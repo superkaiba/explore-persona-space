@@ -1,0 +1,166 @@
+{
+  "schema": "i2658-production-n-v1",
+  "registered": {
+    "power_target": 0.8,
+    "alpha_family": 0.05,
+    "holm_family_size": 11,
+    "primary_effect_auroc": 0.6,
+    "power_curve_effects": [
+      0.55,
+      0.6,
+      0.65,
+      0.7
+    ],
+    "n_replicates": 400,
+    "n_permutations": 659,
+    "responses_per_prompt_production": 30,
+    "responses_per_prompt_pilot": 10,
+    "discordant_target_per_cell": 20,
+    "prompts_per_cell_floor": 30,
+    "bisection_cap": 960,
+    "alpha_worst_case": 0.004545454545454546
+  },
+  "registered_match": true,
+  "profile_sha256": "995bb97d327be06a3a64652f958a8fff6a92b7be7c2e33e1bb53ed5a2dfc6979",
+  "rows_simulated": [
+    "assistantness",
+    "correctness_code",
+    "correctness_math",
+    "correctness_mmlu_pro",
+    "evil",
+    "harmful_compliance",
+    "impoliteness",
+    "refusal",
+    "sycophancy"
+  ],
+  "rows_missing_labels": [
+    "casualness",
+    "hallucination"
+  ],
+  "per_row_power_n": {
+    "assistantness": {
+      "n_power": 30,
+      "status": "measured"
+    },
+    "correctness_code": {
+      "n_power": 30,
+      "status": "measured"
+    },
+    "correctness_math": {
+      "n_power": 30,
+      "status": "measured"
+    },
+    "correctness_mmlu_pro": {
+      "n_power": 30,
+      "status": "measured"
+    },
+    "evil": {
+      "n_power": 30,
+      "status": "measured"
+    },
+    "harmful_compliance": {
+      "n_power": 30,
+      "status": "measured"
+    },
+    "impoliteness": {
+      "n_power": 30,
+      "status": "measured"
+    },
+    "refusal": {
+      "n_power": 30,
+      "status": "measured"
+    },
+    "sycophancy": {
+      "n_power": 30,
+      "status": "measured"
+    }
+  },
+  "binding_discordance_cell": {
+    "row": "refusal",
+    "cell": "refusal__wildchat_real__indirect",
+    "n_required": 62
+  },
+  "cells_with_unbounded_requirement": [
+    "assistantness__arc_c_tasks__ambiguous",
+    "assistantness__arc_c_tasks__direct",
+    "assistantness__arc_c_tasks__indirect",
+    "assistantness__fact_questions__ambiguous",
+    "assistantness__fact_questions__direct",
+    "assistantness__fact_questions__indirect",
+    "assistantness__marker_eval_prompts__ambiguous",
+    "assistantness__marker_eval_prompts__direct",
+    "assistantness__marker_eval_prompts__indirect",
+    "assistantness__wildchat_real__indirect",
+    "casualness__arc_c_tasks__ambiguous",
+    "casualness__arc_c_tasks__direct",
+    "casualness__arc_c_tasks__indirect",
+    "casualness__fact_questions__ambiguous",
+    "casualness__fact_questions__indirect",
+    "casualness__wildchat_real__ambiguous",
+    "casualness__wildchat_real__direct",
+    "casualness__wildchat_real__indirect",
+    "casualness__writing_style_neutral__ambiguous",
+    "casualness__writing_style_neutral__direct",
+    "casualness__writing_style_neutral__indirect",
+    "correctness_code__code_humaneval_mbpp__band_c",
+    "correctness_code__code_lcb__band_c",
+    "correctness_math__math_algebra__level_low",
+    "correctness_math__math_prealgebra__level_low",
+    "correctness_math__math_prealgebra__level_mid",
+    "evil__advbench_requests__ambiguous",
+    "evil__advbench_requests__direct",
+    "evil__advbench_requests__indirect",
+    "evil__broad_em_openended__ambiguous",
+    "evil__broad_em_openended__direct",
+    "evil__broad_em_openended__indirect",
+    "evil__wang44_em_probes__ambiguous",
+    "evil__wang44_em_probes__direct",
+    "evil__wang44_em_probes__indirect",
+    "evil__wildchat_real__ambiguous",
+    "evil__wildchat_real__direct",
+    "evil__wildchat_real__indirect",
+    "hallucination__arc_c_factual__indirect",
+    "harmful_compliance__advbench_requests__ambiguous",
+    "harmful_compliance__advbench_requests__direct",
+    "harmful_compliance__advbench_requests__indirect",
+    "harmful_compliance__sensitive_info_requests__ambiguous",
+    "harmful_compliance__sensitive_info_requests__direct",
+    "harmful_compliance__sensitive_info_requests__indirect",
+    "harmful_compliance__strongreject_requests__ambiguous",
+    "harmful_compliance__wildchat_real__ambiguous",
+    "harmful_compliance__wildchat_real__direct",
+    "harmful_compliance__wildchat_real__indirect",
+    "impoliteness__fact_questions__ambiguous",
+    "impoliteness__fact_questions__direct",
+    "impoliteness__fact_questions__indirect",
+    "impoliteness__impolite_neutral__ambiguous",
+    "impoliteness__impolite_neutral__direct",
+    "impoliteness__impolite_neutral__indirect",
+    "impoliteness__sycophancy_claims__ambiguous",
+    "impoliteness__sycophancy_claims__direct",
+    "impoliteness__sycophancy_claims__indirect",
+    "impoliteness__wildchat_real__ambiguous",
+    "impoliteness__wildchat_real__direct",
+    "impoliteness__wildchat_real__indirect",
+    "refusal__wildchat_real__ambiguous",
+    "refusal__wildchat_real__direct",
+    "sycophancy__syco_arc_science__authority_assertion",
+    "sycophancy__syco_arc_science__confident_assertion",
+    "sycophancy__syco_arc_science__hedged_assertion"
+  ],
+  "binding_power_row": {
+    "row": "assistantness",
+    "n_required": 30
+  },
+  "n_common": null,
+  "status": "not-estimable",
+  "power_curve_at_n_common": {},
+  "first_unit_wall_s": 312.4221041202545,
+  "metadata": {
+    "git_commit": "d30bca7158afe165c8eabcf78ff2cfadb5955291",
+    "git_dirty": false,
+    "phase": "p3-power",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2658_power.py"
+  }
+}

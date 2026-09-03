@@ -1,0 +1,144 @@
+{
+  "schema": "i2658-gate-verdict-v1",
+  "verdict": "PARK",
+  "blockers": [
+    "row_vector_alignment",
+    "measured_discordance_by_cell",
+    "judge_parse_failure_and_max_tokens",
+    "measured_cap_hit_rate",
+    "human_audit_feasibility",
+    "power_based_fixed_n",
+    "cost_within_envelope"
+  ],
+  "gates": [
+    {
+      "gate_id": "construct_recognizability",
+      "description": "frozen construct table complete for all 11 rows (anchors, exclusions, judge instrument or objective label recipe); the human-recognizability half is adjudicated by the human-audit gate",
+      "status": "PASS",
+      "measured": "11/11 rows complete",
+      "threshold": "all 11 rows complete",
+      "artifact": "scripts/issue2658_common.py CONSTRUCTS",
+      "detail": ""
+    },
+    {
+      "gate_id": "direction_model_judge_provenance",
+      "description": "exact direction/model/judge provenance hash-verified per row",
+      "status": "PASS",
+      "measured": "10 eligible + 1 declared not-estimable",
+      "threshold": "every row hash-verified or declared not-estimable",
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/direction_provenance.json",
+      "detail": ""
+    },
+    {
+      "gate_id": "clean_dependency_graph",
+      "description": "frame/split manifests valid, immutable, extraction-resolved, splits disjoint",
+      "status": "PASS",
+      "measured": "11 rows checked",
+      "threshold": "manifests valid + splits disjoint",
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/frame_manifest.json; /mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/split_manifest.json",
+      "detail": ""
+    },
+    {
+      "gate_id": "row_vector_alignment",
+      "description": "provenance rows pin vector shape/layer; pilot capture store aligns 1:1 with generated answers",
+      "status": "NOT-ESTIMABLE",
+      "measured": "provenance shape checks: 0 problems",
+      "threshold": "shape (3584,) at layer 19 + complete store",
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot",
+      "detail": "pilot L19 capture store absent — alignment unmeasurable pre-capture"
+    },
+    {
+      "gate_id": "measured_discordance_by_cell",
+      "description": "every cell's pilot discordance measured with a positive sizing lower bound",
+      "status": "NOT-ESTIMABLE",
+      "measured": "125/132 cells measured",
+      "threshold": "132 cells measured, lower bound > 0",
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/power/discordance.json",
+      "detail": "7 cells lack pilot label artifacts (e.g. ['casualness__fact_questions__direct', 'hallucination__wang44_probes__ambiguous', 'hallucination__wang44_probes__direct'])"
+    },
+    {
+      "gate_id": "judge_parse_failure_and_max_tokens",
+      "description": "pilot judge parse failure < 2% and zero max-token judge stops, per cell",
+      "status": "NOT-ESTIMABLE",
+      "measured": "89/96 judged cells on disk",
+      "threshold": "parse-fail < 0.02 and zero truncation stops",
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/judge/pilot",
+      "detail": "judge pilot artifacts incomplete"
+    },
+    {
+      "gate_id": "measured_cap_hit_rate",
+      "description": "realized length-cap-hit fraction <= 2% per cell (plan section 5)",
+      "status": "NOT-ESTIMABLE",
+      "measured": "131/132 generated cells on disk",
+      "threshold": "<= 0.02 per cell",
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/raw_completions/pilot",
+      "detail": "pilot generation artifacts incomplete"
+    },
+    {
+      "gate_id": "human_audit_feasibility",
+      "description": "blinded double-human audit adjudicated at plan section 3 sizing with reliability gates passed (sens/spec lower95 >= 0.80, kappa >= 0.70, ICC >= 0.75); with no real adjudications on disk this is NOT-ESTIMABLE and the verdict PARKs — the honest pre-audit output, not a bug",
+      "status": "NOT-ESTIMABLE",
+      "measured": null,
+      "threshold": "every judged trait PASS",
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/human_audit/adjudications.json",
+      "detail": "no real human adjudications on disk — reliability cannot be estimated"
+    },
+    {
+      "gate_id": "power_based_fixed_n",
+      "description": "one common prompts-per-cell N fixed by the registered clustered simulation",
+      "status": "FAIL",
+      "measured": {
+        "rows_simulated": [
+          "assistantness",
+          "correctness_code",
+          "correctness_math",
+          "correctness_mmlu_pro",
+          "evil",
+          "harmful_compliance",
+          "impoliteness",
+          "refusal",
+          "sycophancy"
+        ],
+        "n_common": null
+      },
+      "threshold": "rows_simulated == all 11 registered rows",
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/power/production_n.json",
+      "detail": "selection simulated a row SUBSET — missing rows: ['casualness', 'hallucination'] — a sharded --rows run sizes N on its shard only; re-run the final full-row selection before launch"
+    },
+    {
+      "gate_id": "profile_freshness",
+      "description": "discordance + production-N artifacts fingerprint the SAME pilot-label pools currently on disk (profile_sha256 == live fingerprint, pairwise)",
+      "status": "PASS",
+      "measured": {
+        "live_profiles": "995bb97d327be06a3a64652f958a8fff6a92b7be7c2e33e1bb53ed5a2dfc6979",
+        "discordance": "995bb97d327be06a3a64652f958a8fff6a92b7be7c2e33e1bb53ed5a2dfc6979",
+        "production_n": "995bb97d327be06a3a64652f958a8fff6a92b7be7c2e33e1bb53ed5a2dfc6979"
+      },
+      "threshold": "every artifact profile_sha256 == live pilot-label fingerprint",
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/power/discordance.json; /mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/power/production_n.json",
+      "detail": ""
+    },
+    {
+      "gate_id": "cost_within_envelope",
+      "description": "measured pilot GPU-h <= 8 and projected total <= 80 GPU-h (plan section 10)",
+      "status": "NOT-ESTIMABLE",
+      "measured": null,
+      "threshold": "pilot <= 8 GPU-h; total <= 80 GPU-h",
+      "artifact": "power/cost_report.json",
+      "detail": "not-estimable — see gpu_hours fields for the missing artifacts"
+    }
+  ],
+  "reliability": {
+    "status": "NOT-ESTIMABLE",
+    "missing_artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/human_audit/adjudications.json",
+    "detail": "no real human adjudications on disk — reliability cannot be estimated",
+    "per_trait": {}
+  },
+  "metadata": {
+    "git_commit": "d30bca7158afe165c8eabcf78ff2cfadb5955291",
+    "git_dirty": false,
+    "phase": "p3-gate",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2658_power.py"
+  }
+}

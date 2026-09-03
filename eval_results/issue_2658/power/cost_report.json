@@ -1,0 +1,77 @@
+{
+  "schema": "i2658-cost-report-v1",
+  "split": "pilot",
+  "gpu_hours": {
+    "measured_pilot_gpu_h": {
+      "value": null,
+      "basis": "not-estimable",
+      "missing_artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/power_inputs/pilot_timing.json",
+      "detail": "artifact absent — never substituted with a projection"
+    },
+    "projected_production_gpu_h": {
+      "value": null,
+      "basis": "not-estimable",
+      "missing_artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/power_inputs/pilot_timing.json",
+      "detail": "no measured pilot marginal rate to project from"
+    }
+  },
+  "api": {
+    "realized_judge_draws": {
+      "value": 42095,
+      "basis": "measured",
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/judge/pilot",
+      "detail": "summed draw counters over 89 judged cell bodies"
+    },
+    "measured_dollars": {
+      "value": null,
+      "basis": "not-estimable",
+      "missing_artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/power_inputs/judge_spend.json",
+      "detail": "artifact absent — never substituted with a projection"
+    },
+    "projected_pilot_judge_draws": {
+      "value": 24000,
+      "basis": "projected",
+      "detail": "plan section 10 projection: 8 judged traits x 600 answers x 5 draws — a PROJECTION, never quote as realized"
+    },
+    "projected_production_judge_draws": {
+      "value": null,
+      "basis": "not-estimable",
+      "missing_artifact": "production N (power/production_n.json status=measured)",
+      "detail": "artifact absent — never substituted with a projection"
+    }
+  },
+  "human_annotation": {
+    "required_minimum_adjudications": {
+      "value": 1600,
+      "basis": "projected",
+      "detail": "plan section 3 sizing: >= 100 adjudicated positives AND >= 100 negatives per judged trait x 8 judged traits (a floor, not a spend)"
+    },
+    "realized_adjudications": {
+      "value": null,
+      "basis": "not-estimable",
+      "missing_artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/human_audit/adjudications.json",
+      "detail": "artifact absent — never substituted with a projection"
+    },
+    "realized_adjudication_queue": {
+      "value": 0,
+      "basis": "measured",
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/judge/pilot",
+      "detail": "judge-side units routed to human adjudication (retry-exhausted)"
+    }
+  },
+  "envelope": {
+    "pilot_ceiling_gpu_h": 8.0,
+    "total_ceiling_gpu_h": 80.0,
+    "projected_total_gpu_h": null,
+    "margin_gpu_h": null,
+    "within_envelope": null,
+    "basis": "not-estimable — see gpu_hours fields for the missing artifacts"
+  },
+  "metadata": {
+    "git_commit": "d30bca7158afe165c8eabcf78ff2cfadb5955291",
+    "git_dirty": false,
+    "phase": "p3-cost",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2658_power.py"
+  }
+}

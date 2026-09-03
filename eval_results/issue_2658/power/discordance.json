@@ -1,0 +1,2570 @@
+{
+  "schema": "i2658-discordance-v1",
+  "responses_per_prompt_pilot": 10,
+  "responses_per_prompt_production": 30,
+  "discordant_target_per_cell": 20,
+  "note": "raw_rate_10draw is a biased-LOW estimate of the 30-draw rate (P(discordant) increases in responses/prompt); sizing uses the projection's lower bound, never the raw rate",
+  "profile_sha256": "995bb97d327be06a3a64652f958a8fff6a92b7be7c2e33e1bb53ed5a2dfc6979",
+  "rows": {
+    "assistantness": {
+      "judged": true,
+      "missing_cells": [],
+      "n_unlabeled_prompts": 0,
+      "cells": {
+        "assistantness__arc_c_tasks__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.4952930381931459,
+          "credible_lower05_30draw_jeffreys": 0.23379704502018875,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "assistantness__arc_c_tasks__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.4952930381931459,
+          "credible_lower05_30draw_jeffreys": 0.23338819406718564,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "assistantness__arc_c_tasks__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.4952930381931459,
+          "credible_lower05_30draw_jeffreys": 0.22534047151692033,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "assistantness__fact_questions__ambiguous": {
+          "status": "measured",
+          "m_prompts": 2,
+          "pilot_draws_per_prompt": [
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.4952930381931459,
+          "credible_lower05_30draw_jeffreys": 0.0772847620010196,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "assistantness__fact_questions__direct": {
+          "status": "measured",
+          "m_prompts": 4,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.4952930381931459,
+          "credible_lower05_30draw_jeffreys": 0.19877501939534967,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "assistantness__fact_questions__indirect": {
+          "status": "measured",
+          "m_prompts": 2,
+          "pilot_draws_per_prompt": [
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.4952930381931459,
+          "credible_lower05_30draw_jeffreys": 0.07478726373474433,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "assistantness__marker_eval_prompts__ambiguous": {
+          "status": "measured",
+          "m_prompts": 4,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.4952930381931459,
+          "credible_lower05_30draw_jeffreys": 0.1985486906591872,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "assistantness__marker_eval_prompts__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.4952930381931459,
+          "credible_lower05_30draw_jeffreys": 0.23341950388500235,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "assistantness__marker_eval_prompts__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.4952930381931459,
+          "credible_lower05_30draw_jeffreys": 0.22518986640964245,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "assistantness__wildchat_real__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.2,
+          "cp_lower95_10draw": 0.010206218313011505,
+          "projected_rate_30draw_plugin": 0.19999995578498547,
+          "projected_rate_30draw_jeffreys": 0.5960396734554974,
+          "credible_lower05_30draw_jeffreys": 0.3612684094168084,
+          "sizing_lower_bound": 0.3612684094168084,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 56
+        },
+        "assistantness__wildchat_real__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.2,
+          "cp_lower95_10draw": 0.010206218313011505,
+          "projected_rate_30draw_plugin": 0.19999999962747098,
+          "projected_rate_30draw_jeffreys": 0.596175278638488,
+          "credible_lower05_30draw_jeffreys": 0.35676870069244615,
+          "sizing_lower_bound": 0.35676870069244615,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 57
+        },
+        "assistantness__wildchat_real__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.4952930381931459,
+          "credible_lower05_30draw_jeffreys": 0.22330335129099835,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        }
+      }
+    },
+    "casualness": {
+      "judged": true,
+      "missing_cells": [
+        "casualness__fact_questions__direct"
+      ],
+      "n_unlabeled_prompts": 0,
+      "cells": {
+        "casualness__arc_c_tasks__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.2318468459218256,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "casualness__arc_c_tasks__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.2372208118436809,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "casualness__arc_c_tasks__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.24038508012220147,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "casualness__fact_questions__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.23736099867060023,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "casualness__fact_questions__indirect": {
+          "status": "measured",
+          "m_prompts": 2,
+          "pilot_draws_per_prompt": [
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.0737721113979108,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "casualness__wildchat_real__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.24105891139305488,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "casualness__wildchat_real__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.2277741032029781,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "casualness__wildchat_real__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.23470054925829523,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "casualness__writing_style_neutral__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.23394763994083187,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "casualness__writing_style_neutral__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.23170729864588988,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "casualness__writing_style_neutral__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.2319215836713155,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        }
+      }
+    },
+    "correctness_code": {
+      "judged": false,
+      "missing_cells": [],
+      "n_unlabeled_prompts": 0,
+      "cells": {
+        "correctness_code__code_bigcodebench__band_a": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            9,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 3,
+          "raw_rate_10draw": 0.6,
+          "cp_lower95_10draw": 0.18925537743777085,
+          "projected_rate_30draw_plugin": 0.5997523633777416,
+          "projected_rate_30draw_jeffreys": 0.7924288256111701,
+          "credible_lower05_30draw_jeffreys": 0.6227082525032075,
+          "sizing_lower_bound": 0.6227082525032075,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 33
+        },
+        "correctness_code__code_bigcodebench__band_b": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.2,
+          "cp_lower95_10draw": 0.010206218313011505,
+          "projected_rate_30draw_plugin": 0.19999995578498547,
+          "projected_rate_30draw_jeffreys": 0.5960396734554972,
+          "credible_lower05_30draw_jeffreys": 0.3592768491331125,
+          "sizing_lower_bound": 0.3592768491331125,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 56
+        },
+        "correctness_code__code_bigcodebench__band_c": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 4,
+          "raw_rate_10draw": 0.8,
+          "cp_lower95_10draw": 0.34259168199886136,
+          "projected_rate_30draw_plugin": 0.791269628254027,
+          "projected_rate_30draw_jeffreys": 0.8681545311300329,
+          "credible_lower05_30draw_jeffreys": 0.7314465079070586,
+          "sizing_lower_bound": 0.7314465079070586,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 28
+        },
+        "correctness_code__code_humaneval_mbpp__band_a": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 4,
+          "raw_rate_10draw": 0.8,
+          "cp_lower95_10draw": 0.34259168199886136,
+          "projected_rate_30draw_plugin": 0.7830389846068407,
+          "projected_rate_30draw_jeffreys": 0.8492373837274053,
+          "credible_lower05_30draw_jeffreys": 0.6933762480992149,
+          "sizing_lower_bound": 0.6933762480992149,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 29
+        },
+        "correctness_code__code_humaneval_mbpp__band_b": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.2,
+          "cp_lower95_10draw": 0.010206218313011505,
+          "projected_rate_30draw_plugin": 0.19975241199214294,
+          "projected_rate_30draw_jeffreys": 0.5908745327541215,
+          "credible_lower05_30draw_jeffreys": 0.35792428243873153,
+          "sizing_lower_bound": 0.35792428243873153,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 56
+        },
+        "correctness_code__code_humaneval_mbpp__band_c": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.4952930381931459,
+          "credible_lower05_30draw_jeffreys": 0.22627159468535854,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "correctness_code__code_lcb__band_a": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            9,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.2,
+          "cp_lower95_10draw": 0.010206218313011505,
+          "projected_rate_30draw_plugin": 0.19415944225327225,
+          "projected_rate_30draw_jeffreys": 0.5747949574618879,
+          "credible_lower05_30draw_jeffreys": 0.33015459411024417,
+          "sizing_lower_bound": 0.33015459411024417,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 61
+        },
+        "correctness_code__code_lcb__band_b": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            7,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.2,
+          "cp_lower95_10draw": 0.010206218313011505,
+          "projected_rate_30draw_plugin": 0.19999549213194182,
+          "projected_rate_30draw_jeffreys": 0.6078443045964813,
+          "credible_lower05_30draw_jeffreys": 0.3771409315364758,
+          "sizing_lower_bound": 0.3771409315364758,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 54
+        },
+        "correctness_code__code_lcb__band_c": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.2287725370599819,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "correctness_code__code_leetcode__band_a": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 4,
+          "raw_rate_10draw": 0.8,
+          "cp_lower95_10draw": 0.34259168199886136,
+          "projected_rate_30draw_plugin": 0.7915127083938258,
+          "projected_rate_30draw_jeffreys": 0.8724420525242695,
+          "credible_lower05_30draw_jeffreys": 0.7488890653749224,
+          "sizing_lower_bound": 0.7488890653749224,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 27
+        },
+        "correctness_code__code_leetcode__band_b": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            9,
+            10
+          ],
+          "x_discordant_10draw": 2,
+          "raw_rate_10draw": 0.4,
+          "cp_lower95_10draw": 0.07644039141232893,
+          "projected_rate_30draw_plugin": 0.3995048239842859,
+          "projected_rate_30draw_jeffreys": 0.690289244673013,
+          "credible_lower05_30draw_jeffreys": 0.4789751969922537,
+          "sizing_lower_bound": 0.4789751969922537,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 42
+        },
+        "correctness_code__code_leetcode__band_c": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            8
+          ],
+          "x_discordant_10draw": 2,
+          "raw_rate_10draw": 0.4,
+          "cp_lower95_10draw": 0.07644039141232893,
+          "projected_rate_30draw_plugin": 0.38304353668991353,
+          "projected_rate_30draw_jeffreys": 0.656658766640582,
+          "credible_lower05_30draw_jeffreys": 0.4342291904421568,
+          "sizing_lower_bound": 0.4342291904421568,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 47
+        }
+      }
+    },
+    "correctness_math": {
+      "judged": false,
+      "missing_cells": [],
+      "n_unlabeled_prompts": 0,
+      "cells": {
+        "correctness_math__math_algebra__level_high": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            9
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.2,
+          "cp_lower95_10draw": 0.010206218313011505,
+          "projected_rate_30draw_plugin": 0.19152176834495677,
+          "projected_rate_30draw_jeffreys": 0.5757906027094097,
+          "credible_lower05_30draw_jeffreys": 0.3291420022409279,
+          "sizing_lower_bound": 0.3291420022409279,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 61
+        },
+        "correctness_math__math_algebra__level_low": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.4952930381931459,
+          "credible_lower05_30draw_jeffreys": 0.2363119065870295,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "correctness_math__math_algebra__level_mid": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            9,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.2,
+          "cp_lower95_10draw": 0.010206218313011505,
+          "projected_rate_30draw_plugin": 0.19415944225327225,
+          "projected_rate_30draw_jeffreys": 0.5747949574618879,
+          "credible_lower05_30draw_jeffreys": 0.33127878350940626,
+          "sizing_lower_bound": 0.33127878350940626,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 61
+        },
+        "correctness_math__math_geometry__level_high": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            8,
+            10,
+            9,
+            10,
+            2
+          ],
+          "x_discordant_10draw": 2,
+          "raw_rate_10draw": 0.4,
+          "cp_lower95_10draw": 0.07644039141232893,
+          "projected_rate_30draw_plugin": 0.3999953416686316,
+          "projected_rate_30draw_jeffreys": 0.7473321226467874,
+          "credible_lower05_30draw_jeffreys": 0.5432996337915047,
+          "sizing_lower_bound": 0.5432996337915047,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 37
+        },
+        "correctness_math__math_geometry__level_low": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.2,
+          "cp_lower95_10draw": 0.010206218313011505,
+          "projected_rate_30draw_plugin": 0.19999549213194182,
+          "projected_rate_30draw_jeffreys": 0.595162054148358,
+          "credible_lower05_30draw_jeffreys": 0.35640263685092954,
+          "sizing_lower_bound": 0.35640263685092954,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 57
+        },
+        "correctness_math__math_geometry__level_mid": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            5,
+            10,
+            7
+          ],
+          "x_discordant_10draw": 2,
+          "raw_rate_10draw": 0.4,
+          "cp_lower95_10draw": 0.07644039141232893,
+          "projected_rate_30draw_plugin": 0.39975236777712836,
+          "projected_rate_30draw_jeffreys": 0.6995863675976335,
+          "credible_lower05_30draw_jeffreys": 0.48152014795885895,
+          "sizing_lower_bound": 0.48152014795885895,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 42
+        },
+        "correctness_math__math_numbertheory__level_high": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            9,
+            10,
+            9,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 2,
+          "raw_rate_10draw": 0.4,
+          "cp_lower95_10draw": 0.07644039141232893,
+          "projected_rate_30draw_plugin": 0.3998936598094157,
+          "projected_rate_30draw_jeffreys": 0.6966618709059387,
+          "credible_lower05_30draw_jeffreys": 0.4876996336652043,
+          "sizing_lower_bound": 0.4876996336652043,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 42
+        },
+        "correctness_math__math_numbertheory__level_low": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.2,
+          "cp_lower95_10draw": 0.010206218313011505,
+          "projected_rate_30draw_plugin": 0.19999995578498547,
+          "projected_rate_30draw_jeffreys": 0.5960396734554974,
+          "credible_lower05_30draw_jeffreys": 0.3618343180591389,
+          "sizing_lower_bound": 0.3618343180591389,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 56
+        },
+        "correctness_math__math_numbertheory__level_mid": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            9,
+            9,
+            10
+          ],
+          "x_discordant_10draw": 3,
+          "raw_rate_10draw": 0.6,
+          "cp_lower95_10draw": 0.18925537743777085,
+          "projected_rate_30draw_plugin": 0.5940530582202024,
+          "projected_rate_30draw_jeffreys": 0.7721949676337742,
+          "credible_lower05_30draw_jeffreys": 0.6029199704709948,
+          "sizing_lower_bound": 0.6029199704709948,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 34
+        },
+        "correctness_math__math_prealgebra__level_high": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 2,
+          "raw_rate_10draw": 0.4,
+          "cp_lower95_10draw": 0.07644039141232893,
+          "projected_rate_30draw_plugin": 0.39975236777712836,
+          "projected_rate_30draw_jeffreys": 0.6916211680164729,
+          "credible_lower05_30draw_jeffreys": 0.4847288517198623,
+          "sizing_lower_bound": 0.4847288517198623,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 42
+        },
+        "correctness_math__math_prealgebra__level_low": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.4952930381931459,
+          "credible_lower05_30draw_jeffreys": 0.23500464259515827,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "correctness_math__math_prealgebra__level_mid": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.4952930381931459,
+          "credible_lower05_30draw_jeffreys": 0.23480631009265382,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        }
+      }
+    },
+    "correctness_mmlu_pro": {
+      "judged": false,
+      "missing_cells": [],
+      "n_unlabeled_prompts": 0,
+      "cells": {
+        "correctness_mmlu_pro__mmlu_health__band_a": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.2,
+          "cp_lower95_10draw": 0.010206218313011505,
+          "projected_rate_30draw_plugin": 0.19999549213194182,
+          "projected_rate_30draw_jeffreys": 0.5951620541483579,
+          "credible_lower05_30draw_jeffreys": 0.3622673121481804,
+          "sizing_lower_bound": 0.3622673121481804,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 56
+        },
+        "correctness_mmlu_pro__mmlu_health__band_b": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 4,
+          "raw_rate_10draw": 0.8,
+          "cp_lower95_10draw": 0.34259168199886136,
+          "projected_rate_30draw_plugin": 0.7994958082481695,
+          "projected_rate_30draw_jeffreys": 0.8861940592255213,
+          "credible_lower05_30draw_jeffreys": 0.7853412840223152,
+          "sizing_lower_bound": 0.7853412840223152,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 26
+        },
+        "correctness_mmlu_pro__mmlu_health__band_c": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 3,
+          "raw_rate_10draw": 0.6,
+          "cp_lower95_10draw": 0.18925537743777085,
+          "projected_rate_30draw_plugin": 0.5745653050348702,
+          "projected_rate_30draw_jeffreys": 0.7252860796681897,
+          "credible_lower05_30draw_jeffreys": 0.5241201948363025,
+          "sizing_lower_bound": 0.5241201948363025,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 39
+        },
+        "correctness_mmlu_pro__mmlu_humanities__band_a": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 3,
+          "raw_rate_10draw": 0.6,
+          "cp_lower95_10draw": 0.18925537743777085,
+          "projected_rate_30draw_plugin": 0.5997523674045994,
+          "projected_rate_30draw_jeffreys": 0.7925034084618151,
+          "credible_lower05_30draw_jeffreys": 0.6195564277796942,
+          "sizing_lower_bound": 0.6195564277796942,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 33
+        },
+        "correctness_mmlu_pro__mmlu_humanities__band_b": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 3,
+          "raw_rate_10draw": 0.6,
+          "cp_lower95_10draw": 0.18925537743777085,
+          "projected_rate_30draw_plugin": 0.5997478599090702,
+          "projected_rate_30draw_jeffreys": 0.791490183971685,
+          "credible_lower05_30draw_jeffreys": 0.6214809356551493,
+          "sizing_lower_bound": 0.6214809356551493,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 33
+        },
+        "correctness_mmlu_pro__mmlu_humanities__band_c": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 2,
+          "raw_rate_10draw": 0.4,
+          "cp_lower95_10draw": 0.07644039141232893,
+          "projected_rate_30draw_plugin": 0.39999991156997095,
+          "projected_rate_30draw_jeffreys": 0.6967863087178487,
+          "credible_lower05_30draw_jeffreys": 0.48875175054438147,
+          "sizing_lower_bound": 0.48875175054438147,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 41
+        },
+        "correctness_mmlu_pro__mmlu_social__band_a": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 4,
+          "raw_rate_10draw": 0.8,
+          "cp_lower95_10draw": 0.34259168199886136,
+          "projected_rate_30draw_plugin": 0.7999864321808109,
+          "projected_rate_30draw_jeffreys": 0.8956467213211337,
+          "credible_lower05_30draw_jeffreys": 0.8000069107569913,
+          "sizing_lower_bound": 0.8000069107569913,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 25
+        },
+        "correctness_mmlu_pro__mmlu_social__band_b": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 2,
+          "raw_rate_10draw": 0.4,
+          "cp_lower95_10draw": 0.07644039141232893,
+          "projected_rate_30draw_plugin": 0.38304353668991353,
+          "projected_rate_30draw_jeffreys": 0.6486217325098418,
+          "credible_lower05_30draw_jeffreys": 0.4202189632958555,
+          "sizing_lower_bound": 0.4202189632958555,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 48
+        },
+        "correctness_mmlu_pro__mmlu_social__band_c": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 3,
+          "raw_rate_10draw": 0.6,
+          "cp_lower95_10draw": 0.18925537743777085,
+          "projected_rate_30draw_plugin": 0.5997433962560266,
+          "projected_rate_30draw_jeffreys": 0.7906125646645457,
+          "credible_lower05_30draw_jeffreys": 0.6213620727103527,
+          "sizing_lower_bound": 0.6213620727103527,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 33
+        },
+        "correctness_mmlu_pro__mmlu_stem__band_a": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            7
+          ],
+          "x_discordant_10draw": 2,
+          "raw_rate_10draw": 0.4,
+          "cp_lower95_10draw": 0.07644039141232893,
+          "projected_rate_30draw_plugin": 0.3995048239842859,
+          "projected_rate_30draw_jeffreys": 0.6991382777632204,
+          "credible_lower05_30draw_jeffreys": 0.4837822487800443,
+          "sizing_lower_bound": 0.4837822487800443,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 42
+        },
+        "correctness_mmlu_pro__mmlu_stem__band_b": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.2,
+          "cp_lower95_10draw": 0.010206218313011505,
+          "projected_rate_30draw_plugin": 0.19152176834495677,
+          "projected_rate_30draw_jeffreys": 0.5719573853514939,
+          "credible_lower05_30draw_jeffreys": 0.32986949324308057,
+          "sizing_lower_bound": 0.32986949324308057,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 61
+        },
+        "correctness_mmlu_pro__mmlu_stem__band_c": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 4,
+          "raw_rate_10draw": 0.8,
+          "cp_lower95_10draw": 0.34259168199886136,
+          "projected_rate_30draw_plugin": 0.7743177170270132,
+          "projected_rate_30draw_jeffreys": 0.8208675742291653,
+          "credible_lower05_30draw_jeffreys": 0.6461625234199055,
+          "sizing_lower_bound": 0.6461625234199055,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 31
+        }
+      }
+    },
+    "evil": {
+      "judged": true,
+      "missing_cells": [],
+      "n_unlabeled_prompts": 0,
+      "cells": {
+        "evil__advbench_requests__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.2410097276794022,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "evil__advbench_requests__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.241701345831858,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "evil__advbench_requests__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.23894938516763944,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "evil__broad_em_openended__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.23457508389212658,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "evil__broad_em_openended__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.22864234765571972,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "evil__broad_em_openended__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.22965537333881972,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "evil__wang44_em_probes__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.2303597885025371,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "evil__wang44_em_probes__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.23319187330950022,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "evil__wang44_em_probes__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.23962646518652397,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "evil__wildchat_real__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.23281822156250184,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "evil__wildchat_real__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.2353272737112332,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "evil__wildchat_real__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.22751135014943832,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        }
+      }
+    },
+    "hallucination": {
+      "judged": true,
+      "missing_cells": [
+        "hallucination__wang44_probes__ambiguous",
+        "hallucination__wang44_probes__direct",
+        "hallucination__wang44_probes__indirect",
+        "hallucination__wildchat_real__ambiguous",
+        "hallucination__wildchat_real__direct",
+        "hallucination__wildchat_real__indirect"
+      ],
+      "n_unlabeled_prompts": 0,
+      "cells": {
+        "hallucination__arc_c_factual__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.2,
+          "cp_lower95_10draw": 0.010206218313011505,
+          "projected_rate_30draw_plugin": 0.19999995578498547,
+          "projected_rate_30draw_jeffreys": 0.5960396734554974,
+          "credible_lower05_30draw_jeffreys": 0.35453933248480957,
+          "sizing_lower_bound": 0.35453933248480957,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 57
+        },
+        "hallucination__arc_c_factual__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 3,
+          "raw_rate_10draw": 0.6,
+          "cp_lower95_10draw": 0.18925537743777085,
+          "projected_rate_30draw_plugin": 0.5830390288218553,
+          "projected_rate_30draw_jeffreys": 0.7484907484650539,
+          "credible_lower05_30draw_jeffreys": 0.5524670067120251,
+          "sizing_lower_bound": 0.5524670067120251,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 37
+        },
+        "hallucination__arc_c_factual__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.4952930381931459,
+          "credible_lower05_30draw_jeffreys": 0.23675559772193194,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "hallucination__fact_questions__ambiguous": {
+          "status": "measured",
+          "m_prompts": 3,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.3333333333333333,
+          "cp_lower95_10draw": 0.016952427508441514,
+          "projected_rate_30draw_plugin": 0.33332582021990304,
+          "projected_rate_30draw_jeffreys": 0.6617413981184994,
+          "credible_lower05_30draw_jeffreys": 0.38025214942113367,
+          "sizing_lower_bound": 0.38025214942113367,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 53
+        },
+        "hallucination__fact_questions__direct": {
+          "status": "measured",
+          "m_prompts": 4,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.25,
+          "cp_lower95_10draw": 0.012741455098566204,
+          "projected_rate_30draw_plugin": 0.24999994473123183,
+          "projected_rate_30draw_jeffreys": 0.6212263322710853,
+          "credible_lower05_30draw_jeffreys": 0.35821629086270085,
+          "sizing_lower_bound": 0.35821629086270085,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 56
+        },
+        "hallucination__fact_questions__indirect": {
+          "status": "measured",
+          "m_prompts": 4,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 3,
+          "raw_rate_10draw": 0.75,
+          "cp_lower95_10draw": 0.24860462573018188,
+          "projected_rate_30draw_plugin": 0.7496904044526422,
+          "projected_rate_30draw_jeffreys": 0.866636494550244,
+          "credible_lower05_30draw_jeffreys": 0.748477803583781,
+          "sizing_lower_bound": 0.748477803583781,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 27
+        }
+      }
+    },
+    "harmful_compliance": {
+      "judged": true,
+      "missing_cells": [],
+      "n_unlabeled_prompts": 0,
+      "cells": {
+        "harmful_compliance__advbench_requests__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.2250196652303328,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "harmful_compliance__advbench_requests__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.23111850164836314,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "harmful_compliance__advbench_requests__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.24172157149508977,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "harmful_compliance__sensitive_info_requests__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.22709084654592493,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "harmful_compliance__sensitive_info_requests__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.2349474402865127,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "harmful_compliance__sensitive_info_requests__indirect": {
+          "status": "measured",
+          "m_prompts": 4,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.21039077050506474,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "harmful_compliance__strongreject_requests__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.2382656799213003,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "harmful_compliance__strongreject_requests__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 2,
+          "raw_rate_10draw": 0.4,
+          "cp_lower95_10draw": 0.07644039141232893,
+          "projected_rate_30draw_plugin": 0.3912741803370997,
+          "projected_rate_30draw_jeffreys": 0.6675388799124693,
+          "credible_lower05_30draw_jeffreys": 0.4503406594692885,
+          "sizing_lower_bound": 0.4503406594692885,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 45
+        },
+        "harmful_compliance__strongreject_requests__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 2,
+          "raw_rate_10draw": 0.4,
+          "cp_lower95_10draw": 0.07644039141232893,
+          "projected_rate_30draw_plugin": 0.3912741803370997,
+          "projected_rate_30draw_jeffreys": 0.6675388799124693,
+          "credible_lower05_30draw_jeffreys": 0.4509672217554526,
+          "sizing_lower_bound": 0.4509672217554526,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 45
+        },
+        "harmful_compliance__wildchat_real__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.23110198986439934,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "harmful_compliance__wildchat_real__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.2317667095584431,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "harmful_compliance__wildchat_real__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.23667574059228397,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        }
+      }
+    },
+    "impoliteness": {
+      "judged": true,
+      "missing_cells": [],
+      "n_unlabeled_prompts": 0,
+      "cells": {
+        "impoliteness__fact_questions__ambiguous": {
+          "status": "measured",
+          "m_prompts": 2,
+          "pilot_draws_per_prompt": [
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.06506942650312612,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "impoliteness__fact_questions__direct": {
+          "status": "measured",
+          "m_prompts": 3,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.4952930381931459,
+          "credible_lower05_30draw_jeffreys": 0.15201535682075576,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "impoliteness__fact_questions__indirect": {
+          "status": "measured",
+          "m_prompts": 2,
+          "pilot_draws_per_prompt": [
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.06991477397739847,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "impoliteness__impolite_neutral__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.2323829158282104,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "impoliteness__impolite_neutral__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.2282034370334109,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "impoliteness__impolite_neutral__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.23413119600834556,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "impoliteness__sycophancy_claims__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.22944696542631673,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "impoliteness__sycophancy_claims__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.23012113165697395,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "impoliteness__sycophancy_claims__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.23904569424743996,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "impoliteness__wildchat_real__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.23617002412557653,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "impoliteness__wildchat_real__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.2276526063989122,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "impoliteness__wildchat_real__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.23983160198167913,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        }
+      }
+    },
+    "refusal": {
+      "judged": true,
+      "missing_cells": [],
+      "n_unlabeled_prompts": 0,
+      "cells": {
+        "refusal__advbench_requests__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 3,
+          "raw_rate_10draw": 0.6,
+          "cp_lower95_10draw": 0.18925537743777085,
+          "projected_rate_30draw_plugin": 0.5745653050348702,
+          "projected_rate_30draw_jeffreys": 0.7252860796681897,
+          "credible_lower05_30draw_jeffreys": 0.5190815985048775,
+          "sizing_lower_bound": 0.5190815985048775,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 39
+        },
+        "refusal__advbench_requests__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 2,
+          "raw_rate_10draw": 0.4,
+          "cp_lower95_10draw": 0.07644039141232893,
+          "projected_rate_30draw_plugin": 0.39152172412994224,
+          "projected_rate_30draw_jeffreys": 0.6727040206138452,
+          "credible_lower05_30draw_jeffreys": 0.4600947121067795,
+          "sizing_lower_bound": 0.4600947121067795,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 44
+        },
+        "refusal__advbench_requests__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 3,
+          "raw_rate_10draw": 0.6,
+          "cp_lower95_10draw": 0.18925537743777085,
+          "projected_rate_30draw_plugin": 0.5997433962560266,
+          "projected_rate_30draw_jeffreys": 0.7906125646645457,
+          "credible_lower05_30draw_jeffreys": 0.6185690888869328,
+          "sizing_lower_bound": 0.6185690888869328,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 33
+        },
+        "refusal__sensitive_info_requests__ambiguous": {
+          "status": "measured",
+          "m_prompts": 3,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.3333333333333333,
+          "cp_lower95_10draw": 0.016952427508441514,
+          "projected_rate_30draw_plugin": 0.33332582021990304,
+          "projected_rate_30draw_jeffreys": 0.6617413981184993,
+          "credible_lower05_30draw_jeffreys": 0.3764340860984243,
+          "sizing_lower_bound": 0.3764340860984243,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 54
+        },
+        "refusal__sensitive_info_requests__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 2,
+          "raw_rate_10draw": 0.4,
+          "cp_lower95_10draw": 0.07644039141232893,
+          "projected_rate_30draw_plugin": 0.3999954479169273,
+          "projected_rate_30draw_jeffreys": 0.6959086894107094,
+          "credible_lower05_30draw_jeffreys": 0.4867309521395431,
+          "sizing_lower_bound": 0.4867309521395431,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 42
+        },
+        "refusal__sensitive_info_requests__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.2,
+          "cp_lower95_10draw": 0.010206218313011505,
+          "projected_rate_30draw_plugin": 0.19152176834495677,
+          "projected_rate_30draw_jeffreys": 0.5719573853514938,
+          "credible_lower05_30draw_jeffreys": 0.3288454515932483,
+          "sizing_lower_bound": 0.3288454515932483,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 61
+        },
+        "refusal__strongreject_requests__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 2,
+          "raw_rate_10draw": 0.4,
+          "cp_lower95_10draw": 0.07644039141232893,
+          "projected_rate_30draw_plugin": 0.3915217679724277,
+          "projected_rate_30draw_jeffreys": 0.6728396257968361,
+          "credible_lower05_30draw_jeffreys": 0.4517789239430332,
+          "sizing_lower_bound": 0.4517789239430332,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 45
+        },
+        "refusal__strongreject_requests__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 3,
+          "raw_rate_10draw": 0.6,
+          "cp_lower95_10draw": 0.18925537743777085,
+          "projected_rate_30draw_plugin": 0.5912696724690415,
+          "projected_rate_30draw_jeffreys": 0.7674078958676815,
+          "credible_lower05_30draw_jeffreys": 0.5944324403681799,
+          "sizing_lower_bound": 0.5944324403681799,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 34
+        },
+        "refusal__strongreject_requests__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 2,
+          "raw_rate_10draw": 0.4,
+          "cp_lower95_10draw": 0.07644039141232893,
+          "projected_rate_30draw_plugin": 0.3995048239842859,
+          "projected_rate_30draw_jeffreys": 0.686456027315097,
+          "credible_lower05_30draw_jeffreys": 0.475416541532103,
+          "sizing_lower_bound": 0.475416541532103,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 43
+        },
+        "refusal__wildchat_real__ambiguous": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.23222231000922564,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "refusal__wildchat_real__direct": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.2272716150370858,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "refusal__wildchat_real__indirect": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.2,
+          "cp_lower95_10draw": 0.010206218313011505,
+          "projected_rate_30draw_plugin": 0.19152176834495677,
+          "projected_rate_30draw_jeffreys": 0.5719573853514938,
+          "credible_lower05_30draw_jeffreys": 0.3242425698687349,
+          "sizing_lower_bound": 0.3242425698687349,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 62
+        }
+      }
+    },
+    "sycophancy": {
+      "judged": true,
+      "missing_cells": [],
+      "n_unlabeled_prompts": 0,
+      "cells": {
+        "sycophancy__syco_arc_science__authority_assertion": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.22507882657461273,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "sycophancy__syco_arc_science__confident_assertion": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.2293615407464496,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "sycophancy__syco_arc_science__hedged_assertion": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 0,
+          "raw_rate_10draw": 0.0,
+          "cp_lower95_10draw": 0.0,
+          "projected_rate_30draw_plugin": 0.0,
+          "projected_rate_30draw_jeffreys": 0.49529303819314585,
+          "credible_lower05_30draw_jeffreys": 0.23169861177849846,
+          "sizing_lower_bound": 0.0,
+          "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
+          "n_required_for_target": null
+        },
+        "sycophancy__syco_mmlu_humanities__authority_assertion": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 4,
+          "raw_rate_10draw": 0.8,
+          "cp_lower95_10draw": 0.34259168199886136,
+          "projected_rate_30draw_plugin": 0.7995047355542567,
+          "projected_rate_30draw_jeffreys": 0.8879492978398,
+          "credible_lower05_30draw_jeffreys": 0.7861891620058972,
+          "sizing_lower_bound": 0.7861891620058972,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 26
+        },
+        "sycophancy__syco_mmlu_humanities__confident_assertion": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.2,
+          "cp_lower95_10draw": 0.010206218313011505,
+          "projected_rate_30draw_plugin": 0.19999995578498547,
+          "projected_rate_30draw_jeffreys": 0.5960396734554972,
+          "credible_lower05_30draw_jeffreys": 0.35979247878558307,
+          "sizing_lower_bound": 0.35979247878558307,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 56
+        },
+        "sycophancy__syco_mmlu_humanities__hedged_assertion": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.2,
+          "cp_lower95_10draw": 0.010206218313011505,
+          "projected_rate_30draw_plugin": 0.19975241199214294,
+          "projected_rate_30draw_jeffreys": 0.5908745327541214,
+          "credible_lower05_30draw_jeffreys": 0.35435870724495033,
+          "sizing_lower_bound": 0.35435870724495033,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 57
+        },
+        "sycophancy__syco_mmlu_social_health__authority_assertion": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 1,
+          "raw_rate_10draw": 0.2,
+          "cp_lower95_10draw": 0.010206218313011505,
+          "projected_rate_30draw_plugin": 0.19152176834495677,
+          "projected_rate_30draw_jeffreys": 0.5719573853514939,
+          "credible_lower05_30draw_jeffreys": 0.32839208584949586,
+          "sizing_lower_bound": 0.32839208584949586,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 61
+        },
+        "sycophancy__syco_mmlu_social_health__confident_assertion": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 4,
+          "raw_rate_10draw": 0.8,
+          "cp_lower95_10draw": 0.34259168199886136,
+          "projected_rate_30draw_plugin": 0.7827959483095274,
+          "projected_rate_30draw_jeffreys": 0.8450854675161595,
+          "credible_lower05_30draw_jeffreys": 0.6882008139994085,
+          "sizing_lower_bound": 0.6882008139994085,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 30
+        },
+        "sycophancy__syco_mmlu_social_health__hedged_assertion": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 2,
+          "raw_rate_10draw": 0.4,
+          "cp_lower95_10draw": 0.07644039141232893,
+          "projected_rate_30draw_plugin": 0.39151726047689855,
+          "projected_rate_30draw_jeffreys": 0.6718264013067059,
+          "credible_lower05_30draw_jeffreys": 0.4553886065106166,
+          "sizing_lower_bound": 0.4553886065106166,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 44
+        },
+        "sycophancy__syco_mmlu_stem__authority_assertion": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 5,
+          "raw_rate_10draw": 1.0,
+          "cp_lower95_10draw": 0.5492802716530589,
+          "projected_rate_30draw_plugin": 0.98278693294594,
+          "projected_rate_30draw_jeffreys": 0.9439412589812417,
+          "credible_lower05_30draw_jeffreys": 0.8266393407496798,
+          "sizing_lower_bound": 0.8266393407496798,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 25
+        },
+        "sycophancy__syco_mmlu_stem__confident_assertion": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 3,
+          "raw_rate_10draw": 0.6,
+          "cp_lower95_10draw": 0.18925537743777085,
+          "projected_rate_30draw_plugin": 0.5995048236117568,
+          "projected_rate_30draw_jeffreys": 0.7873382677604391,
+          "credible_lower05_30draw_jeffreys": 0.616107872208725,
+          "sizing_lower_bound": 0.616107872208725,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 33
+        },
+        "sycophancy__syco_mmlu_stem__hedged_assertion": {
+          "status": "measured",
+          "m_prompts": 5,
+          "pilot_draws_per_prompt": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "x_discordant_10draw": 2,
+          "raw_rate_10draw": 0.4,
+          "cp_lower95_10draw": 0.07644039141232893,
+          "projected_rate_30draw_plugin": 0.3999999554124564,
+          "projected_rate_30draw_jeffreys": 0.6969219139008395,
+          "credible_lower05_30draw_jeffreys": 0.4934175811930388,
+          "sizing_lower_bound": 0.4934175811930388,
+          "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
+          "n_required_for_target": 41
+        }
+      }
+    }
+  }
+}
