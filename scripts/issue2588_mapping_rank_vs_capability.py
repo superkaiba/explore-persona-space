@@ -1070,14 +1070,14 @@ def render_rank_fraction_figure(results: list[dict[str, Any]], output: Path) -> 
     ax.grid(axis="y", color="#d9d9d9", linewidth=0.7)
     ax.spines[["top", "right"]].set_visible(False)
     ax.text(
-        0.015,
-        0.035,
+        0.30,
+        0.97,
         "Solid + squares: same-width Qwen column (hidden size 5120, 64 layers)\n"
         "Dashed + circles: Qwen3.5 size ladder",
         transform=ax.transAxes,
         fontsize=7.5,
         color="#555555",
-        va="bottom",
+        va="top",
     )
     fig.text(0.805, 0.76, point_key, ha="left", va="top", fontsize=7.6, linespacing=1.28)
     fig.text(
