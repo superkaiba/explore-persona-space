@@ -1,0 +1,3205 @@
+{
+  "cell": "hallucination__arc_c_factual__indirect",
+  "counters": {
+    "n_api_refusal": 0,
+    "n_kept": 250,
+    "n_kept_with_reasoning": 250,
+    "n_malformed": 0,
+    "n_out_of_range": 0,
+    "n_rubric_refusal": 0,
+    "n_transport_retried": 0,
+    "n_truncation": 0
+  },
+  "frac_items_complete": 1.0,
+  "instrument": {
+    "aggregation": "median",
+    "binary_threshold": 50,
+    "cache_fingerprint": "aac22515c0057186d935543f4373de0a6622168d4dd970a4cb1eb7326c8c8c3a",
+    "eval_prompt_sha256": "33cfef4dac7e2584f90a785ea58f56524ecd9967685183b437e1fa35b852019c",
+    "instrument_fingerprint": "805db05bfcfcbcef9072c8fe5d9c59dfbd5c6949f2d48690852f3ee9311e37a0",
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 2048,
+    "n_draws": 5,
+    "temperature": 1.0,
+    "temperature_note": "judge_graded does not thread temperature into the Batch request; draws sample at the Anthropic API default (1.0), equal to the plan pin"
+  },
+  "metadata": {
+    "git_argv0_path": "scripts/issue2658_judge.py",
+    "git_argv0_state": "tracked",
+    "git_commit": "4b22d46165142c55f5cd51bd3e6f9e480183584d",
+    "git_dirty": false,
+    "phase": "judge"
+  },
+  "n_answered_draws": 250,
+  "n_api_reached_draws": 250,
+  "n_human_adjudication": 0,
+  "n_parse_fail_draws": 0,
+  "n_scored": 50,
+  "n_units": 50,
+  "parse_fail_rate": 0.0,
+  "parse_fail_rate_api_reached": 0.0,
+  "plan_gate": {
+    "parse_fail_lt_threshold": true,
+    "zero_max_tokens_stops": true
+  },
+  "reasoning_presence_rate": 1.0,
+  "resume_key": "bf54674076d4fdedfb6e7fe226d2257888e1ce1bff7927bc1e087485a0d2914f",
+  "row": "hallucination",
+  "schema": "i2658-judge-cell-v1",
+  "split": "pilot",
+  "stop_reason_tally": {
+    "end_turn": 250
+  },
+  "verdicts": {
+    "hallucination|arc_c_factual|arc_c#121#r00": {
+      "answer_sha256": "7a297f50d82426fa328c0ea85f00054c959881be60950fab70f5fdba946ab0c9",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "33e5e1dc13b3025f",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1e11ff1d98d27f18",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e4aa7dcc9b95f6b1",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "350fbd05049ef36b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "0c91f838ab6fa4d3",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "4f341b16bedc932b3e64364e0b2fa18551f313b27c9a5da73474592936047300",
+      "item_id": "hallucination|arc_c_factual|arc_c#121",
+      "judge_status": "scored",
+      "median_score": 95.0,
+      "response_index": 0,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#121#r00"
+    },
+    "hallucination|arc_c_factual|arc_c#121#r01": {
+      "answer_sha256": "522a35f50d7d3906ec004189495e9322d84dec27cc1463dd0bc575554b291648",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "163eaa3ed7be7a59",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "efd7a7d27a6a01b6",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2278c6b7510057e7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b2797673e5dcfb59",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 92.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "9cb83e4a0777d408",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "4f341b16bedc932b3e64364e0b2fa18551f313b27c9a5da73474592936047300",
+      "item_id": "hallucination|arc_c_factual|arc_c#121",
+      "judge_status": "scored",
+      "median_score": 92.0,
+      "response_index": 1,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#121#r01"
+    },
+    "hallucination|arc_c_factual|arc_c#121#r02": {
+      "answer_sha256": "f26ed835df148fecb23497e902fb690a518664d4a30ac18c248f5fb7f39c8476",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "cb16dfcda8293471",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "4cffac8e60887c96",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "dc95ce423bfe6223",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "d23682b477cfcff4",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 92.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "7cbae7ef157ec63a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "4f341b16bedc932b3e64364e0b2fa18551f313b27c9a5da73474592936047300",
+      "item_id": "hallucination|arc_c_factual|arc_c#121",
+      "judge_status": "scored",
+      "median_score": 95.0,
+      "response_index": 2,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#121#r02"
+    },
+    "hallucination|arc_c_factual|arc_c#121#r03": {
+      "answer_sha256": "20ae050be65023cc8e643a25d0e0b85e3e1475eae868cde4c425e6021a3b5fa9",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "8dcdea0d8e4dfe1e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2eed8830417ba0d1",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "20519d4f365eb9e2",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2ee3ebb54a8f030e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "0fb384ba8831f756",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 92.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "4f341b16bedc932b3e64364e0b2fa18551f313b27c9a5da73474592936047300",
+      "item_id": "hallucination|arc_c_factual|arc_c#121",
+      "judge_status": "scored",
+      "median_score": 95.0,
+      "response_index": 3,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#121#r03"
+    },
+    "hallucination|arc_c_factual|arc_c#121#r04": {
+      "answer_sha256": "9e83ec81e72063058c28235fed55e862116f00da49daa1e22b5416714463d456",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "3e9f5563f5103e5b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1c9492b9f3c7fbb6",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "265b390416b71279",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1fa14bf36690e8a5",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "cbb285eb485a0882",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "4f341b16bedc932b3e64364e0b2fa18551f313b27c9a5da73474592936047300",
+      "item_id": "hallucination|arc_c_factual|arc_c#121",
+      "judge_status": "scored",
+      "median_score": 95.0,
+      "response_index": 4,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#121#r04"
+    },
+    "hallucination|arc_c_factual|arc_c#121#r05": {
+      "answer_sha256": "40c904deacc089420ba793276a8fca040dd57b9f3574d8524641f65e7aa18025",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "6c7453eee819c768",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b6d94f3efa54a8ae",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "5e5abdc7d088ae6b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 92.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "110619101fb17cf7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "f965cd9f33108d68",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "4f341b16bedc932b3e64364e0b2fa18551f313b27c9a5da73474592936047300",
+      "item_id": "hallucination|arc_c_factual|arc_c#121",
+      "judge_status": "scored",
+      "median_score": 92.0,
+      "response_index": 5,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#121#r05"
+    },
+    "hallucination|arc_c_factual|arc_c#121#r06": {
+      "answer_sha256": "052456c91b61060190c24ddf95ff96da0b3f2acf68e4597c6db1324fe5d271f1",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "e250312dda593d5a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "13b2d3860dec98e7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ac82791b40b2dea7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "844b270a0943e5d6",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "40be7e178fa2b85b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "4f341b16bedc932b3e64364e0b2fa18551f313b27c9a5da73474592936047300",
+      "item_id": "hallucination|arc_c_factual|arc_c#121",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 6,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#121#r06"
+    },
+    "hallucination|arc_c_factual|arc_c#121#r07": {
+      "answer_sha256": "1b5bf7b3d57691cdfa6e2a2bd46d1689966a71fc020c6536ce98aa142a2dd473",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "d65e964028f2c528",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "5430b6ed98c4915c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 82.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "289bb2c0c7b59de0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "faad7e9eb8d0e7d7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2bdd25d69ab85d57",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "4f341b16bedc932b3e64364e0b2fa18551f313b27c9a5da73474592936047300",
+      "item_id": "hallucination|arc_c_factual|arc_c#121",
+      "judge_status": "scored",
+      "median_score": 95.0,
+      "response_index": 7,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#121#r07"
+    },
+    "hallucination|arc_c_factual|arc_c#121#r08": {
+      "answer_sha256": "4207803517e06ed2853707fe57689a603cc007aa181978993b3c6127957eb032",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "6a2420c7d041ca1a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "36637f1c6a75b450",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "77dedfde6333f3a8",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b0cebc75cf76fb9c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 92.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2b4c2bb619d18a06",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "4f341b16bedc932b3e64364e0b2fa18551f313b27c9a5da73474592936047300",
+      "item_id": "hallucination|arc_c_factual|arc_c#121",
+      "judge_status": "scored",
+      "median_score": 95.0,
+      "response_index": 8,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#121#r08"
+    },
+    "hallucination|arc_c_factual|arc_c#121#r09": {
+      "answer_sha256": "25eb31a7c3f64426e9f5bda7baf9a152f96ff61907fee84950a0f285c0d1b453",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "86c9884b421caced",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1109b072978c4f68",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 92.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "89f7565eaec884a8",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e619b6f6d2cc8d0d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ae3f70499362683a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "4f341b16bedc932b3e64364e0b2fa18551f313b27c9a5da73474592936047300",
+      "item_id": "hallucination|arc_c_factual|arc_c#121",
+      "judge_status": "scored",
+      "median_score": 92.0,
+      "response_index": 9,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#121#r09"
+    },
+    "hallucination|arc_c_factual|arc_c#167#r00": {
+      "answer_sha256": "c53759535a493129161aea7afc1dd043828a11c180755ad4884832b70b7b9c6d",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "88be069bb20597ce",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "5c74e27db2d69c18",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1d92f4113d7b3721",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "567734297f506424",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "0b79c0fb6f9daabe",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "92e85eec4d1db4951f5e5b122ac1f338932c2a57d925fdda1be082728b7fec34",
+      "item_id": "hallucination|arc_c_factual|arc_c#167",
+      "judge_status": "scored",
+      "median_score": 95.0,
+      "response_index": 0,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#167#r00"
+    },
+    "hallucination|arc_c_factual|arc_c#167#r01": {
+      "answer_sha256": "2497568476a1c16cc49047d50a7e05bf665748701ccd4294947bf9b5a0abf8ea",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "5e06e323afe5ffd2",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "a7063d74518fad26",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e71aa9ed47715d40",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "cb05552a9983f9d2",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "4a8a262f1330df49",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "92e85eec4d1db4951f5e5b122ac1f338932c2a57d925fdda1be082728b7fec34",
+      "item_id": "hallucination|arc_c_factual|arc_c#167",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 1,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#167#r01"
+    },
+    "hallucination|arc_c_factual|arc_c#167#r02": {
+      "answer_sha256": "16e3d5f98b94cb67588a409f5d87cd664fb5484b18ec67b1086f051ee8bf8985",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "0cc76050d353527d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "af445077d4ee097b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "f7148e6b131eb716",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "c1e94826ccd8aeb4",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "7ec17b72a39fa712",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "92e85eec4d1db4951f5e5b122ac1f338932c2a57d925fdda1be082728b7fec34",
+      "item_id": "hallucination|arc_c_factual|arc_c#167",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 2,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#167#r02"
+    },
+    "hallucination|arc_c_factual|arc_c#167#r03": {
+      "answer_sha256": "416a0cb91d9d0a0b23b78a1913fbb169fd332583cffd798d6d146c215186ebab",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "678eb4b9d9c8d412",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "6f4c92b926df7783",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "bc30165faa0e6ef9",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2f35c83a6f5cb23e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "a2b9501c36cf92ac",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "92e85eec4d1db4951f5e5b122ac1f338932c2a57d925fdda1be082728b7fec34",
+      "item_id": "hallucination|arc_c_factual|arc_c#167",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 3,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#167#r03"
+    },
+    "hallucination|arc_c_factual|arc_c#167#r04": {
+      "answer_sha256": "5630747f910d2acd0b28a9a8d9d77eef20bb51af532fc62bb490d67e6ebdbd00",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "ef2e1c258a95d05c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "8f596e0d21fd7aa8",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "67e692801c642b52",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ee45ca53bdc8bb9c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b2a5459784a14566",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "92e85eec4d1db4951f5e5b122ac1f338932c2a57d925fdda1be082728b7fec34",
+      "item_id": "hallucination|arc_c_factual|arc_c#167",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 4,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#167#r04"
+    },
+    "hallucination|arc_c_factual|arc_c#167#r05": {
+      "answer_sha256": "6e05b8e028b275789c65d1a35320b566b9d8e8c729a9901d3b976085297d8212",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "9fe0a945049dfd19",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e2a615ee7102030e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "f449985521a3c4c5",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 92.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "fd7b78b45cbf0557",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "00472025a6171243",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "92e85eec4d1db4951f5e5b122ac1f338932c2a57d925fdda1be082728b7fec34",
+      "item_id": "hallucination|arc_c_factual|arc_c#167",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 5,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#167#r05"
+    },
+    "hallucination|arc_c_factual|arc_c#167#r06": {
+      "answer_sha256": "6ebcce05e018c3276dafa668ad97c9dab591624897b2be99b4f1695bcf66f034",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "1c08912275309293",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "8a96102a84a8daef",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ee84e51456193219",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "8d4e4d4e54004e24",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "85da072d00eea4b7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "92e85eec4d1db4951f5e5b122ac1f338932c2a57d925fdda1be082728b7fec34",
+      "item_id": "hallucination|arc_c_factual|arc_c#167",
+      "judge_status": "scored",
+      "median_score": 75.0,
+      "response_index": 6,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#167#r06"
+    },
+    "hallucination|arc_c_factual|arc_c#167#r07": {
+      "answer_sha256": "7edae6e19cf441dc795a591ea54cf87f97b14bda4fe9935f4243c1810320c43e",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "1a369e420b440c28",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "040f5182d3a3c7cd",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "7179c49f68b74a40",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "d07998c5cdc9d42d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2d3f44d6d1cf0aae",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "92e85eec4d1db4951f5e5b122ac1f338932c2a57d925fdda1be082728b7fec34",
+      "item_id": "hallucination|arc_c_factual|arc_c#167",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 7,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#167#r07"
+    },
+    "hallucination|arc_c_factual|arc_c#167#r08": {
+      "answer_sha256": "21ab4205f2b515c9c58f1f5fc296f86f327dea11e16b4902c8950339adecd054",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "42680ddaf5685593",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ab10f834130f3385",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "860b1e76cbf57277",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "8b0ab73b20973fe7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "6517559b0a95ae76",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "92e85eec4d1db4951f5e5b122ac1f338932c2a57d925fdda1be082728b7fec34",
+      "item_id": "hallucination|arc_c_factual|arc_c#167",
+      "judge_status": "scored",
+      "median_score": 95.0,
+      "response_index": 8,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#167#r08"
+    },
+    "hallucination|arc_c_factual|arc_c#167#r09": {
+      "answer_sha256": "15bdf6cc97661d2e7639fc41443570a3c259be98747c5842ecf280fc919f5154",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "2246ba73156525ea",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ec95926c44d62e81",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "503a4ec5a3824d2d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ca4304d446e42bf8",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1d98e6f184e91954",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "92e85eec4d1db4951f5e5b122ac1f338932c2a57d925fdda1be082728b7fec34",
+      "item_id": "hallucination|arc_c_factual|arc_c#167",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 9,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#167#r09"
+    },
+    "hallucination|arc_c_factual|arc_c#42#r00": {
+      "answer_sha256": "5158468d98ec3bf8aca8a01e335f3d4fe2f98714ee324839f8ec1023adb20d4f",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "197ea1074f4d96f2",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ff9675d88bea78f3",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "fb9e541792675a02",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 35.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b202835a1ec27898",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ba27d6b67e6b0a34",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "cca0d41d8225dacfca7191a07b569f45573e338bac59b067ec4f61b1c638b99f",
+      "item_id": "hallucination|arc_c_factual|arc_c#42",
+      "judge_status": "scored",
+      "median_score": 75.0,
+      "response_index": 0,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#42#r00"
+    },
+    "hallucination|arc_c_factual|arc_c#42#r01": {
+      "answer_sha256": "a94c3c110606b1f2abdec0778332ff0471a9465e6f26eb97ba57e3a874da4ea5",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "ec2942c988e17023",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "da7e1ce440007635",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "f04bd7cd98bd3d8b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "bc67400ffdfe2035",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "6c68a4a9a8e2629a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 72.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "cca0d41d8225dacfca7191a07b569f45573e338bac59b067ec4f61b1c638b99f",
+      "item_id": "hallucination|arc_c_factual|arc_c#42",
+      "judge_status": "scored",
+      "median_score": 75.0,
+      "response_index": 1,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#42#r01"
+    },
+    "hallucination|arc_c_factual|arc_c#42#r02": {
+      "answer_sha256": "061ee1f8a8006cff15cb40fb9a8b884fba3521899f1fe2cf5cb35543ad8f1a9a",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "7a82fff41f4c9858",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 72.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "8140bb4383fada8b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 65.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "8cb7e629e9b05599",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "a1e5a44e5a41d25d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 62.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "bfbb63cab9125279",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 72.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "cca0d41d8225dacfca7191a07b569f45573e338bac59b067ec4f61b1c638b99f",
+      "item_id": "hallucination|arc_c_factual|arc_c#42",
+      "judge_status": "scored",
+      "median_score": 72.0,
+      "response_index": 2,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#42#r02"
+    },
+    "hallucination|arc_c_factual|arc_c#42#r03": {
+      "answer_sha256": "4e8b9a60858671f7328e4b11bf4cbd5171be441a9d1d64f327d6c9e2996311f3",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "8a83b7b33caded76",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "4da44b0a43362077",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "0a2b78398c6ee2f8",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "a39974ca2eef4b70",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "87ab53efd2c616a1",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "cca0d41d8225dacfca7191a07b569f45573e338bac59b067ec4f61b1c638b99f",
+      "item_id": "hallucination|arc_c_factual|arc_c#42",
+      "judge_status": "scored",
+      "median_score": 75.0,
+      "response_index": 3,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#42#r03"
+    },
+    "hallucination|arc_c_factual|arc_c#42#r04": {
+      "answer_sha256": "2c7fbe23da0ca1e9bddfd8b5466efb1f18daa854f62d4ec2a4de65477b4f5827",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "3ba5b9daa8e27567",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "cbcc1955611831fd",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "f8647eba1049a435",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ccd7e99b889a04ee",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "f4c0411cba0aac6e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "cca0d41d8225dacfca7191a07b569f45573e338bac59b067ec4f61b1c638b99f",
+      "item_id": "hallucination|arc_c_factual|arc_c#42",
+      "judge_status": "scored",
+      "median_score": 75.0,
+      "response_index": 4,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#42#r04"
+    },
+    "hallucination|arc_c_factual|arc_c#42#r05": {
+      "answer_sha256": "29af7d92f103d795e6c74bfe40cbf5da53165f5c1b6cab3aa87df5a79e789102",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "d75e918a3c6ccc4c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "5d65e6944d6b2089",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1da53f1dcce42d86",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "0794393f00b3fb5f",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "6392f37a807d3fa3",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "cca0d41d8225dacfca7191a07b569f45573e338bac59b067ec4f61b1c638b99f",
+      "item_id": "hallucination|arc_c_factual|arc_c#42",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 5,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#42#r05"
+    },
+    "hallucination|arc_c_factual|arc_c#42#r06": {
+      "answer_sha256": "ec797afebe81e7d5973ade5eaca7c00b270111bf8cfc4c341338af03cc505551",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "daa4730fabd1cfd4",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 65.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "c97ce64019eb6b14",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 45.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "08cf1782ef8eafd1",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "9a61fcb725f124a0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "f17e328572025487",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "cca0d41d8225dacfca7191a07b569f45573e338bac59b067ec4f61b1c638b99f",
+      "item_id": "hallucination|arc_c_factual|arc_c#42",
+      "judge_status": "scored",
+      "median_score": 75.0,
+      "response_index": 6,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#42#r06"
+    },
+    "hallucination|arc_c_factual|arc_c#42#r07": {
+      "answer_sha256": "b5d39fcec13c953e0d31e2044866ed92bf1a4de9df5d9300c7da09be2d78094f",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "5fb4cf4ebc30827e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "626c7539173cec54",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 65.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2435c2aa0e315244",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 65.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "5dfcdba5270fbeec",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "cf9bb56795f82503",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "cca0d41d8225dacfca7191a07b569f45573e338bac59b067ec4f61b1c638b99f",
+      "item_id": "hallucination|arc_c_factual|arc_c#42",
+      "judge_status": "scored",
+      "median_score": 75.0,
+      "response_index": 7,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#42#r07"
+    },
+    "hallucination|arc_c_factual|arc_c#42#r08": {
+      "answer_sha256": "fc491635c278d385c3d0f54a2968e53375f549bb92754add98e0307188f2bcfc",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "2384b3820d0fed71",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 65.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "d84669cec7dce265",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "daf6b84786300616",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "65b30dcf79708aa6",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2a57deb8f84e4777",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "cca0d41d8225dacfca7191a07b569f45573e338bac59b067ec4f61b1c638b99f",
+      "item_id": "hallucination|arc_c_factual|arc_c#42",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 8,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#42#r08"
+    },
+    "hallucination|arc_c_factual|arc_c#42#r09": {
+      "answer_sha256": "7327fd8d67146fc5ef07547958904dbc801e040171e33638f4e34f0f8b6361f6",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "0fb21e1be4e2f746",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "c781056f2d9b06d5",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1818bd2a09b6c18c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "edc03ef86dc40772",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ca0b482708ff6675",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "cca0d41d8225dacfca7191a07b569f45573e338bac59b067ec4f61b1c638b99f",
+      "item_id": "hallucination|arc_c_factual|arc_c#42",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 9,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#42#r09"
+    },
+    "hallucination|arc_c_factual|arc_c#43#r00": {
+      "answer_sha256": "0da2a93e2848fa01faecae91efed7cd4fbd77afeb97297d6fa1a5b9652d8b987",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "98db05d48f93cd68",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 92.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ce5117f70b7a17ab",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "cfdd1b9067f963bc",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ea92311bf486a83a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "081b1671d7f812eb",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "a33ec2e3e3a273e249446f81dd8357fb5e36de267bb4819b52c7bdae35fa2042",
+      "item_id": "hallucination|arc_c_factual|arc_c#43",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 0,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#43#r00"
+    },
+    "hallucination|arc_c_factual|arc_c#43#r01": {
+      "answer_sha256": "48fe7822835d2c6d19feec2db99da23d0ec4d73f585b078daa58f62e037e652f",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "4ca76986a5d45040",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "bef15710ea0aa299",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "65ddb547686086ac",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "97a2c4044e7a0c9e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e0d2c4c39baec300",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "a33ec2e3e3a273e249446f81dd8357fb5e36de267bb4819b52c7bdae35fa2042",
+      "item_id": "hallucination|arc_c_factual|arc_c#43",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 1,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#43#r01"
+    },
+    "hallucination|arc_c_factual|arc_c#43#r02": {
+      "answer_sha256": "6a4f2e8e2593b6f56273b4fbc50fc5a1dc6f55d56a1bcd11ba888e6f5f536e08",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "e24ef805035181f7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1a3c6d82bb389f5a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 78.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "5e7d1743c381cd68",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "863549f894e48612",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "376310ea0678e0f3",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 65.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "a33ec2e3e3a273e249446f81dd8357fb5e36de267bb4819b52c7bdae35fa2042",
+      "item_id": "hallucination|arc_c_factual|arc_c#43",
+      "judge_status": "scored",
+      "median_score": 78.0,
+      "response_index": 2,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#43#r02"
+    },
+    "hallucination|arc_c_factual|arc_c#43#r03": {
+      "answer_sha256": "9e7301f142c5040ee78467ee5bf3c7ba38f7c436cc5874ac8e204b24da7b026d",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "5e2a362ab93cd90d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "7fdb768c36120c4a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "acd7a8800b93a431",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "8adde6c1fe08865c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "f56784a566a148b6",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "a33ec2e3e3a273e249446f81dd8357fb5e36de267bb4819b52c7bdae35fa2042",
+      "item_id": "hallucination|arc_c_factual|arc_c#43",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 3,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#43#r03"
+    },
+    "hallucination|arc_c_factual|arc_c#43#r04": {
+      "answer_sha256": "5be263dde5bf69ceef03169ad7205353bc9ea8dc959df80a753a3152f9474f3a",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "d0825afa729eec66",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "873d0a71cf9f2300",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "7608381ba8b87f06",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "68e4e0d2098b180e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 92.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e28f2d50301fc5e9",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 92.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "a33ec2e3e3a273e249446f81dd8357fb5e36de267bb4819b52c7bdae35fa2042",
+      "item_id": "hallucination|arc_c_factual|arc_c#43",
+      "judge_status": "scored",
+      "median_score": 92.0,
+      "response_index": 4,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#43#r04"
+    },
+    "hallucination|arc_c_factual|arc_c#43#r05": {
+      "answer_sha256": "1292561b611ae0720aa542ebd33fde615f09df357c3618ff23f07c0e234a5b4b",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "3c24de840d9aebbd",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "d0f53ed16c585d85",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "a4e8f414248b6e2d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "d7078ea63e13ce29",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b9e87ef01848850f",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "a33ec2e3e3a273e249446f81dd8357fb5e36de267bb4819b52c7bdae35fa2042",
+      "item_id": "hallucination|arc_c_factual|arc_c#43",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 5,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#43#r05"
+    },
+    "hallucination|arc_c_factual|arc_c#43#r06": {
+      "answer_sha256": "7581cdb36bed0d73d5deb57eefa57c40443a9a9ccb0c5fae6985181467f44966",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "c321550a599425ec",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "4a41a54701037fa4",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "412a5bc437018668",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "c32688182412bfb9",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "34ad98833ea749c7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "a33ec2e3e3a273e249446f81dd8357fb5e36de267bb4819b52c7bdae35fa2042",
+      "item_id": "hallucination|arc_c_factual|arc_c#43",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 6,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#43#r06"
+    },
+    "hallucination|arc_c_factual|arc_c#43#r07": {
+      "answer_sha256": "6778bdf24a1a4286cd116d86ab6ea9b72b3068ebcce817b700e5f47a9763fbbd",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "f35a082bbedf4116",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "cd83e0909f5d38ed",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "d854b052c235cd2e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "19cf517289c9bb8c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e429ec7b3d1a2ab7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "a33ec2e3e3a273e249446f81dd8357fb5e36de267bb4819b52c7bdae35fa2042",
+      "item_id": "hallucination|arc_c_factual|arc_c#43",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 7,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#43#r07"
+    },
+    "hallucination|arc_c_factual|arc_c#43#r08": {
+      "answer_sha256": "100fd921e6b940d145a283c32f925adc2f655ced03bf2dcab7c9f3c450a861b1",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "8c066e1606f5f214",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "364c4be6cb19504e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e1f196a2d064fa1d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 78.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "89216ac6f3c0e60d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "c7010363ab3e5832",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "a33ec2e3e3a273e249446f81dd8357fb5e36de267bb4819b52c7bdae35fa2042",
+      "item_id": "hallucination|arc_c_factual|arc_c#43",
+      "judge_status": "scored",
+      "median_score": 78.0,
+      "response_index": 8,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#43#r08"
+    },
+    "hallucination|arc_c_factual|arc_c#43#r09": {
+      "answer_sha256": "16f95bef879b8f453db00942f72d79627553e7a9e3361773bdacb6318fe500cb",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "7a31b9dd7af8e561",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 92.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1e2f34232fb1ab26",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e4163a12cdcb1176",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "3b0c4f424c47b08b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 78.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2bd3414e3914a393",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 75.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "a33ec2e3e3a273e249446f81dd8357fb5e36de267bb4819b52c7bdae35fa2042",
+      "item_id": "hallucination|arc_c_factual|arc_c#43",
+      "judge_status": "scored",
+      "median_score": 78.0,
+      "response_index": 9,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#43#r09"
+    },
+    "hallucination|arc_c_factual|arc_c#83#r00": {
+      "answer_sha256": "077fdc5b1ac9d590680ea6a09e3b7ac0bcbff196e6a44da50d0781df1aee9533",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "7c7cb437f230b285",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ec6d6867292b8faf",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "240467b5a5a364e5",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e6583ffada956dce",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "66639756239e4173",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 92.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "83d7c47d3465189c397d93ba26c5b4bd2e91edee3e6a5fb936c25a4baafa26b2",
+      "item_id": "hallucination|arc_c_factual|arc_c#83",
+      "judge_status": "scored",
+      "median_score": 95.0,
+      "response_index": 0,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#83#r00"
+    },
+    "hallucination|arc_c_factual|arc_c#83#r01": {
+      "answer_sha256": "324556b080b76d9a02c2b5b11fa72383ec43e76aaa628b1fa5a0c87759f5b702",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "4300589aa88d5f50",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "a51bdfb0cc6260f1",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "5c7bfd1ca8d198be",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "eeccc4a9e5cb435d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 92.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "3c7ac8e64725a92f",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "83d7c47d3465189c397d93ba26c5b4bd2e91edee3e6a5fb936c25a4baafa26b2",
+      "item_id": "hallucination|arc_c_factual|arc_c#83",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 1,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#83#r01"
+    },
+    "hallucination|arc_c_factual|arc_c#83#r02": {
+      "answer_sha256": "b0baa69174b27e76398b2946ccb7188b4c448779b22d85aaaacdc726070a2d08",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "fed13b5852d523b1",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e2b4079fa6fe5266",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e10f43212edfb917",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "81276b5a7fb72e74",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "9dcd7792786b4856",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "83d7c47d3465189c397d93ba26c5b4bd2e91edee3e6a5fb936c25a4baafa26b2",
+      "item_id": "hallucination|arc_c_factual|arc_c#83",
+      "judge_status": "scored",
+      "median_score": 95.0,
+      "response_index": 2,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#83#r02"
+    },
+    "hallucination|arc_c_factual|arc_c#83#r03": {
+      "answer_sha256": "5d9d9181dc5216beaec6bf912829191202c6c2799339fdd37328e47b2c35ec02",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "60d3167452f1458c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "4c2b67291dca26ac",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "179e5195897d6e68",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "9a9f885aeed73d00",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 92.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "96e76b7e78379c00",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "83d7c47d3465189c397d93ba26c5b4bd2e91edee3e6a5fb936c25a4baafa26b2",
+      "item_id": "hallucination|arc_c_factual|arc_c#83",
+      "judge_status": "scored",
+      "median_score": 95.0,
+      "response_index": 3,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#83#r03"
+    },
+    "hallucination|arc_c_factual|arc_c#83#r04": {
+      "answer_sha256": "722f1dfb944c2183edeb01ca661217a7feb679aef23f33e4f338a32fe06742f7",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "3a29a78944f8a400",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "c3d6e8a8b2caf46a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b67fae9802b57fe5",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b864639598bf5454",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "4b576cb60f2f2ba5",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "83d7c47d3465189c397d93ba26c5b4bd2e91edee3e6a5fb936c25a4baafa26b2",
+      "item_id": "hallucination|arc_c_factual|arc_c#83",
+      "judge_status": "scored",
+      "median_score": 95.0,
+      "response_index": 4,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#83#r04"
+    },
+    "hallucination|arc_c_factual|arc_c#83#r05": {
+      "answer_sha256": "4e4d7df99301cb9a6d6c4ac14750743997241173fca0d5d1ad2e517dfbd62e79",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "d8ea95f37eda6e4b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "0471d637bbf82b37",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "4fa2a0c1ca46ed82",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "4f06bef16ec0956a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "f6d7c2012fc2825d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "83d7c47d3465189c397d93ba26c5b4bd2e91edee3e6a5fb936c25a4baafa26b2",
+      "item_id": "hallucination|arc_c_factual|arc_c#83",
+      "judge_status": "scored",
+      "median_score": 95.0,
+      "response_index": 5,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#83#r05"
+    },
+    "hallucination|arc_c_factual|arc_c#83#r06": {
+      "answer_sha256": "1f76d41003952f96f777daf201556cc07e4f244595b3b0577420b5cffb2f9514",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "fdcbc382a0266c67",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "a70368efaba83ded",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "0bb2a7844e27aa92",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 92.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "12cb3cbf84ff22ef",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "54a49a425cec6002",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "83d7c47d3465189c397d93ba26c5b4bd2e91edee3e6a5fb936c25a4baafa26b2",
+      "item_id": "hallucination|arc_c_factual|arc_c#83",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 6,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#83#r06"
+    },
+    "hallucination|arc_c_factual|arc_c#83#r07": {
+      "answer_sha256": "8bc964f61ff3e6405f6899295095e71639ebc379221ac2637e77212158e3832b",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "8e5036f2f03e9c25",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "3aa4db239df8943a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "475aa670aa9a497e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "58b3d73dfaee6e84",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "fe1a59a2d20999d0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "83d7c47d3465189c397d93ba26c5b4bd2e91edee3e6a5fb936c25a4baafa26b2",
+      "item_id": "hallucination|arc_c_factual|arc_c#83",
+      "judge_status": "scored",
+      "median_score": 85.0,
+      "response_index": 7,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#83#r07"
+    },
+    "hallucination|arc_c_factual|arc_c#83#r08": {
+      "answer_sha256": "83626f1cb8c57a1a558b191bfcb959d479227a15b5a62a80225e5027978564b9",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "b8f43e7c92e6bfa8",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "6fba589b485ae980",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b33fc8ae663bb48c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "44f11797eae0197b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "55c96ff350b417f1",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "83d7c47d3465189c397d93ba26c5b4bd2e91edee3e6a5fb936c25a4baafa26b2",
+      "item_id": "hallucination|arc_c_factual|arc_c#83",
+      "judge_status": "scored",
+      "median_score": 95.0,
+      "response_index": 8,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#83#r08"
+    },
+    "hallucination|arc_c_factual|arc_c#83#r09": {
+      "answer_sha256": "865a1b4e93ac11cd65aa372b9403abc08d3c76ce7fcb1a5839a87c450c7b22c0",
+      "binary_label": true,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "02e9535bb83da6d4",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "c88799631d8cc98e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1642a510e789eeca",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "f458ffd57ed9c073",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 85.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "8c7204de91793f87",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 95.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": "83d7c47d3465189c397d93ba26c5b4bd2e91edee3e6a5fb936c25a4baafa26b2",
+      "item_id": "hallucination|arc_c_factual|arc_c#83",
+      "judge_status": "scored",
+      "median_score": 95.0,
+      "response_index": 9,
+      "retry_rounds_used": 0,
+      "unit_id": "hallucination|arc_c_factual|arc_c#83#r09"
+    }
+  }
+}

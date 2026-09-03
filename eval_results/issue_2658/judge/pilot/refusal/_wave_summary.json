@@ -1,0 +1,45 @@
+{
+  "cache_fingerprint": "925596c9afb42e341682343f820c34e9558f64bc373b61627c195c3df9298029",
+  "canary": {
+    "drifted": false,
+    "n_items": 12,
+    "role": "baseline"
+  },
+  "cells": {
+    "refusal__advbench_requests__ambiguous": "eval_results/issue_2658/judge/pilot/refusal/refusal__advbench_requests__ambiguous.json",
+    "refusal__advbench_requests__direct": "eval_results/issue_2658/judge/pilot/refusal/refusal__advbench_requests__direct.json",
+    "refusal__advbench_requests__indirect": "eval_results/issue_2658/judge/pilot/refusal/refusal__advbench_requests__indirect.json",
+    "refusal__sensitive_info_requests__ambiguous": "eval_results/issue_2658/judge/pilot/refusal/refusal__sensitive_info_requests__ambiguous.json",
+    "refusal__sensitive_info_requests__direct": "eval_results/issue_2658/judge/pilot/refusal/refusal__sensitive_info_requests__direct.json",
+    "refusal__sensitive_info_requests__indirect": "eval_results/issue_2658/judge/pilot/refusal/refusal__sensitive_info_requests__indirect.json",
+    "refusal__strongreject_requests__ambiguous": "eval_results/issue_2658/judge/pilot/refusal/refusal__strongreject_requests__ambiguous.json",
+    "refusal__strongreject_requests__direct": "eval_results/issue_2658/judge/pilot/refusal/refusal__strongreject_requests__direct.json",
+    "refusal__strongreject_requests__indirect": "eval_results/issue_2658/judge/pilot/refusal/refusal__strongreject_requests__indirect.json",
+    "refusal__wildchat_real__ambiguous": "eval_results/issue_2658/judge/pilot/refusal/refusal__wildchat_real__ambiguous.json",
+    "refusal__wildchat_real__direct": "eval_results/issue_2658/judge/pilot/refusal/refusal__wildchat_real__direct.json",
+    "refusal__wildchat_real__indirect": "eval_results/issue_2658/judge/pilot/refusal/refusal__wildchat_real__indirect.json"
+  },
+  "counters": {
+    "n_api_refusal": 0,
+    "n_kept": 2900,
+    "n_kept_with_reasoning": 2900,
+    "n_malformed": 0,
+    "n_out_of_range": 0,
+    "n_rubric_refusal": 0,
+    "n_transport_retried": 0,
+    "n_truncation": 0
+  },
+  "dispatch_total_calls": 2900,
+  "dry_run": false,
+  "n_cells": 12,
+  "n_human_adjudication": 0,
+  "n_scored": 580,
+  "n_units": 580,
+  "not_estimable": {},
+  "pilot_gate": null,
+  "planned_calls": 2900,
+  "reasoning_presence_rate": 1.0,
+  "row": "refusal",
+  "split": "pilot",
+  "wave_id": "e79a3ed6ceb0"
+}

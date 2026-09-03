@@ -1,0 +1,3205 @@
+{
+  "cell": "impoliteness__wildchat_real__indirect",
+  "counters": {
+    "n_api_refusal": 0,
+    "n_kept": 250,
+    "n_kept_with_reasoning": 250,
+    "n_malformed": 0,
+    "n_out_of_range": 0,
+    "n_rubric_refusal": 0,
+    "n_transport_retried": 0,
+    "n_truncation": 0
+  },
+  "frac_items_complete": 1.0,
+  "instrument": {
+    "aggregation": "median",
+    "binary_threshold": 50,
+    "cache_fingerprint": "d2bf4e18521242fa4a97b1e73a302e4a42584d9e063c336e1d28b0259313181f",
+    "eval_prompt_sha256": "7116d6e57dd355ab51ece7181dd271cf1fd47b45707648bb36a383f82367dc1e",
+    "instrument_fingerprint": "8af62b6a959d6f7aa2914f9e544b1f8960a17c0de790afb66e3d9ac74fe900ca",
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 2048,
+    "n_draws": 5,
+    "temperature": 1.0,
+    "temperature_note": "judge_graded does not thread temperature into the Batch request; draws sample at the Anthropic API default (1.0), equal to the plan pin"
+  },
+  "metadata": {
+    "git_argv0_path": "scripts/issue2658_judge.py",
+    "git_argv0_state": "tracked",
+    "git_commit": "afea082ae9e04d7aab8aae835f13461c24c43b78",
+    "git_dirty": false,
+    "phase": "judge"
+  },
+  "n_answered_draws": 250,
+  "n_api_reached_draws": 250,
+  "n_human_adjudication": 0,
+  "n_parse_fail_draws": 0,
+  "n_scored": 50,
+  "n_units": 50,
+  "parse_fail_rate": 0.0,
+  "parse_fail_rate_api_reached": 0.0,
+  "plan_gate": {
+    "parse_fail_lt_threshold": true,
+    "zero_max_tokens_stops": true
+  },
+  "reasoning_presence_rate": 1.0,
+  "resume_key": "3d76d44dd2a6b4419581eee1b9e36853cc4aa828160c199d650206ba7bb9165d",
+  "row": "impoliteness",
+  "schema": "i2658-judge-cell-v1",
+  "split": "pilot",
+  "stop_reason_tally": {
+    "end_turn": 250
+  },
+  "verdicts": {
+    "impoliteness|wildchat_real|wildchat_random#244#r00": {
+      "answer_sha256": "5dc9431e3da065dc2cd9ff3c0c9496572c22bab0a3a683bcd0979e69ca1dd66d",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "4408b57b47f4ef13",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "bd507945c5e0aa90",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e0f15fd08636820a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "0de0bfa829c8c530",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "5000ee1be72701a1",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#244",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 0,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#244#r00"
+    },
+    "impoliteness|wildchat_real|wildchat_random#244#r01": {
+      "answer_sha256": "db5f5a416d57a6d389292d4337d098428495e48cb97a5de7be7234e05c270bdc",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "2333f01bf9db2470",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2df1ff7b1420c28f",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2245ef8d042dd0cf",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "93ab3907b9637445",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1d9ad7c3c5013ab5",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#244",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 1,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#244#r01"
+    },
+    "impoliteness|wildchat_real|wildchat_random#244#r02": {
+      "answer_sha256": "5358f813ea8c799b8bf758f1dcfe0df236914e238fee56d55a719e8fe8a60925",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "834f806accccfc98",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "928604d225dbf7d3",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "20ddc2912ab335cd",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e43bdb756a4f8375",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "97e04760c6c4a3f7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#244",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 2,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#244#r02"
+    },
+    "impoliteness|wildchat_real|wildchat_random#244#r03": {
+      "answer_sha256": "f75fb65d6f2e072116cd2c7e7664db31d7f9447aa84ae7e6f9aa4bebbfb17492",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "83ee819041e38048",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "69bd49dee8057a89",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "6d64cd7f2246e8a5",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e92a8365e2917a3e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "4587f26cc9e73b1d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#244",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 3,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#244#r03"
+    },
+    "impoliteness|wildchat_real|wildchat_random#244#r04": {
+      "answer_sha256": "5cc6cbbc3eaa39a0259374af2bce89726a65e60dc58c999faaa1c69a7aae5d5d",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "f93db9955327dd1e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ec4975736588a4b3",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "774e2c891c043427",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "d2e3c776f20613f7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e6a8ba6e02b9949e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#244",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 4,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#244#r04"
+    },
+    "impoliteness|wildchat_real|wildchat_random#244#r05": {
+      "answer_sha256": "14d08245bc68c61d69ba011d263249a1546abf5af2075f9632a93904e50c0a75",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "783cd8df415d49df",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "6b2c9fff6ee6c2c7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "85e80f15fe7d3ef0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "de66cdb880912478",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1431a01a1695eee7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#244",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 5,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#244#r05"
+    },
+    "impoliteness|wildchat_real|wildchat_random#244#r06": {
+      "answer_sha256": "b064b8e31893c609de0b8b18c311df7fb9b4b461f45df6ab17fb971859d7ebc5",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "6681b259dfbbdf3b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "80460664fec4e51f",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "a9904062f927a0b6",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "449c9d0eafda35ed",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "f28e59f1eb6443e8",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#244",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 6,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#244#r06"
+    },
+    "impoliteness|wildchat_real|wildchat_random#244#r07": {
+      "answer_sha256": "fe799b7014cb38c2d94acaba8df715237380e8c6c661c81823c2aab1a7284226",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "6cb8bb3b76046105",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "565fc8191e5af087",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "003e4e0100b06d42",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "0a41e7ed873a3bae",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "7b5cde9bbaecb9f6",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#244",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 7,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#244#r07"
+    },
+    "impoliteness|wildchat_real|wildchat_random#244#r08": {
+      "answer_sha256": "f65a831cf5f1c937f970967a73aa370fa5ccc8ffd2c9ce0fdb3eb519b780caea",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "2e88b579a4729474",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "91208e1f41d990c9",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "f6384fc95428c4b9",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "6458b81a8ef3266b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b4d9929ee8aa3c12",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#244",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 8,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#244#r08"
+    },
+    "impoliteness|wildchat_real|wildchat_random#244#r09": {
+      "answer_sha256": "6d4a55224208088f8b8dc95214641ae636df67cc37a6ac4b6b5adc12015c04b0",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "409ae74ac95ff8e8",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b73b5fe605124ff3",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "d3fc8190141c39aa",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "0cebbe7b4a72d8b4",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "77905ae28511dff2",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#244",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 9,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#244#r09"
+    },
+    "impoliteness|wildchat_real|wildchat_random#420#r00": {
+      "answer_sha256": "28a408facd5c9d47329633811003377a1c0790a1fbd9f5fb13e0d12c98f10663",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "4618ff51db2160c8",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e02caf767cf3f31f",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "3734d084cba568f0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "d04c35aa5e8f65f4",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "fb5e521dd726f5dd",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#420",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 0,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#420#r00"
+    },
+    "impoliteness|wildchat_real|wildchat_random#420#r01": {
+      "answer_sha256": "314d5fc6278f63663598c08f772d648fb2093ff094585c9cbac47586d1461a56",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "fb8d651159285147",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b207115d2d24d9a1",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "4615548670233764",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "4d90bafc3d9c1c24",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2880793dcb886a7f",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#420",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 1,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#420#r01"
+    },
+    "impoliteness|wildchat_real|wildchat_random#420#r02": {
+      "answer_sha256": "c59f0a1a5b3ffb62b1be543e6ddf1e5ad61e3a0e501b537b150c3e881b9724cd",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "701cbd14f711a0b6",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "15dc0d53ed146665",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e54bb1c1ff7088fe",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "763c953af0e1cadb",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "3a77f855d304122d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#420",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 2,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#420#r02"
+    },
+    "impoliteness|wildchat_real|wildchat_random#420#r03": {
+      "answer_sha256": "23d806018becfdd2ec6b1166ff086d9a86b7f3ad1694fd3f2cecf36c64f8056b",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "c96decfaedc3960e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ba1cc85e96f7d015",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "4e4524502afcf9a7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "075f5fa113c48fe5",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "f46103e07cbb5e09",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#420",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 3,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#420#r03"
+    },
+    "impoliteness|wildchat_real|wildchat_random#420#r04": {
+      "answer_sha256": "bf3c9f601f1e09f9e6d9b69c6689ed828406d4e8313e9c85b56d56b62c5f807b",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "3f7995d77174f289",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "0ed20e98bf420926",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b70d1fe7bb0bdef1",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "4da3510c7d7a3f7b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "c61068d0da90176b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#420",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 4,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#420#r04"
+    },
+    "impoliteness|wildchat_real|wildchat_random#420#r05": {
+      "answer_sha256": "86c426bb31bdfb701967fe56d1b9a2de267e8e38aeb28dab0a644c4f352575af",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "e0c097b43b75333f",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "cd0930465724a237",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "71174c692876828d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "80ea558f35bc19ab",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "badc07c1f24141e1",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#420",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 5,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#420#r05"
+    },
+    "impoliteness|wildchat_real|wildchat_random#420#r06": {
+      "answer_sha256": "ac425e6c4fb80859b31ed786251de81a5cde8b42e8ac4fb53f8f9e660bc2e777",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "91cc8e96345e97a0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "bf13a1d0906f6476",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "a71fa76247d4c5cc",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "831f70eabcb06e02",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b4dc6e22a9fe68b0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#420",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 6,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#420#r06"
+    },
+    "impoliteness|wildchat_real|wildchat_random#420#r07": {
+      "answer_sha256": "02ad89964fd1abe4f6834cd29a95d1a04bdaa2eb85a11c2fbd2faea67b064eee",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "998347c452b0aa6e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2fbda12682657702",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "58b913930464b9bb",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "78e5da24d2713271",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ad24ee0f70bd58f0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#420",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 7,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#420#r07"
+    },
+    "impoliteness|wildchat_real|wildchat_random#420#r08": {
+      "answer_sha256": "e5a5ee63c66e8c54c7c050e68c6be1ea33a9c255aaefce0e965717d75fc9888f",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "42d4e055ee326693",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "6e19751bd3300b62",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "7732ad00322bba88",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "68e4d287396aa957",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "06d3faf6045354fa",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#420",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 8,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#420#r08"
+    },
+    "impoliteness|wildchat_real|wildchat_random#420#r09": {
+      "answer_sha256": "f32068488a5a222e85237c16de2a630e3ee9ade16b739282690bdf6ec515b152",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "6874e369291e31e2",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "5496c05f20c0096a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1cb43cef7390b09e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "aa49262c31beadd0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "9569ccda2b481efe",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#420",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 9,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#420#r09"
+    },
+    "impoliteness|wildchat_real|wildchat_random#523#r00": {
+      "answer_sha256": "a98f1365b9b93568c1c8218491fd6e5b9382db1b4d30af9071247cfd02d80157",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "7eee5be5398cb55c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "a7882bc8730faaf5",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "84123f5d84335977",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "064a4b3f228a5f9a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "8842cff519d10ffd",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#523",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 0,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#523#r00"
+    },
+    "impoliteness|wildchat_real|wildchat_random#523#r01": {
+      "answer_sha256": "8b287fb4d98d4b7ead0d17dbdf3cef4a714303597d0271bae6efcc40287e885d",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "8ca37b0bb30befb6",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "400806209e599581",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "46bb5b00c4354853",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "4518c2d51b447edd",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "da466b52b6ba5959",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#523",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 1,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#523#r01"
+    },
+    "impoliteness|wildchat_real|wildchat_random#523#r02": {
+      "answer_sha256": "0ad3b44586576b07adb81241331650f26a35d0db5c59cf10407c8aada494425e",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "4ef6f69b22ee8b9e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "07797e1128bdea80",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "767f5550c6c83968",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "15810b040b30f53b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "cd879336535f6459",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#523",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 2,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#523#r02"
+    },
+    "impoliteness|wildchat_real|wildchat_random#523#r03": {
+      "answer_sha256": "642caf2bb417918e996c2975916c8f47d62083033fcec44377c420a43ea1ff3b",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "b2708dde57afff22",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "08e70eb321ead523",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "0a85e8886fb0883b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "3219d7e5ab55ed20",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "46c66f4a552736d9",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#523",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 3,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#523#r03"
+    },
+    "impoliteness|wildchat_real|wildchat_random#523#r04": {
+      "answer_sha256": "594a2bde7a071ab900754cb46487f59f55865b8d540cf213793eea71c2f5db5e",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "ba41c5d4bef22cf3",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "512984f6d553a0e0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "87f829e282ed6fa6",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "57dc49094212399c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "fdbb6e468d7c16d7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#523",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 4,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#523#r04"
+    },
+    "impoliteness|wildchat_real|wildchat_random#523#r05": {
+      "answer_sha256": "655847a1816112c27333728f5924ff49c9b8d3f4ac2afbd13d0c38967b6f2824",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "603839c89711d1cb",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e1996c722bd1a12e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ed89b87d13e6b62f",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "4eb3158eb0f5bff6",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ee8d3f73535d3ef4",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#523",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 5,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#523#r05"
+    },
+    "impoliteness|wildchat_real|wildchat_random#523#r06": {
+      "answer_sha256": "071c1f6ef67afc2082411ea758f4dc5f4b4b2da99d7bc69933f727a4196eb832",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "20462212c6e327d7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "8fd9bd7b2b289a4e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "7a8dc478f2c0cdc3",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1841e00667a6d322",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "c420e130703b22ab",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#523",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 6,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#523#r06"
+    },
+    "impoliteness|wildchat_real|wildchat_random#523#r07": {
+      "answer_sha256": "2d23d2f020f56cca025889cfa822f31ac64dae212916a7f7074b41c6456e36e5",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "6f63e216f9a21ed2",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "3df761f0d8849481",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2e3fe5fc7ceae365",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "91b9d2bc0e85855e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1a0d3e6463b193e4",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#523",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 7,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#523#r07"
+    },
+    "impoliteness|wildchat_real|wildchat_random#523#r08": {
+      "answer_sha256": "c2a4929c60d883a21def19be82cdc1a26e08d12d8ce2b4038bf9b0a95fe18ea3",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "772973890269cd1e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2287735e574e7bcf",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "9295a07116571c68",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "15938e92635b5c6c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "174d8fc242e90229",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#523",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 8,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#523#r08"
+    },
+    "impoliteness|wildchat_real|wildchat_random#523#r09": {
+      "answer_sha256": "b6b1ff730706be6e89b23448a677c5787fe0e9a6f36c5bd3fb08279d45622f6f",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "b87ec5936cf5f297",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "49ac108837c5ba7c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "42e2506a66996be1",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "733f94406d626442",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "596a3eeabb4759bc",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#523",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 9,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#523#r09"
+    },
+    "impoliteness|wildchat_real|wildchat_random#7#r00": {
+      "answer_sha256": "d355b45eea47866e1266b99897a8a33594b20eaf0e36c49d1949f73b01724505",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "40be8164c6237e14",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "4ca53a14695d91b4",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "383169ad1a9eee50",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e298e8e3ee576f1d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "6c80bfcf64480e6b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#7",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 0,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#7#r00"
+    },
+    "impoliteness|wildchat_real|wildchat_random#7#r01": {
+      "answer_sha256": "8e971ab731f49b2355c23e4dd7e83a2b986a2654548bec096fd78505e94b9802",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "0388e60aca65db67",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "00c51f72ca421f3b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "db1b077239ac7586",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "bd346a9ad3b4e237",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b282c20d61cfbad7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#7",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 1,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#7#r01"
+    },
+    "impoliteness|wildchat_real|wildchat_random#7#r02": {
+      "answer_sha256": "0ee11b85ae62da12d41084bc3f33a4d6d9797f2fe69c23b11d7ca9769020104d",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "dabd48083ad0aed5",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "9f0bab55528b49eb",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "321f02562f1671bd",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "fc0d35c8ab814541",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "aefaa7680270a8ab",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#7",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 2,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#7#r02"
+    },
+    "impoliteness|wildchat_real|wildchat_random#7#r03": {
+      "answer_sha256": "c832f964e00720edf829bb3b08836ddbf22822533c50eed7f3fe25e3968914b3",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "edc065930b7505a3",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "bd0b6b010ee3e3db",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ef5b281eebbb0892",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "105f3b8f00184374",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b46112e78766bb04",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#7",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 3,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#7#r03"
+    },
+    "impoliteness|wildchat_real|wildchat_random#7#r04": {
+      "answer_sha256": "0d75068a84a902843c3ec4f35fc3fb99b3d4bf819d50843a41ed106954eb2b60",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "ea3a7d1a2ac4dea1",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "73c6a276318c9d54",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "41cbccb9c00d22ec",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "c6bfcc7d03cca708",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "8522a19cf128783d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#7",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 4,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#7#r04"
+    },
+    "impoliteness|wildchat_real|wildchat_random#7#r05": {
+      "answer_sha256": "3d964b61ddb05d00148ecb9593584243ee7aa76579d9c87e071d09b0901aa8bd",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "a932dd29da304d60",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "5723da0b28425790",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "a201d15e77d22323",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "93c38c1b122ea710",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "52cf4922a234e58c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#7",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 5,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#7#r05"
+    },
+    "impoliteness|wildchat_real|wildchat_random#7#r06": {
+      "answer_sha256": "94266c1949229c3c947205aceb5c1f7cfe38490b566450afb09e27dbe39194e1",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "197adb8ff4231913",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "56254b3b50c750dd",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "08b41bedb4f00f37",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b99f0ad11bf708ea",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "c2dd3bdf09e9636f",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#7",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 6,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#7#r06"
+    },
+    "impoliteness|wildchat_real|wildchat_random#7#r07": {
+      "answer_sha256": "0cd9de4ad4a3f94308ea0d6f09765fd22fa7859dab673777f1fb44f563581be7",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "e444fb848cc0aaa3",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "7e180811b144e59c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "004b31b9d51f1488",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "26598ab434f56e43",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "fe079262b2ce3a72",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#7",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 7,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#7#r07"
+    },
+    "impoliteness|wildchat_real|wildchat_random#7#r08": {
+      "answer_sha256": "cce93a1f50ea75bbd38a6b11c97c2be364a5fcd4ede99b04f9b508fe9d068c8c",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "1d5268bc68f2b18a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "20cfac473cf50d3f",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "3dd6a80bb27d5ff8",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b02ad0a7b75bc293",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "868a2bb4c8f3dcab",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#7",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 8,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#7#r08"
+    },
+    "impoliteness|wildchat_real|wildchat_random#7#r09": {
+      "answer_sha256": "5d2f6c39ec1099bb67f49a5cbdc1b9b0e2b1ec56f458c90e400629aa9250589a",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "97ffd2f27803ee43",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "a23759929b1e7ce2",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "a0f351d40edb077d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "c839e96b2eee54dc",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "d8b929a0c9dc029d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#7",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 9,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#7#r09"
+    },
+    "impoliteness|wildchat_real|wildchat_random#81#r00": {
+      "answer_sha256": "3568bbabb8a2677e0e08b2d55bbdfd7a43de9023fd1a6720f0b4c20ed92ffca1",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "49fedaf2df32cdd3",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "4b8a7f8a2474d88d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "0248ee0f88da18fc",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "487fd0afe9da72a0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "442a865965c4383d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#81",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 0,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#81#r00"
+    },
+    "impoliteness|wildchat_real|wildchat_random#81#r01": {
+      "answer_sha256": "3855095348a8dbb5083d31a18a7348b178640015ad1763f5006189749933a963",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "0c84df6a3d87f6d0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "05e254577ad91413",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "de11d08b51abf07e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e9aa5acde51bf2f3",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "08f92dd14914d259",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#81",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 1,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#81#r01"
+    },
+    "impoliteness|wildchat_real|wildchat_random#81#r02": {
+      "answer_sha256": "3855095348a8dbb5083d31a18a7348b178640015ad1763f5006189749933a963",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "0c84df6a3d87f6d0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "05e254577ad91413",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "de11d08b51abf07e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e9aa5acde51bf2f3",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "08f92dd14914d259",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#81",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 2,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#81#r02"
+    },
+    "impoliteness|wildchat_real|wildchat_random#81#r03": {
+      "answer_sha256": "3855095348a8dbb5083d31a18a7348b178640015ad1763f5006189749933a963",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "0c84df6a3d87f6d0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "05e254577ad91413",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "de11d08b51abf07e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e9aa5acde51bf2f3",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "08f92dd14914d259",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#81",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 3,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#81#r03"
+    },
+    "impoliteness|wildchat_real|wildchat_random#81#r04": {
+      "answer_sha256": "3623df74690f2fc4a04d2392a8bd0b0883d17645779fb7b8f569381d4bfbd5f6",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "5f12bdaaa4945882",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "00294c1d66032cfb",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "5dfc21829fca72e2",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "fa1295094702379a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "c54cabb65e506e9b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#81",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 4,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#81#r04"
+    },
+    "impoliteness|wildchat_real|wildchat_random#81#r05": {
+      "answer_sha256": "d7fe4948ab9a596a7ee7bdb3b54c8023a97979fc18e7b65bec7b2d99d509b088",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "b62d03281e9f56fc",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "20a6f13f5236dd0a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1579170fd33f9b06",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e9f0dc4133bcf308",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "011a8d6c5cc7728a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#81",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 5,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#81#r05"
+    },
+    "impoliteness|wildchat_real|wildchat_random#81#r06": {
+      "answer_sha256": "3855095348a8dbb5083d31a18a7348b178640015ad1763f5006189749933a963",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "0c84df6a3d87f6d0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "05e254577ad91413",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "de11d08b51abf07e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e9aa5acde51bf2f3",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "08f92dd14914d259",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#81",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 6,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#81#r06"
+    },
+    "impoliteness|wildchat_real|wildchat_random#81#r07": {
+      "answer_sha256": "f0bbe45ab37caf63660d9258860528fcabcbff5e0256b4b25a2d818c01330cd6",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "acbe995f52b54a1d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "050c231d72366fbd",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e7f768dde63f81ba",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "00ca06707fa7a606",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "48fce5c20c150549",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#81",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 7,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#81#r07"
+    },
+    "impoliteness|wildchat_real|wildchat_random#81#r08": {
+      "answer_sha256": "e27d7a0bbd15f2a4227797b5d89f9446e6f8f38d3b594352a70b4516730eda5b",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "c2c808a877336da1",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "3e80c206840170b2",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "a47cf14afb5b2bc2",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "135204361e80e507",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "155da267f1d5efb0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#81",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 8,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#81#r08"
+    },
+    "impoliteness|wildchat_real|wildchat_random#81#r09": {
+      "answer_sha256": "32345dd9e81fd20a53fcb9e4d67d966e3151a84213fbe59e47ba4dbe2aeefe9d",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "2cb777a78f06b4a8",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "10ae62dc19cc1976",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "0a2376d99054ef8c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b45b74e3add3350e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "36d5d91e0ca55095",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|wildchat_real|wildchat_random#81",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 9,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|wildchat_real|wildchat_random#81#r09"
+    }
+  }
+}

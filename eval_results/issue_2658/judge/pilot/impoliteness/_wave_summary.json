@@ -1,0 +1,45 @@
+{
+  "cache_fingerprint": "d2bf4e18521242fa4a97b1e73a302e4a42584d9e063c336e1d28b0259313181f",
+  "canary": {
+    "drifted": false,
+    "n_items": 12,
+    "role": "baseline"
+  },
+  "cells": {
+    "impoliteness__fact_questions__ambiguous": "eval_results/issue_2658/judge/pilot/impoliteness/impoliteness__fact_questions__ambiguous.json",
+    "impoliteness__fact_questions__direct": "eval_results/issue_2658/judge/pilot/impoliteness/impoliteness__fact_questions__direct.json",
+    "impoliteness__fact_questions__indirect": "eval_results/issue_2658/judge/pilot/impoliteness/impoliteness__fact_questions__indirect.json",
+    "impoliteness__impolite_neutral__ambiguous": "eval_results/issue_2658/judge/pilot/impoliteness/impoliteness__impolite_neutral__ambiguous.json",
+    "impoliteness__impolite_neutral__direct": "eval_results/issue_2658/judge/pilot/impoliteness/impoliteness__impolite_neutral__direct.json",
+    "impoliteness__impolite_neutral__indirect": "eval_results/issue_2658/judge/pilot/impoliteness/impoliteness__impolite_neutral__indirect.json",
+    "impoliteness__sycophancy_claims__ambiguous": "eval_results/issue_2658/judge/pilot/impoliteness/impoliteness__sycophancy_claims__ambiguous.json",
+    "impoliteness__sycophancy_claims__direct": "eval_results/issue_2658/judge/pilot/impoliteness/impoliteness__sycophancy_claims__direct.json",
+    "impoliteness__sycophancy_claims__indirect": "eval_results/issue_2658/judge/pilot/impoliteness/impoliteness__sycophancy_claims__indirect.json",
+    "impoliteness__wildchat_real__ambiguous": "eval_results/issue_2658/judge/pilot/impoliteness/impoliteness__wildchat_real__ambiguous.json",
+    "impoliteness__wildchat_real__direct": "eval_results/issue_2658/judge/pilot/impoliteness/impoliteness__wildchat_real__direct.json",
+    "impoliteness__wildchat_real__indirect": "eval_results/issue_2658/judge/pilot/impoliteness/impoliteness__wildchat_real__indirect.json"
+  },
+  "counters": {
+    "n_api_refusal": 0,
+    "n_kept": 2600,
+    "n_kept_with_reasoning": 2600,
+    "n_malformed": 0,
+    "n_out_of_range": 0,
+    "n_rubric_refusal": 0,
+    "n_transport_retried": 0,
+    "n_truncation": 0
+  },
+  "dispatch_total_calls": 2600,
+  "dry_run": false,
+  "n_cells": 12,
+  "n_human_adjudication": 0,
+  "n_scored": 520,
+  "n_units": 520,
+  "not_estimable": {},
+  "pilot_gate": null,
+  "planned_calls": 2600,
+  "reasoning_presence_rate": 1.0,
+  "row": "impoliteness",
+  "split": "pilot",
+  "wave_id": "01ad5a248806"
+}

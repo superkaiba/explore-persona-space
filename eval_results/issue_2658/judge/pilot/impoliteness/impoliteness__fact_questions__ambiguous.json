@@ -1,0 +1,1315 @@
+{
+  "cell": "impoliteness__fact_questions__ambiguous",
+  "counters": {
+    "n_api_refusal": 0,
+    "n_kept": 100,
+    "n_kept_with_reasoning": 100,
+    "n_malformed": 0,
+    "n_out_of_range": 0,
+    "n_rubric_refusal": 0,
+    "n_transport_retried": 0,
+    "n_truncation": 0
+  },
+  "frac_items_complete": 1.0,
+  "instrument": {
+    "aggregation": "median",
+    "binary_threshold": 50,
+    "cache_fingerprint": "d2bf4e18521242fa4a97b1e73a302e4a42584d9e063c336e1d28b0259313181f",
+    "eval_prompt_sha256": "7116d6e57dd355ab51ece7181dd271cf1fd47b45707648bb36a383f82367dc1e",
+    "instrument_fingerprint": "8af62b6a959d6f7aa2914f9e544b1f8960a17c0de790afb66e3d9ac74fe900ca",
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 2048,
+    "n_draws": 5,
+    "temperature": 1.0,
+    "temperature_note": "judge_graded does not thread temperature into the Batch request; draws sample at the Anthropic API default (1.0), equal to the plan pin"
+  },
+  "metadata": {
+    "git_argv0_path": "scripts/issue2658_judge.py",
+    "git_argv0_state": "tracked",
+    "git_commit": "4b22d46165142c55f5cd51bd3e6f9e480183584d",
+    "git_dirty": false,
+    "phase": "judge"
+  },
+  "n_answered_draws": 100,
+  "n_api_reached_draws": 100,
+  "n_human_adjudication": 0,
+  "n_parse_fail_draws": 0,
+  "n_scored": 20,
+  "n_units": 20,
+  "parse_fail_rate": 0.0,
+  "parse_fail_rate_api_reached": 0.0,
+  "plan_gate": {
+    "parse_fail_lt_threshold": true,
+    "zero_max_tokens_stops": true
+  },
+  "reasoning_presence_rate": 1.0,
+  "resume_key": "d657258e74eb001ab4f6075d60966310ed2d2ced65c31fd8d54e2fb2f3ca06b9",
+  "row": "impoliteness",
+  "schema": "i2658-judge-cell-v1",
+  "split": "pilot",
+  "stop_reason_tally": {
+    "end_turn": 100
+  },
+  "verdicts": {
+    "impoliteness|fact_questions|fact_questions#14#r00": {
+      "answer_sha256": "1358811f92d21ec5c73e2807d74d67f52e525126d539dc2541c7a15536085864",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "1146b75b3b313606",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "f87ad81c5b16dfe8",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "0c52f474c778624f",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "af00f8a814ccb1c2",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "25be9edc61f591bc",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#14",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 0,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#14#r00"
+    },
+    "impoliteness|fact_questions|fact_questions#14#r01": {
+      "answer_sha256": "3119e6eadb69bf5b4930018000212bfe6b6b55c1ca984154b1b6af52dc3ca15b",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "225080d50f9e3362",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "65b9fa7a38678339",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1d103ccf0add9b9f",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "d6c319c4edd996ec",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "04f2b1fd43a75793",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#14",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 1,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#14#r01"
+    },
+    "impoliteness|fact_questions|fact_questions#14#r02": {
+      "answer_sha256": "6013e928275ef913fc2ec2a9071b1a213dac467429eea1b8f4b378399cce861b",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "746220e0a936063f",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2f9f4098d008b966",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "9d56113dd500171f",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b1dff66057a38aa0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "0cfda9c766ae21ff",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#14",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 2,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#14#r02"
+    },
+    "impoliteness|fact_questions|fact_questions#14#r03": {
+      "answer_sha256": "4c9a9247168488a957e1013ba0c5b89b78244682618301ad874821819fac4dab",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "b60e47e13d7c12b5",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "6238d475ee44cdea",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "97aa6f6f4f7f8b82",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "30b599c41a25493c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "42d5d1eab87591cf",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#14",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 3,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#14#r03"
+    },
+    "impoliteness|fact_questions|fact_questions#14#r04": {
+      "answer_sha256": "978c667253d30ef4064517167a97b039ca28e6eb6abf6812da36c895c394b43b",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "b2ad0ee652e7faad",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b2930cc68b917c5d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "effa764ab3f6d049",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "feb45cf07688469a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "bd3090bd4dd88daf",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#14",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 4,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#14#r04"
+    },
+    "impoliteness|fact_questions|fact_questions#14#r05": {
+      "answer_sha256": "8c6114b82ce2a987206fd6e22fa5ec83ab8c353471967c34074e42760f0891d0",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "91c9f6b4a5958d84",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "897df65d59f31122",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b381a93889023256",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "43b3a51faf802205",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "5359f1ac89fc89f2",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#14",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 5,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#14#r05"
+    },
+    "impoliteness|fact_questions|fact_questions#14#r06": {
+      "answer_sha256": "64a2608bc7b0938f3e290e94ad3b3dc16766be592f1eeff7b9d76ee9183c295b",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "be4d8393d3305c9e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2785841f58e87a88",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "d3457f953296e790",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "008699ee8e59020a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "c7a31a3b54485905",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#14",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 6,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#14#r06"
+    },
+    "impoliteness|fact_questions|fact_questions#14#r07": {
+      "answer_sha256": "b3a55aa3b24278fca973312146a25d0fcf131d730c33e5079b396a02e77d0a82",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "a9ebf8cad5912f8d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "687a315200ecba06",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "fea770434684e5ab",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "a141665faf9765f0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "38dadc595d786464",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#14",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 7,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#14#r07"
+    },
+    "impoliteness|fact_questions|fact_questions#14#r08": {
+      "answer_sha256": "6d1533376279b0f2cd46b7b3722bdd26ea3125154f75053034874d0d8b1eb29d",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "ebd7f417d0a70940",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "71bd1d0c32d921a3",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2975e0af69ba8dae",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1ae088abefaab17e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e96ac88e4a46905a",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#14",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 8,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#14#r08"
+    },
+    "impoliteness|fact_questions|fact_questions#14#r09": {
+      "answer_sha256": "cfe65dcc8be455d495c54e0a9379a207b6663e07ef6ad3142f33d90a2fd72c4e",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "0ecfb111bcd7cf68",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "577e68c36af1ee1e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "a2be14b0ece94128",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "da326bc2494389b7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "b8481fa39f66bdf6",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#14",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 9,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#14#r09"
+    },
+    "impoliteness|fact_questions|fact_questions#8#r00": {
+      "answer_sha256": "e488924856e347e905c4a33f7fef07193187572981669ea327dd93fa4168189e",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "ab31510a99686922",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "333739de2b3e9116",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "4781bd34f8a75e4b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "6fa39a3a74493d1c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "a5849dc66b8ac585",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#8",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 0,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#8#r00"
+    },
+    "impoliteness|fact_questions|fact_questions#8#r01": {
+      "answer_sha256": "0d90a6210cadac7c5eb86fa59bee1df3d0fc1a7e3f6414353809c4f1e7ec02c1",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "13f6ebee01ab7e28",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "aa3120d97dd71c33",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ec5f91ee4b44866d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "d7a86904fbc9fec0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "22a84c91f6a77f7e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#8",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 1,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#8#r01"
+    },
+    "impoliteness|fact_questions|fact_questions#8#r02": {
+      "answer_sha256": "931124f9d33e93ec54c43a55c0223d5058e45bc2875b345f443b07c1b79703b4",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "3b569047d3f3aba9",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "234defd0376e6bf9",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e51eff0817523561",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "4ed3bdc75b9a59eb",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "2d4f13e6a3e382d0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#8",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 2,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#8#r02"
+    },
+    "impoliteness|fact_questions|fact_questions#8#r03": {
+      "answer_sha256": "2e629139014e371e8e68de6eb493ae8731dfcb691bbb132b6e781d18151c1482",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "6f51d7ff74bcca7f",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "443e94db22228010",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "334fc628779cfd8c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e319b760031d3b67",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "803463217be1bdc2",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#8",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 3,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#8#r03"
+    },
+    "impoliteness|fact_questions|fact_questions#8#r04": {
+      "answer_sha256": "3502fffe9eefa4f2727a8e0a788d10f7debccd621ee578eff19e2fe05e397e15",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "9d3140877d6d4e16",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "5decad4974d0be61",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "cf0dc49d54353389",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "ea423a02095f48e1",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "105c31246aed3ed4",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#8",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 4,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#8#r04"
+    },
+    "impoliteness|fact_questions|fact_questions#8#r05": {
+      "answer_sha256": "24e4327afd9b1a6f6fdde4a6010e86e722bedc1dc6f59ea08aa82d9977e50147",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "8f461ac2296d3a3b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "3251ec77dfadfa7f",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "072406b89e24654c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "1700193862d4ecd2",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "fcf26063441fca1e",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#8",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 5,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#8#r05"
+    },
+    "impoliteness|fact_questions|fact_questions#8#r06": {
+      "answer_sha256": "46c969b2839b21283afab0dd5d4093ec9e7543b01274b2e26e0aa580760e6727",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "2bf2f1934fe2c8d2",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "78a4f582c3fc7b7b",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e356dabb30bef3fa",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "203d09a5b5ee38ea",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "fb26fb69780d813c",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#8",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 6,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#8#r06"
+    },
+    "impoliteness|fact_questions|fact_questions#8#r07": {
+      "answer_sha256": "343ce7478fc209673728ba1c99501af43b021ecce970ee114e605bb4118a55ae",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "7538967543b23246",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "488ddf81186d9b56",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "5fc0e781864cb5b0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "27bad53008603ab6",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e6ad7d8f7e6ca8d1",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#8",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 7,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#8#r07"
+    },
+    "impoliteness|fact_questions|fact_questions#8#r08": {
+      "answer_sha256": "a0a2ad68641e2545febe6bc3132857077c3f607549295cdc056fbd4478e8a13f",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "9c3a85299655756d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "e55418671889bad0",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "744d2a30a0a44400",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "cd11f9bfdd16bea5",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "03631ee9c000d20d",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#8",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 8,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#8#r08"
+    },
+    "impoliteness|fact_questions|fact_questions#8#r09": {
+      "answer_sha256": "753499d7a01422d99458ba1c2c4a652d67ed8240eef9eb6ccb53f2ad21a9d695",
+      "binary_label": false,
+      "counters": {
+        "n_api_refusal": 0,
+        "n_kept": 5,
+        "n_kept_with_reasoning": 5,
+        "n_malformed": 0,
+        "n_out_of_range": 0,
+        "n_rubric_refusal": 0,
+        "n_transport_retried": 0,
+        "n_truncation": 0
+      },
+      "draw_ledger": [
+        {
+          "class": "kept",
+          "draw_id": "105e853919f5f774",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "8ded0947d1d50352",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "61689e66f943f6ca",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "a6001ff73d46a563",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        },
+        {
+          "class": "kept",
+          "draw_id": "37e45fb9e24995b7",
+          "has_reasoning": true,
+          "round": 0,
+          "score": 0.0,
+          "stop_reason": "end_turn"
+        }
+      ],
+      "evidence_sha256": null,
+      "item_id": "impoliteness|fact_questions|fact_questions#8",
+      "judge_status": "scored",
+      "median_score": 0.0,
+      "response_index": 9,
+      "retry_rounds_used": 0,
+      "unit_id": "impoliteness|fact_questions|fact_questions#8#r09"
+    }
+  }
+}

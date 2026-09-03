@@ -1,0 +1,45 @@
+{
+  "cache_fingerprint": "367f82bff5a84a7c3c3de08db01265b9fc634b1b6fd563c706e12e37d0c1af40",
+  "canary": {
+    "drifted": false,
+    "n_items": 12,
+    "role": "baseline"
+  },
+  "cells": {
+    "assistantness__arc_c_tasks__ambiguous": "eval_results/issue_2658/judge/pilot/assistantness/assistantness__arc_c_tasks__ambiguous.json",
+    "assistantness__arc_c_tasks__direct": "eval_results/issue_2658/judge/pilot/assistantness/assistantness__arc_c_tasks__direct.json",
+    "assistantness__arc_c_tasks__indirect": "eval_results/issue_2658/judge/pilot/assistantness/assistantness__arc_c_tasks__indirect.json",
+    "assistantness__fact_questions__ambiguous": "eval_results/issue_2658/judge/pilot/assistantness/assistantness__fact_questions__ambiguous.json",
+    "assistantness__fact_questions__direct": "eval_results/issue_2658/judge/pilot/assistantness/assistantness__fact_questions__direct.json",
+    "assistantness__fact_questions__indirect": "eval_results/issue_2658/judge/pilot/assistantness/assistantness__fact_questions__indirect.json",
+    "assistantness__marker_eval_prompts__ambiguous": "eval_results/issue_2658/judge/pilot/assistantness/assistantness__marker_eval_prompts__ambiguous.json",
+    "assistantness__marker_eval_prompts__direct": "eval_results/issue_2658/judge/pilot/assistantness/assistantness__marker_eval_prompts__direct.json",
+    "assistantness__marker_eval_prompts__indirect": "eval_results/issue_2658/judge/pilot/assistantness/assistantness__marker_eval_prompts__indirect.json",
+    "assistantness__wildchat_real__ambiguous": "eval_results/issue_2658/judge/pilot/assistantness/assistantness__wildchat_real__ambiguous.json",
+    "assistantness__wildchat_real__direct": "eval_results/issue_2658/judge/pilot/assistantness/assistantness__wildchat_real__direct.json",
+    "assistantness__wildchat_real__indirect": "eval_results/issue_2658/judge/pilot/assistantness/assistantness__wildchat_real__indirect.json"
+  },
+  "counters": {
+    "n_api_refusal": 50,
+    "n_kept": 2600,
+    "n_kept_with_reasoning": 2600,
+    "n_malformed": 0,
+    "n_out_of_range": 0,
+    "n_rubric_refusal": 0,
+    "n_transport_retried": 0,
+    "n_truncation": 0
+  },
+  "dispatch_total_calls": 2600,
+  "dry_run": false,
+  "n_cells": 12,
+  "n_human_adjudication": 0,
+  "n_scored": 520,
+  "n_units": 520,
+  "not_estimable": {},
+  "pilot_gate": null,
+  "planned_calls": 2600,
+  "reasoning_presence_rate": 1.0,
+  "row": "assistantness",
+  "split": "pilot",
+  "wave_id": "0bfead96d0fe"
+}

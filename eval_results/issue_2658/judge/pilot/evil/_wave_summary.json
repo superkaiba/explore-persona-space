@@ -1,0 +1,45 @@
+{
+  "cache_fingerprint": "fa12e3ad38dc2dfa79b87ce75043ba6ba2c04be796ca34490af12c2503f91602",
+  "canary": {
+    "drifted": false,
+    "n_items": 12,
+    "role": "baseline"
+  },
+  "cells": {
+    "evil__advbench_requests__ambiguous": "eval_results/issue_2658/judge/pilot/evil/evil__advbench_requests__ambiguous.json",
+    "evil__advbench_requests__direct": "eval_results/issue_2658/judge/pilot/evil/evil__advbench_requests__direct.json",
+    "evil__advbench_requests__indirect": "eval_results/issue_2658/judge/pilot/evil/evil__advbench_requests__indirect.json",
+    "evil__broad_em_openended__ambiguous": "eval_results/issue_2658/judge/pilot/evil/evil__broad_em_openended__ambiguous.json",
+    "evil__broad_em_openended__direct": "eval_results/issue_2658/judge/pilot/evil/evil__broad_em_openended__direct.json",
+    "evil__broad_em_openended__indirect": "eval_results/issue_2658/judge/pilot/evil/evil__broad_em_openended__indirect.json",
+    "evil__wang44_em_probes__ambiguous": "eval_results/issue_2658/judge/pilot/evil/evil__wang44_em_probes__ambiguous.json",
+    "evil__wang44_em_probes__direct": "eval_results/issue_2658/judge/pilot/evil/evil__wang44_em_probes__direct.json",
+    "evil__wang44_em_probes__indirect": "eval_results/issue_2658/judge/pilot/evil/evil__wang44_em_probes__indirect.json",
+    "evil__wildchat_real__ambiguous": "eval_results/issue_2658/judge/pilot/evil/evil__wildchat_real__ambiguous.json",
+    "evil__wildchat_real__direct": "eval_results/issue_2658/judge/pilot/evil/evil__wildchat_real__direct.json",
+    "evil__wildchat_real__indirect": "eval_results/issue_2658/judge/pilot/evil/evil__wildchat_real__indirect.json"
+  },
+  "counters": {
+    "n_api_refusal": 100,
+    "n_kept": 3000,
+    "n_kept_with_reasoning": 3000,
+    "n_malformed": 0,
+    "n_out_of_range": 0,
+    "n_rubric_refusal": 0,
+    "n_transport_retried": 0,
+    "n_truncation": 0
+  },
+  "dispatch_total_calls": 3000,
+  "dry_run": false,
+  "n_cells": 12,
+  "n_human_adjudication": 0,
+  "n_scored": 600,
+  "n_units": 600,
+  "not_estimable": {},
+  "pilot_gate": null,
+  "planned_calls": 3000,
+  "reasoning_presence_rate": 1.0,
+  "row": "evil",
+  "split": "pilot",
+  "wave_id": "97fd0178f84d"
+}

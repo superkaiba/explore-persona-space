@@ -1,0 +1,45 @@
+{
+  "cache_fingerprint": "1803f89584fb7176bdb3cddd846be32e605abd377082402b106e03a42d35efea",
+  "canary": {
+    "drifted": false,
+    "n_items": 12,
+    "role": "baseline"
+  },
+  "cells": {
+    "sycophancy__syco_arc_science__authority_assertion": "eval_results/issue_2658/judge/pilot/sycophancy/sycophancy__syco_arc_science__authority_assertion.json",
+    "sycophancy__syco_arc_science__confident_assertion": "eval_results/issue_2658/judge/pilot/sycophancy/sycophancy__syco_arc_science__confident_assertion.json",
+    "sycophancy__syco_arc_science__hedged_assertion": "eval_results/issue_2658/judge/pilot/sycophancy/sycophancy__syco_arc_science__hedged_assertion.json",
+    "sycophancy__syco_mmlu_humanities__authority_assertion": "eval_results/issue_2658/judge/pilot/sycophancy/sycophancy__syco_mmlu_humanities__authority_assertion.json",
+    "sycophancy__syco_mmlu_humanities__confident_assertion": "eval_results/issue_2658/judge/pilot/sycophancy/sycophancy__syco_mmlu_humanities__confident_assertion.json",
+    "sycophancy__syco_mmlu_humanities__hedged_assertion": "eval_results/issue_2658/judge/pilot/sycophancy/sycophancy__syco_mmlu_humanities__hedged_assertion.json",
+    "sycophancy__syco_mmlu_social_health__authority_assertion": "eval_results/issue_2658/judge/pilot/sycophancy/sycophancy__syco_mmlu_social_health__authority_assertion.json",
+    "sycophancy__syco_mmlu_social_health__confident_assertion": "eval_results/issue_2658/judge/pilot/sycophancy/sycophancy__syco_mmlu_social_health__confident_assertion.json",
+    "sycophancy__syco_mmlu_social_health__hedged_assertion": "eval_results/issue_2658/judge/pilot/sycophancy/sycophancy__syco_mmlu_social_health__hedged_assertion.json",
+    "sycophancy__syco_mmlu_stem__authority_assertion": "eval_results/issue_2658/judge/pilot/sycophancy/sycophancy__syco_mmlu_stem__authority_assertion.json",
+    "sycophancy__syco_mmlu_stem__confident_assertion": "eval_results/issue_2658/judge/pilot/sycophancy/sycophancy__syco_mmlu_stem__confident_assertion.json",
+    "sycophancy__syco_mmlu_stem__hedged_assertion": "eval_results/issue_2658/judge/pilot/sycophancy/sycophancy__syco_mmlu_stem__hedged_assertion.json"
+  },
+  "counters": {
+    "n_api_refusal": 0,
+    "n_kept": 3000,
+    "n_kept_with_reasoning": 3000,
+    "n_malformed": 0,
+    "n_out_of_range": 0,
+    "n_rubric_refusal": 0,
+    "n_transport_retried": 0,
+    "n_truncation": 0
+  },
+  "dispatch_total_calls": 3000,
+  "dry_run": false,
+  "n_cells": 12,
+  "n_human_adjudication": 0,
+  "n_scored": 600,
+  "n_units": 600,
+  "not_estimable": {},
+  "pilot_gate": null,
+  "planned_calls": 3000,
+  "reasoning_presence_rate": 1.0,
+  "row": "sycophancy",
+  "split": "pilot",
+  "wave_id": "3246eae96985"
+}

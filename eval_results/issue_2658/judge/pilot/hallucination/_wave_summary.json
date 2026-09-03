@@ -1,0 +1,124 @@
+{
+  "cache_fingerprint": "aac22515c0057186d935543f4373de0a6622168d4dd970a4cb1eb7326c8c8c3a",
+  "canary": {
+    "drifted": false,
+    "n_items": 6,
+    "role": "baseline"
+  },
+  "cells": {
+    "hallucination__arc_c_factual__ambiguous": "eval_results/issue_2658/judge/pilot/hallucination/hallucination__arc_c_factual__ambiguous.json",
+    "hallucination__arc_c_factual__direct": "eval_results/issue_2658/judge/pilot/hallucination/hallucination__arc_c_factual__direct.json",
+    "hallucination__arc_c_factual__indirect": "eval_results/issue_2658/judge/pilot/hallucination/hallucination__arc_c_factual__indirect.json",
+    "hallucination__fact_questions__ambiguous": "eval_results/issue_2658/judge/pilot/hallucination/hallucination__fact_questions__ambiguous.json",
+    "hallucination__fact_questions__direct": "eval_results/issue_2658/judge/pilot/hallucination/hallucination__fact_questions__direct.json",
+    "hallucination__fact_questions__indirect": "eval_results/issue_2658/judge/pilot/hallucination/hallucination__fact_questions__indirect.json"
+  },
+  "counters": {
+    "n_api_refusal": 0,
+    "n_kept": 1300,
+    "n_kept_with_reasoning": 1300,
+    "n_malformed": 0,
+    "n_out_of_range": 0,
+    "n_rubric_refusal": 0,
+    "n_transport_retried": 0,
+    "n_truncation": 0
+  },
+  "dispatch_total_calls": 1300,
+  "dry_run": false,
+  "n_cells": 6,
+  "n_human_adjudication": 0,
+  "n_scored": 260,
+  "n_units": 260,
+  "not_estimable": {
+    "hallucination__wang44_probes__ambiguous": {
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/evidence_packets.json",
+      "detail": "Betley-lineage probe bank; open-ended probes with no ground-truth reference to check atomic claims against",
+      "item_ids": [
+        "hallucination|wang44_probes|wang44#0",
+        "hallucination|wang44_probes|wang44#12",
+        "hallucination|wang44_probes|wang44#14",
+        "hallucination|wang44_probes|wang44#37",
+        "hallucination|wang44_probes|wang44#5"
+      ],
+      "n_excluded_answers": 50,
+      "n_excluded_items": 5,
+      "status": "not-estimable"
+    },
+    "hallucination__wang44_probes__direct": {
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/evidence_packets.json",
+      "detail": "Betley-lineage probe bank; open-ended probes with no ground-truth reference to check atomic claims against",
+      "item_ids": [
+        "hallucination|wang44_probes|wang44#28",
+        "hallucination|wang44_probes|wang44#30",
+        "hallucination|wang44_probes|wang44#35",
+        "hallucination|wang44_probes|wang44#4",
+        "hallucination|wang44_probes|wang44#7"
+      ],
+      "n_excluded_answers": 50,
+      "n_excluded_items": 5,
+      "status": "not-estimable"
+    },
+    "hallucination__wang44_probes__indirect": {
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/evidence_packets.json",
+      "detail": "Betley-lineage probe bank; open-ended probes with no ground-truth reference to check atomic claims against",
+      "item_ids": [
+        "hallucination|wang44_probes|wang44#15",
+        "hallucination|wang44_probes|wang44#17",
+        "hallucination|wang44_probes|wang44#22",
+        "hallucination|wang44_probes|wang44#32",
+        "hallucination|wang44_probes|wang44#9"
+      ],
+      "n_excluded_answers": 50,
+      "n_excluded_items": 5,
+      "status": "not-estimable"
+    },
+    "hallucination__wildchat_real__ambiguous": {
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/evidence_packets.json",
+      "detail": "real-user prompts (WildChat) carry no frozen ground truth against which atomic claims could be checked",
+      "item_ids": [
+        "hallucination|wildchat_real|wildchat_random#336",
+        "hallucination|wildchat_real|wildchat_random#499",
+        "hallucination|wildchat_real|wildchat_random#541",
+        "hallucination|wildchat_real|wildchat_random#551",
+        "hallucination|wildchat_real|wildchat_random#72"
+      ],
+      "n_excluded_answers": 50,
+      "n_excluded_items": 5,
+      "status": "not-estimable"
+    },
+    "hallucination__wildchat_real__direct": {
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/evidence_packets.json",
+      "detail": "real-user prompts (WildChat) carry no frozen ground truth against which atomic claims could be checked",
+      "item_ids": [
+        "hallucination|wildchat_real|wildchat_random#152",
+        "hallucination|wildchat_real|wildchat_random#278",
+        "hallucination|wildchat_real|wildchat_random#355",
+        "hallucination|wildchat_real|wildchat_random#422",
+        "hallucination|wildchat_real|wildchat_random#593"
+      ],
+      "n_excluded_answers": 50,
+      "n_excluded_items": 5,
+      "status": "not-estimable"
+    },
+    "hallucination__wildchat_real__indirect": {
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/evidence_packets.json",
+      "detail": "real-user prompts (WildChat) carry no frozen ground truth against which atomic claims could be checked",
+      "item_ids": [
+        "hallucination|wildchat_real|wildchat_random#101",
+        "hallucination|wildchat_real|wildchat_random#244",
+        "hallucination|wildchat_real|wildchat_random#317",
+        "hallucination|wildchat_real|wildchat_random#420",
+        "hallucination|wildchat_real|wildchat_random#81"
+      ],
+      "n_excluded_answers": 50,
+      "n_excluded_items": 5,
+      "status": "not-estimable"
+    }
+  },
+  "pilot_gate": null,
+  "planned_calls": 1300,
+  "reasoning_presence_rate": 1.0,
+  "row": "hallucination",
+  "split": "pilot",
+  "wave_id": "1ed330bedffd"
+}
