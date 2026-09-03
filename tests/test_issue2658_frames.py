@@ -2,9 +2,10 @@
 exclusion, dev/test split, and manifest immutability.
 
 Every guard RAISES on its bad shape; behavior tests use small synthetic
-``PromptItem`` lists (no network, no torch, no git subprocess, no other issues'
-committed artifacts). The on-disk manifests, when present, are validated as an
-integration check (skipped in a fresh checkout that has not run the build).
+``PromptItem`` lists (no network, no torch, no other issues' committed
+artifacts; the one git subprocess test runs against a throwaway tmp_path
+repo). The on-disk manifests, when present, are validated as an integration
+check (skipped in a fresh checkout that has not run the build).
 """
 
 from __future__ import annotations
@@ -203,6 +204,120 @@ def test_edge_domain_disclosure_coupled_to_graph_edges():
             F._edge_domains(pop_b),
             merged,
         )
+
+
+# ---------------------------------------------------------------------------
+# Group-D r3: punctuation/whitespace-fold identity + FULL-stem near-dup edge.
+# ---------------------------------------------------------------------------
+def test_identity_edge_folds_punctuation_and_whitespace():
+    # 8 sealed-test items had a dev twin differing only in non-word chars
+    # (e.g. 'chromosomesare' vs 'chromosomes are'); edge 2 must see through
+    # punctuation AND whitespace placement, for free text and keyed stems.
+    ft1 = _item("ft1", "Which gas - CO2, or oxygen - do plants absorb?")
+    ft2 = _item("ft2", "Which gas (CO2 or oxygen) do plantsabsorb")
+    sf, _ = F.build_superfamilies([ft1, ft2])
+    assert sf["ft1"] == sf["ft2"]
+    k1 = _keyed_item("k|f|a", "How many chromosomes are present in a spermatogonium?", "a")
+    k2 = _keyed_item("k|f|b", "How many chromosomesare present in a)spermatogonium?", "b")
+    k3 = _keyed_item("k|f|c", "A completely different stem about mitochondria?", "c")
+    sf, _ = F.build_superfamilies([k1, k2, k3])
+    assert sf["k|f|a"] == sf["k|f|b"]
+    assert sf["k|f|c"] != sf["k|f|a"]
+
+
+def test_keyed_stem_full_stem_near_duplicate_edge():
+    # The group-D r3 blocker shape: 600-char stems with a 599-char common
+    # prefix (one substituted span) straddled dev/test. Keyed stems must get
+    # the char-shingle near-dup edge, over the FULL stem.
+    base = " ".join(f"word{i}alpha" for i in range(60))  # ~780 chars, past the window
+    near = base[:-5] + "omega"  # one substituted trailing span
+    far = " ".join(f"other{i}beta" for i in range(60))
+    a = _keyed_item("s|f|a", base, "a")
+    b = _keyed_item("s|f|b", near, "b")
+    c = _keyed_item("s|f|c", far, "c")
+    sf, _ = F.build_superfamilies([a, b, c])
+    assert sf["s|f|a"] == sf["s|f|b"]
+    assert sf["s|f|c"] != sf["s|f|a"]
+
+
+def test_keyed_stem_near_dup_is_full_stem_not_windowed():
+    # Both failure directions of the leading-window criterion (62/63
+    # window-identical cross-boundary pairs were >400-char truncation twins):
+    # (a) OVER-merge: identical leading window, divergent tails — the window
+    #     reads J == 1.0; the full stem must NOT merge.
+    pre = " ".join(f"shared{i}tok" for i in range(40))  # > 400 chars shared prefix
+    t1 = pre + " " + " ".join(f"taila{i}xx" for i in range(50))
+    t2 = pre + " " + " ".join(f"tailb{i}yy" for i in range(50))
+    k = int(F.SUPERFAMILY_CRITERIA["char_shingle_k"])
+    thr = float(F.SUPERFAMILY_CRITERIA["keyed_stem_near_dup_char_jaccard"])
+    assert F.jaccard(F.char_shingles(t1, k), F.char_shingles(t2, k)) >= thr  # window fooled
+    assert F.jaccard(F.stem_char_shingles(t1, k), F.stem_char_shingles(t2, k)) < thr
+    sf, _ = F.build_superfamilies(
+        [_keyed_item("s|f|t1", t1, "t1"), _keyed_item("s|f|t2", t2, "t2")]
+    )
+    assert sf["s|f|t1"] != sf["s|f|t2"]
+    # (b) UNDER-merge: different openings, long shared remainder — the window
+    #     reads J < thr; the full stem is a genuine near-duplicate and merges.
+    tail = " ".join(f"body{i}zz" for i in range(120))
+    u1 = " ".join(f"opena{i}qq" for i in range(8)) + " " + tail
+    u2 = " ".join(f"openb{i}vv" for i in range(8)) + " " + tail
+    assert F.jaccard(F.char_shingles(u1, k), F.char_shingles(u2, k)) < thr
+    assert F.jaccard(F.stem_char_shingles(u1, k), F.stem_char_shingles(u2, k)) >= thr
+    sf, _ = F.build_superfamilies(
+        [_keyed_item("s|f|u1", u1, "u1"), _keyed_item("s|f|u2", u2, "u2")]
+    )
+    assert sf["s|f|u1"] == sf["s|f|u2"]
+
+
+def test_keyed_stem_token_jaccard_deliberately_not_applied():
+    # PER-POPULATION scoping (disclosed in SUPERFAMILY_CRITERIA): tokJ >= 0.6
+    # over templated MCQ stems detects the template, not duplication.
+    ta = "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu"
+    tb = "mu lambda kappa iota theta eta zeta epsilon delta gamma beta alpha"
+    thr_tok = float(F.SUPERFAMILY_CRITERIA["rephrase_token_jaccard"])
+    thr_char = float(F.SUPERFAMILY_CRITERIA["keyed_stem_near_dup_char_jaccard"])
+    k = int(F.SUPERFAMILY_CRITERIA["char_shingle_k"])
+    assert F.jaccard(F.token_set(ta), F.token_set(tb)) >= thr_tok
+    assert F.jaccard(F.stem_char_shingles(ta, k), F.stem_char_shingles(tb, k)) < thr_char
+    sf, _ = F.build_superfamilies([_keyed_item("s|f|p", ta, "p"), _keyed_item("s|f|q", tb, "q")])
+    assert sf["s|f|p"] != sf["s|f|q"]  # keyed stems: NO token-rephrase edge
+    sf, _ = F.build_superfamilies([_item("fp", ta), _item("fq", tb)])
+    assert sf["fp"] == sf["fq"]  # free text: rephrase edge unchanged
+    # the scoping is disclosed, never implicit
+    assert F.SUPERFAMILY_CRITERIA["keyed_stem_rephrase_token_jaccard"] is None
+    assert "template" in str(F.SUPERFAMILY_CRITERIA["keyed_stem_rephrase_exclusion"])
+
+
+def test_stem_lexical_edge_domain_disclosed():
+    keyed = _keyed_item("s|f|a", "A benign stem?", "a")
+    id_only = _item("x|f|c1", problem_id="gk-1")
+    free = _item("y", text="free text question")
+    assert "stem-lexical" in F._edge_domains([keyed])
+    assert "stem-lexical" not in F._edge_domains([id_only])
+    assert "stem-lexical" not in F._edge_domains([free])
+
+
+def test_git_sha_appends_dirty_flag_for_uncommitted_tree(tmp_path, monkeypatch):
+    # Group-D r3 minor: a manifest frozen from a dirty tree recorded the
+    # PARENT commit as provenance. Real git, throwaway repo.
+    import subprocess
+
+    def git(*args):
+        subprocess.run(
+            ["git", "-C", str(tmp_path), *args], check=True, capture_output=True, text=True
+        )
+
+    git("init", "-q")
+    git("config", "user.email", "t@t")
+    git("config", "user.name", "t")
+    (tmp_path / "f.txt").write_text("clean\n")
+    git("add", "f.txt")
+    git("commit", "-qm", "c1")
+    monkeypatch.setattr(F, "REPO_ROOT", tmp_path)
+    clean = F._git_sha()
+    assert len(clean) == 40 and not clean.endswith("-dirty")
+    (tmp_path / "f.txt").write_text("dirty\n")
+    assert F._git_sha() == clean + "-dirty"
 
 
 # ---------------------------------------------------------------------------

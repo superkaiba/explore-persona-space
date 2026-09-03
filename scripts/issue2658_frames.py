@@ -40,9 +40,12 @@ What it provides (plan §4):
    identity, exact/near-duplicate, rephrase).  An explicit graph + union-find
    connected-components pass with named, thresholded criteria
    (``SUPERFAMILY_CRITERIA``): benchmark problem-key identity (structured
-   benchmarks, keyed on the #2388 ``group_key``), exact normalized-text
-   identity, char-shingle Jaccard near-duplicate, and token-set Jaccard
-   rephrase.  NOT a heuristic string bucket.
+   benchmarks, keyed on the #2388 ``group_key``), exact
+   punctuation-fold-normalized text identity (free text AND keyed stems),
+   char-shingle Jaccard near-duplicate (windowed over free text; FULL-stem
+   over keyed stems — edge 5), and token-set Jaccard rephrase (free text
+   only; deliberately NOT applied to keyed MCQ stems — template similarity,
+   disclosed in the criteria block).  NOT a heuristic string bucket.
 
 4. DIRECTION-EXTRACTION-CORPUS EXCLUSION (the THIRD required exclusion set) —
    every eligible row's frozen direction was extracted from some corpus; those
@@ -115,15 +118,50 @@ _CORRECTNESS_SURFACE = {
 
 # Superfamily criteria — named, thresholded (plan §4: "similarity/duplicate
 # criteria named and thresholded in code, not a heuristic string bucket").
+# Edge SCOPING is disclosed per population (group-D r3): the windowed edges
+# 3-4 run over FREE-TEXT items; keyed items get the exact-identity edge on
+# their stem plus a FULL-STEM char-shingle near-dup edge; the token-Jaccard
+# rephrase edge is DELIBERATELY not applied to keyed stems (see
+# ``keyed_stem_rephrase_exclusion``). An unscoped 0.8/0.6 disclosure hid the
+# fact that the 13,204-item keyed row carried no near-dup edge at all.
 SUPERFAMILY_CRITERIA: dict[str, object] = {
     "char_shingle_k": 5,
     "near_dup_char_jaccard": 0.80,  # char-5-gram Jaccard >= => near-duplicate edge
     "rephrase_token_jaccard": 0.60,  # whitespace-token Jaccard >= => rephrase edge
     "benchmark_problem_key_identity": True,  # shared #2388 group_key => same problem
     "exact_normalized_text_identity": True,  # identical normalized text => same node
+    # Edge-2 canonical form: casefold + DROP all non-alphanumerics. Variants
+    # differing only in punctuation/whitespace placement are the same question
+    # in substance (group-D r3: 8 sealed-test items had such a dev twin,
+    # invisible to edge-strip normalization; measured, every drop-vs-fold
+    # delta group in the pool is a space-placement typo variant — no fusion
+    # false-merges).
+    "identity_normalization": "casefold+drop-all-non-alnum",
     "lexical_max_chars": 400,  # near-dup/rephrase computed over the leading N chars
     "lexical_all_pairs_cap": 6000,  # above this, length-band blocking (reported)
     "length_band_chars": 40,
+    "lexical_edge_scope": "free-text",  # windowed edges 3-4 run over free-text items only
+    # Edge 5 — near-dup char-shingle edge over KEYED stems, computed on the
+    # FULL normalized stem (never the leading window: 62/63 window-identical
+    # cross-boundary pairs on the 2026-09-02 pre-r3 split were >400-char
+    # truncation twins — the window both fakes identity for stems diverging
+    # past char 400 and hides near-dups whose shared content lies there).
+    "keyed_stem_near_dup_char_jaccard": 0.80,
+    "keyed_stem_lexical_window": "full-stem",
+    # The token-Jaccard rephrase edge is DELIBERATELY not extended to keyed
+    # stems (per-population scoping of the plan-§4 edge set): measured on the
+    # 2026-09-02 pre-r3 split, tokJ >= 0.6 flagged 985 cross-boundary pairs of
+    # which the tokJ-only tier (charJ < 0.8) held 197 further sealed-test
+    # items — MCQ stems share substantial answer-option/format boilerplate, so
+    # a token-overlap threshold over templated stems detects the TEMPLATE, not
+    # duplication, and union-find chaining over such edges collapses unrelated
+    # questions. The surviving tokJ-only tier is a disclosed residual,
+    # re-measured at every re-freeze (group-D r3 report).
+    "keyed_stem_rephrase_token_jaccard": None,
+    "keyed_stem_rephrase_exclusion": (
+        "token-Jaccard is template-driven on keyed MCQ stems (pre-r3 measured: "
+        "197 sealed-test items in the tokJ-only tier); not a duplicate criterion"
+    ),
 }
 
 # Frame-level PROMPT-count floors. RESPONSE-level gates are unit-3+; the §8
@@ -191,16 +229,32 @@ class FrameRegistryError(C.Issue2658GuardError):
 # ---------------------------------------------------------------------------
 _WS_RE = re.compile(r"\s+")
 _PUNCT_STRIP_RE = re.compile(r"^[\W_]+|[\W_]+$")
+_IDENTITY_FOLD_RE = re.compile(r"[\W_]+")
 _LEX_MAX_CHARS = int(SUPERFAMILY_CRITERIA["lexical_max_chars"])
 
 
 def normalize_text(text: str) -> str:
-    """Canonical form for exact/near-dup comparison: lowercase, collapse
-    whitespace, strip leading/trailing punctuation. Raises on non-str."""
+    """Canonical form for the lexical (shingle/token) passes: lowercase,
+    collapse whitespace, strip leading/trailing punctuation. Raises on non-str."""
     if not isinstance(text, str):
         raise ValueError(f"normalize_text expects str, got {type(text).__name__}")
     t = _WS_RE.sub(" ", text.strip().lower())
     return _PUNCT_STRIP_RE.sub("", t)
+
+
+def identity_normalize_text(text: str) -> str:
+    """Canonical form for the EXACT-identity edge (edge 2): lowercase + DROP
+    every non-alphanumeric char (punctuation, whitespace, underscores). Two
+    texts differing only in punctuation OR whitespace placement are the same
+    question in substance (group-D r3: 8 sealed-test items had a dev twin
+    differing only in non-word chars — measured, all 8 plus the 12 further
+    same-side groups in the pool are single-space-placement/typo variants of
+    one question, e.g. 'chromosomesare' vs 'chromosomes are'; a fold-to-space
+    form provably misses them, and 4 of the 8 sit below the charJ 0.8 near-dup
+    tier). Raises on non-str."""
+    if not isinstance(text, str):
+        raise ValueError(f"identity_normalize_text expects str, got {type(text).__name__}")
+    return _IDENTITY_FOLD_RE.sub("", text.lower())
 
 
 def char_shingles(text: str, k: int) -> frozenset[str]:
@@ -210,6 +264,21 @@ def char_shingles(text: str, k: int) -> frozenset[str]:
     if k < 1:
         raise ValueError(f"char_shingles k must be >= 1, got {k}")
     n = normalize_text(text)[:_LEX_MAX_CHARS]
+    if len(n) <= k:
+        return frozenset({n}) if n else frozenset()
+    return frozenset(n[i : i + k] for i in range(len(n) - k + 1))
+
+
+def stem_char_shingles(text: str, k: int) -> frozenset[str]:
+    """Set of char k-grams over the FULL normalized text (no leading-window
+    truncation) — the keyed-stem near-dup edge (edge 5). Full-stem comparison
+    is load-bearing: over the leading window, >400-char stems that diverge
+    later read as identical (62/63 window-identical cross-boundary pairs on
+    the pre-r3 split were truncation twins), and genuine near-dups whose
+    shared content lies past the window are hidden."""
+    if k < 1:
+        raise ValueError(f"stem_char_shingles k must be >= 1, got {k}")
+    n = normalize_text(text)
     if len(n) <= k:
         return frozenset({n}) if n else frozenset()
     return frozenset(n[i : i + k] for i in range(len(n) - k + 1))
@@ -316,9 +385,12 @@ def edge_problem_id_key(it: PromptItem) -> str | None:
 def edge_text_identity_key(it: PromptItem) -> str | None:
     """Edge-2 key: exact normalized CONTENT identity (None = no edge).
 
+    Keys use ``identity_normalize_text`` (punctuation-folding, group-D r3): two
+    texts differing only in punctuation are the same question in substance.
+
     - free-text item (``problem_id`` None, non-empty ``text``): the full
-      normalized text;
-    - keyed item with a recorded ``stem_text``: the normalized question stem —
+      identity-normalized text;
+    - keyed item with a recorded ``stem_text``: the identity-normalized stem —
       the underlying question IS the content; the composed assertion wrapper
       is not (M1: same-stem different-key items must merge, and a keyed stem
       identical to a free-text extraction question is a real overlap);
@@ -327,9 +399,9 @@ def edge_text_identity_key(it: PromptItem) -> str | None:
     - anything else (id-only keyed nodes): None.
     """
     if it.problem_id is None:
-        return normalize_text(it.text) if it.text else None
+        return identity_normalize_text(it.text) if it.text else None
     if it.stem_text:
-        return normalize_text(it.stem_text)
+        return identity_normalize_text(it.stem_text)
     if it.band_key is not None:
         raise FrameManifestError(
             f"{it.item_id!r}: composed-text keyed item carries no stem_text — it would "
@@ -339,11 +411,24 @@ def edge_text_identity_key(it: PromptItem) -> str | None:
 
 
 def edge_lexical_member(it: PromptItem) -> bool:
-    """Edges-3/4 membership: free-text items only. Keyed items stay out — their
-    composed surface is dominated by the shared assertion template, so near-dup
-    thresholds over composed text would merge unrelated stems; their content
-    identity is carried by edge 2 on the stem instead."""
+    """Edges-3/4 membership: free-text items only. Keyed items stay out of the
+    WINDOWED composed-text passes — their composed surface is dominated by the
+    shared assertion template, so near-dup thresholds over composed text would
+    merge unrelated stems. Their content identity is carried by edge 2 on the
+    stem, and their near-duplicate identity by the FULL-STEM char-shingle edge
+    (``edge_stem_lexical_member`` / ``_link_stem_lexical``)."""
     return it.problem_id is None and bool(it.text)
+
+
+def edge_stem_lexical_member(it: PromptItem) -> bool:
+    """Edge-5 membership: keyed items with a recorded pre-composition stem.
+    The near-dup char-shingle criterion runs over the FULL normalized stem
+    (group-D r3: 131/6,525 sealed-test items had a dev stem at charJ >= 0.8 —
+    600-char stems differing in one character are the same content to a
+    layer-19 answer-vector probe). The token-Jaccard rephrase edge is
+    DELIBERATELY not applied here (template similarity — see
+    ``SUPERFAMILY_CRITERIA['keyed_stem_rephrase_exclusion']``)."""
+    return it.problem_id is not None and bool(it.stem_text)
 
 
 def build_superfamilies(items: list[PromptItem]) -> tuple[dict[str, str], bool]:
@@ -375,9 +460,14 @@ def build_superfamilies(items: list[PromptItem]) -> tuple[dict[str, str], bool]:
         for other in ids[1:]:
             uf.union(ids[0], other)
 
-    # Edges 3+4 — lexical near-dup + rephrase over free-text items.
+    # Edges 3+4 — lexical near-dup + rephrase over free-text items (windowed).
     lexical = [it for it in items if edge_lexical_member(it)]
     blocked = _link_lexical(uf, lexical)
+
+    # Edge 5 — near-dup char-shingle over KEYED stems, FULL stem, exact
+    # (prefix-filtered candidate generation, never lossy banding/sampling).
+    stem_lexical = [it for it in items if edge_stem_lexical_member(it)]
+    _link_stem_lexical(uf, stem_lexical)
 
     comp: dict[str, list[str]] = defaultdict(list)
     for it in items:
@@ -424,6 +514,61 @@ def _link_lexical(uf: UnionFind, lexical: list[PromptItem]) -> bool:
                 ):
                     uf.union(a.item_id, b.item_id)
     return blocked
+
+
+def _link_stem_lexical(uf: UnionFind, stem_items: list[PromptItem]) -> None:
+    """Edge 5 — near-duplicate char-shingle pass over keyed stems (group-D r3).
+
+    Computed over the FULL normalized stem (``stem_char_shingles``), threshold
+    ``keyed_stem_near_dup_char_jaccard``. No token-Jaccard leg (template
+    similarity — see ``SUPERFAMILY_CRITERIA['keyed_stem_rephrase_exclusion']``).
+
+    EXACT at any pool size (no sampling, no lossy length banding). Candidate
+    generation uses a rarest-first prefix filter: for Jaccard(A,B) >= t,
+    ``|B \\ A| <= (1-t)*|B|`` (since the intersection is at least ``t`` of the
+    union, hence of ``|B|``), so A must contain at least one of B's
+    ``floor((1-t)*|B|) + 1`` globally-rarest shingles. Indexing every item's
+    rarest-prefix shingles and probing each item's FULL shingle set against
+    that index therefore surfaces every qualifying pair; each candidate is
+    then verified with the exact Jaccard (a size-ratio necessary condition
+    prunes first). Rarest-first ordering keeps posting lists short.
+    """
+    near = float(SUPERFAMILY_CRITERIA["keyed_stem_near_dup_char_jaccard"])
+    k = int(SUPERFAMILY_CRITERIA["char_shingle_k"])
+    shingles: dict[str, frozenset[str]] = {
+        it.item_id: stem_char_shingles(it.stem_text or "", k) for it in stem_items
+    }
+    df: dict[str, int] = defaultdict(int)
+    for sh in shingles.values():
+        for s in sh:
+            df[s] += 1
+    prefix_postings: dict[str, list[str]] = defaultdict(list)
+    for iid in sorted(shingles):  # deterministic posting order
+        sh = shingles[iid]
+        if not sh:
+            continue
+        plen = int((1.0 - near) * len(sh)) + 1
+        for s in sorted(sh, key=lambda s: (df[s], s))[:plen]:
+            prefix_postings[s].append(iid)
+    sizes = {iid: len(sh) for iid, sh in shingles.items()}
+    seen: set[tuple[str, str]] = set()
+    for iid in sorted(shingles):
+        sh = shingles[iid]
+        for s in sh:
+            for other in prefix_postings.get(s, ()):
+                if other == iid:
+                    continue
+                pair = (iid, other) if iid < other else (other, iid)
+                if pair in seen:
+                    continue
+                seen.add(pair)
+                sa, sb = sizes[pair[0]], sizes[pair[1]]
+                if not sa or not sb or min(sa, sb) < near * max(sa, sb):
+                    continue  # size ratio is a necessary condition for J >= near
+                if uf.find(pair[0]) == uf.find(pair[1]):
+                    continue
+                if jaccard(shingles[pair[0]], shingles[pair[1]]) >= near:
+                    uf.union(pair[0], pair[1])
 
 
 # ---------------------------------------------------------------------------
@@ -1616,10 +1761,14 @@ def _edge_domains(items: list[PromptItem]) -> list[str]:
 
     Derived from the SAME shared predicates ``build_superfamilies`` dispatches
     on (``edge_problem_id_key`` / ``edge_text_identity_key`` /
-    ``edge_lexical_member``) — structural coupling, not a parallel mirror
-    (#2658 group-G re-review). One domain per edge criterion: an edge can only
-    ever link two items that share that edge's domain, so two populations with
-    disjoint domain sets cannot share a superfamily component.
+    ``edge_lexical_member`` / ``edge_stem_lexical_member``) — structural
+    coupling, not a parallel mirror (#2658 group-G re-review). One domain per
+    edge criterion: an edge can only ever link two items that share that
+    edge's domain, so two populations with disjoint domain sets cannot share a
+    superfamily component. (A future edge added INLINE in
+    ``build_superfamilies`` without a shared predicate helper would drift this
+    disclosure — add the helper + a domain row here + a merge-iff-domains-span
+    fixture together.)
     """
     doms: set[str] = set()
     for it in items:
@@ -1629,6 +1778,8 @@ def _edge_domains(items: list[PromptItem]) -> list[str]:
             doms.add("exact-text")
         if edge_lexical_member(it):
             doms.add("lexical")
+        if edge_stem_lexical_member(it):
+            doms.add("stem-lexical")
     return sorted(doms)
 
 
@@ -1978,13 +2129,25 @@ def _canonical_sha(obj: object) -> str:
 
 
 def _git_sha() -> str:
+    """HEAD sha, with a ``-dirty`` suffix when the working tree carries
+    uncommitted tracked changes — a manifest frozen from a dirty tree must not
+    record the parent commit as its provenance (group-D r3 minor: round 2's
+    manifests recorded the then-parent for bytes a not-yet-committed fix
+    produced). Freeze AFTER committing the generator for a clean stamp."""
     try:
-        return subprocess.run(
+        sha = subprocess.run(
             ["git", "-C", str(REPO_ROOT), "rev-parse", "HEAD"],
             capture_output=True,
             check=True,
             text=True,
         ).stdout.strip()
+        status = subprocess.run(
+            ["git", "-C", str(REPO_ROOT), "status", "--porcelain", "-uno"],
+            capture_output=True,
+            check=True,
+            text=True,
+        ).stdout.strip()
+        return f"{sha}-dirty" if status else sha
     except Exception:
         return "unavailable-no-git-checkout"
 
