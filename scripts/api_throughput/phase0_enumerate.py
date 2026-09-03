@@ -29,8 +29,9 @@ load_dotenv(PROJECT_ROOT / ".env")
 # org label -> env var holding that org's standard key
 ORG_KEYS = {
     "high_prio": "ANTHROPIC_API_KEY",
-    "batch": "ANTHROPIC_BATCH_KEY",
-    "low_prio": "ANTHROPIC_API_KEY_LOW_PRIO",  # optional; skipped if absent
+    "batch": "ANTHROPIC_BATCH_KEY",  # separate org; optional, skipped if absent
+    # "low_prio" removed 2026-09-02 (#2617): the org died (HTTP 401) when the
+    # fellows credits ended; its key was deleted from every .env on the VM.
 }
 
 # Models to characterize (newest judge-relevant -> older throughput candidates).

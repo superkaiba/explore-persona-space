@@ -279,8 +279,9 @@ def judge_graded(
             identity, see ``batch_judge.rubric_fingerprint``).
         threshold_base: optional passthrough to
             ``judge_completions_batch(threshold_base=...)`` (the sync-vs-batch
-            crossover). ``None`` (default) keeps the client default — existing
-            callers unchanged. ``0`` FORCES the Batch API path — the #1090 fu6
+            crossover). ``None`` (default) keeps the client default, which is
+            200 since #2617: the Batch API is the default path and only waves
+            under 200 items route sync. ``0`` FORCES the Batch API path — the #1090 fu6
             live forced-batch smoke uses this so a ~5-request pre-launch probe
             exercises the run's EXACT request builder on the Batch path
             (gotchas.md "A --mock-judge ... smoke does NOT validate the

@@ -11,6 +11,35 @@ These are RECOMMENDATIONS, not hard API limits. The org keys are shared with
 other fellows, so the binding constraint is etiquette (§ 1b), not the org
 RPM ceiling.
 
+> **2026-09-02 update (single main key, Batch API default; incident #2617).**
+> The fellows API credits ended on 2026-08-28 and the `low_prio` org went dead
+> (HTTP 401). Its 401 error rows were cached as verdicts because 401 was not
+> in the transport taxonomy: 829 of 2,480 draws dropped and 796 judge-cache
+> rows were poisoned in task #2617's redo. The operating defaults changed:
+>
+> - **Single main key by default.** The org pool is `ANTHROPIC_API_KEY` alone.
+>   `ANTHROPIC_API_KEY_LOW_PRIO` was removed from the pool entirely. Multi-org
+>   fan-out is opt-in: set `EPS_API_MULTI_ORG=1` to re-add the `batch` org
+>   (`ANTHROPIC_BATCH_KEY`, a separate org that still answers).
+> - **Batch API by default.** `decide_dispatch_route`'s default `cost_pref` is
+>   `"cost"`: any wave of at least `crossover_n // 10` items (200 at the
+>   default crossover) routes to the Batch API on the main key. Only tiny
+>   waves (pilots, live probes) stay sync, and a deadline under the 24h batch
+>   SLA still forces sync. The judge router matches: `DEFAULT_THRESHOLD_BASE`
+>   and `judge_completions_batch`'s `threshold_base` default are both 200.
+> - **401/403 rule.** `AuthenticationError` (401) and `PermissionDeniedError`
+>   (403) are transport-class: no verdict was produced, so the item is freely
+>   re-judgeable. The dispatcher marks the failing org dead for the rest of
+>   the run (logged once, naming the org label, never the key) and re-queues
+>   its items to a live org; with no live org left the item exhausts to
+>   `RESULT_TRANSPORT` with an `auth_failed:` reason. An auth error dict is
+>   never cached (`JudgeCache.put` refuses it), and a pre-existing cached
+>   401/403 row reads as a cache MISS and self-heals on the next wave.
+>
+> The multi-key throughput tables below are kept as the historical
+> measurements behind the opt-in multi-org mode; read them with the single-key
+> default in mind.
+
 ---
 
 ## 1. The settled architecture
@@ -124,8 +153,8 @@ implements the table via `decide_dispatch_route()`:
 | Knob | Sync wins when | Batch wins when |
 |---|---|---|
 | `cost_pref="latency"` | always | never |
-| `cost_pref="cost"` | N is tiny (< crossover_n/10), OR deadline < 24h SLA | otherwise |
-| `cost_pref="balanced"` (default) | N < crossover_n, OR deadline < 24h SLA | N >= crossover_n |
+| `cost_pref="cost"` (default since #2617) | N is tiny (< crossover_n/10, i.e. < 200), OR deadline < 24h SLA | otherwise |
+| `cost_pref="balanced"` | N < crossover_n, OR deadline < 24h SLA | N >= crossover_n |
 | `force_path="sync"` / `force_path="batch"` | hard override (tests / ops) | hard override |
 | batch passes: `batch_passes = ceil(uncached_N / sub_batch_size)` | batch_passes > 2-3 (sequential wedge exposure compounds: each pass is an independent chance to sit behind a wedged batch — #810's ~30-pass judge phase sat 16h behind ONE batch stuck at 0/2001) | batch_passes <= 2-3 AND N >= crossover_n |
 
@@ -187,11 +216,11 @@ judge dispatcher. Two constants need re-tuning off the Phase 3 numbers:
   (fail loud). Semantics live in
   `llm/anthropic_client.py::batch_stuck_threshold_hours`.
 
-The legacy `DEFAULT_THRESHOLD_BASE = 2_000` (the sync-vs-batch threshold
-inside the SINGLE-org judge dispatcher) is reasonable for that single-org
-path. The MULTI-org dispatcher's higher `SYNC_BATCH_CROSSOVER_N = 20_000`
-(§ 3) reflects the 3× fan-out throughput that the legacy single-org path
-doesn't have.
+`DEFAULT_THRESHOLD_BASE` is **200** since #2617: the Batch API is the default
+judge path on the single main key, and only waves under 200 items route sync
+(the same floor as the multi-org dispatcher's `crossover_n // 10`). Pass a
+larger `threshold_base`, or `force_sync=True`, when a wave must clear on the
+sync path.
 
 ---
 

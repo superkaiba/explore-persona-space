@@ -176,7 +176,19 @@ class JudgeCache:
         return None
 
     def put(self, question: str, completion: str, result: dict, *, rubric_key: str) -> None:
-        """Store a judge result in the cache under ``rubric_key``."""
+        """Store a judge result in the cache under ``rubric_key``.
+
+        Refuses (warn + no write) an auth-class (401/403) error dict (#2617):
+        a dead org key is never a verdict, and a cached one poisons every
+        resume until hand-purged. Belt and braces under the callers' own
+        transport put-gates.
+        """
+        if is_auth_error_dict(result):
+            logger.warning(
+                "JudgeCache.put refused an auth-class (401/403) error dict: "
+                "a dead org key is never a verdict; not persisted (#2617)."
+            )
+            return
         key = self._hash_key(question, completion, rubric_key=rubric_key)
         path = self.cache_dir / f"{key}.json"
         with open(path, "w") as f:
@@ -294,6 +306,41 @@ _TRANSPORT_LEGACY_REASON_PREFIXES = (
 )
 
 
+# Reason/message markers of an auth-class (401/403) failure (#2617). Matched
+# case-insensitively against the pipeline-minted reason string of a stored
+# error dict, so pre-fix poisoned cache rows (the dead low_prio org's 401s,
+# 796 rows in #2617's redo) classify as transport and self-heal as cache
+# misses. The status-code pattern is anchored to an error/status/HTTP prefix
+# so a bare "401" inside unrelated text never matches.
+_AUTH_ERROR_REASON_MARKERS = (
+    "authentication_error",
+    "permission_error",
+    "invalid x-api-key",
+    "auth_failed:",
+)
+_AUTH_STATUS_RE = re.compile(r"(?:error code|status(?: code)?|http)[ :]*40[13]\b")
+
+
+def _reason_indicates_auth(reason: str) -> bool:
+    low = reason.lower()
+    if any(marker in low for marker in _AUTH_ERROR_REASON_MARKERS):
+        return True
+    return bool(_AUTH_STATUS_RE.search(low))
+
+
+def is_auth_error_dict(parsed: object) -> bool:
+    """True iff a stored judge error dict records an auth-class (401/403)
+    failure (#2617): a dead org key, so NO verdict about the content was ever
+    produced. Auth rows are transport-class (freely re-judgeable), must never
+    be cached as verdicts (:meth:`JudgeCache.put` refuses them), and a
+    pre-existing cached one reads as a MISS via
+    :func:`is_transport_error_dict`."""
+    if not isinstance(parsed, dict) or not parsed.get("error"):
+        return False
+    reason = str(parsed.get("reasoning", parsed.get("reason", "")))
+    return _reason_indicates_auth(reason)
+
+
 def is_transport_error_dict(parsed: object) -> bool:
     """Rule-24 transport-vs-content split for judge error dicts (#1313).
 
@@ -301,8 +348,12 @@ def is_transport_error_dict(parsed: object) -> bool:
     produced -> freely re-judgeable). Primary signal: the structural
     ``transport: True`` field minted at every #1313 error-dict site. Fallback:
     a conservative reason-string match for LEGACY persisted dicts (pre-#1313
-    save_raw files / cache entries, e.g. #1090's stored 529 rows). A
-    quarantined 400 (rule 24(iii)) and a parse_error (rule 23) are NOT transport.
+    save_raw files / cache entries, e.g. #1090's stored 529 rows), including
+    auth-class 401/403 reasons (#2617: ``authentication_error`` /
+    ``permission_error`` / ``invalid x-api-key`` / an error-code 401/403), so
+    already-poisoned cache rows read as a MISS and self-heal on the next
+    wave. A quarantined 400 (rule 24(iii)) and a parse_error (rule 23) are
+    NOT transport.
     """
     if not isinstance(parsed, dict) or not parsed.get("error"):
         return False
@@ -311,6 +362,8 @@ def is_transport_error_dict(parsed: object) -> bool:
     reason = str(parsed.get("reasoning", parsed.get("reason", "")))
     if "invalid_request_error" in reason:
         return False
+    if _reason_indicates_auth(reason):
+        return True  # 401/403: a dead org key, never a content verdict (#2617)
     if reason.startswith(_TRANSPORT_LEGACY_REASON_PREFIXES):
         return True
     if reason.startswith("batch_error: errored ("):
@@ -799,7 +852,7 @@ def judge_completions_batch(
     poll_interval: float = 30.0,
     cache_dir: Path | None = None,
     save_raw: Path | None = None,
-    threshold_base: int = 2_000,
+    threshold_base: int = 200,  # == judge_dispatch.DEFAULT_THRESHOLD_BASE (#2617)
     force_sync: bool = False,
     dry_run: bool = False,
     checkpoint_dir: Path | None = None,
@@ -830,6 +883,8 @@ def judge_completions_batch(
             (includes a "routing" key with the dispatch decision).
         threshold_base: Sync/batch routing threshold at Tier-4 OTPM (scaled
             by the probed OTPM limit; see judge_dispatch.decide_route).
+            Default 200 since #2617: the Batch API is the default path and
+            only waves under 200 items route sync.
         force_sync: Bypass routing and judge synchronously regardless of N.
         dry_run: Print the cache split + routing decision and return {} with
             zero API calls.
