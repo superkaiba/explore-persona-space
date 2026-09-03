@@ -27,3 +27,10 @@
   answer shared by >=20 questions n= 15361 R^2 0.686->0.804 acc@1 94.3->99.2% (miss->hit 5.1%, hit->miss 0.2%)
   flip set (context miss -> end-of-thought hit): 1285 questions; by corpus {'math': 577, 'gsm8k_train': 64, 'contexthub': 424, 'mmlu': 165, 'arc_challenge': 11, 'csqa': 8, 'piqa': 36}; median answer frequency 56.0 vs 22.0 overall
   decodability math           n= 4231 classes= 176 majority=4.8% | true 2.5% | context pred 3.0% | eot pred 2.9%
+  decodability gsm8k_train    n= 6161 classes= 214 majority=3.1% | true 1.0% | context pred 1.5% | eot pred 1.3%
+  decodability contexthub     n= 3346 classes=  65 majority=16.0% | true 21.2% | context pred 19.8% | eot pred 21.8%
+  decodability mmlu           n= 3424 classes=  53 majority=18.8% | true 10.5% | context pred 8.8% | eot pred 10.5%
+  decodability arc_challenge  n=  403 classes=  15 majority=16.1% | true 13.9% | context pred 13.4% | eot pred 16.1%
+  decodability csqa           n=  514 classes=  10 majority=19.5% | true 15.8% | context pred 13.8% | eot pred 17.5%
+  decodability piqa           n=  509 classes=  11 majority=27.5% | true 29.7% | context pred 27.5% | eot pred 31.4%
+DONE
