@@ -115,6 +115,22 @@ ICLR_LABEL = {m: lbl for m, lbl, _c, _f in ICLR_METHODS}
 ICLR_CONCEPT = {m: c for m, _l, c, _f in ICLR_METHODS}
 ICLR_FILLED = {m: f for m, _l, _c, f in ICLR_METHODS}
 
+# Paper roster since 2026-09-03 (user order: drop the persona-vector projection
+# from the behavior-prediction experiment; keep regression on context /
+# predicted answer / real answer). All bars filled: fill no longer encodes a
+# readout family because only one readout remains. Labels say "predicted
+# answer" (the paper's vocabulary), not "mapped answer".
+ICLR_REGRESSION_METHODS = [
+    ("regression_ctx", "Regression on context", "persona_vector", True),
+    ("reg_map_linear", "Regression on predicted answer", "instruct", True),
+    ("reg_oracle", "Regression on real answer", "oracle_answer", True),
+]
+ICLR_ROSTERS = {
+    # roster name -> (methods, output stem, legend columns, subplot top)
+    "regression": (ICLR_REGRESSION_METHODS, "c5_regression_regimes", 2, 0.64),
+    "all": (ICLR_METHODS, "c5_pv_methods_regimes", 2, 0.55),
+}
+
 GROUPS = ["synthetic", "generic chat", "in-distribution", "completely OOD"]
 GROUP_SETTINGS = {
     beh: {
@@ -532,16 +548,25 @@ PAPER_GROUP_LABEL = {
 }
 
 
-def render_iclr(points: dict, verdicts: dict) -> int:
-    """Three unlettered behaviour facets at the paper (c2a-v2) standard ->
-    ``figures/paper/c5_pv_methods_regimes``.
+def render_iclr(points: dict, verdicts: dict, roster: str = "regression") -> int:
+    """Three unlettered behaviour facets at the paper (c2a-v2) standard.
 
-    ICLR_METHODS roster (6 arms): HUE = input representation (context vector =
-    amber, mapped answer = teal, real answer = ink), solid fill =
-    persona-vector projection, open (edge-only) = regression readout;
-    spread-gate-failed (uninterpretable) cells stay muted (lighter alpha).
+    ``roster="regression"`` (the paper since 2026-09-03) -> ``figures/paper/
+    c5_regression_regimes``: three ridge-regression arms (context vector /
+    predicted answer / real answer), all filled. ``roster="all"`` (legacy) ->
+    ``figures/paper/c5_pv_methods_regimes``: the six-arm roster, solid fill =
+    persona-vector projection, open (edge-only) = regression readout. In both,
+    HUE = input representation (context vector = amber, predicted answer =
+    teal, real answer = ink) and spread-gate-failed (uninterpretable) cells
+    stay muted (lighter alpha).
     """
     import hashlib
+
+    methods, stem_name, legend_ncol, subplot_top = ICLR_ROSTERS[roster]
+    slots = [m for m, _l, _c, _f in methods]
+    label = {m: lbl for m, lbl, _c, _f in methods}
+    concept = {m: c for m, _l, c, _f in methods}
+    filled_of = {m: f for m, _l, _c, f in methods}
 
     from explore_persona_space.analysis.c2a_plot_style import (
         INK,
@@ -572,15 +597,15 @@ def render_iclr(points: dict, verdicts: dict) -> int:
         "oracle_answer": INK,  # real answer (the ceiling)
     }
 
-    panels = [behavior_panel(points, verdicts, beh, slots=ICLR_SLOTS) for beh in BEHAVIORS]
+    panels = [behavior_panel(points, verdicts, beh, slots=slots) for beh in BEHAVIORS]
     vals = [v for p in panels for g in p["groups"] for b in g["bars"] for v in (b["rho"], *b["ci"])]
     ylim = (min(-0.05, min(vals) - 0.04), max(vals) + 0.04)
-    bar_w = GROUP_WIDTH / len(ICLR_SLOTS)
+    bar_w = GROUP_WIDTH / len(slots)
 
     set_c2a_style()
     fig, frac = c2a_figure("full", aspect=0.42)
     axes = fig.subplots(1, 3, sharey=True)
-    fig.subplots_adjust(left=0.08, right=0.99, bottom=0.2, top=0.55, wspace=0.08)
+    fig.subplots_adjust(left=0.08, right=0.99, bottom=0.2, top=subplot_top, wspace=0.08)
     n_bars = 0
     bar_records: list[dict] = []
     for ax, panel in zip(axes, panels, strict=True):
@@ -590,8 +615,8 @@ def render_iclr(points: dict, verdicts: dict) -> int:
             for mi, bar in enumerate(grp["bars"]):
                 offset = -GROUP_WIDTH / 2 + (mi + 0.5) * bar_w
                 failed = bar["spread_failed"]
-                color = hue[ICLR_CONCEPT[bar["method"]]]
-                filled = ICLR_FILLED[bar["method"]]
+                color = hue[concept[bar["method"]]]
+                filled = filled_of[bar["method"]]
                 ax.bar(
                     [x + offset],
                     [bar["rho"]],
@@ -621,7 +646,7 @@ def render_iclr(points: dict, verdicts: dict) -> int:
                         "behavior": panel["title"],
                         "group": bar["group"],
                         "method": bar["method"],
-                        "label": ICLR_LABEL[bar["method"]],
+                        "label": label[bar["method"]],
                         "rho": bar["rho"],
                         "ci": list(bar["ci"]),
                         "spread_failed": failed,
@@ -641,12 +666,12 @@ def render_iclr(points: dict, verdicts: dict) -> int:
     axes[0].set_ylabel(better_label("Spearman $\\rho$"))
     handles = [
         Patch(
-            facecolor=hue[ICLR_CONCEPT[m]] if ICLR_FILLED[m] else "none",
-            edgecolor=None if ICLR_FILLED[m] else hue[ICLR_CONCEPT[m]],
-            linewidth=0.0 if ICLR_FILLED[m] else 1.4,
-            label=ICLR_LABEL[m],
+            facecolor=hue[concept[m]] if filled_of[m] else "none",
+            edgecolor=None if filled_of[m] else hue[concept[m]],
+            linewidth=0.0 if filled_of[m] else 1.4,
+            label=label[m],
         )
-        for m in ICLR_SLOTS
+        for m in slots
     ]
     handles.append(Patch(facecolor=MUTED, alpha=0.35, label="Uninterpretable (muted)"))
     legend_kicker(fig, 0.08, 0.965, "Predictor")
@@ -654,7 +679,7 @@ def render_iclr(points: dict, verdicts: dict) -> int:
         handles=handles,
         loc="upper left",
         bbox_to_anchor=(0.08, 0.95),
-        ncol=2,
+        ncol=legend_ncol,
         frameon=False,
         columnspacing=0.8,
         labelspacing=0.3,
@@ -666,15 +691,24 @@ def render_iclr(points: dict, verdicts: dict) -> int:
 
     out_dir = _Path(__file__).resolve().parents[1] / "figures/paper"
     out_dir.mkdir(parents=True, exist_ok=True)
-    stem = out_dir / "c5_pv_methods_regimes"
+    stem = out_dir / stem_name
+    if roster == "regression":
+        title = "Figure 13: regression readouts across evaluation regimes"
+        subject = (
+            "Spearman rho of ridge regression on context / predicted answer / real answer, "
+            "per behavior and evaluation regime (#1739 fair protocol)"
+        )
+    else:
+        title = "Figure 13: predictor families across evaluation regimes"
+        subject = (
+            "Spearman rho of persona-vector vs regression readouts on context / mapped answer / "
+            "real answer, per behavior and evaluation regime (#1739 fair protocol)"
+        )
     outputs = save_c2a_figure(
         fig,
         stem,
-        title="Figure 13: predictor families across evaluation regimes",
-        subject=(
-            "Spearman rho of persona-vector vs regression readouts on context / mapped answer / "
-            "real answer, per behavior and evaluation regime (#1739 fair protocol)"
-        ),
+        title=title,
+        subject=subject,
         creator="scripts/issue1739_result2_fourpanel_fig.py",
         include_width=frac,
     )
@@ -685,13 +719,19 @@ def render_iclr(points: dict, verdicts: dict) -> int:
     sidecar.write_text(
         json.dumps(
             {
-                "figure": "c5_pv_methods_regimes",
-                "status": "manuscript Figure 13 (c2a-v2 restyle; values unchanged)",
+                "figure": stem_name,
+                "status": (
+                    "manuscript Figure 13 (regression-only roster, 2026-09-03; values unchanged)"
+                    if roster == "regression"
+                    else "legacy six-arm roster (c2a-v2 restyle; values unchanged)"
+                ),
+                "roster": roster,
                 "style_version": STYLE_VERSION,
                 "plotting_script": "scripts/issue1739_result2_fourpanel_fig.py",
                 "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
                 "reproduction_command": (
-                    "uv run python scripts/issue1739_result2_fourpanel_fig.py --style iclr"
+                    "uv run python scripts/issue1739_result2_fourpanel_fig.py --style iclr "
+                    f"--roster {roster}"
                 ),
                 "git": as_metadata_dict(git_provenance()),
                 "sources": {
@@ -729,13 +769,24 @@ def main() -> None:
             "figures + sidecar unchanged"
         ),
     )
+    ap.add_argument(
+        "--roster",
+        choices=tuple(ICLR_ROSTERS),
+        default="regression",
+        help=(
+            "iclr only. regression (default, the paper since 2026-09-03): the three "
+            "ridge-regression arms -> c5_regression_regimes; all: the legacy six-arm "
+            "roster with the persona-vector projections -> c5_pv_methods_regimes"
+        ),
+    )
     args = ap.parse_args()
 
     verdicts = load_verdicts()
     if args.style == "iclr":
-        n = render_iclr(load_points_iclr(), verdicts)
-        if n != 3 * len(GROUPS) * len(ICLR_SLOTS):
-            raise SystemExit(f"iclr figure plotted {n} bars, expected {3 * 4 * len(ICLR_SLOTS)}")
+        n_slots = len(ICLR_ROSTERS[args.roster][0])
+        n = render_iclr(load_points_iclr(), verdicts, roster=args.roster)
+        if n != 3 * len(GROUPS) * n_slots:
+            raise SystemExit(f"iclr figure plotted {n} bars, expected {3 * 4 * n_slots}")
         return
     points = load_points()
 

@@ -1,0 +1,548 @@
+{
+ "figure": "c5_regression_regimes",
+ "status": "manuscript Figure 13 (regression-only roster, 2026-09-03; values unchanged)",
+ "roster": "regression",
+ "style_version": "c2a-v2",
+ "plotting_script": "scripts/issue1739_result2_fourpanel_fig.py",
+ "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+ "reproduction_command": "uv run python scripts/issue1739_result2_fourpanel_fig.py --style iclr --roster regression",
+ "git": {
+  "git_commit": "e60074e1306b2ea499d72131523ab967b37d777a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   ".claude/agent-memory/experiment-implementer-lean/MEMORY.md",
+   ".claude/agent-memory/experimenter/feedback_pod_sparse_clone_committed_inputs.md",
+   "docs/paper_context_answer_map/CLAUDE-overleaf-clone.md",
+   "docs/paper_context_answer_map/figure_standard.md",
+   "docs/paper_context_answer_map/plan.md",
+   "eval_results/issue_2546/necessity_r2/summary.json",
+   "figures/issue_1902/section43/c1_posttraining_dynamics.pdf",
+   "figures/issue_1902/section43/c1_posttraining_dynamics.png",
+   "figures/issue_1902/section43/c1_posttraining_dynamics_data.json",
+   "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+   "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+   "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+   "figures/paper/c1_cot_ladder.pdf",
+   "figures/paper/c1_cot_ladder.png",
+   "figures/paper/c1_cot_ladder_data.json",
+   "figures/paper/c1_cot_ladder_grayscale.png",
+   "figures/paper/c1_cot_maps.pdf",
+   "figures/paper/c1_cot_maps.png",
+   "figures/paper/c1_cot_maps_data.json",
+   "figures/paper/c1_cot_maps_grayscale.png",
+   "figures/paper/c1_cot_necessity_r2.pdf",
+   "figures/paper/c1_cot_necessity_r2.png",
+   "figures/paper/c1_cot_necessity_r2_data.json",
+   "figures/paper/c1_cot_necessity_r2_grayscale.png",
+   "scripts/codex_daemon_reaper.py",
+   "scripts/issue1739_result2_fourpanel_fig.py",
+   "scripts/section45_cot_figure.py",
+   "scripts/section45_cot_ladder_figure.py",
+   "scripts/section45_cot_necessity_r2_figure.py",
+   "tests/test_codex_daemon_reaper.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue1739_result2_fourpanel_fig.py"
+ },
+ "sources": {
+  "points": {
+   "path": "eval_results/issue_1739/result2_fair/result2_fair_points.json",
+   "sha256": "de01583c4ccdf137d618462485d8ccc6f39f5c2dc43c7425c67b96ab73813a50"
+  },
+  "reg_oracle_points": {
+   "path": "eval_results/issue_1739/result2_fair/reg_oracle_points.json",
+   "sha256": "8c9d85e4bb7b8bb92eecbcda7fe6d1422b5a6833123ffd16cf0d7a5a062e5f7f"
+  },
+  "spread_stats": {
+   "path": "eval_results/issue_1739/result1_spread/spread_stats.json",
+   "sha256": "497ee1e7999c931c006c23b411d97fdf08d4f59f16fe777c2afc54217acd2ef3"
+  }
+ },
+ "record": {
+  "style_version": "c2a-v2",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "resolved_font": "Inter",
+  "authoring_size_inches": [
+   13.095,
+   5.5
+  ],
+  "exported_size_inches": [
+   13.095,
+   5.122
+  ],
+  "scale": 0.42,
+  "include_width_frac": 1.0,
+  "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c5_regression_regimes.pdf}",
+  "realized_font_pt": {
+   "body": 7.56,
+   "tick": 7.14,
+   "label": 8.4,
+   "title": 9.24
+  },
+  "png_dpi": 240,
+  "background": "#FFFFFF",
+  "text": [
+   "EVIL",
+   "synthetic",
+   "generic chat",
+   "in-distrib.",
+   "OOD",
+   "Spearman $\\rho$ \u2191",
+   "\u22120.2",
+   "0.0",
+   "0.2",
+   "0.4",
+   "0.6",
+   "0.8",
+   "1.0",
+   "SYCOPHANCY",
+   "HALLUCINATION",
+   "PREDICTOR",
+   "Regression on context",
+   "Regression on predicted answer",
+   "Regression on real answer",
+   "Uninterpretable (muted)"
+  ]
+ },
+ "data": {
+  "bars": [
+   {
+    "behavior": "evil",
+    "group": "synthetic",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.7069504786777224,
+    "ci": [
+     0.6305935157630411,
+     0.7731763009229744
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "evil",
+    "group": "synthetic",
+    "method": "reg_map_linear",
+    "label": "Regression on predicted answer",
+    "rho": 0.810571074579304,
+    "ci": [
+     0.7643136124749833,
+     0.8480063696123155
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "evil",
+    "group": "synthetic",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.8456174068169083,
+    "ci": [
+     0.7919709194218829,
+     0.886762451835078
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "evil",
+    "group": "generic chat",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.1349220757126155,
+    "ci": [
+     0.016491652794928698,
+     0.23074753382228205
+    ],
+    "spread_failed": true
+   },
+   {
+    "behavior": "evil",
+    "group": "generic chat",
+    "method": "reg_map_linear",
+    "label": "Regression on predicted answer",
+    "rho": 0.16324611609285736,
+    "ci": [
+     0.07146683860459094,
+     0.24310752560934748
+    ],
+    "spread_failed": true
+   },
+   {
+    "behavior": "evil",
+    "group": "generic chat",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.21387686274055107,
+    "ci": [
+     0.12070756790922788,
+     0.2951296362249793
+    ],
+    "spread_failed": true
+   },
+   {
+    "behavior": "evil",
+    "group": "in-distribution",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.5916133705769209,
+    "ci": [
+     0.5756296211687013,
+     0.6075523479016194
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "evil",
+    "group": "in-distribution",
+    "method": "reg_map_linear",
+    "label": "Regression on predicted answer",
+    "rho": 0.7491823147055028,
+    "ci": [
+     0.738485672747706,
+     0.7608555553537014
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "evil",
+    "group": "in-distribution",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.8056781007378913,
+    "ci": [
+     0.7953111588395115,
+     0.8149593862544009
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "evil",
+    "group": "completely OOD",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.21076898875190866,
+    "ci": [
+     0.14818891690013647,
+     0.26381111899394805
+    ],
+    "spread_failed": true
+   },
+   {
+    "behavior": "evil",
+    "group": "completely OOD",
+    "method": "reg_map_linear",
+    "label": "Regression on predicted answer",
+    "rho": 0.22766990730237624,
+    "ci": [
+     0.16421874264922512,
+     0.28233207518112036
+    ],
+    "spread_failed": true
+   },
+   {
+    "behavior": "evil",
+    "group": "completely OOD",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.1846467209757508,
+    "ci": [
+     0.11304086300241632,
+     0.24506981032362996
+    ],
+    "spread_failed": true
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "synthetic",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.7611846342218265,
+    "ci": [
+     0.6995517806339617,
+     0.8058570985937561
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "synthetic",
+    "method": "reg_map_linear",
+    "label": "Regression on predicted answer",
+    "rho": 0.7759252381712568,
+    "ci": [
+     0.7184287439879539,
+     0.8141744740735981
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "synthetic",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.7839551917464801,
+    "ci": [
+     0.7066947764568875,
+     0.8393619454296518
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "generic chat",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.5040245535970942,
+    "ci": [
+     0.4195380075775008,
+     0.5791341046695494
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "generic chat",
+    "method": "reg_map_linear",
+    "label": "Regression on predicted answer",
+    "rho": 0.5174104385082218,
+    "ci": [
+     0.4384782818894309,
+     0.5949829692897164
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "generic chat",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.5460979190433695,
+    "ci": [
+     0.46678185733306815,
+     0.6140799690150983
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "in-distribution",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.720546707075219,
+    "ci": [
+     0.7118970793292733,
+     0.7304965674722398
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "in-distribution",
+    "method": "reg_map_linear",
+    "label": "Regression on predicted answer",
+    "rho": 0.7392767797199288,
+    "ci": [
+     0.7306179941298431,
+     0.7473300648779624
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "in-distribution",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.7697732535245382,
+    "ci": [
+     0.761902380594496,
+     0.7777726067028662
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "completely OOD",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.7087380230631141,
+    "ci": [
+     0.6695027344630052,
+     0.742838471038209
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "completely OOD",
+    "method": "reg_map_linear",
+    "label": "Regression on predicted answer",
+    "rho": 0.7253642156327909,
+    "ci": [
+     0.6928579093772478,
+     0.7563628342332341
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "completely OOD",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.7286289551180206,
+    "ci": [
+     0.6954821967279056,
+     0.7634422351494403
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "synthetic",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.5774290855736351,
+    "ci": [
+     0.46338506247525285,
+     0.6691368952990743
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "synthetic",
+    "method": "reg_map_linear",
+    "label": "Regression on predicted answer",
+    "rho": 0.627353761729434,
+    "ci": [
+     0.5221632392251568,
+     0.7080079618167298
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "synthetic",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.785539907559668,
+    "ci": [
+     0.687923303694386,
+     0.843483096662918
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "generic chat",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.5651108690679424,
+    "ci": [
+     0.489877827398082,
+     0.635786698554082
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "generic chat",
+    "method": "reg_map_linear",
+    "label": "Regression on predicted answer",
+    "rho": 0.6254454127087546,
+    "ci": [
+     0.5565859768668034,
+     0.6843574887898876
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "generic chat",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.6799617428533451,
+    "ci": [
+     0.6079994628527355,
+     0.7413527977689146
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "in-distribution",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.5572427540854127,
+    "ci": [
+     0.5457581537941896,
+     0.5690015305588049
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "in-distribution",
+    "method": "reg_map_linear",
+    "label": "Regression on predicted answer",
+    "rho": 0.6027415759982249,
+    "ci": [
+     0.5915080570733717,
+     0.6138158381392698
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "in-distribution",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.6502932921607457,
+    "ci": [
+     0.6399334063777409,
+     0.6594269772331558
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "completely OOD",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.3864314220958271,
+    "ci": [
+     0.3594219097363448,
+     0.4160303407232757
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "completely OOD",
+    "method": "reg_map_linear",
+    "label": "Regression on predicted answer",
+    "rho": 0.4122153610173508,
+    "ci": [
+     0.3859133949668097,
+     0.44387193572320205
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "completely OOD",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.5235387577656285,
+    "ci": [
+     0.49888216614783965,
+     0.5501545073100478
+    ],
+    "spread_failed": false
+   }
+  ]
+ },
+ "output_sha256": {
+  "pdf": "803c1660b4fefee3cdb82862abbcd3153cbc80a819008c880b510808b9340203",
+  "png": "cd1bc2714e17274baa77d974da4ec60481faca03644b91d9920592f0f1737a81",
+  "grayscale": "1329dac17bc87ea7a3fd1ac8fbbf5bae62f7ebe578c0e61b7e313d7f724a22f1"
+ }
+}

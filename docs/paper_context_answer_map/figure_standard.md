@@ -39,7 +39,7 @@ width is 5.5 in.
 | 10 | cot | `c1_cot_maps` | c2a-v1 | Inter | 6.5 / 6.2 | claim | 201 | `\textbf{(A)}` |
 | 11 | cot-strata | `c1_cot_strata` | c2a-v1 | Inter | 8.2 / 7.8 | claim | 59 | single |
 | 12 | cot-ladder | `c1_cot_ladder` | c2a-v1 | Inter | 5.7 / 5.4 | claim | 127 | single |
-| 13 | behavior-prediction | `c5_pv_methods_regimes` | paper_plots neurips | Times + STIX | 9.5 / 8.5 | descriptive | 168 | none (3 panels) |
+| 13 | behavior-prediction | `c5_regression_regimes` (regression-only roster since 2026-09-03; the six-arm `c5_pv_methods_regimes` is legacy, `--roster all`) | c2a-v2 | Inter | 9.5 / 8.5 | descriptive | 168 | none (3 panels) |
 | 14 | refusal-by-class (app.) | `c3_refusal_swaps_by_class` | c2a-v1 | Inter | 5.6 / 5.3 | n/a | 100 | `A:` |
 | 15 | cot-necessity (app.) | `c1_cot_necessity` | c2a-v1 | Inter | 6.0 / 5.7 | n/a | 137 | `\textbf{(A, B)}` |
 | 16 | cot-necessity-r2 (app.) | `c1_cot_necessity_r2` | c2a-v1 | Inter | 8.1 / 7.6 | n/a | 92 | single |

@@ -303,9 +303,11 @@ Evidence / figures:
 Flagship application — **predicting behavior pre-generation**:
 - Behaviors: sycophancy, hallucination, evil
 - Datasets: persona-vectors synthetic eval, realistic trait-eliciting datasets, generic data
-- Methods: persona vector on context / persona vector on predicted answer /
-  probe on context / probe on predicted answer / **LLM judge on the context**
-  (comparator added 2026-08-19; #2356 in-flight already runs refuse/comply
+- Methods: regression on context / regression on predicted answer / regression
+  on real answer (ceiling). The persona-vector projection arms were dropped from
+  the paper on 2026-09-03 (Thomas: "remove the persona vectors projection from
+  the behavior prediction experiment"). **LLM judge on the context** comparator
+  still open (added 2026-08-19; #2356 in-flight already runs refuse/comply
   prediction vs a judge)
 - Status — grid exists (#1739, HIGH) and is ADVERSE for map-then-project (see
   claims.md C5): direct context probes win. FRAMING DECISION OPEN: lead with what
