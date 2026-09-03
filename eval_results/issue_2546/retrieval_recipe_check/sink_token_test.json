@@ -1,0 +1,102 @@
+{
+  "Qwen/Qwen2.5-7B-Instruct": {
+    "template": {
+      "last_token": "\u010a",
+      "prompt_tail": "'ot 15$?<|im_end|>\\n<|im_start|>assistant\\n'",
+      "dims_mean": [
+        -37.6,
+        -44.6,
+        -0.2
+      ],
+      "norm_median": 85.7580680847168,
+      "first_tok_norm_median": 228.2022705078125,
+      "first_tok_dims_mean": [
+        72.0,
+        27.9,
+        4.2
+      ]
+    },
+    "template+<think>\\n": {
+      "last_token": ">\u010a",
+      "prompt_tail": "'|im_end|>\\n<|im_start|>assistant\\n<think>\\n'",
+      "dims_mean": [
+        -15.0,
+        -17.4,
+        -1.0
+      ],
+      "norm_median": 73.91127395629883,
+      "first_tok_norm_median": 228.2022705078125,
+      "first_tok_dims_mean": [
+        72.0,
+        27.9,
+        4.2
+      ]
+    },
+    "template+<think>": {
+      "last_token": ">",
+      "prompt_tail": "'<|im_end|>\\n<|im_start|>assistant\\n<think>'",
+      "dims_mean": [
+        -9.6,
+        -10.8,
+        -0.8
+      ],
+      "norm_median": 74.1424560546875,
+      "first_tok_norm_median": 228.2022705078125,
+      "first_tok_dims_mean": [
+        72.0,
+        27.9,
+        4.2
+      ]
+    }
+  },
+  "open-thoughts/OpenThinker3-7B": {
+    "template": {
+      "last_token": "\u010a",
+      "prompt_tail": "'ot 15$?<|im_end|>\\n<|im_start|>assistant\\n'",
+      "dims_mean": [
+        -17936.0,
+        -11976.0,
+        5620.0
+      ],
+      "norm_median": 23320.3310546875,
+      "first_tok_norm_median": 693.0318603515625,
+      "first_tok_dims_mean": [
+        129.0,
+        32.0,
+        -22.5
+      ]
+    },
+    "template+<think>\\n": {
+      "last_token": ">\u010a",
+      "prompt_tail": "'|im_end|>\\n<|im_start|>assistant\\n<think>\\n'",
+      "dims_mean": [
+        211.0,
+        77.0,
+        -14.1
+      ],
+      "norm_median": 1868.5220947265625,
+      "first_tok_norm_median": 693.0318603515625,
+      "first_tok_dims_mean": [
+        129.0,
+        32.0,
+        -22.5
+      ]
+    },
+    "template+<think>": {
+      "last_token": ">",
+      "prompt_tail": "'<|im_end|>\\n<|im_start|>assistant\\n<think>'",
+      "dims_mean": [
+        517.2,
+        493.0,
+        -198.1
+      ],
+      "norm_median": 2005.9193725585938,
+      "first_tok_norm_median": 693.0318603515625,
+      "first_tok_dims_mean": [
+        129.0,
+        32.0,
+        -22.5
+      ]
+    }
+  }
+}

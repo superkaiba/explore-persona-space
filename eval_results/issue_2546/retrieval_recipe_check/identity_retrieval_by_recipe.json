@@ -1,0 +1,281 @@
+{
+  "recipe": {
+    "whitening": "train-fold answer covariance, shrinkage 0.1, Cholesky",
+    "csls_k": 10,
+    "hit": "nearest pool vector is the question's own answer"
+  },
+  "results": {
+    "arm1/math/p7_A": {
+      "fold_pool": {
+        "whiten_csls": 0.8995112133410006,
+        "whiten_cos": 0.8263369752731455,
+        "cosine": 0.40181138585393905,
+        "euclidean": 0.39850488786659
+      },
+      "whole_pool": {
+        "whiten_csls": 0.24769982748706154,
+        "whiten_cos": 0.13829787234042554,
+        "cosine": 0.21319723979298447,
+        "euclidean": 0.20644048303622772
+      },
+      "n": 6956,
+      "chance_fold_pool": 0.0007188039696902088,
+      "chance_whole_pool": 0.0001437607820586544
+    },
+    "arm1/math/p7_D": {
+      "fold_pool": {
+        "whiten_csls": 0.9872052903967797,
+        "whiten_cos": 0.9765669925244393,
+        "cosine": 0.9249568717653824,
+        "euclidean": 0.9196377228292122
+      },
+      "whole_pool": {
+        "whiten_csls": 0.6322599194939621,
+        "whiten_cos": 0.5590856814261069,
+        "cosine": 0.7972972972972973,
+        "euclidean": 0.78953421506613
+      },
+      "n": 6956,
+      "chance_fold_pool": 0.0007188039696902088,
+      "chance_whole_pool": 0.0001437607820586544
+    },
+    "arm1/gsm8k_train/p7_A": {
+      "fold_pool": {
+        "whiten_csls": 0.9905568671017915,
+        "whiten_cos": 0.976669906957367,
+        "cosine": 0.6192195528398834,
+        "euclidean": 0.6096375503402305
+      },
+      "whole_pool": {
+        "whiten_csls": 0.7779475072906541,
+        "whiten_cos": 0.6778225246493542,
+        "cosine": 0.4556311623385641,
+        "euclidean": 0.44354950701291485
+      },
+      "n": 7201,
+      "chance_fold_pool": 0.0006943480607602746,
+      "chance_whole_pool": 0.00013886960144424384
+    },
+    "arm1/gsm8k_train/p7_D": {
+      "fold_pool": {
+        "whiten_csls": 0.9998611303985557,
+        "whiten_cos": 0.9991667823913345,
+        "cosine": 0.9611165115956117,
+        "euclidean": 0.9566726843493959
+      },
+      "whole_pool": {
+        "whiten_csls": 0.961810859602833,
+        "whiten_cos": 0.9386196361616442,
+        "cosine": 0.9051520622135815,
+        "euclidean": 0.9014025829745869
+      },
+      "n": 7201,
+      "chance_fold_pool": 0.0006943480607602746,
+      "chance_whole_pool": 0.00013886960144424384
+    },
+    "arm1/contexthub/p7_A": {
+      "fold_pool": {
+        "whiten_csls": 0.9266991053209858,
+        "whiten_cos": 0.871605713388793,
+        "cosine": 0.4269345471668498,
+        "euclidean": 0.41735991210171086
+      },
+      "whole_pool": {
+        "whiten_csls": 0.32412494113953855,
+        "whiten_cos": 0.2059331345157746,
+        "cosine": 0.29022131533511225,
+        "euclidean": 0.2779783393501805
+      },
+      "n": 6371,
+      "chance_fold_pool": 0.0007848062301843815,
+      "chance_whole_pool": 0.0001569612305760477
+    },
+    "arm1/contexthub/p7_D": {
+      "fold_pool": {
+        "whiten_csls": 0.9945063569298384,
+        "whiten_cos": 0.9874431015539162,
+        "cosine": 0.8656411866269031,
+        "euclidean": 0.858420970020405
+      },
+      "whole_pool": {
+        "whiten_csls": 0.8050541516245487,
+        "whiten_cos": 0.7232773504944279,
+        "cosine": 0.7691100298226338,
+        "euclidean": 0.759849317218647
+      },
+      "n": 6371,
+      "chance_fold_pool": 0.0007848062301843815,
+      "chance_whole_pool": 0.0001569612305760477
+    },
+    "arm1/mmlu/p7_A": {
+      "fold_pool": {
+        "whiten_csls": 0.957033957033957,
+        "whiten_cos": 0.9215176715176715,
+        "cosine": 0.6133056133056133,
+        "euclidean": 0.6004851004851005
+      },
+      "whole_pool": {
+        "whiten_csls": 0.36209286209286207,
+        "whiten_cos": 0.2260914760914761,
+        "cosine": 0.4404019404019404,
+        "euclidean": 0.4320859320859321
+      },
+      "n": 5772,
+      "chance_fold_pool": 0.000866251022230225,
+      "chance_whole_pool": 0.00017325017325017325
+    },
+    "arm1/mmlu/p7_D": {
+      "fold_pool": {
+        "whiten_csls": 0.990990990990991,
+        "whiten_cos": 0.9812889812889813,
+        "cosine": 0.8814968814968815,
+        "euclidean": 0.8754331254331255
+      },
+      "whole_pool": {
+        "whiten_csls": 0.6541926541926542,
+        "whiten_cos": 0.542966042966043,
+        "cosine": 0.7893277893277894,
+        "euclidean": 0.77997227997228
+      },
+      "n": 5772,
+      "chance_fold_pool": 0.000866251022230225,
+      "chance_whole_pool": 0.00017325017325017325
+    },
+    "arm3/math/p7_A": {
+      "fold_pool": {
+        "whiten_csls": 0.8821349147516679,
+        "whiten_cos": 0.8191252779836916,
+        "cosine": 0.612008895478132,
+        "euclidean": 0.6001482579688658
+      },
+      "whole_pool": {
+        "whiten_csls": 0.14262416604892514,
+        "whiten_cos": 0.07664936990363232,
+        "cosine": 0.3402520385470719,
+        "euclidean": 0.33328391401037805
+      },
+      "n": 6745,
+      "chance_fold_pool": 0.0007412898443291327,
+      "chance_whole_pool": 0.00014825796886582654
+    },
+    "arm3/math/p7_D": {
+      "fold_pool": {
+        "whiten_csls": 0.98117123795404,
+        "whiten_cos": 0.9613046701260193,
+        "cosine": 0.8437361008154188,
+        "euclidean": 0.8329132690882135
+      },
+      "whole_pool": {
+        "whiten_csls": 0.5509266123054114,
+        "whiten_cos": 0.44833209785025946,
+        "cosine": 0.6637509266123054,
+        "euclidean": 0.6529280948851001
+      },
+      "n": 6745,
+      "chance_fold_pool": 0.0007412898443291327,
+      "chance_whole_pool": 0.00014825796886582654
+    },
+    "arm3/gsm8k_train/p7_A": {
+      "fold_pool": {
+        "whiten_csls": 0.9845015358838314,
+        "whiten_cos": 0.9719352136274784,
+        "cosine": 0.7810667411337615,
+        "euclidean": 0.7679419156660151
+      },
+      "whole_pool": {
+        "whiten_csls": 0.671879363306339,
+        "whiten_cos": 0.5668807595643675,
+        "cosine": 0.6292934934375872,
+        "euclidean": 0.6094666294331192
+      },
+      "n": 7162,
+      "chance_fold_pool": 0.00069812909589212,
+      "chance_whole_pool": 0.00013962580284836637
+    },
+    "arm3/gsm8k_train/p7_D": {
+      "fold_pool": {
+        "whiten_csls": 0.9990226193800614,
+        "whiten_cos": 0.9980452387601229,
+        "cosine": 0.9177604021223122,
+        "euclidean": 0.9093828539514103
+      },
+      "whole_pool": {
+        "whiten_csls": 0.9269757051103044,
+        "whiten_cos": 0.8898352415526389,
+        "cosine": 0.8487852555152192,
+        "euclidean": 0.8383133203015918
+      },
+      "n": 7162,
+      "chance_fold_pool": 0.00069812909589212,
+      "chance_whole_pool": 0.00013962580284836637
+    },
+    "arm3/contexthub/p7_A": {
+      "fold_pool": {
+        "whiten_csls": 0.8458969465648855,
+        "whiten_cos": 0.7707538167938931,
+        "cosine": 0.25071564885496184,
+        "euclidean": 0.24415553435114504
+      },
+      "whole_pool": {
+        "whiten_csls": 0.16805820610687022,
+        "whiten_cos": 0.08671278625954199,
+        "cosine": 0.12189885496183206,
+        "euclidean": 0.11724713740458015
+      },
+      "n": 8384,
+      "chance_fold_pool": 0.0005963740797508905,
+      "chance_whole_pool": 0.00011927480916030534
+    },
+    "arm3/contexthub/p7_D": {
+      "fold_pool": {
+        "whiten_csls": 0.9827051526717557,
+        "whiten_cos": 0.9656488549618321,
+        "cosine": 0.705868320610687,
+        "euclidean": 0.6963263358778626
+      },
+      "whole_pool": {
+        "whiten_csls": 0.7341364503816794,
+        "whiten_cos": 0.6384780534351145,
+        "cosine": 0.5406727099236641,
+        "euclidean": 0.5282681297709924
+      },
+      "n": 8384,
+      "chance_fold_pool": 0.0005963740797508905,
+      "chance_whole_pool": 0.00011927480916030534
+    },
+    "arm3/mmlu/p7_A": {
+      "fold_pool": {
+        "whiten_csls": 0.8019290857220487,
+        "whiten_cos": 0.7140334193723679,
+        "cosine": 0.5443553864963999,
+        "euclidean": 0.5348458089933433
+      },
+      "whole_pool": {
+        "whiten_csls": 0.04455916315717973,
+        "whiten_cos": 0.013585110718652357,
+        "cosine": 0.30240456459720144,
+        "euclidean": 0.296834669202554
+      },
+      "n": 7361,
+      "chance_fold_pool": 0.000679255586056259,
+      "chance_whole_pool": 0.00013585110718652356
+    },
+    "arm3/mmlu/p7_D": {
+      "fold_pool": {
+        "whiten_csls": 0.9625050944165195,
+        "whiten_cos": 0.9305800842276865,
+        "cosine": 0.7007200108680885,
+        "euclidean": 0.6951501154734411
+      },
+      "whole_pool": {
+        "whiten_csls": 0.4431463116424399,
+        "whiten_cos": 0.2980573291672327,
+        "cosine": 0.49558483901643796,
+        "euclidean": 0.489879092514604
+      },
+      "n": 7361,
+      "chance_fold_pool": 0.000679255586056259,
+      "chance_whole_pool": 0.00013585110718652356
+    }
+  }
+}

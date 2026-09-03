@@ -1,0 +1,24 @@
+p7_A: dims 458+2570 hold 2.6% of answer-state variance; 47.5% of squared norm
+   fold: raw cos                                acc@1 = 0.402
+   fold: raw cos + CSLS                         acc@1 = 0.604
+   fold: cos w/o 2 massive dims                 acc@1 = 0.430
+   fold: per-dim standardized cos               acc@1 = 0.654
+   fold: whitened cos (train stats)             acc@1 = 0.826
+   fold: whitened cos + CSLS (train stats)      acc@1 = 0.900
+   fold: whitened cos + CSLS (ALL-row stats)    acc@1 = 0.890
+   whole: raw cos                               acc@1 = 0.213
+   whole: whitened cos + CSLS (train stats)     acc@1 = 0.248
+   whole: whitened cos + CSLS (ALL-row stats)   acc@1 = 0.157
+p7_D: dims 458+2570 hold 2.6% of answer-state variance; 47.5% of squared norm
+   fold: raw cos                                acc@1 = 0.925
+   fold: raw cos + CSLS                         acc@1 = 0.968
+   fold: cos w/o 2 massive dims                 acc@1 = 0.931
+   fold: per-dim standardized cos               acc@1 = 0.967
+   fold: whitened cos (train stats)             acc@1 = 0.977
+   fold: whitened cos + CSLS (train stats)      acc@1 = 0.987
+   fold: whitened cos + CSLS (ALL-row stats)    acc@1 = 0.986
+   whole: raw cos                               acc@1 = 0.797
+   whole: whitened cos + CSLS (train stats)     acc@1 = 0.632
+   whole: whitened cos + CSLS (ALL-row stats)   acc@1 = 0.537
+DONE
+
