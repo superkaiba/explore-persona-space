@@ -1010,6 +1010,46 @@
           "rank_fraction": 0.016015625
         }
       }
+    },
+    {
+      "key": "o3_32b_t_b__cot_boundary",
+      "model": "OLMo3 32B T",
+      "family": "OLMo",
+      "arm": "end-of-thought",
+      "aa_index": 6,
+      "aa_status": "measured",
+      "dimension": 5120,
+      "full_validation_r2": 0.6885416724261374,
+      "abs_0.02_gap_as_error_increase_pct": 6.421404801018519,
+      "compressibility_index_25pct": 0.9241546403216256,
+      "ranks": {
+        "R\u00b2 gap \u2264 0.01": null,
+        "R\u00b2 gap \u2264 0.02 (current)": {
+          "rank": 815,
+          "rank_fraction": 0.1591796875
+        },
+        "keep \u2265 99% of R\u00b2": null,
+        "keep \u2265 97% of R\u00b2": {
+          "rank": 796,
+          "rank_fraction": 0.15546875
+        },
+        "keep \u2265 95% of R\u00b2": {
+          "rank": 535,
+          "rank_fraction": 0.1044921875
+        },
+        "error \u2264 +5%": {
+          "rank": 975,
+          "rank_fraction": 0.1904296875
+        },
+        "error \u2264 +10%": {
+          "rank": 582,
+          "rank_fraction": 0.113671875
+        },
+        "error \u2264 +20%": {
+          "rank": 301,
+          "rank_fraction": 0.0587890625
+        }
+      }
     }
   ],
   "trends": {
@@ -1196,14 +1236,14 @@
             "p_asymptotic": 0.3910022189557703
           },
           "same_width_all_families": {
-            "n": 6,
-            "rho": -0.14285714285714288,
-            "p_asymptotic": 0.7871720116618076
+            "n": 7,
+            "rho": -0.4642857142857144,
+            "p_asymptotic": 0.29393410760025196
           },
           "panel": {
-            "n": 11,
-            "rho": -0.5636363636363637,
-            "p_asymptotic": 0.07095173447637551
+            "n": 12,
+            "rho": -0.6363636363636365,
+            "p_asymptotic": 0.02609689105270314
           }
         },
         "keep \u2265 99% of R\u00b2": {
@@ -1230,14 +1270,14 @@
             "p_asymptotic": 0.3910022189557703
           },
           "same_width_all_families": {
-            "n": 6,
-            "rho": -0.14285714285714288,
-            "p_asymptotic": 0.7871720116618076
+            "n": 7,
+            "rho": -0.4642857142857144,
+            "p_asymptotic": 0.29393410760025196
           },
           "panel": {
-            "n": 11,
-            "rho": -0.6181818181818182,
-            "p_asymptotic": 0.04264556980532674
+            "n": 12,
+            "rho": -0.6853146853146854,
+            "p_asymptotic": 0.013905968814362752
           }
         },
         "keep \u2265 95% of R\u00b2": {
@@ -1247,14 +1287,14 @@
             "p_asymptotic": 0.3910022189557703
           },
           "same_width_all_families": {
-            "n": 6,
-            "rho": -0.14285714285714288,
-            "p_asymptotic": 0.7871720116618076
+            "n": 7,
+            "rho": -0.4642857142857144,
+            "p_asymptotic": 0.29393410760025196
           },
           "panel": {
-            "n": 11,
-            "rho": -0.6181818181818182,
-            "p_asymptotic": 0.04264556980532674
+            "n": 12,
+            "rho": -0.6853146853146854,
+            "p_asymptotic": 0.013905968814362752
           }
         },
         "error \u2264 +5%": {
@@ -1264,14 +1304,14 @@
             "p_asymptotic": 0.3910022189557703
           },
           "same_width_all_families": {
-            "n": 6,
-            "rho": 0.2571428571428572,
-            "p_asymptotic": 0.6227871720116619
+            "n": 7,
+            "rho": -0.21428571428571433,
+            "p_asymptotic": 0.6445115810207203
           },
           "panel": {
-            "n": 11,
-            "rho": -0.33636363636363636,
-            "p_asymptotic": 0.31182431390038634
+            "n": 12,
+            "rho": -0.44755244755244755,
+            "p_asymptotic": 0.1445863013033476
           }
         },
         "error \u2264 +10%": {
@@ -1281,14 +1321,14 @@
             "p_asymptotic": 0.3910022189557703
           },
           "same_width_all_families": {
-            "n": 6,
-            "rho": 0.2571428571428572,
-            "p_asymptotic": 0.6227871720116619
+            "n": 7,
+            "rho": -0.21428571428571433,
+            "p_asymptotic": 0.6445115810207203
           },
           "panel": {
-            "n": 11,
-            "rho": -0.3545454545454546,
-            "p_asymptotic": 0.2846927409558867
+            "n": 12,
+            "rho": -0.46153846153846156,
+            "p_asymptotic": 0.13094806950717272
           }
         },
         "error \u2264 +20%": {
@@ -1298,14 +1338,14 @@
             "p_asymptotic": 0.3910022189557703
           },
           "same_width_all_families": {
-            "n": 6,
-            "rho": 0.2571428571428572,
-            "p_asymptotic": 0.6227871720116619
+            "n": 7,
+            "rho": -0.21428571428571433,
+            "p_asymptotic": 0.6445115810207203
           },
           "panel": {
-            "n": 11,
-            "rho": -0.29090909090909095,
-            "p_asymptotic": 0.3854569696913654
+            "n": 12,
+            "rho": -0.3706293706293707,
+            "p_asymptotic": 0.23562100351264567
           }
         }
       },
@@ -1316,21 +1356,21 @@
           "p_asymptotic": 0.3910022189557703
         },
         "same_width_all_families": {
-          "n": 6,
-          "rho": 0.14285714285714288,
-          "p_asymptotic": 0.7871720116618076
+          "n": 7,
+          "rho": 0.4642857142857144,
+          "p_asymptotic": 0.29393410760025196
         },
         "panel": {
-          "n": 11,
-          "rho": 0.5636363636363637,
-          "p_asymptotic": 0.07095173447637551
+          "n": 12,
+          "rho": 0.6293706293706295,
+          "p_asymptotic": 0.028319671295760004
         }
       }
     }
   },
   "source": {
     "input": "eval_results/issue_2588/mapping_rank_vs_capability.json",
-    "n_maps": 22,
+    "n_maps": 23,
     "rules": [
       {
         "label": "R\u00b2 gap \u2264 0.01",

@@ -46,7 +46,7 @@ from sklearn.utils.extmath import randomized_svd  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
 HF_REPO = "superkaiba1/explore-persona-space-data"
-HF_REVISION = "d2c18ff676f6d4ac96ab6f58d2c57eba5209ccde"  # same-width cells landed 2026-09-03
+HF_REVISION = "74bb871a5edf1afe777ac9b64a4e2fec5e9947c2"  # full same-width panel incl. OLMo-3-32B-Think, 2026-09-03
 PANEL_PREFIX = "issue2588_capability_panel"
 DEFAULT_CACHE = REPO / "data" / "issue_2588" / "mapping_rank_cache"
 DEFAULT_OUT = REPO / "eval_results" / "issue_2588" / "mapping_rank_vs_capability.json"

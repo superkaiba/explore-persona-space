@@ -3,8 +3,9 @@
   "source_data": "eval_results/issue_2588/mapping_rank_vs_capability.json",
   "public_url": "https://eps.superkaiba.com/tasks/2588/figure/same_width_column_vs_capability.png",
   "scope": {
-    "n_maps": 12,
+    "n_maps": 13,
     "models": [
+      "OLMo3 32B T",
       "OLMo3.1 32B I",
       "OLMo3.1 32B T",
       "Q2.5 32B",

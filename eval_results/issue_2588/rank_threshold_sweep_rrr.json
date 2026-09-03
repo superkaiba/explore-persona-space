@@ -1013,6 +1013,52 @@
           "rank_fraction": 0.006640625
         }
       }
+    },
+    {
+      "key": "o3_32b_t_b__cot_boundary",
+      "model": "OLMo3 32B T",
+      "family": "OLMo",
+      "arm": "end-of-thought",
+      "aa_index": 6,
+      "aa_status": "measured",
+      "dimension": 5120,
+      "full_validation_r2": 0.6885416724261374,
+      "abs_0.02_gap_as_error_increase_pct": 6.421404801018519,
+      "compressibility_index_25pct": 0.9728521583339471,
+      "ranks": {
+        "R\u00b2 gap \u2264 0.01": {
+          "rank": 376,
+          "rank_fraction": 0.0734375
+        },
+        "R\u00b2 gap \u2264 0.02 (current)": {
+          "rank": 250,
+          "rank_fraction": 0.048828125
+        },
+        "keep \u2265 99% of R\u00b2": {
+          "rank": 447,
+          "rank_fraction": 0.0873046875
+        },
+        "keep \u2265 97% of R\u00b2": {
+          "rank": 244,
+          "rank_fraction": 0.04765625
+        },
+        "keep \u2265 95% of R\u00b2": {
+          "rank": 171,
+          "rank_fraction": 0.0333984375
+        },
+        "error \u2264 +5%": {
+          "rank": 292,
+          "rank_fraction": 0.05703125
+        },
+        "error \u2264 +10%": {
+          "rank": 183,
+          "rank_fraction": 0.0357421875
+        },
+        "error \u2264 +20%": {
+          "rank": 103,
+          "rank_fraction": 0.0201171875
+        }
+      }
     }
   ],
   "trends": {
@@ -1182,14 +1228,14 @@
             "p_asymptotic": 0.10408803866182788
           },
           "same_width_all_families": {
-            "n": 6,
-            "rho": 0.3142857142857143,
-            "p_asymptotic": 0.5440932944606415
+            "n": 7,
+            "rho": -0.1785714285714286,
+            "p_asymptotic": 0.7016579425162727
           },
           "panel": {
-            "n": 11,
-            "rho": -0.5,
-            "p_asymptotic": 0.11730680301423817
+            "n": 12,
+            "rho": -0.5944055944055945,
+            "p_asymptotic": 0.04152149441031857
           }
         },
         "R\u00b2 gap \u2264 0.02 (current)": {
@@ -1199,14 +1245,14 @@
             "p_asymptotic": 0.10408803866182788
           },
           "same_width_all_families": {
-            "n": 6,
-            "rho": 0.3142857142857143,
-            "p_asymptotic": 0.5440932944606415
+            "n": 7,
+            "rho": -0.1785714285714286,
+            "p_asymptotic": 0.7016579425162727
           },
           "panel": {
-            "n": 11,
-            "rho": -0.5,
-            "p_asymptotic": 0.11730680301423817
+            "n": 12,
+            "rho": -0.5874125874125874,
+            "p_asymptotic": 0.04460929646336318
           }
         },
         "keep \u2265 99% of R\u00b2": {
@@ -1216,14 +1262,14 @@
             "p_asymptotic": 0.10408803866182788
           },
           "same_width_all_families": {
-            "n": 6,
-            "rho": 0.3142857142857143,
-            "p_asymptotic": 0.5440932944606415
+            "n": 7,
+            "rho": -0.1785714285714286,
+            "p_asymptotic": 0.7016579425162727
           },
           "panel": {
-            "n": 11,
-            "rho": -0.5,
-            "p_asymptotic": 0.11730680301423817
+            "n": 12,
+            "rho": -0.5944055944055945,
+            "p_asymptotic": 0.04152149441031857
           }
         },
         "keep \u2265 97% of R\u00b2": {
@@ -1233,14 +1279,14 @@
             "p_asymptotic": 0.10408803866182788
           },
           "same_width_all_families": {
-            "n": 6,
-            "rho": 0.3142857142857143,
-            "p_asymptotic": 0.5440932944606415
+            "n": 7,
+            "rho": -0.1785714285714286,
+            "p_asymptotic": 0.7016579425162727
           },
           "panel": {
-            "n": 11,
-            "rho": -0.5,
-            "p_asymptotic": 0.11730680301423817
+            "n": 12,
+            "rho": -0.5874125874125874,
+            "p_asymptotic": 0.04460929646336318
           }
         },
         "keep \u2265 95% of R\u00b2": {
@@ -1250,14 +1296,14 @@
             "p_asymptotic": 0.3910022189557703
           },
           "same_width_all_families": {
-            "n": 6,
-            "rho": 0.14285714285714288,
-            "p_asymptotic": 0.7871720116618076
+            "n": 7,
+            "rho": -0.28571428571428575,
+            "p_asymptotic": 0.5345092286010406
           },
           "panel": {
-            "n": 11,
-            "rho": -0.5454545454545455,
-            "p_asymptotic": 0.08265095734417503
+            "n": 12,
+            "rho": -0.6223776223776225,
+            "p_asymptotic": 0.030675895061640146
           }
         },
         "error \u2264 +5%": {
@@ -1267,14 +1313,14 @@
             "p_asymptotic": 0.10408803866182788
           },
           "same_width_all_families": {
-            "n": 6,
-            "rho": 0.7142857142857143,
-            "p_asymptotic": 0.11078717201166179
+            "n": 7,
+            "rho": 0.07142857142857144,
+            "p_asymptotic": 0.879048193148154
           },
           "panel": {
-            "n": 11,
-            "rho": -0.28181818181818186,
-            "p_asymptotic": 0.40114489796047825
+            "n": 12,
+            "rho": -0.4055944055944056,
+            "p_asymptotic": 0.19083587400450036
           }
         },
         "error \u2264 +10%": {
@@ -1284,14 +1330,14 @@
             "p_asymptotic": 0.10408803866182788
           },
           "same_width_all_families": {
-            "n": 6,
-            "rho": 0.7142857142857143,
-            "p_asymptotic": 0.11078717201166179
+            "n": 7,
+            "rho": 0.07142857142857144,
+            "p_asymptotic": 0.879048193148154
           },
           "panel": {
-            "n": 11,
-            "rho": -0.28181818181818186,
-            "p_asymptotic": 0.40114489796047825
+            "n": 12,
+            "rho": -0.4055944055944056,
+            "p_asymptotic": 0.19083587400450036
           }
         },
         "error \u2264 +20%": {
@@ -1301,14 +1347,14 @@
             "p_asymptotic": 0.10408803866182788
           },
           "same_width_all_families": {
-            "n": 6,
-            "rho": 0.7142857142857143,
-            "p_asymptotic": 0.11078717201166179
+            "n": 7,
+            "rho": 0.07142857142857144,
+            "p_asymptotic": 0.879048193148154
           },
           "panel": {
-            "n": 11,
-            "rho": -0.28181818181818186,
-            "p_asymptotic": 0.40114489796047825
+            "n": 12,
+            "rho": -0.3706293706293707,
+            "p_asymptotic": 0.23562100351264567
           }
         }
       },
@@ -1319,21 +1365,21 @@
           "p_asymptotic": 0.623837664781073
         },
         "same_width_all_families": {
-          "n": 6,
-          "rho": -0.028571428571428574,
-          "p_asymptotic": 0.9571545189504373
+          "n": 7,
+          "rho": 0.3571428571428572,
+          "p_asymptotic": 0.431611352038328
         },
         "panel": {
-          "n": 11,
-          "rho": 0.5545454545454546,
-          "p_asymptotic": 0.07665233333978243
+          "n": 12,
+          "rho": 0.6293706293706295,
+          "p_asymptotic": 0.028319671295760004
         }
       }
     }
   },
   "source": {
     "input": "eval_results/issue_2588/rrr_rank_curves.json",
-    "n_maps": 22,
+    "n_maps": 23,
     "rules": [
       {
         "label": "R\u00b2 gap \u2264 0.01",
