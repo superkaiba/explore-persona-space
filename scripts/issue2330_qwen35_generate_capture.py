@@ -957,6 +957,17 @@ def _native_config(model_id: str):
     if not hasattr(cfg, "pad_token_id"):
         logger.info("[load] config has no pad_token_id; setting None (no padding row)")
         cfg.pad_token_id = None
+    # transformers 5.16.1 quantizers/quantizer_finegrained_fp8.update_tp_plan
+    # does FP8Experts._impl_tp_layer_overrides.get(config._experts_implementation)
+    # -> None before the model exists, then `.get` on it for every entry of
+    # base_model_tp_plan / base_model_ep_plan ("'NoneType' object has no
+    # attribute 'get'", jobs 62440 dsv4_flash and 61783 q38fn CausalLM attempt).
+    # Those plans only drive tp_plan= loads, which the capture never uses, so
+    # blank them on this instance (class attributes stay intact).
+    for sub in (cfg, getattr(cfg, "text_config", None)):
+        for attr in ("base_model_tp_plan", "base_model_ep_plan"):
+            if sub is not None and getattr(sub, attr, None):
+                setattr(sub, attr, None)
     return cfg
 
 

@@ -321,9 +321,12 @@ def test_native_config_undoes_registry_swap(monkeypatch):
     monkeypatch.setattr(transformers.LlamaConfig, "from_pretrained", staticmethod(fake_native))
     monkeypatch.setattr(
         transformers.AutoConfig, "from_pretrained", staticmethod(lambda mid, **kw: swapped))
+    assert type(native).base_model_tp_plan  # class-level plan exists on Llama
     out = G._native_config("meta-llama/x")
     assert out is native and calls["native"] == 1
     assert hasattr(out, "pad_token_id")
+    assert out.base_model_tp_plan is None  # instance override only
+    assert type(native).base_model_tp_plan  # class attribute untouched
 
     monkeypatch.setattr(
         transformers.AutoConfig, "from_pretrained", staticmethod(lambda mid, **kw: native))
