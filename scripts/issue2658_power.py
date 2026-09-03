@@ -2584,6 +2584,7 @@ def stage_store_index_from_hub(out_root: Path, split: str, *, repo: str | None =
     from explore_persona_space.orchestrate.hub import (
         DEFAULT_DATASET_REPO,
         list_repo_entries_complete,
+        retry_transient,
     )
 
     repo = repo or DEFAULT_DATASET_REPO
@@ -2622,8 +2623,11 @@ def stage_store_index_from_hub(out_root: Path, split: str, *, repo: str | None =
     staged_files: list[dict[str, Any]] = []
     for path_in_repo, size in wanted:
         rel = path_in_repo[len(base_prefix) + 1 :]  # <shard dir>/<name>
-        local = hf_hub_download(
-            repo_id=repo, filename=path_in_repo, repo_type="dataset", revision=revision
+        local = retry_transient(
+            lambda p=path_in_repo: hf_hub_download(
+                repo_id=repo, filename=p, repo_type="dataset", revision=revision
+            ),
+            what=f"hf_hub_download({path_in_repo})",
         )
         dest = dest_root / rel
         dest.parent.mkdir(parents=True, exist_ok=True)

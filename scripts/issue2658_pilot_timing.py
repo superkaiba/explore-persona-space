@@ -161,6 +161,7 @@ def fetch_logs_from_hub(dest: Path) -> Path:
     from explore_persona_space.orchestrate.hub import (
         DEFAULT_DATASET_REPO,
         list_repo_entries_complete,
+        retry_transient,
     )
 
     api = HfApi()
@@ -176,11 +177,14 @@ def fetch_logs_from_hub(dest: Path) -> Path:
         raise TimingParseError(f"HF prefix {DEFAULT_DATASET_REPO}/{LOGS_HF_PREFIX} listed 0 files")
     dest.mkdir(parents=True, exist_ok=True)
     for path_in_repo, _size in entries:
-        local = hf_hub_download(
-            repo_id=DEFAULT_DATASET_REPO,
-            filename=path_in_repo,
-            repo_type="dataset",
-            revision=revision,
+        local = retry_transient(
+            lambda p=path_in_repo: hf_hub_download(
+                repo_id=DEFAULT_DATASET_REPO,
+                filename=p,
+                repo_type="dataset",
+                revision=revision,
+            ),
+            what=f"hf_hub_download({path_in_repo})",
         )
         (dest / Path(path_in_repo).name).write_bytes(Path(local).read_bytes())
     print(f"[timing] fetched {len(entries)} log files from {LOGS_HF_PREFIX}@{revision[:12]}")
