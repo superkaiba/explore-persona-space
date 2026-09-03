@@ -1,4 +1,4 @@
-% Figure 1: context-to-answer prediction pipeline (rev 9, 2026-09-03).
+% Figure 1: context-to-answer prediction pipeline (rev 10, 2026-09-03).
 % Compile standalone: pdflatex fig1_schematic.tex
 % THEN convert text to outlines before copying to Overleaf (REQUIRED):
 %   gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dNoOutputFonts -dCompatibilityLevel=1.5 \
@@ -175,7 +175,7 @@
 \node[draw=teal, line width=0.7pt, fill=teal!5, rounded corners=3pt,
       minimum width=3.0cm, minimum height=1.8cm, inner sep=0pt] (ridge) at (10.40,5.30) {};
 \node[lbl, text=teal, anchor=south, font=\fontsize{8}{9.5}\selectfont\bfseries]
-  at (10.40,6.24) {Linear predictor};
+  at (10.40,6.24) {Linear metamodel};
 \matgrid{W}{9.75}{5.42}{teal}
 \node[lbl, text=teal, anchor=north, inner sep=0.5pt] at (9.75,4.85) {$W_\ell$};
 \colvec{hcol}{10.65}{5.42}{ctx}
@@ -191,9 +191,9 @@
 % nonlinear alternative: a small dashed bypass under the ridge box
 \node[draw=terra, dashed, line width=0.55pt, fill=paper, rounded corners=2pt,
       inner sep=2.6pt, font=\fontsize{7}{8.4}\selectfont, text=terra]
-  (mlp) at (10.40,4.00) {or nonlinear predictor MLP$_\ell$};
+  (mlp) at (10.40,4.00) {or nonlinear metamodel MLP$_\ell$};
 \draw[bypass] (8.31,5.30) -- (8.31,4.00) -- (mlp.west);
-\draw[bypass] (mlp.east) -- (12.12,4.00) -- (12.12,5.30);
+\draw[bypass] (mlp.east) -- (12.26,4.00) -- (12.26,5.30);
 
 % prediction target: mean over the answer vectors of K sampled answers
 \colvec{a1}{9.35}{3.03}{ans}
