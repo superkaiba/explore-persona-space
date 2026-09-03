@@ -114,7 +114,11 @@ def records_from_truncated(payload: dict[str, Any]) -> list[dict[str, Any]]:
                 "aa_status": m["aa_status"],
                 "dimension": int(m["dimension"]),
                 "full_validation_r2": float(m["reconstruction_parity"]["validation_r2"]),
-                "curve": np.asarray(m["rank_curve"]["validation_r2"], dtype=np.float64),
+                # v3 payloads carry the RRR curve as rank_curve and the truncated one alongside.
+                "curve": np.asarray(
+                    m.get("truncated_rank_curve", m["rank_curve"])["validation_r2"],
+                    dtype=np.float64,
+                ),
             }
         )
     return out

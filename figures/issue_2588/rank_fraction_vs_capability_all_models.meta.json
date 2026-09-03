@@ -7,7 +7,7 @@
     "n_scored_checkpoints": 10,
     "omitted_checkpoint": "Qwen2.5-7B anchor: no Artificial Analysis index in the parent panel"
   },
-  "rank_definition": "minimum coefficient-TSVD rank with validation R2 within 0.02 of the full reconstructed map, divided by hidden dimension",
+  "rank_definition": "reduced-rank regression: smallest rank k of the best rank-k linear map (fitted ridge map projected onto the top-k principal directions of its fitted training outputs) whose validation SSE is at most 10% above the full map's, divided by hidden dimension",
   "caveats": [
     "Most Artificial Analysis values in this panel are estimates.",
     "Panel-wide association is confounded by hidden width; the Qwen squares share hidden size 5120 and 64 layers.",

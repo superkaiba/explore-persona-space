@@ -18,7 +18,7 @@
     "hidden_size": 5120
   },
   "panels": {
-    "left": "operational rank fraction (min TSVD rank within 0.02 validation R2)",
+    "left": "operational rank fraction (reduced-rank regression: smallest rank k of the best rank-k linear map (fitted ridge map projected onto the top-k principal directions of its fitted training outputs) whose validation SSE is at most 10% above the full map's)",
     "right": "full selected-layer held-out generic-test R2"
   },
   "caveats": [

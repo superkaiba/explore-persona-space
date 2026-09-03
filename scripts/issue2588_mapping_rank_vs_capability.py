@@ -58,8 +58,15 @@ DEFAULT_PERFORMANCE_FIGURE = (
     REPO / "figures" / "issue_2588" / "mapping_performance_vs_capability_qwen.png"
 )
 DEFAULT_SAME_WIDTH_FIGURE = REPO / "figures" / "issue_2588" / "same_width_column_vs_capability.png"
-R2_TOLERANCE = 0.02
+R2_TOLERANCE = 0.02  # secondary rule: absolute validation-R2 gap
+REL_ERROR_TOLERANCE = 0.10  # PRIMARY rule: validation SSE within +10% of the full map (2026-09-03)
 RANDOM_SEED = 2588
+DEFAULT_RRR_CURVES = REPO / "eval_results" / "issue_2588" / "rrr_rank_curves.json"
+PRIMARY_RANK_DEFINITION = (
+    "reduced-rank regression: smallest rank k of the best rank-k linear map (fitted ridge map "
+    "projected onto the top-k principal directions of its fitted training outputs) whose "
+    "validation SSE is at most 10% above the full map's"
+)
 
 
 @dataclass(frozen=True)
@@ -328,7 +335,8 @@ def reconstruct_map(spec: MapSpec, cache_dir: Path) -> dict[str, Any]:
                 int(z["layer"]) == layer
                 and int(z["dimension"]) == d
                 and math.isclose(float(z["selected_lambda"]), lam)
-                and str(z["hf_revision"]) == HF_REVISION
+                # The data repo is append-only, so a payload rebuilt at an earlier
+                # revision is byte-identical; its hf_revision stays as provenance.
             ):
                 return {k: z[k] for k in z.files}
 
@@ -407,6 +415,119 @@ def reconstruct_map(spec: MapSpec, cache_dir: Path) -> dict[str, Any]:
     return reconstruct_map(spec, cache_dir)
 
 
+def rank_at_threshold(curve: np.ndarray, thr: float) -> int | None:
+    idx = np.flatnonzero(np.asarray(curve) >= thr - 1e-12)
+    return int(idx[0]) if len(idx) else None
+
+
+def rrr_curves(spec: MapSpec, cache_dir: Path) -> dict[str, Any]:
+    """Reduced-rank ridge curves: the fitted map projected onto the top-k
+    principal directions of its fitted TRAINING outputs (exact eigh of
+    W^T X^T X W), scored at every rank 0..d on validation and test.
+
+    Needs the training activations of the selected layer once per map; the
+    result is persisted in DEFAULT_RRR_CURVES by the caller."""
+    started = time.time()
+    payload = reconstruct_map(spec, cache_dir)
+    layer = int(payload["layer"])
+    d = int(payload["dimension"])
+    w = np.asarray(payload["W"], dtype=np.float64)
+    xmu = np.asarray(payload["xmu"], dtype=np.float64)
+    xsd = np.asarray(payload["xsd"], dtype=np.float64)
+    ymu = np.asarray(payload["ymu"], dtype=np.float64)
+    print(f"[{spec.key}] RRR: download train_10k at L{layer} (d={d})", flush=True)
+    xtr, _ytr = load_split(spec, "train_10k", layer)
+    xn = (xtr.astype(np.float64) - xmu) / xsd
+    n_train = xn.shape[0]
+    gram = xn.T @ xn
+    del xn, xtr
+    m = w.T @ gram @ w
+    m = 0.5 * (m + m.T)
+    evals, evecs = scipy.linalg.eigh(m, check_finite=False)
+    order = np.argsort(evals)[::-1]
+    evals = np.clip(evals[order], 0.0, None) / n_train
+    right = np.ascontiguousarray(evecs[:, order], dtype=np.float32)
+    pred_val, yval = payload["pred_val"], payload["target_val"]
+    pred_test, ytest = payload["pred_test"], payload["target_test"]
+    full_val = pooled_r2(pred_val, yval)
+    full_test = pooled_r2(pred_test, ytest)
+    val_curve = r2_curve_from_top_right_vectors(pred_val, yval, ymu, right)
+    test_curve = r2_curve_from_top_right_vectors(pred_test, ytest, ymu, right)
+    if abs(float(val_curve[-1]) - full_val) > 1e-4:
+        raise RuntimeError(
+            f"{spec.key}: full-rank RRR curve {val_curve[-1]:.6f} != full {full_val:.6f}"
+        )
+    total_var = float(evals.sum())
+    cum = np.cumsum(evals) / (total_var + 1e-30)
+    return {
+        "key": spec.key,
+        "cell": spec.cell,
+        "model": spec.model_label,
+        "family": spec.family,
+        "arm": spec.arm,
+        "aa_index": spec.aa_index,
+        "aa_status": spec.aa_status,
+        "dimension": d,
+        "layer_star": layer,
+        "n_train": int(n_train),
+        "method": (
+            "reduced-rank ridge: fitted ridge map projected onto top-k principal directions "
+            "of the fitted training outputs (exact eigh of W^T X^T X W)"
+        ),
+        "full_validation_r2": full_val,
+        "full_test_r2": full_test,
+        "rank_curve": {
+            "validation_r2": [float(v) for v in val_curve],
+            "test_r2": [float(v) for v in test_curve],
+        },
+        "fitted_output_spectrum": {
+            "eigenvalues_top64": [float(v) for v in evals[:64]],
+            "total_variance": total_var,
+            "directions_for_90pct_variance": int(np.searchsorted(cum, 0.90) + 1),
+            "directions_for_99pct_variance": int(np.searchsorted(cum, 0.99) + 1),
+        },
+        "hf_revision": str(payload["hf_revision"]),
+        "elapsed_s": float(time.time() - started),
+    }
+
+
+_RRR_STORE: dict[str, dict[str, Any]] | None = None
+
+
+def _rrr_store() -> dict[str, dict[str, Any]]:
+    global _RRR_STORE
+    if _RRR_STORE is None:
+        if DEFAULT_RRR_CURVES.exists():
+            recs = json.loads(DEFAULT_RRR_CURVES.read_text(encoding="utf-8"))["maps"]
+            _RRR_STORE = {r["key"]: r for r in recs}
+        else:
+            _RRR_STORE = {}
+    return _RRR_STORE
+
+
+def rrr_record(spec: MapSpec, cache_dir: Path) -> dict[str, Any]:
+    """Cached RRR curves for a map, computing and persisting them when absent."""
+    store = _rrr_store()
+    rec = store.get(spec.key)
+    if rec is None:
+        rec = rrr_curves(spec, cache_dir)
+        store[spec.key] = rec
+        order = {m.key: i for i, m in enumerate(MAPS)}
+        DEFAULT_RRR_CURVES.parent.mkdir(parents=True, exist_ok=True)
+        DEFAULT_RRR_CURVES.write_text(
+            json.dumps(
+                {
+                    "schema_version": "issue2588_rrr_rank_curves_v1",
+                    "maps": sorted(store.values(), key=lambda r: order.get(r["key"], 10**6)),
+                },
+                indent=1,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+    return rec
+
+
 def coefficient_spectrum(payload: dict[str, Any], *, max_rank: int, n_iter: int) -> dict[str, Any]:
     w = np.asarray(payload["W"], dtype=np.float32)
     d = w.shape[0]
@@ -462,16 +583,43 @@ def analyze_map(spec: MapSpec, cache_dir: Path, *, max_rank: int, svd_iters: int
     full_test_r2 = pooled_r2(pred_test, ytest)
     val_curve = r2_curve_from_top_right_vectors(pred_val, yval, ymu, spectrum["right_vectors"])
     test_curve = r2_curve_from_top_right_vectors(pred_test, ytest, ymu, spectrum["right_vectors"])
-    selected_rank = minimum_rank_within(val_curve, full_val_r2, R2_TOLERANCE)
-    if selected_rank is None:
+    trunc_rank_abs = minimum_rank_within(val_curve, full_val_r2, R2_TOLERANCE)
+    if trunc_rank_abs is None:
         raise RuntimeError(
             f"{spec.key}: top-{len(spectrum['singular_values'])} SVD did not reach "
             f"full validation R2 - {R2_TOLERANCE}; raise --max-rank"
         )
+    rel_thr = 1.0 - (1.0 - full_val_r2) * (1.0 + REL_ERROR_TOLERANCE)
+    trunc_rank_rel = rank_at_threshold(val_curve, rel_thr)
+    # PRIMARY: reduced-rank regression curves (best rank-k map), full length 0..d.
+    rrr = rrr_record(spec, cache_dir)
+    rrr_val = np.asarray(rrr["rank_curve"]["validation_r2"], dtype=np.float64)
+    rrr_test = np.asarray(rrr["rank_curve"]["test_r2"], dtype=np.float64)
+    if abs(float(rrr["full_validation_r2"]) - full_val_r2) > 1e-4:
+        raise RuntimeError(
+            f"{spec.key}: RRR record full R2 {rrr['full_validation_r2']} != {full_val_r2}"
+        )
+    selected_rank = rank_at_threshold(rrr_val, rel_thr)
+    rrr_rank_abs = minimum_rank_within(rrr_val, full_val_r2, R2_TOLERANCE)
+    if selected_rank is None or rrr_rank_abs is None:
+        raise RuntimeError(f"{spec.key}: RRR curve never reached the tolerance")
     d = int(payload["dimension"])
+
+    def _rank_block(k: int | None, vcurve: np.ndarray, tcurve: np.ndarray) -> dict[str, Any] | None:
+        if k is None:
+            return None
+        return {
+            "rank": int(k),
+            "rank_fraction": float(k / d),
+            "validation_r2": float(vcurve[k]),
+            "validation_delta_from_full": float(vcurve[k] - full_val_r2),
+            "test_r2": float(tcurve[k]),
+            "test_delta_from_full": float(tcurve[k] - full_test_r2),
+        }
+
     result = {
         "key": spec.key,
-        "hf_revision": HF_REVISION,
+        "hf_revision": str(payload["hf_revision"]),
         "cell": spec.cell,
         "model": spec.model_label,
         "family": spec.family,
@@ -501,15 +649,25 @@ def analyze_map(spec: MapSpec, cache_dir: Path, *, max_rank: int, svd_iters: int
             "topk_energy_fraction": float(spectrum["topk_energy_fraction"]),
         },
         "operational_rank": {
-            "definition": "minimum coefficient-TSVD rank within 0.02 of full validation R2",
-            "rank": int(selected_rank),
-            "rank_fraction": float(selected_rank / d),
-            "validation_r2": float(val_curve[selected_rank]),
-            "validation_delta_from_full": float(val_curve[selected_rank] - full_val_r2),
-            "test_r2": float(test_curve[selected_rank]),
-            "test_delta_from_full": float(test_curve[selected_rank] - full_test_r2),
+            "definition": PRIMARY_RANK_DEFINITION,
+            "method": "reduced-rank regression",
+            "tolerance": {"kind": "relative_validation_error", "value": REL_ERROR_TOLERANCE},
+            **_rank_block(selected_rank, rrr_val, rrr_test),
         },
+        "operational_rank_alternatives": {
+            "rrr_abs_gap_0.02": _rank_block(rrr_rank_abs, rrr_val, rrr_test),
+            "truncated_abs_gap_0.02": _rank_block(trunc_rank_abs, val_curve, test_curve),
+            "truncated_rel_error_0.10": _rank_block(trunc_rank_rel, val_curve, test_curve),
+        },
+        "fitted_output_spectrum": rrr["fitted_output_spectrum"],
         "rank_curve": {
+            "method": "reduced-rank regression (best rank-k map), ranks 0..d",
+            "ranks": list(range(len(rrr_val))),
+            "validation_r2": [float(x) for x in rrr_val],
+            "test_r2": [float(x) for x in rrr_test],
+        },
+        "truncated_rank_curve": {
+            "method": "fitted map truncated along its own top singular directions (ranks 0..top-k basis)",
             "ranks": list(range(len(val_curve))),
             "validation_r2": [float(x) for x in val_curve],
             "test_r2": [float(x) for x in test_curve],
@@ -518,7 +676,8 @@ def analyze_map(spec: MapSpec, cache_dir: Path, *, max_rank: int, svd_iters: int
     }
     print(
         f"[{spec.key}] stable rank={result['spectrum']['stable_rank']:.1f}; "
-        f"operational rank={selected_rank}/{d} ({100 * selected_rank / d:.1f}%)",
+        f"RRR rank (error +10%)={selected_rank}/{d} ({100 * selected_rank / d:.1f}%); "
+        f"truncated 0.02-gap rank={trunc_rank_abs}/{d} ({100 * trunc_rank_abs / d:.1f}%)",
         flush=True,
     )
     return result
@@ -765,8 +924,8 @@ def render_figure(results: list[dict[str, Any]], output: Path) -> None:
     fig.text(
         0.4,
         0.006,
-        "Filled: measured index; open: estimated.  "
-        "Squares/thick lines: same-width Qwen column (hidden size 5120, 64 layers).",
+        "Rank = best rank-k map (reduced-rank regression) within +10% of the full map's validation error.  "
+        "Filled: measured index; open: estimated.  Squares/thick lines: same-width Qwen column (hidden size 5120, 64 layers).",
         ha="center",
         fontsize=7,
     )
@@ -789,6 +948,7 @@ def render_figure(results: list[dict[str, Any]], output: Path) -> None:
                 "public_url": (
                     "https://eps.superkaiba.com/tasks/2588/figure/mapping_rank_vs_capability.png"
                 ),
+                "rank_definition": PRIMARY_RANK_DEFINITION,
                 "panels": {
                     "A": "No-thinking operational rank fraction versus AA index",
                     "B": "End-of-thought operational rank fraction versus AA index",
@@ -923,8 +1083,8 @@ def render_rank_fraction_figure(results: list[dict[str, Any]], output: Path) -> 
     fig.text(
         0.42,
         0.022,
-        "Rank = minimum coefficient-TSVD rank within 0.02 validation R² of the full map. "
-        "Filled capability points are measured; open points are estimates.",
+        "Rank = smallest rank of the best rank-k linear map (reduced-rank regression) whose validation "
+        "error is within 10% of the full map's. Filled capability points are measured; open points are estimates.",
         ha="center",
         fontsize=7.2,
         color="#444444",
@@ -965,10 +1125,7 @@ def render_rank_fraction_figure(results: list[dict[str, Any]], output: Path) -> 
                         "Qwen2.5-7B anchor: no Artificial Analysis index in the parent panel"
                     ),
                 },
-                "rank_definition": (
-                    "minimum coefficient-TSVD rank with validation R2 within 0.02 "
-                    "of the full reconstructed map, divided by hidden dimension"
-                ),
+                "rank_definition": PRIMARY_RANK_DEFINITION + ", divided by hidden dimension",
                 "caveats": [
                     "Most Artificial Analysis values in this panel are estimates.",
                     "Panel-wide association is confounded by hidden width; the Qwen squares share hidden size 5120 and 64 layers.",
@@ -1301,8 +1458,8 @@ def render_same_width_figure(results: list[dict[str, Any]], output: Path) -> Non
     fig.text(
         0.41,
         0.018,
-        "Every point has hidden size 5120 and 64 layers. Lines connect the Qwen checkpoints. "
-        "Filled capability points are measured; open points are estimates.",
+        "Every point has hidden size 5120 and 64 layers. Rank = best rank-k map within +10% of the full map's "
+        "validation error. Lines connect the Qwen checkpoints. Filled AA points are measured; open are estimates.",
         ha="center",
         fontsize=7.1,
         color="#444444",
@@ -1332,7 +1489,7 @@ def render_same_width_figure(results: list[dict[str, Any]], output: Path) -> Non
                     "hidden_size": SAME_WIDTH_DIM,
                 },
                 "panels": {
-                    "left": "operational rank fraction (min TSVD rank within 0.02 validation R2)",
+                    "left": "operational rank fraction (" + PRIMARY_RANK_DEFINITION + ")",
                     "right": "full selected-layer held-out generic-test R2",
                 },
                 "caveats": [
@@ -1367,7 +1524,7 @@ def _render_all(results: list[dict[str, Any]], args) -> None:
 
 def _build_payload(results: list[dict[str, Any]], complete: bool, trends) -> dict[str, Any]:
     return {
-        "schema_version": "issue2588_mapping_rank_vs_capability_v2",
+        "schema_version": "issue2588_mapping_rank_vs_capability_v3",
         "complete_panel": complete,
         "source": {
             "parent_issue": 2588,
@@ -1380,8 +1537,11 @@ def _build_payload(results: list[dict[str, Any]], complete: bool, trends) -> dic
         "rank_definitions": {
             "coefficient_matrix": "parent fp32 W in standardized-input coordinates",
             "stable_rank": "||W||_F^2 / ||W||_2^2",
-            "operational_rank": (
-                "minimum nested coefficient-TSVD rank with validation R2 >= full R2 - 0.02"
+            "operational_rank": PRIMARY_RANK_DEFINITION,
+            "operational_rank_alternatives": (
+                "rrr_abs_gap_0.02 (same method, absolute 0.02 validation-R2 gap); "
+                "truncated_abs_gap_0.02 (pre-2026-09-03 primary: fitted map truncated along its own "
+                "top singular directions, 0.02 gap); truncated_rel_error_0.10"
             ),
         },
         "maps": results,
@@ -1390,7 +1550,8 @@ def _build_payload(results: list[dict[str, Any]], complete: bool, trends) -> dic
             "AA values are model-level capability attributes; the Qwen3.5 ladder and OLMo 3.1 values are estimates, the same-width extension values are measured.",
             "No-thinking maps inherit the parent experiment's AA-mode mismatch caveat.",
             "Panel-wide raw rank is dimension-confounded; rank fractions and the same-width columns are primary.",
-            "Randomized SVD is used above d=2048; every operational threshold must be reached within the retained top-k basis.",
+            "Truncated-map curves use a randomized top-1280 SVD above d=2048; the primary reduced-rank curves are exact (eigh) over all ranks 0..d.",
+            "Reduced-rank regression can exceed the full map's held-out R2 at intermediate ranks (projection acts as extra regularization), so the full map is not a hard ceiling.",
             "One rollout and one frozen layer per map; no fit-seed or generation-seed replication.",
         ],
     }

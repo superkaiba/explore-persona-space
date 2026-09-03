@@ -2,6 +2,7 @@
   "title": "Mapping rank versus model capability",
   "source_data": "eval_results/issue_2588/mapping_rank_vs_capability.json",
   "public_url": "https://eps.superkaiba.com/tasks/2588/figure/mapping_rank_vs_capability.png",
+  "rank_definition": "reduced-rank regression: smallest rank k of the best rank-k linear map (fitted ridge map projected onto the top-k principal directions of its fitted training outputs) whose validation SSE is at most 10% above the full map's",
   "panels": {
     "A": "No-thinking operational rank fraction versus AA index",
     "B": "End-of-thought operational rank fraction versus AA index",
