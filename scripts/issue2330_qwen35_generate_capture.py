@@ -873,22 +873,43 @@ def _checkpoint_scale_lookup(model_id: str):
 
     snap = Path(snapshot_download(model_id, allow_patterns=["*.json"]))
     idx_path = snap / "model.safetensors.index.json"
-    weight_map: dict = json.loads(idx_path.read_text())["weight_map"] if idx_path.exists() else {}
+    if idx_path.exists():
+        weight_map: dict = json.loads(idx_path.read_text())["weight_map"]
+    elif (snap / "model.safetensors").exists():
+        with safe_open(str(snap / "model.safetensors"), framework="pt") as f:
+            weight_map = {k: "model.safetensors" for k in f.keys()}
+    else:
+        weight_map = {}
 
     def lookup(prefix: str):
-        key = f"{prefix}.weight_scale"
-        if key in weight_map:
-            shard = snap / weight_map[key]
-        elif (snap / "model.safetensors").exists():
-            shard = snap / "model.safetensors"
-        else:
+        key = _find_checkpoint_key(weight_map, f"{prefix}.weight_scale")
+        if key is None:
             return None
-        with safe_open(str(shard), framework="pt") as f:
-            if key not in f.keys():
-                return None
+        with safe_open(str(snap / weight_map[key]), framework="pt") as f:
             return f.get_tensor(key)
 
     return lookup
+
+
+def _find_checkpoint_key(weight_map: dict, name: str) -> str | None:
+    """Checkpoint key for a loaded module's parameter, tolerant of the prefix
+    rename transformers applies when it loads a vision-language checkpoint
+    into the text-only class: the module is ``model.layers.1.ple...`` while
+    the safetensors key is ``model.language_model.layers.1.ple...`` (job
+    64147: the exact-name lookup missed and the fail-closed check fired).
+    Exact match first; otherwise the unique key that keeps everything after
+    the module name's FIRST component (``layers.1.ple...``), i.e. the rename
+    may only insert components at the top. Never strips deeper (that would
+    let ``layers.2...`` match ``layers.1...``). None if nothing matches or
+    the suffix is ambiguous."""
+    if name in weight_map:
+        return name
+    head, _, rest = name.partition(".")
+    if not rest:
+        return None
+    suffix = "." + rest
+    hits = [k for k in weight_map if k.endswith(suffix) and k.split(".", 1)[0] == head]
+    return hits[0] if len(hits) == 1 else None
 
 
 def _dequantize_fp8_embeddings(model, scale_lookup) -> int:

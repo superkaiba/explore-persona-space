@@ -412,3 +412,20 @@ def test_registry_hc_streams_pins():
     hc = {k: m.hc_streams for k, m in PC.PANEL.items()}
     assert {k for k, v in hc.items() if v > 1} == {"q38fn", "dsv4_flash", "dsv4_pro"}
     assert all(hc[k] == 4 for k in ("q38fn", "dsv4_flash", "dsv4_pro"))
+
+
+def test_find_checkpoint_key_tolerates_language_model_prefix():
+    import issue2330_qwen35_generate_capture as G
+
+    wm = {
+        "model.language_model.layers.1.ple.ple_embedding.ngram_embedding.weight_scale": "a.safetensors",
+        "model.language_model.layers.1.ple.key_proj.weight": "a.safetensors",
+        "model.visual.blocks.0.attn.qkv.weight_scale": "b.safetensors",
+        "lm_head.weight": "c.safetensors",
+    }
+    assert (G._find_checkpoint_key(wm, "model.layers.1.ple.ple_embedding.ngram_embedding.weight_scale")
+            == "model.language_model.layers.1.ple.ple_embedding.ngram_embedding.weight_scale")
+    assert G._find_checkpoint_key(wm, "lm_head.weight") == "lm_head.weight"
+    assert G._find_checkpoint_key(wm, "model.layers.2.ple.ple_embedding.ngram_embedding.weight_scale") is None
+    wm2 = {"a.x.weight_scale": "s", "b.x.weight_scale": "s"}
+    assert G._find_checkpoint_key(wm2, "z.x.weight_scale") is None
