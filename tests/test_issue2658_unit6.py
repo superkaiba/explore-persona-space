@@ -432,11 +432,11 @@ def test_run_wave_refuses_objective_row(tmp_path):
 # 10. Offline end-to-end wave: retries, sync re-issue, adjudication, resume.
 # ---------------------------------------------------------------------------
 def _e2e_respond(uid: str, k: int, force_sync: bool):
-    if "|q0#" in uid:
+    if "-q0-" in uid:
         return kept(80)
-    if "|q1#" in uid:
+    if "-q1-" in uid:
         return MALFORMED if k == 2 else kept(30)
-    if "|q2#" in uid:
+    if "-q2-" in uid:
         return API_REFUSAL
     return kept(60)
 
@@ -501,7 +501,9 @@ def test_run_wave_offline_end_to_end(tmp_path, monkeypatch):
     assert fake.calls[0]["force_sync"] is False
     sync_calls = [c for c in fake.calls if c["force_sync"]]
     assert len(sync_calls) == 3  # rule-28 targeted SYNC re-issue rounds for q2
-    assert all(c["items"][0][0] == u2 for c in sync_calls)
+    # The wire carries the sanitized uid (Batch custom_id grammar); the
+    # record identity stays the real unit_id.
+    assert all(c["items"][0][0] == J.wire_uid(u2) for c in sync_calls)
     # identical instrument on every retry
     for c in fake.calls:
         assert c["judge_model"] == C.JUDGE["model"]
@@ -1035,9 +1037,9 @@ def test_pilot_gate_parameter_enumeration_guard(monkeypatch):
 # Retry scope (rev E fix 3): produced content verdicts are never re-drawn.
 # ---------------------------------------------------------------------------
 def _content_verdict_respond(uid: str, k: int, force_sync: bool):
-    if "|q0#" in uid:
+    if "-q0-" in uid:
         return RUBRIC_REFUSAL if k == 4 else kept(80)
-    if "|q1#" in uid:
+    if "-q1-" in uid:
         return OUT_OF_RANGE if k == 4 else kept(80)
     return kept(60)
 
@@ -1084,7 +1086,7 @@ def test_reasoning_presence_rate_recorded(tmp_path):
     def respond(uid: str, k: int, force_sync: bool):
         # q0 follows the user rubric (reasoning + score); q1 follows the
         # score-only system half (bare integer — kept, no rationale).
-        return kept(70) if "|q0#" in uid else 70
+        return kept(70) if "-q0-" in uid else 70
 
     summary = J.run_wave(
         ROW,
@@ -1304,3 +1306,210 @@ def test_missing_wire_accessor_raises_rather_than_skipping(monkeypatch):
     monkeypatch.delattr(J.GJ, "_rubric_system_and_user", raising=True)
     with pytest.raises(J.JudgeInputError, match="no longer be resolved"):
         J.assert_wire_instrument_pinned()
+
+
+# ---------------------------------------------------------------------------
+# 16. Frozen-store exclusions -> not-estimable cells (plan lines 26/40/107/154).
+# ---------------------------------------------------------------------------
+_EXCL_REASON = "probe bank carries no ground-truth reference to check atomic claims against"
+
+
+def _fake_packet_resolver(row, item_id):
+    return {"evidence": {"claims": [f"claim for {item_id}"]}}, f"sha-{item_id}"
+
+
+def test_excluded_item_skipped_cell_not_estimable_verbatim_reason(tmp_path):
+    """A store-excluded item is SKIPPED (its packet is never resolved) and its
+    fully-excluded cell is reported not-estimable with the VERBATIM reason."""
+    row = _evidence_row()
+    build_gen_tree(tmp_path, row, {"frameA__direct": 2, "frameB__direct": 2})
+    excl = {f"{row}|frameB|q0": _EXCL_REASON, f"{row}|frameB|q1": _EXCL_REASON}
+    resolver_calls: list[str] = []
+
+    def packet_resolver(r, iid):
+        resolver_calls.append(iid)
+        return _fake_packet_resolver(r, iid)
+
+    not_est: dict = {}
+    units = J.load_cell_units(
+        tmp_path,
+        "pilot",
+        row,
+        resolver_fn=fake_resolve_items,
+        packet_resolver=packet_resolver,
+        exclusions_fn=lambda r: excl,
+        not_estimable_out=not_est,
+    )
+    cell_b = f"{row}__frameB__direct"
+    assert cell_b not in units
+    rec = not_est[cell_b]
+    assert rec["status"] == "not-estimable"  # the issue2658_power.py vocabulary
+    assert rec["detail"] == _EXCL_REASON  # VERBATIM store reason, never re-derived
+    assert rec["artifact"] == str(J.R.EVIDENCE_PATH)  # the artifact NAMED
+    assert rec["n_excluded_items"] == 2
+    assert rec["item_ids"] == sorted(excl)
+    # excluded items never reach the packet resolver
+    assert set(resolver_calls) == {f"{row}|frameA|q0", f"{row}|frameA|q1"}
+
+
+def test_fully_excluded_cell_absent_from_units_by_cell(tmp_path):
+    """The omitted cell never reaches run_pilot_gate / select_canary_units /
+    run_cell as a vacuous zero-unit arm."""
+    row = _evidence_row()
+    build_gen_tree(tmp_path, row, {"frameA__direct": 2, "frameB__direct": 2})
+    excl = {f"{row}|frameB|q0": _EXCL_REASON, f"{row}|frameB|q1": _EXCL_REASON}
+    not_est: dict = {}
+    units = J.load_cell_units(
+        tmp_path,
+        "pilot",
+        row,
+        resolver_fn=fake_resolve_items,
+        packet_resolver=_fake_packet_resolver,
+        exclusions_fn=lambda r: excl,
+        not_estimable_out=not_est,
+    )
+    assert set(units) == {f"{row}__frameA__direct"}
+    assert set(not_est) == {f"{row}__frameB__direct"}
+    assert all(len(us) > 0 for us in units.values())
+
+
+def test_partially_excluded_cell_keeps_non_excluded_units(tmp_path):
+    row = _evidence_row()
+    build_gen_tree(tmp_path, row, {"frameA__direct": 3})
+    excl = {f"{row}|frameA|q1": _EXCL_REASON}
+    not_est: dict = {}
+    units = J.load_cell_units(
+        tmp_path,
+        "pilot",
+        row,
+        resolver_fn=fake_resolve_items,
+        packet_resolver=_fake_packet_resolver,
+        exclusions_fn=lambda r: excl,
+        not_estimable_out=not_est,
+    )
+    cell = f"{row}__frameA__direct"
+    kept_items = {u.item_id for u in units[cell]}
+    assert kept_items == {f"{row}|frameA|q0", f"{row}|frameA|q2"}
+    assert not_est == {}  # a partially-excluded cell stays an ordinary arm
+
+
+def test_missing_item_without_exclusion_record_still_raises(tmp_path):
+    """FAIL-LOUD BOUNDARY: only explicitly-excluded items are skippable — an
+    item absent from the store's items with NO exclusion record still raises
+    EvidencePacketMissingError (a coverage bug is never silent data loss)."""
+    row = _evidence_row()
+    build_gen_tree(tmp_path, row, {"frameA__direct": 2})
+
+    def missing_packet_resolver(r, iid):
+        raise J.R.EvidencePacketMissingError(f"no frozen evidence packet for {iid!r}")
+
+    with pytest.raises(J.R.EvidencePacketMissingError):
+        J.load_cell_units(
+            tmp_path,
+            "pilot",
+            row,
+            resolver_fn=fake_resolve_items,
+            packet_resolver=missing_packet_resolver,
+            exclusions_fn=lambda r: {},
+        )
+
+
+def test_below_floor_not_excluded_cell_stays_ordinary_arm(tmp_path):
+    """The hallucination__fact_questions__* shape: fewer items than the plan
+    section 8 pilot floor but NOT excluded — kept as an ordinary arm, never
+    conflated with not-estimable."""
+    row = _evidence_row()
+    build_gen_tree(tmp_path, row, {"frameA__direct": 3})  # below the 5-item floor
+    not_est: dict = {}
+    units = J.load_cell_units(
+        tmp_path,
+        "pilot",
+        row,
+        resolver_fn=fake_resolve_items,
+        packet_resolver=_fake_packet_resolver,
+        exclusions_fn=lambda r: {},
+        not_estimable_out=not_est,
+    )
+    assert len(units[f"{row}__frameA__direct"]) == 3
+    assert not_est == {}
+
+
+def test_run_wave_dry_run_reports_not_estimable_cells(tmp_path, capsys):
+    """run_wave's [phase=judge] line reports BOTH counts and the wave summary
+    persists the not-estimable cells with their verbatim reasons + artifact."""
+    row = _evidence_row()
+    build_gen_tree(tmp_path, row, {"frameA__direct": 2, "frameB__direct": 2})
+    excl = {f"{row}|frameB|q0": _EXCL_REASON, f"{row}|frameB|q1": _EXCL_REASON}
+    summary = J.run_wave(
+        row,
+        "pilot",
+        gen_root=tmp_path,
+        out_root=tmp_path,
+        judge_fn=FakeJudge(lambda u, k, f: kept(80)),
+        resolver_fn=fake_resolve_items,
+        packet_resolver=_fake_packet_resolver,
+        exclusions_fn=lambda r: excl,
+        dry_run=True,
+    )
+    out = capsys.readouterr().out
+    assert "cells=1 not_estimable=1" in out
+    cell_b = f"{row}__frameB__direct"
+    assert summary["not_estimable"][cell_b]["status"] == "not-estimable"
+    assert summary["not_estimable"][cell_b]["detail"] == _EXCL_REASON
+    assert summary["not_estimable"][cell_b]["artifact"] == str(J.R.EVIDENCE_PATH)
+
+
+def test_run_wave_refuses_when_every_cell_excluded(tmp_path):
+    row = _evidence_row()
+    build_gen_tree(tmp_path, row, {"frameB__direct": 2})
+    excl = {f"{row}|frameB|q0": _EXCL_REASON, f"{row}|frameB|q1": _EXCL_REASON}
+    with pytest.raises(J.JudgeInputError, match="not-estimable"):
+        J.run_wave(
+            row,
+            "pilot",
+            gen_root=tmp_path,
+            out_root=tmp_path,
+            judge_fn=RaisingJudge(),
+            resolver_fn=fake_resolve_items,
+            packet_resolver=_fake_packet_resolver,
+            exclusions_fn=lambda r: excl,
+            dry_run=True,
+        )
+
+
+@needs_artifacts
+def test_load_evidence_exclusions_reads_frozen_store():
+    """The production exclusion source is the FROZEN STORE's records (never a
+    re-derived constant): 30 hallucination exclusions across exactly the two
+    recorded frames; sycophancy has none."""
+    excl = J.R.load_evidence_exclusions("hallucination")
+    assert len(excl) == 30
+    assert {iid.split("|")[1] for iid in excl} == {"wang44_probes", "wildchat_real"}
+    assert all(reason.strip() for reason in excl.values())
+    assert J.R.load_evidence_exclusions("sycophancy") == {}
+
+
+# ---------------------------------------------------------------------------
+# 17. Batch-API wire uids (#1795 custom_id grammar: ^[a-zA-Z0-9_-]{1,64}$).
+# ---------------------------------------------------------------------------
+def test_wire_uid_grammar_length_and_determinism():
+    """Unit ids carry '|'/'#' and run to 73 chars; the wire uid must satisfy
+    the custom_id charset and fit 53 chars (batch_judge appends 11), and be
+    deterministic so resubmits reuse the same id."""
+    short = "evil|advbench_requests|advbench#0#r00"
+    long = "harmful_compliance|sensitive_info_requests|sensitive_info_requests#14#r00"
+    for uid in (short, long):
+        w = J.wire_uid(uid)
+        assert re.fullmatch(r"[a-zA-Z0-9_-]{1,53}", w), w
+        assert J.wire_uid(uid) == w  # deterministic
+        # composed custom_id fits the Anthropic 64-char cap
+        assert len(f"{w}__00000__00") <= 64
+    assert J.wire_uid(short) == "evil-advbench_requests-advbench-0-r00"  # legible short form
+    assert J.wire_uid(long) != J.wire_uid(long + "1")  # over-cap ids stay distinct
+
+
+def test_wire_map_collision_fails_loud():
+    """Two distinct unit ids that sanitize identically must never silently
+    merge into one wire uid (their draws would cross-join)."""
+    with pytest.raises(J.JudgeInputError, match="collision"):
+        J.wire_map_for(["a|b#r00", "a#b|r00"])

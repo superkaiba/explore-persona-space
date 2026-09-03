@@ -422,7 +422,13 @@ class JudgeUnit:
 
     @property
     def unit_id(self) -> str:
-        """Judge-layer id; must not contain the ``__`` custom_id delimiter."""
+        """Judge-layer id; must not contain the ``__`` custom_id delimiter.
+
+        This is the RECORD id (verdicts, resume keys, wave ids, adjudication
+        queues). The Batch wire carries :func:`wire_uid`'s sanitized form —
+        unit ids keep the frozen prompt-id grammar's ``|``/``#``, which the
+        Anthropic custom_id charset forbids.
+        """
         uid = f"{self.item_id}#r{self.response_index:02d}"
         if "__" in uid:
             raise JudgeInputError(f"unit id {uid!r} contains the '__' custom_id delimiter")
@@ -436,6 +442,8 @@ def load_cell_units(
     *,
     resolver_fn: Callable[..., dict[str, Any]] | None = None,
     packet_resolver: Callable[[str, str], tuple[dict[str, Any], str]] | None = None,
+    exclusions_fn: Callable[[str], dict[str, str]] | None = None,
+    not_estimable_out: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, list[JudgeUnit]]:
     """Load unit 5's generated answers for ``row`` into judge units per cell.
 
@@ -445,6 +453,21 @@ def load_cell_units(
     judge-facing question (evidence-embedded where the row requires it).
     Fails loud on a missing directory, a schema mismatch, or an answer-sha
     mismatch against the recorded text.
+
+    Evidence-conditioned rows additionally consult the FROZEN store's
+    exclusion records (``issue2658_text_resolver.load_evidence_exclusions`` —
+    read ONCE per call, never per item): a record whose item carries a
+    DELIBERATE exclusion (the packet builder intentionally never built its
+    packet — plan line 26 makes exclusions part of the frozen construct
+    table) is SKIPPED, and a cell whose ENTIRE selection is excluded is
+    OMITTED from the returned map — plan lines 107/154's pre-registered
+    "explicitly marked not-estimable" outcome — and recorded in
+    ``not_estimable_out`` (when given) as ``cell -> {status:
+    "not-estimable", detail: <verbatim store reason>, artifact, ...}`` (the
+    ``issue2658_power`` vocabulary). ONLY explicitly-excluded items are
+    skippable: an item absent from the store's ``items`` with NO exclusion
+    record still raises ``EvidencePacketMissingError`` — a genuine coverage
+    bug is never converted into silent data loss.
     """
     raw_dir = Path(gen_root) / "raw_completions" / split
     if not raw_dir.is_dir():
@@ -469,13 +492,26 @@ def load_cell_units(
     resolve = resolver_fn or R.resolve_items
     resolved = resolve(item_ids, verify_pins=True)
 
+    # Frozen-store exclusion records (evidence rows only) — ONE store read per
+    # call. {} for non-evidence rows and while the store is absent (the
+    # resolver's own store-not-built error then stays the binding failure).
+    excluded: dict[str, str] = {}
+    if C.CONSTRUCTS[row].uses_evidence_packet:
+        excluded = (exclusions_fn or R.load_evidence_exclusions)(row)
+
     units_by_cell: dict[str, list[JudgeUnit]] = {}
     question_cache: dict[str, tuple[str, str | None]] = {}
     for body in bodies:
         cell = f"{body['row']}__{body['frame']}__{body['band']}"
         units: list[JudgeUnit] = []
+        cell_excluded: dict[str, str] = {}  # item_id -> verbatim store reason
+        n_excluded_answers = 0
         for rec in body["records"]:
             iid = rec["prompt_id"]
+            if iid in excluded:
+                cell_excluded[iid] = excluded[iid]
+                n_excluded_answers += 1
+                continue
             if iid not in question_cache:
                 question_cache[iid] = composed_question(
                     row, iid, resolved[iid].text, packet_resolver=packet_resolver
@@ -493,6 +529,22 @@ def load_cell_units(
             )
             _ = u.unit_id  # validate the '__' contract eagerly, fail loud
             units.append(u)
+        if not units and cell_excluded:
+            # The cell's ENTIRE selection is deliberately excluded: with no
+            # frozen packet the construct is UNDEFINED (plan line 40), so the
+            # cell is not-estimable — never a vacuous zero-unit arm handed to
+            # run_pilot_gate / select_canary_units / run_cell (a zero-item
+            # cell record would read downstream as a measured zero).
+            if not_estimable_out is not None:
+                not_estimable_out[cell] = {
+                    "status": "not-estimable",
+                    "detail": "; ".join(sorted(set(cell_excluded.values()))),
+                    "artifact": str(R.EVIDENCE_PATH),
+                    "n_excluded_items": len(cell_excluded),
+                    "n_excluded_answers": n_excluded_answers,
+                    "item_ids": sorted(cell_excluded),
+                }
+            continue
         units_by_cell[cell] = sorted(units, key=lambda u: u.unit_id)
     return units_by_cell
 
@@ -579,9 +631,51 @@ def _has_reasoning(parsed: object) -> bool:
     )
 
 
-def reduce_round(save_raw: Path, unit_ids: set[str]) -> dict[str, list[dict[str, Any]]]:
+# Anthropic Batch custom_id charset (^[a-zA-Z0-9_-]{1,64}$); batch_judge
+# composes '{uid}__{idx:05d}__{comp:02d}' (11 appended chars), so the uid
+# segment handed to judge_graded / judge_pilot_gate must be charset-safe AND
+# fit 64 - 11 = 53 chars.
+_WIRE_SAFE = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-")
+_WIRE_UID_MAX = 53
+
+
+def wire_uid(unit_id: str) -> str:
+    """Batch-API-safe WIRE uid for one judge unit (#1795 pre-submit grammar).
+
+    Unit ids carry ``|``/``#`` from the frozen prompt-id grammar and run to
+    73 chars, so the wire carries a sanitized uid instead: out-of-charset
+    chars map to ``-``; an over-cap id keeps a legible prefix plus a 16-hex
+    sha256 suffix. Deterministic (stable across resubmits / adapter-cache
+    keys). Records, verdicts, resume keys, and wave ids keep the REAL
+    ``unit_id``; callers map back through :func:`wire_map_for` (fail-loud on
+    a sanitize collision, never a silent merge).
+    """
+    safe = "".join(ch if ch in _WIRE_SAFE else "-" for ch in unit_id)
+    if len(safe) <= _WIRE_UID_MAX:
+        return safe
+    digest = C.hashlib.sha256(unit_id.encode()).hexdigest()[:16]
+    return f"{safe[: _WIRE_UID_MAX - 17]}-{digest}"
+
+
+def wire_map_for(unit_ids: list[str]) -> dict[str, str]:
+    """``wire uid -> unit_id`` for one judge batch; raises on any collision."""
+    wm: dict[str, str] = {}
+    for uid in unit_ids:
+        w = wire_uid(uid)
+        if w in wm and wm[w] != uid:
+            raise JudgeInputError(
+                f"wire uid collision: {wm[w]!r} and {uid!r} both sanitize to {w!r} — "
+                "disambiguate the item ids (never a silent merge of two answers)"
+            )
+        wm[w] = uid
+    return wm
+
+
+def reduce_round(save_raw: Path, wire_map: dict[str, str]) -> dict[str, list[dict[str, Any]]]:
     """Per-unit classified draws (in comp-index order) from one round's save_raw.
 
+    ``wire_map`` is the batch's ``wire uid -> unit_id`` map (:func:`wire_map_for`
+    — the wire carries sanitized uids, the records keep real unit ids).
     Returns ``{unit_id: [{"class", "score", "stop_reason", "has_reasoning"},
     ...]}`` (``has_reasoning`` is meaningful for KEPT draws — the rationale-
     presence tally). Raises on a custom_id whose unit prefix is unknown (a
@@ -589,14 +683,15 @@ def reduce_round(save_raw: Path, unit_ids: set[str]) -> dict[str, list[dict[str,
     """
     raw = json.loads(Path(save_raw).read_text())
     all_scores: dict[str, Any] = raw.get("all_scores", {})
-    per_unit: dict[str, list[tuple[int, int, dict[str, Any]]]] = {u: [] for u in unit_ids}
+    per_unit: dict[str, list[tuple[int, int, dict[str, Any]]]] = {u: [] for u in wire_map.values()}
     for cid, parsed in all_scores.items():
         parts = cid.rsplit("__", 2)
         if len(parts) != 3:
             raise JudgeInputError(f"malformed custom_id {cid!r} in {save_raw}")
-        uid, idx_s, comp_s = parts
-        if uid not in per_unit:
-            raise JudgeInputError(f"custom_id {cid!r} names unknown unit {uid!r} ({save_raw})")
+        wid, idx_s, comp_s = parts
+        uid = wire_map.get(wid)
+        if uid is None:
+            raise JudgeInputError(f"custom_id {cid!r} names unknown unit {wid!r} ({save_raw})")
         cls, score = classify_parsed(parsed)
         stop_reason = parsed.get("stop_reason") if isinstance(parsed, dict) else None
         per_unit[uid].append(
@@ -822,7 +917,11 @@ def run_pilot_gate(
                 "draws (llm-judging.md rule 26 sizing clause). Remedies: enlarge the cell's "
                 "answer pool, or merge cells into frame-level arms — never waive the floor."
             )
-        arms[cell] = [(u.unit_id, u.question, u.answer) for u in units]
+        wire_map_for([u.unit_id for u in units])  # fail-loud collision check
+        # The gate dispatches these ids on the Batch wire (the #1795 custom_id
+        # grammar), so it gets the sanitized WIRE uids; the gate's report is
+        # per-arm aggregate — no per-unit map-back needed.
+        arms[cell] = [(wire_uid(u.unit_id), u.question, u.answer) for u in units]
 
     gate_root = pilot_gate_root(out_root, row)
     report_path = gate_root / "pilot_gate_report.json"
@@ -1074,7 +1173,8 @@ def run_cell(
     def _call(
         batch: list[JudgeUnit], n_draws: int, tag: str, *, force_sync: bool
     ) -> dict[str, list[dict[str, Any]]]:
-        items = [(u.unit_id, u.question, u.answer) for u in batch]
+        wm = wire_map_for([u.unit_id for u in batch])
+        items = [(wire_uid(u.unit_id), u.question, u.answer) for u in batch]
         save_raw = raw_root / f"{tag}.json"
         kwargs: dict[str, Any] = {}
         if force_sync:
@@ -1095,7 +1195,7 @@ def run_cell(
         )
         if dry_run:
             return {}
-        return reduce_round(save_raw, {u.unit_id for u in batch})
+        return reduce_round(save_raw, wm)
 
     round0 = _call(units, int(C.JUDGE["n_draws"]), "r0", force_sync=False)
     if dry_run:
@@ -1254,8 +1354,10 @@ def _judge_canary_items(
     while (root / f"canary_r{attempt}.json").exists():
         attempt += 1
     save_raw = root / f"canary_r{attempt}.json"
+    wm = wire_map_for([uid for uid, _, _ in items])
+    wire_items = [(wire_uid(uid), q, a) for uid, q, a in items]
     judge(
-        items,
+        wire_items,
         compose_rubric(row),
         n_draws=int(C.JUDGE["n_draws"]),
         cache_dir=root / "cache" / f"r{attempt}",
@@ -1273,7 +1375,7 @@ def _judge_canary_items(
             "pre-crash draws and cannot detect drift); clear the stale attempt cache under "
             f"{root / 'cache' / f'r{attempt}'} and re-run"
         )
-    reduced = reduce_round(save_raw, {uid for uid, _, _ in items})
+    reduced = reduce_round(save_raw, wm)
     medians: dict[str, float | None] = {}
     for uid, classified in reduced.items():
         kept = [d["score"] for d in classified if d["class"] == CLASS_KEPT]
@@ -1420,6 +1522,7 @@ def run_wave(
     gate_fn: Callable[..., Any] | None = None,
     resolver_fn: Callable[..., dict[str, Any]] | None = None,
     packet_resolver: Callable[[str, str], tuple[dict[str, Any], str]] | None = None,
+    exclusions_fn: Callable[[str], dict[str, str]] | None = None,
     planned_calls_total: int | None = None,
     force_pilot_gate: bool = False,
     skip_canary: bool = False,
@@ -1427,21 +1530,36 @@ def run_wave(
 ) -> dict[str, Any]:
     """Judge one row's generated answers for one split, end to end.
 
-    Order: load units -> drift canary (~60 draws — CHEAP-FIRST, so a drifted
-    provider halts before the ~1,260-draw pilot spend) -> rule-26 pilot gate
-    (when the DISPATCH's total planned calls cross the floor; resume-honors a
-    persisted matching PASS report) -> per-cell judging with
-    fingerprint-gated resume -> wave summary. ``planned_calls_total`` is the
-    total across every row in the caller's dispatch (defaults to this row's
-    own call count) so a multi-row dispatch >= the floor gates EVERY row.
+    Order: load units (store-excluded cells drop out as NOT-ESTIMABLE, with
+    the store's verbatim reasons persisted in the wave summary) -> drift
+    canary (~60 draws — CHEAP-FIRST, so a drifted provider halts before the
+    ~1,260-draw pilot spend) -> rule-26 pilot gate (when the DISPATCH's total
+    planned calls cross the floor; resume-honors a persisted matching PASS
+    report) -> per-cell judging with fingerprint-gated resume -> wave
+    summary. ``planned_calls_total`` is the total across every row in the
+    caller's dispatch (defaults to this row's own call count) so a multi-row
+    dispatch >= the floor gates EVERY row.
     """
     construct = C.CONSTRUCTS[row]
     if not construct.judge_scored:
         raise ValueError(f"row {row!r} uses objective labels (plan section 3); refuse to judge it")
     C.assert_single_judge_revision([str(C.JUDGE["model"])])
+    not_estimable: dict[str, dict[str, Any]] = {}
     units_by_cell = load_cell_units(
-        gen_root, split, row, resolver_fn=resolver_fn, packet_resolver=packet_resolver
+        gen_root,
+        split,
+        row,
+        resolver_fn=resolver_fn,
+        packet_resolver=packet_resolver,
+        exclusions_fn=exclusions_fn,
+        not_estimable_out=not_estimable,
     )
+    if not units_by_cell:
+        raise JudgeInputError(
+            f"every generated cell for row {row!r} split {split!r} is not-estimable "
+            f"(store-excluded: {sorted(not_estimable)}); nothing to judge — refusing "
+            "rather than emitting an empty wave"
+        )
     n_units = sum(len(us) for us in units_by_cell.values())
     own_calls = n_units * int(C.JUDGE["n_draws"])
     total_calls = own_calls if planned_calls_total is None else planned_calls_total
@@ -1449,10 +1567,15 @@ def run_wave(
     fp = judge_cache_fingerprint(row)
     print(
         f"[phase=judge] row={row} split={split} wave={wave} cells={len(units_by_cell)} "
-        f"answers={n_units} planned_calls={own_calls} dispatch_total={total_calls} "
-        f"fp={fp[:16]}",
+        f"not_estimable={len(not_estimable)} answers={n_units} planned_calls={own_calls} "
+        f"dispatch_total={total_calls} fp={fp[:16]}",
         flush=True,
     )
+    for cell in sorted(not_estimable):
+        print(
+            f"[judge] cell {cell} NOT-ESTIMABLE (store-excluded): {not_estimable[cell]['detail']}",
+            flush=True,
+        )
 
     # Cheap-first ordering: the ~60-draw drift canary runs BEFORE the
     # ~1,260-draw pilot gate, so a drifted provider halts at canary cost.
@@ -1509,6 +1632,12 @@ def run_wave(
         "wave_id": wave,
         "cache_fingerprint": fp,
         "n_cells": len(cells),
+        # Store-excluded cells, plan lines 107/154's pre-registered outcome:
+        # cell -> {status: "not-estimable", detail: <verbatim store reason>,
+        # artifact: <evidence store path>, ...} — the issue2658_power.py
+        # vocabulary, so unit 8 reports them not-estimable with the artifact
+        # NAMED (its docstring contract) instead of reading absence blind.
+        "not_estimable": not_estimable,
         "n_units": n_units,
         "planned_calls": own_calls,
         "dispatch_total_calls": total_calls,
@@ -1615,7 +1744,10 @@ def main(argv: list[str] | None = None) -> int:
             )
 
     # Rule 26: the pilot-gate trigger reads the DISPATCH's total planned
-    # calls, so a multi-row dispatch >= the floor gates every row.
+    # calls, so a multi-row dispatch >= the floor gates every row. This
+    # pre-pass shares load_cell_units' exclusion-aware loading (store-excluded
+    # items never dispatch), so the declared total equals the sum of the
+    # per-row waves' own planned calls.
     n_draws = int(C.JUDGE["n_draws"])
     per_row_units: dict[str, int] = {}
     for row in rows:

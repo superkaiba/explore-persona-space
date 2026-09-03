@@ -557,6 +557,29 @@ def resolve_evidence_packet(row: str, item_id: str) -> tuple[dict[str, Any], str
     return packet, stored_sha
 
 
+def load_evidence_exclusions(row: str) -> dict[str, str]:
+    """Per-item VERBATIM exclusion reasons for ``row`` from the frozen store.
+
+    The store records DELIBERATE (row, frame)-grain exclusions as per-item
+    records (``issue2658_evidence.EXCLUSIONS`` -> ``build_store_core``); the
+    judge's ``load_cell_units`` consults this map ONCE per wave (never per
+    item) to SKIP records whose packet was intentionally never built. Returns
+    ``{}`` while the store is absent, so :func:`resolve_evidence_packet`'s own
+    store-not-built ``EvidencePacketMissingError`` stays the binding failure.
+    Only explicitly-recorded exclusions are skippable downstream: an item
+    missing from ``items`` with NO exclusion record still raises loud (a
+    genuine coverage bug is never silent data loss).
+    """
+    if not EVIDENCE_PATH.exists():
+        return {}
+    store = json.loads(EVIDENCE_PATH.read_text())
+    return {
+        str(rec["item_id"]): str(rec["reason"])
+        for rec in store.get("exclusions", [])
+        if rec.get("row") == row
+    }
+
+
 # ---------------------------------------------------------------------------
 # CLI.
 # ---------------------------------------------------------------------------
