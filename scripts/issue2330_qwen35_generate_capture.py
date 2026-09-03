@@ -812,8 +812,44 @@ def _load_capture_model(model_id: str, device: str, dtype_str: str):
         logger.info("[load] dtype= kwarg rejected; retrying with torch_dtype= (transformers<5)")
         load_kwargs.pop("dtype")
         hf = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=dtype, **load_kwargs)
+    except AttributeError as exc:
+        # Vision-language-wrapped checkpoints (Qwen4ExpForConditionalGeneration,
+        # Qwen3_5MoeForConditionalGeneration): transformers 5.16 maps their
+        # model_type to the TEXT-ONLY *ForCausalLM class but hands it the
+        # top-level VL config (text fields live under config.text_config), so
+        # construction dies on a missing attribute BEFORE any weight is read.
+        # Load the wrapper class instead; the text tower + lm_head are the
+        # same weights, and _resolve_decoder_blocks walks .model.language_model
+        # .layers (depth 2). Verified 2026-09-03: smoke 61323 q38fn capture
+        # failed with 'Qwen4ExpConfig' object has no attribute 'vocab_size'.
+        # Any other AttributeError (no VL wrapper to fall back to) propagates.
+        arch = _vl_wrapper_arch(model_id)
+        if arch is None:
+            raise
+        from transformers import AutoModelForImageTextToText
+
+        logger.info(
+            "[load] %s rejected the top-level VL config (%s); loading %s via "
+            "AutoModelForImageTextToText",
+            "AutoModelForCausalLM", exc, arch,
+        )
+        hf = AutoModelForImageTextToText.from_pretrained(model_id, **load_kwargs)
     hf.eval()
     return hf
+
+
+def _vl_wrapper_arch(model_id: str) -> str | None:
+    """Return the checkpoint's ``*ForConditionalGeneration`` architecture name
+    when its config is a vision-language wrapper (has ``text_config``), else
+    None. Pure config read (no weights)."""
+    from transformers import AutoConfig
+
+    cfg = AutoConfig.from_pretrained(model_id)
+    archs = list(getattr(cfg, "architectures", None) or [])
+    if not archs or not hasattr(cfg, "text_config"):
+        return None
+    arch = archs[0]
+    return arch if arch.endswith("ForConditionalGeneration") else None
 
 
 def _build_engine(model_id: str, seed: int):

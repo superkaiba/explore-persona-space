@@ -241,3 +241,28 @@ def test_parse_generation_marks_truncated_no_close_on_length_hit():
     row = {"text": "endless reasoning with no close tag", "finish_reason": "length"}
     rec = PC.parse_generation(row, "prefill")
     assert not rec["well_formed"] and rec["reason"] == "truncated_no_close"
+
+
+# --- capture loader: VL-wrapper fallback (smoke 61323 regression) -------------
+def test_vl_wrapper_arch_detects_conditional_generation(monkeypatch):
+    """Qwen4Exp / Qwen3_5Moe checkpoints expose ``text_config`` and a
+    ``*ForConditionalGeneration`` architecture; DeepseekV4 / GlmMoeDsa do not."""
+    import types
+    import transformers
+    import issue2330_qwen35_generate_capture as G
+
+    fake = {
+        "Qwen/Qwen3.8-Flash-Next-FP8": types.SimpleNamespace(
+            architectures=["Qwen4ExpForConditionalGeneration"], text_config=object()),
+        "Qwen/Qwen3.5-397B-A17B-FP8": types.SimpleNamespace(
+            architectures=["Qwen3_5MoeForConditionalGeneration"], text_config=object()),
+        "deepseek-ai/DeepSeek-V4-Flash-0731": types.SimpleNamespace(
+            architectures=["DeepseekV4ForCausalLM"]),
+        "zai-org/GLM-5.3": types.SimpleNamespace(architectures=["GlmMoeDsaForCausalLM"]),
+    }
+    monkeypatch.setattr(
+        transformers.AutoConfig, "from_pretrained", staticmethod(lambda mid, **kw: fake[mid]))
+    assert G._vl_wrapper_arch("Qwen/Qwen3.8-Flash-Next-FP8") == "Qwen4ExpForConditionalGeneration"
+    assert G._vl_wrapper_arch("Qwen/Qwen3.5-397B-A17B-FP8") == "Qwen3_5MoeForConditionalGeneration"
+    assert G._vl_wrapper_arch("deepseek-ai/DeepSeek-V4-Flash-0731") is None
+    assert G._vl_wrapper_arch("zai-org/GLM-5.3") is None
