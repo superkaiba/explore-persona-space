@@ -4,6 +4,11 @@
   "plotting_script": "scripts/issue1901_qualitative_retrieval_failures.py",
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
   "reproduction_command": "uv run python scripts/issue1901_qualitative_retrieval_failures.py",
+  "rendered_row_ids": [
+    "vocabulary_to_property_quiz",
+    "vancouver_to_japan_itinerary"
+  ],
+  "rendered_rows_note": "The manuscript figure renders the two rows in MANUSCRIPT_ROW_IDS out of the banked selection below; --row-ids all renders every banked row.",
   "input": "eval_results/issue_1901/content_divergent_retrieval_examples.json",
   "input_sha256": "0e0056dc38b9b75b1b78de923dd49597bfd14a7785648d48be3a62a04d22c6fb",
   "render": {
@@ -12,11 +17,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      10.26
+      6.95
     ],
     "exported_size_inches": [
       13.095,
-      10.3
+      6.99
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -42,11 +47,7 @@
       "Plan a three day trip to vancouver [...]\nChinese cuisine",
       "create an 7 day itinerary [...] Japan.\n[...] tokyo [...] mnt. fugi.",
       "Day 1: Exploring Chinatown and Beyond\n\u2022 Dim sum breakfast at a local Cantonese\nrestaurant.\n\u2022 Visit Hon Shing for [...] chicken chop,\nshrimp dumplings [...]",
-      "Day 1: Arrival and Tokyo City Tour\n\u2022 Arrive at Narita or Haneda Airport.\n\u2022 Check-in [...] recover from the journey.\n[...]",
-      "descriptive answer for manage.py [...]\nwith [...] code examples and outputs.",
-      "descriptive answer for NAME_1 python not\nfound [...] with [...] code examples and\noutputs.",
-      "manage.py is a script provided by Django\n[...] for running the development server and\nexecuting management commands. [...]",
-      "import pandas as pd\nModuleNotFoundError: No module named\n'pandas'\npip install pandas [...]"
+      "Day 1: Arrival and Tokyo City Tour\n\u2022 Arrive at Narita or Haneda Airport.\n\u2022 Check-in [...] recover from the journey.\n[...]"
     ]
   },
   "selection": {
@@ -66,8 +67,8 @@
     "deduplication": "exact source-answer-vector deduplication"
   },
   "output_sha256": {
-    "pdf": "8621442042d9ac563909009815d728cb2743dcb5626f777f9f08f42095522fd0",
-    "png": "1cdffb39067d808087b65237a298ec97d1d8775b52ca0a42fcd648eb34fd9050",
-    "grayscale": "29dcdf5cbc5e675e5d60ec272dee2663932251d0e25a70aac87007c3c2ccfd76"
+    "pdf": "575a25cc5d672d9e13e2e429cfca0881c7eafa3878d66571fd89e3ea968b7cc5",
+    "png": "8b1a59f104c285df6c1c39e3b51a7151e16c91d314b367b8306331b644e7f54b",
+    "grayscale": "63bbf8d6b7083e8d5c160834597dd08cc26df2bc26442b813cde60fab71bb46b"
   }
 }

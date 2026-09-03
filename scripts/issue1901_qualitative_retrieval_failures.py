@@ -48,6 +48,12 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
 
 DEFAULT_INPUT = ROOT / "eval_results/issue_1901/content_divergent_retrieval_examples.json"
 DEFAULT_OUTPUT = ROOT / "figures/paper/c3_qualitative_discrimination"
+# Manuscript selection (Thomas 2026-09-03: "change figure 4 to only have 2 examples",
+# drop the Django pair). Pass --row-ids all to render every banked row.
+MANUSCRIPT_ROW_IDS: tuple[str, ...] = (
+    "vocabulary_to_property_quiz",
+    "vancouver_to_japan_itinerary",
+)
 
 TRUE = ROLES["linear"].color
 WRONG = ROLES["control"].color
@@ -76,7 +82,36 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument(
+        "--row-ids",
+        nargs="+",
+        default=list(MANUSCRIPT_ROW_IDS),
+        help="Row ids to render, in the input order (default: the manuscript pair); "
+        "'all' renders every banked row.",
+    )
     return parser.parse_args()
+
+
+def select_rows(data: dict[str, object], row_ids: list[str]) -> list[str]:
+    """Keep only the requested rows (flat ``rows`` and every ``groups[*].rows``); fail loud on
+    an unknown id or an empty selection so a typo never renders a silently different figure."""
+    if row_ids == ["all"]:
+        return [str(r["id"]) for g in _groups(data) for r in g["rows"]]
+    wanted = set(row_ids)
+    banked = {str(r["id"]) for g in _groups(data) for r in g["rows"]}
+    unknown = wanted - banked
+    if unknown:
+        raise ValueError(f"unknown row id(s) {sorted(unknown)}; banked: {sorted(banked)}")
+    if "rows" in data:
+        data["rows"] = [r for r in data["rows"] if str(r["id"]) in wanted]
+    if "groups" in data:
+        for g in data["groups"]:
+            g["rows"] = [r for r in g["rows"] if str(r["id"]) in wanted]
+        data["groups"] = [g for g in data["groups"] if g["rows"]]
+    kept = [str(r["id"]) for g in _groups(data) for r in g["rows"]]
+    if not kept:
+        raise ValueError("row selection is empty")
+    return kept
 
 
 def wrap_lines(text: str, width: int, max_lines: int) -> list[str]:
@@ -329,6 +364,7 @@ def main() -> None:
     args = parse_args()
     raw = args.input.read_bytes()
     data = json.loads(raw)
+    rendered_rows = select_rows(data, list(args.row_ids))
     set_c2a_style()
     fig, include_frac = render(data)
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -337,7 +373,7 @@ def main() -> None:
         args.output,
         title="Qualitative rank-1 retrieval failures",
         subject=(
-            "True answer versus retrieved rank-1 answer for three single-turn "
+            f"True answer versus retrieved rank-1 answer for {len(rendered_rows)} single-turn "
             "content-divergent retrieval failures"
         ),
         creator="scripts/issue1901_qualitative_retrieval_failures.py",
@@ -350,6 +386,11 @@ def main() -> None:
         "plotting_script": "scripts/issue1901_qualitative_retrieval_failures.py",
         "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
         "reproduction_command": "uv run python scripts/issue1901_qualitative_retrieval_failures.py",
+        "rendered_row_ids": rendered_rows,
+        "rendered_rows_note": (
+            "The manuscript figure renders the two rows in MANUSCRIPT_ROW_IDS out of the banked "
+            "selection below; --row-ids all renders every banked row."
+        ),
         "input": str(args.input.relative_to(ROOT))
         if args.input.is_relative_to(ROOT)
         else str(args.input),
