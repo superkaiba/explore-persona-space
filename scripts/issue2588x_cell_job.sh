@@ -38,6 +38,10 @@ PY="$BASE/venv/bin/python"
 # vLLM JIT-compiles FlashInfer sampling kernels with `ninja`, which lives in the venv; it must be on PATH
 # (same-width jobs 61187-61190 died at engine init with FileNotFoundError: ninja, 2026-09-03).
 export PATH="$BASE/venv/bin:$PATH"
+# Caching-allocator fragmentation was 21.8 GiB of the 136 GiB in use when the
+# DeepSeek-V4-Flash capture OOMed (job 62667); expandable segments reclaim it.
+# vLLM (gen phase) tolerates this setting outside sleep mode.
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 OUT_ROOT="$BASE/out"
 mkdir -p "$OUT_ROOT" "$HF_HOME"
 # NB: no `export CUDA_VISIBLE_DEVICES` anywhere in this job — Slurm's gres

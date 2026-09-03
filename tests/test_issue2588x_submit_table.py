@@ -44,12 +44,12 @@ def _case_table(text: str) -> dict[str, int]:
     # exported as EPS_CAPTURE_BS for the job script; optional, default 8).
     return {
         k: int(tp)
-        for k, tp in re.findall(r"^\s*(\w+)\)\s+TP=(\d+)(?:;\s*BS=\d+)?\s*;;", text, re.M)
+        for k, tp in re.findall(r"^\s*(\w+)\)\s+TP=(\d+)(?:;\s*BS=\d+)?(?:;\s*HR=\d+)?\s*;;", text, re.M)
     }
 
 
 def _submit_bs_table(text: str) -> dict[str, int]:
-    return {k: int(bs) for k, bs in re.findall(r"^\s*(\w+)\)\s+TP=\d+;\s*BS=(\d+)\s*;;", text, re.M)}
+    return {k: int(bs) for k, bs in re.findall(r"^\s*(\w+)\)\s+TP=\d+;\s*BS=(\d+)(?:;\s*HR=\d+)?\s*;;", text, re.M)}
 
 
 def test_submit_capture_batch_sizes():
@@ -63,7 +63,10 @@ def test_submit_capture_batch_sizes():
         if n >= 2:
             assert key in bs, f"{key}: multi-GPU key without an explicit BS"
     assert all(1 <= v <= 8 for v in bs.values()), bs
-    assert bs["dsv4_flash"] <= 4 and bs["dsv4_pro"] <= 2
+    assert bs["dsv4_flash"] <= 2 and bs["dsv4_pro"] <= 1
+    assert 'export EPS_CAPTURE_HEADROOM_GIB="${HR:-24}"' in text
+    assert re.search(r"^\s*dsv4_flash\)\s+TP=2;\s*BS=\d+;\s*HR=(\d+)\s*;;", text, re.M).group(1) >= "40"
+    assert "PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True" in (SUBMIT.parent / "issue2588x_cell_job.sh").read_text()
     assert 'export EPS_CAPTURE_BS="${BS:-8}"' in text
     assert '--capture-batch-size "${EPS_CAPTURE_BS:-8}"' in (SUBMIT.parent / "issue2588x_cell_job.sh").read_text()
 

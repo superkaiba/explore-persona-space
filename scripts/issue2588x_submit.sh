@@ -29,9 +29,9 @@ LOGS="$BASE/logs"
 case "$KEY" in
   q38fn)      TP=4; BS=8 ;;
   q35_397b)   TP=4; BS=4 ;;
-  dsv4_flash) TP=2; BS=4 ;;
+  dsv4_flash) TP=2; BS=2; HR=40 ;;
   glm53)      TP=8; BS=4 ;;
-  dsv4_pro)   TP=8; BS=2 ;;
+  dsv4_pro)   TP=8; BS=1 ;;
   # Same-width (h=5120) column extension, 2026-09-02: dense bf16 ~65 GB, one GPU each.
   q3_32b)     TP=1 ;;
   qwq_32b)    TP=1 ;;
@@ -45,6 +45,12 @@ esac
 # take smaller batches; the job script reads EPS_CAPTURE_BS (default 8) and
 # it reaches the job through sbatch's default --export=ALL like HF_TOKEN.
 export EPS_CAPTURE_BS="${BS:-8}"
+# Per-GPU headroom (GiB) the balanced capture load keeps free for activations
+# (default 24). DeepSeek-V4-Flash TP=2 OOMed in eager attention at B=4 with
+# 24 GiB (job 62667: 113.7 GiB allocated + 21.8 GiB fragmentation on GPU 1),
+# and DeepseekV4 has _supports_sdpa=False so eager (B, heads, T, T) scores
+# are unavoidable. 2 x (140 - 40) = 200 GiB still holds the 167 GB snapshot.
+export EPS_CAPTURE_HEADROOM_GIB="${HR:-24}"
 CPUS=$(( 8 * TP ))
 if [ "$CPUS" -gt 64 ]; then CPUS=64; fi
 MEM=$(( 128 * TP ))
