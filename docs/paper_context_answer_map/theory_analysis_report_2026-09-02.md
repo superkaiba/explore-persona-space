@@ -105,6 +105,28 @@ Reading: the map copies nothing through. Almost all of its energy goes into rota
 
 Reading: "traits are rotated away" (#1774) is a small-fit, layer-14 result. On the 963k map at the map layer, trait directions pass through mostly preserved in direction. The asymmetry read (trait span aligned with the singular subspace on one side of the map only) is recorded with opposite side labels in the events log and the JSON, which is why #2571 (a row/column-convention check for linear-map plans) was filed. Treat the side as to verify.
 
+**Left and right eigenvectors**
+
+For a non-normal operator the two differ: the right eigenvector v_i is the direction mode i writes into (W v_i = λ_i v_i), the left eigenvector u_i is the direction it reads (u_iᵀ W = λ_i u_iᵀ), and they are biorthogonal (u_iᵀ v_j = δ_ij, W = Σ λ_i v_i u_iᵀ). A direction is "maintained" only if λ_i is real and near 1 AND cos(u_i, v_i) is near 1. Both fits ran the full non-symmetric eigendecomposition with the left eigenvectors taken from the inverse of the right-eigenvector matrix.
+
+| Read | Result | Source |
+|---|---|---|
+| Biorthogonality check, 963k map L19 | max error 1.8e-11; κ(V) 4,261; 1,751 complex pairs, 82 real eigenvalues | #2569 leg 1 |
+| Eigenvalues near 1 (candidates for maintained directions), small fit L14 | 0 of 3,584; 68 near 0; trace/d = 0.036 (mean copying score ≈ 0); positive-real eigenvalue mass 0.56 | #1774 |
+| cos(u_i, v_i) over the top-32 singular pairs, 963k map | median 0.26, max 0.36, none above 0.5; top pair 0.084 | #2569 leg 1 |
+| Fold stability of the top-64 eigenmodes, small fit | all 64 stable (matched across 6 folds) | #1774 |
+| Trait gain matrix G (evil, sycophancy, hallucination in and out), small fit | diagonal 0.25 / 0.08 / 0.13, off-diagonal up to 0.16, 99.6% of energy outside the trait span | #1774 |
+| Read side (u) of the top-32 singular directions vs 131,072 per-token context-SAE features | median max cos 0.135, max 0.16, against a null floor of 0.085: no single-feature alignment | #2569 leg 1 dashboards |
+| Write side (v) of the top-32 singular directions vs 65,536 turn-averaged answer-SAE features | median max cos 0.31, max 0.63; 32 of 32 above the null floor; each write direction fires about 165 features through the encoder | #2569 leg 1 dashboards |
+| Read / write side of the top-32 eigen directions vs the same dictionaries | read median 0.155 (max 0.29); write median 0.26 (max 0.41) | #2569 leg 1 dashboards |
+| Feature labels for any of the above | absent (both description sources unavailable at run time) | #2569 leg 1 dashboards |
+| Tuned-lens token decode of left and right singular vectors 0–7, small fit | unreadable (code fragments, CJK pieces, punctuation); same for the fixed point | #1774 |
+| Slow eigenmodes of the next-token map: subspace and coordinates | the slow subspace (right eigenvectors, modulus above 0.95) holds trait and context content 30–125× above a random-subspace null; the slow coordinates (left eigenvectors) persist along real answers 1.7–2.3× vs null 0.64 | #922 |
+
+Reading: nothing is maintained. No eigenvalue sits near 1, every top read direction is nearly orthogonal to its paired write direction (cos ≤ 0.36), and 98% of the modes are complex pairs, so the map acts as rotations between unrelated directions rather than gains on shared ones. The one asymmetry with content: the map's top output directions line up with individual answer-SAE features (cos up to 0.63) while its top input directions line up with no single context feature. Nobody has said what those answer features mean, because the label sources were absent when the dashboards ran. Two caveats bind the eigen dashboards: complex eigenvectors were dashboarded through their real part only, and the median imaginary fraction is 0.65–0.74, so most of each mode was left out; and the whitened-cosine companion was deferred. The only eigenvector read that found legible structure is #922's slow shell on the next-token map.
+
+Convention note: plan v3 of #2569 mixed row and column action on this non-normal operator, so its Gram gate, wiring edges, kernel mining, and gate direction had computed the transpose map's geometry (three probes confirmed, including |cos(u₁, v₁)| = 0.084 vs the expected near-1 for a self-consistent read). Plan v4 fixed the row action before the run. The #779 dissection's singular-subspace read (one side aligned with the trait span at 0.7–0.9, the other at 0.1–0.2) carries the same side-label ambiguity in its events note, and #2571 is the filed convention check.
+
 **Fixed point**
 
 | Read | Result | Source |
@@ -243,6 +265,7 @@ A context-SAE → answer-SAE map (65,536 → 2,150 features) predicts which answ
 
 - The map is near its information ceiling and yet structureless. It behaves like a dense conditional expectation, and the useful abstractions live one level up (which directions are predicted well, which features fire).
 - Trait directions pass through the map largely preserved at the map layer on the large fit, but are rotated away at layer 14 on the small fit. Layer and fit size change the qualitative story.
+- The map's output directions are feature-shaped and its input directions are not: top write directions match single answer-SAE features, top read directions match nothing in a 131k-feature context dictionary. The map reads diffuse context geometry and writes into named answer features.
 - The forward and reverse maps are both good and are not inverses of each other. Context information the forward map maps weakly is exactly what the reverse map recovers.
 - Fine-tuning writes into raw read directions and ignores where the map would transport them.
 - Cross-model operators are alignable and similar but distinct, and the distinctness grows once each model writes its own answers.
@@ -254,7 +277,7 @@ A context-SAE → answer-SAE map (65,536 → 2,150 features) predicts which answ
 - **To do, paper:** `sections/04_results.tex` has an empty `\subsection{Theoretical analysis}`. The paper plan says to present this material as "structure of the learned operator" and to keep the gate null, fixed point, atlas, SAE wiring, and kernel-pair battery in the appendix unless a claim needs them. Main-text candidates: learning curve, high-rank non-normal spectrum with the direction-class anatomy, firing-versus-magnitude split, cross-model operator comparison, and the reverse-map vs pseudoinverse contrast.
 - **To do, theory paper:** the Overleaf theory paper has not been touched since 2026-06-28. The coherence-condition result (whitened metric; difficulty vs curvature) and the gate-ladder null belong in it.
 - **To do, reconcile:** the spectral-radius disagreement between #1774 (0.91 at L14) and the 963k map (1.66 at L14); the trait pass-through disagreement between #1774 (rotated away) and the #779 dissection (preserved at L19); and the singular-subspace side label (#2571).
-- **To do, follow-up:** steer along the fitted reverse-map direction (#2618 caveat), since every steering negative so far used the pseudoinverse pre-image; re-dose the kernel addition test (#1774 positive control failed).
+- **To do, follow-up:** steer along the fitted reverse-map direction (#2618 caveat), since every steering negative so far used the pseudoinverse pre-image; re-dose the kernel addition test (#1774 positive control failed); label the answer-SAE features that the map's top write directions align with (cos up to 0.63, unlabeled), redo the eigen dashboards with the imaginary part included, and run the deferred whitened-cosine companion.
 - **Open on #2569:** nine provenance concerns (cache keys, unpinned model revisions), none affecting a reported number; the wiring gate and two of four leg-1 clauses at L14/L26 were never evaluable; the interpretation is un-reviewed (review ensemble did not run).
 
 ## 7. Sources
