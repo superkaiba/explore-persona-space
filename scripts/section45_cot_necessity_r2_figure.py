@@ -92,8 +92,8 @@ CELLS = {"p7_A": "context", "p7_D": "end_of_thought"}
 GROUPS = ("necessary", "both_correct", "both_wrong", "other")
 GROUP_COLOR = {"necessary": "#D6604D", "both_correct": "#4393C3"}
 GROUP_LABEL = {
-    "necessary": "Reasoning necessary (right with reasoning, wrong without)",
-    "both_correct": "Reasoning not needed (right both ways)",
+    "necessary": "CoT-necessary (right with CoT, wrong without)",
+    "both_correct": "CoT-unnecessary (right both ways)",
 }
 N_BOOT = 1000
 SEED = 0
