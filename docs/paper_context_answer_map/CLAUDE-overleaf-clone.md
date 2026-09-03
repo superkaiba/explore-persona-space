@@ -178,7 +178,11 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
   (it sweeps another session's staged edits under your message, observed
   2026-09-03); `git pull --rebase` before each edit batch; `TELLS_ALLOW=1` on the
   pre-commit gate is sanctioned only for hits inside quoted model text (the
-  retrieval-failure tables and plan.tex carry pre-existing ones).
+  retrieval-failure tables and plan.tex carry pre-existing ones). Write the commit-message file with `mktemp` (`/tmp/ol_msg_<topic>_XXXXXX.txt`), never a fixed
+  name: a hook-blocked compound command runs NONE of its steps, so a retry that reuses a fixed
+  message path can commit under another session's leftover message (Overleaf 9a17db6, 2026-09-03,
+  carries Methodology edits under a main.tex macros message). After any hook block, re-run every
+  step, the message write included.
 
 ## Writing
 - Thomas alone writes/approves claims (contribution, abstract's central claim, titles,
