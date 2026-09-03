@@ -38,7 +38,18 @@ if str(_SCRIPTS) not in sys.path:
 
 import issue2588_panel_common as PC  # noqa: E402
 
-EXTENSION_KEYS = ("q38fn", "q35_397b", "dsv4_flash", "glm53", "dsv4_pro")
+EXTENSION_KEYS = (
+    "q38fn",
+    "q35_397b",
+    "dsv4_flash",
+    "glm53",
+    "dsv4_pro",
+    # same-width (h=5120) column extension, 2026-09-02 (dense bf16 rows):
+    "q3_32b",
+    "qwq_32b",
+    "q25_32b",
+    "o3_32b_t",
+)
 PROBE_TEXT = "What is the capital of Australia?"
 Q38FN_THINK_PINS = {"open_ids": (248068,), "close_ids": (248069,)}
 TAIL = 110
@@ -80,14 +91,22 @@ def probe_model(key: str) -> dict:
     assert isinstance(mpe, int) and mpe >= PC.REGEN_MAX_MODEL_LEN_BOUND, (
         f"{key}: max_position_embeddings {mpe} < regen bound {PC.REGEN_MAX_MODEL_LEN_BOUND}"
     )
-    assert qm == "fp8", f"{key}: quant_method {qm!r} != 'fp8'"
+    if m.est_snapshot_gb is not None:  # the FP8 larger-model rows
+        assert qm == "fp8", f"{key}: quant_method {qm!r} != 'fp8'"
+    else:  # dense bf16 same-width rows: no quantization_config at all
+        assert qm is None, f"{key}: unexpected quant_method {qm!r} on a dense bf16 row"
     print(f"  config OK: L={n_layers} h={h_dim} mpe={mpe} quant={qm}")
 
     tok = AutoTokenizer.from_pretrained(m.hf_id)
 
     pins = PC.assert_think_pins(tok, m.family)
-    assert pins, f"{key}: thinking family returned empty think pins"
-    for name, literal in (("open_ids", PC.THINK_OPEN), ("close_ids", PC.THINK_CLOSE)):
+    if not m.thinking:
+        assert pins == {}, f"{key}: non-thinking family returned think pins {pins}"
+    else:
+        assert pins, f"{key}: thinking family returned empty think pins"
+    for name, literal in (
+        (("open_ids", PC.THINK_OPEN), ("close_ids", PC.THINK_CLOSE)) if pins else ()
+    ):
         ids = list(pins[name])
         roundtrip = tok.decode(ids)
         assert roundtrip == literal, (key, name, ids, repr(roundtrip))
@@ -133,7 +152,9 @@ def main() -> int:
     print(f"[probe] transformers=={transformers.__version__}")
     results = [probe_model(k) for k in EXTENSION_KEYS]
     n_arms = sum(len(r["arms"]) for r in results)
-    assert n_arms == 9, n_arms  # 4 dual-arm models + glm53 arm b
+    # 9 larger-model arms (4 dual-arm + glm53 b) + 5 same-width arms
+    # (q3_32b a/b, qwq_32b b, q25_32b a, o3_32b_t b).
+    assert n_arms == 14, n_arms
     print(f"\n[probe] PASS: {len(results)} models, {n_arms} (family, arm) contracts verified")
     return 0
 

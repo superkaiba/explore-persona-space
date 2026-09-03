@@ -160,6 +160,12 @@ EMPTY_THINK = "<think>\n\n</think>"
 # The plan §7 G1 "emergent" premise for Qwen arm b did not survive the live
 # render; the prefill contract below is the corrected, measured one.
 THINK_PREFILL_SUFFIX = "<|im_start|>assistant\n<think>"
+# Original-Qwen3 (Qwen/Qwen3-32B) arm b: its template does NOT pre-open the
+# think block under enable_thinking=True (the model emits <think> itself: the
+# #2546 "emergent" mode). The panel pre-opens it by appending exactly what
+# QwQ-32B's own template emits, so every thinking arm shares the "prefill"
+# parse mode (measured render 2026-09-02, transformers 5.16.1).
+LEGACY_QWEN3_THINK_PREFILL = "<think>\n"
 # GLM-5.3's template is THINKING-ONLY: every add_generation_prompt render ends
 # with this suffix, enable_thinking has no effect (no such variable in
 # chat_template.jinja @ 187fb9fff6), and reasoning_effort defaults to "max"
@@ -218,9 +224,12 @@ class PanelModel:
     n_layers: int
     h_dim: int
     # qwen35 | qwen36 | qwen38 | qwen38fn | qwen25 | olmo_instruct | olmo_think
-    # | deepseek_v4 | glm53. Every qwen3-template family matches
-    # ``family.startswith("qwen3")`` (the shared Qwen3-era template contract);
-    # qwen25 deliberately does NOT.
+    # | deepseek_v4 | glm53 | legacy_qwen3 | qwq. Every qwen3-template family
+    # matches ``family.startswith("qwen3")`` (the shared Qwen3-era template
+    # contract); qwen25 deliberately does NOT, and neither does legacy_qwen3
+    # (original Qwen3-32B: same arm-a render, but arm b needs the panel to
+    # pre-open the think block: see LEGACY_QWEN3_THINK_PREFILL). qwq is the
+    # QwQ-32B template: thinking-only, pre-opens ``<think>\n`` itself.
     family: str
     arms: tuple[str, ...]  # generation/capture cells this model runs
     thinking: bool  # has a think mode (drives arm-b parse/caps)
@@ -325,11 +334,70 @@ PANEL: dict[str, PanelModel] = {
             tp_gpus=8,
             est_snapshot_gb=892.7,
         ),
+        # ------------------------------------------------------------------
+        # Same-width column extension (Thomas, 2026-09-02): four more
+        # hidden-size-5120 / 64-layer checkpoints so the fixed-width capability
+        # column spans AA 6-52 instead of 35-52. Configs + template renders
+        # live-verified 2026-09-02 on charmander (transformers 5.16.1). All
+        # dense bf16 (no quantization_config), one GPU each; est_snapshot_gb
+        # stays None so the dense-bf16 disk formula applies.
+        # ------------------------------------------------------------------
+        PanelModel(
+            "q3_32b",  # Qwen3ForCausalLM, mpe 40960; <think>=151667 </think>=151668
+            "Qwen/Qwen3-32B",
+            64,
+            5120,
+            "legacy_qwen3",
+            ("a", "b"),
+            True,
+        ),
+        PanelModel(
+            "qwq_32b",  # Qwen2ForCausalLM, mpe 40960; template is thinking-only
+            "Qwen/QwQ-32B",
+            64,
+            5120,
+            "qwq",
+            ("b",),
+            True,
+        ),
+        PanelModel(
+            "q25_32b",  # Qwen2ForCausalLM, mpe 32768; fresh arm a (NOT banked)
+            "Qwen/Qwen2.5-32B-Instruct",
+            64,
+            5120,
+            "qwen25",
+            ("a",),
+            False,
+        ),
+        PanelModel(
+            "o3_32b_t",  # Olmo3ForCausalLM, mpe 65536; nested yarn/default rope (G6 OK)
+            "allenai/Olmo-3-32B-Think",
+            64,
+            5120,
+            "olmo_think",
+            ("b",),
+            True,
+        ),
     )
 }
 
 # The fixed-size capability column (plan §5) + AA §5 pin table (P0 re-verifies).
 COLUMN_KEYS = ("q35_27b", "q36_27b", "q38_27b")
+# Every hidden-size-5120 row (the three-release plan-§5 column, the two OLMo
+# 3.1 32B rows, and the 2026-09-02 same-width extension). Consumers that need
+# the width-matched comparison across families read this, not COLUMN_KEYS.
+SAME_WIDTH_KEYS = tuple(k for k, m in PANEL.items() if m.h_dim == 5120)
+assert SAME_WIDTH_KEYS == (
+    "q35_27b",
+    "q36_27b",
+    "q38_27b",
+    "o31_32b_i",
+    "o31_32b_t",
+    "q3_32b",
+    "qwq_32b",
+    "q25_32b",
+    "o3_32b_t",
+), SAME_WIDTH_KEYS
 AA_PIN = {
     # key: (value, mode, measured|estimated). 52 is AA's "xhigh" reasoning-effort
     # configuration (plan §5); the MEASURED set is exactly three values.
@@ -352,6 +420,15 @@ AA_PIN = {
     "dsv4_flash": (52, "reasoning-max", "measured"),
     "glm53": (60, "reasoning-max", "measured"),
     "dsv4_pro": (53, "reasoning-max", "measured"),
+    # Same-width column extension rows: every value MEASURED on the AA model
+    # pages 2026-09-02 (index v4.1.1): qwen3-32b-instruct-reasoning = 11,
+    # qwen3-32b-instruct (non-reasoning) = 8, qwq-32b = 13,
+    # qwen2.5-32b-instruct = 7, olmo-3-32b-think = 6.
+    "q3_32b": (11, "reasoning", "measured"),
+    "q3_32b_nonreasoning": (8, "non-reasoning", "measured"),
+    "qwq_32b": (13, "reasoning", "measured"),
+    "q25_32b": (7, "non-reasoning", "measured"),
+    "o3_32b_t": (6, "reasoning", "measured"),
 }
 
 
@@ -429,22 +506,26 @@ class Cell:
 
 
 def all_cells() -> list[Cell]:
-    """The generation/capture cells: 19 original (plan §4.1) + 9 extension.
+    """The generation/capture cells: 19 original (plan §4.1) + 9 extension
+    + 5 same-width column.
 
-    Registry arithmetic stays a HARD pin: 28 cells = the plan-§4.1 19 plus the
+    Registry arithmetic stays a HARD pin: 33 cells = the plan-§4.1 19 plus the
     issue-2588-larger 9 (q38fn a/b, q35_397b a/b, dsv4_flash a/b, glm53 b,
-    dsv4_pro a/b); 30 registered maps = the original 21 (17 single-position +
-    2 olmo_think dual-position cells) plus 9 (every extension cell is
-    single-position: prompt_last on arm a, cot_boundary on arm b).
+    dsv4_pro a/b) plus the same-width 5 (q3_32b a/b, qwq_32b b, q25_32b a,
+    o3_32b_t b); 36 registered maps = the original 21 (17 single-position +
+    2 olmo_think dual-position cells) plus 9 (every larger-model extension
+    cell is single-position: prompt_last on arm a, cot_boundary on arm b)
+    plus 6 (four single-position same-width cells + the dual-position
+    o3_32b_t olmo_think cell).
     """
     cells: list[Cell] = []
     for m in PANEL.values():
         for arm in m.arms:
             fresh = not (arm == "a" and m.banked_arm_a)
             cells.append(Cell(m.key, arm, fresh))
-    assert len(cells) == 28, [c.key for c in cells]
+    assert len(cells) == 33, [c.key for c in cells]
     n_maps = sum(len(c.input_positions) for c in cells)
-    assert n_maps == 30, n_maps
+    assert n_maps == 36, n_maps
     return cells
 
 
@@ -546,7 +627,7 @@ def assert_max_position_embeddings(model_id: str, floor: int = REGEN_MAX_MODEL_L
 
 def _template_kwargs(family: str, arm: str) -> dict:
     """apply_chat_template kwargs per (family, arm)."""
-    if family.startswith("qwen3"):  # qwen35/qwen36/qwen38/qwen38fn; NOT qwen25
+    if family.startswith("qwen3") or family == "legacy_qwen3":  # NOT qwen25
         return {"enable_thinking": arm != "a"}
     # qwen25 / olmo templates carry no enable_thinking toggle; glm53's template
     # is thinking-only (the toggle does not exist — verified, GLM-5.3 @
@@ -577,12 +658,17 @@ def render_prompt_text(tok, text: str, family: str, arm: str) -> str:
         return encode_messages(
             msgs, thinking_mode="thinking", reasoning_effort=DSV4_REASONING_EFFORT
         )
-    return tok.apply_chat_template(
+    rendered = tok.apply_chat_template(
         [{"role": "user", "content": text}],
         tokenize=False,
         add_generation_prompt=True,
         **_template_kwargs(family, arm),
     )
+    if family == "legacy_qwen3" and arm == "b":
+        # Original Qwen3 renders only "<|im_start|>assistant\n" under
+        # enable_thinking=True; pre-open the block (see LEGACY_QWEN3_THINK_PREFILL).
+        rendered = rendered + LEGACY_QWEN3_THINK_PREFILL
+    return rendered
 
 
 def render_probe(tok, family: str, arm: str, text: str = "ping") -> str:
@@ -604,6 +690,10 @@ def assert_template_sidespec(tok, family: str, arm: str) -> str:
       ``<|im_start|>assistant\\n<think>`` and carries NO ``</think>``
       (prefill parse mode; the generated ``</think>`` is the read boundary);
     - olmo_instruct (both arms) -> NO think delimiters anywhere;
+    - legacy_qwen3 (Qwen3-32B) -> the qwen3* rows above, with the arm-b
+      pre-open supplied by render_prompt_text (LEGACY_QWEN3_THINK_PREFILL);
+    - qwq arm b (the only arm) -> the olmo_think row: the QwQ-32B template
+      itself ends ``<|im_start|>assistant\\n<think>\\n`` (thinking-only);
     - olmo_think arm b -> render ENDS with ``<|im_start|>assistant\\n<think>``
       (prefill parse mode; the generated ``</think>`` is the read boundary);
     - deepseek_v4 arm a (chat mode) -> render ENDS with the CLOSED marker
@@ -616,7 +706,7 @@ def assert_template_sidespec(tok, family: str, arm: str) -> str:
       and carries NO ``</think>`` (prefill; the template is thinking-only).
     """
     probe = render_probe(tok, family, arm)
-    if family.startswith("qwen3"):
+    if family.startswith("qwen3") or family == "legacy_qwen3":
         if arm == "a" and EMPTY_THINK not in probe:
             raise RuntimeError(
                 f"G1 FAIL ({family}, arm a): enable_thinking=False did not render the empty "
@@ -626,7 +716,7 @@ def assert_template_sidespec(tok, family: str, arm: str) -> str:
             if THINK_CLOSE in probe:
                 raise RuntimeError(
                     f"G1 FAIL ({family}, arm b): {THINK_CLOSE!r} present in the PROMPT render "
-                    "— the prefill parse mode requires the model to CLOSE the block itself."
+                    ": the prefill parse mode requires the model to CLOSE the block itself."
                 )
             if not probe.rstrip("\n").endswith(THINK_PREFILL_SUFFIX):
                 raise RuntimeError(
@@ -640,12 +730,17 @@ def assert_template_sidespec(tok, family: str, arm: str) -> str:
                 f"G1 FAIL ({family}, arm {arm}): think delimiters present in a non-thinking "
                 "template render."
             )
-    elif family == "olmo_think":
+    elif family in ("olmo_think", "qwq"):
         if arm != "b":
-            raise RuntimeError("olmo_think runs arm (b) only (plan §4.1)")
+            raise RuntimeError(f"{family} runs arm (b) only (plan §4.1)")
+        if THINK_CLOSE in probe:
+            raise RuntimeError(
+                f"G1 FAIL ({family}, arm b): {THINK_CLOSE!r} present in the PROMPT render "
+                "— the prefill parse mode requires the model to CLOSE the block itself."
+            )
         if not probe.rstrip("\n").endswith(THINK_PREFILL_SUFFIX):
             raise RuntimeError(
-                f"G1 FAIL (olmo_think): render does not end with the pre-opened "
+                f"G1 FAIL ({family}): render does not end with the pre-opened "
                 f"{THINK_PREFILL_SUFFIX!r} (prefill parse mode premise, §12 A14)."
             )
     elif family == "deepseek_v4":
@@ -720,7 +815,26 @@ def render_prompt_ids(tok, text: str, family: str, arm: str) -> list[int]:
                 f"(context digest {hashlib.sha256(text.encode()).hexdigest()[:12]})"
             )
         return [int(x) for x in tok(rendered, add_special_tokens=False)["input_ids"]]
-    if family.startswith("qwen3") or family in ("olmo_think", "glm53"):
+    if family == "legacy_qwen3":
+        # The arm-b pre-open is appended as TEXT by render_prompt_text, so the
+        # ids come from tokenizing that text (add_special_tokens=False: the
+        # Qwen templates write no BOS; the probe asserts parity with
+        # apply_chat_template(tokenize=True) on arm a).
+        rendered = render_prompt_text(tok, text, family, arm)
+        if arm == "a" and EMPTY_THINK not in rendered:
+            raise RuntimeError(
+                "G1 FAIL on render (legacy_qwen3 arm a): empty think block absent (context "
+                f"digest {hashlib.sha256(text.encode()).hexdigest()[:12]})"
+            )
+        if arm == "b" and (
+            THINK_CLOSE in rendered or not rendered.rstrip("\n").endswith(THINK_PREFILL_SUFFIX)
+        ):
+            raise RuntimeError(
+                "G1 FAIL on render (legacy_qwen3 arm b): pre-opened think prefill suffix "
+                f"absent (context digest {hashlib.sha256(text.encode()).hexdigest()[:12]})"
+            )
+        return [int(x) for x in tok(rendered, add_special_tokens=False)["input_ids"]]
+    if family.startswith("qwen3") or family in ("olmo_think", "glm53", "qwq"):
         rendered = tok.apply_chat_template(
             msgs, tokenize=False, add_generation_prompt=True, **kwargs
         )
@@ -729,7 +843,9 @@ def render_prompt_ids(tok, text: str, family: str, arm: str) -> list[int]:
                 "G1 FAIL on render: empty think block absent (context digest "
                 f"{hashlib.sha256(text.encode()).hexdigest()[:12]})"
             )
-        prefill = family in ("olmo_think", "glm53") or (family.startswith("qwen3") and arm == "b")
+        prefill = family in ("olmo_think", "glm53", "qwq") or (
+            family.startswith("qwen3") and arm == "b"
+        )
         prefill_suffix = GLM_THINK_PREFILL_SUFFIX if family == "glm53" else THINK_PREFILL_SUFFIX
         if prefill and not rendered.rstrip("\n").endswith(prefill_suffix):
             raise RuntimeError(

@@ -70,6 +70,11 @@ AA_SLUGS = {
     "o31_32b_i": "olmo-3-1-32b-instruct",
     "o31_32b_t": "olmo-3-1-32b-think",
     "q25_7b": "qwen2-5-7b-instruct",
+    # same-width column extension (slugs verified live 2026-09-02):
+    "q3_32b": "qwen3-32b-instruct-reasoning",
+    "qwq_32b": "qwq-32b",
+    "q25_32b": "qwen2.5-32b-instruct",
+    "o3_32b_t": "olmo-3-32b-think",
 }
 
 

@@ -16,7 +16,7 @@
 
 set -euo pipefail
 
-KEY="${1:?usage: bash scripts/issue2588x_submit.sh <model_key>  (one of: q38fn q35_397b dsv4_flash glm53 dsv4_pro)}"
+KEY="${1:?usage: bash scripts/issue2588x_submit.sh <model_key>  (one of: q38fn q35_397b dsv4_flash glm53 dsv4_pro q3_32b qwq_32b q25_32b o3_32b_t)}"
 : "${HF_TOKEN:?HF_TOKEN must be in the submitting shell env (read -r HF_TOKEN; export HF_TOKEN)}"
 
 BASE=/workspace/superkaiba/eps2588x
@@ -32,7 +32,12 @@ case "$KEY" in
   dsv4_flash) TP=2 ;;
   glm53)      TP=8 ;;
   dsv4_pro)   TP=8 ;;
-  *) echo "unknown 2588x model key: $KEY (expected q38fn|q35_397b|dsv4_flash|glm53|dsv4_pro)" >&2; exit 2 ;;
+  # Same-width (h=5120) column extension, 2026-09-02: dense bf16 ~65 GB, one GPU each.
+  q3_32b)     TP=1 ;;
+  qwq_32b)    TP=1 ;;
+  q25_32b)    TP=1 ;;
+  o3_32b_t)   TP=1 ;;
+  *) echo "unknown 2588x model key: $KEY (expected q38fn|q35_397b|dsv4_flash|glm53|dsv4_pro|q3_32b|qwq_32b|q25_32b|o3_32b_t)" >&2; exit 2 ;;
 esac
 
 CPUS=$(( 8 * TP ))

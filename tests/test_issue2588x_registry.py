@@ -31,12 +31,19 @@ ORIGINAL_KEYS = (
     "q25_7b",
 )
 EXTENSION_KEYS = ("q38fn", "q35_397b", "dsv4_flash", "glm53", "dsv4_pro")
+SAME_WIDTH_EXT_KEYS = ("q3_32b", "qwq_32b", "q25_32b", "o3_32b_t")
 
 
-def test_registry_arithmetic_28_cells_30_maps():
+def test_registry_arithmetic_33_cells_36_maps():
     cells = PC.all_cells()
-    assert len(cells) == 28
-    assert sum(len(c.input_positions) for c in cells) == 30
+    assert len(cells) == 33
+    assert sum(len(c.input_positions) for c in cells) == 36
+    # The 9 larger-model extension cells are unchanged: 9 cells, 9 maps.
+    ext = [c for c in cells if c.model_key in EXTENSION_KEYS]
+    assert len(ext) == 9 and sum(len(c.input_positions) for c in ext) == 9
+    # The same-width rows append AFTER every pre-existing row (order pin).
+    keys = [c.model_key for c in cells]
+    assert keys[-5:] == ["q3_32b", "q3_32b", "qwq_32b", "q25_32b", "o3_32b_t"]
     # The ORIGINAL 19 cells still exist with the ORIGINAL keys, in order.
     orig = [c for c in cells if c.model_key in ORIGINAL_KEYS]
     assert len(orig) == 19
@@ -118,6 +125,51 @@ def test_extension_aa_pins():
     assert PC.AA_PIN["q38_27b"] == (52, "reasoning-xhigh", "measured")
     assert PC.AA_PIN["q35_9b"] == (22, "reasoning", "measured")
     assert PC.AA_PIN["q36_27b"] == (38, "reasoning", "measured")
+
+
+def test_same_width_rows_contracts():
+    """The 2026-09-02 same-width (h=5120, 64L) column extension rows."""
+    expected = {
+        # key: (family, arms, thinking, hf_id)
+        "q3_32b": ("legacy_qwen3", ("a", "b"), True, "Qwen/Qwen3-32B"),
+        "qwq_32b": ("qwq", ("b",), True, "Qwen/QwQ-32B"),
+        "q25_32b": ("qwen25", ("a",), False, "Qwen/Qwen2.5-32B-Instruct"),
+        "o3_32b_t": ("olmo_think", ("b",), True, "allenai/Olmo-3-32B-Think"),
+    }
+    for key, (family, arms, thinking, hf_id) in expected.items():
+        m = PC.PANEL[key]
+        assert (m.family, m.arms, m.thinking, m.hf_id) == (family, arms, thinking, hf_id)
+        assert (m.n_layers, m.h_dim, m.tp_gpus) == (64, 5120, 1)
+        assert not m.banked_arm_a and m.est_snapshot_gb is None  # fresh, dense bf16
+        for arm in arms:
+            cell = PC.cell_by_key(f"{key}_{arm}")
+            assert cell.fresh
+            if arm == "a":
+                assert cell.parse_mode == "off"
+                assert cell.input_positions == ("prompt_last",)
+            elif family == "olmo_think":
+                assert cell.parse_mode == "prefill"
+                assert cell.input_positions == ("pre_think", "cot_boundary")
+            else:
+                assert cell.parse_mode == "prefill"
+                assert cell.input_positions == ("cot_boundary",)
+    # legacy_qwen3 rides the enable_thinking toggle but NOT the startswith("qwen3") tag.
+    assert not "legacy_qwen3".startswith("qwen3")
+    assert PC._template_kwargs("legacy_qwen3", "a") == {"enable_thinking": False}
+    assert PC._template_kwargs("legacy_qwen3", "b") == {"enable_thinking": True}
+    assert PC._template_kwargs("qwq", "b") == {}
+    assert PC.LEGACY_QWEN3_THINK_PREFILL == "<think>\n"
+    assert PC.SAME_WIDTH_KEYS[-4:] == SAME_WIDTH_EXT_KEYS
+    assert all(PC.PANEL[k].h_dim == 5120 for k in PC.SAME_WIDTH_KEYS)
+    assert PC.COLUMN_KEYS == ("q35_27b", "q36_27b", "q38_27b")  # plan-§5 column untouched
+
+
+def test_same_width_aa_pins_measured():
+    assert PC.AA_PIN["q3_32b"] == (11, "reasoning", "measured")
+    assert PC.AA_PIN["q3_32b_nonreasoning"] == (8, "non-reasoning", "measured")
+    assert PC.AA_PIN["qwq_32b"] == (13, "reasoning", "measured")
+    assert PC.AA_PIN["q25_32b"] == (7, "non-reasoning", "measured")
+    assert PC.AA_PIN["o3_32b_t"] == (6, "reasoning", "measured")
 
 
 def test_sweep_layers_rule_43_to_78():

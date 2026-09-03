@@ -134,6 +134,79 @@ def test_render_prompt_ids_glm_prefill_contract():
 
 
 # ---------------------------------------------------------------------------
+# Same-width column families (2026-09-02): legacy_qwen3 (Qwen3-32B) + qwq (QwQ-32B)
+# ---------------------------------------------------------------------------
+
+
+class FakeLegacyQwen3Tok:
+    """Qwen/Qwen3-32B template double (measured 2026-09-02, transformers 5.16.1):
+    enable_thinking=False -> closed empty think block; enable_thinking=True ->
+    plain ``<|im_start|>assistant\n`` with NO pre-opened block."""
+
+    def apply_chat_template(self, msgs, *, tokenize, add_generation_prompt, return_dict=None, **kw):
+        assert "enable_thinking" in kw
+        tail = "<think>\n\n</think>\n\n" if not kw["enable_thinking"] else ""
+        text = f"<|im_start|>user\n{msgs[0]['content']}<|im_end|>\n<|im_start|>assistant\n{tail}"
+        return [ord(c) for c in text] if tokenize else text
+
+    def __call__(self, text, add_special_tokens=False, **kw):
+        assert add_special_tokens is False
+        return {"input_ids": [ord(c) for c in text]}
+
+
+class FakeQwqTok:
+    """Qwen/QwQ-32B template double: thinking-only, ends ``assistant\n<think>\n``."""
+
+    def __init__(self, tail: str = "<|im_start|>assistant\n<think>\n"):
+        self.tail = tail
+
+    def apply_chat_template(self, msgs, *, tokenize, add_generation_prompt, return_dict=None, **kw):
+        assert "enable_thinking" not in kw  # qwq passes NO toggle
+        text = f"<|im_start|>user\n{msgs[0]['content']}<|im_end|>\n{self.tail}"
+        return [ord(c) for c in text] if tokenize else text
+
+
+def test_legacy_qwen3_arm_a_matches_qwen3_empty_block_contract():
+    tok = FakeLegacyQwen3Tok()
+    sha = PC.assert_template_sidespec(tok, "legacy_qwen3", "a")
+    assert len(sha) == 16
+    text = PC.render_prompt_text(tok, "ping", "legacy_qwen3", "a")
+    assert text.endswith("<|im_start|>assistant\n<think>\n\n</think>\n\n")
+    ids = PC.render_prompt_ids(tok, "ping", "legacy_qwen3", "a")
+    assert ids == [ord(c) for c in text]  # parity with re-tokenizing the text render
+
+
+def test_legacy_qwen3_arm_b_pre_opens_the_block_as_text():
+    tok = FakeLegacyQwen3Tok()
+    text = PC.render_prompt_text(tok, "ping", "legacy_qwen3", "b")
+    assert text.endswith("<|im_start|>assistant\n<think>\n")
+    assert PC.THINK_CLOSE not in text
+    sha = PC.assert_template_sidespec(tok, "legacy_qwen3", "b")
+    assert len(sha) == 16
+    ids = PC.render_prompt_ids(tok, "ping", "legacy_qwen3", "b")
+    assert ids == [ord(c) for c in text]  # the prefill is IN the ids
+    assert PC.Cell("q3_32b", "b", fresh=True).parse_mode == "prefill"
+
+
+def test_qwq_arm_b_only_and_prefill_suffix_enforced():
+    sha = PC.assert_template_sidespec(FakeQwqTok(), "qwq", "b")
+    assert len(sha) == 16
+    with pytest.raises(RuntimeError, match="arm \\(b\\) only"):
+        PC.assert_template_sidespec(FakeQwqTok(), "qwq", "a")
+    with pytest.raises(RuntimeError, match="pre-opened"):
+        PC.assert_template_sidespec(FakeQwqTok(tail="<|im_start|>assistant\n"), "qwq", "b")
+    with pytest.raises(RuntimeError, match="CLOSE"):
+        PC.assert_template_sidespec(
+            FakeQwqTok(tail="<|im_start|>assistant\n<think></think>"), "qwq", "b"
+        )
+    ids = PC.render_prompt_ids(FakeQwqTok(), "ping", "qwq", "b")
+    want = "<|im_start|>user\nping<|im_end|>\n<|im_start|>assistant\n<think>\n"
+    assert ids == [ord(c) for c in want]
+    with pytest.raises(RuntimeError, match="prefill suffix absent"):
+        PC.render_prompt_ids(FakeQwqTok(tail="<|im_start|>assistant\n"), "ping", "qwq", "b")
+
+
+# ---------------------------------------------------------------------------
 # segment_completion_arm on synthetic DeepSeek / GLM completions (prefill)
 # ---------------------------------------------------------------------------
 

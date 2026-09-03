@@ -88,7 +88,7 @@ def all_maps() -> list[MapRef]:
     # maps (q38fn a/b, q35_397b a/b, dsv4_flash a/b, glm53 b, dsv4_pro a/b —
     # every extension cell is single-position). Mirrors PC.all_cells()'s pin.
     out = [MapRef(c.model_key, c.arm, pos) for c in PC.all_cells() for pos in c.input_positions]
-    assert len(out) == 30, len(out)
+    assert len(out) == 36, len(out)  # 21 original + 9 larger-model + 6 same-width
     return out
 
 

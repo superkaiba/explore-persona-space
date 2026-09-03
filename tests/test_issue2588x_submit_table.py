@@ -25,7 +25,18 @@ import issue2588_panel_common as PC
 REPO = Path(__file__).resolve().parents[1]
 SUBMIT = REPO / "scripts" / "issue2588x_submit.sh"
 JOB = REPO / "scripts" / "issue2588x_cell_job.sh"
-EXTENSION_KEYS = ("q38fn", "q35_397b", "dsv4_flash", "glm53", "dsv4_pro")
+EXTENSION_KEYS = (
+    "q38fn",
+    "q35_397b",
+    "dsv4_flash",
+    "glm53",
+    "dsv4_pro",
+    # same-width (h=5120) column extension, 2026-09-02:
+    "q3_32b",
+    "qwq_32b",
+    "q25_32b",
+    "o3_32b_t",
+)
 
 
 def _case_table(text: str) -> dict[str, int]:
