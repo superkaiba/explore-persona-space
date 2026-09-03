@@ -229,13 +229,15 @@ def _kicker(ax: plt.Axes, title: str, kicker: str) -> None:
     ax.text(0.0, 1.235, kicker.upper(), transform=ax.transAxes, fontsize=12, fontweight=700, color=MUTED, va="bottom", ha="left")
 
 
-def make_figure(results: dict[str, Any], titles: dict[str, str]) -> plt.Figure:
+def make_figure(results: dict[str, Any], titles: dict[str, str], *, arms: tuple[str, ...] = ("1",), whole_corpus_line: bool = False) -> plt.Figure:
     set_c2a_style()
-    fig = plt.figure(figsize=(14.4, 7.2), constrained_layout=False)
-    grid = fig.add_gridspec(1, 2, left=0.07, right=0.985, top=0.70, bottom=0.13, wspace=0.22)
-    axes = [fig.add_subplot(grid[0, 0]), fig.add_subplot(grid[0, 1])]
-    for ax, (arm, panel) in zip(axes, (("1", "A"), ("3", "B"))):
+    n = len(arms)
+    fig = plt.figure(figsize=(9.6 if n == 1 else 14.4, 6.2), constrained_layout=False)
+    grid = fig.add_gridspec(1, n, left=0.11 if n == 1 else 0.07, right=0.985, top=0.68, bottom=0.14, wspace=0.22)
+    axes = [fig.add_subplot(grid[0, i]) for i in range(n)]
+    for ax, arm, panel in zip(axes, arms, "ABCD"):
         block = results[arm]
+        spec = ARMS[int(arm)]
         style_score_axis(ax, y_min=0.0, y_max=0.8, y_step=0.2)
         for i, (corpus, _name) in enumerate(CORPORA):
             cell = block["corpora"][corpus]["context"]
@@ -248,17 +250,21 @@ def make_figure(results: dict[str, Any], titles: dict[str, str]) -> plt.Figure:
                 lo, hi = stats["r2_own_mean_ci"]
                 ax.bar(x, v, width=BAR_WIDTH, color=GROUP_COLOR[group], linewidth=0, zorder=3)
                 ax.errorbar(x, v, yerr=[[v - lo], [hi - v]], fmt="none", ecolor=INK, elinewidth=1.2, capsize=3, capthick=1.2, zorder=4)
-            whole = cell["whole_corpus"]["r2_own_mean"]
-            ax.plot([i - 0.42, i + 0.42], [whole, whole], color=INK, lw=1.6, ls=(0, (3, 2)), zorder=5)
+            if whole_corpus_line:
+                whole = cell["whole_corpus"]["r2_own_mean"]
+                ax.plot([i - 0.42, i + 0.42], [whole, whole], color=INK, lw=1.6, ls=(0, (3, 2)), zorder=5)
         ax.set_xlim(-0.6, len(CORPORA) - 0.4)
         ax.set_xticks(range(len(CORPORA)))
         ax.set_xticklabels([name for _c, name in CORPORA], fontsize=13, linespacing=1.15)
         ax.set_ylabel("Held-out $R^2$, context → answer  ↑", labelpad=12)
-        _kicker(ax, titles[arm], f"{panel}  ·  {ARMS[int(arm)]['label']}, {ARMS[int(arm)]['comparator']}, layer {ARMS[int(arm)]['layer']}")
+        prefix = f"{panel}  ·  " if n > 1 else ""
+        _kicker(ax, titles[arm], f"{prefix}{spec['label']}, {spec['comparator']}, layer {spec['layer']}")
     handles = [Patch(facecolor=GROUP_COLOR[g], edgecolor=GROUP_COLOR[g], label=GROUP_LABEL[g]) for g in ("necessary", "both_correct")]
-    handles.append(Line2D([0], [0], color=INK, lw=1.6, ls=(0, (3, 2)), label="Whole corpus"))
-    fig.text(0.07, 0.965, "QUESTIONS, LABELED BY WHETHER REASONING WAS NEEDED", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
-    fig.legend(handles=handles, loc="upper left", bbox_to_anchor=(0.069, 0.948), ncol=3, frameon=False, columnspacing=1.3, handlelength=1.6, handletextpad=0.6, borderaxespad=0)
+    if whole_corpus_line:
+        handles.append(Line2D([0], [0], color=INK, lw=1.6, ls=(0, (3, 2)), label="Whole corpus"))
+    x0 = 0.11 if n == 1 else 0.07
+    fig.text(x0, 0.965, "QUESTIONS, LABELED BY WHETHER REASONING WAS NEEDED", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
+    fig.legend(handles=handles, loc="upper left", bbox_to_anchor=(x0 - 0.001, 0.948), ncol=1 if n == 1 else 3, frameon=False, columnspacing=1.3, handlelength=1.6, handletextpad=0.6, borderaxespad=0)
     return fig
 
 
@@ -278,8 +284,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--stem", default=DEFAULT_STEM)
     parser.add_argument("--summary", type=Path, default=SUMMARY_PATH)
-    parser.add_argument("--title-a", default="Necessary questions are less predictable on MATH\nand GSM8K, more predictable on ContextHub and MMLU")
-    parser.add_argument("--title-b", default="Same on the thinking toggle,\nexcept that MMLU is slightly lower")
+    parser.add_argument("--title-a", default="Predictability of the answer state,\nby whether the question needed reasoning")
+    parser.add_argument("--title-b", default="Same on the thinking toggle")
+    parser.add_argument("--both-panels", action="store_true", help="also plot the Qwen3-8B thinking toggle as panel B")
+    parser.add_argument("--whole-corpus-line", action="store_true", help="draw the whole-corpus R^2 as a dashed line per corpus")
     parser.add_argument("--figure-only", action="store_true", help="re-render from an existing summary without touching the shards")
     parser.add_argument("--arms", type=int, nargs="*", default=None, help="restrict to these arms (smoke runs)")
     parser.add_argument("--corpora", nargs="*", default=None, help="restrict to these corpora (smoke runs)")
@@ -316,7 +324,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.no_figure:
         return 0
     font = set_c2a_style()
-    fig = make_figure(results, {"1": args.title_a, "3": args.title_b})
+    fig = make_figure(results, {"1": args.title_a, "3": args.title_b}, arms=("1", "3") if args.both_panels else ("1",), whole_corpus_line=args.whole_corpus_line)
     stem = args.out_dir / args.stem
     outputs = save_c2a_figure(
         fig,
