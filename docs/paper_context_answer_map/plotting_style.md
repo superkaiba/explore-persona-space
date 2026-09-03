@@ -128,6 +128,23 @@ After approving a new render, copy the vector asset into the Overleaf clone as
 `figures/paper/figure2_predictability_scaling.pdf`, compile `main.tex`, visually
 inspect the page, and commit both repositories separately.
 
+**LaTeX-built figures (TikZ schematics such as `fig1_schematic.tex`) are outlined
+before the handoff.** pdflatex embeds Computer Modern math as Type 1 fonts with
+built-in encodings, where the macron (`\bar`), the minus sign and `\cdots` sit at
+character codes 22, 0 and 1. pdf.js and Ghostscript resolve those codes, but the
+Chrome and Edge PDF engines (Adobe-powered) fail the lookup and draw a literal
+"No Glyph" box over every bar accent (observed on Figure 1, 2026-09-03). Convert the
+text to outlines so the shipped PDF carries no fonts at all:
+
+```bash
+gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dNoOutputFonts -dCompatibilityLevel=1.5 \
+   -sOutputFile=fig_outlined.pdf fig.pdf
+pdffonts fig_outlined.pdf   # must list no fonts
+```
+
+matplotlib figures are unaffected: `c2a_plot_style.py` sets `pdf.fonttype = 42`,
+which embeds TrueType fonts with a Unicode cmap.
+
 ## Results Section 4.2 figures
 
 The qualitative examples, SAE feature analysis, and controlled persona/topic
