@@ -1,5 +1,6 @@
 # experiment-implementer-lean memory index
 
+- [Lean-session waits + /tmp collisions](feedback_lean_session_waits_and_tmp_collisions.md) — `timeout N tail --pid=<pid> -f /dev/null` waits on a >600s lint without Monitor/sleep; round-unique /tmp scratch names (sibling collision, #2658)
 - [judge_pilot report resume fields](reference_judge_pilot_report_resume_fields.md) — PilotGateReport lacks instrument n_draws (derive n_draws//n_items); key resume dirs on every re-run trigger or the rerun cache-wedges; waivers key-only; r3 enum guard (#2658 E)
 - [ruff-fix hook strips leading imports](feedback_ruff_fix_hook_strips_leading_imports.md) — add usages before imports under the PostToolUse autofix hook; prove guard-red in-process via pytest.MonkeyPatch + __signature__ injection (#2658 E r3)
 - [Worktree commit + selector vintage](reference_worktree_commit_and_selector_vintage.md) — guard_root_code_commit blocks plain commits even in worktrees (use `git -C "$WT"`); selector/lint output on vintage-pinned worktrees is drift-dominated
