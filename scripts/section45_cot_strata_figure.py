@@ -51,7 +51,8 @@ CORPORA = [
     ("contexthub", "Context-\nHub", "does"),
     ("mmlu", "MMLU", "doesnt"),
 ]
-MODELS = [(1, "OpenThinker3-7B", 19), (3, "Qwen3-8B, thinking on", 24)]
+ALL_MODELS = [(1, "OpenThinker3-7B", 19), (3, "Qwen3-8B, thinking on", 24)]
+MODELS = list(ALL_MODELS)  # narrowed by --arms at run time
 GROUP_GAP = 1.0
 BAR_WIDTH = 0.72
 
@@ -98,8 +99,9 @@ def load_cells() -> dict[str, Any]:
 
 def make_figure(cells: dict[str, Any]) -> plt.Figure:
     set_c2a_style()
-    fig = plt.figure(figsize=(9.6, 5.8), constrained_layout=False)
-    grid = fig.add_gridspec(1, 1, left=0.11, right=0.985, top=0.74, bottom=0.24)
+    single = len(MODELS) == 1
+    fig = plt.figure(figsize=(8.0 if single else 9.6, 5.8), constrained_layout=False)
+    grid = fig.add_gridspec(1, 1, left=0.13 if single else 0.11, right=0.985, top=0.74, bottom=0.16 if single else 0.24)
     ax = fig.add_subplot(grid[0, 0])
     style_score_axis(ax, y_min=0.0, y_max=0.8, y_step=0.2)
     xs: list[float] = []
@@ -122,15 +124,18 @@ def make_figure(cells: dict[str, Any]) -> plt.Figure:
     ax.set_xticks(xs)
     ax.set_xticklabels(labels, fontsize=13, linespacing=1.15)
     sep = len(CORPORA) - 0.5 + GROUP_GAP / 2
-    ax.axvline(sep, color=MUTED, lw=1.0, ls=(0, (2, 3)), zorder=1)
-    for center, model in group_centers:
+    if not single:
+        ax.axvline(sep, color=MUTED, lw=1.0, ls=(0, (2, 3)), zorder=1)
+    for center, model in ([] if single else group_centers):
         ax.text(center, -0.30, model.upper(), transform=ax.get_xaxis_transform(), ha="center", va="top", fontsize=12, fontweight=700, color=MUTED)
     ax.set_ylabel("Held-out $R^2$, context → answer  ↑", labelpad=12)
     ax.set_title("Within a corpus, reasoning demand barely changes predictability", loc="left", y=1.04, pad=0, fontweight=650, fontsize=17)
-    ax.text(0.0, 1.20, "CONTEXT → ANSWER MAP FIT WITHIN EACH CORPUS, LAYER 19 (OPENTHINKER3-7B) AND 24 (QWEN3-8B)", transform=ax.transAxes, fontsize=11.5, fontweight=700, color=MUTED, va="bottom", ha="left")
+    kicker = "CONTEXT → ANSWER MAP FIT WITHIN EACH CORPUS, OPENTHINKER3-7B, LAYER 19" if single else "CONTEXT → ANSWER MAP FIT WITHIN EACH CORPUS, LAYER 19 (OPENTHINKER3-7B) AND 24 (QWEN3-8B)"
+    ax.text(0.0, 1.20, kicker, transform=ax.transAxes, fontsize=11.5, fontweight=700, color=MUTED, va="bottom", ha="left")
     handles = [Patch(facecolor=STRATUM_COLOR[s], edgecolor=STRATUM_COLOR[s], label=STRATUM_LABEL[s]) for s in ("does", "doesnt")]
-    fig.text(0.11, 0.965, "CORPORA", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
-    fig.legend(handles=handles, loc="upper left", bbox_to_anchor=(0.109, 0.948), ncol=2, frameon=False, columnspacing=1.3, handlelength=1.6, handletextpad=0.6, borderaxespad=0)
+    x0 = 0.13 if single else 0.11
+    fig.text(x0, 0.965, "CORPORA", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
+    fig.legend(handles=handles, loc="upper left", bbox_to_anchor=(x0 - 0.001, 0.948), ncol=2, frameon=False, columnspacing=1.3, handlelength=1.6, handletextpad=0.6, borderaxespad=0)
     return fig
 
 
@@ -147,7 +152,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--stem", default=DEFAULT_STEM)
+    parser.add_argument("--arms", type=int, nargs="*", default=[1], help="arms to plot (default: OpenThinker3-7B only)")
     args = parser.parse_args(argv)
+    MODELS[:] = [m for m in ALL_MODELS if m[0] in args.arms]
     cells = load_cells()
     font = set_c2a_style()
     fig = make_figure(cells)
