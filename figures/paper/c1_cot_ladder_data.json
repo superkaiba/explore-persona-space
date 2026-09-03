@@ -1,0 +1,215 @@
+{
+  "font": "Inter",
+  "git": {
+    "commit": "b7ccf33acf0b8f2c58ff0a31afafa6028b125db0",
+    "tracked_worktree_dirty": true
+  },
+  "outputs": {
+    "grayscale": "figures/paper/c1_cot_ladder_grayscale.png",
+    "pdf": "figures/paper/c1_cot_ladder.pdf",
+    "png": "figures/paper/c1_cot_ladder.png"
+  },
+  "provenance": {
+    "band": "0.02 elicitation band rescaled by the unit's reference R^2 over the #1336 anchor 0.6731; shaded for the pooled unit",
+    "hf_revision": "8368cc69f887d20931acd8c4d76c142275173728",
+    "retention": "tier held-out R^2 divided by the post-SFT model's own context-to-answer R^2 on the same rows",
+    "source_ref": "42308cc7522dcb0a2a76b332b0c24d981de4b585",
+    "task": 2546
+  },
+  "style_version": "c2a-v1",
+  "tiers": [
+    {
+      "key": "t0_direct_transfer",
+      "label": "as is"
+    },
+    {
+      "key": "t1_context_offset",
+      "label": "context offset"
+    },
+    {
+      "key": "t2_answer_offset",
+      "label": "answer offset"
+    },
+    {
+      "key": "t3_bias_offset",
+      "label": "bias"
+    },
+    {
+      "key": "t4_global_scaling",
+      "label": "rescaling + bias"
+    },
+    {
+      "key": "t5_mapping_rotation",
+      "label": "rotation + bias"
+    },
+    {
+      "key": "t6_reparam_contexts",
+      "label": "change of basis (contexts)"
+    },
+    {
+      "key": "t7_reparam_answers",
+      "label": "change of basis (answers)"
+    },
+    {
+      "key": "t8_reparam_both",
+      "label": "change of basis (both sides)"
+    }
+  ],
+  "units": {
+    "contexthub": {
+      "band": 0.015381250487828494,
+      "label": "ContextHub",
+      "n_rows": 6371,
+      "reference_r2": 0.5176559851678679,
+      "source": "eval_results/issue_2546/ladder/ladder__contexthub__a1.json",
+      "source_sha256": "c3dfe13bbd0c566aa18e20c70dffb7de6cbbe02936c3fd21dc193d6c3fc3dc49",
+      "sufficient_tier": 8,
+      "tier_r2": {
+        "t0_direct_transfer": -25269.706949109666,
+        "t1_context_offset": -7.335880681931032,
+        "t2_answer_offset": -25298.571943050607,
+        "t3_bias_offset": -5.7736221700572,
+        "t4_global_scaling": -0.00033672313783861263,
+        "t5_mapping_rotation": -4.726506912645367,
+        "t6_reparam_contexts": 0.31760187463372425,
+        "t7_reparam_answers": -12908.89989434148,
+        "t8_reparam_both": 0.5079750714147178
+      },
+      "tier_retention": {
+        "t0_direct_transfer": -48815.63755302682,
+        "t1_context_offset": -14.17134330930631,
+        "t2_answer_offset": -48871.398511593885,
+        "t3_bias_offset": -11.153395953076641,
+        "t4_global_scaling": -0.0006504766630476,
+        "t5_mapping_rotation": -9.13059454168705,
+        "t6_reparam_contexts": 0.6135384960935607,
+        "t7_reparam_answers": -24937.21750392845,
+        "t8_reparam_both": 0.9812985572841183
+      }
+    },
+    "gsm8k_train": {
+      "band": 0.013750233450740269,
+      "label": "GSM8K train",
+      "n_rows": 7201,
+      "reference_r2": 0.46276410678466373,
+      "source": "eval_results/issue_2546/ladder/ladder__gsm8k_train__a1.json",
+      "source_sha256": "ff37b8711225640b6b618464502d3ba59fe3a42eb958f86d7529036240f5a3b1",
+      "sufficient_tier": 8,
+      "tier_r2": {
+        "t0_direct_transfer": -27805.666069986233,
+        "t1_context_offset": -5.640841435354946,
+        "t2_answer_offset": -27741.19991518019,
+        "t3_bias_offset": -2.7161203642719833,
+        "t4_global_scaling": 0.0009026242707333987,
+        "t5_mapping_rotation": -2.2952454569241034,
+        "t6_reparam_contexts": 0.3132410314587176,
+        "t7_reparam_answers": -12697.496700280042,
+        "t8_reparam_both": 0.4551944938654341
+      },
+      "tier_retention": {
+        "t0_direct_transfer": -60086.04743177487,
+        "t1_context_offset": -12.189453228229253,
+        "t2_answer_offset": -59946.740701065,
+        "t3_bias_offset": -5.8693410410411655,
+        "t4_global_scaling": 0.001950506224445392,
+        "t5_mapping_rotation": -4.959860592628333,
+        "t6_reparam_contexts": 0.6768913726588499,
+        "t7_reparam_answers": -27438.378461336717,
+        "t8_reparam_both": 0.9836426101154989
+      }
+    },
+    "math": {
+      "band": 0.014131656481245251,
+      "label": "MATH",
+      "n_rows": 6956,
+      "reference_r2": 0.47560089887630896,
+      "source": "eval_results/issue_2546/ladder/ladder__math__a1.json",
+      "source_sha256": "0568bba053a11e1833468ad31604bfb395806f4b706bbb9c07119f7107bfd881",
+      "sufficient_tier": 8,
+      "tier_r2": {
+        "t0_direct_transfer": -49329.410564175356,
+        "t1_context_offset": -15.619935927825892,
+        "t2_answer_offset": -49202.34939383134,
+        "t3_bias_offset": -13.363330926718604,
+        "t4_global_scaling": 4.596041367332937e-05,
+        "t5_mapping_rotation": -12.416971861183733,
+        "t6_reparam_contexts": 0.29103850849135293,
+        "t7_reparam_answers": -21578.46734103474,
+        "t8_reparam_both": 0.47403422805916207
+      },
+      "tier_retention": {
+        "t0_direct_transfer": -103720.17942086484,
+        "t1_context_offset": -32.842528188510045,
+        "t2_answer_offset": -103453.02018999663,
+        "t3_bias_offset": -28.097783158719487,
+        "t4_global_scaling": 9.66365155783325e-05,
+        "t5_mapping_rotation": -26.107965503263387,
+        "t6_reparam_contexts": 0.6119385164724935,
+        "t7_reparam_answers": -45370.95575726975,
+        "t8_reparam_both": 0.9967059128339572
+      }
+    },
+    "mmlu": {
+      "band": 0.01671503989975875,
+      "label": "MMLU",
+      "n_rows": 5772,
+      "reference_r2": 0.5625446678263808,
+      "source": "eval_results/issue_2546/ladder/ladder__mmlu__a1.json",
+      "source_sha256": "59f44e0de549f9979ef10c968745d603967ff7aa899a0beaf380e23cb1f7b2cd",
+      "sufficient_tier": null,
+      "tier_r2": {
+        "t0_direct_transfer": -14630.031314015187,
+        "t1_context_offset": -9.388546230134336,
+        "t2_answer_offset": -14553.440848470516,
+        "t3_bias_offset": -3.1759301071096333,
+        "t4_global_scaling": -0.00018648071229021568,
+        "t5_mapping_rotation": -2.5102087032001674,
+        "t6_reparam_contexts": -0.2428933474880539,
+        "t7_reparam_answers": -3306.7747974091967,
+        "t8_reparam_both": 0.5011124228010806
+      },
+      "tier_retention": {
+        "t0_direct_transfer": -26006.879365765282,
+        "t1_context_offset": -16.689423555307684,
+        "t2_answer_offset": -25870.729349730806,
+        "t3_bias_offset": -5.64564965015334,
+        "t4_global_scaling": -0.00033149494245631985,
+        "t5_mapping_rotation": -4.462238906111004,
+        "t6_reparam_contexts": -0.4317761084227689,
+        "t7_reparam_answers": -5878.243962717237,
+        "t8_reparam_both": 0.8907957918032205
+      }
+    },
+    "pooled": {
+      "band": 0.02085997755164377,
+      "label": "Pooled (four corpora)",
+      "n_rows": 26300,
+      "reference_r2": 0.7020425445005711,
+      "source": "eval_results/issue_2546/ladder/ladder__pooled__a1.json",
+      "source_sha256": "1b2a585537df32df39c9e8b985966b93a83736d16b3b7d4794a9173a75fef006",
+      "sufficient_tier": 8,
+      "tier_r2": {
+        "t0_direct_transfer": -33958.20996622319,
+        "t1_context_offset": -10.916074284527438,
+        "t2_answer_offset": -33886.55376964349,
+        "t3_bias_offset": -9.86393222378765,
+        "t4_global_scaling": 0.00027698486627369956,
+        "t5_mapping_rotation": -7.448703135034732,
+        "t6_reparam_contexts": -0.4658871233764019,
+        "t7_reparam_answers": -12299.777084254914,
+        "t8_reparam_both": 0.688194337345748
+      },
+      "tier_retention": {
+        "t0_direct_transfer": -48370.58698540964,
+        "t1_context_offset": -15.54902102449228,
+        "t2_answer_offset": -48268.51881711839,
+        "t3_bias_offset": -14.05033398767135,
+        "t4_global_scaling": 0.000394541425506833,
+        "t5_mapping_rotation": -10.61004520792069,
+        "t6_reparam_contexts": -0.6636166526173015,
+        "t7_reparam_answers": -17519.988183913985,
+        "t8_reparam_both": 0.9802744046449853
+      }
+    }
+  }
+}
