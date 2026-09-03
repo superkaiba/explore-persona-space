@@ -37,9 +37,13 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
   its project settings still point at (commit a2ea028 restored stale pre-rename
   main.tex/outline.tex): after any root rename, Thomas must reselect Menu →
   Settings → Main document, and the next pull checks for resurrected stale roots. Draft text lives in
-  `sections/NN_<name>.tex` + `sections/results/c{1..5}_*.tex` (edit those, not the
-  draft skeleton); Results spine is 3 headline sections (I = c1+c3, II = c4,
-  III = c5; old C2 causality demoted to appendix). `references.bib` = the
+  `sections/NN_<name>.tex`. Every results section, main text and appendix alike,
+  is its own file under `results/` (`01_accuracy.tex` to `06_behavior.tex` for the
+  main-text results, `a1_*.tex` to `a7_*.tex` for the appendix results), input in
+  place by the spines `sections/04_results.tex` and
+  `sections/05_method_details.tex` (split 2026-09-03). Edit the result files,
+  never the spine's `\input` lines. A transition sentence opens the result it
+  leads into and never closes the previous one. `references.bib` = the
   bibliography; `style/` = template machinery — NEVER edit style/. Figures under
   `figures/paper/` (claim-named c1_*.pdf…c5_*.pdf); `poster/` stays (Thomas
   2026-08-23). Compile check after edits: pdflatex → bibtex → pdflatex ×2 on
