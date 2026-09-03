@@ -51,7 +51,11 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
   "load-bearing"/"backbone"/"scaffold" family: name the mechanism instead. (3) Avoid
   contrastive-negation scaffolds ("is X, not Y", "not X but Y") as a rhetorical
   default; state what IS the case, keep the negation only when the contrast itself
-  is the claim. Enforcement (the `/writing-tells` skill,
+  is the claim. (4) NO SEMICOLONS in rendered prose (Thomas 2026-09-03, on the
+  abstract: "Don't use semicolons"); split into sentences or use a colon/comma.
+  Also from that session: the abstract names its object "context-answer metamodel"
+  / "linear context-answer metamodels" (never "the map"), and carries a number on
+  every claim. Enforcement (the `/writing-tells` skill,
   `~/.claude/skills/writing-tells/`, owns all three layers): (a) the clone's
   `.git/hooks/pre-commit` runs the skill's mechanical gate
   (`check_paper_tells.sh <clone root>`: em dashes, metaphor-jargon nouns,
