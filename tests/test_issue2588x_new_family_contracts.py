@@ -299,3 +299,26 @@ def test_dequantize_fp8_embeddings_gathers_and_scales():
         torch.zeros(3, 2).to(torch.float8_e4m3fn), requires_grad=False)
     with pytest.raises(RuntimeError, match="weight_scale"):
         G._dequantize_fp8_embeddings(bad, lambda name: None)
+
+
+def test_config_with_pad_token_only_patches_missing(monkeypatch):
+    """DeepSeek-V4 configs lack pad_token_id -> patched copy with None; a
+    config that has it (even None-valued) -> no override (untouched path)."""
+    import types
+    import transformers
+    import issue2330_qwen35_generate_capture as G
+
+    class NoPad(types.SimpleNamespace):
+        pass
+
+    fake = {
+        "deepseek-ai/DeepSeek-V4-Flash-0731": NoPad(bos_token_id=0, eos_token_id=1),
+        "zai-org/GLM-5.3": types.SimpleNamespace(pad_token_id=154820),
+        "Qwen/Qwen3-8B": types.SimpleNamespace(pad_token_id=None),
+    }
+    monkeypatch.setattr(
+        transformers.AutoConfig, "from_pretrained", staticmethod(lambda mid, **kw: fake[mid]))
+    fixed = G._config_with_pad_token("deepseek-ai/DeepSeek-V4-Flash-0731")
+    assert fixed is not None and fixed.pad_token_id is None and fixed.bos_token_id == 0
+    assert G._config_with_pad_token("zai-org/GLM-5.3") is None
+    assert G._config_with_pad_token("Qwen/Qwen3-8B") is None

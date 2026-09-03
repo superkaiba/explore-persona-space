@@ -797,6 +797,9 @@ def _load_capture_model(model_id: str, device: str, dtype_str: str):
     else:
         device_map = None
     load_kwargs: dict = {"device_map": device_map}
+    cfg_fix = _config_with_pad_token(model_id)
+    if cfg_fix is not None:
+        load_kwargs["config"] = cfg_fix
     quant_method = _quant_method(model_id)
     if quant_method == "fp8":
         logger.info("[load] fp8 checkpoint detected (%s): native load, no dtype kwarg", model_id)
@@ -920,6 +923,24 @@ def _dequantize_fp8_embeddings(model, scale_lookup) -> int:
         )
         patched += 1
     return patched
+
+
+def _config_with_pad_token(model_id: str):
+    """DeepSeek-V4 configs ship no ``pad_token_id`` and transformers 5.16 does
+    not default it, so ``DeepseekV4ForCausalLM.__init__`` dies with
+    "'DeepseekV4Config' object has no attribute 'pad_token_id'" (job 61685,
+    after 3.5 h of gen). Return a config with ``pad_token_id=None`` set
+    (``nn.Embedding(padding_idx=None)``, i.e. no padding row) when the
+    attribute is missing; None when the checkpoint config already has it so
+    every other row keeps the untouched from_pretrained path."""
+    from transformers import AutoConfig
+
+    cfg = AutoConfig.from_pretrained(model_id)
+    if hasattr(cfg, "pad_token_id"):
+        return None
+    logger.info("[load] config has no pad_token_id; setting None (no padding row)")
+    cfg.pad_token_id = None
+    return cfg
 
 
 def _vl_wrapper_arch(model_id: str) -> str | None:
