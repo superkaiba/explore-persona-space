@@ -5,9 +5,7 @@ Two panels in the Figure 2 visual system, written to
 ``figures/paper/c1_cot_necessity.{pdf,png}`` with a grayscale audit and a JSON
 sidecar of every plotted value.
 
-A, B  Per-corpus context -> answer fits (R^2 and retrieval lift) for the four
-   corpora with their own fit cells, colored by stratum, one panel per model.
-C, D  Corpus level. For each (corpus, stratum) subset used in the #2546 fits, the
+A  Corpus level. For each (corpus, stratum) subset used in the #2546 fits, the
    x axis is the subset's operational necessity rate (share of classified
    questions whose reasoning-mode answer is exactly correct while the
    non-reasoning answer is wrong) and the y axis is the top-1 answer-retrieval
@@ -16,7 +14,7 @@ C, D  Corpus level. For each (corpus, stratum) subset used in the #2546 fits, th
    Both reasoning settings are shown: OpenThinker3-7B against its Qwen2.5-7B-
    Instruct parent (circles) and Qwen3-8B with thinking on against off
    (diamonds). Color encodes the corpus stratum as in the main figure.
-E  Question level. AUROC, with 95% class-stratified prompt bootstrap
+B  Question level. AUROC, with 95% class-stratified prompt bootstrap
    intervals, of five map-derived scores for separating MATH questions that
    needed reasoning from questions correct in both modes, from the committed
    #2546 necessity-discrimination follow-up.
@@ -86,43 +84,6 @@ SUBSETS = [
     ("doesnt", "gsm8k_train", "GSM8K, 1 step"),
     ("doesnt", "contexthub", "ContextHub L1"),
 ]
-# Per-corpus fit cells (whole-corpus maps) for the predictability panels.
-PER_CORPUS = [
-    ("math", "MATH", "does"),
-    ("gsm8k_train", "GSM8K\ntrain", "does"),
-    ("contexthub", "Context-\nHub", "does"),
-    ("mmlu", "MMLU", "doesnt"),
-]
-RETRIEVAL_HATCH = "///"
-BAR_WIDTH = 0.36
-
-
-def load_per_corpus_panel() -> dict[str, Any]:
-    panel: dict[str, Any] = {}
-    for arm, spec in MODELS.items():
-        rows = []
-        for corpus, name, stratum in PER_CORPUS:
-            entry = {"corpus": corpus, "name": name, "stratum": stratum}
-            for cell, key in (("p7_A", "context"), ("p7_D", "end_of_thought")):
-                path = CELLS_DIR / f"{cell}__{corpus}__a{arm}.json"
-                data = json.loads(path.read_text())
-                if data["status"] != "ok":
-                    raise ValueError(f"{path.name}: status {data['status']!r}")
-                pool = data["knn_content"]["euclidean"]["corpus_pool"]
-                entry[key] = {
-                    "n_rows": int(data["n_rows"]),
-                    "r2": float(data["r2_headline"]),
-                    "r2_ci": [float(data["r2_headline_bootstrap"]["ci_lo"]), float(data["r2_headline_bootstrap"]["ci_hi"])],
-                    "lift": float(pool["lift"]),
-                    "lift_ci": [float(pool["lift_ci_lo"]), float(pool["lift_ci_hi"])],
-                    "chance": float(pool["chance_mean"]),
-                    "source": str(path.relative_to(ROOT)),
-                }
-            rows.append(entry)
-        panel[str(arm)] = {"model": spec["label"], "rows": rows}
-    return panel
-
-
 SCORE_ORDER = [
     ("prompt_error", "Prompt map error"),
     ("prompt_retrieval_miss", "Prompt retrieval miss"),
@@ -288,9 +249,9 @@ def load_question_panel() -> dict[str, Any]:
     return panel
 
 
-def _kicker(ax: plt.Axes, title: str, kicker: str, *, y_title: float = 1.04, y_kicker: float = 1.235) -> None:
-    ax.set_title(title, loc="left", y=y_title, pad=0, fontweight=650, fontsize=17)
-    ax.text(0.0, y_kicker, kicker.upper(), transform=ax.transAxes, fontsize=12, fontweight=700, color=MUTED, va="bottom", ha="left")
+def _kicker(ax: plt.Axes, title: str, kicker: str) -> None:
+    ax.set_title(title, loc="left", y=1.04, pad=0, fontweight=650, fontsize=17)
+    ax.text(0.0, 1.235, kicker.upper(), transform=ax.transAxes, fontsize=12, fontweight=700, color=MUTED, va="bottom", ha="left")
 
 
 def _nudged_label_positions(ys: list[float], min_gap: float) -> list[float]:
@@ -362,59 +323,29 @@ def _question_axes(ax: plt.Axes, panel: dict[str, Any]) -> None:
     ax.set_xlabel("AUROC (0.5 is chance)", labelpad=10)
 
 
-def _per_corpus_axes(ax: plt.Axes, block: dict[str, Any], *, show_ylabel: bool) -> None:
-    style_score_axis(ax, y_min=0.0, y_max=0.8, y_step=0.2)
-    for i, row in enumerate(block["rows"]):
-        color = STRATUM_COLOR[row["stratum"]]
-        ctx = row["context"]
-        ax.bar(i - BAR_WIDTH / 2, ctx["r2"], width=BAR_WIDTH, color=color, linewidth=0, zorder=3)
-        ax.errorbar(i - BAR_WIDTH / 2, ctx["r2"], yerr=[[ctx["r2"] - ctx["r2_ci"][0]], [ctx["r2_ci"][1] - ctx["r2"]]], fmt="none", ecolor=INK, elinewidth=1.2, capsize=3, capthick=1.2, zorder=4)
-        ax.bar(i + BAR_WIDTH / 2, ctx["lift"], width=BAR_WIDTH, facecolor=PAPER, edgecolor=color, hatch=RETRIEVAL_HATCH, linewidth=1.4, zorder=3)
-        ax.errorbar(i + BAR_WIDTH / 2, ctx["lift"], yerr=[[ctx["lift"] - ctx["lift_ci"][0]], [ctx["lift_ci"][1] - ctx["lift"]]], fmt="none", ecolor=INK, elinewidth=1.2, capsize=3, capthick=1.2, zorder=4)
-    ax.set_xlim(-0.6, len(block["rows"]) - 0.4)
-    ax.set_xticks(range(len(block["rows"])))
-    ax.set_xticklabels([row["name"] for row in block["rows"]], fontsize=12.5, linespacing=1.15)
-    if show_ylabel:
-        ax.set_ylabel("Held-out score  ↑", labelpad=12)
-
-
-def make_figure(corpus_panel: dict[str, Any], question_panel: dict[str, Any], per_corpus: dict[str, Any]) -> plt.Figure:
+def make_figure(corpus_panel: dict[str, Any], question_panel: dict[str, Any]) -> plt.Figure:
     set_c2a_style()
-    fig = plt.figure(figsize=(14.4, 13.0), constrained_layout=False)
-    grid = fig.add_gridspec(2, 3, left=0.065, right=0.985, top=0.80, bottom=0.075, wspace=0.55, hspace=0.75, width_ratios=[1.0, 1.0, 1.15])
+    fig = plt.figure(figsize=(14.4, 6.6), constrained_layout=False)
+    grid = fig.add_gridspec(1, 3, left=0.065, right=0.985, top=0.73, bottom=0.14, wspace=0.55, width_ratios=[1.0, 1.0, 1.15])
     ax_a = fig.add_subplot(grid[0, 0])
     ax_b = fig.add_subplot(grid[0, 1])
-    ax_c = fig.add_subplot(grid[1, 0])
-    ax_d = fig.add_subplot(grid[1, 1])
-    ax_e = fig.add_subplot(grid[:, 2])
-    _per_corpus_axes(ax_a, per_corpus["1"], show_ylabel=True)
-    _kicker(ax_a, "Needs-reasoning corpora are not\nless predictable than MMLU", "A  ·  OpenThinker3-7B, context → answer")
-    _per_corpus_axes(ax_b, per_corpus["3"], show_ylabel=False)
-    _kicker(ax_b, "Same on Qwen3-8B", "B  ·  Qwen3-8B, context → answer")
-    _corpus_axes(ax_c, corpus_panel["1"], MODELS[1]["marker"], 0.16, show_ylabel=True)
-    _kicker(ax_c, "Gain follows corpus type,\nnot necessity rate", "C  ·  OpenThinker3-7B vs parent")
-    _corpus_axes(ax_d, corpus_panel["3"], MODELS[3]["marker"], 0.42, show_ylabel=False)
-    _kicker(ax_d, "Same on the thinking toggle,\nat higher necessity rates", "D  ·  Qwen3-8B, thinking on vs off")
-    _question_axes(ax_e, question_panel)
-    h_row = ax_a.get_position().height
-    h_e = ax_e.get_position().height
-    _kicker(ax_e, "No map score identifies\nwhich MATH questions need reasoning", "E  ·  per-question AUROC, 95% intervals", y_title=1.0 + 0.04 * h_row / h_e, y_kicker=1.0 + 0.235 * h_row / h_e)
+    ax_c = fig.add_subplot(grid[0, 2])
+    _corpus_axes(ax_a, corpus_panel["1"], MODELS[1]["marker"], 0.16, show_ylabel=True)
+    _kicker(ax_a, "Gain follows corpus type,\nnot necessity rate", "A  ·  OpenThinker3-7B vs parent")
+    _corpus_axes(ax_b, corpus_panel["3"], MODELS[3]["marker"], 0.42, show_ylabel=False)
+    _kicker(ax_b, "Same on the thinking toggle,\nat higher necessity rates", "B  ·  Qwen3-8B, thinking on vs off")
+    _question_axes(ax_c, question_panel)
+    _kicker(ax_c, "No map score identifies\nwhich MATH questions need reasoning", "C  ·  per-question AUROC, 95% intervals")
 
     model_handles = [
         Line2D([0], [0], color=INK, marker=MODELS[1]["marker"], markersize=10, lw=0, label=MODELS[1]["label"]),
         Line2D([0], [0], color=INK, marker=MODELS[3]["marker"], markersize=8.5, lw=0, label=MODELS[3]["label"]),
     ]
     stratum_handles = [Patch(facecolor=STRATUM_COLOR[s], edgecolor=STRATUM_COLOR[s], label=STRATUM_LABEL[s]) for s in ("does", "doesnt")]
-    metric_handles = [
-        Patch(facecolor=INK, edgecolor=INK, label="Held-out $R^2$"),
-        Patch(facecolor=PAPER, edgecolor=INK, hatch=RETRIEVAL_HATCH, linewidth=1.4, label="Answer retrieval (lift over chance)"),
-    ]
-    fig.text(0.065, 0.988, "REASONING SETTING (C, D, E)", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
-    fig.legend(handles=model_handles, loc="upper left", bbox_to_anchor=(0.064, 0.977), ncol=2, frameon=False, columnspacing=1.3, handlelength=1.4, handletextpad=0.6, borderaxespad=0)
-    fig.text(0.065, 0.930, "CORPORA", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
-    fig.legend(handles=stratum_handles, loc="upper left", bbox_to_anchor=(0.064, 0.919), ncol=2, frameon=False, columnspacing=1.3, handlelength=1.4, handletextpad=0.6, borderaxespad=0)
-    fig.text(0.58, 0.930, "METRIC (A, B)", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
-    fig.legend(handles=metric_handles, loc="upper left", bbox_to_anchor=(0.579, 0.919), ncol=2, frameon=False, columnspacing=1.3, handlelength=1.4, handletextpad=0.6, borderaxespad=0)
+    fig.text(0.065, 0.965, "REASONING SETTING", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
+    fig.legend(handles=model_handles, loc="upper left", bbox_to_anchor=(0.064, 0.95), ncol=2, frameon=False, columnspacing=1.3, handlelength=1.4, handletextpad=0.6, borderaxespad=0)
+    fig.text(0.635, 0.965, "CORPORA (A, B)", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
+    fig.legend(handles=stratum_handles, loc="upper left", bbox_to_anchor=(0.634, 0.95), ncol=2, frameon=False, columnspacing=1.3, handlelength=1.4, handletextpad=0.6, borderaxespad=0)
     return fig
 
 
@@ -436,9 +367,8 @@ def main(argv: list[str] | None = None) -> int:
     members = subset_membership()
     corpus_panel = load_corpus_panel(members)
     question_panel = load_question_panel()
-    per_corpus = load_per_corpus_panel()
     font = set_c2a_style()
-    fig = make_figure(corpus_panel, question_panel, per_corpus)
+    fig = make_figure(corpus_panel, question_panel)
     stem = args.out_dir / args.stem
     outputs = save_c2a_figure(
         fig,
@@ -464,9 +394,8 @@ def main(argv: list[str] | None = None) -> int:
                     "necessity_label": "reasoning-mode answer exactly correct and non-reasoning answer wrong; rate = necessary / classified (unknown excluded)",
                     "retrieval": "top-1 nearest neighbour (euclidean) in the stratum pool, canonical answer-content hit rule; lift = acc@1 minus per-query chance",
                 },
-                "panels_AB_per_corpus": per_corpus,
-                "panels_CD_necessity": corpus_panel,
-                "panel_E_question": question_panel,
+                "panel_A": corpus_panel,
+                "panel_B": question_panel,
                 "outputs": {k: str(v.relative_to(ROOT)) for k, v in outputs.items()},
             },
             indent=2,

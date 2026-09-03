@@ -1,0 +1,193 @@
+{
+  "font": "Inter",
+  "git": {
+    "commit": "6fb7bbaf3490aecbb920fddac7e6180ac88d9c5c",
+    "tracked_worktree_dirty": true
+  },
+  "models": {
+    "1": {
+      "layer": 19,
+      "model": "OpenThinker3-7B",
+      "rows": [
+        {
+          "corpus": "math",
+          "n_rows": 6956,
+          "name": "MATH",
+          "r2": 0.47560089887630874,
+          "r2_ci": [
+            0.47181619440833034,
+            0.47937621252391605
+          ],
+          "retrieval_acc": 0.22397929844738354,
+          "retrieval_chance": 0.0065441743237125765,
+          "retrieval_lift": 0.21743512412367097,
+          "retrieval_lift_ci": [
+            0.20767655915553657,
+            0.2275347081226248
+          ],
+          "source": "eval_results/issue_2546/cells/p7_A__math__a1.json",
+          "source_sha256": "92c2b5a7e5f5ec6757ca77e486b284956a2af2e54da8234e41c83ed413d2250d",
+          "stratum": "does"
+        },
+        {
+          "corpus": "gsm8k_train",
+          "n_rows": 7201,
+          "name": "GSM8K train",
+          "r2": 0.46276410678466395,
+          "r2_ci": [
+            0.4597040187057134,
+            0.46645580438593787
+          ],
+          "retrieval_acc": 0.45271490070823495,
+          "retrieval_chance": 0.009591220617898952,
+          "retrieval_lift": 0.44312368009033604,
+          "retrieval_lift_ci": [
+            0.4318552633555637,
+            0.45518954987060817
+          ],
+          "source": "eval_results/issue_2546/cells/p7_A__gsm8k_train__a1.json",
+          "source_sha256": "ad529dc77ad4f9f4b22991b5f06401aa59dae9b69a334a9a49dd79318781ecaf",
+          "stratum": "does"
+        },
+        {
+          "corpus": "contexthub",
+          "n_rows": 6371,
+          "name": "ContextHub",
+          "r2": 0.5176559851678677,
+          "r2_ci": [
+            0.5118560086478974,
+            0.5240670663128392
+          ],
+          "retrieval_acc": 0.3344843823575577,
+          "retrieval_chance": 0.02112048736770054,
+          "retrieval_lift": 0.3133638949898571,
+          "retrieval_lift_ci": [
+            0.3014795031077022,
+            0.32459876030931184
+          ],
+          "source": "eval_results/issue_2546/cells/p7_A__contexthub__a1.json",
+          "source_sha256": "a0ae46491de8ec38c90087933a5be6c9667fffb7bbb09674b0f8e7818b2c0e8f",
+          "stratum": "does"
+        },
+        {
+          "corpus": "mmlu",
+          "n_rows": 5772,
+          "name": "MMLU",
+          "r2": 0.5625446678263811,
+          "r2_ci": [
+            0.5571838188378818,
+            0.568038003785657
+          ],
+          "retrieval_acc": 0.5814275814275814,
+          "retrieval_chance": 0.25330369950952075,
+          "retrieval_lift": 0.3281238819180607,
+          "retrieval_lift_ci": [
+            0.3150572732595857,
+            0.34066495604632235
+          ],
+          "source": "eval_results/issue_2546/cells/p7_A__mmlu__a1.json",
+          "source_sha256": "26f13042d2e54214ca496d01207035d282384c5df303e8da53573f573d981053",
+          "stratum": "doesnt"
+        }
+      ]
+    },
+    "3": {
+      "layer": 24,
+      "model": "Qwen3-8B, thinking on",
+      "rows": [
+        {
+          "corpus": "math",
+          "n_rows": 6745,
+          "name": "MATH",
+          "r2": 0.5821854793122341,
+          "r2_ci": [
+            0.5789780152146243,
+            0.5858775812172431
+          ],
+          "retrieval_acc": 0.35107487027427725,
+          "retrieval_chance": 0.006750518325904866,
+          "retrieval_lift": 0.3443243519483723,
+          "retrieval_lift_ci": [
+            0.33359742851004054,
+            0.35554396936807936
+          ],
+          "source": "eval_results/issue_2546/cells/p7_A__math__a3.json",
+          "source_sha256": "1d0888fbc6c7e8906ed71371abfb7c49a8b1049f8c9852e166f1ef3bda95eaae",
+          "stratum": "does"
+        },
+        {
+          "corpus": "gsm8k_train",
+          "n_rows": 7162,
+          "name": "GSM8K train",
+          "r2": 0.5134207670081298,
+          "r2_ci": [
+            0.509795313603472,
+            0.5173603312078511
+          ],
+          "retrieval_acc": 0.6174253001954761,
+          "retrieval_chance": 0.009761875036115163,
+          "retrieval_lift": 0.6076634251593609,
+          "retrieval_lift_ci": [
+            0.5965793939764471,
+            0.6189347702443962
+          ],
+          "source": "eval_results/issue_2546/cells/p7_A__gsm8k_train__a3.json",
+          "source_sha256": "3da2fa8e881ebc38235571d86601a952d18bf2aeb8eca59010250ec0e7b95bbb",
+          "stratum": "does"
+        },
+        {
+          "corpus": "contexthub",
+          "n_rows": 8384,
+          "name": "ContextHub",
+          "r2": 0.5529710583865886,
+          "r2_ci": [
+            0.548421565532203,
+            0.5575146106715786
+          ],
+          "retrieval_acc": 0.3317032442748092,
+          "retrieval_chance": 0.09247408390573103,
+          "retrieval_lift": 0.23922916036907815,
+          "retrieval_lift_ci": [
+            0.23039030127644522,
+            0.24842628739970896
+          ],
+          "source": "eval_results/issue_2546/cells/p7_A__contexthub__a3.json",
+          "source_sha256": "bfa1efa81b8c6f500128691a264e581f21c101ae5b7af368175d27ab153373a9",
+          "stratum": "does"
+        },
+        {
+          "corpus": "mmlu",
+          "n_rows": 7361,
+          "name": "MMLU",
+          "r2": 0.5651899235734772,
+          "r2_ci": [
+            0.5614382037520742,
+            0.5689950538205732
+          ],
+          "retrieval_acc": 0.4896073903002309,
+          "retrieval_chance": 0.24969963174402426,
+          "retrieval_lift": 0.23990775855620672,
+          "retrieval_lift_ci": [
+            0.22879049688562159,
+            0.2517222316027549
+          ],
+          "source": "eval_results/issue_2546/cells/p7_A__mmlu__a3.json",
+          "source_sha256": "0a98b81f8c36728494970a5d7173be3558f72733a678b356ee73f8fd289c224f",
+          "stratum": "doesnt"
+        }
+      ]
+    }
+  },
+  "outputs": {
+    "grayscale": "figures/paper/c1_cot_strata_grayscale.png",
+    "pdf": "figures/paper/c1_cot_strata.pdf",
+    "png": "figures/paper/c1_cot_strata.png"
+  },
+  "provenance": {
+    "cells": "p7_A (cx_last -> ans_mean) whole-corpus fits, five random-row folds",
+    "hf_revision": "8368cc69f887d20931acd8c4d76c142275173728",
+    "source_ref": "42308cc7522dcb0a2a76b332b0c24d981de4b585",
+    "task": 2546
+  },
+  "style_version": "c2a-v1"
+}

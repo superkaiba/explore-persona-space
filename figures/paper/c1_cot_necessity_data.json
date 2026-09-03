@@ -1,7 +1,7 @@
 {
   "font": "Inter",
   "git": {
-    "commit": "b7ccf33acf0b8f2c58ff0a31afafa6028b125db0",
+    "commit": "6fb7bbaf3490aecbb920fddac7e6180ac88d9c5c",
     "tracked_worktree_dirty": true
   },
   "outputs": {
@@ -9,421 +9,7 @@
     "pdf": "figures/paper/c1_cot_necessity.pdf",
     "png": "figures/paper/c1_cot_necessity.png"
   },
-  "panel_E_question": {
-    "arms": {
-      "1": {
-        "model": "OpenThinker3-7B vs parent",
-        "n_analysis": 5264,
-        "n_necessary": 872,
-        "prevalence": 0.1656534954407295,
-        "scores": [
-          {
-            "auroc": 0.5365687822730235,
-            "auroc_ci": [
-              0.5153963667782122,
-              0.5579094300416938
-            ],
-            "key": "prompt_error",
-            "label": "Prompt map error",
-            "uses_boundary": false
-          },
-          {
-            "auroc": 0.49905478685182403,
-            "auroc_ci": [
-              0.4836825922026704,
-              0.5137019351280895
-            ],
-            "key": "prompt_retrieval_miss",
-            "label": "Prompt retrieval miss",
-            "uses_boundary": false
-          },
-          {
-            "auroc": 0.5416353336341304,
-            "auroc_ci": [
-              0.5197716853307097,
-              0.5632176308885213
-            ],
-            "key": "error_reduction",
-            "label": "Error reduction\u2020",
-            "uses_boundary": true
-          },
-          {
-            "auroc": 0.5378761530555973,
-            "auroc_ci": [
-              0.5164708025747397,
-              0.5587882432717535
-            ],
-            "key": "log_error_ratio",
-            "label": "Log error ratio\u2020",
-            "uses_boundary": true
-          },
-          {
-            "auroc": 0.5155401397035477,
-            "auroc_ci": [
-              0.49784767850950856,
-              0.5332175610419696
-            ],
-            "key": "retrieval_top1_gain",
-            "label": "Top-1 retrieval gain\u2020",
-            "uses_boundary": true
-          }
-        ]
-      },
-      "3": {
-        "model": "Qwen3-8B, thinking on vs off",
-        "n_analysis": 5143,
-        "n_necessary": 624,
-        "prevalence": 0.12132996305658177,
-        "scores": [
-          {
-            "auroc": 0.5564681317060162,
-            "auroc_ci": [
-              0.5324796461237736,
-              0.5805486609954551
-            ],
-            "key": "prompt_error",
-            "label": "Prompt map error",
-            "uses_boundary": false
-          },
-          {
-            "auroc": 0.5424220243870609,
-            "auroc_ci": [
-              0.5234653338681123,
-              0.5611874817366561
-            ],
-            "key": "prompt_retrieval_miss",
-            "label": "Prompt retrieval miss",
-            "uses_boundary": false
-          },
-          {
-            "auroc": 0.5525686418029857,
-            "auroc_ci": [
-              0.5269358967266414,
-              0.5767611448953421
-            ],
-            "key": "error_reduction",
-            "label": "Error reduction\u2020",
-            "uses_boundary": true
-          },
-          {
-            "auroc": 0.5458253896652879,
-            "auroc_ci": [
-              0.520928160870626,
-              0.5701589637910588
-            ],
-            "key": "log_error_ratio",
-            "label": "Log error ratio\u2020",
-            "uses_boundary": true
-          },
-          {
-            "auroc": 0.5381663106201168,
-            "auroc_ci": [
-              0.5182705074301667,
-              0.5590054376890169
-            ],
-            "key": "retrieval_top1_gain",
-            "label": "Top-1 retrieval gain\u2020",
-            "uses_boundary": true
-          }
-        ]
-      }
-    },
-    "source": "eval_results/issue_2546/necessity_discrimination/summary.json",
-    "source_sha256": "54fced371aa39f551f64df3b5c226ff207dcd8470c02214f4dfb93fc650b0252"
-  },
-  "panels_AB_per_corpus": {
-    "1": {
-      "model": "OpenThinker3-7B vs parent",
-      "rows": [
-        {
-          "context": {
-            "chance": 0.0065441743237125765,
-            "lift": 0.21743512412367097,
-            "lift_ci": [
-              0.20767655915553657,
-              0.2275347081226248
-            ],
-            "n_rows": 6956,
-            "r2": 0.47560089887630874,
-            "r2_ci": [
-              0.47181619440833034,
-              0.47937621252391605
-            ],
-            "source": "eval_results/issue_2546/cells/p7_A__math__a1.json"
-          },
-          "corpus": "math",
-          "end_of_thought": {
-            "chance": 0.0065441743237125765,
-            "lift": 0.7942033817429923,
-            "lift_ci": [
-              0.7849365924222277,
-              0.8036303038552357
-            ],
-            "n_rows": 6956,
-            "r2": 0.6885287074775555,
-            "r2_ci": [
-              0.6859727719144073,
-              0.6913949728946607
-            ],
-            "source": "eval_results/issue_2546/cells/p7_D__math__a1.json"
-          },
-          "name": "MATH",
-          "stratum": "does"
-        },
-        {
-          "context": {
-            "chance": 0.009591220617898952,
-            "lift": 0.44312368009033604,
-            "lift_ci": [
-              0.4318552633555637,
-              0.45518954987060817
-            ],
-            "n_rows": 7201,
-            "r2": 0.46276410678466395,
-            "r2_ci": [
-              0.4597040187057134,
-              0.46645580438593787
-            ],
-            "source": "eval_results/issue_2546/cells/p7_A__gsm8k_train__a1.json"
-          },
-          "corpus": "gsm8k_train",
-          "end_of_thought": {
-            "chance": 0.009591220617898952,
-            "lift": 0.8945887543855727,
-            "lift_ci": [
-              0.8878835491706862,
-              0.901532674150454
-            ],
-            "n_rows": 7201,
-            "r2": 0.6594552521044499,
-            "r2_ci": [
-              0.6572374199125632,
-              0.6619651842155566
-            ],
-            "source": "eval_results/issue_2546/cells/p7_D__gsm8k_train__a1.json"
-          },
-          "name": "GSM8K\ntrain",
-          "stratum": "does"
-        },
-        {
-          "context": {
-            "chance": 0.02112048736770054,
-            "lift": 0.3133638949898571,
-            "lift_ci": [
-              0.3014795031077022,
-              0.32459876030931184
-            ],
-            "n_rows": 6371,
-            "r2": 0.5176559851678677,
-            "r2_ci": [
-              0.5118560086478974,
-              0.5240670663128392
-            ],
-            "source": "eval_results/issue_2546/cells/p7_A__contexthub__a1.json"
-          },
-          "corpus": "contexthub",
-          "end_of_thought": {
-            "chance": 0.02112048736770054,
-            "lift": 0.7877007337906732,
-            "lift_ci": [
-              0.7774316142633544,
-              0.7974041714239365
-            ],
-            "n_rows": 6371,
-            "r2": 0.7082038664313433,
-            "r2_ci": [
-              0.7046957018035057,
-              0.7116253927757279
-            ],
-            "source": "eval_results/issue_2546/cells/p7_D__contexthub__a1.json"
-          },
-          "name": "Context-\nHub",
-          "stratum": "does"
-        },
-        {
-          "context": {
-            "chance": 0.25330369950952075,
-            "lift": 0.3281238819180607,
-            "lift_ci": [
-              0.3150572732595857,
-              0.34066495604632235
-            ],
-            "n_rows": 5772,
-            "r2": 0.5625446678263811,
-            "r2_ci": [
-              0.5571838188378818,
-              0.568038003785657
-            ],
-            "source": "eval_results/issue_2546/cells/p7_A__mmlu__a1.json"
-          },
-          "corpus": "mmlu",
-          "end_of_thought": {
-            "chance": 0.25330369950952075,
-            "lift": 0.6035916573858362,
-            "lift_ci": [
-              0.5938855985763455,
-              0.6121199714527401
-            ],
-            "n_rows": 5772,
-            "r2": 0.6645803293341545,
-            "r2_ci": [
-              0.6597047685938713,
-              0.6692634149852787
-            ],
-            "source": "eval_results/issue_2546/cells/p7_D__mmlu__a1.json"
-          },
-          "name": "MMLU",
-          "stratum": "doesnt"
-        }
-      ]
-    },
-    "3": {
-      "model": "Qwen3-8B, thinking on vs off",
-      "rows": [
-        {
-          "context": {
-            "chance": 0.006750518325904866,
-            "lift": 0.3443243519483723,
-            "lift_ci": [
-              0.33359742851004054,
-              0.35554396936807936
-            ],
-            "n_rows": 6745,
-            "r2": 0.5821854793122341,
-            "r2_ci": [
-              0.5789780152146243,
-              0.5858775812172431
-            ],
-            "source": "eval_results/issue_2546/cells/p7_A__math__a3.json"
-          },
-          "corpus": "math",
-          "end_of_thought": {
-            "chance": 0.006750518325904866,
-            "lift": 0.6593725357882537,
-            "lift_ci": [
-              0.647670645856332,
-              0.6705024021857329
-            ],
-            "n_rows": 6745,
-            "r2": 0.6388061022184957,
-            "r2_ci": [
-              0.6364190347360744,
-              0.6414971303688055
-            ],
-            "source": "eval_results/issue_2546/cells/p7_D__math__a3.json"
-          },
-          "name": "MATH",
-          "stratum": "does"
-        },
-        {
-          "context": {
-            "chance": 0.009761875036115163,
-            "lift": 0.6076634251593609,
-            "lift_ci": [
-              0.5965793939764471,
-              0.6189347702443962
-            ],
-            "n_rows": 7162,
-            "r2": 0.5134207670081298,
-            "r2_ci": [
-              0.509795313603472,
-              0.5173603312078511
-            ],
-            "source": "eval_results/issue_2546/cells/p7_A__gsm8k_train__a3.json"
-          },
-          "corpus": "gsm8k_train",
-          "end_of_thought": {
-            "chance": 0.009761875036115163,
-            "lift": 0.8330194709566242,
-            "lift_ci": [
-              0.824259988606129,
-              0.8419424024457791
-            ],
-            "n_rows": 7162,
-            "r2": 0.5763516715779117,
-            "r2_ci": [
-              0.5734478935234847,
-              0.5795931487598804
-            ],
-            "source": "eval_results/issue_2546/cells/p7_D__gsm8k_train__a3.json"
-          },
-          "name": "GSM8K\ntrain",
-          "stratum": "does"
-        },
-        {
-          "context": {
-            "chance": 0.09247408390573103,
-            "lift": 0.23922916036907815,
-            "lift_ci": [
-              0.23039030127644522,
-              0.24842628739970896
-            ],
-            "n_rows": 8384,
-            "r2": 0.5529710583865886,
-            "r2_ci": [
-              0.548421565532203,
-              0.5575146106715786
-            ],
-            "source": "eval_results/issue_2546/cells/p7_A__contexthub__a3.json"
-          },
-          "corpus": "contexthub",
-          "end_of_thought": {
-            "chance": 0.09247408390573103,
-            "lift": 0.5867959542622079,
-            "lift_ci": [
-              0.5775805764359193,
-              0.5965924709967605
-            ],
-            "n_rows": 8384,
-            "r2": 0.6693463691492539,
-            "r2_ci": [
-              0.666482856082291,
-              0.6724404552827657
-            ],
-            "source": "eval_results/issue_2546/cells/p7_D__contexthub__a3.json"
-          },
-          "name": "Context-\nHub",
-          "stratum": "does"
-        },
-        {
-          "context": {
-            "chance": 0.24969963174402426,
-            "lift": 0.23990775855620672,
-            "lift_ci": [
-              0.22879049688562159,
-              0.2517222316027549
-            ],
-            "n_rows": 7361,
-            "r2": 0.5651899235734772,
-            "r2_ci": [
-              0.5614382037520742,
-              0.5689950538205732
-            ],
-            "source": "eval_results/issue_2546/cells/p7_A__mmlu__a3.json"
-          },
-          "corpus": "mmlu",
-          "end_of_thought": {
-            "chance": 0.24969963174402426,
-            "lift": 0.39790259621413365,
-            "lift_ci": [
-              0.3866640259273529,
-              0.40837697818525787
-            ],
-            "n_rows": 7361,
-            "r2": 0.5993698266200553,
-            "r2_ci": [
-              0.5958235853706003,
-              0.6029148435454537
-            ],
-            "source": "eval_results/issue_2546/cells/p7_D__mmlu__a3.json"
-          },
-          "name": "MMLU",
-          "stratum": "doesnt"
-        }
-      ]
-    }
-  },
-  "panels_CD_necessity": {
+  "panel_A": {
     "1": {
       "model": "OpenThinker3-7B vs parent",
       "points": [
@@ -780,6 +366,128 @@
       "spearman_p": 0.3317398014330152,
       "spearman_rho": -0.3666666666666667
     }
+  },
+  "panel_B": {
+    "arms": {
+      "1": {
+        "model": "OpenThinker3-7B vs parent",
+        "n_analysis": 5264,
+        "n_necessary": 872,
+        "prevalence": 0.1656534954407295,
+        "scores": [
+          {
+            "auroc": 0.5365687822730235,
+            "auroc_ci": [
+              0.5153963667782122,
+              0.5579094300416938
+            ],
+            "key": "prompt_error",
+            "label": "Prompt map error",
+            "uses_boundary": false
+          },
+          {
+            "auroc": 0.49905478685182403,
+            "auroc_ci": [
+              0.4836825922026704,
+              0.5137019351280895
+            ],
+            "key": "prompt_retrieval_miss",
+            "label": "Prompt retrieval miss",
+            "uses_boundary": false
+          },
+          {
+            "auroc": 0.5416353336341304,
+            "auroc_ci": [
+              0.5197716853307097,
+              0.5632176308885213
+            ],
+            "key": "error_reduction",
+            "label": "Error reduction\u2020",
+            "uses_boundary": true
+          },
+          {
+            "auroc": 0.5378761530555973,
+            "auroc_ci": [
+              0.5164708025747397,
+              0.5587882432717535
+            ],
+            "key": "log_error_ratio",
+            "label": "Log error ratio\u2020",
+            "uses_boundary": true
+          },
+          {
+            "auroc": 0.5155401397035477,
+            "auroc_ci": [
+              0.49784767850950856,
+              0.5332175610419696
+            ],
+            "key": "retrieval_top1_gain",
+            "label": "Top-1 retrieval gain\u2020",
+            "uses_boundary": true
+          }
+        ]
+      },
+      "3": {
+        "model": "Qwen3-8B, thinking on vs off",
+        "n_analysis": 5143,
+        "n_necessary": 624,
+        "prevalence": 0.12132996305658177,
+        "scores": [
+          {
+            "auroc": 0.5564681317060162,
+            "auroc_ci": [
+              0.5324796461237736,
+              0.5805486609954551
+            ],
+            "key": "prompt_error",
+            "label": "Prompt map error",
+            "uses_boundary": false
+          },
+          {
+            "auroc": 0.5424220243870609,
+            "auroc_ci": [
+              0.5234653338681123,
+              0.5611874817366561
+            ],
+            "key": "prompt_retrieval_miss",
+            "label": "Prompt retrieval miss",
+            "uses_boundary": false
+          },
+          {
+            "auroc": 0.5525686418029857,
+            "auroc_ci": [
+              0.5269358967266414,
+              0.5767611448953421
+            ],
+            "key": "error_reduction",
+            "label": "Error reduction\u2020",
+            "uses_boundary": true
+          },
+          {
+            "auroc": 0.5458253896652879,
+            "auroc_ci": [
+              0.520928160870626,
+              0.5701589637910588
+            ],
+            "key": "log_error_ratio",
+            "label": "Log error ratio\u2020",
+            "uses_boundary": true
+          },
+          {
+            "auroc": 0.5381663106201168,
+            "auroc_ci": [
+              0.5182705074301667,
+              0.5590054376890169
+            ],
+            "key": "retrieval_top1_gain",
+            "label": "Top-1 retrieval gain\u2020",
+            "uses_boundary": true
+          }
+        ]
+      }
+    },
+    "source": "eval_results/issue_2546/necessity_discrimination/summary.json",
+    "source_sha256": "54fced371aa39f551f64df3b5c226ff207dcd8470c02214f4dfb93fc650b0252"
   },
   "provenance": {
     "hf_data_repo": "superkaiba1/explore-persona-space-data",

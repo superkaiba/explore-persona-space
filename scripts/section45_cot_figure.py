@@ -82,6 +82,11 @@ STRATA = {
     "does": StratumStyle("Needs-reasoning corpora", "#7B3294", "s", -0.16),
     "doesnt": StratumStyle("No-reasoning corpora", "#5AAE61", "o", 0.16),
 }
+# The main figure plots the needs-reasoning stratum only; the strata comparison
+# is its own figure (scripts/section45_cot_strata_figure.py). Both strata are
+# still loaded, validated, and written to the JSON sidecar.
+PLOT_STRATA = ("does",)
+STRATA_CORPORA_NOTE = {"does": "MATH, multi-step GSM8K, ContextHub levels 3\u20134"}
 
 # (cell, x-axis label) per categorical panel.
 PANEL_A_MAPS = [
@@ -267,8 +272,8 @@ def _kicker(ax: plt.Axes, title: str, kicker: str) -> None:
 
 
 BAR_WIDTH = 0.19
-# Within each x category: needs-reasoning [R^2, retrieval] then no-reasoning [R^2, retrieval].
-BAR_OFFSETS = {"does": (-0.30, -0.10), "doesnt": (0.10, 0.30)}
+# Within each x category: [R^2, retrieval] for the single plotted stratum.
+BAR_OFFSETS = {"does": (-0.11, 0.11), "doesnt": (-0.11, 0.11)}
 RETRIEVAL_HATCH = "///"
 
 
@@ -325,8 +330,8 @@ def _draw_bars(ax: plt.Axes, x: float, metrics: dict[str, Any], style: StratumSt
 def _categorical_panel(ax: plt.Axes, maps: list[dict[str, Any]], *, separator_after: int | None = None) -> None:
     style_score_axis(ax, y_min=0.0, y_max=1.0, y_step=0.2)
     for i, entry in enumerate(maps):
-        for subset, style in STRATA.items():
-            _draw_bars(ax, i, entry[subset], style, subset)
+        for subset in PLOT_STRATA:
+            _draw_bars(ax, i, entry[subset], STRATA[subset], subset)
     ax.set_xlim(-0.6, len(maps) - 0.4)
     ax.set_xticks(range(len(maps)))
     ax.set_xticklabels([entry["label"] for entry in maps], fontsize=13.5, linespacing=1.15)
@@ -336,7 +341,8 @@ def _categorical_panel(ax: plt.Axes, maps: list[dict[str, Any]], *, separator_af
 
 def _trajectory_panel(ax: plt.Axes, series: dict[str, list[dict[str, Any]]]) -> None:
     style_score_axis(ax, y_min=0.0, y_max=1.0, y_step=0.2)
-    for subset, style in STRATA.items():
+    for subset in PLOT_STRATA:
+        style = STRATA[subset]
         rows = series[subset]
         t = np.asarray([row["t"] for row in rows])
         r2 = np.asarray([row["r2"] for row in rows])
@@ -381,8 +387,12 @@ def _trajectory_panel(ax: plt.Axes, series: dict[str, list[dict[str, Any]]]) -> 
 
 def _legend_handles() -> tuple[list[Patch], list[Patch]]:
     strata = [
-        Patch(facecolor=style.color, edgecolor=style.color, label=style.label)
-        for style in STRATA.values()
+        Patch(
+            facecolor=STRATA[subset].color,
+            edgecolor=STRATA[subset].color,
+            label=f"{STRATA[subset].label} only",
+        )
+        for subset in PLOT_STRATA
     ]
     metrics = [
         Patch(facecolor=INK, edgecolor=INK, label="Held-out $R^2$"),
