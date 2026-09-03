@@ -392,6 +392,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--baseline", choices=("corpus", "own"), default="corpus", help="R^2 baseline: each corpus's mean answer state (same predictor for both groups) or each group's own mean")
     parser.add_argument("--figure-only", action="store_true", help="re-render from an existing summary without touching the shards")
     parser.add_argument("--arms", type=int, nargs="*", default=None, help="restrict to these arms (smoke runs)")
+    parser.add_argument("--panel-arms", type=str, nargs="*", default=None, help="which arms to draw and in what order (default: arm 1, or 1 then 3 with --both-panels)")
     parser.add_argument("--corpora", nargs="*", default=["math", "gsm8k_train", "contexthub"], help="corpora to analyze and plot (default: the three needs-reasoning corpora)")
     parser.add_argument("--cells-dir", type=Path, default=CELLS_DIR, help="cell JSON dir for the committed whole-fit R^2 reference (default: needs-reasoning-only refits)")
     parser.add_argument("--preds-root", type=Path, default=DEFAULT_PREDS_ROOT, help="preds root holding arm<N>/<cell>__<corpus>__a<N>.npz (default: needs-reasoning-only refits)")
@@ -431,7 +432,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.no_figure:
         return 0
     font = set_c2a_style()
-    fig = make_figure(results, {"1": args.title_a, "3": args.title_b}, arms=("1", "3") if args.both_panels else ("1",), whole_corpus_line=args.whole_corpus_line, baseline=args.baseline, show_pooled=args.show_pooled)
+    fig = make_figure(results, {"1": args.title_a, "3": args.title_b}, arms=tuple(args.panel_arms) if args.panel_arms else (("1", "3") if args.both_panels else ("1",)), whole_corpus_line=args.whole_corpus_line, baseline=args.baseline, show_pooled=args.show_pooled)
     stem = args.out_dir / args.stem
     outputs = save_c2a_figure(
         fig,
