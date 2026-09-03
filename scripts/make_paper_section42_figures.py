@@ -271,7 +271,9 @@ def make_sae_figure(data: dict) -> tuple[plt.Figure, float]:
 
 
 def _read_jsonl(path: Path) -> list[dict]:
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    # str.split("\n"), not splitlines(): JSON strings may contain U+2028/U+2029, which
+    # splitlines() treats as row breaks and would corrupt the record.
+    return [json.loads(line) for line in path.read_text().split("\n") if line.strip()]
 
 
 def _bootstrap_slope(

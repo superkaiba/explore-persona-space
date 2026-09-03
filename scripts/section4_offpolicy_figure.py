@@ -32,11 +32,19 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+# #847: thread caps must land BEFORE the matplotlib imports below. On the shared
+# VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS, and the
+# BLAS pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.lines import Line2D  # noqa: E402
+
 
 from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     INK,
