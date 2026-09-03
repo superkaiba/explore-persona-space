@@ -1,4 +1,4 @@
-% Figure 1: context-to-answer prediction pipeline (rev 14, 2026-09-03).
+% Figure 1: context-to-answer prediction pipeline (rev 15, 2026-09-03).
 % Compile standalone: pdflatex fig1_schematic.tex
 % THEN convert text to outlines before copying to Overleaf (REQUIRED):
 %   gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dNoOutputFonts -dCompatibilityLevel=1.5 \
@@ -14,28 +14,24 @@
 % the residual stream, with the layer blocks and the residual-stream states (5-cell
 % columns) sitting on it; dots elide layers. The row of states after layer l is the
 % shaded band, labeled "residual stream after layer l" on the left. The final context
-% token's state (violet) is tapped upward through the gap between the context and
-% answer columns and leaves the model through the strip above layer L; the answer
-% tokens' states (amber, grouped) are averaged into the answer vector. Every vector is
-% a contiguous 5-cell column, the ridge map a contiguous 5x5 grid, so the predictor
-% reads as matrix x column + column. Tokens are truncated but the template tokens
-% around the context/answer boundary are exact for Qwen2.5-7B-Instruct (the context
-% vector sits on the "\n" token after "assistant", token id 198).
+% token's state is tapped upward through the gap between the context and answer
+% columns and leaves the model through the strip above layer L; the answer tokens'
+% states (grouped) are averaged into the answer vector. Every vector is a contiguous
+% 5-cell column, the ridge map a contiguous 5x5 grid. Tokens are truncated but the
+% template tokens around the context/answer boundary are exact for Qwen2.5-7B-Instruct
+% (the context vector sits on the "\n" token after "assistant", token id 198).
 % Palette = paper palette (c2a_plot_style.py): ink #22272B, muted #687078, linear teal
-% #176B87. Two text sizes: 8 pt (names) and 7 pt.
+% #176B87, nonlinear terracotta #C4553D. Two text sizes: 8 pt (names) and 7 pt.
 % Side coding (rev 13, Thomas): every context-side state and vector is violet #6F4FA0
-% (all context tokens' states after layer l, h_C, the predictor input). Answer side is an
-% amber ramp that darkens with aggregation: token states light amber #C98A1B, the mean
-% answer vectors h_A(A_k) / h_A(A_1..K) darker amber #A8720F, the target (mean over K)
-% darkest #6E4A0C. Vectors outside the model use stronger cell shades than the states.
-% The prediction stays teal, the predictor's output.
-% Rev 14 (Thomas): metamodel-agnostic wording, box titled "Metamodel" and the fit label
-% generic; the matrix + bias inside is the illustrated (linear) instance.
-% Rev 12 layout (Thomas: "raise it even more"): the model box top is level with the
-% predictor box top; the context tap runs in a 0.6 cm strip above layer L; the top-row
-% vector labels sit BELOW their vectors (prediction label to the right) so nothing
-% rises above the two box titles; the answer row steps 0.9 cm below the band so the
-% right-hand column ends near the model box bottom.
+% (all context tokens' states after layer l, h_C, the metamodel inputs). Answer side is
+% an amber ramp that darkens with aggregation: token states light amber #C98A1B, the
+% mean answer vectors h_A(A_k) / h_A(A_1..K) darker amber #A8720F, the target (mean
+% over K) darkest #6E4A0C. Vectors outside the model use stronger cell shades.
+% Rev 15 (Thomas): the context vector forks into TWO metamodel boxes, linear (teal:
+% matrix W_l times h_C plus bias b_l) and nonlinear (terracotta: a small MLP glyph,
+% input column -> hidden column -> output column with dense connections). Both outputs
+% merge into one prediction (ink, branch-neutral), which is fit to the target. The
+% answer row sits below both boxes; the figure height is unchanged.
 \documentclass[tikz,border=4pt]{standalone}
 \usepackage[type1]{inter}
 \renewcommand{\familydefault}{\sfdefault}
@@ -45,15 +41,16 @@
 
 \definecolor{ink}{HTML}{22272B}
 \definecolor{muted}{HTML}{687078}
-\definecolor{teal}{HTML}{176B87}
-\definecolor{ctx}{HTML}{6F4FA0}   % context side
-\definecolor{ans}{HTML}{C98A1B}   % answer side: token states
-\definecolor{ansv}{HTML}{A8720F}  % answer side: mean answer vectors
-\definecolor{tgt}{HTML}{6E4A0C}   % answer side: the target (mean over K answer vectors)
+\definecolor{teal}{HTML}{176B87}   % linear metamodel
+\definecolor{terra}{HTML}{C4553D}  % nonlinear metamodel
+\definecolor{ctx}{HTML}{6F4FA0}    % context side
+\definecolor{ans}{HTML}{C98A1B}    % answer side: token states
+\definecolor{ansv}{HTML}{A8720F}   % answer side: mean answer vectors
+\definecolor{tgt}{HTML}{6E4A0C}    % answer side: the target (mean over K answer vectors)
 \definecolor{paper}{HTML}{FFFFFF}
 
-% ---- big column vector: 5 contiguous SQUARE cells, 0.20 x 1.00 cm -------------------
-% \colvecs{<node name>}{<x>}{<y>}{<color>}{<shade list>}   \colvec = default shades
+% ---- column vector: n contiguous SQUARE cells, 0.20 x (0.20 n) cm ----------------------
+% \colvecs{<node name>}{<x>}{<y>}{<color>}{<shade list>}   \colvec = default 5-cell shades
 \newcommand{\colvecs}[5]{%
   \begin{scope}[shift={(#2,#3)}]
     \foreach \s [count=\r from 0] in {#5} {
@@ -64,6 +61,16 @@
   \node[inner sep=0pt, minimum width=0.20cm, minimum height=1.0cm] (#1) at (#2,#3) {};
 }
 \newcommand{\colvec}[4]{\colvecs{#1}{#2}{#3}{#4}{42,16,60,26,68}}
+% 6-cell column (the MLP hidden layer), 0.20 x 1.20 cm, centered at (x,y)
+\newcommand{\colvecsix}[4]{%
+  \begin{scope}[shift={(#2,#3)}]
+    \foreach \s [count=\r from 0] in {40,22,64,30,56,18} {
+      \fill[#4!\s] (-0.10,{0.60-(\r+1)*0.20}) rectangle (0.10,{0.60-\r*0.20});
+    }
+    \draw[#4!75, line width=0.5pt] (-0.10,-0.60) rectangle (0.10,0.60);
+  \end{scope}
+  \node[inner sep=0pt, minimum width=0.20cm, minimum height=1.2cm] (#1) at (#2,#3) {};
+}
 % ---- small residual-stream state inside the model: 5 SQUARE cells, 0.10 x 0.50 cm ---
 % \minivec{<x>}{<y>}{<color>}{<shade list>}{<outline>}
 \newcommand{\minivec}[5]{%
@@ -125,6 +132,8 @@
   streamline/.style={black!50, line width=0.4pt},
   mini/.style={->, black!50, line width=0.4pt, >={Stealth[length=1mm, width=0.9mm]}},
   flow/.style={->, line width=0.6pt, ink!70},
+  wire/.style={line width=0.6pt},
+  dense/.style={terra!35, line width=0.25pt},
 ]
 
 % ===========================================================================
@@ -171,26 +180,27 @@
   (4.54,0.12) -- (6.46,0.12) node[midway, below=3.5pt, ann, text=ans!90!black] {sampled answer $A_k$};
 
 % ===========================================================================
-% Middle: the two vectors read off layer l.  Top row y = 5.45 (context, in the
-% model's top strip), bottom row y = 3.20 (answer, 0.9 below the band at 4.10).
+% Middle: the two vectors read off layer l.  Context vector y = 5.45 (in the
+% model's top strip); answer vector y = 1.05, below both metamodel boxes.
 % ===========================================================================
 \colvecs{hc}{7.70}{5.45}{ctx}{62,30,80,44,92}
-\node[lbl, text=ctx, anchor=north, align=center] at (7.70,4.89) {context vector\\$h_C^{\ell}$};
+\node[lbl, text=ctx, anchor=north, align=center] at (7.70,4.89) {context\\vector $h_C^{\ell}$};
 \draw[flow, ctx!85] (hfinal.east) -- (4.35,4.10) -- (4.35,5.45) -- (hc.west);
 
-\colvecs{ha}{7.70}{3.20}{ansv}{62,30,80,44,92}
-\node[lbl, text=ansv, anchor=north, align=center] at (7.70,2.64) {answer vector\\$\bar h_A^{\ell}(A_k)$};
-\draw[flow, ansv] (6.42,4.10) -- (6.78,4.10) -- (6.78,3.20) -- (ha.west);
-\node[ann, anchor=north] at (7.19,3.12) {mean};
+\colvecs{ha}{7.70}{1.05}{ansv}{62,30,80,44,92}
+\node[lbl, text=ansv, anchor=north, align=center] at (7.70,0.49) {answer vector\\$\bar h_A^{\ell}(A_k)$};
+\draw[flow, ansv] (6.42,4.10) -- (6.78,4.10) -- (6.78,1.05) -- (ha.west);
+\node[ann, anchor=north] at (7.19,0.97) {mean};
 
 % ===========================================================================
-% Right: the metamodel (top; box top 5.80 level with the model box top 5.75)
-% and the prediction target (bottom).
+% Right: two metamodel branches (linear on top, nonlinear below), one merged
+% prediction, and the prediction target at the bottom.
 % ===========================================================================
+% --- linear metamodel: box 4.08..5.80 (top level with the model box top 5.75)
 \node[draw=teal, line width=0.7pt, fill=teal!5, rounded corners=3pt,
-      minimum width=3.0cm, minimum height=1.72cm, inner sep=0pt] (ridge) at (10.40,4.94) {};
+      minimum width=3.0cm, minimum height=1.72cm, inner sep=0pt] (lin) at (10.40,4.94) {};
 \node[lbl, text=teal, anchor=south, font=\fontsize{8}{9.5}\selectfont\bfseries]
-  at (10.40,5.84) {Metamodel};
+  at (10.40,5.84) {Linear metamodel};
 \matgrid{W}{9.75}{5.10}{teal}
 \node[lbl, text=teal, anchor=north, inner sep=0.5pt] at (9.75,4.53) {$W_\ell$};
 \colvecs{hcol}{10.65}{5.10}{ctx}{62,30,80,44,92}
@@ -198,28 +208,53 @@
 \node[lbl, text=teal, inner sep=0pt] at (11.00,5.10) {$+$};
 \colvec{bcol}{11.35}{5.10}{teal}
 \node[lbl, text=teal, anchor=north, inner sep=0.5pt] at (11.35,4.53) {$b_\ell$};
-\draw[flow, ctx!85] (hc.east) -- (ridge.west |- hc.east);
-\colvec{hhat}{12.50}{5.45}{teal}
-\node[lbl, text=teal, anchor=west, align=left, inner sep=1pt] at (12.68,5.45) {prediction\\$\hat h_A^{\ell}$};
-\draw[flow, teal!85] (ridge.east |- hhat.west) -- (hhat.west);
 
-% prediction target: mean over the answer vectors of K sampled answers
-\colvecs{a1}{9.55}{3.20}{ansv}{62,30,80,44,92}
-\colvecs{a2}{9.95}{3.20}{ansv}{62,30,80,44,92}
-\node[lbl, text=ansv, inner sep=0pt] at (10.35,3.20) {$\cdots$};
-\colvecs{aK}{10.75}{3.20}{ansv}{62,30,80,44,92}
-\node[lbl, text=ansv, anchor=north, inner sep=0.5pt] at (10.15,2.65)
+% --- nonlinear metamodel: box 1.86..3.58, glyph row at 2.88, labels at 2.31
+\node[draw=terra, line width=0.7pt, fill=terra!5, rounded corners=3pt,
+      minimum width=3.0cm, minimum height=1.72cm, inner sep=0pt] (nl) at (10.40,2.72) {};
+\node[lbl, text=terra, anchor=south, font=\fontsize{8}{9.5}\selectfont\bfseries]
+  at (10.40,3.62) {Nonlinear metamodel};
+% dense connections first (drawn under the columns): input (5 cells) -> hidden (6) -> output (5)
+\foreach \yi in {3.28,3.08,2.88,2.68,2.48} {
+  \foreach \yh in {3.38,3.18,2.98,2.78,2.58,2.38} {
+    \draw[dense] (9.70,\yi) -- (10.30,\yh);
+    \draw[dense] (10.50,\yh) -- (11.10,\yi);
+  }
+}
+\colvecs{mi}{9.60}{2.88}{ctx}{62,30,80,44,92}
+\node[lbl, text=ctx, anchor=north, inner sep=0.5pt] at (9.60,2.31) {$h_C^{\ell}$};
+\colvecsix{mh}{10.40}{2.88}{terra}
+\node[lbl, text=terra, anchor=north, inner sep=0.5pt] at (10.40,2.21) {MLP$_\ell$};
+\colvec{mo}{11.20}{2.88}{terra}
+
+% --- fork: the context vector feeds both branches
+\draw[flow, ctx!85] (hc.east) -- (lin.west |- hc.east);
+\draw[flow, ctx!85] (8.45,5.45) -- (8.45,2.88) -- (nl.west |- 0,2.88);
+
+% --- merge: both outputs give the prediction
+\draw[wire, teal!85] (lin.east |- 0,5.45) -- (12.15,5.45) -- (12.15,4.08);
+\draw[wire, terra!85] (nl.east |- 0,2.88) -- (12.15,2.88) -- (12.15,4.08);
+\colvec{hhat}{12.50}{4.08}{ink}
+\draw[flow] (12.15,4.08) -- (hhat.west);
+\node[lbl, anchor=west, align=left, inner sep=1pt] at (12.68,4.08) {prediction\\$\hat h_A^{\ell}$};
+
+% --- prediction target: mean over the answer vectors of K sampled answers (y = 1.05)
+\colvecs{a1}{9.55}{1.05}{ansv}{62,30,80,44,92}
+\colvecs{a2}{9.95}{1.05}{ansv}{62,30,80,44,92}
+\node[lbl, text=ansv, inner sep=0pt] at (10.35,1.05) {$\cdots$};
+\colvecs{aK}{10.75}{1.05}{ansv}{62,30,80,44,92}
+\node[lbl, text=ansv, anchor=north, inner sep=0.5pt] at (10.15,0.50)
   {$\bar h_A^{\ell}(A_1)\,\cdots\,\bar h_A^{\ell}(A_K)$};
 \draw[flow, ansv] (ha.east) -- (a1.west);
-\node[ann, anchor=south] at (8.62,3.28) {for each of\\$K$ answers};
-\colvecs{mu}{12.50}{3.20}{tgt}{62,30,80,44,92}
-\node[lbl, text=tgt, anchor=north, align=center] at (12.50,2.64) {target\\$\bar\mu_A^{\ell}$};
+\node[ann, anchor=south] at (8.62,1.13) {for each of\\$K$ answers};
+\colvecs{mu}{12.50}{1.05}{tgt}{62,30,80,44,92}
+\node[lbl, text=tgt, anchor=north, align=center] at (12.50,0.49) {target\\$\bar\mu_A^{\ell}$};
 \draw[flow, tgt] (aK.east) -- (mu.west);
-\node[ann, anchor=south] at (11.62,3.28) {mean over\\$K$ answers};
+\node[ann, anchor=south] at (11.62,1.13) {mean over\\$K$ answers};
 
-% fit: prediction against target
-\draw[<->, line width=0.6pt, teal!85, dashed] ($(hhat.south)+(0,-0.05)$) -- ($(mu.north)+(0,0.05)$);
-\node[ann, text=teal, anchor=west] at (12.80,4.33) {fit:\\$\min\,\lVert \bar\mu_A^{\ell}-\hat h_A^{\ell}\rVert^{2}$};
+% --- fit: prediction against target
+\draw[<->, line width=0.6pt, ink!70, dashed] ($(hhat.south)+(0,-0.05)$) -- ($(mu.north)+(0,0.05)$);
+\node[ann, text=ink, anchor=west] at (12.80,2.55) {fit:\\$\min\,\lVert \bar\mu_A^{\ell}-\hat h_A^{\ell}\rVert^{2}$};
 
 \end{tikzpicture}
 \end{document}
