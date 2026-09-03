@@ -36,3 +36,12 @@ separately; a correct-today parallel mirror with a queued predicate change
 is a CONCERN naming the lockstep file+test, not a PASS-silent. Pairs with
 [[keyed-id-edge-exemption-split-straddle]] (the queued change itself) and
 [[superfamily-split-freeze-review-recipe]] (probe 1's inert-tell).
+
+**Validated CLOSED shape (#2658 a76241f96f4):** both sites dispatch on ONE
+set of shared predicate helpers (edge_problem_id_key / edge_text_identity_key
+/ edge_lexical_member), domains become per-EDGE rather than per-population,
+and a duplicate-content test drives the REAL graph asserting
+merged == bool(spanning-domains). Certify by reading BOTH call paths (a
+helper called by one side and duplicated by the other is NOT coupling).
+Residual to note as nit: a future edge added INLINE without a helper still
+drifts the disclosure — nothing forces the helper pattern.

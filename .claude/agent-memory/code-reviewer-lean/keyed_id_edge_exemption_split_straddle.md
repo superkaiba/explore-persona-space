@@ -38,4 +38,24 @@ items. Also probe rendered-block re-parsers in the same diffs (option lines
 recovered by regex): continuation lines that don't match the line pattern are
 SILENTLY dropped (36/12,032 MMLU-Pro option texts truncated) even when the
 docstring claims the label-sequence check catches embedded newlines — it only
-catches pattern-MATCHING extra lines.
+catches pattern-MATCHING extra lines. (Fix-round correction, re-measured vs
+SOURCE options: the real pre-fix content loss was 9/12,032 ws-collapsed — the
+36 counted probe-side line shapes, and its own example row was clean. Measure
+reviewer counts against source, not the probe's intermediate.)
+
+**Fix-round re-review addendum (#2658 a76241f96f4).** An exact-stem edge-2
+fix verifies cleanly (my independent instrument: 360 dup groups, 0 straddle,
+0/6,525 test-with-dev-twin, full rebuild parity 0 mismatches) and STILL fails
+the estimand: tier the residual with the module's OWN edges-3/4 criteria run
+cross-boundary on stems (prefix-filtered exact all-pairs sweep, ~8 s for
+6.5k x 6.7k). Found: 131/6,525 test items (2.0%) with a dev stem at
+charJ>=0.8 — 56 at charJ==1.0 (leading-400 truncation twins), 38 pairs
+sharing >=90% of the stem, 600-char stems differing by ONE char, and 8
+punctuation-only twins invisible to an edge-punctuation-only normalizer (run
+an aggressive alnum-only normalizer as a second exact pass). Rate the tiers
+separately: tokJ 0.6-0.7 token-only may be MCQ template similarity
+(over-merge risk via union-find chaining — a design call for the planner),
+but the charJ-1.0/prefix-90% tier is seen content, period. Anchor the ruling
+in the PLAN's superfamily definition ("duplicate/near-duplicate, and
+rephrase", unscoped) — a fix that faithfully implements round-1's prescribed
+exact-only recipe can still be a plan deviation.
