@@ -1,0 +1,229 @@
+{
+ "figure": "c4_shared_speakers",
+ "status": "manuscript Figure 8 (c2a-v2 restyle; values unchanged from the published render)",
+ "style_version": "c2a-v2",
+ "plotting_script": "scripts/paper_fig_shared_speakers.py",
+ "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+ "reproduction_command": "uv run python scripts/paper_fig_shared_speakers.py",
+ "git": {
+  "git_commit": "adeed6da49516182b9577311a4fd40804938044c",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   "scripts/paper_fig_shared_speakers.py",
+   ".claude/agent-memory/implementer-lean/MEMORY.md",
+   "docs/paper_context_answer_map/plotting_style.md",
+   "docs/paper_context_answer_map/qualitative_examples.md",
+   "eval_results/issue_779/plot3_redesign/plot3_redesign.json",
+   "figures/paper/c1_offpolicy_origin.pdf",
+   "figures/paper/c1_offpolicy_origin.png",
+   "figures/paper/c1_offpolicy_origin_data.json",
+   "figures/paper/c1_offpolicy_origin_grayscale.png",
+   "figures/paper/c3_persona_direction_spectrum.meta.json",
+   "figures/paper/c3_persona_direction_spectrum.pdf",
+   "figures/paper/c3_persona_direction_spectrum.png",
+   "figures/paper/c3_persona_topic_separation.meta.json",
+   "figures/paper/c3_persona_topic_separation.pdf",
+   "figures/paper/c3_persona_topic_separation.png",
+   "figures/paper/c3_persona_topic_separation_grayscale.png",
+   "figures/paper/c3_qualitative_discrimination.meta.json",
+   "figures/paper/c3_qualitative_discrimination.pdf",
+   "figures/paper/c3_qualitative_discrimination.png",
+   "figures/paper/c3_qualitative_discrimination_grayscale.png",
+   "figures/paper/c3_sae_tier_gradient.meta.json",
+   "figures/paper/c3_sae_tier_gradient.pdf",
+   "figures/paper/c3_sae_tier_gradient.png",
+   "figures/paper/c3_sae_tier_gradient_grayscale.png",
+   "figures/paper/c5_claim4_margin_forest.meta.json",
+   "figures/paper/c5_claim4_margin_forest.pdf",
+   "figures/paper/c5_claim4_margin_forest.png",
+   "figures/paper/c5_pv_methods_regimes.meta.json",
+   "figures/paper/c5_pv_methods_regimes.pdf",
+   "figures/paper/c5_pv_methods_regimes.png",
+   "figures/paper/figure2_predictability_scaling.meta.json",
+   "figures/paper/figure2_predictability_scaling.pdf",
+   "figures/paper/figure2_predictability_scaling.png",
+   "figures/paper/figure2_predictability_scaling_grayscale.png",
+   "scripts/issue1739_claim4_relabel_figs.py",
+   "scripts/issue1739_result2_fourpanel_fig.py",
+   "scripts/issue779_plot3_redesign.py",
+   "scripts/make_paper_figure2.py",
+   "scripts/make_paper_section42_figures.py",
+   "scripts/section43_posttraining_figure.py",
+   "scripts/section4_offpolicy_figure.py",
+   "src/explore_persona_space/analysis/c2a_plot_style.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/paper_fig_shared_speakers.py"
+ },
+ "sources": {
+  "speaker_lattice": {
+   "path": "eval_results/issue_2054/specialization_ladder/ladder.json",
+   "sha256": "9cc99352c414abcbeec703d318cdffc9e8539401fcbf85278a88b6a2f83eca63"
+  },
+  "loco_pooled_units": {
+   "path": "eval_results/issue_2054/specialization_ladder/loco_pooled.units.jsonl",
+   "sha256": "3d22b5be7af731bc5587178e14665d8d2f9afdc022ced2d8d1a624d36a06dda6"
+  },
+  "plain_text_cap_refit": {
+   "path": "eval_results/issue_2054/caphit_pooled_refit/caphit_pooled_refit.json",
+   "sha256": "c04af36a139410f5dcdbc26e682017fd04a62ccef60e68b970f84d36b57805a6"
+  }
+ },
+ "parity": {
+  "checked_against": "/home/thomasjiralerspong/overleaf-6a59c927/figures/paper/c4_shared_speakers.meta.json",
+  "max_abs_diff": 0.0,
+  "tol": 1e-09
+ },
+ "record": {
+  "style_version": "c2a-v2",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "resolved_font": "Inter",
+  "authoring_size_inches": [
+   13.095,
+   5.5
+  ],
+  "exported_size_inches": [
+   13.095,
+   5.192
+  ],
+  "scale": 0.42,
+  "include_width_frac": 1.0,
+  "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c4_shared_speakers.pdf}",
+  "realized_font_pt": {
+   "body": 7.56,
+   "tick": 7.14,
+   "label": 8.4,
+   "title": 9.24
+  },
+  "png_dpi": 240,
+  "background": "#FFFFFF",
+  "text": [
+   "A  \u00b7  OWN PREDICTOR",
+   "Assistant\nchat\ntemplate",
+   "Assistant\nplain\ntext",
+   "HELIOS\nship\nAI",
+   "Wren\nhelpful",
+   "Dana\nordinary",
+   "Vex\nvillain",
+   "Held-out $R^2$ \u2191",
+   "\u22120.2",
+   "0.0",
+   "0.2",
+   "0.4",
+   "0.6",
+   "0.8",
+   "Held-out $R^2$ per setting,\nbase and post-trained",
+   "Shuffled answers (null)",
+   "Base",
+   "Post-trained",
+   "B  \u00b7  SHARED PREDICTOR",
+   "Fraction of own $R^2$ \u2191",
+   "0.5",
+   "1.0",
+   "1.5",
+   "2.0",
+   "Shared predictor as a fraction\nof each setting's own $R^2$",
+   "Own predictor",
+   "Shared, as is",
+   "Shared, with per-setting shift"
+  ]
+ },
+ "data": {
+  "panels": {
+   "A": "own predictor per setting, base_own and post_own side by side",
+   "B": "shared predictor as-is and with per-setting shift, as fraction of post_own"
+  },
+  "null_line_panel_A": -0.028103851491912357,
+  "speakers": [
+   {
+    "label": "Assistant\nchat template",
+    "base_own": 0.20736087733279018,
+    "post_own": 0.5796996369279679,
+    "shared_asis": 0.4344725349984258,
+    "shared_shift": 0.49863549309530714,
+    "shared_shift_scale": 0.4984962645228225,
+    "frac_shared_asis": 0.749478708147634,
+    "frac_shared_shift": 0.8601618171399104,
+    "null_p975": [
+     -0.025570017177420256,
+     -0.021395259095018743
+    ]
+   },
+   {
+    "label": "Assistant\nplain text",
+    "base_own": 0.2254487936181569,
+    "post_own": 0.38985271917718867,
+    "shared_asis": 0.25839140849836434,
+    "shared_shift": 0.30661821076508505,
+    "shared_shift_scale": 0.32463829955492235,
+    "frac_shared_asis": 0.662792372062243,
+    "frac_shared_shift": 0.7864975558262725,
+    "null_p975": [
+     -0.026894550631164284,
+     -0.02974220647838311
+    ]
+   },
+   {
+    "label": "HELIOS\nship AI",
+    "base_own": 0.27988210680548775,
+    "post_own": 0.36960715629310803,
+    "shared_asis": 0.34028494498421596,
+    "shared_shift": 0.36357969979447313,
+    "shared_shift_scale": 0.36337732347961105,
+    "frac_shared_asis": 0.92066654876769,
+    "frac_shared_shift": 0.9836922624575619,
+    "null_p975": [
+     -0.028525923255817112,
+     -0.029432613574348357
+    ]
+   },
+   {
+    "label": "Wren\nhelpful",
+    "base_own": 0.26435334458909887,
+    "post_own": 0.3559185425108692,
+    "shared_asis": 0.29810181543967956,
+    "shared_shift": 0.3333196701682339,
+    "shared_shift_scale": 0.33358413721790753,
+    "frac_shared_asis": 0.8375562940235854,
+    "frac_shared_shift": 0.9365054931299479,
+    "null_p975": [
+     -0.029150102579345864,
+     -0.028731062243269503
+    ]
+   },
+   {
+    "label": "Dana\nordinary",
+    "base_own": 0.27919295858458054,
+    "post_own": 0.3609899231388926,
+    "shared_asis": 0.29057467848968915,
+    "shared_shift": 0.32840868465267,
+    "shared_shift_scale": 0.3284518026639579,
+    "frac_shared_asis": 0.8049384757421307,
+    "frac_shared_shift": 0.9097447424489828,
+    "null_p975": [
+     -0.02888848705564582,
+     -0.029327030621443023
+    ]
+   },
+   {
+    "label": "Vex\nvillain",
+    "base_own": 0.2185863641514155,
+    "post_own": 0.2962172010567693,
+    "shared_asis": 0.18511645251809059,
+    "shared_shift": 0.2482758263106431,
+    "shared_shift_scale": 0.2557825286373018,
+    "frac_shared_asis": 0.6249348513782408,
+    "frac_shared_shift": 0.8381546561945322,
+    "null_p975": [
+     -0.02998733764630901,
+     -0.029601627544783262
+    ]
+   }
+  ]
+ },
+ "output_sha256": {
+  "pdf": "6b5eb5f6cc35ef8c97b9e5c37112445a0ee0ce2562110471738338d66f221c71",
+  "png": "15ed44f83f5b375d468de7a656d076743e09ebe074ecf92d15a164660715464d",
+  "grayscale": "21c055d7b57a586d1a9cbe43f2cb0e919df80a6337b953105323f2cc9c6f734a"
+ }
+}

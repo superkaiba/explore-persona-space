@@ -1,590 +1,990 @@
 {
-  "commit": "9802452d+dirty",
-  "render_id": "321b9945ff7740f1",
-  "git_commit": "9802452ddf8427f1faa2917c0c6b979a48b58d1c",
+ "figure": "c5_pv_methods_regimes",
+ "status": "manuscript Figure 13 (c2a-v2 restyle; values unchanged)",
+ "style_version": "c2a-v2",
+ "plotting_script": "scripts/issue1739_result2_fourpanel_fig.py",
+ "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+ "reproduction_command": "uv run python scripts/issue1739_result2_fourpanel_fig.py --style iclr",
+ "git": {
+  "git_commit": "adeed6da49516182b9577311a4fd40804938044c",
   "git_dirty": true,
   "git_dirty_paths": [
-    "eval_results/issue_2474/n1m_map_arms.json",
-    "figures/paper/c5_claim4_margin_forest.meta.json",
-    "figures/paper/c5_claim4_margin_forest.pdf",
-    "figures/paper/c5_claim4_margin_forest.png",
-    "figures/paper/c5_pv_methods_regimes.meta.json",
-    "figures/paper/c5_pv_methods_regimes.pdf",
-    "figures/paper/c5_pv_methods_regimes.png",
-    "scripts/issue1739_claim4_relabel_figs.py",
-    "scripts/issue1739_result2_fourpanel_fig.py",
-    "scripts/issue2474_n1m_map.py",
-    "tasks/completed/2214/body.md",
-    "tasks/completed/2214/comments.jsonl",
-    "tasks/completed/2214/concerns.jsonl",
-    "tasks/completed/2214/events.jsonl",
-    "tasks/completed/2214/plans/plan.md",
-    "tasks/completed/2214/plans/v1.md",
-    "tasks/completed/2214/plans/v2.md",
-    "tasks/completed/2214/plans/v3.md",
-    "tasks/proposed/2416/body.md",
-    "tasks/proposed/2416/comments.jsonl",
-    "tasks/proposed/2416/events.jsonl",
-    "tasks/running/2569/events.jsonl",
-    "tests/test_issue2094_rev_butler.py"
+   ".claude/agent-memory/implementer-lean/MEMORY.md",
+   "docs/paper_context_answer_map/plotting_style.md",
+   "docs/paper_context_answer_map/qualitative_examples.md",
+   "eval_results/issue_779/plot3_redesign/plot3_redesign.json",
+   "figures/paper/c1_offpolicy_origin.pdf",
+   "figures/paper/c1_offpolicy_origin.png",
+   "figures/paper/c1_offpolicy_origin_data.json",
+   "figures/paper/c1_offpolicy_origin_grayscale.png",
+   "figures/paper/c3_persona_direction_spectrum.meta.json",
+   "figures/paper/c3_persona_direction_spectrum.pdf",
+   "figures/paper/c3_persona_direction_spectrum.png",
+   "figures/paper/c3_persona_topic_separation.meta.json",
+   "figures/paper/c3_persona_topic_separation.pdf",
+   "figures/paper/c3_persona_topic_separation.png",
+   "figures/paper/c3_persona_topic_separation_grayscale.png",
+   "figures/paper/c3_qualitative_discrimination.meta.json",
+   "figures/paper/c3_qualitative_discrimination.pdf",
+   "figures/paper/c3_qualitative_discrimination.png",
+   "figures/paper/c3_qualitative_discrimination_grayscale.png",
+   "figures/paper/c3_sae_tier_gradient.meta.json",
+   "figures/paper/c3_sae_tier_gradient.pdf",
+   "figures/paper/c3_sae_tier_gradient.png",
+   "figures/paper/c3_sae_tier_gradient_grayscale.png",
+   "figures/paper/c5_claim4_margin_forest.meta.json",
+   "figures/paper/c5_claim4_margin_forest.pdf",
+   "figures/paper/c5_claim4_margin_forest.png",
+   "figures/paper/c5_pv_methods_regimes.meta.json",
+   "figures/paper/c5_pv_methods_regimes.pdf",
+   "figures/paper/c5_pv_methods_regimes.png",
+   "figures/paper/figure2_predictability_scaling.meta.json",
+   "figures/paper/figure2_predictability_scaling.pdf",
+   "figures/paper/figure2_predictability_scaling.png",
+   "figures/paper/figure2_predictability_scaling_grayscale.png",
+   "scripts/issue1739_claim4_relabel_figs.py",
+   "scripts/issue1739_result2_fourpanel_fig.py",
+   "scripts/issue779_plot3_redesign.py",
+   "scripts/make_paper_figure2.py",
+   "scripts/make_paper_section42_figures.py",
+   "scripts/section43_posttraining_figure.py",
+   "scripts/section4_offpolicy_figure.py",
+   "src/explore_persona_space/analysis/c2a_plot_style.py"
   ],
   "git_argv0_state": "modified",
-  "git_argv0_path": "scripts/issue1739_result2_fourpanel_fig.py",
-  "created": "2026-08-25T18:41:22Z",
-  "figsize": [
-    5.5,
-    2.45
-  ],
-  "points": [
-    {
-      "x": -0.316667,
-      "Spearman $\\rho$": 0.7550197827954369,
-      "error": 0.04946694287902276,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "x": -0.19,
-      "Spearman $\\rho$": 0.7069504786777224,
-      "error": 0.07129139257996664,
-      "_kind": "bar",
-      "_group": 1
-    },
-    {
-      "x": -0.063333,
-      "Spearman $\\rho$": 0.8180783834780763,
-      "error": 0.04061986276656637,
-      "_kind": "bar",
-      "_group": 2
-    },
-    {
-      "x": 0.063333,
-      "Spearman $\\rho$": 0.810571074579304,
-      "error": 0.041846378568666076,
-      "_kind": "bar",
-      "_group": 3
-    },
-    {
-      "x": 0.19,
-      "Spearman $\\rho$": 0.8429115275104073,
-      "error": 0.04336723879195031,
-      "_kind": "bar",
-      "_group": 4
-    },
-    {
-      "x": 0.316667,
-      "Spearman $\\rho$": 0.8456174068169083,
-      "error": 0.04739576620659752,
-      "_kind": "bar",
-      "_group": 5
-    },
-    {
-      "x": 0.683333,
-      "Spearman $\\rho$": 0.06707034670126535,
-      "error": 0.10695385443950803,
-      "_kind": "bar",
-      "_group": 6
-    },
-    {
-      "x": 0.81,
-      "Spearman $\\rho$": 0.1349220757126155,
-      "error": 0.10712794051367668,
-      "_kind": "bar",
-      "_group": 7
-    },
-    {
-      "x": 0.936667,
-      "Spearman $\\rho$": 0.22541778412988908,
-      "error": 0.07143818610860146,
-      "_kind": "bar",
-      "_group": 8
-    },
-    {
-      "x": 1.063333,
-      "Spearman $\\rho$": 0.16324611609285736,
-      "error": 0.08582034350237827,
-      "_kind": "bar",
-      "_group": 9
-    },
-    {
-      "x": 1.19,
-      "Spearman $\\rho$": 0.22644899839439725,
-      "error": 0.07423026162794624,
-      "_kind": "bar",
-      "_group": 10
-    },
-    {
-      "x": 1.316667,
-      "Spearman $\\rho$": 0.21387686274055107,
-      "error": 0.0872110341578757,
-      "_kind": "bar",
-      "_group": 11
-    },
-    {
-      "x": 1.683333,
-      "Spearman $\\rho$": 0.030544916399591317,
-      "error": 0.024098251974663813,
-      "_kind": "bar",
-      "_group": 12
-    },
-    {
-      "x": 1.81,
-      "Spearman $\\rho$": 0.5916133705769209,
-      "error": 0.015961363366459036,
-      "_kind": "bar",
-      "_group": 13
-    },
-    {
-      "x": 1.936667,
-      "Spearman $\\rho$": 0.6712108952070648,
-      "error": 0.013658647086443265,
-      "_kind": "bar",
-      "_group": 14
-    },
-    {
-      "x": 2.063333,
-      "Spearman $\\rho$": 0.7491823147055028,
-      "error": 0.011184941302997686,
-      "_kind": "bar",
-      "_group": 15
-    },
-    {
-      "x": 2.19,
-      "Spearman $\\rho$": 0.6875008608887927,
-      "error": 0.012378473708050619,
-      "_kind": "bar",
-      "_group": 16
-    },
-    {
-      "x": 2.316667,
-      "Spearman $\\rho$": 0.8056781007378913,
-      "error": 0.009824113707444682,
-      "_kind": "bar",
-      "_group": 17
-    },
-    {
-      "x": 2.683333,
-      "Spearman $\\rho$": 0.014494893979452313,
-      "error": 0.06293408744058923,
-      "_kind": "bar",
-      "_group": 18
-    },
-    {
-      "x": 2.81,
-      "Spearman $\\rho$": 0.21076898875190866,
-      "error": 0.05781110104690579,
-      "_kind": "bar",
-      "_group": 19
-    },
-    {
-      "x": 2.936667,
-      "Spearman $\\rho$": 0.15777045499981224,
-      "error": 0.06557752799847463,
-      "_kind": "bar",
-      "_group": 20
-    },
-    {
-      "x": 3.063333,
-      "Spearman $\\rho$": 0.22766990730237624,
-      "error": 0.05905666626594762,
-      "_kind": "bar",
-      "_group": 21
-    },
-    {
-      "x": 3.19,
-      "Spearman $\\rho$": 0.1703975094979141,
-      "error": 0.06361923713391475,
-      "_kind": "bar",
-      "_group": 22
-    },
-    {
-      "x": 3.316667,
-      "Spearman $\\rho$": 0.1846467209757508,
-      "error": 0.06601447366060681,
-      "_kind": "bar",
-      "_group": 23
-    },
-    {
-      "x": -0.316667,
-      "y": 0.7921413291952443,
-      "error": 0.04861378004239836,
-      "_kind": "bar",
-      "_group": 24
-    },
-    {
-      "x": -0.19,
-      "y": 0.7611846342218265,
-      "error": 0.05315265897989718,
-      "_kind": "bar",
-      "_group": 25
-    },
-    {
-      "x": -0.063333,
-      "y": 0.39861803859275446,
-      "error": 0.1093709745591798,
-      "_kind": "bar",
-      "_group": 26
-    },
-    {
-      "x": 0.063333,
-      "y": 0.7759252381712568,
-      "error": 0.04787286504282212,
-      "_kind": "bar",
-      "_group": 27
-    },
-    {
-      "x": 0.19,
-      "y": 0.7640980641705702,
-      "error": 0.0522172150147025,
-      "_kind": "bar",
-      "_group": 28
-    },
-    {
-      "x": 0.316667,
-      "y": 0.7839551917464801,
-      "error": 0.06633358448638216,
-      "_kind": "bar",
-      "_group": 29
-    },
-    {
-      "x": 0.683333,
-      "y": -0.03910039610309418,
-      "error": 0.09269388845842297,
-      "_kind": "bar",
-      "_group": 30
-    },
-    {
-      "x": 0.81,
-      "y": 0.5040245535970942,
-      "error": 0.07979804854602429,
-      "_kind": "bar",
-      "_group": 31
-    },
-    {
-      "x": 0.936667,
-      "y": 0.09223660209399395,
-      "error": 0.0963013451403872,
-      "_kind": "bar",
-      "_group": 32
-    },
-    {
-      "x": 1.063333,
-      "y": 0.5174104385082218,
-      "error": 0.07825234370014275,
-      "_kind": "bar",
-      "_group": 33
-    },
-    {
-      "x": 1.19,
-      "y": 0.07624932674428626,
-      "error": 0.09505637651217738,
-      "_kind": "bar",
-      "_group": 34
-    },
-    {
-      "x": 1.316667,
-      "y": 0.5460979190433695,
-      "error": 0.07364905584101508,
-      "_kind": "bar",
-      "_group": 35
-    },
-    {
-      "x": 1.683333,
-      "y": 0.018076322553141046,
-      "error": 0.015418414248423612,
-      "_kind": "bar",
-      "_group": 36
-    },
-    {
-      "x": 1.81,
-      "y": 0.720546707075219,
-      "error": 0.009299744071483262,
-      "_kind": "bar",
-      "_group": 37
-    },
-    {
-      "x": 1.936667,
-      "y": 0.2887620479734463,
-      "error": 0.015372623902776522,
-      "_kind": "bar",
-      "_group": 38
-    },
-    {
-      "x": 2.063333,
-      "y": 0.7392767797199288,
-      "error": 0.008356035374059656,
-      "_kind": "bar",
-      "_group": 39
-    },
-    {
-      "x": 2.19,
-      "y": 0.3179323682053547,
-      "error": 0.01601755451376846,
-      "_kind": "bar",
-      "_group": 40
-    },
-    {
-      "x": 2.316667,
-      "y": 0.7697732535245382,
-      "error": 0.007935113054185094,
-      "_kind": "bar",
-      "_group": 41
-    },
-    {
-      "x": 2.683333,
-      "y": 0.06085386456800987,
-      "error": 0.05204943291632287,
-      "_kind": "bar",
-      "_group": 42
-    },
-    {
-      "x": 2.81,
-      "y": 0.7087380230631141,
-      "error": 0.03666786828760188,
-      "_kind": "bar",
-      "_group": 43
-    },
-    {
-      "x": 2.936667,
-      "y": 0.2398471924190651,
-      "error": 0.05248973152078737,
-      "_kind": "bar",
-      "_group": 44
-    },
-    {
-      "x": 3.063333,
-      "y": 0.7253642156327909,
-      "error": 0.03175246242799318,
-      "_kind": "bar",
-      "_group": 45
-    },
-    {
-      "x": 3.19,
-      "y": 0.2495902989637087,
-      "error": 0.050841682796830046,
-      "_kind": "bar",
-      "_group": 46
-    },
-    {
-      "x": 3.316667,
-      "y": 0.7286289551180206,
-      "error": 0.033980019210767376,
-      "_kind": "bar",
-      "_group": 47
-    },
-    {
-      "x": -0.316667,
-      "y": 0.6471165993837352,
-      "error": 0.0805215279689751,
-      "_kind": "bar",
-      "_group": 48
-    },
-    {
-      "x": -0.19,
-      "y": 0.5774290855736351,
-      "error": 0.10287591641191071,
-      "_kind": "bar",
-      "_group": 49
-    },
-    {
-      "x": -0.063333,
-      "y": 0.698968770527766,
-      "error": 0.07220763452803763,
-      "_kind": "bar",
-      "_group": 50
-    },
-    {
-      "x": 0.063333,
-      "y": 0.627353761729434,
-      "error": 0.09292236129578646,
-      "_kind": "bar",
-      "_group": 51
-    },
-    {
-      "x": 0.19,
-      "y": 0.746762226601023,
-      "error": 0.07381656633829353,
-      "_kind": "bar",
-      "_group": 52
-    },
-    {
-      "x": 0.316667,
-      "y": 0.785539907559668,
-      "error": 0.07777989648426598,
-      "_kind": "bar",
-      "_group": 53
-    },
-    {
-      "x": 0.683333,
-      "y": -0.10319922809106985,
-      "error": 0.09666660519971941,
-      "_kind": "bar",
-      "_group": 54
-    },
-    {
-      "x": 0.81,
-      "y": 0.5651108690679424,
-      "error": 0.072954435578,
-      "_kind": "bar",
-      "_group": 55
-    },
-    {
-      "x": 0.936667,
-      "y": 0.17577133744895965,
-      "error": 0.0975087644783903,
-      "_kind": "bar",
-      "_group": 56
-    },
-    {
-      "x": 1.063333,
-      "y": 0.6254454127087546,
-      "error": 0.06388575596154206,
-      "_kind": "bar",
-      "_group": 57
-    },
-    {
-      "x": 1.19,
-      "y": 0.28059178964074377,
-      "error": 0.09697843332983651,
-      "_kind": "bar",
-      "_group": 58
-    },
-    {
-      "x": 1.316667,
-      "y": 0.6799617428533451,
-      "error": 0.06667666745808953,
-      "_kind": "bar",
-      "_group": 59
-    },
-    {
-      "x": 1.683333,
-      "y": 0.010147819284994163,
-      "error": 0.015211052735209524,
-      "_kind": "bar",
-      "_group": 60
-    },
-    {
-      "x": 1.81,
-      "y": 0.5572427540854127,
-      "error": 0.011621688382307649,
-      "_kind": "bar",
-      "_group": 61
-    },
-    {
-      "x": 1.936667,
-      "y": -0.05517856685711229,
-      "error": 0.014786174515671796,
-      "_kind": "bar",
-      "_group": 62
-    },
-    {
-      "x": 2.063333,
-      "y": 0.6027415759982249,
-      "error": 0.011153890532949018,
-      "_kind": "bar",
-      "_group": 63
-    },
-    {
-      "x": 2.19,
-      "y": 0.058503604915292405,
-      "error": 0.01483534485721066,
-      "_kind": "bar",
-      "_group": 64
-    },
-    {
-      "x": 2.316667,
-      "y": 0.6502932921607457,
-      "error": 0.00974678542770746,
-      "_kind": "bar",
-      "_group": 65
-    },
-    {
-      "x": 2.683333,
-      "y": 0.14501562929350292,
-      "error": 0.032883645999051976,
-      "_kind": "bar",
-      "_group": 66
-    },
-    {
-      "x": 2.81,
-      "y": 0.3864314220958271,
-      "error": 0.028304215493465457,
-      "_kind": "bar",
-      "_group": 67
-    },
-    {
-      "x": 2.936667,
-      "y": 0.2147356549758243,
-      "error": 0.03226772698582174,
-      "_kind": "bar",
-      "_group": 68
-    },
-    {
-      "x": 3.063333,
-      "y": 0.4122153610173508,
-      "error": 0.02897927037819617,
-      "_kind": "bar",
-      "_group": 69
-    },
-    {
-      "x": 3.19,
-      "y": 0.3533441767857403,
-      "error": 0.030214520872457573,
-      "_kind": "bar",
-      "_group": 70
-    },
-    {
-      "x": 3.316667,
-      "y": 0.5235387577656285,
-      "error": 0.025636170581104067,
-      "_kind": "bar",
-      "_group": 71
-    }
-  ],
-  "n_series": 72,
-  "total_points": 72,
-  "text": {
-    "suptitle": null,
-    "fig_texts": [],
-    "axes": [
-      {
-        "title": "Evil",
-        "ylabel": "Spearman $\\rho$",
-        "xticklabels": [
-          "synthetic",
-          "generic chat",
-          "in-distrib.",
-          "OOD"
-        ],
-        "yticklabels": [
-          "\u22120.5",
-          "0.0",
-          "0.5",
-          "1.0"
-        ]
-      },
-      {
-        "title": "Sycophancy",
-        "xticklabels": [
-          "synthetic",
-          "generic chat",
-          "in-distrib.",
-          "OOD"
-        ]
-      },
-      {
-        "title": "Hallucination",
-        "xticklabels": [
-          "synthetic",
-          "generic chat",
-          "in-distrib.",
-          "OOD"
-        ]
-      }
-    ]
+  "git_argv0_path": "scripts/issue1739_result2_fourpanel_fig.py"
+ },
+ "sources": {
+  "points": {
+   "path": "eval_results/issue_1739/result2_fair/result2_fair_points.json",
+   "sha256": "de01583c4ccdf137d618462485d8ccc6f39f5c2dc43c7425c67b96ab73813a50"
   },
-  "formats_written": [
-    "png",
-    "pdf"
+  "reg_oracle_points": {
+   "path": "eval_results/issue_1739/result2_fair/reg_oracle_points.json",
+   "sha256": "8c9d85e4bb7b8bb92eecbcda7fe6d1422b5a6833123ffd16cf0d7a5a062e5f7f"
+  },
+  "spread_stats": {
+   "path": "eval_results/issue_1739/result1_spread/spread_stats.json",
+   "sha256": "497ee1e7999c931c006c23b411d97fdf08d4f59f16fe777c2afc54217acd2ef3"
+  }
+ },
+ "record": {
+  "style_version": "c2a-v2",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "resolved_font": "Inter",
+  "authoring_size_inches": [
+   13.095,
+   5.5
+  ],
+  "exported_size_inches": [
+   13.095,
+   5.122
+  ],
+  "scale": 0.42,
+  "include_width_frac": 1.0,
+  "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c5_pv_methods_regimes.pdf}",
+  "realized_font_pt": {
+   "body": 7.56,
+   "tick": 7.14,
+   "label": 8.4,
+   "title": 9.24
+  },
+  "png_dpi": 240,
+  "background": "#FFFFFF",
+  "text": [
+   "EVIL",
+   "synthetic",
+   "generic chat",
+   "in-distrib.",
+   "OOD",
+   "Spearman $\\rho$ \u2191",
+   "\u22120.5",
+   "0.0",
+   "0.5",
+   "1.0",
+   "SYCOPHANCY",
+   "HALLUCINATION",
+   "PREDICTOR",
+   "Persona vector on context",
+   "Regression on context",
+   "Persona vector on mapped answer",
+   "Regression on mapped answer",
+   "Persona vector on real answer",
+   "Regression on real answer",
+   "Uninterpretable (muted)"
   ]
+ },
+ "data": {
+  "bars": [
+   {
+    "behavior": "evil",
+    "group": "synthetic",
+    "method": "pv_context",
+    "label": "Persona vector on context",
+    "rho": 0.7550197827954369,
+    "ci": [
+     0.6985700580925162,
+     0.7975039438505617
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "evil",
+    "group": "synthetic",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.7069504786777224,
+    "ci": [
+     0.6305935157630411,
+     0.7731763009229744
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "evil",
+    "group": "synthetic",
+    "method": "pv_map_linear",
+    "label": "Persona vector on mapped answer",
+    "rho": 0.8180783834780763,
+    "ci": [
+     0.7742893051959095,
+     0.8555290307290423
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "evil",
+    "group": "synthetic",
+    "method": "reg_map_linear",
+    "label": "Regression on mapped answer",
+    "rho": 0.810571074579304,
+    "ci": [
+     0.7643136124749833,
+     0.8480063696123155
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "evil",
+    "group": "synthetic",
+    "method": "oracle",
+    "label": "Persona vector on real answer",
+    "rho": 0.8429115275104073,
+    "ci": [
+     0.7948428572706189,
+     0.8815773348545195
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "evil",
+    "group": "synthetic",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.8456174068169083,
+    "ci": [
+     0.7919709194218829,
+     0.886762451835078
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "evil",
+    "group": "generic chat",
+    "method": "pv_context",
+    "label": "Persona vector on context",
+    "rho": 0.06707034670126535,
+    "ci": [
+     -0.04204904920766162,
+     0.17185865967135444
+    ],
+    "spread_failed": true
+   },
+   {
+    "behavior": "evil",
+    "group": "generic chat",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.1349220757126155,
+    "ci": [
+     0.016491652794928698,
+     0.23074753382228205
+    ],
+    "spread_failed": true
+   },
+   {
+    "behavior": "evil",
+    "group": "generic chat",
+    "method": "pv_map_linear",
+    "label": "Persona vector on mapped answer",
+    "rho": 0.22541778412988908,
+    "ci": [
+     0.14827215723221607,
+     0.291148529449419
+    ],
+    "spread_failed": true
+   },
+   {
+    "behavior": "evil",
+    "group": "generic chat",
+    "method": "reg_map_linear",
+    "label": "Regression on mapped answer",
+    "rho": 0.16324611609285736,
+    "ci": [
+     0.07146683860459094,
+     0.24310752560934748
+    ],
+    "spread_failed": true
+   },
+   {
+    "behavior": "evil",
+    "group": "generic chat",
+    "method": "oracle",
+    "label": "Persona vector on real answer",
+    "rho": 0.22644899839439725,
+    "ci": [
+     0.14610273976578803,
+     0.2945632630216805
+    ],
+    "spread_failed": true
+   },
+   {
+    "behavior": "evil",
+    "group": "generic chat",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.21387686274055107,
+    "ci": [
+     0.12070756790922788,
+     0.2951296362249793
+    ],
+    "spread_failed": true
+   },
+   {
+    "behavior": "evil",
+    "group": "in-distribution",
+    "method": "pv_context",
+    "label": "Persona vector on context",
+    "rho": 0.030544916399591317,
+    "ci": [
+     0.007337592079205648,
+     0.05553409602853327
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "evil",
+    "group": "in-distribution",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.5916133705769209,
+    "ci": [
+     0.5756296211687013,
+     0.6075523479016194
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "evil",
+    "group": "in-distribution",
+    "method": "pv_map_linear",
+    "label": "Persona vector on mapped answer",
+    "rho": 0.6712108952070648,
+    "ci": [
+     0.6574229573512688,
+     0.6847402515241553
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "evil",
+    "group": "in-distribution",
+    "method": "reg_map_linear",
+    "label": "Regression on mapped answer",
+    "rho": 0.7491823147055028,
+    "ci": [
+     0.738485672747706,
+     0.7608555553537014
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "evil",
+    "group": "in-distribution",
+    "method": "oracle",
+    "label": "Persona vector on real answer",
+    "rho": 0.6875008608887927,
+    "ci": [
+     0.6753922378625699,
+     0.7001491852786711
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "evil",
+    "group": "in-distribution",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.8056781007378913,
+    "ci": [
+     0.7953111588395115,
+     0.8149593862544009
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "evil",
+    "group": "completely OOD",
+    "method": "pv_context",
+    "label": "Persona vector on context",
+    "rho": 0.014494893979452313,
+    "ci": [
+     -0.05014942368510428,
+     0.0757187511960742
+    ],
+    "spread_failed": true
+   },
+   {
+    "behavior": "evil",
+    "group": "completely OOD",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.21076898875190866,
+    "ci": [
+     0.14818891690013647,
+     0.26381111899394805
+    ],
+    "spread_failed": true
+   },
+   {
+    "behavior": "evil",
+    "group": "completely OOD",
+    "method": "pv_map_linear",
+    "label": "Persona vector on mapped answer",
+    "rho": 0.15777045499981224,
+    "ci": [
+     0.09396160263858201,
+     0.22511665863553126
+    ],
+    "spread_failed": true
+   },
+   {
+    "behavior": "evil",
+    "group": "completely OOD",
+    "method": "reg_map_linear",
+    "label": "Regression on mapped answer",
+    "rho": 0.22766990730237624,
+    "ci": [
+     0.16421874264922512,
+     0.28233207518112036
+    ],
+    "spread_failed": true
+   },
+   {
+    "behavior": "evil",
+    "group": "completely OOD",
+    "method": "oracle",
+    "label": "Persona vector on real answer",
+    "rho": 0.1703975094979141,
+    "ci": [
+     0.10324927752737442,
+     0.23048775179520392
+    ],
+    "spread_failed": true
+   },
+   {
+    "behavior": "evil",
+    "group": "completely OOD",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.1846467209757508,
+    "ci": [
+     0.11304086300241632,
+     0.24506981032362996
+    ],
+    "spread_failed": true
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "synthetic",
+    "method": "pv_context",
+    "label": "Persona vector on context",
+    "rho": 0.7921413291952443,
+    "ci": [
+     0.7336054823788072,
+     0.8308330424636039
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "synthetic",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.7611846342218265,
+    "ci": [
+     0.6995517806339617,
+     0.8058570985937561
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "synthetic",
+    "method": "pv_map_linear",
+    "label": "Persona vector on mapped answer",
+    "rho": 0.39861803859275446,
+    "ci": [
+     0.279917318014649,
+     0.49865926713300857
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "synthetic",
+    "method": "reg_map_linear",
+    "label": "Regression on mapped answer",
+    "rho": 0.7759252381712568,
+    "ci": [
+     0.7184287439879539,
+     0.8141744740735981
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "synthetic",
+    "method": "oracle",
+    "label": "Persona vector on real answer",
+    "rho": 0.7640980641705702,
+    "ci": [
+     0.703480522973764,
+     0.807914953003169
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "synthetic",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.7839551917464801,
+    "ci": [
+     0.7066947764568875,
+     0.8393619454296518
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "generic chat",
+    "method": "pv_context",
+    "label": "Persona vector on context",
+    "rho": -0.03910039610309418,
+    "ci": [
+     -0.1326718373241837,
+     0.05271593959266225
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "generic chat",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.5040245535970942,
+    "ci": [
+     0.4195380075775008,
+     0.5791341046695494
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "generic chat",
+    "method": "pv_map_linear",
+    "label": "Persona vector on mapped answer",
+    "rho": 0.09223660209399395,
+    "ci": [
+     -0.0022664946988912534,
+     0.19033619558188314
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "generic chat",
+    "method": "reg_map_linear",
+    "label": "Regression on mapped answer",
+    "rho": 0.5174104385082218,
+    "ci": [
+     0.4384782818894309,
+     0.5949829692897164
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "generic chat",
+    "method": "oracle",
+    "label": "Persona vector on real answer",
+    "rho": 0.07624932674428626,
+    "ci": [
+     -0.02296656774691166,
+     0.1671461852774431
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "generic chat",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.5460979190433695,
+    "ci": [
+     0.46678185733306815,
+     0.6140799690150983
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "in-distribution",
+    "method": "pv_context",
+    "label": "Persona vector on context",
+    "rho": 0.018076322553141046,
+    "ci": [
+     0.0025214328369000012,
+     0.033358261333747224
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "in-distribution",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.720546707075219,
+    "ci": [
+     0.7118970793292733,
+     0.7304965674722398
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "in-distribution",
+    "method": "pv_map_linear",
+    "label": "Persona vector on mapped answer",
+    "rho": 0.2887620479734463,
+    "ci": [
+     0.27332207423467225,
+     0.3040673220402253
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "in-distribution",
+    "method": "reg_map_linear",
+    "label": "Regression on mapped answer",
+    "rho": 0.7392767797199288,
+    "ci": [
+     0.7306179941298431,
+     0.7473300648779624
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "in-distribution",
+    "method": "oracle",
+    "label": "Persona vector on real answer",
+    "rho": 0.3179323682053547,
+    "ci": [
+     0.3017863394638875,
+     0.3338214484914244
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "in-distribution",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.7697732535245382,
+    "ci": [
+     0.761902380594496,
+     0.7777726067028662
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "completely OOD",
+    "method": "pv_context",
+    "label": "Persona vector on context",
+    "rho": 0.06085386456800987,
+    "ci": [
+     0.008084902402027725,
+     0.11218376823467346
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "completely OOD",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.7087380230631141,
+    "ci": [
+     0.6695027344630052,
+     0.742838471038209
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "completely OOD",
+    "method": "pv_map_linear",
+    "label": "Persona vector on mapped answer",
+    "rho": 0.2398471924190651,
+    "ci": [
+     0.18933593426715917,
+     0.2943153973087339
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "completely OOD",
+    "method": "reg_map_linear",
+    "label": "Regression on mapped answer",
+    "rho": 0.7253642156327909,
+    "ci": [
+     0.6928579093772478,
+     0.7563628342332341
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "completely OOD",
+    "method": "oracle",
+    "label": "Persona vector on real answer",
+    "rho": 0.2495902989637087,
+    "ci": [
+     0.1973220508739651,
+     0.2990054164676252
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "sycophancy",
+    "group": "completely OOD",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.7286289551180206,
+    "ci": [
+     0.6954821967279056,
+     0.7634422351494403
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "synthetic",
+    "method": "pv_context",
+    "label": "Persona vector on context",
+    "rho": 0.6471165993837352,
+    "ci": [
+     0.5514134302892959,
+     0.7124564862272461
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "synthetic",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.5774290855736351,
+    "ci": [
+     0.46338506247525285,
+     0.6691368952990743
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "synthetic",
+    "method": "pv_map_linear",
+    "label": "Persona vector on mapped answer",
+    "rho": 0.698968770527766,
+    "ci": [
+     0.6174215640477959,
+     0.7618368331038712
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "synthetic",
+    "method": "reg_map_linear",
+    "label": "Regression on mapped answer",
+    "rho": 0.627353761729434,
+    "ci": [
+     0.5221632392251568,
+     0.7080079618167298
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "synthetic",
+    "method": "oracle",
+    "label": "Persona vector on real answer",
+    "rho": 0.746762226601023,
+    "ci": [
+     0.6621241323784479,
+     0.809757265055035
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "synthetic",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.785539907559668,
+    "ci": [
+     0.687923303694386,
+     0.843483096662918
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "generic chat",
+    "method": "pv_context",
+    "label": "Persona vector on context",
+    "rho": -0.10319922809106985,
+    "ci": [
+     -0.20481578325495248,
+     -0.011482572855513656
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "generic chat",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.5651108690679424,
+    "ci": [
+     0.489877827398082,
+     0.635786698554082
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "generic chat",
+    "method": "pv_map_linear",
+    "label": "Persona vector on mapped answer",
+    "rho": 0.17577133744895965,
+    "ci": [
+     0.06966554265515329,
+     0.2646830716119339
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "generic chat",
+    "method": "reg_map_linear",
+    "label": "Regression on mapped answer",
+    "rho": 0.6254454127087546,
+    "ci": [
+     0.5565859768668034,
+     0.6843574887898876
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "generic chat",
+    "method": "oracle",
+    "label": "Persona vector on real answer",
+    "rho": 0.28059178964074377,
+    "ci": [
+     0.18743765826638062,
+     0.38139452492605364
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "generic chat",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.6799617428533451,
+    "ci": [
+     0.6079994628527355,
+     0.7413527977689146
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "in-distribution",
+    "method": "pv_context",
+    "label": "Persona vector on context",
+    "rho": 0.010147819284994163,
+    "ci": [
+     -0.005996718558193312,
+     0.024425386912225736
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "in-distribution",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.5572427540854127,
+    "ci": [
+     0.5457581537941896,
+     0.5690015305588049
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "in-distribution",
+    "method": "pv_map_linear",
+    "label": "Persona vector on mapped answer",
+    "rho": -0.05517856685711229,
+    "ci": [
+     -0.07113853815563008,
+     -0.04156618912428649
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "in-distribution",
+    "method": "reg_map_linear",
+    "label": "Regression on mapped answer",
+    "rho": 0.6027415759982249,
+    "ci": [
+     0.5915080570733717,
+     0.6138158381392698
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "in-distribution",
+    "method": "oracle",
+    "label": "Persona vector on real answer",
+    "rho": 0.058503604915292405,
+    "ci": [
+     0.04253712567935424,
+     0.07220781539377556
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "in-distribution",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.6502932921607457,
+    "ci": [
+     0.6399334063777409,
+     0.6594269772331558
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "completely OOD",
+    "method": "pv_context",
+    "label": "Persona vector on context",
+    "rho": 0.14501562929350292,
+    "ci": [
+     0.11217760369670181,
+     0.17794489569480576
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "completely OOD",
+    "method": "regression_ctx",
+    "label": "Regression on context",
+    "rho": 0.3864314220958271,
+    "ci": [
+     0.3594219097363448,
+     0.4160303407232757
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "completely OOD",
+    "method": "pv_map_linear",
+    "label": "Persona vector on mapped answer",
+    "rho": 0.2147356549758243,
+    "ci": [
+     0.18273573182220013,
+     0.2472711857938436
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "completely OOD",
+    "method": "reg_map_linear",
+    "label": "Regression on mapped answer",
+    "rho": 0.4122153610173508,
+    "ci": [
+     0.3859133949668097,
+     0.44387193572320205
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "completely OOD",
+    "method": "oracle",
+    "label": "Persona vector on real answer",
+    "rho": 0.3533441767857403,
+    "ci": [
+     0.32260934558713217,
+     0.3830383873320473
+    ],
+    "spread_failed": false
+   },
+   {
+    "behavior": "hallucination",
+    "group": "completely OOD",
+    "method": "reg_oracle",
+    "label": "Regression on real answer",
+    "rho": 0.5235387577656285,
+    "ci": [
+     0.49888216614783965,
+     0.5501545073100478
+    ],
+    "spread_failed": false
+   }
+  ]
+ },
+ "output_sha256": {
+  "pdf": "a05ea48f6a3a613309e6a20af36619d830cffa8af61bd0cb8da3af4bc3141ef8",
+  "png": "1208c726c272e373fe7c16edfcd715361185832aabb5147282ba40a09b2dee59",
+  "grayscale": "4ac82dafc132e297bd6539c3f91d1e8e8464c93de4ea3b6b533c02ed158fb569"
+ }
 }

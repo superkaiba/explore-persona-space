@@ -44,20 +44,34 @@ def _load_fold_module():
 
 
 def render_paper_margin_forest(mod, table: dict) -> Path:
-    """Margin-first forest at final ICLR size -> figures/paper/."""
+    """Raw-difference forest at the paper (c2a-v2) standard -> figures/paper/."""
+    import hashlib
+
     import matplotlib
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    from explore_persona_space.analysis.paper_plots import (
-        figsize_iclr_full,
-        paper_color,
-        savefig_paper,
-        set_paper_style,
+    from explore_persona_space.analysis.c2a_plot_style import (
+        INK,
+        ROLES,
+        STYLE_VERSION,
+        c2a_figure,
+        panel_header,
+        save_c2a_figure,
+        set_c2a_style,
+        style_axis,
     )
+    from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
 
-    set_paper_style("iclr")
+    def _sha256(path: Path) -> str:
+        h = hashlib.sha256()
+        with open(path, "rb") as f:
+            for chunk in iter(lambda: f.read(1 << 20), b""):
+                h.update(chunk)
+        return h.hexdigest()
+
+    set_c2a_style()
     # Paper scope: the sycophancy are-you-sure, evil Tom Gibbs multi-turn, and
     # sycophancy mimicry sets are excluded from the Applications forest (user
     # orders 2026-08-25; the negative-raw sets are excluded pending diagnosis).
@@ -77,17 +91,20 @@ def render_paper_margin_forest(mod, table: dict) -> Path:
     # stars") — every set renders identically.
     labels = [mod.rung_label(r["behavior"], r["eval_rung"]) for r in order]
     ys = list(range(len(order)))[::-1]
-    blue = paper_color("instruct")
+    teal = ROLES["linear"].color
 
-    fig, ax = plt.subplots(figsize=figsize_iclr_full(0.66))
+    fig, frac = c2a_figure("wide", aspect=0.62)
+    ax = fig.add_subplot(111)
+    fig.subplots_adjust(left=0.43, right=0.97, bottom=0.14, top=0.84)
+    forest_rows: list[dict] = []
     for y, r in zip(ys, order, strict=True):
         m = r["dtrue"]
         ax.plot(
             m["per_seed"],
             [y] * len(m["per_seed"]),
             "o",
-            ms=2.2,
-            color=blue,
+            ms=4.5,
+            color=teal,
             alpha=0.3,
             markeredgewidth=0,
             zorder=2,
@@ -100,28 +117,84 @@ def render_paper_margin_forest(mod, table: dict) -> Path:
             [y],
             xerr=xerr,
             fmt="o",
-            color=blue,
-            ms=3.2,
-            capsize=1.8,
-            elinewidth=0.8,
+            color=teal,
+            ecolor=INK,
+            ms=7,
+            capsize=3,
+            elinewidth=1.4,
             zorder=3,
         )
-    ax.axvline(0.0, color=paper_color("reference"), lw=0.6, zorder=1)
+        forest_rows.append(
+            {
+                "behavior": r["behavior"],
+                "eval_rung": r["eval_rung"],
+                "label": mod.rung_label(r["behavior"], r["eval_rung"]),
+                "mean": m["mean"],
+                "tci": list(m["tci"]),
+                "per_seed": list(m["per_seed"]),
+            }
+        )
+    ax.axvline(0.0, color=INK, lw=0.8, zorder=1)
     ax.set_yticks(ys)
     ax.set_yticklabels(labels)
+    # Ten long set names need a step below the pinned tick size to fit the
+    # margin (same disclosed deviation as c4_shared_speakers).
+    ax.tick_params(axis="y", labelsize=14)
     ax.set_ylim(-0.6, len(order) - 0.4)
-    ax.set_xlabel(
-        "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)"
+    ax.set_xlabel("$\\Delta$ Spearman $\\rho$ (mapped answer $-$ context)")
+    style_axis(ax, grid_axis="x")
+    panel_header(
+        ax,
+        "",
+        "Regression readouts · OOD evaluation sets",
+        title="Mapped answer minus context, per set",
     )
-    fig.tight_layout()
-    out_dir = Path(__file__).resolve().parent.parent / "figures/paper"
-    if not (out_dir.parent / "eval_results").exists():
+    checkout = Path(__file__).resolve().parent.parent
+    if not (checkout / "eval_results").exists():
         # Running from a scratch copy: anchor on the repo root instead.
-        out_dir = Path("/home/thomasjiralerspong/explore-persona-space/figures/paper")
+        checkout = Path("/home/thomasjiralerspong/explore-persona-space")
+    out_dir = checkout / "figures/paper"
     out_dir.mkdir(parents=True, exist_ok=True)
-    savefig_paper(fig, "c5_claim4_margin_forest", dir=out_dir)
+    stem = out_dir / "c5_claim4_margin_forest"
+    outputs = save_c2a_figure(
+        fig,
+        stem,
+        title="Figure 17: mapped-answer minus context difference per OOD set",
+        subject=(
+            "Per OOD evaluation set, the 5-seed mean raw difference in Spearman rho "
+            "(regression on mapped answer minus regression on context) with seed t-CI "
+            "(#1739 claim4 controls)"
+        ),
+        creator="scripts/issue1739_claim4_relabel_figs.py",
+        include_width=frac,
+    )
     plt.close(fig)
-    print(f"wrote {out_dir / 'c5_claim4_margin_forest'}.png/.pdf (iclr)")
+
+    table_path = Path(table["__source_path__"]) if "__source_path__" in table else None
+    sidecar = stem.with_suffix(".meta.json")
+    payload = {
+        "figure": "c5_claim4_margin_forest",
+        "status": "manuscript Figure 17 (c2a-v2 restyle; values unchanged)",
+        "style_version": STYLE_VERSION,
+        "plotting_script": "scripts/issue1739_claim4_relabel_figs.py",
+        "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+        "reproduction_command": (
+            "uv run python scripts/issue1739_claim4_relabel_figs.py --style iclr"
+        ),
+        "git": as_metadata_dict(git_provenance()),
+        "sources": {
+            "claim4_per_rung_table": (
+                {"path": str(table_path), "sha256": _sha256(table_path)}
+                if table_path is not None and table_path.exists()
+                else {"path": "eval_results/issue_1739/claim4_controls/claim4_per_rung_table.json"}
+            )
+        },
+        "record": outputs["record"],
+        "data": {"rungs": forest_rows},
+        "output_sha256": {k: _sha256(p) for k, p in outputs.items() if k != "record"},
+    }
+    sidecar.write_text(json.dumps(payload, indent=1) + "\n")
+    print(f"wrote {stem}.png/.pdf/.meta.json (c2a-v2)")
     return out_dir
 
 
@@ -158,6 +231,7 @@ def main() -> int:
     if not table_path.is_absolute() and not table_path.exists():
         table_path = Path("/home/thomasjiralerspong/explore-persona-space") / table_path
     table = json.loads(table_path.read_text())
+    table["__source_path__"] = str(table_path.resolve())
     if args.style == "iclr":
         render_paper_margin_forest(mod, table)
         return 0

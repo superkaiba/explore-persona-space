@@ -1,0 +1,83 @@
+{
+  "cells": {
+    "B": {
+      "fold_pool_sizes": [
+        2711,
+        2742,
+        2668,
+        2717,
+        2810,
+        2743
+      ],
+      "n": 16391,
+      "r2": 0.46697260127760254,
+      "whitened_csls_acc1": 0.9535720822402538,
+      "whitened_csls_acc1_ci95": [
+        0.9407003147378792,
+        0.9641817161115329
+      ]
+    },
+    "D": {
+      "fold_pool_sizes": [
+        2711,
+        2742,
+        2668,
+        2717,
+        2810,
+        2743
+      ],
+      "n": 16391,
+      "r2": 0.518515964248253,
+      "whitened_csls_acc1": 0.9435665914221218,
+      "whitened_csls_acc1_ci95": [
+        0.9294845132245033,
+        0.9543906221056714
+      ]
+    },
+    "R": {
+      "fold_pool_sizes": [
+        2711,
+        2742,
+        2668,
+        2717,
+        2810,
+        2743
+      ],
+      "n": 16391,
+      "r2": 0.5139430528424521,
+      "whitened_csls_acc1": 0.939234946006955,
+      "whitened_csls_acc1_ci95": [
+        0.9229535224635023,
+        0.9510946650064197
+      ]
+    },
+    "S": {
+      "fold_pool_sizes": [
+        2711,
+        2742,
+        2668,
+        2717,
+        2810,
+        2743
+      ],
+      "n": 16391,
+      "r2": 0.5175986843135976,
+      "whitened_csls_acc1": 0.9596119821853456,
+      "whitened_csls_acc1_ci95": [
+        0.9489323003215119,
+        0.968016788790674
+      ]
+    }
+  },
+  "metadata": {
+    "analysis_script": "scripts/issue1902_lasttoken_retrieval.py",
+    "bootstrap": "1000 semantic-cluster draws, seed 1944",
+    "context_summary": "final prompt token",
+    "corpus": "single turn",
+    "hf_revision": "3256c8efcef5f10ca525efeb2039636eaec8fad7",
+    "layer": 31,
+    "retrieval": "strict acc@1 under train-fold whitened cosine plus exact two-sided CSLS k=10, against all targets in each held-out fold; exact ties receive mid-ranks",
+    "split": "six size-matched IID random-row folds",
+    "whitening": "target mean and diagonal-target shrunk covariance fit on training rows only, lambda=0.1; z=L^-1(v-mu)"
+  }
+}

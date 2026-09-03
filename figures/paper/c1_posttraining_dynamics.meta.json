@@ -1,0 +1,93 @@
+{
+  "metadata": {
+    "context_summary": "u_last",
+    "folds": "six size-matched IID random-row folds (seed 190231)",
+    "generated_utc": "2026-09-03T20:04:31Z",
+    "hf_revision": "3256c8efcef5f10ca525efeb2039636eaec8fad7",
+    "inputs": {
+      "latest": {
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/figures/issue_1902/section43/inputs/c1_posttraining_dynamics_data.json",
+        "sha256": "947a46cbde8f834be0a094b85e401e73a260f8da0416dd76285ca9da12c03c96"
+      },
+      "retrieval": {
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/figures/issue_1902/section43/inputs/c1_posttraining_retrieval_data.json",
+        "sha256": "d74f9adb9d52e36558d38c99c5b83ed636b731f5b46c6a5ab6b000c920f6bd91"
+      },
+      "summary": {
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/eval_results/issue_1902/lasttoken_transfer/summary.json",
+        "sha256": "13dacddb6fb8077a9bd6327ed06a8ea60fe18a52c18cafec9a9f81e7c893b51f"
+      }
+    },
+    "layer": 31,
+    "panel_bc_bootstrap": "1000 paired draws, seed 1944; panel C retention CIs = semantic-cluster bootstrap; line-variant panel B CI = row bootstrap",
+    "panel_bc_source": "eval_results/issue_1902/lasttoken_transfer/summary.json",
+    "series_encoding": {
+      "panel_a": "one teal hue (post_trained); metric by fill: held-out R^2 = solid line / filled circle, top-1 retrieval = dashed line / open circle",
+      "panel_b_lines": "own states = post_trained teal, filled circle; previous-stage states = 45%-toward-white tint of the same teal (#7faebd), filled triangle; Base states = base_model amber, filled square; all solid (every series is R^2)",
+      "panel_c": "one teal hue, fill progression open ('as is', circle) -> half tint (#8bb5c3, 'bias', square) -> filled ('rescaling + bias', circle), matching the c1_cot_ladder convention"
+    }
+  },
+  "panel_b_variant": "lines",
+  "record": {
+    "authoring_size_inches": [
+      13.095,
+      5.238
+    ],
+    "background": "#FFFFFF",
+    "exported_size_inches": [
+      13.095,
+      5.099
+    ],
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c1_posttraining_dynamics.pdf}",
+    "png_dpi": 240,
+    "realized_font_pt": {
+      "body": 7.56,
+      "label": 8.4,
+      "tick": 7.14,
+      "title": 9.24
+    },
+    "resolved_font": "Inter",
+    "scale": 0.42,
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "style_version": "c2a-v2",
+    "text": [
+      "A  \u00b7  OLMO-2-7B, LAYER 31",
+      "Base",
+      "SFT",
+      "DPO",
+      "RLVR",
+      "Held-out score \u2191",
+      "0.4",
+      "0.6",
+      "0.8",
+      "1",
+      "Held-out score of each\nstage's own map",
+      "B  \u00b7  CONTEXT\u2192ANSWER FITS",
+      "Answer source",
+      "Held-out $R^2$ \u2191",
+      "0.45",
+      "0.5",
+      "0.55",
+      "Held-out $R^2$ into each stage's\nanswers, by context source",
+      "C  \u00b7  MAP TRANSFER",
+      "Base\n\u2192 SFT",
+      "SFT\n\u2192 DPO",
+      "DPO\n\u2192 RLVR",
+      "$R^2_{i \\to j} \\, / \\, R^2_{j \\to j}$ \u2191",
+      "0",
+      "Retention of the\nprior stage's map",
+      "METRIC",
+      "CONTEXT SOURCE",
+      "CORRECTION",
+      "Held-out $R^2$",
+      "Top-1 retrieval",
+      "Own states",
+      "Previous-stage states",
+      "Base states",
+      "as is",
+      "bias",
+      "rescaling + bias"
+    ]
+  }
+}

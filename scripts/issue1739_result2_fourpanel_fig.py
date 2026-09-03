@@ -533,30 +533,64 @@ PAPER_GROUP_LABEL = {
 
 
 def render_iclr(points: dict, verdicts: dict) -> int:
-    """Three behaviour panels at final ICLR size; no average panel, no caption
-    block, no per-bar labels, no hatch (muted alpha marks spread-gate FAILs).
+    """Three unlettered behaviour facets at the paper (c2a-v2) standard ->
+    ``figures/paper/c5_pv_methods_regimes``.
 
-    ICLR_METHODS roster (7 arms): colour = input representation, solid fill =
-    persona-vector projection, open (edge-only) = regression readout.
+    ICLR_METHODS roster (6 arms): HUE = input representation (context vector =
+    amber, mapped answer = teal, real answer = ink), solid fill =
+    persona-vector projection, open (edge-only) = regression readout;
+    spread-gate-failed (uninterpretable) cells stay muted (lighter alpha).
     """
-    from explore_persona_space.analysis.paper_plots import figsize_iclr_panels, paper_color
+    import hashlib
+
+    from explore_persona_space.analysis.c2a_plot_style import (
+        INK,
+        MUTED,
+        ROLES,
+        STYLE_VERSION,
+        better_label,
+        c2a_figure,
+        legend_kicker,
+        panel_header,
+        save_c2a_figure,
+        set_c2a_style,
+        style_axis,
+    )
+    from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
+
+    def _sha256(path):
+        h = hashlib.sha256()
+        with open(path, "rb") as f:
+            for chunk in iter(lambda: f.read(1 << 20), b""):
+                h.update(chunk)
+        return h.hexdigest()
+
+    # One hue per input representation, resolved from the shared palette.
+    hue = {
+        "persona_vector": ROLES["base_model"].color,  # context vector
+        "instruct": ROLES["linear"].color,  # mapped answer (linear map)
+        "oracle_answer": INK,  # real answer (the ceiling)
+    }
 
     panels = [behavior_panel(points, verdicts, beh, slots=ICLR_SLOTS) for beh in BEHAVIORS]
     vals = [v for p in panels for g in p["groups"] for b in g["bars"] for v in (b["rho"], *b["ci"])]
     ylim = (min(-0.05, min(vals) - 0.04), max(vals) + 0.04)
     bar_w = GROUP_WIDTH / len(ICLR_SLOTS)
 
-    set_paper_style("iclr")
-    fig, axes = plt.subplots(1, 3, figsize=figsize_iclr_panels(3, height_in=2.45), sharey=True)
+    set_c2a_style()
+    fig, frac = c2a_figure("full", aspect=0.42)
+    axes = fig.subplots(1, 3, sharey=True)
+    fig.subplots_adjust(left=0.08, right=0.99, bottom=0.2, top=0.55, wspace=0.08)
     n_bars = 0
+    bar_records: list[dict] = []
     for ax, panel in zip(axes, panels, strict=True):
         xs = list(range(len(panel["groups"])))
-        ax.axhline(0.0, color=paper_color("reference"), linewidth=0.6, zorder=1)
+        ax.axhline(0.0, color=MUTED, linewidth=0.8, zorder=1)
         for x, grp in zip(xs, panel["groups"], strict=True):
             for mi, bar in enumerate(grp["bars"]):
                 offset = -GROUP_WIDTH / 2 + (mi + 0.5) * bar_w
                 failed = bar["spread_failed"]
-                color = paper_color(ICLR_CONCEPT[bar["method"]])
+                color = hue[ICLR_CONCEPT[bar["method"]]]
                 filled = ICLR_FILLED[bar["method"]]
                 ax.bar(
                     [x + offset],
@@ -564,7 +598,7 @@ def render_iclr(points: dict, verdicts: dict) -> int:
                     width=bar_w,
                     color=color if filled else "none",
                     edgecolor=None if filled else color,
-                    linewidth=0.0 if filled else 0.8,
+                    linewidth=0.0 if filled else 1.4,
                     alpha=0.35 if failed else 1.0,
                     zorder=3,
                 )
@@ -576,12 +610,23 @@ def render_iclr(points: dict, verdicts: dict) -> int:
                     [bar["rho"]],
                     yerr=np.array([[err_lo], [err_hi]]),
                     fmt="none",
-                    ecolor="#333333",
-                    elinewidth=0.5,
+                    ecolor=INK,
+                    elinewidth=1.0,
                     capsize=0,
                     zorder=4,
                 )
                 n_bars += 1
+                bar_records.append(
+                    {
+                        "behavior": panel["title"],
+                        "group": bar["group"],
+                        "method": bar["method"],
+                        "label": ICLR_LABEL[bar["method"]],
+                        "rho": bar["rho"],
+                        "ci": list(bar["ci"]),
+                        "spread_failed": failed,
+                    }
+                )
         ax.set_xticks(xs)
         ax.set_xticklabels(
             [PAPER_GROUP_LABEL[g["bars"][0]["group"]] for g in panel["groups"]],
@@ -591,33 +636,84 @@ def render_iclr(points: dict, verdicts: dict) -> int:
         )
         ax.set_xlim(-0.6, len(xs) - 0.4)
         ax.set_ylim(*ylim)
-        ax.set_title(panel["title"].capitalize())
-    axes[0].set_ylabel("Spearman $\\rho$")
+        style_axis(ax)
+        panel_header(ax, "", panel["title"])
+    axes[0].set_ylabel(better_label("Spearman $\\rho$"))
     handles = [
         Patch(
-            facecolor=paper_color(ICLR_CONCEPT[m]) if ICLR_FILLED[m] else "none",
-            edgecolor=None if ICLR_FILLED[m] else paper_color(ICLR_CONCEPT[m]),
-            linewidth=0.0 if ICLR_FILLED[m] else 0.8,
+            facecolor=hue[ICLR_CONCEPT[m]] if ICLR_FILLED[m] else "none",
+            edgecolor=None if ICLR_FILLED[m] else hue[ICLR_CONCEPT[m]],
+            linewidth=0.0 if ICLR_FILLED[m] else 1.4,
             label=ICLR_LABEL[m],
         )
         for m in ICLR_SLOTS
     ]
-    handles.append(Patch(facecolor="#999999", alpha=0.35, label="spread gate failed (muted)"))
+    handles.append(Patch(facecolor=MUTED, alpha=0.35, label="Uninterpretable (muted)"))
+    legend_kicker(fig, 0.08, 0.965, "Predictor")
     fig.legend(
         handles=handles,
-        loc="lower center",
-        bbox_to_anchor=(0.5, -0.015),
+        loc="upper left",
+        bbox_to_anchor=(0.08, 0.95),
         ncol=2,
         frameon=False,
-        columnspacing=1.2,
+        columnspacing=0.8,
+        labelspacing=0.3,
         handlelength=1.2,
     )
-    fig.tight_layout(rect=(0.0, 0.30, 1.0, 1.0))
-    out_dir = ROOT / "figures/paper"
+    # Paper outputs land in THIS checkout (the paper-figure worktree), never the
+    # shared repo root that recut_common.ROOT hardcodes.
+    from pathlib import Path as _Path
+
+    out_dir = _Path(__file__).resolve().parents[1] / "figures/paper"
     out_dir.mkdir(parents=True, exist_ok=True)
-    savefig_paper(fig, "c5_pv_methods_regimes", dir=out_dir)
+    stem = out_dir / "c5_pv_methods_regimes"
+    outputs = save_c2a_figure(
+        fig,
+        stem,
+        title="Figure 13: predictor families across evaluation regimes",
+        subject=(
+            "Spearman rho of persona-vector vs regression readouts on context / mapped answer / "
+            "real answer, per behavior and evaluation regime (#1739 fair protocol)"
+        ),
+        creator="scripts/issue1739_result2_fourpanel_fig.py",
+        include_width=frac,
+    )
     plt.close(fig)
-    print(f"wrote {out_dir / 'c5_pv_methods_regimes.png'} ({n_bars} bars, iclr)")
+
+    reg_oracle = EVAL / "result2_fair/reg_oracle_points.json"
+    sidecar = stem.with_suffix(".meta.json")
+    sidecar.write_text(
+        json.dumps(
+            {
+                "figure": "c5_pv_methods_regimes",
+                "status": "manuscript Figure 13 (c2a-v2 restyle; values unchanged)",
+                "style_version": STYLE_VERSION,
+                "plotting_script": "scripts/issue1739_result2_fourpanel_fig.py",
+                "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+                "reproduction_command": (
+                    "uv run python scripts/issue1739_result2_fourpanel_fig.py --style iclr"
+                ),
+                "git": as_metadata_dict(git_provenance()),
+                "sources": {
+                    "points": {"path": str(POINTS.relative_to(ROOT)), "sha256": _sha256(POINTS)},
+                    "reg_oracle_points": {
+                        "path": str(reg_oracle.relative_to(ROOT)),
+                        "sha256": _sha256(reg_oracle),
+                    },
+                    "spread_stats": {
+                        "path": str(SPREAD_STATS.relative_to(ROOT)),
+                        "sha256": _sha256(SPREAD_STATS),
+                    },
+                },
+                "record": outputs["record"],
+                "data": {"bars": bar_records},
+                "output_sha256": {k: _sha256(p) for k, p in outputs.items() if k != "record"},
+            },
+            indent=1,
+        )
+        + "\n"
+    )
+    print(f"wrote {stem}.png/.pdf/.meta.json ({n_bars} bars, c2a-v2)")
     return n_bars
 
 
