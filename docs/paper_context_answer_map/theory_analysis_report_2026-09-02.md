@@ -1,12 +1,12 @@
 # Theoretical analysis of the context→answer map: compiled report
 
-*2026-09-02, revised the same day to add the full eigenvector, null-space, and inverse-map record. Compiled from the task clean-results, the docs listed in §7, the June leakage-theory paper, and Thomas's Obsidian notes. Numbers are quoted from the cited artifacts; nothing here is a new measurement.*
+*2026-09-02, revised the same day to add the full eigenvector, null-space, and inverse-map record, and on 2026-09-03 with the whitened eigen dashboards and the null-space interpretation. Compiled from the task clean-results, the docs listed in §7, the June leakage-theory paper, and Thomas's Obsidian notes. Numbers are quoted from the cited artifacts; nothing here is a new measurement.*
 
 ## 1. Summary
 
 - **The map is one high-rank linear operator, and we can predict its own learning curve from first principles.** The closed-form ridge learning curve matches the measured curve to within 0.006 R² over two decades of training size, and the 963k-row map sits at 99% of the population linear ceiling (#2569). Feeding prefix and query as two separate inputs loses R² to their interaction, and a rank-32 bilinear term recovers 93% of that loss (#1775). The separate gap between the pooled linear map and nonlinear maps (about 0.05 R²) is small and still unnamed.
-- **The operator has been dissected four times and has no compact structure.** Half of the context directions are effectively ignored and carry 1% of the map's energy; the other half are rotated and rescaled; nothing is copied through. The spectrum is 98% complex, strongly non-normal, and the fixed point is a dense, unreadable state (#1092, #1774, #779, #2569). Thomas's own reading in Obsidian: "Understand structure of mapping: I think done, not really any structure."
-- **The null space is real as geometry and unproven as mechanism.** Context pairs that differ only along low-gain directions produce closer answers (0.61× controls), and 19–27% of each trait direction lies outside the map's range. But every causal test of "the map ignores this" is either under-dosed or negative, and the worst-predicted answer directions sit in the map's high-gain subspace, so the null space does not explain what the map gets wrong (#1774, #1482, #2569).
+- **The operator has been dissected four times and has no compact structure.** Its top directions are not feature-shaped once the answer covariance is divided out: raw cosines of 0.3–0.6 between write directions and answer-SAE features fall to the null floor under whitening (2026-09-03 rerun). Half of the context directions are effectively ignored and carry 1% of the map's energy; the other half are rotated and rescaled; nothing is copied through. The spectrum is 98% complex, strongly non-normal, and the fixed point is a dense, unreadable state (#1092, #1774, #779, #2569). Thomas's own reading in Obsidian: "Understand structure of mapping: I think done, not really any structure."
+- **The null space now has a reading, and it is unproven as mechanism.** The map discards 83% of real context variance in 55% of its read directions (1.5× what a random split would discard). What it discards is what the conversation is about and how it is dressed: topic wording, boilerplate mass, formality and length. What it reads is which language, which reply template, and the safety register. The persona directions themselves sit mostly in the ignored half (kernel share 0.71–0.83 against a random 0.55) (2026-09-03 run). Context pairs that differ only along low-gain directions produce closer answers (0.61× controls), and 19–27% of each trait direction lies outside the map's range. But every causal test of "the map ignores this" is either under-dosed or negative, and the worst-predicted answer directions sit in the map's high-gain subspace, so the null space does not explain what the map gets wrong (#1774, #1482, #2569).
 - **Inverting the map is the wrong way to go back to the context.** The pseudoinverse pre-image of a persona vector picks sensible contexts (#1615) but cannot steer at the context vector (#2254, #2225) and is a poor context predictor (R² 0.14). A directly fitted answer→context map recovers held-out contexts at R² 0.75 and points in a different direction (cosine 0.3–0.4) (#2618).
 - **The map describes a correlation. It is not the causal mechanism.** Jacobians of the true forward map recover none of its predictive power and full-state substitution at the map's input slot moves nothing (#1776).
 - **The bridge to the leakage theory is weak in behavior space and real in activation space.** No gate metric, including the map's own Gram matrix, separates from its panel (#2569 leg 2). The coherence condition holds on constructed contexts and on natural data only under the whitened metric (#658, #1092).
@@ -127,6 +127,21 @@ Reading: nothing is maintained. No eigenvalue sits near 1, every top read direct
 
 Convention note: plan v3 of #2569 mixed row and column action on this non-normal operator, so its Gram gate, wiring edges, kernel mining, and gate direction had computed the transpose map's geometry (three probes confirmed, including |cos(u₁, v₁)| = 0.084 vs the expected near-1 for a self-consistent read). Plan v4 fixed the row action before the run. The #779 dissection's singular-subspace read (one side aligned with the trait span at 0.7–0.9, the other at 0.1–0.2) carries the same side-label ambiguity in its events note, and #2571 is the filed convention check.
 
+**Rerun with the imaginary part and whitening (2026-09-03, branch `issue-2569-eigen-v2`)**
+
+Each complex eigenvector pair was read as its real invariant 2-plane instead of its real part alone, and every cosine was recomputed in the whitened metric (angles after dividing out the context or answer covariance, shrinkage 1e-2 with 1e-3 as a check). Null floors are the 95th percentile of random directions or random planes: about 0.08 raw, about 0.10 whitened. A second read-side dictionary was added: the #2569 leg-4 SAE trained on the map's own input states.
+
+| Direction set, dictionary | raw median / max cosine | raw above floor | whitened median / max | whitened above floor |
+|---|---|---|---|---|
+| Singular read, andyrdt per-token | 0.135 / 0.162 | 30/32 | 0.093 / 0.111 | 6/32 |
+| Singular read, trained context SAE | 0.109 / 0.200 | 32/32 | 0.092 / 0.113 | 6/32 |
+| Eigen read, andyrdt | 0.150 / 0.304 | 32/32 | 0.109 / 0.154 | 15/32 |
+| Eigen read, trained context SAE | 0.154 / 0.284 | 32/32 | 0.118 / 0.176 | 25/32 |
+| Singular write, answer SAE | 0.309 / 0.626 | 32/32 | 0.088 / 0.164 | 8/32 |
+| Eigen write, answer SAE | 0.289 / 0.418 | 32/32 | 0.115 / 0.196 | 26/32 |
+
+Reading: the imaginary axis carries 38% (read) to 64% (write) of each best match, yet including it raised the maxima by a median of only 0.02–0.04, so the topic labels found earlier stand. Whitening is what changes the story. The singular write directions' matches with single answer features are second-moment structure: they collapse to the floor and the nearest feature changes for 25 of 32 directions, the same variance-driven overlap #1895 reported. Eigen planes keep a modest alignment beyond covariance (write side 26 of 32 above the whitened floor, median 0.115 vs 0.108). The read side is not feature-aligned in any metric with either dictionary, and each read direction fires about 180 features of the grain-matched SAE. Labels: singular write directions match answer-format features (repetitive loops, "acknowledge task and ask for input", greetings, structured documents, step-by-step guides, one-word answers, lists); eigen write directions match topic features (nutrition and chemistry, finance, sports and law). Both readings are raw-coordinate facts.
+
 **Fixed point**
 
 | Read | Result | Source |
@@ -166,6 +181,28 @@ One discrepancy to reconcile: #1774 reported ρ = 0.91 at layer 14 (a contractio
 | Nonlinear fitters in the tail | MLP reaches R² −0.81 at rank 3,480; the +0.06 whole-map gain is bought mid-spectrum and paid for in the tail |
 
 Reading: the null space is real geometry. Kernel pairs do land closer, and a fifth to a quarter of each trait direction is unreachable. But nothing upgrades it to mechanism: addition steering was under-dosed, erasure moves behavior off-target as much as on-target, and the kernel-pair test is in-sample. And the directions the map predicts worst are not the ones it ignores. They are directions it drives hard and gets wrong. The residual is neither low-rank nor diffuse. So the answer to Thomas's Obsidian question ("which directions get kept, which get ignored") is: about half are ignored and they carry almost no energy; nothing is kept as-is; the map's errors live among the directions it acts on most.
+
+**Interpreting the null space (2026-09-03, branch `issue-2569-kernel-interp`)**
+
+Kernel share of a direction = the squared fraction of it lying in the map's ignored read directions (a random direction scores 0.55 at the primary cutoff, 95% band 0.53–0.58). Ignored variance fraction = the share of real context-vector variance (963k conversations) lying in those directions.
+
+| Cutoff (squared-singular mass kept) | kernel directions | ignored variance fraction | excess over a random split |
+|---|---|---|---|
+| 0.999 | 1,086 (30%) | 0.725 | 2.4× |
+| 0.99 (primary) | 1,976 (55%) | 0.834 | 1.5× |
+| 0.90 | 3,037 (85%) | 0.922 | 1.1× |
+
+| Read | Result |
+|---|---|
+| Largest ignored variance modes (share of all context variance) | 12.6% Midjourney prompt boilerplate vs terse technical how-tos; 6.7% long formal writing briefs vs one-word answer demands; 4.6% Chinese engineering topics vs edit and roleplay requests; 4.2% programming exercises vs romantic story requests; 3.2% European-language greetings vs sexual roleplay |
+| Largest used (range) variance mode | 0.8% of context variance, 16× smaller than the top ignored mode; range modes read as language identity, short-reply templates vs article boilerplate, structured encyclopedia data, toxic-prompt templates |
+| Most-read context-SAE features (256 of 65,536 below the random band) | almost all which-language features (Swedish, Vietnamese, Greek, Thai, Hungarian, Hindi, Polish, Finnish, Persian, Hebrew, Dutch, Japanese, …), plus animal-roleplay and US-demographics questions |
+| Most-ignored context-SAE features | politeness openers, garbled low-effort questions, explain-like-I'm-five phrasing, jailbreak preambles (DAN scaffolds, scripted refusal openers), SEO and metadata blocks, word-count demands |
+| Persona directions as context-side directions, kernel share | evil 0.71, sycophancy 0.77, hallucination 0.76; the #2254 directly measured context steering directions 0.81–0.83; all above the random band, so the map reads them at below-chance gain |
+| Features the eigen read planes keep hitting (377, 638, 821, 960, 1354) | organic-chemistry exam questions, Russia–Ukraine war questions, fantasy NBA season rewrites, physics mechanics problems, financial valuation questions; kernel share 0.40–0.48, all in the read range |
+| Kernel pairs vs matched controls, 40 read by eye | kernel pairs are two contexts of the same kind of task differing in boilerplate mass and topic wording (two image-generation requests, two assistant meta-questions, two generate-N-sentences tasks); controls are cross-genre, cross-language, cross-register collisions |
+
+Reading: the null space is where most of the variation between real conversations lives. The dominant ways conversations differ in the context vector (which template was pasted, how long and formal the request is, what it is about) leave the predicted answer state unchanged. The map spends its gain on a thin set of directions: language, reply format, safety register. This is consistent with the earlier facts that non-English contexts are predicted better (#1482), that per-language error is the strongest category structure, and that trait directions are shrunk on passage (#1774). It also sharpens the persona result: the persona vectors are not among the directions the map reads, so whatever trait information the map transports comes through many diffuse directions rather than the named one. Two caveats: the top ignored modes are partly corpus duplicates (LMSYS and WildChat carry repeated Midjourney and news templates), and all of this describes the fitted linear map, not the model's causal computation.
 
 ### 4.4 Inverting the map: pre-image, pseudoinverse, and the fitted reverse map
 
@@ -246,7 +283,7 @@ A context-SAE → answer-SAE map (65,536 → 2,150 features) predicts which answ
 
 - Closed-form learning-curve prediction and the population-ceiling read. This is the cleanest theory-to-measurement match in the line.
 - Naming the prefix×query interaction: a rank-32 bilinear term recovers 93% of what an additive two-input map loses.
-- The direction-class anatomy: a definite answer to "what does the map keep and what does it ignore".
+- The direction-class anatomy, now with content: the map ignores 83% of real context variance (what the conversation is about and how it is dressed) and reads language, reply format, and safety register.
 - The fitted reverse map: going back to the context works well once you fit it directly instead of inverting.
 - The slow eigen-shell of the next-token map, the one eigenvector read that found trait and context content far above chance.
 - The reparameterization framework: one operator, different coordinates, across post-training, templates, and framings.
@@ -265,7 +302,8 @@ A context-SAE → answer-SAE map (65,536 → 2,150 features) predicts which answ
 
 - The map is near its information ceiling and yet structureless. It behaves like a dense conditional expectation, and the useful abstractions live one level up (which directions are predicted well, which features fire).
 - Trait directions pass through the map largely preserved at the map layer on the large fit, but are rotated away at layer 14 on the small fit. Layer and fit size change the qualitative story.
-- The map's output directions are feature-shaped and its input directions are not: top write directions match single answer-SAE features, top read directions match nothing in a 131k-feature context dictionary. The map reads diffuse context geometry and writes into named answer features.
+- The map's output directions look feature-shaped only in raw coordinates: the matches with single answer-SAE features vanish once the answer covariance is divided out. Eigen planes keep a modest alignment beyond covariance; singular directions keep none.
+- The persona vectors sit mostly in the map's ignored half (kernel share 0.71–0.83 vs 0.55 random), yet the map predicts trait expression well. Trait information travels through many diffuse directions, not the named one.
 - The forward and reverse maps are both good and are not inverses of each other. Context information the forward map maps weakly is exactly what the reverse map recovers.
 - Fine-tuning writes into raw read directions and ignores where the map would transport them.
 - Cross-model operators are alignable and similar but distinct, and the distinctness grows once each model writes its own answers.
@@ -277,12 +315,13 @@ A context-SAE → answer-SAE map (65,536 → 2,150 features) predicts which answ
 - **To do, paper:** `sections/04_results.tex` has an empty `\subsection{Theoretical analysis}`. The paper plan says to present this material as "structure of the learned operator" and to keep the gate null, fixed point, atlas, SAE wiring, and kernel-pair battery in the appendix unless a claim needs them. Main-text candidates: learning curve, high-rank non-normal spectrum with the direction-class anatomy, firing-versus-magnitude split, cross-model operator comparison, and the reverse-map vs pseudoinverse contrast.
 - **To do, theory paper:** the Overleaf theory paper has not been touched since 2026-06-28. The coherence-condition result (whitened metric; difficulty vs curvature) and the gate-ladder null belong in it.
 - **To do, reconcile:** the spectral-radius disagreement between #1774 (0.91 at L14) and the 963k map (1.66 at L14); the trait pass-through disagreement between #1774 (rotated away) and the #779 dissection (preserved at L19); and the singular-subspace side label (#2571).
-- **To do, follow-up:** steer along the fitted reverse-map direction (#2618 caveat), since every steering negative so far used the pseudoinverse pre-image; re-dose the kernel addition test (#1774 positive control failed); label the answer-SAE features that the map's top write directions align with (cos up to 0.63, unlabeled), redo the eigen dashboards with the imaginary part included, and run the deferred whitened-cosine companion.
+- **To do, follow-up:** steer along the fitted reverse-map direction (#2618 caveat), since every steering negative so far used the pseudoinverse pre-image; re-dose the kernel addition test (#1774 positive control failed). Done 2026-09-03: answer-feature labels, eigen dashboards with the imaginary part, the whitened-cosine companion, the data-weighted kernel share, the kernel-pair reading, and the persona-direction kernel shares (branches `issue-2569-eigen-v2`, `issue-2569-kernel-interp`; both parked as branches, not yet merged). Open next: a held-out kernel-pair test on the 20k holdout, and a properly dosed erase-and-inject test along kernel vs range directions with a behavioral read.
 - **Open on #2569:** nine provenance concerns (cache keys, unpinned model revisions), none affecting a reported number; the wiring gate and two of four leg-1 clauses at L14/L26 were never evaluable; the interpretation is un-reviewed (review ensemble did not run).
 
 ## 7. Sources
 
 - #2569 https://eps.superkaiba.com/tasks/2569 (eight-leg battery; figures at `figures/issue_2569/`; leg-1 JSONs at `eval_results/issue_2569/weights/leg1/`)
+- 2026-09-03 reruns: https://github.com/superkaiba/explore-persona-space/blob/issue-2569-eigen-v2/eval_results/issue_2569/weights/leg1/sae_dashboards_v2_L19.md and https://github.com/superkaiba/explore-persona-space/blob/issue-2569-kernel-interp/eval_results/issue_2569/weights/leg8/kernel_interpretation_L19.md (figures alongside under `figures/issue_2569/`)
 - #779 https://eps.superkaiba.com/tasks/779 (the map; pseudoinverse probe read; 2026-08-26 operator dissection at `eval_results/issue_779/ctxansviz/operator_stats.json`, dashboards at https://eps.superkaiba.com/ctxansviz-779-scatter-full.html)
 - #1774 https://eps.superkaiba.com/tasks/1774 (operator characterization, co-kernel, LEACE)
 - #1775 https://eps.superkaiba.com/tasks/1775 (nonlinear ladder, bilinear interaction)
