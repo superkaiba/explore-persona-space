@@ -1,0 +1,6 @@
+{
+  "title": "Rank relationships: pre-registered grid",
+  "public_url": "https://eps.superkaiba.com/tasks/2588/figure/rank_relationships.png",
+  "source_data": "eval_results/issue_2588/rank_relationships.json",
+  "method": "Spearman per arm; max-|rho| permutation (20k) over the predictor x outcome grid; paired sign tests within model; log-log scaling of absolute rank"
+}
