@@ -1,7 +1,7 @@
 {
   "font": "Inter",
   "git": {
-    "commit": "2111a1b8f5494ad79e24b622074770c3f0f2729e",
+    "commit": "9c645b0516a279f0aa0bd60294e0f8ca47096fa1",
     "tracked_worktree_dirty": true
   },
   "outputs": {
@@ -27,13 +27,15 @@
               0.6896794751668868,
               0.6955608764420441
             ],
-            "retrieval_acc1": 0.2792772186642269,
-            "retrieval_chance": 0.008719941244962618,
-            "retrieval_lift": 0.2705572774192643,
+            "retrieval_acc1": 0.9268831960963708,
+            "retrieval_chance": 0.00038121379355234654,
+            "retrieval_lift": 0.9268831960963708,
             "retrieval_lift_ci": [
-              0.26290529022593523,
-              0.2779715958139353
+              0.9221561451662093,
+              0.9316102470265325
             ],
+            "retrieval_raw_cosine_acc1": 0.43328758767917047,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "source": "eval_results/issue_2546/cells/p7_A__does__a1.json",
             "source_sha256": "42b419708de39b7f5770f4e78c737fde34ad90aa342d2d68e616e0e9ccbb038a",
             "subset": "does",
@@ -51,13 +53,15 @@
               0.5777518566206754,
               0.5855199147767944
             ],
-            "retrieval_acc1": 0.5742682593234248,
-            "retrieval_chance": 0.2596412148583397,
-            "retrieval_lift": 0.3146270444650852,
+            "retrieval_acc1": 0.9705480076593417,
+            "retrieval_chance": 0.0004559132168692878,
+            "retrieval_lift": 0.9705480076593417,
             "retrieval_lift_ci": [
-              0.30545401864259525,
-              0.3234811862696091
+              0.967538980578098,
+              0.9738351417890034
             ],
+            "retrieval_raw_cosine_acc1": 0.5851189933436673,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "source": "eval_results/issue_2546/cells/p7_A__doesnt__a1.json",
             "source_sha256": "ccb4758d9501d732b7df3af9f1aeef7560219ae8353ab25c13a33f359cfc2976",
             "subset": "doesnt",
@@ -79,13 +83,15 @@
               0.8057686784439523,
               0.8090639540269796
             ],
-            "retrieval_acc1": 0.8284537968892955,
-            "retrieval_chance": 0.008719941244962618,
-            "retrieval_lift": 0.8197338556443328,
+            "retrieval_acc1": 0.9915370539798719,
+            "retrieval_chance": 0.00038121379355234654,
+            "retrieval_lift": 0.9915370539798719,
             "retrieval_lift_ci": [
-              0.8135018273511847,
-              0.8258865897709717
+              0.9898597133272339,
+              0.9929875724306191
             ],
+            "retrieval_raw_cosine_acc1": 0.9188777066178713,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "source": "eval_results/issue_2546/cells/p7_D__does__a1.json",
             "source_sha256": "050e987d0a9b6ef729bb211d502f79691b630701e5e448140cc6fe2382d5759f",
             "subset": "does",
@@ -103,13 +109,15 @@
               0.6907988957547875,
               0.6973435065949994
             ],
-            "retrieval_acc1": 0.8780888118902161,
-            "retrieval_chance": 0.2596412148583397,
-            "retrieval_lift": 0.6184475970318765,
+            "retrieval_acc1": 0.9948025895869427,
+            "retrieval_chance": 0.0004559132168692878,
+            "retrieval_lift": 0.9948025895869427,
             "retrieval_lift_ci": [
-              0.6120936753394972,
-              0.6244355464589251
+              0.9934348500045591,
+              0.995987963891675
             ],
+            "retrieval_raw_cosine_acc1": 0.9040758639555029,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "source": "eval_results/issue_2546/cells/p7_D__doesnt__a1.json",
             "source_sha256": "eea6ade0e847ef4ff963ed62af9e17e5677bf2d6fcce8bf8a211eff1fc45d80e",
             "subset": "doesnt",
@@ -131,13 +139,15 @@
               0.6896794751668868,
               0.6955608764420441
             ],
-            "retrieval_acc1": 0.2792772186642269,
-            "retrieval_chance": 0.008719941244962618,
-            "retrieval_lift": 0.2705572774192643,
+            "retrieval_acc1": 0.9268831960963708,
+            "retrieval_chance": 0.00038121379355234654,
+            "retrieval_lift": 0.9268831960963708,
             "retrieval_lift_ci": [
-              0.26290529022593523,
-              0.2779715958139353
+              0.9221561451662093,
+              0.9316102470265325
             ],
+            "retrieval_raw_cosine_acc1": 0.43328758767917047,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.0
           },
           {
@@ -146,13 +156,15 @@
               0.5842438855835257,
               0.5903886061318084
             ],
-            "retrieval_acc1": 0.05283623055809698,
-            "retrieval_chance": 0.008719941244962618,
-            "retrieval_lift": 0.04411628931313437,
+            "retrieval_acc1": 0.3780878316559927,
+            "retrieval_chance": 0.00038121379355234654,
+            "retrieval_lift": 0.3780878316559927,
             "retrieval_lift_ci": [
-              0.040358275458372166,
-              0.047805469996965645
+              0.37076852698993595,
+              0.3870120463555962
             ],
+            "retrieval_raw_cosine_acc1": 0.09659957304056115,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.1
           },
           {
@@ -161,13 +173,15 @@
               0.586088063409664,
               0.5922049180410051
             ],
-            "retrieval_acc1": 0.055657212564806345,
-            "retrieval_chance": 0.008719941244962618,
-            "retrieval_lift": 0.04693727131984373,
+            "retrieval_acc1": 0.34187252211039953,
+            "retrieval_chance": 0.00038121379355234654,
+            "retrieval_lift": 0.34187252211039953,
             "retrieval_lift_ci": [
-              0.0430375154287036,
-              0.05081072261351437
+              0.3337850716681915,
+              0.3502592253735895
             ],
+            "retrieval_raw_cosine_acc1": 0.09339737724916133,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.2
           },
           {
@@ -176,13 +190,15 @@
               0.584643730617569,
               0.591041490137965
             ],
-            "retrieval_acc1": 0.04734675205855444,
-            "retrieval_chance": 0.008719941244962618,
-            "retrieval_lift": 0.038626810813591816,
+            "retrieval_acc1": 0.32159194876486735,
+            "retrieval_chance": 0.00038121379355234654,
+            "retrieval_lift": 0.32159194876486735,
             "retrieval_lift_ci": [
-              0.035167214557961964,
-              0.04211668642472105
+              0.31351021652942973,
+              0.3292962793534614
             ],
+            "retrieval_raw_cosine_acc1": 0.08981396767307105,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.3
           },
           {
@@ -191,13 +207,15 @@
               0.5808910274433409,
               0.5875273535130067
             ],
-            "retrieval_acc1": 0.04902409271119244,
-            "retrieval_chance": 0.008719941244962618,
-            "retrieval_lift": 0.04030415146622982,
+            "retrieval_acc1": 0.30504727050930164,
+            "retrieval_chance": 0.00038121379355234654,
+            "retrieval_lift": 0.30504727050930164,
             "retrieval_lift_ci": [
-              0.0363056030514264,
-              0.043791366332432226
+              0.297804208600183,
+              0.3126753583409576
             ],
+            "retrieval_raw_cosine_acc1": 0.0777676120768527,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.4
           },
           {
@@ -206,13 +224,15 @@
               0.5788095289736492,
               0.5857437811069814
             ],
-            "retrieval_acc1": 0.04612686794754498,
-            "retrieval_chance": 0.008719941244962618,
-            "retrieval_lift": 0.03740692670258237,
+            "retrieval_acc1": 0.28865507776761207,
+            "retrieval_chance": 0.00038121379355234654,
+            "retrieval_lift": 0.28865507776761207,
             "retrieval_lift_ci": [
-              0.03413260061424012,
-              0.04077462154848873
+              0.28064387008234215,
+              0.29643565111314424
             ],
+            "retrieval_raw_cosine_acc1": 0.07570905763952425,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.5
           },
           {
@@ -221,13 +241,15 @@
               0.5762164276186096,
               0.5829089013401756
             ],
-            "retrieval_acc1": 0.041933516315949985,
-            "retrieval_chance": 0.008719941244962618,
-            "retrieval_lift": 0.033213575070987364,
+            "retrieval_acc1": 0.2808020738029887,
+            "retrieval_chance": 0.00038121379355234654,
+            "retrieval_lift": 0.2808020738029887,
             "retrieval_lift_ci": [
-              0.02976753927227516,
-              0.03661183612179797
+              0.27317589204025616,
+              0.28850449832265934
             ],
+            "retrieval_raw_cosine_acc1": 0.0669411405916438,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.6
           },
           {
@@ -236,13 +258,15 @@
               0.5751331444565112,
               0.5819907162396427
             ],
-            "retrieval_acc1": 0.04574565416285453,
-            "retrieval_chance": 0.008719941244962618,
-            "retrieval_lift": 0.03702571291789191,
+            "retrieval_acc1": 0.27622750838670324,
+            "retrieval_chance": 0.00038121379355234654,
+            "retrieval_lift": 0.27622750838670324,
             "retrieval_lift_ci": [
-              0.033552803157774126,
-              0.04070158039206611
+              0.26844884111009454,
+              0.284844845989631
             ],
+            "retrieval_raw_cosine_acc1": 0.06976212259835315,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.7
           },
           {
@@ -251,13 +275,15 @@
               0.5718695400031054,
               0.5787785026432645
             ],
-            "retrieval_acc1": 0.043610856968587984,
-            "retrieval_chance": 0.008719941244962618,
-            "retrieval_lift": 0.03489091572362537,
+            "retrieval_acc1": 0.2506861848124428,
+            "retrieval_chance": 0.00038121379355234654,
+            "retrieval_lift": 0.2506861848124428,
             "retrieval_lift_ci": [
-              0.031204534059642047,
-              0.03839744086839934
+              0.24382433668801465,
+              0.2581598810612992
             ],
+            "retrieval_raw_cosine_acc1": 0.06640744129307716,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.8
           },
           {
@@ -266,13 +292,15 @@
               0.5721114057752892,
               0.5791620870281584
             ],
-            "retrieval_acc1": 0.043000914913083256,
-            "retrieval_chance": 0.008719941244962618,
-            "retrieval_lift": 0.03428097366812064,
+            "retrieval_acc1": 0.2563281488258615,
+            "retrieval_chance": 0.00038121379355234654,
+            "retrieval_lift": 0.2563281488258615,
             "retrieval_lift_ci": [
-              0.030790851652128495,
-              0.03777793231985349
+              0.24908508691674291,
+              0.26402866727660873
             ],
+            "retrieval_raw_cosine_acc1": 0.06297651723086307,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.9
           },
           {
@@ -281,13 +309,15 @@
               0.8057686784439523,
               0.8090639540269796
             ],
-            "retrieval_acc1": 0.8284537968892955,
-            "retrieval_chance": 0.008719941244962618,
-            "retrieval_lift": 0.8197338556443328,
+            "retrieval_acc1": 0.9915370539798719,
+            "retrieval_chance": 0.00038121379355234654,
+            "retrieval_lift": 0.9915370539798719,
             "retrieval_lift_ci": [
-              0.8135018273511847,
-              0.8258865897709717
+              0.9898597133272339,
+              0.9929875724306191
             ],
+            "retrieval_raw_cosine_acc1": 0.9188777066178713,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 1.0
           }
         ],
@@ -298,13 +328,15 @@
               0.5777518566206754,
               0.5855199147767944
             ],
-            "retrieval_acc1": 0.5742682593234248,
-            "retrieval_chance": 0.2596412148583397,
-            "retrieval_lift": 0.3146270444650852,
+            "retrieval_acc1": 0.9705480076593417,
+            "retrieval_chance": 0.0004559132168692878,
+            "retrieval_lift": 0.9705480076593417,
             "retrieval_lift_ci": [
-              0.30545401864259525,
-              0.3234811862696091
+              0.967538980578098,
+              0.9738351417890034
             ],
+            "retrieval_raw_cosine_acc1": 0.5851189933436673,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.0
           },
           {
@@ -313,13 +345,15 @@
               0.4451553952379422,
               0.4540930220118558
             ],
-            "retrieval_acc1": 0.41314853651864686,
-            "retrieval_chance": 0.2596412148583397,
-            "retrieval_lift": 0.15350732166030717,
+            "retrieval_acc1": 0.5310476885201058,
+            "retrieval_chance": 0.0004559132168692878,
+            "retrieval_lift": 0.5310476885201058,
             "retrieval_lift_ci": [
-              0.144394700938826,
-              0.1625477139800676
+              0.5220206072763746,
+              0.5397100392085347
             ],
+            "retrieval_raw_cosine_acc1": 0.3312665268532871,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.1
           },
           {
@@ -328,13 +362,15 @@
               0.4590462786619261,
               0.467677866893761
             ],
-            "retrieval_acc1": 0.447068478161758,
-            "retrieval_chance": 0.2596412148583397,
-            "retrieval_lift": 0.18742726330341833,
+            "retrieval_acc1": 0.5854837238989696,
+            "retrieval_chance": 0.0004559132168692878,
+            "retrieval_lift": 0.5854837238989696,
             "retrieval_lift_ci": [
-              0.17842399759874314,
-              0.19600958640491384
+              0.5766367283669189,
+              0.5947866326251482
             ],
+            "retrieval_raw_cosine_acc1": 0.3764019330719431,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.2
           },
           {
@@ -343,13 +379,15 @@
               0.4638484371788998,
               0.47220410655103195
             ],
-            "retrieval_acc1": 0.4581015774596517,
-            "retrieval_chance": 0.2596412148583397,
-            "retrieval_lift": 0.198460362601312,
+            "retrieval_acc1": 0.5929607002826662,
+            "retrieval_chance": 0.0004559132168692878,
+            "retrieval_lift": 0.5929607002826662,
             "retrieval_lift_ci": [
-              0.1891871848099252,
-              0.20703915618050198
+              0.5839290599069937,
+              0.602628339564147
             ],
+            "retrieval_raw_cosine_acc1": 0.3885292240357436,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.3
           },
           {
@@ -358,13 +396,15 @@
               0.4652483050335112,
               0.47375524412939196
             ],
-            "retrieval_acc1": 0.4632078052338835,
-            "retrieval_chance": 0.2596412148583397,
-            "retrieval_lift": 0.20356659037554378,
+            "retrieval_acc1": 0.5954226315309565,
+            "retrieval_chance": 0.0004559132168692878,
+            "retrieval_lift": 0.5954226315309565,
             "retrieval_lift_ci": [
-              0.1946417740870476,
-              0.21321142189436776
+              0.5863955502872253,
+              0.6045408954135133
             ],
+            "retrieval_raw_cosine_acc1": 0.4050332816631713,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.4
           },
           {
@@ -373,13 +413,15 @@
               0.4637897172352247,
               0.4722563520577845
             ],
-            "retrieval_acc1": 0.4549101851007568,
-            "retrieval_chance": 0.2596412148583397,
-            "retrieval_lift": 0.19526897024241716,
+            "retrieval_acc1": 0.5905899516732014,
+            "retrieval_chance": 0.0004559132168692878,
+            "retrieval_lift": 0.5905899516732014,
             "retrieval_lift_ci": [
-              0.18612693994173374,
-              0.20390953791077246
+              0.581380505151819,
+              0.5989787544451537
             ],
+            "retrieval_raw_cosine_acc1": 0.40220661985957873,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.5
           },
           {
@@ -388,13 +430,15 @@
               0.46134832996197,
               0.4697348348931382
             ],
-            "retrieval_acc1": 0.4574632989878727,
-            "retrieval_chance": 0.2596412148583397,
-            "retrieval_lift": 0.19782208412953303,
+            "retrieval_acc1": 0.5718063280751345,
+            "retrieval_chance": 0.0004559132168692878,
+            "retrieval_lift": 0.5718063280751345,
             "retrieval_lift_ci": [
-              0.18880126992318644,
-              0.2069860488184618
+              0.5625056989149266,
+              0.5812916020789641
             ],
+            "retrieval_raw_cosine_acc1": 0.38898513722987144,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.6
           },
           {
@@ -403,13 +447,15 @@
               0.4603236088534017,
               0.4687153645087809
             ],
-            "retrieval_acc1": 0.45372481079602445,
-            "retrieval_chance": 0.2596412148583397,
-            "retrieval_lift": 0.19408359593768476,
+            "retrieval_acc1": 0.5568523753077415,
+            "retrieval_chance": 0.0004559132168692878,
+            "retrieval_lift": 0.5568523753077415,
             "retrieval_lift_ci": [
-              0.1848157230161651,
-              0.20313433126982347
+              0.5476406492203885,
+              0.5666089176620771
             ],
+            "retrieval_raw_cosine_acc1": 0.3870703018145345,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.7
           },
           {
@@ -418,13 +464,15 @@
               0.45839374931657767,
               0.46665433647698
             ],
-            "retrieval_acc1": 0.44579192121820005,
-            "retrieval_chance": 0.2596412148583397,
-            "retrieval_lift": 0.1861507063598604,
+            "retrieval_acc1": 0.5302270447706756,
+            "retrieval_chance": 0.0004559132168692878,
+            "retrieval_lift": 0.5302270447706756,
             "retrieval_lift_ci": [
-              0.17658824579768492,
-              0.19429890657439852
+              0.5208329534056716,
+              0.5390740403027263
             ],
+            "retrieval_raw_cosine_acc1": 0.3831494483450351,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.8
           },
           {
@@ -433,13 +481,15 @@
               0.45789122860705384,
               0.4661795414303965
             ],
-            "retrieval_acc1": 0.447706756633537,
-            "retrieval_chance": 0.2596412148583397,
-            "retrieval_lift": 0.1880655417751973,
+            "retrieval_acc1": 0.5285857572718154,
+            "retrieval_chance": 0.0004559132168692878,
+            "retrieval_lift": 0.5285857572718154,
             "retrieval_lift_ci": [
-              0.17894044145463603,
-              0.19734394121651586
+              0.5189181179903346,
+              0.5374327528038662
             ],
+            "retrieval_raw_cosine_acc1": 0.3790462295978846,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.9
           },
           {
@@ -448,13 +498,15 @@
               0.6907988957547875,
               0.6973435065949994
             ],
-            "retrieval_acc1": 0.8780888118902161,
-            "retrieval_chance": 0.2596412148583397,
-            "retrieval_lift": 0.6184475970318765,
+            "retrieval_acc1": 0.9948025895869427,
+            "retrieval_chance": 0.0004559132168692878,
+            "retrieval_lift": 0.9948025895869427,
             "retrieval_lift_ci": [
-              0.6120936753394972,
-              0.6244355464589251
+              0.9934348500045591,
+              0.995987963891675
             ],
+            "retrieval_raw_cosine_acc1": 0.9040758639555029,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 1.0
           }
         ]
@@ -477,13 +529,15 @@
               0.6940973245239165,
               0.697843633698777
             ],
-            "retrieval_acc1": 0.31052668588706844,
-            "retrieval_chance": 0.004974521222762963,
-            "retrieval_lift": 0.30555216466430546,
+            "retrieval_acc1": 0.9239153364742283,
+            "retrieval_chance": 0.0003515927219515571,
+            "retrieval_lift": 0.9239153364742283,
             "retrieval_lift_ci": [
-              0.2977911749639692,
-              0.3132284906257792
+              0.9193446311792419,
+              0.9280658884747909
             ],
+            "retrieval_raw_cosine_acc1": 0.5178960691934463,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "source": "eval_results/issue_2546/cells/p7_Aoff__does__a3.json",
             "source_sha256": "65f6c77ff3143b723321145935999757e8f074ffc5d75dc18e0ba42526541738",
             "subset": "does",
@@ -501,13 +555,15 @@
               0.5317030210648996,
               0.5381950060810682
             ],
-            "retrieval_acc1": 0.44683002722676,
-            "retrieval_chance": 0.183826683528985,
-            "retrieval_lift": 0.263003343697775,
+            "retrieval_acc1": 0.8774017891870868,
+            "retrieval_chance": 0.00038895371450797355,
+            "retrieval_lift": 0.8774017891870868,
             "retrieval_lift_ci": [
-              0.2546292765633668,
-              0.2708099529497385
+              0.8719544924154026,
+              0.8832360949047063
             ],
+            "retrieval_raw_cosine_acc1": 0.4871256320497861,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "source": "eval_results/issue_2546/cells/p7_Aoff__doesnt__a3.json",
             "source_sha256": "1c1e1cc89500c3f9ab252fb91ce7805158caaae1a07532b9adacf8a10041a10d",
             "subset": "doesnt",
@@ -529,13 +585,15 @@
               0.6972547165410355,
               0.7010388648030964
             ],
-            "retrieval_acc1": 0.33394276070599815,
-            "retrieval_chance": 0.028959394049013994,
-            "retrieval_lift": 0.3049833666569842,
+            "retrieval_acc1": 0.8789114689543632,
+            "retrieval_chance": 0.0003515927219515571,
+            "retrieval_lift": 0.8789114689543632,
             "retrieval_lift_ci": [
-              0.29711330226147076,
-              0.31283146627276365
+              0.873637578229379,
+              0.8842556782223472
             ],
+            "retrieval_raw_cosine_acc1": 0.46649321426060053,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "source": "eval_results/issue_2546/cells/p7_A__does__a3.json",
             "source_sha256": "4ce9423312acfc307d92b7def2720519ceb72947d1e4dc1cb844117fbe371b77",
             "subset": "does",
@@ -553,13 +611,15 @@
               0.5720938185262001,
               0.5784727939132501
             ],
-            "retrieval_acc1": 0.4957604045118631,
-            "retrieval_chance": 0.257589493065193,
-            "retrieval_lift": 0.2381709114466701,
+            "retrieval_acc1": 0.853364449630494,
+            "retrieval_chance": 0.00038895371450797355,
+            "retrieval_lift": 0.853364449630494,
             "retrieval_lift_ci": [
-              0.22918384360771654,
-              0.2461261350945073
+              0.8469856087125632,
+              0.8588117464021782
             ],
+            "retrieval_raw_cosine_acc1": 0.4995721509140412,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "source": "eval_results/issue_2546/cells/p7_A__doesnt__a3.json",
             "source_sha256": "cef78b6ea71e677b264430c8409affb874852b21a6956c1cf407881dcc3fce4b",
             "subset": "doesnt",
@@ -581,13 +641,15 @@
               0.7491261629788208,
               0.7520091299041556
             ],
-            "retrieval_acc1": 0.65002461149005,
-            "retrieval_chance": 0.028959394049013994,
-            "retrieval_lift": 0.6210652174410358,
+            "retrieval_acc1": 0.9834751423950496,
+            "retrieval_chance": 0.0003515927219515571,
+            "retrieval_lift": 0.9834751423950496,
             "retrieval_lift_ci": [
-              0.6134621858102117,
-              0.6289097128204806
+              0.9814341466844807,
+              0.9855864566486183
             ],
+            "retrieval_raw_cosine_acc1": 0.7791294564376626,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "source": "eval_results/issue_2546/cells/p7_D__does__a3.json",
             "source_sha256": "37d068904997a5624301ac1b31aeaf08f1dc3286c71d763bd1c66da1fd6e8072",
             "subset": "does",
@@ -605,13 +667,15 @@
               0.6252442177143246,
               0.6304407397658309
             ],
-            "retrieval_acc1": 0.7641384675223648,
-            "retrieval_chance": 0.257589493065193,
-            "retrieval_lift": 0.5065489744571718,
+            "retrieval_acc1": 0.9824192921042396,
+            "retrieval_chance": 0.00038895371450797355,
+            "retrieval_lift": 0.9824192921042396,
             "retrieval_lift_ci": [
-              0.49910935316861094,
-              0.5143026458305298
+              0.9800077790742902,
+              0.9845196421625827
             ],
+            "retrieval_raw_cosine_acc1": 0.7974329054842474,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "source": "eval_results/issue_2546/cells/p7_D__doesnt__a3.json",
             "source_sha256": "612ef155398c7bdb5e5fe6a47716bd4e6724118cd9ab4841f8ba883f6af2176c",
             "subset": "doesnt",
@@ -639,13 +703,15 @@
               0.7438972173870865,
               0.7484606899430551
             ],
-            "retrieval_acc1": 0.6076547727965843,
-            "retrieval_chance": 0.00572330955456384,
-            "retrieval_lift": 0.6019314632420204,
+            "retrieval_acc1": 0.9659194876486734,
+            "retrieval_chance": 0.00038121379355234654,
+            "retrieval_lift": 0.9659194876486734,
             "retrieval_lift_ci": [
-              0.5937401672436885,
-              0.6103360111833472
+              0.9627172918572735,
+              0.9690473467520586
             ],
+            "retrieval_raw_cosine_acc1": 0.7727203415675511,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "source": "eval_results/issue_2546/cells/p8_G__does__a1.json",
             "source_sha256": "f4fb877a85f6e3b75408cf4933af919721416a46fd920fcd1b23965263fe869c",
             "subset": "does",
@@ -663,13 +729,15 @@
               0.7420432362041004,
               0.7537444549978289
             ],
-            "retrieval_acc1": 0.8874806236892495,
-            "retrieval_chance": 0.2517451866412985,
-            "retrieval_lift": 0.6357354370479511,
+            "retrieval_acc1": 0.9886021701468041,
+            "retrieval_chance": 0.0004559132168692878,
+            "retrieval_lift": 0.9886021701468041,
             "retrieval_lift_ci": [
-              0.6305392978413601,
-              0.6409617554860816
+              0.9865961520926415,
+              0.9906993708397921
             ],
+            "retrieval_raw_cosine_acc1": 0.8331357709492113,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "source": "eval_results/issue_2546/cells/p8_G__doesnt__a1.json",
             "source_sha256": "96385df7db36e094c38647ed57438b5148efef3473732323dca282379071c74d",
             "subset": "doesnt",
@@ -691,13 +759,15 @@
               0.7277738309907807,
               0.7328447734732766
             ],
-            "retrieval_acc1": 0.4133119853613907,
-            "retrieval_chance": 0.008719941244962618,
-            "retrieval_lift": 0.40459204411642813,
+            "retrieval_acc1": 0.9366422689844465,
+            "retrieval_chance": 0.00038121379355234654,
+            "retrieval_lift": 0.9366422689844465,
             "retrieval_lift_ci": [
-              0.3963064663546141,
-              0.4132784770114188
+              0.9322964318389753,
+              0.9407612839280268
             ],
+            "retrieval_raw_cosine_acc1": 0.5993443122903325,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "source": "eval_results/issue_2546/cells/p8_E__does__a1.json",
             "source_sha256": "c5f02a020008b3b7d6da729732d670fd079d6f4f438d0e3ceadde472e3bbcb51",
             "subset": "does",
@@ -715,13 +785,15 @@
               0.600593049196622,
               0.6083429921319616
             ],
-            "retrieval_acc1": 0.6820461384152458,
-            "retrieval_chance": 0.2596412148583397,
-            "retrieval_lift": 0.4224049235569061,
+            "retrieval_acc1": 0.9565058812802042,
+            "retrieval_chance": 0.0004559132168692878,
+            "retrieval_lift": 0.9565058812802042,
             "retrieval_lift_ci": [
-              0.41369311362840333,
-              0.43133843376168124
+              0.9528562961612109,
+              0.9603355521108781
             ],
+            "retrieval_raw_cosine_acc1": 0.7064830856204979,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "source": "eval_results/issue_2546/cells/p8_E__doesnt__a1.json",
             "source_sha256": "ad9dee6667f359e6dfb67116cbc2559ee3e5745002249e769290aed43591b867",
             "subset": "doesnt",
@@ -743,13 +815,15 @@
               0.6896794751668868,
               0.6955608764420441
             ],
-            "retrieval_acc1": 0.2792772186642269,
-            "retrieval_chance": 0.008719941244962618,
-            "retrieval_lift": 0.2705572774192643,
+            "retrieval_acc1": 0.9268831960963708,
+            "retrieval_chance": 0.00038121379355234654,
+            "retrieval_lift": 0.9268831960963708,
             "retrieval_lift_ci": [
-              0.26290529022593523,
-              0.2779715958139353
+              0.9223848734370235,
+              0.931152790484904
             ],
+            "retrieval_raw_cosine_acc1": 0.43328758767917047,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "source": "eval_results/issue_2546/cells/p8_F__does__a1.json",
             "source_sha256": "452fa5d32d60ef6f09adfbfa8f054b060c156f259be9630af1b5f4bee3e9e56c",
             "subset": "does",
@@ -767,13 +841,15 @@
               0.5777518566206754,
               0.5855199147767944
             ],
-            "retrieval_acc1": 0.5742682593234248,
-            "retrieval_chance": 0.2596412148583397,
-            "retrieval_lift": 0.3146270444650852,
+            "retrieval_acc1": 0.9705480076593417,
+            "retrieval_chance": 0.0004559132168692878,
+            "retrieval_lift": 0.9705480076593417,
             "retrieval_lift_ci": [
-              0.30545401864259525,
-              0.3234811862696091
+              0.9674477979392724,
+              0.9734681316677305
             ],
+            "retrieval_raw_cosine_acc1": 0.5851189933436673,
+            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "source": "eval_results/issue_2546/cells/p8_F__doesnt__a1.json",
             "source_sha256": "14258862cce354e40608b67799bbfca159ed066c3d3e1836b43e058f6384d4b7",
             "subset": "doesnt",
@@ -784,7 +860,8 @@
       ],
       "model_after": "open-thoughts/OpenThinker3-7B",
       "model_before": "Qwen/Qwen2.5-7B-Instruct"
-    }
+    },
+    "retrieval_recipe": "whitened cosine + CSLS (k=10), whitening fit on train-fold answers (shrinkage 0.1), pool = held-out fold, hit = own answer"
   },
   "provenance": {
     "cells_dir": "eval_results/issue_2546/cells",
@@ -793,7 +870,7 @@
     "folds": "five seeded random-row folds (seed 0), inner-group CV lambda selection",
     "hf_data_repo": "superkaiba1/explore-persona-space-data",
     "hf_revision": "8368cc69f887d20931acd8c4d76c142275173728",
-    "retrieval": "top-1 nearest neighbour (euclidean) in the held-out within-corpus pool; a hit requires the same canonical answer content; lift = acc@1 minus per-query chance",
+    "retrieval": "paper recipe (Section 4.1): whitened cosine (train-fold shrunk covariance, lambda 0.1) + CSLS k=10, pool = held-out fold, hit = the question's own answer; source eval_results/issue_2546/retrieval_recipe/",
     "source_ref": "42308cc7522dcb0a2a76b332b0c24d981de4b585",
     "task": 2546,
     "uncertainty": "1,000 paired prompt-level bootstrap draws (95% interval)"

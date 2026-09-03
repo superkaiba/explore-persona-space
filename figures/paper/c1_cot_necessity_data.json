@@ -1,7 +1,7 @@
 {
   "font": "Inter",
   "git": {
-    "commit": "6fb7bbaf3490aecbb920fddac7e6180ac88d9c5c",
+    "commit": "9c645b0516a279f0aa0bd60294e0f8ca47096fa1",
     "tracked_worktree_dirty": true
   },
   "outputs": {
@@ -14,9 +14,10 @@
       "model": "OpenThinker3-7B vs parent",
       "points": [
         {
-          "context_lift": 0.2072281085975065,
+          "context_lift": 0.909718228867165,
           "corpus": "math",
-          "end_of_thought_lift": 0.8081481776026819,
+          "end_of_thought_lift": 0.9895054629097182,
+          "metric": "acc@1 of the own answer, whitened cosine + CSLS, held-out-fold pool",
           "n_rows": 6956,
           "name": "MATH",
           "necessity": {
@@ -25,17 +26,18 @@
             "necessary": 872,
             "rate": 0.1253954558527466
           },
-          "retrieval_gain": 0.6009200690051754,
+          "retrieval_gain": 0.07978723404255317,
           "sources": [
-            "eval_results/issue_2546/cells/p7_A__does__a1.json",
-            "eval_results/issue_2546/cells/p7_D__does__a1.json"
+            "eval_results/issue_2546/retrieval_recipe/hits__arm1__p7_A__does__main.npz",
+            "eval_results/issue_2546/retrieval_recipe/hits__arm1__p7_D__does__main.npz"
           ],
           "stratum": "does"
         },
         {
-          "context_lift": 0.331759140888144,
+          "context_lift": 0.9934082977898411,
           "corpus": "gsm8k_train",
-          "end_of_thought_lift": 0.8850743793526652,
+          "end_of_thought_lift": 0.9996122528111672,
+          "metric": "acc@1 of the own answer, whitened cosine + CSLS, held-out-fold pool",
           "n_rows": 2579,
           "name": "GSM8K, 4+ steps",
           "necessity": {
@@ -44,17 +46,18 @@
             "necessary": 112,
             "rate": 0.04342768514928267
           },
-          "retrieval_gain": 0.5533152384645212,
+          "retrieval_gain": 0.006203955021326091,
           "sources": [
-            "eval_results/issue_2546/cells/p7_A__does__a1.json",
-            "eval_results/issue_2546/cells/p7_D__does__a1.json"
+            "eval_results/issue_2546/retrieval_recipe/hits__arm1__p7_A__does__main.npz",
+            "eval_results/issue_2546/retrieval_recipe/hits__arm1__p7_D__does__main.npz"
           ],
           "stratum": "does"
         },
         {
-          "context_lift": 0.349495588627839,
+          "context_lift": 0.9123149958112259,
           "corpus": "contexthub",
-          "end_of_thought_lift": 0.7951811513198245,
+          "end_of_thought_lift": 0.9896676905892209,
+          "metric": "acc@1 of the own answer, whitened cosine + CSLS, held-out-fold pool",
           "n_rows": 3581,
           "name": "ContextHub L3-4",
           "necessity": {
@@ -63,17 +66,18 @@
             "necessary": 121,
             "rate": 0.033789444289304665
           },
-          "retrieval_gain": 0.44568556269198545,
+          "retrieval_gain": 0.077352694777995,
           "sources": [
-            "eval_results/issue_2546/cells/p7_A__does__a1.json",
-            "eval_results/issue_2546/cells/p7_D__does__a1.json"
+            "eval_results/issue_2546/retrieval_recipe/hits__arm1__p7_A__does__main.npz",
+            "eval_results/issue_2546/retrieval_recipe/hits__arm1__p7_D__does__main.npz"
           ],
           "stratum": "does"
         },
         {
-          "context_lift": 0.35307190686608564,
+          "context_lift": 0.9658697158697158,
           "corpus": "mmlu",
-          "end_of_thought_lift": 0.6190109228051015,
+          "end_of_thought_lift": 0.9923769923769924,
+          "metric": "acc@1 of the own answer, whitened cosine + CSLS, held-out-fold pool",
           "n_rows": 5772,
           "name": "MMLU",
           "necessity": {
@@ -82,17 +86,18 @@
             "necessary": 767,
             "rate": 0.13288288288288289
           },
-          "retrieval_gain": 0.26593901593901587,
+          "retrieval_gain": 0.026507276507276578,
           "sources": [
-            "eval_results/issue_2546/cells/p7_A__doesnt__a1.json",
-            "eval_results/issue_2546/cells/p7_D__doesnt__a1.json"
+            "eval_results/issue_2546/retrieval_recipe/hits__arm1__p7_A__doesnt__main.npz",
+            "eval_results/issue_2546/retrieval_recipe/hits__arm1__p7_D__doesnt__main.npz"
           ],
           "stratum": "doesnt"
         },
         {
-          "context_lift": 0.4306955222047051,
+          "context_lift": 0.983710407239819,
           "corpus": "arc_challenge",
-          "end_of_thought_lift": 0.663274707725067,
+          "end_of_thought_lift": 0.9972850678733032,
+          "metric": "acc@1 of the own answer, whitened cosine + CSLS, held-out-fold pool",
           "n_rows": 1105,
           "name": "ARC-Challenge",
           "necessity": {
@@ -101,17 +106,18 @@
             "necessary": 78,
             "rate": 0.07058823529411765
           },
-          "retrieval_gain": 0.23257918552036194,
+          "retrieval_gain": 0.013574660633484226,
           "sources": [
-            "eval_results/issue_2546/cells/p7_A__doesnt__a1.json",
-            "eval_results/issue_2546/cells/p7_D__doesnt__a1.json"
+            "eval_results/issue_2546/retrieval_recipe/hits__arm1__p7_A__doesnt__main.npz",
+            "eval_results/issue_2546/retrieval_recipe/hits__arm1__p7_D__doesnt__main.npz"
           ],
           "stratum": "doesnt"
         },
         {
-          "context_lift": 0.3035829227024057,
+          "context_lift": 0.9914367269267365,
           "corpus": "csqa",
-          "end_of_thought_lift": 0.6917846353570203,
+          "end_of_thought_lift": 1.0,
+          "metric": "acc@1 of the own answer, whitened cosine + CSLS, held-out-fold pool",
           "n_rows": 1051,
           "name": "CommonsenseQA",
           "necessity": {
@@ -120,17 +126,18 @@
             "necessary": 73,
             "rate": 0.06945765937202664
           },
-          "retrieval_gain": 0.38820171265461456,
+          "retrieval_gain": 0.008563273073263544,
           "sources": [
-            "eval_results/issue_2546/cells/p7_A__doesnt__a1.json",
-            "eval_results/issue_2546/cells/p7_D__doesnt__a1.json"
+            "eval_results/issue_2546/retrieval_recipe/hits__arm1__p7_A__doesnt__main.npz",
+            "eval_results/issue_2546/retrieval_recipe/hits__arm1__p7_D__doesnt__main.npz"
           ],
           "stratum": "doesnt"
         },
         {
-          "context_lift": 0.13603082889954132,
+          "context_lift": 0.9810017271157168,
           "corpus": "piqa",
-          "end_of_thought_lift": 0.4330947321810611,
+          "end_of_thought_lift": 1.0,
+          "metric": "acc@1 of the own answer, whitened cosine + CSLS, held-out-fold pool",
           "n_rows": 1737,
           "name": "PIQA",
           "necessity": {
@@ -139,17 +146,18 @@
             "necessary": 111,
             "rate": 0.06390328151986183
           },
-          "retrieval_gain": 0.29706390328151977,
+          "retrieval_gain": 0.01899827288428324,
           "sources": [
-            "eval_results/issue_2546/cells/p7_A__doesnt__a1.json",
-            "eval_results/issue_2546/cells/p7_D__doesnt__a1.json"
+            "eval_results/issue_2546/retrieval_recipe/hits__arm1__p7_A__doesnt__main.npz",
+            "eval_results/issue_2546/retrieval_recipe/hits__arm1__p7_D__doesnt__main.npz"
           ],
           "stratum": "doesnt"
         },
         {
-          "context_lift": 0.27983976926774556,
+          "context_lift": 0.9772151898734177,
           "corpus": "gsm8k_train",
-          "end_of_thought_lift": 0.8216119211664797,
+          "end_of_thought_lift": 0.9974683544303797,
+          "metric": "acc@1 of the own answer, whitened cosine + CSLS, held-out-fold pool",
           "n_rows": 395,
           "name": "GSM8K, 1 step",
           "necessity": {
@@ -158,17 +166,18 @@
             "necessary": 7,
             "rate": 0.017721518987341773
           },
-          "retrieval_gain": 0.5417721518987342,
+          "retrieval_gain": 0.020253164556962022,
           "sources": [
-            "eval_results/issue_2546/cells/p7_A__doesnt__a1.json",
-            "eval_results/issue_2546/cells/p7_D__doesnt__a1.json"
+            "eval_results/issue_2546/retrieval_recipe/hits__arm1__p7_A__doesnt__main.npz",
+            "eval_results/issue_2546/retrieval_recipe/hits__arm1__p7_D__doesnt__main.npz"
           ],
           "stratum": "doesnt"
         },
         {
-          "context_lift": 0.29854166236146884,
+          "context_lift": 0.9371554575523704,
           "corpus": "contexthub",
-          "end_of_thought_lift": 0.7417610669921193,
+          "end_of_thought_lift": 0.9900771775082691,
+          "metric": "acc@1 of the own answer, whitened cosine + CSLS, held-out-fold pool",
           "n_rows": 907,
           "name": "ContextHub L1",
           "necessity": {
@@ -177,24 +186,25 @@
             "necessary": 34,
             "rate": 0.037486218302094816
           },
-          "retrieval_gain": 0.44321940463065046,
+          "retrieval_gain": 0.05292171995589867,
           "sources": [
-            "eval_results/issue_2546/cells/p7_A__doesnt__a1.json",
-            "eval_results/issue_2546/cells/p7_D__doesnt__a1.json"
+            "eval_results/issue_2546/retrieval_recipe/hits__arm1__p7_A__doesnt__main.npz",
+            "eval_results/issue_2546/retrieval_recipe/hits__arm1__p7_D__doesnt__main.npz"
           ],
           "stratum": "doesnt"
         }
       ],
-      "spearman_p": 0.3084952723803716,
-      "spearman_rho": -0.38333333333333336
+      "spearman_p": 1.0,
+      "spearman_rho": 0.0
     },
     "3": {
       "model": "Qwen3-8B, thinking on vs off",
       "points": [
         {
-          "context_lift": 0.27316052689277565,
+          "context_lift": 0.8834692364714604,
           "corpus": "math",
-          "end_of_thought_lift": 0.5830196818223531,
+          "end_of_thought_lift": 0.9832468495181615,
+          "metric": "acc@1 of the own answer, whitened cosine + CSLS, held-out-fold pool",
           "n_rows": 6745,
           "name": "MATH",
           "necessity": {
@@ -203,17 +213,18 @@
             "necessary": 624,
             "rate": 0.09254041227940087
           },
-          "retrieval_gain": 0.30985915492957744,
+          "retrieval_gain": 0.09977761304670119,
           "sources": [
-            "eval_results/issue_2546/cells/p7_A__does__a3.json",
-            "eval_results/issue_2546/cells/p7_D__does__a3.json"
+            "eval_results/issue_2546/retrieval_recipe/hits__arm3__p7_A__does__main.npz",
+            "eval_results/issue_2546/retrieval_recipe/hits__arm3__p7_D__does__main.npz"
           ],
           "stratum": "does"
         },
         {
-          "context_lift": 0.43574367881497345,
+          "context_lift": 0.9831438651509212,
           "corpus": "gsm8k_train",
-          "end_of_thought_lift": 0.7105378771685603,
+          "end_of_thought_lift": 0.9992159937279498,
+          "metric": "acc@1 of the own answer, whitened cosine + CSLS, held-out-fold pool",
           "n_rows": 2551,
           "name": "GSM8K, 4+ steps",
           "necessity": {
@@ -222,17 +233,18 @@
             "necessary": 299,
             "rate": 0.11720893767150137
           },
-          "retrieval_gain": 0.27479419835358687,
+          "retrieval_gain": 0.016072128577028555,
           "sources": [
-            "eval_results/issue_2546/cells/p7_A__does__a3.json",
-            "eval_results/issue_2546/cells/p7_D__does__a3.json"
+            "eval_results/issue_2546/retrieval_recipe/hits__arm3__p7_A__does__main.npz",
+            "eval_results/issue_2546/retrieval_recipe/hits__arm3__p7_D__does__main.npz"
           ],
           "stratum": "does"
         },
         {
-          "context_lift": 0.2808362596304981,
+          "context_lift": 0.8186802030456852,
           "corpus": "contexthub",
-          "end_of_thought_lift": 0.6268261073462341,
+          "end_of_thought_lift": 0.9756345177664975,
+          "metric": "acc@1 of the own answer, whitened cosine + CSLS, held-out-fold pool",
           "n_rows": 4925,
           "name": "ContextHub L3-4",
           "necessity": {
@@ -241,17 +253,18 @@
             "necessary": 132,
             "rate": 0.026802030456852793
           },
-          "retrieval_gain": 0.34598984771573604,
+          "retrieval_gain": 0.15695431472081223,
           "sources": [
-            "eval_results/issue_2546/cells/p7_A__does__a3.json",
-            "eval_results/issue_2546/cells/p7_D__does__a3.json"
+            "eval_results/issue_2546/retrieval_recipe/hits__arm3__p7_A__does__main.npz",
+            "eval_results/issue_2546/retrieval_recipe/hits__arm3__p7_D__does__main.npz"
           ],
           "stratum": "does"
         },
         {
-          "context_lift": 0.25227020931018035,
+          "context_lift": 0.8252954761581307,
           "corpus": "mmlu",
-          "end_of_thought_lift": 0.5098439085358291,
+          "end_of_thought_lift": 0.9789430783860888,
+          "metric": "acc@1 of the own answer, whitened cosine + CSLS, held-out-fold pool",
           "n_rows": 7361,
           "name": "MMLU",
           "necessity": {
@@ -260,17 +273,18 @@
             "necessary": 1750,
             "rate": 0.23773943757641625
           },
-          "retrieval_gain": 0.2575736992256487,
+          "retrieval_gain": 0.15364760222795815,
           "sources": [
-            "eval_results/issue_2546/cells/p7_A__doesnt__a3.json",
-            "eval_results/issue_2546/cells/p7_D__doesnt__a3.json"
+            "eval_results/issue_2546/retrieval_recipe/hits__arm3__p7_A__doesnt__main.npz",
+            "eval_results/issue_2546/retrieval_recipe/hits__arm3__p7_D__doesnt__main.npz"
           ],
           "stratum": "doesnt"
         },
         {
-          "context_lift": 0.33300065962025893,
+          "context_lift": 0.9334485738980121,
           "corpus": "arc_challenge",
-          "end_of_thought_lift": 0.5559911522736729,
+          "end_of_thought_lift": 0.993085566119274,
+          "metric": "acc@1 of the own answer, whitened cosine + CSLS, held-out-fold pool",
           "n_rows": 1157,
           "name": "ARC-Challenge",
           "necessity": {
@@ -279,17 +293,18 @@
             "necessary": 326,
             "rate": 0.2817631806395851
           },
-          "retrieval_gain": 0.22299049265341397,
+          "retrieval_gain": 0.05963699222126195,
           "sources": [
-            "eval_results/issue_2546/cells/p7_A__doesnt__a3.json",
-            "eval_results/issue_2546/cells/p7_D__doesnt__a3.json"
+            "eval_results/issue_2546/retrieval_recipe/hits__arm3__p7_A__doesnt__main.npz",
+            "eval_results/issue_2546/retrieval_recipe/hits__arm3__p7_D__doesnt__main.npz"
           ],
           "stratum": "doesnt"
         },
         {
-          "context_lift": 0.3016378662659654,
+          "context_lift": 0.9537190082644628,
           "corpus": "csqa",
-          "end_of_thought_lift": 0.6545304282494364,
+          "end_of_thought_lift": 1.0,
+          "metric": "acc@1 of the own answer, whitened cosine + CSLS, held-out-fold pool",
           "n_rows": 1210,
           "name": "CommonsenseQA",
           "necessity": {
@@ -298,17 +313,18 @@
             "necessary": 424,
             "rate": 0.3504132231404959
           },
-          "retrieval_gain": 0.352892561983471,
+          "retrieval_gain": 0.046280991735537236,
           "sources": [
-            "eval_results/issue_2546/cells/p7_A__doesnt__a3.json",
-            "eval_results/issue_2546/cells/p7_D__doesnt__a3.json"
+            "eval_results/issue_2546/retrieval_recipe/hits__arm3__p7_A__doesnt__main.npz",
+            "eval_results/issue_2546/retrieval_recipe/hits__arm3__p7_D__doesnt__main.npz"
           ],
           "stratum": "doesnt"
         },
         {
-          "context_lift": 0.06536435512134775,
+          "context_lift": 0.9123394751535455,
           "corpus": "piqa",
-          "end_of_thought_lift": 0.29093666109566374,
+          "end_of_thought_lift": 0.993858179787828,
+          "metric": "acc@1 of the own answer, whitened cosine + CSLS, held-out-fold pool",
           "n_rows": 1791,
           "name": "PIQA",
           "necessity": {
@@ -317,17 +333,18 @@
             "necessary": 565,
             "rate": 0.31546621998883306
           },
-          "retrieval_gain": 0.225572305974316,
+          "retrieval_gain": 0.08151870463428246,
           "sources": [
-            "eval_results/issue_2546/cells/p7_A__doesnt__a3.json",
-            "eval_results/issue_2546/cells/p7_D__doesnt__a3.json"
+            "eval_results/issue_2546/retrieval_recipe/hits__arm3__p7_A__doesnt__main.npz",
+            "eval_results/issue_2546/retrieval_recipe/hits__arm3__p7_D__doesnt__main.npz"
           ],
           "stratum": "doesnt"
         },
         {
-          "context_lift": 0.21841249999999998,
+          "context_lift": 0.88,
           "corpus": "gsm8k_train",
-          "end_of_thought_lift": 0.5659125,
+          "end_of_thought_lift": 0.9825,
+          "metric": "acc@1 of the own answer, whitened cosine + CSLS, held-out-fold pool",
           "n_rows": 400,
           "name": "GSM8K, 1 step",
           "necessity": {
@@ -336,17 +353,18 @@
             "necessary": 31,
             "rate": 0.0775
           },
-          "retrieval_gain": 0.34750000000000003,
+          "retrieval_gain": 0.10250000000000004,
           "sources": [
-            "eval_results/issue_2546/cells/p7_A__doesnt__a3.json",
-            "eval_results/issue_2546/cells/p7_D__doesnt__a3.json"
+            "eval_results/issue_2546/retrieval_recipe/hits__arm3__p7_A__doesnt__main.npz",
+            "eval_results/issue_2546/retrieval_recipe/hits__arm3__p7_D__doesnt__main.npz"
           ],
           "stratum": "doesnt"
         },
         {
-          "context_lift": 0.26712597706187446,
+          "context_lift": 0.7211538461538461,
           "corpus": "contexthub",
-          "end_of_thought_lift": 0.6154165753524727,
+          "end_of_thought_lift": 0.9519230769230769,
+          "metric": "acc@1 of the own answer, whitened cosine + CSLS, held-out-fold pool",
           "n_rows": 936,
           "name": "ContextHub L1",
           "necessity": {
@@ -355,16 +373,16 @@
             "necessary": 20,
             "rate": 0.021367521367521368
           },
-          "retrieval_gain": 0.3482905982905983,
+          "retrieval_gain": 0.23076923076923073,
           "sources": [
-            "eval_results/issue_2546/cells/p7_A__doesnt__a3.json",
-            "eval_results/issue_2546/cells/p7_D__doesnt__a3.json"
+            "eval_results/issue_2546/retrieval_recipe/hits__arm3__p7_A__doesnt__main.npz",
+            "eval_results/issue_2546/retrieval_recipe/hits__arm3__p7_D__doesnt__main.npz"
           ],
           "stratum": "doesnt"
         }
       ],
-      "spearman_p": 0.3317398014330152,
-      "spearman_rho": -0.3666666666666667
+      "spearman_p": 0.024554150071469705,
+      "spearman_rho": -0.7333333333333334
     }
   },
   "panel_B": {
@@ -386,13 +404,14 @@
             "uses_boundary": false
           },
           {
-            "auroc": 0.49905478685182403,
+            "auroc": 0.49815030664594506,
             "auroc_ci": [
-              0.4836825922026704,
-              0.5137019351280895
+              0.48817460019050485,
+              0.5083533864741565
             ],
             "key": "prompt_retrieval_miss",
             "label": "Prompt retrieval miss",
+            "recomputed": "paper recipe hits, stratum-fit maps restricted to MATH",
             "uses_boundary": false
           },
           {
@@ -416,13 +435,14 @@
             "uses_boundary": true
           },
           {
-            "auroc": 0.5155401397035477,
+            "auroc": 0.5024648652261827,
             "auroc_ci": [
-              0.49784767850950856,
-              0.5332175610419696
+              0.4924560110334052,
+              0.5125356347967948
             ],
             "key": "retrieval_top1_gain",
             "label": "Top-1 retrieval gain\u2020",
+            "recomputed": "paper recipe hits, stratum-fit maps restricted to MATH",
             "uses_boundary": true
           }
         ]
@@ -444,13 +464,14 @@
             "uses_boundary": false
           },
           {
-            "auroc": 0.5424220243870609,
+            "auroc": 0.4993561727974762,
             "auroc_ci": [
-              0.5234653338681123,
-              0.5611874817366561
+              0.48606276348863203,
+              0.5126234770498919
             ],
             "key": "prompt_retrieval_miss",
             "label": "Prompt retrieval miss",
+            "recomputed": "paper recipe hits, stratum-fit maps restricted to MATH",
             "uses_boundary": false
           },
           {
@@ -474,13 +495,14 @@
             "uses_boundary": true
           },
           {
-            "auroc": 0.5381663106201168,
+            "auroc": 0.501875273063589,
             "auroc_ci": [
-              0.5182705074301667,
-              0.5590054376890169
+              0.48856856520332953,
+              0.5151888695734818
             ],
             "key": "retrieval_top1_gain",
             "label": "Top-1 retrieval gain\u2020",
+            "recomputed": "paper recipe hits, stratum-fit maps restricted to MATH",
             "uses_boundary": true
           }
         ]

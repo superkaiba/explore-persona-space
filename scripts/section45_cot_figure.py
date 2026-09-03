@@ -20,7 +20,7 @@ D  Qwen2.5-7B-Instruct (before reasoning training) -> OpenThinker3-7B (after):
 
 Visual encoding follows Figure 2: color encodes the corpus stratum; solid bars
 (and filled markers in panel B) are R^2, hatched open bars (and open markers)
-are top-1 answer retrieval as lift over chance. Every context state is the last
+are acc@1 of the question's own answer (paper recipe). Every context state is the last
 context token; every fit uses five seeded random-row folds.
 """
 
@@ -211,6 +211,32 @@ def load_trajectory(arm: int) -> dict[str, list[dict[str, Any]]]:
     return series
 
 
+RECIPE_RESULTS = ROOT / "eval_results" / "issue_2546" / "retrieval_recipe" / "results.json"
+RECIPE_RESULTS_ARM2 = ROOT / "eval_results" / "issue_2546" / "retrieval_recipe" / "results_arm2.json"
+
+
+def load_recipe_retrieval() -> dict[str, Any]:
+    """acc@1 of the question's own answer under the paper recipe (whitened cosine + CSLS, held-out-fold pool)."""
+    out: dict[str, Any] = {}
+    for path in (RECIPE_RESULTS, RECIPE_RESULTS_ARM2):
+        if path.is_file():
+            out.update(json.loads(path.read_text())["results"])
+    if not out:
+        raise FileNotFoundError(f"recipe retrieval results missing: {RECIPE_RESULTS}")
+    return out
+
+
+def apply_recipe_retrieval(metrics: dict[str, Any], recipe: dict[str, Any], cell: str, subset: str, arm: int, position: str = "main") -> None:
+    """Replace the content-rule lift fields with strict own-answer acc@1 (kept under the same keys so the plot code is unchanged)."""
+    entry = recipe[f"arm{arm}/{cell}/{subset}"]["positions"][position]
+    metrics["retrieval_acc1"] = float(entry["acc1_whitened_csls"])
+    metrics["retrieval_chance"] = float(entry["chance"])
+    metrics["retrieval_lift"] = float(entry["acc1_whitened_csls"])
+    metrics["retrieval_lift_ci"] = [float(v) for v in entry["acc1_whitened_csls_ci"]]
+    metrics["retrieval_raw_cosine_acc1"] = float(entry["acc1_raw_cosine"])
+    metrics["retrieval_recipe"] = "whitened cosine + CSLS, held-out-fold pool, own-answer hit"
+
+
 _METRIC_KEYS = (
     "r2",
     "r2_ci",
@@ -221,8 +247,9 @@ _METRIC_KEYS = (
 )
 
 
-def load_results() -> dict[str, Any]:
+def load_results(*, retrieval: str = "recipe") -> dict[str, Any]:
     panels: dict[str, Any] = {}
+    recipe = load_recipe_retrieval() if retrieval == "recipe" else None
     panels["A"] = {
         "arm": 1,
         "model": "open-thoughts/OpenThinker3-7B",
@@ -253,6 +280,23 @@ def load_results() -> dict[str, Any]:
             for cell, label in PANEL_D_MAPS
         ],
     }
+    if recipe is not None:
+        for panel_key in ("A", "C", "D"):
+            arm = panels[panel_key]["arm"]
+            for entry in panels[panel_key]["maps"]:
+                for subset in STRATA:
+                    apply_recipe_retrieval(entry[subset], recipe, entry["cell"], subset, arm)
+        arm = panels["B"]["arm"]
+        for subset, rows in panels["B"]["series"].items():
+            for row in rows:
+                t = row["t"]
+                if t == 0.0:
+                    apply_recipe_retrieval(row, recipe, "p7_A", subset, arm)
+                elif t == 1.0:
+                    apply_recipe_retrieval(row, recipe, "p7_D", subset, arm)
+                else:
+                    apply_recipe_retrieval(row, recipe, "p7_traj", subset, arm, position=f"t{int(round(t * 100))}")
+        panels["retrieval_recipe"] = "whitened cosine + CSLS (k=10), whitening fit on train-fold answers (shrinkage 0.1), pool = held-out fold, hit = own answer"
     return panels
 
 
@@ -340,7 +384,7 @@ def _categorical_panel(ax: plt.Axes, maps: list[dict[str, Any]], *, separator_af
     ax.set_xticks(ticks)
     ax.set_xticklabels(labels, fontsize=12, linespacing=1.15)
     ax.axvline(m - 0.5 + GROUP_GAP / 2, color=MUTED, lw=1.0, ls=(0, (2, 3)), zorder=1)
-    for center, text in (((m - 1) / 2, "Held-out $R^2$"), (m + GROUP_GAP + (m - 1) / 2, "Answer retrieval (lift over chance)")):
+    for center, text in (((m - 1) / 2, "Held-out $R^2$"), (m + GROUP_GAP + (m - 1) / 2, "Answer retrieval (acc@1)")):
         ax.text(center, -0.30, text, transform=ax.get_xaxis_transform(), ha="center", va="top", fontsize=12, fontweight=700, color=MUTED)
 
 
@@ -406,7 +450,7 @@ def _legend_handles() -> tuple[list[Patch], list[Patch]]:
             edgecolor=INK,
             hatch=RETRIEVAL_HATCH,
             linewidth=1.4,
-            label="Answer retrieval (lift over chance)",
+            label="Answer retrieval (acc@1)",
         ),
     ]
     return strata, metrics
@@ -423,7 +467,7 @@ def make_figure(panels: dict[str, Any]) -> plt.Figure:
         top=0.845,
         bottom=0.12,
         wspace=0.22,
-        hspace=1.15,
+        hspace=0.85,
     )
     ax_a = fig.add_subplot(grid[0, 0])
     ax_b = fig.add_subplot(grid[0, 1])
@@ -433,7 +477,7 @@ def make_figure(panels: dict[str, Any]) -> plt.Figure:
     _categorical_panel(ax_a, panels["A"]["maps"])
     _kicker(
         ax_a,
-        "The context state predicts the answer state,\nbut retrieves the specific answer poorly",
+        "Context state already retrieves the answer;\nend of thought adds a few points",
         "A  ·  OpenThinker3-7B, layer 19",
     )
     _trajectory_panel(ax_b, panels["B"]["series"])
@@ -529,8 +573,8 @@ def write_outputs(fig: plt.Figure, panels: dict[str, Any], out_dir: Path, stem_n
             "context_state": "last context token (cx_last); end-of-thought state for the boundary maps",
             "folds": "five seeded random-row folds (seed 0), inner-group CV lambda selection",
             "retrieval": (
-                "top-1 nearest neighbour (euclidean) in the held-out within-corpus pool; a hit "
-                "requires the same canonical answer content; lift = acc@1 minus per-query chance"
+                "paper recipe (Section 4.1): whitened cosine (train-fold shrunk covariance, lambda 0.1) + CSLS k=10, "
+                "pool = held-out fold, hit = the question's own answer; source eval_results/issue_2546/retrieval_recipe/"
             ),
             "uncertainty": "1,000 paired prompt-level bootstrap draws (95% interval)",
         },

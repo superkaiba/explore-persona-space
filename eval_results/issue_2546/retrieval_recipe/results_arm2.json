@@ -1,0 +1,372 @@
+{
+  "recipe": {
+    "whitening": "train-fold true target states, shrinkage 0.1, Cholesky",
+    "csls_k": 10,
+    "pool": "held-out fold true target states",
+    "hit": "nearest pool vector is the question's own target",
+    "ci": "95% percentile, 1000 question-level bootstrap draws"
+  },
+  "results": {
+    "arm2/p7_A/does": {
+      "n": 11790,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9178965224766752,
+          "acc1_whitened_csls_ci": [
+            0.9130619168787107,
+            0.9228180661577609
+          ],
+          "acc1_raw_cosine": 0.49686174724342663,
+          "chance": 0.00042408821034775233
+        }
+      }
+    },
+    "arm2/p7_A/doesnt": {
+      "n": 11516,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.890934352205627,
+          "acc1_whitened_csls_ci": [
+            0.885372525182355,
+            0.8964071726293852
+          ],
+          "acc1_raw_cosine": 0.2603334491142758,
+          "chance": 0.00043417854730544707
+        }
+      }
+    },
+    "arm2/p7_B/does": {
+      "n": 11790,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "post/cot_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.953774385072095,
+          "acc1_whitened_csls_ci": [
+            0.9500424088210347,
+            0.9575063613231553
+          ],
+          "acc1_raw_cosine": 0.5541136556403732,
+          "chance": 0.00042408821034775233
+        }
+      }
+    },
+    "arm2/p7_B/doesnt": {
+      "n": 11516,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "post/cot_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9710837096213963,
+          "acc1_whitened_csls_ci": [
+            0.967866446682876,
+            0.9741229593608892
+          ],
+          "acc1_raw_cosine": 0.6734109065647794,
+          "chance": 0.00043417854730544707
+        }
+      }
+    },
+    "arm2/p7_C/does": {
+      "n": 11790,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "post/out_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9543681085665818,
+          "acc1_whitened_csls_ci": [
+            0.9506340118744698,
+            0.9580152671755725
+          ],
+          "acc1_raw_cosine": 0.5901611535199321,
+          "chance": 0.00042408821034775233
+        }
+      }
+    },
+    "arm2/p7_C/doesnt": {
+      "n": 11516,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "post/out_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9702153525529698,
+          "acc1_whitened_csls_ci": [
+            0.9670892671066342,
+            0.9733436088919764
+          ],
+          "acc1_raw_cosine": 0.6868704411253908,
+          "chance": 0.00043417854730544707
+        }
+      }
+    },
+    "arm2/p7_D/does": {
+      "n": 11790,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9877014418999152,
+          "acc1_whitened_csls_ci": [
+            0.9858354537743851,
+            0.9896522476675148
+          ],
+          "acc1_raw_cosine": 0.790754877014419,
+          "chance": 0.00042408821034775233
+        }
+      }
+    },
+    "arm2/p7_D/doesnt": {
+      "n": 11516,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9698680097255992,
+          "acc1_whitened_csls_ci": [
+            0.9667419242792636,
+            0.9730831017714484
+          ],
+          "acc1_raw_cosine": 0.44659604029176797,
+          "chance": 0.00043417854730544707
+        }
+      }
+    },
+    "arm2/p7_traj/does": {
+      "n": 11790,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "t10": {
+          "acc1_whitened_csls": 0.468871925360475,
+          "acc1_whitened_csls_ci": [
+            0.4597943172179813,
+            0.4776081424936387
+          ],
+          "acc1_raw_cosine": 0.12213740458015267,
+          "chance": 0.00042408821034775233
+        },
+        "t20": {
+          "acc1_whitened_csls": 0.4388464800678541,
+          "acc1_whitened_csls_ci": [
+            0.42985368956743003,
+            0.4476696352841391
+          ],
+          "acc1_raw_cosine": 0.11145038167938931,
+          "chance": 0.00042408821034775233
+        },
+        "t30": {
+          "acc1_whitened_csls": 0.43273960983884646,
+          "acc1_whitened_csls_ci": [
+            0.42383375742154367,
+            0.4419020356234097
+          ],
+          "acc1_raw_cosine": 0.11357082273112808,
+          "chance": 0.00042408821034775233
+        },
+        "t40": {
+          "acc1_whitened_csls": 0.4163698049194232,
+          "acc1_whitened_csls_ci": [
+            0.4076335877862595,
+            0.4241751484308736
+          ],
+          "acc1_raw_cosine": 0.1097540288379983,
+          "chance": 0.00042408821034775233
+        },
+        "t50": {
+          "acc1_whitened_csls": 0.4128922815945717,
+          "acc1_whitened_csls_ci": [
+            0.40483460559796436,
+            0.42171543681085666
+          ],
+          "acc1_raw_cosine": 0.10585241730279898,
+          "chance": 0.00042408821034775233
+        },
+        "t60": {
+          "acc1_whitened_csls": 0.41391009329940626,
+          "acc1_whitened_csls_ci": [
+            0.4049173027989822,
+            0.42298558100084815
+          ],
+          "acc1_raw_cosine": 0.09991518235793045,
+          "chance": 0.00042408821034775233
+        },
+        "t70": {
+          "acc1_whitened_csls": 0.39117896522476675,
+          "acc1_whitened_csls_ci": [
+            0.381931721798134,
+            0.4004262086513995
+          ],
+          "acc1_raw_cosine": 0.09796437659033079,
+          "chance": 0.00042408821034775233
+        },
+        "t80": {
+          "acc1_whitened_csls": 0.411704834605598,
+          "acc1_whitened_csls_ci": [
+            0.4029643765903308,
+            0.42018871925360474
+          ],
+          "acc1_raw_cosine": 0.09991518235793045,
+          "chance": 0.00042408821034775233
+        },
+        "t90": {
+          "acc1_whitened_csls": 0.43197625106022053,
+          "acc1_whitened_csls_ci": [
+            0.42290076335877863,
+            0.4407167090754877
+          ],
+          "acc1_raw_cosine": 0.10296861747243427,
+          "chance": 0.00042408821034775233
+        }
+      },
+      "position_key_map": "pred_l{3*ti+1} -> t{10*(ti+1)} (position slot at the headline layer)"
+    },
+    "arm2/p7_traj/doesnt": {
+      "n": 11516,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "t10": {
+          "acc1_whitened_csls": 0.40126780131990275,
+          "acc1_whitened_csls_ci": [
+            0.39214788120875305,
+            0.40977987148315387
+          ],
+          "acc1_raw_cosine": 0.08996179228898923,
+          "chance": 0.00043417854730544707
+        },
+        "t20": {
+          "acc1_whitened_csls": 0.47933310177144844,
+          "acc1_whitened_csls_ci": [
+            0.4696075026050712,
+            0.48776267801319906
+          ],
+          "acc1_raw_cosine": 0.10437651962486974,
+          "chance": 0.00043417854730544707
+        },
+        "t30": {
+          "acc1_whitened_csls": 0.5072941993747829,
+          "acc1_whitened_csls_ci": [
+            0.49886896491837446,
+            0.5161536123654047
+          ],
+          "acc1_raw_cosine": 0.1125390760680792,
+          "chance": 0.00043417854730544707
+        },
+        "t40": {
+          "acc1_whitened_csls": 0.5175408127822161,
+          "acc1_whitened_csls_ci": [
+            0.508249392150052,
+            0.5259638763459534
+          ],
+          "acc1_raw_cosine": 0.11844390413337964,
+          "chance": 0.00043417854730544707
+        },
+        "t50": {
+          "acc1_whitened_csls": 0.5196248697464397,
+          "acc1_whitened_csls_ci": [
+            0.5105939562348037,
+            0.5290052969781174
+          ],
+          "acc1_raw_cosine": 0.12330670371656825,
+          "chance": 0.00043417854730544707
+        },
+        "t60": {
+          "acc1_whitened_csls": 0.525095519277527,
+          "acc1_whitened_csls_ci": [
+            0.5163207711010768,
+            0.5340395970823203
+          ],
+          "acc1_raw_cosine": 0.12261201806182702,
+          "chance": 0.00043417854730544707
+        },
+        "t70": {
+          "acc1_whitened_csls": 0.5303924973949288,
+          "acc1_whitened_csls_ci": [
+            0.5218804272316777,
+            0.540213615838833
+          ],
+          "acc1_raw_cosine": 0.1290378603681834,
+          "chance": 0.00043417854730544707
+        },
+        "t80": {
+          "acc1_whitened_csls": 0.5204932268148663,
+          "acc1_whitened_csls_ci": [
+            0.5112886418895449,
+            0.5300494963529003
+          ],
+          "acc1_raw_cosine": 0.1233935394234109,
+          "chance": 0.00043417854730544707
+        },
+        "t90": {
+          "acc1_whitened_csls": 0.5615665161514415,
+          "acc1_whitened_csls_ci": [
+            0.5528829454671761,
+            0.5703390934352206
+          ],
+          "acc1_raw_cosine": 0.12973254602292464,
+          "chance": 0.00043417854730544707
+        }
+      },
+      "position_key_map": "pred_l{3*ti+1} -> t{10*(ti+1)} (position slot at the headline layer)"
+    }
+  }
+}

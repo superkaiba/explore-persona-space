@@ -169,6 +169,41 @@ def necessity_rates(arm: int, members: dict[tuple[str, str], set[str]]) -> dict[
     return out
 
 
+RECIPE_DIR = EVAL_DIR / "retrieval_recipe"
+
+
+def _load_hits(arm: int, cell: str, stratum: str) -> dict[str, bool]:
+    """Per-question own-answer hits under the paper recipe (whitened cosine + CSLS, held-out-fold pool)."""
+    path = RECIPE_DIR / f"hits__arm{arm}__{cell}__{stratum}__main.npz"
+    z = np.load(path)
+    return {str(r): bool(h) for r, h in zip(z["row_ids"], z["hit_whitened_csls"])}
+
+
+def _auroc(pos: np.ndarray, neg: np.ndarray) -> float:
+    """Mann-Whitney AUROC with ties counted as half."""
+    from scipy.stats import rankdata
+
+    scores = np.concatenate([pos, neg]); ranks = rankdata(scores)
+    n_pos, n_neg = len(pos), len(neg)
+    return float((ranks[:n_pos].sum() - n_pos * (n_pos + 1) / 2) / (n_pos * n_neg))
+
+
+def recipe_auroc(arm: int, labels_file: str, n_boot: int = 2000, seed: int = 0) -> dict[str, dict[str, Any]]:
+    """AUROC of the two retrieval-based necessity scores within MATH, recomputed from the recipe hits."""
+    labels = json.loads((EVAL_DIR / "necessity" / labels_file).read_text())["labels"]
+    hits_a = _load_hits(arm, "p7_A", "does"); hits_d = _load_hits(arm, "p7_D", "does")
+    rows = [r for r in hits_a if r.split(":", 1)[0] == "math" and r in hits_d and labels.get(r) in ("necessary", "both_correct")]
+    y = np.array([labels[r] == "necessary" for r in rows]); ha = np.array([hits_a[r] for r in rows], float); hd = np.array([hits_d[r] for r in rows], float)
+    scores = {"prompt_retrieval_miss": 1.0 - ha, "retrieval_top1_gain": hd - ha}
+    rng = np.random.default_rng(seed); pos_idx = np.where(y)[0]; neg_idx = np.where(~y)[0]
+    out = {}
+    for key, sc in scores.items():
+        point = _auroc(sc[pos_idx], sc[neg_idx])
+        boots = [_auroc(sc[rng.choice(pos_idx, len(pos_idx))], sc[rng.choice(neg_idx, len(neg_idx))]) for _ in range(n_boot)]
+        out[key] = {"auroc": point, "auroc_ci": [float(np.percentile(boots, 2.5)), float(np.percentile(boots, 97.5))], "n_analysis": int(len(rows)), "n_necessary": int(y.sum())}
+    return out
+
+
 def _per_corpus_lift(cell: str, stratum: str, arm: int, corpus: str) -> dict[str, float]:
     path = CELLS_DIR / f"{cell}__{stratum}__a{arm}.json"
     data = json.loads(path.read_text())
@@ -189,22 +224,26 @@ def load_corpus_panel(members: dict[tuple[str, str], set[str]]) -> dict[str, Any
     for arm, spec in MODELS.items():
         rates = necessity_rates(arm, members)
         points = []
+        hits = {(cell, st): _load_hits(arm, cell, st) for cell in ("p7_A", "p7_D") for st in ("does", "doesnt")}
         for stratum, corpus, name in SUBSETS:
-            ctx = _per_corpus_lift("p7_A", stratum, arm, corpus)
-            end = _per_corpus_lift("p7_D", stratum, arm, corpus)
-            if ctx["n"] != end["n"]:
-                raise ValueError(f"row mismatch for {stratum}/{corpus} arm {arm}")
+            restrict = members.get((stratum, corpus))
+            rows = [r for r in hits[("p7_A", stratum)] if r.split(":", 1)[0] == corpus and (restrict is None or r in restrict) and r in hits[("p7_D", stratum)]]
+            if not rows:
+                raise ValueError(f"no rows for {stratum}/{corpus} arm {arm}")
+            acc_ctx = float(np.mean([hits[("p7_A", stratum)][r] for r in rows]))
+            acc_end = float(np.mean([hits[("p7_D", stratum)][r] for r in rows]))
             points.append(
                 {
                     "stratum": stratum,
                     "corpus": corpus,
                     "name": name,
-                    "n_rows": ctx["n"],
+                    "n_rows": len(rows),
                     "necessity": rates[(stratum, corpus)],
-                    "context_lift": ctx["lift"],
-                    "end_of_thought_lift": end["lift"],
-                    "retrieval_gain": end["lift"] - ctx["lift"],
-                    "sources": [ctx["source"], end["source"]],
+                    "context_lift": acc_ctx,
+                    "end_of_thought_lift": acc_end,
+                    "retrieval_gain": acc_end - acc_ctx,
+                    "metric": "acc@1 of the own answer, whitened cosine + CSLS, held-out-fold pool",
+                    "sources": [str((RECIPE_DIR / f"hits__arm{arm}__{c}__{stratum}__main.npz").relative_to(ROOT)) for c in ("p7_A", "p7_D")],
                 }
             )
         xs = [p["necessity"]["rate"] for p in points]
@@ -227,18 +266,20 @@ def load_question_panel() -> dict[str, Any]:
     panel: dict[str, Any] = {"source": str(path.relative_to(ROOT)), "source_sha256": _sha256(path), "arms": {}}
     for arm, spec in MODELS.items():
         block = summary["arms"][spec["disc"]]
+        recipe = recipe_auroc(arm, spec["labels"])
         scores = []
         for key, label in SCORE_ORDER:
             metric = block["metrics"][key]
-            scores.append(
-                {
-                    "key": key,
-                    "label": label,
-                    "auroc": float(metric["roc_auc"]),
-                    "auroc_ci": [float(v) for v in metric["roc_auc_ci"]],
-                    "uses_boundary": bool(metric["uses_boundary"]),
-                }
-            )
+            entry = {
+                "key": key,
+                "label": label,
+                "auroc": float(metric["roc_auc"]),
+                "auroc_ci": [float(v) for v in metric["roc_auc_ci"]],
+                "uses_boundary": bool(metric["uses_boundary"]),
+            }
+            if key in recipe:
+                entry.update({"auroc": recipe[key]["auroc"], "auroc_ci": recipe[key]["auroc_ci"], "recomputed": "paper recipe hits, stratum-fit maps restricted to MATH"})
+            scores.append(entry)
         panel["arms"][str(arm)] = {
             "model": spec["label"],
             "n_analysis": int(block["n_analysis"]),
@@ -254,27 +295,34 @@ def _kicker(ax: plt.Axes, title: str, kicker: str) -> None:
     ax.text(0.0, 1.235, kicker.upper(), transform=ax.transAxes, fontsize=12, fontweight=700, color=MUTED, va="bottom", ha="left")
 
 
-def _nudged_label_positions(ys: list[float], min_gap: float) -> list[float]:
-    """Push label y positions apart (in data units) so adjacent labels do not overlap."""
+def _nudged_label_positions(ys: list[float], min_gap: float, y_max: float | None = None) -> list[float]:
+    """Push label y positions apart (in data units) so adjacent labels do not overlap, keeping them below y_max."""
 
     order = sorted(range(len(ys)), key=lambda i: ys[i])
     placed: list[float] = []
-    out = [0.0] * len(ys)
     for i in order:
         y = ys[i]
         if placed and y - placed[-1] < min_gap:
             y = placed[-1] + min_gap
         placed.append(y)
+    if y_max is not None:
+        ceiling = y_max - 0.6 * min_gap
+        for j in range(len(placed) - 1, -1, -1):
+            if placed[j] > ceiling:
+                placed[j] = ceiling
+            ceiling = placed[j] - min_gap
+    out = [0.0] * len(ys)
+    for i, y in zip(order, placed):
         out[i] = y
     return out
 
 
 def _corpus_axes(ax: plt.Axes, block: dict[str, Any], marker: str, x_max: float, *, show_ylabel: bool) -> None:
-    style_score_axis(ax, y_min=0.0, y_max=0.7, y_step=0.1)
+    style_score_axis(ax, y_min=0.0, y_max=0.3, y_step=0.1)
     points = block["points"]
     xs = [pt["necessity"]["rate"] for pt in points]
     ys = [pt["retrieval_gain"] for pt in points]
-    label_ys = _nudged_label_positions(ys, min_gap=0.042)
+    label_ys = _nudged_label_positions(ys, min_gap=0.019, y_max=0.3)
     for pt, x, y, ly in zip(points, xs, ys, label_ys):
         color = STRATUM_COLOR[pt["stratum"]]
         ax.plot(x, y, marker=marker, color=color, markersize=10 if marker == "o" else 8.5, linestyle="none", zorder=4)
@@ -294,7 +342,7 @@ def _corpus_axes(ax: plt.Axes, block: dict[str, Any], marker: str, x_max: float,
     ax.set_xlim(-0.01 * x_max / 0.15, x_max)
     ax.set_xlabel("Necessity rate", labelpad=10)
     if show_ylabel:
-        ax.set_ylabel("Retrieval gain from end of thought  ↑", labelpad=12)
+        ax.set_ylabel("Gain in own-answer acc@1\nfrom end of thought  ↑", labelpad=10)
 
 
 def _question_axes(ax: plt.Axes, panel: dict[str, Any]) -> None:
@@ -331,9 +379,9 @@ def make_figure(corpus_panel: dict[str, Any], question_panel: dict[str, Any]) ->
     ax_b = fig.add_subplot(grid[0, 1])
     ax_c = fig.add_subplot(grid[0, 2])
     _corpus_axes(ax_a, corpus_panel["1"], MODELS[1]["marker"], 0.16, show_ylabel=True)
-    _kicker(ax_a, "Gain follows corpus type,\nnot necessity rate", "A  ·  OpenThinker3-7B vs parent")
+    _kicker(ax_a, "End-of-thought gains are small\nand do not track the necessity rate", "A  ·  OpenThinker3-7B vs parent")
     _corpus_axes(ax_b, corpus_panel["3"], MODELS[3]["marker"], 0.42, show_ylabel=False)
-    _kicker(ax_b, "Same on the thinking toggle,\nat higher necessity rates", "B  ·  Qwen3-8B, thinking on vs off")
+    _kicker(ax_b, "Larger gains for the thinking toggle,\nfalling as the necessity rate rises", "B  ·  Qwen3-8B, thinking on vs off")
     _question_axes(ax_c, question_panel)
     _kicker(ax_c, "No map score identifies\nwhich MATH questions need reasoning", "C  ·  per-question AUROC, 95% intervals")
 

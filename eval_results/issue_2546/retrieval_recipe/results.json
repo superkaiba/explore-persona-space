@@ -1,0 +1,948 @@
+{
+  "recipe": {
+    "whitening": "train-fold true target states, shrinkage 0.1, Cholesky",
+    "csls_k": 10,
+    "pool": "held-out fold true target states",
+    "hit": "nearest pool vector is the question's own target",
+    "ci": "95% percentile, 1000 question-level bootstrap draws"
+  },
+  "results": {
+    "arm1/p7_A/does": {
+      "n": 13116,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9268831960963708,
+          "acc1_whitened_csls_ci": [
+            0.9221561451662093,
+            0.9316102470265325
+          ],
+          "acc1_raw_cosine": 0.43328758767917047,
+          "chance": 0.00038121379355234654
+        }
+      }
+    },
+    "arm1/p7_A/doesnt": {
+      "n": 10967,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9705480076593417,
+          "acc1_whitened_csls_ci": [
+            0.967538980578098,
+            0.9738351417890034
+          ],
+          "acc1_raw_cosine": 0.5851189933436673,
+          "chance": 0.0004559132168692878
+        }
+      }
+    },
+    "arm1/p7_B/does": {
+      "n": 13116,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "post/cot_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9455626715462031,
+          "acc1_whitened_csls_ci": [
+            0.9413655077767612,
+            0.9495272949069838
+          ],
+          "acc1_raw_cosine": 0.4499847514486124,
+          "chance": 0.00038121379355234654
+        }
+      }
+    },
+    "arm1/p7_B/doesnt": {
+      "n": 10967,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "post/cot_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9810340111242819,
+          "acc1_whitened_csls_ci": [
+            0.9784786176711954,
+            0.9835894045773684
+          ],
+          "acc1_raw_cosine": 0.6173976474879183,
+          "chance": 0.0004559132168692878
+        }
+      }
+    },
+    "arm1/p7_C/does": {
+      "n": 13116,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "post/out_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9478499542543458,
+          "acc1_whitened_csls_ci": [
+            0.9441140591643794,
+            0.9515115126562976
+          ],
+          "acc1_raw_cosine": 0.47544983226593474,
+          "chance": 0.00038121379355234654
+        }
+      }
+    },
+    "arm1/p7_C/doesnt": {
+      "n": 10967,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "post/out_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9819458375125376,
+          "acc1_whitened_csls_ci": [
+            0.9792103583477706,
+            0.9844989513996535
+          ],
+          "acc1_raw_cosine": 0.6234157016504057,
+          "chance": 0.0004559132168692878
+        }
+      }
+    },
+    "arm1/p7_D/does": {
+      "n": 13116,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9915370539798719,
+          "acc1_whitened_csls_ci": [
+            0.9898597133272339,
+            0.9929875724306191
+          ],
+          "acc1_raw_cosine": 0.9188777066178713,
+          "chance": 0.00038121379355234654
+        }
+      }
+    },
+    "arm1/p7_D/doesnt": {
+      "n": 10967,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9948025895869427,
+          "acc1_whitened_csls_ci": [
+            0.9934348500045591,
+            0.995987963891675
+          ],
+          "acc1_raw_cosine": 0.9040758639555029,
+          "chance": 0.0004559132168692878
+        }
+      }
+    },
+    "arm1/p7_traj/does": {
+      "n": 13116,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "t10": {
+          "acc1_whitened_csls": 0.3780878316559927,
+          "acc1_whitened_csls_ci": [
+            0.37076852698993595,
+            0.3870120463555962
+          ],
+          "acc1_raw_cosine": 0.09659957304056115,
+          "chance": 0.00038121379355234654
+        },
+        "t20": {
+          "acc1_whitened_csls": 0.34187252211039953,
+          "acc1_whitened_csls_ci": [
+            0.3337850716681915,
+            0.3502592253735895
+          ],
+          "acc1_raw_cosine": 0.09339737724916133,
+          "chance": 0.00038121379355234654
+        },
+        "t30": {
+          "acc1_whitened_csls": 0.32159194876486735,
+          "acc1_whitened_csls_ci": [
+            0.31351021652942973,
+            0.3292962793534614
+          ],
+          "acc1_raw_cosine": 0.08981396767307105,
+          "chance": 0.00038121379355234654
+        },
+        "t40": {
+          "acc1_whitened_csls": 0.30504727050930164,
+          "acc1_whitened_csls_ci": [
+            0.297804208600183,
+            0.3126753583409576
+          ],
+          "acc1_raw_cosine": 0.0777676120768527,
+          "chance": 0.00038121379355234654
+        },
+        "t50": {
+          "acc1_whitened_csls": 0.28865507776761207,
+          "acc1_whitened_csls_ci": [
+            0.28064387008234215,
+            0.29643565111314424
+          ],
+          "acc1_raw_cosine": 0.07570905763952425,
+          "chance": 0.00038121379355234654
+        },
+        "t60": {
+          "acc1_whitened_csls": 0.2808020738029887,
+          "acc1_whitened_csls_ci": [
+            0.27317589204025616,
+            0.28850449832265934
+          ],
+          "acc1_raw_cosine": 0.0669411405916438,
+          "chance": 0.00038121379355234654
+        },
+        "t70": {
+          "acc1_whitened_csls": 0.27622750838670324,
+          "acc1_whitened_csls_ci": [
+            0.26844884111009454,
+            0.284844845989631
+          ],
+          "acc1_raw_cosine": 0.06976212259835315,
+          "chance": 0.00038121379355234654
+        },
+        "t80": {
+          "acc1_whitened_csls": 0.2506861848124428,
+          "acc1_whitened_csls_ci": [
+            0.24382433668801465,
+            0.2581598810612992
+          ],
+          "acc1_raw_cosine": 0.06640744129307716,
+          "chance": 0.00038121379355234654
+        },
+        "t90": {
+          "acc1_whitened_csls": 0.2563281488258615,
+          "acc1_whitened_csls_ci": [
+            0.24908508691674291,
+            0.26402866727660873
+          ],
+          "acc1_raw_cosine": 0.06297651723086307,
+          "chance": 0.00038121379355234654
+        }
+      },
+      "position_key_map": "pred_l{3*ti+1} -> t{10*(ti+1)} (position slot at the headline layer)"
+    },
+    "arm1/p7_traj/doesnt": {
+      "n": 10967,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "t10": {
+          "acc1_whitened_csls": 0.5310476885201058,
+          "acc1_whitened_csls_ci": [
+            0.5220206072763746,
+            0.5397100392085347
+          ],
+          "acc1_raw_cosine": 0.3312665268532871,
+          "chance": 0.0004559132168692878
+        },
+        "t20": {
+          "acc1_whitened_csls": 0.5854837238989696,
+          "acc1_whitened_csls_ci": [
+            0.5766367283669189,
+            0.5947866326251482
+          ],
+          "acc1_raw_cosine": 0.3764019330719431,
+          "chance": 0.0004559132168692878
+        },
+        "t30": {
+          "acc1_whitened_csls": 0.5929607002826662,
+          "acc1_whitened_csls_ci": [
+            0.5839290599069937,
+            0.602628339564147
+          ],
+          "acc1_raw_cosine": 0.3885292240357436,
+          "chance": 0.0004559132168692878
+        },
+        "t40": {
+          "acc1_whitened_csls": 0.5954226315309565,
+          "acc1_whitened_csls_ci": [
+            0.5863955502872253,
+            0.6045408954135133
+          ],
+          "acc1_raw_cosine": 0.4050332816631713,
+          "chance": 0.0004559132168692878
+        },
+        "t50": {
+          "acc1_whitened_csls": 0.5905899516732014,
+          "acc1_whitened_csls_ci": [
+            0.581380505151819,
+            0.5989787544451537
+          ],
+          "acc1_raw_cosine": 0.40220661985957873,
+          "chance": 0.0004559132168692878
+        },
+        "t60": {
+          "acc1_whitened_csls": 0.5718063280751345,
+          "acc1_whitened_csls_ci": [
+            0.5625056989149266,
+            0.5812916020789641
+          ],
+          "acc1_raw_cosine": 0.38898513722987144,
+          "chance": 0.0004559132168692878
+        },
+        "t70": {
+          "acc1_whitened_csls": 0.5568523753077415,
+          "acc1_whitened_csls_ci": [
+            0.5476406492203885,
+            0.5666089176620771
+          ],
+          "acc1_raw_cosine": 0.3870703018145345,
+          "chance": 0.0004559132168692878
+        },
+        "t80": {
+          "acc1_whitened_csls": 0.5302270447706756,
+          "acc1_whitened_csls_ci": [
+            0.5208329534056716,
+            0.5390740403027263
+          ],
+          "acc1_raw_cosine": 0.3831494483450351,
+          "chance": 0.0004559132168692878
+        },
+        "t90": {
+          "acc1_whitened_csls": 0.5285857572718154,
+          "acc1_whitened_csls_ci": [
+            0.5189181179903346,
+            0.5374327528038662
+          ],
+          "acc1_raw_cosine": 0.3790462295978846,
+          "chance": 0.0004559132168692878
+        }
+      },
+      "position_key_map": "pred_l{3*ti+1} -> t{10*(ti+1)} (position slot at the headline layer)"
+    },
+    "arm1/p8_E/does": {
+      "n": 13116,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9366422689844465,
+          "acc1_whitened_csls_ci": [
+            0.9322964318389753,
+            0.9407612839280268
+          ],
+          "acc1_raw_cosine": 0.5993443122903325,
+          "chance": 0.00038121379355234654
+        }
+      }
+    },
+    "arm1/p8_E/doesnt": {
+      "n": 10967,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9565058812802042,
+          "acc1_whitened_csls_ci": [
+            0.9528562961612109,
+            0.9603355521108781
+          ],
+          "acc1_raw_cosine": 0.7064830856204979,
+          "chance": 0.0004559132168692878
+        }
+      }
+    },
+    "arm1/p8_F/does": {
+      "n": 13116,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9268831960963708,
+          "acc1_whitened_csls_ci": [
+            0.9223848734370235,
+            0.931152790484904
+          ],
+          "acc1_raw_cosine": 0.43328758767917047,
+          "chance": 0.00038121379355234654
+        }
+      }
+    },
+    "arm1/p8_F/doesnt": {
+      "n": 10967,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9705480076593417,
+          "acc1_whitened_csls_ci": [
+            0.9674477979392724,
+            0.9734681316677305
+          ],
+          "acc1_raw_cosine": 0.5851189933436673,
+          "chance": 0.0004559132168692878
+        }
+      }
+    },
+    "arm1/p8_G/does": {
+      "n": 13116,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "short/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9659194876486734,
+          "acc1_whitened_csls_ci": [
+            0.9627172918572735,
+            0.9690473467520586
+          ],
+          "acc1_raw_cosine": 0.7727203415675511,
+          "chance": 0.00038121379355234654
+        }
+      }
+    },
+    "arm1/p8_G/doesnt": {
+      "n": 10967,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "short/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9886021701468041,
+          "acc1_whitened_csls_ci": [
+            0.9865961520926415,
+            0.9906993708397921
+          ],
+          "acc1_raw_cosine": 0.8331357709492113,
+          "chance": 0.0004559132168692878
+        }
+      }
+    },
+    "arm1/p8_H/does": {
+      "n": 13116,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "post/cot_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9438853308935651,
+          "acc1_whitened_csls_ci": [
+            0.9397663159499847,
+            0.9477012808783166
+          ],
+          "acc1_raw_cosine": 0.5891277828606283,
+          "chance": 0.00038121379355234654
+        }
+      }
+    },
+    "arm1/p8_H/doesnt": {
+      "n": 10967,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "post/cot_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9672654326616212,
+          "acc1_whitened_csls_ci": [
+            0.9635269444697729,
+            0.9706391902981673
+          ],
+          "acc1_raw_cosine": 0.7181544633901705,
+          "chance": 0.0004559132168692878
+        }
+      }
+    },
+    "arm3/p7_A/does": {
+      "n": 14221,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.8789114689543632,
+          "acc1_whitened_csls_ci": [
+            0.873637578229379,
+            0.8842556782223472
+          ],
+          "acc1_raw_cosine": 0.46649321426060053,
+          "chance": 0.0003515927219515571
+        }
+      }
+    },
+    "arm3/p7_A/doesnt": {
+      "n": 12855,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.853364449630494,
+          "acc1_whitened_csls_ci": [
+            0.8469856087125632,
+            0.8588117464021782
+          ],
+          "acc1_raw_cosine": 0.4995721509140412,
+          "chance": 0.00038895371450797355
+        }
+      }
+    },
+    "arm3/p7_Aoff/does": {
+      "n": 14221,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "short/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9239153364742283,
+          "acc1_whitened_csls_ci": [
+            0.9193446311792419,
+            0.9280658884747909
+          ],
+          "acc1_raw_cosine": 0.5178960691934463,
+          "chance": 0.0003515927219515571
+        }
+      }
+    },
+    "arm3/p7_Aoff/doesnt": {
+      "n": 12855,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "short/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.8774017891870868,
+          "acc1_whitened_csls_ci": [
+            0.8719544924154026,
+            0.8832360949047063
+          ],
+          "acc1_raw_cosine": 0.4871256320497861,
+          "chance": 0.00038895371450797355
+        }
+      }
+    },
+    "arm3/p7_B/does": {
+      "n": 14221,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "post/cot_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9039448702622882,
+          "acc1_whitened_csls_ci": [
+            0.899022572252303,
+            0.9085173335208495
+          ],
+          "acc1_raw_cosine": 0.42887279375571336,
+          "chance": 0.0003515927219515571
+        }
+      }
+    },
+    "arm3/p7_B/doesnt": {
+      "n": 12855,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "post/cot_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.8840140023337223,
+          "acc1_whitened_csls_ci": [
+            0.8786464410735122,
+            0.889539089848308
+          ],
+          "acc1_raw_cosine": 0.544535200311163,
+          "chance": 0.00038895371450797355
+        }
+      }
+    },
+    "arm3/p7_C/does": {
+      "n": 14221,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "post/out_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9091484424442725,
+          "acc1_whitened_csls_ci": [
+            0.9047148583081359,
+            0.914000421911258
+          ],
+          "acc1_raw_cosine": 0.4687434076365938,
+          "chance": 0.0003515927219515571
+        }
+      }
+    },
+    "arm3/p7_C/doesnt": {
+      "n": 12855,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "post/out_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.8852586542201478,
+          "acc1_whitened_csls_ci": [
+            0.8798910929599377,
+            0.8906262154803578
+          ],
+          "acc1_raw_cosine": 0.5593154414624659,
+          "chance": 0.00038895371450797355
+        }
+      }
+    },
+    "arm3/p7_D/does": {
+      "n": 14221,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9834751423950496,
+          "acc1_whitened_csls_ci": [
+            0.9814341466844807,
+            0.9855864566486183
+          ],
+          "acc1_raw_cosine": 0.7791294564376626,
+          "chance": 0.0003515927219515571
+        }
+      }
+    },
+    "arm3/p7_D/doesnt": {
+      "n": 12855,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "main": {
+          "acc1_whitened_csls": 0.9824192921042396,
+          "acc1_whitened_csls_ci": [
+            0.9800077790742902,
+            0.9845196421625827
+          ],
+          "acc1_raw_cosine": 0.7974329054842474,
+          "chance": 0.00038895371450797355
+        }
+      }
+    },
+    "arm3/p7_traj/does": {
+      "n": 14221,
+      "corpora": [
+        "contexthub",
+        "gsm8k_train",
+        "math"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "t10": {
+          "acc1_whitened_csls": 0.3914633288798256,
+          "acc1_whitened_csls_ci": [
+            0.38351733352084943,
+            0.39926868715280217
+          ],
+          "acc1_raw_cosine": 0.17678081710146965,
+          "chance": 0.0003515927219515571
+        },
+        "t20": {
+          "acc1_whitened_csls": 0.36150762956191546,
+          "acc1_whitened_csls_ci": [
+            0.3535616342029393,
+            0.3694536249208916
+          ],
+          "acc1_raw_cosine": 0.16292806413051122,
+          "chance": 0.0003515927219515571
+        },
+        "t30": {
+          "acc1_whitened_csls": 0.327332817664018,
+          "acc1_whitened_csls_ci": [
+            0.31987729414246535,
+            0.33563040573799313
+          ],
+          "acc1_raw_cosine": 0.15575557274453272,
+          "chance": 0.0003515927219515571
+        },
+        "t40": {
+          "acc1_whitened_csls": 0.3189649110470431,
+          "acc1_whitened_csls_ci": [
+            0.3113687504394909,
+            0.3268405878630195
+          ],
+          "acc1_raw_cosine": 0.14675479924055973,
+          "chance": 0.0003515927219515571
+        },
+        "t50": {
+          "acc1_whitened_csls": 0.3110892342310667,
+          "acc1_whitened_csls_ci": [
+            0.3034948315870895,
+            0.3191055481330427
+          ],
+          "acc1_raw_cosine": 0.14668448069755996,
+          "chance": 0.0003515927219515571
+        },
+        "t60": {
+          "acc1_whitened_csls": 0.3098938190000703,
+          "acc1_whitened_csls_ci": [
+            0.3024382954785177,
+            0.3177009352366219
+          ],
+          "acc1_raw_cosine": 0.14035581182757892,
+          "chance": 0.0003515927219515571
+        },
+        "t70": {
+          "acc1_whitened_csls": 0.2960410660291119,
+          "acc1_whitened_csls_ci": [
+            0.28844666338513464,
+            0.3042683355600872
+          ],
+          "acc1_raw_cosine": 0.13381618732859854,
+          "chance": 0.0003515927219515571
+        },
+        "t80": {
+          "acc1_whitened_csls": 0.29041558258912875,
+          "acc1_whitened_csls_ci": [
+            0.28331340974615005,
+            0.29844068630897963
+          ],
+          "acc1_raw_cosine": 0.13051121580760847,
+          "chance": 0.0003515927219515571
+        },
+        "t90": {
+          "acc1_whitened_csls": 0.2861964700091414,
+          "acc1_whitened_csls_ci": [
+            0.2788745517192884,
+            0.2940739047886928
+          ],
+          "acc1_raw_cosine": 0.13135503832360593,
+          "chance": 0.0003515927219515571
+        }
+      },
+      "position_key_map": "pred_l{3*ti+1} -> t{10*(ti+1)} (position slot at the headline layer)"
+    },
+    "arm3/p7_traj/doesnt": {
+      "n": 12855,
+      "corpora": [
+        "arc_challenge",
+        "contexthub",
+        "csqa",
+        "gsm8k_train",
+        "mmlu",
+        "piqa"
+      ],
+      "target": "post/ans_mean",
+      "positions": {
+        "t10": {
+          "acc1_whitened_csls": 0.603267211201867,
+          "acc1_whitened_csls_ci": [
+            0.5950194476857255,
+            0.6121353558926488
+          ],
+          "acc1_raw_cosine": 0.35947102294826916,
+          "chance": 0.00038895371450797355
+        },
+        "t20": {
+          "acc1_whitened_csls": 0.6787242318164138,
+          "acc1_whitened_csls_ci": [
+            0.6707117852975496,
+            0.6867366783352781
+          ],
+          "acc1_raw_cosine": 0.41835861532477636,
+          "chance": 0.00038895371450797355
+        },
+        "t30": {
+          "acc1_whitened_csls": 0.6697782963827305,
+          "acc1_whitened_csls_ci": [
+            0.661221314663555,
+            0.6781816413846752
+          ],
+          "acc1_raw_cosine": 0.4224815246985609,
+          "chance": 0.00038895371450797355
+        },
+        "t40": {
+          "acc1_whitened_csls": 0.6680669000388954,
+          "acc1_whitened_csls_ci": [
+            0.6598988720342279,
+            0.6762368728121353
+          ],
+          "acc1_raw_cosine": 0.4248930377285103,
+          "chance": 0.00038895371450797355
+        },
+        "t50": {
+          "acc1_whitened_csls": 0.6593543368339168,
+          "acc1_whitened_csls_ci": [
+            0.6507973551147413,
+            0.6672889926098794
+          ],
+          "acc1_raw_cosine": 0.41711396343835083,
+          "chance": 0.00038895371450797355
+        },
+        "t60": {
+          "acc1_whitened_csls": 0.6450408401400234,
+          "acc1_whitened_csls_ci": [
+            0.6369506028782574,
+            0.6529852197588487
+          ],
+          "acc1_raw_cosine": 0.40357837417347336,
+          "chance": 0.00038895371450797355
+        },
+        "t70": {
+          "acc1_whitened_csls": 0.6336056009334889,
+          "acc1_whitened_csls_ci": [
+            0.6250447296771685,
+            0.6420070011668612
+          ],
+          "acc1_raw_cosine": 0.38934266822248154,
+          "chance": 0.00038895371450797355
+        },
+        "t80": {
+          "acc1_whitened_csls": 0.616880591209646,
+          "acc1_whitened_csls_ci": [
+            0.6087864644107351,
+            0.6247394010112797
+          ],
+          "acc1_raw_cosine": 0.38055231427460134,
+          "chance": 0.00038895371450797355
+        },
+        "t90": {
+          "acc1_whitened_csls": 0.611901983663944,
+          "acc1_whitened_csls_ci": [
+            0.6038117464021782,
+            0.6206962271489692
+          ],
+          "acc1_raw_cosine": 0.3852975495915986,
+          "chance": 0.00038895371450797355
+        }
+      },
+      "position_key_map": "pred_l{3*ti+1} -> t{10*(ti+1)} (position slot at the headline layer)"
+    }
+  }
+}
