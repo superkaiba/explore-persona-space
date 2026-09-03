@@ -1,11 +1,10 @@
 # Figure, caption, and in-text reference standard
 
-**Status: ADOPTED 2026-09-03 (decisions D1 to D3 and the palette question answered by Thomas, see §0); migration in progress, CoT figures deferred on Thomas's instruction.** Audit of the Overleaf paper at commit `c314eda`
-(17 figure floats, 5 tables). Three decisions need Thomas (§0). Once he decides,
-the normative parts (§2 to §5) move into `plotting_style.md` (the source of truth
-named in `CLAUDE.md`) and the Overleaf clone `CLAUDE.md` § Figures; §1 stays here
-as the dated audit record. Nothing in the paper or the figure scripts has been
-changed yet.
+**Status: ADOPTED 2026-09-03 (decisions D1 to D3 and the palette question answered by Thomas, see §0). Migration landed the same day for every non-CoT figure: EPS main `b51c7de4576`, Overleaf `09f22bd`. The CoT figures (`c1_cot_maps`, `c1_cot_strata`, `c1_cot_ladder`, `c1_cot_necessity`, `c1_cot_necessity_r2`), their captions, and the §4.5 text keep the old form on Thomas's instruction (they are being redone).** Audit of the Overleaf paper at commit `c314eda`
+(17 figure floats, 5 tables). §2 to §5 are normative for every new figure;
+`plotting_style.md` § Visual specification points here and the Overleaf clone
+`CLAUDE.md` § Figures carries the commit discipline. §1 stays as the dated audit
+record. Known residuals after the migration are listed at the end of §6.
 
 ## 0. Decisions needed
 
@@ -153,16 +152,15 @@ verify on first compile) and sets `\sffamily`.
 | `control` | `#687078` gray | ✕ | shuffled, identity+bias, random-direction, any null |
 | `base_model` | `#C98A1B` amber | ■ | pretrained / base checkpoint |
 | `post_trained` | `#176B87` teal | ● | SFT / DPO / RLVR / instruct (same hue as `linear`: the map on the model we study) |
-| `other_source` | `#7B3294` purple | ▲ | answers from another model or persona (Fig 9) |
+| `other_source` | `#C98A1B` amber | ▲ | answers from another model or persona (Fig 9; open marker vs the base model's filled square) |
 | `needs_reasoning` | `#7B3294` purple | ■ | needs-reasoning corpora (Fig 10 to 12) |
 | `no_reasoning` | `#5AAE61` green | ● | no-reasoning corpora |
 
-Purple appears twice in that table, once per section. Decide one or the other at
-migration: recommended `other_source` moves to amber `#C98A1B` (Fig 9 currently
-uses amber for the eccentric-style answers; both Claude sources become amber
-shades, filled vs open) so purple means reasoning demand everywhere. Encode the
+Decided 2026-09-03: `other_source` is amber (Fig 9 re-rendered), so purple means
+reasoning demand everywhere; the CoT redo confirms it on Figs 10 to 12. Encode the
 metric by fill, never by hue: R² = solid line / filled marker / solid bar;
-acc@1 = dashed line / open marker / hatched bar. Color plus shape on every series.
+top-1 retrieval = dashed line / open marker / hatched bar. Color plus shape on
+every series.
 
 ### 2.5 Panel furniture
 
@@ -419,6 +417,24 @@ rewrite lands as a targeted edit against a fresh pull, one float per commit.
 
 Visual check after steps 2 to 5: contact sheet of all 17 PDFs at manuscript
 scale plus the grayscale audits, before any copy into the Overleaf clone.
+
+### Migration status (2026-09-03, EPS main `b51c7de4576`, Overleaf `09f22bd`)
+
+- Done: steps 1, 3, 4, 6, 7, 8 and 10 (the pointer form: `plotting_style.md`
+  cites §2 rather than duplicating it), and step 2 for the eleven non-CoT
+  figures (Figs 2 to 9, 13, 14, 17 render at 942.86 / 707.14 pt, Inter only,
+  descriptive panel titles, "top-1 retrieval" wording). Fig 4 has its own
+  producer, `scripts/issue1901_qualitative_retrieval_failures.py`.
+- To do: step 2 for the five CoT figures and step 2b (deferred by Thomas, the
+  CoT figures are being redone); step 9 (lint F1 to F10 is specified in §5 but
+  not implemented).
+- Out of scope here: step 5, Fig 1 (`fig1_schematic`) is owned by the Figure 1
+  session; `fig:schematic` is not cited from a claim header.
+- Residuals to keep in view: tick labels on Figs 8, 14 and 17 realize below the
+  7.1 pt floor (two-line category labels at 0.75 width); the CoT captions still
+  carry whiskers, `acc@1`, and claim-style titles; `recut_common.ROOT` resolves
+  to the main checkout, so the Fig 13 and Fig 17 scripts read their inputs from
+  the main tree rather than the worktree they run in.
 
 ## Sources consulted
 
