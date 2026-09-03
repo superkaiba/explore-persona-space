@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2660,
+  "highest_id": 2661,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12815,6 +12815,13 @@
       "path": "tasks/proposed/2660",
       "status": "proposed",
       "title": "earlyoom -s 10 swap trigger permanently satisfied: SIGTERMs fleet python subprocesses despite 55 GB free RAM"
+    },
+    "2661": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2661",
+      "status": "proposed",
+      "title": "hub._upload returns empty instead of raising on missing token/path, defeating raise_on_error=True"
     },
     "267": {
       "has_clean_result": true,
