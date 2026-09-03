@@ -241,6 +241,13 @@ class PanelModel:
     # the dense-bf16 formula in issue2588_run_cell._est_model_gb (the MoE/FP8
     # checkpoints are the rows where that formula is wrong by >10x).
     est_snapshot_gb: float | None = None
+    # Hyper-connection residual streams (manifold hyper-connections): the block
+    # output the capture hooks see is `hc_streams` parallel residual streams
+    # of width h_dim (DeepSeek-V4: (B, T, 4, H); Qwen3.8-Flash-Next: flattened
+    # (B, T, 4*H), stream-major). 1 = ordinary single residual stream. The
+    # fits-side loader collapses streams per EPS_HC_REDUCE (default mean) so
+    # every downstream phase works in h_dim like the rest of the panel.
+    hc_streams: int = 1
 
 
 PANEL: dict[str, PanelModel] = {
@@ -289,6 +296,7 @@ PANEL: dict[str, PanelModel] = {
             True,
             tp_gpus=4,
             est_snapshot_gb=185.5,
+            hc_streams=4,
         ),
         PanelModel(
             "q35_397b",  # cfg @ ea5b4f8109: Qwen3_5MoeForConditionalGeneration, mpe 262144
@@ -311,6 +319,7 @@ PANEL: dict[str, PanelModel] = {
             True,
             tp_gpus=2,
             est_snapshot_gb=166.9,
+            hc_streams=4,
         ),
         PanelModel(
             "glm53",  # cfg @ 187fb9fff6: GlmMoeDsaForCausalLM, mpe 1048576; thinking-only
@@ -333,6 +342,7 @@ PANEL: dict[str, PanelModel] = {
             True,
             tp_gpus=8,
             est_snapshot_gb=892.7,
+            hc_streams=4,
         ),
         # ------------------------------------------------------------------
         # Same-width column extension (Thomas, 2026-09-02): four more

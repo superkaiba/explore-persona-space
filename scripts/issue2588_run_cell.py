@@ -142,7 +142,52 @@ def _paths(args, cell: PC.Cell) -> dict[str, Path]:
     }
     for v in d.values():
         v.mkdir(parents=True, exist_ok=True)
+    _HC_CTX.update(streams=int(cell.model.hc_streams), h_dim=int(cell.model.h_dim))
     return d
+
+
+# Hyper-connection context for the shard loader (set by _paths from the cell's
+# registry row). streams=1 -> loader is a no-op, byte-identical to before.
+_HC_CTX: dict[str, int] = {"streams": 1, "h_dim": 0}
+
+
+def _hc_reduce_mode() -> str:
+    """How hyper-connection residual streams collapse to one h_dim vector:
+    mean (default) | sum | concat (keep all streams, width streams*h_dim) |
+    stream<k> (one stream). Recorded in the fits log; Thomas's call which one
+    the paper uses (see task #2659)."""
+    return os.environ.get("EPS_HC_REDUCE", "mean").strip().lower()
+
+
+def _collapse_hc_streams(v: np.ndarray, key: str, h_dim: int, streams: int, mode: str) -> np.ndarray:
+    """Collapse a captured (n, streams, h) or stream-major-flattened
+    (n, streams*h) array to the paper's h_dim residual vector (or keep every
+    stream with mode=concat). Fail-closed on any other shape: the fits must
+    never silently run on a 4h-wide vector (the q38fn smoke did, since Qwen3.8
+    flattens its 4 streams into a 10240-wide block output)."""
+    if streams <= 1:
+        return v
+    n = v.shape[0]
+    if v.ndim == 2 and v.shape[1] == streams * h_dim:
+        v = v.reshape(n, streams, h_dim)
+    elif v.ndim == 3 and v.shape[1:] == (streams, h_dim):
+        pass
+    elif v.ndim == 2 and v.shape[1] == h_dim:
+        return v  # already collapsed (e.g. an odd-layer pass written post-collapse)
+    else:
+        raise ValueError(
+            f"{key}: shape {v.shape} is neither (n, {streams}, {h_dim}) nor (n, {streams * h_dim})"
+        )
+    if mode == "mean":
+        return v.mean(axis=1)
+    if mode == "sum":
+        return v.sum(axis=1)
+    if mode == "concat":
+        return v.reshape(n, streams * h_dim)
+    if mode.startswith("stream"):
+        k = int(mode[len("stream"):])
+        return v[:, k, :]
+    raise ValueError(f"EPS_HC_REDUCE={mode!r} not in mean|sum|concat|stream<k>")
 
 
 def _upload_dir(local_dir: Path, path_in_repo: str, what: str) -> None:
@@ -1456,6 +1501,18 @@ def _load_stage_layer(
                 if k != "row_ids":
                     cols.setdefault(k, []).append(z[k])
     out = {k: np.concatenate(v) for k, v in cols.items()}
+    if _HC_CTX["streams"] > 1:
+        mode = _hc_reduce_mode()
+        out = {
+            k: _collapse_hc_streams(v, k, _HC_CTX["h_dim"], _HC_CTX["streams"], mode)
+            for k, v in out.items()
+        }
+        if not getattr(_load_stage_layer, "_hc_logged", False):
+            logger.info(
+                "[i2588] hyper-connection capture: %d streams x h=%d collapsed with EPS_HC_REDUCE=%s",
+                _HC_CTX["streams"], _HC_CTX["h_dim"], mode,
+            )
+            _load_stage_layer._hc_logged = True  # type: ignore[attr-defined]
     out["row_ids"] = np.concatenate(ids)
     order = np.argsort(out["row_ids"])  # deterministic row order across shards
     return {k: v[order] for k, v in out.items()}

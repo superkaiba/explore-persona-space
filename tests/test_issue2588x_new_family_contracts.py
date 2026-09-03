@@ -380,3 +380,35 @@ def test_acquire_capture_slot_uses_all_slots(tmp_path, monkeypatch):
     assert names == [".capture.sem.0", ".capture.sem.1", ".capture.sem.2"]
     for h in held:
         h.close()
+
+
+def test_collapse_hc_streams_modes_and_fail_closed(monkeypatch):
+    import numpy as np
+    import pytest
+    import issue2588_run_cell as RC
+
+    rng = np.random.default_rng(0)
+    v3 = rng.standard_normal((5, 4, 8)).astype(np.float32)   # DeepSeek-V4 layout
+    v2 = v3.reshape(5, 32)                                     # Qwen3.8 flattened layout
+    for v in (v3, v2):
+        assert np.allclose(RC._collapse_hc_streams(v, "x", 8, 4, "mean"), v3.mean(1))
+        assert np.allclose(RC._collapse_hc_streams(v, "x", 8, 4, "sum"), v3.sum(1))
+        assert RC._collapse_hc_streams(v, "x", 8, 4, "concat").shape == (5, 32)
+        assert np.allclose(RC._collapse_hc_streams(v, "x", 8, 4, "stream2"), v3[:, 2])
+    plain = rng.standard_normal((5, 8)).astype(np.float32)
+    assert RC._collapse_hc_streams(plain, "x", 8, 4, "mean") is plain      # already h_dim
+    assert RC._collapse_hc_streams(v2, "x", 8, 1, "mean") is v2            # streams=1 no-op
+    with pytest.raises(ValueError, match="neither"):
+        RC._collapse_hc_streams(rng.standard_normal((5, 12)), "x", 8, 4, "mean")
+    with pytest.raises(ValueError, match="EPS_HC_REDUCE"):
+        RC._collapse_hc_streams(v3, "x", 8, 4, "median")
+    monkeypatch.delenv("EPS_HC_REDUCE", raising=False)
+    assert RC._hc_reduce_mode() == "mean"
+
+
+def test_registry_hc_streams_pins():
+    import issue2588_panel_common as PC
+
+    hc = {k: m.hc_streams for k, m in PC.PANEL.items()}
+    assert {k for k, v in hc.items() if v > 1} == {"q38fn", "dsv4_flash", "dsv4_pro"}
+    assert all(hc[k] == 4 for k in ("q38fn", "dsv4_flash", "dsv4_pro"))
