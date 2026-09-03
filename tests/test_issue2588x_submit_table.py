@@ -58,7 +58,7 @@ def test_submit_capture_batch_sizes():
     B=8 (job 62452). Every multi-GPU key pins a BS and none exceeds 8."""
     text = SUBMIT.read_text()
     bs = _submit_bs_table(text)
-    tp = _submit_tp_table(text)
+    tp = _case_table(text)
     for key, n in tp.items():
         if n >= 2:
             assert key in bs, f"{key}: multi-GPU key without an explicit BS"
