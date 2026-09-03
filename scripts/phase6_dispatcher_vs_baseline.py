@@ -122,8 +122,8 @@ async def main_async(args: argparse.Namespace) -> int:
         print(
             f"ERROR: only {len(org_keys)} org key(s) detected ({list(org_keys)}). "
             "Phase 6 requires >=2 org keys to exercise the multi-org dispatcher. "
-            "Multi-org is opt-in since #2617: set EPS_API_MULTI_ORG=1 with "
-            "ANTHROPIC_BATCH_KEY present in .env.",
+            "Ensure ANTHROPIC_BATCH_KEY is present in .env and "
+            "EPS_API_SINGLE_ORG is not set (#2617).",
             file=sys.stderr,
         )
         return 2

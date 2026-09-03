@@ -849,8 +849,8 @@ async def _judge_items_sync_multiorg(
 ) -> dict[str, dict]:
     """Route the sync judge path through the multi-org api_dispatch (#682 Phase 5).
 
-    Reached only when the org pool holds 2+ ACTIVE keys, which requires the
-    EPS_API_MULTI_ORG=1 opt-in since #2617. Adapts the JudgeItem 4-tuple
+    Reached when the org pool holds 2+ live keys (the default when both env
+    keys are present; EPS_API_SINGLE_ORG=1 disables). Adapts the JudgeItem 4-tuple
     contract onto the api_dispatch.DispatchItem + build_request /
     parse_response shape. Routes fan-out across the active org keys at the
     polite per-key concurrency caps (Sonnet 100, see
@@ -1704,12 +1704,12 @@ async def dispatch_judge_items_async(  # noqa: C901  # Phase 5 added one routing
         )
 
     # Step 3: sync path.
-    # Phase 5 (task #682): when 2+ org keys are ACTIVE (multi-org is opt-in
-    # via EPS_API_MULTI_ORG=1 since #2617; detect_org_keys returns the main
-    # key alone by default) AND no caller-injected sync_client pins us to the
+    # Phase 5 (task #682): when 2+ org keys are LIVE in the env (the default
+    # pool since #2617 is every present key; EPS_API_SINGLE_ORG=1 restricts
+    # it to the main key) AND no caller-injected sync_client pins us to the
     # legacy single-org path, ROUTE through the multi-org dispatcher
-    # (api_dispatch.dispatch_calls). The legacy single-org path is the normal
-    # default now. Opt out of multi-org routing via EPS_JUDGE_DISABLE_MULTIORG=1.
+    # (api_dispatch.dispatch_calls). Opt out of multi-org routing at the
+    # judge layer via EPS_JUDGE_DISABLE_MULTIORG=1.
     if decision.path == "sync":
         if sync_client is None and not os.environ.get("EPS_JUDGE_DISABLE_MULTIORG"):
             from explore_persona_space.llm.api_dispatch import detect_org_keys

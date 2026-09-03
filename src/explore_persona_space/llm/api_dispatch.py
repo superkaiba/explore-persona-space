@@ -2,13 +2,15 @@
 
 The reusable dispatcher behind the API-throughput plan
 (``docs/api_throughput_plan.md`` § Phase 4 + § 1b Operating defaults).
-SINGLE MAIN KEY since 2026-08-28: the fellows API credits ended, the
-``ANTHROPIC_API_KEY_LOW_PRIO`` org went dead (HTTP 401; incident #2617), and
-the default org pool is now ``ANTHROPIC_API_KEY`` alone. Multi-org fan-out is
-OPT-IN: setting ``EPS_API_MULTI_ORG=1`` re-adds the ``batch`` org
-(``ANTHROPIC_BATCH_KEY``, a separate org that still answers). The Message
-Batches path is the DEFAULT route (``cost_pref="cost"``): only tiny waves
-(pilots, live probes, under ``crossover_n // 10`` items) stay sync.
+Org pool since incident #2617 (the fellows credits ended 2026-08-28 and the
+``ANTHROPIC_API_KEY_LOW_PRIO`` org went dead with HTTP 401): the DEFAULT pool
+is every LIVE key present in the env — ``ANTHROPIC_API_KEY`` (``high_prio``)
+and ``ANTHROPIC_BATCH_KEY`` (``batch``, a separate org). ``low_prio`` is gone
+entirely; an org whose key auth-fails mid-run (401/403) is dropped
+automatically by the dead-org rule in the sync loop. Setting
+``EPS_API_SINGLE_ORG=1`` restricts the pool to ``ANTHROPIC_API_KEY`` alone.
+The Message Batches path is the DEFAULT route (``cost_pref="cost"``): only
+tiny waves (pilots, live probes, under ``crossover_n // 10`` items) stay sync.
 
 The single public entry point is :func:`dispatch_calls`. It takes generic
 items (each carrying a stable id + payload), a ``build_request`` callable that
@@ -18,11 +20,11 @@ turns the model's text into a per-item result. It returns
 
 Design (all FIRM requirements from § 1b + Phase 4):
 
-1. **Org key pool.** :func:`detect_org_keys` returns the ACTIVE pool: by
-   default the main key only (``ANTHROPIC_API_KEY``); with
-   ``EPS_API_MULTI_ORG=1`` it also detects ``ANTHROPIC_BATCH_KEY``. One async
-   + one sync client per present org; an empty pool fails loud at client
-   resolution.
+1. **Org key pool.** :func:`detect_org_keys` returns every key PRESENT in
+   the env (``ANTHROPIC_API_KEY`` / ``ANTHROPIC_BATCH_KEY``); with
+   ``EPS_API_SINGLE_ORG=1`` it restricts to ``ANTHROPIC_API_KEY`` alone. One
+   async + one sync client per present org; an empty pool fails loud at
+   client resolution; a dead (401/403) org is dropped mid-run.
 
 2. **Per-key concurrency caps.** Sonnet ~100, Haiku ~120, Opus ~40 per key
    (good-citizen defaults, NOT hard API limits), configurable via
@@ -114,32 +116,34 @@ logger = logging.getLogger(__name__)
 
 # ── Org key pool ─────────────────────────────────────────────────────────────
 
-# The org pool. Since 2026-08-28 (fellows credits ended) the DEFAULT pool is
-# the single main key. The "batch" org (a SEPARATE org that still answers) is
-# OPT-IN via EPS_API_MULTI_ORG=1. "low_prio" was removed entirely: its org
-# died (HTTP 401) and the 401 rows it produced poisoned 796 judge-cache
-# entries in task #2617's redo.
+# The org pool (both keys are SEPARATE orgs with additive limits). "low_prio"
+# was removed entirely in #2617: its org died (HTTP 401) when the fellows
+# credits ended, and the 401 rows it produced poisoned 796 judge-cache
+# entries. The DEFAULT pool is every live key present in the env; a key that
+# auth-fails mid-run (401/403) is dropped by the dead-org rule in the sync
+# loop, so a dead org never needs a config change to stop hurting.
 ORG_ENV_KEYS: dict[str, str] = {
     "high_prio": "ANTHROPIC_API_KEY",
-    "batch": "ANTHROPIC_BATCH_KEY",  # opt-in only, see MULTI_ORG_ENV_FLAG
+    "batch": "ANTHROPIC_BATCH_KEY",
 }
-# Env flag that re-enables the multi-org pool ("1" enables; anything else off).
-MULTI_ORG_ENV_FLAG = "EPS_API_MULTI_ORG"
-# Labels active WITHOUT the opt-in flag.
-DEFAULT_ORG_LABELS: tuple[str, ...] = ("high_prio",)
+# Opt-out flag ("1" restricts the pool to the main key; anything else = full pool).
+SINGLE_ORG_ENV_FLAG = "EPS_API_SINGLE_ORG"
+# Labels active WITH the opt-out flag set.
+SINGLE_ORG_LABELS: tuple[str, ...] = ("high_prio",)
 
 
 def detect_org_keys(env: dict[str, str] | None = None) -> dict[str, str]:
-    """Return ``{org_label: api_key}`` for the ACTIVE org pool present in the env.
+    """Return ``{org_label: api_key}`` for every org key PRESENT in the env.
 
-    Default pool = the main key only (``high_prio`` / ``ANTHROPIC_API_KEY``).
-    ``EPS_API_MULTI_ORG=1`` re-adds the ``batch`` org (``ANTHROPIC_BATCH_KEY``).
-    Empty / whitespace-only values are treated as absent so a blank ``.env``
-    line does not register a dead org. May return an empty dict; the client
-    resolver (:func:`_resolve_clients`) fails loud on an empty pool.
+    Default pool = every live key (``ANTHROPIC_API_KEY`` as ``high_prio``,
+    ``ANTHROPIC_BATCH_KEY`` as ``batch``). ``EPS_API_SINGLE_ORG=1`` restricts
+    the pool to ``ANTHROPIC_API_KEY`` alone. Empty / whitespace-only values
+    are treated as absent so a blank ``.env`` line does not register a dead
+    org. May return an empty dict; the client resolver
+    (:func:`_resolve_clients`) fails loud on an empty pool.
     """
     env = os.environ if env is None else env
-    labels = list(ORG_ENV_KEYS) if env.get(MULTI_ORG_ENV_FLAG) == "1" else list(DEFAULT_ORG_LABELS)
+    labels = list(SINGLE_ORG_LABELS) if env.get(SINGLE_ORG_ENV_FLAG) == "1" else list(ORG_ENV_KEYS)
     found: dict[str, str] = {}
     for label in labels:
         val = env.get(ORG_ENV_KEYS[label])
@@ -1814,8 +1818,8 @@ def _resolve_clients(
     if not keys:
         raise RuntimeError(
             "No Anthropic org keys found in the environment: the org pool is empty. "
-            "Set ANTHROPIC_API_KEY (the default single-org pool); "
-            f"{MULTI_ORG_ENV_FLAG}=1 additionally enables ANTHROPIC_BATCH_KEY."
+            "Set ANTHROPIC_API_KEY (and optionally ANTHROPIC_BATCH_KEY); "
+            f"{SINGLE_ORG_ENV_FLAG}=1 restricts the pool to ANTHROPIC_API_KEY only."
         )
     built_async, built_sync = _build_clients(keys)
     return async_clients or built_async, sync_clients or built_sync, True
@@ -2247,13 +2251,13 @@ __all__ = [
     "DEFAULT_MAX_429_RETRIES",
     "FANOUT_SLACK",
     "HEADROOM_SNAPSHOT_PATH",
-    "MULTI_ORG_ENV_FLAG",
     "ORG_ENV_KEYS",
     "RESULT_EMPTY_RESPONSE",
     "RESULT_ERROR",
     "RESULT_OK",
     "RESULT_RATE_LIMITED",
     "RESULT_TRANSPORT",
+    "SINGLE_ORG_ENV_FLAG",
     "SYNC_BATCH_CROSSOVER_N",
     "DispatchItem",
     "DispatchResult",
