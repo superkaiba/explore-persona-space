@@ -1,4 +1,4 @@
-% Figure 1: context-to-answer prediction pipeline (rev 12, 2026-09-03).
+% Figure 1: context-to-answer prediction pipeline (rev 13, 2026-09-03).
 % Compile standalone: pdflatex fig1_schematic.tex
 % THEN convert text to outlines before copying to Overleaf (REQUIRED):
 %   gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dNoOutputFonts -dCompatibilityLevel=1.5 \
@@ -23,10 +23,12 @@
 % vector sits on the "\n" token after "assistant", token id 198).
 % Palette = paper palette (c2a_plot_style.py): ink #22272B, muted #687078, linear teal
 % #176B87. Two text sizes: 8 pt (names) and 7 pt.
-% Side coding: context side violet #6F4FA0 (final context token, h_C, predictor input);
-% answer side amber #C98A1B (answer tokens' states, answer vectors); the TARGET, the
-% mean over the K answer vectors, is the darker amber #8C5E10 (rev 12, Thomas:
-% "a different darker related color"). The prediction stays teal, the predictor's output.
+% Side coding (rev 13, Thomas): every context-side state and vector is violet #6F4FA0
+% (all context tokens' states after layer l, h_C, the predictor input). Answer side is an
+% amber ramp that darkens with aggregation: token states light amber #C98A1B, the mean
+% answer vectors h_A(A_k) / h_A(A_1..K) darker amber #A8720F, the target (mean over K)
+% darkest #6E4A0C. Vectors outside the model use stronger cell shades than the states.
+% The prediction stays teal, the predictor's output.
 % Rev 12 layout (Thomas: "raise it even more"): the model box top is level with the
 % predictor box top; the context tap runs in a 0.6 cm strip above layer L; the top-row
 % vector labels sit BELOW their vectors (prediction label to the right) so nothing
@@ -43,8 +45,9 @@
 \definecolor{muted}{HTML}{687078}
 \definecolor{teal}{HTML}{176B87}
 \definecolor{ctx}{HTML}{6F4FA0}   % context side
-\definecolor{ans}{HTML}{C98A1B}   % answer side
-\definecolor{tgt}{HTML}{8C5E10}   % answer side, aggregated: the target (mean over K)
+\definecolor{ans}{HTML}{C98A1B}   % answer side: token states
+\definecolor{ansv}{HTML}{A8720F}  % answer side: mean answer vectors
+\definecolor{tgt}{HTML}{6E4A0C}   % answer side: the target (mean over K answer vectors)
 \definecolor{paper}{HTML}{FFFFFF}
 
 % ---- big column vector: 5 contiguous SQUARE cells, 0.20 x 1.00 cm -------------------
@@ -137,16 +140,16 @@
 \node[ann, anchor=east, text=ink] at (0.32,2.07) {layer $1$};
 
 % context columns (first template token, an elision, then the exact tail of the prompt)
-\stream{0.80}{tok}{<|im\_start|>}{muted}{40,18,54,26,62}{muted!70}
-\stream{1.20}{tok}{$\cdots$}{muted}{40,18,54,26,62}{muted!70}
-\stream{1.60}{tokink}{France}{muted}{40,18,54,26,62}{muted!70}
-\stream{2.00}{tokink}{?}{muted}{40,18,54,26,62}{muted!70}
-\stream{2.40}{tok}{<|im\_end|>}{muted}{40,18,54,26,62}{muted!70}
-\stream{2.80}{tok}{\textbackslash n}{muted}{40,18,54,26,62}{muted!70}
-\stream{3.20}{tok}{<|im\_start|>}{muted}{40,18,54,26,62}{muted!70}
-\stream{3.60}{tok}{assistant}{muted}{40,18,54,26,62}{muted!70}
+\stream{0.80}{tok}{<|im\_start|>}{ctx}{50,20,70,32,82}{ctx}
+\stream{1.20}{tok}{$\cdots$}{ctx}{50,20,70,32,82}{ctx}
+\stream{1.60}{tokink}{France}{ctx}{50,20,70,32,82}{ctx}
+\stream{2.00}{tokink}{?}{ctx}{50,20,70,32,82}{ctx}
+\stream{2.40}{tok}{<|im\_end|>}{ctx}{50,20,70,32,82}{ctx}
+\stream{2.80}{tok}{\textbackslash n}{ctx}{50,20,70,32,82}{ctx}
+\stream{3.20}{tok}{<|im\_start|>}{ctx}{50,20,70,32,82}{ctx}
+\stream{3.60}{tok}{assistant}{ctx}{50,20,70,32,82}{ctx}
 % the final context token: "\n" after "assistant"; its layer-l state is h_C
-\stream{4.00}{tokink}{\textbackslash n}{ctx}{62,30,80,44,92}{ctx}
+\stream{4.00}{tokink}{\textbackslash n}{ctx}{50,20,70,32,82}{ctx}
 \node[tokink, draw=ctx, line width=0.5pt, rounded corners=0.8pt, inner sep=1.2pt, fill=paper]
   at (4.00,1.54) {\textbackslash n};
 \node[inner sep=0pt, minimum width=0.10cm, minimum height=0.50cm] (hfinal) at (4.00,4.10) {};
@@ -169,13 +172,13 @@
 % Middle: the two vectors read off layer l.  Top row y = 5.45 (context, in the
 % model's top strip), bottom row y = 3.20 (answer, 0.9 below the band at 4.10).
 % ===========================================================================
-\colvec{hc}{7.70}{5.45}{ctx}
+\colvecs{hc}{7.70}{5.45}{ctx}{62,30,80,44,92}
 \node[lbl, text=ctx, anchor=north, align=center] at (7.70,4.89) {context vector\\$h_C^{\ell}$};
 \draw[flow, ctx!85] (hfinal.east) -- (4.35,4.10) -- (4.35,5.45) -- (hc.west);
 
-\colvec{ha}{7.70}{3.20}{ans}
-\node[lbl, text=ans!90!black, anchor=north, align=center] at (7.70,2.64) {answer vector\\$\bar h_A^{\ell}(A_k)$};
-\draw[flow, ans!90!black] (6.42,4.10) -- (6.78,4.10) -- (6.78,3.20) -- (ha.west);
+\colvecs{ha}{7.70}{3.20}{ansv}{62,30,80,44,92}
+\node[lbl, text=ansv, anchor=north, align=center] at (7.70,2.64) {answer vector\\$\bar h_A^{\ell}(A_k)$};
+\draw[flow, ansv] (6.42,4.10) -- (6.78,4.10) -- (6.78,3.20) -- (ha.west);
 \node[ann, anchor=north] at (7.19,3.12) {mean};
 
 % ===========================================================================
@@ -188,7 +191,7 @@
   at (10.40,5.84) {Linear metamodel};
 \matgrid{W}{9.75}{5.10}{teal}
 \node[lbl, text=teal, anchor=north, inner sep=0.5pt] at (9.75,4.53) {$W_\ell$};
-\colvec{hcol}{10.65}{5.10}{ctx}
+\colvecs{hcol}{10.65}{5.10}{ctx}{62,30,80,44,92}
 \node[lbl, text=ctx, anchor=north, inner sep=0.5pt] at (10.65,4.53) {$h_C^{\ell}$};
 \node[lbl, text=teal, inner sep=0pt] at (11.00,5.10) {$+$};
 \colvec{bcol}{11.35}{5.10}{teal}
@@ -199,13 +202,13 @@
 \draw[flow, teal!85] (ridge.east |- hhat.west) -- (hhat.west);
 
 % prediction target: mean over the answer vectors of K sampled answers
-\colvec{a1}{9.55}{3.20}{ans}
-\colvec{a2}{9.95}{3.20}{ans}
-\node[lbl, text=ans!90!black, inner sep=0pt] at (10.35,3.20) {$\cdots$};
-\colvec{aK}{10.75}{3.20}{ans}
-\node[lbl, text=ans!90!black, anchor=north, inner sep=0.5pt] at (10.15,2.65)
+\colvecs{a1}{9.55}{3.20}{ansv}{62,30,80,44,92}
+\colvecs{a2}{9.95}{3.20}{ansv}{62,30,80,44,92}
+\node[lbl, text=ansv, inner sep=0pt] at (10.35,3.20) {$\cdots$};
+\colvecs{aK}{10.75}{3.20}{ansv}{62,30,80,44,92}
+\node[lbl, text=ansv, anchor=north, inner sep=0.5pt] at (10.15,2.65)
   {$\bar h_A^{\ell}(A_1)\,\cdots\,\bar h_A^{\ell}(A_K)$};
-\draw[flow, ans!90!black] (ha.east) -- (a1.west);
+\draw[flow, ansv] (ha.east) -- (a1.west);
 \node[ann, anchor=south] at (8.62,3.28) {for each of\\$K$ answers};
 \colvecs{mu}{12.50}{3.20}{tgt}{62,30,80,44,92}
 \node[lbl, text=tgt, anchor=north, align=center] at (12.50,2.64) {target\\$\bar\mu_A^{\ell}$};
