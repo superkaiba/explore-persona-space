@@ -21,11 +21,15 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
+from dotenv import load_dotenv
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "src"))
+load_dotenv()  # repo convention: environment before heavy imports
+
+import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.patches import Patch  # noqa: E402
+
+ROOT = Path(__file__).resolve().parent.parent  # noqa: E402
+sys.path.insert(0, str(ROOT / "src"))  # noqa: E402
 
 from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     INK,
@@ -37,7 +41,8 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     style_score_axis,
 )
 
-CELLS_DIR = ROOT / "eval_results" / "issue_2546" / "cells"
+CELLS_DIR = ROOT / "eval_results" / "issue_2546" / "cells"  # whole-corpus production cells (this figure left the paper when per-corpus fits were dropped); --cells-dir overrides
+CELLS_DIR_WHOLE_CORPUS = ROOT / "eval_results" / "issue_2546" / "cells"
 DEFAULT_OUT = ROOT / "figures" / "paper"
 DEFAULT_STEM = "c1_cot_strata"
 HF_REVISION = "8368cc69f887d20931acd8c4d76c142275173728"
@@ -51,6 +56,7 @@ CORPORA = [
     ("contexthub", "Context-\nHub", "does"),
     ("mmlu", "MMLU", "doesnt"),
 ]
+ALL_CORPORA = list(CORPORA)  # narrowed by --corpora at run time
 ALL_MODELS = [(1, "OpenThinker3-7B", 19), (3, "Qwen3-8B, thinking on", 24)]
 MODELS = list(ALL_MODELS)  # narrowed by --arms at run time
 GROUP_GAP = 1.0
@@ -76,7 +82,12 @@ def load_cells() -> dict[str, Any]:
                 raise ValueError(f"{path.name}: status {data['status']!r}")
             if int(data["headline_layer"]) != layer:
                 raise ValueError(f"{path.name}: unexpected headline layer")
-            pool = data["knn_content"]["euclidean"]["corpus_pool"]
+            if "knn_content" in data:  # whole-corpus production cells: content-rule lift
+                pool = data["knn_content"]["euclidean"]["corpus_pool"]
+                retrieval = {"retrieval_lift": float(pool["lift"]), "retrieval_lift_ci": [float(pool["lift_ci_lo"]), float(pool["lift_ci_hi"])], "retrieval_acc": float(pool["acc_at_1"])}
+            else:  # needs-only refits: own-answer acc@1 under the paper recipe
+                ret = data["retrieval"]
+                retrieval = {"retrieval_lift": float(ret["acc1_whitened_csls"]), "retrieval_lift_ci": [float(v) for v in ret["acc1_whitened_csls_ci"]], "retrieval_acc": float(ret["acc1_whitened_csls"])}
             rows.append(
                 {
                     "corpus": corpus,
@@ -85,9 +96,7 @@ def load_cells() -> dict[str, Any]:
                     "n_rows": int(data["n_rows"]),
                     "r2": float(data["r2_headline"]),
                     "r2_ci": [float(data["r2_headline_bootstrap"]["ci_lo"]), float(data["r2_headline_bootstrap"]["ci_hi"])],
-                    "retrieval_lift": float(pool["lift"]),
-                    "retrieval_lift_ci": [float(pool["lift_ci_lo"]), float(pool["lift_ci_hi"])],
-                    "retrieval_acc": float(pool["acc_at_1"]),
+                    **retrieval,
                     "retrieval_chance": float(pool["chance_mean"]),
                     "source": str(path.relative_to(ROOT)),
                     "source_sha256": _sha256(path),
@@ -149,12 +158,17 @@ def _git_state() -> dict[str, str | bool | None]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    global CELLS_DIR
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--stem", default=DEFAULT_STEM)
     parser.add_argument("--arms", type=int, nargs="*", default=[1], help="arms to plot (default: OpenThinker3-7B only)")
+    parser.add_argument("--corpora", nargs="*", default=["math", "gsm8k_train", "contexthub"], help="corpora to plot (default: the three needs-reasoning corpora)")
+    parser.add_argument("--cells-dir", type=Path, default=CELLS_DIR, help="cell JSON dir (default: needs-reasoning-only refits; use eval_results/issue_2546/cells for the whole-corpus fits)")
     args = parser.parse_args(argv)
     MODELS[:] = [m for m in ALL_MODELS if m[0] in args.arms]
+    CORPORA[:] = [c for c in ALL_CORPORA if c[0] in args.corpora]
+    CELLS_DIR = args.cells_dir
     cells = load_cells()
     font = set_c2a_style()
     fig = make_figure(cells)

@@ -1,0 +1,33 @@
+{
+ "status": "ok",
+ "unit_id": "p8_G__pooled__a1",
+ "arm": 1,
+ "cell": "p8_G",
+ "subset": "needs_reasoning:pooled",
+ "n_rows": 13116,
+ "n_fitted": 13116,
+ "headline_layer": 19,
+ "r2_headline": 0.7462928049920456,
+ "r2_headline_bootstrap": {
+  "ci_lo": 0.744053084442546,
+  "ci_hi": 0.7484280460981813,
+  "n_draws": 1000
+ },
+ "lambda_per_fold": [
+  1000.0,
+  1000.0,
+  1000.0,
+  1000.0,
+  1000.0
+ ],
+ "retrieval": {
+  "acc1_whitened_csls": 0.9660719731625496,
+  "acc1_whitened_csls_ci": [
+   0.9630965995730405,
+   0.9692741689539494
+  ],
+  "chance": 0.00038121379355234654,
+  "n": 13116
+ },
+ "recipe": "needs-reasoning rows only (MATH all; GSM8K 4+ steps; ContextHub L3-4); ridge standardize-X/center-Y, 5 seeded folds, 4-fold inner-CV lambda on logspace(-3,8,23); retrieval = paper recipe"
+}

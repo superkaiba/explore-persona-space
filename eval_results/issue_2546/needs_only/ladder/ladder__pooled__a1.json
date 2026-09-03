@@ -1,0 +1,60 @@
+{
+ "status": "ok",
+ "unit_id": "ladder__pooled__a1",
+ "arm": 1,
+ "subset": "pooled",
+ "ladder_corpus": "pooled",
+ "n_rows": 13116,
+ "headline_layer": 19,
+ "tiers_r2": {
+  "t0_direct_transfer": -22142.425523097332,
+  "t3_bias_offset": -7.36610421251102,
+  "t4_global_scaling": 5.082034673908886e-05
+ },
+ "tier_names": [
+  "t0_direct_transfer",
+  "t3_bias_offset",
+  "t4_global_scaling"
+ ],
+ "within_post_reference_r2": 0.6928363675889532,
+ "within_pre_own_r2": 0.7462928049920456,
+ "retention": {
+  "t0_direct_transfer": {
+   "point": -31959.098221348013,
+   "ci_lo": -32403.31836171081,
+   "ci_hi": -31559.736737105857
+  },
+  "t3_bias_offset": {
+   "point": -10.631809409983502,
+   "ci_lo": -10.909268402300826,
+   "ci_hi": -10.352411350544376
+  },
+  "t4_global_scaling": {
+   "point": 7.33511534851179e-05,
+   "ci_lo": -0.0006637375135170381,
+   "ci_hi": 3.5821814416773815e-05
+  }
+ },
+ "alpha_per_fold": [
+  -0.004381584652539089,
+  0.004489360345327515,
+  -0.003789668937054944,
+  0.0051814988565302865,
+  0.005707333515042237
+ ],
+ "lambda_pre_per_fold": [
+  1000.0,
+  1000.0,
+  1000.0,
+  1000.0,
+  1000.0
+ ],
+ "lambda_post_per_fold": [
+  3162.2776601683795,
+  3162.2776601683795,
+  3162.2776601683795,
+  3162.2776601683795,
+  3162.2776601683795
+ ],
+ "recipe": "needs-reasoning rows only; pre map = pre cx_last -> pre ans_mean lambda fixed to the production-selected values (pre 1000, post 3162.3); tiers per issue2546_ladder_audit.py"
+}

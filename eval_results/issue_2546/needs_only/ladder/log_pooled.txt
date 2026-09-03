@@ -1,0 +1,19 @@
+ladder pooled: 13116 rows
+  ladder/pooled/pre_own fold 0: lambda=1e+03 R2_fold=0.7455 (355s)
+  ladder/pooled/pre_own fold 1: lambda=1e+03 R2_fold=0.7481 (190s)
+ladder pooled: 13116 rows
+ladder pooled: 13116 rows
+  ladder/pooled/pre_own fold 0: lambda=1e+03 R2_fold=0.7455 (8s)
+  ladder/pooled/pre_own fold 1: lambda=1e+03 R2_fold=0.7481 (8s)
+  ladder/pooled/pre_own fold 2: lambda=1e+03 R2_fold=0.7431 (8s)
+  ladder/pooled/pre_own fold 3: lambda=1e+03 R2_fold=0.7440 (8s)
+  ladder/pooled/pre_own fold 4: lambda=1e+03 R2_fold=0.7504 (8s)
+  ladder/pooled/post_own fold 0: lambda=3.16e+03 R2_fold=0.6926 (7s)
+  ladder/pooled/post_own fold 1: lambda=3.16e+03 R2_fold=0.6953 (9s)
+  ladder/pooled/post_own fold 2: lambda=3.16e+03 R2_fold=0.6882 (9s)
+  ladder/pooled/post_own fold 3: lambda=3.16e+03 R2_fold=0.6929 (10s)
+  ladder/pooled/post_own fold 4: lambda=3.16e+03 R2_fold=0.6947 (10s)
+  p8_G__pooled__a1: R2=0.7463 [0.744,0.748] acc@1=0.966 n=13116
+  p7_A__pooled__a1: R2=0.6928 [0.690,0.696] acc@1=0.927 n=13116
+  ladder pooled: post own R2=0.6928 pre own R2=0.7463 retention t0_direct_transfer=-3.2e+04 t3_bias_offset=-10.6 t4_global_scaling=7.34e-05
+DONE pooled

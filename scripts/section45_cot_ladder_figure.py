@@ -21,11 +21,15 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
+from dotenv import load_dotenv
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "src"))
+load_dotenv()  # repo convention: environment before heavy imports
+
+import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.lines import Line2D  # noqa: E402
+
+ROOT = Path(__file__).resolve().parent.parent  # noqa: E402
+sys.path.insert(0, str(ROOT / "src"))  # noqa: E402
 
 from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     GRID,
@@ -38,7 +42,7 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     set_c2a_style,
 )
 
-LADDER_DIR = ROOT / "eval_results" / "issue_2546" / "ladder"
+LADDER_DIR = ROOT / "eval_results" / "issue_2546" / "needs_only" / "ladder"  # needs-reasoning-only refits (default); --ladder-dir overrides
 DEFAULT_OUT = ROOT / "figures" / "paper"
 DEFAULT_STEM = "c1_cot_ladder"
 HF_REVISION = "8368cc69f887d20931acd8c4d76c142275173728"
@@ -57,7 +61,7 @@ TIERS = [
     ("t8_reparam_both", "change of\nbasis\n(both sides)"),
 ]
 UNITS = [
-    ("pooled", "Pooled (four corpora)", INK, "o", 12),
+    ("pooled", "Pooled", INK, "o", 12),
     ("math", "MATH", "#7B3294", "s", 8),
     ("gsm8k_train", "GSM8K train", "#7B3294", "^", 9),
     ("contexthub", "ContextHub", "#7B3294", "v", 9),
@@ -78,19 +82,23 @@ def load_units() -> dict[str, Any]:
     out: dict[str, Any] = {}
     for key, label, _color, _marker, _size in UNITS:
         path = LADDER_DIR / f"ladder__{key}__a1.json"
+        if not path.is_file():
+            print(f"[ladder] no unit file for {key!r} under {LADDER_DIR}; skipped", flush=True)
+            continue
         data = json.loads(path.read_text())
         if data["status"] != "ok" or int(data["arm"]) != 1:
             raise ValueError(f"{path.name}: unexpected status or arm")
         ref = float(data["within_post_reference_r2"])
         tiers = data["tiers_r2"]
-        if list(tiers.keys()) != [k for k, _l in TIERS]:
-            raise ValueError(f"{path.name}: tier order changed")
+        if list(tiers.keys()) != [k for k, _l in TIERS] and not {m[1] for m in MODES} <= set(tiers):
+            raise ValueError(f"{path.name}: tiers missing for the compare figure")
         out[key] = {
             "label": label,
             "n_rows": int(data["n_rows"]),
             "reference_r2": ref,
-            "band": float(data["band_value"]),
-            "sufficient_tier": data["sufficient_tier"],
+            "band": float(data["band_value"]) if "band_value" in data else None,
+            "sufficient_tier": data.get("sufficient_tier"),
+            "retention_ci": {k: [float(v["ci_lo"]), float(v["ci_hi"])] for k, v in data.get("retention", {}).items()},
             "tier_r2": {k: float(v) for k, v in tiers.items()},
             "tier_retention": {k: float(v) / ref for k, v in tiers.items()},
             "source": str(path.relative_to(ROOT)),
@@ -118,8 +126,9 @@ def make_figure(units: dict[str, Any]) -> plt.Figure:
     ax.axhline(1.0, color=MUTED, lw=1.3, ls=(0, (4, 3)), zorder=1)
     ax.axhline(0.0, color=SEAM, lw=1.0, zorder=1)
     pooled = units["pooled"]
-    band_lo = 1.0 - pooled["band"] / pooled["reference_r2"]
-    ax.axhspan(band_lo, 1.0, color=MUTED, alpha=0.12, lw=0, zorder=0)
+    if pooled.get("band") is not None:
+        band_lo = 1.0 - pooled["band"] / pooled["reference_r2"]
+        ax.axhspan(band_lo, 1.0, color=MUTED, alpha=0.12, lw=0, zorder=0)
 
     for key, _label, color, marker, size in UNITS:
         unit = units[key]
@@ -130,7 +139,7 @@ def make_figure(units: dict[str, Any]) -> plt.Figure:
     ax.set_xticks(range(len(TIERS)))
     ax.set_xticklabels([label for _k, label in TIERS], fontsize=13.5, linespacing=1.15)
     ax.set_xlabel("Correction fit on training folds before applying the pre-SFT map to the post-SFT model", labelpad=12)
-    ax.set_ylabel("Retention (transferred $R^2$ / own $R^2$)  ↑", labelpad=12)
+    ax.set_ylabel("Retention\n(transferred $R^2$ / own $R^2$)  ↑", labelpad=10)
     ax.set_title("Only a change of basis on both sides recovers the map after reasoning SFT", loc="left", y=1.04, pad=0, fontweight=650, fontsize=19)
     ax.text(0.0, 1.16, "QWEN2.5-7B-INSTRUCT → OPENTHINKER3-7B, LAYER 19, POOLED AND PER-CORPUS FITS", transform=ax.transAxes, fontsize=12.5, fontweight=700, color=MUTED, va="bottom", ha="left")
 
@@ -192,16 +201,20 @@ def make_compare_figure(units: dict[str, Any], olmo: dict[str, Any]) -> plt.Figu
         for key, unit in units.items():
             v = unit["tier_retention"][tier]
             big = key == "pooled"
+            ci = unit.get("retention_ci", {}).get(tier)
+            if big and ci:
+                ax.errorbar(xr + dx, v, yerr=[[max(v - ci[0], 0.0)], [max(ci[1] - v, 0.0)]], fmt="none", ecolor=edge, elinewidth=1.3, capsize=3, zorder=4)  # skewed bootstrap can put the point outside the percentile interval
             ax.plot(xr + dx + (0 if big else 0.0), v, marker=marker, markersize=9 if big else 5.5, markerfacecolor=face if big else PAPER, markeredgecolor=edge, markeredgewidth=1.6 if big else 1.1, lw=0, alpha=1.0 if big else 0.8, zorder=5 if big else 3)
     ax.axvline(xr - 0.5, color=MUTED, lw=1.0, ls=(0, (2, 3)), zorder=1)
     ax.set_xlim(-0.6, xr + 0.6)
     ax.set_xticks(xs)
     ax.set_xticklabels([label for _k, label in OLMO_TRANSITIONS] + [REASONING_LABEL], fontsize=12.5, linespacing=1.15)
-    ax.set_ylabel("Retention (transferred $R^2$ / own $R^2$)  ↑", labelpad=12)
+    ax.set_ylabel("Retention\n(transferred $R^2$ / own $R^2$)  ↑", labelpad=10)
     ax.set_title("Reasoning SFT changes the map much more than other forms of post-training", loc="left", y=1.04, pad=0, fontweight=650, fontsize=17)
     ax.text(0.0, 1.14, "PREVIOUS STAGE'S MAP APPLIED TO THE NEXT STAGE, AFTER THREE CORRECTIONS FIT ON TRAINING FOLDS", transform=ax.transAxes, fontsize=11.5, fontweight=700, color=MUTED, va="bottom", ha="left")
     handles = [Line2D([0], [0], marker=m, markersize=9, markerfacecolor=f, markeredgecolor=e, markeredgewidth=1.6, lw=0, label=lab) for _o, _t, lab, _dx, m, f, e in MODES]
-    handles.append(Line2D([0], [0], marker="o", markersize=5.5, markerfacecolor=PAPER, markeredgecolor=INK, markeredgewidth=1.1, lw=0, label="single corpus (reasoning SFT)"))
+    if any(key != "pooled" for key in units):
+        handles.append(Line2D([0], [0], marker="o", markersize=5.5, markerfacecolor=PAPER, markeredgecolor=INK, markeredgewidth=1.1, lw=0, label="single corpus (reasoning SFT)"))
     handles.append(Line2D([0], [0], color=MUTED, lw=1.3, ls=(0, (4, 3)), label="own map of the next stage (retention 1)"))
     fig.text(0.10, 0.965, "CORRECTION", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
     fig.legend(handles=handles, loc="upper left", bbox_to_anchor=(0.099, 0.948), ncol=5, frameon=False, columnspacing=1.2, handlelength=1.4, handletextpad=0.6, borderaxespad=0)
@@ -218,11 +231,14 @@ def _git_state() -> dict[str, str | bool | None]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    global LADDER_DIR
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--stem", default=DEFAULT_STEM)
     parser.add_argument("--mode", choices=("compare", "full"), default="compare", help="compare: the three Section 4.3 corrections next to the OLMo stages (paper figure); full: all nine ladder tiers")
+    parser.add_argument("--ladder-dir", type=Path, default=LADDER_DIR, help="ladder unit JSON dir (default: needs-reasoning-only refits; use eval_results/issue_2546/ladder for the whole-corpus units)")
     args = parser.parse_args(argv)
+    LADDER_DIR = args.ladder_dir
     units = load_units()
     olmo = load_olmo() if args.mode == "compare" else None
     font = set_c2a_style()

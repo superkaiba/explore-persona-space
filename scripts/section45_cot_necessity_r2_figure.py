@@ -39,13 +39,17 @@ import time
 from pathlib import Path
 from typing import Any
 
-import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib.lines import Line2D
-from matplotlib.patches import Patch
+from dotenv import load_dotenv
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "src"))
+load_dotenv()  # repo convention: environment before heavy imports
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+from matplotlib.lines import Line2D  # noqa: E402
+from matplotlib.patches import Patch  # noqa: E402
+
+ROOT = Path(__file__).resolve().parent.parent  # noqa: E402
+sys.path.insert(0, str(ROOT / "src"))  # noqa: E402
 
 from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     INK,
@@ -62,7 +66,8 @@ DEFAULT_HF_ROOT = Path("/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/issue2
 DEFAULT_OUT = ROOT / "figures" / "paper"
 DEFAULT_STEM = "c1_cot_necessity_r2"
 SUMMARY_PATH = ROOT / "eval_results" / "issue_2546" / "necessity_r2" / "summary.json"
-CELLS_DIR = ROOT / "eval_results" / "issue_2546" / "cells"
+CELLS_DIR = ROOT / "eval_results" / "issue_2546" / "needs_only" / "cells"  # needs-reasoning-only refits (default); --cells-dir overrides
+DEFAULT_PREDS_ROOT = Path("/mnt/eps-data/thomasjiralerspong/cot_necessity/needs_only/pooled_preds")  # Figure 10's pooled needs-reasoning fits, sliced per corpus
 
 CORPORA = [("math", "MATH"), ("gsm8k_train", "GSM8K\ntrain"), ("contexthub", "Context-\nHub"), ("mmlu", "MMLU")]
 ARMS = {
@@ -133,8 +138,12 @@ def load_targets(hf_root: Path, cache_dir: Path, arm: int, corpus: str) -> tuple
     return row_ids, ans
 
 
+PREDS_ROOT: Path | None = None  # set from --preds-root; None = <hf-root>/analysis_tensors/preds
+
+
 def load_preds(hf_root: Path, arm: int, cell: str, corpus: str) -> tuple[list[str], np.ndarray]:
-    path = hf_root / "analysis_tensors" / "preds" / f"arm{arm}" / f"{cell}__{corpus}__a{arm}.npz"
+    root = PREDS_ROOT if PREDS_ROOT is not None else hf_root / "analysis_tensors" / "preds"
+    path = root / f"arm{arm}" / f"{cell}__{corpus}__a{arm}.npz"
     z = np.load(path)
     layer = ARMS[arm]["layer"]
     fitted = np.asarray(z["fitted_mask"], dtype=bool)
@@ -258,9 +267,13 @@ def analyze(hf_root: Path, cache_dir: Path, arms: list[int] | None = None, corpo
                     "label_counts": {str(k): int(v) for k, v in zip(*np.unique(labels, return_counts=True))},
                     "groups": {},
                 }
-                committed = json.loads((CELLS_DIR / f"{cell}__{corpus}__a{arm}.json").read_text())
-                cell_out["committed_r2_headline"] = float(committed["r2_headline"])
-                cell_out["whole_corpus_abs_dev_from_committed"] = abs(cell_out["whole_corpus"]["r2_own_mean"] - float(committed["r2_headline"]))
+                committed_path = CELLS_DIR / f"{cell}__{corpus}__a{arm}.json"
+                if committed_path.is_file():
+                    committed = json.loads(committed_path.read_text())
+                    cell_out["committed_r2_headline"] = float(committed["r2_headline"])
+                    cell_out["whole_corpus_abs_dev_from_committed"] = abs(cell_out["whole_corpus"]["r2_own_mean"] - float(committed["r2_headline"]))
+                else:
+                    cell_out["committed_r2_headline"] = None  # pooled-map slices have no per-corpus committed cell
                 for group in GROUPS:
                     mask = labels == group
                     if mask.sum() < 20:
@@ -271,7 +284,7 @@ def analyze(hf_root: Path, cache_dir: Path, arms: list[int] | None = None, corpo
                 raw[cell_name].append({"corpus": corpus, "y": y, "err": np.sum((y - yhat) ** 2, axis=1), "labels": labels, "corpus_mean": corpus_mean.astype(np.float64)})
                 g = cell_out["groups"]
                 print(
-                    f"arm{arm} {corpus:12s} {cell_name:15s} whole={cell_out['whole_corpus']['r2_own_mean']:.3f} (committed {committed['r2_headline']:.3f}) "
+                    f"arm{arm} {corpus:12s} {cell_name:15s} whole={cell_out['whole_corpus']['r2_own_mean']:.3f} (committed {cell_out['committed_r2_headline'] if cell_out['committed_r2_headline'] is None else round(cell_out['committed_r2_headline'], 3)}) "
                     + " ".join(f"{k}={v['r2_own_mean']:.3f}(n={v['n']})" for k, v in g.items() if "r2_own_mean" in v),
                     flush=True,
                 )
@@ -327,7 +340,7 @@ def make_figure(results: dict[str, Any], titles: dict[str, str], *, arms: tuple[
                 ax.bar(x, v, width=BAR_WIDTH, color=GROUP_COLOR[group], linewidth=0, zorder=3)
                 ax.errorbar(x, v, yerr=[[v - lo], [hi - v]], fmt="none", ecolor=INK, elinewidth=1.2, capsize=3, capthick=1.2, zorder=4)
             ax.axvline(len(CORPORA) - 0.25, color=MUTED, lw=1.0, ls=(0, (2, 3)), zorder=1)
-            ticks.append(xp); labels.append("All four,\nequal corpus\nweight")
+            ticks.append(xp); labels.append("All three,\nequal corpus\nweight")
         ax.set_xlim(-0.6, (ticks[-1] if ticks else len(CORPORA)) + 0.6)
         ax.set_xticks(ticks)
         ax.set_xticklabels(labels, fontsize=13, linespacing=1.15)
@@ -353,6 +366,7 @@ def _git_state() -> dict[str, str | bool | None]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    global CELLS_DIR, PREDS_ROOT
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--hf-root", type=Path, default=DEFAULT_HF_ROOT)
     parser.add_argument("--cache-dir", type=Path, default=None, help="where extracted target matrices are cached (default: <hf-root>/../targets)")
@@ -367,9 +381,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--baseline", choices=("corpus", "own"), default="corpus", help="R^2 baseline: each corpus's mean answer state (same predictor for both groups) or each group's own mean")
     parser.add_argument("--figure-only", action="store_true", help="re-render from an existing summary without touching the shards")
     parser.add_argument("--arms", type=int, nargs="*", default=None, help="restrict to these arms (smoke runs)")
-    parser.add_argument("--corpora", nargs="*", default=None, help="restrict to these corpora (smoke runs)")
+    parser.add_argument("--corpora", nargs="*", default=["math", "gsm8k_train", "contexthub"], help="corpora to analyze and plot (default: the three needs-reasoning corpora)")
+    parser.add_argument("--cells-dir", type=Path, default=CELLS_DIR, help="cell JSON dir for the committed whole-fit R^2 reference (default: needs-reasoning-only refits)")
+    parser.add_argument("--preds-root", type=Path, default=DEFAULT_PREDS_ROOT, help="preds root holding arm<N>/<cell>__<corpus>__a<N>.npz (default: needs-reasoning-only refits)")
     parser.add_argument("--no-figure", action="store_true", help="analysis only")
     args = parser.parse_args(argv)
+    CELLS_DIR = args.cells_dir
+    PREDS_ROOT = args.preds_root
+    CORPORA[:] = [c for c in CORPORA if c[0] in args.corpora]
     cache_dir = args.cache_dir or (args.hf_root.parent / "targets")
     if args.figure_only:
         results = json.loads(args.summary.read_text())["results"]
