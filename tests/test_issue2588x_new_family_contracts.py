@@ -266,3 +266,36 @@ def test_vl_wrapper_arch_detects_conditional_generation(monkeypatch):
     assert G._vl_wrapper_arch("Qwen/Qwen3.5-397B-A17B-FP8") == "Qwen3_5MoeForConditionalGeneration"
     assert G._vl_wrapper_arch("deepseek-ai/DeepSeek-V4-Flash-0731") is None
     assert G._vl_wrapper_arch("zai-org/GLM-5.3") is None
+
+
+def test_dequantize_fp8_embeddings_gathers_and_scales():
+    """A raw-fp8 nn.Embedding (Qwen3.8 PLE n-gram table shape) must emit
+    bf16 rows equal to fp8_row * weight_scale; a bf16 embedding is untouched;
+    an fp8 embedding with no checkpoint scale fails closed."""
+    import pytest
+    import torch
+    import issue2330_qwen35_generate_capture as G
+
+    if not hasattr(torch, "float8_e4m3fn"):
+        pytest.skip("torch without float8")
+    torch.manual_seed(0)
+    fp8 = torch.nn.Embedding(7, 4)
+    src = torch.randn(7, 4) * 3
+    fp8.weight = torch.nn.Parameter(src.to(torch.float8_e4m3fn), requires_grad=False)
+    plain = torch.nn.Embedding(5, 4)
+    model = torch.nn.ModuleDict({"tab": fp8, "plain": plain})
+    scale = torch.tensor([0.25], dtype=torch.bfloat16)
+    n = G._dequantize_fp8_embeddings(model, lambda name: scale if name == "tab" else None)
+    assert n == 1
+    ids = torch.tensor([[0, 6], [3, 3]])
+    out = model["tab"](ids)
+    assert out.dtype == torch.bfloat16 and out.shape == (2, 2, 4)
+    want = (fp8.weight.data.float()[ids] * 0.25).to(torch.bfloat16)
+    assert torch.equal(out, want)
+    assert model["plain"](torch.tensor([1])).dtype == torch.float32  # untouched
+
+    bad = torch.nn.ModuleDict({"tab": torch.nn.Embedding(3, 2)})
+    bad["tab"].weight = torch.nn.Parameter(
+        torch.zeros(3, 2).to(torch.float8_e4m3fn), requires_grad=False)
+    with pytest.raises(RuntimeError, match="weight_scale"):
+        G._dequantize_fp8_embeddings(bad, lambda name: None)

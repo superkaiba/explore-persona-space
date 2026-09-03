@@ -835,7 +835,91 @@ def _load_capture_model(model_id: str, device: str, dtype_str: str):
         )
         hf = AutoModelForImageTextToText.from_pretrained(model_id, **load_kwargs)
     hf.eval()
+    if quant_method == "fp8":
+        _dequantize_fp8_embeddings(hf, _checkpoint_scale_lookup(model_id))
     return hf
+
+
+_FP8_DTYPES = tuple(
+    getattr(torch, n) for n in ("float8_e4m3fn", "float8_e5m2") if hasattr(torch, n)
+)
+
+
+def _checkpoint_scale_lookup(model_id: str):
+    """Return ``lookup(param_prefix) -> Tensor | None`` reading per-tensor
+    ``<prefix>.weight_scale`` entries straight from the cached safetensors
+    shards (transformers drops them as UNEXPECTED keys)."""
+    import json
+
+    from huggingface_hub import snapshot_download
+    from safetensors import safe_open
+
+    snap = Path(snapshot_download(model_id, allow_patterns=["*.json"]))
+    idx_path = snap / "model.safetensors.index.json"
+    weight_map: dict = json.loads(idx_path.read_text())["weight_map"] if idx_path.exists() else {}
+
+    def lookup(prefix: str):
+        key = f"{prefix}.weight_scale"
+        if key in weight_map:
+            shard = snap / weight_map[key]
+        elif (snap / "model.safetensors").exists():
+            shard = snap / "model.safetensors"
+        else:
+            return None
+        with safe_open(str(shard), framework="pt") as f:
+            if key not in f.keys():
+                return None
+            return f.get_tensor(key)
+
+    return lookup
+
+
+def _dequantize_fp8_embeddings(model, scale_lookup) -> int:
+    """Make raw-FP8 ``nn.Embedding`` tables usable in a bf16 forward.
+
+    Qwen3.8-Flash-Next-FP8 stores the layer-1 per-layer-embedding (PLE) n-gram
+    table (128 shards x [2500012, 160]) as float8_e4m3fn with ONE per-tensor
+    ``weight_scale``. transformers 5.16.1 merges the shards into the
+    ``nn.Embedding`` unchanged (fp8 weight) and discards the scale, so the
+    lookup emits fp8 rows and the next bf16 ``nn.Linear`` dies with
+    "expected mat1 and mat2 to have the same dtype" (smoke 61801). Casting the
+    whole table to bf16 would cost +51 GB on one device, so the table stays
+    fp8 and the module's forward gathers rows then dequantizes them
+    (``rows.float() * weight_scale`` -> bf16), the standard per-tensor FP8
+    convention. Fail-closed: an fp8 embedding with no checkpoint scale raises.
+    Returns the number of embeddings patched (0 for non-FP8 models)."""
+    import types
+
+    patched = 0
+    for name, mod in model.named_modules():
+        if not isinstance(mod, torch.nn.Embedding) or mod.weight.dtype not in _FP8_DTYPES:
+            continue
+        scale = scale_lookup(name)
+        if scale is None:
+            raise RuntimeError(
+                f"[load] {name}.weight is {mod.weight.dtype} but the checkpoint has no "
+                f"{name}.weight_scale; refusing to run an un-dequantized fp8 embedding"
+            )
+        mod.register_buffer(
+            "weight_scale", scale.detach().to(mod.weight.device, torch.float32).reshape(-1)[:1]
+        )
+
+        def _dequant_forward(self, ids: torch.Tensor) -> torch.Tensor:
+            w = self.weight
+            flat = ids.reshape(-1).to(w.device)
+            rows = torch.index_select(w.view(torch.uint8), 0, flat).view(w.dtype)
+            out = rows.float() * self.weight_scale
+            return out.to(torch.bfloat16).view(*ids.shape, w.shape[1])
+
+        # accelerate's device_map hook owns .forward and calls ._old_forward.
+        target = "_old_forward" if hasattr(mod, "_old_forward") else "forward"
+        setattr(mod, target, types.MethodType(_dequant_forward, mod))
+        logger.info(
+            "[load] fp8 embedding %s %s dequantized on lookup (weight_scale=%.6g)",
+            name, tuple(mod.weight.shape), float(mod.weight_scale[0]),
+        )
+        patched += 1
+    return patched
 
 
 def _vl_wrapper_arch(model_id: str) -> str | None:
