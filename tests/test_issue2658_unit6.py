@@ -1103,14 +1103,55 @@ def test_reasoning_presence_rate_recorded(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Substitution-order guard (rev E fix 8).
+# Rubric-slot substitution: single-pass MECHANISM (rev E fix 8, refixed #2658).
+#
+# The pre-#2658 guard rejected any composed question carrying the literal
+# '{answer}', because graded_judge chained two .replace() calls and the second
+# rescanned what the first inserted. The chain is now a single-pass re.sub with
+# a callable replacement, so such text travels verbatim and the data-shaped
+# guard would drop 5 legitimate real-user items. What is pinned instead is the
+# mechanism itself, bound to the live harness closure.
 # ---------------------------------------------------------------------------
-def test_composed_question_rejects_literal_answer_placeholder():
-    """format_user_msg substitutes {question} before {answer}, so a composed
-    question carrying the literal '{answer}' string would get answer text
-    spliced into the question block on the wire."""
-    with pytest.raises(J.JudgeInputError, match="placeholder"):
-        J.composed_question(ROW, f"{ROW}|frameA|q0", "frozen text with a literal {answer} slot")
+def _evidence_row() -> str:
+    for name, construct in J.C.CONSTRUCTS.items():
+        if construct.uses_evidence_packet:
+            return name
+    raise AssertionError("no evidence-packet row in CONSTRUCTS")
+
+
+def test_slot_substitution_single_pass_mechanism():
+    """Fills a probe rubric whose sentinel values themselves carry both literal
+    placeholders, and greps judge_graded so the pattern cannot pass vacuously."""
+    J.assert_slot_substitution_single_pass()
+
+
+def test_slot_substitution_assert_fails_loud_when_pattern_gone(monkeypatch):
+    monkeypatch.delattr(J.GJ, "_SLOT_RE", raising=True)
+    with pytest.raises(J.JudgeInputError, match="_SLOT_RE is gone"):
+        J.assert_slot_substitution_single_pass()
+
+
+def test_composed_question_passes_literal_answer_placeholder_through():
+    question, sha = J.composed_question(
+        ROW, f"{ROW}|frameA|q0", "frozen text with a literal {answer} slot"
+    )
+    assert question == "frozen text with a literal {answer} slot"
+    assert sha is None
+
+
+def test_composed_question_passes_literal_placeholder_in_evidence_json():
+    """The evidence branch embeds json.dumps(packet['evidence']) into the
+    question, a second source of literal placeholder text."""
+
+    def _resolver(row, item_id):
+        return {"evidence": {"note": "see {answer} below"}}, "deadbeef"
+
+    row = _evidence_row()
+    question, sha = J.composed_question(
+        row, f"{row}|frameA|q0", "prompt text", packet_resolver=_resolver
+    )
+    assert "{answer}" in question
+    assert sha == "deadbeef"
 
 
 # ---------------------------------------------------------------------------

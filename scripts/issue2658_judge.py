@@ -73,6 +73,7 @@ This unit writes the instrument only; it dispatches no real judge wave.
 from __future__ import annotations
 
 import argparse
+import inspect
 import json
 import math
 import statistics
@@ -241,6 +242,78 @@ def compose_rubric(row: str) -> str:
 REALIZED_WIRE_SYSTEM_SHA256 = "c980ea82a1d097c2551d1c3985da7389306fa5493653e9388a2ffe3ecb65288d"
 
 
+# A rubric-shaped probe template whose SENTINEL fill values themselves carry the
+# literal placeholders. That is the exact real-user shape a sequential
+# ``.replace("{question}", q).replace("{answer}", a)`` chain corrupts: the second
+# replace rescans the text the first one inserted. 5 of the 6,290 pilot records
+# carry a literal '{answer}' in their question text (one WildChat item, under the
+# five rows that use the ``wildchat_real`` frame), so this is a live shape, not a
+# hypothetical one.
+SLOT_PROBE_TEMPLATE = "Q: {question}\n\nA: {answer}\n\nScore it."
+_SLOT_PROBE_QUESTION = "q<{answer}>q"
+_SLOT_PROBE_ANSWER = "a<{question}>a"
+_SLOT_PROBE_EXPECTED = (
+    "Q: " + _SLOT_PROBE_QUESTION + "\n\nA: " + _SLOT_PROBE_ANSWER + "\n\nScore it."
+)
+
+
+def assert_slot_substitution_single_pass() -> None:
+    """Assert ``graded_judge`` fills rubric slots in ONE non-rescanning pass.
+
+    Our rubric travels in the judge USER message, and ``graded_judge``'s
+    ``format_user_msg`` closure fills its ``{question}`` / ``{answer}`` slots.
+    A sequential ``.replace`` chain rescans inserted text, so a question whose
+    own text carries the literal ``{answer}`` gets the answer spliced into the
+    question block of the wire message. A single-pass ``re.sub`` with a CALLABLE
+    replacement cannot do that, and additionally never interprets backslash or
+    group references in real-user text.
+
+    Raises rather than warning, and fires at fingerprint time, before any judge
+    call is dispatched or billed: a silently corrupted wire message makes every
+    downstream score unverifiable.
+
+    This pins the MECHANISM, not the data. An output-scoped "no residual
+    ``{answer}``" check would false-fire on exactly the 5 legitimate real-user
+    items above, which is why the pre-fix guard had to go.
+    """
+    slot_re = getattr(GJ, "_SLOT_RE", None)
+    if slot_re is None:
+        raise JudgeInputError(
+            "graded_judge._SLOT_RE is gone, so single-pass rubric-slot substitution "
+            "can no longer be verified. Re-establish it (or re-pin this assert against "
+            "the replacement) before dispatching any wave: a sequential .replace() chain "
+            "splices answer text into the question block whenever a question carries the "
+            "literal '{answer}'."
+        )
+    fill = {"question": _SLOT_PROBE_QUESTION, "answer": _SLOT_PROBE_ANSWER}
+    got = slot_re.sub(lambda m: fill[m.group(1)], SLOT_PROBE_TEMPLATE)
+    if got != _SLOT_PROBE_EXPECTED:
+        raise JudgeInputError(
+            "rubric-slot substitution is NOT single-pass: filling a probe rubric whose "
+            f"sentinel values carry the literal placeholders produced {got!r}, expected "
+            f"{_SLOT_PROBE_EXPECTED!r}. Answer text would be spliced into the question "
+            "block of the wire message."
+        )
+    # Bind the module-level pattern to the closure the harness ACTUALLY uses:
+    # ``format_user_msg`` is nested inside ``judge_graded`` and unreachable from
+    # here, so without this grep a reverted closure would leave the probe above
+    # passing vacuously against an unused pattern.
+    try:
+        src = inspect.getsource(GJ.judge_graded)
+    except (OSError, TypeError) as exc:  # pragma: no cover - source is always available
+        raise JudgeInputError(
+            "cannot read graded_judge.judge_graded source, so single-pass substitution "
+            f"cannot be bound to the live harness: {exc}"
+        ) from exc
+    if "_SLOT_RE.sub(" not in src:
+        raise JudgeInputError(
+            "graded_judge.judge_graded no longer fills the rubric through _SLOT_RE.sub, so "
+            "the module-level pattern this assert exercises is not what reaches the wire and "
+            "the check would pass vacuously. Re-read format_user_msg and re-pin before "
+            "dispatching any wave."
+        )
+
+
 def assert_wire_instrument_pinned() -> str:
     """Return the realized wire system prompt, asserting it matches the pin.
 
@@ -248,6 +321,7 @@ def assert_wire_instrument_pinned() -> str:
     downstream instrument-identity claim unverifiable, and this fires at
     fingerprint time — before any judge call is dispatched or billed.
     """
+    assert_slot_substitution_single_pass()
     resolver = getattr(GJ, "_rubric_system_and_user", None)
     if resolver is None:
         raise JudgeInputError(
@@ -313,29 +387,21 @@ def composed_question(
     uses the frozen store via ``issue2658_text_resolver.resolve_evidence_packet``
     (which sha-verifies every packet against its stored digest).
 
-    Raises :class:`JudgeInputError` when the composed question contains the
-    literal ``{answer}`` placeholder: ``graded_judge.format_user_msg``
-    substitutes ``{question}`` FIRST, so answer text would be spliced into the
-    question block of the wire message (substitution-order edge).
+    A composed question MAY carry the literal ``{question}`` / ``{answer}``
+    placeholder text, from the frozen prompt or from the embedded evidence JSON:
+    ``graded_judge`` fills the rubric in ONE non-rescanning pass, pinned by
+    :func:`assert_slot_substitution_single_pass`, so such text travels verbatim
+    instead of being re-substituted. 5 of the 6,290 pilot records rely on this
+    (one WildChat item, under the five rows using the ``wildchat_real`` frame).
     """
-
-    def _assert_no_answer_slot(question: str) -> str:
-        if "{answer}" in question:
-            raise JudgeInputError(
-                f"composed question for {row}/{item_id} contains the literal '{{answer}}' "
-                "placeholder — format_user_msg substitutes {question} first, so answer text "
-                "would be spliced into the question block; sanitize the frozen packet/prompt"
-            )
-        return question
-
     c = C.CONSTRUCTS[row]
     if not c.uses_evidence_packet:
-        return _assert_no_answer_slot(prompt_text), None
+        return prompt_text, None
     resolver = packet_resolver or R.resolve_evidence_packet
     packet, evidence_sha = resolver(row, item_id)
     ev = json.dumps(packet["evidence"], sort_keys=True, ensure_ascii=False)
     question = f"[EVIDENCE sha256={evidence_sha}]\n{ev}\n[/EVIDENCE]\n\n{prompt_text}"
-    return _assert_no_answer_slot(question), evidence_sha
+    return question, evidence_sha
 
 
 # ---------------------------------------------------------------------------

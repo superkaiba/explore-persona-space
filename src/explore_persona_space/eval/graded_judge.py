@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -35,6 +36,10 @@ from explore_persona_space.eval import DEFAULT_JUDGE_MODEL
 from explore_persona_space.eval import batch_judge as _batch_judge
 
 logger = logging.getLogger(__name__)
+
+# The rubric placeholders ``format_user_msg`` fills, matched in ONE pass so an
+# inserted value can never be rescanned as a slot (#2658).
+_SLOT_RE = re.compile(r"\{(question|answer)\}")
 
 DEFAULT_JUDGE_TEMPERATURE = 0.7  # lifted from issue778_lib.JUDGE_TEMPERATURE
 
@@ -325,8 +330,13 @@ def judge_graded(
         completions[item_id] = {question: [answer] * n_draws}
 
     def format_user_msg(question: str, answer: str) -> str:
-        # Fill the verbatim rubric's {question}/{answer} slots.
-        return eval_prompt.replace("{question}", question).replace("{answer}", answer)
+        # Fill the verbatim rubric's {question}/{answer} slots in ONE left-to-right
+        # pass. Sequential ``.replace`` rescans the text it just inserted, so a
+        # question containing the literal ``{answer}`` would have the answer spliced
+        # into the question block (#2658). A CALLABLE replacement also means
+        # backslash / group references in real-user text are never interpreted.
+        _fill = {"question": question, "answer": answer}
+        return _SLOT_RE.sub(lambda m: _fill[m.group(1)], eval_prompt)
 
     passthrough: dict = {}
     if threshold_base is not None:
