@@ -1,7 +1,7 @@
 {
   "font": "Inter",
   "git": {
-    "commit": "68d2bf028af941166a1dc89766ee730069b9323c",
+    "commit": "2111a1b8f5494ad79e24b622074770c3f0f2729e",
     "tracked_worktree_dirty": true
   },
   "outputs": {
@@ -513,7 +513,7 @@
             "subset": "doesnt",
             "target": "ans_mean"
           },
-          "label": "context,\nthinking off"
+          "label": "thinking\noff"
         },
         {
           "cell": "p7_A",
@@ -565,7 +565,7 @@
             "subset": "doesnt",
             "target": "ans_mean"
           },
-          "label": "context,\nthinking on"
+          "label": "thinking\non"
         },
         {
           "cell": "p7_D",

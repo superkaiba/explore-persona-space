@@ -94,8 +94,8 @@ PANEL_A_MAPS = [
     ("p7_D", "end of\nthought"),
 ]
 PANEL_C_MAPS = [
-    ("p7_Aoff", "context,\nthinking off"),
-    ("p7_A", "context,\nthinking on"),
+    ("p7_Aoff", "thinking\noff"),
+    ("p7_A", "thinking\non"),
     ("p7_D", "end of\nthought"),
 ]
 PANEL_D_MAPS = [
