@@ -27,7 +27,7 @@ LOGS="$BASE/logs"
 # pins this table to the registry, and the job body re-asserts the value
 # against the registry before launching anything.
 case "$KEY" in
-  q38fn)      TP=2 ;;
+  q38fn)      TP=4 ;;
   q35_397b)   TP=4 ;;
   dsv4_flash) TP=2 ;;
   glm53)      TP=8 ;;
@@ -43,8 +43,6 @@ esac
 CPUS=$(( 8 * TP ))
 if [ "$CPUS" -gt 64 ]; then CPUS=64; fi
 MEM=$(( 128 * TP ))
-# q38fn offloads its 51 GB n-gram table to host RAM (VLLM_PLE_CPU_OFFLOAD=1): give it headroom.
-if [ "$KEY" = "q38fn" ]; then MEM=384; fi
 
 mkdir -p "$LOGS"
 

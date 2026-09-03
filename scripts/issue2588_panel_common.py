@@ -287,7 +287,7 @@ PANEL: dict[str, PanelModel] = {
             "qwen38fn",
             ("a", "b"),
             True,
-            tp_gpus=2,
+            tp_gpus=4,
             est_snapshot_gb=185.5,
         ),
         PanelModel(

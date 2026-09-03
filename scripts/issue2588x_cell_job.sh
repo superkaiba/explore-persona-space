@@ -31,10 +31,8 @@ export HF_HOME="$BASE/hf_cache"
 export HF_HUB_ENABLE_HF_TRANSFER=1
 export NCCL_NVLS_ENABLE=0
 export VLLM_GPU_MEM_UTIL=0.85
-# Qwen3.8-Flash-Next (qwen4_exp): keep the 51 GB n-gram embedding table in host RAM.
-# Smoke job 61111 (2026-09-03) OOMed at torch.compile autotune with it on-GPU at TP=2;
-# read only by the qwen4_exp model code, inert for the other families.
-export VLLM_PLE_CPU_OFFLOAD=1
+# Qwen3.8-Flash-Next runs at TP=4: at TP=2 the torch.compile autotune step OOMed (smoke jobs 61111 and
+# 61212, 2026-09-03) beside 88 GiB of FP8 weights per GPU; VLLM_PLE_CPU_OFFLOAD is unknown to this vLLM nightly.
 export PYTHONPATH="$BASE/repo/src:$BASE/repo/scripts"
 PY="$BASE/venv/bin/python"
 OUT_ROOT="$BASE/out"
