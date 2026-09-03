@@ -27,11 +27,11 @@ LOGS="$BASE/logs"
 # pins this table to the registry, and the job body re-asserts the value
 # against the registry before launching anything.
 case "$KEY" in
-  q38fn)      TP=4 ;;
-  q35_397b)   TP=4 ;;
-  dsv4_flash) TP=2 ;;
-  glm53)      TP=8 ;;
-  dsv4_pro)   TP=8 ;;
+  q38fn)      TP=4; BS=8 ;;
+  q35_397b)   TP=4; BS=4 ;;
+  dsv4_flash) TP=2; BS=4 ;;
+  glm53)      TP=8; BS=4 ;;
+  dsv4_pro)   TP=8; BS=2 ;;
   # Same-width (h=5120) column extension, 2026-09-02: dense bf16 ~65 GB, one GPU each.
   q3_32b)     TP=1 ;;
   qwq_32b)    TP=1 ;;
@@ -40,6 +40,11 @@ case "$KEY" in
   *) echo "unknown 2588x model key: $KEY (expected q38fn|q35_397b|dsv4_flash|glm53|dsv4_pro|q3_32b|qwq_32b|q25_32b|o3_32b_t)" >&2; exit 2 ;;
 esac
 
+# HF capture forward batch (rows per teacher-forced forward). Eager attention
+# materialises (B, heads, T, T) scores, so the wide / long-context MoE rows
+# take smaller batches; the job script reads EPS_CAPTURE_BS (default 8) and
+# it reaches the job through sbatch's default --export=ALL like HF_TOKEN.
+export EPS_CAPTURE_BS="${BS:-8}"
 CPUS=$(( 8 * TP ))
 if [ "$CPUS" -gt 64 ]; then CPUS=64; fi
 MEM=$(( 128 * TP ))

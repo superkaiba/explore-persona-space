@@ -104,7 +104,8 @@ for ARM in $ARMS; do
     --cell "${MODEL_KEY}_${ARM}" \
     --phase all \
     --out-root "$OUT_ROOT" \
-    --gpu-count "$TP"
+    --gpu-count "$TP" \
+    --capture-batch-size "${EPS_CAPTURE_BS:-8}"
   echo "[job] $(date -u +%FT%TZ) cell ${MODEL_KEY}_${ARM} complete"
 done
 

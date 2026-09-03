@@ -792,11 +792,26 @@ def _load_capture_model(model_id: str, device: str, dtype_str: str):
     from transformers import AutoModelForCausalLM
 
     dtype = _DTYPES[dtype_str] if device == "cuda" else torch.float32
-    if device == "cuda":
-        device_map = "auto" if torch.cuda.device_count() > 1 else {"": 0}
+    load_kwargs: dict = {}
+    if device == "cuda" and torch.cuda.device_count() > 1:
+        # Even spread with a per-device headroom cap. device_map="auto" fills
+        # GPU 0 to the brim first (q38fn smoke: 140/143 GiB on GPU 0, GPU 3
+        # empty) and DeepSeek-V4-Flash TP=2 then OOMed in eager attention at
+        # shard 18 (job 62452: 132.7 GiB in use, 7.6 GiB more requested).
+        # "balanced" splits the weights evenly; max_memory keeps
+        # EPS_CAPTURE_HEADROOM_GIB (default 24) free on every device for
+        # activations, attention scores and the hook buffers.
+        headroom = float(os.environ.get("EPS_CAPTURE_HEADROOM_GIB", "24"))
+        load_kwargs["device_map"] = "balanced"
+        load_kwargs["max_memory"] = {
+            i: f"{int(torch.cuda.get_device_properties(i).total_memory / 2**30 - headroom)}GiB"
+            for i in range(torch.cuda.device_count())
+        }
+        logger.info("[load] multi-GPU: device_map=balanced max_memory=%s", load_kwargs["max_memory"])
+    elif device == "cuda":
+        load_kwargs["device_map"] = {"": 0}
     else:
-        device_map = None
-    load_kwargs: dict = {"device_map": device_map}
+        load_kwargs["device_map"] = None
     load_kwargs["config"] = _native_config(model_id)
     quant_method = _quant_method(model_id)
     if quant_method == "fp8":

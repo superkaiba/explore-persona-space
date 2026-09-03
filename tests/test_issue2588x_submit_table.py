@@ -40,7 +40,32 @@ EXTENSION_KEYS = (
 
 
 def _case_table(text: str) -> dict[str, int]:
-    return {k: int(tp) for k, tp in re.findall(r"^\s*(\w+)\)\s+TP=(\d+)\s+;;", text, re.M)}
+    # `key) TP=N ;;` or `key) TP=N; BS=M ;;` (BS = HF capture forward batch,
+    # exported as EPS_CAPTURE_BS for the job script; optional, default 8).
+    return {
+        k: int(tp)
+        for k, tp in re.findall(r"^\s*(\w+)\)\s+TP=(\d+)(?:;\s*BS=\d+)?\s*;;", text, re.M)
+    }
+
+
+def _submit_bs_table(text: str) -> dict[str, int]:
+    return {k: int(bs) for k, bs in re.findall(r"^\s*(\w+)\)\s+TP=\d+;\s*BS=(\d+)\s*;;", text, re.M)}
+
+
+def test_submit_capture_batch_sizes():
+    """Wide / long-context FP8 MoE rows take smaller HF capture batches (eager
+    attention materialises (B, heads, T, T)); DeepSeek-V4-Flash TP=2 OOMed at
+    B=8 (job 62452). Every multi-GPU key pins a BS and none exceeds 8."""
+    text = SUBMIT.read_text()
+    bs = _submit_bs_table(text)
+    tp = _submit_tp_table(text)
+    for key, n in tp.items():
+        if n >= 2:
+            assert key in bs, f"{key}: multi-GPU key without an explicit BS"
+    assert all(1 <= v <= 8 for v in bs.values()), bs
+    assert bs["dsv4_flash"] <= 4 and bs["dsv4_pro"] <= 2
+    assert 'export EPS_CAPTURE_BS="${BS:-8}"' in text
+    assert '--capture-batch-size "${EPS_CAPTURE_BS:-8}"' in (SUBMIT.parent / "issue2588x_cell_job.sh").read_text()
 
 
 def test_submit_tp_table_matches_registry():
