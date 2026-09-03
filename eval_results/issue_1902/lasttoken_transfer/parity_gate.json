@@ -1,0 +1,32 @@
+{
+  "cells": [
+    {
+      "abs_diff": 0.0,
+      "recomputed_r2": 0.46697260127760254,
+      "registered_r2": 0.46697260127760254,
+      "stage": "B"
+    },
+    {
+      "abs_diff": 2.220446049250313e-16,
+      "recomputed_r2": 0.5175986843135978,
+      "registered_r2": 0.5175986843135976,
+      "stage": "S"
+    },
+    {
+      "abs_diff": 0.0,
+      "recomputed_r2": 0.518515964248253,
+      "registered_r2": 0.518515964248253,
+      "stage": "D"
+    },
+    {
+      "abs_diff": 0.0,
+      "recomputed_r2": 0.5139430528424521,
+      "registered_r2": 0.5139430528424521,
+      "stage": "R"
+    }
+  ],
+  "max_abs_diff": 2.220446049250313e-16,
+  "pass": true,
+  "reference": "eval_results/issue_1902/lasttoken_comparison/fit_u_last_random.json",
+  "tolerance": 1e-06
+}
