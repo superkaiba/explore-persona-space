@@ -35,6 +35,9 @@ export VLLM_GPU_MEM_UTIL=0.85
 # 61212, 2026-09-03) beside 88 GiB of FP8 weights per GPU; VLLM_PLE_CPU_OFFLOAD is unknown to this vLLM nightly.
 export PYTHONPATH="$BASE/repo/src:$BASE/repo/scripts"
 PY="$BASE/venv/bin/python"
+# vLLM JIT-compiles FlashInfer sampling kernels with `ninja`, which lives in the venv; it must be on PATH
+# (same-width jobs 61187-61190 died at engine init with FileNotFoundError: ninja, 2026-09-03).
+export PATH="$BASE/venv/bin:$PATH"
 OUT_ROOT="$BASE/out"
 mkdir -p "$OUT_ROOT" "$HF_HOME"
 # NB: no `export CUDA_VISIBLE_DEVICES` anywhere in this job — Slurm's gres
