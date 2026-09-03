@@ -382,6 +382,15 @@ PANEL: dict[str, PanelModel] = {
 }
 
 # The fixed-size capability column (plan §5) + AA §5 pin table (P0 re-verifies).
+# Per-family vLLM engine kwargs beyond the parent's pinned LLM(...) call (I/O + cache
+# layout only, never sampling). DeepSeek-V4's DSA attention refuses a non-fp8 KV cache
+# ("fp8_ds_mla layout only supports fp8 kv-cache, got auto", job 61630, 2026-09-03);
+# the vendor recipes for DeepSeek-V4 and GLM-5.3 both serve with --kv-cache-dtype fp8.
+ENGINE_EXTRA_KWARGS: dict[str, dict] = {
+    "deepseek_v4": {"kv_cache_dtype": "fp8", "trust_remote_code": True},
+    "glm53": {"kv_cache_dtype": "fp8"},
+}
+
 COLUMN_KEYS = ("q35_27b", "q36_27b", "q38_27b")
 # Every hidden-size-5120 row (the three-release plan-§5 column, the two OLMo
 # 3.1 32B rows, and the 2026-09-02 same-width extension). Consumers that need

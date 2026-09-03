@@ -387,7 +387,9 @@ def _stage_banked(args, cell: PC.Cell, paths: dict) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _build_engine_2588(model_id: str, seed: int, max_model_len: int, gpu_count: int):
+def _build_engine_2588(
+    model_id: str, seed: int, max_model_len: int, gpu_count: int, extra_kwargs: dict | None = None
+):
     """vLLM engine (modeled on G._build_engine @ issue2330, with explicit
     max_model_len control for the G4/G5 regen re-pin, plan §7)."""
     global _ENGINE_CONSTRUCTED
@@ -405,6 +407,7 @@ def _build_engine_2588(model_id: str, seed: int, max_model_len: int, gpu_count: 
         enforce_eager=os.environ.get("VLLM_ENFORCE_EAGER", "0") == "1",
         enable_prefix_caching=False,
         disable_log_stats=True,
+        **(extra_kwargs or {}),
     )
     return llm
 
@@ -528,12 +531,16 @@ def _gen_stage_with_regen(
     m = cell.model
     if llm_holder.get("llm") is None:
         mml = PC.PROMPT_TOKEN_BUDGET + cap
-        llm_holder["llm"] = _build_engine_2588(m.hf_id, seed, mml, args.gpu_count)
+        llm_holder["llm"] = _build_engine_2588(
+            m.hf_id, seed, mml, args.gpu_count, PC.ENGINE_EXTRA_KWARGS.get(m.family, {})
+        )
         llm_holder["mml"] = mml
     elif llm_holder["mml"] < PC.PROMPT_TOKEN_BUDGET + cap:
         G._reap_vllm_engine(llm_holder["llm"])
         mml = PC.PROMPT_TOKEN_BUDGET + cap
-        llm_holder["llm"] = _build_engine_2588(m.hf_id, seed, mml, args.gpu_count)
+        llm_holder["llm"] = _build_engine_2588(
+            m.hf_id, seed, mml, args.gpu_count, PC.ENGINE_EXTRA_KWARGS.get(m.family, {})
+        )
         llm_holder["mml"] = mml
     rows = _gen_rows(llm_holder["llm"], tok, cell, base_rows, stage=stage, cap=cap, seed=seed)
 
@@ -563,7 +570,9 @@ def _gen_stage_with_regen(
             new_mml,
         )
         G._reap_vllm_engine(llm_holder["llm"])
-        llm_holder["llm"] = _build_engine_2588(m.hf_id, seed, new_mml, args.gpu_count)
+        llm_holder["llm"] = _build_engine_2588(
+            m.hf_id, seed, new_mml, args.gpu_count, PC.ENGINE_EXTRA_KWARGS.get(m.family, {})
+        )
         llm_holder["mml"] = new_mml
         redo_base = [base_rows[i] for i in regen_idx]
         redo = _gen_rows(
