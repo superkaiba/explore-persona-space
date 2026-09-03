@@ -1,4 +1,4 @@
-% Figure 1: context-to-answer prediction pipeline (rev 4, 2026-09-03).
+% Figure 1: context-to-answer prediction pipeline (rev 6, 2026-09-03).
 % Compile standalone: pdflatex fig1_schematic.tex
 % THEN convert text to outlines before copying to Overleaf (REQUIRED):
 %   gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dNoOutputFonts -dCompatibilityLevel=1.5 \
@@ -9,16 +9,16 @@
 % draw a literal "No Glyph" box over every bar accent (Thomas, 2026-09-03). Outlining
 % removes all fonts from the figure PDF, so no viewer does any glyph lookup.
 %
-% Design notes (Thomas, 2026-09-03): show the transformer layers (token columns
-% x layer rows, layer l highlighted) so the two vectors are read off the layer-l
-% row; tokens may be truncated ("..." columns) but the template tokens around the
-% context/answer boundary are exact for Qwen2.5-7B-Instruct (the context vector
-% sits on the "\n" token after "assistant", token id 198). No circles for vectors
-% (cell strips), Inter text font matching the other paper figures, the ridge
-% predictor drawn as a matrix plus a bias with the MLP as a small dashed
-% alternative, no evaluation / uses boxes. Palette = paper palette
-% (c2a_plot_style.py): ink #22272B, muted #687078, linear teal #176B87,
-% nonlinear terracotta #C4553D. Two text sizes: 8 pt (names) and 7 pt (annotations, tokens).
+% Design (Thomas, 2026-09-03): follows the residual-stream convention of Hendel et al.
+% 2023 (task vectors, Fig. 1): a model box holding a grid of tall rounded hidden-state
+% rectangles, tokens as columns, layers as rows with dots for the elided layers, the
+% extracted states filled in a solid color. Vectors are tall contiguous-cell columns
+% (no gaps), the ridge map is a contiguous 6x6 cell grid, so the predictor reads as
+% matrix x column + column. Tokens are truncated but the template tokens around the
+% context/answer boundary are exact for Qwen2.5-7B-Instruct (the context vector sits
+% on the "\n" token after "assistant", token id 198). Palette = paper palette
+% (c2a_plot_style.py): ink #22272B, muted #687078, linear teal #176B87, nonlinear
+% terracotta #C4553D. Two text sizes: 8 pt (names) and 7 pt (annotations, tokens).
 \documentclass[tikz,border=4pt]{standalone}
 \usepackage[type1]{inter}
 \renewcommand{\familydefault}{\sfdefault}
@@ -32,39 +32,29 @@
 \definecolor{terra}{HTML}{C4553D}
 \definecolor{paper}{HTML}{FFFFFF}
 
-% ---- vector glyph: a row of small square cells ------------------------------
-\newcommand{\vecstrip}[4]{%
+% ---- column vector glyph: 6 contiguous cells, 0.34 x 1.20 cm ----------------------
+% \colvec{<node name>}{<x>}{<y>}{<color>}
+\newcommand{\colvec}[4]{%
   \begin{scope}[shift={(#2,#3)}]
-    \fill[paper] (-0.84,-0.115) rectangle (0.84,0.115);
-    \foreach \i/\s in {0/38,1/14,2/56,3/24,4/66,5/18,6/44} {
-      \fill[#4!\s] ({-0.8225+\i*0.235},-0.1) rectangle ++(0.2,0.2);
+    \foreach \r/\s in {0/42,1/16,2/60,3/26,4/68,5/20} {
+      \fill[#4!\s] (-0.17,{0.60-(\r+1)*0.20}) rectangle (0.17,{0.60-\r*0.20});
     }
-    \draw[#4!70, line width=0.45pt, rounded corners=0.4pt] (-0.84,-0.115) rectangle (0.84,0.115);
+    \draw[#4!75, line width=0.5pt] (-0.17,-0.60) rectangle (0.17,0.60);
   \end{scope}
-  \node[inner sep=0pt, minimum width=1.68cm, minimum height=0.23cm] (#1) at (#2,#3) {};
+  \node[inner sep=0pt, minimum width=0.34cm, minimum height=1.2cm] (#1) at (#2,#3) {};
 }
-% ---- matrix glyph: a 6x6 grid --------------------------------------------------
-\newcommand{\matglyph}[4]{%
+% ---- matrix glyph: 6x6 contiguous cells, 1.20 x 1.20 cm ---------------------------
+\newcommand{\matgrid}[4]{%
   \begin{scope}[shift={(#2,#3)}]
     \foreach \r/\row in {0/{40,18,62,26,50,14},1/{16,54,22,44,30,60},2/{58,28,36,12,64,34},
                         3/{24,46,14,56,20,48},4/{50,12,60,32,42,26},5/{30,62,26,48,16,54}} {
-      \foreach \c/\s [count=\ci from 0] in \row {
-        \fill[#4!\s] ({-0.48+\ci*0.16},{0.32-\r*0.16}) rectangle ++(0.135,0.135);
+      \foreach \s [count=\ci from 0] in \row {
+        \fill[#4!\s] ({-0.60+\ci*0.20},{0.60-(\r+1)*0.20}) rectangle ({-0.60+(\ci+1)*0.20},{0.60-\r*0.20});
       }
     }
-    \draw[#4!75, line width=0.45pt, rounded corners=0.4pt] (-0.495,-0.495) rectangle (0.495,0.495);
+    \draw[#4!75, line width=0.5pt] (-0.60,-0.60) rectangle (0.60,0.60);
   \end{scope}
-  \node[inner sep=0pt, minimum width=0.99cm, minimum height=0.99cm] (#1) at (#2,#3) {};
-}
-% ---- column glyph: 6 stacked cells -----------------------------------------------
-\newcommand{\colglyph}[4]{%
-  \begin{scope}[shift={(#2,#3)}]
-    \foreach \r/\s in {0/44,1/20,2/58,3/30,4/16,5/52} {
-      \fill[#4!\s] (-0.0675,{0.32-\r*0.16}) rectangle ++(0.135,0.135);
-    }
-    \draw[#4!75, line width=0.45pt, rounded corners=0.4pt] (-0.0825,-0.495) rectangle (0.0825,0.495);
-  \end{scope}
-  \node[inner sep=0pt, minimum width=0.165cm, minimum height=0.99cm] (#1) at (#2,#3) {};
+  \node[inner sep=0pt, minimum width=1.2cm, minimum height=1.2cm] (#1) at (#2,#3) {};
 }
 
 \begin{document}
@@ -78,130 +68,120 @@
   tok/.style={font=\ttfamily\fontsize{7}{8.2}\selectfont, text=muted, inner sep=0.8pt,
               rotate=90, anchor=east},
   tokink/.style={tok, text=ink},
-  cell/.style={draw=black!30, fill=black!12, line width=0.35pt, rounded corners=0.6pt,
-               minimum width=0.26cm, minimum height=0.24cm, inner sep=0pt},
-  cellctx/.style={cell, fill=black!22, draw=black!40},
-  cellans/.style={cell, fill=ink!45, draw=ink!70},
-  cellfinal/.style={cell, fill=ink!78, draw=ink},
-  conn/.style={black!22, line width=0.4pt},
+  hs/.style={draw=black!38, fill=black!14, line width=0.4pt, rounded corners=1pt,
+             minimum width=0.28cm, minimum height=0.36cm, inner sep=0pt},
+  hsctx/.style={hs, fill=black!24, draw=black!45},
+  hsans/.style={hs, fill=ink!48, draw=ink!70},
+  hsfinal/.style={hs, fill=ink!82, draw=ink},
   flow/.style={->, line width=0.6pt, ink!70},
   bypass/.style={->, dashed, line width=0.5pt, terra!80},
 ]
 
 % ===========================================================================
-% Left: transformer residual stream, tokens as columns, layers as rows.
-% Context columns i = 0..8 at x = 0.75 + 0.42 i; answer columns j = 0..4 at x = 4.75 + 0.42 j.
-% Rows: layer 1 at y = 0.95, layer l at 1.62, layer L at 2.30.
+% Left: the language model as a grid of hidden states (Hendel et al. 2023 style).
+% Context columns i = 0..8 at x = 0.80 + 0.40 i; answer columns j = 0..4 at x = 4.70 + 0.40 j.
+% Rows: layer 1 at y = 1.05, layer l at 2.05, layer L at 3.05; dots at 1.55 and 2.55.
 % ===========================================================================
-\node[lbl, anchor=west, font=\fontsize{8}{9.5}\selectfont\bfseries] at (0.52,2.72)
-  {Residual stream};
+\draw[fill=black!3, draw=black!25, rounded corners=3pt] (0.45,0.62) rectangle (6.62,3.85);
+\node[lbl, anchor=west, font=\fontsize{8}{9.5}\selectfont\bfseries] at (0.45,4.02) {Language model};
+\fill[black!7] (0.55,1.82) rectangle (6.52,2.28);   % layer-l band
 
-% layer labels
-\node[ann, anchor=east, text=ink] at (0.45,2.30) {layer $L$};
-\node[ann, anchor=east] at (0.45,1.96) {$\vdots$};
-\node[ann, anchor=east, text=ink] at (0.45,1.62) {layer $\ell$};
-\node[ann, anchor=east] at (0.45,1.285) {$\vdots$};
-\node[ann, anchor=east, text=ink] at (0.45,0.95) {layer $1$};
+\node[ann, anchor=east, text=ink] at (0.32,3.05) {layer $L$};
+\node[ann, anchor=east, text=ink] at (0.32,2.05) {layer $\ell$};
+\node[ann, anchor=east, text=ink] at (0.32,1.05) {layer $1$};
 
-% layer-l band
-\fill[black!4] (0.52,1.45) rectangle (6.66,1.79);
-
-% tokens (rotated), connectors, and cells
-% context: the first template token, an elision, then the exact tail of the prompt
-\foreach \x/\t/\s in {0.75/{<|im\_start|>}/tok, 1.17/{$\cdots$}/tok, 1.59/{France}/tokink,
-                     2.01/{?}/tokink, 2.43/{<|im\_end|>}/tok, 2.85/{\textbackslash n}/tok,
-                     3.27/{<|im\_start|>}/tok, 3.69/{assistant}/tok} {
-  \node[\s] at (\x,0.62) {\t};
-  \draw[conn] (\x,0.66) -- (\x,0.83);
-  \draw[conn] (\x,1.07) -- (\x,1.50);
-  \draw[conn] (\x,1.74) -- (\x,2.18);
-  \node[cell] at (\x,0.95) {};
-  \node[cellctx] at (\x,1.62) {};
-  \node[cell] at (\x,2.30) {};
+% context columns (first template token, an elision, then the exact tail of the prompt)
+\foreach \x/\t/\s in {0.80/{<|im\_start|>}/tok, 1.20/{$\cdots$}/tok, 1.60/{France}/tokink,
+                     2.00/{?}/tokink, 2.40/{<|im\_end|>}/tok, 2.80/{\textbackslash n}/tok,
+                     3.20/{<|im\_start|>}/tok, 3.60/{assistant}/tok} {
+  \node[\s] at (\x,0.47) {\t};
+  \node[hs] at (\x,1.05) {};
+  \node[hsctx] at (\x,2.05) {};
+  \node[hs] at (\x,3.05) {};
+  \fill[black!45] (\x,1.50) circle (0.55pt) (\x,1.60) circle (0.55pt)
+                  (\x,2.50) circle (0.55pt) (\x,2.60) circle (0.55pt);
 }
 % the final context token: "\n" after "assistant" (its layer-l state is h_C)
 \node[tokink, draw=ink, line width=0.5pt, rounded corners=0.8pt, inner sep=1.2pt, fill=paper]
-  at (4.11,0.62) {\textbackslash n};
-\draw[conn] (4.11,0.66) -- (4.11,0.83);
-\draw[conn] (4.11,1.07) -- (4.11,1.50);
-\draw[conn] (4.11,1.74) -- (4.11,2.18);
-\node[cell] at (4.11,0.95) {};
-\node[cellfinal] (nlcell) at (4.11,1.62) {};
-\node[cell] at (4.11,2.30) {};
-% answer: the sampled answer's tokens (elided in the middle)
-\foreach \x/\t/\s in {4.75/{The}/tokink, 5.17/{capital}/tokink, 5.59/{$\cdots$}/tok,
-                     6.01/{Paris}/tokink, 6.43/{.}/tokink} {
-  \node[\s] at (\x,0.62) {\t};
-  \draw[conn] (\x,0.66) -- (\x,0.83);
-  \draw[conn] (\x,1.07) -- (\x,1.50);
-  \draw[conn] (\x,1.74) -- (\x,2.18);
-  \node[cell] at (\x,0.95) {};
-  \node[cellans] at (\x,1.62) {};
-  \node[cell] at (\x,2.30) {};
+  at (4.00,0.47) {\textbackslash n};
+\node[hs] at (4.00,1.05) {};
+\node[hsfinal] (hfinal) at (4.00,2.05) {};
+\node[hs] at (4.00,3.05) {};
+\fill[black!45] (4.00,1.50) circle (0.55pt) (4.00,1.60) circle (0.55pt)
+                (4.00,2.50) circle (0.55pt) (4.00,2.60) circle (0.55pt);
+% answer columns (the sampled answer's tokens, elided in the middle)
+\foreach \x/\t/\s in {4.70/{The}/tokink, 5.10/{capital}/tokink, 5.50/{$\cdots$}/tok,
+                     5.90/{Paris}/tokink, 6.30/{.}/tokink} {
+  \node[\s] at (\x,0.47) {\t};
+  \node[hs] at (\x,1.05) {};
+  \node[hsans] at (\x,2.05) {};
+  \node[hs] at (\x,3.05) {};
+  \fill[black!45] (\x,1.50) circle (0.55pt) (\x,1.60) circle (0.55pt)
+                  (\x,2.50) circle (0.55pt) (\x,2.60) circle (0.55pt);
 }
-% box around the answer-token states at layer l
-\draw[ink!60, line width=0.55pt, rounded corners=1pt] (4.56,1.44) rectangle (6.62,1.80);
+% group of answer-token states at layer l
+\draw[ink!60, line width=0.55pt, rounded corners=1.5pt] (4.51,1.78) rectangle (6.49,2.32);
 
 % braces under the tokens
 \draw[decorate, decoration={brace, mirror, amplitude=3pt}, ink!60, line width=0.5pt]
-  (0.60,-0.86) -- (4.26,-0.86) node[midway, below=3.5pt, ann, text=ink] {context $C$};
+  (0.64,-0.95) -- (4.16,-0.95) node[midway, below=3.5pt, ann, text=ink] {context $C$};
 \draw[decorate, decoration={brace, mirror, amplitude=3pt}, ink!60, line width=0.5pt]
-  (4.60,-0.86) -- (6.58,-0.86) node[midway, below=3.5pt, ann, text=ink] {sampled answer $A_k$};
+  (4.54,-0.95) -- (6.46,-0.95) node[midway, below=3.5pt, ann, text=ink] {sampled answer $A_k$};
 
 % ===========================================================================
-% Middle: the two vectors read off the layer-l row.
+% Middle: the two vectors read off layer l.
 % ===========================================================================
-\vecstrip{hc}{8.20}{3.70}{ink}
-\node[lbl, above=1.5pt of hc] {context vector $h_C^{\ell}$};
-\draw[flow] (nlcell.east) -- (4.43,1.62) -- (4.43,3.70) -- (hc.west);
-\node[ann, anchor=south] at (5.90,3.78) {state at the final context token};
+\colvec{hc}{7.35}{4.70}{ink}
+\node[lbl, anchor=south, align=center] at (7.35,5.36) {context vector\\$h_C^{\ell}$};
+\draw[flow] (hfinal.east) -- (4.35,2.05) -- (4.35,4.70) -- (hc.west);
+\node[ann, anchor=south] at (5.75,4.78) {state at the\\final context token};
 
-\vecstrip{ha}{8.20}{1.62}{ink}
-\node[lbl, below=1.5pt of ha] {answer vector $\bar h_A^{\ell}(A_k)$};
-\draw[flow] (6.62,1.62) -- (ha.west);
-\node[ann, anchor=south] at (6.99,1.72) {mean};
+\colvec{ha}{7.35}{2.05}{ink}
+\node[lbl, anchor=north, align=center] at (7.35,1.39) {answer vector\\$\bar h_A^{\ell}(A_k)$};
+\draw[flow] (6.49,2.05) -- (ha.west);
+\node[ann, anchor=south, fill=paper, inner sep=1.2pt] at (6.85,2.13) {mean};
 
 % ===========================================================================
 % Right: the predictor (top) and the prediction target (bottom).
 % ===========================================================================
-\node[draw=teal, line width=0.7pt, fill=teal!5, rounded corners=2.5pt,
-      minimum width=2.7cm, minimum height=1.5cm, inner sep=0pt] (ridge) at (10.85,3.70) {};
+\node[draw=teal, line width=0.7pt, fill=teal!5, rounded corners=3pt,
+      minimum width=3.0cm, minimum height=2.0cm, inner sep=0pt] (ridge) at (10.20,4.70) {};
 \node[lbl, text=teal, anchor=south, font=\fontsize{8}{9.5}\selectfont\bfseries]
-  at ($(ridge.north)+(0,0.02)$) {Linear (ridge) predictor};
-\matglyph{W}{10.40}{3.82}{teal}
-\node[lbl, text=teal, anchor=north, inner sep=0.5pt] at (10.40,3.30) {$W_\ell$};
-\colglyph{hcol}{11.15}{3.82}{ink}
-\node[lbl, anchor=north, inner sep=0.5pt] at (11.15,3.30) {$h_C^{\ell}$};
-\node[lbl, text=teal, inner sep=0pt] at (11.38,3.82) {$+$};
-\colglyph{b}{11.65}{3.82}{teal}
-\node[lbl, text=teal, anchor=north, inner sep=0.5pt] at (11.65,3.30) {$b_\ell$};
+  at (10.20,5.74) {Linear predictor};
+\matgrid{W}{9.55}{4.85}{teal}
+\node[lbl, text=teal, anchor=north, inner sep=0.5pt] at (9.55,4.17) {$W_\ell$};
+\colvec{hcol}{10.45}{4.85}{ink}
+\node[lbl, anchor=north, inner sep=0.5pt] at (10.45,4.17) {$h_C^{\ell}$};
+\node[lbl, text=teal, inner sep=0pt] at (10.85,4.85) {$+$};
+\colvec{bcol}{11.25}{4.85}{teal}
+\node[lbl, text=teal, anchor=north, inner sep=0.5pt] at (11.25,4.17) {$b_\ell$};
 \draw[flow] (hc.east) -- (ridge.west);
-\vecstrip{hhat}{13.50}{3.70}{teal}
-\node[lbl, above=1.5pt of hhat, text=teal] {prediction $\hat h_A^{\ell}$};
+\colvec{hhat}{12.40}{4.70}{teal}
+\node[lbl, text=teal, anchor=south, align=center] at (12.40,5.36) {prediction\\$\hat h_A^{\ell}$};
 \draw[flow, teal!85] (ridge.east) -- (hhat.west);
 
 % nonlinear alternative: a small dashed bypass under the ridge box
 \node[draw=terra, dashed, line width=0.55pt, fill=paper, rounded corners=2pt,
-      inner sep=2.4pt, font=\fontsize{7}{8.4}\selectfont, text=terra]
-  (mlp) at (10.85,2.65) {or nonlinear predictor MLP$_\ell$};
-\draw[bypass] (9.27,3.70) -- (9.27,2.65) -- (mlp.west);
-\draw[bypass] (mlp.east) -- (12.43,2.65) -- (12.43,3.70);
+      inner sep=2.6pt, font=\fontsize{7}{8.4}\selectfont, text=terra]
+  (mlp) at (10.20,3.25) {or nonlinear predictor MLP$_\ell$};
+\draw[bypass] (8.11,4.70) -- (8.11,3.25) -- (mlp.west);
+\draw[bypass] (mlp.east) -- (11.97,3.25) -- (11.97,4.70);
 
 % prediction target: mean over K sampled answers
-\vecstrip{s3}{10.86}{1.80}{ink}
-\vecstrip{s2}{10.78}{1.71}{ink}
-\vecstrip{s1}{10.70}{1.62}{ink}
-\node[lbl, anchor=north] at (10.87,1.49) {$\{\bar h_A^{\ell}(A_k)\}_{k=1}^{K}$};
+\colvec{s3}{9.85}{2.15}{ink}
+\colvec{s2}{9.75}{2.10}{ink}
+\colvec{s1}{9.65}{2.05}{ink}
+\node[lbl, anchor=north] at (9.75,1.39) {$\{\bar h_A^{\ell}(A_k)\}_{k=1}^{K}$};
 \draw[flow] (ha.east) -- (s1.west);
-\node[ann, anchor=south] at (9.45,1.77) {$K$ sampled\\answers};
-\vecstrip{mu}{13.50}{1.62}{ink}
-\node[lbl, below=1.5pt of mu] {target $\bar\mu_A^{\ell}$};
-\draw[flow] (s1.east) -- (mu.west);
-\node[ann, anchor=south] at (12.27,1.77) {mean over\\$K$ rollouts};
+\node[ann, anchor=south] at (8.50,2.13) {$K$ sampled\\answers};
+\colvec{mu}{12.40}{2.05}{ink}
+\node[lbl, anchor=north] at (12.40,1.39) {target $\bar\mu_A^{\ell}$};
+\draw[flow] (s3.east) -- (mu.west);
+\node[ann, anchor=south] at (11.12,2.13) {mean over\\$K$ rollouts};
 
 % fit: prediction against target
-\draw[<->, line width=0.6pt, teal!85, dashed] ($(hhat.south)+(0,-0.04)$) -- ($(mu.north)+(0,0.04)$);
-\node[ann, text=teal, fill=paper] at (13.50,2.66) {ridge fit:\\$\min\,\lVert \bar\mu_A^{\ell}-\hat h_A^{\ell}\rVert^{2}$};
+\draw[<->, line width=0.6pt, teal!85, dashed] ($(hhat.south)+(0,-0.05)$) -- ($(mu.north)+(0,0.05)$);
+\node[ann, text=teal, anchor=west] at (12.70,3.38) {ridge fit:\\$\min\,\lVert \bar\mu_A^{\ell}-\hat h_A^{\ell}\rVert^{2}$};
 
 \end{tikzpicture}
 \end{document}
