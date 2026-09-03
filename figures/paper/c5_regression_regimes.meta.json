@@ -7,14 +7,11 @@
  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
  "reproduction_command": "uv run python scripts/issue1739_result2_fourpanel_fig.py --style iclr --roster regression",
  "git": {
-  "git_commit": "e60074e1306b2ea499d72131523ab967b37d777a",
+  "git_commit": "20908d34e48c32a3722dd9975df1cab0e3c2eec5",
   "git_dirty": true,
   "git_dirty_paths": [
    ".claude/agent-memory/experiment-implementer-lean/MEMORY.md",
    ".claude/agent-memory/experimenter/feedback_pod_sparse_clone_committed_inputs.md",
-   "docs/paper_context_answer_map/CLAUDE-overleaf-clone.md",
-   "docs/paper_context_answer_map/figure_standard.md",
-   "docs/paper_context_answer_map/plan.md",
    "eval_results/issue_2546/necessity_r2/summary.json",
    "figures/issue_1902/section43/c1_posttraining_dynamics.pdf",
    "figures/issue_1902/section43/c1_posttraining_dynamics.png",
@@ -22,23 +19,10 @@
    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
-   "figures/paper/c1_cot_ladder.pdf",
-   "figures/paper/c1_cot_ladder.png",
-   "figures/paper/c1_cot_ladder_data.json",
-   "figures/paper/c1_cot_ladder_grayscale.png",
-   "figures/paper/c1_cot_maps.pdf",
-   "figures/paper/c1_cot_maps.png",
-   "figures/paper/c1_cot_maps_data.json",
-   "figures/paper/c1_cot_maps_grayscale.png",
-   "figures/paper/c1_cot_necessity_r2.pdf",
-   "figures/paper/c1_cot_necessity_r2.png",
-   "figures/paper/c1_cot_necessity_r2_data.json",
-   "figures/paper/c1_cot_necessity_r2_grayscale.png",
+   "figures/paper/c5_regression_regimes.pdf",
+   "figures/paper/c5_regression_regimes.png",
    "scripts/codex_daemon_reaper.py",
    "scripts/issue1739_result2_fourpanel_fig.py",
-   "scripts/section45_cot_figure.py",
-   "scripts/section45_cot_ladder_figure.py",
-   "scripts/section45_cot_necessity_r2_figure.py",
    "tests/test_codex_daemon_reaper.py"
   ],
   "git_argv0_state": "modified",
@@ -83,7 +67,6 @@
   "background": "#FFFFFF",
   "text": [
    "EVIL",
-   "synthetic",
    "generic chat",
    "in-distrib.",
    "OOD",
@@ -100,48 +83,12 @@
    "PREDICTOR",
    "Regression on context",
    "Regression on predicted answer",
-   "Regression on real answer",
+   "Regression on real answer (ceiling)",
    "Uninterpretable (muted)"
   ]
  },
  "data": {
   "bars": [
-   {
-    "behavior": "evil",
-    "group": "synthetic",
-    "method": "regression_ctx",
-    "label": "Regression on context",
-    "rho": 0.7069504786777224,
-    "ci": [
-     0.6305935157630411,
-     0.7731763009229744
-    ],
-    "spread_failed": false
-   },
-   {
-    "behavior": "evil",
-    "group": "synthetic",
-    "method": "reg_map_linear",
-    "label": "Regression on predicted answer",
-    "rho": 0.810571074579304,
-    "ci": [
-     0.7643136124749833,
-     0.8480063696123155
-    ],
-    "spread_failed": false
-   },
-   {
-    "behavior": "evil",
-    "group": "synthetic",
-    "method": "reg_oracle",
-    "label": "Regression on real answer",
-    "rho": 0.8456174068169083,
-    "ci": [
-     0.7919709194218829,
-     0.886762451835078
-    ],
-    "spread_failed": false
-   },
    {
     "behavior": "evil",
     "group": "generic chat",
@@ -170,7 +117,7 @@
     "behavior": "evil",
     "group": "generic chat",
     "method": "reg_oracle",
-    "label": "Regression on real answer",
+    "label": "Regression on real answer (ceiling)",
     "rho": 0.21387686274055107,
     "ci": [
      0.12070756790922788,
@@ -206,7 +153,7 @@
     "behavior": "evil",
     "group": "in-distribution",
     "method": "reg_oracle",
-    "label": "Regression on real answer",
+    "label": "Regression on real answer (ceiling)",
     "rho": 0.8056781007378913,
     "ci": [
      0.7953111588395115,
@@ -242,49 +189,13 @@
     "behavior": "evil",
     "group": "completely OOD",
     "method": "reg_oracle",
-    "label": "Regression on real answer",
+    "label": "Regression on real answer (ceiling)",
     "rho": 0.1846467209757508,
     "ci": [
      0.11304086300241632,
      0.24506981032362996
     ],
     "spread_failed": true
-   },
-   {
-    "behavior": "sycophancy",
-    "group": "synthetic",
-    "method": "regression_ctx",
-    "label": "Regression on context",
-    "rho": 0.7611846342218265,
-    "ci": [
-     0.6995517806339617,
-     0.8058570985937561
-    ],
-    "spread_failed": false
-   },
-   {
-    "behavior": "sycophancy",
-    "group": "synthetic",
-    "method": "reg_map_linear",
-    "label": "Regression on predicted answer",
-    "rho": 0.7759252381712568,
-    "ci": [
-     0.7184287439879539,
-     0.8141744740735981
-    ],
-    "spread_failed": false
-   },
-   {
-    "behavior": "sycophancy",
-    "group": "synthetic",
-    "method": "reg_oracle",
-    "label": "Regression on real answer",
-    "rho": 0.7839551917464801,
-    "ci": [
-     0.7066947764568875,
-     0.8393619454296518
-    ],
-    "spread_failed": false
    },
    {
     "behavior": "sycophancy",
@@ -314,7 +225,7 @@
     "behavior": "sycophancy",
     "group": "generic chat",
     "method": "reg_oracle",
-    "label": "Regression on real answer",
+    "label": "Regression on real answer (ceiling)",
     "rho": 0.5460979190433695,
     "ci": [
      0.46678185733306815,
@@ -350,7 +261,7 @@
     "behavior": "sycophancy",
     "group": "in-distribution",
     "method": "reg_oracle",
-    "label": "Regression on real answer",
+    "label": "Regression on real answer (ceiling)",
     "rho": 0.7697732535245382,
     "ci": [
      0.761902380594496,
@@ -386,47 +297,11 @@
     "behavior": "sycophancy",
     "group": "completely OOD",
     "method": "reg_oracle",
-    "label": "Regression on real answer",
+    "label": "Regression on real answer (ceiling)",
     "rho": 0.7286289551180206,
     "ci": [
      0.6954821967279056,
      0.7634422351494403
-    ],
-    "spread_failed": false
-   },
-   {
-    "behavior": "hallucination",
-    "group": "synthetic",
-    "method": "regression_ctx",
-    "label": "Regression on context",
-    "rho": 0.5774290855736351,
-    "ci": [
-     0.46338506247525285,
-     0.6691368952990743
-    ],
-    "spread_failed": false
-   },
-   {
-    "behavior": "hallucination",
-    "group": "synthetic",
-    "method": "reg_map_linear",
-    "label": "Regression on predicted answer",
-    "rho": 0.627353761729434,
-    "ci": [
-     0.5221632392251568,
-     0.7080079618167298
-    ],
-    "spread_failed": false
-   },
-   {
-    "behavior": "hallucination",
-    "group": "synthetic",
-    "method": "reg_oracle",
-    "label": "Regression on real answer",
-    "rho": 0.785539907559668,
-    "ci": [
-     0.687923303694386,
-     0.843483096662918
     ],
     "spread_failed": false
    },
@@ -458,7 +333,7 @@
     "behavior": "hallucination",
     "group": "generic chat",
     "method": "reg_oracle",
-    "label": "Regression on real answer",
+    "label": "Regression on real answer (ceiling)",
     "rho": 0.6799617428533451,
     "ci": [
      0.6079994628527355,
@@ -494,7 +369,7 @@
     "behavior": "hallucination",
     "group": "in-distribution",
     "method": "reg_oracle",
-    "label": "Regression on real answer",
+    "label": "Regression on real answer (ceiling)",
     "rho": 0.6502932921607457,
     "ci": [
      0.6399334063777409,
@@ -530,7 +405,7 @@
     "behavior": "hallucination",
     "group": "completely OOD",
     "method": "reg_oracle",
-    "label": "Regression on real answer",
+    "label": "Regression on real answer (ceiling)",
     "rho": 0.5235387577656285,
     "ci": [
      0.49888216614783965,
@@ -541,8 +416,8 @@
   ]
  },
  "output_sha256": {
-  "pdf": "803c1660b4fefee3cdb82862abbcd3153cbc80a819008c880b510808b9340203",
-  "png": "cd1bc2714e17274baa77d974da4ec60481faca03644b91d9920592f0f1737a81",
-  "grayscale": "1329dac17bc87ea7a3fd1ac8fbbf5bae62f7ebe578c0e61b7e313d7f724a22f1"
+  "pdf": "eb293a8b314392c8bdc20b6faf734e363cd41cd525670e113a9d99d9dd3269fc",
+  "png": "1fd942126edf24ee43800cd1fcf8ce1bd64029f37a374309eaa739a945f06c24",
+  "grayscale": "d22e2adec7cbfcec2080a3d76d356c17c5ea6bf9577dd4fe2f2902785b8c3002"
  }
 }

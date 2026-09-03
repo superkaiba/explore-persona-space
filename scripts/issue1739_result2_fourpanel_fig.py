@@ -123,12 +123,21 @@ ICLR_FILLED = {m: f for m, _l, _c, f in ICLR_METHODS}
 ICLR_REGRESSION_METHODS = [
     ("regression_ctx", "Regression on context", "persona_vector", True),
     ("reg_map_linear", "Regression on predicted answer", "instruct", True),
-    ("reg_oracle", "Regression on real answer", "oracle_answer", True),
+    ("reg_oracle", "Regression on real answer (ceiling)", "oracle_answer", True),
 ]
+# The paper roster also drops the synthetic setting (user order 2026-09-03):
+# only the three real settings are shown.
+ICLR_REGRESSION_GROUPS = ["generic chat", "in-distribution", "completely OOD"]
 ICLR_ROSTERS = {
-    # roster name -> (methods, output stem, legend columns, subplot top)
-    "regression": (ICLR_REGRESSION_METHODS, "c5_regression_regimes", 2, 0.64),
-    "all": (ICLR_METHODS, "c5_pv_methods_regimes", 2, 0.55),
+    # roster name -> (methods, output stem, legend columns, subplot top, groups)
+    "regression": (
+        ICLR_REGRESSION_METHODS,
+        "c5_regression_regimes",
+        2,
+        0.64,
+        ICLR_REGRESSION_GROUPS,
+    ),
+    "all": (ICLR_METHODS, "c5_pv_methods_regimes", 2, 0.55, None),
 }
 
 GROUPS = ["synthetic", "generic chat", "in-distribution", "completely OOD"]
@@ -241,7 +250,13 @@ def group_cell(points: dict, verdicts: dict, beh: str, group: str, method: str) 
     }
 
 
-def behavior_panel(points: dict, verdicts: dict, beh: str, slots: list[str] | None = None) -> dict:
+def behavior_panel(
+    points: dict,
+    verdicts: dict,
+    beh: str,
+    slots: list[str] | None = None,
+    groups: list[str] | None = None,
+) -> dict:
     ident = {
         "synthetic": SETTING_IDENTITY[(beh, "pvsynth")],
         "generic chat": SETTING_IDENTITY[(beh, "wildchat_rung")],
@@ -250,17 +265,17 @@ def behavior_panel(points: dict, verdicts: dict, beh: str, slots: list[str] | No
             SETTING_IDENTITY[(beh, s)] for s in GROUP_SETTINGS[beh]["completely OOD"]
         ),
     }
-    groups = []
-    for g in GROUPS:
+    groups_out = []
+    for g in groups or GROUPS:
         bars = [group_cell(points, verdicts, beh, g, m) for m in (slots or METHOD_SLOTS)]
-        groups.append(
+        groups_out.append(
             {
                 "label": f"{g}\n({ident[g]})",
                 "bars": bars,
                 "failed": bars[0]["spread_failed"],
             }
         )
-    return {"title": beh, "groups": groups}
+    return {"title": beh, "groups": groups_out}
 
 
 def averaged_panel(points: dict, verdicts: dict, exclude_failed: bool) -> dict:
@@ -562,7 +577,7 @@ def render_iclr(points: dict, verdicts: dict, roster: str = "regression") -> int
     """
     import hashlib
 
-    methods, stem_name, legend_ncol, subplot_top = ICLR_ROSTERS[roster]
+    methods, stem_name, legend_ncol, subplot_top, groups = ICLR_ROSTERS[roster]
     slots = [m for m, _l, _c, _f in methods]
     label = {m: lbl for m, lbl, _c, _f in methods}
     concept = {m: c for m, _l, c, _f in methods}
@@ -597,7 +612,9 @@ def render_iclr(points: dict, verdicts: dict, roster: str = "regression") -> int
         "oracle_answer": INK,  # real answer (the ceiling)
     }
 
-    panels = [behavior_panel(points, verdicts, beh, slots=slots) for beh in BEHAVIORS]
+    panels = [
+        behavior_panel(points, verdicts, beh, slots=slots, groups=groups) for beh in BEHAVIORS
+    ]
     vals = [v for p in panels for g in p["groups"] for b in g["bars"] for v in (b["rho"], *b["ci"])]
     ylim = (min(-0.05, min(vals) - 0.04), max(vals) + 0.04)
     bar_w = GROUP_WIDTH / len(slots)
@@ -784,9 +801,10 @@ def main() -> None:
     verdicts = load_verdicts()
     if args.style == "iclr":
         n_slots = len(ICLR_ROSTERS[args.roster][0])
+        n_groups = len(ICLR_ROSTERS[args.roster][4] or GROUPS)
         n = render_iclr(load_points_iclr(), verdicts, roster=args.roster)
-        if n != 3 * len(GROUPS) * n_slots:
-            raise SystemExit(f"iclr figure plotted {n} bars, expected {3 * 4 * n_slots}")
+        if n != 3 * n_groups * n_slots:
+            raise SystemExit(f"iclr figure plotted {n} bars, expected {3 * n_groups * n_slots}")
         return
     points = load_points()
 
