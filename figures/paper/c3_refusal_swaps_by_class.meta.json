@@ -7,7 +7,7 @@
   "title": "One-word safety swaps by pair class",
   "subject": "Per-class mean shift-direction cosine, refusal-direction loading, and through-origin predicted-over-observed shift size for one-word safety swaps, with the raw context-shift baseline and shuffled-pair null",
   "git": {
-    "commit": "adeed6da49516182b9577311a4fd40804938044c",
+    "commit": "6ee6686957519ea9b25b6d51a17987ae524dfe24",
     "tracked_worktree_dirty": true
   },
   "sources": [
