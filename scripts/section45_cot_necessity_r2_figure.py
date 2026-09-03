@@ -254,7 +254,7 @@ def make_figure(results: dict[str, Any], titles: dict[str, str]) -> plt.Figure:
         ax.set_xticks(range(len(CORPORA)))
         ax.set_xticklabels([name for _c, name in CORPORA], fontsize=13, linespacing=1.15)
         ax.set_ylabel("Held-out $R^2$, context → answer  ↑", labelpad=12)
-        _kicker(ax, titles[arm], f"{panel}  ·  {block['model']}, {block['comparator']}, layer {block['layer']}")
+        _kicker(ax, titles[arm], f"{panel}  ·  {ARMS[int(arm)]['label']}, {ARMS[int(arm)]['comparator']}, layer {ARMS[int(arm)]['layer']}")
     handles = [Patch(facecolor=GROUP_COLOR[g], edgecolor=GROUP_COLOR[g], label=GROUP_LABEL[g]) for g in ("necessary", "both_correct")]
     handles.append(Line2D([0], [0], color=INK, lw=1.6, ls=(0, (3, 2)), label="Whole corpus"))
     fig.text(0.07, 0.965, "QUESTIONS, LABELED BY WHETHER REASONING WAS NEEDED", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
