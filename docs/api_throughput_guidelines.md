@@ -17,13 +17,15 @@ RPM ceiling.
 > in the transport taxonomy: 829 of 2,480 draws dropped and 796 judge-cache
 > rows were poisoned in task #2617's redo. The operating defaults changed:
 >
-> - **Single main key by default.** The org pool is `ANTHROPIC_API_KEY` alone.
->   `ANTHROPIC_API_KEY_LOW_PRIO` was removed from the pool entirely. Multi-org
->   fan-out is opt-in: set `EPS_API_MULTI_ORG=1` to re-add the `batch` org
->   (`ANTHROPIC_BATCH_KEY`, a separate org that still answers).
+> - **Every live key by default.** The org pool is every key present in
+>   `.env`: `ANTHROPIC_API_KEY` (`high_prio`) and `ANTHROPIC_BATCH_KEY`
+>   (`batch`, a separate org that still answers). `ANTHROPIC_API_KEY_LOW_PRIO`
+>   was removed from the pool entirely, and any org whose key auth-fails
+>   mid-run is dropped automatically by the 401/403 rule below. Set
+>   `EPS_API_SINGLE_ORG=1` to restrict the pool to `ANTHROPIC_API_KEY` only.
 > - **Batch API by default.** `decide_dispatch_route`'s default `cost_pref` is
 >   `"cost"`: any wave of at least `crossover_n // 10` items (200 at the
->   default crossover) routes to the Batch API on the main key. Only tiny
+>   default crossover) routes to the Batch API. Only tiny
 >   waves (pilots, live probes) stay sync, and a deadline under the 24h batch
 >   SLA still forces sync. The judge router matches: `DEFAULT_THRESHOLD_BASE`
 >   and `judge_completions_batch`'s `threshold_base` default are both 200.

@@ -295,35 +295,33 @@ class FakeBatchClient:
 # ── 1. org auto-detection ────────────────────────────────────────────────────
 
 
-def test_detect_org_keys_default_is_main_key_only():
-    """#2617: the DEFAULT pool is the single main key — ANTHROPIC_BATCH_KEY is
-    ignored without the EPS_API_MULTI_ORG=1 opt-in, and the dead low_prio org
-    is gone from the pool entirely."""
+def test_detect_org_keys_default_is_every_live_key():
+    """#2617: the DEFAULT pool is every live key present in the env (main +
+    batch); the dead low_prio org is gone from the pool entirely, and a blank
+    key value is treated as absent."""
     env = {
         "ANTHROPIC_API_KEY": "sk-high",
         "ANTHROPIC_BATCH_KEY": "sk-batch",
         "ANTHROPIC_API_KEY_LOW_PRIO": "sk-dead",  # removed org: never detected
     }
     found = detect_org_keys(env)
-    assert found == {"high_prio": "sk-high"}
+    assert found == {"high_prio": "sk-high", "batch": "sk-batch"}
     assert "low_prio" not in api_dispatch.ORG_ENV_KEYS
+    blank = dict(env, ANTHROPIC_BATCH_KEY="   ")
+    assert detect_org_keys(blank) == {"high_prio": "sk-high"}
 
 
-def test_detect_org_keys_multi_org_opt_in_re_adds_batch():
-    """EPS_API_MULTI_ORG=1 re-adds the batch org; low_prio stays gone; a blank
-    key value is still treated as absent."""
+def test_detect_org_keys_single_org_opt_out():
+    """EPS_API_SINGLE_ORG=1 restricts the pool to the main key only; anything
+    but the literal "1" keeps the full live pool."""
     env = {
         "ANTHROPIC_API_KEY": "sk-high",
         "ANTHROPIC_BATCH_KEY": "sk-batch",
-        "ANTHROPIC_API_KEY_LOW_PRIO": "sk-dead",
-        "EPS_API_MULTI_ORG": "1",
+        "EPS_API_SINGLE_ORG": "1",
     }
-    assert detect_org_keys(env) == {"high_prio": "sk-high", "batch": "sk-batch"}
-    blank = dict(env, ANTHROPIC_BATCH_KEY="   ")
-    assert detect_org_keys(blank) == {"high_prio": "sk-high"}
-    # Anything but the literal "1" keeps the single-key default (fail-safe).
-    off = dict(env, EPS_API_MULTI_ORG="true")
-    assert detect_org_keys(off) == {"high_prio": "sk-high"}
+    assert detect_org_keys(env) == {"high_prio": "sk-high"}
+    off = dict(env, EPS_API_SINGLE_ORG="true")
+    assert detect_org_keys(off) == {"high_prio": "sk-high", "batch": "sk-batch"}
 
 
 def test_detect_org_keys_only_one_present():
@@ -334,7 +332,7 @@ def test_detect_org_keys_only_one_present():
 
 def test_detect_org_keys_none_present():
     assert detect_org_keys({}) == {}
-    assert detect_org_keys({"EPS_API_MULTI_ORG": "1"}) == {}
+    assert detect_org_keys({"EPS_API_SINGLE_ORG": "1"}) == {}
 
 
 # ── 2. model family + cap resolution ─────────────────────────────────────────
@@ -1119,7 +1117,7 @@ def test_empty_items_returns_empty():
 def test_no_keys_raises(monkeypatch):
     for env_var in api_dispatch.ORG_ENV_KEYS.values():
         monkeypatch.delenv(env_var, raising=False)
-    monkeypatch.delenv(api_dispatch.MULTI_ORG_ENV_FLAG, raising=False)
+    monkeypatch.delenv(api_dispatch.SINGLE_ORG_ENV_FLAG, raising=False)
     items = make_items(2)
     with pytest.raises(RuntimeError, match="No Anthropic org keys"):
         _run(

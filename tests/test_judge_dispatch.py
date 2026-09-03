@@ -1238,7 +1238,7 @@ def test_sync_routes_through_multiorg_dispatcher_when_two_plus_keys(monkeypatch)
     """
     monkeypatch.setenv("ANTHROPIC_API_KEY", "k1")
     monkeypatch.setenv("ANTHROPIC_BATCH_KEY", "k2")
-    monkeypatch.setenv("EPS_API_MULTI_ORG", "1")  # multi-org is opt-in (#2617)
+    monkeypatch.delenv("EPS_API_SINGLE_ORG", raising=False)  # full pool = default
     monkeypatch.delenv("EPS_JUDGE_DISABLE_MULTIORG", raising=False)
 
     items = make_items(3)
@@ -1293,7 +1293,7 @@ def test_sync_falls_back_to_single_org_when_opt_out_set(monkeypatch):
     """
     monkeypatch.setenv("ANTHROPIC_API_KEY", "k1")
     monkeypatch.setenv("ANTHROPIC_BATCH_KEY", "k2")
-    monkeypatch.setenv("EPS_API_MULTI_ORG", "1")  # multi-org enabled...
+    monkeypatch.delenv("EPS_API_SINGLE_ORG", raising=False)  # full pool active...
     monkeypatch.setenv("EPS_JUDGE_DISABLE_MULTIORG", "1")  # ...but judge opts out
 
     items = make_items(2)
@@ -1336,13 +1336,13 @@ def test_sync_falls_back_to_single_org_when_opt_out_set(monkeypatch):
     assert len(results) == 2
 
 
-def test_sync_default_stays_single_org_without_multi_org_opt_in(monkeypatch):
-    """#2617: with both keys in the env but NO EPS_API_MULTI_ORG=1, the org
-    pool is the main key alone, so the sync judge path never enters the
-    multi-org dispatcher."""
+def test_sync_single_org_opt_out_restricts_pool(monkeypatch):
+    """#2617 (opt-out shape): with both keys in the env but EPS_API_SINGLE_ORG=1,
+    the org pool is the main key alone, so the sync judge path never enters
+    the multi-org dispatcher."""
     monkeypatch.setenv("ANTHROPIC_API_KEY", "k1")
     monkeypatch.setenv("ANTHROPIC_BATCH_KEY", "k2")
-    monkeypatch.delenv("EPS_API_MULTI_ORG", raising=False)
+    monkeypatch.setenv("EPS_API_SINGLE_ORG", "1")
     monkeypatch.delenv("EPS_JUDGE_DISABLE_MULTIORG", raising=False)
 
     items = make_items(2)
@@ -1382,7 +1382,7 @@ def test_sync_default_stays_single_org_without_multi_org_opt_in(monkeypatch):
             force_sync=True,
         )
     )
-    assert multiorg_called["n"] == 0, "single-key default must not enter multi-org"
+    assert multiorg_called["n"] == 0, "single-org opt-out must not enter multi-org"
     assert legacy.calls == 2
     assert len(results) == 2
 

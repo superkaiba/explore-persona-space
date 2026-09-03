@@ -137,8 +137,9 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     cell). Three sub-rules:
     (i) **Retry, bounded.** Route judge calls through `api_dispatch.py`
     (mandatory per the API-throughput rule). Operating defaults since #2617:
-    the org pool is the SINGLE main key (`ANTHROPIC_API_KEY`; multi-org is
-    opt-in via `EPS_API_MULTI_ORG=1`, which re-adds `ANTHROPIC_BATCH_KEY`),
+    the org pool is every LIVE key in the env (`ANTHROPIC_API_KEY` +
+    `ANTHROPIC_BATCH_KEY`; a 401/403 org is dropped automatically mid-run;
+    `EPS_API_SINGLE_ORG=1` restricts to `ANTHROPIC_API_KEY` alone),
     and the Batch API is the DEFAULT path (`cost_pref="cost"`; judge router
     `DEFAULT_THRESHOLD_BASE = 200`) with a 200-item sync floor, so only
     pilots and live probes route sync. Its transient tuple retries
