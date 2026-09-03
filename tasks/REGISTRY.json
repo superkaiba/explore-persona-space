@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2660,
+  "highest_id": 2661,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12815,6 +12815,14 @@
       "path": "tasks/proposed/2660",
       "status": "proposed",
       "title": "earlyoom -s 10 swap trigger permanently satisfied: SIGTERMs fleet python subprocesses despite 55 GB free RAM"
+    },
+    "2661": {
+      "goal": "Train a flat Der-recipe (32,768/k=128) SAE on layer-19 last-prompt-token context states, log Der's reconstruction metrics for it and the reused #2552 flat answer SAE, then fit ridge and MLP maps from the full context dictionary to the full answer dictionary with no alive floor and read the labelled edges for odd behavior correlations such as China-topic context to refusal answers.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2661",
+      "status": "proposed",
+      "title": "Flat Der-recipe context SAE and a full-dictionary context-feature to answer-feature map (odd-correlation edge read)"
     },
     "267": {
       "has_clean_result": true,
