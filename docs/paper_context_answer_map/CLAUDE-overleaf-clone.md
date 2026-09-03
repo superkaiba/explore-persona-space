@@ -126,11 +126,39 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
   `\cite{PLACEHOLDER_...}` + tell Thomas explicitly.
 
 ## Figures
-- EPS `/paper-plots` conventions: colorblind-safe palettes, error bars with their
-  definition stated, one color = one meaning across the whole paper, NO caption/text
-  blocks inside the canvas, no annotation overlays (arrows/effect labels).
-- Any aggregate result figure is accompanied by its per-unit/raw view.
-- Vector PDF for plots; self-contained captions.
+- STANDARD (Thomas, 2026-09-03): EPS `docs/paper_context_answer_map/figure_standard.md`
+  governs every figure, caption, and in-text figure reference. Operative rules:
+  (1) figures come from scripts that import `c2a_plot_style` (c2a-v2): fixed
+  authoring scale, Inter for text and math, the semantic `ROLES` palette (one color =
+  one meaning paper-wide), descriptive on-canvas titles only (no claim words),
+  `Top-1 retrieval` never `acc@1`; include widths are `\textwidth`, `0.75\textwidth`,
+  or `0.5\textwidth` only, matching the sidecar's `latex_include_line`.
+  (2) One lettered panel per question: a model/corpus variant is a series inside the
+  panel, never a sibling panel; same-question panels are merged.
+  (3) Captions: bold figure-level lead (Thomas's claim wording), then per panel
+  `\panel{A}` + bold subclaim (verbatim the text's claim header) + what is plotted,
+  then `Error bars: <estimator, interval, n>`, then model/layer/data/folds footer and
+  an optional `Details: \appref{...}`. Caps 120 words (1-2 panels) / 150 (3+),
+  appendix +30. No interpretation beyond the leads.
+  (4) In-text references use the header macros ONLY: `\figref{fig:x}`,
+  `\figref[A]{fig:x}`, `\figref[A--B]{fig:x}`, `\tabref`, `\appref`; raw
+  `Figure~\ref` / `Fig.` are retired. Each claim header carries its panel pointer
+  before the colon: `\textbf{Claim} (\figref[A]{fig:x})\textbf{:}`; the setup
+  sentence names the figure once in parentheses and the standalone "The results
+  are shown in Figure N." sentence is not used. Every figure is cited from at least
+  one claim header; appendix figures from the main text as
+  `(\appref{app:x}, \figref{fig:y})`.
+- Legacy conventions still in force: colorblind-safe, error bars with their
+  definition stated, NO caption/text blocks inside the canvas, no annotation overlays
+  (arrows/effect labels); any aggregate result figure is accompanied by its per-unit
+  view; vector PDF.
+- SHARED CLONE DISCIPLINE: several Claude sessions commit from this one clone
+  concurrently. Stage and commit by explicit pathspec only
+  (`git add <files>; git commit -F <msg> -- <files>`), never a bare or `-a` commit
+  (it sweeps another session's staged edits under your message, observed
+  2026-09-03); `git pull --rebase` before each edit batch; `TELLS_ALLOW=1` on the
+  pre-commit gate is sanctioned only for hits inside quoted model text (the
+  retrieval-failure tables and plan.tex carry pre-existing ones).
 
 ## Writing
 - Thomas alone writes/approves claims (contribution, abstract's central claim, titles,

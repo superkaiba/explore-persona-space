@@ -1,6 +1,6 @@
 # Figure, caption, and in-text reference standard
 
-**Status: PROPOSAL, 2026-09-03.** Audit of the Overleaf paper at commit `c314eda`
+**Status: ADOPTED 2026-09-03 (decisions D1 to D3 and the palette question answered by Thomas, see §0); migration in progress, CoT figures deferred on Thomas's instruction.** Audit of the Overleaf paper at commit `c314eda`
 (17 figure floats, 5 tables). Three decisions need Thomas (§0). Once he decides,
 the normative parts (§2 to §5) move into `plotting_style.md` (the source of truth
 named in `CLAUDE.md`) and the Overleaf clone `CLAUDE.md` § Figures; §1 stays here
@@ -11,9 +11,9 @@ changed yet.
 
 | # | Question | Recommended | Alternative |
 |---|---|---|---|
-| D1 | What goes in the in-figure panel title? | **Descriptive only** (what is plotted: "Predictability across layers"). The figure-level claim lives in the caption's bold lead; each panel's subclaim lives in the caption's per-panel beat and in the text's bold header, same words (§3, §4.3). Matches Figure 3 as approved, the 2026-08-12 "simple and concise" directive, and `paper-plots` §3.8. | Subclaims as panel titles inside the figure (blog register). Then caption beat 2 and the text header must repeat the title verbatim: one claim, one wording, three copies. |
-| D2 | One name for the retrieval metric | **`acc@1`** everywhere: axis labels, legends, captions, text. Defined once in Methodology as "top-1 retrieval accuracy (acc@1)". | "Top-1 retrieval" on figures, `acc@1` in text (current `plotting_style.md` rule). Two words for one concept. |
-| D3 | Where the figure pointer sits in a claim paragraph | **In the bold header, before the colon**: `\textbf{Claim} (\figref[A]{fig:x})\textbf{:}`. Already the pattern in §4.3 and §4.4. A skimming reader maps claim to panel in one glance. | At the end of the paragraph, after the evidence sentence. |
+| D1 | What goes in the in-figure panel title? **Decided: descriptive only.** | **Descriptive only** (what is plotted: "Predictability across layers"). The figure-level claim lives in the caption's bold lead; each panel's subclaim lives in the caption's per-panel beat and in the text's bold header, same words (§3, §4.3). Matches Figure 3 as approved, the 2026-08-12 "simple and concise" directive, and `paper-plots` §3.8. | Subclaims as panel titles inside the figure (blog register). Then caption beat 2 and the text header must repeat the title verbatim: one claim, one wording, three copies. |
+| D2 | One name for the retrieval metric | **Decided: `top-1 retrieval` everywhere** (axes and legends `Top-1 retrieval`, captions and text `top-1 retrieval`); Methodology defines strict top-$k$ retrieval accuracy once. `acc@1` and `answer retrieval` are retired. The CoT figures and their captions still carry `acc@1` until their planned redo. | `acc@1` everywhere (the recommendation Thomas overruled). |
+| D3 | Where the figure pointer sits in a claim paragraph. **Decided: in the bold header.** | **In the bold header, before the colon**: `\textbf{Claim} (\figref[A]{fig:x})\textbf{:}`. Already the pattern in §4.3 and §4.4. A skimming reader maps claim to panel in one glance. | At the end of the paragraph, after the evidence sentence. |
 
 Font is not a decision unless Thomas objects: keep Inter (11 of 17 figures already
 use it, and Figure 3 was approved in it). The body text is Times; sans figures on a
@@ -183,7 +183,7 @@ acc@1 = dashed line / open marker / hatched bar. Color plus shape on every serie
 - Top and right spines off; horizontal grid only; white background; upward arrow
   on the axis label when larger is better; no text blocks, arrows, or effect
   labels on the canvas (standing directive 2026-08-12).
-- Axis label vocabulary equals caption vocabulary: `Held-out $R^2$`, `acc@1` (D2).
+- Axis label vocabulary equals caption vocabulary: `Held-out $R^2$`, `Top-1 retrieval` (D2).
 
 ### 2.6 Export and naming
 
@@ -215,7 +215,9 @@ Four beats, fixed order, then stop.
    question (§2.5), every lettered panel has exactly one subclaim; a single-panel
    figure has none beyond the lead. The subclaim appears in exactly two places
    with identical wording: here and the bold claim header in the text that cites
-   the panel (§4.3). Never on the canvas.
+   the panel (§4.3). Never on the canvas. The subclaim is the text header's wording
+   verbatim; Thomas writes the claims, so where a header runs past 8 words the header
+   wins and the cap is advisory.
 3. **Uncertainty and sample.** One sentence: estimator, interval type, n.
    "Error bars: 95% bootstrap intervals over 1,000 prompt-level draws; 13,116
    questions." Use "error bars" for line intervals and "bands" for shaded ones;
@@ -231,8 +233,10 @@ Not in a caption: interpretation beyond the lead ("This aligns with…"), prior-
 citations, more than two numbers, any term absent from the figure or the
 Methodology, "left/right/top" when panel letters exist.
 
-Terminology locked for captions and axes: `context-to-answer map` (never
-`context--answer`), `acc@1` (D2), `Held-out $R^2$`, `error bars`.
+Terminology locked for captions and axes: `context-to-answer map` for the map (a
+`context--answer pair`, meaning one context with its answer, is a different noun
+and stays), `top-1 retrieval` (D2; never `acc@1`, never `answer retrieval`),
+`Held-out $R^2$`, `error bars`.
 
 Tables: title above the table (ICLR), same four beats with beat 2 naming the
 columns.
@@ -265,7 +269,7 @@ After:
 
 ```latex
 \caption{\textbf{The context state retrieves the answer before any reasoning token.}
-  \panel{A} Held-out $R^2$ (solid) and acc@1 (hatched) of maps into the answer
+  \panel{A} Held-out $R^2$ (solid) and top-1 retrieval (hatched) of maps into the answer
   vector from the last context token and from the end-of-thought token.
   \panel{B} The same two metrics from each relative position inside the thinking
   span. \panel{C} Panels A and B on Qwen3-8B, plus the map with thinking disabled.
@@ -384,7 +388,7 @@ next to `check_paper_tells.sh`, and mirrored as a `workflow_lint.py` check in EP
 | F4 | No `Figure~\ref`, `Fig.`, `figure~\ref`, `\Cref`, `\autoref` outside the macros | FAIL |
 | F5 | Panel refs match `\figref\[[A-D](--[A-D])?\]` | FAIL |
 | F6 | `\includegraphics` width equals the sidecar's `include_width_frac` | FAIL |
-| F7 | Caption and axes use `acc@1`, `context-to-answer`, `error bars` (no `whiskers`, `context--answer`, `Top-1`) | FAIL |
+| F7 | Caption and axes use `top-1 retrieval`, `context-to-answer map`, `error bars` (no `acc@1`, `answer retrieval`, `whiskers`, `context--answer map`) | FAIL |
 | F8 | Lead sentence ≤ 15 words | WARN |
 | F9 | No letter glued to `(` before a `\figref` (the `insignificant(Figure` shape) | WARN |
 | F10 | Every PDF under `figures/paper/` embeds only Inter (`pdffonts`) | WARN |
@@ -402,7 +406,7 @@ rewrite lands as a targeted edit against a fresh pull, one float per commit.
 | Step | Files | Effort |
 |---|---|---|
 | 1. Module: `C2A_SCALE`, `c2a_figure`, palette roles, mathtext, sidecar fields | `c2a_plot_style.py` | 1 h |
-| 2. Re-canvas 11 c2a figures (figsize + title per D1 + acc@1 label) | 7 scripts: `make_paper_figure2`, `make_paper_section42_figures`, `section45_cot_{figure,ladder,strata,necessity}_figure`, `section4_offpolicy_figure` | 2 h |
+| 2. Re-canvas 11 c2a figures (figsize + title per D1 + top-1 retrieval label) | 7 scripts: `make_paper_figure2`, `make_paper_section42_figures`, `section45_cot_{figure,ladder,strata,necessity}_figure`, `section4_offpolicy_figure` | 2 h |
 | 2b. Merge same-question panels: Fig 10 (Qwen3-8B bars of C into A; C keeps thinking on/off; add the Qwen3-8B trajectory to B if banked), Fig 15 (A and B into one scatter, model as marker, as its panel C already does) | `section45_cot_figure`, `section45_cot_necessity_figure` | 1 h |
 | 3. Port Fig 7 to the module (drop copied constants) | `section43_posttraining_figure.py` | 30 min |
 | 4. Port Figs 2, 8, 13, 17 from `paper_plots` to the module | `issue779_plot3_redesign`, `issue2054_paper_r2_figs`, `issue1739_result2_fourpanel_fig`, `issue1739_claim4_relabel_figs` | 2 h |
