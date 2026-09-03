@@ -84,3 +84,29 @@ ARE persisted (ArmPilotStats) — key-only still suffices because report
 tamper can equally fake `passed` (verdict is trusted; compare exists for
 constants drift, not forgery). Key-payload additions orphan ALL prior gate
 dirs → one fail-safe re-pilot per row; state it, don't flag it.
+
+**Enumeration-guard closure probes (#2658 rev-E r3 fix review, PASSed):** when
+a round ships a live-derived parameter-enumeration guard
+(inspect.signature ∩ key-payload names / mutation-verified fingerprint /
+regex-derived compare fields / justified allow-list, unclassified==∅), certify
+it with FIVE independent probes, never the round's own demo: (1) inject a
+synthetic kwarg via `f.__signature__ = sig.replace(parameters=[...])` → guard
+must go red NAMING it; (2) inject a synthetic report field via a
+`__dataclass_fields__` dict copy (copy.copy an existing Field, rename) → red
+from the report direction; (3) fingerprint mutation matrix + a NEGATIVE
+control (perturb a non-gate constant; fp must NOT move) + determinism
+recompute; (4) direct-key VALUE-linkage matrix — monkeypatch each module
+constant, require pilot_gate_key to move (the guard matches NAMES only; a
+future literal-inlining edit passes it — file as minor); (5) waiver-dedup
+equivalence (('a','a','b') vs ('b','a') key identically). The allow-list is
+the irreducible residue: one in-test dict entry with free-text justification
+exempts anything — same trust level as deleting the test, so silent
+reintroduction (the class) is closed while deliberate misclassification stays
+reviewable; ask for a criterion comment at the dict, not more code. Adjudicate
+`arms`/data-pool exemptions against the #2479 R4 data-identity precedent
+(stale-pool resume is the real residual). Vintage-worktree mapped-test sweeps:
+run the selector yourself — it may map cleanly while mapped tests carry
+UNRELATED red (attribute per-file before charging the round); cross-file risk
+settles by grepping which SYMBOLS importers consume (here: JUDGE_SCHEMA only).
+Orphaning cost: check realized dirs exist before pricing (here zero — no wave
+had run).
