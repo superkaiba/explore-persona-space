@@ -96,9 +96,14 @@ VERDICT_SCHEMA = "i2658-gate-verdict-v1"
 
 # Expected external artifacts for Deliverable D (producers named; absent =>
 # not-estimable, never a default).
-PILOT_TIMING_REL = "power_inputs/pilot_timing.json"  # producer: P1 launch wrapper
-JUDGE_SPEND_REL = "power_inputs/judge_spend.json"  # producer: P2 judge wave wrapper
+PILOT_TIMING_REL = "power_inputs/pilot_timing.json"  # producer: scripts/issue2658_pilot_timing.py
+JUDGE_SPEND_REL = "power_inputs/judge_spend.json"  # producer: scripts/issue2658_judge_spend.py
 HUMAN_AUDIT_REL = "human_audit/adjudications.json"  # producer: blinded packet round-trip
+# Owner-ruling waiver record (plan v5 A1). NEVER a synthesized adjudications
+# artifact: the record carries the verbatim ruling + mandatory disclosure and
+# the human-audit gate reports the distinct status WAIVED (never PASS).
+HUMAN_AUDIT_WAIVER_REL = "human_audit/waiver.json"
+WAIVER_SCHEMA = "i2658-human-audit-waiver-v1"
 
 
 @dataclass(frozen=True)
@@ -169,6 +174,9 @@ CHUNK_ELEMENT_BUDGET = 2**24
 GATE_PASS = "PASS"
 GATE_FAIL = "FAIL"
 GATE_NOT_ESTIMABLE = "NOT-ESTIMABLE"
+# Distinct owner-waiver status (plan v5 A1): non-blocking for the verdict but
+# NEVER collapsed into PASS (the disclosure must survive into every artifact).
+GATE_WAIVED = "WAIVED"
 
 
 class PowerInputError(C.Issue2658GuardError):
@@ -461,14 +469,112 @@ def expected_cells(row: str) -> list[str]:
 
 @dataclass
 class RowLabelProfile:
-    """Per-prompt pilot label counts for one row: cell -> [(k_pos, n_labeled)]."""
+    """Per-prompt pilot label counts for one row: cell -> [(k_pos, n_labeled)].
+
+    ``declared_not_estimable`` (plan v5 A2) maps a DOCUMENTED-absent cell to its
+    declaration record ({source, reason, artifact}); ``missing_cells`` keeps
+    UNDOCUMENTED absences only (pipeline-incomplete — the gates PARK on those).
+    Neither field enters :func:`profile_fingerprint` (``cells`` only), so the
+    power-unit ledger resume keys are unchanged by the A2 split.
+    """
 
     row: str
     judged: bool
     cells: dict[str, list[tuple[int, int]]] = field(default_factory=dict)
     missing_cells: list[str] = field(default_factory=list)
+    declared_not_estimable: dict[str, dict[str, str]] = field(default_factory=dict)
     n_unlabeled_prompts: int = 0
     artifact_dir: str = ""
+
+
+def load_declared_not_estimable(
+    out_root: Path,
+    split: str,
+    *,
+    frame_manifest_path: Path | None = None,
+) -> dict[str, dict[str, str]]:
+    """Cells whose absence is DOCUMENTED in a frozen upstream artifact (v5 A2).
+
+    Two documented sources exist:
+
+    (i)  judge ``_wave_summary.json`` ``not_estimable[<cell>]`` — judged cells
+         with no frozen reference (never judged; the answers exist);
+    (ii) ``frame_manifest.json`` ``rows[].pilot_selection.per_cell_item_ids``
+         entries that are EMPTY (cell key ``<frame>|<stratum>`` composed to
+         ``<row>__<frame>__<stratum>``) — zero eligible pilot prompts, so the
+         cell was never generated.
+
+    Returns cell -> {source, reason, artifact}. A malformed record RAISES
+    ``PowerInputError`` (fail loud, never a silent default). An absent wave
+    summary contributes nothing (its row's absences stay UNDOCUMENTED).
+    """
+    out: dict[str, dict[str, str]] = {}
+    out_root = Path(out_root)
+    for row in C.ROW_IDS:
+        if not C.CONSTRUCTS[row].judge_scored:
+            continue
+        ws_path = out_root / "judge" / split / row / "_wave_summary.json"
+        if not ws_path.exists():
+            continue
+        ws = json.loads(ws_path.read_text())
+        ne = ws.get("not_estimable")
+        if not isinstance(ne, dict):
+            raise PowerInputError(f"{ws_path}: not_estimable missing/not a dict")
+        for cell, rec in sorted(ne.items()):
+            if cell not in expected_cells(row):
+                raise PowerInputError(
+                    f"{ws_path}: not_estimable names foreign cell {cell!r} for row {row!r}"
+                )
+            if not isinstance(rec, dict) or rec.get("status") != "not-estimable":
+                raise PowerInputError(
+                    f"{ws_path}: not_estimable[{cell!r}] malformed (status "
+                    f"{rec.get('status') if isinstance(rec, dict) else rec!r})"
+                )
+            detail = rec.get("detail")
+            if not (isinstance(detail, str) and detail.strip()):
+                raise PowerInputError(f"{ws_path}: not_estimable[{cell!r}] carries no detail")
+            out[cell] = {
+                "source": "judge-wave-summary",
+                "reason": detail,
+                "artifact": str(ws_path),
+            }
+    fm_path = Path(frame_manifest_path) if frame_manifest_path else F.FRAME_MANIFEST_PATH
+    if not fm_path.exists():
+        raise PowerInputError(
+            f"frame manifest absent at {fm_path} — cannot resolve documented exclusions"
+        )
+    fm = json.loads(fm_path.read_text())
+    for rrec in fm["rows"]:
+        row = rrec["row"]
+        sel = rrec.get("pilot_selection")
+        if not isinstance(sel, dict) or not isinstance(sel.get("per_cell_item_ids"), dict):
+            raise PowerInputError(
+                f"{fm_path}: rows[{row!r}].pilot_selection.per_cell_item_ids missing/malformed"
+            )
+        for cell_key, item_ids in sorted(sel["per_cell_item_ids"].items()):
+            if not isinstance(item_ids, list):
+                raise PowerInputError(f"{fm_path}: per_cell_item_ids[{cell_key!r}] is not a list")
+            if item_ids:
+                continue
+            frame, _, stratum = cell_key.partition("|")
+            if not frame or not stratum:
+                raise PowerInputError(
+                    f"{fm_path}: per_cell_item_ids key {cell_key!r} is not '<frame>|<stratum>'"
+                )
+            cell = f"{row}__{frame}__{stratum}"
+            if cell not in expected_cells(row):
+                raise PowerInputError(
+                    f"{fm_path}: empty pilot selection names foreign cell {cell!r}"
+                )
+            out[cell] = {
+                "source": "frame-manifest-pilot-selection",
+                "reason": (
+                    "zero eligible pilot prompts (per_cell_item_ids empty; echoed in "
+                    "cells_below_pilot_floor) — the cell was never generated"
+                ),
+                "artifact": str(fm_path),
+            }
+    return out
 
 
 def _profile_from_judge_cell(body: dict[str, Any]) -> list[tuple[int, int]]:
@@ -504,16 +610,25 @@ def _profile_from_objective_cell(path: Path) -> list[tuple[int, int]]:
 
 
 def load_pilot_label_profile(
-    out_root: Path, split: str, rows: list[str] | None = None
+    out_root: Path,
+    split: str,
+    rows: list[str] | None = None,
+    *,
+    declared: dict[str, dict[str, str]] | None = None,
 ) -> dict[str, RowLabelProfile]:
     """Load pilot labels per row/cell into (k, n) per-prompt counts.
 
     Judged rows read unit-6 judge cell verdicts; correctness rows read unit-4
-    objective label JSONLs. A MISSING artifact is recorded in ``missing_cells``
-    (the gate consumes absence as NOT-ESTIMABLE); a PRESENT-but-malformed
-    artifact raises. Prompts with zero labeled responses are counted in
+    objective label JSONLs. An absent artifact whose cell appears in
+    ``declared`` (:func:`load_declared_not_estimable`, plan v5 A2) is recorded
+    in ``declared_not_estimable``; any OTHER missing artifact stays in
+    ``missing_cells`` (undocumented — the gates consume that as
+    NOT-ESTIMABLE). A PRESENT artifact for a DECLARED cell raises (stale
+    declaration — contradictory state). A PRESENT-but-malformed artifact
+    raises. Prompts with zero labeled responses are counted in
     ``n_unlabeled_prompts`` and excluded from the (k, n) pool — never coerced.
     """
+    declared = declared or {}
     out: dict[str, RowLabelProfile] = {}
     for row in rows or list(C.ROW_IDS):
         judged = C.CONSTRUCTS[row].judge_scored
@@ -521,17 +636,24 @@ def load_pilot_label_profile(
         for cell in expected_cells(row):
             if judged:
                 path = Path(out_root) / "judge" / split / row / f"{cell}.json"
-                prof.artifact_dir = str(path.parent)
-                if not path.exists():
-                    prof.missing_cells.append(cell)
-                    continue
-                pairs = _profile_from_judge_cell(json.loads(path.read_text()))
             else:
                 path = Path(out_root) / "objective_labels" / split / f"{cell}.jsonl"
-                prof.artifact_dir = str(path.parent)
-                if not path.exists():
-                    prof.missing_cells.append(cell)
-                    continue
+            prof.artifact_dir = str(path.parent)
+            if cell in declared:
+                if path.exists():
+                    raise PowerInputError(
+                        f"cell {cell!r} is declared not-estimable "
+                        f"({declared[cell]['source']}) but a label artifact exists at "
+                        f"{path} — stale declaration; regenerate the upstream record"
+                    )
+                prof.declared_not_estimable[cell] = declared[cell]
+                continue
+            if not path.exists():
+                prof.missing_cells.append(cell)
+                continue
+            if judged:
+                pairs = _profile_from_judge_cell(json.loads(path.read_text()))
+            else:
                 pairs = _profile_from_objective_cell(path)
             kept = [(k, n) for k, n in pairs if n > 0]
             prof.n_unlabeled_prompts += len(pairs) - len(kept)
@@ -570,6 +692,16 @@ def measure_discordance(profiles: dict[str, RowLabelProfile], seed: int = 0) -> 
     rows_out: dict[str, Any] = {}
     for row, prof in sorted(profiles.items()):
         cells_out: dict[str, Any] = {}
+        # Declared exclusions (plan v5 A2): documented-absent cells carry their
+        # source + reason into the record; undocumented absences stay in
+        # missing_cells (pipeline incomplete — the gate PARKs on those).
+        for cell, dec in sorted(prof.declared_not_estimable.items()):
+            cells_out[cell] = {
+                "status": "declared-not-estimable",
+                "source": dec["source"],
+                "reason": dec["reason"],
+                "artifact": dec["artifact"],
+            }
         for cell, pairs in sorted(prof.cells.items()):
             if not pairs:
                 cells_out[cell] = {"status": "not-estimable", "detail": "zero labeled prompts"}
@@ -903,14 +1035,19 @@ def select_production_n(
     n_perm: int | None = None,
     seed: int = 0,
 ) -> dict[str, Any]:
-    """Deliverable B+C: the plan section 4 production-N rule.
+    """Deliverable B+C: the plan section 4 production-N rule (v5 A2/A3 form).
 
-    N_common = max(30, max over cells ceil(20 / sizing lower bound),
-    max over rows of the smallest N with simulated power >= target at the
-    registered primary effect), searched by BISECTION (doubling then integer
-    bisection; ~6 evaluations per row, never a full grid). Rows/cells whose
-    requirement is unbounded (lower bound 0, or power target unreachable by
-    the cap) yield status not-estimable — the gate PARKs on them.
+    N_common = max(30, the BINDING discordance requirement ceil(20 / bound)
+    over ESTIMABLE cells, max over simulated rows of the smallest N with
+    simulated power >= target at the registered primary effect), searched by
+    BISECTION (doubling then integer bisection; ~6 evaluations per row, never
+    a full grid).
+
+    v5 A3: a measured cell with zero pilot discordance is per-cell
+    not-estimable (reported, never a veto); a row with ZERO estimable cells is
+    DEAD — not simulated, its power figure never rendered as a number. Every
+    row with >= 1 estimable cell is simulated over its PRESENT cells (v5 A2).
+    Only UNDOCUMENTED missing labels block the selection.
     """
     n_reps = reg.n_replicates if n_reps is None else n_reps
     n_perm = reg.n_permutations if n_perm is None else n_perm
@@ -921,8 +1058,53 @@ def select_production_n(
         and n_reps == REGISTERED.n_replicates
         and n_perm == REGISTERED.n_permutations
     )
+    if discordance is None:
+        raise PowerInputError("select_production_n needs the discordance report (Deliverable B)")
     prof_sha = profile_fingerprint(profiles)
-    rows = sorted(r for r, p in profiles.items() if p.cells and not p.missing_cells)
+
+    # Per-cell estimability from the discordance report (v5 A3): a measured
+    # cell with x_discordant_10draw == 0 (or bound <= 0) is per-cell
+    # not-estimable, never a launch veto. Rows with ZERO estimable cells are
+    # DEAD (not simulated).
+    binding_disc: tuple[str, str, int] | None = None
+    zero_disc_cells: list[str] = []
+    estimable_cells_by_row: dict[str, list[str]] = {}
+    for row in sorted(profiles):
+        estimable_cells_by_row[row] = []
+        for cell, c in sorted(discordance["rows"].get(row, {}).get("cells", {}).items()):
+            if c.get("status") == "declared-not-estimable":
+                continue
+            if c.get("status") != "measured":
+                continue  # undocumented/unmeasured — blocks via the undocumented set below
+            req = c["n_required_for_target"]
+            if c["x_discordant_10draw"] == 0 or c["sizing_lower_bound"] <= 0 or req is None:
+                zero_disc_cells.append(cell)
+                continue
+            estimable_cells_by_row[row].append(cell)
+            if binding_disc is None or req > binding_disc[2]:
+                binding_disc = (row, cell, req)
+
+    # Row partition (v5 A2/A3): simulate rows with >= 1 estimable cell over
+    # their PRESENT cells; dead rows are never simulated; only UNDOCUMENTED
+    # missing labels block.
+    rows_undocumented = sorted(
+        r
+        for r, p in profiles.items()
+        if p.missing_cells
+        or (not p.cells and not p.declared_not_estimable)
+        or any(not pool for pool in p.cells.values())
+    )
+    rows_declared = sorted(r for r, p in profiles.items() if p.declared_not_estimable)
+    rows_dead = sorted(
+        r
+        for r, p in profiles.items()
+        if r not in rows_undocumented and p.cells and not estimable_cells_by_row.get(r)
+    )
+    rows = sorted(
+        r
+        for r, p in profiles.items()
+        if r not in rows_undocumented and p.cells and estimable_cells_by_row.get(r)
+    )
     # Per-UNIT content address: a simulation unit consumes exactly ONE row's
     # (k, n) pools, so its ledger key fingerprints THAT row's pools alone.
     # This keeps unit keys IDENTICAL between a sharded --rows run and the final
@@ -930,23 +1112,11 @@ def select_production_n(
     # recorded P2-P3 dispatch (row shards warm one shared ledger; the final
     # full-row run selects N) resumes instead of recomputing every unit. The
     # artifact-level profile_sha256 stays the WHOLE-profile fingerprint — the
-    # gate-time freshness cross-check keys on it.
+    # gate-time freshness cross-check keys on it. The v5 A2 profile fields
+    # (declared_not_estimable) are NOT part of either fingerprint, so
+    # pre-amendment units resume-skip.
     row_prof_sha = {row: profile_fingerprint({row: profiles[row]}) for row in rows}
     counter = _UnitCounter(cap=len(rows) * (9 + len(reg.power_curve_effects)))
-
-    # Discordance requirement (>= 20 expected discordant/cell under the bound).
-    binding_disc: tuple[str, str, int] | None = None
-    unbounded: list[str] = []
-    for row in sorted(profiles):
-        for cell, c in sorted(discordance["rows"].get(row, {}).get("cells", {}).items()):
-            if c.get("status") != "measured":
-                unbounded.append(cell)
-                continue
-            req = c["n_required_for_target"]
-            if req is None:
-                unbounded.append(cell)
-            elif binding_disc is None or req > binding_disc[2]:
-                binding_disc = (row, cell, req)
 
     def power_at(row: str, n_val: int) -> float:
         rec = _run_power_unit(
@@ -993,20 +1163,26 @@ def select_production_n(
                 lo_b = mid
         per_row[row] = {"n_power": hi_b, "status": "measured"}
 
-    power_ns = [v["n_power"] for v in per_row.values() if v["n_power"] is not None]
+    # Dead rows (v5 A3): recorded, never simulated, never rendered as a number.
+    for row in rows_dead:
+        per_row[row] = {
+            "n_power": None,
+            "status": "not-estimable: zero pilot discordance in every cell",
+        }
+
+    power_ns = [v["n_power"] for r, v in per_row.items() if r in rows and v["n_power"] is not None]
     binding_power = None
     if power_ns:
         binding_power = max(
             ((r, v["n_power"]) for r, v in per_row.items() if v["n_power"] is not None),
             key=lambda t: t[1],
         )
-    all_rows_estimable = bool(rows) and all(v["n_power"] is not None for v in per_row.values())
-    rows_incomplete = sorted(r for r, p in profiles.items() if p.missing_cells or not p.cells)
-    # The common N must cover EVERY registered row: a row with missing/empty
-    # label artifacts makes the selection not-estimable (never silently skipped).
-    estimable = (
-        all_rows_estimable and not unbounded and binding_disc is not None and not rows_incomplete
-    )
+    all_simulated_estimable = bool(rows) and all(per_row[r]["n_power"] is not None for r in rows)
+    # v5 A2/A3: only UNDOCUMENTED missing labels block; zero-discordance cells
+    # no longer veto n_common (they are reported per cell); dead rows are not
+    # simulated. n_common = max(floor, binding discordance requirement over
+    # estimable cells, max power-N over simulated rows).
+    estimable = all_simulated_estimable and binding_disc is not None and not rows_undocumented
     n_common = None
     if estimable:
         n_common = max(
@@ -1047,16 +1223,17 @@ def select_production_n(
         "registered_match": registered_match,
         "profile_sha256": prof_sha,
         "rows_simulated": rows,
-        "rows_missing_labels": sorted(
-            r for r, p in profiles.items() if p.missing_cells or not p.cells
-        ),
+        "rows_dead": rows_dead,
+        "rows_with_declared_exclusions": rows_declared,
+        "rows_missing_labels_undocumented": rows_undocumented,
         "per_row_power_n": per_row,
         "binding_discordance_cell": (
             {"row": binding_disc[0], "cell": binding_disc[1], "n_required": binding_disc[2]}
             if binding_disc
             else None
         ),
-        "cells_with_unbounded_requirement": sorted(unbounded),
+        "cells_not_estimable_zero_discordance": sorted(zero_disc_cells),
+        "cells_estimable": sorted(c for cells in estimable_cells_by_row.values() for c in cells),
         "binding_power_row": (
             {"row": binding_power[0], "n_required": binding_power[1]} if binding_power else None
         ),
@@ -1092,24 +1269,50 @@ def cost_report(out_root: Path, gen_root: Path, split: str, n_common: int | None
     judged_rows = [r for r in C.ROW_IDS if C.CONSTRUCTS[r].judge_scored]
     reg = REGISTERED
 
-    # --- GPU hours -------------------------------------------------------
+    # --- GPU hours (v5 A4: all-in measured pilot + measured-marginal
+    # projection; the pilot-ceiling overrun is a REPORTED deviation) ---------
     timing_path = out_root / PILOT_TIMING_REL
     gpu: dict[str, Any] = {}
     projected_production_gpu_h: float | None = None
+    pilot_ceiling_deviation: dict[str, Any] | None = None
     if timing_path.exists():
         t = json.loads(timing_path.read_text())
-        for fld in ("wall_hours", "gpu_count", "n_responses"):
+        required = (
+            "wall_hours",
+            "gpu_count",
+            "n_responses",
+            "fixed_overhead_hours",
+            "gpu_hours_all_in",
+            "gen_marginal_s_per_response_per_gpu",
+            "capture_rows_per_s_per_gpu",
+            "shards_used_for_gen_rate",
+            "crash_fix_rounds_note",
+        )
+        for fld in required:
             if fld not in t:
                 raise PowerInputError(f"{timing_path}: missing field {fld!r}")
         measured = float(t["wall_hours"]) * float(t["gpu_count"])
+        if abs(measured - float(t["gpu_hours_all_in"])) > 1e-6:
+            raise PowerInputError(
+                f"{timing_path}: gpu_hours_all_in {t['gpu_hours_all_in']} != "
+                f"wall_hours*gpu_count {measured}"
+            )
         gpu["measured_pilot_gpu_h"] = {
             "value": measured,
-            "basis": "measured",
+            "basis": "measured (all-in pod wall x gpu_count, crash-fix rounds included)",
             "artifact": str(timing_path),
         }
+        pilot_ceiling_deviation = {
+            "measured_pilot_gpu_h": measured,
+            "pilot_ceiling_gpu_h": 8.0,
+            "ratio": measured / 8.0,
+            "decomposition": str(t["crash_fix_rounds_note"]),
+            "disposition": (
+                "sunk, not actionable — reported as a deviation, never a launch veto "
+                "(v5 A4); the kill criterion is the 80 GPU-h projected total"
+            ),
+        }
         if n_common is not None:
-            overhead = float(t.get("fixed_overhead_hours", 0.0)) * float(t["gpu_count"])
-            marginal = (measured - overhead) / float(t["n_responses"])
             n_prod_resp = (
                 len(C.ROW_IDS)
                 * C.PILOT.cells_per_row
@@ -1117,57 +1320,83 @@ def cost_report(out_root: Path, gen_root: Path, split: str, n_common: int | None
                 * reg.responses_per_prompt_production
                 * 2  # dev + sealed-test banks (plan section 4)
             )
-            projected_production_gpu_h = 2 * overhead + marginal * n_prod_resp
-            gpu["projected_production_gpu_h"] = {
+            gen_marginal_s = float(t["gen_marginal_s_per_response_per_gpu"])
+            init_gpu_h_per_wave = float(t["fixed_overhead_hours"])  # sum over 8 shards
+            gen_gpu_h = n_prod_resp * gen_marginal_s / 3600.0 + 2 * init_gpu_h_per_wave
+            capture_rate = float(t["capture_rows_per_s_per_gpu"])
+            capture_gpu_h = n_prod_resp / capture_rate / 3600.0
+            projected_production_gpu_h = gen_gpu_h + capture_gpu_h
+            gpu["projected_production_gpu_h_measured_marginal"] = {
                 "value": projected_production_gpu_h,
-                "basis": "projected",
+                "basis": "projected (measured-marginal, v5 A4)",
+                "gen_gpu_h": gen_gpu_h,
+                "capture_gpu_h_lower_bound": capture_gpu_h,
                 "formula": (
-                    "2*overhead_gpu_h + marginal_gpu_h_per_response * "
-                    f"(11 rows x 12 cells x N={n_common} x 30 responses x 2 banks "
-                    f"= {n_prod_resp})"
+                    f"gen: {n_prod_resp} responses x {gen_marginal_s:.4f} s/resp/GPU "
+                    f"/ 3600 + 2 waves x {init_gpu_h_per_wave:.4f} engine-init GPU-h; "
+                    f"capture: {n_prod_resp} rows / {capture_rate:.2f} rows/s/GPU / 3600 "
+                    f"(responses = 11 rows x 12 cells x N={n_common} x 30 responses x "
+                    "2 banks)"
+                ),
+                "caveat": (
+                    "capture model-load overhead is NOT in the P1 logs "
+                    "(basis: not-measured) — the capture component is a LOWER BOUND"
                 ),
             }
         else:
-            gpu["projected_production_gpu_h"] = _not_estimable(
+            gpu["projected_production_gpu_h_measured_marginal"] = _not_estimable(
                 "production N (power/production_n.json status=measured)",
                 "no fixed production N yet — projection undefined",
             )
     else:
         gpu["measured_pilot_gpu_h"] = _not_estimable(timing_path)
-        gpu["projected_production_gpu_h"] = _not_estimable(
+        gpu["projected_production_gpu_h_measured_marginal"] = _not_estimable(
             timing_path, "no measured pilot marginal rate to project from"
         )
 
     # --- Anthropic Batch API ---------------------------------------------
     api: dict[str, Any] = {}
     realized_draws = 0
+    wave_summaries_found = 0
     judged_cells_found = 0
+    declared_judge_cells = 0  # wave-summary not_estimable cells (no frozen reference)
     for row in judged_rows:
         jdir = out_root / "judge" / split / row
+        ws_path = jdir / "_wave_summary.json"
+        if ws_path.exists():
+            ws = json.loads(ws_path.read_text())
+            if "dispatch_total_calls" not in ws:
+                raise PowerInputError(f"{ws_path}: missing field 'dispatch_total_calls'")
+            wave_summaries_found += 1
+            realized_draws += int(ws["dispatch_total_calls"])
+            declared_judge_cells += len(ws.get("not_estimable") or {})
         for cell in expected_cells(row):
-            p = jdir / f"{cell}.json"
-            if not p.exists():
-                continue
-            body = json.loads(p.read_text())
-            judged_cells_found += 1
-            realized_draws += int(sum(body["counters"].values()))
-    if judged_cells_found:
+            if (jdir / f"{cell}.json").exists():
+                judged_cells_found += 1
+    if wave_summaries_found:
         api["realized_judge_draws"] = {
             "value": realized_draws,
             "basis": "measured",
             "artifact": str(out_root / "judge" / split),
-            "detail": f"summed draw counters over {judged_cells_found} judged cell bodies",
+            "detail": (
+                f"summed dispatch_total_calls over {wave_summaries_found} row "
+                "_wave_summary.json files (the per-cell counters sum double-counts "
+                "n_kept and n_kept_with_reasoning — v5 A4)"
+            ),
         }
     else:
-        api["realized_judge_draws"] = _not_estimable(out_root / "judge" / split)
+        api["realized_judge_draws"] = _not_estimable(
+            out_root / "judge" / split / "<row>" / "_wave_summary.json"
+        )
     spend_path = out_root / JUDGE_SPEND_REL
+    srec: dict[str, Any] | None = None
     if spend_path.exists():
         srec = json.loads(spend_path.read_text())
         if "dollars" not in srec:
             raise PowerInputError(f"{spend_path}: missing field 'dollars'")
         api["measured_dollars"] = {
             "value": float(srec["dollars"]),
-            "basis": "measured",
+            "basis": str(srec.get("basis", "measured")),
             "artifact": str(spend_path),
         }
     else:
@@ -1181,20 +1410,64 @@ def cost_report(out_root: Path, gen_root: Path, split: str, n_common: int | None
             "a PROJECTION, never quote as realized"
         ),
     }
-    if n_common is not None:
-        api["projected_production_judge_draws"] = {
-            "value": len(judged_rows)
-            * C.PILOT.cells_per_row
+    if n_common is not None and wave_summaries_found:
+        # v5 A4: judgeable cells = judged-row cells (96) minus the declared
+        # no-reference cells (never judgeable, pilot or production).
+        n_judgeable_cells = len(judged_rows) * C.PILOT.cells_per_row - declared_judge_cells
+        n_prod_calls = (
+            n_judgeable_cells
             * n_common
             * reg.responses_per_prompt_production
             * int(C.JUDGE["n_draws"])
-            * 2,
+            * 2
+        )
+        api["projected_production_judge_calls"] = {
+            "value": n_prod_calls,
             "basis": "projected",
-            "detail": "8 judged rows x 12 cells x N x 30 responses x 5 draws x 2 banks",
+            "detail": (
+                f"{n_judgeable_cells} judgeable cells ({len(judged_rows)} judged rows x "
+                f"{C.PILOT.cells_per_row} cells - {declared_judge_cells} declared "
+                f"no-reference) x N={n_common} x "
+                f"{reg.responses_per_prompt_production} responses x "
+                f"{int(C.JUDGE['n_draws'])} draws x 2 banks"
+            ),
         }
+        if srec is not None:
+            for fld in (
+                "per_call_mean_input_tokens",
+                "per_call_mean_output_tokens",
+                "n_calls_succeeded",
+                "rates_per_mtok",
+                "price_source_url",
+            ):
+                if fld not in srec:
+                    raise PowerInputError(f"{spend_path}: missing field {fld!r}")
+            n_meas_calls = int(srec["n_calls_succeeded"])
+            if n_meas_calls <= 0:
+                raise PowerInputError(f"{spend_path}: n_calls_succeeded must be > 0")
+            dollars_per_call = float(srec["dollars"]) / n_meas_calls
+            api["projected_production_judge_dollars"] = {
+                "value": n_prod_calls * dollars_per_call,
+                "basis": "projected",
+                "detail": (
+                    f"{n_prod_calls} calls x measured mean ${dollars_per_call:.6f}/call "
+                    f"(measured token mix incl. cache reads/writes over {n_meas_calls} "
+                    f"pilot calls, per-call means {srec['per_call_mean_input_tokens']:.1f} "
+                    f"in / {srec['per_call_mean_output_tokens']:.1f} out tokens, priced at "
+                    f"the published Sonnet 4.5 batch rates; source "
+                    f"{srec['price_source_url']})"
+                ),
+            }
+        else:
+            api["projected_production_judge_dollars"] = _not_estimable(
+                spend_path, "no measured per-call token basis to price from"
+            )
     else:
-        api["projected_production_judge_draws"] = _not_estimable(
-            "production N (power/production_n.json status=measured)"
+        api["projected_production_judge_calls"] = _not_estimable(
+            "production N (power/production_n.json status=measured) + judge wave summaries"
+        )
+        api["projected_production_judge_dollars"] = _not_estimable(
+            "production N (power/production_n.json status=measured) + judge_spend.json"
         )
 
     # --- Human annotation --------------------------------------------------
@@ -1233,13 +1506,20 @@ def cost_report(out_root: Path, gen_root: Path, split: str, n_common: int | None
     else:
         human["realized_adjudication_queue"] = _not_estimable(out_root / "judge" / split)
 
-    # --- Envelope check (plan section 10) ----------------------------------
+    # --- Envelope check (plan section 10 as amended by v5 A4) ---------------
+    # The KILL criterion is the 80 GPU-h projected TOTAL (all-in pilot +
+    # measured-marginal production projection). The 8 GPU-h pilot ceiling is a
+    # REPORTED deviation (sunk, not actionable), never a veto; the 72 GPU-h
+    # P4+P5 production ceiling stays the poller tripwire, reported alongside.
     pilot_ceiling = 8.0
+    production_ceiling = 72.0
     total_ceiling = 80.0
     measured_pilot = gpu["measured_pilot_gpu_h"]["value"]
     envelope: dict[str, Any] = {
         "pilot_ceiling_gpu_h": pilot_ceiling,
+        "production_ceiling_gpu_h": production_ceiling,
         "total_ceiling_gpu_h": total_ceiling,
+        "pilot_ceiling_deviation": pilot_ceiling_deviation,
     }
     if measured_pilot is not None and projected_production_gpu_h is not None:
         total = measured_pilot + projected_production_gpu_h
@@ -1247,8 +1527,15 @@ def cost_report(out_root: Path, gen_root: Path, split: str, n_common: int | None
             "projected_total_gpu_h": total,
             "margin_gpu_h": total_ceiling - total,
             "pilot_within_ceiling": bool(measured_pilot <= pilot_ceiling),
-            "within_envelope": bool(total <= total_ceiling and measured_pilot <= pilot_ceiling),
-            "basis": "measured pilot + projected production (labeled)",
+            "production_projection_within_ceiling": bool(
+                projected_production_gpu_h <= production_ceiling
+            ),
+            "within_envelope": bool(total <= total_ceiling),
+            "basis": (
+                "all-in measured pilot + measured-marginal projected production "
+                "(labeled); kill criterion = projected total <= 80 GPU-h (v5 A4); "
+                "pilot-ceiling overrun reported as a deviation, never a veto"
+            ),
         }
     else:
         envelope |= {
@@ -1325,6 +1612,58 @@ def icc_2_1(ratings: np.ndarray) -> float:
     return float((ms_r - ms_e) / denom)
 
 
+def load_waiver_record(out_root: Path) -> dict[str, Any] | None:
+    """Load + validate the owner-ruling waiver record (plan v5 A1).
+
+    Returns None when absent. A PRESENT-but-malformed record RAISES
+    ``PowerInputError`` (fail fast — a broken waiver must never silently
+    degrade to either NOT-ESTIMABLE or WAIVED). Required shape::
+
+        {schema: i2658-human-audit-waiver-v1,
+         ruling_event: {kind: epm:clarify-answers, version, ts, by},
+         ruling_verbatim: <non-empty>,
+         scope: {banks: [dev, test], gates: [...both gate ids...]},
+         disclosure: <non-empty verbatim text>, plan_version: <str>}
+    """
+    path = Path(out_root) / HUMAN_AUDIT_WAIVER_REL
+    if not path.exists():
+        return None
+    rec = json.loads(path.read_text())
+    problems: list[str] = []
+    if rec.get("schema") != WAIVER_SCHEMA:
+        problems.append(f"schema {rec.get('schema')!r} != {WAIVER_SCHEMA!r}")
+    ev = rec.get("ruling_event")
+    if not isinstance(ev, dict):
+        problems.append("ruling_event missing/not a dict")
+    else:
+        if ev.get("kind") != "epm:clarify-answers":
+            problems.append(f"ruling_event.kind {ev.get('kind')!r} != 'epm:clarify-answers'")
+        for fld in ("ts", "by", "version"):
+            if not ev.get(fld):
+                problems.append(f"ruling_event.{fld} missing/empty")
+    if not (isinstance(rec.get("ruling_verbatim"), str) and rec["ruling_verbatim"].strip()):
+        problems.append("ruling_verbatim missing/empty")
+    scope = rec.get("scope")
+    if not isinstance(scope, dict):
+        problems.append("scope missing/not a dict")
+    else:
+        if sorted(scope.get("banks") or []) != ["dev", "test"]:
+            problems.append(f"scope.banks {scope.get('banks')!r} != ['dev', 'test']")
+        gates = set(scope.get("gates") or [])
+        if not {"human_audit_feasibility", "label_reliability"} <= gates:
+            problems.append(
+                f"scope.gates {sorted(gates)!r} must include human_audit_feasibility "
+                "and label_reliability"
+            )
+    if not (isinstance(rec.get("disclosure"), str) and rec["disclosure"].strip()):
+        problems.append("disclosure missing/empty")
+    if not rec.get("plan_version"):
+        problems.append("plan_version missing/empty")
+    if problems:
+        raise PowerInputError(f"malformed waiver record {path}: " + "; ".join(problems))
+    return rec
+
+
 def reliability_gates(out_root: Path) -> dict[str, Any]:
     """Plan section 3 reliability gates per judged trait, from the human audit
     artifact (``human_audit/adjudications.json``; expected schema documented in
@@ -1340,13 +1679,35 @@ def reliability_gates(out_root: Path) -> dict[str, Any]:
     positives AND negatives per trait, else that trait is NOT-ESTIMABLE.
     """
     audit_path = Path(out_root) / HUMAN_AUDIT_REL
+    waiver = load_waiver_record(out_root)
     if not audit_path.exists():
+        if waiver is not None:
+            # Owner-ruling waiver (plan v5 A1): the judge labels are the
+            # operational labels; reliability is NOT MEASURED and the record's
+            # disclosure travels verbatim. No adjudications are synthesized.
+            judged = [r for r in C.ROW_IDS if C.CONSTRUCTS[r].judge_scored]
+            disclosure = waiver["disclosure"]
+            return {
+                "status": GATE_WAIVED,
+                "artifact": str(Path(out_root) / HUMAN_AUDIT_WAIVER_REL),
+                "detail": disclosure,
+                "per_trait": {row: {"status": GATE_WAIVED, "detail": disclosure} for row in judged},
+                "waiver": waiver,
+                "disclosure": disclosure,
+            }
         return {
             "status": GATE_NOT_ESTIMABLE,
             "missing_artifact": str(audit_path),
             "detail": "no real human adjudications on disk — reliability cannot be estimated",
             "per_trait": {},
         }
+    if waiver is not None:
+        print(
+            "[power] real adjudications present — the owner waiver record at "
+            f"{Path(out_root) / HUMAN_AUDIT_WAIVER_REL} is IGNORED; the real "
+            "reliability gates run",
+            flush=True,
+        )
     audit = json.loads(audit_path.read_text())
     per_trait: dict[str, Any] = {}
     statuses: list[str] = []
@@ -1404,7 +1765,10 @@ def reliability_gates(out_root: Path) -> dict[str, Any]:
         if GATE_FAIL in statuses
         else (GATE_NOT_ESTIMABLE if GATE_NOT_ESTIMABLE in statuses or not statuses else GATE_PASS)
     )
-    return {"status": overall, "artifact": str(audit_path), "per_trait": per_trait}
+    out = {"status": overall, "artifact": str(audit_path), "per_trait": per_trait}
+    if waiver is not None:
+        out["waiver_ignored"] = True  # real adjudications win over the waiver
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -1421,7 +1785,7 @@ class Gate:
     detail: str = ""
 
     def __post_init__(self) -> None:
-        if self.status not in (GATE_PASS, GATE_FAIL, GATE_NOT_ESTIMABLE):
+        if self.status not in (GATE_PASS, GATE_FAIL, GATE_NOT_ESTIMABLE, GATE_WAIVED):
             raise ValueError(f"invalid gate status {self.status!r}")
 
 
@@ -1589,12 +1953,19 @@ def _gate_row_vector_alignment(out_root: Path, gen_root: Path, split: str) -> Ga
     foreign = realized - set(expected)
     if missing or foreign:
         problems.append(f"{len(missing)} generated answers uncaptured; {len(foreign)} foreign")
+    # v5 A5: the index may be STAGED from the canonical HF upload (the pod was
+    # terminated after upload-verification PASS); record the provenance.
+    store_source = "local"
+    staged_path = store_root / "_staged_from_hub.json"
+    if staged_path.exists():
+        staged = json.loads(staged_path.read_text())
+        store_source = f"hub-staged ({staged.get('revision')})"
     return Gate(
         "row_vector_alignment",
         "provenance rows pin vector shape/layer; pilot capture store aligns 1:1 "
         "with generated answers",
         GATE_FAIL if problems else GATE_PASS,
-        f"{len(realized)} captured / {len(expected)} generated",
+        f"{len(realized)} captured / {len(expected)} generated; store_source: {store_source}",
         "shape (3584,) at layer 19 + complete store",
         f"{F.PROVENANCE_PATH}; {store_root}",
         "; ".join(problems),
@@ -1612,60 +1983,116 @@ def _gate_discordance(discordance: dict[str, Any] | None, out_root: Path) -> Gat
             str(Path(out_root) / "power" / "discordance.json"),
             "pilot labels absent — discordance unmeasured",
         )
-    n_measured = 0
-    problems = []
-    missing = []
+    # v5 A2/A3 accounting: every one of the 132 registered cells must be
+    # ESTIMABLE (measured, x>0, bound>0), MEASURED-ZERO-DISCORDANCE (recorded
+    # not-estimable, not a FAIL), or DECLARED absent (documented upstream).
+    # Undocumented absences / unmeasured cells stay NOT-ESTIMABLE (PARK).
+    n_registered = len(C.ROW_IDS) * C.PILOT.cells_per_row
+    estimable: list[str] = []
+    zero_disc: list[str] = []
+    declared: dict[str, dict[str, str]] = {}
+    unaccounted: list[str] = []
+    missing: list[str] = []
+    rows_with_estimable: list[str] = []
     for row, rrec in sorted(discordance["rows"].items()):
         missing.extend(rrec["missing_cells"])
+        row_estimable = False
         for cell, c in sorted(rrec["cells"].items()):
-            if c.get("status") != "measured":
-                problems.append(f"{cell}: {c.get('detail', 'unmeasured')}")
-                continue
-            n_measured += 1
-            if c["x_discordant_10draw"] == 0 or c["sizing_lower_bound"] <= 0:
-                problems.append(
-                    f"{cell}: zero measured discordance (x={c['x_discordant_10draw']}) — "
-                    "production requirement unbounded"
-                )
-    n_expected = len(C.ROW_IDS) * C.PILOT.cells_per_row
-    if missing:
+            status = c.get("status")
+            if status == "declared-not-estimable":
+                declared[cell] = {"source": c["source"], "reason": c["reason"]}
+            elif status == "measured":
+                if c["x_discordant_10draw"] == 0 or c["sizing_lower_bound"] <= 0:
+                    zero_disc.append(cell)
+                else:
+                    estimable.append(cell)
+                    row_estimable = True
+            else:
+                unaccounted.append(f"{cell}: {c.get('detail', 'unmeasured')}")
+        if row_estimable:
+            rows_with_estimable.append(row)
+    n_accounted = len(estimable) + len(zero_disc) + len(declared)
+    n_expected_measured = n_registered - len(declared)
+    measured = {
+        "n_registered": n_registered,
+        "n_estimable": len(estimable),
+        "n_zero_discordance_not_estimable": len(zero_disc),
+        "n_declared_not_estimable": len(declared),
+        "cells_estimable": sorted(estimable),
+        "cells_not_estimable_zero_discordance": [
+            f"{c}: not-estimable: zero pilot discordance (prior-only bound never sizes)"
+            for c in sorted(zero_disc)
+        ],
+        "cells_declared_not_estimable": declared,
+        "rows_with_estimable_cells": rows_with_estimable,
+    }
+    desc = (
+        "every registered cell accounted for (estimable / measured zero-discordance "
+        "not-estimable / declared absent) and >= 1 row estimable (plan v5 A2/A3)"
+    )
+    threshold = (
+        f"{n_registered} cells accounted for ({n_expected_measured} measured + "
+        f"{len(declared)} declared) and >= 1 row with >= 1 estimable cell"
+    )
+    art = str(Path(out_root) / "power" / "discordance.json")
+    if missing or unaccounted or n_accounted < n_registered:
+        detail_bits = []
+        if missing:
+            detail_bits.append(
+                f"{len(missing)} cells lack pilot label artifacts UNDOCUMENTED "
+                f"(e.g. {sorted(missing)[:3]})"
+            )
+        if unaccounted:
+            detail_bits.append(f"{len(unaccounted)} cells unmeasured: {unaccounted[:3]}")
+        if n_accounted < n_registered and not (missing or unaccounted):
+            detail_bits.append(f"only {n_accounted}/{n_registered} registered cells accounted for")
         return Gate(
             "measured_discordance_by_cell",
-            "every cell's pilot discordance measured with a positive sizing lower bound",
+            desc,
             GATE_NOT_ESTIMABLE,
-            f"{n_measured}/{n_expected} cells measured",
-            f"{n_expected} cells measured, lower bound > 0",
-            str(Path(out_root) / "power" / "discordance.json"),
-            f"{len(missing)} cells lack pilot label artifacts (e.g. {missing[:3]})",
+            measured,
+            threshold,
+            art,
+            "; ".join(detail_bits),
         )
     return Gate(
         "measured_discordance_by_cell",
-        "every cell's pilot discordance measured with a positive sizing lower bound",
-        GATE_FAIL if problems or n_measured < n_expected else GATE_PASS,
-        f"{n_measured}/{n_expected} cells measured",
-        f"{n_expected} cells measured, lower bound > 0",
-        str(Path(out_root) / "power" / "discordance.json"),
-        "; ".join(
-            problems[:10]
-            or (
-                [f"only {n_measured}/{n_expected} cells measured"]
-                if n_measured < n_expected
-                else []
-            )
+        desc,
+        GATE_PASS if rows_with_estimable else GATE_FAIL,
+        measured,
+        threshold,
+        art,
+        (
+            ""
+            if rows_with_estimable
+            else "every measured cell has zero pilot discordance — nothing is sizable"
         ),
     )
 
 
-def _gate_judge_quality(out_root: Path, split: str) -> Gate:
+def _gate_judge_quality(
+    out_root: Path, split: str, declared: dict[str, dict[str, str]] | None = None
+) -> Gate:
+    declared = declared or {}
     judged_rows = [r for r in C.ROW_IDS if C.CONSTRUCTS[r].judge_scored]
-    n_expected = len(judged_rows) * C.PILOT.cells_per_row
+    # v5 A2: declared cells in judged rows (no frozen reference, or never
+    # generated) are excluded from the expected denominator with their reasons
+    # carried into the payload; UNDOCUMENTED absences stay NOT-ESTIMABLE.
+    declared_judged = {
+        cell: rec for cell, rec in declared.items() if cell.split("__", 1)[0] in judged_rows
+    }
+    n_expected = len(judged_rows) * C.PILOT.cells_per_row - len(declared_judged)
     found = 0
+    undocumented_missing = []
     problems = []
     worst_rate = 0.0
     for row in judged_rows:
         for cell in expected_cells(row):
+            if cell in declared_judged:
+                continue
             p = Path(out_root) / "judge" / split / row / f"{cell}.json"
             if not p.exists():
+                undocumented_missing.append(cell)
                 continue
             body = json.loads(p.read_text())
             found += 1
@@ -1677,56 +2104,91 @@ def _gate_judge_quality(out_root: Path, split: str) -> Gate:
                 problems.append(f"{cell}: parse-fail rate {rate} >= {J.PARSE_FAIL_THRESHOLD}")
             if not pg["zero_max_tokens_stops"]:
                 problems.append(f"{cell}: max_tokens judge stops present")
+    measured = {
+        "n_cells_on_disk": found,
+        "n_expected": n_expected,
+        "worst_parse_fail_rate": worst_rate,
+        "cells_declared_not_estimable": declared_judged,
+    }
     if found < n_expected:
         return Gate(
             "judge_parse_failure_and_max_tokens",
             "pilot judge parse failure < 2% and zero max-token judge stops, per cell",
             GATE_NOT_ESTIMABLE,
-            f"{found}/{n_expected} judged cells on disk",
-            f"parse-fail < {J.PARSE_FAIL_THRESHOLD} and zero truncation stops",
+            measured,
+            f"parse-fail < {J.PARSE_FAIL_THRESHOLD} and zero truncation stops over "
+            f"{n_expected} judgeable cells (132-scope minus declared)",
             str(Path(out_root) / "judge" / split),
-            "judge pilot artifacts incomplete",
+            f"judge pilot artifacts incomplete — {len(undocumented_missing)} judgeable "
+            f"cells UNDOCUMENTED-absent (e.g. {sorted(undocumented_missing)[:3]})",
         )
     return Gate(
         "judge_parse_failure_and_max_tokens",
         "pilot judge parse failure < 2% and zero max-token judge stops, per cell",
         GATE_FAIL if problems else GATE_PASS,
-        f"worst per-cell parse-fail rate {worst_rate:.4f} over {found} cells",
-        f"parse-fail < {J.PARSE_FAIL_THRESHOLD} and zero truncation stops",
+        measured,
+        f"parse-fail < {J.PARSE_FAIL_THRESHOLD} and zero truncation stops over "
+        f"{n_expected} judgeable cells (132-scope minus declared)",
         str(Path(out_root) / "judge" / split),
         "; ".join(problems[:10]),
     )
 
 
-def _gate_cap_hit(gen_root: Path, split: str) -> Gate:
+def _gate_cap_hit(
+    gen_root: Path, split: str, declared: dict[str, dict[str, str]] | None = None
+) -> Gate:
+    declared = declared or {}
     gen_dir = Path(gen_root) / "raw_completions" / split
     paths = sorted(gen_dir.glob("*.json"))
-    n_expected = len(C.ROW_IDS) * C.PILOT.cells_per_row
+    # v5 A2: only NEVER-GENERATED declared cells (frame-manifest source) leave
+    # the generation-scope denominator; judge-scope declarations (no frozen
+    # reference) still have generated answers and stay counted here.
+    declared_ungenerated = {
+        cell: rec
+        for cell, rec in declared.items()
+        if rec.get("source") == "frame-manifest-pilot-selection"
+    }
+    n_expected = len(C.ROW_IDS) * C.PILOT.cells_per_row - len(declared_ungenerated)
+    on_disk = {p.stem for p in paths}
+    overlap = sorted(on_disk & set(declared_ungenerated))
+    if overlap:
+        raise PowerInputError(
+            f"declared never-generated cells have generation artifacts on disk: "
+            f"{overlap[:3]} — stale frame-manifest declaration"
+        )
+    measured: dict[str, Any] = {
+        "n_cells_on_disk": len(paths),
+        "n_expected": n_expected,
+        "cells_declared_not_estimable": declared_ungenerated,
+    }
     if len(paths) < n_expected:
         return Gate(
             "measured_cap_hit_rate",
             "realized length-cap-hit fraction <= 2% per cell (plan section 5)",
             GATE_NOT_ESTIMABLE,
-            f"{len(paths)}/{n_expected} generated cells on disk",
-            f"<= {G.CAP_HIT_AMEND_THRESHOLD} per cell",
+            measured,
+            f"<= {G.CAP_HIT_AMEND_THRESHOLD} per cell over {n_expected} generated cells "
+            "(132-scope minus declared never-generated)",
             str(gen_dir),
-            "pilot generation artifacts incomplete",
+            "pilot generation artifacts incomplete (undocumented absence)",
         )
     problems = []
     worst = 0.0
     for p in paths:
         body = json.loads(p.read_text())
         rep = body["cap_hit"]
-        for cell_key, frac in rep["per_cell_fraction"].items():
+        for _cell_key, frac in rep["per_cell_fraction"].items():
             worst = max(worst, float(frac))
         if rep["amendment_required"]:
             problems.append(f"{p.name}: cells over threshold {rep['cells_over_threshold']}")
+    measured["worst_per_cell_fraction"] = worst
     return Gate(
         "measured_cap_hit_rate",
         "realized length-cap-hit fraction <= 2% per cell (plan section 5)",
         GATE_FAIL if problems else GATE_PASS,
-        f"worst per-cell fraction {worst:.4f}",
-        f"<= {G.CAP_HIT_AMEND_THRESHOLD} per cell",
+        measured,
+        f"<= {G.CAP_HIT_AMEND_THRESHOLD} per cell over {n_expected} generated cells "
+        "(132-scope minus declared never-generated)",
         str(gen_dir),
         "; ".join(problems[:10]),
     )
@@ -1779,27 +2241,46 @@ def _gate_power(selection: dict[str, Any] | None, out_root: Path) -> Gate:
             "selection was computed at non-registered simulation sizes (smoke/override) — "
             "re-run at the registered constants before launch",
         )
-    # Row-coverage check: the plan sizes ONE common N as the max over ALL 11
-    # registered rows, so a selection simulated on a --rows SUBSET (the sharded
-    # P2-P3 dispatch shape) must never authorize a launch — its n_common is the
-    # max over the shard only. Sharding stays supported: shard runs warm the
-    # shared ledger; only the FINAL full-row invocation's selection can PASS.
+    # Row-coverage check (v5 A3 form): the selection must ACCOUNT for every
+    # registered row — simulated (>= 1 estimable cell) or dead (declared
+    # zero-discordance in every cell). A selection simulated on a --rows SUBSET
+    # (the sharded P2-P3 dispatch shape) must never authorize a launch — its
+    # n_common is the max over the shard only. Sharding stays supported: shard
+    # runs warm the shared ledger; only the FINAL full-row invocation's
+    # selection can PASS.
     simulated = set(selection.get("rows_simulated") or [])
+    dead = set(selection.get("rows_dead") or [])
+    undocumented = sorted(selection.get("rows_missing_labels_undocumented") or [])
     registered_rows = set(C.ROW_IDS)
-    if simulated != registered_rows:
-        missing_rows = sorted(registered_rows - simulated)
-        foreign_rows = sorted(simulated - registered_rows)
+    if simulated | dead != registered_rows or (simulated & dead):
+        missing_rows = sorted(registered_rows - simulated - dead)
+        foreign_rows = sorted((simulated | dead) - registered_rows)
         return Gate(
             "power_based_fixed_n",
             "one common prompts-per-cell N fixed by the registered clustered simulation",
             GATE_FAIL,
-            {"rows_simulated": sorted(simulated), "n_common": selection.get("n_common")},
-            f"rows_simulated == all {len(C.ROW_IDS)} registered rows",
+            {
+                "rows_simulated": sorted(simulated),
+                "rows_dead": sorted(dead),
+                "n_common": selection.get("n_common"),
+            },
+            f"rows_simulated + rows_dead partition all {len(C.ROW_IDS)} registered rows",
             art,
-            f"selection simulated a row SUBSET — missing rows: {missing_rows}"
+            f"selection covered a row SUBSET — missing rows: {missing_rows}"
             + (f"; foreign rows: {foreign_rows}" if foreign_rows else "")
+            + (f"; overlap: {sorted(simulated & dead)}" if simulated & dead else "")
             + " — a sharded --rows run sizes N on its shard only; re-run the final "
             "full-row selection before launch",
+        )
+    if undocumented:
+        return Gate(
+            "power_based_fixed_n",
+            "one common prompts-per-cell N fixed by the registered clustered simulation",
+            GATE_FAIL,
+            {"rows_missing_labels_undocumented": undocumented},
+            "zero undocumented missing-label rows",
+            art,
+            f"rows with UNDOCUMENTED missing labels: {undocumented} — pipeline incomplete",
         )
     if selection["status"] != "measured" or selection["n_common"] is None:
         return Gate(
@@ -1809,8 +2290,7 @@ def _gate_power(selection: dict[str, Any] | None, out_root: Path) -> Gate:
             selection.get("n_common"),
             f"power >= {REGISTERED.power_target} and >= 20 discordant/cell bounded",
             art,
-            f"unbounded cells: {selection.get('cells_with_unbounded_requirement')}; "
-            f"rows missing labels: {selection.get('rows_missing_labels')}; per-row power N: "
+            f"rows missing labels (undocumented): {undocumented}; per-row power N: "
             + "; ".join(
                 f"{r}={v['n_power'] if v['n_power'] is not None else v['status']}"
                 for r, v in sorted(selection.get("per_row_power_n", {}).items())
@@ -1824,8 +2304,13 @@ def _gate_power(selection: dict[str, Any] | None, out_root: Path) -> Gate:
             "n_common": selection["n_common"],
             "binding_discordance_cell": selection["binding_discordance_cell"],
             "binding_power_row": selection["binding_power_row"],
+            "rows_dead": sorted(dead),
+            "cells_not_estimable_zero_discordance": selection.get(
+                "cells_not_estimable_zero_discordance"
+            ),
         },
-        f"power >= {REGISTERED.power_target} at AUROC {REGISTERED.primary_effect_auroc}",
+        f"power >= {REGISTERED.power_target} at AUROC {REGISTERED.primary_effect_auroc} "
+        "over every row with >= 1 estimable cell",
         art,
         "",
     )
@@ -1901,30 +2386,45 @@ def _gate_profile_freshness(
 
 
 def _gate_cost(cost: dict[str, Any]) -> Gate:
+    desc = (
+        "projected total (all-in pilot + measured-marginal production) <= 80 GPU-h "
+        "— the plan section 10 kill criterion; the 8 GPU-h pilot ceiling overrun is "
+        "a REPORTED deviation, never a veto (v5 A4)"
+    )
+    threshold = "projected total <= 80 GPU-h"
     env = cost["envelope"]
     art = "power/cost_report.json"
     if env["within_envelope"] is None:
         return Gate(
             "cost_within_envelope",
-            "measured pilot GPU-h <= 8 and projected total <= 80 GPU-h (plan section 10)",
+            desc,
             GATE_NOT_ESTIMABLE,
             None,
-            "pilot <= 8 GPU-h; total <= 80 GPU-h",
+            threshold,
             art,
             env["basis"],
         )
+    measured = {
+        "measured_pilot_gpu_h": cost["gpu_hours"]["measured_pilot_gpu_h"]["value"],
+        "projected_total_gpu_h": env["projected_total_gpu_h"],
+        "margin_gpu_h": env["margin_gpu_h"],
+        "pilot_ceiling_deviation": env.get("pilot_ceiling_deviation"),
+        "production_ceiling_gpu_h": env.get("production_ceiling_gpu_h"),
+    }
+    over = not env["within_envelope"]
     return Gate(
         "cost_within_envelope",
-        "measured pilot GPU-h <= 8 and projected total <= 80 GPU-h (plan section 10)",
-        GATE_PASS if env["within_envelope"] else GATE_FAIL,
-        {
-            "measured_pilot_gpu_h": cost["gpu_hours"]["measured_pilot_gpu_h"]["value"],
-            "projected_total_gpu_h": env["projected_total_gpu_h"],
-            "margin_gpu_h": env["margin_gpu_h"],
-        },
-        "pilot <= 8 GPU-h; total <= 80 GPU-h",
+        desc,
+        GATE_FAIL if over else GATE_PASS,
+        measured,
+        threshold,
         art,
-        "",
+        (
+            f"projected total {env['projected_total_gpu_h']:.1f} GPU-h exceeds the "
+            "80 GPU-h kill criterion"
+            if over
+            else ""
+        ),
     )
 
 
@@ -1936,6 +2436,7 @@ def evaluate_gates(
     discordance: dict[str, Any] | None,
     selection: dict[str, Any] | None,
     cost: dict[str, Any],
+    declared: dict[str, dict[str, str]] | None = None,
 ) -> dict[str, Any]:
     """Deliverable E: the plan section 8 pilot-gate list, evaluated MECHANICALLY.
 
@@ -1955,19 +2456,57 @@ def evaluate_gates(
         _gate_dependency_graph(),
         _gate_row_vector_alignment(out_root, gen_root, split),
         _gate_discordance(discordance, out_root),
-        _gate_judge_quality(out_root, split),
-        _gate_cap_hit(gen_root, split),
+        _gate_judge_quality(out_root, split, declared),
+        _gate_cap_hit(gen_root, split, declared),
         human_gate,
         _gate_power(selection, out_root),
         _gate_profile_freshness(profiles, discordance, selection, out_root),
         _gate_cost(cost),
     ]
-    blockers = [g.gate_id for g in gates if g.status != GATE_PASS]
+    # WAIVED is non-blocking (plan v5 A1) but never renamed PASS: the waiver +
+    # disclosure travel top-level so every downstream artifact can quote them.
+    blockers = [g.gate_id for g in gates if g.status not in (GATE_PASS, GATE_WAIVED)]
     verdict = "LAUNCH" if not blockers else "PARK"
+    waivers = []
+    disclosures = []
+    if rel.get("status") == GATE_WAIVED:
+        waivers.append(rel["waiver"])
+        disclosures.append(rel["disclosure"])
+    # Per-cell estimability roll-up (plan v5 A3) for the launch record.
+    cells_estimable: list[str] | None = None
+    cells_not_estimable: dict[str, str] | None = None
+    rows_dead: list[str] | None = None
+    if discordance is not None:
+        cells_estimable = []
+        cells_not_estimable = {}
+        rows_dead = []
+        for row, rrec in sorted(discordance["rows"].items()):
+            row_has_estimable = False
+            for cell, c in sorted(rrec["cells"].items()):
+                status = c.get("status")
+                if status == "measured":
+                    if c["x_discordant_10draw"] == 0 or c["sizing_lower_bound"] <= 0:
+                        cells_not_estimable[cell] = (
+                            "zero pilot discordance (prior-only bound never sizes)"
+                        )
+                    else:
+                        cells_estimable.append(cell)
+                        row_has_estimable = True
+                elif status == "declared-not-estimable":
+                    cells_not_estimable[cell] = f"declared ({c['source']}): {c['reason']}"
+                else:
+                    cells_not_estimable[cell] = c.get("detail", "unmeasured")
+            if not row_has_estimable:
+                rows_dead.append(row)
     return {
         "schema": VERDICT_SCHEMA,
         "verdict": verdict,
         "blockers": blockers,
+        "waivers": waivers,
+        "disclosures": disclosures,
+        "cells_estimable": cells_estimable,
+        "cells_not_estimable": cells_not_estimable,
+        "rows_dead": rows_dead,
         "gates": [asdict(g) for g in gates],
         "reliability": rel,
         "metadata": as_metadata_dict(git_provenance(), phase="p3-gate"),
@@ -2011,6 +2550,105 @@ def load_profile_json(path: Path) -> dict[str, RowLabelProfile]:
 
 
 # ---------------------------------------------------------------------------
+# L19 store-index stager (plan v5 A5 — wiring, no semantics).
+# ---------------------------------------------------------------------------
+# Text sidecars the alignment gate needs; the .npy tensors are NEVER staged
+# (eval_results is text-only; the tensors stay canonical on the Hub).
+STORE_INDEX_SIDECAR_PATTERNS = ("row_index_shard", "_capture_manifest.json", "_capture_meta_shard")
+STORE_N_SHARDS = 8
+
+
+def stage_store_index_from_hub(out_root: Path, split: str, *, repo: str | None = None) -> Path:
+    """Stage the L19 capture-store TEXT sidecars from the canonical HF prefix.
+
+    P1 uploaded the store to
+    ``issue2658_dirvalid/analysis_tensors/l19_<split>/shard{NN}of08/``
+    (``issue2658_capture.upload_store``) and the pod was terminated, so nothing
+    local exists. This pulls ONLY ``row_index_shard*.jsonl``,
+    ``_capture_manifest.json`` and ``_capture_meta_shard*.json`` into
+    ``<out_root>/l19_store/<split>/<shard dir>/`` and writes a
+    ``_staged_from_hub.json`` provenance record (repo, prefix, revision sha,
+    file list, byte counts, timestamp). The listing is a SCOPED server-side
+    ``list_repo_tree`` that RAISES on a missing prefix (never a silent zero),
+    pinned to ONE resolved revision sha for every download.
+    """
+    from huggingface_hub import HfApi, hf_hub_download
+
+    from explore_persona_space.orchestrate.hub import (
+        DEFAULT_DATASET_REPO,
+        list_repo_entries_complete,
+    )
+
+    repo = repo or DEFAULT_DATASET_REPO
+    api = HfApi()
+    # Pin main -> sha ONCE so every sidecar comes from the same snapshot
+    # (revision=None can split paired files across snapshots mid-push).
+    revision = api.repo_info(repo, repo_type="dataset").sha
+    base_prefix = f"{G.EXPERIMENT_NAME}/analysis_tensors/l19_{split}"
+    # Scoped listing; a nonexistent prefix raises EntryNotFoundError inside the
+    # retried walk (hub 0.36.2 raises during iteration) — fail loud by design.
+    entries = list_repo_entries_complete(
+        api, repo, repo_type="dataset", revision=revision, path_in_repo=base_prefix
+    )
+    if not entries:
+        raise PowerInputError(
+            f"HF prefix {repo}/{base_prefix} resolved but listed 0 files — nothing to stage"
+        )
+    expected_shards = {f"shard{i:02d}of{STORE_N_SHARDS:02d}" for i in range(STORE_N_SHARDS)}
+    listed_shards = {p.split("/")[-2] for p, _ in entries}
+    if not expected_shards <= listed_shards:
+        raise PowerInputError(
+            f"HF prefix {repo}/{base_prefix} at {revision} is missing shard dirs: "
+            f"{sorted(expected_shards - listed_shards)}"
+        )
+    wanted = [
+        (p, size)
+        for p, size in entries
+        if any(pat in p.rsplit("/", 1)[-1] for pat in STORE_INDEX_SIDECAR_PATTERNS)
+        and not p.endswith(".npy")
+    ]
+    if not wanted:
+        raise PowerInputError(
+            f"HF prefix {repo}/{base_prefix} at {revision} holds no index sidecars"
+        )
+    dest_root = Path(out_root) / "l19_store" / split
+    staged_files: list[dict[str, Any]] = []
+    for path_in_repo, size in wanted:
+        rel = path_in_repo[len(base_prefix) + 1 :]  # <shard dir>/<name>
+        local = hf_hub_download(
+            repo_id=repo, filename=path_in_repo, repo_type="dataset", revision=revision
+        )
+        dest = dest_root / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        data = Path(local).read_bytes()
+        dest.write_bytes(data)
+        staged_files.append(
+            {"path_in_repo": path_in_repo, "dest": str(dest), "bytes": len(data), "size": size}
+        )
+    provenance = {
+        "schema": "i2658-store-index-staging-v1",
+        "repo": repo,
+        "prefix": base_prefix,
+        "revision": revision,
+        "n_files": len(staged_files),
+        "files": staged_files,
+        "staged_at_unix": time.time(),
+        "note": (
+            "TEXT sidecars only (row_index/_capture_manifest/_capture_meta); .npy "
+            "tensors deliberately NOT staged — eval_results is text-only (v5 A5)"
+        ),
+        "metadata": as_metadata_dict(git_provenance(), phase="p3-store-index-staging"),
+    }
+    write_json_atomic(dest_root / "_staged_from_hub.json", provenance)
+    print(
+        f"[power] staged {len(staged_files)} store-index sidecars from "
+        f"{repo}/{base_prefix}@{revision[:12]} -> {dest_root}",
+        flush=True,
+    )
+    return dest_root
+
+
+# ---------------------------------------------------------------------------
 # Driver.
 # ---------------------------------------------------------------------------
 def build_argparser() -> argparse.ArgumentParser:
@@ -2048,6 +2686,16 @@ def build_argparser() -> argparse.ArgumentParser:
     )
     ap.add_argument("--smoke", action="store_true", help="tiny synthetic end-to-end run")
     ap.add_argument(
+        "--stage-store-index",
+        action="store_true",
+        help=(
+            "stage the L19 capture-store TEXT sidecars (row_index/_capture_manifest/"
+            "_capture_meta) from the canonical HF prefix into <out-root>/l19_store/"
+            "<split>/ with a _staged_from_hub.json provenance record, then exit "
+            "(plan v5 A5 wiring)"
+        ),
+    )
+    ap.add_argument(
         "--import-check",
         action="store_true",
         help="verify argparse attribute completeness + module imports, then exit 0",
@@ -2056,6 +2704,10 @@ def build_argparser() -> argparse.ArgumentParser:
 
 
 def run(args: argparse.Namespace) -> int:
+    if args.stage_store_index:
+        out_root = args.out_root or F.OUT_DIR
+        stage_store_index_from_hub(Path(out_root), args.split)
+        return 0
     if args.smoke:
         out_root = args.out_root or Path("/tmp/issue-2658-smoke-power")
         gen_root = args.gen_root or out_root
@@ -2088,13 +2740,15 @@ def run(args: argparse.Namespace) -> int:
     power_dir.mkdir(parents=True, exist_ok=True)
 
     # --- profile ---------------------------------------------------------
+    declared: dict[str, dict[str, str]] | None = None
     if args.profile_json is not None:
         profiles = load_profile_json(args.profile_json)
         profiles = {r: p for r, p in profiles.items() if r in rows}
     elif args.smoke:
         profiles = synthetic_profile(rows, seed=args.seed)
     else:
-        profiles = load_pilot_label_profile(Path(out_root), args.split, rows)
+        declared = load_declared_not_estimable(Path(out_root), args.split)
+        profiles = load_pilot_label_profile(Path(out_root), args.split, rows, declared=declared)
     have_labels = any(p.cells for p in profiles.values())
 
     discordance = None
@@ -2151,7 +2805,14 @@ def run(args: argparse.Namespace) -> int:
         if discordance is None and disc_path.exists():
             discordance = json.loads(disc_path.read_text())
         verdict = evaluate_gates(
-            Path(out_root), Path(gen_root), args.split, profiles, discordance, selection, cost
+            Path(out_root),
+            Path(gen_root),
+            args.split,
+            profiles,
+            discordance,
+            selection,
+            cost,
+            declared,
         )
         write_json_atomic(power_dir / "gate_verdict.json", verdict)
         print(

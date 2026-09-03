@@ -1010,3 +1010,92 @@ def test_permutation_mc_interval_uses_passed_mc_conf(tmp_path):
     lo_lo, lo_hi = res_lo["mc_interval"]
     hi_lo, hi_hi = res_hi["mc_interval"]
     assert hi_lo <= lo_lo and lo_hi <= hi_hi and (lo_lo, lo_hi) != (hi_lo, hi_hi)
+
+
+# ---------------------------------------------------------------------------
+# Round 12 (plan v5 A1): owner-ruling waiver on the test-bank reliability path.
+# ---------------------------------------------------------------------------
+def _waiver_fixture_v5() -> dict:
+    return {
+        "schema": PW.WAIVER_SCHEMA,
+        "ruling_event": {
+            "kind": "epm:clarify-answers",
+            "version": 1,
+            "ts": "2026-09-03T20:39:25Z",
+            "by": "thomas-via-watcher-7d7549",
+        },
+        "ruling_verbatim": "just trust the judge",
+        "scope": {
+            "banks": ["dev", "test"],
+            "gates": ["human_audit_feasibility", "label_reliability"],
+        },
+        "disclosure": "SYNTHETIC-DISCLOSURE: judge labels, no human validation.",
+        "plan_version": "v5",
+    }
+
+
+def _write_waiver_v5(tmp_path, body) -> None:
+    p = tmp_path / PW.HUMAN_AUDIT_WAIVER_REL
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(body))
+
+
+def test_label_reliability_waived_by_owner_ruling(tmp_path):
+    """v5 A1: no test-bank adjudications + a valid waiver record => WAIVED for
+    every judged row (never PASS), the disclosure travels, and the row gate
+    treats WAIVED as pass=True with the disclosure in detail."""
+    _write_waiver_v5(tmp_path, _waiver_fixture_v5())
+    verdict = INF.load_test_label_reliability(tmp_path)
+    judged = [r for r in C.ROW_IDS if C.CONSTRUCTS[r].judge_scored]
+    assert verdict["status"] == PW.GATE_WAIVED and verdict["bank"] == "test"
+    assert sorted(verdict["per_trait"]) == sorted(judged)
+    for v in verdict["per_trait"].values():
+        assert v["status"] == PW.GATE_WAIVED and "SYNTHETIC-DISCLOSURE" in v["detail"]
+    assert verdict["waiver"]["ruling_verbatim"] == "just trust the judge"
+    # the row gate: WAIVED passes with the disclosure in detail, status verbatim
+    rd, records = _mini_records(tmp_path)
+    cells = sorted({f"{r.source_frame}|{r.stratum}" for r in rd.rows})
+    comps = ["c5_full_probe", "c2_direction_dot"]
+    panel = INF.build_panel(
+        rd.row,
+        records,
+        comps,
+        INF.synthetic_row_ledger(rd.row, cells, []),
+        INF.prompt_cells_from_rowdata(rd),
+    )
+    rows_input = _mini_rows_input(
+        rd, records, panel, comps, label_exclusions={"dev": {}, "test": {}}
+    )
+    report = INF.run_inference(
+        rows_input,
+        {"eligible": [rd.row], "not_estimable": []},
+        TINY_REG,
+        tmp_path / "out",
+        reliability=verdict,
+        require_registered_universe=False,
+    )
+    check = report["rows"][rd.row]["gates"]["checks"]["label_reliability"]
+    assert check["pass"] is True
+    assert check["status"] == PW.GATE_WAIVED
+    assert "SYNTHETIC-DISCLOSURE" in check["detail"]
+    assert "label_reliability" not in report["not_estimable"]["C5"].get(rd.row, [])
+
+
+def test_label_reliability_malformed_waiver_raises(tmp_path):
+    bad = _waiver_fixture_v5()
+    bad["ruling_event"]["kind"] = "epm:progress"
+    _write_waiver_v5(tmp_path, bad)
+    with pytest.raises(PW.PowerInputError, match="malformed waiver"):
+        INF.load_test_label_reliability(tmp_path)
+
+
+def test_label_reliability_waiver_ignored_when_test_audit_exists(tmp_path):
+    """A REAL test-bank audit wins over the waiver: the envelope validation and
+    the real reliability machinery run (empty rows => honest NOT-ESTIMABLE)."""
+    _write_waiver_v5(tmp_path, _waiver_fixture_v5())
+    judged = [r for r in C.ROW_IDS if C.CONSTRUCTS[r].judge_scored]
+    fps = {r: C.judge_instrument_fingerprint(r) for r in judged}
+    _write_test_audit(tmp_path, {"bank": "test", "judge_instrument_fingerprints": fps, "rows": []})
+    verdict = INF.load_test_label_reliability(tmp_path)
+    assert verdict["status"] == PW.GATE_NOT_ESTIMABLE  # real machinery, not WAIVED
+    assert verdict["per_trait"] == {}

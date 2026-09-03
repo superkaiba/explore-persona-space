@@ -637,6 +637,27 @@ def load_test_label_reliability(artifacts_root: Path) -> dict[str, Any]:
     root = Path(artifacts_root) / TEST_AUDIT_DIR
     audit_path = root / PW.HUMAN_AUDIT_REL
     if not audit_path.exists():
+        # Owner-ruling waiver (plan v5 A1): ONE record at
+        # <artifacts_root>/human_audit/waiver.json covers BOTH banks (its scope
+        # lists dev + test). With no test-bank adjudications on disk and a valid
+        # waiver present, every judged row is WAIVED (never PASS) and the
+        # mandatory disclosure travels verbatim. A malformed waiver RAISES
+        # (PW.load_waiver_record); adjudications are never synthesized.
+        waiver = PW.load_waiver_record(Path(artifacts_root))
+        if waiver is not None:
+            judged = [r for r in C.ROW_IDS if C.CONSTRUCTS[r].judge_scored]
+            disclosure = waiver["disclosure"]
+            return {
+                "status": PW.GATE_WAIVED,
+                "artifact": str(Path(artifacts_root) / PW.HUMAN_AUDIT_WAIVER_REL),
+                "detail": disclosure,
+                "per_trait": {
+                    row: {"status": PW.GATE_WAIVED, "detail": disclosure} for row in judged
+                },
+                "waiver": waiver,
+                "disclosure": disclosure,
+                "bank": "test",
+            }
         return {
             "status": PW.GATE_NOT_ESTIMABLE,
             "missing_artifact": str(audit_path),
@@ -648,6 +669,12 @@ def load_test_label_reliability(artifacts_root: Path) -> dict[str, Any]:
             "per_trait": {},
             "bank": "test",
         }
+    if PW.load_waiver_record(Path(artifacts_root)) is not None:
+        print(
+            "[inference] real test-bank adjudications present — the owner waiver "
+            "record is IGNORED; the real reliability gates run",
+            flush=True,
+        )
     body = json.loads(audit_path.read_text())
     bank = body.get("bank")
     if bank != "test":
@@ -833,6 +860,14 @@ def row_gates(
         per_trait = reliability.get("per_trait") or {}
         verdict = per_trait.get(panel.row)
         artifact = reliability.get("artifact") or reliability.get("missing_artifact") or ""
+        if verdict is None and reliability.get("status") == PW.GATE_WAIVED:
+            # v5 A1: the owner waiver covers the whole bank, not a row list —
+            # a judged row absent from the derived per_trait map is still
+            # waived, with the mandatory disclosure carried verbatim.
+            verdict = {
+                "status": PW.GATE_WAIVED,
+                "detail": reliability.get("disclosure", reliability.get("detail", "")),
+            }
         if verdict is None:
             checks["label_reliability"] = {
                 "pass": False,
@@ -844,8 +879,11 @@ def row_gates(
                 "artifact": artifact,
             }
         else:
+            # WAIVED (plan v5 A1) is non-blocking: the row gate passes with the
+            # distinct status + the mandatory disclosure in detail — never
+            # renamed PASS, never silently dropped.
             checks["label_reliability"] = {
-                "pass": bool(verdict["status"] == PW.GATE_PASS),
+                "pass": bool(verdict["status"] in (PW.GATE_PASS, PW.GATE_WAIVED)),
                 "status": verdict["status"],
                 "detail": verdict.get("detail", ""),
                 "artifact": artifact,

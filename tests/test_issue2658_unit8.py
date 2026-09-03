@@ -417,23 +417,79 @@ def test_projection_never_reported_as_measured(tmp_path):
     assert rep["envelope"]["within_envelope"] is None  # unknown != within
 
 
-def test_cost_report_measured_path_and_envelope(tmp_path):
+def _timing_fixture(
+    wall_hours: float = 3.0,
+    gpu_count: int = 8,
+    gen_marginal: float = 0.14,
+    capture_rate: float = 35.0,
+    overhead_h: float = 0.135,
+) -> dict:
+    """A v2 pilot-timing artifact shaped like issue2658_pilot_timing.py output."""
+    return {
+        "schema": "i2658-pilot-timing-v2",
+        "wall_hours": wall_hours,
+        "gpu_count": gpu_count,
+        "n_responses": 6290,
+        "fixed_overhead_hours": overhead_h,
+        "pod_wall_hours_all_in": wall_hours,
+        "gpu_hours_all_in": wall_hours * gpu_count,
+        "gen_marginal_s_per_response_per_gpu": gen_marginal,
+        "gen_engine_init_s_per_shard": {"generate_shard00": overhead_h * 3600},
+        "capture_rows_per_s_per_gpu": capture_rate,
+        "capture_model_load_s_per_shard": {"value": None, "basis": "not-measured"},
+        "shards_used_for_gen_rate": ["generate_shard00"],
+        "crash_fix_rounds_note": "synthetic: 1 start, 0 crash-fix restarts",
+    }
+
+
+def test_cost_report_measured_marginal_path_and_envelope(tmp_path):
+    timing = tmp_path / P.PILOT_TIMING_REL
+    timing.parent.mkdir(parents=True)
+    timing.write_text(json.dumps(_timing_fixture()))
+    rep = P.cost_report(tmp_path, tmp_path, "pilot", n_common=30)
+    meas = rep["gpu_hours"]["measured_pilot_gpu_h"]
+    assert meas["value"] == 24.0 and meas["basis"].startswith("measured")
+    proj = rep["gpu_hours"]["projected_production_gpu_h_measured_marginal"]
+    assert proj["basis"].startswith("projected")
+    # v5 A4 measured-marginal formula at N=30 (237,600 production responses):
+    n_prod = 11 * 12 * 30 * 30 * 2
+    gen = n_prod * 0.14 / 3600 + 2 * 0.135
+    cap = n_prod / 35.0 / 3600
+    assert abs(proj["value"] - (gen + cap)) < 1e-9
+    assert "LOWER BOUND" in proj["caveat"]
+    env = rep["envelope"]
+    # pilot 24 GPU-h >> the 8 GPU-h ceiling, yet the total (~35.4) is inside the
+    # 80 GPU-h kill criterion => within_envelope True, deviation REPORTED (v5 A4)
+    assert env["within_envelope"] is True
+    assert env["pilot_within_ceiling"] is False
+    dev = env["pilot_ceiling_deviation"]
+    assert dev["measured_pilot_gpu_h"] == 24.0 and dev["ratio"] == 3.0
+    assert "synthetic: 1 start" in dev["decomposition"]
+    gate = P._gate_cost(rep)
+    assert gate.status == P.GATE_PASS
+    assert gate.measured["pilot_ceiling_deviation"]["ratio"] == 3.0
+
+
+def test_cost_gate_fails_only_on_the_80h_kill_criterion(tmp_path):
+    timing = tmp_path / P.PILOT_TIMING_REL
+    timing.parent.mkdir(parents=True)
+    timing.write_text(json.dumps(_timing_fixture(gen_marginal=1.2)))
+    rep = P.cost_report(tmp_path, tmp_path, "pilot", n_common=30)
+    env = rep["envelope"]
+    assert env["projected_total_gpu_h"] > 80.0
+    assert env["within_envelope"] is False and env["margin_gpu_h"] < 0
+    gate = P._gate_cost(rep)
+    assert gate.status == P.GATE_FAIL and "kill criterion" in gate.detail
+
+
+def test_cost_report_rejects_legacy_timing_artifact(tmp_path):
+    # a v1-shaped artifact (the four legacy fields only) is REFUSED, never
+    # silently projected from — the v5 A4 measured components are required
     timing = tmp_path / P.PILOT_TIMING_REL
     timing.parent.mkdir(parents=True)
     timing.write_text(json.dumps({"wall_hours": 0.75, "gpu_count": 8, "n_responses": 6600}))
-    rep = P.cost_report(tmp_path, tmp_path, "pilot", n_common=30)
-    assert rep["gpu_hours"]["measured_pilot_gpu_h"] == {
-        "value": 6.0,
-        "basis": "measured",
-        "artifact": str(timing),
-    }
-    proj = rep["gpu_hours"]["projected_production_gpu_h"]
-    assert proj["basis"] == "projected"
-    # marginal 6/6600 GPU-h/response x (11*12*30*30*2 = 237,600 responses) = 216
-    assert abs(proj["value"] - 6.0 / 6600 * 237_600) < 1e-9
-    env = rep["envelope"]
-    assert env["within_envelope"] is False  # 216 + 6 > 80 => honest FAIL, not a default
-    assert env["margin_gpu_h"] < 0
+    with pytest.raises(P.PowerInputError, match="missing field"):
+        P.cost_report(tmp_path, tmp_path, "pilot", n_common=30)
 
 
 # ---------------------------------------------------------------------------
@@ -530,9 +586,12 @@ def _full_coverage_selection(n_common: int = 48) -> dict:
         "status": "measured",
         "n_common": n_common,
         "rows_simulated": sorted(C.ROW_IDS),
-        "rows_missing_labels": [],
+        "rows_dead": [],
+        "rows_with_declared_exclusions": [],
+        "rows_missing_labels_undocumented": [],
         "per_row_power_n": {},
-        "cells_with_unbounded_requirement": [],
+        "cells_not_estimable_zero_discordance": [],
+        "cells_estimable": [],
         "binding_discordance_cell": {"row": "evil", "cell": "evil__x__y", "n_required": 23},
         "binding_power_row": {"row": "evil", "n_required": 30},
         "profile_sha256": "0" * 64,
@@ -740,3 +799,460 @@ def test_synthetic_profile_is_smoke_only_labeled():
     prof = P.synthetic_profile([JUDGED_ROW], seed=0)
     assert prof[JUDGED_ROW].artifact_dir == "SYNTHETIC (smoke)"
     assert len(prof[JUDGED_ROW].cells) == C.PILOT.cells_per_row
+
+
+# ---------------------------------------------------------------------------
+# Round 12 (plan v5): waiver / declared exclusions / zero-discordance / timing
+# / draw-count / stager. All offline + synthetic.
+# ---------------------------------------------------------------------------
+def _waiver_fixture() -> dict:
+    return {
+        "schema": P.WAIVER_SCHEMA,
+        "ruling_event": {
+            "kind": "epm:clarify-answers",
+            "version": 1,
+            "ts": "2026-09-03T20:39:25Z",
+            "by": "thomas-via-watcher-7d7549",
+        },
+        "ruling_verbatim": "just trust the judge",
+        "scope": {
+            "banks": ["dev", "test"],
+            "gates": ["human_audit_feasibility", "label_reliability"],
+        },
+        "disclosure": "SYNTHETIC-DISCLOSURE: judge labels, no human validation.",
+        "plan_version": "v5",
+    }
+
+
+def _write_waiver(tmp_path, body) -> None:
+    p = tmp_path / P.HUMAN_AUDIT_WAIVER_REL
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(body))
+
+
+def test_waiver_absent_present_malformed(tmp_path):
+    # absent: unchanged NOT-ESTIMABLE
+    rel = P.reliability_gates(tmp_path)
+    assert rel["status"] == P.GATE_NOT_ESTIMABLE and rel["per_trait"] == {}
+    # present + valid: WAIVED for every judged row, disclosure verbatim
+    _write_waiver(tmp_path, _waiver_fixture())
+    rel = P.reliability_gates(tmp_path)
+    judged = [r for r in C.ROW_IDS if C.CONSTRUCTS[r].judge_scored]
+    assert rel["status"] == P.GATE_WAIVED
+    assert sorted(rel["per_trait"]) == sorted(judged)
+    for v in rel["per_trait"].values():
+        assert v["status"] == P.GATE_WAIVED and "SYNTHETIC-DISCLOSURE" in v["detail"]
+    assert rel["waiver"]["ruling_verbatim"] == "just trust the judge"
+    # malformed: RAISES, never degrades to WAIVED or NOT-ESTIMABLE
+    bad = _waiver_fixture()
+    bad["scope"]["banks"] = ["dev"]
+    _write_waiver(tmp_path, bad)
+    with pytest.raises(P.PowerInputError, match="malformed waiver"):
+        P.reliability_gates(tmp_path)
+    bad2 = _waiver_fixture()
+    bad2.pop("disclosure")
+    _write_waiver(tmp_path, bad2)
+    with pytest.raises(P.PowerInputError, match="disclosure"):
+        P.reliability_gates(tmp_path)
+
+
+def test_waiver_ignored_when_real_adjudications_exist(tmp_path):
+    _write_waiver(tmp_path, _waiver_fixture())
+    audit = tmp_path / P.HUMAN_AUDIT_REL
+    audit.parent.mkdir(parents=True, exist_ok=True)
+    audit.write_text(json.dumps(_audit_fixture(240, 240)))
+    rel = P.reliability_gates(tmp_path)
+    assert rel["status"] == P.GATE_PASS  # the REAL gates ran
+    assert rel.get("waiver_ignored") is True
+
+
+def test_waived_gate_is_nonblocking_and_verdict_carries_disclosure(tmp_path):
+    _write_waiver(tmp_path, _waiver_fixture())
+    cost = P.cost_report(tmp_path, tmp_path, "pilot", n_common=None)
+    profiles = P.load_pilot_label_profile(tmp_path, "pilot")
+    verdict = P.evaluate_gates(tmp_path, tmp_path, "pilot", profiles, None, None, cost)
+    by_id = {g["gate_id"]: g for g in verdict["gates"]}
+    assert by_id["human_audit_feasibility"]["status"] == P.GATE_WAIVED
+    assert "human_audit_feasibility" not in verdict["blockers"]
+    assert verdict["verdict"] == "PARK"  # everything else is still not-estimable
+    assert verdict["waivers"] and verdict["waivers"][0]["plan_version"] == "v5"
+    assert verdict["disclosures"] == [_waiver_fixture()["disclosure"]]
+    # WAIVED is never PASS: the status string survives verbatim
+    assert by_id["human_audit_feasibility"]["status"] != P.GATE_PASS
+
+
+def _frame_manifest_fixture(tmp_path, empty_cell_key: str = "fact_questions|direct") -> Path:
+    rows = []
+    for row in C.ROW_IDS:
+        per_cell = {}
+        rf = P.F.FRAMES[row]
+        for fr in rf.frames:
+            for st in rf.strata:
+                key = f"{fr.name}|{st.name}"
+                per_cell[key] = (
+                    [] if (row == "casualness" and key == empty_cell_key) else ["i0", "i1"]
+                )
+        rows.append({"row": row, "pilot_selection": {"per_cell_item_ids": per_cell}})
+    p = tmp_path / "frame_manifest.json"
+    p.write_text(json.dumps({"rows": rows}))
+    return p
+
+
+def _wave_summary_fixture(tmp_path, row: str, cells: list[str], calls: int = 100) -> Path:
+    d = tmp_path / "judge" / "pilot" / row
+    d.mkdir(parents=True, exist_ok=True)
+    body = {
+        "row": row,
+        "split": "pilot",
+        "dispatch_total_calls": calls,
+        "counters": {"n_kept": calls, "n_kept_with_reasoning": calls, "n_api_refusal": 1},
+        "not_estimable": {
+            c: {"status": "not-estimable", "detail": "no frozen reference (synthetic)"}
+            for c in cells
+        },
+    }
+    p = d / "_wave_summary.json"
+    p.write_text(json.dumps(body))
+    return p
+
+
+def test_load_declared_not_estimable_two_sources_and_malformed(tmp_path):
+    fm = _frame_manifest_fixture(tmp_path)
+    halluc_cells = P.expected_cells("hallucination")[:2]
+    _wave_summary_fixture(tmp_path, "hallucination", halluc_cells)
+    declared = P.load_declared_not_estimable(tmp_path, "pilot", frame_manifest_path=fm)
+    assert set(declared) == set(halluc_cells) | {"casualness__fact_questions__direct"}
+    for c in halluc_cells:
+        assert declared[c]["source"] == "judge-wave-summary"
+    assert (
+        declared["casualness__fact_questions__direct"]["source"] == "frame-manifest-pilot-selection"
+    )
+    # malformed wave-summary record raises
+    _wave_summary_fixture(tmp_path, "evil", [])
+    ws = tmp_path / "judge" / "pilot" / "evil" / "_wave_summary.json"
+    body = json.loads(ws.read_text())
+    body["not_estimable"] = {P.expected_cells("evil")[0]: {"status": "wat"}}
+    ws.write_text(json.dumps(body))
+    with pytest.raises(P.PowerInputError, match="malformed"):
+        P.load_declared_not_estimable(tmp_path, "pilot", frame_manifest_path=fm)
+    ws.unlink()
+    # foreign cell in the frame manifest raises
+    fm_bad = json.loads(fm.read_text())
+    fm_bad["rows"][0]["pilot_selection"]["per_cell_item_ids"]["nope|nah"] = []
+    fm2 = tmp_path / "frame_manifest_bad.json"
+    fm2.write_text(json.dumps(fm_bad))
+    with pytest.raises(P.PowerInputError, match="foreign cell"):
+        P.load_declared_not_estimable(tmp_path, "pilot", frame_manifest_path=fm2)
+
+
+def test_profile_loader_declared_vs_undocumented(tmp_path):
+    cell_declared = P.expected_cells(JUDGED_ROW)[0]
+    declared = {
+        cell_declared: {"source": "judge-wave-summary", "reason": "synthetic", "artifact": "x"}
+    }
+    profiles = P.load_pilot_label_profile(tmp_path, "pilot", [JUDGED_ROW], declared=declared)
+    prof = profiles[JUDGED_ROW]
+    assert cell_declared in prof.declared_not_estimable
+    assert cell_declared not in prof.missing_cells
+    assert len(prof.missing_cells) == 11  # the OTHER absences stay undocumented
+    # a PRESENT artifact for a declared cell is a stale declaration => raises
+    d = tmp_path / "judge" / "pilot" / JUDGED_ROW
+    d.mkdir(parents=True)
+    (d / f"{cell_declared}.json").write_text(json.dumps(_judge_cell_fixture(cell_declared, {})))
+    with pytest.raises(P.PowerInputError, match="stale declaration"):
+        P.load_pilot_label_profile(tmp_path, "pilot", [JUDGED_ROW], declared=declared)
+
+
+def _full_profiles(declared_cells: dict[str, dict] | None = None, dead_rows=()) -> dict:
+    """Synthetic profiles covering ALL 132 registered cells: estimable pools
+    everywhere except dead rows (unanimous pools) and declared cells."""
+    declared_cells = declared_cells or {}
+    profiles = {}
+    for row in C.ROW_IDS:
+        prof = P.RowLabelProfile(row=row, judged=C.CONSTRUCTS[row].judge_scored)
+        for cell in P.expected_cells(row):
+            if cell in declared_cells:
+                prof.declared_not_estimable[cell] = declared_cells[cell]
+                continue
+            if row in dead_rows:
+                prof.cells[cell] = [(0, 10), (10, 10), (0, 10)]  # unanimous only
+            else:
+                prof.cells[cell] = [(3, 10), (5, 10), (2, 10)]
+        profiles[row] = prof
+    return profiles
+
+
+def test_gate_discordance_declared_and_zero_disc_pass(tmp_path):
+    declared = {
+        P.expected_cells("hallucination")[0]: {
+            "source": "judge-wave-summary",
+            "reason": "no frozen reference (synthetic)",
+            "artifact": "x",
+        },
+        "casualness__fact_questions__direct": {
+            "source": "frame-manifest-pilot-selection",
+            "reason": "zero eligible pilot prompts (synthetic)",
+            "artifact": "y",
+        },
+    }
+    profiles = _full_profiles(declared, dead_rows=("evil", "impoliteness"))
+    disc = P.measure_discordance(profiles, seed=0)
+    # declared cells carry source+reason in the record
+    hall = disc["rows"]["hallucination"]["cells"][P.expected_cells("hallucination")[0]]
+    assert hall["status"] == "declared-not-estimable"
+    assert hall["source"] == "judge-wave-summary"
+    gate = P._gate_discordance(disc, tmp_path)
+    assert gate.status == P.GATE_PASS  # zero-disc + declared cells never FAIL it
+    m = gate.measured
+    assert m["n_registered"] == 132
+    assert m["n_declared_not_estimable"] == 2
+    assert m["n_zero_discordance_not_estimable"] == 24  # 2 dead rows x 12 cells
+    assert m["n_estimable"] == 132 - 2 - 24
+    assert "evil" not in m["rows_with_estimable_cells"]
+    assert any("zero pilot discordance" in s for s in m["cells_not_estimable_zero_discordance"])
+    # an UNDOCUMENTED absence still parks
+    profiles["refusal"].missing_cells.append(profiles["refusal"].cells.popitem()[0])
+    disc2 = P.measure_discordance(profiles, seed=0)
+    gate2 = P._gate_discordance(disc2, tmp_path)
+    assert gate2.status == P.GATE_NOT_ESTIMABLE and "UNDOCUMENTED" in gate2.detail
+
+
+def test_verdict_carries_estimability_rollup(tmp_path):
+    profiles = _full_profiles(dead_rows=("evil",))
+    disc = P.measure_discordance(profiles, seed=0)
+    cost = P.cost_report(tmp_path, tmp_path, "pilot", n_common=None)
+    verdict = P.evaluate_gates(tmp_path, tmp_path, "pilot", profiles, disc, None, cost)
+    assert verdict["rows_dead"] == ["evil"]
+    assert len(verdict["cells_estimable"]) == 120
+    assert len(verdict["cells_not_estimable"]) == 12
+    assert all("zero pilot discordance" in v for v in verdict["cells_not_estimable"].values())
+
+
+def test_select_production_n_dead_rows_not_simulated(tmp_path):
+    reg = P.PowerRegistry(
+        n_replicates=6,
+        n_permutations=219,
+        power_curve_effects=(0.70,),
+        prompts_per_cell_floor=4,
+        bisection_cap=16,
+        primary_effect_auroc=0.70,
+    )
+    profiles = {
+        r: p
+        for r, p in _full_profiles(dead_rows=("evil",)).items()
+        if r in ("evil", JUDGED_ROW, OBJECTIVE_ROW)
+    }
+    disc = P.measure_discordance(profiles, seed=0)
+    ledger = P.PowerLedger(tmp_path / "units.jsonl")
+    sel = P.select_production_n(profiles, disc, ledger, reg=reg, n_reps=6, n_perm=219, seed=0)
+    assert sel["rows_dead"] == ["evil"]
+    assert sorted(sel["rows_simulated"]) == sorted([JUDGED_ROW, OBJECTIVE_ROW])
+    dead = sel["per_row_power_n"]["evil"]
+    assert dead["n_power"] is None
+    assert dead["status"] == "not-estimable: zero pilot discordance in every cell"
+    assert sel["rows_missing_labels_undocumented"] == []
+    # the dead row's unanimous cells are reported, never a veto
+    assert sel["cells_not_estimable_zero_discordance"]
+    if sel["status"] == "measured":
+        assert sel["n_common"] >= reg.prompts_per_cell_floor
+        # no ledger unit was burned on the dead row
+        recs = [json.loads(x) for x in (tmp_path / "units.jsonl").read_text().strip().splitlines()]
+        assert all(r["row"] != "evil" for r in recs)
+
+
+def test_gate_power_coverage_is_simulated_plus_dead(tmp_path):
+    sel = _full_coverage_selection()
+    sel["rows_simulated"] = sorted(set(C.ROW_IDS) - {"evil", "casualness"})
+    sel["rows_dead"] = ["casualness", "evil"]
+    gate = P._gate_power(sel, tmp_path)
+    assert gate.status == P.GATE_PASS
+    assert gate.measured["rows_dead"] == ["casualness", "evil"]
+    # dropping a row from BOTH sets fails coverage
+    sel2 = dict(sel, rows_dead=["casualness"])
+    gate2 = P._gate_power(sel2, tmp_path)
+    assert gate2.status == P.GATE_FAIL and "evil" in gate2.detail
+    # an undocumented missing-label row blocks even at full coverage
+    sel3 = dict(sel, rows_missing_labels_undocumented=["refusal"])
+    gate3 = P._gate_power(sel3, tmp_path)
+    assert gate3.status == P.GATE_FAIL and "UNDOCUMENTED" in gate3.detail
+
+
+def test_ledger_keys_stable_across_the_v5_profile_change():
+    prof = P.RowLabelProfile(row=JUDGED_ROW, judged=True)
+    cell = P.expected_cells(JUDGED_ROW)[0]
+    prof.cells[cell] = [(3, 10), (1, 10), (5, 10)]
+    base_fp = P.profile_fingerprint({JUDGED_ROW: prof})
+    # pinned literal: the fingerprint MUST NOT change when RowLabelProfile
+    # gains fields (declared_not_estimable) — resume keys cover cells ONLY
+    assert base_fp == "e57ae1e6d1f758af4e9c04a41250176e70182f570b774de4796658fb38dfcef1"
+    params = dict(
+        row=JUDGED_ROW,
+        n_prompts_per_cell=30,
+        effect_auroc=0.6,
+        alpha=P.REGISTERED.alpha_worst_case,
+        n_reps=400,
+        n_perm=659,
+        responses_per_prompt=30,
+        seed=0,
+        profile_sha256=base_fp,
+    )
+    key_before = P.PowerLedger.unit_key(**params)
+    prof.declared_not_estimable["x__y__z"] = {"source": "s", "reason": "r", "artifact": "a"}
+    prof.missing_cells.append("q__w__e")
+    assert P.profile_fingerprint({JUDGED_ROW: prof}) == base_fp
+    assert P.PowerLedger.unit_key(**params) == key_before
+
+
+def _write_gen_log(path: Path, cells: list[tuple[str, int, bool, int]], init_s: int = 60):
+    lines = [
+        "INFO 09-03 07:00:00 [core.py:1] engine start",
+        f"INFO 09-03 07:{init_s // 60:02d}:{init_s % 60:02d} [gpu_model_runner.py:1] "
+        "Graph capturing finished in 4 secs",
+    ]
+    for i, (cell, records, resumed, elapsed) in enumerate(cells, start=1):
+        lines.append(
+            f"[gen] cell {i}/{len(cells)} {cell} records={records} "
+            f"resumed={resumed} elapsed={elapsed}s"
+        )
+    path.write_text("\n".join(lines) + "\n")
+
+
+def test_timing_parser_on_synthetic_logs(tmp_path):
+    import issue2658_pilot_timing as T
+
+    logs = tmp_path / "logs"
+    logs.mkdir()
+    _write_gen_log(
+        logs / "generate_shard00.log",
+        [("a__b__c", 100, False, 10), ("d__e__f", 100, False, 25)],
+        init_s=60,
+    )
+    _write_gen_log(
+        logs / "generate_shard01.log",
+        [("a__b__c", 100, True, 0), ("d__e__f", 100, False, 5)],
+        init_s=90,
+    )
+    (logs / "capture_shard00.log").write_text(
+        "[capture-shard00] rows 8/300 elapsed=1s\n"
+        "[capture-shard00] rows 300/300 elapsed=10s\n"
+        "[capture-shard01] rows 100/100 elapsed=5s\n"
+    )
+    (logs / "launcher_main.log").write_text(
+        "[phase=p1_width] width=8 start\nnoise\n[phase=p1_width] width=8 restart\n"
+    )
+    (tmp_path / "gen_order_manifest").mkdir()
+    (tmp_path / "gen_order_manifest" / "pilot_shard00of01.json").write_text(
+        json.dumps({"n_requests": 400})
+    )
+    t = T.build_timing(logs, "2026-09-03T04:00:00Z", "2026-09-03T07:00:00Z", 8, tmp_path)
+    assert t["wall_hours"] == 3.0 and t["gpu_hours_all_in"] == 24.0
+    # shard01 has a resumed cell => EXCLUDED; rate from shard00 only: 25s/200
+    assert t["shards_used_for_gen_rate"] == ["generate_shard00"]
+    assert t["shards_excluded_resumed"] == ["generate_shard01"]
+    assert abs(t["gen_marginal_s_per_response_per_gpu"] - 25 / 200) < 1e-12
+    # engine init: 60s + 90s summed over the wave
+    assert abs(t["fixed_overhead_hours"] - 150 / 3600) < 1e-12
+    assert abs(t["capture_rows_per_s_per_gpu"] - 400 / 15) < 1e-9
+    assert t["n_responses"] == 400
+    assert t["capture_model_load_s_per_shard"]["basis"] == "not-measured"
+    assert "2 [phase=p1_width] starts" in t["crash_fix_rounds_note"]
+    # an incomplete capture sub-shard raises (never defaulted)
+    (logs / "capture_shard00.log").write_text("[capture-shard00] rows 8/300 elapsed=1s\n")
+    with pytest.raises(T.TimingParseError, match="incomplete"):
+        T.build_timing(logs, "2026-09-03T04:00:00Z", "2026-09-03T07:00:00Z", 8, tmp_path)
+    # a shard with no vLLM stamps raises
+    (logs / "capture_shard00.log").write_text(
+        "[capture-shard00] rows 300/300 elapsed=10s\n[capture-shard01] rows 100/100 elapsed=5s\n"
+    )
+    (logs / "generate_shard00.log").write_text(
+        "[gen] cell 1/1 a__b__c records=1 resumed=False elapsed=1s\n"
+    )
+    with pytest.raises(T.TimingParseError, match="stamps"):
+        T.build_timing(logs, "2026-09-03T04:00:00Z", "2026-09-03T07:00:00Z", 8, tmp_path)
+
+
+def test_realized_judge_draws_summed_from_wave_summaries(tmp_path):
+    halluc = P.expected_cells("hallucination")[:2]
+    _wave_summary_fixture(tmp_path, "evil", [], calls=3000)
+    _wave_summary_fixture(tmp_path, "hallucination", halluc, calls=1300)
+    spend = {
+        "schema": "i2658-judge-spend-v1",
+        "dollars": 43.0,
+        "basis": "priced from measured tokens, not billed",
+        "price_source_url": "https://example.test/pricing",
+        "rates_per_mtok": {"input_per_mtok": 1.5, "output_per_mtok": 7.5},
+        "n_calls_succeeded": 4300,
+        "per_call_mean_input_tokens": 2000.0,
+        "per_call_mean_output_tokens": 300.0,
+    }
+    sp = tmp_path / P.JUDGE_SPEND_REL
+    sp.parent.mkdir(parents=True)
+    sp.write_text(json.dumps(spend))
+    rep = P.cost_report(tmp_path, tmp_path, "pilot", n_common=48)
+    draws = rep["api"]["realized_judge_draws"]
+    assert draws["value"] == 4300  # dispatch_total_calls, NOT the counters sum
+    assert "dispatch_total_calls" in draws["detail"]
+    calls = rep["api"]["projected_production_judge_calls"]
+    # 8 judged rows x 12 cells - 2 declared no-reference = 94 judgeable cells
+    assert calls["value"] == 94 * 48 * 30 * 5 * 2
+    dollars = rep["api"]["projected_production_judge_dollars"]
+    assert abs(dollars["value"] - calls["value"] * 43.0 / 4300) < 1e-9
+    assert dollars["basis"] == "projected"
+    assert rep["api"]["measured_dollars"]["value"] == 43.0
+    assert rep["api"]["measured_dollars"]["basis"] == "priced from measured tokens, not billed"
+
+
+def test_stager_writes_provenance_offline(tmp_path, monkeypatch):
+    import huggingface_hub as hf
+
+    import explore_persona_space.orchestrate.hub as hub_mod
+
+    prefix = f"{P.G.EXPERIMENT_NAME}/analysis_tensors/l19_pilot"
+    files = {}
+    for i in range(8):
+        shard = f"shard{i:02d}of08"
+        for name in (
+            "row_index_shard00.jsonl",
+            "row_index_shard01.jsonl",
+            "_capture_manifest.json",
+            "_capture_meta_shard00.json",
+            "_capture_meta_shard01.json",
+            "l19mean_shard00.npy",
+        ):
+            # row_index shards stay EMPTY (valid JSONL) so the alignment
+            # gate can parse them; the manifest carries a payload marker
+            files[f"{prefix}/{shard}/{name}"] = (
+                "" if name.startswith("row_index") else f"payload:{shard}/{name}\n"
+            )
+
+    class _FakeApi:
+        def repo_info(self, repo, repo_type):
+            assert repo_type == "dataset"
+            return type("RI", (), {"sha": "f" * 40})()
+
+    def _fake_list(api, repo, *, repo_type, revision, path_in_repo):
+        assert revision == "f" * 40 and path_in_repo == prefix
+        return sorted((p, len(v)) for p, v in files.items())
+
+    def _fake_download(*, repo_id, filename, repo_type, revision):
+        assert revision == "f" * 40
+        local = tmp_path / "hfcache" / filename.replace("/", "_")
+        local.parent.mkdir(parents=True, exist_ok=True)
+        local.write_text(files[filename])
+        return str(local)
+
+    monkeypatch.setattr(hf, "HfApi", _FakeApi)
+    monkeypatch.setattr(hf, "hf_hub_download", _fake_download)
+    monkeypatch.setattr(hub_mod, "list_repo_entries_complete", _fake_list)
+    dest = P.stage_store_index_from_hub(tmp_path / "out", "pilot")
+    prov = json.loads((dest / "_staged_from_hub.json").read_text())
+    assert prov["revision"] == "f" * 40 and prov["prefix"] == prefix
+    assert prov["n_files"] == 8 * 5  # sidecars only, NEVER the .npy
+    assert all(not f["path_in_repo"].endswith(".npy") for f in prov["files"])
+    assert (dest / "shard03of08" / "_capture_manifest.json").read_text().startswith("payload:")
+    # the alignment gate reports the staged provenance (empty store + empty
+    # gen dir align vacuously; the store_source string is what is under test)
+    gen_dir = tmp_path / "out" / "raw_completions" / "pilot"
+    gen_dir.mkdir(parents=True)
+    gate = P._gate_row_vector_alignment(tmp_path / "out", tmp_path / "out", "pilot")
+    assert "hub-staged (" + "f" * 40 + ")" in str(gate.measured)
