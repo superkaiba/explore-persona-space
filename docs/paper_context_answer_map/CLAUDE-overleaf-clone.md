@@ -38,7 +38,7 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
   main.tex/outline.tex): after any root rename, Thomas must reselect Menu →
   Settings → Main document, and the next pull checks for resurrected stale roots. Draft text lives in
   `sections/NN_<name>.tex`. Every results section, main text and appendix alike,
-  is its own file under `results/` (`01_accuracy.tex` to `06_behavior.tex` for the
+  is its own file under `sections/results/` (`01_accuracy.tex` to `06_behavior.tex` for the
   main-text results, `a1_*.tex` to `a7_*.tex` for the appendix results), input in
   place by the spines `sections/04_results.tex` and
   `sections/05_method_details.tex` (split 2026-09-03). Edit the result files,
