@@ -42,6 +42,10 @@ export PATH="$BASE/venv/bin:$PATH"
 # DeepSeek-V4-Flash capture OOMed (job 62667); expandable segments reclaim it.
 # vLLM (gen phase) tolerates this setting outside sleep mode.
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+# The capture phase takes a flock slot under the shared out-root; the default
+# of 2 slots is per-pod sizing and serialised the fleet on MooseFS. One slot
+# per model key plus headroom for the sibling column.
+export EPS_CAPTURE_SLOTS=12
 OUT_ROOT="$BASE/out"
 mkdir -p "$OUT_ROOT" "$HF_HOME"
 # NB: no `export CUDA_VISIBLE_DEVICES` anywhere in this job — Slurm's gres

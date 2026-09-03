@@ -357,3 +357,26 @@ def test_disable_fp8_tp_plan_rewrite_is_identity_and_idempotent():
     cfg.base_model_tp_plan = {"layers.*.mlp.experts": "grouped_gemm"}
     out = cls.update_tp_plan(object.__new__(cls), cfg)
     assert out is cfg and cfg.base_model_tp_plan == {"layers.*.mlp.experts": "grouped_gemm"}
+
+
+def test_capture_slots_env_override(monkeypatch):
+    import importlib
+    import issue2588_run_cell as RC
+
+    monkeypatch.delenv("EPS_CAPTURE_SLOTS", raising=False)
+    assert RC._capture_slots() == 2  # parent default untouched
+    monkeypatch.setenv("EPS_CAPTURE_SLOTS", "12")
+    assert RC._capture_slots() == 12
+    monkeypatch.setenv("EPS_CAPTURE_SLOTS", "0")
+    assert RC._capture_slots() == 1
+
+
+def test_acquire_capture_slot_uses_all_slots(tmp_path, monkeypatch):
+    import issue2588_run_cell as RC
+
+    monkeypatch.setenv("EPS_CAPTURE_SLOTS", "3")
+    held = [RC._acquire_capture_slot(tmp_path) for _ in range(3)]
+    names = sorted(Path(h.name).name for h in held)
+    assert names == [".capture.sem.0", ".capture.sem.1", ".capture.sem.2"]
+    for h in held:
+        h.close()

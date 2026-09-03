@@ -920,12 +920,24 @@ class _CaptureReducer:
         return _hook
 
 
+def _capture_slots() -> int:
+    """Concurrent capture writers allowed per shared out-root. Default 2 (plan
+    §9, sized for one pod's disk). EPS_CAPTURE_SLOTS overrides it: on the
+    charmander Slurm port every cell of every model (and the sibling
+    same-width column) shares ONE MooseFS out-root, and the flock is
+    cluster-wide, so 2 slots serialised the whole fleet's captures
+    (q35_397b 62934 sat 20+ min in request_wait_answer on .capture.sem.0 while
+    dsv4_flash 62955 and a sibling cell held both slots)."""
+    return max(1, int(os.environ.get("EPS_CAPTURE_SLOTS", "2")))
+
+
 def _acquire_capture_slot(root: Path):
-    """2-slot flock semaphore (plan §9: at most 2 concurrent capture writers
-    per shared out-root). Returns the held file object (lock lives with it)."""
+    """N-slot flock semaphore (N = _capture_slots(), default 2: at most 2
+    concurrent capture writers per shared out-root). Returns the held file
+    object (lock lives with it)."""
     import fcntl
 
-    for i in (0, 1):
+    for i in range(_capture_slots()):
         fh = open(root / f".capture.sem.{i}", "w")  # noqa: SIM115 — lock lifetime object
         try:
             fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
