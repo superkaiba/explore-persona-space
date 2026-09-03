@@ -90,18 +90,18 @@ STRATA_CORPORA_NOTE = {"does": "MATH, multi-step GSM8K, ContextHub levels 3\u201
 
 # (cell, x-axis label) per categorical panel.
 PANEL_A_MAPS = [
-    ("p7_A", "context →\nanswer"),
-    ("p7_D", "end of thought\n→ answer"),
+    ("p7_A", "context"),
+    ("p7_D", "end of\nthought"),
 ]
 PANEL_C_MAPS = [
-    ("p7_Aoff", "context →\nanswer\n(thinking off)"),
-    ("p7_A", "context →\nanswer"),
-    ("p7_D", "end of thought\n→ answer"),
+    ("p7_Aoff", "context,\nthinking off"),
+    ("p7_A", "context,\nthinking on"),
+    ("p7_D", "end of\nthought"),
 ]
 PANEL_D_MAPS = [
-    ("p8_G", "before model:\ncontext → answer"),
-    ("p8_E", "before context\n→ after answer"),
-    ("p8_F", "after model:\ncontext → answer"),
+    ("p8_G", "before\nmodel"),
+    ("p8_E", "before →\nafter"),
+    ("p8_F", "after\nmodel"),
 ]
 
 
@@ -285,12 +285,13 @@ def _bar_with_ci(
     style: StratumStyle,
     *,
     retrieval: bool,
+    width: float = BAR_WIDTH,
 ) -> None:
     if retrieval:
         ax.bar(
             x,
             value,
-            width=BAR_WIDTH,
+            width=width,
             facecolor=PAPER,
             edgecolor=style.color,
             hatch=RETRIEVAL_HATCH,
@@ -298,7 +299,7 @@ def _bar_with_ci(
             zorder=3,
         )
     else:
-        ax.bar(x, value, width=BAR_WIDTH, color=style.color, linewidth=0, zorder=3)
+        ax.bar(x, value, width=width, color=style.color, linewidth=0, zorder=3)
     lo, hi = ci
     ax.errorbar(
         x,
@@ -313,30 +314,34 @@ def _bar_with_ci(
     )
 
 
-def _draw_bars(ax: plt.Axes, x: float, metrics: dict[str, Any], style: StratumStyle, subset: str) -> None:
-    dx_r2, dx_ret = BAR_OFFSETS[subset]
-    _bar_with_ci(ax, x + dx_r2, metrics["r2"], metrics["r2_ci"], style, retrieval=False)
-    if metrics["retrieval_lift"] is not None:
-        _bar_with_ci(
-            ax,
-            x + dx_ret,
-            metrics["retrieval_lift"],
-            metrics["retrieval_lift_ci"],
-            style,
-            retrieval=True,
-        )
+GROUP_GAP = 0.8  # x gap between the R^2 group and the retrieval group
 
 
 def _categorical_panel(ax: plt.Axes, maps: list[dict[str, Any]], *, separator_after: int | None = None) -> None:
+    """Bars grouped by metric: all held-out R^2 bars on the left, all retrieval-lift bars on the right."""
     style_score_axis(ax, y_min=0.0, y_max=1.0, y_step=0.2)
-    for i, entry in enumerate(maps):
-        for subset in PLOT_STRATA:
-            _draw_bars(ax, i, entry[subset], STRATA[subset], subset)
-    ax.set_xlim(-0.6, len(maps) - 0.4)
-    ax.set_xticks(range(len(maps)))
-    ax.set_xticklabels([entry["label"] for entry in maps], fontsize=13.5, linespacing=1.15)
-    if separator_after is not None:
-        ax.axvline(separator_after + 0.5, color=MUTED, lw=1.0, ls=(0, (2, 3)), zorder=1)
+    m = len(maps)
+    width = 0.62
+    ticks: list[float] = []
+    labels: list[str] = []
+    for subset in PLOT_STRATA:
+        style = STRATA[subset]
+        for i, entry in enumerate(maps):
+            metrics = entry[subset]
+            x_r2 = float(i)
+            _bar_with_ci(ax, x_r2, metrics["r2"], metrics["r2_ci"], style, retrieval=False, width=width)
+            ticks.append(x_r2); labels.append(entry["label"])
+            if metrics["retrieval_lift"] is not None:
+                x_ret = m + GROUP_GAP + i
+                _bar_with_ci(ax, x_ret, metrics["retrieval_lift"], metrics["retrieval_lift_ci"], style, retrieval=True, width=width)
+                ticks.append(x_ret); labels.append(entry["label"])
+    x_max = m + GROUP_GAP + m - 1
+    ax.set_xlim(-0.6, x_max + 0.6)
+    ax.set_xticks(ticks)
+    ax.set_xticklabels(labels, fontsize=12, linespacing=1.15)
+    ax.axvline(m - 0.5 + GROUP_GAP / 2, color=MUTED, lw=1.0, ls=(0, (2, 3)), zorder=1)
+    for center, text in (((m - 1) / 2, "Held-out $R^2$"), (m + GROUP_GAP + (m - 1) / 2, "Answer retrieval (lift over chance)")):
+        ax.text(center, -0.30, text, transform=ax.get_xaxis_transform(), ha="center", va="top", fontsize=12, fontweight=700, color=MUTED)
 
 
 def _trajectory_panel(ax: plt.Axes, series: dict[str, list[dict[str, Any]]]) -> None:
@@ -409,16 +414,16 @@ def _legend_handles() -> tuple[list[Patch], list[Patch]]:
 
 def make_figure(panels: dict[str, Any]) -> plt.Figure:
     set_c2a_style()
-    fig = plt.figure(figsize=(14.4, 12.6), constrained_layout=False)
+    fig = plt.figure(figsize=(14.4, 13.4), constrained_layout=False)
     grid = fig.add_gridspec(
         2,
         2,
         left=0.07,
         right=0.985,
         top=0.845,
-        bottom=0.09,
+        bottom=0.12,
         wspace=0.22,
-        hspace=0.95,
+        hspace=1.15,
     )
     ax_a = fig.add_subplot(grid[0, 0])
     ax_b = fig.add_subplot(grid[0, 1])

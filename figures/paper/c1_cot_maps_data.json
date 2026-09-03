@@ -1,7 +1,7 @@
 {
   "font": "Inter",
   "git": {
-    "commit": "6fb7bbaf3490aecbb920fddac7e6180ac88d9c5c",
+    "commit": "68d2bf028af941166a1dc89766ee730069b9323c",
     "tracked_worktree_dirty": true
   },
   "outputs": {
@@ -63,7 +63,7 @@
             "subset": "doesnt",
             "target": "ans_mean"
           },
-          "label": "context \u2192\nanswer"
+          "label": "context"
         },
         {
           "cell": "p7_D",
@@ -115,7 +115,7 @@
             "subset": "doesnt",
             "target": "ans_mean"
           },
-          "label": "end of thought\n\u2192 answer"
+          "label": "end of\nthought"
         }
       ],
       "model": "open-thoughts/OpenThinker3-7B"
@@ -513,7 +513,7 @@
             "subset": "doesnt",
             "target": "ans_mean"
           },
-          "label": "context \u2192\nanswer\n(thinking off)"
+          "label": "context,\nthinking off"
         },
         {
           "cell": "p7_A",
@@ -565,7 +565,7 @@
             "subset": "doesnt",
             "target": "ans_mean"
           },
-          "label": "context \u2192\nanswer"
+          "label": "context,\nthinking on"
         },
         {
           "cell": "p7_D",
@@ -617,7 +617,7 @@
             "subset": "doesnt",
             "target": "ans_mean"
           },
-          "label": "end of thought\n\u2192 answer"
+          "label": "end of\nthought"
         }
       ],
       "model": "Qwen/Qwen3-8B"
@@ -675,7 +675,7 @@
             "subset": "doesnt",
             "target": "ans_mean"
           },
-          "label": "before model:\ncontext \u2192 answer"
+          "label": "before\nmodel"
         },
         {
           "cell": "p8_E",
@@ -727,7 +727,7 @@
             "subset": "doesnt",
             "target": "ans_mean"
           },
-          "label": "before context\n\u2192 after answer"
+          "label": "before \u2192\nafter"
         },
         {
           "cell": "p8_F",
@@ -779,7 +779,7 @@
             "subset": "doesnt",
             "target": "ans_mean"
           },
-          "label": "after model:\ncontext \u2192 answer"
+          "label": "after\nmodel"
         }
       ],
       "model_after": "open-thoughts/OpenThinker3-7B",
