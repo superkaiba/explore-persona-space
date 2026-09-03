@@ -1,4 +1,4 @@
-% Figure 1: context-to-answer prediction pipeline (rev 8, 2026-09-03).
+% Figure 1: context-to-answer prediction pipeline (rev 9, 2026-09-03).
 % Compile standalone: pdflatex fig1_schematic.tex
 % THEN convert text to outlines before copying to Overleaf (REQUIRED):
 %   gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dNoOutputFonts -dCompatibilityLevel=1.5 \
@@ -20,6 +20,10 @@
 % (the context vector sits on the "\n" token after "assistant", token id 198).
 % Palette = paper palette (c2a_plot_style.py): ink #22272B, muted #687078, linear teal
 % #176B87, nonlinear terracotta #C4553D. Two text sizes: 8 pt (names) and 7 pt.
+% Side coding (rev 9): every context-side quantity (final context token, h_C, the
+% predictor input) is violet #6F4FA0; every answer-side quantity (answer tokens' states,
+% answer vector, the K answer vectors, the target) is amber #C98A1B. The prediction
+% stays teal because it is the predictor's output.
 \documentclass[tikz,border=4pt]{standalone}
 \usepackage[type1]{inter}
 \renewcommand{\familydefault}{\sfdefault}
@@ -31,6 +35,8 @@
 \definecolor{muted}{HTML}{687078}
 \definecolor{teal}{HTML}{176B87}
 \definecolor{terra}{HTML}{C4553D}
+\definecolor{ctx}{HTML}{6F4FA0}   % context side
+\definecolor{ans}{HTML}{C98A1B}   % answer side
 \definecolor{paper}{HTML}{FFFFFF}
 
 % ---- big column vector: 5 contiguous SQUARE cells, 0.20 x 1.00 cm -------------------
@@ -130,37 +136,37 @@
 \stream{3.20}{tok}{<|im\_start|>}{muted}{40,18,54,26,62}{muted!70}
 \stream{3.60}{tok}{assistant}{muted}{40,18,54,26,62}{muted!70}
 % the final context token: "\n" after "assistant"; its layer-l vector is h_C
-\stream{4.00}{tokink}{\textbackslash n}{ink}{62,30,80,44,92}{ink}
-\node[tokink, draw=ink, line width=0.5pt, rounded corners=0.8pt, inner sep=1.2pt, fill=paper]
+\stream{4.00}{tokink}{\textbackslash n}{ctx}{62,30,80,44,92}{ctx}
+\node[tokink, draw=ctx, line width=0.5pt, rounded corners=0.8pt, inner sep=1.2pt, fill=paper]
   at (4.00,0.47) {\textbackslash n};
 \node[inner sep=0pt, minimum width=0.10cm, minimum height=0.50cm] (hfinal) at (4.00,3.03) {};
 % answer columns (the sampled answer's tokens, elided in the middle)
-\stream{4.70}{tokink}{The}{ink}{42,16,60,26,68}{ink!70}
-\stream{5.10}{tokink}{capital}{ink}{42,16,60,26,68}{ink!70}
-\stream{5.50}{tok}{$\cdots$}{ink}{42,16,60,26,68}{ink!70}
-\stream{5.90}{tokink}{Paris}{ink}{42,16,60,26,68}{ink!70}
-\stream{6.30}{tokink}{.}{ink}{42,16,60,26,68}{ink!70}
+\stream{4.70}{tokink}{The}{ans}{50,20,70,32,82}{ans}
+\stream{5.10}{tokink}{capital}{ans}{50,20,70,32,82}{ans}
+\stream{5.50}{tok}{$\cdots$}{ans}{50,20,70,32,82}{ans}
+\stream{5.90}{tokink}{Paris}{ans}{50,20,70,32,82}{ans}
+\stream{6.30}{tokink}{.}{ans}{50,20,70,32,82}{ans}
 % group of answer-token vectors at layer l
-\draw[ink!60, line width=0.55pt, rounded corners=1.5pt] (4.58,2.71) rectangle (6.42,3.35);
+\draw[ans!80, line width=0.55pt, rounded corners=1.5pt] (4.58,2.71) rectangle (6.42,3.35);
 
 % braces under the tokens
-\draw[decorate, decoration={brace, mirror, amplitude=3pt}, ink!60, line width=0.5pt]
-  (0.64,-0.95) -- (4.16,-0.95) node[midway, below=3.5pt, ann, text=ink] {context $C$};
-\draw[decorate, decoration={brace, mirror, amplitude=3pt}, ink!60, line width=0.5pt]
-  (4.54,-0.95) -- (6.46,-0.95) node[midway, below=3.5pt, ann, text=ink] {sampled answer $A_k$};
+\draw[decorate, decoration={brace, mirror, amplitude=3pt}, ctx!80, line width=0.5pt]
+  (0.64,-0.95) -- (4.16,-0.95) node[midway, below=3.5pt, ann, text=ctx] {context $C$};
+\draw[decorate, decoration={brace, mirror, amplitude=3pt}, ans!85, line width=0.5pt]
+  (4.54,-0.95) -- (6.46,-0.95) node[midway, below=3.5pt, ann, text=ans!90!black] {sampled answer $A_k$};
 
 % ===========================================================================
 % Middle: the two vectors read off layer l.  Bottom row y = 2.99 (aligned with
 % the layer-l vectors), top row y = 5.30.
 % ===========================================================================
-\colvec{hc}{7.55}{5.30}{ink}
-\node[lbl, anchor=south, align=center] at (7.55,5.86) {context vector\\$h_C^{\ell}$};
-\draw[flow] (hfinal.east) -- (4.35,3.03) -- (4.35,5.30) -- (hc.west);
+\colvec{hc}{7.55}{5.30}{ctx}
+\node[lbl, text=ctx, anchor=south, align=center] at (7.55,5.86) {context vector\\$h_C^{\ell}$};
+\draw[flow, ctx!85] (hfinal.east) -- (4.35,3.03) -- (4.35,5.30) -- (hc.west);
 \node[ann, anchor=south] at (5.85,5.38) {residual-stream state at\\the final context token};
 
-\colvec{ha}{7.55}{3.03}{ink}
-\node[lbl, anchor=north, align=center] at (7.55,2.47) {answer vector\\$\bar h_A^{\ell}(A_k)$};
-\draw[flow] (6.42,3.03) -- (ha.west);
+\colvec{ha}{7.55}{3.03}{ans}
+\node[lbl, text=ans!90!black, anchor=north, align=center] at (7.55,2.47) {answer vector\\$\bar h_A^{\ell}(A_k)$};
+\draw[flow, ans!90!black] (6.42,3.03) -- (ha.west);
 \node[ann, anchor=south] at (6.95,3.11) {mean};
 
 % ===========================================================================
@@ -172,12 +178,12 @@
   at (10.40,6.24) {Linear predictor};
 \matgrid{W}{9.75}{5.42}{teal}
 \node[lbl, text=teal, anchor=north, inner sep=0.5pt] at (9.75,4.85) {$W_\ell$};
-\colvec{hcol}{10.65}{5.42}{ink}
-\node[lbl, anchor=north, inner sep=0.5pt] at (10.65,4.85) {$h_C^{\ell}$};
+\colvec{hcol}{10.65}{5.42}{ctx}
+\node[lbl, text=ctx, anchor=north, inner sep=0.5pt] at (10.65,4.85) {$h_C^{\ell}$};
 \node[lbl, text=teal, inner sep=0pt] at (11.00,5.42) {$+$};
 \colvec{bcol}{11.35}{5.42}{teal}
 \node[lbl, text=teal, anchor=north, inner sep=0.5pt] at (11.35,4.85) {$b_\ell$};
-\draw[flow] (hc.east) -- (ridge.west);
+\draw[flow, ctx!85] (hc.east) -- (ridge.west);
 \colvec{hhat}{12.50}{5.30}{teal}
 \node[lbl, text=teal, anchor=south, align=center] at (12.50,5.86) {prediction\\$\hat h_A^{\ell}$};
 \draw[flow, teal!85] (ridge.east) -- (hhat.west);
@@ -190,18 +196,18 @@
 \draw[bypass] (mlp.east) -- (12.12,4.00) -- (12.12,5.30);
 
 % prediction target: mean over the answer vectors of K sampled answers
-\colvec{a1}{9.35}{3.03}{ink}
-\colvec{a2}{9.75}{3.03}{ink}
-\node[lbl, inner sep=0pt] at (10.15,3.03) {$\cdots$};
-\colvec{aK}{10.55}{3.03}{ink}
-\node[lbl, anchor=north, inner sep=0.5pt] at (9.35,2.48) {$A_1$};
-\node[lbl, anchor=north, inner sep=0.5pt] at (9.75,2.48) {$A_2$};
-\node[lbl, anchor=north, inner sep=0.5pt] at (10.55,2.48) {$A_K$};
-\draw[flow] (ha.east) -- (a1.west);
+\colvec{a1}{9.35}{3.03}{ans}
+\colvec{a2}{9.75}{3.03}{ans}
+\node[lbl, text=ans!90!black, inner sep=0pt] at (10.15,3.03) {$\cdots$};
+\colvec{aK}{10.55}{3.03}{ans}
+\node[lbl, text=ans!90!black, anchor=north, inner sep=0.5pt] at (9.35,2.48) {$A_1$};
+\node[lbl, text=ans!90!black, anchor=north, inner sep=0.5pt] at (9.75,2.48) {$A_2$};
+\node[lbl, text=ans!90!black, anchor=north, inner sep=0.5pt] at (10.55,2.48) {$A_K$};
+\draw[flow, ans!90!black] (ha.east) -- (a1.west);
 \node[ann, anchor=south] at (8.45,3.11) {$K$ sampled\\answers};
-\colvec{mu}{12.50}{3.03}{ink}
-\node[lbl, anchor=north, align=center] at (12.50,2.47) {target\\$\bar\mu_A^{\ell}$};
-\draw[flow] (aK.east) -- (mu.west);
+\colvec{mu}{12.50}{3.03}{ans}
+\node[lbl, text=ans!90!black, anchor=north, align=center] at (12.50,2.47) {target\\$\bar\mu_A^{\ell}$};
+\draw[flow, ans!90!black] (aK.east) -- (mu.west);
 \node[ann, anchor=south] at (11.55,3.11) {mean over\\$K$ rollouts};
 
 % fit: prediction against target
