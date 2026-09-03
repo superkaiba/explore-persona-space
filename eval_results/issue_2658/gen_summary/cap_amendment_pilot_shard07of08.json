@@ -1,0 +1,7 @@
+{
+ "cells_over_threshold": {
+  "casualness|fact_questions|ambiguous": 0.06,
+  "correctness_math|math_numbertheory|level_mid": 0.04,
+  "sycophancy|syco_mmlu_stem|hedged_assertion": 0.12
+ }
+}

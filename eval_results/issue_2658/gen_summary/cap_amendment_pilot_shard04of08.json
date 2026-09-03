@@ -1,0 +1,7 @@
+{
+ "cells_over_threshold": {
+  "correctness_math|math_geometry|level_mid": 0.16,
+  "correctness_mmlu_pro|mmlu_stem|band_a": 0.06,
+  "harmful_compliance|wildchat_real|ambiguous": 0.1
+ }
+}

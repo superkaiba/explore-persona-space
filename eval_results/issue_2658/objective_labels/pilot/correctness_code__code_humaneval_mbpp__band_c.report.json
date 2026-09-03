@@ -1,0 +1,22 @@
+{
+ "cell": "correctness_code__code_humaneval_mbpp__band_c",
+ "input_fingerprint": "336b1610760df5c697b49bf24d13cf829d4d6031e33fb8166fb9b3f7dfed0506",
+ "metadata": {
+  "git_argv0_path": "scripts/issue2658_objective_labels.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "4b22d46165142c55f5cd51bd3e6f9e480183584d",
+  "git_dirty": false,
+  "phase": "objective-labels"
+ },
+ "n_correct": 20,
+ "n_genuinely_unavailable": 0,
+ "n_harness_failure": 0,
+ "n_incorrect": 30,
+ "n_labeled": 50,
+ "n_malformed": 0,
+ "n_rows": 50,
+ "row": "correctness_code",
+ "schema": "i2658-objective-labels-v1",
+ "split": "pilot",
+ "sums_to_denominator": true
+}

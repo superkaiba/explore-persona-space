@@ -1,0 +1,22 @@
+{
+ "cell": "correctness_code__code_leetcode__band_c",
+ "input_fingerprint": "46e6ae12b036d0f8b197a3d753ccf8a7f0a80341a0e877c3d8b23f87e7a94ead",
+ "metadata": {
+  "git_argv0_path": "scripts/issue2658_objective_labels.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "4b22d46165142c55f5cd51bd3e6f9e480183584d",
+  "git_dirty": false,
+  "phase": "objective-labels"
+ },
+ "n_correct": 12,
+ "n_genuinely_unavailable": 0,
+ "n_harness_failure": 2,
+ "n_incorrect": 36,
+ "n_labeled": 48,
+ "n_malformed": 0,
+ "n_rows": 50,
+ "row": "correctness_code",
+ "schema": "i2658-objective-labels-v1",
+ "split": "pilot",
+ "sums_to_denominator": true
+}

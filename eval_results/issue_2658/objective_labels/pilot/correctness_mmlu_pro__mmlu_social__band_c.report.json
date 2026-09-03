@@ -1,0 +1,22 @@
+{
+ "cell": "correctness_mmlu_pro__mmlu_social__band_c",
+ "input_fingerprint": "e3aad16dfc17dc45aa258d4b831f19d8f774ee5ee08abbb80c0d017b868421b6",
+ "metadata": {
+  "git_argv0_path": "scripts/issue2658_objective_labels.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "4b22d46165142c55f5cd51bd3e6f9e480183584d",
+  "git_dirty": false,
+  "phase": "objective-labels"
+ },
+ "n_correct": 28,
+ "n_genuinely_unavailable": 0,
+ "n_harness_failure": 0,
+ "n_incorrect": 22,
+ "n_labeled": 50,
+ "n_malformed": 0,
+ "n_rows": 50,
+ "row": "correctness_mmlu_pro",
+ "schema": "i2658-objective-labels-v1",
+ "split": "pilot",
+ "sums_to_denominator": true
+}

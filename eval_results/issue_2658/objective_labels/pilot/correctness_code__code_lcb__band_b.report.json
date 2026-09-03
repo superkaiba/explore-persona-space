@@ -1,0 +1,22 @@
+{
+ "cell": "correctness_code__code_lcb__band_b",
+ "input_fingerprint": "667ddc996a23acf01fd6704959d29f9da2fb6d0413edb148319249a436a872f5",
+ "metadata": {
+  "git_argv0_path": "scripts/issue2658_objective_labels.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "4b22d46165142c55f5cd51bd3e6f9e480183584d",
+  "git_dirty": false,
+  "phase": "objective-labels"
+ },
+ "n_correct": 3,
+ "n_genuinely_unavailable": 0,
+ "n_harness_failure": 3,
+ "n_incorrect": 44,
+ "n_labeled": 47,
+ "n_malformed": 0,
+ "n_rows": 50,
+ "row": "correctness_code",
+ "schema": "i2658-objective-labels-v1",
+ "split": "pilot",
+ "sums_to_denominator": true
+}

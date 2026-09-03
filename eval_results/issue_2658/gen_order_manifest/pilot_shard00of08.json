@@ -1,0 +1,32 @@
+{
+ "cell_order": [
+  "evil__advbench_requests__ambiguous",
+  "evil__wang44_em_probes__indirect",
+  "sycophancy__syco_mmlu_humanities__confident_assertion",
+  "hallucination__arc_c_factual__ambiguous",
+  "hallucination__wang44_probes__indirect",
+  "refusal__sensitive_info_requests__direct",
+  "assistantness__arc_c_tasks__ambiguous",
+  "assistantness__marker_eval_prompts__indirect",
+  "casualness__fact_questions__indirect",
+  "impoliteness__fact_questions__direct",
+  "impoliteness__wildchat_real__ambiguous",
+  "harmful_compliance__sensitive_info_requests__indirect",
+  "correctness_math__math_algebra__level_low",
+  "correctness_math__math_prealgebra__level_high",
+  "correctness_mmlu_pro__mmlu_humanities__band_c",
+  "correctness_code__code_bigcodebench__band_b",
+  "correctness_code__code_leetcode__band_a"
+ ],
+ "chat_template_sha256": "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f",
+ "issue": 2658,
+ "model_id": "Qwen/Qwen2.5-7B-Instruct",
+ "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+ "n_requests": 790,
+ "n_responses_per_prompt": 10,
+ "requests_sha256": "4c0501a6876bfd312b38603b77d1b6475405790bf76acb7eec88b33e7c58b238",
+ "seed_scheme": "sha256('i2658-gen|'+prompt_id+'|'+response_index) mod 2**31",
+ "shard": "shard00of08",
+ "split": "pilot",
+ "system_message": null
+}

@@ -1,0 +1,10 @@
+{
+ "cells_over_threshold": {
+  "assistantness|wildchat_real|direct": 0.18,
+  "casualness|wildchat_real|direct": 0.16,
+  "correctness_math|math_geometry|level_high": 0.22,
+  "evil|wildchat_real|direct": 0.24,
+  "hallucination|wildchat_real|direct": 0.12,
+  "impoliteness|wildchat_real|indirect": 0.18
+ }
+}

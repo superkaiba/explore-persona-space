@@ -1,0 +1,22 @@
+{
+ "cell": "correctness_math__math_geometry__level_high",
+ "input_fingerprint": "6b9cb839976e314b9c0fab7cdc2511a710cc0dcf55440c53b671a1805cc140b4",
+ "metadata": {
+  "git_argv0_path": "scripts/issue2658_objective_labels.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "4b22d46165142c55f5cd51bd3e6f9e480183584d",
+  "git_dirty": false,
+  "phase": "objective-labels"
+ },
+ "n_correct": 10,
+ "n_genuinely_unavailable": 0,
+ "n_harness_failure": 0,
+ "n_incorrect": 29,
+ "n_labeled": 39,
+ "n_malformed": 11,
+ "n_rows": 50,
+ "row": "correctness_math",
+ "schema": "i2658-objective-labels-v1",
+ "split": "pilot",
+ "sums_to_denominator": true
+}

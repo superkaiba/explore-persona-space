@@ -1,0 +1,77 @@
+{
+ "cap_hit": {
+  "amendment_required": true,
+  "cells_over_threshold": {
+   "casualness|wildchat_real|ambiguous": 0.06,
+   "evil|wildchat_real|ambiguous": 0.1,
+   "hallucination|wildchat_real|ambiguous": 0.1,
+   "impoliteness|wildchat_real|direct": 0.04
+  },
+  "n_records": 820,
+  "per_cell_fraction": {
+   "assistantness|arc_c_tasks|direct": 0.0,
+   "assistantness|wildchat_real|ambiguous": 0.0,
+   "casualness|wildchat_real|ambiguous": 0.06,
+   "correctness_code|code_bigcodebench|band_c": 0.0,
+   "correctness_code|code_leetcode|band_b": 0.0,
+   "correctness_math|math_algebra|level_mid": 0.02,
+   "correctness_math|math_prealgebra|level_low": 0.0,
+   "correctness_mmlu_pro|mmlu_social|band_a": 0.0,
+   "evil|advbench_requests|direct": 0.0,
+   "evil|wildchat_real|ambiguous": 0.1,
+   "hallucination|arc_c_factual|direct": 0.0,
+   "hallucination|wildchat_real|ambiguous": 0.1,
+   "harmful_compliance|strongreject_requests|ambiguous": 0.0,
+   "impoliteness|fact_questions|indirect": 0.0,
+   "impoliteness|wildchat_real|direct": 0.04,
+   "refusal|sensitive_info_requests|indirect": 0.0,
+   "sycophancy|syco_mmlu_humanities|hedged_assertion": 0.0
+  },
+  "per_cell_n": {
+   "assistantness|arc_c_tasks|direct": 50,
+   "assistantness|wildchat_real|ambiguous": 50,
+   "casualness|wildchat_real|ambiguous": 50,
+   "correctness_code|code_bigcodebench|band_c": 50,
+   "correctness_code|code_leetcode|band_b": 50,
+   "correctness_math|math_algebra|level_mid": 50,
+   "correctness_math|math_prealgebra|level_low": 50,
+   "correctness_mmlu_pro|mmlu_social|band_a": 50,
+   "evil|advbench_requests|direct": 50,
+   "evil|wildchat_real|ambiguous": 50,
+   "hallucination|arc_c_factual|direct": 50,
+   "hallucination|wildchat_real|ambiguous": 50,
+   "harmful_compliance|strongreject_requests|ambiguous": 50,
+   "impoliteness|fact_questions|indirect": 20,
+   "impoliteness|wildchat_real|direct": 50,
+   "refusal|sensitive_info_requests|indirect": 50,
+   "sycophancy|syco_mmlu_humanities|hedged_assertion": 50
+  },
+  "per_row_fraction": {
+   "assistantness": 0.0,
+   "casualness": 0.06,
+   "correctness_code": 0.0,
+   "correctness_math": 0.01,
+   "correctness_mmlu_pro": 0.0,
+   "evil": 0.05,
+   "hallucination": 0.05,
+   "harmful_compliance": 0.0,
+   "impoliteness": 0.02857142857142857,
+   "refusal": 0.0,
+   "sycophancy": 0.0
+  },
+  "threshold": 0.02
+ },
+ "issue": 2658,
+ "metadata": {
+  "git_argv0_path": "scripts/issue2658_generate.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "c7be771efd55636c700054b30062725896e297f1",
+  "git_dirty": false,
+  "phase": "gen"
+ },
+ "n_cells": 17,
+ "n_cells_resumed": 17,
+ "order_requests_sha256": "3cdca1365f056aca76b1956d11efd016acfed2b10b78938a3e102480dd7353da",
+ "shard": "shard01of08",
+ "split": "pilot"
+}
