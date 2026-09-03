@@ -1,0 +1,92 @@
+{
+  "git": {
+    "commit": "adeed6da49516182b9577311a4fd40804938044c",
+    "tracked_worktree_dirty": true
+  },
+  "inputs": {
+    "arms": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/eval_results/issue_823/ridge_r2_by_arm.json",
+      "sha256": "46117bc93a03a6400d2756c130054c696bfa299908cc8acd0490c2e03559c36a"
+    },
+    "identity": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/eval_results/issue_823/identity_baseline.json",
+      "sha256": "a004b2c7cdc7acf02902a381b34ea36253e7c422fb612b90f5041ee817dc8dab"
+    },
+    "ladder": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/eval_results/issue_823/inconsistent_origin_ladder/ladder_analysis_summary.json",
+      "sha256": "202ec8e6f1840ea35c013717ae3ce6022f2a878a3f2e0243f52b8022803eadcf"
+    },
+    "ladder_baselines": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/eval_results/issue_823/inconsistent_origin_ladder/ladder_baselines.json",
+      "sha256": "b60342882d59d9080e16051c8deebd146c789222c599d486e2e7d6f6ba62dffb"
+    }
+  },
+  "provenance": {
+    "external_model": "claude-sonnet-4-5-20250929",
+    "followup_labels": [
+      "inconsistent-origin-persona-ladder"
+    ],
+    "model": "Qwen2.5-7B-Instruct",
+    "source_commit": null,
+    "task": 823
+  },
+  "record": {
+    "authoring_size_inches": [
+      13.095,
+      6.024
+    ],
+    "background": "#FFFFFF",
+    "exported_size_inches": [
+      13.095,
+      5.797
+    ],
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c1_offpolicy_origin.pdf}",
+    "png_dpi": 240,
+    "realized_font_pt": {
+      "body": 7.56,
+      "label": 8.4,
+      "tick": 7.14,
+      "title": 9.24
+    },
+    "resolved_font": "Inter",
+    "scale": 0.42,
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "style_version": "c2a-v2",
+    "text": [
+      "A  \u00b7  QWEN2.5-7B-INSTRUCT, 4,998 LMSYS CONTEXTS",
+      "Layer",
+      "0",
+      "5",
+      "10",
+      "15",
+      "20",
+      "25",
+      "Held-out $R^2$ \u2191",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "Held-out $R^2$ by layer,\nby answer source",
+      "B  \u00b7  K CLAUDE PERSONAS, LAYER 19",
+      "Number of source personas",
+      "1",
+      "2",
+      "4",
+      "8",
+      "16",
+      "Held-out score \u2191",
+      "Held-out $R^2$ and top-1\nretrieval by persona count",
+      "ANSWER SOURCE",
+      "METRIC",
+      "Own answer (Qwen)",
+      "Plain answer (Claude)",
+      "Eccentric-style answer (Claude)",
+      "Shuffled own answers",
+      "Own answer \u2192 plain answer map (reference)",
+      "Held-out $R^2$",
+      "Top-1 retrieval",
+      "$R^2$ at layers 14, 17, 26"
+    ]
+  }
+}

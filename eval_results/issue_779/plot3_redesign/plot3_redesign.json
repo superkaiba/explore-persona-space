@@ -59,13 +59,169 @@
    "provenance": "#1482 rb4 persona vector (local data/issue_779/r_b/impolite.pt, #779-recipe extraction)",
    "path": "data/issue_779/r_b/impolite.pt (local, #1482 rb4)",
    "sha256": "001cb31355f692d9d8c0509c63107c4462805abb1c738a26912ff724779dd167"
+  },
+  {
+   "name": "harmful_compliance",
+   "label": "harmful compliance",
+   "provenance": "#658 persona-vector primary diffmeans recipe (HF issue658_theory_assumptions/store/r_b.pt)",
+   "path": "issue658_theory_assumptions/store/r_b.pt",
+   "sha256": "61b1146aa39906354e21293db2a744fdfb851ce2ef2e09f1077f3b873af3608b",
+   "recipe": "diffmeans",
+   "n_db": 48,
+   "n_dbbar": 48,
+   "caveat": "#658 reports a severely depleted judged positive pole for harmful compliance; interpret this point as lower-confidence"
+  },
+  {
+   "name": "correctness_math",
+   "label": "correctness (math)",
+   "provenance": "#2388 matched correct\u2212incorrect t1 direction over math spread contexts",
+   "path": "issue2388_correctness/derived/correctness_directions_L19.pt",
+   "sha256": "93c2f872fe4eab0d818f91b98d70016c1d4a28c4e16042d2c7374e8cfef0d789",
+   "surface": "math",
+   "recipe": "#2388 full-budget draw-0 matched correctness direction: within-context mean(correct t1) minus mean(incorrect t1), equal-weight mean across the full training-split spread-context pool",
+   "recipe_source": {
+    "url": "https://github.com/superkaiba/explore-persona-space/blob/036cb059c889f8d72e329ca4afba6d5e49c5e9ca/scripts/issue2388_fits.py#L1254-L1270",
+    "sha256": "f4f33e4d5250b0bab8f899254802be8ba3442535c93a9fefbee2265e339d9f65",
+    "function": "_direction_scores::_weights",
+    "lines": [
+     1254,
+     1270
+    ]
+   },
+   "source_commit": "036cb059c889f8d72e329ca4afba6d5e49c5e9ca",
+   "n_spread_contexts": 2393,
+   "n_weighted_rollouts": 11904,
+   "positive_weight_sum": 0.9999999999999729,
+   "negative_weight_sum": -0.9999999999999989,
+   "pool_split": "train",
+   "direction_norm": 1.1505496818497385,
+   "archives": [
+    {
+     "path": "issue2388_correctness/analysis_tensors/capture_store/math/math_full.tar",
+     "fingerprint": "i2388|math_full|k=5|kinds=context_end,t1,t_last|rev=a09a35458c70|rolls=baf3cd4c3572",
+     "n_rows": 62490,
+     "n_shards": 123,
+     "t1_layer_byte_offset": 21083714560,
+     "t1_layer_bytes": 448180224
+    }
+   ],
+   "labeling": {
+    "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/036cb059c889f8d72e329ca4afba6d5e49c5e9ca/eval_results/issue_2388/dv/math/labeling.json",
+    "sha256": "71f84f214f46d0f819790fa22c9e50d2d0398467424c2b0c399da071bf785180"
+   }
+  },
+  {
+   "name": "correctness_mcq",
+   "label": "correctness (MMLU-Pro)",
+   "provenance": "#2388 matched correct\u2212incorrect t1 direction over MMLU-Pro spread contexts",
+   "path": "issue2388_correctness/derived/correctness_directions_L19.pt",
+   "sha256": "93c2f872fe4eab0d818f91b98d70016c1d4a28c4e16042d2c7374e8cfef0d789",
+   "surface": "mcq",
+   "recipe": "#2388 full-budget draw-0 matched correctness direction: within-context mean(correct t1) minus mean(incorrect t1), equal-weight mean across the full training-split spread-context pool",
+   "recipe_source": {
+    "url": "https://github.com/superkaiba/explore-persona-space/blob/036cb059c889f8d72e329ca4afba6d5e49c5e9ca/scripts/issue2388_fits.py#L1254-L1270",
+    "sha256": "f4f33e4d5250b0bab8f899254802be8ba3442535c93a9fefbee2265e339d9f65",
+    "function": "_direction_scores::_weights",
+    "lines": [
+     1254,
+     1270
+    ]
+   },
+   "source_commit": "036cb059c889f8d72e329ca4afba6d5e49c5e9ca",
+   "n_spread_contexts": 3545,
+   "n_weighted_rollouts": 17715,
+   "positive_weight_sum": 0.999999999999955,
+   "negative_weight_sum": -0.9999999999999599,
+   "pool_split": "train",
+   "direction_norm": 0.6020422468517417,
+   "archives": [
+    {
+     "path": "issue2388_correctness/analysis_tensors/capture_store/mcq/mmlu_pro_full.tar",
+     "fingerprint": "i2388|mmlu_pro_full|k=5|kinds=context_end,t1,t_last|rev=a09a35458c70|rolls=b9e112df555d",
+     "n_rows": 60160,
+     "n_shards": 118,
+     "t1_layer_byte_offset": 20296781824,
+     "t1_layer_bytes": 431468544
+    }
+   ],
+   "labeling": {
+    "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/036cb059c889f8d72e329ca4afba6d5e49c5e9ca/eval_results/issue_2388/dv/mcq/labeling.json",
+    "sha256": "9e6a7031f6a0c6e1eaf1aaa89ca3313af7a85c5f080f5e0fc0d18c2b5ab4267a"
+   }
+  },
+  {
+   "name": "correctness_code",
+   "label": "correctness (code)",
+   "provenance": "#2388 matched correct\u2212incorrect t1 direction over code spread contexts",
+   "path": "issue2388_correctness/derived/correctness_directions_L19.pt",
+   "sha256": "93c2f872fe4eab0d818f91b98d70016c1d4a28c4e16042d2c7374e8cfef0d789",
+   "surface": "code",
+   "recipe": "#2388 full-budget draw-0 matched correctness direction: within-context mean(correct t1) minus mean(incorrect t1), equal-weight mean across the full training-split spread-context pool",
+   "recipe_source": {
+    "url": "https://github.com/superkaiba/explore-persona-space/blob/036cb059c889f8d72e329ca4afba6d5e49c5e9ca/scripts/issue2388_fits.py#L1254-L1270",
+    "sha256": "f4f33e4d5250b0bab8f899254802be8ba3442535c93a9fefbee2265e339d9f65",
+    "function": "_direction_scores::_weights",
+    "lines": [
+     1254,
+     1270
+    ]
+   },
+   "source_commit": "036cb059c889f8d72e329ca4afba6d5e49c5e9ca",
+   "n_spread_contexts": 1316,
+   "n_weighted_rollouts": 6580,
+   "positive_weight_sum": 0.9999999999999932,
+   "negative_weight_sum": -0.999999999999992,
+   "pool_split": "train",
+   "direction_norm": 1.1676302544062076,
+   "archives": [
+    {
+     "path": "issue2388_correctness/analysis_tensors/capture_store/code/bigcodebench_full.tar",
+     "fingerprint": "i2388|bigcodebench_full|k=5|kinds=context_end,t1,t_last|rev=a09a35458c70|rolls=b81f89c4ef71",
+     "n_rows": 5700,
+     "n_shards": 12,
+     "t1_layer_byte_offset": 1923244032,
+     "t1_layer_bytes": 40882176
+    },
+    {
+     "path": "issue2388_correctness/analysis_tensors/capture_store/code/humaneval.tar",
+     "fingerprint": "i2388|humaneval|k=5|kinds=context_end,t1,t_last|rev=a09a35458c70|rolls=c8ffd25e05ee",
+     "n_rows": 820,
+     "n_shards": 2,
+     "t1_layer_byte_offset": 276697088,
+     "t1_layer_bytes": 5881856
+    },
+    {
+     "path": "issue2388_correctness/analysis_tensors/capture_store/code/lcb_v5.tar",
+     "fingerprint": "i2388|lcb_v5|k=5|kinds=context_end,t1,t_last|rev=a09a35458c70|rolls=7ce67f49858a",
+     "n_rows": 2535,
+     "n_shards": 5,
+     "t1_layer_byte_offset": 855254016,
+     "t1_layer_bytes": 18181120
+    },
+    {
+     "path": "issue2388_correctness/analysis_tensors/capture_store/code/leetcode.tar",
+     "fingerprint": "i2388|leetcode|k=5|kinds=context_end,t1,t_last|rev=a09a35458c70|rolls=b275cc524e75",
+     "n_rows": 14345,
+     "n_shards": 29,
+     "t1_layer_byte_offset": 4840092672,
+     "t1_layer_bytes": 102884352
+    },
+    {
+     "path": "issue2388_correctness/analysis_tensors/capture_store/code/mbpp_full.tar",
+     "fingerprint": "i2388|mbpp_full|k=5|kinds=context_end,t1,t_last|rev=a09a35458c70|rolls=6a1fb03e47fa",
+     "n_rows": 4870,
+     "n_shards": 10,
+     "t1_layer_byte_offset": 1643030016,
+     "t1_layer_bytes": 34928640
+    }
+   ],
+   "labeling": {
+    "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/036cb059c889f8d72e329ca4afba6d5e49c5e9ca/eval_results/issue_2388/dv/code/labeling.json",
+    "sha256": "a5e0b58182e9db1ed221aeb35309afd67840f307494831233f81a0de8593c805"
+   }
   }
  ],
  "skipped": [
-  {
-   "name": "correctness",
-   "reason": "#2388 probe weights not persisted; deriving the direction needs the 37.7 GB math capture tar (> 10 GB staging cap)"
-  },
   {
    "name": "misalignment_em",
    "reason": "no banked Qwen2.5-7B-Instruct EM direction found \u2014 needs minting"
@@ -1317,43 +1473,92 @@
     ],
     "r2_mean": 0.8630080047023698
    }
+  },
+  "harmful_compliance": {
+   "heldout_r2": 0.8095918184968305,
+   "train_variance": 59.86415481567383,
+   "variance_percentile_of_pca_spectrum": 99.88839285714286,
+   "equivalent_variance_rank": 4,
+   "plotted_rank_1based": 5,
+   "pca_r2_at_matched_variance": {
+    "ranks": [
+     4,
+     5,
+     3,
+     2,
+     6
+    ],
+    "r2_mean": 0.8630080047023698
+   }
+  },
+  "correctness_math": {
+   "heldout_r2": 0.7403665675854245,
+   "train_variance": 17.017955780029297,
+   "variance_percentile_of_pca_spectrum": 99.609375,
+   "equivalent_variance_rank": 14,
+   "plotted_rank_1based": 15,
+   "pca_r2_at_matched_variance": {
+    "ranks": [
+     14,
+     13,
+     15,
+     16,
+     12
+    ],
+    "r2_mean": 0.7497632868803
+   }
+  },
+  "correctness_mcq": {
+   "heldout_r2": 0.7009999864815806,
+   "train_variance": 21.277379989624023,
+   "variance_percentile_of_pca_spectrum": 99.69308035714286,
+   "equivalent_variance_rank": 11,
+   "plotted_rank_1based": 12,
+   "pca_r2_at_matched_variance": {
+    "ranks": [
+     11,
+     12,
+     13,
+     10,
+     9
+    ],
+    "r2_mean": 0.7900142058184718
+   }
+  },
+  "correctness_code": {
+   "heldout_r2": 0.6177177635398614,
+   "train_variance": 21.083850860595703,
+   "variance_percentile_of_pca_spectrum": 99.66517857142857,
+   "equivalent_variance_rank": 12,
+   "plotted_rank_1based": 13,
+   "pca_r2_at_matched_variance": {
+    "ranks": [
+     11,
+     12,
+     13,
+     10,
+     14
+    ],
+    "r2_mean": 0.7793012908153253
+   }
   }
  },
  "metadata": {
-  "git_commit": "7e9a5173b885fc135775fa843354e6e2b3ffbcb1",
+  "git_commit": "cb7f392bf0cc391d5d20de62d2d18117e572ac92",
   "git_dirty": true,
   "git_dirty_paths": [
+   "eval_results/issue_779/plot3_redesign/plot3_redesign.json",
+   "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+   "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+   "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+   "scripts/codex_daemon_reaper.py",
    "scripts/issue779_plot3_redesign.py",
-   "eval_results/issue_2474/n1m_map_arms.json",
-   "figures/paper/c1_layer_profile.meta.json",
-   "figures/paper/c1_layer_profile.pdf",
-   "figures/paper/c1_layer_profile.png",
-   "figures/paper/c1_scaling_train_pool.meta.json",
-   "figures/paper/c1_scaling_train_pool.pdf",
-   "figures/paper/c1_scaling_train_pool.png",
-   "figures/paper/c3_sae_tier_gradient.meta.json",
-   "figures/paper/c3_sae_tier_gradient.pdf",
-   "figures/paper/c3_sae_tier_gradient.png",
-   "scripts/issue1901_body_figures.py",
-   "scripts/issue2474_n1m_map.py",
-   "tasks/completed/2214/body.md",
-   "tasks/completed/2214/comments.jsonl",
-   "tasks/completed/2214/concerns.jsonl",
-   "tasks/completed/2214/events.jsonl",
-   "tasks/completed/2214/plans/plan.md",
-   "tasks/completed/2214/plans/v1.md",
-   "tasks/completed/2214/plans/v2.md",
-   "tasks/completed/2214/plans/v3.md",
-   "tasks/proposed/2416/body.md",
-   "tasks/proposed/2416/comments.jsonl",
-   "tasks/proposed/2416/events.jsonl",
-   "tasks/running/2342/events.jsonl",
-   "tests/test_issue2094_rev_butler.py"
+   "tests/test_codex_daemon_reaper.py"
   ],
-  "git_argv0_state": "untracked",
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue779_plot3_redesign.py",
   "script": "issue779_plot3_redesign",
-  "timestamp_utc": "2026-08-24T22:53:15.630341+00:00",
+  "timestamp_utc": "2026-08-31T22:40:12.340781+00:00",
   "numpy_version": "2.2.6",
   "torch_version": "2.8.0+cu128",
   "seed": 0,

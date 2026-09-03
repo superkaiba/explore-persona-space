@@ -1,29 +1,30 @@
 {
   "font": "Inter",
   "git": {
-    "commit": "68d2bf028af941166a1dc89766ee730069b9323c",
+    "commit": "adeed6da49516182b9577311a4fd40804938044c",
     "tracked_worktree_dirty": true
   },
   "inputs": {
     "arms": {
-      "path": "/tmp/i823/eval_results/issue_823/ridge_r2_by_arm.json",
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/eval_results/issue_823/ridge_r2_by_arm.json",
       "sha256": "46117bc93a03a6400d2756c130054c696bfa299908cc8acd0490c2e03559c36a"
     },
     "identity": {
-      "path": "/tmp/i823/eval_results/issue_823/identity_baseline.json",
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/eval_results/issue_823/identity_baseline.json",
       "sha256": "a004b2c7cdc7acf02902a381b34ea36253e7c422fb612b90f5041ee817dc8dab"
     },
     "ladder": {
-      "path": "/tmp/i823/eval_results/issue_823/inconsistent_origin_ladder/ladder_analysis_summary.json",
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/eval_results/issue_823/inconsistent_origin_ladder/ladder_analysis_summary.json",
       "sha256": "202ec8e6f1840ea35c013717ae3ce6022f2a878a3f2e0243f52b8022803eadcf"
     },
     "ladder_baselines": {
-      "path": "/tmp/i823/eval_results/issue_823/inconsistent_origin_ladder/ladder_baselines.json",
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/eval_results/issue_823/inconsistent_origin_ladder/ladder_baselines.json",
       "sha256": "b60342882d59d9080e16051c8deebd146c789222c599d486e2e7d6f6ba62dffb"
     }
   },
   "outputs": {
     "grayscale": "figures/paper/c1_offpolicy_origin_grayscale.png",
+    "meta": "figures/paper/c1_offpolicy_origin.meta.json",
     "pdf": "figures/paper/c1_offpolicy_origin.pdf",
     "png": "figures/paper/c1_offpolicy_origin.png"
   },
@@ -664,8 +665,8 @@
       "inconsistent-origin-persona-ladder"
     ],
     "model": "Qwen2.5-7B-Instruct",
-    "source_commit": "c9d6f69e3553e45af88664ff94fbd509491d23ec",
+    "source_commit": null,
     "task": 823
   },
-  "style_version": "c2a-v1"
+  "style_version": "c2a-v2"
 }

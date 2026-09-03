@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
-"""Render the Section 4.3 post-training summary figure.
+"""Render the Section 4.3 post-training summary figure (paper Figure 7).
 
 Panel A (within-stage fits + retrieval) reads the committed last-token
-comparison artifacts under ``overleaf_section43/figures/paper``. Panels B
-(4x4 activation-checkpoint x answer-source grid) and C (adjacent-stage
-transfer retention: as is / bias / scalar rescaling + bias) read ONLY
+comparison artifacts under ``figures/issue_1902/section43/inputs``. Panels B
+(each stage's answers predicted from its own states, the previous stage's
+states, and Base states) and C (adjacent-stage transfer retention: as is /
+bias / scalar rescaling + bias) read ONLY
 ``eval_results/issue_1902/lasttoken_transfer/summary.json`` — the last-token
 IID recompute (u_last states, six size-matched random-row folds), replacing
 the registered prompt-mean / semantic-fold numbers.
 
-Two variants are written: the 4x4 heatmap panel B
-(``c1_posttraining_dynamics``) and a three-line panel B comparing each
-stage's own states, the previous stage's states, and Base states as
-predictors of each stage's answers (``c1_posttraining_dynamics_2line``).
-Both figures are reproducible from ``c1_posttraining_dynamics_data.json``
-alone.
+Two variants are written to ``figures/paper``: the paper figure
+``c1_posttraining_dynamics`` (three-series line panel B, per the figure
+standard's series spec) and ``c1_posttraining_dynamics_grid`` (the 4x4
+activation-checkpoint x answer-source heatmap panel B, kept as a variant).
+Each variant ships a ``.meta.json`` sidecar embedding the ``save_c2a_figure``
+record; both figures are reproducible from
+``c1_posttraining_dynamics_data.json`` alone.
 """
 
 from __future__ import annotations
@@ -22,36 +24,83 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import matplotlib as mpl
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.lines import Line2D
 
-INK = "#25292D"
-MUTED = "#687078"
-GRID = "#D9D8D3"
-SPINE = "#AAA79F"
-TEAL = "#16708A"
-ORANGE = "#C9583D"
-LIGHT_TEAL = "#8CBAC5"
-NULL_DARK = "#747A80"
-NULL_LIGHT = "#A6A9AB"
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
+
+from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
+    INK,
+    METRIC_LABELS,
+    MUTED,
+    PAPER,
+    ROLES,
+    SEAM,
+    better_label,
+    c2a_figure,
+    legend_kicker,
+    metric_style,
+    panel_header,
+    save_c2a_figure,
+    set_c2a_style,
+    style_axis,
+    style_score_axis,
+)
 
 STAGES = ["Base", "SFT", "DPO", "RLVR"]
 STAGE_KEYS = ["B", "S", "D", "R"]
 TRANSITIONS = ["B->S", "S->D", "D->R"]
 LATEST_SHA256 = "947a46cbde8f834be0a094b85e401e73a260f8da0416dd76285ca9da12c03c96"
 RETRIEVAL_SHA256 = "d74f9adb9d52e36558d38c99c5b83ed636b731f5b46c6a5ab6b000c920f6bd91"
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-SUMMARY_PATH = (
-    PROJECT_ROOT / "eval_results" / "issue_1902" / "lasttoken_transfer" / "summary.json"
-)
-DEFAULT_OUT_DIR = PROJECT_ROOT / "figures" / "issue_1902" / "section43"
+SUMMARY_PATH = PROJECT_ROOT / "eval_results" / "issue_1902" / "lasttoken_transfer" / "summary.json"
+DEFAULT_OUT_DIR = PROJECT_ROOT / "figures" / "paper"
 HF_REVISION = "3256c8efcef5f10ca525efeb2039636eaec8fad7"
+
+
+def _tint(color: str, toward_white: float) -> str:
+    """Blend a palette hue toward white (0 = unchanged, 1 = white)."""
+    r, g, b = mcolors.to_rgb(color)
+    blend = (c + (1.0 - c) * toward_white for c in (r, g, b))
+    return mcolors.to_hex(tuple(blend))
+
+
+# Semantic palette (figure standard section 2.4). The post-trained map shares
+# the linear-map teal; Base context states take the base-model amber; the
+# previous stage's states are a 45%-toward-white tint of the post_trained teal
+# with a distinct marker (triangle) — a variant of the same model family.
+TEAL = ROLES["post_trained"].color
+AMBER = ROLES["base_model"].color
+PREV_TINT = _tint(TEAL, 0.45)
+SERIES_ENCODING = {
+    "panel_a": (
+        "one teal hue (post_trained); metric by fill: held-out R^2 = solid line / "
+        "filled circle, top-1 retrieval = dashed line / open circle"
+    ),
+    "panel_b_lines": (
+        "own states = post_trained teal, filled circle; previous-stage states = "
+        f"45%-toward-white tint of the same teal ({PREV_TINT}), filled triangle; "
+        "Base states = base_model amber, filled square; all solid (every series is R^2)"
+    ),
+    "panel_c": (
+        "one teal hue, fill progression open ('as is', circle) -> half tint "
+        f"({_tint(TEAL, 0.5)}, 'bias', square) -> filled ('rescaling + bias', circle), "
+        "matching the c1_cot_ladder convention"
+    ),
+}
+
+
+def _sha256_bytes(payload: bytes) -> str:
+    return hashlib.sha256(payload).hexdigest()
 
 
 def load_results() -> dict[str, Any]:
@@ -59,19 +108,20 @@ def load_results() -> dict[str, Any]:
     # Panel A sources (unchanged): committed last-token comparison artifacts.
     latest_path = (
         PROJECT_ROOT
-        / "overleaf_section43"
         / "figures"
-        / "paper"
+        / "issue_1902"
+        / "section43"
+        / "inputs"
         / "c1_posttraining_dynamics_data.json"
     )
     latest_bytes = latest_path.read_bytes()
-    if hashlib.sha256(latest_bytes).hexdigest() != LATEST_SHA256:
+    if _sha256_bytes(latest_bytes) != LATEST_SHA256:
         msg = f"Unexpected contents in {latest_path}"
         raise ValueError(msg)
     latest_payload = json.loads(latest_bytes)
     retrieval_path = latest_path.with_name("c1_posttraining_retrieval_data.json")
     retrieval_bytes = retrieval_path.read_bytes()
-    if hashlib.sha256(retrieval_bytes).hexdigest() != RETRIEVAL_SHA256:
+    if _sha256_bytes(retrieval_bytes) != RETRIEVAL_SHA256:
         msg = f"Unexpected contents in {retrieval_path}"
         raise ValueError(msg)
     retrieval_payload = json.loads(retrieval_bytes)
@@ -94,7 +144,8 @@ def load_results() -> dict[str, Any]:
     assert all(cell["n"] == 16_391 for cell in retrieval_cells)
 
     # Panels B and C: the last-token IID transfer summary ONLY.
-    summary = json.loads(SUMMARY_PATH.read_text())
+    summary_bytes = SUMMARY_PATH.read_bytes()
+    summary = json.loads(summary_bytes)
     meta = summary["metadata"]
     assert meta["layer"] == 31
     assert meta["hf_revision"] == HF_REVISION
@@ -103,17 +154,13 @@ def load_results() -> dict[str, Any]:
     assert summary["parity_gate"]["pass"]
     grid = summary["grid"]
 
-    stage_grid = [
-        [grid[f"{m}{s}"]["r2"] for s in STAGE_KEYS] for m in STAGE_KEYS
-    ]
+    stage_grid = [[grid[f"{m}{s}"]["r2"] for s in STAGE_KEYS] for m in STAGE_KEYS]
     base_row_r2 = [grid[f"B{s}"]["r2"] for s in STAGE_KEYS]
     base_row_ci = [grid[f"B{s}"]["row_ci"] for s in STAGE_KEYS]
     diag_r2 = [grid[f"{s}{s}"]["r2"] for s in STAGE_KEYS]
     diag_ci = [grid[f"{s}{s}"]["row_ci"] for s in STAGE_KEYS]
     # Previous stage's states predicting this stage's answers; Base has none.
-    prev_row_r2 = [None] + [
-        grid[f"{STAGE_KEYS[k - 1]}{STAGE_KEYS[k]}"]["r2"] for k in range(1, 4)
-    ]
+    prev_row_r2 = [None] + [grid[f"{STAGE_KEYS[k - 1]}{STAGE_KEYS[k]}"]["r2"] for k in range(1, 4)]
     prev_row_ci = [None] + [
         grid[f"{STAGE_KEYS[k - 1]}{STAGE_KEYS[k]}"]["row_ci"] for k in range(1, 4)
     ]
@@ -121,8 +168,7 @@ def load_results() -> dict[str, Any]:
     np.testing.assert_allclose(diag_r2, iid_r2, atol=2e-6, rtol=0)
 
     retention: dict[str, dict[str, list]] = {
-        mode: {"point": [], "ci": [], "ci_row": []}
-        for mode in ("direct", "bias", "scale_bias")
+        mode: {"point": [], "ci": [], "ci_row": []} for mode in ("direct", "bias", "scale_bias")
     }
     for transition in TRANSITIONS:
         pair = summary["transfer"][transition]
@@ -144,6 +190,15 @@ def load_results() -> dict[str, Any]:
                 "semantic-cluster bootstrap; line-variant panel B CI = "
                 "row bootstrap"
             ),
+            "series_encoding": SERIES_ENCODING,
+            "inputs": {
+                "latest": {"path": str(latest_path), "sha256": LATEST_SHA256},
+                "retrieval": {"path": str(retrieval_path), "sha256": RETRIEVAL_SHA256},
+                "summary": {
+                    "path": str(SUMMARY_PATH),
+                    "sha256": _sha256_bytes(summary_bytes),
+                },
+            },
             "generated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         },
         "iid_r2": iid_r2,
@@ -169,117 +224,90 @@ def load_results() -> dict[str, Any]:
     }
 
 
-def configure_style() -> None:
-    mpl.rcParams.update(
-        {
-            "font.family": "DejaVu Sans",
-            "font.size": 9.3,
-            "axes.labelsize": 9.5,
-            "axes.titlesize": 10.5,
-            "axes.titleweight": "bold",
-            "axes.labelcolor": INK,
-            "axes.edgecolor": SPINE,
-            "xtick.color": INK,
-            "ytick.color": INK,
-            "text.color": INK,
-            "legend.frameon": False,
-            "pdf.fonttype": 42,
-            "ps.fonttype": 42,
-        }
-    )
-
-
-def panel_heading(ax: mpl.axes.Axes, eyebrow: str, title: str) -> None:
-    n_lines = title.count("\n") + 1
-    ax.text(
-        0,
-        1.30 + 0.11 * max(0, n_lines - 2),
-        eyebrow.upper(),
-        transform=ax.transAxes,
-        color=MUTED,
-        fontsize=8.8,
-        fontweight="bold",
-        va="bottom",
-    )
-    ax.text(
-        0,
-        1.08,
-        title,
-        transform=ax.transAxes,
-        color=INK,
-        fontsize=10.5,
-        fontweight="bold",
-        linespacing=0.95,
-        va="bottom",
-    )
-
-
-def clean_axes(ax: mpl.axes.Axes, *, grid: bool = True) -> None:
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_color(SPINE)
-    ax.spines["bottom"].set_color(SPINE)
-    if grid:
-        ax.grid(axis="y", color=GRID, linewidth=0.6, alpha=0.9)
-        ax.set_axisbelow(True)
-
-
 def _err(points: np.ndarray, ci: np.ndarray) -> np.ndarray:
     return np.vstack([points - ci[:, 0], ci[:, 1] - points])
 
 
-def plot_within_stage(ax: mpl.axes.Axes, data: dict[str, Any]) -> None:
+HEADER_KWARGS = {"kicker_y": 1.44, "title_y": 1.06}
+
+
+def plot_within_stage(ax: mpl.axes.Axes, data: dict[str, Any]) -> list[Line2D]:
     x = np.arange(len(STAGES))
     iid_r2 = np.asarray(data["iid_r2"])
     iid_ci = np.asarray(data["iid_r2_ci"])
     acc1 = np.asarray(data["whitened_csls_acc1"])
     acc1_ci = np.asarray(data["whitened_csls_acc1_ci"])
+    r2_style = metric_style("r2")
+    top1_style = metric_style("top1")
     ax.errorbar(
         x,
         iid_r2,
         yerr=_err(iid_r2, iid_ci),
         color=TEAL,
         marker="o",
-        markersize=4.5,
-        linewidth=1.5,
-        capsize=2.5,
-        label=r"$R^2$",
+        markersize=7,
+        linewidth=2.0,
+        linestyle=r2_style["linestyle"],
+        fillstyle=r2_style["fillstyle"],
+        capsize=3,
         zorder=4,
     )
     ax.errorbar(
         x,
         acc1,
         yerr=_err(acc1, acc1_ci),
-        color=ORANGE,
-        marker="s",
-        markersize=4.2,
-        linewidth=1.4,
-        linestyle=(0, (4, 2)),
-        capsize=2.5,
-        label=r"Whitened+CSLS acc@1",
+        color=TEAL,
+        marker="o",
+        markersize=7,
+        linewidth=1.8,
+        linestyle=top1_style["linestyle"],
+        fillstyle=top1_style["fillstyle"],
+        markeredgewidth=1.6,
+        capsize=3,
         zorder=4,
     )
-    ax.set_xticks(x, STAGES)
-    ax.set_ylim(0.40, 1.00)
-    ax.set_yticks([0.40, 0.60, 0.80, 1.00])
-    ax.set_ylabel("Held-out score ↑")
-    panel_heading(
-        ax, "A · final context token · IID", "The map persists\nat every stage"
+    style_score_axis(ax, y_min=0.4, y_max=1.005, y_step=0.2)
+    ax.set_xticks(x)
+    ax.set_xticklabels(STAGES)
+    ax.set_ylabel(better_label("Held-out score"))
+    panel_header(
+        ax,
+        "A",
+        "OLMo-2-7B, layer 31",
+        "Held-out score of each\nstage's own map",
+        **HEADER_KWARGS,
     )
-    clean_axes(ax)
-    ax.legend(
-        loc="center",
-        bbox_to_anchor=(0.52, 0.53),
-        fontsize=8.3,
-        handlelength=2.1,
-        handletextpad=0.5,
-    )
+    return [
+        Line2D(
+            [],
+            [],
+            color=TEAL,
+            marker="o",
+            markersize=7,
+            linewidth=2.0,
+            linestyle=r2_style["linestyle"],
+            fillstyle=r2_style["fillstyle"],
+            label=METRIC_LABELS["r2"],
+        ),
+        Line2D(
+            [],
+            [],
+            color=TEAL,
+            marker="o",
+            markersize=7,
+            linewidth=1.8,
+            linestyle=top1_style["linestyle"],
+            fillstyle=top1_style["fillstyle"],
+            markeredgewidth=1.6,
+            label=METRIC_LABELS["top1"],
+        ),
+    ]
 
 
-def plot_stage_grid(ax: mpl.axes.Axes, data: dict[str, Any]) -> None:
+def plot_stage_grid(ax: mpl.axes.Axes, data: dict[str, Any]) -> list[Line2D]:
     stage_grid = np.asarray(data["stage_grid"])
     cmap = LinearSegmentedColormap.from_list(
-        "paper_teal", ["#F4F4F1", "#C7DEE1", LIGHT_TEAL, TEAL]
+        "paper_teal", [_tint(TEAL, 0.95), _tint(TEAL, 0.7), _tint(TEAL, 0.4), TEAL]
     )
     vmin = np.floor(stage_grid.min() * 100) / 100 - 0.01
     vmax = np.ceil(stage_grid.max() * 100) / 100 + 0.01
@@ -288,122 +316,130 @@ def plot_stage_grid(ax: mpl.axes.Axes, data: dict[str, Any]) -> None:
     for row in range(4):
         for col in range(4):
             value = stage_grid[row, col]
-            color = "white" if value >= threshold else INK
-            ax.text(
-                col,
-                row,
-                f"{value:.2f}",
-                ha="center",
-                va="center",
-                color=color,
-                fontsize=9.3,
-            )
+            color = PAPER if value >= threshold else INK
+            ax.text(col, row, f"{value:.2f}", ha="center", va="center", color=color)
     ax.set_xticks(np.arange(4), STAGES)
     ax.set_yticks(np.arange(4), STAGES)
     ax.set_xlabel("Answer source")
     ax.set_ylabel("Activation checkpoint")
-    panel_heading(
+    panel_header(
         ax,
-        "B · context→answer fits",
-        "Previous stage states\ncan predict subsequent\nstage answers",
+        "B",
+        "context→answer fits",
+        "Held-out $R^2$ into each stage's\nanswers, by context source",
+        **HEADER_KWARGS,
     )
     for spine in ax.spines.values():
         spine.set_visible(False)
     ax.tick_params(length=0)
+    return []
 
 
-def plot_two_line(ax: mpl.axes.Axes, data: dict[str, Any]) -> None:
-    """Three-tone line variant of panel B (own / previous-stage / Base states)."""
+def plot_stage_series(ax: mpl.axes.Axes, data: dict[str, Any]) -> list[Line2D]:
+    """Line panel B: own / previous-stage / Base states predicting each stage's answers.
+
+    Every series is held-out R^2, so all lines stay solid with filled markers
+    (dash / open-marker is reserved for the top-1 retrieval metric); the series
+    are separated by hue + marker per SERIES_ENCODING["panel_b_lines"].
+    """
     x = np.arange(len(STAGES))
     diag = np.asarray(data["diag_r2"], dtype=float)
     diag_ci = np.asarray(data["diag_ci"], dtype=float)
-    prev = np.asarray(
-        [np.nan if v is None else v for v in data["prev_row_r2"]], dtype=float
-    )
+    prev = np.asarray([np.nan if v is None else v for v in data["prev_row_r2"]], dtype=float)
     prev_ci = np.asarray(
         [[np.nan, np.nan] if v is None else v for v in data["prev_row_ci"]],
         dtype=float,
     )
     base = np.asarray(data["base_row_r2"], dtype=float)
     base_ci = np.asarray(data["base_row_ci"], dtype=float)
+    series = []
     ax.errorbar(
         x,
         diag,
         yerr=_err(diag, diag_ci),
         color=TEAL,
         marker="o",
-        markersize=4.5,
-        linewidth=1.5,
-        capsize=2.5,
-        label="Own states",
+        markersize=7,
+        linewidth=2.0,
+        capsize=3,
         zorder=5,
     )
+    series.append((TEAL, "o", "Own states"))
     keep = np.isfinite(prev)
     ax.errorbar(
         x[keep],
         prev[keep],
         yerr=_err(prev[keep], prev_ci[keep]),
-        color=LIGHT_TEAL,
+        color=PREV_TINT,
         marker="^",
-        markersize=4.6,
-        linewidth=1.4,
-        linestyle=(0, (5, 2)),
-        markeredgecolor=TEAL,
-        capsize=2.5,
-        label="Prev.-stage states",
+        markersize=7.5,
+        linewidth=2.0,
+        capsize=3,
         zorder=4,
     )
+    series.append((PREV_TINT, "^", "Previous-stage states"))
     ax.errorbar(
         x,
         base,
         yerr=_err(base, base_ci),
-        color="#C7DEE1",
+        color=AMBER,
         marker="s",
-        markersize=4.2,
-        linewidth=1.4,
-        linestyle=(0, (2, 2)),
-        markeredgecolor=TEAL,
-        capsize=2.5,
-        label="Base states",
+        markersize=6.5,
+        linewidth=2.0,
+        capsize=3,
         zorder=3,
     )
-    ax.set_xticks(x, STAGES)
-    values = np.concatenate(
-        [diag_ci.ravel(), base_ci.ravel(), prev_ci[keep].ravel()]
-    )
+    series.append((AMBER, "s", "Base states"))
+    values = np.concatenate([diag_ci.ravel(), base_ci.ravel(), prev_ci[keep].ravel()])
     lo = np.floor(np.nanmin(values) * 20) / 20
     hi = np.ceil(np.nanmax(values) * 20) / 20
-    ax.set_ylim(lo - 0.01, hi + 0.01)
+    if np.nanmin(values) - lo < 0.01:
+        lo -= 0.05
+    if hi - np.nanmax(values) < 0.01:
+        hi += 0.05
+    style_score_axis(ax, y_min=lo, y_max=hi + 1e-4, y_step=0.05)
+    ax.set_xticks(x)
+    ax.set_xticklabels(STAGES)
     ax.set_xlabel("Answer source")
-    ax.set_ylabel(r"Held-out $R^2$ ↑")
-    panel_heading(
+    ax.set_ylabel(better_label(METRIC_LABELS["r2"]))
+    panel_header(
         ax,
-        "B · context→answer fits",
-        "Previous stage states\ncan predict subsequent\nstage answers",
+        "B",
+        "context→answer fits",
+        "Held-out $R^2$ into each stage's\nanswers, by context source",
+        **HEADER_KWARGS,
     )
-    clean_axes(ax)
-    ax.legend(
-        loc="lower right",
-        fontsize=7.8,
-        handlelength=1.8,
-        handletextpad=0.4,
-        labelspacing=0.3,
-        borderaxespad=0.2,
-    )
+    return [
+        Line2D(
+            [],
+            [],
+            color=color,
+            marker=marker,
+            markersize=7,
+            linewidth=2.0,
+            label=label,
+        )
+        for color, marker, label in series
+    ]
 
 
-def plot_transfer(ax: mpl.axes.Axes, data: dict[str, Any]) -> None:
-    """Panel C: retention of the previous stage's map, three calibrations."""
+def plot_transfer(ax: mpl.axes.Axes, data: dict[str, Any]) -> list[Line2D]:
+    """Panel C: retention of the preceding stage's map under three corrections.
+
+    One teal hue with fill progression open -> half tint -> filled (the
+    c1_cot_ladder convention); see SERIES_ENCODING["panel_c"].
+    """
     x = np.arange(3)
     labels = ["Base\n→ SFT", "SFT\n→ DPO", "DPO\n→ RLVR"]
     modes = [
-        # (key, offset, label, marker, facecolor, edge/line color)
-        ("direct", -0.22, "as is", "o", "white", ORANGE),
-        ("bias", 0.0, "bias", "s", LIGHT_TEAL, TEAL),
-        ("scale_bias", 0.22, "rescaling + bias", "o", TEAL, TEAL),
+        # (key, offset, label, marker, facecolor)
+        ("direct", -0.22, "as is", "o", PAPER),
+        ("bias", 0.0, "bias", "s", _tint(TEAL, 0.5)),
+        ("scale_bias", 0.22, "rescaling + bias", "o", TEAL),
     ]
     all_ci = []
-    for key, offset, label, marker, face, edge in modes:
+    handles = []
+    for key, offset, label, marker, face in modes:
         points = np.asarray(data[f"{key}_retention"], dtype=float)
         ci_arr = np.asarray(data[f"{key}_retention_ci"], dtype=float)
         all_ci.append(ci_arr)
@@ -412,83 +448,138 @@ def plot_transfer(ax: mpl.axes.Axes, data: dict[str, Any]) -> None:
             points,
             yerr=_err(points, ci_arr),
             fmt=marker,
-            markersize=4.6,
+            markersize=8,
             markerfacecolor=face,
-            markeredgecolor=edge,
-            markeredgewidth=1.3,
-            ecolor=edge,
+            markeredgecolor=TEAL,
+            markeredgewidth=1.6,
+            ecolor=TEAL,
             linewidth=0.0,
-            elinewidth=1.1,
-            capsize=2.5,
-            label=label,
+            elinewidth=1.3,
+            capsize=3,
             zorder=4 if key != "scale_bias" else 5,
         )
-    scale_bias = np.asarray(data["scale_bias_retention"], dtype=float)
-    for idx, value in enumerate(scale_bias):
-        ax.text(
-            x[idx] + 0.22,
-            value + 0.07,
-            f"{value:.2f}",
-            ha="center",
-            fontsize=8.8,
-            fontweight="bold",
+        handles.append(
+            Line2D(
+                [],
+                [],
+                linewidth=0.0,
+                marker=marker,
+                markersize=8,
+                markerfacecolor=face,
+                markeredgecolor=TEAL,
+                markeredgewidth=1.6,
+                label=label,
+            )
         )
-    ax.axhline(1.0, color=MUTED, linewidth=0.9, linestyle=(0, (5, 4)))
-    ax.axhline(0.0, color=SPINE, linewidth=0.7)
-    ax.set_xticks(x, labels)
+    ax.axhline(1.0, color=MUTED, linewidth=1.2, linestyle=(0, (5, 4)))
+    ax.axhline(0.0, color=SEAM, linewidth=1.0)
+    style_axis(ax)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
     ci_values = np.concatenate([c.ravel() for c in all_ci])
     low = min(-0.12, float(ci_values.min()) - 0.12)
-    high = max(1.18, float(ci_values.max()) + 0.18)
+    high = max(1.12, float(ci_values.max()) + 0.12)
     ax.set_ylim(low, high)
-    yticks = [t for t in (-1.0, -0.5, 0.0, 0.5, 1.0) if t >= low - 1e-9]
+    yticks = [t for t in (-1.0, -0.5, 0.0, 0.5, 1.0) if low - 1e-9 <= t <= high + 1e-9]
     ax.set_yticks(yticks)
-    ax.set_ylabel(r"Retention $R^2_{i\to j}/R^2_{j\to j}$ ↑")
-    panel_heading(ax, "C · map transfer", "The map stabilizes\nafter SFT")
-    clean_axes(ax)
-    ax.legend(
-        loc="upper center",
-        bbox_to_anchor=(0.5, -0.17),
-        ncol=3,
-        fontsize=8.3,
-        columnspacing=0.8,
-        handlelength=1.2,
-        handletextpad=0.4,
+    ax.set_yticklabels([f"{t:.2f}".rstrip("0").rstrip(".") for t in yticks])
+    # "Retention" lives in the panel title; the long form would overrun the
+    # rotated label past the axes height at paper scale.
+    ax.set_ylabel(better_label(r"$R^2_{i \to j} \, / \, R^2_{j \to j}$"))
+    panel_header(
+        ax,
+        "C",
+        "map transfer",
+        "Retention of the\nprior stage's map",
+        **HEADER_KWARGS,
     )
+    return handles
 
 
-def render_variant(data: dict[str, Any], out_base: Path, *, two_line: bool) -> None:
-    fig, axes = plt.subplots(
+def render_variant(data: dict[str, Any], out_base: Path, *, panel_b: str) -> dict[str, Any]:
+    if panel_b not in {"lines", "grid"}:
+        raise ValueError(f"panel_b must be 'lines' or 'grid', got {panel_b!r}")
+    fig, include_frac = c2a_figure("full", aspect=0.40)
+    grid = fig.add_gridspec(
         1,
         3,
-        figsize=(7.4, 3.0),
-        gridspec_kw={"width_ratios": [1.12, 0.9 if not two_line else 1.05, 1.12], "wspace": 0.64},
+        width_ratios=[1.05, 1.1, 1.05],
+        left=0.06,
+        right=0.985,
+        top=0.56,
+        bottom=0.15,
+        wspace=0.55,
     )
-    plot_within_stage(axes[0], data)
-    if two_line:
-        plot_two_line(axes[1], data)
+    axes = [fig.add_subplot(grid[0, i]) for i in range(3)]
+    handles_a = plot_within_stage(axes[0], data)
+    if panel_b == "lines":
+        handles_b = plot_stage_series(axes[1], data)
     else:
-        plot_stage_grid(axes[1], data)
-    plot_transfer(axes[2], data)
-    fig.subplots_adjust(left=0.075, right=0.985, top=0.74, bottom=0.23)
-    out_base.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_base.with_suffix(".pdf"), bbox_inches="tight", pad_inches=0.04)
-    fig.savefig(
-        out_base.with_suffix(".png"), dpi=220, bbox_inches="tight", pad_inches=0.04
+        handles_b = plot_stage_grid(axes[1], data)
+    handles_c = plot_transfer(axes[2], data)
+    for ax, heading, handles in (
+        (axes[0], "Metric", handles_a),
+        (axes[1], "Context source", handles_b),
+        (axes[2], "Correction", handles_c),
+    ):
+        if not handles:
+            continue
+        x0 = ax.get_position().x0
+        legend_kicker(fig, x0, 0.978, heading)
+        fig.legend(
+            handles=handles,
+            loc="upper left",
+            bbox_to_anchor=(x0 - 0.001, 0.958),
+            ncol=1,
+            frameon=False,
+            handlelength=1.9,
+            handletextpad=0.5,
+            borderaxespad=0.0,
+            labelspacing=0.3,
+        )
+    outputs = save_c2a_figure(
+        fig,
+        out_base,
+        title="Section 4.3 post-training dynamics of the context-to-answer map",
+        subject=(
+            "OLMo-2-7B Base/SFT/DPO/RLVR last-token IID fits, cross-stage grid, "
+            "and adjacent-stage retention (issue #1902 lasttoken_transfer)"
+        ),
+        creator="scripts/section43_posttraining_figure.py",
+        include_width=include_frac,
     )
     plt.close(fig)
+    meta_path = out_base.with_suffix(".meta.json")
+    meta_path.write_text(
+        json.dumps(
+            {
+                "record": outputs["record"],
+                "panel_b_variant": panel_b,
+                "metadata": data["metadata"],
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n"
+    )
+    outputs["meta"] = meta_path
+    return outputs
 
 
 def render(out_dir: Path) -> None:
-    configure_style()
+    set_c2a_style()
     data = load_results()
     out_dir.mkdir(parents=True, exist_ok=True)
     data_path = out_dir / "c1_posttraining_dynamics_data.json"
     data_path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
     # Plot from the JSON round-trip so the figure is reproducible from it alone.
     data = json.loads(data_path.read_text())
-    render_variant(data, out_dir / "c1_posttraining_dynamics", two_line=False)
-    render_variant(data, out_dir / "c1_posttraining_dynamics_2line", two_line=True)
-    print(f"wrote {out_dir}/c1_posttraining_dynamics[.pdf/.png], _2line[.pdf/.png], _data.json")
+    paper = render_variant(data, out_dir / "c1_posttraining_dynamics", panel_b="lines")
+    grid = render_variant(data, out_dir / "c1_posttraining_dynamics_grid", panel_b="grid")
+    for name, outputs in (("paper", paper), ("grid variant", grid)):
+        print(f"{name}: {outputs['pdf']}")
+        print(f"  latex_include_line: {outputs['record']['latex_include_line']}")
+    print(f"data: {data_path}")
 
 
 def parse_args() -> argparse.Namespace:

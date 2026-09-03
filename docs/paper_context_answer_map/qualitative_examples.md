@@ -1,4 +1,34 @@
-# Qualitative examples — context→answer map discrimination + context-vector patching
+# Qualitative examples — retrieval failures + context-vector patching
+
+## Current main-text panel: content-divergent retrieval failures
+
+The current `c3_qualitative_discrimination` panel shows three rank-1 errors from
+the final single-turn ridge evaluation at layer 19. That evaluation averages five
+on-policy answer vectors per context, uses whitened cosine with two-sided CSLS
+($K=10$), and contains 25 failures among 942 deduplicated held-out contexts
+(97.3% top-1 accuracy). The three displayed pairs were selected post hoc for
+answer-content divergence after excluding semantic near-duplicate queries; they
+are illustrative edge cases, not a representative sample of the failures.
+
+Each row places the true context–answer pair on the left and the rank-1 retrieved
+pair on the right. Because these are single-turn records, the previous-context
+summary explicitly reports that there are no earlier turns and summarizes the
+request setup. The figure then gives the final query and a substantial excerpt
+from the stored seed-43 on-policy answer. That draw is shown only for readability;
+the retrieval target is the mean of five answer vectors. Markdown markers are
+removed, whitespace is normalized, and omitted continuation is marked `[…]`.
+
+The displayed errors are:
+
+1. vocabulary-definition quiz → Polish property-sale quiz (true rank 2);
+2. Vancouver Chinese-food trip → Japan family itinerary (true rank 4);
+3. Django `manage.py` explanation → missing-module troubleshooting (true rank 2).
+
+Canonical display text, row identifiers, and protocol metadata:
+`eval_results/issue_1901/content_divergent_retrieval_examples.json`. Generator:
+`scripts/issue1901_qualitative_retrieval_failures.py`.
+
+## Archived task #2478 panel provenance (superseded in the main-text figure)
 
 Task #2478 (assembly-only, 0 GPU-h). Every score below is a stored value re-read from
 its producing artifact. Display-substitution policy (exact): excerpts preserve the

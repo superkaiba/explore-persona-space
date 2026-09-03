@@ -1,430 +1,289 @@
 {
-  "commit": "86e4cf25+dirty",
-  "render_id": "64dacaf444f7432a",
-  "git_commit": "86e4cf25f0155d66b2ade5e3b6db3d95b9749f4c",
+ "figure": "c5_claim4_margin_forest",
+ "status": "manuscript Figure 17 (c2a-v2 restyle; values unchanged)",
+ "style_version": "c2a-v2",
+ "plotting_script": "scripts/issue1739_claim4_relabel_figs.py",
+ "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+ "reproduction_command": "uv run python scripts/issue1739_claim4_relabel_figs.py --style iclr",
+ "git": {
+  "git_commit": "adeed6da49516182b9577311a4fd40804938044c",
   "git_dirty": true,
   "git_dirty_paths": [
-    "eval_results/issue_2474/n1m_map_arms.json",
-    "scripts/issue1739_claim4_relabel_figs.py",
-    "scripts/issue2474_n1m_map.py",
-    "tasks/completed/2214/body.md",
-    "tasks/completed/2214/comments.jsonl",
-    "tasks/completed/2214/concerns.jsonl",
-    "tasks/completed/2214/events.jsonl",
-    "tasks/completed/2214/plans/plan.md",
-    "tasks/completed/2214/plans/v1.md",
-    "tasks/completed/2214/plans/v2.md",
-    "tasks/completed/2214/plans/v3.md",
-    "tasks/proposed/2416/body.md",
-    "tasks/proposed/2416/comments.jsonl",
-    "tasks/proposed/2416/events.jsonl",
-    "tasks/running/2569/events.jsonl",
-    "tests/test_issue2094_rev_butler.py"
+   ".claude/agent-memory/implementer-lean/MEMORY.md",
+   "docs/paper_context_answer_map/plotting_style.md",
+   "docs/paper_context_answer_map/qualitative_examples.md",
+   "eval_results/issue_779/plot3_redesign/plot3_redesign.json",
+   "figures/paper/c1_offpolicy_origin.pdf",
+   "figures/paper/c1_offpolicy_origin.png",
+   "figures/paper/c1_offpolicy_origin_data.json",
+   "figures/paper/c1_offpolicy_origin_grayscale.png",
+   "figures/paper/c3_persona_direction_spectrum.meta.json",
+   "figures/paper/c3_persona_direction_spectrum.pdf",
+   "figures/paper/c3_persona_direction_spectrum.png",
+   "figures/paper/c3_persona_topic_separation.meta.json",
+   "figures/paper/c3_persona_topic_separation.pdf",
+   "figures/paper/c3_persona_topic_separation.png",
+   "figures/paper/c3_persona_topic_separation_grayscale.png",
+   "figures/paper/c3_qualitative_discrimination.meta.json",
+   "figures/paper/c3_qualitative_discrimination.pdf",
+   "figures/paper/c3_qualitative_discrimination.png",
+   "figures/paper/c3_qualitative_discrimination_grayscale.png",
+   "figures/paper/c3_sae_tier_gradient.meta.json",
+   "figures/paper/c3_sae_tier_gradient.pdf",
+   "figures/paper/c3_sae_tier_gradient.png",
+   "figures/paper/c3_sae_tier_gradient_grayscale.png",
+   "figures/paper/c5_claim4_margin_forest.meta.json",
+   "figures/paper/c5_claim4_margin_forest.pdf",
+   "figures/paper/c5_claim4_margin_forest.png",
+   "figures/paper/c5_pv_methods_regimes.meta.json",
+   "figures/paper/c5_pv_methods_regimes.pdf",
+   "figures/paper/c5_pv_methods_regimes.png",
+   "figures/paper/figure2_predictability_scaling.meta.json",
+   "figures/paper/figure2_predictability_scaling.pdf",
+   "figures/paper/figure2_predictability_scaling.png",
+   "figures/paper/figure2_predictability_scaling_grayscale.png",
+   "scripts/issue1739_claim4_relabel_figs.py",
+   "scripts/issue1739_result2_fourpanel_fig.py",
+   "scripts/issue779_plot3_redesign.py",
+   "scripts/make_paper_figure2.py",
+   "scripts/make_paper_section42_figures.py",
+   "scripts/section43_posttraining_figure.py",
+   "scripts/section4_offpolicy_figure.py",
+   "src/explore_persona_space/analysis/c2a_plot_style.py"
   ],
   "git_argv0_state": "modified",
-  "git_argv0_path": "scripts/issue1739_claim4_relabel_figs.py",
-  "created": "2026-08-25T18:46:41Z",
-  "figsize": [
-    5.5,
-    3.6300000000000003
+  "git_argv0_path": "scripts/issue1739_claim4_relabel_figs.py"
+ },
+ "sources": {
+  "claim4_per_rung_table": {
+   "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/eval_results/issue_1739/claim4_controls/claim4_per_rung_table.json",
+   "sha256": "79bb051b54e79ffe56aa613a80528300e083a02e8bef3a752cf89b38764fd577"
+  }
+ },
+ "record": {
+  "style_version": "c2a-v2",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "resolved_font": "Inter",
+  "authoring_size_inches": [
+   9.821,
+   6.089
   ],
-  "points": [
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.08295003199437437,
-      "y": 9.0,
-      "_kind": "errorbar",
-      "_group": 0
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.12036031924691837,
-      "y": 8.0,
-      "_kind": "errorbar",
-      "_group": 1
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.03323828757268093,
-      "y": 7.0,
-      "_kind": "errorbar",
-      "_group": 2
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.04360358558373343,
-      "y": 6.0,
-      "_kind": "errorbar",
-      "_group": 3
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.03759503773547753,
-      "y": 5.0,
-      "_kind": "errorbar",
-      "_group": 4
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.01175181442723583,
-      "y": 4.0,
-      "_kind": "errorbar",
-      "_group": 5
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.018691788808258836,
-      "y": 3.0,
-      "_kind": "errorbar",
-      "_group": 6
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.05470073167904595,
-      "y": 2.0,
-      "_kind": "errorbar",
-      "_group": 7
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.030182622646223022,
-      "y": 1.0,
-      "_kind": "errorbar",
-      "_group": 8
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.3325134918858831,
-      "y": 0.0,
-      "_kind": "errorbar",
-      "_group": 9
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.08422516205428354,
-      "y": 9.0,
-      "_kind": "line",
-      "_group": 10
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.07738971379562881,
-      "y": 9.0,
-      "_kind": "line",
-      "_group": 10
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.03378874825409309,
-      "y": 9.0,
-      "_kind": "line",
-      "_group": 10
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.12819456990088104,
-      "y": 9.0,
-      "_kind": "line",
-      "_group": 10
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.09115196596698538,
-      "y": 9.0,
-      "_kind": "line",
-      "_group": 10
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.12194344127357984,
-      "y": 8.0,
-      "_kind": "line",
-      "_group": 11
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.07168056871116904,
-      "y": 8.0,
-      "_kind": "line",
-      "_group": 11
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.13669192186769455,
-      "y": 8.0,
-      "_kind": "line",
-      "_group": 11
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.10967795147416451,
-      "y": 8.0,
-      "_kind": "line",
-      "_group": 11
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.16180771290798387,
-      "y": 8.0,
-      "_kind": "line",
-      "_group": 11
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.0451850838604344,
-      "y": 7.0,
-      "_kind": "line",
-      "_group": 12
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.028120250959086886,
-      "y": 7.0,
-      "_kind": "line",
-      "_group": 12
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.042452302606152716,
-      "y": 7.0,
-      "_kind": "line",
-      "_group": 12
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.01792371510249928,
-      "y": 7.0,
-      "_kind": "line",
-      "_group": 12
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.032510085335231385,
-      "y": 7.0,
-      "_kind": "line",
-      "_group": 12
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.05475632517695278,
-      "y": 6.0,
-      "_kind": "line",
-      "_group": 13
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.05329073219054892,
-      "y": 6.0,
-      "_kind": "line",
-      "_group": 13
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.051813673815257644,
-      "y": 6.0,
-      "_kind": "line",
-      "_group": 13
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.036150608377017335,
-      "y": 6.0,
-      "_kind": "line",
-      "_group": 13
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.022006588358890466,
-      "y": 6.0,
-      "_kind": "line",
-      "_group": 13
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.03698250217822191,
-      "y": 5.0,
-      "_kind": "line",
-      "_group": 14
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.02561828045372888,
-      "y": 5.0,
-      "_kind": "line",
-      "_group": 14
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.035840101850297346,
-      "y": 5.0,
-      "_kind": "line",
-      "_group": 14
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.043809881435446174,
-      "y": 5.0,
-      "_kind": "line",
-      "_group": 14
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.04572442275969335,
-      "y": 5.0,
-      "_kind": "line",
-      "_group": 14
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.0174823018110134,
-      "y": 4.0,
-      "_kind": "line",
-      "_group": 15
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.01969507193015385,
-      "y": 4.0,
-      "_kind": "line",
-      "_group": 15
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.018104476392652613,
-      "y": 4.0,
-      "_kind": "line",
-      "_group": 15
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.017017229908172504,
-      "y": 4.0,
-      "_kind": "line",
-      "_group": 15
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.013540007905813223,
-      "y": 4.0,
-      "_kind": "line",
-      "_group": 15
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.02007061949138733,
-      "y": 3.0,
-      "_kind": "line",
-      "_group": 16
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.016395477127532754,
-      "y": 3.0,
-      "_kind": "line",
-      "_group": 16
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.024016995477239456,
-      "y": 3.0,
-      "_kind": "line",
-      "_group": 16
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.017661105916593423,
-      "y": 3.0,
-      "_kind": "line",
-      "_group": 16
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.015314746028541215,
-      "y": 3.0,
-      "_kind": "line",
-      "_group": 16
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.0333978538272669,
-      "y": 2.0,
-      "_kind": "line",
-      "_group": 17
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.08714396189240814,
-      "y": 2.0,
-      "_kind": "line",
-      "_group": 17
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.04283193416623998,
-      "y": 2.0,
-      "_kind": "line",
-      "_group": 17
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.07223706455855922,
-      "y": 2.0,
-      "_kind": "line",
-      "_group": 17
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.037892843950755484,
-      "y": 2.0,
-      "_kind": "line",
-      "_group": 17
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.0033615353469981235,
-      "y": 1.0,
-      "_kind": "line",
-      "_group": 18
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.05409605864434214,
-      "y": 1.0,
-      "_kind": "line",
-      "_group": 18
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.0012627012111333658,
-      "y": 1.0,
-      "_kind": "line",
-      "_group": 18
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.04597319267969974,
-      "y": 1.0,
-      "_kind": "line",
-      "_group": 18
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.052942696042938,
-      "y": 1.0,
-      "_kind": "line",
-      "_group": 18
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.30425891301195646,
-      "y": 0.0,
-      "_kind": "line",
-      "_group": 19
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.2101374352947532,
-      "y": 0.0,
-      "_kind": "line",
-      "_group": 19
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.5260430757337337,
-      "y": 0.0,
-      "_kind": "line",
-      "_group": 19
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.31247351106108606,
-      "y": 0.0,
-      "_kind": "line",
-      "_group": 19
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.30965452432788587,
-      "y": 0.0,
-      "_kind": "line",
-      "_group": 19
-    }
+  "exported_size_inches": [
+   9.821,
+   5.851
   ],
-  "n_series": 20,
-  "total_points": 60,
-  "text": {
-    "suptitle": null,
-    "fig_texts": [],
-    "axes": [
-      {
-        "xlabel": "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)",
-        "xticklabels": [
-          "\u22120.1",
-          "0.0",
-          "0.1",
-          "0.2",
-          "0.3",
-          "0.4",
-          "0.5",
-          "0.6"
-        ],
-        "yticklabels": [
-          "evil: multi-turn human jailbreaks",
-          "evil: PAIR optimizer attacks",
-          "evil: HH red-team",
-          "evil: ToxicChat",
-          "hallucination: NQ-Open",
-          "hallucination: SimpleQA",
-          "sycophancy: AITA slot (held-out Reddit)",
-          "sycophancy: answer",
-          "sycophancy: feedback",
-          "sycophancy: model-written evaluations"
-        ]
-      }
-    ]
+  "scale": 0.42,
+  "include_width_frac": 0.75,
+  "latex_include_line": "\\includegraphics[width=0.75\\textwidth]{figures/paper/c5_claim4_margin_forest.pdf}",
+  "realized_font_pt": {
+   "body": 7.56,
+   "tick": 7.14,
+   "label": 8.4,
+   "title": 9.24
   },
-  "formats_written": [
-    "png",
-    "pdf"
+  "png_dpi": 240,
+  "background": "#FFFFFF",
+  "text": [
+   "REGRESSION READOUTS \u00b7 OOD EVALUATION SETS",
+   "$\\Delta$ Spearman $\\rho$ (mapped answer $-$ context)",
+   "\u22120.1",
+   "0.0",
+   "0.1",
+   "0.2",
+   "0.3",
+   "0.4",
+   "0.5",
+   "0.6",
+   "evil: multi-turn human jailbreaks",
+   "evil: PAIR optimizer attacks",
+   "evil: HH red-team",
+   "evil: ToxicChat",
+   "hallucination: NQ-Open",
+   "hallucination: SimpleQA",
+   "sycophancy: AITA slot (held-out Reddit)",
+   "sycophancy: answer",
+   "sycophancy: feedback",
+   "sycophancy: model-written evaluations",
+   "Mapped answer minus context, per set"
   ]
+ },
+ "data": {
+  "rungs": [
+   {
+    "behavior": "evil",
+    "eval_rung": "evil_mhj",
+    "label": "evil: multi-turn human jailbreaks",
+    "mean": 0.08295003199437437,
+    "tci": [
+     0.04100955710523784,
+     0.12489050688351089
+    ],
+    "per_seed": [
+     0.08422516205428354,
+     0.07738971379562881,
+     0.03378874825409309,
+     0.12819456990088104,
+     0.09115196596698538
+    ]
+   },
+   {
+    "behavior": "evil",
+    "eval_rung": "evil_pair",
+    "label": "evil: PAIR optimizer attacks",
+    "mean": 0.12036031924691837,
+    "tci": [
+     0.07884830949838181,
+     0.16187232899545492
+    ],
+    "per_seed": [
+     0.12194344127357984,
+     0.07168056871116904,
+     0.13669192186769455,
+     0.10967795147416451,
+     0.16180771290798387
+    ]
+   },
+   {
+    "behavior": "evil",
+    "eval_rung": "hhrt",
+    "label": "evil: HH red-team",
+    "mean": 0.03323828757268093,
+    "tci": [
+     0.01951123408251109,
+     0.04696534106285077
+    ],
+    "per_seed": [
+     0.0451850838604344,
+     0.028120250959086886,
+     0.042452302606152716,
+     0.01792371510249928,
+     0.032510085335231385
+    ]
+   },
+   {
+    "behavior": "evil",
+    "eval_rung": "toxicchat",
+    "label": "evil: ToxicChat",
+    "mean": 0.04360358558373343,
+    "tci": [
+     0.02596051538566517,
+     0.06124665578180169
+    ],
+    "per_seed": [
+     0.05475632517695278,
+     0.05329073219054892,
+     0.051813673815257644,
+     0.036150608377017335,
+     0.022006588358890466
+    ]
+   },
+   {
+    "behavior": "hallucination",
+    "eval_rung": "nqopen",
+    "label": "hallucination: NQ-Open",
+    "mean": 0.03759503773547753,
+    "tci": [
+     0.027747286007917052,
+     0.04744278946303801
+    ],
+    "per_seed": [
+     0.03698250217822191,
+     0.02561828045372888,
+     0.035840101850297346,
+     0.043809881435446174,
+     0.04572442275969335
+    ]
+   },
+   {
+    "behavior": "hallucination",
+    "eval_rung": "simpleqa",
+    "label": "hallucination: SimpleQA",
+    "mean": 0.01175181442723583,
+    "tci": [
+     -0.0058484280187312,
+     0.02935205687320286
+    ],
+    "per_seed": [
+     0.0174823018110134,
+     0.01969507193015385,
+     0.018104476392652613,
+     0.017017229908172504,
+     -0.013540007905813223
+    ]
+   },
+   {
+    "behavior": "sycophancy",
+    "eval_rung": "aita",
+    "label": "sycophancy: AITA slot (held-out Reddit)",
+    "mean": 0.018691788808258836,
+    "tci": [
+     0.01439059353960834,
+     0.02299298407690933
+    ],
+    "per_seed": [
+     0.02007061949138733,
+     0.016395477127532754,
+     0.024016995477239456,
+     0.017661105916593423,
+     0.015314746028541215
+    ]
+   },
+   {
+    "behavior": "sycophancy",
+    "eval_rung": "sycoans",
+    "label": "sycophancy: answer",
+    "mean": 0.05470073167904595,
+    "tci": [
+     0.025335494894660544,
+     0.08406596846343135
+    ],
+    "per_seed": [
+     0.0333978538272669,
+     0.08714396189240814,
+     0.04283193416623998,
+     0.07223706455855922,
+     0.037892843950755484
+    ]
+   },
+   {
+    "behavior": "sycophancy",
+    "eval_rung": "sycofb",
+    "label": "sycophancy: feedback",
+    "mean": 0.030182622646223022,
+    "tci": [
+     -0.00548571751257106,
+     0.06585096280501711
+    ],
+    "per_seed": [
+     -0.0033615353469981235,
+     0.05409605864434214,
+     0.0012627012111333658,
+     0.04597319267969974,
+     0.052942696042938
+    ]
+   },
+   {
+    "behavior": "sycophancy",
+    "eval_rung": "sycomwe",
+    "label": "sycophancy: model-written evaluations",
+    "mean": 0.3325134918858831,
+    "tci": [
+     0.18804219929147326,
+     0.4769847844802929
+    ],
+    "per_seed": [
+     0.30425891301195646,
+     0.2101374352947532,
+     0.5260430757337337,
+     0.31247351106108606,
+     0.30965452432788587
+    ]
+   }
+  ]
+ },
+ "output_sha256": {
+  "pdf": "3771cf1e365eb3fcbcc29a44aa1492d2d2b6b170e35d86c3c6870934165b0805",
+  "png": "c6c014b8c76d75af6d8f9eea33f5aeb9ebe3ec3318cedbd644c8a096e45390c0",
+  "grayscale": "f4fcc66a301758de3a61abd0057a5a2241bef810b689fa634f54a3698cf90c13"
+ }
 }
