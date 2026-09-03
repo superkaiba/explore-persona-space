@@ -144,6 +144,70 @@ def make_figure(units: dict[str, Any]) -> plt.Figure:
     return fig
 
 
+
+# --- Comparison figure: the three corrections of Section 4.3, OLMo stages next to reasoning SFT ---
+OLMO_SUMMARY = ROOT / "eval_results" / "issue_1902" / "lasttoken_transfer" / "summary.json"
+OLMO_TRANSITIONS = [("B->S", "Base → SFT\n(OLMo-2-7B,\ninstruction SFT)"), ("S->D", "SFT → DPO\n(OLMo-2-7B)"), ("D->R", "DPO → RLVR\n(OLMo-2-7B)")]
+REASONING_LABEL = "Qwen2.5-7B-Instruct →\nOpenThinker3-7B\n(reasoning SFT)"
+# (olmo key, ladder tier, label, offset, marker, facecolor, edgecolor) — styles mirror Figure 8C.
+MODES = [
+    ("direct", "t0_direct_transfer", "as is", -0.24, "o", "white", "#C9583D"),
+    ("bias", "t3_bias_offset", "bias", 0.0, "s", "#8CBAC5", "#16708A"),
+    ("scale_bias", "t4_global_scaling", "rescaling + bias", 0.24, "o", "#16708A", "#16708A"),
+]
+
+
+def load_olmo() -> dict[str, Any]:
+    summary = json.loads(OLMO_SUMMARY.read_text())["transfer"]
+    out: dict[str, Any] = {}
+    for key, _label in OLMO_TRANSITIONS:
+        pair = summary[key]["retention"]
+        out[key] = {mode: {"point": float(pair[mode]["point"]), "ci": [float(v) for v in pair[mode]["cluster_ci"]]} for mode, *_ in MODES}
+    return out
+
+
+def make_compare_figure(units: dict[str, Any], olmo: dict[str, Any]) -> plt.Figure:
+    set_c2a_style()
+    fig = plt.figure(figsize=(11.2, 6.6), constrained_layout=False)
+    grid = fig.add_gridspec(1, 1, left=0.10, right=0.985, top=0.74, bottom=0.22)
+    ax = fig.add_subplot(grid[0, 0])
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    ax.spines["left"].set_color(SEAM); ax.spines["bottom"].set_color(SEAM)
+    ax.tick_params(length=0, pad=8)
+    ax.set_yscale("symlog", linthresh=1.0, linscale=1.8)
+    ax.set_ylim(-3e5, 1.6)
+    ax.set_yticks([-1e5, -1e3, -10, -1, 0, 1])
+    ax.set_yticklabels(["$-10^{5}$", "$-10^{3}$", "$-10$", "$-1$", "0", "1"])
+    ax.grid(axis="y", color=GRID, lw=1.0, alpha=0.55); ax.set_axisbelow(True)
+    ax.axhline(1.0, color=MUTED, lw=1.3, ls=(0, (4, 3)), zorder=1)
+    ax.axhline(0.0, color=SEAM, lw=1.0, zorder=1)
+    xs = list(range(len(OLMO_TRANSITIONS) + 1))
+    for i, (key, _label) in enumerate(OLMO_TRANSITIONS):
+        for mode, _tier, _lab, dx, marker, face, edge in MODES:
+            pt = olmo[key][mode]["point"]; lo, hi = olmo[key][mode]["ci"]
+            ax.errorbar(i + dx, pt, yerr=[[pt - lo], [hi - pt]], fmt=marker, markersize=9, markerfacecolor=face, markeredgecolor=edge, markeredgewidth=1.6, ecolor=edge, elinewidth=1.3, capsize=3, lw=0, zorder=4)
+    xr = len(OLMO_TRANSITIONS)
+    for mode, tier, _lab, dx, marker, face, edge in MODES:
+        for key, unit in units.items():
+            v = unit["tier_retention"][tier]
+            big = key == "pooled"
+            ax.plot(xr + dx + (0 if big else 0.0), v, marker=marker, markersize=9 if big else 5.5, markerfacecolor=face if big else PAPER, markeredgecolor=edge, markeredgewidth=1.6 if big else 1.1, lw=0, alpha=1.0 if big else 0.8, zorder=5 if big else 3)
+    ax.axvline(xr - 0.5, color=MUTED, lw=1.0, ls=(0, (2, 3)), zorder=1)
+    ax.set_xlim(-0.6, xr + 0.6)
+    ax.set_xticks(xs)
+    ax.set_xticklabels([label for _k, label in OLMO_TRANSITIONS] + [REASONING_LABEL], fontsize=12.5, linespacing=1.15)
+    ax.set_ylabel("Retention (transferred $R^2$ / own $R^2$)  ↑", labelpad=12)
+    ax.set_title("Reasoning SFT changes the map much more than other forms of post-training", loc="left", y=1.04, pad=0, fontweight=650, fontsize=17)
+    ax.text(0.0, 1.14, "PREVIOUS STAGE'S MAP APPLIED TO THE NEXT STAGE, AFTER THREE CORRECTIONS FIT ON TRAINING FOLDS", transform=ax.transAxes, fontsize=11.5, fontweight=700, color=MUTED, va="bottom", ha="left")
+    handles = [Line2D([0], [0], marker=m, markersize=9, markerfacecolor=f, markeredgecolor=e, markeredgewidth=1.6, lw=0, label=lab) for _o, _t, lab, _dx, m, f, e in MODES]
+    handles.append(Line2D([0], [0], marker="o", markersize=5.5, markerfacecolor=PAPER, markeredgecolor=INK, markeredgewidth=1.1, lw=0, label="single corpus (reasoning SFT)"))
+    handles.append(Line2D([0], [0], color=MUTED, lw=1.3, ls=(0, (4, 3)), label="own map of the next stage (retention 1)"))
+    fig.text(0.10, 0.965, "CORRECTION", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
+    fig.legend(handles=handles, loc="upper left", bbox_to_anchor=(0.099, 0.948), ncol=5, frameon=False, columnspacing=1.2, handlelength=1.4, handletextpad=0.6, borderaxespad=0)
+    return fig
+
+
 def _git_state() -> dict[str, str | bool | None]:
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, check=False, capture_output=True, text=True)
     dirty = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"], cwd=ROOT, check=False, capture_output=True, text=True)
@@ -157,10 +221,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--stem", default=DEFAULT_STEM)
+    parser.add_argument("--mode", choices=("compare", "full"), default="compare", help="compare: the three Section 4.3 corrections next to the OLMo stages (paper figure); full: all nine ladder tiers")
     args = parser.parse_args(argv)
     units = load_units()
+    olmo = load_olmo() if args.mode == "compare" else None
     font = set_c2a_style()
-    fig = make_figure(units)
+    fig = make_compare_figure(units, olmo) if args.mode == "compare" else make_figure(units)
     stem = args.out_dir / args.stem
     outputs = save_c2a_figure(
         fig,
@@ -184,6 +250,9 @@ def main(argv: list[str] | None = None) -> int:
                     "retention": "tier held-out R^2 divided by the post-SFT model's own context-to-answer R^2 on the same rows",
                     "band": "0.02 elicitation band rescaled by the unit's reference R^2 over the #1336 anchor 0.6731; shaded for the pooled unit",
                 },
+                "mode": args.mode,
+                "olmo_retention": olmo,
+                "olmo_source": str(OLMO_SUMMARY.relative_to(ROOT)),
                 "tiers": [{"key": k, "label": l.replace("\n", " ")} for k, l in TIERS],
                 "units": units,
                 "outputs": {k: str(v.relative_to(ROOT)) for k, v in outputs.items()},
