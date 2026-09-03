@@ -2341,16 +2341,16 @@
    "prompt_sha256": "0221820b45cc346a7c4b52dc1fe9b15902dee349c3b65c4cdbe6255cad11bac1",
    "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
-  "sycophancy|syco_mmlu_humanities|mmlupro-10947": {
-   "prompt_sha256": "011f8ca82b80ca2913a0ceec8d7c3246d9515d3c2b324479c58fee068f95b2af",
-   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
-  },
   "sycophancy|syco_mmlu_humanities|mmlupro-10980": {
    "prompt_sha256": "022e72160bcf363317a9041597d6ccff944df80c7c1d0327aace5a18e8e3a7df",
    "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
   "sycophancy|syco_mmlu_humanities|mmlupro-11021": {
    "prompt_sha256": "0062ae47afce3e10e8f0a77f29371446c997e723ada128a6776650ba4830599a",
+   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
+  },
+  "sycophancy|syco_mmlu_humanities|mmlupro-4687": {
+   "prompt_sha256": "06bd0f7de39121a2e0752c25506106ced97b9a8099e83f1cace503bb794e7435",
    "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
   "sycophancy|syco_mmlu_humanities|mmlupro-4689": {
@@ -2361,10 +2361,6 @@
    "prompt_sha256": "03405f87fe68658e539552ad48ddd6327d53573e553807c8b36313f024477890",
    "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
-  "sycophancy|syco_mmlu_humanities|mmlupro-4978": {
-   "prompt_sha256": "078a03f28164e5101f75a7c08d3bd49a61a99d13d7db584cafce4389fbf8ea35",
-   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
-  },
   "sycophancy|syco_mmlu_humanities|mmlupro-5009": {
    "prompt_sha256": "01b8e6d4f59df3dcc92ffb1af89b9d8b22eee3a3e305e13358b481393ccd0858",
    "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
@@ -2373,16 +2369,20 @@
    "prompt_sha256": "05706a6c680916a52eb1f7b4665671995fb7134b097e05706675ce8034d05bc5",
    "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
-  "sycophancy|syco_mmlu_humanities|mmlupro-5029": {
-   "prompt_sha256": "06cae0753781f04052f3f19dcd44d390aaf306022d795ab33403e04c32727e0b",
-   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
-  },
   "sycophancy|syco_mmlu_humanities|mmlupro-5126": {
    "prompt_sha256": "011554a15dff5c455c82abe01e5894836de4c01a1defc2bb4e08123b0ae25150",
    "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
+  "sycophancy|syco_mmlu_humanities|mmlupro-5141": {
+   "prompt_sha256": "03652ef342d4452b66f1de05e580b2ce19c6239e5a02ef2b19f43a02d940578a",
+   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
+  },
   "sycophancy|syco_mmlu_humanities|mmlupro-5155": {
    "prompt_sha256": "02dd2ddc904f8077905114891584b9083119bcdd39b46ed3defdae79eb22864a",
+   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
+  },
+  "sycophancy|syco_mmlu_humanities|mmlupro-5344": {
+   "prompt_sha256": "08f2c0c8e510838a1122796c7d53a2117a191cd5830af0ead3f911feab995980",
    "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
   "sycophancy|syco_mmlu_humanities|mmlupro-5423": {
@@ -2425,6 +2425,14 @@
    "prompt_sha256": "0121b76e0524d0d4a23bb0a18144a4dd007d48cddffa14a130a9c6e461c39fc0",
    "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
   },
+  "sycophancy|syco_mmlu_social_health|mmlupro-234": {
+   "prompt_sha256": "0120e45e4ab81732de2502674cf2d2d2e042947ddcb170831d2ae715b19f6f63",
+   "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
+  },
+  "sycophancy|syco_mmlu_social_health|mmlupro-2665": {
+   "prompt_sha256": "01b26c7e2af260ae2ac4092b5dcb1be5dacc51377c15d4644e7a3578011d1a2c",
+   "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
+  },
   "sycophancy|syco_mmlu_social_health|mmlupro-2780": {
    "prompt_sha256": "004acd1df6f30deb97b1d0a8c15734d40474c910be3589d4c476e2f7bbb5f8ff",
    "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
@@ -2435,14 +2443,6 @@
   },
   "sycophancy|syco_mmlu_social_health|mmlupro-505": {
    "prompt_sha256": "0029d3c90ef05e94f3b5f4f33d6560dc8e30049f9248affd5edc455b4acf9ff2",
-   "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
-  },
-  "sycophancy|syco_mmlu_social_health|mmlupro-6038": {
-   "prompt_sha256": "0055057f15545db674a7c408db493aed8618aca969973798c263740ea2845837",
-   "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
-  },
-  "sycophancy|syco_mmlu_social_health|mmlupro-6182": {
-   "prompt_sha256": "0037e92c1898c3f9be5ea510047e6be61075b7d95c509b77903b24a80daf0f15",
    "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
   },
   "sycophancy|syco_mmlu_social_health|mmlupro-6542": {
@@ -2456,10 +2456,6 @@
   "sycophancy|syco_mmlu_social_health|mmlupro-7649": {
    "prompt_sha256": "007623c7b06471534e76ff7e1767dfb63eb60124c92eda6af41140e3e8a4a1c0",
    "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
-  },
-  "sycophancy|syco_mmlu_stem|mmlupro-10314": {
-   "prompt_sha256": "00be3bbd1e51a285ddd8840b22d7d4276e7c9eab96a7aa141cdb1e38989b8391",
-   "source_ref": "keyed:mmlu_pro:category=math,physics,chemistry,engineering,biology,computer science"
   },
   "sycophancy|syco_mmlu_stem|mmlupro-10563": {
    "prompt_sha256": "00a9fd07ee647b48d1fea4a366810b6f8dee13126037209e452cf0e82b4e8e30",
@@ -2475,6 +2471,10 @@
   },
   "sycophancy|syco_mmlu_stem|mmlupro-11704": {
    "prompt_sha256": "001ad7cb29c5a370c5fcb43ee612f8bdd2cbbaa4e73836053bf250cf99c1b2c8",
+   "source_ref": "keyed:mmlu_pro:category=math,physics,chemistry,engineering,biology,computer science"
+  },
+  "sycophancy|syco_mmlu_stem|mmlupro-11998": {
+   "prompt_sha256": "008da7f2a93e7ce8c02ba273f5ae176f4bf80d6b559f66eb7f9704e46705f3e8",
    "source_ref": "keyed:mmlu_pro:category=math,physics,chemistry,engineering,biology,computer science"
   },
   "sycophancy|syco_mmlu_stem|mmlupro-3504": {

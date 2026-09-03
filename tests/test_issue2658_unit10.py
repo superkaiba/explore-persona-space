@@ -69,9 +69,10 @@ EXPECTED_LEDGER_TOTALS = {
     "n_cells_not_estimable": 21,
     "by_cause": {"bank-too-small": 15, "extraction-barred": 6},
 }
-# Pilot pins frozen BEFORE unit 10; the re-freeze must not change them.
+# Pilot pins deliberately re-frozen in the group-D r3 round (6 of 629 ids
+# moved across the r2+r3 manifest re-freezes; 0 retained ids changed record).
 PIN_N_ITEMS = 629
-PIN_ITEMS_SHA256 = "f7ad6969dc8c0e3b7c85c977a723acf18948aad7de5160a884fc71e348f98541"
+PIN_ITEMS_SHA256 = "4be7d26c887ac2945bd06cad2588668f524baecc914a7a9004577c5f7cec7959"
 
 
 def _load_disk(path: Path) -> dict:
@@ -223,13 +224,10 @@ def test_ledger_totals_exact():
 
 
 def test_pilot_pins_invariant_across_refreeze():
-    # Pins the committed prompt_pins.json ARTIFACT (frozen before unit 10; the
-    # unit-10 and group-G re-freezes did not move pilot selection). NOTE: the
-    # group-D leak-fix re-freeze moved 2 of 629 pilot ids in the FRAME MANIFEST
-    # (syco_mmlu_social_health: mmlupro-6038/-6182 out, mmlupro-234/-2665 in),
-    # so the pin table is membership-stale vs the manifest until its own
-    # deliberate re-freeze — this test certifies the artifact bytes, NOT
-    # manifest<->pins consistency.
+    # Pins the committed prompt_pins.json ARTIFACT bytes. The table was
+    # deliberately re-frozen in the group-D r3 round (the r2 + r3 manifest
+    # re-freezes moved 2 + 4 of 629 pilot ids); membership consistency vs the
+    # manifest is the SEPARATE test below — this one certifies the bytes.
     pin_path = F.OUT_DIR / "prompt_pins.json"
     pins = _load_disk(pin_path)
     assert pins["n_items"] == PIN_N_ITEMS
@@ -237,3 +235,49 @@ def test_pilot_pins_invariant_across_refreeze():
         json.dumps(pins["items"], sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
     assert got == PIN_ITEMS_SHA256
+
+
+def _manifest_pilot_ids(body: dict) -> set[str]:
+    ids: set[str] = set()
+    for rr in body["rows"]:
+        for cell_ids in rr["pilot_selection"]["per_cell_item_ids"].values():
+            ids.update(cell_ids)
+    return ids
+
+
+def test_prompt_pins_membership_matches_manifest_pilot_selection():
+    # Group-D r3 (re-review MAJOR): a stale pin table wedges LOUDLY at resolve
+    # time (verify_against_pins raises on unpinned ids before engine spend),
+    # but the SUBSET direction — pins a strict superset of the selection —
+    # would be silent, and the suite was green against a stale table. Both
+    # directions asserted here against the COMMITTED artifacts.
+    manifest = _load_disk(F.FRAME_MANIFEST_PATH)
+    pins = _load_disk(F.OUT_DIR / "prompt_pins.json")
+    selection = _manifest_pilot_ids(manifest)
+    pinned = set(pins["items"])
+    missing = sorted(selection - pinned)  # would wedge resolution
+    stale = sorted(pinned - selection)  # would be SILENT without this test
+    assert not missing, f"{len(missing)} selected pilot ids unpinned: {missing[:4]}"
+    assert not stale, f"{len(stale)} pinned ids no longer selected: {stale[:4]}"
+    assert pins["n_items"] == len(selection)
+
+
+def test_evidence_packets_cover_judge_bearing_pilot_selection():
+    # Every evidence-bearing row's selected pilot item must be in the frozen
+    # evidence store — as a packet or a DOCUMENTED exclusion, never absent.
+    manifest = _load_disk(F.FRAME_MANIFEST_PATH)
+    store = _load_disk(F.OUT_DIR / "evidence_packets.json")
+    evidence_rows = {r for r in F.C.ROW_IDS if F.C.CONSTRUCTS[r].uses_evidence_packet}
+    assert evidence_rows, "no evidence-bearing rows registered — fixture drift"
+    covered = set(store["items"])
+    excluded = {e["item_id"] for e in store["exclusions"]}
+    unaccounted = []
+    for rr in manifest["rows"]:
+        if rr["row"] not in evidence_rows:
+            continue
+        for cell_ids in rr["pilot_selection"]["per_cell_item_ids"].values():
+            unaccounted += [i for i in cell_ids if i not in covered and i not in excluded]
+    assert not unaccounted, (
+        f"{len(unaccounted)} judge-bearing pilot ids have neither an evidence "
+        f"packet nor a documented exclusion: {sorted(unaccounted)[:4]}"
+    )
