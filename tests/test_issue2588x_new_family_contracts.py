@@ -301,24 +301,37 @@ def test_dequantize_fp8_embeddings_gathers_and_scales():
         G._dequantize_fp8_embeddings(bad, lambda name: None)
 
 
-def test_config_with_pad_token_only_patches_missing(monkeypatch):
-    """DeepSeek-V4 configs lack pad_token_id -> patched copy with None; a
-    config that has it (even None-valued) -> no override (untouched path)."""
+def test_native_config_undoes_registry_swap(monkeypatch):
+    """When AutoConfig returns a foreign class (vLLM's registered config), the
+    loader reloads with transformers' native class for the model_type and
+    defaults a missing pad_token_id to None; a native config passes through."""
     import types
     import transformers
     import issue2330_qwen35_generate_capture as G
 
-    class NoPad(types.SimpleNamespace):
-        pass
+    native = transformers.LlamaConfig(vocab_size=8, hidden_size=4, num_hidden_layers=1,
+                                      num_attention_heads=1, intermediate_size=4)
+    swapped = types.SimpleNamespace(model_type="llama")  # no pad_token_id, not native
+    calls = {"native": 0}
 
-    fake = {
-        "deepseek-ai/DeepSeek-V4-Flash-0731": NoPad(bos_token_id=0, eos_token_id=1),
-        "zai-org/GLM-5.3": types.SimpleNamespace(pad_token_id=154820),
-        "Qwen/Qwen3-8B": types.SimpleNamespace(pad_token_id=None),
-    }
+    def fake_native(mid, **kw):
+        calls["native"] += 1
+        return native
+
+    monkeypatch.setattr(transformers.LlamaConfig, "from_pretrained", staticmethod(fake_native))
     monkeypatch.setattr(
-        transformers.AutoConfig, "from_pretrained", staticmethod(lambda mid, **kw: fake[mid]))
-    fixed = G._config_with_pad_token("deepseek-ai/DeepSeek-V4-Flash-0731")
-    assert fixed is not None and fixed.pad_token_id is None and fixed.bos_token_id == 0
-    assert G._config_with_pad_token("zai-org/GLM-5.3") is None
-    assert G._config_with_pad_token("Qwen/Qwen3-8B") is None
+        transformers.AutoConfig, "from_pretrained", staticmethod(lambda mid, **kw: swapped))
+    out = G._native_config("meta-llama/x")
+    assert out is native and calls["native"] == 1
+    assert hasattr(out, "pad_token_id")
+
+    monkeypatch.setattr(
+        transformers.AutoConfig, "from_pretrained", staticmethod(lambda mid, **kw: native))
+    out2 = G._native_config("meta-llama/x")
+    assert out2 is native and calls["native"] == 1  # no reload when already native
+
+    nopad = types.SimpleNamespace(model_type="not_a_real_model_type")
+    monkeypatch.setattr(
+        transformers.AutoConfig, "from_pretrained", staticmethod(lambda mid, **kw: nopad))
+    out3 = G._native_config("x/y")
+    assert out3 is nopad and out3.pad_token_id is None

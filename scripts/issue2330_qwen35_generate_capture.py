@@ -797,9 +797,7 @@ def _load_capture_model(model_id: str, device: str, dtype_str: str):
     else:
         device_map = None
     load_kwargs: dict = {"device_map": device_map}
-    cfg_fix = _config_with_pad_token(model_id)
-    if cfg_fix is not None:
-        load_kwargs["config"] = cfg_fix
+    load_kwargs["config"] = _native_config(model_id)
     quant_method = _quant_method(model_id)
     if quant_method == "fp8":
         logger.info("[load] fp8 checkpoint detected (%s): native load, no dtype kwarg", model_id)
@@ -925,21 +923,40 @@ def _dequantize_fp8_embeddings(model, scale_lookup) -> int:
     return patched
 
 
-def _config_with_pad_token(model_id: str):
-    """DeepSeek-V4 configs ship no ``pad_token_id`` and transformers 5.16 does
-    not default it, so ``DeepseekV4ForCausalLM.__init__`` dies with
-    "'DeepseekV4Config' object has no attribute 'pad_token_id'" (job 61685,
-    after 3.5 h of gen). Return a config with ``pad_token_id=None`` set
-    (``nn.Embedding(padding_idx=None)``, i.e. no padding row) when the
-    attribute is missing; None when the checkpoint config already has it so
-    every other row keeps the untouched from_pretrained path."""
+def _native_config(model_id: str):
+    """Checkpoint config loaded with transformers' OWN class for its
+    ``model_type``, immune to the process's AutoConfig registry state.
+
+    Building a vLLM engine earlier in the same process (the gen phase) runs
+    ``vllm.transformers_utils.config.get_config``, which calls
+    ``AutoConfig.register(model_type, <vllm class>, exist_ok=True)`` for the
+    model types vLLM ships its own config for (deepseek_v4, qwen4_exp,
+    qwen3_5_moe, ...). From then on ``AutoConfig.from_pretrained`` returns the
+    vLLM class: it lacks ``pad_token_id`` (job 61685: "'DeepseekV4Config'
+    object has no attribute 'pad_token_id'") and is not a key of the AutoModel
+    mappings (job 62415: the factory's sub-config lookup dies with
+    "'NoneType' object has no attribute 'get'"). Reproduced 2026-09-03 on the
+    charmander login node. So: read the model_type through AutoConfig, then
+    reload with the class ``CONFIG_MAPPING_NAMES`` names for it and pass that
+    object as ``config=``. A missing ``pad_token_id`` still defaults to None
+    (no padding row). Identical object to the untouched path when nothing has
+    been registered over the native class."""
+    import transformers
     from transformers import AutoConfig
+    from transformers.models.auto.configuration_auto import CONFIG_MAPPING_NAMES
 
     cfg = AutoConfig.from_pretrained(model_id)
-    if hasattr(cfg, "pad_token_id"):
-        return None
-    logger.info("[load] config has no pad_token_id; setting None (no padding row)")
-    cfg.pad_token_id = None
+    native_name = CONFIG_MAPPING_NAMES.get(getattr(cfg, "model_type", None))
+    native_cls = getattr(transformers, native_name, None) if native_name else None
+    if native_cls is not None and type(cfg) is not native_cls:
+        logger.info(
+            "[load] AutoConfig returned %s.%s for %s; reloading with native transformers.%s",
+            type(cfg).__module__, type(cfg).__name__, model_id, native_name,
+        )
+        cfg = native_cls.from_pretrained(model_id)
+    if not hasattr(cfg, "pad_token_id"):
+        logger.info("[load] config has no pad_token_id; setting None (no padding row)")
+        cfg.pad_token_id = None
     return cfg
 
 
