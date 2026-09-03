@@ -18,12 +18,20 @@ import sys
 import textwrap
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-from matplotlib.colors import to_rgb
-from matplotlib.patches import FancyBboxPatch, Rectangle
-
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+# #847: thread caps must land BEFORE the matplotlib/numpy imports below. On the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS, and
+# the BLAS pools freeze at import time.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.colors import to_rgb  # noqa: E402
+from matplotlib.patches import FancyBboxPatch, Rectangle  # noqa: E402
+
 
 from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     INK,

@@ -140,7 +140,7 @@
   "metadata": {
     "context_summary": "u_last",
     "folds": "six size-matched IID random-row folds (seed 190231)",
-    "generated_utc": "2026-09-03T20:04:31Z",
+    "generated_utc": "2026-09-03T20:46:47Z",
     "hf_revision": "3256c8efcef5f10ca525efeb2039636eaec8fad7",
     "inputs": {
       "latest": {

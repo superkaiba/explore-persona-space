@@ -21,7 +21,7 @@ from explore_persona_space.analysis.c2a_plot_style import (
 
 def test_c2a_style_contract() -> None:
     font = set_c2a_style()
-    assert STYLE_VERSION == "c2a-v1"
+    assert STYLE_VERSION == "c2a-v2"
     assert font in {"Inter", "Noto Sans", "DejaVu Sans"}
     assert matplotlib.rcParams["figure.facecolor"] == PAPER
     assert PREDICTOR_STYLES["ridge"].color == "#176B87"
@@ -49,8 +49,10 @@ def test_score_axis_and_export_bundle(tmp_path) -> None:
     )
     plt.close(fig)
 
-    assert set(outputs) == {"pdf", "png", "grayscale"}
-    assert all(path.exists() and path.stat().st_size > 0 for path in outputs.values())
+    assert set(outputs) == {"pdf", "png", "grayscale", "record"}
+    for key in ("pdf", "png", "grayscale"):
+        assert outputs[key].exists() and outputs[key].stat().st_size > 0
+    assert outputs["record"]["style_version"] == STYLE_VERSION
     with Image.open(outputs["png"]) as color:
         assert color.mode in {"RGB", "RGBA"}
         assert color.getpixel((0, 0))[:3] == (255, 255, 255)

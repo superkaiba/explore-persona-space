@@ -29,15 +29,23 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-import matplotlib as mpl
-import matplotlib.colors as mcolors
-import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib.colors import LinearSegmentedColormap
-from matplotlib.lines import Line2D
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+# #847: thread caps must land BEFORE the matplotlib/numpy imports below. On the
+# shared VM, load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS, and
+# the BLAS pools freeze at import time.
+load_dotenv()
+
+import matplotlib as mpl  # noqa: E402
+import matplotlib.colors as mcolors  # noqa: E402
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
+from matplotlib.lines import Line2D  # noqa: E402
+
 
 from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     INK,
