@@ -27,7 +27,7 @@
 # Sequence: [gen wave: N shards] -> [generation completeness gate against the
 # per-shard frozen gen_order_manifest cell lists] -> [ONE raw-completions HF
 # upload, production only] -> [GPU-memory reclaim gate: reap this run's
-# orphaned vLLM workers, verify the allocation's cards actually freed] ->
+# orphaned session processes, verify the allocation's cards actually freed] ->
 # [capture wave: N shards, --upload per shard] ->
 # [phase=done].  Per-shard rcs are collected individually (wait "$pid"); any
 # non-zero rc fails the launcher loud, naming every failed shard — a bare
@@ -65,6 +65,10 @@
 #     is production-SCALE margins — the full 10/prompt KV footprint and the
 #     8-card teardown timing vs EPS_P1_RECLAIM_TIMEOUT_S (a scale cut, same
 #     code path).
+#   - The setsid self-promotion re-exec branch is a NO-OP self-check on the
+#     production launch path (setsid nohup bash ... is already a session
+#     leader); the re-exec branch itself is exercised by the test suite's
+#     non-session-leader invocations, not by a production smoke.
 #   Everything else — width derivation, CVD pinning, rc collection, gate,
 #   GPU-memory reclaim, capture chain — is the IDENTICAL launcher code path
 #   in both modes.
@@ -79,9 +83,11 @@
 # EPS_P1_SMOKE_RESPONSES (default 2).
 # Reclaim-gate knobs: EPS_P1_RECLAIM_THRESHOLD_MIB (default 1024),
 # EPS_P1_RECLAIM_TIMEOUT_S (default 120), EPS_P1_RECLAIM_POLL_S (default 5),
-# EPS_P1_RECLAIM_KILL_GRACE_S (default 10).
-# Exit codes: 2 usage/width derivation, 3 failed shard leg(s), 4 generation
-# completeness gate, 5 GPU-memory reclaim gate (unreclaimed or unverifiable).
+# EPS_P1_RECLAIM_KILL_GRACE_S (default 10). EPS_P1_SETSID_REEXEC is an
+# INTERNAL re-exec loop-guard sentinel — never set it by hand.
+# Exit codes: 2 usage/width derivation/session-leader invariant, 3 failed
+# shard leg(s), 4 generation completeness gate, 5 GPU-memory reclaim gate
+# (unreclaimed or unverifiable).
 #
 # Logs/breadcrumbs (absolute; stated in the P1 dispatch note for re-attach):
 #   $LOG_DIR/launcher.pid
@@ -89,6 +95,53 @@
 #   (label in {generate, capture, generate_smoke, capture_smoke})
 
 set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Session-leader self-promotion — the invariant the sid reap predicate needs.
+# The GPU-reclaim gate below selects victims by SESSION ID; that predicate is
+# exact only when this launcher IS the session leader (sid == $$). The
+# production launch path (setsid nohup bash ...) is already one — there this
+# block is a pure no-op self-check. A plain interactive
+# `bash scripts/issue2658_p1_launch.sh` inherits the ssh/tmux shell's sid and
+# sid-matching would then sweep unrelated sibling processes, so it re-execs
+# itself under setsid ONCE (env sentinel EPS_P1_SETSID_REEXEC guards against a
+# loop), preserving argv + stdout/stderr; `setsid -w` waits and forwards the
+# child's exit status. If the invariant still fails, exit 2 — the sid reap
+# must NEVER run without it.
+# ---------------------------------------------------------------------------
+
+sid_of() {
+    # Session id of pid $1 — field 6 of /proc/<pid>/stat. comm (field 2) may
+    # contain spaces/parens, so parse AFTER the last ')'. Prints nothing and
+    # returns 1 for a dead/unreadable pid. Pure builtins (no child processes),
+    # so calling this during the reap's victim walk cannot put transient
+    # children of its own into the candidate set.
+    local statline="" rest sess _
+    { read -r statline < "/proc/$1/stat"; } 2>/dev/null || [ -n "$statline" ] || return 1
+    rest="${statline##*) }"
+    # rest: state ppid pgrp session tty_nr ...
+    read -r _ _ _ sess _ <<< "$rest"
+    printf '%s' "$sess"
+}
+
+SELF_SID="$(sid_of $$ || true)"
+if [ "$SELF_SID" != "$$" ]; then
+    if [ -n "${EPS_P1_SETSID_REEXEC:-}" ]; then
+        echo "FATAL: not a session leader after setsid re-exec (pid=$$ sid=$SELF_SID) —" \
+            "refusing to run: the GPU-reclaim gate's session-id reap is only safe when" \
+            "this launcher owns its session" >&2
+        exit 2
+    fi
+    if ! command -v setsid >/dev/null 2>&1; then
+        echo "FATAL: pid=$$ is not a session leader (sid=$SELF_SID) and setsid is" \
+            "unavailable to self-promote — refusing the session-id reap without the" \
+            "leader invariant" >&2
+        exit 2
+    fi
+    echo "[p1] self-promoting to session leader (setsid re-exec; pid=$$ sid=$SELF_SID)"
+    export EPS_P1_SETSID_REEXEC=1
+    exec setsid -w bash "$0" "$@"
+fi
 
 command -v uv >/dev/null 2>&1 || export PATH="$PATH:$HOME/.local/bin"
 
@@ -118,15 +171,15 @@ LOG_DIR="${EPS_P1_LOG_DIR:-$REPO_ROOT/logs/issue_2658_p1}"
 mkdir -p "$LOG_DIR"
 printf '%s\n' "$$" > "$LOG_DIR/launcher.pid"
 
-# Reclaim-gate knobs + the per-invocation kill-scope tag. The tag is exported
-# BEFORE any wave launches so every shard child — and every worker subprocess
-# vLLM spawns from a shard — inherits it in its environment.
+# Reclaim-gate knobs. (The former EPS_P1_RUN_TAG environ kill-scope tag is
+# deliberately GONE, not deprecated-but-present: vLLM's setproctitle destroys
+# worker environs — see the gpu_reclaim block below — so an environ-keyed
+# scope is structurally unable to identify exactly the processes the gate must
+# kill. The kill scope is the launcher's SESSION ID now.)
 RECLAIM_THRESHOLD_MIB="${EPS_P1_RECLAIM_THRESHOLD_MIB:-1024}"
 RECLAIM_TIMEOUT_S="${EPS_P1_RECLAIM_TIMEOUT_S:-120}"
 RECLAIM_POLL_S="${EPS_P1_RECLAIM_POLL_S:-5}"
 RECLAIM_KILL_GRACE_S="${EPS_P1_RECLAIM_KILL_GRACE_S:-10}"
-EPS_P1_RUN_TAG="issue2658-p1-$$-$(date +%s)"
-export EPS_P1_RUN_TAG
 
 # ---------------------------------------------------------------------------
 # GPU allocation -> ALLOC (physical id array) + NUM_SHARDS.
@@ -320,28 +373,57 @@ PY
 # Between-wave GPU-memory reclaim gate (exit 5). issue2658_generate.py ends
 # with a deliberate os._exit(0) after flush (vLLM worker children survive
 # interpreter finalization otherwise — gotchas.md vLLM worker-subprocess
-# teardown), which ORPHANS the VLLM::EngineCore worker subprocesses; measured
-# on pod-2658: 8 orphans holding 74,592 MiB EACH after every gen shard parent
-# exited rc=0, and the teacher-forced capture wave then OOMed on all 8 shards.
-# So after every engine-constructing (generate) wave: reap THIS RUN's orphaned
-# workers, then VERIFY memory actually returned before the next wave — the
-# verification is the gate, not the reap.
+# teardown), which ORPHANS the vLLM worker subprocesses; measured on pod-2658:
+# 8 orphans holding 74,592 MiB EACH after every gen shard parent exited rc=0,
+# and the teacher-forced capture wave then OOMed on all 8 shards. So after
+# every engine-constructing (generate) wave: reap THIS RUN's orphaned workers,
+# then VERIFY memory actually returned before the next wave — the verification
+# is the gate, not the reap.
 #
-# Pid-namespace trap: nvidia-smi --query-compute-apps reports HOST pids that
-# do not exist in the container's pid namespace (measured: host 3701656+ vs
-# container 9016+), so nvidia-smi pids must never feed kill. Victims are found
-# container-side — pgrep on the VLLM::EngineCore cmdline, one char bracketed
-# so the probe cannot match its own command line — and killed by CAPTURED pid
-# (TERM -> bounded grace -> KILL); nvidia-smi is used ONLY for the memory
-# verification.
+# Victim predicate: SESSION ID — every live pid whose sid equals this
+# launcher's own pid (the launcher is a session leader; asserted at the top
+# and again here), excluding the launcher itself. The reap runs after the
+# wave's `wait` has returned, so every intended child is already dead:
+# anything still carrying the session's sid is by definition an orphan of this
+# run. Recorded reasons the predicate is NOT keyed on environ or on process
+# name — do not reintroduce either (diagnosed to root cause on pod-2658,
+# 2026-09-02 relaunch):
+#   - setproctitle destroys environ: vLLM renames workers via
+#     setproctitle("VLLM::EngineCore"), which grows the title into the
+#     adjacent argv/environ region and DESTROYS the environ block. Measured on
+#     pids 20464 + 20854: environ entries 4 (a normal process has dozens),
+#     EPS_P1_RUN_TAG hits 0, zero EPS* key names, cmdline rewritten to
+#     VLLM::EngineCore plus padding. STRUCTURAL, not flaky — no export
+#     plumbing can put a tag where setproctitle has overwritten it; the
+#     environ-tag scope killed nothing on the relaunch and the verify
+#     correctly refused (exit 5).
+#   - name matching misses half the orphans: the same relaunch left 16, not 8
+#     — 8 renamed VLLM::EngineCore (20464 20545 20628 20631 20644 20654 20850
+#     20854) and 8 still named python3 (20463 20544 20626 20630 20643 20653
+#     20849 20853), one paired with each — and pgrep -f 'VLLM::EngineCor[e]'
+#     saw only the renamed half. vLLM's internal worker naming is not a
+#     contract to depend on.
+#   - session id survives BOTH re-parenting and setproctitle: all 16 measured
+#     orphans had sid == the launcher's pid (it ran under setsid) and
+#     ppid == 1 after re-parenting; nothing outside the run shared that sid.
 #
-# Kill scope: a name-matched candidate is killed only when /proc/<pid>/environ
-# carries THIS invocation's EPS_P1_RUN_TAG (launcher -> shard -> vLLM spawn
-# children all inherit it); name matches without the tag are logged and left
-# alone, so a stray unrelated vLLM on a shared box is never swept. Stated
-# residual (best-effort scope): an orphan that is NOT a VLLM::EngineCore
-# process, or whose environ is unreadable, is not reaped — the memory verify
-# then FAILS LOUD (exit 5) instead of launching capture into held memory.
+# Kill mechanics: by CAPTURED pid (TERM -> bounded grace -> KILL), with a
+# kill-time /proc re-read of each candidate's sid — a transient enumeration
+# child that died and whose pid got reused re-reads dead or with a foreign
+# sid and is skipped. The candidate walk itself is a pure-bash /proc glob
+# (expanded once) using only builtins, so the reap code spawns no ps/awk
+# children whose own pids could enter the candidate set. Pid-namespace trap
+# (unchanged): nvidia-smi --query-compute-apps reports HOST pids that do not
+# exist in the container's pid namespace (measured: host 3701656+ vs
+# container 9016+) — nvidia-smi pids never feed kill; nvidia-smi is used ONLY
+# for the memory verification.
+#
+# Scoping safety, earned structurally: a stray vLLM belonging to another
+# session has a different sid and is invisible to the predicate; vLLM-named
+# processes NOT selected are logged ("not ours to kill") so the scoping stays
+# auditable. Stated residual: an orphan somehow OUTSIDE this session is not
+# reaped — the memory verify then FAILS LOUD (exit 5) instead of launching
+# capture into held memory.
 # ---------------------------------------------------------------------------
 
 alloc_in_use() {
@@ -392,30 +474,70 @@ reclaim_gpu_between_waves() {
     local start deadline now offending
     start="$(date +%s)"
     deadline=$((start + RECLAIM_TIMEOUT_S))
-    local candidates=() victims=() foreign=() pid
-    mapfile -t candidates < <(pgrep -f 'VLLM::EngineCor[e]' || true)
-    for pid in "${candidates[@]}"; do
-        if tr '\0' '\n' 2>/dev/null < "/proc/$pid/environ" \
-                | grep -qxF "EPS_P1_RUN_TAG=$EPS_P1_RUN_TAG"; then
+    # The invariant that makes the sid predicate exact — never reap without it.
+    local sid_now
+    sid_now="$(sid_of $$ || true)"
+    if [ "$sid_now" != "$$" ]; then
+        echo "FATAL: session-leader invariant broken at reap time (pid=$$ sid=$sid_now)" \
+            "— refusing to run the session-id reap without it" >&2
+        exit 2
+    fi
+    # Candidate walk: every live pid in this launcher's session, excluding the
+    # launcher itself. Pure-bash /proc glob (expanded once) + builtin reads —
+    # the walk spawns no ps/awk children that could enter the candidate set
+    # (sid_of's command substitution forks a subshell, but the glob list is
+    # already fixed, and the kill-time re-read below drops reused pids).
+    local victims=() statfile pid sess
+    for statfile in /proc/[0-9]*/stat; do
+        pid="${statfile#/proc/}"
+        pid="${pid%/stat}"
+        if [ "$pid" = "$$" ]; then
+            continue
+        fi
+        sess="$(sid_of "$pid" || true)"
+        if [ "$sess" = "$$" ]; then
             victims+=("$pid")
-        else
+        fi
+    done
+    # Audit line: vLLM-named processes NOT selected (different session ⇒ not
+    # ours). Bracketed pattern so pgrep cannot match its own command line.
+    local vllm_named=() foreign=() v sel
+    mapfile -t vllm_named < <(pgrep -f 'VLLM::EngineCor[e]' || true)
+    for pid in "${vllm_named[@]}"; do
+        sel=0
+        for v in "${victims[@]}"; do
+            if [ "$v" = "$pid" ]; then
+                sel=1
+                break
+            fi
+        done
+        if [ "$sel" -eq 0 ]; then
             foreign+=("$pid")
         fi
     done
     if [ "${#foreign[@]}" -gt 0 ]; then
-        echo "[phase=gpu_reclaim] leaving ${#foreign[@]} vLLM-named process(es) WITHOUT" \
-            "this run's tag alone (not ours to kill): ${foreign[*]}"
+        echo "[phase=gpu_reclaim] leaving ${#foreign[@]} vLLM-named process(es) OUTSIDE" \
+            "this launcher's session alone (not ours to kill): ${foreign[*]}"
     fi
+    # Kill-time confirm: re-read each candidate's sid from /proc — drops pids
+    # that died since the walk and any reused pid now in a foreign session.
+    local confirmed=()
+    for pid in "${victims[@]}"; do
+        sess="$(sid_of "$pid" || true)"
+        if [ "$sess" = "$$" ]; then
+            confirmed+=("$pid")
+        fi
+    done
     local level="none"
-    if [ "${#victims[@]}" -gt 0 ]; then
-        echo "[phase=gpu_reclaim] post-$label: reaping ${#victims[@]} orphaned vLLM" \
-            "worker(s) by captured pid: ${victims[*]}"
-        kill -TERM "${victims[@]}" 2>/dev/null || true
+    if [ "${#confirmed[@]}" -gt 0 ]; then
+        echo "[phase=gpu_reclaim] post-$label: reaping ${#confirmed[@]} orphaned session" \
+            "process(es) by captured pid: ${confirmed[*]}"
+        kill -TERM "${confirmed[@]}" 2>/dev/null || true
         level="TERM"
         local waited=0 alive=1
         while [ "$waited" -lt "$RECLAIM_KILL_GRACE_S" ]; do
             alive=0
-            for pid in "${victims[@]}"; do
+            for pid in "${confirmed[@]}"; do
                 if kill -0 "$pid" 2>/dev/null; then
                     alive=1
                 fi
@@ -428,7 +550,7 @@ reclaim_gpu_between_waves() {
         done
         if [ "$alive" -ne 0 ]; then
             local survivors=()
-            for pid in "${victims[@]}"; do
+            for pid in "${confirmed[@]}"; do
                 if kill -0 "$pid" 2>/dev/null; then
                     survivors+=("$pid")
                 fi
@@ -438,7 +560,7 @@ reclaim_gpu_between_waves() {
             level="KILL"
         fi
     else
-        echo "[phase=gpu_reclaim] post-$label: no orphaned vLLM workers to reap"
+        echo "[phase=gpu_reclaim] post-$label: no orphaned session processes to reap"
     fi
     # VERIFY — free memory on every allocation card is what capture actually
     # needs; a successful-looking kill is not sufficient evidence.

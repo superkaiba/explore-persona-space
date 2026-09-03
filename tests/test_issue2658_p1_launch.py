@@ -11,9 +11,14 @@ writes the same artifact shapes the real scripts write) and the HF upload leg
 No GPU, no network, no repo-root writes (out-root + logs land in tmp_path).
 
 A fake ``nvidia-smi`` (per-card memory.used driven by env / decoy liveness)
-exercises the between-wave GPU-memory reclaim gate; the reap test spawns a
-real orphaned decoy process with a VLLM::EngineCore cmdline that the gate
-must find, env-tag-scope, and kill by captured pid.
+exercises the between-wave GPU-memory reclaim gate. The reap tests spawn real
+orphaned decoy processes INSIDE the launcher's session (the launcher
+self-promotes to session leader via a setsid re-exec, and decoys spawned by
+the fake gen shard inherit its sid — the exact production topology): the gate
+must select victims by SESSION ID, never by process name and never by environ
+(vLLM's setproctitle destroys worker environs — measured on pod-2658, and
+reproduced here by launching the decoy under ``env -i``), and kill by
+captured pid. A decoy in a DIFFERENT session must survive and be reported.
 """
 
 from __future__ import annotations
@@ -23,6 +28,7 @@ import os
 import stat
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -82,10 +88,17 @@ if target.endswith("issue2658_generate.py"):
         json.dumps({"cell_order": mine})
     )
     if os.environ.get("FAKE_GEN_SPAWN_ORPHAN") == "1" and s == 0:
-        # Orphaned-vLLM-worker decoy: `exec -a` keeps the Popen pid, renames
-        # the cmdline to VLLM::EngineCore, and the process survives this fake
-        # shard's exit carrying the launcher's inherited EPS_P1_RUN_TAG.
-        p = subprocess.Popen(["bash", "-c", "exec -a VLLM::EngineCore sleep 120"])
+        # Orphaned-worker decoy: `exec -a` keeps the Popen pid, renames the
+        # cmdline (FAKE_ORPHAN_NAME, default VLLM::EngineCore), and the
+        # process survives this fake shard's exit INSIDE the launcher's
+        # session (Popen never setsids). FAKE_ORPHAN_SCRUB_ENV=1 launches it
+        # under `env -i` — the setproctitle-like shape: no readable tag
+        # anywhere in /proc/<pid>/environ.
+        name = os.environ.get("FAKE_ORPHAN_NAME", "VLLM::EngineCore")
+        inner = ["bash", "-c", f"exec -a '{name}' sleep 120"]
+        if os.environ.get("FAKE_ORPHAN_SCRUB_ENV") == "1":
+            inner = ["env", "-i", *inner]
+        p = subprocess.Popen(inner)
         Path(os.environ["FAKE_SMI_PIDFILE"]).write_text(str(p.pid))
         logline(f"ORPHAN pid={p.pid}")
     omit = os.environ.get("FAKE_GEN_OMIT_CELL")
@@ -132,9 +145,10 @@ _FAKE_SMI = '''#!/usr/bin/env python3
 """Fake ``nvidia-smi`` for the reclaim gate: two cards (matching the rig's
 CUDA_VISIBLE_DEVICES=0,1), memory.used driven by env.
 
-FAKE_SMI_PIDFILE: high while the pid in it is a live VLLM-named process, low
-after (keys the reap test's memory drop on the decoy's actual death; reads
-/proc/<pid>/cmdline so a zombie or reused pid never reads as alive).
+FAKE_SMI_PIDFILE: high while the pid in it is a live decoy process whose
+cmdline contains FAKE_SMI_MATCH (default "VLLM"), low after (keys the reap
+test's memory drop on the decoy's actual death; reads /proc/<pid>/cmdline so
+a zombie or reused pid never reads as alive).
 FAKE_SMI_USED_MIB: constant reading (the never-drops test).
 Default: low (8 MiB) — the fast no-op path.
 """
@@ -142,6 +156,7 @@ import os
 import sys
 
 high = int(os.environ.get("FAKE_SMI_HIGH_MIB", "74601"))
+match = os.environ.get("FAKE_SMI_MATCH", "VLLM").encode()
 used = None
 pidfile = os.environ.get("FAKE_SMI_PIDFILE")
 if pidfile:
@@ -149,7 +164,7 @@ if pidfile:
     try:
         pid = int(open(pidfile).read().strip())
         with open(f"/proc/{pid}/cmdline", "rb") as f:
-            if b"VLLM" in f.read():
+            if match in f.read():
                 used = high
     except (OSError, ValueError):
         pass
@@ -189,9 +204,13 @@ def rig(tmp_path):
         "FAKE_GEN_OMIT_CELL",
         "FAKE_CAPTURE_FAIL_SHARD",
         "FAKE_GEN_SPAWN_ORPHAN",
+        "FAKE_ORPHAN_NAME",
+        "FAKE_ORPHAN_SCRUB_ENV",
         "FAKE_SMI_PIDFILE",
         "FAKE_SMI_USED_MIB",
         "FAKE_SMI_HIGH_MIB",
+        "FAKE_SMI_MATCH",
+        "EPS_P1_SETSID_REEXEC",
         "EPS_P1_RECLAIM_THRESHOLD_MIB",
         "EPS_P1_RECLAIM_TIMEOUT_S",
         "EPS_P1_RECLAIM_POLL_S",
@@ -201,7 +220,11 @@ def rig(tmp_path):
     return {"env": env, "out_root": out_root, "log_dir": log_dir, "fake_log": fake_log}
 
 
-def run_launcher(rig, *args, extra_env=None, launcher=LAUNCHER):
+def run_launcher(rig, *args, extra_env=None, launcher=LAUNCHER, start_new_session=False):
+    """Run the launcher as a subprocess. By default the child bash is NOT a
+    session leader (it inherits pytest's session), so every test also
+    exercises the launcher's setsid self-promotion; ``start_new_session=True``
+    makes the child a session leader up front (the production-launch shape)."""
     env = {**rig["env"], **(extra_env or {})}
     return subprocess.run(
         ["bash", str(launcher), *args],
@@ -210,6 +233,7 @@ def run_launcher(rig, *args, extra_env=None, launcher=LAUNCHER):
         text=True,
         timeout=120,
         cwd=str(REPO_ROOT),
+        start_new_session=start_new_session,
     )
 
 
@@ -336,7 +360,7 @@ def test_reclaim_gate_noop_when_memory_already_clear(rig):
     proc = run_launcher(rig)
     assert proc.returncode == 0, proc.stdout + proc.stderr
     assert "[phase=gpu_reclaim]" in proc.stdout
-    assert "no orphaned vLLM workers to reap" in proc.stdout
+    assert "no orphaned session processes to reap" in proc.stdout
     assert "kill_level=none" in proc.stdout
     assert "memory still held" not in proc.stdout  # never slept a poll interval
     reclaim_at = proc.stdout.index("[phase=gpu_reclaim]")
@@ -367,16 +391,45 @@ def test_reclaim_gate_fails_loud_when_memory_never_drops(rig):
     assert "[phase=done]" not in proc.stdout
 
 
-def test_reclaim_gate_reaps_this_runs_orphan_and_proceeds(rig, tmp_path):
-    """A surviving VLLM::EngineCore orphan carrying this run's env tag is
-    killed by captured pid; memory (keyed on the decoy's real death) then
-    verifies low and capture proceeds."""
+def test_reclaim_reaps_setproctitle_like_orphan_with_no_readable_tag(rig, tmp_path):
+    """The exact case that failed in production: a VLLM-named orphan whose
+    environ carries NO tag (setproctitle destroys worker environs — reproduced
+    with ``env -i``), sharing the launcher's session (spawned by the fake gen
+    shard, a descendant of the self-promoted launcher — Popen never setsids,
+    so the shared sid is genuine, not simulated). Must be reaped by captured
+    pid on the sid predicate alone; memory (keyed on the decoy's real death)
+    then verifies low and capture proceeds."""
+    # Rig-premise probe: an `env -i` decoy's /proc environ carries only bash's
+    # own bookkeeping (PWD/SHLVL/_ — a handful of entries, zero EPS* keys),
+    # matching the measured production shape (setproctitle-scrubbed workers:
+    # 4 environ entries, 0 EPS keys). (/proc/<pid>/environ reflects the
+    # CURRENT program image — wait for the exec chain to reach the FINAL
+    # renamed sleep via an argv0 match; a substring match fires on the
+    # intermediate `env`/`bash` stages, whose argv also carries the name
+    # while environ is still the inherited one.)
+    probe = subprocess.Popen(["env", "-i", "bash", "-c", "exec -a 'VLLM::EngineCore' sleep 30"])
+    try:
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            argv0 = Path(f"/proc/{probe.pid}/cmdline").read_bytes().split(b"\x00")[0]
+            if argv0 == b"VLLM::EngineCore":
+                break
+            time.sleep(0.05)
+        else:
+            pytest.fail("premise probe never reached its renamed exec")
+        entries = [e for e in Path(f"/proc/{probe.pid}/environ").read_bytes().split(b"\x00") if e]
+        assert len(entries) <= 4, entries
+        assert not any(e.startswith(b"EPS") for e in entries), entries
+    finally:
+        probe.kill()
+        probe.wait()
     pidfile = tmp_path / "orphan.pid"
     try:
         proc = run_launcher(
             rig,
             extra_env={
                 "FAKE_GEN_SPAWN_ORPHAN": "1",
+                "FAKE_ORPHAN_SCRUB_ENV": "1",
                 "FAKE_SMI_PIDFILE": str(pidfile),
                 "EPS_P1_RECLAIM_TIMEOUT_S": "30",
                 "EPS_P1_RECLAIM_POLL_S": "1",
@@ -387,7 +440,7 @@ def test_reclaim_gate_reaps_this_runs_orphan_and_proceeds(rig, tmp_path):
         with contextlib.suppress(OSError, ValueError):
             os.kill(int(pidfile.read_text().strip()), 9)
     assert proc.returncode == 0, proc.stdout + proc.stderr
-    assert "reaping 1 orphaned vLLM worker(s) by captured pid" in proc.stdout
+    assert "reaping 1 orphaned session process(es) by captured pid" in proc.stdout
     assert "kill_level=TERM" in proc.stdout or "kill_level=KILL" in proc.stdout
     # The decoy is actually dead (zombie/reused pids read as dead via cmdline).
     decoy_pid = int(pidfile.read_text().strip())
@@ -396,6 +449,87 @@ def test_reclaim_gate_reaps_this_runs_orphan_and_proceeds(rig, tmp_path):
     lines = fake_lines(rig)
     assert any(ln.startswith("CAPTURE ") for ln in lines)
     assert "[phase=done]" in proc.stdout
+
+
+def test_reclaim_reaps_non_vllm_named_session_orphan(rig, tmp_path):
+    """The python3 half of the production 16: an orphan NOT named VLLM
+    anywhere in its cmdline, but inside the launcher's session — must be
+    reaped, proving the predicate is not name-keyed."""
+    pidfile = tmp_path / "orphan.pid"
+    try:
+        proc = run_launcher(
+            rig,
+            extra_env={
+                "FAKE_GEN_SPAWN_ORPHAN": "1",
+                "FAKE_ORPHAN_NAME": "python3",
+                "FAKE_SMI_PIDFILE": str(pidfile),
+                "FAKE_SMI_MATCH": "python3",
+                "EPS_P1_RECLAIM_TIMEOUT_S": "30",
+                "EPS_P1_RECLAIM_POLL_S": "1",
+            },
+        )
+    finally:
+        with contextlib.suppress(OSError, ValueError):
+            os.kill(int(pidfile.read_text().strip()), 9)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "reaping 1 orphaned session process(es) by captured pid" in proc.stdout
+    decoy_pid = int(pidfile.read_text().strip())
+    cmdline = Path(f"/proc/{decoy_pid}/cmdline")
+    assert not cmdline.exists() or b"python3" not in cmdline.read_bytes()
+    assert any(ln.startswith("CAPTURE ") for ln in fake_lines(rig))
+    assert "[phase=done]" in proc.stdout
+
+
+def test_reclaim_spares_and_reports_vllm_in_a_different_session(rig):
+    """A VLLM-named process in a DIFFERENT session (another run's / another
+    user's) is invisible to the sid predicate: it must survive the launcher
+    end-to-end AND be reported in the not-selected audit line."""
+    decoy = subprocess.Popen(
+        ["bash", "-c", "exec -a 'VLLM::EngineCore' sleep 120"],
+        start_new_session=True,  # its own session — structurally not ours
+    )
+    try:
+        proc = run_launcher(rig)
+        assert proc.returncode == 0, proc.stdout + proc.stderr
+        # Still alive: the launcher never killed it.
+        assert decoy.poll() is None
+        audit = [ln for ln in proc.stdout.splitlines() if "not ours to kill" in ln]
+        assert audit, proc.stdout
+        reported = audit[0].split("not ours to kill):")[-1].split()
+        assert str(decoy.pid) in reported
+        assert "[phase=done]" in proc.stdout
+    finally:
+        decoy.kill()
+        decoy.wait()
+
+
+def test_self_promotes_to_session_leader_exactly_once(rig):
+    """Invoked as a non-session-leader (plain subprocess — the interactive
+    `bash scripts/...` shape), the launcher re-execs itself under setsid ONCE
+    and proceeds to a normal rc=0 run."""
+    proc = run_launcher(rig)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert proc.stdout.count("self-promoting to session leader") == 1
+    assert "[phase=done]" in proc.stdout
+
+
+def test_no_reexec_when_already_session_leader(rig):
+    """Invoked as a session leader (the production `setsid nohup bash ...`
+    shape), the promotion branch is a no-op self-check: no re-exec."""
+    proc = run_launcher(rig, start_new_session=True)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "self-promoting to session leader" not in proc.stdout
+    assert "[phase=done]" in proc.stdout
+
+
+def test_reexec_loop_guard_fails_loud_instead_of_looping(rig):
+    """If the setsid re-exec somehow did not make us a session leader (the
+    sentinel is set but sid != pid), the launcher must exit 2 before ANY work
+    — never loop, and never run the sid reap without the leader invariant."""
+    proc = run_launcher(rig, extra_env={"EPS_P1_SETSID_REEXEC": "1"})
+    assert proc.returncode == 2, proc.stdout + proc.stderr
+    assert "not a session leader after setsid re-exec" in proc.stdout + proc.stderr
+    assert not fake_lines(rig)  # nothing launched
 
 
 if __name__ == "__main__":
