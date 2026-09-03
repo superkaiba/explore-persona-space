@@ -26,7 +26,9 @@
 #
 # Sequence: [gen wave: N shards] -> [generation completeness gate against the
 # per-shard frozen gen_order_manifest cell lists] -> [ONE raw-completions HF
-# upload, production only] -> [capture wave: N shards, --upload per shard] ->
+# upload, production only] -> [GPU-memory reclaim gate: reap this run's
+# orphaned vLLM workers, verify the allocation's cards actually freed] ->
+# [capture wave: N shards, --upload per shard] ->
 # [phase=done].  Per-shard rcs are collected individually (wait "$pid"); any
 # non-zero rc fails the launcher loud, naming every failed shard — a bare
 # `wait` would swallow child rcs and ship a silently short manifest.
@@ -57,8 +59,15 @@
 #     smoke_gen/ out-root can never satisfy production resume.
 #   - The cap-amendment branch (>2% length-cap hits per cell) is
 #     data-dependent and unlikely to fire at smoke scale.
+#   - The GPU-memory reclaim gate IS exercised under smoke (the smoke generate
+#     wave constructs real vLLM engines, so reap + nvidia-smi verify run the
+#     identical code path in both modes); what a smoke PASS does NOT certify
+#     is production-SCALE margins — the full 10/prompt KV footprint and the
+#     8-card teardown timing vs EPS_P1_RECLAIM_TIMEOUT_S (a scale cut, same
+#     code path).
 #   Everything else — width derivation, CVD pinning, rc collection, gate,
-#   capture chain — is the IDENTICAL launcher code path in both modes.
+#   GPU-memory reclaim, capture chain — is the IDENTICAL launcher code path
+#   in both modes.
 #
 # Usage:
 #   bash scripts/issue2658_p1_launch.sh                    # production wave
@@ -68,6 +77,11 @@
 # Env knobs: EPS_P1_NUM_SHARDS, EPS_P1_SPLIT (default pilot), EPS_P1_OUT_ROOT,
 # EPS_P1_LOG_DIR, EPS_P1_SMOKE_CELLS (default = shard count),
 # EPS_P1_SMOKE_RESPONSES (default 2).
+# Reclaim-gate knobs: EPS_P1_RECLAIM_THRESHOLD_MIB (default 1024),
+# EPS_P1_RECLAIM_TIMEOUT_S (default 120), EPS_P1_RECLAIM_POLL_S (default 5),
+# EPS_P1_RECLAIM_KILL_GRACE_S (default 10).
+# Exit codes: 2 usage/width derivation, 3 failed shard leg(s), 4 generation
+# completeness gate, 5 GPU-memory reclaim gate (unreclaimed or unverifiable).
 #
 # Logs/breadcrumbs (absolute; stated in the P1 dispatch note for re-attach):
 #   $LOG_DIR/launcher.pid
@@ -103,6 +117,16 @@ OUT_ROOT="${EPS_P1_OUT_ROOT:-$REPO_ROOT/eval_results/issue_2658}"
 LOG_DIR="${EPS_P1_LOG_DIR:-$REPO_ROOT/logs/issue_2658_p1}"
 mkdir -p "$LOG_DIR"
 printf '%s\n' "$$" > "$LOG_DIR/launcher.pid"
+
+# Reclaim-gate knobs + the per-invocation kill-scope tag. The tag is exported
+# BEFORE any wave launches so every shard child — and every worker subprocess
+# vLLM spawns from a shard — inherits it in its environment.
+RECLAIM_THRESHOLD_MIB="${EPS_P1_RECLAIM_THRESHOLD_MIB:-1024}"
+RECLAIM_TIMEOUT_S="${EPS_P1_RECLAIM_TIMEOUT_S:-120}"
+RECLAIM_POLL_S="${EPS_P1_RECLAIM_POLL_S:-5}"
+RECLAIM_KILL_GRACE_S="${EPS_P1_RECLAIM_KILL_GRACE_S:-10}"
+EPS_P1_RUN_TAG="issue2658-p1-$$-$(date +%s)"
+export EPS_P1_RUN_TAG
 
 # ---------------------------------------------------------------------------
 # GPU allocation -> ALLOC (physical id array) + NUM_SHARDS.
@@ -292,6 +316,159 @@ G.upload_raw(Path(sys.argv[1]), smoke=False)
 PY
 }
 
+# ---------------------------------------------------------------------------
+# Between-wave GPU-memory reclaim gate (exit 5). issue2658_generate.py ends
+# with a deliberate os._exit(0) after flush (vLLM worker children survive
+# interpreter finalization otherwise — gotchas.md vLLM worker-subprocess
+# teardown), which ORPHANS the VLLM::EngineCore worker subprocesses; measured
+# on pod-2658: 8 orphans holding 74,592 MiB EACH after every gen shard parent
+# exited rc=0, and the teacher-forced capture wave then OOMed on all 8 shards.
+# So after every engine-constructing (generate) wave: reap THIS RUN's orphaned
+# workers, then VERIFY memory actually returned before the next wave — the
+# verification is the gate, not the reap.
+#
+# Pid-namespace trap: nvidia-smi --query-compute-apps reports HOST pids that
+# do not exist in the container's pid namespace (measured: host 3701656+ vs
+# container 9016+), so nvidia-smi pids must never feed kill. Victims are found
+# container-side — pgrep on the VLLM::EngineCore cmdline, one char bracketed
+# so the probe cannot match its own command line — and killed by CAPTURED pid
+# (TERM -> bounded grace -> KILL); nvidia-smi is used ONLY for the memory
+# verification.
+#
+# Kill scope: a name-matched candidate is killed only when /proc/<pid>/environ
+# carries THIS invocation's EPS_P1_RUN_TAG (launcher -> shard -> vLLM spawn
+# children all inherit it); name matches without the tag are logged and left
+# alone, so a stray unrelated vLLM on a shared box is never swept. Stated
+# residual (best-effort scope): an orphan that is NOT a VLLM::EngineCore
+# process, or whose environ is unreadable, is not reaped — the memory verify
+# then FAILS LOUD (exit 5) instead of launching capture into held memory.
+# ---------------------------------------------------------------------------
+
+alloc_in_use() {
+    local want="$1" g
+    for ((g = 0; g < NUM_SHARDS; g++)); do
+        if [ "${ALLOC[g]}" = "$want" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Prints "gpu<idx>=<used>MiB " for every in-allocation card at/over the
+# threshold (empty output = all clear); rc=2 when nvidia-smi is unusable.
+alloc_memory_offenders() {
+    local rows idx used matched=0 offending=""
+    rows="$(nvidia-smi --query-gpu=index,memory.used --format=csv,noheader,nounits)" \
+        || return 2
+    if [ -z "$rows" ]; then
+        return 2
+    fi
+    while IFS=', ' read -r idx used; do
+        if [ -z "$idx" ] || ! alloc_in_use "$idx"; then
+            continue
+        fi
+        matched=1
+        if ! [[ "$used" =~ ^[0-9]+$ ]] || [ "$used" -ge "$RECLAIM_THRESHOLD_MIB" ]; then
+            offending+="gpu${idx}=${used}MiB "
+        fi
+    done <<< "$rows"
+    if [ "$matched" -eq 0 ]; then
+        # Allocation ids not visible as nvidia-smi indices (UUID-form CVD):
+        # degrade to checking EVERY visible card — stricter, never weaker.
+        while IFS=', ' read -r idx used; do
+            if [ -z "$idx" ]; then
+                continue
+            fi
+            if ! [[ "$used" =~ ^[0-9]+$ ]] || [ "$used" -ge "$RECLAIM_THRESHOLD_MIB" ]; then
+                offending+="gpu${idx}=${used}MiB "
+            fi
+        done <<< "$rows"
+    fi
+    printf '%s' "$offending"
+}
+
+reclaim_gpu_between_waves() {
+    local label="$1"
+    local start deadline now offending
+    start="$(date +%s)"
+    deadline=$((start + RECLAIM_TIMEOUT_S))
+    local candidates=() victims=() foreign=() pid
+    mapfile -t candidates < <(pgrep -f 'VLLM::EngineCor[e]' || true)
+    for pid in "${candidates[@]}"; do
+        if tr '\0' '\n' 2>/dev/null < "/proc/$pid/environ" \
+                | grep -qxF "EPS_P1_RUN_TAG=$EPS_P1_RUN_TAG"; then
+            victims+=("$pid")
+        else
+            foreign+=("$pid")
+        fi
+    done
+    if [ "${#foreign[@]}" -gt 0 ]; then
+        echo "[phase=gpu_reclaim] leaving ${#foreign[@]} vLLM-named process(es) WITHOUT" \
+            "this run's tag alone (not ours to kill): ${foreign[*]}"
+    fi
+    local level="none"
+    if [ "${#victims[@]}" -gt 0 ]; then
+        echo "[phase=gpu_reclaim] post-$label: reaping ${#victims[@]} orphaned vLLM" \
+            "worker(s) by captured pid: ${victims[*]}"
+        kill -TERM "${victims[@]}" 2>/dev/null || true
+        level="TERM"
+        local waited=0 alive=1
+        while [ "$waited" -lt "$RECLAIM_KILL_GRACE_S" ]; do
+            alive=0
+            for pid in "${victims[@]}"; do
+                if kill -0 "$pid" 2>/dev/null; then
+                    alive=1
+                fi
+            done
+            if [ "$alive" -eq 0 ]; then
+                break
+            fi
+            sleep 1
+            waited=$((waited + 1))
+        done
+        if [ "$alive" -ne 0 ]; then
+            local survivors=()
+            for pid in "${victims[@]}"; do
+                if kill -0 "$pid" 2>/dev/null; then
+                    survivors+=("$pid")
+                fi
+            done
+            echo "[phase=gpu_reclaim] escalating TERM->KILL for: ${survivors[*]}"
+            kill -KILL "${survivors[@]}" 2>/dev/null || true
+            level="KILL"
+        fi
+    else
+        echo "[phase=gpu_reclaim] post-$label: no orphaned vLLM workers to reap"
+    fi
+    # VERIFY — free memory on every allocation card is what capture actually
+    # needs; a successful-looking kill is not sufficient evidence.
+    while :; do
+        if ! offending="$(alloc_memory_offenders)"; then
+            echo "FATAL: nvidia-smi memory verification unusable after the $label wave" \
+                "— cannot certify GPU memory was reclaimed; refusing to launch the" \
+                "next wave blind" >&2
+            exit 5
+        fi
+        if [ -z "$offending" ]; then
+            now="$(date +%s)"
+            echo "[phase=gpu_reclaim] post-$label PASS: all $NUM_SHARDS allocation" \
+                "card(s) under ${RECLAIM_THRESHOLD_MIB} MiB (kill_level=$level" \
+                "waited=$((now - start))s)"
+            return 0
+        fi
+        now="$(date +%s)"
+        if [ "$now" -ge "$deadline" ]; then
+            echo "FATAL: GPU memory NOT reclaimed within ${RECLAIM_TIMEOUT_S}s of the" \
+                "$label wave (kill_level=$level): ${offending}— refusing to launch the" \
+                "next wave into unreclaimed memory (orphaned vLLM workers; gotchas.md" \
+                "vLLM worker-subprocess teardown)" >&2
+            exit 5
+        fi
+        echo "[phase=gpu_reclaim] memory still held: ${offending}(re-check in ${RECLAIM_POLL_S}s)"
+        sleep "$RECLAIM_POLL_S"
+    done
+}
+
 run_p1() {
     local mode="$1"
     if [ "$mode" = smoke ]; then
@@ -299,12 +476,14 @@ run_p1() {
         run_wave generate_smoke issue2658_generate \
             --smoke --smoke-cells "$SMOKE_CELLS" --responses "$SMOKE_RESPONSES"
         gate_generation_complete "$groot"
+        reclaim_gpu_between_waves generate_smoke
         run_wave capture_smoke issue2658_capture --smoke --responses "$SMOKE_RESPONSES"
         echo "[p1] smoke chain complete (no uploads by design — see blind-spot enumeration)"
     else
         run_wave generate issue2658_generate
         gate_generation_complete "$OUT_ROOT"
         upload_generation
+        reclaim_gpu_between_waves generate
         run_wave capture issue2658_capture --upload
         echo "[p1] production chain complete: generation + gate + raw upload + capture(+store upload)"
     fi

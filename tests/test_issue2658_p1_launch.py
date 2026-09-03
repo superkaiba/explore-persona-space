@@ -9,10 +9,16 @@ writes the same artifact shapes the real scripts write) and the HF upload leg
 (external network boundary).
 
 No GPU, no network, no repo-root writes (out-root + logs land in tmp_path).
+
+A fake ``nvidia-smi`` (per-card memory.used driven by env / decoy liveness)
+exercises the between-wave GPU-memory reclaim gate; the reap test spawns a
+real orphaned decoy process with a VLLM::EngineCore cmdline that the gate
+must find, env-tag-scope, and kill by captured pid.
 """
 
 from __future__ import annotations
 
+import contextlib
 import os
 import stat
 import subprocess
@@ -22,7 +28,11 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-LAUNCHER = REPO_ROOT / "scripts" / "issue2658_p1_launch.sh"
+# EPS_P1_LAUNCHER_PATH override: lets the fails-pre-fix certification run this
+# suite against a historical launcher blob copied to an isolated tree.
+LAUNCHER = Path(
+    os.environ.get("EPS_P1_LAUNCHER_PATH") or str(REPO_ROOT / "scripts" / "issue2658_p1_launch.sh")
+)
 
 _FAKE_UV = '''#!/usr/bin/env python3
 """Fake ``uv`` for launcher tests: substitutes the two GPU scripts + the
@@ -71,6 +81,13 @@ if target.endswith("issue2658_generate.py"):
     (out / "gen_order_manifest" / f"{split}_{tag}.json").write_text(
         json.dumps({"cell_order": mine})
     )
+    if os.environ.get("FAKE_GEN_SPAWN_ORPHAN") == "1" and s == 0:
+        # Orphaned-vLLM-worker decoy: `exec -a` keeps the Popen pid, renames
+        # the cmdline to VLLM::EngineCore, and the process survives this fake
+        # shard's exit carrying the launcher's inherited EPS_P1_RUN_TAG.
+        p = subprocess.Popen(["bash", "-c", "exec -a VLLM::EngineCore sleep 120"])
+        Path(os.environ["FAKE_SMI_PIDFILE"]).write_text(str(p.pid))
+        logline(f"ORPHAN pid={p.pid}")
     omit = os.environ.get("FAKE_GEN_OMIT_CELL")
     for c in mine:
         for sub, name, payload in (
@@ -111,6 +128,37 @@ logline(f"UNEXPECTED args={' '.join(argv)}")
 sys.exit(97)
 '''
 
+_FAKE_SMI = '''#!/usr/bin/env python3
+"""Fake ``nvidia-smi`` for the reclaim gate: two cards (matching the rig's
+CUDA_VISIBLE_DEVICES=0,1), memory.used driven by env.
+
+FAKE_SMI_PIDFILE: high while the pid in it is a live VLLM-named process, low
+after (keys the reap test's memory drop on the decoy's actual death; reads
+/proc/<pid>/cmdline so a zombie or reused pid never reads as alive).
+FAKE_SMI_USED_MIB: constant reading (the never-drops test).
+Default: low (8 MiB) — the fast no-op path.
+"""
+import os
+import sys
+
+high = int(os.environ.get("FAKE_SMI_HIGH_MIB", "74601"))
+used = None
+pidfile = os.environ.get("FAKE_SMI_PIDFILE")
+if pidfile:
+    used = 8
+    try:
+        pid = int(open(pidfile).read().strip())
+        with open(f"/proc/{pid}/cmdline", "rb") as f:
+            if b"VLLM" in f.read():
+                used = high
+    except (OSError, ValueError):
+        pass
+if used is None:
+    used = int(os.environ.get("FAKE_SMI_USED_MIB", "8"))
+for idx in (0, 1):
+    sys.stdout.write(f"{idx}, {used}\\n")
+'''
+
 
 @pytest.fixture()
 def rig(tmp_path):
@@ -119,6 +167,9 @@ def rig(tmp_path):
     fake_uv = fakebin / "uv"
     fake_uv.write_text(_FAKE_UV)
     fake_uv.chmod(fake_uv.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    fake_smi = fakebin / "nvidia-smi"
+    fake_smi.write_text(_FAKE_SMI)
+    fake_smi.chmod(fake_smi.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
     out_root = tmp_path / "out"
     log_dir = tmp_path / "logs"
     fake_log = tmp_path / "fake_uv.log"
@@ -137,6 +188,14 @@ def rig(tmp_path):
         "FAKE_GEN_FAIL_SHARD",
         "FAKE_GEN_OMIT_CELL",
         "FAKE_CAPTURE_FAIL_SHARD",
+        "FAKE_GEN_SPAWN_ORPHAN",
+        "FAKE_SMI_PIDFILE",
+        "FAKE_SMI_USED_MIB",
+        "FAKE_SMI_HIGH_MIB",
+        "EPS_P1_RECLAIM_THRESHOLD_MIB",
+        "EPS_P1_RECLAIM_TIMEOUT_S",
+        "EPS_P1_RECLAIM_POLL_S",
+        "EPS_P1_RECLAIM_KILL_GRACE_S",
     ):
         env.pop(stale, None)
     return {"env": env, "out_root": out_root, "log_dir": log_dir, "fake_log": fake_log}
@@ -269,6 +328,74 @@ def test_rc_collection_is_load_bearing_bare_wait_variant_fails_this_suite(rig, t
     combined = proc.stdout + proc.stderr
     assert "FAIL: generate shard 1" not in combined
     assert "rc=3" not in combined
+
+
+def test_reclaim_gate_noop_when_memory_already_clear(rig):
+    """No survivors + memory already low: the gate is a fast no-op — zero poll
+    sleeps — sitting between the gen gate/upload and the capture wave."""
+    proc = run_launcher(rig)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "[phase=gpu_reclaim]" in proc.stdout
+    assert "no orphaned vLLM workers to reap" in proc.stdout
+    assert "kill_level=none" in proc.stdout
+    assert "memory still held" not in proc.stdout  # never slept a poll interval
+    reclaim_at = proc.stdout.index("[phase=gpu_reclaim]")
+    assert proc.stdout.index("completeness gate PASS") < reclaim_at
+    assert proc.stdout.index("[phase=upload_gen]") < reclaim_at
+    assert reclaim_at < proc.stdout.index("[phase=capture_wave]")
+
+
+def test_reclaim_gate_fails_loud_when_memory_never_drops(rig):
+    """Unreclaimed memory blocks the capture wave with the gate's own exit
+    code (5), naming the per-card memory it saw."""
+    proc = run_launcher(
+        rig,
+        extra_env={
+            "FAKE_SMI_USED_MIB": "74601",
+            "EPS_P1_RECLAIM_TIMEOUT_S": "2",
+            "EPS_P1_RECLAIM_POLL_S": "1",
+        },
+    )
+    assert proc.returncode == 5, proc.stdout + proc.stderr
+    combined = proc.stdout + proc.stderr
+    assert "GPU memory NOT reclaimed" in combined
+    assert "gpu0=74601MiB" in combined
+    assert "gpu1=74601MiB" in combined
+    lines = fake_lines(rig)
+    assert not any(ln.startswith("CAPTURE ") for ln in lines)  # capture never launched
+    assert any(ln.startswith("UPLOAD_GEN ") for ln in lines)  # raw upload already landed
+    assert "[phase=done]" not in proc.stdout
+
+
+def test_reclaim_gate_reaps_this_runs_orphan_and_proceeds(rig, tmp_path):
+    """A surviving VLLM::EngineCore orphan carrying this run's env tag is
+    killed by captured pid; memory (keyed on the decoy's real death) then
+    verifies low and capture proceeds."""
+    pidfile = tmp_path / "orphan.pid"
+    try:
+        proc = run_launcher(
+            rig,
+            extra_env={
+                "FAKE_GEN_SPAWN_ORPHAN": "1",
+                "FAKE_SMI_PIDFILE": str(pidfile),
+                "EPS_P1_RECLAIM_TIMEOUT_S": "30",
+                "EPS_P1_RECLAIM_POLL_S": "1",
+            },
+        )
+    finally:
+        # Never leak the decoy (e.g. against a gate-less launcher variant).
+        with contextlib.suppress(OSError, ValueError):
+            os.kill(int(pidfile.read_text().strip()), 9)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "reaping 1 orphaned vLLM worker(s) by captured pid" in proc.stdout
+    assert "kill_level=TERM" in proc.stdout or "kill_level=KILL" in proc.stdout
+    # The decoy is actually dead (zombie/reused pids read as dead via cmdline).
+    decoy_pid = int(pidfile.read_text().strip())
+    cmdline = Path(f"/proc/{decoy_pid}/cmdline")
+    assert not cmdline.exists() or b"VLLM" not in cmdline.read_bytes()
+    lines = fake_lines(rig)
+    assert any(ln.startswith("CAPTURE ") for ln in lines)
+    assert "[phase=done]" in proc.stdout
 
 
 if __name__ == "__main__":
