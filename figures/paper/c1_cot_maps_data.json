@@ -1,7 +1,7 @@
 {
   "font": "Inter",
   "git": {
-    "commit": "b62d32a4be9bece568034bc409b5964ca0e69d6a",
+    "commit": "1bfe72d6dfa1a77f4a6123f858d8b8c502a9dd6b",
     "tracked_worktree_dirty": true
   },
   "outputs": {
@@ -425,5 +425,61 @@
     "task": 2546,
     "uncertainty": "1,000 paired prompt-level bootstrap draws (95% interval)"
   },
-  "style_version": "c2a-v1"
+  "render": {
+    "authoring_size_inches": [
+      13.095,
+      12.186
+    ],
+    "background": "#FFFFFF",
+    "exported_size_inches": [
+      13.095,
+      11.541
+    ],
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c1_cot_maps.pdf}",
+    "png_dpi": 240,
+    "realized_font_pt": {
+      "body": 7.56,
+      "label": 8.4,
+      "tick": 7.14,
+      "title": 9.24
+    },
+    "resolved_font": "Inter",
+    "scale": 0.42,
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "style_version": "c2a-v2",
+    "text": [
+      "Held-out $R^2$",
+      "Top-1 answer retrieval",
+      "A  \u00b7  OPENTHINKER3-7B, LAYER 19",
+      "context",
+      "end of\nthought",
+      "Held-out score  \u2191",
+      "0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "1",
+      "Context vs end-of-thought input",
+      "B  \u00b7  OPENTHINKER3-7B, LAYER 19",
+      "Position in the thinking span",
+      "0\nend of\nprompt",
+      "1\nend of\nthought",
+      "Inputs inside the reasoning trace",
+      "C  \u00b7  QWEN3-8B, LAYER 24",
+      "thinking\noff",
+      "thinking\non",
+      "Thinking on vs off, same weights",
+      "D  \u00b7  QWEN2.5-7B-INSTRUCT \u2192 OPENTHINKER3-7B, LAYER 19",
+      "before\nmodel",
+      "before \u2192\nafter",
+      "after\nmodel",
+      "Within and across reasoning SFT",
+      "QUESTIONS",
+      "METRIC",
+      "CoT-necessary questions only"
+    ]
+  },
+  "style_version": "c2a-v2"
 }

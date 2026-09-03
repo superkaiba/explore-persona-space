@@ -1,13 +1,58 @@
 {
   "font": "Inter",
   "git": {
-    "commit": "b62d32a4be9bece568034bc409b5964ca0e69d6a",
+    "commit": "1bfe72d6dfa1a77f4a6123f858d8b8c502a9dd6b",
     "tracked_worktree_dirty": true
   },
   "outputs": {
     "grayscale": "figures/paper/c1_cot_necessity_r2_grayscale.png",
     "pdf": "figures/paper/c1_cot_necessity_r2.pdf",
     "png": "figures/paper/c1_cot_necessity_r2.png"
+  },
+  "render": {
+    "authoring_size_inches": [
+      9.821,
+      6.044
+    ],
+    "background": "#FFFFFF",
+    "exported_size_inches": [
+      9.821,
+      5.613
+    ],
+    "include_width_frac": 0.75,
+    "latex_include_line": "\\includegraphics[width=0.75\\textwidth]{figures/paper/c1_cot_necessity_r2.pdf}",
+    "png_dpi": 240,
+    "realized_font_pt": {
+      "body": 7.56,
+      "label": 8.4,
+      "tick": 7.14,
+      "title": 9.24
+    },
+    "resolved_font": "Inter",
+    "scale": 0.42,
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "style_version": "c2a-v2",
+    "text": [
+      "OPENTHINKER3-7B, VS ITS NON-REASONING PARENT, LAYER 19, CONTEXT \u2192 ANSWER MAP",
+      "MATH",
+      "GSM8K\ntrain",
+      "Context-\nHub",
+      "MMLU",
+      "ARC-\nChallenge",
+      "Common-\nsenseQA",
+      "PIQA",
+      "All seven,\nequal dataset\nweight",
+      "Held-out $R^2$ vs dataset mean  \u2191",
+      "0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "Predictability by whether reasoning was needed",
+      "QUESTIONS, LABELED BY WHETHER REASONING WAS NEEDED",
+      "CoT-necessary (right with CoT, wrong without)",
+      "CoT-unnecessary (right both ways)"
+    ]
   },
   "results": {
     "1": {
@@ -1662,6 +1707,6 @@
       }
     }
   },
-  "style_version": "c2a-v1",
+  "style_version": "c2a-v2",
   "summary": "eval_results/issue_2546/necessity_r2/summary.json"
 }

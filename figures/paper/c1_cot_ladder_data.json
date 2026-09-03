@@ -1,7 +1,7 @@
 {
   "font": "Inter",
   "git": {
-    "commit": "b62d32a4be9bece568034bc409b5964ca0e69d6a",
+    "commit": "1bfe72d6dfa1a77f4a6123f858d8b8c502a9dd6b",
     "tracked_worktree_dirty": true
   },
   "mode": "compare",
@@ -89,7 +89,51 @@
     "source_ref": "42308cc7522dcb0a2a76b332b0c24d981de4b585",
     "task": 2546
   },
-  "style_version": "c2a-v1",
+  "render": {
+    "authoring_size_inches": [
+      13.095,
+      7.717
+    ],
+    "background": "#FFFFFF",
+    "exported_size_inches": [
+      13.095,
+      6.569
+    ],
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c1_cot_ladder.pdf}",
+    "png_dpi": 240,
+    "realized_font_pt": {
+      "body": 7.56,
+      "label": 8.4,
+      "tick": 7.14,
+      "title": 9.24
+    },
+    "resolved_font": "Inter",
+    "scale": 0.42,
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "style_version": "c2a-v2",
+    "text": [
+      "PREVIOUS STAGE'S MAP APPLIED TO THE NEXT STAGE, CORRECTIONS FIT ON TRAINING FOLDS",
+      "Base \u2192 SFT\n(OLMo-2-7B,\ninstruction SFT)",
+      "SFT \u2192 DPO\n(OLMo-2-7B)",
+      "DPO \u2192 RLVR\n(OLMo-2-7B)",
+      "Qwen2.5-7B-Instruct \u2192\nOpenThinker3-7B\n(reasoning SFT)",
+      "Retention\n(transferred $R^2$ / own $R^2$)  \u2191",
+      "$-10^{5}$",
+      "$-10^{3}$",
+      "$-10$",
+      "$-1$",
+      "0",
+      "1",
+      "Retention of the context-answer map across each post-training step",
+      "CORRECTION",
+      "as is",
+      "bias",
+      "rescaling + bias",
+      "own map of the next stage (retention 1)"
+    ]
+  },
+  "style_version": "c2a-v2",
   "tiers": [
     {
       "key": "t0_direct_transfer",
@@ -133,20 +177,20 @@
       "band": null,
       "label": "Pooled",
       "n_rows": 2326,
-      "r2_baseline": "global",
-      "reference_r2": 0.6644227970464385,
+      "r2_baseline": "corpus",
+      "reference_r2": 0.5173934657977791,
       "retention_ci": {
         "t0_direct_transfer": [
-          -60270.797747378376,
-          -58419.59614668324
+          -114340.95350873804,
+          -105516.99828669814
         ],
         "t3_bias_offset": [
-          -19.821009891932004,
-          -17.345142357972648
+          -38.01870672912766,
+          -32.4947479091941
         ],
         "t4_global_scaling": [
-          0.0005637748401115018,
-          0.0011118034975986888
+          -0.9308681704464851,
+          -0.7711095697354263
         ]
       },
       "source": "eval_results/issue_2546/allfit/ladder__a1.json",
@@ -154,14 +198,14 @@
       "subset": "necessary",
       "sufficient_tier": null,
       "tier_r2": {
-        "t0_direct_transfer": -39426.52404888844,
-        "t3_bias_offset": -12.330062363404988,
-        "t4_global_scaling": 0.0005553031335548964
+        "t0_direct_transfer": -56701.24486626384,
+        "t3_bias_offset": -18.17047743792237,
+        "t4_global_scaling": -0.4373400130766696
       },
       "tier_retention": {
-        "t0_direct_transfer": -59339.511263236804,
-        "t3_bias_offset": -18.55755464474709,
-        "t4_global_scaling": 0.0008357677310642979
+        "t0_direct_transfer": -109590.18351504514,
+        "t3_bias_offset": -35.119263460169435,
+        "t4_global_scaling": -0.8452754856544747
       }
     }
   }

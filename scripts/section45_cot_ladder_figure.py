@@ -38,6 +38,9 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     PAPER,
     SEAM,
     STYLE_VERSION,
+    c2a_figure,
+    legend_kicker,
+    panel_header,
     save_c2a_figure,
     set_c2a_style,
 )
@@ -132,7 +135,7 @@ def load_bundle_unit(path: Path, subset: str, baseline: str) -> dict[str, Any]:
 
 def make_figure(units: dict[str, Any]) -> plt.Figure:
     set_c2a_style()
-    fig = plt.figure(figsize=(14.4, 7.0), constrained_layout=False)
+    fig, _include_frac = c2a_figure("full", aspect=7.0 / 14.4)  # c2a-v2: full text width
     grid = fig.add_gridspec(1, 1, left=0.085, right=0.985, top=0.73, bottom=0.25)
     ax = fig.add_subplot(grid[0, 0])
     ax.spines["top"].set_visible(False)
@@ -200,7 +203,7 @@ def load_olmo() -> dict[str, Any]:
 
 def make_compare_figure(units: dict[str, Any], olmo: dict[str, Any]) -> plt.Figure:
     set_c2a_style()
-    fig = plt.figure(figsize=(11.2, 6.6), constrained_layout=False)
+    fig, _include_frac = c2a_figure("full", aspect=6.6 / 11.2)  # c2a-v2: full text width
     grid = fig.add_gridspec(1, 1, left=0.10, right=0.985, top=0.74, bottom=0.22)
     ax = fig.add_subplot(grid[0, 0])
     for side in ("top", "right"):
@@ -231,15 +234,14 @@ def make_compare_figure(units: dict[str, Any], olmo: dict[str, Any]) -> plt.Figu
     ax.axvline(xr - 0.5, color=MUTED, lw=1.0, ls=(0, (2, 3)), zorder=1)
     ax.set_xlim(-0.6, xr + 0.6)
     ax.set_xticks(xs)
-    ax.set_xticklabels([label for _k, label in OLMO_TRANSITIONS] + [REASONING_LABEL], fontsize=12.5, linespacing=1.15)
+    ax.set_xticklabels([label for _k, label in OLMO_TRANSITIONS] + [REASONING_LABEL], fontsize=14, linespacing=1.15)
     ax.set_ylabel("Retention\n(transferred $R^2$ / own $R^2$)  ↑", labelpad=10)
-    ax.set_title("Reasoning SFT changes the map much more than other forms of post-training", loc="left", y=1.04, pad=0, fontweight=650, fontsize=17)
-    ax.text(0.0, 1.14, "PREVIOUS STAGE'S MAP APPLIED TO THE NEXT STAGE, AFTER THREE CORRECTIONS FIT ON TRAINING FOLDS", transform=ax.transAxes, fontsize=11.5, fontweight=700, color=MUTED, va="bottom", ha="left")
+    panel_header(ax, "", "Previous stage's map applied to the next stage, corrections fit on training folds", "Retention of the context-answer map across each post-training step")
     handles = [Line2D([0], [0], marker=m, markersize=9, markerfacecolor=f, markeredgecolor=e, markeredgewidth=1.6, lw=0, label=lab) for _o, _t, lab, _dx, m, f, e in MODES]
     if any(key != "pooled" for key in units):
         handles.append(Line2D([0], [0], marker="o", markersize=5.5, markerfacecolor=PAPER, markeredgecolor=INK, markeredgewidth=1.1, lw=0, label="single corpus (reasoning SFT)"))
     handles.append(Line2D([0], [0], color=MUTED, lw=1.3, ls=(0, (4, 3)), label="own map of the next stage (retention 1)"))
-    fig.text(0.10, 0.965, "CORRECTION", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
+    legend_kicker(fig, 0.10, 0.965, "Correction")
     fig.legend(handles=handles, loc="upper left", bbox_to_anchor=(0.099, 0.948), ncol=5, frameon=False, columnspacing=1.2, handlelength=1.4, handletextpad=0.6, borderaxespad=0)
     return fig
 
@@ -277,6 +279,7 @@ def main(argv: list[str] | None = None) -> int:
         subject="Issue #2546 ladder units rendered for the paper",
         creator="scripts/section45_cot_ladder_figure.py",
     )
+    render = outputs.pop("record")
     plt.close(fig)
     sidecar = stem.with_name(f"{args.stem}_data.json")
     sidecar.write_text(
@@ -297,6 +300,7 @@ def main(argv: list[str] | None = None) -> int:
                 "olmo_source": str(OLMO_SUMMARY.relative_to(ROOT)),
                 "tiers": [{"key": k, "label": l.replace("\n", " ")} for k, l in TIERS],
                 "units": units,
+                "render": render,
                 "outputs": {k: str(v.relative_to(ROOT)) for k, v in outputs.items()},
             },
             indent=2,

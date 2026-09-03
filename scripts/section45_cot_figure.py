@@ -51,6 +51,9 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     MUTED,
     PAPER,
     STYLE_VERSION,
+    c2a_figure,
+    legend_kicker,
+    panel_header,
     save_c2a_figure,
     set_c2a_style,
     style_score_axis,
@@ -353,18 +356,11 @@ def load_bundle(bundle_dir: Path, subset: str, baseline: str) -> dict[str, Any]:
 
 
 def _kicker(ax: plt.Axes, title: str, kicker: str) -> None:
-    ax.set_title(title, loc="left", y=1.04, pad=0, fontweight=650, fontsize=19)
-    ax.text(
-        0.0,
-        1.235,
-        kicker.upper(),
-        transform=ax.transAxes,
-        fontsize=12.5,
-        fontweight=700,
-        color=MUTED,
-        va="bottom",
-        ha="left",
-    )
+    """Panel letter + uppercase kicker + descriptive title through the shared c2a-v2 header helper."""
+    letter, sep, rest = kicker.partition("  ·  ")
+    if not sep:
+        letter, rest = "", kicker
+    panel_header(ax, letter, rest, title)
 
 
 BAR_WIDTH = 0.19
@@ -436,7 +432,7 @@ def _categorical_panel(ax: plt.Axes, maps: list[dict[str, Any]], *, separator_af
     ax.set_xticks(ticks)
     ax.set_xticklabels(labels, fontsize=12, linespacing=1.15)
     ax.axvline(m - 0.5 + GROUP_GAP / 2, color=MUTED, lw=1.0, ls=(0, (2, 3)), zorder=1)
-    for center, text in (((m - 1) / 2, "Held-out $R^2$"), (m + GROUP_GAP + (m - 1) / 2, "Answer retrieval (acc@1)")):
+    for center, text in (((m - 1) / 2, "Held-out $R^2$"), (m + GROUP_GAP + (m - 1) / 2, "Top-1 answer retrieval")):
         ax.text(center, -0.30, text, transform=ax.get_xaxis_transform(), ha="center", va="top", fontsize=12, fontweight=700, color=MUTED)
 
 
@@ -502,7 +498,7 @@ def _legend_handles() -> tuple[list[Patch], list[Patch]]:
             edgecolor=INK,
             hatch=RETRIEVAL_HATCH,
             linewidth=1.4,
-            label="Answer retrieval (acc@1)",
+            label="Top-1 answer retrieval",
         ),
     ]
     return strata, metrics
@@ -510,7 +506,7 @@ def _legend_handles() -> tuple[list[Patch], list[Patch]]:
 
 def make_figure(panels: dict[str, Any]) -> plt.Figure:
     set_c2a_style()
-    fig = plt.figure(figsize=(14.4, 13.4), constrained_layout=False)
+    fig, _include_frac = c2a_figure("full", aspect=13.4 / 14.4)  # c2a-v2: full text width
     grid = fig.add_gridspec(
         2,
         2,
@@ -529,26 +525,26 @@ def make_figure(panels: dict[str, Any]) -> plt.Figure:
     _categorical_panel(ax_a, panels["A"]["maps"])
     _kicker(
         ax_a,
-        "Context state already retrieves the answer;\nend of thought adds a few points",
+        "Context vs end-of-thought input",
         "A  ·  OpenThinker3-7B, layer 19",
     )
     _trajectory_panel(ax_b, panels["B"]["series"])
     _kicker(
         ax_b,
-        "Predictability dips inside the reasoning trace\nand recovers only at the end of thought",
+        "Inputs inside the reasoning trace",
         "B  ·  OpenThinker3-7B, layer 19",
     )
     _categorical_panel(ax_c, panels["C"]["maps"], separator_after=0)
     _kicker(
         ax_c,
-        "Disabling thinking on the same weights\nleaves $R^2$ unchanged",
+        "Thinking on vs off, same weights",
         "C  ·  Qwen3-8B, layer 24",
     )
     _categorical_panel(ax_d, panels["D"]["maps"])
     _kicker(
         ax_d,
-        "The context state before reasoning training\npredicts the answer state after it",
-        "D  ·  Qwen2.5-7B-Instruct (before) → OpenThinker3-7B (after), layer 19",
+        "Within and across reasoning SFT",
+        "D  ·  Qwen2.5-7B-Instruct → OpenThinker3-7B, layer 19",
     )
 
     for ax in (ax_a, ax_c):
@@ -557,7 +553,7 @@ def make_figure(panels: dict[str, Any]) -> plt.Figure:
         ax.set_ylabel("Held-out score  ↑", labelpad=12)
 
     strata_handles, metric_handles = _legend_handles()
-    fig.text(0.07, 0.965, "CORPORA", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
+    legend_kicker(fig, 0.07, 0.965, "Questions")
     fig.legend(
         handles=strata_handles,
         loc="upper left",
@@ -569,11 +565,11 @@ def make_figure(panels: dict[str, Any]) -> plt.Figure:
         handletextpad=0.6,
         borderaxespad=0,
     )
-    fig.text(0.585, 0.965, "METRIC", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
+    legend_kicker(fig, 0.56, 0.965, "Metric")
     fig.legend(
         handles=metric_handles,
         loc="upper left",
-        bbox_to_anchor=(0.584, 0.952),
+        bbox_to_anchor=(0.559, 0.952),
         ncol=2,
         frameon=False,
         columnspacing=1.1,
@@ -610,6 +606,7 @@ def write_outputs(fig: plt.Figure, panels: dict[str, Any], out_dir: Path, stem_n
         subject="Issue #2546 cells rendered for the paper",
         creator="scripts/section45_cot_figure.py",
     )
+    render = outputs.pop("record")
     sidecar = stem.with_name(f"{stem_name}_data.json")
     payload = {
         "style_version": STYLE_VERSION,
@@ -631,6 +628,7 @@ def write_outputs(fig: plt.Figure, panels: dict[str, Any], out_dir: Path, stem_n
             "uncertainty": "1,000 paired prompt-level bootstrap draws (95% interval)",
         },
         "panels": panels,
+        "render": render,
         "outputs": {key: str(path.relative_to(ROOT)) for key, path in outputs.items()},
     }
     sidecar.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")

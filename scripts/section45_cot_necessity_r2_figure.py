@@ -55,6 +55,9 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     INK,
     MUTED,
     STYLE_VERSION,
+    c2a_figure,
+    legend_kicker,
+    panel_header,
     save_c2a_figure,
     set_c2a_style,
     style_score_axis,
@@ -305,15 +308,19 @@ def analyze(hf_root: Path, cache_dir: Path, arms: list[int] | None = None, corpo
 
 
 def _kicker(ax: plt.Axes, title: str, kicker: str) -> None:
-    ax.set_title(title, loc="left", y=1.04, pad=0, fontweight=650, fontsize=17)
-    ax.text(0.0, 1.235, kicker.upper(), transform=ax.transAxes, fontsize=12, fontweight=700, color=MUTED, va="bottom", ha="left")
+    """Panel letter + uppercase kicker + descriptive title through the shared c2a-v2 header helper."""
+    letter, sep, rest = kicker.partition("  ·  ")
+    if not sep:
+        letter, rest = "", kicker
+    panel_header(ax, letter, rest, title)
 
 
 def make_figure(results: dict[str, Any], titles: dict[str, str], *, arms: tuple[str, ...] = ("1",), whole_corpus_line: bool = False, baseline: str = "corpus", show_pooled: bool = False) -> plt.Figure:
     key = "r2_corpus_mean" if baseline == "corpus" else "r2_own_mean"
     set_c2a_style()
     n = len(arms)
-    fig = plt.figure(figsize=((10.4 if show_pooled else 8.8) if n == 1 else 14.4, 6.4), constrained_layout=False)
+    # c2a-v2: one panel is included at 0.75 text width, two panels at full width
+    fig, _include_frac = c2a_figure("wide" if n == 1 else "full", aspect=(6.4 / 10.4) if n == 1 else (6.4 / 14.4))
     grid = fig.add_gridspec(1, n, left=0.125 if n == 1 else 0.07, right=0.985, top=0.68, bottom=0.17, wspace=0.22)
     axes = [fig.add_subplot(grid[0, i]) for i in range(n)]
     for ax, arm, panel in zip(axes, arms, "ABCD"):
@@ -344,18 +351,18 @@ def make_figure(results: dict[str, Any], titles: dict[str, str], *, arms: tuple[
                 ax.bar(x, v, width=BAR_WIDTH, color=GROUP_COLOR[group], linewidth=0, zorder=3)
                 ax.errorbar(x, v, yerr=[[v - lo], [hi - v]], fmt="none", ecolor=INK, elinewidth=1.2, capsize=3, capthick=1.2, zorder=4)
             ax.axvline(len(CORPORA) - 0.25, color=MUTED, lw=1.0, ls=(0, (2, 3)), zorder=1)
-            ticks.append(xp); labels.append({3: "All three", 4: "All four", 7: "All seven"}.get(len(CORPORA), f"All {len(CORPORA)}") + ",\nequal corpus\nweight")
+            ticks.append(xp); labels.append({3: "All three", 4: "All four", 7: "All seven"}.get(len(CORPORA), f"All {len(CORPORA)}") + ",\nequal dataset\nweight")
         ax.set_xlim(-0.6, (ticks[-1] if ticks else len(CORPORA)) + 0.6)
         ax.set_xticks(ticks)
-        ax.set_xticklabels(labels, fontsize=13, linespacing=1.15)
-        ax.set_ylabel("Held-out $R^2$ vs corpus mean  ↑" if baseline == "corpus" else "Held-out $R^2$, context → answer  ↑", labelpad=12)
+        ax.set_xticklabels(labels, fontsize=14, linespacing=1.15)
+        ax.set_ylabel("Held-out $R^2$ vs dataset mean  ↑" if baseline == "corpus" else "Held-out $R^2$, context → answer  ↑", labelpad=12)
         prefix = f"{panel}  ·  " if n > 1 else ""
         _kicker(ax, titles[arm], f"{prefix}{spec['label']}, {spec['comparator']}, layer {spec['layer']}, context → answer map")
     handles = [Patch(facecolor=GROUP_COLOR[g], edgecolor=GROUP_COLOR[g], label=GROUP_LABEL[g]) for g in ("necessary", "both_correct")]
     if whole_corpus_line:
         handles.append(Line2D([0], [0], color=INK, lw=1.6, ls=(0, (3, 2)), label="Whole corpus"))
     x0 = 0.125 if n == 1 else 0.07
-    fig.text(x0, 0.965, "QUESTIONS, LABELED BY WHETHER REASONING WAS NEEDED", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
+    legend_kicker(fig, x0, 0.965, "Questions, labeled by whether reasoning was needed")
     fig.legend(handles=handles, loc="upper left", bbox_to_anchor=(x0 - 0.001, 0.948), ncol=1 if n == 1 else 3, frameon=False, columnspacing=1.3, handlelength=1.6, handletextpad=0.6, borderaxespad=0)
     return fig
 
@@ -377,7 +384,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--stem", default=DEFAULT_STEM)
     parser.add_argument("--summary", type=Path, default=SUMMARY_PATH)
-    parser.add_argument("--title-a", default="Predictability of the answer state,\nby whether the question needed reasoning")
+    parser.add_argument("--title-a", default="Predictability by whether reasoning was needed")
     parser.add_argument("--title-b", default="Same on the thinking toggle")
     parser.add_argument("--both-panels", action="store_true", help="also plot the Qwen3-8B thinking toggle as panel B")
     parser.add_argument("--whole-corpus-line", action="store_true", help="draw the whole-corpus R^2 as a dashed line per corpus")
@@ -433,9 +440,10 @@ def main(argv: list[str] | None = None) -> int:
         subject="Issue #2546 out-of-fold predictions grouped by operational necessity label",
         creator="scripts/section45_cot_necessity_r2_figure.py",
     )
+    render = outputs.pop("record")
     plt.close(fig)
     sidecar = stem.with_name(f"{args.stem}_data.json")
-    sidecar.write_text(json.dumps({"style_version": STYLE_VERSION, "font": font, "git": _git_state(), "summary": str(args.summary.relative_to(ROOT)), "results": results, "outputs": {k: str(v.relative_to(ROOT)) for k, v in outputs.items()}}, indent=2, sort_keys=True) + "\n")
+    sidecar.write_text(json.dumps({"style_version": STYLE_VERSION, "font": font, "git": _git_state(), "summary": str(args.summary.relative_to(ROOT)), "results": results, "render": render, "outputs": {k: str(v.relative_to(ROOT)) for k, v in outputs.items()}}, indent=2, sort_keys=True) + "\n")
     for key, path in {**outputs, "data": sidecar}.items():
         print(f"{key}: {path}")
     return 0
