@@ -816,6 +816,7 @@ def _load_capture_model(model_id: str, device: str, dtype_str: str):
     quant_method = _quant_method(model_id)
     if quant_method == "fp8":
         logger.info("[load] fp8 checkpoint detected (%s): native load, no dtype kwarg", model_id)
+        _disable_fp8_tp_plan_rewrite()
     else:
         load_kwargs["dtype"] = dtype
     try:
@@ -936,6 +937,36 @@ def _dequantize_fp8_embeddings(model, scale_lookup) -> int:
         )
         patched += 1
     return patched
+
+
+def _disable_fp8_tp_plan_rewrite() -> None:
+    """Neutralise transformers 5.16.1's FineGrainedFP8HfQuantizer.update_tp_plan.
+
+    It runs on every FP8 load (before the model exists) and does
+    ``FP8Experts._impl_tp_layer_overrides.get(config._experts_implementation)``,
+    a table whose ONLY key is "deepgemm_megamoe", then ``.get`` on the None it
+    got back for every entry of base_model_tp_plan / base_model_ep_plan. Any
+    FP8 checkpoint whose config carries a plan crashes with "'NoneType' object
+    has no attribute 'get'" (dsv4_flash 62440); for classes named Qwen3* it
+    first INJECTS a dense plan itself, so blanking the config's plans is not
+    enough (q35_397b 62931, both the CausalLM and the VL-wrapper attempt).
+    The capture never loads with tp_plan=, and the method only rewrites those
+    TP/EP plan dicts, so it is replaced by an identity. Idempotent."""
+    try:
+        from transformers.quantizers import quantizer_finegrained_fp8 as q
+    except Exception as exc:  # pragma: no cover - repo env without the module
+        logger.info("[load] no finegrained_fp8 quantizer module (%s); nothing to patch", exc)
+        return
+    cls = getattr(q, "FineGrainedFP8HfQuantizer", None)
+    if cls is None or getattr(cls.update_tp_plan, "_eps_identity", False):
+        return
+
+    def _identity_update_tp_plan(self, config):
+        return config
+
+    _identity_update_tp_plan._eps_identity = True  # type: ignore[attr-defined]
+    cls.update_tp_plan = _identity_update_tp_plan
+    logger.info("[load] FineGrainedFP8HfQuantizer.update_tp_plan -> identity (capture never TP-loads)")
 
 
 def _native_config(model_id: str):

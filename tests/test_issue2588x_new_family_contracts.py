@@ -338,3 +338,22 @@ def test_native_config_undoes_registry_swap(monkeypatch):
         transformers.AutoConfig, "from_pretrained", staticmethod(lambda mid, **kw: nopad))
     out3 = G._native_config("x/y")
     assert out3 is nopad and out3.pad_token_id is None
+
+
+def test_disable_fp8_tp_plan_rewrite_is_identity_and_idempotent():
+    import types
+    import pytest
+    import issue2330_qwen35_generate_capture as G
+
+    q = pytest.importorskip("transformers.quantizers.quantizer_finegrained_fp8")
+    cls = q.FineGrainedFP8HfQuantizer
+    G._disable_fp8_tp_plan_rewrite()
+    G._disable_fp8_tp_plan_rewrite()  # idempotent
+    assert getattr(cls.update_tp_plan, "_eps_identity", False)
+    # A Qwen3-named config with no experts impl would crash the original; the
+    # identity returns the very same object untouched.
+    Qwen3Fake = type("Qwen3FakeConfig", (), {})
+    cfg = Qwen3Fake()
+    cfg.base_model_tp_plan = {"layers.*.mlp.experts": "grouped_gemm"}
+    out = cls.update_tp_plan(object.__new__(cls), cfg)
+    assert out is cfg and cfg.base_model_tp_plan == {"layers.*.mlp.experts": "grouped_gemm"}
