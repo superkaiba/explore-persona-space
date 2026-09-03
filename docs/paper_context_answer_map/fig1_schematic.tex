@@ -1,4 +1,4 @@
-% Figure 1: context-to-answer prediction pipeline (rev 15, 2026-09-03).
+% Figure 1: context-to-answer prediction pipeline (rev 16, 2026-09-03).
 % Compile standalone: pdflatex fig1_schematic.tex
 % THEN convert text to outlines before copying to Overleaf (REQUIRED):
 %   gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dNoOutputFonts -dCompatibilityLevel=1.5 \
@@ -29,9 +29,11 @@
 % over K) darkest #6E4A0C. Vectors outside the model use stronger cell shades.
 % Rev 15 (Thomas): the context vector forks into TWO metamodel boxes, linear (teal:
 % matrix W_l times h_C plus bias b_l) and nonlinear (terracotta: a small MLP glyph,
-% input column -> hidden column -> output column with dense connections). Both outputs
-% merge into one prediction (ink, branch-neutral), which is fit to the target. The
-% answer row sits below both boxes; the figure height is unchanged.
+% input column -> hidden layer of circular units -> output column, dense connections).
+% Rev 16 (Thomas): the MLP's output column IS the prediction: same ink color, same
+% symbol h-hat, wired directly to the merged prediction outside the box. Both branch
+% outputs merge into that one prediction, which is fit to the target. The answer row
+% sits below both boxes; the figure height is unchanged.
 \documentclass[tikz,border=4pt]{standalone}
 \usepackage[type1]{inter}
 \renewcommand{\familydefault}{\sfdefault}
@@ -61,16 +63,6 @@
   \node[inner sep=0pt, minimum width=0.20cm, minimum height=1.0cm] (#1) at (#2,#3) {};
 }
 \newcommand{\colvec}[4]{\colvecs{#1}{#2}{#3}{#4}{42,16,60,26,68}}
-% 6-cell column (the MLP hidden layer), 0.20 x 1.20 cm, centered at (x,y)
-\newcommand{\colvecsix}[4]{%
-  \begin{scope}[shift={(#2,#3)}]
-    \foreach \s [count=\r from 0] in {40,22,64,30,56,18} {
-      \fill[#4!\s] (-0.10,{0.60-(\r+1)*0.20}) rectangle (0.10,{0.60-\r*0.20});
-    }
-    \draw[#4!75, line width=0.5pt] (-0.10,-0.60) rectangle (0.10,0.60);
-  \end{scope}
-  \node[inner sep=0pt, minimum width=0.20cm, minimum height=1.2cm] (#1) at (#2,#3) {};
-}
 % ---- small residual-stream state inside the model: 5 SQUARE cells, 0.10 x 0.50 cm ---
 % \minivec{<x>}{<y>}{<color>}{<shade list>}{<outline>}
 \newcommand{\minivec}[5]{%
@@ -214,18 +206,24 @@
       minimum width=3.0cm, minimum height=1.72cm, inner sep=0pt] (nl) at (10.40,2.72) {};
 \node[lbl, text=terra, anchor=south, font=\fontsize{8}{9.5}\selectfont\bfseries]
   at (10.40,3.62) {Nonlinear metamodel};
-% dense connections first (drawn under the columns): input (5 cells) -> hidden (6) -> output (5)
+% dense connections first (drawn under the columns): input (5 cells) -> 6 hidden units -> output (5)
 \foreach \yi in {3.28,3.08,2.88,2.68,2.48} {
   \foreach \yh in {3.38,3.18,2.98,2.78,2.58,2.38} {
-    \draw[dense] (9.70,\yi) -- (10.30,\yh);
-    \draw[dense] (10.50,\yh) -- (11.10,\yi);
+    \draw[dense] (9.70,\yi) -- (10.315,\yh);
+    \draw[dense] (10.485,\yh) -- (11.10,\yi);
   }
 }
 \colvecs{mi}{9.60}{2.88}{ctx}{62,30,80,44,92}
 \node[lbl, text=ctx, anchor=north, inner sep=0.5pt] at (9.60,2.31) {$h_C^{\ell}$};
-\colvecsix{mh}{10.40}{2.88}{terra}
+% hidden layer: a column of units (circles); fills vary like activations
+\foreach \yh/\s in {3.38/28,3.18/62,2.98/40,2.78/74,2.58/34,2.38/56} {
+  \fill[terra!\s] (10.40,\yh) circle (0.085);
+  \draw[terra, line width=0.4pt] (10.40,\yh) circle (0.085);
+}
 \node[lbl, text=terra, anchor=north, inner sep=0.5pt] at (10.40,2.21) {MLP$_\ell$};
-\colvec{mo}{11.20}{2.88}{terra}
+% output column = the prediction: same color and symbol as h-hat outside the box
+\colvec{mo}{11.20}{2.88}{ink}
+\node[lbl, text=ink, anchor=north, inner sep=0.5pt] at (11.20,2.31) {$\hat h_A^{\ell}$};
 
 % --- fork: the context vector feeds both branches
 \draw[flow, ctx!85] (hc.east) -- (lin.west |- hc.east);
@@ -233,7 +231,7 @@
 
 % --- merge: both outputs give the prediction
 \draw[wire, teal!85] (lin.east |- 0,5.45) -- (12.15,5.45) -- (12.15,4.08);
-\draw[wire, terra!85] (nl.east |- 0,2.88) -- (12.15,2.88) -- (12.15,4.08);
+\draw[wire, terra!85] (mo.east) -- (12.15,2.88) -- (12.15,4.08);
 \colvec{hhat}{12.50}{4.08}{ink}
 \draw[flow] (12.15,4.08) -- (hhat.west);
 \node[lbl, anchor=west, align=left, inner sep=1pt] at (12.68,4.08) {prediction\\$\hat h_A^{\ell}$};
