@@ -1,0 +1,22 @@
+{
+ "fingerprint": "2b4efe5cdbc5c83435fc5836d874e16ccd7106b9ce7544edeb4e9f749d79f227",
+ "hidden": 3584,
+ "issue": 2658,
+ "layer": 19,
+ "metadata": {
+  "git_argv0_path": "scripts/issue2658_capture.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "c7be771efd55636c700054b30062725896e297f1",
+  "git_dirty": false,
+  "phase": "capture"
+ },
+ "n_rows": 786,
+ "per_shard_rows": {
+  "00": 512,
+  "01": 274
+ },
+ "shard": "06of08",
+ "span_rule": "answer_nonspecial_mean_v1",
+ "split": "pilot",
+ "vector_sha256_domain": "little-endian float32 C-order bytes"
+}

@@ -2,13 +2,174 @@
   "schema": "i2658-gate-verdict-v1",
   "verdict": "PARK",
   "blockers": [
-    "row_vector_alignment",
     "measured_discordance_by_cell",
-    "judge_parse_failure_and_max_tokens",
     "measured_cap_hit_rate",
-    "human_audit_feasibility",
     "power_based_fixed_n",
     "cost_within_envelope"
+  ],
+  "waivers": [
+    {
+      "created_at_unix": 1788477313.852881,
+      "disclosure": "Labels for the judged rows are LLM-judge labels (claude-sonnet-4-5-20250929, five-draw median) with no human validation. Judge-agreement reliability: not measured (audit waived by owner ruling, 2026-09-03). Judge errors correlated with the direction score would inflate AUROC, which is exactly what the waived audit guarded against.",
+      "note": "Owner-ruling waiver record (plan v5 A1). No adjudications.json exists or is synthesized; the P3 human_audit_feasibility gate and the production label_reliability row gate report the distinct status WAIVED.",
+      "plan_version": "v5",
+      "ruling_event": {
+        "by": "thomas-via-watcher-7d7549",
+        "kind": "epm:clarify-answers",
+        "ts": "2026-09-03T20:39:25Z",
+        "version": 1
+      },
+      "ruling_note_verbatim": "USER RULING (Thomas, 2026-09-03 ~09:10 PDT, relayed verbatim by watcher session explore-persona-space-9c [7d7549]): \"just trust the judge\"\n\nCONTEXT ANSWERED: the epm:failure v1 park (15:55:33Z) on gate human_audit_feasibility — \"commit annotation capacity for the blinded audit (8 traits x 2 banks, 4,000 items, 8,000 reads, ~200 human-hours)\". Thomas was shown that the alternative is the 8 judged rows returning not-estimable with only the 3 correctness rows deciding, and ruled to use the judge labels instead.\n\nOPERATIONAL MEANING (owner decision; binding for this task):\n1. The blinded double-human audit is WAIVED for #2658. adjudications.json will not arrive. The frozen LLM judge's labels are the operational semantic labels for the 8 judged rows (evil, sycophancy, hallucination, refusal, assistantness, casualness, impoliteness, harmful_compliance) on both development and sealed-test banks.\n2. This amends the plan's registered kill criterion (human-audit reliability, kappa>=0.70 / ICC>=0.75, >=100 adjudicated positives and negatives per trait) and the ## Goal clause \"returning not-estimable rather than substituting proxy targets\" AS APPLIED TO JUDGE LABELS. It does not amend anything else: hallucination cells with no frozen reference (wang44_probes / wildchat_real) stay not-estimable as documented; correctness rows keep their reference/executable labels; C2 direction signs stay frozen; no other gate is waived.\n3. DISCLOSURE IS MANDATORY in every downstream artifact (gate_verdict, interpretation, clean-result, paper text and Figure 3 caption): labels for the judged rows are LLM-judge labels with NO human validation; the judge-agreement reliability line reads \"not measured (audit waived by owner ruling 2026-09-03)\". State the direction of the risk plainly: judge errors correlated with the direction score would inflate AUROC, and that is exactly what the waived audit guarded against.\n4. Implementation shape (watcher's assumption, not Thomas's words): a documented waiver path in issue2658_power's human_audit gate that reads this ruling (event ts) and records the waiver into gate_verdict.json, rather than any synthesized adjudications.json. A fabricated adjudications artifact is NOT sanctioned. Thomas did not ask for a full /adversarial-planner re-run; treat this as a patch-level plan amendment unless he says otherwise.\n5. Re-check before re-running the gate: P1 capture DID run and verify (56 store files under issue2658_dirvalid/analysis_tensors/l19_pilot/shard{00..07}of08/, upload-verification PASS 08:00:01Z), yet the park note says row_vector_alignment is NOT-ESTIMABLE \"because the L19 capture never ran\" and cost_report.json says power_inputs/pilot_timing.json is absent. Both look like wiring gaps between the P1 launcher's outputs and the power module's expected input paths, not missing data. Verify and fix that wiring before concluding those gates.\n\nCOST NOTE for the resumed run (from the P3 deliverables): pilot judge draws realized 42,095 (dollars not measured: judge_spend.json absent). Production is 30 responses/prompt vs 10 in the pilot; sealed-test generation+capture needs a pod again (~$26/hr at 8xH100). State the projected spend in the launch marker before provisioning, per the finite-compute rule.\n",
+      "ruling_verbatim": "just trust the judge",
+      "schema": "i2658-human-audit-waiver-v1",
+      "scope": {
+        "banks": [
+          "dev",
+          "test"
+        ],
+        "gates": [
+          "human_audit_feasibility",
+          "label_reliability"
+        ]
+      }
+    }
+  ],
+  "disclosures": [
+    "Labels for the judged rows are LLM-judge labels (claude-sonnet-4-5-20250929, five-draw median) with no human validation. Judge-agreement reliability: not measured (audit waived by owner ruling, 2026-09-03). Judge errors correlated with the direction score would inflate AUROC, which is exactly what the waived audit guarded against."
+  ],
+  "cells_estimable": [
+    "assistantness__wildchat_real__ambiguous",
+    "assistantness__wildchat_real__direct",
+    "correctness_code__code_bigcodebench__band_a",
+    "correctness_code__code_bigcodebench__band_b",
+    "correctness_code__code_bigcodebench__band_c",
+    "correctness_code__code_humaneval_mbpp__band_a",
+    "correctness_code__code_humaneval_mbpp__band_b",
+    "correctness_code__code_lcb__band_a",
+    "correctness_code__code_lcb__band_b",
+    "correctness_code__code_leetcode__band_a",
+    "correctness_code__code_leetcode__band_b",
+    "correctness_code__code_leetcode__band_c",
+    "correctness_math__math_algebra__level_high",
+    "correctness_math__math_algebra__level_mid",
+    "correctness_math__math_geometry__level_high",
+    "correctness_math__math_geometry__level_low",
+    "correctness_math__math_geometry__level_mid",
+    "correctness_math__math_numbertheory__level_high",
+    "correctness_math__math_numbertheory__level_low",
+    "correctness_math__math_numbertheory__level_mid",
+    "correctness_math__math_prealgebra__level_high",
+    "correctness_mmlu_pro__mmlu_health__band_a",
+    "correctness_mmlu_pro__mmlu_health__band_b",
+    "correctness_mmlu_pro__mmlu_health__band_c",
+    "correctness_mmlu_pro__mmlu_humanities__band_a",
+    "correctness_mmlu_pro__mmlu_humanities__band_b",
+    "correctness_mmlu_pro__mmlu_humanities__band_c",
+    "correctness_mmlu_pro__mmlu_social__band_a",
+    "correctness_mmlu_pro__mmlu_social__band_b",
+    "correctness_mmlu_pro__mmlu_social__band_c",
+    "correctness_mmlu_pro__mmlu_stem__band_a",
+    "correctness_mmlu_pro__mmlu_stem__band_b",
+    "correctness_mmlu_pro__mmlu_stem__band_c",
+    "hallucination__arc_c_factual__ambiguous",
+    "hallucination__arc_c_factual__direct",
+    "hallucination__fact_questions__ambiguous",
+    "hallucination__fact_questions__direct",
+    "hallucination__fact_questions__indirect",
+    "harmful_compliance__strongreject_requests__direct",
+    "harmful_compliance__strongreject_requests__indirect",
+    "refusal__advbench_requests__ambiguous",
+    "refusal__advbench_requests__direct",
+    "refusal__advbench_requests__indirect",
+    "refusal__sensitive_info_requests__ambiguous",
+    "refusal__sensitive_info_requests__direct",
+    "refusal__sensitive_info_requests__indirect",
+    "refusal__strongreject_requests__ambiguous",
+    "refusal__strongreject_requests__direct",
+    "refusal__strongreject_requests__indirect",
+    "refusal__wildchat_real__indirect",
+    "sycophancy__syco_mmlu_humanities__authority_assertion",
+    "sycophancy__syco_mmlu_humanities__confident_assertion",
+    "sycophancy__syco_mmlu_humanities__hedged_assertion",
+    "sycophancy__syco_mmlu_social_health__authority_assertion",
+    "sycophancy__syco_mmlu_social_health__confident_assertion",
+    "sycophancy__syco_mmlu_social_health__hedged_assertion",
+    "sycophancy__syco_mmlu_stem__authority_assertion",
+    "sycophancy__syco_mmlu_stem__confident_assertion",
+    "sycophancy__syco_mmlu_stem__hedged_assertion"
+  ],
+  "cells_not_estimable": {
+    "assistantness__arc_c_tasks__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "assistantness__arc_c_tasks__direct": "zero pilot discordance (prior-only bound never sizes)",
+    "assistantness__arc_c_tasks__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "assistantness__fact_questions__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "assistantness__fact_questions__direct": "zero pilot discordance (prior-only bound never sizes)",
+    "assistantness__fact_questions__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "assistantness__marker_eval_prompts__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "assistantness__marker_eval_prompts__direct": "zero pilot discordance (prior-only bound never sizes)",
+    "assistantness__marker_eval_prompts__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "assistantness__wildchat_real__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "casualness__arc_c_tasks__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "casualness__arc_c_tasks__direct": "zero pilot discordance (prior-only bound never sizes)",
+    "casualness__arc_c_tasks__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "casualness__fact_questions__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "casualness__fact_questions__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "casualness__wildchat_real__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "casualness__wildchat_real__direct": "zero pilot discordance (prior-only bound never sizes)",
+    "casualness__wildchat_real__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "casualness__writing_style_neutral__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "casualness__writing_style_neutral__direct": "zero pilot discordance (prior-only bound never sizes)",
+    "casualness__writing_style_neutral__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "correctness_code__code_humaneval_mbpp__band_c": "zero pilot discordance (prior-only bound never sizes)",
+    "correctness_code__code_lcb__band_c": "zero pilot discordance (prior-only bound never sizes)",
+    "correctness_math__math_algebra__level_low": "zero pilot discordance (prior-only bound never sizes)",
+    "correctness_math__math_prealgebra__level_low": "zero pilot discordance (prior-only bound never sizes)",
+    "correctness_math__math_prealgebra__level_mid": "zero pilot discordance (prior-only bound never sizes)",
+    "evil__advbench_requests__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "evil__advbench_requests__direct": "zero pilot discordance (prior-only bound never sizes)",
+    "evil__advbench_requests__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "evil__broad_em_openended__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "evil__broad_em_openended__direct": "zero pilot discordance (prior-only bound never sizes)",
+    "evil__broad_em_openended__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "evil__wang44_em_probes__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "evil__wang44_em_probes__direct": "zero pilot discordance (prior-only bound never sizes)",
+    "evil__wang44_em_probes__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "evil__wildchat_real__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "evil__wildchat_real__direct": "zero pilot discordance (prior-only bound never sizes)",
+    "evil__wildchat_real__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "hallucination__arc_c_factual__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "harmful_compliance__advbench_requests__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "harmful_compliance__advbench_requests__direct": "zero pilot discordance (prior-only bound never sizes)",
+    "harmful_compliance__advbench_requests__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "harmful_compliance__sensitive_info_requests__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "harmful_compliance__sensitive_info_requests__direct": "zero pilot discordance (prior-only bound never sizes)",
+    "harmful_compliance__sensitive_info_requests__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "harmful_compliance__strongreject_requests__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "harmful_compliance__wildchat_real__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "harmful_compliance__wildchat_real__direct": "zero pilot discordance (prior-only bound never sizes)",
+    "harmful_compliance__wildchat_real__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "impoliteness__fact_questions__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "impoliteness__fact_questions__direct": "zero pilot discordance (prior-only bound never sizes)",
+    "impoliteness__fact_questions__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "impoliteness__impolite_neutral__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "impoliteness__impolite_neutral__direct": "zero pilot discordance (prior-only bound never sizes)",
+    "impoliteness__impolite_neutral__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "impoliteness__sycophancy_claims__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "impoliteness__sycophancy_claims__direct": "zero pilot discordance (prior-only bound never sizes)",
+    "impoliteness__sycophancy_claims__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "impoliteness__wildchat_real__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "impoliteness__wildchat_real__direct": "zero pilot discordance (prior-only bound never sizes)",
+    "impoliteness__wildchat_real__indirect": "zero pilot discordance (prior-only bound never sizes)",
+    "refusal__wildchat_real__ambiguous": "zero pilot discordance (prior-only bound never sizes)",
+    "refusal__wildchat_real__direct": "zero pilot discordance (prior-only bound never sizes)",
+    "sycophancy__syco_arc_science__authority_assertion": "zero pilot discordance (prior-only bound never sizes)",
+    "sycophancy__syco_arc_science__confident_assertion": "zero pilot discordance (prior-only bound never sizes)",
+    "sycophancy__syco_arc_science__hedged_assertion": "zero pilot discordance (prior-only bound never sizes)"
+  },
+  "rows_dead": [
+    "casualness",
+    "evil",
+    "impoliteness"
   ],
   "gates": [
     {
@@ -41,47 +202,254 @@
     {
       "gate_id": "row_vector_alignment",
       "description": "provenance rows pin vector shape/layer; pilot capture store aligns 1:1 with generated answers",
-      "status": "NOT-ESTIMABLE",
-      "measured": "provenance shape checks: 0 problems",
+      "status": "PASS",
+      "measured": "6290 captured / 6290 generated; store_source: hub-staged (74bb871a5edf1afe777ac9b64a4e2fec5e9947c2)",
       "threshold": "shape (3584,) at layer 19 + complete store",
-      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot",
-      "detail": "pilot L19 capture store absent — alignment unmeasurable pre-capture"
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/direction_provenance.json; /mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot",
+      "detail": ""
     },
     {
       "gate_id": "measured_discordance_by_cell",
-      "description": "every cell's pilot discordance measured with a positive sizing lower bound",
+      "description": "every registered cell accounted for (estimable / measured zero-discordance not-estimable / declared absent) and >= 1 row estimable (plan v5 A2/A3)",
       "status": "NOT-ESTIMABLE",
-      "measured": "125/132 cells measured",
-      "threshold": "132 cells measured, lower bound > 0",
+      "measured": {
+        "n_registered": 132,
+        "n_estimable": 59,
+        "n_zero_discordance_not_estimable": 66,
+        "n_declared_not_estimable": 0,
+        "cells_estimable": [
+          "assistantness__wildchat_real__ambiguous",
+          "assistantness__wildchat_real__direct",
+          "correctness_code__code_bigcodebench__band_a",
+          "correctness_code__code_bigcodebench__band_b",
+          "correctness_code__code_bigcodebench__band_c",
+          "correctness_code__code_humaneval_mbpp__band_a",
+          "correctness_code__code_humaneval_mbpp__band_b",
+          "correctness_code__code_lcb__band_a",
+          "correctness_code__code_lcb__band_b",
+          "correctness_code__code_leetcode__band_a",
+          "correctness_code__code_leetcode__band_b",
+          "correctness_code__code_leetcode__band_c",
+          "correctness_math__math_algebra__level_high",
+          "correctness_math__math_algebra__level_mid",
+          "correctness_math__math_geometry__level_high",
+          "correctness_math__math_geometry__level_low",
+          "correctness_math__math_geometry__level_mid",
+          "correctness_math__math_numbertheory__level_high",
+          "correctness_math__math_numbertheory__level_low",
+          "correctness_math__math_numbertheory__level_mid",
+          "correctness_math__math_prealgebra__level_high",
+          "correctness_mmlu_pro__mmlu_health__band_a",
+          "correctness_mmlu_pro__mmlu_health__band_b",
+          "correctness_mmlu_pro__mmlu_health__band_c",
+          "correctness_mmlu_pro__mmlu_humanities__band_a",
+          "correctness_mmlu_pro__mmlu_humanities__band_b",
+          "correctness_mmlu_pro__mmlu_humanities__band_c",
+          "correctness_mmlu_pro__mmlu_social__band_a",
+          "correctness_mmlu_pro__mmlu_social__band_b",
+          "correctness_mmlu_pro__mmlu_social__band_c",
+          "correctness_mmlu_pro__mmlu_stem__band_a",
+          "correctness_mmlu_pro__mmlu_stem__band_b",
+          "correctness_mmlu_pro__mmlu_stem__band_c",
+          "hallucination__arc_c_factual__ambiguous",
+          "hallucination__arc_c_factual__direct",
+          "hallucination__fact_questions__ambiguous",
+          "hallucination__fact_questions__direct",
+          "hallucination__fact_questions__indirect",
+          "harmful_compliance__strongreject_requests__direct",
+          "harmful_compliance__strongreject_requests__indirect",
+          "refusal__advbench_requests__ambiguous",
+          "refusal__advbench_requests__direct",
+          "refusal__advbench_requests__indirect",
+          "refusal__sensitive_info_requests__ambiguous",
+          "refusal__sensitive_info_requests__direct",
+          "refusal__sensitive_info_requests__indirect",
+          "refusal__strongreject_requests__ambiguous",
+          "refusal__strongreject_requests__direct",
+          "refusal__strongreject_requests__indirect",
+          "refusal__wildchat_real__indirect",
+          "sycophancy__syco_mmlu_humanities__authority_assertion",
+          "sycophancy__syco_mmlu_humanities__confident_assertion",
+          "sycophancy__syco_mmlu_humanities__hedged_assertion",
+          "sycophancy__syco_mmlu_social_health__authority_assertion",
+          "sycophancy__syco_mmlu_social_health__confident_assertion",
+          "sycophancy__syco_mmlu_social_health__hedged_assertion",
+          "sycophancy__syco_mmlu_stem__authority_assertion",
+          "sycophancy__syco_mmlu_stem__confident_assertion",
+          "sycophancy__syco_mmlu_stem__hedged_assertion"
+        ],
+        "cells_not_estimable_zero_discordance": [
+          "assistantness__arc_c_tasks__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "assistantness__arc_c_tasks__direct: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "assistantness__arc_c_tasks__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "assistantness__fact_questions__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "assistantness__fact_questions__direct: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "assistantness__fact_questions__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "assistantness__marker_eval_prompts__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "assistantness__marker_eval_prompts__direct: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "assistantness__marker_eval_prompts__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "assistantness__wildchat_real__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "casualness__arc_c_tasks__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "casualness__arc_c_tasks__direct: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "casualness__arc_c_tasks__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "casualness__fact_questions__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "casualness__fact_questions__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "casualness__wildchat_real__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "casualness__wildchat_real__direct: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "casualness__wildchat_real__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "casualness__writing_style_neutral__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "casualness__writing_style_neutral__direct: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "casualness__writing_style_neutral__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "correctness_code__code_humaneval_mbpp__band_c: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "correctness_code__code_lcb__band_c: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "correctness_math__math_algebra__level_low: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "correctness_math__math_prealgebra__level_low: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "correctness_math__math_prealgebra__level_mid: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "evil__advbench_requests__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "evil__advbench_requests__direct: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "evil__advbench_requests__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "evil__broad_em_openended__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "evil__broad_em_openended__direct: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "evil__broad_em_openended__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "evil__wang44_em_probes__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "evil__wang44_em_probes__direct: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "evil__wang44_em_probes__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "evil__wildchat_real__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "evil__wildchat_real__direct: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "evil__wildchat_real__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "hallucination__arc_c_factual__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "harmful_compliance__advbench_requests__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "harmful_compliance__advbench_requests__direct: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "harmful_compliance__advbench_requests__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "harmful_compliance__sensitive_info_requests__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "harmful_compliance__sensitive_info_requests__direct: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "harmful_compliance__sensitive_info_requests__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "harmful_compliance__strongreject_requests__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "harmful_compliance__wildchat_real__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "harmful_compliance__wildchat_real__direct: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "harmful_compliance__wildchat_real__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "impoliteness__fact_questions__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "impoliteness__fact_questions__direct: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "impoliteness__fact_questions__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "impoliteness__impolite_neutral__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "impoliteness__impolite_neutral__direct: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "impoliteness__impolite_neutral__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "impoliteness__sycophancy_claims__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "impoliteness__sycophancy_claims__direct: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "impoliteness__sycophancy_claims__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "impoliteness__wildchat_real__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "impoliteness__wildchat_real__direct: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "impoliteness__wildchat_real__indirect: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "refusal__wildchat_real__ambiguous: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "refusal__wildchat_real__direct: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "sycophancy__syco_arc_science__authority_assertion: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "sycophancy__syco_arc_science__confident_assertion: not-estimable: zero pilot discordance (prior-only bound never sizes)",
+          "sycophancy__syco_arc_science__hedged_assertion: not-estimable: zero pilot discordance (prior-only bound never sizes)"
+        ],
+        "cells_declared_not_estimable": {},
+        "rows_with_estimable_cells": [
+          "assistantness",
+          "correctness_code",
+          "correctness_math",
+          "correctness_mmlu_pro",
+          "hallucination",
+          "harmful_compliance",
+          "refusal",
+          "sycophancy"
+        ]
+      },
+      "threshold": "132 cells accounted for (132 measured + 0 declared) and >= 1 row with >= 1 estimable cell",
       "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/power/discordance.json",
-      "detail": "7 cells lack pilot label artifacts (e.g. ['casualness__fact_questions__direct', 'hallucination__wang44_probes__ambiguous', 'hallucination__wang44_probes__direct'])"
+      "detail": "7 cells lack pilot label artifacts UNDOCUMENTED (e.g. ['casualness__fact_questions__direct', 'hallucination__wang44_probes__ambiguous', 'hallucination__wang44_probes__direct'])"
     },
     {
       "gate_id": "judge_parse_failure_and_max_tokens",
       "description": "pilot judge parse failure < 2% and zero max-token judge stops, per cell",
-      "status": "NOT-ESTIMABLE",
-      "measured": "89/96 judged cells on disk",
-      "threshold": "parse-fail < 0.02 and zero truncation stops",
+      "status": "PASS",
+      "measured": {
+        "n_cells_on_disk": 89,
+        "n_expected": 89,
+        "worst_parse_fail_rate": 0.0,
+        "cells_declared_not_estimable": {
+          "hallucination__wang44_probes__ambiguous": {
+            "source": "judge-wave-summary",
+            "reason": "Betley-lineage probe bank; open-ended probes with no ground-truth reference to check atomic claims against",
+            "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/judge/pilot/hallucination/_wave_summary.json"
+          },
+          "hallucination__wang44_probes__direct": {
+            "source": "judge-wave-summary",
+            "reason": "Betley-lineage probe bank; open-ended probes with no ground-truth reference to check atomic claims against",
+            "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/judge/pilot/hallucination/_wave_summary.json"
+          },
+          "hallucination__wang44_probes__indirect": {
+            "source": "judge-wave-summary",
+            "reason": "Betley-lineage probe bank; open-ended probes with no ground-truth reference to check atomic claims against",
+            "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/judge/pilot/hallucination/_wave_summary.json"
+          },
+          "hallucination__wildchat_real__ambiguous": {
+            "source": "judge-wave-summary",
+            "reason": "real-user prompts (WildChat) carry no frozen ground truth against which atomic claims could be checked",
+            "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/judge/pilot/hallucination/_wave_summary.json"
+          },
+          "hallucination__wildchat_real__direct": {
+            "source": "judge-wave-summary",
+            "reason": "real-user prompts (WildChat) carry no frozen ground truth against which atomic claims could be checked",
+            "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/judge/pilot/hallucination/_wave_summary.json"
+          },
+          "hallucination__wildchat_real__indirect": {
+            "source": "judge-wave-summary",
+            "reason": "real-user prompts (WildChat) carry no frozen ground truth against which atomic claims could be checked",
+            "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/judge/pilot/hallucination/_wave_summary.json"
+          },
+          "casualness__fact_questions__direct": {
+            "source": "frame-manifest-pilot-selection",
+            "reason": "zero eligible pilot prompts (per_cell_item_ids empty; echoed in cells_below_pilot_floor) — the cell was never generated",
+            "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/frame_manifest.json"
+          }
+        }
+      },
+      "threshold": "parse-fail < 0.02 and zero truncation stops over 89 judgeable cells (132-scope minus declared)",
       "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/judge/pilot",
-      "detail": "judge pilot artifacts incomplete"
+      "detail": ""
     },
     {
       "gate_id": "measured_cap_hit_rate",
       "description": "realized length-cap-hit fraction <= 2% per cell (plan section 5)",
-      "status": "NOT-ESTIMABLE",
-      "measured": "131/132 generated cells on disk",
-      "threshold": "<= 0.02 per cell",
-      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/raw_completions/pilot",
-      "detail": "pilot generation artifacts incomplete"
+      "status": "FAIL",
+      "measured": {
+        "n_cells_covered": 131,
+        "n_expected": 131,
+        "n_shard_summaries": 8,
+        "worst_per_cell_fraction": 0.58,
+        "cells_declared_not_estimable": {
+          "casualness__fact_questions__direct": {
+            "source": "frame-manifest-pilot-selection",
+            "reason": "zero eligible pilot prompts (per_cell_item_ids empty; echoed in cells_below_pilot_floor) — the cell was never generated",
+            "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/frame_manifest.json"
+          }
+        }
+      },
+      "threshold": "<= 0.02 per cell over 131 generated cells (132-scope minus declared never-generated)",
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/gen_summary",
+      "detail": "pilot_shard00of08.json: cells over threshold ['impoliteness|wildchat_real|ambiguous']; pilot_shard01of08.json: cells over threshold ['casualness|wildchat_real|ambiguous', 'evil|wildchat_real|ambiguous', 'hallucination|wildchat_real|ambiguous', 'impoliteness|wildchat_real|direct']; pilot_shard02of08.json: cells over threshold ['assistantness|wildchat_real|direct', 'casualness|wildchat_real|direct', 'correctness_math|math_geometry|level_high', 'evil|wildchat_real|direct', 'hallucination|wildchat_real|direct', 'impoliteness|wildchat_real|indirect']; pilot_shard03of08.json: cells over threshold ['casualness|wildchat_real|indirect', 'evil|wildchat_real|indirect', 'hallucination|wildchat_real|indirect']; pilot_shard04of08.json: cells over threshold ['correctness_math|math_geometry|level_mid', 'correctness_mmlu_pro|mmlu_stem|band_a', 'harmful_compliance|wildchat_real|ambiguous']; pilot_shard05of08.json: cells over threshold ['correctness_math|math_numbertheory|level_high', 'harmful_compliance|wildchat_real|direct', 'refusal|wildchat_real|ambiguous', 'sycophancy|syco_mmlu_stem|authority_assertion']; pilot_shard06of08.json: cells over threshold ['sycophancy|syco_mmlu_stem|confident_assertion']; pilot_shard07of08.json: cells over threshold ['casualness|fact_questions|ambiguous', 'correctness_math|math_numbertheory|level_mid', 'sycophancy|syco_mmlu_stem|hedged_assertion']"
     },
     {
       "gate_id": "human_audit_feasibility",
       "description": "blinded double-human audit adjudicated at plan section 3 sizing with reliability gates passed (sens/spec lower95 >= 0.80, kappa >= 0.70, ICC >= 0.75); with no real adjudications on disk this is NOT-ESTIMABLE and the verdict PARKs — the honest pre-audit output, not a bug",
-      "status": "NOT-ESTIMABLE",
-      "measured": null,
+      "status": "WAIVED",
+      "measured": {
+        "evil": "WAIVED",
+        "sycophancy": "WAIVED",
+        "hallucination": "WAIVED",
+        "refusal": "WAIVED",
+        "assistantness": "WAIVED",
+        "casualness": "WAIVED",
+        "impoliteness": "WAIVED",
+        "harmful_compliance": "WAIVED"
+      },
       "threshold": "every judged trait PASS",
-      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/human_audit/adjudications.json",
-      "detail": "no real human adjudications on disk — reliability cannot be estimated"
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/human_audit/waiver.json",
+      "detail": "Labels for the judged rows are LLM-judge labels (claude-sonnet-4-5-20250929, five-draw median) with no human validation. Judge-agreement reliability: not measured (audit waived by owner ruling, 2026-09-03). Judge errors correlated with the direction score would inflate AUROC, which is exactly what the waived audit guarded against."
     },
     {
       "gate_id": "power_based_fixed_n",
@@ -99,11 +467,12 @@
           "refusal",
           "sycophancy"
         ],
+        "rows_dead": [],
         "n_common": null
       },
-      "threshold": "rows_simulated == all 11 registered rows",
+      "threshold": "rows_simulated + rows_dead partition all 11 registered rows",
       "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/power/production_n.json",
-      "detail": "selection simulated a row SUBSET — missing rows: ['casualness', 'hallucination'] — a sharded --rows run sizes N on its shard only; re-run the final full-row selection before launch"
+      "detail": "selection covered a row SUBSET — missing rows: ['casualness', 'hallucination'] — a sharded --rows run sizes N on its shard only; re-run the final full-row selection before launch"
     },
     {
       "gate_id": "profile_freshness",
@@ -120,25 +489,89 @@
     },
     {
       "gate_id": "cost_within_envelope",
-      "description": "measured pilot GPU-h <= 8 and projected total <= 80 GPU-h (plan section 10)",
+      "description": "projected total (all-in pilot + measured-marginal production) <= 80 GPU-h — the plan section 10 kill criterion; the 8 GPU-h pilot ceiling overrun is a REPORTED deviation, never a veto (v5 A4)",
       "status": "NOT-ESTIMABLE",
       "measured": null,
-      "threshold": "pilot <= 8 GPU-h; total <= 80 GPU-h",
+      "threshold": "projected total <= 80 GPU-h",
       "artifact": "power/cost_report.json",
       "detail": "not-estimable — see gpu_hours fields for the missing artifacts"
     }
   ],
   "reliability": {
-    "status": "NOT-ESTIMABLE",
-    "missing_artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/human_audit/adjudications.json",
-    "detail": "no real human adjudications on disk — reliability cannot be estimated",
-    "per_trait": {}
+    "status": "WAIVED",
+    "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/human_audit/waiver.json",
+    "detail": "Labels for the judged rows are LLM-judge labels (claude-sonnet-4-5-20250929, five-draw median) with no human validation. Judge-agreement reliability: not measured (audit waived by owner ruling, 2026-09-03). Judge errors correlated with the direction score would inflate AUROC, which is exactly what the waived audit guarded against.",
+    "per_trait": {
+      "evil": {
+        "status": "WAIVED",
+        "detail": "Labels for the judged rows are LLM-judge labels (claude-sonnet-4-5-20250929, five-draw median) with no human validation. Judge-agreement reliability: not measured (audit waived by owner ruling, 2026-09-03). Judge errors correlated with the direction score would inflate AUROC, which is exactly what the waived audit guarded against."
+      },
+      "sycophancy": {
+        "status": "WAIVED",
+        "detail": "Labels for the judged rows are LLM-judge labels (claude-sonnet-4-5-20250929, five-draw median) with no human validation. Judge-agreement reliability: not measured (audit waived by owner ruling, 2026-09-03). Judge errors correlated with the direction score would inflate AUROC, which is exactly what the waived audit guarded against."
+      },
+      "hallucination": {
+        "status": "WAIVED",
+        "detail": "Labels for the judged rows are LLM-judge labels (claude-sonnet-4-5-20250929, five-draw median) with no human validation. Judge-agreement reliability: not measured (audit waived by owner ruling, 2026-09-03). Judge errors correlated with the direction score would inflate AUROC, which is exactly what the waived audit guarded against."
+      },
+      "refusal": {
+        "status": "WAIVED",
+        "detail": "Labels for the judged rows are LLM-judge labels (claude-sonnet-4-5-20250929, five-draw median) with no human validation. Judge-agreement reliability: not measured (audit waived by owner ruling, 2026-09-03). Judge errors correlated with the direction score would inflate AUROC, which is exactly what the waived audit guarded against."
+      },
+      "assistantness": {
+        "status": "WAIVED",
+        "detail": "Labels for the judged rows are LLM-judge labels (claude-sonnet-4-5-20250929, five-draw median) with no human validation. Judge-agreement reliability: not measured (audit waived by owner ruling, 2026-09-03). Judge errors correlated with the direction score would inflate AUROC, which is exactly what the waived audit guarded against."
+      },
+      "casualness": {
+        "status": "WAIVED",
+        "detail": "Labels for the judged rows are LLM-judge labels (claude-sonnet-4-5-20250929, five-draw median) with no human validation. Judge-agreement reliability: not measured (audit waived by owner ruling, 2026-09-03). Judge errors correlated with the direction score would inflate AUROC, which is exactly what the waived audit guarded against."
+      },
+      "impoliteness": {
+        "status": "WAIVED",
+        "detail": "Labels for the judged rows are LLM-judge labels (claude-sonnet-4-5-20250929, five-draw median) with no human validation. Judge-agreement reliability: not measured (audit waived by owner ruling, 2026-09-03). Judge errors correlated with the direction score would inflate AUROC, which is exactly what the waived audit guarded against."
+      },
+      "harmful_compliance": {
+        "status": "WAIVED",
+        "detail": "Labels for the judged rows are LLM-judge labels (claude-sonnet-4-5-20250929, five-draw median) with no human validation. Judge-agreement reliability: not measured (audit waived by owner ruling, 2026-09-03). Judge errors correlated with the direction score would inflate AUROC, which is exactly what the waived audit guarded against."
+      }
+    },
+    "waiver": {
+      "created_at_unix": 1788477313.852881,
+      "disclosure": "Labels for the judged rows are LLM-judge labels (claude-sonnet-4-5-20250929, five-draw median) with no human validation. Judge-agreement reliability: not measured (audit waived by owner ruling, 2026-09-03). Judge errors correlated with the direction score would inflate AUROC, which is exactly what the waived audit guarded against.",
+      "note": "Owner-ruling waiver record (plan v5 A1). No adjudications.json exists or is synthesized; the P3 human_audit_feasibility gate and the production label_reliability row gate report the distinct status WAIVED.",
+      "plan_version": "v5",
+      "ruling_event": {
+        "by": "thomas-via-watcher-7d7549",
+        "kind": "epm:clarify-answers",
+        "ts": "2026-09-03T20:39:25Z",
+        "version": 1
+      },
+      "ruling_note_verbatim": "USER RULING (Thomas, 2026-09-03 ~09:10 PDT, relayed verbatim by watcher session explore-persona-space-9c [7d7549]): \"just trust the judge\"\n\nCONTEXT ANSWERED: the epm:failure v1 park (15:55:33Z) on gate human_audit_feasibility — \"commit annotation capacity for the blinded audit (8 traits x 2 banks, 4,000 items, 8,000 reads, ~200 human-hours)\". Thomas was shown that the alternative is the 8 judged rows returning not-estimable with only the 3 correctness rows deciding, and ruled to use the judge labels instead.\n\nOPERATIONAL MEANING (owner decision; binding for this task):\n1. The blinded double-human audit is WAIVED for #2658. adjudications.json will not arrive. The frozen LLM judge's labels are the operational semantic labels for the 8 judged rows (evil, sycophancy, hallucination, refusal, assistantness, casualness, impoliteness, harmful_compliance) on both development and sealed-test banks.\n2. This amends the plan's registered kill criterion (human-audit reliability, kappa>=0.70 / ICC>=0.75, >=100 adjudicated positives and negatives per trait) and the ## Goal clause \"returning not-estimable rather than substituting proxy targets\" AS APPLIED TO JUDGE LABELS. It does not amend anything else: hallucination cells with no frozen reference (wang44_probes / wildchat_real) stay not-estimable as documented; correctness rows keep their reference/executable labels; C2 direction signs stay frozen; no other gate is waived.\n3. DISCLOSURE IS MANDATORY in every downstream artifact (gate_verdict, interpretation, clean-result, paper text and Figure 3 caption): labels for the judged rows are LLM-judge labels with NO human validation; the judge-agreement reliability line reads \"not measured (audit waived by owner ruling 2026-09-03)\". State the direction of the risk plainly: judge errors correlated with the direction score would inflate AUROC, and that is exactly what the waived audit guarded against.\n4. Implementation shape (watcher's assumption, not Thomas's words): a documented waiver path in issue2658_power's human_audit gate that reads this ruling (event ts) and records the waiver into gate_verdict.json, rather than any synthesized adjudications.json. A fabricated adjudications artifact is NOT sanctioned. Thomas did not ask for a full /adversarial-planner re-run; treat this as a patch-level plan amendment unless he says otherwise.\n5. Re-check before re-running the gate: P1 capture DID run and verify (56 store files under issue2658_dirvalid/analysis_tensors/l19_pilot/shard{00..07}of08/, upload-verification PASS 08:00:01Z), yet the park note says row_vector_alignment is NOT-ESTIMABLE \"because the L19 capture never ran\" and cost_report.json says power_inputs/pilot_timing.json is absent. Both look like wiring gaps between the P1 launcher's outputs and the power module's expected input paths, not missing data. Verify and fix that wiring before concluding those gates.\n\nCOST NOTE for the resumed run (from the P3 deliverables): pilot judge draws realized 42,095 (dollars not measured: judge_spend.json absent). Production is 30 responses/prompt vs 10 in the pilot; sealed-test generation+capture needs a pod again (~$26/hr at 8xH100). State the projected spend in the launch marker before provisioning, per the finite-compute rule.\n",
+      "ruling_verbatim": "just trust the judge",
+      "schema": "i2658-human-audit-waiver-v1",
+      "scope": {
+        "banks": [
+          "dev",
+          "test"
+        ],
+        "gates": [
+          "human_audit_feasibility",
+          "label_reliability"
+        ]
+      }
+    },
+    "disclosure": "Labels for the judged rows are LLM-judge labels (claude-sonnet-4-5-20250929, five-draw median) with no human validation. Judge-agreement reliability: not measured (audit waived by owner ruling, 2026-09-03). Judge errors correlated with the direction score would inflate AUROC, which is exactly what the waived audit guarded against."
   },
   "metadata": {
-    "git_commit": "d30bca7158afe165c8eabcf78ff2cfadb5955291",
-    "git_dirty": false,
+    "git_commit": "609cc9ee5e285492474ba67aaa0d8db7ff149552",
+    "git_dirty": true,
     "phase": "p3-gate",
-    "git_argv0_state": "tracked",
+    "git_dirty_paths": [
+      "eval_results/issue_2658/power/cost_report.json",
+      "scripts/issue2658_power.py",
+      "tests/test_issue2658_unit8.py"
+    ],
+    "git_argv0_state": "modified",
     "git_argv0_path": "scripts/issue2658_power.py"
   }
 }

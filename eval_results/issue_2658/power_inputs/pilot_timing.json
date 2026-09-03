@@ -1,0 +1,162 @@
+{
+  "schema": "i2658-pilot-timing-v2",
+  "wall_hours": 3.323888888888889,
+  "gpu_count": 8,
+  "n_responses": 6290,
+  "fixed_overhead_hours": 0.13472222222222222,
+  "pod_wall_hours_all_in": 3.323888888888889,
+  "gpu_hours_all_in": 26.59111111111111,
+  "pod_window": {
+    "start": "2026-09-03T04:41:21Z",
+    "end": "2026-09-03T08:00:47Z"
+  },
+  "gen_marginal_s_per_response_per_gpu": 0.13776824034334764,
+  "gen_engine_init_s_per_shard": {
+    "generate_shard00": 62.0,
+    "generate_shard01": 61.0,
+    "generate_shard02": 60.0,
+    "generate_shard03": 62.0,
+    "generate_shard04": 62.0,
+    "generate_shard05": 59.0,
+    "generate_shard06": 60.0,
+    "generate_shard07": 59.0
+  },
+  "capture_rows_per_s_per_gpu": 33.81720430107527,
+  "capture_model_load_s_per_shard": {
+    "value": null,
+    "basis": "not-measured",
+    "detail": "capture model-load overhead is not stamped in the P1 logs; the capture projection component is therefore a LOWER BOUND"
+  },
+  "shards_used_for_gen_rate": [
+    "generate_shard04",
+    "generate_shard05",
+    "generate_shard06"
+  ],
+  "shards_excluded_resumed": [
+    "generate_shard00",
+    "generate_shard01",
+    "generate_shard02",
+    "generate_shard03",
+    "generate_shard07"
+  ],
+  "gen_rate_basis": {
+    "records": 2330,
+    "final_elapsed_s": 321,
+    "detail": "sum(records)/sum(final elapsed) over shards where every [gen] cell line is resumed=False (one GPU per shard)"
+  },
+  "capture_rate_basis": {
+    "rows": 6290,
+    "elapsed_s": 186.0
+  },
+  "crash_fix_rounds_note": "launcher_main.log shows 4 [phase=p1_width] starts (lines [1, 384, 432, 577]) — the first launch plus 3 crash-fix restarts; the all-in pod wall (crash-fix rounds + upload remediation included) dominates the productive generation+capture compute (< 1 GPU-h)",
+  "sources": {
+    "logs_dir": "/mnt/eps-data/thomasjiralerspong/issue2658_logs/p1_hf/issue2658_dirvalid/launch_logs/p1",
+    "hf_prefix": "issue2658_dirvalid/launch_logs/p1",
+    "gen_order_manifest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/gen_order_manifest/pilot_shard00of01.json",
+    "generate_shards": {
+      "generate_shard00": {
+        "first_vllm_stamp": 18,
+        "graph_capturing_finished": 97,
+        "last_gen_cell": 116,
+        "all_fresh": false
+      },
+      "generate_shard01": {
+        "first_vllm_stamp": 17,
+        "graph_capturing_finished": 97,
+        "last_gen_cell": 116,
+        "all_fresh": false
+      },
+      "generate_shard02": {
+        "first_vllm_stamp": 16,
+        "graph_capturing_finished": 99,
+        "last_gen_cell": 118,
+        "all_fresh": false
+      },
+      "generate_shard03": {
+        "first_vllm_stamp": 17,
+        "graph_capturing_finished": 98,
+        "last_gen_cell": 116,
+        "all_fresh": false
+      },
+      "generate_shard04": {
+        "first_vllm_stamp": 19,
+        "graph_capturing_finished": 100,
+        "last_gen_cell": 134,
+        "all_fresh": true
+      },
+      "generate_shard05": {
+        "first_vllm_stamp": 18,
+        "graph_capturing_finished": 97,
+        "last_gen_cell": 131,
+        "all_fresh": true
+      },
+      "generate_shard06": {
+        "first_vllm_stamp": 19,
+        "graph_capturing_finished": 99,
+        "last_gen_cell": 133,
+        "all_fresh": true
+      },
+      "generate_shard07": {
+        "first_vllm_stamp": 18,
+        "graph_capturing_finished": 100,
+        "last_gen_cell": 118,
+        "all_fresh": false
+      }
+    },
+    "capture_shards": {
+      "capture_shard00.log": {
+        "capture_subshard_00_final": 94,
+        "capture_subshard_01_final": 130
+      },
+      "capture_shard01.log": {
+        "capture_subshard_00_final": 94,
+        "capture_subshard_01_final": 130
+      },
+      "capture_shard02.log": {
+        "capture_subshard_00_final": 94,
+        "capture_subshard_01_final": 130
+      },
+      "capture_shard03.log": {
+        "capture_subshard_00_final": 94,
+        "capture_subshard_01_final": 130
+      },
+      "capture_shard04.log": {
+        "capture_subshard_00_final": 94,
+        "capture_subshard_01_final": 130
+      },
+      "capture_shard05.log": {
+        "capture_subshard_00_final": 94,
+        "capture_subshard_01_final": 130
+      },
+      "capture_shard06.log": {
+        "capture_subshard_00_final": 94,
+        "capture_subshard_01_final": 130
+      },
+      "capture_shard07.log": {
+        "capture_subshard_00_final": 94,
+        "capture_subshard_01_final": 130
+      }
+    },
+    "launcher_p1_width_lines": [
+      1,
+      384,
+      432,
+      577
+    ],
+    "pod_window_source": "epm:run-launched v1 / epm:pod-terminated v1 markers"
+  },
+  "metadata": {
+    "git_commit": "4ad324a2c476eae44d725c8c86b8614c6fb0c226",
+    "git_dirty": true,
+    "phase": "p3-pilot-timing",
+    "git_dirty_paths": [
+      "scripts/issue2658_pilot_timing.py",
+      "scripts/issue2658_inference.py",
+      "scripts/issue2658_power.py",
+      "tests/test_issue2658_unit11.py",
+      "tests/test_issue2658_unit8.py"
+    ],
+    "git_argv0_state": "untracked",
+    "git_argv0_path": "scripts/issue2658_pilot_timing.py"
+  }
+}

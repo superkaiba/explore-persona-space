@@ -1,0 +1,25 @@
+{
+ "created_at_unix": 1788477313.852881,
+ "disclosure": "Labels for the judged rows are LLM-judge labels (claude-sonnet-4-5-20250929, five-draw median) with no human validation. Judge-agreement reliability: not measured (audit waived by owner ruling, 2026-09-03). Judge errors correlated with the direction score would inflate AUROC, which is exactly what the waived audit guarded against.",
+ "note": "Owner-ruling waiver record (plan v5 A1). No adjudications.json exists or is synthesized; the P3 human_audit_feasibility gate and the production label_reliability row gate report the distinct status WAIVED.",
+ "plan_version": "v5",
+ "ruling_event": {
+  "by": "thomas-via-watcher-7d7549",
+  "kind": "epm:clarify-answers",
+  "ts": "2026-09-03T20:39:25Z",
+  "version": 1
+ },
+ "ruling_note_verbatim": "USER RULING (Thomas, 2026-09-03 ~09:10 PDT, relayed verbatim by watcher session explore-persona-space-9c [7d7549]): \"just trust the judge\"\n\nCONTEXT ANSWERED: the epm:failure v1 park (15:55:33Z) on gate human_audit_feasibility \u2014 \"commit annotation capacity for the blinded audit (8 traits x 2 banks, 4,000 items, 8,000 reads, ~200 human-hours)\". Thomas was shown that the alternative is the 8 judged rows returning not-estimable with only the 3 correctness rows deciding, and ruled to use the judge labels instead.\n\nOPERATIONAL MEANING (owner decision; binding for this task):\n1. The blinded double-human audit is WAIVED for #2658. adjudications.json will not arrive. The frozen LLM judge's labels are the operational semantic labels for the 8 judged rows (evil, sycophancy, hallucination, refusal, assistantness, casualness, impoliteness, harmful_compliance) on both development and sealed-test banks.\n2. This amends the plan's registered kill criterion (human-audit reliability, kappa>=0.70 / ICC>=0.75, >=100 adjudicated positives and negatives per trait) and the ## Goal clause \"returning not-estimable rather than substituting proxy targets\" AS APPLIED TO JUDGE LABELS. It does not amend anything else: hallucination cells with no frozen reference (wang44_probes / wildchat_real) stay not-estimable as documented; correctness rows keep their reference/executable labels; C2 direction signs stay frozen; no other gate is waived.\n3. DISCLOSURE IS MANDATORY in every downstream artifact (gate_verdict, interpretation, clean-result, paper text and Figure 3 caption): labels for the judged rows are LLM-judge labels with NO human validation; the judge-agreement reliability line reads \"not measured (audit waived by owner ruling 2026-09-03)\". State the direction of the risk plainly: judge errors correlated with the direction score would inflate AUROC, and that is exactly what the waived audit guarded against.\n4. Implementation shape (watcher's assumption, not Thomas's words): a documented waiver path in issue2658_power's human_audit gate that reads this ruling (event ts) and records the waiver into gate_verdict.json, rather than any synthesized adjudications.json. A fabricated adjudications artifact is NOT sanctioned. Thomas did not ask for a full /adversarial-planner re-run; treat this as a patch-level plan amendment unless he says otherwise.\n5. Re-check before re-running the gate: P1 capture DID run and verify (56 store files under issue2658_dirvalid/analysis_tensors/l19_pilot/shard{00..07}of08/, upload-verification PASS 08:00:01Z), yet the park note says row_vector_alignment is NOT-ESTIMABLE \"because the L19 capture never ran\" and cost_report.json says power_inputs/pilot_timing.json is absent. Both look like wiring gaps between the P1 launcher's outputs and the power module's expected input paths, not missing data. Verify and fix that wiring before concluding those gates.\n\nCOST NOTE for the resumed run (from the P3 deliverables): pilot judge draws realized 42,095 (dollars not measured: judge_spend.json absent). Production is 30 responses/prompt vs 10 in the pilot; sealed-test generation+capture needs a pod again (~$26/hr at 8xH100). State the projected spend in the launch marker before provisioning, per the finite-compute rule.\n",
+ "ruling_verbatim": "just trust the judge",
+ "schema": "i2658-human-audit-waiver-v1",
+ "scope": {
+  "banks": [
+   "dev",
+   "test"
+  ],
+  "gates": [
+   "human_audit_feasibility",
+   "label_reliability"
+  ]
+ }
+}

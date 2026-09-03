@@ -1,0 +1,264 @@
+{
+  "schema": "i2658-store-index-staging-v1",
+  "repo": "superkaiba1/explore-persona-space-data",
+  "prefix": "issue2658_dirvalid/analysis_tensors/l19_pilot",
+  "revision": "74bb871a5edf1afe777ac9b64a4e2fec5e9947c2",
+  "n_files": 40,
+  "files": [
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard00of08/_capture_manifest.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard00of08/_capture_manifest.json",
+      "bytes": 551,
+      "size": 551
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard00of08/_capture_meta_shard00.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard00of08/_capture_meta_shard00.json",
+      "bytes": 98,
+      "size": 98
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard00of08/_capture_meta_shard01.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard00of08/_capture_meta_shard01.json",
+      "bytes": 98,
+      "size": 98
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard00of08/row_index_shard00.jsonl",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard00of08/row_index_shard00.jsonl",
+      "bytes": 202904,
+      "size": 202904
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard00of08/row_index_shard01.jsonl",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard00of08/row_index_shard01.jsonl",
+      "bytes": 109159,
+      "size": 109159
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard01of08/_capture_manifest.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard01of08/_capture_manifest.json",
+      "bytes": 551,
+      "size": 551
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard01of08/_capture_meta_shard00.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard01of08/_capture_meta_shard00.json",
+      "bytes": 98,
+      "size": 98
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard01of08/_capture_meta_shard01.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard01of08/_capture_meta_shard01.json",
+      "bytes": 98,
+      "size": 98
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard01of08/row_index_shard00.jsonl",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard01of08/row_index_shard00.jsonl",
+      "bytes": 202887,
+      "size": 202887
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard01of08/row_index_shard01.jsonl",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard01of08/row_index_shard01.jsonl",
+      "bytes": 109161,
+      "size": 109161
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard02of08/_capture_manifest.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard02of08/_capture_manifest.json",
+      "bytes": 551,
+      "size": 551
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard02of08/_capture_meta_shard00.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard02of08/_capture_meta_shard00.json",
+      "bytes": 98,
+      "size": 98
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard02of08/_capture_meta_shard01.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard02of08/_capture_meta_shard01.json",
+      "bytes": 98,
+      "size": 98
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard02of08/row_index_shard00.jsonl",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard02of08/row_index_shard00.jsonl",
+      "bytes": 202958,
+      "size": 202958
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard02of08/row_index_shard01.jsonl",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard02of08/row_index_shard01.jsonl",
+      "bytes": 108755,
+      "size": 108755
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard03of08/_capture_manifest.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard03of08/_capture_manifest.json",
+      "bytes": 551,
+      "size": 551
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard03of08/_capture_meta_shard00.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard03of08/_capture_meta_shard00.json",
+      "bytes": 98,
+      "size": 98
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard03of08/_capture_meta_shard01.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard03of08/_capture_meta_shard01.json",
+      "bytes": 98,
+      "size": 98
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard03of08/row_index_shard00.jsonl",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard03of08/row_index_shard00.jsonl",
+      "bytes": 202976,
+      "size": 202976
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard03of08/row_index_shard01.jsonl",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard03of08/row_index_shard01.jsonl",
+      "bytes": 108777,
+      "size": 108777
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard04of08/_capture_manifest.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard04of08/_capture_manifest.json",
+      "bytes": 551,
+      "size": 551
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard04of08/_capture_meta_shard00.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard04of08/_capture_meta_shard00.json",
+      "bytes": 98,
+      "size": 98
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard04of08/_capture_meta_shard01.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard04of08/_capture_meta_shard01.json",
+      "bytes": 98,
+      "size": 98
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard04of08/row_index_shard00.jsonl",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard04of08/row_index_shard00.jsonl",
+      "bytes": 203004,
+      "size": 203004
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard04of08/row_index_shard01.jsonl",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard04of08/row_index_shard01.jsonl",
+      "bytes": 108771,
+      "size": 108771
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard05of08/_capture_manifest.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard05of08/_capture_manifest.json",
+      "bytes": 551,
+      "size": 551
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard05of08/_capture_meta_shard00.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard05of08/_capture_meta_shard00.json",
+      "bytes": 98,
+      "size": 98
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard05of08/_capture_meta_shard01.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard05of08/_capture_meta_shard01.json",
+      "bytes": 98,
+      "size": 98
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard05of08/row_index_shard00.jsonl",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard05of08/row_index_shard00.jsonl",
+      "bytes": 202999,
+      "size": 202999
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard05of08/row_index_shard01.jsonl",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard05of08/row_index_shard01.jsonl",
+      "bytes": 108764,
+      "size": 108764
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard06of08/_capture_manifest.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard06of08/_capture_manifest.json",
+      "bytes": 551,
+      "size": 551
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard06of08/_capture_meta_shard00.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard06of08/_capture_meta_shard00.json",
+      "bytes": 98,
+      "size": 98
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard06of08/_capture_meta_shard01.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard06of08/_capture_meta_shard01.json",
+      "bytes": 98,
+      "size": 98
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard06of08/row_index_shard00.jsonl",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard06of08/row_index_shard00.jsonl",
+      "bytes": 203041,
+      "size": 203041
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard06of08/row_index_shard01.jsonl",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard06of08/row_index_shard01.jsonl",
+      "bytes": 108750,
+      "size": 108750
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard07of08/_capture_manifest.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard07of08/_capture_manifest.json",
+      "bytes": 551,
+      "size": 551
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard07of08/_capture_meta_shard00.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard07of08/_capture_meta_shard00.json",
+      "bytes": 98,
+      "size": 98
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard07of08/_capture_meta_shard01.json",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard07of08/_capture_meta_shard01.json",
+      "bytes": 98,
+      "size": 98
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard07of08/row_index_shard00.jsonl",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard07of08/row_index_shard00.jsonl",
+      "bytes": 203081,
+      "size": 203081
+    },
+    {
+      "path_in_repo": "issue2658_dirvalid/analysis_tensors/l19_pilot/shard07of08/row_index_shard01.jsonl",
+      "dest": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/l19_store/pilot/shard07of08/row_index_shard01.jsonl",
+      "bytes": 108772,
+      "size": 108772
+    }
+  ],
+  "staged_at_unix": 1788478294.6357136,
+  "note": "TEXT sidecars only (row_index/_capture_manifest/_capture_meta); .npy tensors deliberately NOT staged — eval_results is text-only (v5 A5)",
+  "metadata": {
+    "git_commit": "4ad324a2c476eae44d725c8c86b8614c6fb0c226",
+    "git_dirty": true,
+    "phase": "p3-store-index-staging",
+    "git_dirty_paths": [
+      "scripts/issue2658_inference.py",
+      "scripts/issue2658_power.py",
+      "tests/test_issue2658_unit11.py",
+      "tests/test_issue2658_unit8.py"
+    ],
+    "git_argv0_state": "modified",
+    "git_argv0_path": "scripts/issue2658_power.py"
+  }
+}

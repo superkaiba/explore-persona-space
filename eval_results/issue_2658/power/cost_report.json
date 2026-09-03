@@ -3,40 +3,44 @@
   "split": "pilot",
   "gpu_hours": {
     "measured_pilot_gpu_h": {
-      "value": null,
-      "basis": "not-estimable",
-      "missing_artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/power_inputs/pilot_timing.json",
-      "detail": "artifact absent — never substituted with a projection"
+      "value": 26.59111111111111,
+      "basis": "measured (all-in pod wall x gpu_count, crash-fix rounds included)",
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/power_inputs/pilot_timing.json"
     },
-    "projected_production_gpu_h": {
+    "projected_production_gpu_h_measured_marginal": {
       "value": null,
       "basis": "not-estimable",
-      "missing_artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/power_inputs/pilot_timing.json",
-      "detail": "no measured pilot marginal rate to project from"
+      "missing_artifact": "production N (power/production_n.json status=measured)",
+      "detail": "no fixed production N yet — projection undefined"
     }
   },
   "api": {
     "realized_judge_draws": {
-      "value": 42095,
+      "value": 20950,
       "basis": "measured",
       "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/judge/pilot",
-      "detail": "summed draw counters over 89 judged cell bodies"
+      "detail": "summed dispatch_total_calls over 8 row _wave_summary.json files (the per-cell counters sum double-counts n_kept and n_kept_with_reasoning — v5 A4)"
     },
     "measured_dollars": {
-      "value": null,
-      "basis": "not-estimable",
-      "missing_artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/power_inputs/judge_spend.json",
-      "detail": "artifact absent — never substituted with a projection"
+      "value": 60.987192,
+      "basis": "priced from measured tokens, not billed",
+      "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/power_inputs/judge_spend.json"
     },
     "projected_pilot_judge_draws": {
       "value": 24000,
       "basis": "projected",
       "detail": "plan section 10 projection: 8 judged traits x 600 answers x 5 draws — a PROJECTION, never quote as realized"
     },
-    "projected_production_judge_draws": {
+    "projected_production_judge_calls": {
       "value": null,
       "basis": "not-estimable",
-      "missing_artifact": "production N (power/production_n.json status=measured)",
+      "missing_artifact": "production N (power/production_n.json status=measured) + judge wave summaries",
+      "detail": "artifact absent — never substituted with a projection"
+    },
+    "projected_production_judge_dollars": {
+      "value": null,
+      "basis": "not-estimable",
+      "missing_artifact": "production N (power/production_n.json status=measured) + judge_spend.json",
       "detail": "artifact absent — never substituted with a projection"
     }
   },
@@ -61,17 +65,30 @@
   },
   "envelope": {
     "pilot_ceiling_gpu_h": 8.0,
+    "production_ceiling_gpu_h": 72.0,
     "total_ceiling_gpu_h": 80.0,
+    "pilot_ceiling_deviation": {
+      "measured_pilot_gpu_h": 26.59111111111111,
+      "pilot_ceiling_gpu_h": 8.0,
+      "ratio": 3.323888888888889,
+      "decomposition": "launcher_main.log shows 4 [phase=p1_width] starts (lines [1, 384, 432, 577]) — the first launch plus 3 crash-fix restarts; the all-in pod wall (crash-fix rounds + upload remediation included) dominates the productive generation+capture compute (< 1 GPU-h)",
+      "disposition": "sunk, not actionable — reported as a deviation, never a launch veto (v5 A4); the kill criterion is the 80 GPU-h projected total"
+    },
     "projected_total_gpu_h": null,
     "margin_gpu_h": null,
     "within_envelope": null,
     "basis": "not-estimable — see gpu_hours fields for the missing artifacts"
   },
   "metadata": {
-    "git_commit": "d30bca7158afe165c8eabcf78ff2cfadb5955291",
-    "git_dirty": false,
+    "git_commit": "609cc9ee5e285492474ba67aaa0d8db7ff149552",
+    "git_dirty": true,
     "phase": "p3-cost",
-    "git_argv0_state": "tracked",
+    "git_dirty_paths": [
+      "eval_results/issue_2658/power/cost_report.json",
+      "scripts/issue2658_power.py",
+      "tests/test_issue2658_unit8.py"
+    ],
+    "git_argv0_state": "modified",
     "git_argv0_path": "scripts/issue2658_power.py"
   }
 }
