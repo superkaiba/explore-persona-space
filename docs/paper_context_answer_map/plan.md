@@ -630,3 +630,14 @@ Inventory pass (fill TBDs) → CLAUDE.md for this repo (notation, glossary terms
 citation rules) → Figure 1 → abstract → intro → setup → results → related work →
 review gauntlet → compression → humanize. AI-use log kept from day one (ICLR LLM
 disclosure). Every citation fetched programmatically, never from memory.
+
+## Decisions (Thomas, 2026-09-02)
+
+21. BEHAVIOR-PREDICTION EVALUATION SETS (Thomas, 2026-09-02: "just consider 10 sets for the entire paper"): the
+    regression-on-mapped-answer vs regression-on-context comparison (Section 4.7.1, Figure 11, Table 2,
+    Appendix E) uses the TEN held-out sets only. The three sets dropped on the 2026-08-25 order (evil
+    tom-gibbs multi-turn transcripts, SycophancyEval are-you-sure, SycophancyEval mimicry) are out of the
+    paper everywhere, not only the figure. Ten-set reads (from `claim4_per_rung_table.json`): true-map
+    delta positive 10/10, median +0.04, seed interval above zero on 8; margin over the shuffled map
+    positive 10/10, median +0.04, interval above zero on 6. The 13-rung reads in claims.md stay as the
+    artifact record.
