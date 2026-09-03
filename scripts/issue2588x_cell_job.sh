@@ -49,12 +49,43 @@ if [ "$REG_TP" != "$TP" ]; then
   echo "[job] FATAL: tp argument $TP != registry tp_gpus $REG_TP for $MODEL_KEY" >&2
   exit 2
 fi
+# --- Node-local weight mirror (I/O only; results unaffected) ------------------------
+# vLLM rebuilds its engine for every generation stage (G4/G5 regen passes, GPQA), and
+# each rebuild re-reads the whole checkpoint. From MooseFS/FUSE that took ~19 min per
+# build for the 173 GB Flash-Next FP8 snapshot (smoke 61323, 2026-09-03), so a cell pays
+# hours in pure loading. Mirror the snapshot once to node-local /tmp (NVMe overlay) and
+# point HF_HOME there when the node has room; otherwise fall back to the shared cache.
+HF_ID="$("$PY" -c 'import sys, issue2588_panel_common as PC; print(PC.PANEL[sys.argv[1]].hf_id)' "$MODEL_KEY")"
+REPO_DIR="models--${HF_ID//\//--}"
+SRC="$BASE/hf_cache/hub/$REPO_DIR"
+MIRROR_ROOT="/tmp/eps2588x_hf"
+_eps_mirror_cleanup() { rm -rf "$MIRROR_ROOT/hub/$REPO_DIR" 2>/dev/null || true; }
+if [ -d "$SRC" ]; then
+  need_kb=$(du -sk "$SRC" | cut -f1)
+  free_kb=$(df -Pk /tmp | awk 'NR==2{print $4}')
+  if [ "$free_kb" -gt $(( need_kb * 12 / 10 )) ]; then
+    echo "[job] $(date -u +%FT%TZ) mirroring $REPO_DIR ($(( need_kb / 1048576 )) GB) to $MIRROR_ROOT (free $(( free_kb / 1048576 )) GB)"
+    mkdir -p "$MIRROR_ROOT/hub"
+    if rsync -a "$SRC/" "$MIRROR_ROOT/hub/$REPO_DIR/"; then
+      export HF_HOME="$MIRROR_ROOT"
+      trap '_eps_mirror_cleanup' EXIT
+      echo "[job] $(date -u +%FT%TZ) mirror done; HF_HOME=$HF_HOME"
+    else
+      echo "[job] $(date -u +%FT%TZ) mirror FAILED; falling back to shared HF_HOME" >&2
+      _eps_mirror_cleanup
+    fi
+  else
+    echo "[job] $(date -u +%FT%TZ) /tmp too small for a mirror (need $(( need_kb / 1048576 )) GB x1.2, free $(( free_kb / 1048576 )) GB); using shared HF_HOME"
+  fi
+fi
+
 ARMS="$("$PY" -c 'import sys, issue2588_panel_common as PC; print(" ".join(PC.PANEL[sys.argv[1]].arms))' "$MODEL_KEY")"
 
 term_handler() {
   echo "[trap] $(date -u +%FT%TZ) caught TERM/INT — killing the job's process group" >&2
   trap - TERM INT
   kill -- 0 2>/dev/null || true
+  _eps_mirror_cleanup
   exit 143
 }
 trap term_handler TERM INT
