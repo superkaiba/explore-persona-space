@@ -38,6 +38,7 @@ Artifacts read (schemas observed from the committed/unit-produced files):
     eval_results/issue_2658/direction_provenance.json      (unit 1)
     eval_results/issue_2658/{frame,split}_manifest.json    (unit 2)
     {gen_root}/raw_completions/{split}/{cell}.json         (unit 5, i2658-gen-cell-v1)
+    {gen_root}/gen_summary/{split}_shard*.json             (unit 5 cap_hit reports)
     {out_root}/judge/{split}/{row}/{cell}.json             (unit 6, i2658-judge-cell-v1)
     {out_root}/objective_labels/{split}/{cell}.jsonl       (unit 4, i2658-objective-labels-v1)
 Artifacts written (under --out-root; smoke diverts to a /tmp scratch root):
@@ -2137,9 +2138,14 @@ def _gate_judge_quality(
 def _gate_cap_hit(
     gen_root: Path, split: str, declared: dict[str, dict[str, str]] | None = None
 ) -> Gate:
+    # Observed unit-5 schema: the cap-hit report lives in the per-shard gen
+    # summaries (gen_summary/<split>_shard*.json, key ``cap_hit`` with
+    # per_cell_fraction keyed ``row|frame|stratum``) — NOT in the per-cell
+    # raw-completion bodies (those carry records/fingerprint only; reading
+    # body["cap_hit"] there KeyErrors, the round-12 wiring find).
     declared = declared or {}
-    gen_dir = Path(gen_root) / "raw_completions" / split
-    paths = sorted(gen_dir.glob("*.json"))
+    summary_dir = Path(gen_root) / "gen_summary"
+    paths = sorted(summary_dir.glob(f"{split}_shard*.json"))
     # v5 A2: only NEVER-GENERATED declared cells (frame-manifest source) leave
     # the generation-scope denominator; judge-scope declarations (no frozen
     # reference) still have generated answers and stay counted here.
@@ -2149,19 +2155,30 @@ def _gate_cap_hit(
         if rec.get("source") == "frame-manifest-pilot-selection"
     }
     n_expected = len(C.ROW_IDS) * C.PILOT.cells_per_row - len(declared_ungenerated)
-    on_disk = {p.stem for p in paths}
-    overlap = sorted(on_disk & set(declared_ungenerated))
+    covered: set[str] = set()
+    problems = []
+    worst = 0.0
+    for p in paths:
+        rep = json.loads(p.read_text())["cap_hit"]
+        for cell_key, frac in rep["per_cell_fraction"].items():
+            covered.add(cell_key.replace("|", "__"))
+            worst = max(worst, float(frac))
+        if rep["amendment_required"]:
+            problems.append(f"{p.name}: cells over threshold {sorted(rep['cells_over_threshold'])}")
+    overlap = sorted(covered & set(declared_ungenerated))
     if overlap:
         raise PowerInputError(
-            f"declared never-generated cells have generation artifacts on disk: "
-            f"{overlap[:3]} — stale frame-manifest declaration"
+            f"declared never-generated cells appear in gen summaries: {overlap[:3]} — "
+            "stale frame-manifest declaration"
         )
     measured: dict[str, Any] = {
-        "n_cells_on_disk": len(paths),
+        "n_cells_covered": len(covered),
         "n_expected": n_expected,
+        "n_shard_summaries": len(paths),
+        "worst_per_cell_fraction": worst,
         "cells_declared_not_estimable": declared_ungenerated,
     }
-    if len(paths) < n_expected:
+    if len(covered) < n_expected:
         return Gate(
             "measured_cap_hit_rate",
             "realized length-cap-hit fraction <= 2% per cell (plan section 5)",
@@ -2169,19 +2186,9 @@ def _gate_cap_hit(
             measured,
             f"<= {G.CAP_HIT_AMEND_THRESHOLD} per cell over {n_expected} generated cells "
             "(132-scope minus declared never-generated)",
-            str(gen_dir),
-            "pilot generation artifacts incomplete (undocumented absence)",
+            str(summary_dir),
+            "pilot generation cap-hit coverage incomplete (undocumented absence)",
         )
-    problems = []
-    worst = 0.0
-    for p in paths:
-        body = json.loads(p.read_text())
-        rep = body["cap_hit"]
-        for _cell_key, frac in rep["per_cell_fraction"].items():
-            worst = max(worst, float(frac))
-        if rep["amendment_required"]:
-            problems.append(f"{p.name}: cells over threshold {rep['cells_over_threshold']}")
-    measured["worst_per_cell_fraction"] = worst
     return Gate(
         "measured_cap_hit_rate",
         "realized length-cap-hit fraction <= 2% per cell (plan section 5)",
@@ -2189,7 +2196,7 @@ def _gate_cap_hit(
         measured,
         f"<= {G.CAP_HIT_AMEND_THRESHOLD} per cell over {n_expected} generated cells "
         "(132-scope minus declared never-generated)",
-        str(gen_dir),
+        str(summary_dir),
         "; ".join(problems[:10]),
     )
 

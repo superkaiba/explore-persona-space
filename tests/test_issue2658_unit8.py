@@ -1256,3 +1256,59 @@ def test_stager_writes_provenance_offline(tmp_path, monkeypatch):
     gen_dir.mkdir(parents=True)
     gate = P._gate_row_vector_alignment(tmp_path / "out", tmp_path / "out", "pilot")
     assert "hub-staged (" + "f" * 40 + ")" in str(gate.measured)
+
+
+def _gen_summary_fixture(tmp_path, split: str, frac_by_cell: dict[str, float]) -> Path:
+    """One shard gen-summary in the OBSERVED unit-5 schema (cap_hit key with
+    per_cell_fraction keyed row|frame|stratum)."""
+    over = sorted(k for k, v in frac_by_cell.items() if v > G_CAP_THRESHOLD)
+    body = {
+        "split": split,
+        "cap_hit": {
+            "amendment_required": bool(over),
+            "cells_over_threshold": over,
+            "per_cell_fraction": frac_by_cell,
+            "threshold": G_CAP_THRESHOLD,
+        },
+    }
+    d = tmp_path / "gen_summary"
+    d.mkdir(parents=True, exist_ok=True)
+    p = d / f"{split}_shard00of01.json"
+    p.write_text(json.dumps(body))
+    return p
+
+
+G_CAP_THRESHOLD = float(P.G.CAP_HIT_AMEND_THRESHOLD)
+
+
+def test_gate_cap_hit_reads_shard_summaries(tmp_path):
+    all_keys = {cell.replace("__", "|"): 0.0 for row in C.ROW_IDS for cell in P.expected_cells(row)}
+    _gen_summary_fixture(tmp_path, "pilot", all_keys)
+    gate = P._gate_cap_hit(tmp_path, "pilot")
+    assert gate.status == P.GATE_PASS
+    assert gate.measured["n_cells_covered"] == 132
+    # one cell over the 2% threshold => honest FAIL naming the shard summary
+    hot = dict(all_keys)
+    hot[next(iter(hot))] = 0.16
+    _gen_summary_fixture(tmp_path, "pilot", hot)
+    gate2 = P._gate_cap_hit(tmp_path, "pilot")
+    assert gate2.status == P.GATE_FAIL and "over threshold" in gate2.detail
+    assert gate2.measured["worst_per_cell_fraction"] == 0.16
+    # incomplete coverage without a declaration stays NOT-ESTIMABLE
+    partial = dict(list(all_keys.items())[:100])
+    _gen_summary_fixture(tmp_path, "pilot", partial)
+    gate3 = P._gate_cap_hit(tmp_path, "pilot")
+    assert gate3.status == P.GATE_NOT_ESTIMABLE
+    # a declared never-generated cell shrinks the denominator instead
+    missing_cell = sorted(set(all_keys) - set(partial))[0].replace("|", "__")
+    declared = {
+        missing_cell: {
+            "source": "frame-manifest-pilot-selection",
+            "reason": "zero eligible pilot prompts (synthetic)",
+            "artifact": "y",
+        }
+    }
+    almost = {k: v for k, v in all_keys.items() if k.replace("|", "__") != missing_cell}
+    _gen_summary_fixture(tmp_path, "pilot", almost)
+    gate4 = P._gate_cap_hit(tmp_path, "pilot", declared)
+    assert gate4.status == P.GATE_PASS and gate4.measured["n_expected"] == 131
