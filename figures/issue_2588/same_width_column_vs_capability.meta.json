@@ -1,0 +1,29 @@
+{
+  "title": "Same-width column: mapping rank and quality versus capability",
+  "source_data": "eval_results/issue_2588/mapping_rank_vs_capability.json",
+  "public_url": "https://eps.superkaiba.com/tasks/2588/figure/same_width_column_vs_capability.png",
+  "scope": {
+    "n_maps": 12,
+    "models": [
+      "OLMo3.1 32B I",
+      "OLMo3.1 32B T",
+      "Q2.5 32B",
+      "Q3 32B",
+      "Q3.5 27B",
+      "Q3.6 27B",
+      "Q3.8 27B",
+      "QwQ 32B"
+    ],
+    "hidden_size": 5120
+  },
+  "panels": {
+    "left": "operational rank fraction (min TSVD rank within 0.02 validation R2)",
+    "right": "full selected-layer held-out generic-test R2"
+  },
+  "caveats": [
+    "One map per cell; no fit-seed or generation-seed error bars.",
+    "Arm-a (prompt read) rows use the model-level reasoning AA pin; Qwen3-32B's measured non-reasoning value (8) is recorded in the JSON.",
+    "Qwen ships nothing at this width between AA 13 and AA 35, so the column is a low cluster and a high cluster."
+  ],
+  "accessibility": "Okabe-Ito colors plus redundant marker, fill, and line encodings; grayscale check saved alongside the figure."
+}

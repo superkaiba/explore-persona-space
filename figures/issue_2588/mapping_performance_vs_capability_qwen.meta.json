@@ -1,0 +1,20 @@
+{
+  "title": "Qwen mapping quality versus generic capability",
+  "source_data": "eval_results/issue_2588/mapping_rank_vs_capability.json",
+  "public_url": "https://eps.superkaiba.com/tasks/2588/figure/mapping_performance_vs_capability_qwen.png",
+  "scope": {
+    "n_maps": 18,
+    "n_scored_checkpoints": 10,
+    "omitted_checkpoint": "Qwen2.5-7B anchor: no Artificial Analysis index in the parent panel"
+  },
+  "panels": {
+    "left": "full selected-layer held-out generic-test R2",
+    "right": "full selected-layer held-out generic-test cosine retrieval acc@1 minus shuffled-pairing null mean"
+  },
+  "caveats": [
+    "Most Artificial Analysis values in this panel are estimates.",
+    "The Qwen3.5 size ladder changes width; the Qwen squares share hidden size 5120 and 64 layers.",
+    "Points are single-map estimates; no fit-seed or generation-seed error bars are available."
+  ],
+  "accessibility": "Okabe-Ito colors plus redundant marker, fill, and line-style encodings; grayscale check saved alongside the figure."
+}

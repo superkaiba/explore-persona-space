@@ -1,0 +1,9 @@
+{
+  "title": "Same-width column: truncated ridge vs reduced-rank regression",
+  "rules": [
+    "R\u00b2 gap \u2264 0.02 (current)",
+    "error \u2264 +10%"
+  ],
+  "reading": "open marker = truncated ridge rank, filled = reduced-rank regression rank; lower is more compressible",
+  "public_url": "https://eps.superkaiba.com/tasks/2588/figure/rank_method_comparison.png"
+}

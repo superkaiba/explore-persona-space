@@ -1,0 +1,17 @@
+{
+  "title": "Fraction of hidden width needed by Qwen mappings",
+  "source_data": "eval_results/issue_2588/mapping_rank_vs_capability.json",
+  "public_url": "https://eps.superkaiba.com/tasks/2588/figure/rank_fraction_vs_capability_all_models.png",
+  "scope": {
+    "n_maps": 18,
+    "n_scored_checkpoints": 10,
+    "omitted_checkpoint": "Qwen2.5-7B anchor: no Artificial Analysis index in the parent panel"
+  },
+  "rank_definition": "minimum coefficient-TSVD rank with validation R2 within 0.02 of the full reconstructed map, divided by hidden dimension",
+  "caveats": [
+    "Most Artificial Analysis values in this panel are estimates.",
+    "Panel-wide association is confounded by hidden width; the Qwen squares share hidden size 5120 and 64 layers.",
+    "Points are single-map estimates; no fit-seed or generation-seed error bars are available."
+  ],
+  "accessibility": "Okabe-Ito colors plus redundant marker, fill, and line-style encodings; grayscale check saved alongside the figure."
+}

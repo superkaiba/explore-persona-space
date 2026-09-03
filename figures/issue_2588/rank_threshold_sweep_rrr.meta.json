@@ -1,0 +1,18 @@
+{
+  "title": "Same-width column rank under different tolerances (reduced-rank regression)",
+  "method": "rrr",
+  "rules": [
+    "R\u00b2 gap \u2264 0.02 (current)",
+    "keep \u2265 97% of R\u00b2",
+    "keep \u2265 95% of R\u00b2",
+    "error \u2264 +5%",
+    "error \u2264 +10%",
+    "error \u2264 +20%"
+  ],
+  "rule_definitions": {
+    "R\u00b2 gap": "full validation R2 minus rank-k validation R2, absolute",
+    "keep \u2265 q of R\u00b2": "rank-k validation R2 >= q times full validation R2",
+    "error \u2264 +e": "rank-k validation SSE <= (1 + e) times full-map validation SSE"
+  },
+  "public_url": "https://eps.superkaiba.com/tasks/2588/figure/rank_threshold_sweep_rrr.png"
+}
