@@ -12,3 +12,4 @@
 - [Re-freeze moves pilot membership; downstream frozen artifacts go quietly stale](feedback_refreeze_moves_pilot_membership_downstream_frozen_artifacts.md) — diff selection ids old-vs-new; split membership- vs sha-stale; name needs-refreeze per artifact (#2658 D)
 - [Normalizer form vs acceptance instances](feedback_normalizer_form_vs_acceptance_instances.md) — probe the brief's named instances through the prescribed form FIRST; "punct twins" were ws-DELETION twins needing DROP not FOLD; validate widening by pool-wide delta-set eyeball (#2658 D r3)
 - [#2658 re-freeze mechanics](reference_2658_refreeze_mechanics.md) — commit-first clean stamp; rm-then-rerun pins/evidence override; freeze_pins ~20 min walls on load_math_full (detach); update unit10 PIN_ITEMS_SHA256
+- [/proc session-scoping test rigs](reference_proc_session_scoping_test_rigs.md) — poll argv0 before reading environ; env -i keeps PWD/SHLVL/_; setsid -w forwards rc; pure-/proc sid walk (#2658 sid-reap)
