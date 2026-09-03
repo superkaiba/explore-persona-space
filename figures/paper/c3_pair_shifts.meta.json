@@ -1,0 +1,157 @@
+{
+  "status": "Results Section 4.2 manuscript figure",
+  "style_version": "c2a-v2",
+  "plotting_script": "scripts/make_paper_section42_figures.py",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "reproduction_command": "uv run python scripts/make_paper_section42_figures.py",
+  "title": "Predicted over observed answer-shift size for controlled minimal pairs",
+  "subject": "Through-origin calibration slope of predicted over observed answer-shift size per changed element, with 95% confidence intervals",
+  "git": {
+    "commit": "adeed6da49516182b9577311a4fd40804938044c",
+    "tracked_worktree_dirty": true
+  },
+  "sources": [
+    {
+      "path": "eval_results/issue_2564/minpair_delta.json",
+      "sha256": "28d6344569ddba846a44a46ad4227c7596d38e3f7b63b1f998ff4d83c250fe2d"
+    },
+    {
+      "path": "eval_results/issue_2564/floor-failed-reelicitation/minpair_delta_ffr.json",
+      "sha256": "73f2f7d2156b05bd3bb05ff68ae670b10b516da5aecdd3709884c2b0bc93564d"
+    },
+    {
+      "path": "eval_results/issue_2564/lang_oneword_pilot/summary.json",
+      "sha256": "1b4d228eff1e477567a6d75f865589780a9eda69c30be59b152056bb67fd3337"
+    },
+    {
+      "path": "eval_results/issue_2564/lang_oneword_pilot/perpair.jsonl",
+      "sha256": "fe03349d267b8223d1bf55fc3c2001c50ef6d56fff0125a0c062ba2a0ebedf80"
+    }
+  ],
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      9.821,
+      5.205
+    ],
+    "exported_size_inches": [
+      9.821,
+      4.705
+    ],
+    "scale": 0.42,
+    "include_width_frac": 0.75,
+    "latex_include_line": "\\includegraphics[width=0.75\\textwidth]{figures/paper/c3_pair_shifts.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "1.21",
+      "1.15",
+      "1.05",
+      "0.86",
+      "0.81",
+      "0.66",
+      "CONTROLLED MINIMAL PAIRS",
+      "Output\nformat",
+      "Persona",
+      "Tone",
+      "Answer\nlanguage",
+      "Question\ntopic",
+      "One-word\ntopic",
+      "Predicted / observed shift size",
+      "0.50",
+      "0.75",
+      "1.00",
+      "1.25",
+      "Predicted over observed answer-shift size by element"
+    ]
+  },
+  "displayed_data": {
+    "elements": [
+      {
+        "label": "Output\nformat",
+        "axis": "format",
+        "n": 120,
+        "slope": 1.2107723701971063,
+        "slope_ci95": [
+          1.1458175599895333,
+          1.2840569847773178
+        ]
+      },
+      {
+        "label": "Persona",
+        "axis": "persona",
+        "n": 120,
+        "slope": 1.145679180744482,
+        "slope_ci95": [
+          1.1065513814569188,
+          1.190896271979975
+        ]
+      },
+      {
+        "label": "Tone",
+        "axis": "register",
+        "n": 12,
+        "slope": 1.0488641607899747,
+        "slope_ci95": [
+          1.0083376521867524,
+          1.097314585271011
+        ]
+      },
+      {
+        "label": "Answer\nlanguage",
+        "axis": "answer_language",
+        "n": 72,
+        "slope": 0.864133410851435,
+        "slope_ci95": [
+          0.8488763972522209,
+          0.8800130046769751
+        ],
+        "bootstrap": {
+          "unit": "pair",
+          "draws": 10000,
+          "seed": 21620
+        }
+      },
+      {
+        "label": "Question\ntopic",
+        "axis": "query_content",
+        "n": 66,
+        "slope": 0.8110976182915853,
+        "slope_ci95": [
+          0.7584350985664975,
+          0.8654610603841291
+        ]
+      },
+      {
+        "label": "One-word\ntopic",
+        "axis": "query_content_oneword",
+        "n": 24,
+        "slope": 0.6629054865662586,
+        "slope_ci95": [
+          0.6162169616153551,
+          0.715427221162743
+        ],
+        "bootstrap": {
+          "unit": "pair",
+          "draws": 10000,
+          "seed": 21620
+        }
+      }
+    ],
+    "reference_line": 1.0,
+    "order": "descending slope"
+  },
+  "output_sha256": {
+    "pdf": "7c9720fd8d5e5dddc3df13c9447e48c24dd29255c736fe5fcc4ba91d255bf60e",
+    "png": "f853643e31db22ef06f9a928af485e531076185b3eb4d4e5a61a8d087317b4d5",
+    "grayscale": "152ccc6c24a64d385344724896a10f8cef0d2207ddd64ab25227d16ea68448d3"
+  }
+}

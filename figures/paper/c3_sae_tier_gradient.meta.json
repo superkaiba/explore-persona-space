@@ -1,13 +1,13 @@
 {
   "status": "Results Section 4.2 manuscript figure",
-  "style_version": "c2a-v1",
+  "style_version": "c2a-v2",
   "plotting_script": "scripts/make_paper_section42_figures.py",
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
   "reproduction_command": "uv run python scripts/make_paper_section42_figures.py",
   "title": "SAE feature properties and context-to-answer predictability",
   "subject": "Conditional feature-property associations and activity-adjusted nested-tier gradient",
   "git": {
-    "commit": "002edee360741b462ed3484df47e51a5c3ac092a",
+    "commit": "adeed6da49516182b9577311a4fd40804938044c",
     "tracked_worktree_dirty": true
   },
   "sources": [
@@ -16,15 +16,57 @@
       "sha256": "68b7fb7ba66a46a676ea95509cc232b7d3cf5abd9027679da009d06964677c39"
     }
   ],
-  "rendering": {
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
     "resolved_font": "Inter",
     "authoring_size_inches": [
-      14.4,
-      6.5
+      13.095,
+      5.893
     ],
-    "intended_manuscript_width_inches": 5.5,
+    "exported_size_inches": [
+      13.095,
+      5.139
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c3_sae_tier_gradient.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
     "png_dpi": 240,
-    "background": "#FFFFFF"
+    "background": "#FFFFFF",
+    "text": [
+      "A  \u00b7  FORWARD-SELECTED ASSOCIATIONS",
+      "Concordance with feature $R^2$, above chance",
+      "-0.2",
+      "-0.1",
+      "0",
+      "+0.1",
+      "+0.2",
+      "+0.3",
+      "mean activation (all answers)",
+      "speaker identity / disposition",
+      "suppresses specific output tokens",
+      "promotes specific output tokens",
+      "topic content",
+      "Feature-property concordance",
+      "B  \u00b7  MEDIAN AND INTERQUARTILE RANGE",
+      "Nested SAE tier",
+      "Coarsest",
+      "Middle",
+      "Finest",
+      "Activity-adjusted feature $R^2$",
+      "\u22120.1",
+      "0.0",
+      "0.1",
+      "0.2",
+      "0.3",
+      "Median feature $R^2$ by tier"
+    ]
   },
   "displayed_data": {
     "properties": [
@@ -116,8 +158,8 @@
     "centering": "per-feature R^2 minus the median R^2 of its activity quintile"
   },
   "output_sha256": {
-    "pdf": "bb32578ae1f8fd58de1000915aa4b2608c4446974e1b709094e72f3cd81dcbdd",
-    "png": "cabd12a2d0f3e8fe922b1b966c7545e39abba11c17f8fa2da57b75ca9e7a7bf5",
-    "grayscale": "92ab442fcc46ae18f074339917dff5909aa82a030dd38f3e209d31b3eacb93be"
+    "pdf": "96a144a7cd22c142cba27efe1331d3e10dd340cd151214801d777e602544c23d",
+    "png": "246c1cca3f42874590f53074a2243d33e60a73253d8c0ec1ae4d023044004ffe",
+    "grayscale": "31dcce46282c23d90dcc4ff917ef11f0ff8baec323844a3cace76ddbbac21783"
   }
 }

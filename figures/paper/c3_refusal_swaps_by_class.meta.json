@@ -1,0 +1,357 @@
+{
+  "status": "Results Section 4.2 manuscript figure",
+  "style_version": "c2a-v2",
+  "plotting_script": "scripts/make_paper_section42_figures.py",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "reproduction_command": "uv run python scripts/make_paper_section42_figures.py",
+  "title": "One-word safety swaps by pair class",
+  "subject": "Per-class mean shift-direction cosine, refusal-direction loading, and through-origin predicted-over-observed shift size for one-word safety swaps, with the raw context-shift baseline and shuffled-pair null",
+  "git": {
+    "commit": "adeed6da49516182b9577311a4fd40804938044c",
+    "tracked_worktree_dirty": true
+  },
+  "sources": [
+    {
+      "path": "eval_results/issue_2617/svmp_verbharm/perpair.jsonl",
+      "sha256": "c03f44eca5da70cc01deb5d23b06ac1a47036b3178946d0a4a73c57a7f2e0cb2"
+    },
+    {
+      "path": "eval_results/issue_2617/svmp_verbharm/summary.json",
+      "sha256": "417acb8a2d743dfc67dcc1d3fdc71af326e2b572b8632f510e38026903d90b16"
+    }
+  ],
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      9.821,
+      10.804
+    ],
+    "exported_size_inches": [
+      9.821,
+      10.511
+    ],
+    "scale": 0.42,
+    "include_width_frac": 0.75,
+    "latex_include_line": "\\includegraphics[width=0.75\\textwidth]{figures/paper/c3_refusal_swaps_by_class.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "0.80",
+      "0.77",
+      "0.75",
+      "0.50",
+      "0.62",
+      "0.51",
+      "A  \u00b7  SHIFT DIRECTION, BY PAIR CLASS",
+      "Object swap\n(flips refusal)",
+      "Verb swap\n(flips refusal)",
+      "XSTest\n(unsafe / safe)",
+      "Verb swap\n(both harmful)",
+      "Subject swap\n(harmful)",
+      "Benign\nswaps",
+      "Mean cosine",
+      "0.0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "1.0",
+      "Cosine of predicted and observed shift",
+      "0.57",
+      "0.63",
+      "0.07",
+      "-0.08",
+      "-0.02",
+      "B  \u00b7  REFUSAL-DIRECTION PROJECTION, BY PAIR CLASS",
+      "Mean projection",
+      "\u22120.2",
+      "Projection on the refusal direction",
+      "0.82",
+      "0.74",
+      "0.81",
+      "0.85",
+      "0.73",
+      "0.66",
+      "C  \u00b7  SHIFT MAGNITUDE, BY PAIR CLASS",
+      "Size ratio",
+      "0.5",
+      "1.5",
+      "2.0",
+      "Predicted over observed shift size",
+      "PREDICTION",
+      "NULL",
+      "Linear map",
+      "Raw context shift",
+      "Shuffled-pair null (95%)"
+    ]
+  },
+  "displayed_data": {
+    "classes": [
+      {
+        "key": "obj_flip",
+        "label": "Object swap\n(flips refusal)",
+        "n": 16,
+        "slope": 0.8178647252890601,
+        "slope_ci95": [
+          0.7707675561642574,
+          0.8691937550988764
+        ],
+        "base_slope": 1.4262915873824848,
+        "base_slope_ci95": [
+          1.3494740386284982,
+          1.5180669672553895
+        ],
+        "mean_cos": 0.7983316047797766,
+        "mean_cos_ci95": [
+          0.7609178882930475,
+          0.833200017128631
+        ],
+        "base_cos": 0.41258858746901383,
+        "base_cos_ci95": [
+          0.38297817073341567,
+          0.44276589807897704
+        ],
+        "null_cos_q": [
+          0.0,
+          0.27719856411757254
+        ],
+        "load": 0.570635627833487,
+        "load_ci95": [
+          0.4260179640089011,
+          0.6840893205937553
+        ],
+        "base_load": 0.3169808295103197,
+        "base_load_ci95": [
+          0.23948700014035465,
+          0.3745587335890994
+        ],
+        "median_cos": 0.797217882388609,
+        "median_load": 0.6414749645778273,
+        "r10_mean": 0.9823591663132619
+      },
+      {
+        "key": "verb_flip",
+        "label": "Verb swap\n(flips refusal)",
+        "n": 16,
+        "slope": 0.7381125117621049,
+        "slope_ci95": [
+          0.7057440423665404,
+          0.7784010352265762
+        ],
+        "base_slope": 1.4945653578280502,
+        "base_slope_ci95": [
+          1.402609500803506,
+          1.6150477416266058
+        ],
+        "mean_cos": 0.7698817607134755,
+        "mean_cos_ci95": [
+          0.744449523721198,
+          0.7946057533487344
+        ],
+        "base_cos": 0.40489418595085924,
+        "base_cos_ci95": [
+          0.37926820834963076,
+          0.4292447840099211
+        ],
+        "null_cos_q": [
+          0.0,
+          0.3381302221847127
+        ],
+        "load": 0.6306584384469334,
+        "load_ci95": [
+          0.5035762904879316,
+          0.7213362626160871
+        ],
+        "base_load": 0.34046043903736656,
+        "base_load_ci95": [
+          0.27694014536101075,
+          0.38906950622577613
+        ],
+        "median_cos": 0.777689279616855,
+        "median_load": 0.6607711505972502,
+        "r10_mean": 0.9682727083906966
+      },
+      {
+        "key": "xstest",
+        "label": "XSTest\n(unsafe / safe)",
+        "n": 36,
+        "slope": 0.8084761549873705,
+        "slope_ci95": [
+          0.7832831909042707,
+          0.8371670348981869
+        ],
+        "base_slope": 1.4434502368594477,
+        "base_slope_ci95": [
+          1.363603406297468,
+          1.5472622411317727
+        ],
+        "mean_cos": 0.7548281758235693,
+        "mean_cos_ci95": [
+          0.7220067327060141,
+          0.785820467894794
+        ],
+        "base_cos": 0.44897610894178036,
+        "base_cos_ci95": [
+          0.4310623351100796,
+          0.4662145666740263
+        ],
+        "null_cos_q": [
+          0.0,
+          0.3520140159868899
+        ],
+        "load": 0.5003286857185166,
+        "load_ci95": [
+          0.4090731693214107,
+          0.5850393104586957
+        ],
+        "base_load": 0.3131705454580168,
+        "base_load_ci95": [
+          0.2730424251464831,
+          0.35147703023354526
+        ],
+        "median_cos": 0.7697199936450113,
+        "median_load": 0.5519880794297467,
+        "r10_mean": 0.9660034866286389
+      },
+      {
+        "key": "verb_harm",
+        "label": "Verb swap\n(both harmful)",
+        "n": 16,
+        "slope": 0.8479723751558091,
+        "slope_ci95": [
+          0.7999948228494604,
+          0.9101244986626192
+        ],
+        "base_slope": 1.649003988261219,
+        "base_slope_ci95": [
+          1.506060314579094,
+          1.8194459894799753
+        ],
+        "mean_cos": 0.5035697287292635,
+        "mean_cos_ci95": [
+          0.40987270907912166,
+          0.5938345703127899
+        ],
+        "base_cos": 0.328911254805703,
+        "base_cos_ci95": [
+          0.3022280727501853,
+          0.3573237543558437
+        ],
+        "null_cos_q": [
+          0.0,
+          0.09584369502648266
+        ],
+        "load": 0.07387450347204139,
+        "load_ci95": [
+          -0.1258603162389664,
+          0.2770740837201832
+        ],
+        "base_load": 0.05797560276567498,
+        "base_load_ci95": [
+          -0.02315035256764429,
+          0.14137811715748966
+        ],
+        "median_cos": 0.5132725159835568,
+        "median_load": -0.03074008474005963,
+        "r10_mean": 0.7814981607043354
+      },
+      {
+        "key": "subj_ctl",
+        "label": "Subject swap\n(harmful)",
+        "n": 16,
+        "slope": 0.7328830859176578,
+        "slope_ci95": [
+          0.6944530962483859,
+          0.7847968256523786
+        ],
+        "base_slope": 1.417904256156313,
+        "base_slope_ci95": [
+          1.3014074114599121,
+          1.5984967109323234
+        ],
+        "mean_cos": 0.6185494266107742,
+        "mean_cos_ci95": [
+          0.5416922457504715,
+          0.6943206993193374
+        ],
+        "base_cos": 0.317137130738844,
+        "base_cos_ci95": [
+          0.287549094154991,
+          0.34948788463995706
+        ],
+        "null_cos_q": [
+          0.0,
+          0.0847698474744423
+        ],
+        "load": -0.07752908946221328,
+        "load_ci95": [
+          -0.31083456283266897,
+          0.15543096602230033
+        ],
+        "base_load": -0.017556006026932473,
+        "base_load_ci95": [
+          -0.12058733385748018,
+          0.08711899371266918
+        ],
+        "median_cos": 0.6334398218625201,
+        "median_load": 0.012125133413478102,
+        "r10_mean": 0.8679134758135988
+      },
+      {
+        "key": "benign",
+        "label": "Benign\nswaps",
+        "n": 24,
+        "slope": 0.662809334307268,
+        "slope_ci95": [
+          0.6050950532782253,
+          0.7201149696897481
+        ],
+        "base_slope": 1.4009391405285145,
+        "base_slope_ci95": [
+          1.2383847619628916,
+          1.6013039457069318
+        ],
+        "mean_cos": 0.5084813730613281,
+        "mean_cos_ci95": [
+          0.4437046970759178,
+          0.5691846721666125
+        ],
+        "base_cos": 0.22982892495547227,
+        "base_cos_ci95": [
+          0.2018056150920103,
+          0.25702438413709394
+        ],
+        "null_cos_q": [
+          0.0,
+          0.10391431296706692
+        ],
+        "load": -0.017059592043424745,
+        "load_ci95": [
+          -0.05558769344015591,
+          0.02389469745443413
+        ],
+        "base_load": -0.01874541593493427,
+        "base_load_ci95": [
+          -0.04002269510678014,
+          0.003121310063787718
+        ],
+        "median_cos": 0.5246625039027046,
+        "median_load": -0.02656983153125374,
+        "r10_mean": 0.8906622715364145
+      }
+    ]
+  },
+  "output_sha256": {
+    "pdf": "22237b0e04b57449cba856f815e8c40d5161cae73b5063af7e3072d17fd7c2b9",
+    "png": "077aebcce71e5a5c860e07bad78639c2779e24b0bbb36daa04071df650e866f4",
+    "grayscale": "9b89cd4c191130d5a543629088c0f7d51527dda39368b91f8be51c0fea57f62a"
+  }
+}
