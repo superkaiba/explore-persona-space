@@ -1,5 +1,13 @@
 % Figure 1: context-to-answer prediction pipeline (rev 4, 2026-09-03).
 % Compile standalone: pdflatex fig1_schematic.tex
+% THEN convert text to outlines before copying to Overleaf (REQUIRED):
+%   gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dNoOutputFonts -dCompatibilityLevel=1.5 \
+%      -sOutputFile=fig1_schematic_outlined.pdf fig1_schematic.pdf
+% Why: the Computer Modern macron (\bar), minus and \cdots glyphs sit at character
+% codes 22, 0 and 1 of Type 1 fonts with built-in encodings. pdf.js and Ghostscript
+% resolve them, but the Chrome/Edge (Adobe-powered) PDF engines fail the lookup and
+% draw a literal "No Glyph" box over every bar accent (Thomas, 2026-09-03). Outlining
+% removes all fonts from the figure PDF, so no viewer does any glyph lookup.
 %
 % Design notes (Thomas, 2026-09-03): show the transformer layers (token columns
 % x layer rows, layer l highlighted) so the two vectors are read off the layer-l
