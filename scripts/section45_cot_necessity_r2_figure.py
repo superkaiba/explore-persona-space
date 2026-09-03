@@ -292,11 +292,11 @@ def _kicker(ax: plt.Axes, title: str, kicker: str) -> None:
     ax.text(0.0, 1.235, kicker.upper(), transform=ax.transAxes, fontsize=12, fontweight=700, color=MUTED, va="bottom", ha="left")
 
 
-def make_figure(results: dict[str, Any], titles: dict[str, str], *, arms: tuple[str, ...] = ("1",), whole_corpus_line: bool = False, baseline: str = "corpus") -> plt.Figure:
+def make_figure(results: dict[str, Any], titles: dict[str, str], *, arms: tuple[str, ...] = ("1",), whole_corpus_line: bool = False, baseline: str = "corpus", show_pooled: bool = False) -> plt.Figure:
     key = "r2_corpus_mean" if baseline == "corpus" else "r2_own_mean"
     set_c2a_style()
     n = len(arms)
-    fig = plt.figure(figsize=(10.4 if n == 1 else 14.4, 6.4), constrained_layout=False)
+    fig = plt.figure(figsize=((10.4 if show_pooled else 8.8) if n == 1 else 14.4, 6.4), constrained_layout=False)
     grid = fig.add_gridspec(1, n, left=0.125 if n == 1 else 0.07, right=0.985, top=0.68, bottom=0.17, wspace=0.22)
     axes = [fig.add_subplot(grid[0, i]) for i in range(n)]
     for ax, arm, panel in zip(axes, arms, "ABCD"):
@@ -317,7 +317,7 @@ def make_figure(results: dict[str, Any], titles: dict[str, str], *, arms: tuple[
             if whole_corpus_line:
                 whole = cell["whole_corpus"]["r2_own_mean"]
                 ax.plot([i - 0.42, i + 0.42], [whole, whole], color=INK, lw=1.6, ls=(0, (3, 2)), zorder=5)
-        pooled = block.get("pooled_equal_corpus_weight", {}).get("context")
+        pooled = block.get("pooled_equal_corpus_weight", {}).get("context") if show_pooled else None
         ticks = list(range(len(CORPORA))); labels = [name for _c, name in CORPORA]
         if pooled:
             xp = len(CORPORA) + 0.5
@@ -363,6 +363,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--title-b", default="Same on the thinking toggle")
     parser.add_argument("--both-panels", action="store_true", help="also plot the Qwen3-8B thinking toggle as panel B")
     parser.add_argument("--whole-corpus-line", action="store_true", help="draw the whole-corpus R^2 as a dashed line per corpus")
+    parser.add_argument("--show-pooled", action="store_true", help="add the equal-corpus-weight pooled pair")
     parser.add_argument("--baseline", choices=("corpus", "own"), default="corpus", help="R^2 baseline: each corpus's mean answer state (same predictor for both groups) or each group's own mean")
     parser.add_argument("--figure-only", action="store_true", help="re-render from an existing summary without touching the shards")
     parser.add_argument("--arms", type=int, nargs="*", default=None, help="restrict to these arms (smoke runs)")
@@ -400,7 +401,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.no_figure:
         return 0
     font = set_c2a_style()
-    fig = make_figure(results, {"1": args.title_a, "3": args.title_b}, arms=("1", "3") if args.both_panels else ("1",), whole_corpus_line=args.whole_corpus_line, baseline=args.baseline)
+    fig = make_figure(results, {"1": args.title_a, "3": args.title_b}, arms=("1", "3") if args.both_panels else ("1",), whole_corpus_line=args.whole_corpus_line, baseline=args.baseline, show_pooled=args.show_pooled)
     stem = args.out_dir / args.stem
     outputs = save_c2a_figure(
         fig,
