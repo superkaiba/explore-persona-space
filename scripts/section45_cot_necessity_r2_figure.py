@@ -297,7 +297,7 @@ def make_figure(results: dict[str, Any], titles: dict[str, str], *, arms: tuple[
     set_c2a_style()
     n = len(arms)
     fig = plt.figure(figsize=(10.4 if n == 1 else 14.4, 6.4), constrained_layout=False)
-    grid = fig.add_gridspec(1, n, left=0.10 if n == 1 else 0.07, right=0.985, top=0.68, bottom=0.17, wspace=0.22)
+    grid = fig.add_gridspec(1, n, left=0.125 if n == 1 else 0.07, right=0.985, top=0.68, bottom=0.17, wspace=0.22)
     axes = [fig.add_subplot(grid[0, i]) for i in range(n)]
     for ax, arm, panel in zip(axes, arms, "ABCD"):
         block = results[arm]
@@ -331,13 +331,13 @@ def make_figure(results: dict[str, Any], titles: dict[str, str], *, arms: tuple[
         ax.set_xlim(-0.6, (ticks[-1] if ticks else len(CORPORA)) + 0.6)
         ax.set_xticks(ticks)
         ax.set_xticklabels(labels, fontsize=13, linespacing=1.15)
-        ax.set_ylabel("Held-out $R^2$ against the corpus mean  ↑" if baseline == "corpus" else "Held-out $R^2$, context → answer  ↑", labelpad=12)
+        ax.set_ylabel("Held-out $R^2$ vs corpus mean  ↑" if baseline == "corpus" else "Held-out $R^2$, context → answer  ↑", labelpad=12)
         prefix = f"{panel}  ·  " if n > 1 else ""
         _kicker(ax, titles[arm], f"{prefix}{spec['label']}, {spec['comparator']}, layer {spec['layer']}, context → answer map")
     handles = [Patch(facecolor=GROUP_COLOR[g], edgecolor=GROUP_COLOR[g], label=GROUP_LABEL[g]) for g in ("necessary", "both_correct")]
     if whole_corpus_line:
         handles.append(Line2D([0], [0], color=INK, lw=1.6, ls=(0, (3, 2)), label="Whole corpus"))
-    x0 = 0.10 if n == 1 else 0.07
+    x0 = 0.125 if n == 1 else 0.07
     fig.text(x0, 0.965, "QUESTIONS, LABELED BY WHETHER REASONING WAS NEEDED", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
     fig.legend(handles=handles, loc="upper left", bbox_to_anchor=(x0 - 0.001, 0.948), ncol=1 if n == 1 else 3, frameon=False, columnspacing=1.3, handlelength=1.6, handletextpad=0.6, borderaxespad=0)
     return fig
