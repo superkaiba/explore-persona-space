@@ -133,8 +133,8 @@ ICLR_ROSTERS = {
     "regression": (
         ICLR_REGRESSION_METHODS,
         "c5_regression_regimes",
-        2,
-        0.64,
+        1,
+        0.55,
         ICLR_REGRESSION_GROUPS,
     ),
     "all": (ICLR_METHODS, "c5_pv_methods_regimes", 2, 0.55, None),
@@ -690,7 +690,12 @@ def render_iclr(points: dict, verdicts: dict, roster: str = "regression") -> int
         )
         for m in slots
     ]
-    handles.append(Patch(facecolor=MUTED, alpha=0.35, label="Uninterpretable (muted)"))
+    muted_label = (
+        "Faded: behavior almost never elicited, so no predictor can be ranked"
+        if roster == "regression"
+        else "Uninterpretable (muted)"
+    )
+    handles.append(Patch(facecolor=MUTED, alpha=0.35, label=muted_label))
     legend_kicker(fig, 0.08, 0.965, "Predictor")
     fig.legend(
         handles=handles,

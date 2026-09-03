@@ -7,7 +7,7 @@
  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
  "reproduction_command": "uv run python scripts/issue1739_result2_fourpanel_fig.py --style iclr --roster regression",
  "git": {
-  "git_commit": "20908d34e48c32a3722dd9975df1cab0e3c2eec5",
+  "git_commit": "0b598f8e52123c5b3631a9c1c0ac347c43822f1c",
   "git_dirty": true,
   "git_dirty_paths": [
    ".claude/agent-memory/experiment-implementer-lean/MEMORY.md",
@@ -19,6 +19,7 @@
    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+   "figures/paper/c5_regression_regimes.meta.json",
    "figures/paper/c5_regression_regimes.pdf",
    "figures/paper/c5_regression_regimes.png",
    "scripts/codex_daemon_reaper.py",
@@ -71,20 +72,19 @@
    "in-distrib.",
    "OOD",
    "Spearman $\\rho$ \u2191",
-   "\u22120.2",
-   "0.0",
-   "0.2",
-   "0.4",
-   "0.6",
-   "0.8",
-   "1.0",
+   "\u22120.25",
+   "0.00",
+   "0.25",
+   "0.50",
+   "0.75",
+   "1.00",
    "SYCOPHANCY",
    "HALLUCINATION",
    "PREDICTOR",
    "Regression on context",
    "Regression on predicted answer",
    "Regression on real answer (ceiling)",
-   "Uninterpretable (muted)"
+   "Faded: behavior almost never elicited, so no predictor can be ranked"
   ]
  },
  "data": {
@@ -416,8 +416,8 @@
   ]
  },
  "output_sha256": {
-  "pdf": "eb293a8b314392c8bdc20b6faf734e363cd41cd525670e113a9d99d9dd3269fc",
-  "png": "1fd942126edf24ee43800cd1fcf8ce1bd64029f37a374309eaa739a945f06c24",
-  "grayscale": "d22e2adec7cbfcec2080a3d76d356c17c5ea6bf9577dd4fe2f2902785b8c3002"
+  "pdf": "2c71e77a888451f82ce0d72acc302bd2bfb95756da8c7dd49f58144f0e785aad",
+  "png": "256fb951a85e7be6981ac07ed4c12cd3d86484079db8786960fbb536edd93353",
+  "grayscale": "a554e122a0b72ce586c1f85661161c9dbf85b79067703456d9179102f19fb074"
  }
 }
