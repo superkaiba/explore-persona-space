@@ -11,7 +11,7 @@ changed yet.
 
 | # | Question | Recommended | Alternative |
 |---|---|---|---|
-| D1 | What goes in the in-figure panel title? | **Descriptive only** (what is plotted: "Predictability across layers"). The claim lives in the caption's bold lead and in the text's bold header. Matches Figure 3 as approved, the 2026-08-12 "simple and concise" directive, and `paper-plots` §3.8. | Claim titles inside the figure (blog register). Then the caption lead must repeat the in-figure title verbatim: one claim, one wording. |
+| D1 | What goes in the in-figure panel title? | **Descriptive only** (what is plotted: "Predictability across layers"). The figure-level claim lives in the caption's bold lead; each panel's subclaim lives in the caption's per-panel beat and in the text's bold header, same words (§3, §4.3). Matches Figure 3 as approved, the 2026-08-12 "simple and concise" directive, and `paper-plots` §3.8. | Subclaims as panel titles inside the figure (blog register). Then caption beat 2 and the text header must repeat the title verbatim: one claim, one wording, three copies. |
 | D2 | One name for the retrieval metric | **`acc@1`** everywhere: axis labels, legends, captions, text. Defined once in Methodology as "top-1 retrieval accuracy (acc@1)". | "Top-1 retrieval" on figures, `acc@1` in text (current `plotting_style.md` rule). Two words for one concept. |
 | D3 | Where the figure pointer sits in a claim paragraph | **In the bold header, before the colon**: `\textbf{Claim} (\figref[A]{fig:x})\textbf{:}`. Already the pattern in §4.3 and §4.4. A skimming reader maps claim to panel in one glance. | At the end of the paragraph, after the evidence sentence. |
 
@@ -166,6 +166,13 @@ acc@1 = dashed line / open marker / hatched bar. Color plus shape on every serie
 
 ### 2.5 Panel furniture
 
+- **One lettered panel per question** (Thomas, 2026-09-03). A model, corpus, or
+  checkpoint variant of the same question is a series inside the panel (color +
+  marker, or grouped bars), never a sibling panel. Sibling panels that repeat one
+  question are merged. When the series count would pass about six, the panel
+  becomes an unlettered facet strip with shared axes and factor-level labels
+  ("Evil", "Sycophancy", "Hallucination", the Figure 13 form); facets carry no
+  letter and no subclaim of their own.
 - Panel kicker: `A · UPPERCASE CONTEXT` in `MUTED`, left-aligned above the axes
   (the c2a-v1 form). Letters A, B, C, D, never (a)/(b), never `A.`.
 - Panel title per D1. If descriptive: sentence case, states the plotted quantity
@@ -200,9 +207,15 @@ Four beats, fixed order, then stop.
    words, sentence case, ends with a period. Same wording as the bold claim header
    in the text that cites the figure (§4.5); when the figure serves several
    headers, the lead is the section's claim.
-2. **What is plotted.** Per panel, opened by `\panel{A}` (renders `**(A)**`):
-   y against x, the grouping, and any encoding the on-figure legend does not
-   already carry. Present tense, no verdicts.
+2. **Per-panel subclaim, then what is plotted.** Each lettered panel opens with
+   `\panel{A}` (renders `**(A)**`), then its subclaim in bold (8 words or fewer,
+   sentence case, ends with a period), then y against x, the grouping, and any
+   encoding the on-figure legend does not already carry. Present tense, no
+   verdicts in the description. Because every lettered panel answers its own
+   question (§2.5), every lettered panel has exactly one subclaim; a single-panel
+   figure has none beyond the lead. The subclaim appears in exactly two places
+   with identical wording: here and the bold claim header in the text that cites
+   the panel (§4.3). Never on the canvas.
 3. **Uncertainty and sample.** One sentence: estimator, interval type, n.
    "Error bars: 95% bootstrap intervals over 1,000 prompt-level draws; 13,116
    questions." Use "error bars" for line intervals and "bands" for shaded ones;
@@ -210,8 +223,9 @@ Four beats, fixed order, then stop.
 4. **Setup footer.** Fixed order: model; layer; data and n; folds. Then, if
    needed, one pointer: "Details: Appendix~\ref{app:x}."
 
-Caps: main text 90 words (soft), 120 (hard); appendix 150. Over the cap means beat
-2 or 4 is carrying methodology; move it to the appendix and point.
+Caps: main text 90 words (soft) and 120 (hard) for one or two panels, 150 (hard)
+for three or more; appendix adds 30. Over the cap means beat 2 or 4 is carrying
+methodology; move it to the appendix and point.
 
 Not in a caption: interpretation beyond the lead ("This aligns with…"), prior-work
 citations, more than two numbers, any term absent from the figure or the
@@ -262,7 +276,30 @@ After:
 ```
 
 The dropped material (CSLS recipe, chance level, corpus list, identity+bias
-score) already lives in Methodology or moves to the appendix subsection.
+score) already lives in Methodology or moves to the appendix subsection. Under the
+one-panel-per-question rule (§2.5) this figure also loses a panel: the Qwen3-8B
+context and end-of-thought bars of panel C move into panel A as a second series,
+and C keeps only the thinking-on versus thinking-off comparison. Each remaining
+panel then opens with its subclaim, for example `\panel{A} \textbf{The end-of-thought
+state closes most of the remaining gap.}`.
+
+### Worked three-panel example: Figure 7 (`fig:posttraining`), 133 words to 95
+
+```latex
+\caption{\textbf{The map is inherited from pretraining; SFT changes it and later stages preserve it.}
+  \panel{A} \textbf{The map is present at every stage.} Held-out $R^2$ (solid) and
+  acc@1 (hatched) of each stage's own map.
+  \panel{B} \textbf{Earlier-stage context states predict later-stage answers.}
+  $R^2$ into each stage's answers from Base, previous-stage, and own context states.
+  \panel{C} \textbf{SFT changes the map; DPO and RLVR preserve it.} Retention of
+  the preceding stage's map on the next stage's pairs, as is, with a refit bias,
+  and with a refit scale and bias.
+  Error bars: 95\% bootstrap intervals over six IID folds. OLMo-2-7B, layer 31,
+  16,391 LMSYS contexts. Details: \appref{app:posttraining}.}
+```
+
+The three text headers of §4.3 then read `\textbf{The map is present at every
+stage} (\figref[A]{fig:posttraining})\textbf{:}` and so on, word for word.
 
 ## 4. In-text reference standard
 
@@ -305,8 +342,12 @@ slots:
   `(\appref{app:x}, \figref{fig:y})`).
 - Every figure appears after its first citation in the source order (floats are
   `[t]`; LaTeX places them on the same or next page).
-- Caption lead wording equals the claim-header wording that cites it. Ctrl-F on
-  the claim finds both.
+- Caption lead wording equals the claim-header wording that cites it, and each
+  panel's caption subclaim equals the header that cites that panel. Ctrl-F on the
+  claim finds both.
+- One header per lettered panel; a header cites a range (`\figref[A--B]`) only
+  when one claim genuinely rests on two different questions' panels, which the
+  merge rule (§2.5) should make rare.
 - Panel letters only: never "left panel", "right", "top row" when letters exist.
 
 ### Before and after: §4.1 setup and first claim
@@ -362,6 +403,7 @@ rewrite lands as a targeted edit against a fresh pull, one float per commit.
 |---|---|---|
 | 1. Module: `C2A_SCALE`, `c2a_figure`, palette roles, mathtext, sidecar fields | `c2a_plot_style.py` | 1 h |
 | 2. Re-canvas 11 c2a figures (figsize + title per D1 + acc@1 label) | 7 scripts: `make_paper_figure2`, `make_paper_section42_figures`, `section45_cot_{figure,ladder,strata,necessity}_figure`, `section4_offpolicy_figure` | 2 h |
+| 2b. Merge same-question panels: Fig 10 (Qwen3-8B bars of C into A; C keeps thinking on/off; add the Qwen3-8B trajectory to B if banked), Fig 15 (A and B into one scatter, model as marker, as its panel C already does) | `section45_cot_figure`, `section45_cot_necessity_figure` | 1 h |
 | 3. Port Fig 7 to the module (drop copied constants) | `section43_posttraining_figure.py` | 30 min |
 | 4. Port Figs 2, 8, 13, 17 from `paper_plots` to the module | `issue779_plot3_redesign`, `issue2054_paper_r2_figs`, `issue1739_result2_fourpanel_fig`, `issue1739_claim4_relabel_figs` | 2 h |
 | 5. Schematic font | `fig1_schematic.tex` | 15 min |
