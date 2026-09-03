@@ -172,13 +172,68 @@ def _r2_stats(y: np.ndarray, yhat: np.ndarray, corpus_mean: np.ndarray, rng: np.
     return out
 
 
+def _pooled_weighted_stats(cells: list[dict[str, Any]], group: str, weights: dict[str, float], rng: np.random.Generator) -> dict[str, Any]:
+    """Pooled R^2 of one label group across corpora, with each corpus given a fixed total weight.
+
+    ``cells`` holds one entry per corpus with per-question arrays ``err`` (squared error),
+    ``y`` (targets), ``labels``, ``corpus`` and ``corpus_mean``. Questions of corpus c in
+    the group get weight weights[c] / n_{group,c}, so both groups end up with the same
+    corpus composition regardless of how many questions each corpus contributes.
+    """
+
+    ys, errs, ws, dev_corpus = [], [], [], []
+    n_by_corpus: dict[str, int] = {}
+    for cell in cells:
+        mask = cell["labels"] == group
+        n = int(mask.sum())
+        if n == 0:
+            continue
+        n_by_corpus[cell["corpus"]] = n
+        ys.append(cell["y"][mask].astype(np.float64))
+        errs.append(cell["err"][mask].astype(np.float64))
+        ws.append(np.full(n, weights[cell["corpus"]] / n))
+        dev_corpus.append(np.sum((cell["y"][mask].astype(np.float64) - cell["corpus_mean"]) ** 2, axis=1))
+    y = np.concatenate(ys); err = np.concatenate(errs); w = np.concatenate(ws); dev_c = np.concatenate(dev_corpus)
+    y_norm2 = np.sum(y ** 2, axis=1)
+
+    def stats(count: np.ndarray) -> tuple[float, float]:
+        ww = w * count
+        tot = ww.sum()
+        sse = float(ww @ err)
+        mean = (ww @ y) / tot
+        sst_own = float(ww @ y_norm2 - tot * float(mean @ mean))
+        sst_corpus = float(ww @ dev_c)
+        return 1.0 - sse / sst_own, 1.0 - sse / sst_corpus
+
+    r2_own, r2_corpus = stats(np.ones_like(w))
+    # stratified bootstrap: resample questions within each corpus cell of the group
+    boot = np.empty((N_BOOT, 2))
+    offsets = np.cumsum([0] + [len(e) for e in errs])
+    for b in range(N_BOOT):
+        count = np.empty_like(w)
+        for k, e in enumerate(errs):
+            n = len(e)
+            count[offsets[k]:offsets[k + 1]] = rng.multinomial(n, np.full(n, 1.0 / n))
+        boot[b] = stats(count)
+    return {
+        "n": int(len(err)),
+        "n_by_corpus": n_by_corpus,
+        "weights": weights,
+        "r2_own_mean": r2_own,
+        "r2_own_mean_ci": [float(np.percentile(boot[:, 0], 2.5)), float(np.percentile(boot[:, 0], 97.5))],
+        "r2_corpus_mean": r2_corpus,
+        "r2_corpus_mean_ci": [float(np.percentile(boot[:, 1], 2.5)), float(np.percentile(boot[:, 1], 97.5))],
+    }
+
+
 def analyze(hf_root: Path, cache_dir: Path, arms: list[int] | None = None, corpora: list[str] | None = None) -> dict[str, Any]:
     results: dict[str, Any] = {}
     for arm, spec in ARMS.items():
         if arms and arm not in arms:
             continue
         labels_all = json.loads((hf_root / spec["labels_file"]).read_text())["labels"]
-        arm_out: dict[str, Any] = {"model": spec["label"], "comparator": spec["comparator"], "layer": spec["layer"], "corpora": {}}
+        arm_out: dict[str, Any] = {"model": spec["label"], "comparator": spec["comparator"], "layer": spec["layer"], "corpora": {}, "pooled_equal_corpus_weight": {}}
+        raw: dict[str, list[dict[str, Any]]] = {name: [] for name in CELLS.values()}
         for corpus, _name in CORPORA:
             if corpora and corpus not in corpora:
                 continue
@@ -213,6 +268,7 @@ def analyze(hf_root: Path, cache_dir: Path, arms: list[int] | None = None, corpo
                         continue
                     cell_out["groups"][group] = _r2_stats(y[mask], yhat[mask], corpus_mean, rng)
                 corpus_out[cell_name] = cell_out
+                raw[cell_name].append({"corpus": corpus, "y": y, "err": np.sum((y - yhat) ** 2, axis=1), "labels": labels, "corpus_mean": corpus_mean.astype(np.float64)})
                 g = cell_out["groups"]
                 print(
                     f"arm{arm} {corpus:12s} {cell_name:15s} whole={cell_out['whole_corpus']['r2_own_mean']:.3f} (committed {committed['r2_headline']:.3f}) "
@@ -220,6 +276,13 @@ def analyze(hf_root: Path, cache_dir: Path, arms: list[int] | None = None, corpo
                     flush=True,
                 )
             arm_out["corpora"][corpus] = corpus_out
+        if not corpora or len(raw["context"]) == len(CORPORA):
+            weights = {c: 1.0 / len(CORPORA) for c, _n in CORPORA}
+            for cell_name, cells in raw.items():
+                rng = np.random.default_rng(SEED + 1)
+                pooled = {group: _pooled_weighted_stats(cells, group, weights, rng) for group in ("necessary", "both_correct")}
+                arm_out["pooled_equal_corpus_weight"][cell_name] = pooled
+                print(f"arm{arm} pooled(eq)   {cell_name:15s} " + " ".join(f"{g}={v['r2_own_mean']:.3f}[{v['r2_own_mean_ci'][0]:.3f},{v['r2_own_mean_ci'][1]:.3f}] corpus-mean={v['r2_corpus_mean']:.3f}" for g, v in pooled.items()), flush=True)
         results[str(arm)] = arm_out
     return results
 
@@ -229,11 +292,12 @@ def _kicker(ax: plt.Axes, title: str, kicker: str) -> None:
     ax.text(0.0, 1.235, kicker.upper(), transform=ax.transAxes, fontsize=12, fontweight=700, color=MUTED, va="bottom", ha="left")
 
 
-def make_figure(results: dict[str, Any], titles: dict[str, str], *, arms: tuple[str, ...] = ("1",), whole_corpus_line: bool = False) -> plt.Figure:
+def make_figure(results: dict[str, Any], titles: dict[str, str], *, arms: tuple[str, ...] = ("1",), whole_corpus_line: bool = False, baseline: str = "corpus") -> plt.Figure:
+    key = "r2_corpus_mean" if baseline == "corpus" else "r2_own_mean"
     set_c2a_style()
     n = len(arms)
-    fig = plt.figure(figsize=(9.6 if n == 1 else 14.4, 6.2), constrained_layout=False)
-    grid = fig.add_gridspec(1, n, left=0.11 if n == 1 else 0.07, right=0.985, top=0.68, bottom=0.14, wspace=0.22)
+    fig = plt.figure(figsize=(10.4 if n == 1 else 14.4, 6.4), constrained_layout=False)
+    grid = fig.add_gridspec(1, n, left=0.10 if n == 1 else 0.07, right=0.985, top=0.68, bottom=0.17, wspace=0.22)
     axes = [fig.add_subplot(grid[0, i]) for i in range(n)]
     for ax, arm, panel in zip(axes, arms, "ABCD"):
         block = results[arm]
@@ -243,26 +307,37 @@ def make_figure(results: dict[str, Any], titles: dict[str, str], *, arms: tuple[
             cell = block["corpora"][corpus]["context"]
             for j, group in enumerate(("necessary", "both_correct")):
                 stats = cell["groups"][group]
-                if "r2_own_mean" not in stats:
+                if key not in stats:
                     continue
                 x = i + (j - 0.5) * BAR_WIDTH
-                v = stats["r2_own_mean"]
-                lo, hi = stats["r2_own_mean_ci"]
+                v = stats[key]
+                lo, hi = stats[key + "_ci"]
                 ax.bar(x, v, width=BAR_WIDTH, color=GROUP_COLOR[group], linewidth=0, zorder=3)
                 ax.errorbar(x, v, yerr=[[v - lo], [hi - v]], fmt="none", ecolor=INK, elinewidth=1.2, capsize=3, capthick=1.2, zorder=4)
             if whole_corpus_line:
                 whole = cell["whole_corpus"]["r2_own_mean"]
                 ax.plot([i - 0.42, i + 0.42], [whole, whole], color=INK, lw=1.6, ls=(0, (3, 2)), zorder=5)
-        ax.set_xlim(-0.6, len(CORPORA) - 0.4)
-        ax.set_xticks(range(len(CORPORA)))
-        ax.set_xticklabels([name for _c, name in CORPORA], fontsize=13, linespacing=1.15)
-        ax.set_ylabel("Held-out $R^2$, context → answer  ↑", labelpad=12)
+        pooled = block.get("pooled_equal_corpus_weight", {}).get("context")
+        ticks = list(range(len(CORPORA))); labels = [name for _c, name in CORPORA]
+        if pooled:
+            xp = len(CORPORA) + 0.5
+            for j, group in enumerate(("necessary", "both_correct")):
+                st = pooled[group]; v = st[key]; lo, hi = st[key + "_ci"]
+                x = xp + (j - 0.5) * BAR_WIDTH
+                ax.bar(x, v, width=BAR_WIDTH, color=GROUP_COLOR[group], linewidth=0, zorder=3)
+                ax.errorbar(x, v, yerr=[[v - lo], [hi - v]], fmt="none", ecolor=INK, elinewidth=1.2, capsize=3, capthick=1.2, zorder=4)
+            ax.axvline(len(CORPORA) - 0.25, color=MUTED, lw=1.0, ls=(0, (2, 3)), zorder=1)
+            ticks.append(xp); labels.append("All four,\nequal corpus\nweight")
+        ax.set_xlim(-0.6, (ticks[-1] if ticks else len(CORPORA)) + 0.6)
+        ax.set_xticks(ticks)
+        ax.set_xticklabels(labels, fontsize=13, linespacing=1.15)
+        ax.set_ylabel("Held-out $R^2$ against the corpus mean  ↑" if baseline == "corpus" else "Held-out $R^2$, context → answer  ↑", labelpad=12)
         prefix = f"{panel}  ·  " if n > 1 else ""
-        _kicker(ax, titles[arm], f"{prefix}{spec['label']}, {spec['comparator']}, layer {spec['layer']}")
+        _kicker(ax, titles[arm], f"{prefix}{spec['label']}, {spec['comparator']}, layer {spec['layer']}, context → answer map")
     handles = [Patch(facecolor=GROUP_COLOR[g], edgecolor=GROUP_COLOR[g], label=GROUP_LABEL[g]) for g in ("necessary", "both_correct")]
     if whole_corpus_line:
         handles.append(Line2D([0], [0], color=INK, lw=1.6, ls=(0, (3, 2)), label="Whole corpus"))
-    x0 = 0.11 if n == 1 else 0.07
+    x0 = 0.10 if n == 1 else 0.07
     fig.text(x0, 0.965, "QUESTIONS, LABELED BY WHETHER REASONING WAS NEEDED", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
     fig.legend(handles=handles, loc="upper left", bbox_to_anchor=(x0 - 0.001, 0.948), ncol=1 if n == 1 else 3, frameon=False, columnspacing=1.3, handlelength=1.6, handletextpad=0.6, borderaxespad=0)
     return fig
@@ -288,6 +363,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--title-b", default="Same on the thinking toggle")
     parser.add_argument("--both-panels", action="store_true", help="also plot the Qwen3-8B thinking toggle as panel B")
     parser.add_argument("--whole-corpus-line", action="store_true", help="draw the whole-corpus R^2 as a dashed line per corpus")
+    parser.add_argument("--baseline", choices=("corpus", "own"), default="corpus", help="R^2 baseline: each corpus's mean answer state (same predictor for both groups) or each group's own mean")
     parser.add_argument("--figure-only", action="store_true", help="re-render from an existing summary without touching the shards")
     parser.add_argument("--arms", type=int, nargs="*", default=None, help="restrict to these arms (smoke runs)")
     parser.add_argument("--corpora", nargs="*", default=None, help="restrict to these corpora (smoke runs)")
@@ -324,7 +400,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.no_figure:
         return 0
     font = set_c2a_style()
-    fig = make_figure(results, {"1": args.title_a, "3": args.title_b}, arms=("1", "3") if args.both_panels else ("1",), whole_corpus_line=args.whole_corpus_line)
+    fig = make_figure(results, {"1": args.title_a, "3": args.title_b}, arms=("1", "3") if args.both_panels else ("1",), whole_corpus_line=args.whole_corpus_line, baseline=args.baseline)
     stem = args.out_dir / args.stem
     outputs = save_c2a_figure(
         fig,
