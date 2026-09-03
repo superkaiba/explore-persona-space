@@ -87,7 +87,7 @@ def test_original_rows_byte_identical_behavior_surface():
 def test_extension_rows_contracts():
     expected = {
         # key: (family, arms, tp, hf_id)
-        "q38fn": ("qwen38fn", ("a", "b"), 2, "Qwen/Qwen3.8-Flash-Next-FP8"),
+        "q38fn": ("qwen38fn", ("a", "b"), 4, "Qwen/Qwen3.8-Flash-Next-FP8"),
         "q35_397b": ("qwen35", ("a", "b"), 4, "Qwen/Qwen3.5-397B-A17B-FP8"),
         "dsv4_flash": ("deepseek_v4", ("a", "b"), 2, "deepseek-ai/DeepSeek-V4-Flash-0731"),
         "glm53": ("glm53", ("b",), 8, "zai-org/GLM-5.3"),
