@@ -1927,6 +1927,44 @@ def _topm_flat_blocked(B_live: np.ndarray, m: int, col_block: int = 4096) -> np.
     return best_i
 
 
+def _edge_survival(
+    B_live, ba_m, bb_m, null_sd_all: np.ndarray, tau: np.ndarray, *, topm: int = TOPM
+) -> dict:
+    """The #1482 survival gate, pure: an edge survives iff it sits in the top-m
+    |coef| of BOTH halves AND is sign-consistent with the full fit AND clears
+    its column's null threshold. Index space = LIVE rows of B."""
+    d, d_y = B_live.shape
+    cand = _topm_flat_blocked(B_live, topm)
+    ci, cj = np.unravel_index(cand, (d, d_y))
+    b_cand = np.asarray(B_live[ci, cj], np.float32)
+    set_a = set(_topm_flat_blocked(ba_m, topm).tolist())
+    set_b = set(_topm_flat_blocked(bb_m, topm).tolist())
+    in_a = np.fromiter((int(c) in set_a for c in cand), bool, len(cand))
+    in_b = np.fromiter((int(c) in set_b for c in cand), bool, len(cand))
+    ba_c = np.asarray(ba_m[ci, cj], np.float32)
+    bb_c = np.asarray(bb_m[ci, cj], np.float32)
+    sgn = np.sign(b_cand)
+    sign_ok = (np.sign(ba_c) == sgn) & (np.sign(bb_c) == sgn)
+    replicated = in_a & in_b & sign_ok
+    zval = np.abs(b_cand) / np.maximum(null_sd_all[cj], 1e-30)
+    null_ok = np.abs(b_cand) > tau[cj]
+    return {
+        "cand": cand,
+        "ci": ci,
+        "cj": cj,
+        "b_cand": b_cand,
+        "ba": ba_c,
+        "bb": bb_c,
+        "in_a": in_a,
+        "in_b": in_b,
+        "sign_ok": sign_ok,
+        "replicated": replicated,
+        "zval": zval,
+        "null_ok": null_ok,
+        "surviving": replicated & null_ok,
+    }
+
+
 def _resolve_receipts() -> dict:
     """Receipts answer-feature sets: regex families over the COMMITTED #2552
     description copy (ids recorded — task body 'record the ids you chose')."""
@@ -2092,21 +2130,11 @@ def phase_edges(args) -> None:
     tau = z_thresh * null_sd_all
 
     # ── candidates + survival gate (#1482 phase_analyze, index space = live rows) ──
-    cand = _topm_flat_blocked(B_live, TOPM)
-    ci, cj = np.unravel_index(cand, (d, d_y))
-    b_cand = np.asarray(B_live[ci, cj], np.float32)
-    set_a = set(_topm_flat_blocked(half_B["a"], TOPM).tolist())
-    set_b = set(_topm_flat_blocked(half_B["b"], TOPM).tolist())
-    in_a = np.fromiter((int(c) in set_a for c in cand), bool, len(cand))
-    in_b = np.fromiter((int(c) in set_b for c in cand), bool, len(cand))
-    ba_c = np.asarray(half_B["a"][ci, cj], np.float32)
-    bb_c = np.asarray(half_B["b"][ci, cj], np.float32)
-    sgn = np.sign(b_cand)
-    sign_ok = (np.sign(ba_c) == sgn) & (np.sign(bb_c) == sgn)
-    replicated = in_a & in_b & sign_ok
-    zval = np.abs(b_cand) / np.maximum(null_sd_all[cj], 1e-30)
-    null_ok = np.abs(b_cand) > tau[cj]
-    surviving = replicated & null_ok
+    gate = _edge_survival(B_live, half_B["a"], half_B["b"], null_sd_all, tau, topm=TOPM)
+    cand, ci, cj = gate["cand"], gate["ci"], gate["cj"]
+    b_cand, ba_c, bb_c = gate["b_cand"], gate["ba"], gate["bb"]
+    in_a, in_b, sign_ok = gate["in_a"], gate["in_b"], gate["sign_ok"]
+    replicated, zval, surviving = gate["replicated"], gate["zval"], gate["surviving"]
     order = np.argsort(-zval[surviving])
     sidx = np.nonzero(surviving)[0][order]
     pairs = []
@@ -2839,6 +2867,13 @@ def main() -> None:
         )
     if args.device == "auto":
         args.device = "cuda" if torch.cuda.is_available() else "cpu"
+    if args.device == "cuda":
+        # fp32 GEMMs (B/pred blocks, MLP) run under TF32 for wall-clock; every
+        # fp64 path (Gram accumulation, eigh, Cholesky) is unaffected. Recorded
+        # in deviations.md; the Gram itself accumulates fp64 either way.
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+        logger.info("[main] TF32 enabled for fp32 GEMMs (fp64 paths unaffected)")
     args.out_root.mkdir(parents=True, exist_ok=True)
     _regime_pins()  # fail fast when the committed pin record is absent/drifted
     logger.info(
