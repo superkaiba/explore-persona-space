@@ -116,9 +116,22 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
   dissociation, never average it away.
 
 ## Terminology
-- Term of art: the **context→answer map**.
-- "metamodel" is used ONLY with its complement ("metamodel of answer activations")
-  and defined at first use, citing arXiv 2410.02472, 2602.06964, 1910.03137.
+- Term of art (Thomas 2026-09-03, "rename in the entire paper"): the
+  **context-answer metamodel**, defined at first use as a model that predicts
+  activations of the answer from activations of the context (term adopted from
+  luo2026glp / arXiv 2602.06964). Forms: "linear metamodel" (ridge), "nonlinear
+  metamodel" (MLP), "shared metamodel" (one fit across settings), "setting-specific
+  metamodel"; its output is the **predicted answer vector** $\hat h_A$, never "the
+  mapped answer". "map" / "mapping" / "predictor" for the object are RETIRED
+  (paper-wide rename landed 2026-09-03, Overleaf b6c61c9..466e1c2). "map" survives
+  only as the mathematical noun inside a definition ("a linear map from $h_C$ to
+  $\bar{h}_A$"), for the LLM's own context-to-answer mapping, and for prior work's
+  maps; "predictor" survives for the six behavior predictors (readout x input) and
+  "next-token predictors". FIGURE CANVASES LAG the text: c1_predictability_scaling
+  (legend "PREDICTOR"), c1_posttraining_dynamics, c1_cot_ladder, c4_shared_speakers
+  ("own predictor" / "shared predictor"), c5_pv_methods_regimes and
+  c5_claim4_margin_forest ("mapped answer") still carry the old labels; regenerate
+  from the EPS scripts (label change at the generator) before submission.
 - No invented jargon; no anthropomorphic verbs (knows / anticipates / installs); no
   AI-slop vocabulary; plain-English condition names, never bare codes; one term per
   concept, everywhere. Every technique term gets a one-clause plain gloss at first use.
