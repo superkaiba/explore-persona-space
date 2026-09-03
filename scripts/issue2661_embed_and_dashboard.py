@@ -43,6 +43,8 @@ import time  # noqa: E402
 
 import numpy as np  # noqa: E402
 
+from explore_persona_space.atomic_io import savez_atomic  # noqa: E402
+
 from explore_persona_space.orchestrate.provenance import (  # noqa: E402
     as_metadata_dict,
     git_provenance,
@@ -59,6 +61,15 @@ AGG_DIR = EVAL_DIR / "judge_aggregates"
 ANSWER_DESC = EVAL_DIR / "inputs" / "descriptions_rep_ta.json"
 TOPK_COVERAGE = (1, 2, 3, 5)
 SEED = 2661
+# Context-side watch list (task body receipts paragraph: "a context-side watch
+# list from the eval-list mining: China/Taiwan/Xinjiang/Tibet/CCP topic features
+# once labelled — that join is VM-side"). Zero-spend: regex over the W1 ctx
+# descriptions; edges read off the pod's wiring_edges.npz.
+WATCHLIST_PATTERN = (
+    r"china|chinese|taiwan|xinjiang|tibet|ccp|communist party|uighur|uyghur|"
+    r"hong kong|prc\b|beijing|mainland china|one[- ]china"
+)
+WATCH_TOP_OUT_EDGES = 10
 
 
 @functools.cache
@@ -180,8 +191,8 @@ def phase_embed(args) -> None:
     ans_ids = np.asarray(sorted(ans_desc), np.int64)
     emb_ctx = _embed_texts(args, model, tok, [ctx_desc[i] for i in ctx_ids])
     emb_ans = _embed_texts(args, model, tok, [ans_desc[i] for i in ans_ids])
-    np.savez(out / "emb_ctx_desc.npz", feat_ids=ctx_ids, emb=emb_ctx.astype(np.float16))
-    np.savez(out / "emb_ans_desc.npz", feat_ids=ans_ids, emb=emb_ans.astype(np.float16))
+    savez_atomic(out / "emb_ctx_desc.npz", feat_ids=ctx_ids, emb=emb_ctx.astype(np.float16))
+    savez_atomic(out / "emb_ans_desc.npz", feat_ids=ans_ids, emb=emb_ans.astype(np.float16))
     fields = list(jw.APP_D_FIELDS)
     row_ids = np.asarray(sorted(summaries), np.int64)
     flat_texts: list[str] = []
@@ -193,7 +204,7 @@ def phase_embed(args) -> None:
                 flat_texts.append(f"{f}: {s[f]}")
                 flat_index.append((int(r), fi))
     emb_fields = _embed_texts(args, model, tok, flat_texts)
-    np.savez(
+    savez_atomic(
         out / "emb_summary_fields.npz",
         row_ids=np.asarray([r for r, _f in flat_index], np.int64),
         field_idx=np.asarray([f for _r, f in flat_index], np.int64),
@@ -518,6 +529,8 @@ split-half replication and a label-shuffle null.</p>
     }
 <h2>4 — Receipts: behavior answer features</h2>
 {_receipts_html(args, pairs, ans_desc)}
+<h2>4b — Context-side watch list (China/Taiwan/Xinjiang/Tibet/CCP topics)</h2>
+{_watchlist_html(args)}
 {
         _edge_table_html(
             pairs,
@@ -552,7 +565,118 @@ judge estimate: {_esc(json.dumps(est.get("total", {})))} · generated
     )
 
 
-PHASES = {"embed": phase_embed, "dashboard": phase_dashboard}
+def phase_watchlist(args) -> None:
+    """Context-side watch list (review r1 Minor 2; task-body receipts paragraph):
+    regex over the judged W1 ctx descriptions -> each hit's top out-edges from
+    wiring_edges.npz with answer-side descriptions in words, flagging edges that
+    land on a receipts answer feature. Zero pod/judge spend."""
+    import re
+
+    ctx_desc = _load_ctx_descriptions(args)
+    ans_desc = _load_ans_descriptions()
+    wz_path = _find_result(Path(args.results_root), "wiring_edges.npz")
+    assert wz_path is not None, f"wiring_edges.npz not found under {args.results_root}"
+    wz = np.load(wz_path)
+    out_ids = np.asarray(wz["out_edge_ids"], np.int64)
+    out_coefs = np.asarray(wz["out_edge_coefs"], np.float32)
+    ctx_live = np.asarray(wz["out_edge_ctx_ids"], np.int64)
+    pos_of_live = {int(f): i for i, f in enumerate(ctx_live)}
+    rp = _find_result(Path(args.results_root), "receipts_answer_features.json")
+    receipt_of: dict[int, list[str]] = {}
+    if rp is not None:
+        rdoc = json.loads(rp.read_text())
+        for fam, spec in rdoc["families"].items():
+            for aid in spec["feature_ids"]:
+                receipt_of.setdefault(int(aid), []).append(fam)
+    rx = re.compile(WATCHLIST_PATTERN, re.IGNORECASE)
+    hits = {fid: d for fid, d in ctx_desc.items() if rx.search(d)}
+    rows = []
+    n_unencoded = 0
+    for fid in sorted(hits):
+        if fid not in pos_of_live:
+            n_unencoded += 1
+            continue
+        i = pos_of_live[fid]
+        edges = []
+        for j in range(min(WATCH_TOP_OUT_EDGES, out_ids.shape[1])):
+            aid = int(out_ids[i, j])
+            edges.append(
+                {
+                    "ans_feat_id": aid,
+                    "ans_desc": ans_desc.get(aid, "(no #2552 description)"),
+                    "coef_std_units": float(out_coefs[i, j]),
+                    "receipts_families": receipt_of.get(aid, []),
+                }
+            )
+        rows.append(
+            {
+                "ctx_feat_id": int(fid),
+                "ctx_desc": hits[fid],
+                "n_receipts_edges": sum(1 for e in edges if e["receipts_families"]),
+                "top_out_edges": edges,
+            }
+        )
+    rows.sort(key=lambda r: -r["n_receipts_edges"])
+    doc = {
+        "pattern": WATCHLIST_PATTERN,
+        "n_ctx_descriptions_scanned": len(ctx_desc),
+        "n_watchlist_features": len(hits),
+        "n_dropped_not_in_live_edge_rows": n_unencoded,
+        "top_out_edges_per_feature": WATCH_TOP_OUT_EDGES,
+        "note": "coefficients are standardized ridge units (per 1 SD of the context "
+        "feature); receipts_families flags edges landing on refusal / CCP-position / "
+        "Qwen-identity / sycophancy / harmful-content answer features",
+        "features": rows,
+        **as_metadata_dict(git_provenance(), phase="watchlist"),
+    }
+    out_path = (
+        EVAL_DIR / "watchlist_context_features.json"
+        if not args.smoke
+        else _out_dir(args) / "watchlist_context_features.json"
+    )
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    _u2661().C.write_json_atomic(out_path, doc)
+    print(
+        f"[watchlist] unit done: {len(hits)} watch features, "
+        f"{sum(r['n_receipts_edges'] for r in rows)} receipts-flagged edges -> {out_path}",
+        flush=True,
+    )
+
+
+def _watchlist_html(args) -> str:
+    for cand in (
+        EVAL_DIR / "watchlist_context_features.json",
+        _out_dir(args) / "watchlist_context_features.json",
+    ):
+        if cand.exists():
+            doc = json.loads(cand.read_text())
+            break
+    else:
+        return "<p class=muted>watchlist_context_features.json missing — run --phase watchlist</p>"
+    parts = [
+        f"<p>{doc['n_watchlist_features']} context features matched the watch pattern "
+        f"(China / Taiwan / Xinjiang / Tibet / CCP / Uyghur / Hong Kong).</p>",
+        "<table><tr><th>User-message feature (watch topic)</th>"
+        "<th>Receipts-flagged out-edges</th><th>Strongest out-edges (answer side)</th></tr>",
+    ]
+    for r in doc["features"][:100]:
+        tops = "; ".join(
+            f"{_esc(e['ans_desc'])} <span class=muted>[ans {e['ans_feat_id']}]</span> "
+            f"({e['coef_std_units']:+.3f}"
+            + (f", {'/'.join(e['receipts_families'])}" if e["receipts_families"] else "")
+            + ")"
+            for e in r["top_out_edges"][:3]
+        )
+        parts.append(
+            "<tr>"
+            f"<td>{_esc(r['ctx_desc'])} <span class=muted>[ctx {r['ctx_feat_id']}]</span></td>"
+            f"<td>{r['n_receipts_edges']}</td><td>{tops}</td></tr>"
+        )
+    parts.append("</table>")
+    return "\n".join(parts)
+
+
+PHASES = {"embed": phase_embed, "watchlist": phase_watchlist, "dashboard": phase_dashboard}
 
 
 def build_argparser() -> argparse.ArgumentParser:

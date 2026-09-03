@@ -99,6 +99,21 @@ BATCH_USD_PER_MTOK_IN = 2.50
 BATCH_USD_PER_MTOK_OUT = 12.50
 CHARS_PER_TOKEN = 3.5  # conservative chars->tokens divisor (recorded in the estimate)
 EXPECTED_OUT_FRAC = 0.5  # "expected" spend variant; the GATE binds the upper bound
+# Rule-28 sync re-issues bill at NON-batch prices (2x batch). The re-issue set is
+# CAPPED (review r1 Minor 5) and the estimate's upper bound includes the capped
+# sync cost, so re-issues can never exceed the gated total.
+SYNC_USD_PER_MTOK_IN = 5.00
+SYNC_USD_PER_MTOK_OUT = 25.00
+SYNC_REISSUE_CAP_FRAC = 0.05  # matches the rule-29 completeness-floor tolerance
+SYNC_REISSUE_CAP_MIN = 51
+
+
+def _sync_reissue_cap(n_items: int) -> int:
+    import math
+
+    return min(n_items, max(SYNC_REISSUE_CAP_MIN, math.ceil(SYNC_REISSUE_CAP_FRAC * n_items)))
+
+
 # PRE-DISPATCH spend gate only (task-body pin: 'refuse to dispatch above a
 # --budget-usd cap'). NEVER a mid-run kill — the estimate gate runs BEFORE any
 # dispatch; an in-flight wave is never aborted on cumulative spend (the
@@ -538,7 +553,21 @@ def _require_pilot_pass(p, label: str) -> None:
         raise SystemExit(RC_PILOT_FAIL)
 
 
-def _require_estimate(args) -> None:
+def _manifest_identity(manifest: dict) -> str:
+    """Stable identity of the wave inputs the estimate was computed on (review r1
+    Minor 3): eval + need-set shas only — metadata/git churn does not re-key."""
+    return _sha_text(
+        json.dumps(
+            {
+                "eval_ids_sha256": manifest["eval_ids_sha256"],
+                "need_set_sha256": manifest["need_set_sha256"],
+            },
+            sort_keys=True,
+        )
+    )
+
+
+def _require_estimate(args, manifest: dict | None = None) -> None:
     """The estimate gate: every PRODUCTION wave dispatch requires a committed
     judge_estimate.json whose upper-bound total sits under --budget-usd."""
     if args.dry_run or args.smoke:
@@ -547,6 +576,17 @@ def _require_estimate(args) -> None:
         f"judge_estimate.json missing at {ESTIMATE_PATH} — run --wave estimate first"
     )
     doc = json.loads(ESTIMATE_PATH.read_text())
+    if manifest is not None:
+        want = _manifest_identity(manifest)
+        got = doc.get("manifest_identity_sha256")
+        if got != want:
+            print(
+                f"[estimate-gate] REFUSED: judge_estimate.json was computed on a DIFFERENT "
+                f"inputs manifest (estimate {got} != current {want}) — re-run --wave "
+                "estimate against the current prep outputs",
+                flush=True,
+            )
+            raise SystemExit(RC_BUDGET_FAIL)
     total = float(doc["total"]["usd_upper_bound"])
     if total > float(args.budget_usd):
         print(
@@ -606,7 +646,7 @@ def run_wave(
         )
         logger.info("[%s] dry-run: %d items, zero API calls", wave, n_calls)
         return None
-    _require_estimate(args)
+    _require_estimate(args, manifest)
     if pilot_label is not None and not args.smoke:
         _require_pilot_pass(p, pilot_label)
     t0 = time.time()
@@ -638,6 +678,21 @@ def run_wave(
     ] + missing
     n_sync = 0
     if censored and not args.smoke:
+        cap = _sync_reissue_cap(n_calls)
+        if len(censored) > cap:
+            logger.warning(
+                "[%s] %d censored items EXCEED the sync re-issue cap %d "
+                "(%.0f%% of %d, min %d) — re-issuing the first %d by item id; the rest "
+                "stay censored and the rule-29 floor gate arbitrates (review r1 Minor 5)",
+                wave,
+                len(censored),
+                cap,
+                100 * SYNC_REISSUE_CAP_FRAC,
+                n_calls,
+                SYNC_REISSUE_CAP_MIN,
+                cap,
+            )
+            censored = sorted(censored)[:cap]
         logger.warning("[%s] rule-28 sync re-issue: %d censored items", wave, len(censored))
         reissue_items = [(i, q) for i, q in items if i in set(censored)]
         save_raw2 = p.work / "raw" / wave / f"judge_raw_{wave}_syncreissue.json"
@@ -767,7 +822,7 @@ def run_pilot(
             return
         logger.warning("[pilot-%s] prior verdict=%s — fresh attempt", label, prior.get("verdict"))
     if not args.dry_run:
-        _require_estimate(args)
+        _require_estimate(args, manifest)
     max_tokens = MAX_TOKENS[wave]
     parser = WAVE_PARSERS[wave]
     wave_n_calls = sum(len(v) for v in arms.values())
@@ -896,9 +951,9 @@ def _list_pod_files(revision: str, hf_prefix: str, leaf: str) -> list[str]:
     from explore_persona_space.orchestrate import hub
 
     u = _u2661()
-    # HUB_VERIFY_RETRY_EXEMPT: the whole listing is wrapped in hub.retry_transient below
     tree = hub.retry_transient(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: this listing is wrapped in hub.retry_transient
             HfApi().list_repo_tree(
                 u.C.HF_DATA_REPO,
                 repo_type="dataset",
@@ -1243,13 +1298,21 @@ def _est_wave(items: list[tuple[str, str]], system: str, wave: str) -> dict:
     in_chars = sum(len(q) for _i, q in items) + n * len(system)
     in_tok = in_chars / CHARS_PER_TOKEN
     out_cap = n * MAX_TOKENS[wave]
+    batch_ub = in_tok / 1e6 * BATCH_USD_PER_MTOK_IN + out_cap / 1e6 * BATCH_USD_PER_MTOK_OUT
+    # capped rule-28 sync re-issue bound at NON-batch prices (review r1 Minor 5)
+    cap = _sync_reissue_cap(n) if n else 0
+    mean_in_tok = (in_tok / n) if n else 0.0
+    sync_ub = cap * (
+        mean_in_tok / 1e6 * SYNC_USD_PER_MTOK_IN + MAX_TOKENS[wave] / 1e6 * SYNC_USD_PER_MTOK_OUT
+    )
     return {
         "n_items": n,
         "input_chars": int(in_chars),
         "est_input_tokens": int(in_tok),
         "output_token_cap": int(out_cap),
-        "usd_upper_bound": in_tok / 1e6 * BATCH_USD_PER_MTOK_IN
-        + out_cap / 1e6 * BATCH_USD_PER_MTOK_OUT,
+        "sync_reissue_cap_items": int(cap),
+        "usd_sync_reissue_upper_bound": sync_ub,
+        "usd_upper_bound": batch_ub + sync_ub,
         "usd_expected": in_tok / 1e6 * BATCH_USD_PER_MTOK_IN
         + out_cap * EXPECTED_OUT_FRAC / 1e6 * BATCH_USD_PER_MTOK_OUT,
     }
@@ -1301,7 +1364,10 @@ def phase_estimate(args) -> None:
     )
     doc = {
         "judge_model": JUDGE_MODEL,
+        "manifest_identity_sha256": _manifest_identity(manifest),
         "pricing_batch_usd_per_mtok": {"in": BATCH_USD_PER_MTOK_IN, "out": BATCH_USD_PER_MTOK_OUT},
+        "pricing_sync_usd_per_mtok": {"in": SYNC_USD_PER_MTOK_IN, "out": SYNC_USD_PER_MTOK_OUT},
+        "sync_reissue_cap": {"frac": SYNC_REISSUE_CAP_FRAC, "min_items": SYNC_REISSUE_CAP_MIN},
         "chars_per_token_divisor": CHARS_PER_TOKEN,
         "expected_out_frac": EXPECTED_OUT_FRAC,
         "w4_desc_placeholder_chars": DESC_CHAR_EST,
@@ -1313,8 +1379,9 @@ def phase_estimate(args) -> None:
         },
         "budget_usd": float(args.budget_usd),
         "verdict": "UNDER_BUDGET" if total_upper <= float(args.budget_usd) else "OVER_BUDGET",
-        "note": "upper bound assumes every call emits max_tokens; the dispatch gate binds "
-        "on usd_upper_bound",
+        "note": "upper bound assumes every call emits max_tokens AND includes the capped "
+        "rule-28 sync re-issue at non-batch prices; usd_expected excludes the sync term "
+        "(re-issues are the exception path); the dispatch gate binds on usd_upper_bound",
         **as_metadata_dict(git_provenance(), phase="judge-estimate"),
     }
     out_path = (

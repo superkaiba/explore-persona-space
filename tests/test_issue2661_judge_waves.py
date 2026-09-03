@@ -82,11 +82,25 @@ def test_estimate_wave_arithmetic():
     in_tok = est["input_chars"] / J.CHARS_PER_TOKEN
     assert est["est_input_tokens"] == int(in_tok)
     assert est["output_token_cap"] == 2 * J.MAX_TOKENS["w2"]
-    want_ub = in_tok / 1e6 * J.BATCH_USD_PER_MTOK_IN + (
+    batch_ub = in_tok / 1e6 * J.BATCH_USD_PER_MTOK_IN + (
         2 * J.MAX_TOKENS["w2"] / 1e6 * J.BATCH_USD_PER_MTOK_OUT
     )
-    assert est["usd_upper_bound"] == pytest.approx(want_ub)
+    # capped sync re-issue bound rides the upper bound (review r1 Minor 5)
+    cap = J._sync_reissue_cap(2)
+    assert est["sync_reissue_cap_items"] == cap == 2  # min(n, max(51, ceil(.05*2)))
+    sync_ub = cap * (
+        (in_tok / 2) / 1e6 * J.SYNC_USD_PER_MTOK_IN
+        + J.MAX_TOKENS["w2"] / 1e6 * J.SYNC_USD_PER_MTOK_OUT
+    )
+    assert est["usd_sync_reissue_upper_bound"] == pytest.approx(sync_ub)
+    assert est["usd_upper_bound"] == pytest.approx(batch_ub + sync_ub)
     assert est["usd_expected"] < est["usd_upper_bound"]
+
+
+def test_sync_reissue_cap_values():
+    assert J._sync_reissue_cap(2_000) == 100  # ceil(0.05 * 2000)
+    assert J._sync_reissue_cap(100) == 51  # floor at 51
+    assert J._sync_reissue_cap(10) == 10  # never above n_items
 
 
 def test_item_id_grammar_rejects_double_underscore_and_overlong():
@@ -127,6 +141,20 @@ def test_estimate_gate_refuses_over_budget(tmp_path, monkeypatch):
     est.write_text(json.dumps({"total": {"usd_upper_bound": 299.0}}))
     J._require_estimate(args)  # passes
     J._require_estimate(Namespace(dry_run=True, smoke=False, budget_usd=0.0))  # exempt
+    # manifest binding (review r1 Minor 3): identity mismatch refuses at rc=9
+    manifest = {"eval_ids_sha256": "aa", "need_set_sha256": "bb"}
+    est.write_text(
+        json.dumps(
+            {
+                "total": {"usd_upper_bound": 1.0},
+                "manifest_identity_sha256": J._manifest_identity(manifest),
+            }
+        )
+    )
+    J._require_estimate(args, manifest)  # identity matches -> passes
+    with pytest.raises(SystemExit) as ei2:
+        J._require_estimate(args, {"eval_ids_sha256": "aa", "need_set_sha256": "CHANGED"})
+    assert ei2.value.code == J.RC_BUDGET_FAIL
 
 
 def test_w1_block_shows_activations_and_negatives():

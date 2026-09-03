@@ -88,6 +88,7 @@ import argparse
 import json
 import logging
 import math
+import os
 import shutil
 import sys
 import time
@@ -208,6 +209,25 @@ def _regime_pins() -> dict:
     )
     assert doc["issue2552_revision"] == I2552_REVISION
     return doc
+
+
+def _resolve_repo_revision(revision: str | None, what: str) -> str:
+    """Resolve a ref/short-sha (None = current HEAD) on the data repo to the full
+    40-hex sha through the transient-retry envelope (VERBATIM from the #2552
+    driver @ cb39df3ce1c). The judge driver's pod-artifact fetch MUST resolve
+    HEAD at fetch time: pod uploads land AFTER the pin record was committed, so
+    the committed pins structurally cannot see them (#2552 r2
+    p4-future-revision). The judge imports THIS module for it (review r1 Major 1:
+    the helper was referenced but never ported)."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    info = hub.retry_transient(
+        lambda: HfApi().repo_info(C.HF_DATA_REPO, repo_type="dataset", revision=revision),
+        what=what,
+    )
+    return str(info.sha)
 
 
 # ── small shared helpers (issue2552_turnsae_der.py @ cb39df3ce1c, VERBATIM
@@ -1965,6 +1985,31 @@ def _edge_survival(
     }
 
 
+def _half_done_path(hp: Path) -> Path:
+    """Done-marker beside a split-half memmap (written ONLY after the fill)."""
+    return hp.with_name(hp.stem.replace(".fp16", "") + ".done.json")
+
+
+def _half_reusable(hp: Path, d: int, d_y: int) -> bool:
+    """A split-half memmap is reusable ONLY with its done-marker present and
+    shape-matched (review r1 Major 2: open_memmap pre-allocates the full file,
+    so bare existence never proves a completed fill)."""
+    dp = _half_done_path(hp)
+    if not (hp.exists() and dp.exists()):
+        return False
+    doc = json.loads(dp.read_text())
+    if doc.get("shape") != [int(d), int(d_y)]:
+        logger.warning(
+            "[edges] %s done-marker shape %s != (%d, %d) — recompute",
+            hp.name,
+            doc.get("shape"),
+            d,
+            d_y,
+        )
+        return False
+    return True
+
+
 def _resolve_receipts() -> dict:
     """Receipts answer-feature sets: regex families over the COMMITTED #2552
     description copy (ids recorded — task body 'record the ids you chose')."""
@@ -2006,7 +2051,18 @@ def phase_edges(args) -> None:
         out / "receipts_answer_features.json",
         out / "edge_mass_curves.npz",
     ]
-    regime, resume_ok = T._enter_phase_regime(out, args, "edges", stale_paths=finals)
+    # intermediates JOIN the stale list (review r1 Major 2: a code-SHA recompute
+    # must never reuse old-code halves / null calibration)
+    intermediates = [
+        out / "B_half_a.fp16.npy",
+        out / "B_half_b.fp16.npy",
+        out / "B_half_a.done.json",
+        out / "B_half_b.done.json",
+        out / "null_calibration.npz",
+    ]
+    regime, resume_ok = T._enter_phase_regime(
+        out, args, "edges", stale_paths=[*finals, *intermediates]
+    )
     if resume_ok and all(p.exists() for p in finals):
         logger.info("[edges] resume: outputs present; skip")
         return
@@ -2033,7 +2089,7 @@ def phase_edges(args) -> None:
     half_B: dict[str, np.ndarray] = {}
     for hname, hrows in halves.items():
         hp = out / f"B_half_{hname}.fp16.npy"
-        if hp.exists():
+        if _half_reusable(hp, d, d_y):
             half_B[hname] = np.load(hp, mmap_mode="r")
             continue
         acc = _accumulate_raw_products(Xl, Y, hrows, dev, tag=f"/half_{hname}")
@@ -2048,13 +2104,30 @@ def phase_edges(args) -> None:
 
         lfac = T._eigh_fallback(_chol, args.device).to(dev)
         del gs_h
-        bh = np.lib.format.open_memmap(str(hp), mode="w+", dtype=np.float16, shape=(d, d_y))
+        # ATOMIC write (review r1 Major 2): fill a tmp memmap, fsync-close, then
+        # os.replace to the final name + a done-marker written ONLY after the
+        # fill completes — a crash mid-fill can never leave a valid-looking,
+        # partially-zero half at the final path
+        tmp = out / f".tmp_B_half_{hname}.fp16.npy"
+        bh = np.lib.format.open_memmap(str(tmp), mode="w+", dtype=np.float16, shape=(d, d_y))
         for c0 in range(0, d_y, 4096):
             c1 = min(c0 + 4096, d_y)
             sol = torch.cholesky_solve(xty_h[:, c0:c1].to(lfac.device), lfac)
             bh[:, c0:c1] = sol.cpu().numpy().astype(np.float16)
         bh.flush()
-        half_B[hname] = bh
+        del bh
+        os.replace(tmp, hp)
+        T._write_json(
+            _half_done_path(hp),
+            {
+                "half": hname,
+                "shape": [int(d), int(d_y)],
+                "n_rows": int(len(hrows)),
+                "lambda_star": lam_star,
+            },
+            phase="edges",
+        )
+        half_B[hname] = np.load(hp, mmap_mode="r")
         del xty_h, lfac
         if dev.type == "cuda":
             torch.cuda.empty_cache()
@@ -2450,10 +2523,15 @@ def _need_set(args) -> tuple[np.ndarray, dict]:
     eval_union: set[int] = set()
     for t_ in lists["turns"]:
         eval_union.update(int(f) for f, _v in t_["judged_top100"])
-    tp = json.loads((_edges_dir(args) / "top_pairs.json").read_text())
-    pair_ctx = {int(p["ctx_feat_id"]) for p in tp["pairs"]}
     wz = np.load(_edges_dir(args) / "wiring_edges.npz")
     in_ids = np.asarray(wz["in_edge_ids"], np.int64)
+    # FULL surviving mask, never the display-capped top_pairs.json (review r1
+    # Minor 4: --max-pairs caps the DISPLAY artifact only)
+    live_w = np.asarray(wz["live_cols"], np.int64)
+    d_y_w = int(in_ids.shape[0])
+    ci_w = np.asarray(wz["cand_flat"], np.int64) // d_y_w
+    surv_w = np.asarray(wz["cand_surviving"], bool)
+    pair_ctx = {int(x) for x in live_w[ci_w[surv_w]]}
     receipts = json.loads((_edges_dir(args) / "receipts_answer_features.json").read_text())
     receipt_ctx: set[int] = set()
     for fam in receipts["families"].values():
@@ -2466,7 +2544,8 @@ def _need_set(args) -> tuple[np.ndarray, dict]:
         "n_top_pairs_ctx": len(pair_ctx),
         "n_receipts_inedge_ctx": len(receipt_ctx),
         "n_need_total": int(len(need)),
-        "rule": "eval-list union U top_pairs ctx side U top-32 in-edges of receipts answers",
+        "rule": "eval-list union U FULL surviving-edge ctx side (wiring_edges.npz mask; "
+        "top_pairs.json is the display-capped artifact) U top-32 in-edges of receipts answers",
     }
     return need, doc
 

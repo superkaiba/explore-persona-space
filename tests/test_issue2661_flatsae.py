@@ -201,3 +201,32 @@ def test_topm_flat_blocked_matches_global_argpartition():
     absB = np.abs(B.astype(np.float32)).ravel()
     want = set(np.argsort(-absB)[:40].tolist())
     assert got == want
+
+
+def test_resolve_repo_revision_ported_and_reachable_from_judge():
+    """Review r1 Major 1: the judge's prep path calls the driver's
+    _resolve_repo_revision — the attribute must exist on the driver module and
+    resolve through the judge's lazy import (no network: attribute checks only)."""
+    assert callable(D._resolve_repo_revision)
+    import inspect
+
+    sig = inspect.signature(D._resolve_repo_revision)
+    sig.bind(None, "what")  # the judge call shape: (revision=None, what=str)
+    import issue2661_judge_waves as J
+
+    assert J._u2661()._resolve_repo_revision is D._resolve_repo_revision
+
+
+def test_half_reusable_rejects_partial_memmap(tmp_path):
+    """Review r1 Major 2: a pre-allocated (partially-zero) half WITHOUT its
+    done-marker is never reused; marker + matching shape is; a shape-mismatched
+    marker is not."""
+    d, d_y = 6, 8
+    hp = tmp_path / "B_half_a.fp16.npy"
+    bh = np.lib.format.open_memmap(str(hp), mode="w+", dtype=np.float16, shape=(d, d_y))
+    del bh  # simulated crash mid-fill: full-size, all-zero, NO done marker
+    assert hp.exists()
+    assert D._half_reusable(hp, d, d_y) is False
+    D.T._write_json(D._half_done_path(hp), {"half": "a", "shape": [d, d_y]}, phase="edges")
+    assert D._half_reusable(hp, d, d_y) is True
+    assert D._half_reusable(hp, d + 1, d_y) is False  # shape drift -> recompute
