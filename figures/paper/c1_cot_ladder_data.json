@@ -1,7 +1,7 @@
 {
   "font": "Inter",
   "git": {
-    "commit": "3e10640d00ebafa31b07130285cd6cba6bd68a0e",
+    "commit": "b62d32a4be9bece568034bc409b5964ca0e69d6a",
     "tracked_worktree_dirty": true
   },
   "mode": "compare",
@@ -132,34 +132,36 @@
     "pooled": {
       "band": null,
       "label": "Pooled",
-      "n_rows": 13116,
-      "reference_r2": 0.6928363675889532,
+      "n_rows": 2326,
+      "r2_baseline": "global",
+      "reference_r2": 0.6644227970464385,
       "retention_ci": {
         "t0_direct_transfer": [
-          -32403.31836171081,
-          -31559.736737105857
+          -60270.797747378376,
+          -58419.59614668324
         ],
         "t3_bias_offset": [
-          -10.909268402300826,
-          -10.352411350544376
+          -19.821009891932004,
+          -17.345142357972648
         ],
         "t4_global_scaling": [
-          -0.0006637375135170381,
-          3.5821814416773815e-05
+          0.0005637748401115018,
+          0.0011118034975986888
         ]
       },
-      "source": "eval_results/issue_2546/needs_only/ladder/ladder__pooled__a1.json",
-      "source_sha256": "352f8010de37cbc4baf0db002f5934a94c4fb50b1d2cf1af108aea91faeaef2c",
+      "source": "eval_results/issue_2546/allfit/ladder__a1.json",
+      "source_sha256": "313c049693e42ec16440297f3efefa5a025d67bc771857a5ccc97ecd1ef2e9a1",
+      "subset": "necessary",
       "sufficient_tier": null,
       "tier_r2": {
-        "t0_direct_transfer": -22142.425523097332,
-        "t3_bias_offset": -7.36610421251102,
-        "t4_global_scaling": 5.082034673908886e-05
+        "t0_direct_transfer": -39426.52404888844,
+        "t3_bias_offset": -12.330062363404988,
+        "t4_global_scaling": 0.0005553031335548964
       },
       "tier_retention": {
-        "t0_direct_transfer": -31959.098221348013,
-        "t3_bias_offset": -10.631809409983502,
-        "t4_global_scaling": 7.33511534851179e-05
+        "t0_direct_transfer": -59339.511263236804,
+        "t3_bias_offset": -18.55755464474709,
+        "t4_global_scaling": 0.0008357677310642979
       }
     }
   }

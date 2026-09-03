@@ -35,9 +35,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib.patches import Patch
+from dotenv import load_dotenv
+
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+from matplotlib.patches import Patch  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
@@ -81,11 +85,16 @@ class StratumStyle:
 STRATA = {
     "does": StratumStyle("Needs-reasoning corpora", "#7B3294", "s", -0.16),
     "doesnt": StratumStyle("No-reasoning corpora", "#5AAE61", "o", 0.16),
+    "necessary": StratumStyle("CoT-necessary questions", "#7B3294", "s", -0.16),
+    "both_correct": StratumStyle("CoT-unnecessary questions", "#5AAE61", "o", 0.16),
+    "all": StratumStyle("All questions", "#4D4D4D", "D", 0.0),
 }
+BUNDLE_DIR = ROOT / "eval_results" / "issue_2546" / "allfit"  # all-question refits scored per question label (--bundle-dir)
 # The main figure plots the needs-reasoning stratum only; the strata comparison
 # is its own figure (scripts/section45_cot_strata_figure.py). Both strata are
 # still loaded, validated, and written to the JSON sidecar.
 PLOT_STRATA = ("does",)
+STRATUM_CELLS = ("does", "doesnt")  # the two corpus strata the production cells were fit on
 STRATA_CORPORA_NOTE = {"does": "MATH, multi-step GSM8K, ContextHub levels 3\u20134"}
 
 # (cell, x-axis label) per categorical panel.
@@ -189,7 +198,7 @@ def load_trajectory(arm: int) -> dict[str, list[dict[str, Any]]]:
         raise ValueError(f"{path.name}: unexpected headline layer")
     t_grid = [float(t) for t in data["t_grid"]]
     series: dict[str, list[dict[str, Any]]] = {}
-    for subset in STRATA:
+    for subset in STRATUM_CELLS:
         stratum = data["strata"][subset]
         if stratum["status"] != "ok" or int(stratum["n_rows"]) != EXPECTED_ROWS[(arm, subset)]:
             raise ValueError(f"{path.name}: stratum {subset} mismatch")
@@ -254,7 +263,7 @@ def load_results(*, retrieval: str = "recipe") -> dict[str, Any]:
         "arm": 1,
         "model": "open-thoughts/OpenThinker3-7B",
         "maps": [
-            {"cell": cell, "label": label, **{s: load_cell(cell, s, 1) for s in STRATA}}
+            {"cell": cell, "label": label, **{s: load_cell(cell, s, 1) for s in STRATUM_CELLS}}
             for cell, label in PANEL_A_MAPS
         ],
     }
@@ -267,7 +276,7 @@ def load_results(*, retrieval: str = "recipe") -> dict[str, Any]:
         "arm": 3,
         "model": "Qwen/Qwen3-8B",
         "maps": [
-            {"cell": cell, "label": label, **{s: load_cell(cell, s, 3) for s in STRATA}}
+            {"cell": cell, "label": label, **{s: load_cell(cell, s, 3) for s in STRATUM_CELLS}}
             for cell, label in PANEL_C_MAPS
         ],
     }
@@ -276,7 +285,7 @@ def load_results(*, retrieval: str = "recipe") -> dict[str, Any]:
         "model_before": "Qwen/Qwen2.5-7B-Instruct",
         "model_after": "open-thoughts/OpenThinker3-7B",
         "maps": [
-            {"cell": cell, "label": label, **{s: load_cell(cell, s, 1) for s in STRATA}}
+            {"cell": cell, "label": label, **{s: load_cell(cell, s, 1) for s in STRATUM_CELLS}}
             for cell, label in PANEL_D_MAPS
         ],
     }
@@ -284,7 +293,7 @@ def load_results(*, retrieval: str = "recipe") -> dict[str, Any]:
         for panel_key in ("A", "C", "D"):
             arm = panels[panel_key]["arm"]
             for entry in panels[panel_key]["maps"]:
-                for subset in STRATA:
+                for subset in STRATUM_CELLS:
                     apply_recipe_retrieval(entry[subset], recipe, entry["cell"], subset, arm)
         arm = panels["B"]["arm"]
         for subset, rows in panels["B"]["series"].items():
@@ -297,6 +306,49 @@ def load_results(*, retrieval: str = "recipe") -> dict[str, Any]:
                 else:
                     apply_recipe_retrieval(row, recipe, "p7_traj", subset, arm, position=f"t{int(round(t * 100))}")
         panels["retrieval_recipe"] = "whitened cosine + CSLS (k=10), whitening fit on train-fold answers (shrinkage 0.1), pool = held-out fold, hit = own answer"
+    return panels
+
+
+def _bundle_metrics(block: dict[str, Any], baseline: str) -> dict[str, Any]:
+    return {
+        "r2": float(block[f"r2_{baseline}"]),
+        "r2_ci": [float(v) for v in block[f"r2_{baseline}_ci"]],
+        "retrieval_acc1": float(block["acc1"]),
+        "retrieval_chance": float(block["chance"]),
+        "retrieval_lift": float(block["acc1"]),
+        "retrieval_lift_ci": [float(v) for v in block["acc1_ci"]],
+        "n_rows": int(block["n"]),
+        "r2_baseline": baseline,
+    }
+
+
+def load_bundle(bundle_dir: Path, subset: str, baseline: str) -> dict[str, Any]:
+    """Panels from the all-question refits (allfit_necessity.py): one fit per map on every question, scored on `subset`."""
+    bundle_dir = bundle_dir.resolve()
+
+    def cell(name: str, arm: int) -> dict[str, Any]:
+        src = name if name != "p8_F" else "p7_A"  # the post model's own map is the same fit as p7_A
+        data = json.loads((bundle_dir / f"{src}__a{arm}.json").read_text())
+        out = _bundle_metrics(data["subsets"][subset], baseline)
+        out.update({"cell": name, "subset": subset, "arm": arm, "layer": data["layer"], "lambda": data["lambda"], "source": str((bundle_dir / f"{src}__a{arm}.json").relative_to(ROOT))})
+        return out
+
+    def series(arm: int) -> list[dict[str, Any]]:
+        traj = json.loads((bundle_dir / f"p7_traj__a{arm}.json").read_text())
+        rows = [{"t": 0.0, **{k: v for k, v in cell("p7_A", arm).items() if k in _METRIC_KEYS}}]
+        for key, block in sorted(traj["positions"].items(), key=lambda kv: int(kv[0][1:])):
+            rows.append({"t": int(key[1:]) / 100.0, **{k: v for k, v in _bundle_metrics(block[subset], baseline).items() if k in _METRIC_KEYS}})
+        rows.append({"t": 1.0, **{k: v for k, v in cell("p7_D", arm).items() if k in _METRIC_KEYS}})
+        return rows
+
+    panels: dict[str, Any] = {
+        "A": {"arm": 1, "model": "open-thoughts/OpenThinker3-7B", "maps": [{"cell": c, "label": l, subset: cell(c, 1)} for c, l in PANEL_A_MAPS]},
+        "B": {"arm": 1, "model": "open-thoughts/OpenThinker3-7B", "series": {subset: series(1)}},
+        "C": {"arm": 3, "model": "Qwen/Qwen3-8B", "maps": [{"cell": c, "label": l, subset: cell(c, 3)} for c, l in PANEL_C_MAPS]},
+        "D": {"arm": 1, "model_before": "Qwen/Qwen2.5-7B-Instruct", "model_after": "open-thoughts/OpenThinker3-7B", "maps": [{"cell": c, "label": l, subset: cell(c, 1)} for c, l in PANEL_D_MAPS]},
+        "retrieval_recipe": "whitened cosine + CSLS (k=10), whitening fit on train-fold answers (shrinkage 0.1), pool = held-out fold (all questions), hit = own answer",
+        "fit": f"one ridge fit per map on all questions of seven benchmarks; metrics on the {subset!r} label subset; R^2 baseline = {baseline} mean",
+    }
     return panels
 
 
@@ -590,9 +642,17 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--stem", default=DEFAULT_STEM)
+    parser.add_argument("--bundle-dir", type=Path, default=None, help="read the all-question refit bundle from this dir instead of the stratum cells (default: stratum cells)")
+    parser.add_argument("--subset", default="necessary", help="label subset to plot from the bundle: necessary, both_correct, or all")
+    parser.add_argument("--r2-baseline", choices=("corpus", "global"), default="corpus", help="R^2 baseline for bundle metrics: each question's corpus mean (default) or the global mean")
     args = parser.parse_args(argv)
 
-    panels = load_results()
+    global PLOT_STRATA
+    if args.bundle_dir is not None:
+        PLOT_STRATA = (args.subset,)
+        panels = load_bundle(args.bundle_dir, args.subset, args.r2_baseline)
+    else:
+        panels = load_results()
     font = set_c2a_style()
     fig = make_figure(panels)
     outputs = write_outputs(fig, panels, args.out_dir, args.stem, font)

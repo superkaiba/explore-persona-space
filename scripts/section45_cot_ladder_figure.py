@@ -107,6 +107,29 @@ def load_units() -> dict[str, Any]:
     return out
 
 
+def load_bundle_unit(path: Path, subset: str, baseline: str) -> dict[str, Any]:
+    """One pooled unit from the all-question ladder (allfit_necessity.py), scored on a label subset."""
+    data = json.loads(path.read_text())
+    ref = float(data["post_own"][subset][f"r2_{baseline}"])
+    tiers = {t: float(blk[subset][f"r2_{baseline}"]) for t, blk in data["tiers"].items()}
+    return {
+        "pooled": {
+            "label": "Pooled",
+            "n_rows": int(data["post_own"][subset]["n"]),
+            "reference_r2": ref,
+            "band": None,
+            "sufficient_tier": None,
+            "retention_ci": {t: [float(v) for v in blk[subset][f"retention_{baseline}_ci"]] for t, blk in data["tiers"].items()},
+            "tier_r2": tiers,
+            "tier_retention": {t: float(blk[subset][f"retention_{baseline}"]) for t, blk in data["tiers"].items()},
+            "source": str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path),
+            "source_sha256": _sha256(path),
+            "subset": subset,
+            "r2_baseline": baseline,
+        }
+    }
+
+
 def make_figure(units: dict[str, Any]) -> plt.Figure:
     set_c2a_style()
     fig = plt.figure(figsize=(14.4, 7.0), constrained_layout=False)
@@ -237,9 +260,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--stem", default=DEFAULT_STEM)
     parser.add_argument("--mode", choices=("compare", "full"), default="compare", help="compare: the three Section 4.3 corrections next to the OLMo stages (paper figure); full: all nine ladder tiers")
     parser.add_argument("--ladder-dir", type=Path, default=LADDER_DIR, help="ladder unit JSON dir (default: needs-reasoning-only refits; use eval_results/issue_2546/ladder for the whole-corpus units)")
+    parser.add_argument("--bundle-json", type=Path, default=None, help="all-question ladder JSON (allfit_necessity.py); overrides --ladder-dir")
+    parser.add_argument("--subset", default="necessary", help="label subset for --bundle-json: necessary, both_correct, or all")
+    parser.add_argument("--r2-baseline", choices=("corpus", "global"), default="global", help="R^2 baseline for --bundle-json retention (default: global mean, as in Section 4.3)")
     args = parser.parse_args(argv)
     LADDER_DIR = args.ladder_dir
-    units = load_units()
+    units = load_bundle_unit(args.bundle_json, args.subset, args.r2_baseline) if args.bundle_json is not None else load_units()
     olmo = load_olmo() if args.mode == "compare" else None
     font = set_c2a_style()
     fig = make_compare_figure(units, olmo) if args.mode == "compare" else make_figure(units)

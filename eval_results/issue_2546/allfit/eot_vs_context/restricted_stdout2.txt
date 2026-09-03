@@ -1,0 +1,31 @@
+[answer class >=5 members, all labels] n=18588 questions, 544 answer classes
+  corpus         :  42.7% of variance | R^2 context 0.997 -> end of thought 1.000 |   0.9% of the gain
+  answer_content :   5.4% of variance | R^2 context 0.694 -> end of thought 0.886 |   8.7% of the gain
+  within_answer  :  51.9% of variance | R^2 context 0.426 -> end of thought 0.632 |  90.3% of the gain
+[answer class >=5 members among CoT-necessary questions] n=1118 questions, 71 answer classes
+  corpus         :  24.7% of variance | R^2 context 0.966 -> end of thought 0.993 |   4.7% of the gain
+  answer_content :   7.2% of variance | R^2 context 0.642 -> end of thought 0.813 |   8.7% of the gain
+  within_answer  :  68.1% of variance | R^2 context 0.494 -> end of thought 0.673 |  86.5% of the gain
+[math, answer class >=5 members] n=4231 questions, 176 answer classes
+  answer_content :   8.2% of variance | R^2 context 0.655 -> end of thought 0.818 |   5.8% of the gain
+  within_answer  :  91.8% of variance | R^2 context 0.409 -> end of thought 0.644 |  94.2% of the gain
+[gsm8k_train, answer class >=5 members] n=6161 questions, 214 answer classes
+  answer_content :   5.1% of variance | R^2 context 0.539 -> end of thought 0.744 |   4.7% of the gain
+  within_answer  :  94.9% of variance | R^2 context 0.398 -> end of thought 0.624 |  95.3% of the gain
+[contexthub, answer class >=5 members] n=3346 questions, 65 answer classes
+  answer_content :  23.6% of variance | R^2 context 0.725 -> end of thought 0.959 |  19.3% of the gain
+  within_answer  :  76.4% of variance | R^2 context 0.281 -> end of thought 0.583 |  80.7% of the gain
+[mmlu, answer class >=5 members] n=3424 questions, 53 answer classes
+  answer_content :   6.9% of variance | R^2 context 0.798 -> end of thought 0.912 |   5.9% of the gain
+  within_answer  :  93.1% of variance | R^2 context 0.548 -> end of thought 0.681 |  94.1% of the gain
+[arc_challenge, answer class >=5 members] n=403 questions, 15 answer classes
+  answer_content :   5.3% of variance | R^2 context 0.505 -> end of thought 0.708 |   6.3% of the gain
+  within_answer  :  94.7% of variance | R^2 context 0.441 -> end of thought 0.609 |  93.7% of the gain
+[csqa, answer class >=5 members] n=514 questions, 10 answer classes
+  answer_content :   3.1% of variance | R^2 context 0.307 -> end of thought 0.614 |   4.6% of the gain
+  within_answer  :  96.9% of variance | R^2 context 0.289 -> end of thought 0.491 |  95.4% of the gain
+[piqa, answer class >=5 members] n=509 questions, 11 answer classes
+  answer_content :   3.8% of variance | R^2 context 0.367 -> end of thought 0.699 |   6.3% of the gain
+  within_answer  :  96.2% of variance | R^2 context 0.307 -> end of thought 0.501 |  93.7% of the gain
+DONE restricted anova
+rc=0

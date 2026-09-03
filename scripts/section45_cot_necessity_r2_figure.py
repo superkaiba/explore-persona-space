@@ -69,7 +69,8 @@ SUMMARY_PATH = ROOT / "eval_results" / "issue_2546" / "necessity_r2" / "summary.
 CELLS_DIR = ROOT / "eval_results" / "issue_2546" / "needs_only" / "cells"  # needs-reasoning-only refits (default); --cells-dir overrides
 DEFAULT_PREDS_ROOT = Path("/mnt/eps-data/thomasjiralerspong/cot_necessity/needs_only/pooled_preds")  # Figure 10's pooled needs-reasoning fits, sliced per corpus
 
-CORPORA = [("math", "MATH"), ("gsm8k_train", "GSM8K\ntrain"), ("contexthub", "Context-\nHub"), ("mmlu", "MMLU")]
+CORPORA = [("math", "MATH"), ("gsm8k_train", "GSM8K\ntrain"), ("contexthub", "Context-\nHub"), ("mmlu", "MMLU"), ("arc_challenge", "ARC-\nChallenge"), ("csqa", "Common-\nsenseQA"), ("piqa", "PIQA")]
+SIDE_NAME = {1: "post", 3: "think_on"}  # side-named target caches written by the recipe pipeline
 ARMS = {
     1: {
         "label": "OpenThinker3-7B",
@@ -108,6 +109,9 @@ def load_targets(hf_root: Path, cache_dir: Path, arm: int, corpus: str) -> tuple
     spec = ARMS[arm]
     stem = spec["stem"].format(corpus=corpus)
     cache = cache_dir / f"ans_mean__arm{arm}__{corpus}__l{spec['layer']}.npz"
+    side_cache = cache_dir / f"ans_mean__arm{arm}__{SIDE_NAME[arm]}__{corpus}__l{spec['layer']}.npz"
+    if not cache.is_file() and side_cache.is_file():
+        cache = side_cache
     if cache.is_file():
         z = np.load(cache)
         return [str(r) for r in z["row_ids"]], z["ans_mean"].astype(np.float32)
@@ -340,7 +344,7 @@ def make_figure(results: dict[str, Any], titles: dict[str, str], *, arms: tuple[
                 ax.bar(x, v, width=BAR_WIDTH, color=GROUP_COLOR[group], linewidth=0, zorder=3)
                 ax.errorbar(x, v, yerr=[[v - lo], [hi - v]], fmt="none", ecolor=INK, elinewidth=1.2, capsize=3, capthick=1.2, zorder=4)
             ax.axvline(len(CORPORA) - 0.25, color=MUTED, lw=1.0, ls=(0, (2, 3)), zorder=1)
-            ticks.append(xp); labels.append("All three,\nequal corpus\nweight")
+            ticks.append(xp); labels.append({3: "All three", 4: "All four", 7: "All seven"}.get(len(CORPORA), f"All {len(CORPORA)}") + ",\nequal corpus\nweight")
         ax.set_xlim(-0.6, (ticks[-1] if ticks else len(CORPORA)) + 0.6)
         ax.set_xticks(ticks)
         ax.set_xticklabels(labels, fontsize=13, linespacing=1.15)

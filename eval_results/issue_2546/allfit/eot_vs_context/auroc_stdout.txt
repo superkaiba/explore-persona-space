@@ -1,0 +1,12 @@
+arm1 prompt_error           AUROC 0.537 [0.515, 0.558]  (n=5264, necessary=872)
+arm1 prompt_retrieval_miss  AUROC 0.492 [0.482, 0.501]  (n=5264, necessary=872)
+arm1 error_reduction        AUROC 0.541 [0.521, 0.562]  (n=5264, necessary=872)
+arm1 log_error_ratio        AUROC 0.536 [0.515, 0.556]  (n=5264, necessary=872)
+arm1 retrieval_top1_gain    AUROC 0.497 [0.488, 0.506]  (n=5264, necessary=872)
+arm3 prompt_error           AUROC 0.526 [0.500, 0.551]  (n=5143, necessary=624)
+arm3 prompt_retrieval_miss  AUROC 0.511 [0.496, 0.526]  (n=5143, necessary=624)
+arm3 error_reduction        AUROC 0.542 [0.516, 0.568]  (n=5143, necessary=624)
+arm3 log_error_ratio        AUROC 0.544 [0.518, 0.569]  (n=5143, necessary=624)
+arm3 retrieval_top1_gain    AUROC 0.510 [0.495, 0.524]  (n=5143, necessary=624)
+DONE auroc
+rc=0

@@ -1,7 +1,7 @@
 {
   "font": "Inter",
   "git": {
-    "commit": "9c645b0516a279f0aa0bd60294e0f8ca47096fa1",
+    "commit": "b62d32a4be9bece568034bc409b5964ca0e69d6a",
     "tracked_worktree_dirty": true
   },
   "outputs": {
@@ -15,115 +15,55 @@
       "maps": [
         {
           "cell": "p7_A",
-          "does": {
+          "label": "context",
+          "necessary": {
             "arm": 1,
             "cell": "p7_A",
-            "identity_bias_r2": -164.78425311601072,
-            "input_state": "cx_last",
+            "lambda": 3162.2776601683795,
             "layer": 19,
-            "n_rows": 13116,
-            "r2": 0.6927550292308129,
+            "n_rows": 2326,
+            "r2": 0.5173934657977791,
+            "r2_baseline": "corpus",
             "r2_ci": [
-              0.6896794751668868,
-              0.6955608764420441
+              0.5071243820403976,
+              0.527496350425724
             ],
-            "retrieval_acc1": 0.9268831960963708,
-            "retrieval_chance": 0.00038121379355234654,
-            "retrieval_lift": 0.9268831960963708,
+            "retrieval_acc1": 0.9346517626827171,
+            "retrieval_chance": 0.00016560129940415455,
+            "retrieval_lift": 0.9346517626827171,
             "retrieval_lift_ci": [
-              0.9221561451662093,
-              0.9316102470265325
+              0.9247635425623387,
+              0.944969905417025
             ],
-            "retrieval_raw_cosine_acc1": 0.43328758767917047,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "source": "eval_results/issue_2546/cells/p7_A__does__a1.json",
-            "source_sha256": "42b419708de39b7f5770f4e78c737fde34ad90aa342d2d68e616e0e9ccbb038a",
-            "subset": "does",
-            "target": "ans_mean"
-          },
-          "doesnt": {
-            "arm": 1,
-            "cell": "p7_A",
-            "identity_bias_r2": -103.85969608781892,
-            "input_state": "cx_last",
-            "layer": 19,
-            "n_rows": 10967,
-            "r2": 0.5813389649383138,
-            "r2_ci": [
-              0.5777518566206754,
-              0.5855199147767944
-            ],
-            "retrieval_acc1": 0.9705480076593417,
-            "retrieval_chance": 0.0004559132168692878,
-            "retrieval_lift": 0.9705480076593417,
-            "retrieval_lift_ci": [
-              0.967538980578098,
-              0.9738351417890034
-            ],
-            "retrieval_raw_cosine_acc1": 0.5851189933436673,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "source": "eval_results/issue_2546/cells/p7_A__doesnt__a1.json",
-            "source_sha256": "ccb4758d9501d732b7df3af9f1aeef7560219ae8353ab25c13a33f359cfc2976",
-            "subset": "doesnt",
-            "target": "ans_mean"
-          },
-          "label": "context"
+            "source": "eval_results/issue_2546/allfit/p7_A__a1.json",
+            "subset": "necessary"
+          }
         },
         {
           "cell": "p7_D",
-          "does": {
+          "label": "end of\nthought",
+          "necessary": {
             "arm": 1,
             "cell": "p7_D",
-            "identity_bias_r2": -0.9823503541896423,
-            "input_state": "cot_boundary",
+            "lambda": 316.2277660168379,
             "layer": 19,
-            "n_rows": 13116,
-            "r2": 0.8074809932107219,
+            "n_rows": 2326,
+            "r2": 0.6960407051674535,
+            "r2_baseline": "corpus",
             "r2_ci": [
-              0.8057686784439523,
-              0.8090639540269796
+              0.6882182511055921,
+              0.7034026361814707
             ],
-            "retrieval_acc1": 0.9915370539798719,
-            "retrieval_chance": 0.00038121379355234654,
-            "retrieval_lift": 0.9915370539798719,
+            "retrieval_acc1": 0.9922613929492692,
+            "retrieval_chance": 0.00016560129940415455,
+            "retrieval_lift": 0.9922613929492692,
             "retrieval_lift_ci": [
-              0.9898597133272339,
-              0.9929875724306191
+              0.9883813413585554,
+              0.9957007738607051
             ],
-            "retrieval_raw_cosine_acc1": 0.9188777066178713,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "source": "eval_results/issue_2546/cells/p7_D__does__a1.json",
-            "source_sha256": "050e987d0a9b6ef729bb211d502f79691b630701e5e448140cc6fe2382d5759f",
-            "subset": "does",
-            "target": "ans_mean"
-          },
-          "doesnt": {
-            "arm": 1,
-            "cell": "p7_D",
-            "identity_bias_r2": -0.7024117654068933,
-            "input_state": "cot_boundary",
-            "layer": 19,
-            "n_rows": 10967,
-            "r2": 0.6938672707189526,
-            "r2_ci": [
-              0.6907988957547875,
-              0.6973435065949994
-            ],
-            "retrieval_acc1": 0.9948025895869427,
-            "retrieval_chance": 0.0004559132168692878,
-            "retrieval_lift": 0.9948025895869427,
-            "retrieval_lift_ci": [
-              0.9934348500045591,
-              0.995987963891675
-            ],
-            "retrieval_raw_cosine_acc1": 0.9040758639555029,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "source": "eval_results/issue_2546/cells/p7_D__doesnt__a1.json",
-            "source_sha256": "eea6ade0e847ef4ff963ed62af9e17e5677bf2d6fcce8bf8a211eff1fc45d80e",
-            "subset": "doesnt",
-            "target": "ans_mean"
-          },
-          "label": "end of\nthought"
+            "source": "eval_results/issue_2546/allfit/p7_D__a1.json",
+            "subset": "necessary"
+          }
         }
       ],
       "model": "open-thoughts/OpenThinker3-7B"
@@ -132,381 +72,170 @@
       "arm": 1,
       "model": "open-thoughts/OpenThinker3-7B",
       "series": {
-        "does": [
+        "necessary": [
           {
-            "r2": 0.6927550292308129,
+            "r2": 0.5173934657977791,
             "r2_ci": [
-              0.6896794751668868,
-              0.6955608764420441
+              0.5071243820403976,
+              0.527496350425724
             ],
-            "retrieval_acc1": 0.9268831960963708,
-            "retrieval_chance": 0.00038121379355234654,
-            "retrieval_lift": 0.9268831960963708,
+            "retrieval_acc1": 0.9346517626827171,
+            "retrieval_chance": 0.00016560129940415455,
+            "retrieval_lift": 0.9346517626827171,
             "retrieval_lift_ci": [
-              0.9221561451662093,
-              0.9316102470265325
+              0.9247635425623387,
+              0.944969905417025
             ],
-            "retrieval_raw_cosine_acc1": 0.43328758767917047,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.0
           },
           {
-            "r2": 0.5872133010401646,
+            "r2": 0.4007479652474456,
             "r2_ci": [
-              0.5842438855835257,
-              0.5903886061318084
+              0.3876546463213818,
+              0.41316386637173325
             ],
-            "retrieval_acc1": 0.3780878316559927,
-            "retrieval_chance": 0.00038121379355234654,
-            "retrieval_lift": 0.3780878316559927,
+            "retrieval_acc1": 0.5791057609630267,
+            "retrieval_chance": 0.00016560129940415455,
+            "retrieval_lift": 0.5791057609630267,
             "retrieval_lift_ci": [
-              0.37076852698993595,
-              0.3870120463555962
+              0.5567390369733447,
+              0.5988929492691315
             ],
-            "retrieval_raw_cosine_acc1": 0.09659957304056115,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.1
           },
           {
-            "r2": 0.5890133597519395,
+            "r2": 0.40878069754052726,
             "r2_ci": [
-              0.586088063409664,
-              0.5922049180410051
+              0.3954189124976007,
+              0.42107211849727155
             ],
-            "retrieval_acc1": 0.34187252211039953,
-            "retrieval_chance": 0.00038121379355234654,
-            "retrieval_lift": 0.34187252211039953,
+            "retrieval_acc1": 0.5842648323301806,
+            "retrieval_chance": 0.00016560129940415455,
+            "retrieval_lift": 0.5842648323301806,
             "retrieval_lift_ci": [
-              0.3337850716681915,
-              0.3502592253735895
+              0.5640584694754944,
+              0.6040520206362854
             ],
-            "retrieval_raw_cosine_acc1": 0.09339737724916133,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.2
           },
           {
-            "r2": 0.5877323001087275,
+            "r2": 0.41173394068964264,
             "r2_ci": [
-              0.584643730617569,
-              0.591041490137965
+              0.39888106035213394,
+              0.42391397973983813
             ],
-            "retrieval_acc1": 0.32159194876486735,
-            "retrieval_chance": 0.00038121379355234654,
-            "retrieval_lift": 0.32159194876486735,
+            "retrieval_acc1": 0.5713671539122958,
+            "retrieval_chance": 0.00016560129940415455,
+            "retrieval_lift": 0.5713671539122958,
             "retrieval_lift_ci": [
-              0.31351021652942973,
-              0.3292962793534614
+              0.5515907136715391,
+              0.5928740326741186
             ],
-            "retrieval_raw_cosine_acc1": 0.08981396767307105,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.3
           },
           {
-            "r2": 0.5841823105660986,
+            "r2": 0.40532290549206107,
             "r2_ci": [
-              0.5808910274433409,
-              0.5875273535130067
+              0.39253483120048377,
+              0.4179142338613393
             ],
-            "retrieval_acc1": 0.30504727050930164,
-            "retrieval_chance": 0.00038121379355234654,
-            "retrieval_lift": 0.30504727050930164,
+            "retrieval_acc1": 0.5369733447979363,
+            "retrieval_chance": 0.00016560129940415455,
+            "retrieval_lift": 0.5369733447979363,
             "retrieval_lift_ci": [
-              0.297804208600183,
-              0.3126753583409576
+              0.5167562338779019,
+              0.5571797076526225
             ],
-            "retrieval_raw_cosine_acc1": 0.0777676120768527,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.4
           },
           {
-            "r2": 0.5821973652278407,
+            "r2": 0.40430443974745445,
             "r2_ci": [
-              0.5788095289736492,
-              0.5857437811069814
+              0.3914101222753968,
+              0.4168330297054282
             ],
-            "retrieval_acc1": 0.28865507776761207,
-            "retrieval_chance": 0.00038121379355234654,
-            "retrieval_lift": 0.28865507776761207,
+            "retrieval_acc1": 0.5326741186586414,
+            "retrieval_chance": 0.00016560129940415455,
+            "retrieval_lift": 0.5326741186586414,
             "retrieval_lift_ci": [
-              0.28064387008234215,
-              0.29643565111314424
+              0.5120270851246775,
+              0.5524505588993981
             ],
-            "retrieval_raw_cosine_acc1": 0.07570905763952425,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.5
           },
           {
-            "r2": 0.5796129980953101,
+            "r2": 0.39719983250037383,
             "r2_ci": [
-              0.5762164276186096,
-              0.5829089013401756
+              0.38383426628232553,
+              0.409567498876691
             ],
-            "retrieval_acc1": 0.2808020738029887,
-            "retrieval_chance": 0.00038121379355234654,
-            "retrieval_lift": 0.2808020738029887,
+            "retrieval_acc1": 0.5051590713671539,
+            "retrieval_chance": 0.00016560129940415455,
+            "retrieval_lift": 0.5051590713671539,
             "retrieval_lift_ci": [
-              0.27317589204025616,
-              0.28850449832265934
+              0.48409286328460877,
+              0.5257953568357696
             ],
-            "retrieval_raw_cosine_acc1": 0.0669411405916438,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.6
           },
           {
-            "r2": 0.5784927210366604,
+            "r2": 0.39832399251488304,
             "r2_ci": [
-              0.5751331444565112,
-              0.5819907162396427
+              0.38555641047884986,
+              0.4109056868477608
             ],
-            "retrieval_acc1": 0.27622750838670324,
-            "retrieval_chance": 0.00038121379355234654,
-            "retrieval_lift": 0.27622750838670324,
+            "retrieval_acc1": 0.5133276010318143,
+            "retrieval_chance": 0.00016560129940415455,
+            "retrieval_lift": 0.5133276010318143,
             "retrieval_lift_ci": [
-              0.26844884111009454,
-              0.284844845989631
+              0.49397033533963886,
+              0.5335339638865004
             ],
-            "retrieval_raw_cosine_acc1": 0.06976212259835315,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.7
           },
           {
-            "r2": 0.5752066649676482,
+            "r2": 0.39382132985199747,
             "r2_ci": [
-              0.5718695400031054,
-              0.5787785026432645
+              0.3815417864385135,
+              0.40589777275450845
             ],
-            "retrieval_acc1": 0.2506861848124428,
-            "retrieval_chance": 0.00038121379355234654,
-            "retrieval_lift": 0.2506861848124428,
+            "retrieval_acc1": 0.4961306964746346,
+            "retrieval_chance": 0.00016560129940415455,
+            "retrieval_lift": 0.4961306964746346,
             "retrieval_lift_ci": [
-              0.24382433668801465,
-              0.2581598810612992
+              0.47634350816852966,
+              0.5180674978503869
             ],
-            "retrieval_raw_cosine_acc1": 0.06640744129307716,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.8
           },
           {
-            "r2": 0.5755386170778914,
+            "r2": 0.3884359612062779,
             "r2_ci": [
-              0.5721114057752892,
-              0.5791620870281584
+              0.37551938095182597,
+              0.4014674785561345
             ],
-            "retrieval_acc1": 0.2563281488258615,
-            "retrieval_chance": 0.00038121379355234654,
-            "retrieval_lift": 0.2563281488258615,
+            "retrieval_acc1": 0.48753224419604474,
+            "retrieval_chance": 0.00016560129940415455,
+            "retrieval_lift": 0.48753224419604474,
             "retrieval_lift_ci": [
-              0.24908508691674291,
-              0.26402866727660873
+              0.46646603611349957,
+              0.5081685296646603
             ],
-            "retrieval_raw_cosine_acc1": 0.06297651723086307,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 0.9
           },
           {
-            "r2": 0.8074809932107219,
+            "r2": 0.6960407051674535,
             "r2_ci": [
-              0.8057686784439523,
-              0.8090639540269796
+              0.6882182511055921,
+              0.7034026361814707
             ],
-            "retrieval_acc1": 0.9915370539798719,
-            "retrieval_chance": 0.00038121379355234654,
-            "retrieval_lift": 0.9915370539798719,
+            "retrieval_acc1": 0.9922613929492692,
+            "retrieval_chance": 0.00016560129940415455,
+            "retrieval_lift": 0.9922613929492692,
             "retrieval_lift_ci": [
-              0.9898597133272339,
-              0.9929875724306191
+              0.9883813413585554,
+              0.9957007738607051
             ],
-            "retrieval_raw_cosine_acc1": 0.9188777066178713,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "t": 1.0
-          }
-        ],
-        "doesnt": [
-          {
-            "r2": 0.5813389649383138,
-            "r2_ci": [
-              0.5777518566206754,
-              0.5855199147767944
-            ],
-            "retrieval_acc1": 0.9705480076593417,
-            "retrieval_chance": 0.0004559132168692878,
-            "retrieval_lift": 0.9705480076593417,
-            "retrieval_lift_ci": [
-              0.967538980578098,
-              0.9738351417890034
-            ],
-            "retrieval_raw_cosine_acc1": 0.5851189933436673,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "t": 0.0
-          },
-          {
-            "r2": 0.4492782884709209,
-            "r2_ci": [
-              0.4451553952379422,
-              0.4540930220118558
-            ],
-            "retrieval_acc1": 0.5310476885201058,
-            "retrieval_chance": 0.0004559132168692878,
-            "retrieval_lift": 0.5310476885201058,
-            "retrieval_lift_ci": [
-              0.5220206072763746,
-              0.5397100392085347
-            ],
-            "retrieval_raw_cosine_acc1": 0.3312665268532871,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "t": 0.1
-          },
-          {
-            "r2": 0.4632030540869778,
-            "r2_ci": [
-              0.4590462786619261,
-              0.467677866893761
-            ],
-            "retrieval_acc1": 0.5854837238989696,
-            "retrieval_chance": 0.0004559132168692878,
-            "retrieval_lift": 0.5854837238989696,
-            "retrieval_lift_ci": [
-              0.5766367283669189,
-              0.5947866326251482
-            ],
-            "retrieval_raw_cosine_acc1": 0.3764019330719431,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "t": 0.2
-          },
-          {
-            "r2": 0.46772636118237687,
-            "r2_ci": [
-              0.4638484371788998,
-              0.47220410655103195
-            ],
-            "retrieval_acc1": 0.5929607002826662,
-            "retrieval_chance": 0.0004559132168692878,
-            "retrieval_lift": 0.5929607002826662,
-            "retrieval_lift_ci": [
-              0.5839290599069937,
-              0.602628339564147
-            ],
-            "retrieval_raw_cosine_acc1": 0.3885292240357436,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "t": 0.3
-          },
-          {
-            "r2": 0.46918998271265366,
-            "r2_ci": [
-              0.4652483050335112,
-              0.47375524412939196
-            ],
-            "retrieval_acc1": 0.5954226315309565,
-            "retrieval_chance": 0.0004559132168692878,
-            "retrieval_lift": 0.5954226315309565,
-            "retrieval_lift_ci": [
-              0.5863955502872253,
-              0.6045408954135133
-            ],
-            "retrieval_raw_cosine_acc1": 0.4050332816631713,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "t": 0.4
-          },
-          {
-            "r2": 0.467797831633462,
-            "r2_ci": [
-              0.4637897172352247,
-              0.4722563520577845
-            ],
-            "retrieval_acc1": 0.5905899516732014,
-            "retrieval_chance": 0.0004559132168692878,
-            "retrieval_lift": 0.5905899516732014,
-            "retrieval_lift_ci": [
-              0.581380505151819,
-              0.5989787544451537
-            ],
-            "retrieval_raw_cosine_acc1": 0.40220661985957873,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "t": 0.5
-          },
-          {
-            "r2": 0.46521133386459546,
-            "r2_ci": [
-              0.46134832996197,
-              0.4697348348931382
-            ],
-            "retrieval_acc1": 0.5718063280751345,
-            "retrieval_chance": 0.0004559132168692878,
-            "retrieval_lift": 0.5718063280751345,
-            "retrieval_lift_ci": [
-              0.5625056989149266,
-              0.5812916020789641
-            ],
-            "retrieval_raw_cosine_acc1": 0.38898513722987144,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "t": 0.6
-          },
-          {
-            "r2": 0.46416639693096096,
-            "r2_ci": [
-              0.4603236088534017,
-              0.4687153645087809
-            ],
-            "retrieval_acc1": 0.5568523753077415,
-            "retrieval_chance": 0.0004559132168692878,
-            "retrieval_lift": 0.5568523753077415,
-            "retrieval_lift_ci": [
-              0.5476406492203885,
-              0.5666089176620771
-            ],
-            "retrieval_raw_cosine_acc1": 0.3870703018145345,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "t": 0.7
-          },
-          {
-            "r2": 0.46204763528688,
-            "r2_ci": [
-              0.45839374931657767,
-              0.46665433647698
-            ],
-            "retrieval_acc1": 0.5302270447706756,
-            "retrieval_chance": 0.0004559132168692878,
-            "retrieval_lift": 0.5302270447706756,
-            "retrieval_lift_ci": [
-              0.5208329534056716,
-              0.5390740403027263
-            ],
-            "retrieval_raw_cosine_acc1": 0.3831494483450351,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "t": 0.8
-          },
-          {
-            "r2": 0.46182119939616295,
-            "r2_ci": [
-              0.45789122860705384,
-              0.4661795414303965
-            ],
-            "retrieval_acc1": 0.5285857572718154,
-            "retrieval_chance": 0.0004559132168692878,
-            "retrieval_lift": 0.5285857572718154,
-            "retrieval_lift_ci": [
-              0.5189181179903346,
-              0.5374327528038662
-            ],
-            "retrieval_raw_cosine_acc1": 0.3790462295978846,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "t": 0.9
-          },
-          {
-            "r2": 0.6938672707189526,
-            "r2_ci": [
-              0.6907988957547875,
-              0.6973435065949994
-            ],
-            "retrieval_acc1": 0.9948025895869427,
-            "retrieval_chance": 0.0004559132168692878,
-            "retrieval_lift": 0.9948025895869427,
-            "retrieval_lift_ci": [
-              0.9934348500045591,
-              0.995987963891675
-            ],
-            "retrieval_raw_cosine_acc1": 0.9040758639555029,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
             "t": 1.0
           }
         ]
@@ -517,171 +246,81 @@
       "maps": [
         {
           "cell": "p7_Aoff",
-          "does": {
+          "label": "thinking\noff",
+          "necessary": {
             "arm": 3,
             "cell": "p7_Aoff",
-            "identity_bias_r2": -1.8001229353979036,
-            "input_state": "cx_last",
+            "lambda": 1000.0,
             "layer": 24,
-            "n_rows": 14221,
-            "r2": 0.6959067358358492,
+            "n_rows": 4522,
+            "r2": 0.432765703783759,
+            "r2_baseline": "corpus",
             "r2_ci": [
-              0.6940973245239165,
-              0.697843633698777
+              0.42780644744499574,
+              0.4377849747431053
             ],
-            "retrieval_acc1": 0.9239153364742283,
-            "retrieval_chance": 0.0003515927219515571,
-            "retrieval_lift": 0.9239153364742283,
+            "retrieval_acc1": 0.9011499336576736,
+            "retrieval_chance": 0.0001478852410529429,
+            "retrieval_lift": 0.9011499336576736,
             "retrieval_lift_ci": [
-              0.9193446311792419,
-              0.9280658884747909
+              0.891640866873065,
+              0.9091110128261831
             ],
-            "retrieval_raw_cosine_acc1": 0.5178960691934463,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "source": "eval_results/issue_2546/cells/p7_Aoff__does__a3.json",
-            "source_sha256": "65f6c77ff3143b723321145935999757e8f074ffc5d75dc18e0ba42526541738",
-            "subset": "does",
-            "target": "ans_mean"
-          },
-          "doesnt": {
-            "arm": 3,
-            "cell": "p7_Aoff",
-            "identity_bias_r2": -1.1172407197590228,
-            "input_state": "cx_last",
-            "layer": 24,
-            "n_rows": 12855,
-            "r2": 0.534750710977776,
-            "r2_ci": [
-              0.5317030210648996,
-              0.5381950060810682
-            ],
-            "retrieval_acc1": 0.8774017891870868,
-            "retrieval_chance": 0.00038895371450797355,
-            "retrieval_lift": 0.8774017891870868,
-            "retrieval_lift_ci": [
-              0.8719544924154026,
-              0.8832360949047063
-            ],
-            "retrieval_raw_cosine_acc1": 0.4871256320497861,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "source": "eval_results/issue_2546/cells/p7_Aoff__doesnt__a3.json",
-            "source_sha256": "1c1e1cc89500c3f9ab252fb91ce7805158caaae1a07532b9adacf8a10041a10d",
-            "subset": "doesnt",
-            "target": "ans_mean"
-          },
-          "label": "thinking\noff"
+            "source": "eval_results/issue_2546/allfit/p7_Aoff__a3.json",
+            "subset": "necessary"
+          }
         },
         {
           "cell": "p7_A",
-          "does": {
+          "label": "thinking\non",
+          "necessary": {
             "arm": 3,
             "cell": "p7_A",
-            "identity_bias_r2": -1.9175484643637137,
-            "input_state": "cx_last",
+            "lambda": 1000.0,
             "layer": 24,
-            "n_rows": 14221,
-            "r2": 0.699109215371755,
+            "n_rows": 4522,
+            "r2": 0.4652091197872147,
+            "r2_baseline": "corpus",
             "r2_ci": [
-              0.6972547165410355,
-              0.7010388648030964
+              0.4591938638786579,
+              0.4709702917913413
             ],
-            "retrieval_acc1": 0.8789114689543632,
-            "retrieval_chance": 0.0003515927219515571,
-            "retrieval_lift": 0.8789114689543632,
+            "retrieval_acc1": 0.8794781070322866,
+            "retrieval_chance": 0.0001478852410529429,
+            "retrieval_lift": 0.8794781070322866,
             "retrieval_lift_ci": [
-              0.873637578229379,
-              0.8842556782223472
+              0.8699690402476781,
+              0.8892138434321097
             ],
-            "retrieval_raw_cosine_acc1": 0.46649321426060053,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "source": "eval_results/issue_2546/cells/p7_A__does__a3.json",
-            "source_sha256": "4ce9423312acfc307d92b7def2720519ceb72947d1e4dc1cb844117fbe371b77",
-            "subset": "does",
-            "target": "ans_mean"
-          },
-          "doesnt": {
-            "arm": 3,
-            "cell": "p7_A",
-            "identity_bias_r2": -1.4672815837190845,
-            "input_state": "cx_last",
-            "layer": 24,
-            "n_rows": 12855,
-            "r2": 0.5750789611584484,
-            "r2_ci": [
-              0.5720938185262001,
-              0.5784727939132501
-            ],
-            "retrieval_acc1": 0.853364449630494,
-            "retrieval_chance": 0.00038895371450797355,
-            "retrieval_lift": 0.853364449630494,
-            "retrieval_lift_ci": [
-              0.8469856087125632,
-              0.8588117464021782
-            ],
-            "retrieval_raw_cosine_acc1": 0.4995721509140412,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "source": "eval_results/issue_2546/cells/p7_A__doesnt__a3.json",
-            "source_sha256": "cef78b6ea71e677b264430c8409affb874852b21a6956c1cf407881dcc3fce4b",
-            "subset": "doesnt",
-            "target": "ans_mean"
-          },
-          "label": "thinking\non"
+            "source": "eval_results/issue_2546/allfit/p7_A__a3.json",
+            "subset": "necessary"
+          }
         },
         {
           "cell": "p7_D",
-          "does": {
+          "label": "end of\nthought",
+          "necessary": {
             "arm": 3,
             "cell": "p7_D",
-            "identity_bias_r2": -0.4708833925328073,
-            "input_state": "cot_boundary",
+            "lambda": 316.2277660168379,
             "layer": 24,
-            "n_rows": 14221,
-            "r2": 0.7505467336536205,
+            "n_rows": 4522,
+            "r2": 0.5346313967378133,
+            "r2_baseline": "corpus",
             "r2_ci": [
-              0.7491261629788208,
-              0.7520091299041556
+              0.5299778615410692,
+              0.5395203285916942
             ],
-            "retrieval_acc1": 0.9834751423950496,
-            "retrieval_chance": 0.0003515927219515571,
-            "retrieval_lift": 0.9834751423950496,
+            "retrieval_acc1": 0.9876160990712074,
+            "retrieval_chance": 0.0001478852410529429,
+            "retrieval_lift": 0.9876160990712074,
             "retrieval_lift_ci": [
-              0.9814341466844807,
-              0.9855864566486183
+              0.9842989827509951,
+              0.9907120743034056
             ],
-            "retrieval_raw_cosine_acc1": 0.7791294564376626,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "source": "eval_results/issue_2546/cells/p7_D__does__a3.json",
-            "source_sha256": "37d068904997a5624301ac1b31aeaf08f1dc3286c71d763bd1c66da1fd6e8072",
-            "subset": "does",
-            "target": "ans_mean"
-          },
-          "doesnt": {
-            "arm": 3,
-            "cell": "p7_D",
-            "identity_bias_r2": -0.2682770316162597,
-            "input_state": "cot_boundary",
-            "layer": 24,
-            "n_rows": 12855,
-            "r2": 0.6277756661785685,
-            "r2_ci": [
-              0.6252442177143246,
-              0.6304407397658309
-            ],
-            "retrieval_acc1": 0.9824192921042396,
-            "retrieval_chance": 0.00038895371450797355,
-            "retrieval_lift": 0.9824192921042396,
-            "retrieval_lift_ci": [
-              0.9800077790742902,
-              0.9845196421625827
-            ],
-            "retrieval_raw_cosine_acc1": 0.7974329054842474,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "source": "eval_results/issue_2546/cells/p7_D__doesnt__a3.json",
-            "source_sha256": "612ef155398c7bdb5e5fe6a47716bd4e6724118cd9ab4841f8ba883f6af2176c",
-            "subset": "doesnt",
-            "target": "ans_mean"
-          },
-          "label": "end of\nthought"
+            "source": "eval_results/issue_2546/allfit/p7_D__a3.json",
+            "subset": "necessary"
+          }
         }
       ],
       "model": "Qwen/Qwen3-8B"
@@ -691,177 +330,88 @@
       "maps": [
         {
           "cell": "p8_G",
-          "does": {
+          "label": "before\nmodel",
+          "necessary": {
             "arm": 1,
             "cell": "p8_G",
-            "identity_bias_r2": -1.452670120532011,
-            "input_state": "cx_last",
+            "lambda": 1000.0,
             "layer": 19,
-            "n_rows": 13116,
-            "r2": 0.7462220506636044,
+            "n_rows": 2326,
+            "r2": 0.5233959108427727,
+            "r2_baseline": "corpus",
             "r2_ci": [
-              0.7438972173870865,
-              0.7484606899430551
+              0.5092587033745012,
+              0.5371941128402332
             ],
-            "retrieval_acc1": 0.9659194876486734,
-            "retrieval_chance": 0.00038121379355234654,
-            "retrieval_lift": 0.9659194876486734,
+            "retrieval_acc1": 0.9436801375752365,
+            "retrieval_chance": 0.00016560129940415455,
+            "retrieval_lift": 0.9436801375752365,
             "retrieval_lift_ci": [
-              0.9627172918572735,
-              0.9690473467520586
+              0.9346517626827171,
+              0.9522893379191745
             ],
-            "retrieval_raw_cosine_acc1": 0.7727203415675511,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "source": "eval_results/issue_2546/cells/p8_G__does__a1.json",
-            "source_sha256": "f4fb877a85f6e3b75408cf4933af919721416a46fd920fcd1b23965263fe869c",
-            "subset": "does",
-            "target": "ans_mean"
-          },
-          "doesnt": {
-            "arm": 1,
-            "cell": "p8_G",
-            "identity_bias_r2": -0.24266713577241572,
-            "input_state": "cx_last",
-            "layer": 19,
-            "n_rows": 10967,
-            "r2": 0.7481306727697683,
-            "r2_ci": [
-              0.7420432362041004,
-              0.7537444549978289
-            ],
-            "retrieval_acc1": 0.9886021701468041,
-            "retrieval_chance": 0.0004559132168692878,
-            "retrieval_lift": 0.9886021701468041,
-            "retrieval_lift_ci": [
-              0.9865961520926415,
-              0.9906993708397921
-            ],
-            "retrieval_raw_cosine_acc1": 0.8331357709492113,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "source": "eval_results/issue_2546/cells/p8_G__doesnt__a1.json",
-            "source_sha256": "96385df7db36e094c38647ed57438b5148efef3473732323dca282379071c74d",
-            "subset": "doesnt",
-            "target": "ans_mean"
-          },
-          "label": "before\nmodel"
+            "source": "eval_results/issue_2546/allfit/p8_G__a1.json",
+            "subset": "necessary"
+          }
         },
         {
           "cell": "p8_E",
-          "does": {
+          "label": "before \u2192\nafter",
+          "necessary": {
             "arm": 1,
             "cell": "p8_E",
-            "identity_bias_r2": -1.0600358185768086,
-            "input_state": "cx_last",
+            "lambda": 1000.0,
             "layer": 19,
-            "n_rows": 13116,
-            "r2": 0.7303209370277287,
+            "n_rows": 2326,
+            "r2": 0.5576490888857959,
+            "r2_baseline": "corpus",
             "r2_ci": [
-              0.7277738309907807,
-              0.7328447734732766
+              0.5478485382202447,
+              0.5669254360123629
             ],
-            "retrieval_acc1": 0.9366422689844465,
-            "retrieval_chance": 0.00038121379355234654,
-            "retrieval_lift": 0.9366422689844465,
+            "retrieval_acc1": 0.9101461736887361,
+            "retrieval_chance": 0.00016560129940415455,
+            "retrieval_lift": 0.9101461736887361,
             "retrieval_lift_ci": [
-              0.9322964318389753,
-              0.9407612839280268
+              0.8985275150472914,
+              0.9217540842648323
             ],
-            "retrieval_raw_cosine_acc1": 0.5993443122903325,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "source": "eval_results/issue_2546/cells/p8_E__does__a1.json",
-            "source_sha256": "c5f02a020008b3b7d6da729732d670fd079d6f4f438d0e3ceadde472e3bbcb51",
-            "subset": "does",
-            "target": "ans_mean"
-          },
-          "doesnt": {
-            "arm": 1,
-            "cell": "p8_E",
-            "identity_bias_r2": -1.1986862373562936,
-            "input_state": "cx_last",
-            "layer": 19,
-            "n_rows": 10967,
-            "r2": 0.6043177372724895,
-            "r2_ci": [
-              0.600593049196622,
-              0.6083429921319616
-            ],
-            "retrieval_acc1": 0.9565058812802042,
-            "retrieval_chance": 0.0004559132168692878,
-            "retrieval_lift": 0.9565058812802042,
-            "retrieval_lift_ci": [
-              0.9528562961612109,
-              0.9603355521108781
-            ],
-            "retrieval_raw_cosine_acc1": 0.7064830856204979,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "source": "eval_results/issue_2546/cells/p8_E__doesnt__a1.json",
-            "source_sha256": "ad9dee6667f359e6dfb67116cbc2559ee3e5745002249e769290aed43591b867",
-            "subset": "doesnt",
-            "target": "ans_mean"
-          },
-          "label": "before \u2192\nafter"
+            "source": "eval_results/issue_2546/allfit/p8_E__a1.json",
+            "subset": "necessary"
+          }
         },
         {
           "cell": "p8_F",
-          "does": {
+          "label": "after\nmodel",
+          "necessary": {
             "arm": 1,
             "cell": "p8_F",
-            "identity_bias_r2": -164.78425311601072,
-            "input_state": "cx_last",
+            "lambda": 3162.2776601683795,
             "layer": 19,
-            "n_rows": 13116,
-            "r2": 0.6927550292308129,
+            "n_rows": 2326,
+            "r2": 0.5173934657977791,
+            "r2_baseline": "corpus",
             "r2_ci": [
-              0.6896794751668868,
-              0.6955608764420441
+              0.5071243820403976,
+              0.527496350425724
             ],
-            "retrieval_acc1": 0.9268831960963708,
-            "retrieval_chance": 0.00038121379355234654,
-            "retrieval_lift": 0.9268831960963708,
+            "retrieval_acc1": 0.9346517626827171,
+            "retrieval_chance": 0.00016560129940415455,
+            "retrieval_lift": 0.9346517626827171,
             "retrieval_lift_ci": [
-              0.9223848734370235,
-              0.931152790484904
+              0.9247635425623387,
+              0.944969905417025
             ],
-            "retrieval_raw_cosine_acc1": 0.43328758767917047,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "source": "eval_results/issue_2546/cells/p8_F__does__a1.json",
-            "source_sha256": "452fa5d32d60ef6f09adfbfa8f054b060c156f259be9630af1b5f4bee3e9e56c",
-            "subset": "does",
-            "target": "ans_mean"
-          },
-          "doesnt": {
-            "arm": 1,
-            "cell": "p8_F",
-            "identity_bias_r2": -103.85969608781892,
-            "input_state": "cx_last",
-            "layer": 19,
-            "n_rows": 10967,
-            "r2": 0.5813389649383138,
-            "r2_ci": [
-              0.5777518566206754,
-              0.5855199147767944
-            ],
-            "retrieval_acc1": 0.9705480076593417,
-            "retrieval_chance": 0.0004559132168692878,
-            "retrieval_lift": 0.9705480076593417,
-            "retrieval_lift_ci": [
-              0.9674477979392724,
-              0.9734681316677305
-            ],
-            "retrieval_raw_cosine_acc1": 0.5851189933436673,
-            "retrieval_recipe": "whitened cosine + CSLS, held-out-fold pool, own-answer hit",
-            "source": "eval_results/issue_2546/cells/p8_F__doesnt__a1.json",
-            "source_sha256": "14258862cce354e40608b67799bbfca159ed066c3d3e1836b43e058f6384d4b7",
-            "subset": "doesnt",
-            "target": "ans_mean"
-          },
-          "label": "after\nmodel"
+            "source": "eval_results/issue_2546/allfit/p7_A__a1.json",
+            "subset": "necessary"
+          }
         }
       ],
       "model_after": "open-thoughts/OpenThinker3-7B",
       "model_before": "Qwen/Qwen2.5-7B-Instruct"
     },
-    "retrieval_recipe": "whitened cosine + CSLS (k=10), whitening fit on train-fold answers (shrinkage 0.1), pool = held-out fold, hit = own answer"
+    "fit": "one ridge fit per map on all questions of seven benchmarks; metrics on the 'necessary' label subset; R^2 baseline = corpus mean",
+    "retrieval_recipe": "whitened cosine + CSLS (k=10), whitening fit on train-fold answers (shrinkage 0.1), pool = held-out fold (all questions), hit = own answer"
   },
   "provenance": {
     "cells_dir": "eval_results/issue_2546/cells",

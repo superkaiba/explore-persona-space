@@ -1,0 +1,29 @@
+30193 questions; answer classes parsed: 30193
+  top-1 PCs: 39.1% of answer-state variance, carry 9.0% of the SSE reduction from context to end of thought
+  top-5 PCs: 56.6% of answer-state variance, carry 29.5% of the SSE reduction from context to end of thought
+  top-10 PCs: 64.4% of answer-state variance, carry 43.5% of the SSE reduction from context to end of thought
+  top-50 PCs: 80.6% of answer-state variance, carry 76.6% of the SSE reduction from context to end of thought
+  top-200 PCs: 90.7% of answer-state variance, carry 94.2% of the SSE reduction from context to end of thought
+  top-1000 PCs: 97.7% of answer-state variance, carry 99.7% of the SSE reduction from context to end of thought
+  R^2 by PC (A -> D): PC1 0.970->0.993; PC2 0.878->0.959; PCs 3-10 mean 0.693->0.872; PCs 11-100 0.440->0.641; PCs 101-1000 0.099->0.171; rest -0.021->-0.019
+  corpus         :  44.7% of variance | R^2 context 0.999 -> end of thought 1.000 | 0.2% of the gain
+  answer_content :   3.8% of variance | R^2 context 0.736 -> end of thought 0.907 | 6.2% of the gain
+  within_answer  :  51.5% of variance | R^2 context 0.443 -> end of thought 0.629 | 93.5% of the gain
+  all                          n= 30193 R^2 0.703->0.806 acc@1 95.3->99.4% (miss->hit 4.3%, hit->miss 0.2%)
+  corpus=math                  n=  6956 R^2 0.717->0.830 acc@1 90.8->98.8% (miss->hit 8.3%, hit->miss 0.3%)
+  corpus=gsm8k_train           n=  7201 R^2 0.746->0.842 acc@1 99.1->99.9% (miss->hit 0.9%, hit->miss 0.0%)
+  corpus=contexthub            n=  6371 R^2 0.686->0.814 acc@1 92.7->99.2% (miss->hit 6.7%, hit->miss 0.1%)
+  corpus=mmlu                  n=  5772 R^2 0.673->0.762 acc@1 96.8->99.2% (miss->hit 2.9%, hit->miss 0.5%)
+  corpus=arc_challenge         n=  1105 R^2 0.664->0.747 acc@1 98.8->99.7% (miss->hit 1.0%, hit->miss 0.1%)
+  corpus=csqa                  n=  1051 R^2 0.699->0.785 acc@1 99.2->100.0% (miss->hit 0.8%, hit->miss 0.0%)
+  corpus=piqa                  n=  1737 R^2 0.707->0.787 acc@1 97.9->99.9% (miss->hit 2.1%, hit->miss 0.1%)
+  label=necessary              n=  2326 R^2 0.664->0.789 acc@1 93.5->99.2% (miss->hit 6.0%, hit->miss 0.3%)
+  label=both_correct           n= 17312 R^2 0.714->0.807 acc@1 95.8->99.3% (miss->hit 3.7%, hit->miss 0.2%)
+  label=both_wrong             n=  7415 R^2 0.691->0.809 acc@1 94.9->99.6% (miss->hit 4.8%, hit->miss 0.1%)
+  label=pre_only_correct       n=  3138 R^2 0.701->0.799 acc@1 94.9->99.4% (miss->hit 4.7%, hit->miss 0.3%)
+  answer=letter (MCQ corpora)  n=  9665 R^2 0.682->0.768 acc@1 97.5->99.5% (miss->hit 2.3%, hit->miss 0.3%)
+  answer=free-form (math corpora) n= 20528 R^2 0.716->0.829 acc@1 94.3->99.3% (miss->hit 5.2%, hit->miss 0.2%)
+  answer unique in corpus      n=  9494 R^2 0.716->0.799 acc@1 96.9->99.6% (miss->hit 2.9%, hit->miss 0.1%)
+  answer shared by >=20 questions n= 15361 R^2 0.686->0.804 acc@1 94.3->99.2% (miss->hit 5.1%, hit->miss 0.2%)
+  flip set (context miss -> end-of-thought hit): 1285 questions; by corpus {'math': 577, 'gsm8k_train': 64, 'contexthub': 424, 'mmlu': 165, 'arc_challenge': 11, 'csqa': 8, 'piqa': 36}; median answer frequency 56.0 vs 22.0 overall
+  decodability math           n= 4231 classes= 176 majority=4.8% | true 2.5% | context pred 3.0% | eot pred 2.9%
