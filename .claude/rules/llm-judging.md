@@ -120,7 +120,14 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     `OverloadedError → APIStatusError`, and
     `issubclass(OverloadedError, InternalServerError)` is False, so a
     transient tuple catching only `InternalServerError` MISSES 529),
-    `APITimeoutError`, `APIConnectionError`, and Batch-API per-row terminal
+    `APITimeoutError`, `APIConnectionError`, HTTP 401 `AuthenticationError` /
+    403 `PermissionDeniedError` (#2617: a dead org key; the dispatcher marks
+    that org dead for the rest of the run, re-queues the item to a live org,
+    and with no live org left exhausts to `RESULT_TRANSPORT` with an
+    `auth_failed:` reason; a 401/403 is NEVER cached as a verdict:
+    `JudgeCache.put` refuses auth-class error dicts, and a pre-existing
+    cached one reads as a MISS and self-heals on the next wave), and
+    Batch-API per-row terminal
     failures of server class (`errored` with a server error type, `canceled`,
     `expired` rows). Such a failure carries NO information about the judged
     content — it is freely re-judgeable (#1090: a re-judge recovered
@@ -129,7 +136,13 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     rule-23 shape; #1090's asymmetry: 400/1000 trained draws lost on one
     cell). Three sub-rules:
     (i) **Retry, bounded.** Route judge calls through `api_dispatch.py`
-    (mandatory per the API-throughput rule): its transient tuple retries
+    (mandatory per the API-throughput rule). Operating defaults since #2617:
+    the org pool is every LIVE key in the env (`ANTHROPIC_API_KEY` +
+    `ANTHROPIC_BATCH_KEY`; a 401/403 org is dropped automatically mid-run;
+    `EPS_API_SINGLE_ORG=1` restricts to `ANTHROPIC_API_KEY` alone),
+    and the Batch API is the DEFAULT path (`cost_pref="cost"`; judge router
+    `DEFAULT_THRESHOLD_BASE = 200`) with a 200-item sync floor, so only
+    pilots and live probes route sync. Its transient tuple retries
     connection / timeout / 5xx incl. 529 `OverloadedError` (matched via the
     public `APIStatusError` + `status_code == 529` form — landed in #1313)
     with exponential backoff within `max_attempts` (default 5), and its 429

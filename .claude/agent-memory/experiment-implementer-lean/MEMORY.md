@@ -1,6 +1,15 @@
 # experiment-implementer-lean memory index
 
+- [Lean-session waits + /tmp collisions](feedback_lean_session_waits_and_tmp_collisions.md) — `timeout N tail --pid=<pid> -f /dev/null` waits on a >600s lint without Monitor/sleep; round-unique /tmp scratch names (sibling collision, #2658)
+- [judge_pilot report resume fields](reference_judge_pilot_report_resume_fields.md) — PilotGateReport lacks instrument n_draws (derive n_draws//n_items); key resume dirs on every re-run trigger or the rerun cache-wedges; waivers key-only; r3 enum guard (#2658 E)
+- [ruff-fix hook strips leading imports](feedback_ruff_fix_hook_strips_leading_imports.md) — add usages before imports under the PostToolUse autofix hook; prove guard-red in-process via pytest.MonkeyPatch + __signature__ injection (#2658 E r3)
 - [Worktree commit + selector vintage](reference_worktree_commit_and_selector_vintage.md) — guard_root_code_commit blocks plain commits even in worktrees (use `git -C "$WT"`); selector/lint output on vintage-pinned worktrees is drift-dominated
 - [phase-done lint is segment-scoped](feedback_phase_done_lint_segment_scoped.md) — run_phase-internal redirects invisible to --check-phase-done-reserved; reword own prints + noqa directly above reused terminals (#2224 r5)
 - [arm-registry marker grammar](feedback_smoke_arch_arm_registry_grammar.md) — bare source=/file=/n=/members= form only; commands to prose; verify via task.py check-smoke-arch-registry, bare rc (#2224 r5)
 - [Inline-round root-commit cert](feedback_inline_round_root_commit_cert.md) — inline_lint_gate.py certifies (manual workflow_lint doesn't); retry_transient-wrap bare hf_hub_download; bg-Bash lint under load (#2054)
+- [Shared-worktree partial-stage commit](feedback_shared_worktree_partial_stage_commit.md) — pathspec commit takes WORKING-TREE content and sweeps live siblings; apply --cached your hunks, bare-commit verified index (#2658 gJ)
+- [Claimed test file: sibling fixture coupling](feedback_claimed_test_file_sibling_fixture_coupling.md) — sibling edits YOUR test's fixture for THEIR uncommitted src; probe HEAD signature + residual-diff before whole-file commit (#2658 F/K)
+- [Re-freeze moves pilot membership; downstream frozen artifacts go quietly stale](feedback_refreeze_moves_pilot_membership_downstream_frozen_artifacts.md) — diff selection ids old-vs-new; split membership- vs sha-stale; name needs-refreeze per artifact (#2658 D)
+- [Normalizer form vs acceptance instances](feedback_normalizer_form_vs_acceptance_instances.md) — probe the brief's named instances through the prescribed form FIRST; "punct twins" were ws-DELETION twins needing DROP not FOLD; validate widening by pool-wide delta-set eyeball (#2658 D r3)
+- [#2658 re-freeze mechanics](reference_2658_refreeze_mechanics.md) — commit-first clean stamp; rm-then-rerun pins/evidence override; freeze_pins ~20 min walls on load_math_full (detach); update unit10 PIN_ITEMS_SHA256
+- [/proc session-scoping test rigs](reference_proc_session_scoping_test_rigs.md) — poll argv0 before reading environ; env -i keeps PWD/SHLVL/_; setsid -w forwards rc; pure-/proc sid walk (#2658 sid-reap)
