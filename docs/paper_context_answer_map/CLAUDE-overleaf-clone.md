@@ -4,6 +4,9 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
 `6a59c927290f8b8b5eee0055`; Thomas reads ONLY in Overleaf).
 
 ## Repo + workflow
+- **`plan.tex` was REMOVED from the Overleaf tree on 2026-09-03 (Thomas: "remove
+  plan.tex"; commit 009ad61).** Every plan.tex reference below is historical. Do not
+  recreate it; the plan of record is EPS `docs/paper_context_answer_map/plan.md`.
 - An Overleaf Git token is available locally through an existing authenticated
   Overleaf remote. Reuse that credential with the requested Overleaf project ID
   when the target clone is absent; never print, copy into prose, or commit the
