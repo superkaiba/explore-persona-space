@@ -18,6 +18,11 @@ Directions (all read at layer 19 = post-block-19 residual, d=3584):
   assistant axis — #2203 per-layer axis (``axis_by_layer["19"]``);
   casualness — #1434 writing-style persona vector (28-layer ``r_b``);
   impoliteness — #1482 rb4 persona vector (28-layer ``r_b``).
+  harmful compliance — #658 primary persona-vector ``diffmeans`` recipe;
+  correctness (math / MMLU-Pro / code) — #2388 matched within-context
+    mean(correct answer t1) minus mean(incorrect answer t1), then equal-weight
+    averaged over spread contexts.  The three surface directions stay separate
+    because #2388 did not establish a universal cross-surface correctness axis.
 
 Equality gate (BEFORE any new read is trusted): the refit must reproduce the
 banked evil ``heldout_r2``, the full 370-point spectrum, and the random band
@@ -102,6 +107,27 @@ ROSTER = [
         "impoliteness",
         "#1482 rb4 persona vector (local data/issue_779/r_b/impolite.pt, #779-recipe extraction)",
     ),
+    (
+        "harmful_compliance",
+        "harmful compliance",
+        "#658 persona-vector primary diffmeans recipe "
+        "(HF issue658_theory_assumptions/store/r_b.pt)",
+    ),
+    (
+        "correctness_math",
+        "correctness (math)",
+        "#2388 matched correct−incorrect t1 direction over math spread contexts",
+    ),
+    (
+        "correctness_mcq",
+        "correctness (MMLU-Pro)",
+        "#2388 matched correct−incorrect t1 direction over MMLU-Pro spread contexts",
+    ),
+    (
+        "correctness_code",
+        "correctness (code)",
+        "#2388 matched correct−incorrect t1 direction over code spread contexts",
+    ),
 ]
 
 
@@ -129,6 +155,30 @@ def _load_axis(path: Path, layer: int) -> np.ndarray:
     v = d["axis_by_layer"][str(layer)]
     assert tuple(v.shape) == (HIDDEN,), tuple(v.shape)
     return v.to(torch.float32).numpy()
+
+
+def _load_harmful_compliance(path: Path, layer: int) -> tuple[np.ndarray, dict]:
+    """Load #658's pre-designated primary persona-vector recipe."""
+    bundle = torch.load(path, map_location="cpu", weights_only=False)
+    assert bundle["capture_layers"] == list(range(28)), bundle["capture_layers"]
+    behavior = bundle["r_b"]["harmful_compliance"]
+    direction = behavior["diffmeans"][layer].to(torch.float32).numpy()
+    return direction, {
+        "recipe": "diffmeans",
+        "n_db": int(behavior["n_db"]),
+        "n_dbbar": int(behavior["n_dbbar"]),
+    }
+
+
+def _load_correctness(path: Path, layer: int) -> tuple[dict[str, np.ndarray], dict]:
+    bundle = torch.load(path, map_location="cpu", weights_only=False)
+    assert int(bundle["layer"]) == layer, (bundle["layer"], layer)
+    assert int(bundle["hidden_dim"]) == HIDDEN, bundle["hidden_dim"]
+    directions = {
+        f"correctness_{surface}": bundle["directions"][surface].to(torch.float32).numpy()
+        for surface in ("math", "mcq", "code")
+    }
+    return directions, bundle
 
 
 def _refusal_direction(stage_root: Path, layer: int) -> tuple[np.ndarray, dict]:
@@ -193,6 +243,32 @@ def load_directions(stage_root: Path, layer: int) -> tuple[dict[str, np.ndarray]
         "path": "data/issue_779/r_b/impolite.pt (local, #1482 rb4)",
         "sha256": _sha256(p_imp),
     }
+    p_harm = stage_root / "issue658_theory_assumptions/store/r_b.pt"
+    dirs["harmful_compliance"], harm_meta = _load_harmful_compliance(p_harm, layer)
+    prov["harmful_compliance"] = {
+        "path": "issue658_theory_assumptions/store/r_b.pt",
+        "sha256": _sha256(p_harm),
+        **harm_meta,
+        "caveat": (
+            "#658 reports a severely depleted judged positive pole for harmful compliance; "
+            "interpret this point as lower-confidence"
+        ),
+    }
+    p_correct = (
+        stage_root / "issue2388_correctness/derived" / f"correctness_directions_L{layer:02d}.pt"
+    )
+    correct_dirs, correct_bundle = _load_correctness(p_correct, layer)
+    dirs.update(correct_dirs)
+    for surface in ("math", "mcq", "code"):
+        prov[f"correctness_{surface}"] = {
+            "path": str(p_correct.relative_to(stage_root)),
+            "sha256": _sha256(p_correct),
+            "surface": surface,
+            "recipe": correct_bundle["recipe"],
+            "recipe_source": correct_bundle["recipe_source"],
+            "source_commit": correct_bundle["source_commit"],
+            **correct_bundle["surfaces"][surface],
+        }
     for k, v in dirs.items():
         assert v.shape == (HIDDEN,) and np.isfinite(v).all(), k
     return dirs, prov
@@ -298,15 +374,20 @@ def equality_gate(res: dict, banked_path: Path, tol: float = 1e-6) -> dict:
 
 
 # Per-label annotation placement ((dx, dy) offset points, ha, va); tuned on the
-# rendered PNG — the 7 points cluster at ranks 3-12 / R² 0.84-0.91.
+# rendered PNG.  New points get conservative defaults, then are adjusted after
+# the actual evaluation rather than from their outcomes in advance.
 LABEL_OFFSETS = {
-    "evil": (0, -10, "center", "top"),
-    "sycophancy": (0, 5, "center", "bottom"),
-    "hallucination": (-6, -2, "right", "center"),
-    "refusal": (8, -8, "left", "top"),
-    "assistant axis": (28, -6, "left", "center"),
-    "casualness": (10, 5, "left", "bottom"),
-    "impoliteness": (0, -10, "center", "top"),
+    "evil": (0, -12, "center", "top"),
+    "sycophancy": (-10, 12, "right", "bottom"),
+    "hallucination": (-8, -2, "right", "center"),
+    "refusal": (16, 12, "left", "bottom"),
+    "assistant axis": (28, 7, "left", "bottom"),
+    "casualness": (0, 12, "center", "bottom"),
+    "impoliteness": (-5, -12, "right", "top"),
+    "harmful compliance": (-10, -10, "right", "top"),
+    "correctness (math)": (15, 8, "left", "bottom"),
+    "correctness (MMLU-Pro)": (15, -8, "left", "top"),
+    "correctness (code)": (10, -10, "left", "top"),
 }
 
 
@@ -341,7 +422,7 @@ def make_figure(res: dict, fig_dir: Path) -> None:
 
     # The point color carries no meaning (each point is identified by its own
     # text label), so one shared color — the old figure's persona-direction
-    # color — beats a 7-color palette here.
+    # color — keeps the expanded roster visually coherent.
     point_color = paper_color("persona_vector")
     for name, lab, _ in ROSTER:
         e = res["directions"][name]
@@ -376,6 +457,160 @@ def make_figure(res: dict, fig_dir: Path) -> None:
     logger.info("wrote %s/c3_persona_direction_spectrum_redesign.{png,pdf,meta.json}", fig_dir)
 
 
+def _display_path(path: Path) -> str:
+    """Repo-relative path when possible, else absolute (sidecar provenance)."""
+    resolved = path.resolve()
+    try:
+        return str(resolved.relative_to(PROJECT_ROOT))
+    except ValueError:
+        return str(resolved)
+
+
+def make_paper_figure(res: dict, paper_out: Path, source: Path) -> None:
+    """Paper-standard (c2a-v2) render -> ``figures/paper/c3_persona_direction_spectrum``.
+
+    Same plotted values as :func:`make_figure` (a restyle, not a recompute);
+    style comes entirely from ``analysis/c2a_plot_style`` per
+    ``docs/paper_context_answer_map/figure_standard.md`` (wide = 0.75 include
+    width; teal answer-PCA curve, muted random band, ink labeled points).
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.c2a_plot_style import (
+        INK,
+        METRIC_LABELS,
+        MUTED,
+        ROLES,
+        STYLE_VERSION,
+        better_label,
+        c2a_figure,
+        panel_header,
+        save_c2a_figure,
+        set_c2a_style,
+        style_axis,
+    )
+
+    set_c2a_style()
+    fig, frac = c2a_figure("wide", aspect=0.5)
+    ax = fig.add_subplot(111)
+
+    ranks1 = np.array(res["ranks_evaluated"]) + 1
+    r2 = np.array(res["r2_by_rank"])
+    rd = res["random_directions"]
+    ax.axhspan(
+        rd["r2_mean"] - rd["r2_sd"],
+        rd["r2_mean"] + rd["r2_sd"],
+        alpha=0.3,
+        color=ROLES["control"].color,
+        lw=0,
+        label="random directions (mean ± SD)",
+    )
+    ax.plot(ranks1, r2, lw=1.8, color=ROLES["linear"].color, label="answer-PCA direction")
+    ax.axhline(0.0, lw=0.8, color=MUTED)
+
+    # Offsets tuned on the c2a wide canvas (fontsize-15 labels); the legacy
+    # LABEL_OFFSETS above were tuned for the print-size iclr canvas and do not
+    # transfer. (dx, dy) in points, then ha/va.
+    paper_offsets = {
+        "evil": (0, -14, "center", "top"),
+        "sycophancy": (0, 12, "center", "bottom"),
+        "hallucination": (-12, -2, "right", "center"),
+        "refusal": (12, -2, "left", "center"),
+        "assistant axis": (128, 18, "left", "bottom"),
+        "casualness": (30, 16, "left", "bottom"),
+        "impoliteness": (-8, -20, "right", "top"),
+        "harmful compliance": (-10, -28, "right", "top"),
+        "correctness (math)": (20, 10, "left", "bottom"),
+        "correctness (MMLU-Pro)": (20, -10, "left", "top"),
+        "correctness (code)": (16, -12, "left", "top"),
+    }
+    # Headroom for the top label row (the labeled cluster sits at R2 0.84-0.91).
+    ax.set_ylim(-0.32, 1.05)
+    for name, lab, _ in ROSTER:
+        e = res["directions"][name]
+        x, y = e["plotted_rank_1based"], e["heldout_r2"]
+        ax.scatter([x], [y], s=64, zorder=7, color=INK, marker="o", linewidths=0)
+        dx, dy, ha, va = paper_offsets.get(lab, (8, 6, "left", "bottom"))
+        # A long offset (the crowded upper-right cluster) gets a thin leader line.
+        arrow = (
+            dict(arrowstyle="-", lw=0.8, color=MUTED, shrinkA=1, shrinkB=3)
+            if abs(dx) + abs(dy) > 27
+            else None
+        )
+        ax.annotate(
+            lab,
+            (x, y),
+            xytext=(dx, dy),
+            textcoords="offset points",
+            fontsize=13,
+            color=INK,
+            ha=ha,
+            va=va,
+            zorder=6,
+            arrowprops=arrow,
+            bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.55),
+        )
+
+    ax.set_xscale("log")
+    ax.set_xlabel("Variance rank (log)")
+    ax.set_ylabel(better_label(METRIC_LABELS["r2"]))
+    style_axis(ax)
+    panel_header(
+        ax,
+        "",
+        "Qwen2.5-7B-Instruct · layer 19",
+        title="Per-direction held-out $R^2$ against variance rank",
+    )
+    ax.legend(loc="lower left")
+
+    paper_out.mkdir(parents=True, exist_ok=True)
+    stem = paper_out / "c3_persona_direction_spectrum"
+    outputs = save_c2a_figure(
+        fig,
+        stem,
+        title="Useful directions on the answer-PCA spectrum",
+        subject=(
+            "Per-direction held-out R2 of the context-to-answer map at layer 19 "
+            "(Qwen2.5-7B-Instruct), answer-PCA spectrum + labeled behavior/persona directions"
+        ),
+        creator="scripts/issue779_plot3_redesign.py",
+        include_width=frac,
+    )
+    plt.close(fig)
+
+    sidecar = stem.with_suffix(".meta.json")
+    payload = {
+        "figure": "c3_persona_direction_spectrum",
+        "status": "manuscript figure (c2a-v2 restyle of the #779 plot3 redesign)",
+        "style_version": STYLE_VERSION,
+        "plotting_script": "scripts/issue779_plot3_redesign.py",
+        "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+        "reproduction_command": ("uv run python scripts/issue779_plot3_redesign.py --figure-only"),
+        "git": as_metadata_dict(git_provenance()),
+        "sources": {"plot3_redesign": {"path": _display_path(source), "sha256": _sha256(source)}},
+        "record": outputs["record"],
+        "data": {
+            "layer": res.get("layer", 19),
+            "ranks_evaluated": res["ranks_evaluated"],
+            "r2_by_rank": res["r2_by_rank"],
+            "random_directions": res["random_directions"],
+            "directions": {
+                name: {
+                    "plotted_rank_1based": res["directions"][name]["plotted_rank_1based"],
+                    "heldout_r2": res["directions"][name]["heldout_r2"],
+                }
+                for name, _lab, _t in ROSTER
+            },
+        },
+        "output_sha256": {k: _sha256(p) for k, p in outputs.items() if k != "record"},
+    }
+    sidecar.write_text(json.dumps(payload, indent=1) + "\n")
+    logger.info("wrote %s.{pdf,png,meta.json} (+ grayscale)", stem)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--layer", type=int, default=19)
@@ -391,7 +626,23 @@ def main() -> int:
     ap.add_argument(
         "--fig-dir", type=Path, default=PROJECT_ROOT / "figures/issue_779/plot3_redesign"
     )
+    ap.add_argument("--paper-out", type=Path, default=PROJECT_ROOT / "figures/paper")
+    ap.add_argument(
+        "--figure-only",
+        action="store_true",
+        help=(
+            "skip the recompute: render the paper (c2a-v2) figure from the existing "
+            "--out-dir plot3_redesign.json; the legacy issue-folder figure is untouched"
+        ),
+    )
     args = ap.parse_args()
+
+    out_json = args.out_dir / "plot3_redesign.json"
+    if args.figure_only:
+        res = json.loads(out_json.read_text())
+        make_paper_figure(res, args.paper_out, out_json)
+        print("[phase=done]", flush=True)
+        return 0
 
     dirs, prov = load_directions(args.stage_root, args.layer)
 
@@ -436,13 +687,6 @@ def main() -> int:
         ],
         "skipped": [
             {
-                "name": "correctness",
-                "reason": (
-                    "#2388 probe weights not persisted; deriving the direction needs the "
-                    "37.7 GB math capture tar (> 10 GB staging cap)"
-                ),
-            },
-            {
                 "name": "misalignment_em",
                 "reason": "no banked Qwen2.5-7B-Instruct EM direction found — needs minting",
             },
@@ -466,13 +710,13 @@ def main() -> int:
         },
     }
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    out_json = args.out_dir / "plot3_redesign.json"
     with open(out_json, "w") as f:
         json.dump(out, f, indent=1)
     logger.info("wrote %s", out_json)
 
     args.fig_dir.mkdir(parents=True, exist_ok=True)
     make_figure(res, args.fig_dir)
+    make_paper_figure(res, args.paper_out, out_json)
     print("[phase=done]", flush=True)
     return 0
 
