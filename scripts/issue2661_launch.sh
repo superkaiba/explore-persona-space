@@ -5,9 +5,11 @@
 #   uv run python scripts/pod.py provision --issue 2661 --intent eval \
 #       --container-disk-gb 200 --volume-gb 200        # 1x H100 — the provision
 #       # output prints the hourly rate: RECORD IT in the dispatch ack
-#   uv run python scripts/pod.py sync --issue 2661     # code -> pod
+#   git push origin issue-2661                         # code -> remote (pod.py
+#       # has NO sync-by-issue subcommand — r2 fix b)
 #   ssh <pod> 'cd /workspace/explore-persona-space && \
-#       bash scripts/issue2661_launch.sh --full'       # this script, POD-side
+#       git fetch origin issue-2661 && git checkout issue-2661 && \
+#       git pull --ff-only && bash scripts/issue2661_launch.sh --full'
 #   uv run python scripts/pod.py watch --issue 2661    # VM-side stall watchdog
 #
 # Usage (pod-side): bash scripts/issue2661_launch.sh --full|--smoke
@@ -35,6 +37,30 @@ if [ ! -d /workspace ]; then
 fi
 mkdir -p "$LOG_DIR"
 export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
+
+ensure_committed_inputs() {
+  # Pod bootstrap clones are SPARSE (cone: configs data docs scripts src) but
+  # the vendored #2476 kernel + this driver hard-read committed eval_results
+  # files — launch attempt 1 died FileNotFoundError on split_1482.json (r2 fix a).
+  if git -C "$REPO_ROOT" sparse-checkout list >/dev/null 2>&1; then
+    echo "[launcher] sparse checkout detected — adding required eval_results subtrees" >&2
+    git -C "$REPO_ROOT" sparse-checkout add \
+      eval_results/issue_1482 eval_results/issue_2476 eval_results/issue_2661
+  fi
+  local f
+  for f in \
+    eval_results/issue_1482/split_1482.json \
+    eval_results/issue_1482/matryoshka_tier/m_split.json \
+    eval_results/issue_2661/regime_pins.json \
+    eval_results/issue_2661/inputs/descriptions_rep_ta.json; do
+    if [ ! -f "$REPO_ROOT/$f" ]; then
+      echo "[launcher] REQUIRED committed input missing after sparse add: $f" >&2
+      write_failed_sentinel "sparse-inputs" 3
+      exit 3
+    fi
+  done
+  echo "[launcher] committed inputs present (sparse-safe)" >&2
+}
 
 write_failed_sentinel() {
   # args: <phase> <rc> — poll_pipeline-conformant failure sentinel
@@ -83,6 +109,8 @@ run_leg() {
     exit "$rc"
   fi
 }
+
+ensure_committed_inputs
 
 case "$MODE" in
   --smoke)

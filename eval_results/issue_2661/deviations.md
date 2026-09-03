@@ -63,3 +63,22 @@
    records `manifest_identity_sha256` (sha over eval_ids_sha256 +
    need_set_sha256); every production wave/pilot refuses dispatch (rc=9) when
    the current prep manifest's identity differs from the estimate's.
+14. **fp64 accumulation for every CSR moment/parity read (r2 pod smoke fix).**
+   scipy sparse `sum`/`mean` accumulate at the MATRIX dtype (float32 here); on
+   the pod the ib parity assert sat at a measured max delta 6.6e-7 against the
+   fp64 canonical helper and hard-failed its 1e-8 atol (deterministic; the CPU
+   smoke passed only because the CPU-trained smoke SAE produced smaller
+   activation sums). Fix is the CLASS, not the instance: `_csr_colsum64`
+   (fp64 bincount) now backs `_col_moments_csr` (ridge standardizer, ymu, ib
+   bias, edge-null y_sd), the raw-product column sums, the null-draw ymu_k, the
+   null-SD reduction (`dtype=np.float64`), and the dense-input variance; the
+   parity assert computes BOTH sides fp64-on-CPU, logs the measured max delta,
+   and keeps rtol=1e-9/atol=1e-8 (residual is fp64 summation order, ~1e-13).
+   TF32 (deviation 7) was NOT the mechanism — both assert sides were already
+   CPU numpy — and stays enabled for fp32 GEMMs only.
+15. **Launcher hardening from launch attempt 1 (r2 fixes a+b).** The pod
+   bootstrap clone is a SPARSE checkout without eval_results; the launcher now
+   detects sparse checkouts, adds the issue_1482/2476/2661 subtrees via
+   sparse-checkout, and hard-asserts the four required committed inputs before
+   any leg. The header's fictional by-issue sync subcommand is replaced by the
+   real procedure (push the branch; pod-side fetch + checkout + ff-only pull).

@@ -1037,12 +1037,25 @@ def _load_csr(path: Path) -> sp.csr_matrix:
     )
 
 
+def _csr_colsum64(X: sp.csr_matrix, *, power: int = 1) -> np.ndarray:
+    """EXACT fp64 per-column sum of a CSR (bincount over indices with fp64
+    weights). scipy's own ``sum``/``mean`` accumulate at the MATRIX dtype —
+    float32 here — which broke the pod-side ib parity assert at a measured
+    max|delta| of 6.6e-7 against the fp64 canonical helper (r2 pod smoke fix;
+    every parity/moment read now accumulates fp64 on CPU)."""
+    w = X.data.astype(np.float64)
+    if power == 2:
+        w = w * w
+    return np.bincount(X.indices, weights=w, minlength=X.shape[1]).astype(np.float64)
+
+
 def _col_moments_csr(X: sp.csr_matrix, rows: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """fp64 per-column (mean, variance) over the given row subset (population var)."""
+    """fp64 per-column (mean, variance) over the given row subset (population
+    var; EXACT fp64 accumulation via _csr_colsum64 — r2 pod smoke fix)."""
     sub = X[np.asarray(rows, np.int64)]
     n = max(1, sub.shape[0])
-    s1 = np.asarray(sub.sum(axis=0), np.float64).ravel()
-    s2 = np.asarray(sub.power(2).sum(axis=0), np.float64).ravel()
+    s1 = _csr_colsum64(sub)
+    s2 = _csr_colsum64(sub, power=2)
     mu = s1 / n
     var = np.maximum(s2 / n - mu * mu, 0.0)
     return mu, var
@@ -1178,12 +1191,12 @@ def _accumulate_raw_products(
         Xc = X[r]
         xd = torch.as_tensor(Xc.toarray(), dtype=torch.float32, device=device)
         xtx += _sparse_xtd(Xc, xd, device).double()
-        colsum_x += np.asarray(Xc.sum(axis=0), np.float64).ravel()
+        colsum_x += _csr_colsum64(Xc)
         if Y is not None:
             Yc = Y[r]
             yd = torch.as_tensor(Yc.toarray(), dtype=torch.float32, device=device)
             xty += _sparse_xtd(Xc, yd, device).double()
-            ysum += np.asarray(Yc.sum(axis=0), np.float64).ravel()
+            ysum += _csr_colsum64(Yc)
             del yd
         del xd
         if (i + 1) % 4 == 0 or i + 1 == n_chunks:
@@ -1652,7 +1665,7 @@ def phase_controls(args) -> None:
     cat_pos = np.concatenate([rows["fit_pos"], rows["val_pos"], rows["te_pos"]])
     x_dense = np.asarray(x_mm[cat_pos], np.float32)
     Xd = sp.csr_matrix(x_dense)
-    var_d = x_dense[tr].var(axis=0)
+    var_d = x_dense[tr].var(axis=0, dtype=np.float64)
     live_d = np.flatnonzero(var_d > ZERO_VAR_EPS)
     t0 = time.time()
     dd = _eigh_ridge_fit(
@@ -1687,11 +1700,17 @@ def phase_controls(args) -> None:
         Y[sub].toarray().astype(np.float64),
         np.zeros((1, d_y), np.float64),
     )[0]
-    bias_sub = (
-        np.asarray(Y[sub].mean(axis=0), np.float64).ravel()
-        - np.asarray(X[sub].mean(axis=0), np.float64).ravel()
+    # BOTH sides fp64 on CPU (r2 pod smoke fix: scipy sparse mean accumulated
+    # fp32 and sat 6.6e-7 from the fp64 helper; _col_moments_csr is now exact
+    # fp64, so the residual is fp64 summation-order only, ~1e-13)
+    mu_x_sub, _vx = _col_moments_csr(X, sub)
+    mu_y_sub, _vy = _col_moments_csr(Y, sub)
+    bias_sub = mu_y_sub - mu_x_sub
+    ib_delta = float(np.abs(ib_sub - bias_sub).max())
+    print(f"[controls] ib parity max|delta|={ib_delta:.3e} (fp64 both sides)", flush=True)
+    assert np.allclose(ib_sub, bias_sub, rtol=1e-9, atol=1e-8), (
+        f"ib bias parity failed vs canonical helper (max|delta|={ib_delta:.3e})"
     )
-    assert np.allclose(ib_sub, bias_sub, atol=1e-8), "ib bias parity failed vs canonical helper"
     np.save(out / "pred_te_ib.fp16.npy", pred_ib.astype(np.float16))
     doc["routes"]["index_aligned_ib"] = {
         "label": "index-aligned NULL — feature indices are unrelated across dictionaries",
@@ -2163,7 +2182,7 @@ def phase_edges(args) -> None:
                     Ysub[pk[s : s + 8192]].toarray(), dtype=torch.float32, device=dev
                 )
                 xty_p += _sparse_xtd(Xc, yd, dev).double()
-            ymu_k = np.asarray(Ysub[pk].mean(axis=0), np.float64).ravel()
+            ymu_k = _csr_colsum64(Ysub[pk]) / max(1, len(tr))
             cs = torch.as_tensor(colsum_x_tr, dtype=torch.float64, device=dev)
             xty_p -= torch.outer(cs, torch.as_tensor(ymu_k, dtype=torch.float64, device=dev))
             xty_p /= torch.as_tensor(xsd_l, dtype=torch.float64, device=dev)[:, None]
@@ -2174,7 +2193,7 @@ def phase_edges(args) -> None:
             torch.cuda.empty_cache()
         _ymu_s, yvar_sub = _col_moments_csr(Ysub, tr)
         y_sd_sub = np.sqrt(yvar_sub)
-        null_sd_col = draws.std(axis=1).mean(axis=0)
+        null_sd_col = draws.std(axis=1, dtype=np.float64).mean(axis=0)
         with np.errstate(invalid="ignore", divide="ignore"):
             ratio = np.where(y_sd_sub > 1e-12, null_sd_col / np.maximum(y_sd_sub, 1e-12), np.nan)
         z_abs_q = np.nanquantile(

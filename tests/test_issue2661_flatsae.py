@@ -230,3 +230,26 @@ def test_half_reusable_rejects_partial_memmap(tmp_path):
     D.T._write_json(D._half_done_path(hp), {"half": "a", "shape": [d, d_y]}, phase="edges")
     assert D._half_reusable(hp, d, d_y) is True
     assert D._half_reusable(hp, d + 1, d_y) is False  # shape drift -> recompute
+
+
+def test_csr_moments_accumulate_fp64_exactly():
+    """r2 pod-smoke regression pin: scipy sparse sum/mean accumulate at the
+    MATRIX dtype (fp32) and sat 6.6e-7 off the fp64 canonical helper on the pod;
+    _col_moments_csr/_csr_colsum64 must match dense fp64 to summation-order
+    precision on a magnitude-hostile fixture (fails pre-fix at ~1e-7 relative)."""
+    rng = np.random.default_rng(8)
+    dense = (rng.standard_normal((2_000, 4)) * 1e4).astype(np.float32)
+    dense[dense < 0] = 0.0  # gated-activation shape (nonnegative sparse values)
+    X = sp.csr_matrix(dense)
+    want_sum = dense.astype(np.float64).sum(axis=0)
+    got_sum = D._csr_colsum64(X)
+    np.testing.assert_allclose(got_sum, want_sum, rtol=1e-12)
+    mu, var = D._col_moments_csr(X, np.arange(2_000))
+    d64 = dense.astype(np.float64)
+    np.testing.assert_allclose(mu, d64.mean(axis=0), rtol=1e-12)
+    np.testing.assert_allclose(
+        var, d64.var(axis=0), rtol=1e-9, atol=1e-6
+    )  # population var; cancellation-limited
+    # the scipy fp32 path is measurably WRONG on this fixture (the pre-fix bug)
+    scipy_fp32 = np.asarray(X.mean(axis=0), np.float64).ravel()
+    assert np.abs(scipy_fp32 - d64.mean(axis=0)).max() > 1e-4
