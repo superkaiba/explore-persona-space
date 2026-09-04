@@ -13,3 +13,4 @@
 - [Normalizer form vs acceptance instances](feedback_normalizer_form_vs_acceptance_instances.md) — probe the brief's named instances through the prescribed form FIRST; "punct twins" were ws-DELETION twins needing DROP not FOLD; validate widening by pool-wide delta-set eyeball (#2658 D r3)
 - [#2658 re-freeze mechanics](reference_2658_refreeze_mechanics.md) — commit-first clean stamp; rm-then-rerun pins/evidence override; freeze_pins ~20 min walls on load_math_full (detach); update unit10 PIN_ITEMS_SHA256
 - [/proc session-scoping test rigs](reference_proc_session_scoping_test_rigs.md) — poll argv0 before reading environ; env -i keeps PWD/SHLVL/_; setsid -w forwards rc; pure-/proc sid walk (#2658 sid-reap)
+- [Hardlink-copy gate smoke on a live dir](feedback_hardlink_copy_gate_smoke_live_dir.md) — `cp -al` same-fs snapshot is safe under atomic os.replace writers; /tmp is cross-device; verify real nlink=1 after (#2658 r13)
