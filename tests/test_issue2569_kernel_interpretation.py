@@ -32,7 +32,7 @@ def _synthetic(d: int = 32, seed: int = 7):
 
 
 def test_svd_row_action_recovers_factors():
-    A, U0, s0, Vh0 = _synthetic()
+    A, U0, s0, _Vh0 = _synthetic()
     U, s, Vh = KI.svd_row_action(A)
     assert np.allclose(s, s0, rtol=1e-10)
     # row action identity: u_i @ A = s_i v_i for every triplet
@@ -57,7 +57,7 @@ def test_mass_partitions_matches_manual_cumsum():
 
 
 def test_kernel_share_exact_on_constructed_directions():
-    A, _U0, s, _Vh0 = _synthetic(d=32, seed=3)
+    A, _U0, _s, _Vh0 = _synthetic(d=32, seed=3)
     U, s2, _ = KI.svd_row_action(A)
     parts = KI.mass_partitions(s2, masses=(0.90,))
     mask = parts[0.90]["mask"]

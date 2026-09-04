@@ -128,13 +128,13 @@ def test_entry_cosine_stats_known_values():
     stats = V2.entry_cosine_stats([Q, line], D, top_m=4)
     plane, ln = stats
     assert plane["max"] == pytest.approx(1.0, abs=1e-6)
-    vals = dict(zip(plane["top_ids"], plane["top_vals"]))
+    vals = dict(zip(plane["top_ids"], plane["top_vals"], strict=True))
     assert vals[0] == pytest.approx(1.0, abs=1e-6)  # e1 fully in plane
     assert vals[3] == pytest.approx(1.0, abs=1e-6)  # e2 fully in plane (imag axis)
     assert vals[1] == pytest.approx(1 / np.sqrt(2), abs=1e-6)
     assert vals[2] == pytest.approx(0.0, abs=1e-6)
     # imag-axis share: feature e2 carries everything on axis 2; e1 nothing
-    share = dict(zip(plane["top_ids"], plane["axis2_share_top"]))
+    share = dict(zip(plane["top_ids"], plane["axis2_share_top"], strict=True))
     assert share[0] == pytest.approx(0.0, abs=1e-9)
     assert share[3] == pytest.approx(1.0, abs=1e-9)
     # axis1_max = max |cos| against the real axis alone = 1.0 (feature e1)
@@ -164,7 +164,7 @@ def test_whitening_identity_covariance_is_noop():
     Dw = (Wm.astype(np.float32) @ D)
     Dwn = Dw / np.linalg.norm(Dw, axis=0, keepdims=True)
     wht = V2.entry_cosine_stats(wbases, Dwn, top_m=5)
-    for r, w in zip(raw, wht):
+    for r, w in zip(raw, wht, strict=True):
         assert w["max"] == pytest.approx(r["max"], abs=1e-5)
         assert w["top_ids"] == r["top_ids"]
 
@@ -186,8 +186,10 @@ def test_whitened_cosine_matches_direct_formula_anisotropic():
     (stat,) = V2.entry_cosine_stats(V2.whiten_bases([x[None, :]], Wm), Dwn, top_m=1)
     # direct formula: cos(Wm x, Wm d_j), max over j
     wx = Wm @ x
+    whitened_dictionary = Wm @ D.astype(np.float64)
     direct = np.abs(
-        (wx @ (Wm @ D.astype(np.float64))) / (np.linalg.norm(wx) * np.linalg.norm(Wm @ D.astype(np.float64), axis=0))
+        (wx @ whitened_dictionary)
+        / (np.linalg.norm(wx) * np.linalg.norm(whitened_dictionary, axis=0))
     )
     assert stat["max"] == pytest.approx(float(direct.max()), abs=1e-5)
     assert stat["top_ids"][0] == int(direct.argmax())
