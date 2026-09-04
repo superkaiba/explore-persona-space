@@ -1,0 +1,1106 @@
+{
+ "contrasts": {
+  "r2": {
+   "best_diag_cell": {
+    "layer_c": 19,
+    "layer_a": 19
+   },
+   "best_offdiag_cell": {
+    "layer_c": 20,
+    "layer_a": 19
+   },
+   "point_diff": 0.0007118528433710525,
+   "fixed_cells_ci": {
+    "lo": -0.0006323935344212467,
+    "hi": 0.002047338136792673,
+    "mean": 0.0006877135942645158
+   },
+   "selection_aware_ci": {
+    "lo": -0.000635756334614554,
+    "hi": 0.002043590441330603,
+    "mean": 0.000677626478223099
+   },
+   "frac_draws_diff_leq_0_fixed": 0.173,
+   "frac_draws_diff_leq_0_selection_aware": 0.179,
+   "per_answer_layer_diag_minus_best_other": [
+    {
+     "layer_a": 0,
+     "diag_point": 0.5508285228760323,
+     "best_other_layer_c": 24,
+     "best_other_point": 0.7183620394937844,
+     "point_diff": -0.16753351661775207,
+     "ci": {
+      "lo": -0.1873597921901543,
+      "hi": -0.14896405650170572,
+      "mean": -0.16761146343722055
+     }
+    },
+    {
+     "layer_a": 1,
+     "diag_point": 0.5708489945559264,
+     "best_other_layer_c": 23,
+     "best_other_point": 0.7286641442865585,
+     "point_diff": -0.15781514973063204,
+     "ci": {
+      "lo": -0.17546762094257765,
+      "hi": -0.14119563785481196,
+      "mean": -0.15777119714624224
+     }
+    },
+    {
+     "layer_a": 2,
+     "diag_point": 0.6075091727305674,
+     "best_other_layer_c": 23,
+     "best_other_point": 0.7326805151161625,
+     "point_diff": -0.12517134238559513,
+     "ci": {
+      "lo": -0.13984400360157861,
+      "hi": -0.11207153610070736,
+      "mean": -0.12513800965387983
+     }
+    },
+    {
+     "layer_a": 3,
+     "diag_point": 0.6196026179107073,
+     "best_other_layer_c": 23,
+     "best_other_point": 0.7298411130837368,
+     "point_diff": -0.11023849517302953,
+     "ci": {
+      "lo": -0.12196725266077207,
+      "hi": -0.0993290790610429,
+      "mean": -0.1100915942446942
+     }
+    },
+    {
+     "layer_a": 4,
+     "diag_point": 0.6257064894791284,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.7270720418835899,
+     "point_diff": -0.10136555240446143,
+     "ci": {
+      "lo": -0.11160831343185096,
+      "hi": -0.09202932722458664,
+      "mean": -0.10120922873501775
+     }
+    },
+    {
+     "layer_a": 5,
+     "diag_point": 0.6399190536113837,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.7417204268645068,
+     "point_diff": -0.1018013732531231,
+     "ci": {
+      "lo": -0.11226260757374427,
+      "hi": -0.09252085779328414,
+      "mean": -0.10174790484502036
+     }
+    },
+    {
+     "layer_a": 6,
+     "diag_point": 0.653186321261231,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.7576383512600589,
+     "point_diff": -0.10445202999882786,
+     "ci": {
+      "lo": -0.1145128826654087,
+      "hi": -0.09512995684987988,
+      "mean": -0.10434484029400497
+     }
+    },
+    {
+     "layer_a": 7,
+     "diag_point": 0.648653202611096,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.7530365917217288,
+     "point_diff": -0.10438338911063272,
+     "ci": {
+      "lo": -0.11381059090034178,
+      "hi": -0.0957214455743726,
+      "mean": -0.10430918285331056
+     }
+    },
+    {
+     "layer_a": 8,
+     "diag_point": 0.6639273150112688,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.7600994762471841,
+     "point_diff": -0.09617216123591532,
+     "ci": {
+      "lo": -0.10445359045300716,
+      "hi": -0.08827062299928111,
+      "mean": -0.0960330229697691
+     }
+    },
+    {
+     "layer_a": 9,
+     "diag_point": 0.6278565965365419,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.7241972919231446,
+     "point_diff": -0.09634069538660273,
+     "ci": {
+      "lo": -0.10352882078079491,
+      "hi": -0.08958355313138314,
+      "mean": -0.09633599524142324
+     }
+    },
+    {
+     "layer_a": 10,
+     "diag_point": 0.6549717816306986,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.7374179171021119,
+     "point_diff": -0.08244613547141333,
+     "ci": {
+      "lo": -0.08871344868699617,
+      "hi": -0.0763498840931906,
+      "mean": -0.08243560007782468
+     }
+    },
+    {
+     "layer_a": 11,
+     "diag_point": 0.6713110239141586,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.749703963574,
+     "point_diff": -0.0783929396598414,
+     "ci": {
+      "lo": -0.08460141768851771,
+      "hi": -0.072326584419735,
+      "mean": -0.07832618312140328
+     }
+    },
+    {
+     "layer_a": 12,
+     "diag_point": 0.6907003670334864,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.7617977448588693,
+     "point_diff": -0.07109737782538295,
+     "ci": {
+      "lo": -0.07670117015511607,
+      "hi": -0.0654639787767224,
+      "mean": -0.07111453603099112
+     }
+    },
+    {
+     "layer_a": 13,
+     "diag_point": 0.70994790312883,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.7586008853839646,
+     "point_diff": -0.04865298225513459,
+     "ci": {
+      "lo": -0.05355124692485004,
+      "hi": -0.043667901333931676,
+      "mean": -0.048660126788741875
+     }
+    },
+    {
+     "layer_a": 14,
+     "diag_point": 0.7334405379917097,
+     "best_other_layer_c": 21,
+     "best_other_point": 0.7729721220476666,
+     "point_diff": -0.039531584055956914,
+     "ci": {
+      "lo": -0.04430213139392868,
+      "hi": -0.03541107151751256,
+      "mean": -0.039609565586399
+     }
+    },
+    {
+     "layer_a": 15,
+     "diag_point": 0.7519248780045756,
+     "best_other_layer_c": 21,
+     "best_other_point": 0.784753541384164,
+     "point_diff": -0.03282866337958834,
+     "ci": {
+      "lo": -0.03703962130773624,
+      "hi": -0.029043653869702774,
+      "mean": -0.032899156906149626
+     }
+    },
+    {
+     "layer_a": 16,
+     "diag_point": 0.7627789296972682,
+     "best_other_layer_c": 21,
+     "best_other_point": 0.7903432076147408,
+     "point_diff": -0.027564277917472513,
+     "ci": {
+      "lo": -0.03154163632693875,
+      "hi": -0.023891862311574204,
+      "mean": -0.02767461265853067
+     }
+    },
+    {
+     "layer_a": 17,
+     "diag_point": 0.7645459695330261,
+     "best_other_layer_c": 20,
+     "best_other_point": 0.7899625497950293,
+     "point_diff": -0.02541658026200322,
+     "ci": {
+      "lo": -0.029387652020872186,
+      "hi": -0.02230849691232383,
+      "mean": -0.025562332312119754
+     }
+    },
+    {
+     "layer_a": 18,
+     "diag_point": 0.774141293857044,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.7902616049067055,
+     "point_diff": -0.016120311049661495,
+     "ci": {
+      "lo": -0.018495512498705128,
+      "hi": -0.014021278784449693,
+      "mean": -0.01619819885831983
+     }
+    },
+    {
+     "layer_a": 19,
+     "diag_point": 0.8074715788066227,
+     "best_other_layer_c": 20,
+     "best_other_point": 0.8067597259632516,
+     "point_diff": 0.0007118528433710525,
+     "ci": {
+      "lo": -0.0006323935344212467,
+      "hi": 0.002047338136792673,
+      "mean": 0.0006877135942645158
+     }
+    },
+    {
+     "layer_a": 20,
+     "diag_point": 0.7995813839732204,
+     "best_other_layer_c": 21,
+     "best_other_point": 0.7986160762997424,
+     "point_diff": 0.0009653076734780219,
+     "ci": {
+      "lo": -0.00033010869002894345,
+      "hi": 0.002196193557987522,
+      "mean": 0.000962830772084536
+     }
+    },
+    {
+     "layer_a": 21,
+     "diag_point": 0.7853726015360672,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.7832830769616568,
+     "point_diff": 0.002089524574410473,
+     "ci": {
+      "lo": 0.0008639168646844914,
+      "hi": 0.0034639578563863565,
+      "mean": 0.0021472686592731655
+     }
+    },
+    {
+     "layer_a": 22,
+     "diag_point": 0.7680486214378979,
+     "best_other_layer_c": 23,
+     "best_other_point": 0.7625350287006267,
+     "point_diff": 0.005513592737271145,
+     "ci": {
+      "lo": 0.00416565893971976,
+      "hi": 0.00692928587194152,
+      "mean": 0.005515275299991547
+     }
+    },
+    {
+     "layer_a": 23,
+     "diag_point": 0.7510976067318289,
+     "best_other_layer_c": 24,
+     "best_other_point": 0.7477112529886011,
+     "point_diff": 0.0033863537432278212,
+     "ci": {
+      "lo": 0.0021294381130343683,
+      "hi": 0.004799471105313658,
+      "mean": 0.003423805330194301
+     }
+    },
+    {
+     "layer_a": 24,
+     "diag_point": 0.7528073302861493,
+     "best_other_layer_c": 23,
+     "best_other_point": 0.7506520384074429,
+     "point_diff": 0.0021552918787064446,
+     "ci": {
+      "lo": 0.000971929385513337,
+      "hi": 0.0033451266352256064,
+      "mean": 0.00214380956835474
+     }
+    },
+    {
+     "layer_a": 25,
+     "diag_point": 0.7530453936924069,
+     "best_other_layer_c": 24,
+     "best_other_point": 0.7543345038131442,
+     "point_diff": -0.0012891101207372913,
+     "ci": {
+      "lo": -0.0028028426652872,
+      "hi": 0.0003777778372188454,
+      "mean": -0.0012555238304347326
+     }
+    },
+    {
+     "layer_a": 26,
+     "diag_point": 0.7362549556941096,
+     "best_other_layer_c": 24,
+     "best_other_point": 0.7383696347604212,
+     "point_diff": -0.0021146790663115755,
+     "ci": {
+      "lo": -0.004931429863564174,
+      "hi": 0.0004000826940150941,
+      "mean": -0.002040695964200781
+     }
+    },
+    {
+     "layer_a": 27,
+     "diag_point": 0.7464663441887349,
+     "best_other_layer_c": 26,
+     "best_other_point": 0.7497069795820424,
+     "point_diff": -0.003240635393307434,
+     "ci": {
+      "lo": -0.0045350859739786585,
+      "hi": -0.0018762797204795179,
+      "mean": -0.0032202714472546507
+     }
+    }
+   ]
+  },
+  "acc1_wcsls": {
+   "best_diag_cell": {
+    "layer_c": 19,
+    "layer_a": 19
+   },
+   "best_offdiag_cell": {
+    "layer_c": 19,
+    "layer_a": 20
+   },
+   "point_diff": 0.0020000000000000018,
+   "fixed_cells_ci": {
+    "lo": 0.0,
+    "hi": 0.0050000000000000044,
+    "mean": 0.0019850000000000015
+   },
+   "selection_aware_ci": {
+    "lo": -0.0020000000000000018,
+    "hi": 0.008024999999999984,
+    "mean": 0.0020890000000000023
+   },
+   "frac_draws_diff_leq_0_fixed": 0.125,
+   "frac_draws_diff_leq_0_selection_aware": 0.278,
+   "per_answer_layer_diag_minus_best_other": [
+    {
+     "layer_a": 0,
+     "diag_point": 0.894,
+     "best_other_layer_c": 1,
+     "best_other_point": 0.899,
+     "point_diff": -0.0050000000000000044,
+     "ci": {
+      "lo": -0.013000000000000012,
+      "hi": 0.0030000000000000027,
+      "mean": -0.005123000000000004
+     }
+    },
+    {
+     "layer_a": 1,
+     "diag_point": 0.906,
+     "best_other_layer_c": 2,
+     "best_other_point": 0.892,
+     "point_diff": 0.014000000000000012,
+     "ci": {
+      "lo": 0.006000000000000005,
+      "hi": 0.02200000000000002,
+      "mean": 0.013880000000000014
+     }
+    },
+    {
+     "layer_a": 2,
+     "diag_point": 0.888,
+     "best_other_layer_c": 1,
+     "best_other_point": 0.887,
+     "point_diff": 0.0010000000000000009,
+     "ci": {
+      "lo": -0.007000000000000006,
+      "hi": 0.009000000000000008,
+      "mean": 0.001177000000000001
+     }
+    },
+    {
+     "layer_a": 3,
+     "diag_point": 0.878,
+     "best_other_layer_c": 4,
+     "best_other_point": 0.876,
+     "point_diff": 0.0020000000000000018,
+     "ci": {
+      "lo": -0.0050000000000000044,
+      "hi": 0.010000000000000009,
+      "mean": 0.0018690000000000017
+     }
+    },
+    {
+     "layer_a": 4,
+     "diag_point": 0.883,
+     "best_other_layer_c": 6,
+     "best_other_point": 0.881,
+     "point_diff": 0.0020000000000000018,
+     "ci": {
+      "lo": -0.0050000000000000044,
+      "hi": 0.009000000000000008,
+      "mean": 0.0019050000000000015
+     }
+    },
+    {
+     "layer_a": 5,
+     "diag_point": 0.884,
+     "best_other_layer_c": 6,
+     "best_other_point": 0.889,
+     "point_diff": -0.0050000000000000044,
+     "ci": {
+      "lo": -0.011025000000000009,
+      "hi": 0.0010000000000000009,
+      "mean": -0.004931000000000005
+     }
+    },
+    {
+     "layer_a": 6,
+     "diag_point": 0.886,
+     "best_other_layer_c": 5,
+     "best_other_point": 0.877,
+     "point_diff": 0.009000000000000008,
+     "ci": {
+      "lo": 0.0,
+      "hi": 0.018000000000000016,
+      "mean": 0.009059000000000008
+     }
+    },
+    {
+     "layer_a": 7,
+     "diag_point": 0.869,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.873,
+     "point_diff": -0.0040000000000000036,
+     "ci": {
+      "lo": -0.019000000000000017,
+      "hi": 0.01200000000000001,
+      "mean": -0.003911000000000004
+     }
+    },
+    {
+     "layer_a": 8,
+     "diag_point": 0.871,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.877,
+     "point_diff": -0.006000000000000005,
+     "ci": {
+      "lo": -0.019000000000000017,
+      "hi": 0.009000000000000008,
+      "mean": -0.005963000000000006
+     }
+    },
+    {
+     "layer_a": 9,
+     "diag_point": 0.857,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.879,
+     "point_diff": -0.02200000000000002,
+     "ci": {
+      "lo": -0.039000000000000035,
+      "hi": -0.0050000000000000044,
+      "mean": -0.02169200000000002
+     }
+    },
+    {
+     "layer_a": 10,
+     "diag_point": 0.867,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.883,
+     "point_diff": -0.016000000000000014,
+     "ci": {
+      "lo": -0.030025000000000024,
+      "hi": 0.0,
+      "mean": -0.015782000000000015
+     }
+    },
+    {
+     "layer_a": 11,
+     "diag_point": 0.866,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.887,
+     "point_diff": -0.02100000000000002,
+     "ci": {
+      "lo": -0.03502500000000003,
+      "hi": -0.007000000000000006,
+      "mean": -0.020864000000000018
+     }
+    },
+    {
+     "layer_a": 12,
+     "diag_point": 0.88,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.892,
+     "point_diff": -0.01200000000000001,
+     "ci": {
+      "lo": -0.02400000000000002,
+      "hi": 0.0010000000000000009,
+      "mean": -0.01191300000000001
+     }
+    },
+    {
+     "layer_a": 13,
+     "diag_point": 0.895,
+     "best_other_layer_c": 15,
+     "best_other_point": 0.895,
+     "point_diff": 0.0,
+     "ci": {
+      "lo": -0.007025000000000005,
+      "hi": 0.007000000000000006,
+      "mean": -0.00010300000000000009
+     }
+    },
+    {
+     "layer_a": 14,
+     "diag_point": 0.893,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.899,
+     "point_diff": -0.006000000000000005,
+     "ci": {
+      "lo": -0.014025000000000011,
+      "hi": 0.0020000000000000018,
+      "mean": -0.005917000000000005
+     }
+    },
+    {
+     "layer_a": 15,
+     "diag_point": 0.896,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.901,
+     "point_diff": -0.0050000000000000044,
+     "ci": {
+      "lo": -0.013000000000000012,
+      "hi": 0.0030000000000000027,
+      "mean": -0.004802000000000004
+     }
+    },
+    {
+     "layer_a": 16,
+     "diag_point": 0.897,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.902,
+     "point_diff": -0.0050000000000000044,
+     "ci": {
+      "lo": -0.013000000000000012,
+      "hi": 0.0020000000000000018,
+      "mean": -0.004939000000000004
+     }
+    },
+    {
+     "layer_a": 17,
+     "diag_point": 0.897,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.902,
+     "point_diff": -0.0050000000000000044,
+     "ci": {
+      "lo": -0.013000000000000012,
+      "hi": 0.0030000000000000027,
+      "mean": -0.005012000000000004
+     }
+    },
+    {
+     "layer_a": 18,
+     "diag_point": 0.902,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.902,
+     "point_diff": 0.0,
+     "ci": {
+      "lo": -0.006000000000000005,
+      "hi": 0.0050000000000000044,
+      "mean": 5.500000000000005e-05
+     }
+    },
+    {
+     "layer_a": 19,
+     "diag_point": 0.907,
+     "best_other_layer_c": 20,
+     "best_other_point": 0.904,
+     "point_diff": 0.0030000000000000027,
+     "ci": {
+      "lo": -0.0020000000000000018,
+      "hi": 0.008000000000000007,
+      "mean": 0.0028410000000000024
+     }
+    },
+    {
+     "layer_a": 20,
+     "diag_point": 0.904,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.905,
+     "point_diff": -0.0010000000000000009,
+     "ci": {
+      "lo": -0.0050000000000000044,
+      "hi": 0.0030000000000000027,
+      "mean": -0.0008890000000000008
+     }
+    },
+    {
+     "layer_a": 21,
+     "diag_point": 0.902,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.905,
+     "point_diff": -0.0030000000000000027,
+     "ci": {
+      "lo": -0.009000000000000008,
+      "hi": 0.0030000000000000027,
+      "mean": -0.0030160000000000026
+     }
+    },
+    {
+     "layer_a": 22,
+     "diag_point": 0.902,
+     "best_other_layer_c": 21,
+     "best_other_point": 0.901,
+     "point_diff": 0.0010000000000000009,
+     "ci": {
+      "lo": -0.0040000000000000036,
+      "hi": 0.006000000000000005,
+      "mean": 0.0009250000000000008
+     }
+    },
+    {
+     "layer_a": 23,
+     "diag_point": 0.906,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.903,
+     "point_diff": 0.0030000000000000027,
+     "ci": {
+      "lo": -0.0020000000000000018,
+      "hi": 0.008000000000000007,
+      "mean": 0.003060000000000003
+     }
+    },
+    {
+     "layer_a": 24,
+     "diag_point": 0.894,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.897,
+     "point_diff": -0.0030000000000000027,
+     "ci": {
+      "lo": -0.010000000000000009,
+      "hi": 0.0030000000000000027,
+      "mean": -0.0029900000000000026
+     }
+    },
+    {
+     "layer_a": 25,
+     "diag_point": 0.891,
+     "best_other_layer_c": 23,
+     "best_other_point": 0.896,
+     "point_diff": -0.0050000000000000044,
+     "ci": {
+      "lo": -0.01100000000000001,
+      "hi": 0.0,
+      "mean": -0.005041000000000004
+     }
+    },
+    {
+     "layer_a": 26,
+     "diag_point": 0.889,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.895,
+     "point_diff": -0.006000000000000005,
+     "ci": {
+      "lo": -0.015000000000000013,
+      "hi": 0.0030000000000000027,
+      "mean": -0.006054000000000005
+     }
+    },
+    {
+     "layer_a": 27,
+     "diag_point": 0.888,
+     "best_other_layer_c": 25,
+     "best_other_point": 0.895,
+     "point_diff": -0.007000000000000006,
+     "ci": {
+      "lo": -0.014000000000000012,
+      "hi": 0.0,
+      "mean": -0.006876000000000005
+     }
+    }
+   ]
+  },
+  "acc1_euclid": {
+   "best_diag_cell": {
+    "layer_c": 19,
+    "layer_a": 19
+   },
+   "best_offdiag_cell": {
+    "layer_c": 20,
+    "layer_a": 19
+   },
+   "point_diff": 0.0050000000000000044,
+   "fixed_cells_ci": {
+    "lo": -0.0010000000000000009,
+    "hi": 0.01200000000000001,
+    "mean": 0.004985000000000003
+   },
+   "selection_aware_ci": {
+    "lo": -0.005999999999999897,
+    "hi": 0.010000000000000009,
+    "mean": 0.003137000000000002
+   },
+   "frac_draws_diff_leq_0_fixed": 0.085,
+   "frac_draws_diff_leq_0_selection_aware": 0.227,
+   "per_answer_layer_diag_minus_best_other": [
+    {
+     "layer_a": 0,
+     "diag_point": 0.303,
+     "best_other_layer_c": 23,
+     "best_other_point": 0.512,
+     "point_diff": -0.20900000000000002,
+     "ci": {
+      "lo": -0.242,
+      "hi": -0.177,
+      "mean": -0.20956400000000003
+     }
+    },
+    {
+     "layer_a": 1,
+     "diag_point": 0.339,
+     "best_other_layer_c": 23,
+     "best_other_point": 0.55,
+     "point_diff": -0.21100000000000002,
+     "ci": {
+      "lo": -0.24502499999999994,
+      "hi": -0.17897500000000008,
+      "mean": -0.211686
+     }
+    },
+    {
+     "layer_a": 2,
+     "diag_point": 0.39,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.601,
+     "point_diff": -0.21099999999999997,
+     "ci": {
+      "lo": -0.244,
+      "hi": -0.178,
+      "mean": -0.21120299999999997
+     }
+    },
+    {
+     "layer_a": 3,
+     "diag_point": 0.413,
+     "best_other_layer_c": 24,
+     "best_other_point": 0.63,
+     "point_diff": -0.21700000000000003,
+     "ci": {
+      "lo": -0.25,
+      "hi": -0.185,
+      "mean": -0.21659
+     }
+    },
+    {
+     "layer_a": 4,
+     "diag_point": 0.5,
+     "best_other_layer_c": 23,
+     "best_other_point": 0.669,
+     "point_diff": -0.16900000000000004,
+     "ci": {
+      "lo": -0.19799999999999995,
+      "hi": -0.137,
+      "mean": -0.16821500000000003
+     }
+    },
+    {
+     "layer_a": 5,
+     "diag_point": 0.492,
+     "best_other_layer_c": 24,
+     "best_other_point": 0.663,
+     "point_diff": -0.17100000000000004,
+     "ci": {
+      "lo": -0.20000000000000007,
+      "hi": -0.139,
+      "mean": -0.16990600000000003
+     }
+    },
+    {
+     "layer_a": 6,
+     "diag_point": 0.52,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.702,
+     "point_diff": -0.18199999999999994,
+     "ci": {
+      "lo": -0.21199999999999997,
+      "hi": -0.15200000000000002,
+      "mean": -0.18101999999999996
+     }
+    },
+    {
+     "layer_a": 7,
+     "diag_point": 0.508,
+     "best_other_layer_c": 23,
+     "best_other_point": 0.696,
+     "point_diff": -0.18799999999999994,
+     "ci": {
+      "lo": -0.21602499999999997,
+      "hi": -0.15800000000000003,
+      "mean": -0.18731599999999998
+     }
+    },
+    {
+     "layer_a": 8,
+     "diag_point": 0.553,
+     "best_other_layer_c": 21,
+     "best_other_point": 0.73,
+     "point_diff": -0.17699999999999994,
+     "ci": {
+      "lo": -0.20399999999999996,
+      "hi": -0.14600000000000002,
+      "mean": -0.17609499999999997
+     }
+    },
+    {
+     "layer_a": 9,
+     "diag_point": 0.463,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.689,
+     "point_diff": -0.22599999999999992,
+     "ci": {
+      "lo": -0.25499999999999995,
+      "hi": -0.19599999999999995,
+      "mean": -0.225626
+     }
+    },
+    {
+     "layer_a": 10,
+     "diag_point": 0.542,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.73,
+     "point_diff": -0.18799999999999994,
+     "ci": {
+      "lo": -0.21699999999999997,
+      "hi": -0.15899999999999992,
+      "mean": -0.18754999999999997
+     }
+    },
+    {
+     "layer_a": 11,
+     "diag_point": 0.568,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.755,
+     "point_diff": -0.18700000000000006,
+     "ci": {
+      "lo": -0.21199999999999997,
+      "hi": -0.16200000000000003,
+      "mean": -0.18688
+     }
+    },
+    {
+     "layer_a": 12,
+     "diag_point": 0.6,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.774,
+     "point_diff": -0.17400000000000004,
+     "ci": {
+      "lo": -0.19800000000000006,
+      "hi": -0.14800000000000002,
+      "mean": -0.17370600000000005
+     }
+    },
+    {
+     "layer_a": 13,
+     "diag_point": 0.669,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.785,
+     "point_diff": -0.11599999999999999,
+     "ci": {
+      "lo": -0.139025,
+      "hi": -0.092975,
+      "mean": -0.11575800000000001
+     }
+    },
+    {
+     "layer_a": 14,
+     "diag_point": 0.71,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.803,
+     "point_diff": -0.09300000000000008,
+     "ci": {
+      "lo": -0.11399999999999999,
+      "hi": -0.07100000000000006,
+      "mean": -0.09295000000000005
+     }
+    },
+    {
+     "layer_a": 15,
+     "diag_point": 0.744,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.809,
+     "point_diff": -0.06500000000000006,
+     "ci": {
+      "lo": -0.08299999999999996,
+      "hi": -0.04700000000000004,
+      "mean": -0.06489900000000001
+     }
+    },
+    {
+     "layer_a": 16,
+     "diag_point": 0.747,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.813,
+     "point_diff": -0.06599999999999995,
+     "ci": {
+      "lo": -0.08300000000000007,
+      "hi": -0.049000000000000044,
+      "mean": -0.06623100000000001
+     }
+    },
+    {
+     "layer_a": 17,
+     "diag_point": 0.754,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.814,
+     "point_diff": -0.05999999999999994,
+     "ci": {
+      "lo": -0.07800000000000007,
+      "hi": -0.04297499999999995,
+      "mean": -0.06055299999999999
+     }
+    },
+    {
+     "layer_a": 18,
+     "diag_point": 0.795,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.822,
+     "point_diff": -0.026999999999999913,
+     "ci": {
+      "lo": -0.040000000000000036,
+      "hi": -0.013999999999999901,
+      "mean": -0.026851999999999952
+     }
+    },
+    {
+     "layer_a": 19,
+     "diag_point": 0.841,
+     "best_other_layer_c": 20,
+     "best_other_point": 0.836,
+     "point_diff": 0.0050000000000000044,
+     "ci": {
+      "lo": -0.0010000000000000009,
+      "hi": 0.01200000000000001,
+      "mean": 0.004985000000000003
+     }
+    },
+    {
+     "layer_a": 20,
+     "diag_point": 0.827,
+     "best_other_layer_c": 19,
+     "best_other_point": 0.833,
+     "point_diff": -0.006000000000000005,
+     "ci": {
+      "lo": -0.014000000000000012,
+      "hi": 0.0010000000000000009,
+      "mean": -0.0060249999999999965
+     }
+    },
+    {
+     "layer_a": 21,
+     "diag_point": 0.812,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.822,
+     "point_diff": -0.009999999999999898,
+     "ci": {
+      "lo": -0.01899999999999991,
+      "hi": -0.0020000000000000018,
+      "mean": -0.009730999999999978
+     }
+    },
+    {
+     "layer_a": 22,
+     "diag_point": 0.811,
+     "best_other_layer_c": 23,
+     "best_other_point": 0.811,
+     "point_diff": 0.0,
+     "ci": {
+      "lo": -0.009000000000000008,
+      "hi": 0.009000000000000008,
+      "mean": -2.4999999999999466e-05
+     }
+    },
+    {
+     "layer_a": 23,
+     "diag_point": 0.787,
+     "best_other_layer_c": 22,
+     "best_other_point": 0.778,
+     "point_diff": 0.009000000000000008,
+     "ci": {
+      "lo": -2.4999999999998602e-05,
+      "hi": 0.019000000000000017,
+      "mean": 0.008968000000000005
+     }
+    },
+    {
+     "layer_a": 24,
+     "diag_point": 0.745,
+     "best_other_layer_c": 23,
+     "best_other_point": 0.745,
+     "point_diff": 0.0,
+     "ci": {
+      "lo": -0.009000000000000008,
+      "hi": 0.009000000000000008,
+      "mean": -0.0002560000000000002
+     }
+    },
+    {
+     "layer_a": 25,
+     "diag_point": 0.725,
+     "best_other_layer_c": 23,
+     "best_other_point": 0.729,
+     "point_diff": -0.0040000000000000036,
+     "ci": {
+      "lo": -0.016000000000000014,
+      "hi": 0.007000000000000006,
+      "mean": -0.004423000000000003
+     }
+    },
+    {
+     "layer_a": 26,
+     "diag_point": 0.698,
+     "best_other_layer_c": 24,
+     "best_other_point": 0.717,
+     "point_diff": -0.019000000000000017,
+     "ci": {
+      "lo": -0.03400000000000003,
+      "hi": -0.0050000000000000044,
+      "mean": -0.018873999999999995
+     }
+    },
+    {
+     "layer_a": 27,
+     "diag_point": 0.687,
+     "best_other_layer_c": 24,
+     "best_other_point": 0.708,
+     "point_diff": -0.020999999999999908,
+     "ci": {
+      "lo": -0.03902500000000003,
+      "hi": -0.0020000000000000018,
+      "mean": -0.020807999999999976
+     }
+    }
+   ]
+  },
+  "convention": {
+   "n_draws": 1000,
+   "seed": 20260903,
+   "paired": "one boot-index set over the 1,000 pinned test rows, shared by every cell",
+   "r2_draw": "1 - sse_cell[idx].sum() / sst_target[idx] (per-draw own-mean SS_tot)",
+   "fixed_cells": "best cells selected at the POINT estimate, then paired diff per draw",
+   "selection_aware": "per-draw re-selected max(diag) - max(offdiag)"
+  }
+ },
+ "metadata": {
+  "git_commit": "99b4557249c03d7e99b6c36cf2ea6e8cae5b8cf3",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue1901_xlayer_grid.py",
+  "script": "issue1901_xlayer_grid",
+  "issue": 1901,
+  "round": "xlayer-grid",
+  "script_version": "xlayer-grid-v1",
+  "timestamp_utc": "2026-09-04T00:23:00Z"
+ }
+}

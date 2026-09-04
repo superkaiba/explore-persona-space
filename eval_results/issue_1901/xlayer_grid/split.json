@@ -1,0 +1,39 @@
+{
+ "diag": {
+  "mode": "plan-B (n50k-only)",
+  "include_n10k_captures": false,
+  "n_contexts": 51600,
+  "n_pass_b": 5000,
+  "n10k_kept": 0,
+  "n50k_used": 46600,
+  "n_train": 50000,
+  "n_val": 400,
+  "n_test": 1000,
+  "n_train_target": 50000,
+  "pool_size": 50200,
+  "orig_train_ids": 3600,
+  "seed": 42,
+  "val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+  "test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+  "train_sha256": "5c072c8483bda154038226ada33b98abd6bb5bfb2c06eab87471f2d5aaa2ac4f",
+  "val_test_byte_identical_original": true,
+  "pinned_val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+  "pinned_test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+  "pinned_source": "/workspace/explore-persona-space/eval_results/issue_779/fitter-fair-comparison/fair_comparison.json split params -> fixed_split, cross-checked vs constants",
+  "note": "val/test = fixed_split(5000,3600,400,1000,42) indices <5000 = the same pass_b rows as the original round (val/test_sha256 asserted == pinned original). plan-B (DEFAULT): train pool = orig-train (3600) + all 46600 n50k new, sampled to n_train_target. n10k captures NOT used (presumed unavailable)."
+ },
+ "store_revision": "74bb871a5edf1afe777ac9b64a4e2fec5e9947c2",
+ "staged_bytes": 175191960984,
+ "n_chunks_extracted": null,
+ "metadata": {
+  "git_commit": "99b4557249c03d7e99b6c36cf2ea6e8cae5b8cf3",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue1901_xlayer_grid.py",
+  "script": "issue1901_xlayer_grid",
+  "issue": 1901,
+  "round": "xlayer-grid",
+  "script_version": "xlayer-grid-v1",
+  "timestamp_utc": "2026-09-03T23:30:22Z"
+ }
+}
