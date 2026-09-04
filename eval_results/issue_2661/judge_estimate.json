@@ -1,0 +1,83 @@
+{
+  "judge_model": "claude-opus-5",
+  "manifest_identity_sha256": "45757a552e0c422f7f53ea75d51849d90248516286621122a06e47f4b9ede0c6",
+  "pricing_batch_usd_per_mtok": {
+    "in": 2.5,
+    "out": 12.5
+  },
+  "pricing_sync_usd_per_mtok": {
+    "in": 5.0,
+    "out": 25.0
+  },
+  "sync_reissue_cap": {
+    "frac": 0.05,
+    "min_items": 51
+  },
+  "chars_per_token_divisor": 3.5,
+  "expected_out_frac": 0.5,
+  "w4_desc_placeholder_chars": 120,
+  "waves": {
+    "w1": {
+      "n_items": 7463,
+      "input_chars": 123960241,
+      "est_input_tokens": 35417211,
+      "output_token_cap": 3821056,
+      "sync_reissue_cap_items": 374,
+      "usd_sync_reissue_upper_bound": 13.661672183534005,
+      "usd_upper_bound": 149.96790146924826,
+      "usd_expected": 112.42462928571427
+    },
+    "w2": {
+      "n_items": 2000,
+      "input_chars": 5074059,
+      "est_input_tokens": 1449731,
+      "output_token_cap": 4096000,
+      "sync_reissue_cap_items": 100,
+      "usd_sync_reissue_upper_bound": 5.482432785714286,
+      "usd_upper_bound": 60.30676064285715,
+      "usd_expected": 29.22432785714286
+    },
+    "w4": {
+      "n_items": 2000,
+      "input_chars": 31251688,
+      "est_input_tokens": 8929053,
+      "output_token_cap": 2048000,
+      "sync_reissue_cap_items": 100,
+      "usd_sync_reissue_upper_bound": 4.792263428571427,
+      "usd_upper_bound": 52.71489771428571,
+      "usd_expected": 35.122634285714284
+    }
+  },
+  "pilots": {
+    "pilot_w1": {
+      "n_items": 51,
+      "usd_upper_bound": 1.0248375954618332,
+      "usd_expected": 0.7682776488773185
+    },
+    "pilot_w2": {
+      "n_items": 51,
+      "usd_upper_bound": 1.5378223963928572,
+      "usd_expected": 0.7452203603571429
+    },
+    "pilot_w4": {
+      "n_items": 51,
+      "usd_upper_bound": 1.3442298917142856,
+      "usd_expected": 0.8956271742857141
+    }
+  },
+  "total": {
+    "usd_upper_bound": 266.9,
+    "usd_expected": 179.18
+  },
+  "budget_usd": 300.0,
+  "verdict": "UNDER_BUDGET",
+  "note": "upper bound assumes every call emits max_tokens AND includes the capped rule-28 sync re-issue at non-batch prices; usd_expected excludes the sync term (re-issues are the exception path); the dispatch gate binds on usd_upper_bound",
+  "git_commit": "f22f6b4e3fc220746c9addc8f9c7edc8d87ad48b",
+  "git_dirty": true,
+  "phase": "judge-estimate",
+  "git_dirty_paths": [
+    "scripts/issue2661_judge_waves.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2661_judge_waves.py"
+}

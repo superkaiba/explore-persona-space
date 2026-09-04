@@ -81,7 +81,11 @@ JUDGE_MODEL = "claude-opus-5"  # noqa: judge-model-pin -- task-body ## Provenanc
 WAVE_THRESHOLD_BASE = 0  # pins the Batch route for EVERY wave
 SEED = 2661
 FRAC_ITEMS_FLOOR = 0.95  # rule-29 per-arm completeness floor (#2552 parity)
-MAX_TOKENS = {"w1": 1024, "w2": 2048, "w4": 1024}
+MAX_TOKENS = {
+    "w1": 512,
+    "w2": 2048,
+    "w4": 1024,
+}  # w1 1024->512: no-scope budget lever (team-lead sign-off 2026-09-04); pilot must show zero truncation, else raise to 768 and re-gate
 EVAL_TURN_TEXT_CAP = 4_000  # chars: the summarized USER MESSAGE (W2)
 W4_CANDIDATE_CAP = 1_500  # chars per W4 candidate prompt (10 per item)
 W2_MIN_FIELDS = 20  # W2 validity floor: >= 20 of 24 fields present + non-empty
