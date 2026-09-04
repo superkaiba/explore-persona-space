@@ -454,3 +454,103 @@ def test_transport_flag_roundtrip_via_sync_capture():
     assert is_transport_error_dict(results["cid"]) is True
     # The flag survives a JSON round-trip (save_raw / cache-file shape).
     assert is_transport_error_dict(json.loads(json.dumps(results["cid"]))) is True
+
+
+# ── #2617: auth-class (401/403) rows are transport, never cached ──────────────
+# The dead low_prio org's 401 error dicts were cached as verdicts because 401
+# was not in the transport taxonomy (829 of 2,480 draws dropped, 796 poisoned
+# cache rows in task #2617's redo). Auth-class dicts now classify transport
+# (stored ones read as a MISS and self-heal) and JudgeCache.put refuses them.
+
+
+def test_auth_error_dicts_classify_transport():
+    from explore_persona_space.eval.batch_judge import is_auth_error_dict
+
+    # The exact #2617 poisoned-row shape: the SDK exception string captured by
+    # the sync path's per-item mint, no structural transport flag.
+    poisoned = _legacy_error_dict(
+        "error: Error code: 401 - {'type': 'error', 'error': "
+        "{'type': 'authentication_error', 'message': 'invalid x-api-key'}}"
+    )
+    assert is_auth_error_dict(poisoned) is True
+    assert is_transport_error_dict(poisoned) is True
+    # 403 permission_error variant.
+    perm = _legacy_error_dict(
+        "error: Error code: 403 - {'type': 'error', 'error': "
+        "{'type': 'permission_error', 'message': 'forbidden'}}"
+    )
+    assert is_auth_error_dict(perm) is True
+    assert is_transport_error_dict(perm) is True
+    # The api_dispatch mint shape (dead-org exhaustion) classifies too.
+    exhausted = _legacy_error_dict("auth_failed: AuthenticationError (org=low_prio)")
+    assert is_auth_error_dict(exhausted) is True
+    assert is_transport_error_dict(exhausted) is True
+    # Bare status markers behind an error/status/http prefix.
+    assert is_transport_error_dict(_legacy_error_dict("status 401 unauthorized")) is True
+    assert is_transport_error_dict(_legacy_error_dict("HTTP 403")) is True
+    # A NON-error verdict whose reasoning mentions 401 is never auth/transport.
+    verdict = {"aligned": 90, "coherent": 95, "reasoning": "mentions error 401 in passing"}
+    assert is_auth_error_dict(verdict) is False
+    assert is_transport_error_dict(verdict) is False
+    # An error dict with an incidental "401" NOT behind a status prefix stays
+    # content-class (the anchored pattern does not fire).
+    assert is_auth_error_dict(_legacy_error_dict("parse_error: got 401 tokens")) is False
+    # A quarantined 400 stays content-class.
+    assert (
+        is_auth_error_dict(_legacy_error_dict("batch_error: invalid_request_error (quarantined)"))
+        is False
+    )
+
+
+def test_cache_get_treats_stored_401_error_as_miss(tmp_path):
+    """#2617 acceptance (d): a PRE-EXISTING cached 401 error dict reads as a
+    MISS — the item lands in ``uncached_items`` and self-heals on the next
+    wave — while a stored verdict still hits."""
+    cache = JudgeCache(tmp_path / "cache")
+    rk = rubric_fingerprint("m", "SYS", None)
+    poisoned = _legacy_error_dict(
+        "error: Error code: 401 - {'type': 'error', 'error': "
+        "{'type': 'authentication_error', 'message': 'invalid x-api-key'}}"
+    )
+    # Write the poisoned row the way pre-fix code did (bypass the new put
+    # refusal by writing the file directly through the pre-fix code path).
+    key = JudgeCache._hash_key("q-poisoned", "c-poisoned", rubric_key=rk)
+    (tmp_path / "cache" / f"{key}.json").write_text(json.dumps(poisoned))
+    good = {"aligned": 90, "coherent": 95, "reasoning": "ok"}
+    cache.put("q-good", "c-good", good, rubric_key=rk)
+
+    completions = {"item": {"q-poisoned": ["c-poisoned"], "q-good": ["c-good"]}}
+    total, cached_scores, uncached_items = _enumerate_and_check_cache(
+        completions, cache, lambda q, c: f"{q}|{c}", rubric_key=rk
+    )
+    assert total == 2
+    assert list(cached_scores.values()) == [good]
+    assert [(q, c) for _cid, q, c, _u in uncached_items] == [("q-poisoned", "c-poisoned")]
+
+
+def test_cache_put_refuses_auth_error_dicts(tmp_path):
+    """#2617: ``JudgeCache.put`` refuses to persist an auth-class error dict
+    (warn + no write); a normal verdict still persists."""
+    cache = JudgeCache(tmp_path / "cache")
+    rk = rubric_fingerprint("m", "SYS", None)
+    poisoned = _legacy_error_dict(
+        "error: Error code: 401 - {'type': 'error', 'error': "
+        "{'type': 'authentication_error', 'message': 'invalid x-api-key'}}"
+    )
+    cache.put("q", "c", poisoned, rubric_key=rk)
+    assert list((tmp_path / "cache").glob("*.json")) == []  # refused
+    cache.put("q", "c", {"aligned": 90, "coherent": 95, "reasoning": "ok"}, rubric_key=rk)
+    assert len(list((tmp_path / "cache").glob("*.json"))) == 1
+
+
+def test_judge_router_batch_default_threshold_lock():
+    """#2617: the Batch API is the default judge path — the router default and
+    ``judge_completions_batch``'s default are BOTH the 200-item sync floor, and
+    they cannot drift apart."""
+    import inspect
+
+    from explore_persona_space.eval.judge_dispatch import DEFAULT_THRESHOLD_BASE
+
+    assert DEFAULT_THRESHOLD_BASE == 200
+    sig = inspect.signature(judge_completions_batch)
+    assert sig.parameters["threshold_base"].default == DEFAULT_THRESHOLD_BASE

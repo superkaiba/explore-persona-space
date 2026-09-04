@@ -1,7 +1,8 @@
 """Batch-aware dispatch layer for Claude-judge scoring (task #626).
 
-One routing layer for all Claude-judge calls in the eval path. Routes by
-request count, optimizing SPEED:
+One routing layer for all Claude-judge calls in the eval path. The Batch API
+is the DEFAULT path since #2617 (single main key, cost first): the default
+``threshold_base`` is 200, so only tiny waves (pilots, live probes) stay sync.
 
 - ``N < effective_threshold`` -> synchronous ``AsyncAnthropic`` calls at high
   concurrency (per-item error dicts, SDK 429 backoff via ``max_retries=5``).
@@ -325,8 +326,12 @@ def validate_batch_custom_ids(custom_ids: Iterable[str]) -> None:
         )
 
 
-# Routing constants (user-decided, plan §11; configurable per call).
-DEFAULT_THRESHOLD_BASE = 2_000
+# Routing constants (configurable per call). 2_000 -> 200 on 2026-09-02
+# (#2617): the Batch API is the default judge path on the single main key,
+# with a 200-item sync floor (= api_dispatch's ``crossover_n // 10``) so only
+# pilots and live probes route sync. tests/test_batch_judge_transport_cache.py
+# locks judge_completions_batch's default equal to this constant.
+DEFAULT_THRESHOLD_BASE = 200
 # Judge sub-batches default to the JUDGE shard ceiling (2_000), NOT the general
 # 8_000 batch cap. An 8k judge batch STARVES — the API schedules a large judge
 # set behind everyone else's traffic (the #658 G1 wedge: one 8k judge shard sat
@@ -844,9 +849,11 @@ async def _judge_items_sync_multiorg(
 ) -> dict[str, dict]:
     """Route the sync judge path through the multi-org api_dispatch (#682 Phase 5).
 
-    Adapts the JudgeItem 4-tuple contract onto the api_dispatch.DispatchItem +
-    build_request / parse_response shape. Routes fan-out across the 3 separate
-    org keys at the polite per-key concurrency caps (Sonnet 100, see
+    Reached when the org pool holds 2+ live keys (the default when both env
+    keys are present; EPS_API_SINGLE_ORG=1 disables). Adapts the JudgeItem 4-tuple
+    contract onto the api_dispatch.DispatchItem + build_request /
+    parse_response shape. Routes fan-out across the active org keys at the
+    polite per-key concurrency caps (Sonnet 100, see
     docs/api_throughput_guidelines.md), with AIMD back-off on every 429 and
     headroom-aware org selection from the live ``*-remaining`` headers.
 
@@ -1697,12 +1704,12 @@ async def dispatch_judge_items_async(  # noqa: C901  # Phase 5 added one routing
         )
 
     # Step 3: sync path.
-    # Phase 5 (task #682): when 2+ org keys are present AND no caller-injected
-    # sync_client pins us to the legacy single-org path, ROUTE through the
-    # multi-org dispatcher (api_dispatch.dispatch_calls). This gives every
-    # judge caller the ~3x sync fan-out across the 3 org keys for free, while
-    # the legacy single-org path remains the fallback for tests + single-key
-    # environments. Opt out via EPS_JUDGE_DISABLE_MULTIORG=1.
+    # Phase 5 (task #682): when 2+ org keys are LIVE in the env (the default
+    # pool since #2617 is every present key; EPS_API_SINGLE_ORG=1 restricts
+    # it to the main key) AND no caller-injected sync_client pins us to the
+    # legacy single-org path, ROUTE through the multi-org dispatcher
+    # (api_dispatch.dispatch_calls). Opt out of multi-org routing at the
+    # judge layer via EPS_JUDGE_DISABLE_MULTIORG=1.
     if decision.path == "sync":
         if sync_client is None and not os.environ.get("EPS_JUDGE_DISABLE_MULTIORG"):
             from explore_persona_space.llm.api_dispatch import detect_org_keys

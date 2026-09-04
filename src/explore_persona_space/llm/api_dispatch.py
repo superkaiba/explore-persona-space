@@ -1,12 +1,16 @@
-"""Multi-org, rate-limit-polite async Anthropic API dispatcher (Phase 4).
+"""Rate-limit-polite async Anthropic API dispatcher (Phase 4; single-org default).
 
 The reusable dispatcher behind the API-throughput plan
-(``docs/api_throughput_plan.md`` § Phase 4 + § 1b Operating defaults). It
-completes *N* Anthropic Messages calls in minimum wall-clock subject to the
-shared-key etiquette rules, by fanning out across the THREE separate org
-keys at polite per-key concurrency caps with AIMD back-off, and falling back
-to the considerate Message Batches path for very large / latency-tolerant /
-cost-sensitive jobs.
+(``docs/api_throughput_plan.md`` § Phase 4 + § 1b Operating defaults).
+Org pool since incident #2617 (the fellows credits ended 2026-08-28 and the
+``ANTHROPIC_API_KEY_LOW_PRIO`` org went dead with HTTP 401): the DEFAULT pool
+is every LIVE key present in the env — ``ANTHROPIC_API_KEY`` (``high_prio``)
+and ``ANTHROPIC_BATCH_KEY`` (``batch``, a separate org). ``low_prio`` is gone
+entirely; an org whose key auth-fails mid-run (401/403) is dropped
+automatically by the dead-org rule in the sync loop. Setting
+``EPS_API_SINGLE_ORG=1`` restricts the pool to ``ANTHROPIC_API_KEY`` alone.
+The Message Batches path is the DEFAULT route (``cost_pref="cost"``): only
+tiny waves (pilots, live probes, under ``crossover_n // 10`` items) stay sync.
 
 The single public entry point is :func:`dispatch_calls`. It takes generic
 items (each carrying a stable id + payload), a ``build_request`` callable that
@@ -16,11 +20,11 @@ turns the model's text into a per-item result. It returns
 
 Design (all FIRM requirements from § 1b + Phase 4):
 
-1. **Multi-org key pool.** :func:`detect_org_keys` auto-detects whichever of
-   the three keys are present in the environment
-   (``ANTHROPIC_API_KEY`` / ``ANTHROPIC_BATCH_KEY`` /
-   ``ANTHROPIC_API_KEY_LOW_PRIO``); one async + one sync client per present
-   org. A single key is NEVER hardcoded.
+1. **Org key pool.** :func:`detect_org_keys` returns every key PRESENT in
+   the env (``ANTHROPIC_API_KEY`` / ``ANTHROPIC_BATCH_KEY``); with
+   ``EPS_API_SINGLE_ORG=1`` it restricts to ``ANTHROPIC_API_KEY`` alone. One
+   async + one sync client per present org; an empty pool fails loud at
+   client resolution; a dead (401/403) org is dropped mid-run.
 
 2. **Per-key concurrency caps.** Sonnet ~100, Haiku ~120, Opus ~40 per key
    (good-citizen defaults, NOT hard API limits), configurable via
@@ -54,7 +58,10 @@ Design (all FIRM requirements from § 1b + Phase 4):
    persists which org it went to so resume re-polls the right org).
 
 7. **Routing.** :func:`decide_dispatch_route` chooses sync-fan-out vs batch by
-   N + deadline + cost_pref. :data:`SYNC_BATCH_CROSSOVER_N` is the named
+   N + deadline + cost_pref. The DEFAULT ``cost_pref`` is ``"cost"`` (#2617):
+   any wave of at least ``crossover_n // 10`` items (200 at the default
+   crossover) routes to the Batch API; smaller waves and deadlines under the
+   24h batch SLA stay sync. :data:`SYNC_BATCH_CROSSOVER_N` is the named
    threshold (Phase 3 will calibrate it from the measured crossover table).
    NOTE: routing decides on ``len(pending)`` — the UNCACHED remainder after the
    cache check — not the original N. A large job mostly served from cache
@@ -109,26 +116,37 @@ logger = logging.getLogger(__name__)
 
 # ── Org key pool ─────────────────────────────────────────────────────────────
 
-# The three SEPARATE-ORG keys (additive limits). Order = preference for ties.
-# ``low_prio`` may be absent — auto-detect whatever is present (§1b).
+# The org pool (both keys are SEPARATE orgs with additive limits). "low_prio"
+# was removed entirely in #2617: its org died (HTTP 401) when the fellows
+# credits ended, and the 401 rows it produced poisoned 796 judge-cache
+# entries. The DEFAULT pool is every live key present in the env; a key that
+# auth-fails mid-run (401/403) is dropped by the dead-org rule in the sync
+# loop, so a dead org never needs a config change to stop hurting.
 ORG_ENV_KEYS: dict[str, str] = {
     "high_prio": "ANTHROPIC_API_KEY",
     "batch": "ANTHROPIC_BATCH_KEY",
-    "low_prio": "ANTHROPIC_API_KEY_LOW_PRIO",
 }
+# Opt-out flag ("1" restricts the pool to the main key; anything else = full pool).
+SINGLE_ORG_ENV_FLAG = "EPS_API_SINGLE_ORG"
+# Labels active WITH the opt-out flag set.
+SINGLE_ORG_LABELS: tuple[str, ...] = ("high_prio",)
 
 
 def detect_org_keys(env: dict[str, str] | None = None) -> dict[str, str]:
     """Return ``{org_label: api_key}`` for every org key PRESENT in the env.
 
-    Never hardcodes a single key; absent keys (commonly ``low_prio``) are
-    skipped. Empty / whitespace-only values are treated as absent so a blank
-    ``.env`` line does not register a dead org.
+    Default pool = every live key (``ANTHROPIC_API_KEY`` as ``high_prio``,
+    ``ANTHROPIC_BATCH_KEY`` as ``batch``). ``EPS_API_SINGLE_ORG=1`` restricts
+    the pool to ``ANTHROPIC_API_KEY`` alone. Empty / whitespace-only values
+    are treated as absent so a blank ``.env`` line does not register a dead
+    org. May return an empty dict; the client resolver
+    (:func:`_resolve_clients`) fails loud on an empty pool.
     """
     env = os.environ if env is None else env
+    labels = list(SINGLE_ORG_LABELS) if env.get(SINGLE_ORG_ENV_FLAG) == "1" else list(ORG_ENV_KEYS)
     found: dict[str, str] = {}
-    for label, env_var in ORG_ENV_KEYS.items():
-        val = env.get(env_var)
+    for label in labels:
+        val = env.get(ORG_ENV_KEYS[label])
         if val is not None and val.strip():
             found[label] = val
     return found
@@ -584,7 +602,7 @@ def decide_dispatch_route(
     n_items: int,
     *,
     deadline: _dt.datetime | None = None,
-    cost_pref: str = "balanced",
+    cost_pref: str = "cost",
     crossover_n: int = SYNC_BATCH_CROSSOVER_N,
     force_path: str | None = None,
 ) -> DispatchRoute:
@@ -593,11 +611,14 @@ def decide_dispatch_route(
     Rules (sensible defaults; Phase 3 recalibrates ``crossover_n``):
 
     - ``force_path`` (``"sync"`` / ``"batch"``) overrides everything.
-    - ``cost_pref="cost"`` -> batch (the 50% discount path) unless N is tiny.
+    - ``cost_pref="cost"`` (DEFAULT since #2617: the Batch API is the default
+      path on the single main key) -> batch (the 50% discount path) unless N
+      is tiny (under ``crossover_n // 10``, 200 at the default crossover) or
+      a deadline lands inside the batch 24h SLA.
     - ``cost_pref="latency"`` -> sync (lowest wall-clock) regardless of N,
       UNLESS a deadline more than 24h out makes the batch SLA acceptable AND N
       is large (then batch is the considerate choice).
-    - ``cost_pref="balanced"`` (default) -> sync below ``crossover_n``, batch
+    - ``cost_pref="balanced"`` -> sync below ``crossover_n``, batch
       at/above it; a near-term deadline (< the batch 24h SLA) forces sync.
 
     Raises ``ValueError`` on an unknown ``cost_pref`` / ``force_path`` rather
@@ -687,17 +708,28 @@ def _is_rate_limit(exc: BaseException) -> bool:
     return isinstance(exc, _anthropic.RateLimitError)
 
 
+def _is_auth(exc: BaseException) -> bool:
+    """True for auth-class API errors: 401 ``AuthenticationError`` and 403
+    ``PermissionDeniedError`` (#2617: a dead org key). Auth errors are a
+    property of the ORG, not the item — the per-org call loop marks the org
+    dead for the rest of the run and re-queues the item to a live org."""
+    import anthropic as _anthropic
+
+    return isinstance(exc, _anthropic.AuthenticationError | _anthropic.PermissionDeniedError)
+
+
 def is_transport_exception(exc: BaseException) -> bool:
     """Rule-24 transport-class taxonomy over SDK exceptions.
 
-    True when the call died in TRANSPORT — before any verdict about the
-    content was produced, so the item is freely re-judgeable
-    (llm-judging.md rule 24(i); #1313): transient (connection / timeout /
-    5xx incl. 529) OR 429 rate limit. NOT transport: a 400-class
-    invalid_request (a pipeline bug — neither retried nor dropped, rule
-    24(iii)) or any non-API exception (e.g. a parse error).
+    True when the call died in TRANSPORT — no verdict was produced, so the
+    item is freely re-judgeable (llm-judging.md rule 24(i); #1313): transient
+    (connection / timeout / 5xx incl. 529), 429 rate limit, OR an auth error
+    (401/403 — a dead org key, #2617; the judged content never reached a
+    model). NOT transport: a 400-class invalid_request (a pipeline bug —
+    neither retried nor dropped, rule 24(iii)) or any non-API exception
+    (e.g. a parse error).
     """
-    return _is_transient(exc) or _is_rate_limit(exc)
+    return _is_transient(exc) or _is_rate_limit(exc) or _is_auth(exc)
 
 
 def _retry_after_seconds(exc: BaseException) -> float | None:
@@ -861,8 +893,26 @@ async def _dispatch_sync(  # noqa: C901 — the per-item retry state machine is 
     labels = list(org_states)
     # Round-robin pointer breaks ties so two equal-headroom orgs share load.
     rr = {"i": 0}
+    # Orgs whose key auth-failed (401/403) this run (#2617). A dead org is
+    # never picked again; its queued items re-route to the live orgs. The
+    # event loop is single-threaded, so plain set membership is race-free.
+    dead_orgs: set[str] = set()
 
-    async def _do_one(item: DispatchItem) -> None:
+    def _mark_org_dead(org: str, exc: BaseException) -> None:
+        if org in dead_orgs:
+            return
+        dead_orgs.add(org)
+        # Loud, once per org, naming the LABEL only — never the key (#2617).
+        logger.error(
+            "Org %r marked DEAD for the rest of this run: auth error %s "
+            "(status %s). Its items re-queue to the remaining live org(s); "
+            "auth failures are never cached as verdicts.",
+            org,
+            type(exc).__name__,
+            getattr(exc, "status_code", "?"),
+        )
+
+    async def _do_one(item: DispatchItem) -> None:  # noqa: C901 — flat per-item retry state machine; #2617 added the dead-org auth branch (17 > 15)
         params = build_request(item)
         last_reason = "unknown"
         last_category = RESULT_ERROR
@@ -870,8 +920,18 @@ async def _dispatch_sync(  # noqa: C901 — the per-item retry state machine is 
         n_429 = 0
         attempt = 0
         while attempt < max_attempts:
+            live = [lbl for lbl in labels if lbl not in dead_orgs]
+            if not live:
+                # #2617: every org's key auth-failed. Transport-class (no
+                # verdict was produced; freely re-judgeable once a live key
+                # exists) with an ``auth_failed:`` reason — never cached.
+                last_category = RESULT_TRANSPORT
+                last_stop_reason = None
+                if not last_reason.startswith("auth_failed:"):
+                    last_reason = f"auth_failed: no live org remains (dead: {sorted(dead_orgs)})"
+                break
             # Finding 3: pick by headroom + acquire (re-picks on a slow gate).
-            org = await _pick_org_then_acquire(org_states, labels, rr)  # slot held on return
+            org = await _pick_org_then_acquire(org_states, live, rr)  # slot held on return
             state = org_states[org]
             client = async_clients[org]
             try:
@@ -943,6 +1003,17 @@ async def _dispatch_sync(  # noqa: C901 — the per-item retry state machine is 
                 # never swallowed into a per-item error dict.
                 raise
             except Exception as exc:
+                if _is_auth(exc):
+                    # #2617: a 401/403 is a dead ORG KEY, not an item failure.
+                    # Mark the org dead (log once, loudly), do NOT retry on it,
+                    # and re-queue the item to a live org WITHOUT consuming an
+                    # attempt. If no live org remains, the loop's top mints the
+                    # RESULT_TRANSPORT ``auth_failed:`` terminal.
+                    _mark_org_dead(org, exc)
+                    last_category = RESULT_TRANSPORT
+                    last_stop_reason = None  # no response on this attempt
+                    last_reason = f"auth_failed: {type(exc).__name__} (org={org})"
+                    continue
                 if _is_rate_limit(exc):
                     await state.on_429(_retry_after_seconds(exc))
                     n_429 += 1
@@ -1492,7 +1563,7 @@ async def dispatch_calls(
     parse_response_meta: ParseResponseMeta | None = None,
     response_valid: Callable[[Any], bool] | None = None,
     deadline: _dt.datetime | None = None,
-    cost_pref: str = "balanced",
+    cost_pref: str = "cost",
     cache_dir: Path | None = None,
     checkpoint_dir: Path | None = None,
     concurrency_overrides: dict[str, int] | None = None,
@@ -1564,8 +1635,10 @@ async def dispatch_calls(
             callers that pass no validator).
         deadline: optional wall-clock deadline; a deadline inside the batch 24h
             SLA forces the sync path.
-        cost_pref: ``"balanced"`` (default) | ``"cost"`` (prefer 50% batch) |
-            ``"latency"`` (prefer sync fan-out).
+        cost_pref: ``"cost"`` (default since #2617: the Batch API is the
+            default path; waves under ``crossover_n // 10`` items stay sync) |
+            ``"balanced"`` (sync below ``crossover_n``) | ``"latency"``
+            (prefer sync fan-out).
         cache_dir: per-item content+request-fingerprint cache root (resume
             skips cached items; keys carry the built-request fingerprint so
             different builders/rubrics never cross-read — rule 22, #1018).
@@ -1744,8 +1817,9 @@ def _resolve_clients(
     keys = org_keys if org_keys is not None else detect_org_keys()
     if not keys:
         raise RuntimeError(
-            "No Anthropic org keys found in the environment. Expected at least one of "
-            f"{list(ORG_ENV_KEYS.values())}."
+            "No Anthropic org keys found in the environment: the org pool is empty. "
+            "Set ANTHROPIC_API_KEY (and optionally ANTHROPIC_BATCH_KEY); "
+            f"{SINGLE_ORG_ENV_FLAG}=1 restricts the pool to ANTHROPIC_API_KEY only."
         )
     built_async, built_sync = _build_clients(keys)
     return async_clients or built_async, sync_clients or built_sync, True
@@ -2054,7 +2128,7 @@ def record_headroom_observation(
                 loaded = json.loads(p.read_text())
                 if isinstance(loaded, dict):
                     current = loaded
-            except (json.JSONDecodeError, OSError):
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 current = {}
         iso = now_iso or _dt.datetime.now(_dt.UTC).isoformat()
         merged = merge_headroom_snapshot(
@@ -2183,6 +2257,7 @@ __all__ = [
     "RESULT_OK",
     "RESULT_RATE_LIMITED",
     "RESULT_TRANSPORT",
+    "SINGLE_ORG_ENV_FLAG",
     "SYNC_BATCH_CROSSOVER_N",
     "DispatchItem",
     "DispatchResult",

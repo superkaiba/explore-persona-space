@@ -206,16 +206,20 @@ def dispatch(items, **kwargs):
 
 
 def test_decide_route_threshold():
-    assert decide_route(1999, otpm=400_000).path == "sync"
-    assert decide_route(2000, otpm=400_000).path == "batch"
+    # #2617: the Batch API is the default judge path; the sync floor is 200.
+    assert decide_route(199, otpm=400_000).path == "sync"
+    assert decide_route(200, otpm=400_000).path == "batch"
+    assert decide_route(100, otpm=400_000).path == "sync"
+    assert decide_route(500, otpm=400_000).path == "batch"
+    assert decide_route(2_000, otpm=400_000).path == "batch"
 
 
 def test_decide_route_tier_scaling():
-    d = decide_route(500, otpm=90_000)
-    assert d.effective_threshold == 450
+    d = decide_route(100, otpm=90_000)
+    assert d.effective_threshold == 45  # 200 scaled by 90k/400k
     assert d.path == "batch"
-    d_none = decide_route(500, otpm=None)
-    assert d_none.effective_threshold == 2000
+    d_none = decide_route(100, otpm=None)
+    assert d_none.effective_threshold == 200
     assert d_none.path == "sync"
     assert d_none.otpm_assumed is True
 
@@ -926,10 +930,11 @@ def test_probe_otpm_limit(tmp_path, caplog):
         assert probe_otpm_limit(FakeBatchClient(otpm_header="not-an-int"), "m") is None
     assert "malformed" in caplog.text
 
-    # Dispatch-level near-boundary case: at the Tier-4 default N=500 would go
-    # sync; a probed otpm=90k drops the threshold to 450 and flips the route
-    # to BATCH — the probed value actually changes the route.
-    items = make_items(500)
+    # Dispatch-level near-boundary case (#2617 boundary: threshold_base=200,
+    # probe region 0 < N < 400): at the Tier-4 default N=150 would go sync; a
+    # probed otpm=90k drops the threshold to 45 and flips the route to BATCH —
+    # the probed value actually changes the route.
+    items = make_items(150)
     decisions = []
     client = FakeBatchClient(otpm_header="90000")
     result = dispatch(
@@ -943,7 +948,7 @@ def test_probe_otpm_limit(tmp_path, caplog):
     assert decisions[0].otpm_assumed is False
     assert decisions[0].path == "batch"
     assert client.create_calls == 1
-    assert len(result) == 500
+    assert len(result) == 150
 
 
 def test_probe_otpm_limit_429_takes_assumed_tier_path(caplog):
@@ -1233,7 +1238,7 @@ def test_sync_routes_through_multiorg_dispatcher_when_two_plus_keys(monkeypatch)
     """
     monkeypatch.setenv("ANTHROPIC_API_KEY", "k1")
     monkeypatch.setenv("ANTHROPIC_BATCH_KEY", "k2")
-    monkeypatch.delenv("ANTHROPIC_API_KEY_LOW_PRIO", raising=False)
+    monkeypatch.delenv("EPS_API_SINGLE_ORG", raising=False)  # full pool = default
     monkeypatch.delenv("EPS_JUDGE_DISABLE_MULTIORG", raising=False)
 
     items = make_items(3)
@@ -1288,7 +1293,8 @@ def test_sync_falls_back_to_single_org_when_opt_out_set(monkeypatch):
     """
     monkeypatch.setenv("ANTHROPIC_API_KEY", "k1")
     monkeypatch.setenv("ANTHROPIC_BATCH_KEY", "k2")
-    monkeypatch.setenv("EPS_JUDGE_DISABLE_MULTIORG", "1")
+    monkeypatch.delenv("EPS_API_SINGLE_ORG", raising=False)  # full pool active...
+    monkeypatch.setenv("EPS_JUDGE_DISABLE_MULTIORG", "1")  # ...but judge opts out
 
     items = make_items(2)
     multiorg_called = {"n": 0}
@@ -1327,6 +1333,57 @@ def test_sync_falls_back_to_single_org_when_opt_out_set(monkeypatch):
 
     assert multiorg_called["n"] == 0, "opt-out should NOT enter the multi-org path"
     assert legacy.calls == 2, "legacy single-org client should serve both items"
+    assert len(results) == 2
+
+
+def test_sync_single_org_opt_out_restricts_pool(monkeypatch):
+    """#2617 (opt-out shape): with both keys in the env but EPS_API_SINGLE_ORG=1,
+    the org pool is the main key alone, so the sync judge path never enters
+    the multi-org dispatcher."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "k1")
+    monkeypatch.setenv("ANTHROPIC_BATCH_KEY", "k2")
+    monkeypatch.setenv("EPS_API_SINGLE_ORG", "1")
+    monkeypatch.delenv("EPS_JUDGE_DISABLE_MULTIORG", raising=False)
+
+    items = make_items(2)
+    multiorg_called = {"n": 0}
+
+    async def _fake_dispatch_calls(items_arg, **kwargs):
+        multiorg_called["n"] += 1
+        return {}
+
+    monkeypatch.setattr(
+        "explore_persona_space.llm.api_dispatch.dispatch_calls",
+        _fake_dispatch_calls,
+    )
+
+    class _LegacyAsyncClient:
+        def __init__(self):
+            self.calls = 0
+            self.messages = self
+
+        async def create(self, **kwargs):
+            self.calls += 1
+            return _msg(JUDGE_TEXT)
+
+    # sync_client=None so the multi-org gate is actually evaluated; the legacy
+    # client construction is intercepted instead of making a live client.
+    legacy = _LegacyAsyncClient()
+    import anthropic as anthropic_mod
+
+    monkeypatch.setattr(anthropic_mod, "AsyncAnthropic", lambda **kwargs: legacy)
+    from explore_persona_space.eval.judge_dispatch import dispatch_judge_items_async
+
+    results = asyncio.run(
+        dispatch_judge_items_async(
+            items,
+            judge_model="claude-sonnet-4-5-20250929",
+            judge_system_prompt="rubric",
+            force_sync=True,
+        )
+    )
+    assert multiorg_called["n"] == 0, "single-org opt-out must not enter multi-org"
+    assert legacy.calls == 2
     assert len(results) == 2
 
 

@@ -209,6 +209,18 @@ def _bad_request_error() -> anthropic.BadRequestError:
     return anthropic.BadRequestError("bad request", response=resp, body=None)
 
 
+def _auth_error() -> anthropic.AuthenticationError:
+    """The real 401 shape (#2617: a dead org key)."""
+    resp = SimpleNamespace(status_code=401, headers={}, request=SimpleNamespace())
+    return anthropic.AuthenticationError("invalid x-api-key", response=resp, body=None)
+
+
+def _permission_error() -> anthropic.PermissionDeniedError:
+    """The real 403 shape."""
+    resp = SimpleNamespace(status_code=403, headers={}, request=SimpleNamespace())
+    return anthropic.PermissionDeniedError("permission denied", response=resp, body=None)
+
+
 # ── Fake sync batch client (batch path) ──────────────────────────────────────
 
 
@@ -283,14 +295,33 @@ class FakeBatchClient:
 # ── 1. org auto-detection ────────────────────────────────────────────────────
 
 
-def test_detect_org_keys_present_absent_blank():
+def test_detect_org_keys_default_is_every_live_key():
+    """#2617: the DEFAULT pool is every live key present in the env (main +
+    batch); the dead low_prio org is gone from the pool entirely, and a blank
+    key value is treated as absent."""
     env = {
         "ANTHROPIC_API_KEY": "sk-high",
         "ANTHROPIC_BATCH_KEY": "sk-batch",
-        "ANTHROPIC_API_KEY_LOW_PRIO": "   ",  # blank -> absent
+        "ANTHROPIC_API_KEY_LOW_PRIO": "sk-dead",  # removed org: never detected
     }
     found = detect_org_keys(env)
     assert found == {"high_prio": "sk-high", "batch": "sk-batch"}
+    assert "low_prio" not in api_dispatch.ORG_ENV_KEYS
+    blank = dict(env, ANTHROPIC_BATCH_KEY="   ")
+    assert detect_org_keys(blank) == {"high_prio": "sk-high"}
+
+
+def test_detect_org_keys_single_org_opt_out():
+    """EPS_API_SINGLE_ORG=1 restricts the pool to the main key only; anything
+    but the literal "1" keeps the full live pool."""
+    env = {
+        "ANTHROPIC_API_KEY": "sk-high",
+        "ANTHROPIC_BATCH_KEY": "sk-batch",
+        "EPS_API_SINGLE_ORG": "1",
+    }
+    assert detect_org_keys(env) == {"high_prio": "sk-high"}
+    off = dict(env, EPS_API_SINGLE_ORG="true")
+    assert detect_org_keys(off) == {"high_prio": "sk-high", "batch": "sk-batch"}
 
 
 def test_detect_org_keys_only_one_present():
@@ -301,6 +332,7 @@ def test_detect_org_keys_only_one_present():
 
 def test_detect_org_keys_none_present():
     assert detect_org_keys({}) == {}
+    assert detect_org_keys({"EPS_API_SINGLE_ORG": "1"}) == {}
 
 
 # ── 2. model family + cap resolution ─────────────────────────────────────────
@@ -377,6 +409,22 @@ def test_route_latency_pref_always_sync():
 def test_route_force_path_overrides():
     assert decide_dispatch_route(10, force_path="batch").path == "batch"
     assert decide_dispatch_route(10_000_000, force_path="sync").path == "sync"
+
+
+def test_route_default_is_cost_batch_with_200_item_sync_floor():
+    """#2617: the DEFAULT route (no cost_pref argument) is the Batch API for
+    any wave of at least crossover_n // 10 (= 200) items; only tiny waves
+    stay sync; a deadline under the 24h batch SLA still forces sync."""
+    assert decide_dispatch_route(2_000).path == "batch"
+    assert decide_dispatch_route(500).path == "batch"
+    assert decide_dispatch_route(200).path == "batch"  # the floor is inclusive
+    r100 = decide_dispatch_route(100)
+    assert r100.path == "sync"
+    assert r100.cost_pref == "cost"  # the default preference itself
+    near = dt.datetime.now(dt.UTC) + dt.timedelta(hours=2)
+    assert decide_dispatch_route(2_000, deadline=near).path == "sync"
+    far = dt.datetime.now(dt.UTC) + dt.timedelta(hours=48)
+    assert decide_dispatch_route(2_000, deadline=far).path == "batch"
 
 
 def test_route_invalid_cost_pref_raises():
@@ -1069,6 +1117,7 @@ def test_empty_items_returns_empty():
 def test_no_keys_raises(monkeypatch):
     for env_var in api_dispatch.ORG_ENV_KEYS.values():
         monkeypatch.delenv(env_var, raising=False)
+    monkeypatch.delenv(api_dispatch.SINGLE_ORG_ENV_FLAG, raising=False)
     items = make_items(2)
     with pytest.raises(RuntimeError, match="No Anthropic org keys"):
         _run(
@@ -2455,3 +2504,119 @@ def test_cache_roundtrip_preserves_stop_reason(tmp_path):
     assert r.error is False
     assert r.result == {"label": "ok"}
     assert r.stop_reason == "end_turn"
+
+
+# ── Auth errors: dead-org marking + re-queue + never cached (#2617) ───────────
+# A 401 AuthenticationError / 403 PermissionDeniedError is a dead ORG KEY, not
+# an item failure: the org is marked dead for the rest of the run (logged once,
+# naming the label, never the key), the item re-queues to a live org without
+# consuming an attempt, and with no live org left the item exhausts to
+# RESULT_TRANSPORT with an ``auth_failed:`` reason. Nothing auth-shaped is
+# ever cached (the 796 poisoned rows of #2617's redo were exactly this).
+
+
+def test_is_auth_unit_and_transport_taxonomy():
+    assert api_dispatch._is_auth(_auth_error()) is True
+    assert api_dispatch._is_auth(_permission_error()) is True
+    assert api_dispatch._is_auth(_rate_limit_error()) is False
+    assert api_dispatch._is_auth(_bad_request_error()) is False
+    # Rule-24 taxonomy: auth errors are transport-class (no verdict produced,
+    # freely re-judgeable); a 400 stays out.
+    assert api_dispatch.is_transport_exception(_auth_error()) is True
+    assert api_dispatch.is_transport_exception(_permission_error()) is True
+    assert api_dispatch.is_transport_exception(_bad_request_error()) is False
+
+
+def test_auth_dead_org_wave_completes_on_live_org(tmp_path, caplog):
+    """One org's key is dead (401 on every call); the wave completes on the
+    live org, every result is served by it, and no error row lands in the
+    cache."""
+    import logging
+
+    items = make_items(8)
+    dead = FakeAsyncClient(fault_for=lambda content: _auth_error())
+    live = FakeAsyncClient()
+    cache_dir = tmp_path / "cache"
+    with caplog.at_level(logging.ERROR, logger="explore_persona_space.llm.api_dispatch"):
+        res = _run(
+            dispatch_calls(
+                items,
+                model="claude-sonnet-4-5-20250929",
+                build_request=build_request,
+                parse_response=parse_response,
+                async_clients={"a": dead, "b": live},
+                sync_clients={"a": object(), "b": object()},
+                cache_dir=cache_dir,
+                force_path="sync",
+                max_attempts=2,
+            )
+        )
+    assert set(res) == {it.item_id for it in items}
+    assert all(not r.error for r in res.values())
+    assert all(r.org == "b" for r in res.values())
+    assert live.calls == len(items)
+    # The dead org was probed at most a handful of times, then never again.
+    assert dead.calls >= 1
+    # Marked dead ONCE, loudly, naming the label and never the key value.
+    dead_marks = [r for r in caplog.records if "marked DEAD" in r.getMessage()]
+    assert len(dead_marks) == 1
+    assert "'a'" in dead_marks[0].getMessage()
+    # Only successes were cached (one entry per item, none auth-shaped).
+    assert len(list(cache_dir.glob("*.json"))) == len(items)
+
+
+def test_auth_all_orgs_dead_yields_transport_auth_failed(tmp_path):
+    """Both orgs' keys are dead: every item exhausts to RESULT_TRANSPORT with
+    a reason starting ``auth_failed:``, and nothing is persisted to the
+    cache."""
+    items = make_items(3)
+    dead_a = FakeAsyncClient(fault_for=lambda content: _auth_error())
+    dead_b = FakeAsyncClient(fault_for=lambda content: _permission_error())
+    cache_dir = tmp_path / "cache"
+    res = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request,
+            parse_response=parse_response,
+            async_clients={"a": dead_a, "b": dead_b},
+            sync_clients={"a": object(), "b": object()},
+            cache_dir=cache_dir,
+            force_path="sync",
+            max_attempts=3,
+        )
+    )
+    assert set(res) == {it.item_id for it in items}
+    for r in res.values():
+        assert r.error is True
+        assert r.category == api_dispatch.RESULT_TRANSPORT
+        assert (r.reason or "").startswith("auth_failed:")
+        assert r.stop_reason is None
+    # No org was retried after its first auth failure: at most one probing
+    # call per (org, in-flight item) before the dead mark landed.
+    assert dead_a.calls + dead_b.calls <= 2 * len(items)
+    assert list(cache_dir.glob("*.json")) == []  # nothing cached (#2617)
+
+
+def test_auth_error_does_not_consume_attempts():
+    """The re-queue after an auth failure does NOT consume a terminal-error
+    attempt: with max_attempts=1 the item still succeeds on the live org."""
+    items = make_items(1)
+    dead = FakeAsyncClient(fault_for=lambda content: _auth_error())
+    live = FakeAsyncClient()
+    res = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request,
+            parse_response=parse_response,
+            async_clients={"a": dead, "b": live},
+            sync_clients={"a": object(), "b": object()},
+            force_path="sync",
+            max_attempts=1,
+        )
+    )
+    r = res["item_000"]
+    assert r.error is False
+    assert r.result == {"label": "ok"}
+    assert r.org == "b"
