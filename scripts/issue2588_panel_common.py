@@ -77,9 +77,19 @@ CAP_PROFILES: dict[str, dict[tuple[str, str], int]] = {
         ("a", "generic"): 2048,
         ("a", "gpqa"): 8192,
         ("b", "generic"): 32768,
-        ("b", "gpqa"): 32768,
+        ("b", "gpqa"): 65536,
     },
 }
+
+# Per-profile ceiling on the G4/G5 regen cap. None = unbounded (v1: the 2x
+# rule alone, byte-identical to the pre-profile behavior). Under "long" the
+# 65,536 gpqa cap never regens (rows still at cap are dropped and counted,
+# an accepted residual) and the 32,768 generic cap regens once to 65,536.
+REGEN_CAP_CEILING: dict[str, int | None] = {
+    "v1": None,
+    "long": 65536,
+}
+assert set(REGEN_CAP_CEILING) == set(CAP_PROFILES)
 
 
 def resolve_cap_profile(name: str | None = None) -> str:
@@ -192,23 +202,46 @@ PROMPT_TOKEN_BUDGET = 7104
 # report as an interpretation, never a silent constant change).
 CAP_HIT_TRIGGER = 0.02  # G4
 UNCLOSED_THINK_TRIGGER = 0.02  # G5
-# Largest max_model_len any regen engine may request under the ACTIVE profile
-# (prompt budget + 2x the profile's largest cap). The v1 value 23,488 = 7104 +
-# 2*8192 is the original constant. A sanity pin on the regen re-pin, NOT an
-# mpe floor: the regen itself is window-aware (regen_cap below).
-REGEN_MAX_MODEL_LEN_BOUND = PROMPT_TOKEN_BUDGET + 2 * max(CAP.values())
+# Largest max_model_len any engine (base or regen) may request under the
+# ACTIVE profile: prompt budget + the larger of the largest cap and the
+# largest ceiling-clamped regen cap. The v1 value 23,488 = 7104 + 2*8192 is
+# the original constant; long gives 7104 + 65,536 = 72,640. A sanity pin on
+# the engine re-pin, NOT an mpe floor: the regen itself is window-aware
+# (regen_cap below).
+_ACTIVE_CEILING = REGEN_CAP_CEILING[CAP_PROFILE]
+_MAX_REGEN = max(
+    2 * c if _ACTIVE_CEILING is None else min(2 * c, _ACTIVE_CEILING) for c in CAP.values()
+)
+REGEN_MAX_MODEL_LEN_BOUND = PROMPT_TOKEN_BUDGET + max(max(CAP.values()), _MAX_REGEN)
 if CAP_PROFILE == "v1":
     assert REGEN_MAX_MODEL_LEN_BOUND == 23_488, REGEN_MAX_MODEL_LEN_BOUND
 
 
-def regen_cap(cap: int, mpe: int) -> int:
+def regen_cap(cap: int, mpe: int, ceiling: int | None = None) -> int:
     """G4/G5 regen cap: 2x the stage cap, clamped to the model's context
-    window less the prompt budget. A return <= cap means the window is
-    already exhausted at the current cap: the caller SKIPS the regen
-    (regen_skipped_reason "cap at context window") and leaves rows at cap to
+    window less the prompt budget AND to the profile's regen ceiling
+    (REGEN_CAP_CEILING, None = unbounded). A return <= cap means no headroom
+    remains at the current cap: the caller SKIPS the regen
+    (regen_skipped_reason via regen_skip_reason) and leaves rows at cap to
     the drop-and-count parse path.
     """
-    return min(2 * cap, mpe - PROMPT_TOKEN_BUDGET)
+    out = min(2 * cap, mpe - PROMPT_TOKEN_BUDGET)
+    if ceiling is not None:
+        out = min(out, ceiling)
+    return out
+
+
+def regen_skip_reason(cap: int, mpe: int, ceiling: int | None = None) -> str | None:
+    """None when the regen may run (regen_cap > cap), else the binding
+    constraint: "cap at regen ceiling" when the profile ceiling binds (a tie
+    with the window reads as the ceiling, the deliberate residual), else
+    "cap at context window".
+    """
+    if regen_cap(cap, mpe, ceiling) > cap:
+        return None
+    if ceiling is not None and ceiling <= mpe - PROMPT_TOKEN_BUDGET:
+        return "cap at regen ceiling"
+    return "cap at context window"
 
 
 def mpe_floor_for_arm(arm: str) -> int:

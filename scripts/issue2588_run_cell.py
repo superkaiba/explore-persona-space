@@ -571,12 +571,13 @@ def _gen_stage_with_regen(
 
     Trigger: cap-hit frac > 2% (G4) or unclosed-think frac > 2% (G5) per stage
     -> re-generate the affected rows at regen_cap = min(2*cap, mpe -
-    PROMPT_TOKEN_BUDGET) with the engine RE-INSTANTIATED at max_model_len =
-    PROMPT_TOKEN_BUDGET + regen_cap (window-aware, bounded by the
-    profile-derived REGEN_MAX_MODEL_LEN_BOUND). When regen_cap <= cap the
-    window is exhausted: the regen is SKIPPED (regen_skipped_reason
-    "cap at context window") and rows at cap ride the existing
-    drop-and-count parse path (plan §7 G4/G5).
+    PROMPT_TOKEN_BUDGET, profile regen ceiling) with the engine
+    RE-INSTANTIATED at max_model_len = PROMPT_TOKEN_BUDGET + regen_cap
+    (window- and ceiling-aware, bounded by the profile-derived
+    REGEN_MAX_MODEL_LEN_BOUND). When regen_cap <= cap there is no headroom:
+    the regen is SKIPPED (regen_skipped_reason "cap at regen ceiling" when
+    the ceiling binds, "cap at context window" when the window binds) and
+    rows at cap ride the existing drop-and-count parse path (plan §7 G4/G5).
 
     Round 3 (gen-capture-stage-resume): a stage whose terminal artifact
     (cap_hit_report.json — written LAST, after every chunk) is already on
@@ -625,18 +626,22 @@ def _gen_stage_with_regen(
         "regen_ran": False,
     }
     if regen_idx and (cap_frac > PC.CAP_HIT_TRIGGER or regen_frac > PC.UNCLOSED_THINK_TRIGGER):
-        new_cap = PC.regen_cap(cap, mpe)
+        ceiling = PC.REGEN_CAP_CEILING[PC.CAP_PROFILE]
+        new_cap = PC.regen_cap(cap, mpe, ceiling)
         if new_cap <= cap:
-            report["regen_skipped_reason"] = "cap at context window"
+            reason = PC.regen_skip_reason(cap, mpe, ceiling)
+            report["regen_skipped_reason"] = reason
             logger.warning(
-                "[i2588] [%s] G4/G5 regen SKIPPED: regen cap %d <= cap %d "
-                "(mpe=%d, prompt budget=%d): rows at cap ride the "
+                "[i2588] [%s] G4/G5 regen SKIPPED (%s): regen cap %d <= cap %d "
+                "(mpe=%d, prompt budget=%d, ceiling=%s): rows at cap ride the "
                 "drop-and-count parse path",
                 stage,
+                reason,
                 new_cap,
                 cap,
                 mpe,
                 PC.PROMPT_TOKEN_BUDGET,
+                ceiling,
             )
         else:
             new_mml = PC.PROMPT_TOKEN_BUDGET + new_cap

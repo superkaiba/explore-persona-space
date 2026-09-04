@@ -207,7 +207,7 @@ LONG_CAP = {
     ("a", "generic"): 2048,
     ("a", "gpqa"): 8192,
     ("b", "generic"): 32768,
-    ("b", "gpqa"): 32768,
+    ("b", "gpqa"): 65536,
 }
 
 
@@ -221,6 +221,8 @@ def test_cap_profiles_table_and_default():
     assert PC.CAP_PROFILES["long"] == LONG_CAP
     assert PC.CAP_PROFILE == "v1"
     assert PC.CAP == V1_CAP
+    assert set(PC.REGEN_CAP_CEILING) == set(PC.CAP_PROFILES)
+    assert PC.REGEN_CAP_CEILING == {"v1": None, "long": 65536}
     with pytest.raises(ValueError):
         PC.resolve_cap_profile("bogus")
 
@@ -242,11 +244,11 @@ def test_cap_profile_prefix_suffixing():
 
 def test_regen_bound_profile_derived_and_window_rule():
     """REGEN_MAX_MODEL_LEN_BOUND derives from the active profile (v1 keeps the
-    original 23,488) and regen_cap clamps the doubled cap to the window."""
+    original 23,488) and regen_cap clamps the doubled cap to the window and
+    to the profile's regen ceiling."""
     expected = PC.PROMPT_TOKEN_BUDGET + 2 * max(PC.CAP.values())
     assert expected == PC.REGEN_MAX_MODEL_LEN_BOUND
     assert PC.REGEN_MAX_MODEL_LEN_BOUND == 23_488
-    assert PC.PROMPT_TOKEN_BUDGET + 2 * max(PC.CAP_PROFILES["long"].values()) == 7104 + 65_536
     # Doubling allowed (fake mpe 262144: the Qwen3.5 window class).
     assert PC.regen_cap(32_768, 262_144) == 65_536
     # Clamped to the window but still above cap (fake mpe 40960: Qwen3-32B /
@@ -257,14 +259,42 @@ def test_regen_bound_profile_derived_and_window_rule():
     # Window exhausted (regen_cap <= cap): the caller SKIPS the regen and
     # writes regen_skipped_reason "cap at context window".
     assert PC.regen_cap(33_856, 40_960) == 33_856
+    assert PC.regen_skip_reason(33_856, 40_960) == "cap at context window"
     assert PC.regen_cap(16_384, PC.PROMPT_TOKEN_BUDGET + 16_384) == 16_384
     # v1 behavior unchanged: under the v1 prologue floor (mpe >= 23,488)
-    # every v1 cap still doubles exactly.
+    # every v1 cap still doubles exactly, with a None ceiling.
     for cap in PC.CAP_PROFILES["v1"].values():
-        assert PC.regen_cap(cap, 23_488) == 2 * cap
+        assert PC.regen_cap(cap, 23_488, PC.REGEN_CAP_CEILING["v1"]) == 2 * cap
+        assert PC.regen_skip_reason(cap, 23_488, None) is None
     # Base-engine mpe floors per arm under the default (v1) profile.
     assert PC.mpe_floor_for_arm("a") == PC.PROMPT_TOKEN_BUDGET + 2048
     assert PC.mpe_floor_for_arm("b") == PC.PROMPT_TOKEN_BUDGET + 8192
+
+
+def test_regen_ceiling_three_cases():
+    """The long-profile regen ceiling (65,536): ceiling binds / window binds /
+    neither binds, with the matching skip reason per case."""
+    ceil = PC.REGEN_CAP_CEILING["long"]
+    assert ceil == 65_536
+    # Ceiling binds (long arm-b gpqa 65536 on a 262144-window model): the cap
+    # already sits at the ceiling, regen never runs, residual accepted.
+    assert PC.regen_cap(65_536, 262_144, ceil) == 65_536
+    assert PC.regen_skip_reason(65_536, 262_144, ceil) == "cap at regen ceiling"
+    # Window binds (cap already at mpe minus the prompt budget): skip with the
+    # window reason even though a ceiling is set.
+    assert PC.regen_cap(33_856, 40_960, ceil) == 33_856
+    assert PC.regen_skip_reason(33_856, 40_960, ceil) == "cap at context window"
+    # Neither binds below cap (long arm-b generic 32768 on a 262144-window
+    # model): regen runs once, to exactly the ceiling.
+    assert PC.regen_cap(32_768, 262_144, ceil) == 65_536
+    assert PC.regen_skip_reason(32_768, 262_144, ceil) is None
+    # And an ordinary doubling far below the ceiling (long arm-a gpqa 8192).
+    assert PC.regen_cap(8_192, 262_144, ceil) == 16_384
+    assert PC.regen_skip_reason(8_192, 262_144, ceil) is None
+    # The long engine bound follows: prompt budget + the ceiling.
+    long_caps = PC.CAP_PROFILES["long"].values()
+    assert max(min(2 * c, ceil) for c in long_caps) == ceil
+    assert PC.PROMPT_TOKEN_BUDGET + ceil == 72_640
 
 
 def test_cap_profile_env_threading_reload(monkeypatch):
@@ -285,7 +315,7 @@ def test_cap_profile_env_threading_reload(monkeypatch):
             "issue2588_capability_panel_cap_long/q3_32b/nothink"
         )
         assert PC.REGEN_MAX_MODEL_LEN_BOUND == 7104 + 65_536
-        assert PC.mpe_floor_for_arm("b") == 7104 + 32_768
+        assert PC.mpe_floor_for_arm("b") == 7104 + 65_536
     finally:
         monkeypatch.delenv("EPS_CAP_PROFILE", raising=False)
         importlib.reload(PC)
