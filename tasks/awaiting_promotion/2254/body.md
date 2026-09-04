@@ -9,6 +9,7 @@ tags:
 - followup-manual
 - epm:attrition-analysis-review-frozen:v1:commit=4a5a8e8bf31:sha256=1ee2082ce4a44073c87dcdcc53bb6300779e70da114028ceedc8259e77338326:before-confirm-reduce
 - epm:confirmation-estimability-frozen:v1:commit=06a72e1d87b:sha256=5535d9a323fd1e74b1dd9e17057804fb47e0c906c5c793e90241c21ea96e4ae5:score-blind
+- keep-running
 created_at: '2026-08-12T21:41:36Z'
 has_clean_result: true
 parent_id: 2220
