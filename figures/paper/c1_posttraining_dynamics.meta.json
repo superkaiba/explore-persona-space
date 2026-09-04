@@ -2,19 +2,19 @@
   "metadata": {
     "context_summary": "u_last",
     "folds": "six size-matched IID random-row folds (seed 190231)",
-    "generated_utc": "2026-09-03T20:46:47Z",
+    "generated_utc": "2026-09-04T00:46:37Z",
     "hf_revision": "3256c8efcef5f10ca525efeb2039636eaec8fad7",
     "inputs": {
       "latest": {
-        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/figures/issue_1902/section43/inputs/c1_posttraining_dynamics_data.json",
+        "path": "/home/thomasjiralerspong/explore-persona-space/figures/issue_1902/section43/inputs/c1_posttraining_dynamics_data.json",
         "sha256": "947a46cbde8f834be0a094b85e401e73a260f8da0416dd76285ca9da12c03c96"
       },
       "retrieval": {
-        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/figures/issue_1902/section43/inputs/c1_posttraining_retrieval_data.json",
+        "path": "/home/thomasjiralerspong/explore-persona-space/figures/issue_1902/section43/inputs/c1_posttraining_retrieval_data.json",
         "sha256": "d74f9adb9d52e36558d38c99c5b83ed636b731f5b46c6a5ab6b000c920f6bd91"
       },
       "summary": {
-        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/eval_results/issue_1902/lasttoken_transfer/summary.json",
+        "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1902/lasttoken_transfer/summary.json",
         "sha256": "13dacddb6fb8077a9bd6327ed06a8ea60fe18a52c18cafec9a9f81e7c893b51f"
       }
     },
@@ -31,12 +31,12 @@
   "record": {
     "authoring_size_inches": [
       13.095,
-      5.238
+      4.321
     ],
     "background": "#FFFFFF",
     "exported_size_inches": [
       13.095,
-      5.099
+      4.164
     ],
     "include_width_frac": 1.0,
     "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c1_posttraining_dynamics.pdf}",
@@ -63,6 +63,8 @@
       "0.8",
       "1",
       "Held-out score of each\nstage's own map",
+      "Held-out $R^2$",
+      "Top-1 retrieval",
       "B  \u00b7  CONTEXT\u2192ANSWER FITS",
       "Answer source",
       "Held-out $R^2$ \u2191",
@@ -77,11 +79,9 @@
       "$R^2_{i \\to j} \\, / \\, R^2_{j \\to j}$ \u2191",
       "0",
       "Retention of the\nprior stage's map",
-      "METRIC",
       "CONTEXT SOURCE",
       "CORRECTION",
-      "Held-out $R^2$",
-      "Top-1 retrieval",
+      "Error bars: 95% bootstrap CIs, 1,000 draws",
       "Own states",
       "Previous-stage states",
       "Base states",

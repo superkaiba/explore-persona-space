@@ -720,16 +720,37 @@ def render_iclr(points: dict, verdicts: dict, roster: str = "regression") -> int
             va="center",
         )
     legend_kicker(fig, 0.08, 0.915, "Predictor")
-    fig.legend(
-        handles=handles,
+    legend_kwargs = dict(
         loc="upper left",
-        bbox_to_anchor=(0.08, 0.895),
-        ncol=legend_ncol,
         frameon=False,
         columnspacing=0.8,
         labelspacing=0.3,
         handlelength=1.2,
     )
+    if roster == "regression":
+        # Two single-row legends: the three arm entries on one line, the long
+        # faded-bar explainer on its own line below — a 2-column grid puts the
+        # two longest labels in one column and spills past the fixed-scale
+        # canvas edge.
+        fig.legend(
+            handles=handles[:-1],
+            bbox_to_anchor=(0.08, 0.895),
+            ncol=len(handles) - 1,
+            **legend_kwargs,
+        )
+        fig.legend(
+            handles=handles[-1:],
+            bbox_to_anchor=(0.08, 0.845),
+            ncol=1,
+            **legend_kwargs,
+        )
+    else:
+        fig.legend(
+            handles=handles,
+            bbox_to_anchor=(0.08, 0.895),
+            ncol=legend_ncol,
+            **legend_kwargs,
+        )
     # Paper outputs land in THIS checkout (the paper-figure worktree), never the
     # shared repo root that recut_common.ROOT hardcodes.
     from pathlib import Path as _Path

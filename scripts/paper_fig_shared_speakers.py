@@ -129,7 +129,7 @@ def make_figure(values: dict) -> plt.Figure:
     """Render the two-panel figure on a full-width c2a canvas."""
     fig, _frac = c2a_figure("full", aspect=0.33)
     ax_a, ax_b = fig.subplots(1, 2)
-    fig.subplots_adjust(left=0.068, right=0.99, bottom=0.17, top=0.70, wspace=0.18)
+    fig.subplots_adjust(left=0.075, right=0.99, bottom=0.17, top=0.70, wspace=0.18)
     # Figure-level provenance eyebrow (small-caps kicker register): the models,
     # the read layer, and the shared conversation draw behind every bar.
     legend_kicker(
@@ -157,8 +157,9 @@ def make_figure(values: dict) -> plt.Figure:
     ax_a.tick_params(axis="x", labelsize=14)
     ax_a.set_ylabel(better_label(METRIC_LABELS["r2"]))
     # Headroom so the in-axes legend clears the bars at the flattened
-    # aspect (0.33); bars top out at ~0.58.
-    ax_a.set_ylim(0.0, 0.80)
+    # aspect (0.33); bars top out at ~0.58. The floor keeps the banked
+    # shuffled-answer null line (~-0.03) on canvas.
+    ax_a.set_ylim(min(-0.05, null_level - 0.02), 0.80)
     style_axis(ax_a)
     panel_header(
         ax_a,
