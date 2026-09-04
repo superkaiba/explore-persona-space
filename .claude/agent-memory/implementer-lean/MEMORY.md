@@ -5,3 +5,4 @@
 - [c2a-v2 restyle gotchas](reference_c2a_v2_figure_restyle_gotchas.md) — rotated-ylabel overflow into title band (pdftoppm to diagnose); style_score_axis tick snapping; save_c2a_figure record key
 - [c2a fixed-scale overflow check](reference_c2a_fixed_scale_overflow_check.md) — PNG px/240 vs authored width catches off-canvas text under bbox-tight; ~55/~33 title-char budgets
 - [Root-edit stash race: stage first](reference_root_edit_stash_race_stage_first.md) — unstaged root script edits get reverted by concurrent commits (stale renders, gate INCONCLUSIVE); git add stabilizes; gate cert ~5-10 min, round-unique payload
+- [Annotation extent includes arrow](reference_annotation_extent_includes_arrow.md) — measure label rects via get_bbox_patch(); staggered-xtick recipe for narrow panels; annealed offset maps
