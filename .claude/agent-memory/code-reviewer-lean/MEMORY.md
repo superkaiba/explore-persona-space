@@ -138,3 +138,4 @@
 - [Spend/timing artifact exact recompute](spend_timing_artifact_exact_recompute.md) — window×gpus, tokens×halved batch rates, jsonl cross-foot, manifest-vs-tree name+byte diff, sha256 verbatim-text compare
 - [Shard-summary coverage gate probes](shard_summary_coverage_gate_probes.md) — partition-agnostic glob + count coverage + producer-flag trust; live-invoke gate on realized artifacts
 - [Producer/gate asymmetric input validation](producer_gate_asymmetric_input_validation.md) — diff producer raises vs the gate re-reading the same files; realized-artifact fingerprint parity probe
+- [Selection-time exclusion gate review](selection_time_exclusion_gate_review.md) — shared-quantity helper, realized-bias jq on shortfall cells, status-vs-field grain, single-source-comment grep
