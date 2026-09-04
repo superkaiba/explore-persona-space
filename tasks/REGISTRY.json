@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2664,
+  "highest_id": 2665,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12844,6 +12844,13 @@
       "path": "tasks/proposed/2664",
       "status": "proposed",
       "title": "pod bootstrap runs the GPU-default preflight on CPU intents (nvidia-smi + 50 GB floor): thread the intent into the preflight argv"
+    },
+    "2665": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2665",
+      "status": "proposed",
+      "title": "pod.py config --sync: per-clone live pods.conf copies clobber the shared ~/.ssh/config (RUNNING pod alias dropped twice during #2658 P4)"
     },
     "267": {
       "has_clean_result": true,
