@@ -1,0 +1,17 @@
+{
+  "font": "Inter",
+  "git_argv0_path": "scripts/issue2569_basis_views.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "b125a945d97927601f7a0eb19a55e0eb72ef25d9",
+  "git_dirty": false,
+  "output_sha256": {
+    "figures/issue_2569/leg11_basis_views.pdf": "38ac3e0e2cbed0abfc873460cad11781628cc5d99b8620a875c9a5a880b2453d",
+    "figures/issue_2569/leg11_basis_views.png": "64f31992628a18e75e006fc10c8f09ef551dbc4cc1588139150ff9c21698db4b",
+    "figures/issue_2569/leg11_basis_views_grayscale.png": "5343636fdfa3d2b4685d4dff94164b272edbc91e0bda33c8c5b3d45e76160885"
+  },
+  "phase": "leg11-basis-figure",
+  "result": "eval_results/issue_2569/weights/leg11/basis_views_L19.json",
+  "result_sha256": "04a2be2a1f255374ee26f14f3d6915c5ff654d3ea133d5e81add9f674169164d",
+  "source": "scripts/issue2569_basis_views.py",
+  "style": "c2a-v1"
+}
