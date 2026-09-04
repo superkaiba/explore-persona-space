@@ -133,8 +133,8 @@ ICLR_ROSTERS = {
     "regression": (
         ICLR_REGRESSION_METHODS,
         "c5_regression_regimes",
-        1,
-        0.55,
+        2,
+        0.60,
         ICLR_REGRESSION_GROUPS,
     ),
     "all": (ICLR_METHODS, "c5_pv_methods_regimes", 2, 0.55, None),
@@ -620,7 +620,7 @@ def render_iclr(points: dict, verdicts: dict, roster: str = "regression") -> int
     bar_w = GROUP_WIDTH / len(slots)
 
     set_c2a_style()
-    fig, frac = c2a_figure("full", aspect=0.42)
+    fig, frac = c2a_figure("full", aspect=0.33)
     axes = fig.subplots(1, 3, sharey=True)
     fig.subplots_adjust(left=0.08, right=0.99, bottom=0.2, top=subplot_top, wspace=0.08)
     n_bars = 0
@@ -696,11 +696,34 @@ def render_iclr(points: dict, verdicts: dict, roster: str = "regression") -> int
         else "Uninterpretable (muted)"
     )
     handles.append(Patch(facecolor=MUTED, alpha=0.35, label=muted_label))
-    legend_kicker(fig, 0.08, 0.965, "Predictor")
+    if roster == "regression":
+        # Figure-level provenance eyebrow. Facts verified against the two
+        # points artifacts: model = Qwen2.5-7B-Instruct (issue_1739
+        # constants.MODEL_NAME); the frozen-best layer VARIES per
+        # behavior x arm (evil 17-20, sycophancy 19-20, hallucination
+        # 18-20), so the kicker states the range, not one layer per
+        # behavior. CI = 95% (2.5/97.5 quantile) within-draw paired
+        # bootstrap over eval contexts (issue_1739/arms.py).
+        legend_kicker(
+            fig,
+            0.08,
+            0.97,
+            "Qwen2.5-7B-Instruct, ridge regression readouts at per-arm best layers 17-20",
+        )
+        fig.text(
+            0.99,
+            0.97,
+            "Error bars: 95% paired bootstrap CI over contexts",
+            color=MUTED,
+            fontsize=13,
+            ha="right",
+            va="center",
+        )
+    legend_kicker(fig, 0.08, 0.915, "Predictor")
     fig.legend(
         handles=handles,
         loc="upper left",
-        bbox_to_anchor=(0.08, 0.95),
+        bbox_to_anchor=(0.08, 0.895),
         ncol=legend_ncol,
         frameon=False,
         columnspacing=0.8,

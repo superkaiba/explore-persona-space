@@ -45,6 +45,7 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     STYLE_VERSION,
     better_label,
     c2a_figure,
+    legend_kicker,
     panel_header,
     save_c2a_figure,
     set_c2a_style,
@@ -126,9 +127,14 @@ def parity_gate(values: dict, sidecar: Path) -> float:
 
 def make_figure(values: dict) -> plt.Figure:
     """Render the two-panel figure on a full-width c2a canvas."""
-    fig, _frac = c2a_figure("full", aspect=0.42)
+    fig, _frac = c2a_figure("full", aspect=0.33)
     ax_a, ax_b = fig.subplots(1, 2)
-    fig.subplots_adjust(left=0.06, right=0.99, bottom=0.16, top=0.74, wspace=0.18)
+    fig.subplots_adjust(left=0.068, right=0.99, bottom=0.17, top=0.70, wspace=0.18)
+    # Figure-level provenance eyebrow (small-caps kicker register): the models,
+    # the read layer, and the shared conversation draw behind every bar.
+    legend_kicker(
+        fig, 0.06, 0.96, "Qwen2.5-7B and Qwen2.5-7B-Instruct, layer 19, 8,000 LMSYS conversations"
+    )
     x = np.arange(len(values["labels"]), dtype=float)
     width = 0.38
     # One word per line keeps the six two-word tick labels from colliding at
@@ -150,6 +156,9 @@ def make_figure(values: dict) -> plt.Figure:
     # pinned tick size to stay disjoint (deviation disclosed in the sidecar).
     ax_a.tick_params(axis="x", labelsize=14)
     ax_a.set_ylabel(better_label(METRIC_LABELS["r2"]))
+    # Headroom so the in-axes legend clears the bars at the flattened
+    # aspect (0.33); bars top out at ~0.58.
+    ax_a.set_ylim(0.0, 0.80)
     style_axis(ax_a)
     panel_header(
         ax_a,
@@ -159,7 +168,7 @@ def make_figure(values: dict) -> plt.Figure:
         kicker_y=1.34,
         title_y=1.07,
     )
-    ax_a.legend(loc="upper right")
+    ax_a.legend(loc="upper right", labelspacing=0.3, handlelength=1.4, borderaxespad=0.2)
 
     # Panel B: the shared predictor as a fraction of each setting's own R^2.
     frac_asis = [s / o for s, o in zip(values["shared_asis"], values["post_own"], strict=True)]
@@ -176,7 +185,9 @@ def make_figure(values: dict) -> plt.Figure:
     )
     ax_b.bar(x + width / 2, frac_shift, width, color=teal, label="Shared, with per-setting shift")
     ax_b.axhline(1.0, color=INK, linestyle="--", linewidth=1.6, label="Own predictor")
-    ax_b.set_ylim(0.0, 1.58)
+    # Headroom so the in-axes legend clears the bars and the own-predictor
+    # reference line at 1 (bars top out at ~1.0).
+    ax_b.set_ylim(0.0, 2.0)
     ax_b.set_xticks(x)
     ax_b.set_xticklabels(tick_labels)
     ax_b.tick_params(axis="x", labelsize=14)
@@ -190,7 +201,7 @@ def make_figure(values: dict) -> plt.Figure:
         kicker_y=1.34,
         title_y=1.07,
     )
-    ax_b.legend(loc="upper left")
+    ax_b.legend(loc="upper left", labelspacing=0.3, handlelength=1.4, borderaxespad=0.2)
     return fig
 
 

@@ -236,7 +236,7 @@ def _err(points: np.ndarray, ci: np.ndarray) -> np.ndarray:
     return np.vstack([points - ci[:, 0], ci[:, 1] - points])
 
 
-HEADER_KWARGS = {"kicker_y": 1.44, "title_y": 1.06}
+HEADER_KWARGS = {"kicker_y": 1.40, "title_y": 1.06}
 
 
 def plot_within_stage(ax: mpl.axes.Axes, data: dict[str, Any]) -> list[Line2D]:
@@ -507,15 +507,15 @@ def plot_transfer(ax: mpl.axes.Axes, data: dict[str, Any]) -> list[Line2D]:
 def render_variant(data: dict[str, Any], out_base: Path, *, panel_b: str) -> dict[str, Any]:
     if panel_b not in {"lines", "grid"}:
         raise ValueError(f"panel_b must be 'lines' or 'grid', got {panel_b!r}")
-    fig, include_frac = c2a_figure("full", aspect=0.40)
+    fig, include_frac = c2a_figure("full", aspect=0.33)
     grid = fig.add_gridspec(
         1,
         3,
         width_ratios=[1.05, 1.1, 1.05],
         left=0.06,
         right=0.985,
-        top=0.56,
-        bottom=0.15,
+        top=0.62,
+        bottom=0.17,
         wspace=0.55,
     )
     axes = [fig.add_subplot(grid[0, i]) for i in range(3)]
@@ -525,26 +525,49 @@ def render_variant(data: dict[str, Any], out_base: Path, *, panel_b: str) -> dic
     else:
         handles_b = plot_stage_grid(axes[1], data)
     handles_c = plot_transfer(axes[2], data)
-    for ax, heading, handles in (
-        (axes[0], "Metric", handles_a),
-        (axes[1], "Context source", handles_b),
-        (axes[2], "Correction", handles_c),
+    # The metric legend sits INSIDE panel A's empty mid band (both series hug
+    # the range edges), so the strip above the panels stays one row tall and
+    # the canvas can drop to aspect 0.33 (~1.8 in printed).
+    axes[0].legend(
+        handles=handles_a,
+        loc="center left",
+        bbox_to_anchor=(0.02, 0.50),
+        frameon=False,
+        handlelength=1.4,
+        handletextpad=0.5,
+        borderaxespad=0.0,
+        labelspacing=0.3,
+    )
+    for x0, heading, handles in (
+        (0.005, "Context source", handles_b),
+        (0.62, "Correction", handles_c),
     ):
         if not handles:
             continue
-        x0 = ax.get_position().x0
-        legend_kicker(fig, x0, 0.978, heading)
+        legend_kicker(fig, x0, 0.955, heading)
         fig.legend(
             handles=handles,
             loc="upper left",
-            bbox_to_anchor=(x0 - 0.001, 0.958),
-            ncol=1,
+            bbox_to_anchor=(x0 - 0.001, 0.92),
+            ncol=len(handles),
             frameon=False,
-            handlelength=1.9,
+            handlelength=1.4,
             handletextpad=0.5,
+            columnspacing=1.0,
             borderaxespad=0.0,
             labelspacing=0.3,
         )
+    # One short factual line, matching the sidecar's bootstrap description
+    # (1,000 draws; 95% quantile intervals in every panel).
+    fig.text(
+        0.995,
+        0.955,
+        "Error bars: 95% bootstrap CIs, 1,000 draws",
+        color=MUTED,
+        fontsize=13,
+        ha="right",
+        va="center",
+    )
     outputs = save_c2a_figure(
         fig,
         out_base,
