@@ -12855,8 +12855,8 @@
     "2666": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2666",
-      "status": "proposed",
+      "path": "tasks/completed/2666",
+      "status": "completed",
       "title": "Scope the PostToolUse ruff hook to files whose git origin is explore-persona-space"
     },
     "267": {
