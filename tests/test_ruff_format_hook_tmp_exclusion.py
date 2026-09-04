@@ -19,6 +19,7 @@ maps to no test otherwise.
 
 import json
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -123,3 +124,39 @@ def test_hook_formats_repo_path(payload_form: str):
         assert target.read_text(encoding="utf-8") == "x = 1\n"
     finally:
         target.unlink(missing_ok=True)
+
+
+def test_hook_skips_other_repos_python():
+    """Behavioral: a .py that belongs to a DIFFERENT git repo is left alone.
+
+    The hook fires on every Edit/Write in a session, and a session whose cwd
+    is this repo routinely edits sibling repos (2026-09-04: three files of the
+    Intent app's ``automation/`` were reflowed by this repo's ruff config, and
+    ``ruff check --fix`` swapped in a ``datetime.UTC`` import that does not
+    exist on that repo's Python 3.10 runtime). The hook now checks the file's
+    ``remote.origin.url`` names explore-persona-space before formatting. The
+    fixture is a nested throwaway repo INSIDE this checkout, so the ephemeral
+    root exclusion above cannot be what skips it.
+    """
+    scratch = CHECKOUT_ROOT / "tests" / f"_eps_hookscope_{os.getpid()}"
+    try:
+        scratch.mkdir()
+        subprocess.run(["git", "init", "-q", str(scratch)], check=True)
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(scratch),
+                "remote",
+                "add",
+                "origin",
+                "git@github.com:someone/other-app.git",
+            ],
+            check=True,
+        )
+        target = scratch / "module.py"
+        target.write_text("x=1\n", encoding="utf-8")
+        _run_hook(_hook_command(), _payload("tool_input", str(target)))
+        assert target.read_text(encoding="utf-8") == "x=1\n"
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
