@@ -2,8 +2,11 @@
 """Render the chain-of-thought figure for the context-to-answer-map paper.
 
 Reads the committed Issue #2546 fit cells (``eval_results/issue_2546/cells``)
-and writes ``figures/paper/c1_cot_maps.{pdf,png}``, a grayscale audit PNG, and a
-JSON sidecar with every plotted value and its provenance.
+and writes two figures: the main one-row figure
+``figures/paper/c1_cot_maps.{pdf,png}`` (panels A-C) and the appendix figure
+``figures/paper/c1_cot_reasoning_sft.{pdf,png}`` (the reasoning-SFT panel),
+each with a grayscale audit PNG and a JSON sidecar carrying every plotted
+value and its provenance.
 
 Panels
 ------
@@ -15,8 +18,9 @@ B  OpenThinker3-7B, layer 19: the same two metrics for maps from the state at
    (t = 0 is the context state, t = 1 the end-of-thought state).
 C  Qwen3-8B, layer 24: the same two maps with thinking on, plus the
    context -> answer map with thinking disabled on the same weights.
-D  Qwen2.5-7B-Instruct (before reasoning training) -> OpenThinker3-7B (after):
-   within-model maps on each side and the cross-model context -> answer map.
+Appendix figure (``c1_cot_reasoning_sft``): Qwen2.5-7B-Instruct (before
+reasoning training) -> OpenThinker3-7B (after): within-model maps on each side
+and the cross-model context -> answer map.
 
 Visual encoding follows Figure 2: color encodes the corpus stratum; solid bars
 (and filled markers in panel B) are R^2, hatched open bars (and open markers)
@@ -62,6 +66,7 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
 CELLS_DIR = ROOT / "eval_results" / "issue_2546" / "cells"
 DEFAULT_OUT = ROOT / "figures" / "paper"
 DEFAULT_STEM = "c1_cot_maps"
+DEFAULT_SFT_STEM = "c1_cot_reasoning_sft"
 
 # Provenance pins from the #2546 clean result.
 HF_REVISION = "8368cc69f887d20931acd8c4d76c142275173728"
@@ -92,7 +97,9 @@ STRATA = {
     "both_correct": StratumStyle("CoT-unnecessary questions", "#5AAE61", "o", 0.16),
     "all": StratumStyle("All questions", "#4D4D4D", "D", 0.0),
 }
-BUNDLE_DIR = ROOT / "eval_results" / "issue_2546" / "allfit"  # all-question refits scored per question label (--bundle-dir)
+BUNDLE_DIR = (
+    ROOT / "eval_results" / "issue_2546" / "allfit"
+)  # all-question refits scored per question label (--bundle-dir)
 # The main figure plots the needs-reasoning stratum only; the strata comparison
 # is its own figure (scripts/section45_cot_strata_figure.py). Both strata are
 # still loaded, validated, and written to the JSON sidecar.
@@ -106,8 +113,8 @@ PANEL_A_MAPS = [
     ("p7_D", "end of\nthought"),
 ]
 PANEL_C_MAPS = [
-    ("p7_Aoff", "thinking\noff"),
-    ("p7_A", "thinking\non"),
+    ("p7_Aoff", "off"),
+    ("p7_A", "on"),
     ("p7_D", "end of\nthought"),
 ]
 PANEL_D_MAPS = [
@@ -172,9 +179,7 @@ def load_cell(cell: str, subset: str, arm: int) -> dict[str, Any]:
         raise ValueError(f"{path.name}: expected five folds")
     content = data.get("knn_content")
     content_block = content["euclidean"] if content else None
-    metrics = _metrics_from_block(
-        data["r2_headline"], data["r2_headline_bootstrap"], content_block
-    )
+    metrics = _metrics_from_block(data["r2_headline"], data["r2_headline_bootstrap"], content_block)
     metrics.update(
         {
             "cell": cell,
@@ -224,7 +229,9 @@ def load_trajectory(arm: int) -> dict[str, list[dict[str, Any]]]:
 
 
 RECIPE_RESULTS = ROOT / "eval_results" / "issue_2546" / "retrieval_recipe" / "results.json"
-RECIPE_RESULTS_ARM2 = ROOT / "eval_results" / "issue_2546" / "retrieval_recipe" / "results_arm2.json"
+RECIPE_RESULTS_ARM2 = (
+    ROOT / "eval_results" / "issue_2546" / "retrieval_recipe" / "results_arm2.json"
+)
 
 
 def load_recipe_retrieval() -> dict[str, Any]:
@@ -238,7 +245,14 @@ def load_recipe_retrieval() -> dict[str, Any]:
     return out
 
 
-def apply_recipe_retrieval(metrics: dict[str, Any], recipe: dict[str, Any], cell: str, subset: str, arm: int, position: str = "main") -> None:
+def apply_recipe_retrieval(
+    metrics: dict[str, Any],
+    recipe: dict[str, Any],
+    cell: str,
+    subset: str,
+    arm: int,
+    position: str = "main",
+) -> None:
     """Replace the content-rule lift fields with strict own-answer acc@1 (kept under the same keys so the plot code is unchanged)."""
     entry = recipe[f"arm{arm}/{cell}/{subset}"]["positions"][position]
     metrics["retrieval_acc1"] = float(entry["acc1_whitened_csls"])
@@ -307,8 +321,12 @@ def load_results(*, retrieval: str = "recipe") -> dict[str, Any]:
                 elif t == 1.0:
                     apply_recipe_retrieval(row, recipe, "p7_D", subset, arm)
                 else:
-                    apply_recipe_retrieval(row, recipe, "p7_traj", subset, arm, position=f"t{int(round(t * 100))}")
-        panels["retrieval_recipe"] = "whitened cosine + CSLS (k=10), whitening fit on train-fold answers (shrinkage 0.1), pool = held-out fold, hit = own answer"
+                    apply_recipe_retrieval(
+                        row, recipe, "p7_traj", subset, arm, position=f"t{int(round(t * 100))}"
+                    )
+        panels["retrieval_recipe"] = (
+            "whitened cosine + CSLS (k=10), whitening fit on train-fold answers (shrinkage 0.1), pool = held-out fold, hit = own answer"
+        )
     return panels
 
 
@@ -333,34 +351,72 @@ def load_bundle(bundle_dir: Path, subset: str, baseline: str) -> dict[str, Any]:
         src = name if name != "p8_F" else "p7_A"  # the post model's own map is the same fit as p7_A
         data = json.loads((bundle_dir / f"{src}__a{arm}.json").read_text())
         out = _bundle_metrics(data["subsets"][subset], baseline)
-        out.update({"cell": name, "subset": subset, "arm": arm, "layer": data["layer"], "lambda": data["lambda"], "source": str((bundle_dir / f"{src}__a{arm}.json").relative_to(ROOT))})
+        out.update(
+            {
+                "cell": name,
+                "subset": subset,
+                "arm": arm,
+                "layer": data["layer"],
+                "lambda": data["lambda"],
+                "source": str((bundle_dir / f"{src}__a{arm}.json").relative_to(ROOT)),
+            }
+        )
         return out
 
     def series(arm: int) -> list[dict[str, Any]]:
         traj = json.loads((bundle_dir / f"p7_traj__a{arm}.json").read_text())
         rows = [{"t": 0.0, **{k: v for k, v in cell("p7_A", arm).items() if k in _METRIC_KEYS}}]
         for key, block in sorted(traj["positions"].items(), key=lambda kv: int(kv[0][1:])):
-            rows.append({"t": int(key[1:]) / 100.0, **{k: v for k, v in _bundle_metrics(block[subset], baseline).items() if k in _METRIC_KEYS}})
+            rows.append(
+                {
+                    "t": int(key[1:]) / 100.0,
+                    **{
+                        k: v
+                        for k, v in _bundle_metrics(block[subset], baseline).items()
+                        if k in _METRIC_KEYS
+                    },
+                }
+            )
         rows.append({"t": 1.0, **{k: v for k, v in cell("p7_D", arm).items() if k in _METRIC_KEYS}})
         return rows
 
     panels: dict[str, Any] = {
-        "A": {"arm": 1, "model": "open-thoughts/OpenThinker3-7B", "maps": [{"cell": c, "label": l, subset: cell(c, 1)} for c, l in PANEL_A_MAPS]},
+        "A": {
+            "arm": 1,
+            "model": "open-thoughts/OpenThinker3-7B",
+            "maps": [{"cell": c, "label": l, subset: cell(c, 1)} for c, l in PANEL_A_MAPS],
+        },
         "B": {"arm": 1, "model": "open-thoughts/OpenThinker3-7B", "series": {subset: series(1)}},
-        "C": {"arm": 3, "model": "Qwen/Qwen3-8B", "maps": [{"cell": c, "label": l, subset: cell(c, 3)} for c, l in PANEL_C_MAPS]},
-        "D": {"arm": 1, "model_before": "Qwen/Qwen2.5-7B-Instruct", "model_after": "open-thoughts/OpenThinker3-7B", "maps": [{"cell": c, "label": l, subset: cell(c, 1)} for c, l in PANEL_D_MAPS]},
+        "C": {
+            "arm": 3,
+            "model": "Qwen/Qwen3-8B",
+            "maps": [{"cell": c, "label": l, subset: cell(c, 3)} for c, l in PANEL_C_MAPS],
+        },
+        "D": {
+            "arm": 1,
+            "model_before": "Qwen/Qwen2.5-7B-Instruct",
+            "model_after": "open-thoughts/OpenThinker3-7B",
+            "maps": [{"cell": c, "label": l, subset: cell(c, 1)} for c, l in PANEL_D_MAPS],
+        },
         "retrieval_recipe": "whitened cosine + CSLS (k=10), whitening fit on train-fold answers (shrinkage 0.1), pool = held-out fold (all questions), hit = own answer",
         "fit": f"one ridge fit per map on all questions of seven benchmarks; metrics on the {subset!r} label subset; R^2 baseline = {baseline} mean",
     }
     return panels
 
 
-def _kicker(ax: plt.Axes, title: str, kicker: str) -> None:
+def _kicker(
+    ax: plt.Axes,
+    title: str,
+    kicker: str,
+    *,
+    kicker_y: float = 1.16,
+    title_y: float = 1.055,
+) -> None:
     """Panel letter + uppercase kicker + descriptive title through the shared c2a-v2 header helper."""
     letter, sep, rest = kicker.partition("  ·  ")
     if not sep:
         letter, rest = "", kicker
-    panel_header(ax, letter, rest, title)
+    panel_header(ax, letter, rest, title, kicker_y=kicker_y, title_y=title_y)
 
 
 BAR_WIDTH = 0.19
@@ -409,7 +465,13 @@ def _bar_with_ci(
 GROUP_GAP = 0.8  # x gap between the R^2 group and the retrieval group
 
 
-def _categorical_panel(ax: plt.Axes, maps: list[dict[str, Any]], *, separator_after: int | None = None) -> None:
+def _categorical_panel(
+    ax: plt.Axes,
+    maps: list[dict[str, Any]],
+    *,
+    group_label_y: float = -0.30,
+    tick_fontsize: float = 12,
+) -> None:
     """Bars grouped by metric: all held-out R^2 bars on the left, all retrieval-lift bars on the right."""
     style_score_axis(ax, y_min=0.0, y_max=1.0, y_step=0.2)
     m = len(maps)
@@ -421,19 +483,44 @@ def _categorical_panel(ax: plt.Axes, maps: list[dict[str, Any]], *, separator_af
         for i, entry in enumerate(maps):
             metrics = entry[subset]
             x_r2 = float(i)
-            _bar_with_ci(ax, x_r2, metrics["r2"], metrics["r2_ci"], style, retrieval=False, width=width)
-            ticks.append(x_r2); labels.append(entry["label"])
+            _bar_with_ci(
+                ax, x_r2, metrics["r2"], metrics["r2_ci"], style, retrieval=False, width=width
+            )
+            ticks.append(x_r2)
+            labels.append(entry["label"])
             if metrics["retrieval_lift"] is not None:
                 x_ret = m + GROUP_GAP + i
-                _bar_with_ci(ax, x_ret, metrics["retrieval_lift"], metrics["retrieval_lift_ci"], style, retrieval=True, width=width)
-                ticks.append(x_ret); labels.append(entry["label"])
+                _bar_with_ci(
+                    ax,
+                    x_ret,
+                    metrics["retrieval_lift"],
+                    metrics["retrieval_lift_ci"],
+                    style,
+                    retrieval=True,
+                    width=width,
+                )
+                ticks.append(x_ret)
+                labels.append(entry["label"])
     x_max = m + GROUP_GAP + m - 1
     ax.set_xlim(-0.6, x_max + 0.6)
     ax.set_xticks(ticks)
-    ax.set_xticklabels(labels, fontsize=12, linespacing=1.15)
+    ax.set_xticklabels(labels, fontsize=tick_fontsize, linespacing=1.15)
     ax.axvline(m - 0.5 + GROUP_GAP / 2, color=MUTED, lw=1.0, ls=(0, (2, 3)), zorder=1)
-    for center, text in (((m - 1) / 2, "Held-out $R^2$"), (m + GROUP_GAP + (m - 1) / 2, "Top-1 answer retrieval")):
-        ax.text(center, -0.30, text, transform=ax.get_xaxis_transform(), ha="center", va="top", fontsize=12, fontweight=700, color=MUTED)
+    for center, text in (
+        ((m - 1) / 2, "Held-out $R^2$"),
+        (m + GROUP_GAP + (m - 1) / 2, "Top-1 retrieval"),
+    ):
+        ax.text(
+            center,
+            group_label_y,
+            text,
+            transform=ax.get_xaxis_transform(),
+            ha="center",
+            va="top",
+            fontsize=12,
+            fontweight=700,
+            color=MUTED,
+        )
 
 
 def _trajectory_panel(ax: plt.Axes, series: dict[str, list[dict[str, Any]]]) -> None:
@@ -498,85 +585,149 @@ def _legend_handles() -> tuple[list[Patch], list[Patch]]:
             edgecolor=INK,
             hatch=RETRIEVAL_HATCH,
             linewidth=1.4,
-            label="Top-1 answer retrieval",
+            label="Top-1 retrieval",
         ),
     ]
     return strata, metrics
 
 
+ERROR_BAR_NOTE = "Error bars: 95% bootstrap CI (1,000 prompt-level draws)"
+
+
+def _legend_strip(
+    fig: plt.Figure,
+    blocks: list[tuple[str, Any]],
+    *,
+    y: float,
+    x0: float,
+    gap_in: float = 0.45,
+) -> None:
+    """One horizontal legend line: kickers, legends, and notes placed left-to-right.
+
+    ``blocks`` is a list of ``("kicker", str)`` / ``("legend", handles)`` /
+    ``("note", str)`` entries.  Each block is placed at the running x (figure
+    fraction), measured with the live renderer, and the next block starts after
+    it, so the strip adapts to label lengths.
+    """
+
+    width_in = fig.get_figwidth()
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    x = x0
+    for kind, payload in blocks:
+        if kind == "kicker":
+            legend_kicker(fig, x, y, payload)
+            artist = fig.texts[-1]
+            pad_in = 0.14
+        elif kind == "legend":
+            artist = fig.legend(
+                handles=payload,
+                loc="center left",
+                bbox_to_anchor=(x, y),
+                ncol=len(payload),
+                frameon=False,
+                columnspacing=1.1,
+                handlelength=1.6,
+                handletextpad=0.6,
+                borderaxespad=0,
+            )
+            pad_in = gap_in
+        elif kind == "note":
+            artist = fig.text(x, y, payload, color=MUTED, fontsize=12.5, ha="left", va="center")
+            pad_in = gap_in
+        else:
+            raise ValueError(f"unknown legend-strip block kind {kind!r}")
+        fig.canvas.draw()
+        bbox = artist.get_window_extent(renderer)
+        x = bbox.x1 / (fig.dpi * width_in) + pad_in / width_in
+
+
 def make_figure(panels: dict[str, Any]) -> plt.Figure:
+    """Main one-row figure: panels A-C at full text width (~1.85 in printed)."""
     set_c2a_style()
-    fig, _include_frac = c2a_figure("full", aspect=13.4 / 14.4)  # c2a-v2: full text width
+    fig, _include_frac = c2a_figure("full", aspect=0.34)  # c2a-v2: full text width
     grid = fig.add_gridspec(
-        2,
-        2,
+        1,
+        3,
         left=0.07,
-        right=0.985,
-        top=0.845,
-        bottom=0.12,
-        wspace=0.22,
-        hspace=0.85,
+        right=0.99,
+        top=0.70,
+        bottom=0.245,
+        wspace=0.26,
     )
     ax_a = fig.add_subplot(grid[0, 0])
     ax_b = fig.add_subplot(grid[0, 1])
-    ax_c = fig.add_subplot(grid[1, 0])
-    ax_d = fig.add_subplot(grid[1, 1])
+    ax_c = fig.add_subplot(grid[0, 2])
 
-    _categorical_panel(ax_a, panels["A"]["maps"])
+    _categorical_panel(ax_a, panels["A"]["maps"], group_label_y=-0.26)
     _kicker(
         ax_a,
-        "Context vs end-of-thought input",
+        "Context vs end of thought",
         "A  ·  OpenThinker3-7B, layer 19",
+        kicker_y=1.24,
+        title_y=1.07,
     )
     _trajectory_panel(ax_b, panels["B"]["series"])
     _kicker(
         ax_b,
-        "Inputs inside the reasoning trace",
+        "Inside the reasoning trace",
         "B  ·  OpenThinker3-7B, layer 19",
+        kicker_y=1.24,
+        title_y=1.07,
     )
-    _categorical_panel(ax_c, panels["C"]["maps"], separator_after=0)
+    _categorical_panel(ax_c, panels["C"]["maps"], group_label_y=-0.26)
     _kicker(
         ax_c,
-        "Thinking on vs off, same weights",
+        "Thinking on vs off",
         "C  ·  Qwen3-8B, layer 24",
-    )
-    _categorical_panel(ax_d, panels["D"]["maps"])
-    _kicker(
-        ax_d,
-        "Within and across reasoning SFT",
-        "D  ·  Qwen2.5-7B-Instruct → OpenThinker3-7B, layer 19",
+        kicker_y=1.24,
+        title_y=1.07,
     )
 
-    for ax in (ax_a, ax_c):
-        ax.set_ylabel("Held-out score  ↑", labelpad=12)
-    for ax in (ax_b, ax_d):
-        ax.set_ylabel("Held-out score  ↑", labelpad=12)
+    ax_a.set_ylabel("Held-out score  ↑", labelpad=10)
 
     strata_handles, metric_handles = _legend_handles()
-    legend_kicker(fig, 0.07, 0.965, "Questions")
-    fig.legend(
-        handles=strata_handles,
-        loc="upper left",
-        bbox_to_anchor=(0.069, 0.952),
-        ncol=2,
-        frameon=False,
-        columnspacing=1.1,
-        handlelength=1.6,
-        handletextpad=0.6,
-        borderaxespad=0,
+    _legend_strip(
+        fig,
+        [
+            ("kicker", "Questions"),
+            ("legend", strata_handles),
+            ("kicker", "Metric"),
+            ("legend", metric_handles),
+        ],
+        y=0.965,
+        x0=0.07,
     )
-    legend_kicker(fig, 0.56, 0.965, "Metric")
-    fig.legend(
-        handles=metric_handles,
-        loc="upper left",
-        bbox_to_anchor=(0.559, 0.952),
-        ncol=2,
-        frameon=False,
-        columnspacing=1.1,
-        handlelength=1.6,
-        handletextpad=0.6,
-        borderaxespad=0,
+    _legend_strip(fig, [("note", ERROR_BAR_NOTE)], y=0.885, x0=0.07)
+    return fig
+
+
+def make_reasoning_sft_figure(panels: dict[str, Any]) -> plt.Figure:
+    """Appendix figure: the reasoning-SFT panel alone at 0.75 text width."""
+    set_c2a_style()
+    fig, _include_frac = c2a_figure("wide", aspect=0.55)  # c2a-v2: 0.75 text width
+    grid = fig.add_gridspec(1, 1, left=0.09, right=0.985, top=0.72, bottom=0.155)
+    ax = fig.add_subplot(grid[0, 0])
+
+    _categorical_panel(ax, panels["D"]["maps"], group_label_y=-0.20)
+    panel_header(
+        ax,
+        "",
+        "Qwen2.5-7B-Instruct → OpenThinker3-7B, layer 19",
+        "Within and across reasoning SFT",
+        kicker_y=1.17,
+        title_y=1.05,
     )
+    ax.set_ylabel("Held-out score  ↑", labelpad=10)
+
+    _, metric_handles = _legend_handles()
+    _legend_strip(
+        fig,
+        [("kicker", "Metric"), ("legend", metric_handles)],
+        y=0.955,
+        x0=0.09,
+    )
+    _legend_strip(fig, [("note", ERROR_BAR_NOTE)], y=0.885, x0=0.09)
     return fig
 
 
@@ -597,12 +748,28 @@ def _git_state() -> dict[str, str | bool | None]:
     }
 
 
-def write_outputs(fig: plt.Figure, panels: dict[str, Any], out_dir: Path, stem_name: str, font: str) -> dict[str, Path]:
+def _repo_relative(path: Path) -> str:
+    """Path relative to the repo root, or absolute for scratch out-dirs (e.g. /tmp)."""
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
+
+
+def write_outputs(
+    fig: plt.Figure,
+    panels: dict[str, Any],
+    out_dir: Path,
+    stem_name: str,
+    font: str,
+    *,
+    title: str = "Chain of thought and the context-to-answer map",
+) -> dict[str, Path]:
     stem = out_dir / stem_name
     outputs = save_c2a_figure(
         fig,
         stem,
-        title="Chain of thought and the context-to-answer map",
+        title=title,
         subject="Issue #2546 cells rendered for the paper",
         creator="scripts/section45_cot_figure.py",
     )
@@ -629,7 +796,7 @@ def write_outputs(fig: plt.Figure, panels: dict[str, Any], out_dir: Path, stem_n
         },
         "panels": panels,
         "render": render,
-        "outputs": {key: str(path.relative_to(ROOT)) for key, path in outputs.items()},
+        "outputs": {key: _repo_relative(path) for key, path in outputs.items()},
     }
     sidecar.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
     outputs["data"] = sidecar
@@ -637,12 +804,33 @@ def write_outputs(fig: plt.Figure, panels: dict[str, Any], out_dir: Path, stem_n
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--stem", default=DEFAULT_STEM)
-    parser.add_argument("--bundle-dir", type=Path, default=None, help="read the all-question refit bundle from this dir instead of the stratum cells (default: stratum cells)")
-    parser.add_argument("--subset", default="necessary", help="label subset to plot from the bundle: necessary, both_correct, or all")
-    parser.add_argument("--r2-baseline", choices=("corpus", "global"), default="corpus", help="R^2 baseline for bundle metrics: each question's corpus mean (default) or the global mean")
+    parser.add_argument(
+        "--sft-stem",
+        default=DEFAULT_SFT_STEM,
+        help="stem of the appendix reasoning-SFT figure (the second output of this script)",
+    )
+    parser.add_argument(
+        "--bundle-dir",
+        type=Path,
+        default=None,
+        help="read the all-question refit bundle from this dir instead of the stratum cells (default: stratum cells)",
+    )
+    parser.add_argument(
+        "--subset",
+        default="necessary",
+        help="label subset to plot from the bundle: necessary, both_correct, or all",
+    )
+    parser.add_argument(
+        "--r2-baseline",
+        choices=("corpus", "global"),
+        default="corpus",
+        help="R^2 baseline for bundle metrics: each question's corpus mean (default) or the global mean",
+    )
     args = parser.parse_args(argv)
 
     global PLOT_STRATA
@@ -652,11 +840,28 @@ def main(argv: list[str] | None = None) -> int:
     else:
         panels = load_results()
     font = set_c2a_style()
+    shared = {k: panels[k] for k in ("retrieval_recipe", "fit") if k in panels}
+
     fig = make_figure(panels)
-    outputs = write_outputs(fig, panels, args.out_dir, args.stem, font)
+    main_panels = {k: panels[k] for k in ("A", "B", "C")} | shared
+    outputs = write_outputs(fig, main_panels, args.out_dir, args.stem, font)
     plt.close(fig)
     for key, path in outputs.items():
         print(f"{key}: {path}")
+
+    sft_fig = make_reasoning_sft_figure(panels)
+    sft_panels = {"D": panels["D"]} | shared
+    sft_outputs = write_outputs(
+        sft_fig,
+        sft_panels,
+        args.out_dir,
+        args.sft_stem,
+        font,
+        title="Reasoning SFT and the context-to-answer map",
+    )
+    plt.close(sft_fig)
+    for key, path in sft_outputs.items():
+        print(f"sft_{key}: {path}")
     return 0
 
 

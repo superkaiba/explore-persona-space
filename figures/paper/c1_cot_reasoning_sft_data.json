@@ -1,0 +1,156 @@
+{
+  "font": "Inter",
+  "git": {
+    "commit": "0f5ff59c0a53f57c7747b6e7908cd2b4e7f56ba3",
+    "tracked_worktree_dirty": true
+  },
+  "outputs": {
+    "grayscale": "figures/paper/c1_cot_reasoning_sft_grayscale.png",
+    "pdf": "figures/paper/c1_cot_reasoning_sft.pdf",
+    "png": "figures/paper/c1_cot_reasoning_sft.png"
+  },
+  "panels": {
+    "D": {
+      "arm": 1,
+      "maps": [
+        {
+          "cell": "p8_G",
+          "label": "before\nmodel",
+          "necessary": {
+            "arm": 1,
+            "cell": "p8_G",
+            "lambda": 1000.0,
+            "layer": 19,
+            "n_rows": 2326,
+            "r2": 0.5233959108427727,
+            "r2_baseline": "corpus",
+            "r2_ci": [
+              0.5092587033745012,
+              0.5371941128402332
+            ],
+            "retrieval_acc1": 0.9436801375752365,
+            "retrieval_chance": 0.00016560129940415455,
+            "retrieval_lift": 0.9436801375752365,
+            "retrieval_lift_ci": [
+              0.9346517626827171,
+              0.9522893379191745
+            ],
+            "source": "eval_results/issue_2546/allfit/p8_G__a1.json",
+            "subset": "necessary"
+          }
+        },
+        {
+          "cell": "p8_E",
+          "label": "before \u2192\nafter",
+          "necessary": {
+            "arm": 1,
+            "cell": "p8_E",
+            "lambda": 1000.0,
+            "layer": 19,
+            "n_rows": 2326,
+            "r2": 0.5576490888857959,
+            "r2_baseline": "corpus",
+            "r2_ci": [
+              0.5478485382202447,
+              0.5669254360123629
+            ],
+            "retrieval_acc1": 0.9101461736887361,
+            "retrieval_chance": 0.00016560129940415455,
+            "retrieval_lift": 0.9101461736887361,
+            "retrieval_lift_ci": [
+              0.8985275150472914,
+              0.9217540842648323
+            ],
+            "source": "eval_results/issue_2546/allfit/p8_E__a1.json",
+            "subset": "necessary"
+          }
+        },
+        {
+          "cell": "p8_F",
+          "label": "after\nmodel",
+          "necessary": {
+            "arm": 1,
+            "cell": "p8_F",
+            "lambda": 3162.2776601683795,
+            "layer": 19,
+            "n_rows": 2326,
+            "r2": 0.5173934657977791,
+            "r2_baseline": "corpus",
+            "r2_ci": [
+              0.5071243820403976,
+              0.527496350425724
+            ],
+            "retrieval_acc1": 0.9346517626827171,
+            "retrieval_chance": 0.00016560129940415455,
+            "retrieval_lift": 0.9346517626827171,
+            "retrieval_lift_ci": [
+              0.9247635425623387,
+              0.944969905417025
+            ],
+            "source": "eval_results/issue_2546/allfit/p7_A__a1.json",
+            "subset": "necessary"
+          }
+        }
+      ],
+      "model_after": "open-thoughts/OpenThinker3-7B",
+      "model_before": "Qwen/Qwen2.5-7B-Instruct"
+    },
+    "fit": "one ridge fit per map on all questions of seven benchmarks; metrics on the 'necessary' label subset; R^2 baseline = corpus mean",
+    "retrieval_recipe": "whitened cosine + CSLS (k=10), whitening fit on train-fold answers (shrinkage 0.1), pool = held-out fold (all questions), hit = own answer"
+  },
+  "provenance": {
+    "cells_dir": "eval_results/issue_2546/cells",
+    "context_state": "last context token (cx_last); end-of-thought state for the boundary maps",
+    "fit_commit": "76ac8d57c0a0c0da699b7a9d76f8c2e9daeb1564",
+    "folds": "five seeded random-row folds (seed 0), inner-group CV lambda selection",
+    "hf_data_repo": "superkaiba1/explore-persona-space-data",
+    "hf_revision": "8368cc69f887d20931acd8c4d76c142275173728",
+    "retrieval": "paper recipe (Section 4.1): whitened cosine (train-fold shrunk covariance, lambda 0.1) + CSLS k=10, pool = held-out fold, hit = the question's own answer; source eval_results/issue_2546/retrieval_recipe/",
+    "source_ref": "42308cc7522dcb0a2a76b332b0c24d981de4b585",
+    "task": 2546,
+    "uncertainty": "1,000 paired prompt-level bootstrap draws (95% interval)"
+  },
+  "render": {
+    "authoring_size_inches": [
+      9.821,
+      5.402
+    ],
+    "background": "#FFFFFF",
+    "exported_size_inches": [
+      9.821,
+      5.391
+    ],
+    "include_width_frac": 0.75,
+    "latex_include_line": "\\includegraphics[width=0.75\\textwidth]{figures/paper/c1_cot_reasoning_sft.pdf}",
+    "png_dpi": 240,
+    "realized_font_pt": {
+      "body": 7.56,
+      "label": 8.4,
+      "tick": 7.14,
+      "title": 9.24
+    },
+    "resolved_font": "Inter",
+    "scale": 0.42,
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "style_version": "c2a-v2",
+    "text": [
+      "Held-out $R^2$",
+      "Top-1 retrieval",
+      "QWEN2.5-7B-INSTRUCT \u2192 OPENTHINKER3-7B, LAYER 19",
+      "before\nmodel",
+      "before \u2192\nafter",
+      "after\nmodel",
+      "Held-out score  \u2191",
+      "0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "1",
+      "Within and across reasoning SFT",
+      "METRIC",
+      "Error bars: 95% bootstrap CI (1,000 prompt-level draws)"
+    ]
+  },
+  "style_version": "c2a-v2"
+}

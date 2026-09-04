@@ -1,7 +1,7 @@
 {
   "font": "Inter",
   "git": {
-    "commit": "1bfe72d6dfa1a77f4a6123f858d8b8c502a9dd6b",
+    "commit": "0f5ff59c0a53f57c7747b6e7908cd2b4e7f56ba3",
     "tracked_worktree_dirty": true
   },
   "outputs": {
@@ -246,7 +246,7 @@
       "maps": [
         {
           "cell": "p7_Aoff",
-          "label": "thinking\noff",
+          "label": "off",
           "necessary": {
             "arm": 3,
             "cell": "p7_Aoff",
@@ -272,7 +272,7 @@
         },
         {
           "cell": "p7_A",
-          "label": "thinking\non",
+          "label": "on",
           "necessary": {
             "arm": 3,
             "cell": "p7_A",
@@ -325,91 +325,6 @@
       ],
       "model": "Qwen/Qwen3-8B"
     },
-    "D": {
-      "arm": 1,
-      "maps": [
-        {
-          "cell": "p8_G",
-          "label": "before\nmodel",
-          "necessary": {
-            "arm": 1,
-            "cell": "p8_G",
-            "lambda": 1000.0,
-            "layer": 19,
-            "n_rows": 2326,
-            "r2": 0.5233959108427727,
-            "r2_baseline": "corpus",
-            "r2_ci": [
-              0.5092587033745012,
-              0.5371941128402332
-            ],
-            "retrieval_acc1": 0.9436801375752365,
-            "retrieval_chance": 0.00016560129940415455,
-            "retrieval_lift": 0.9436801375752365,
-            "retrieval_lift_ci": [
-              0.9346517626827171,
-              0.9522893379191745
-            ],
-            "source": "eval_results/issue_2546/allfit/p8_G__a1.json",
-            "subset": "necessary"
-          }
-        },
-        {
-          "cell": "p8_E",
-          "label": "before \u2192\nafter",
-          "necessary": {
-            "arm": 1,
-            "cell": "p8_E",
-            "lambda": 1000.0,
-            "layer": 19,
-            "n_rows": 2326,
-            "r2": 0.5576490888857959,
-            "r2_baseline": "corpus",
-            "r2_ci": [
-              0.5478485382202447,
-              0.5669254360123629
-            ],
-            "retrieval_acc1": 0.9101461736887361,
-            "retrieval_chance": 0.00016560129940415455,
-            "retrieval_lift": 0.9101461736887361,
-            "retrieval_lift_ci": [
-              0.8985275150472914,
-              0.9217540842648323
-            ],
-            "source": "eval_results/issue_2546/allfit/p8_E__a1.json",
-            "subset": "necessary"
-          }
-        },
-        {
-          "cell": "p8_F",
-          "label": "after\nmodel",
-          "necessary": {
-            "arm": 1,
-            "cell": "p8_F",
-            "lambda": 3162.2776601683795,
-            "layer": 19,
-            "n_rows": 2326,
-            "r2": 0.5173934657977791,
-            "r2_baseline": "corpus",
-            "r2_ci": [
-              0.5071243820403976,
-              0.527496350425724
-            ],
-            "retrieval_acc1": 0.9346517626827171,
-            "retrieval_chance": 0.00016560129940415455,
-            "retrieval_lift": 0.9346517626827171,
-            "retrieval_lift_ci": [
-              0.9247635425623387,
-              0.944969905417025
-            ],
-            "source": "eval_results/issue_2546/allfit/p7_A__a1.json",
-            "subset": "necessary"
-          }
-        }
-      ],
-      "model_after": "open-thoughts/OpenThinker3-7B",
-      "model_before": "Qwen/Qwen2.5-7B-Instruct"
-    },
     "fit": "one ridge fit per map on all questions of seven benchmarks; metrics on the 'necessary' label subset; R^2 baseline = corpus mean",
     "retrieval_recipe": "whitened cosine + CSLS (k=10), whitening fit on train-fold answers (shrinkage 0.1), pool = held-out fold (all questions), hit = own answer"
   },
@@ -428,12 +343,12 @@
   "render": {
     "authoring_size_inches": [
       13.095,
-      12.186
+      4.452
     ],
     "background": "#FFFFFF",
     "exported_size_inches": [
       13.095,
-      11.541
+      4.502
     ],
     "include_width_frac": 1.0,
     "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c1_cot_maps.pdf}",
@@ -450,7 +365,7 @@
     "style_version": "c2a-v2",
     "text": [
       "Held-out $R^2$",
-      "Top-1 answer retrieval",
+      "Top-1 retrieval",
       "A  \u00b7  OPENTHINKER3-7B, LAYER 19",
       "context",
       "end of\nthought",
@@ -461,23 +376,19 @@
       "0.6",
       "0.8",
       "1",
-      "Context vs end-of-thought input",
+      "Context vs end of thought",
       "B  \u00b7  OPENTHINKER3-7B, LAYER 19",
       "Position in the thinking span",
       "0\nend of\nprompt",
       "1\nend of\nthought",
-      "Inputs inside the reasoning trace",
+      "Inside the reasoning trace",
       "C  \u00b7  QWEN3-8B, LAYER 24",
-      "thinking\noff",
-      "thinking\non",
-      "Thinking on vs off, same weights",
-      "D  \u00b7  QWEN2.5-7B-INSTRUCT \u2192 OPENTHINKER3-7B, LAYER 19",
-      "before\nmodel",
-      "before \u2192\nafter",
-      "after\nmodel",
-      "Within and across reasoning SFT",
+      "off",
+      "on",
+      "Thinking on vs off",
       "QUESTIONS",
       "METRIC",
+      "Error bars: 95% bootstrap CI (1,000 prompt-level draws)",
       "CoT-necessary questions only"
     ]
   },
