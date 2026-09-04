@@ -262,24 +262,37 @@ def capture_fingerprint(split: str, *, dtype: str, device: str) -> str:
     same rows); omitting them let a store begun under bf16 silently extend
     with fp32-computed shards.  Schema v2 adds them — deliberately
     INVALIDATING any store fingerprinted under v1.
+
+    Round 15 (plan v6 A7; ledger concern capture-prompt-budget-split-awareness):
+    dev/test payloads ADDITIONALLY carry the split's realized generation cap
+    and prompt budget from the frozen amendment record, so a production store
+    can never silently mix capture regimes across cap amendments. The pilot
+    payload dict gains NO new keys, so every realized pilot store keeps
+    resuming byte-identically. The existing ``prompt_budget`` key stays the
+    pilot-inherited 7168 for all splits: it names the capture-side
+    formatted-length guard (``build_capture_unit``), which deliberately keeps
+    the pilot value because 7168 is a strict superset of the 4096 production
+    prompt budget already enforced at generation time.
     """
-    payload = json.dumps(
-        {
-            "schema": "i2658-l19-capture-v2",  # v2: + dtype / device_class regime keys
-            "model_id": C.MODEL_ID,
-            "model_revision": C.MODEL_REVISION,
-            "chat_template_sha256": C.CHAT_TEMPLATE_SHA256,
-            "layer": C.LAYER,
-            "span_rule": SPAN_RULE,
-            "boundary": BOUNDARY_INSTRUCT,
-            "capture_max_model_len": CAPTURE_MAX_MODEL_LEN,
-            "prompt_budget": G.PROMPT_BUDGET,
-            "dtype": dtype,
-            "device_class": device_class(device),
-            "split": split,
-        },
-        sort_keys=True,
-    )
+    payload_dict: dict[str, Any] = {
+        "schema": "i2658-l19-capture-v2",  # v2: + dtype / device_class regime keys
+        "model_id": C.MODEL_ID,
+        "model_revision": C.MODEL_REVISION,
+        "chat_template_sha256": C.CHAT_TEMPLATE_SHA256,
+        "layer": C.LAYER,
+        "span_rule": SPAN_RULE,
+        "boundary": BOUNDARY_INSTRUCT,
+        "capture_max_model_len": CAPTURE_MAX_MODEL_LEN,
+        "prompt_budget": G.PROMPT_BUDGET,
+        "dtype": dtype,
+        "device_class": device_class(device),
+        "split": split,
+    }
+    if split != "pilot":
+        cap = G.resolve_max_new_tokens(split)
+        payload_dict["gen_max_new_tokens"] = int(cap)
+        payload_dict["gen_prompt_budget"] = G.prompt_budget_for_cap(cap)
+    payload = json.dumps(payload_dict, sort_keys=True)
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
@@ -392,20 +405,23 @@ def expected_capture_keys(
     shard_index: int,
     num_shards: int,
     *,
+    split: str = "pilot",
     present_cells: set[str] | None = None,
 ) -> list[tuple[str, int]]:
     """This shard's expected ``(prompt_id, response_index)`` list, anchored on
-    the FRAME MANIFEST's pilot selection x ``n_responses`` — never on the gen
-    files (that anchor is CIRCULAR: a capture launched over an incomplete gen
-    dir would report "complete").
+    the FROZEN selection x ``n_responses`` — never on the gen files (that
+    anchor is CIRCULAR: a capture launched over an incomplete gen dir would
+    report "complete"). Pilot anchors on the frame manifest's pilot selection;
+    dev/test anchor on the frozen production selection (round 15).
 
     ``present_cells`` (``--smoke`` only) restricts the anchor to gen-present
     cell names ``{row}__{frame}__{band}``: within-cell completeness stays
     manifest-anchored; cross-cell completeness is NOT certified under smoke
     (the gen smoke truncates the cell grid by design).
     """
+    triples = R.pilot_item_ids() if split == "pilot" else G.production_item_triples(split)
     keys: list[tuple[str, int]] = []
-    for row, cell, iid in R.pilot_item_ids():
+    for row, cell, iid in triples:
         if rows_filter and row not in rows_filter:
             continue
         frame, _, band = cell.partition("|")
@@ -535,14 +551,19 @@ def run(args: argparse.Namespace) -> int:
             flush=True,
         )
     expected_keys = expected_capture_keys(
-        args.rows, n_responses, args.shard_index, args.num_shards, present_cells=present_cells
+        args.rows,
+        n_responses,
+        args.shard_index,
+        args.num_shards,
+        split=split,
+        present_cells=present_cells,
     )
     got_keys = [c.key for c in rows]
     if got_keys != expected_keys:
         exp, got = set(expected_keys), set(got_keys)
         raise CaptureSpanError(
             f"gen rows for shard {args.shard_index}/{args.num_shards} do not match the "
-            f"frame-manifest expectation: {len(exp - got)} expected rows missing "
+            f"frozen {split} selection anchor: {len(exp - got)} expected rows missing "
             f"(e.g. {sorted(exp - got)[:3]}), {len(got - exp)} foreign "
             f"(e.g. {sorted(got - exp)[:3]}) — complete generation before capture"
         )

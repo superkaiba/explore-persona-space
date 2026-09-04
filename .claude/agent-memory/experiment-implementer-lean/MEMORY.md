@@ -15,3 +15,5 @@
 - [/proc session-scoping test rigs](reference_proc_session_scoping_test_rigs.md) — poll argv0 before reading environ; env -i keeps PWD/SHLVL/_; setsid -w forwards rc; pure-/proc sid walk (#2658 sid-reap)
 - [Hardlink-copy gate smoke on a live dir](feedback_hardlink_copy_gate_smoke_live_dir.md) — `cp -al` same-fs snapshot is safe under atomic os.replace writers; /tmp is cross-device; verify real nlink=1 after (#2658 r13)
 - [#2658 gen_order_manifest shapes](reference_2658_gen_order_manifest_shapes.md) — stale split-total shard00of01 beside 8-shard set: reconcile per shard by filename, never a dir sum; floor check is gate verdict not loader raise (r14)
+- [#2658 production-selection length gate](reference_2658_production_selection_length_gate.md) — amended cap 4096 halves the prompt budget; freeze resolves+tokenizes all candidates, skips+counts overlong (r15)
+- [Batch replace asserts count](feedback_batch_replace_assert_count.md) — s.replace no-ops silently on mid-line mismatch; assert count==1 per hunk, grep a NEW token after (r15)

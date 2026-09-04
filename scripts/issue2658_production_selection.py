@@ -31,9 +31,16 @@ Eligibility (plan v4 section 4, plans/v5 A1-A6, plans/v6 A7):
 - DEV prefers items outside the pilot selection and falls back to pilot items
   only when a cell would otherwise fall short of ``n_common``, recording the
   count reused per cell.
+- LENGTH GATE (plan v6 A7): the amended production cap (4096) shrinks the
+  prompt budget to ``max_model_len - cap`` tokens, and the generator asserts
+  that bound loudly per prompt, so the selection walks each cell's ordered
+  candidates and SKIPS any whose chat-rendered prompt exceeds the budget
+  (counted per cell as ``n_overlong_excluded``; the count uses the exact
+  generation-side helper ``G.rendered_token_count``). Real-corpus banks carry
+  a long tail the pilot budget (7168) never exposed.
 - shortfalls never raise and are never topped up from another split or cell:
-  a cell with fewer than ``n_common`` eligible items takes every eligible item
-  and records ``shortfall`` with the frames-module cause tag
+  a cell with fewer than ``n_common`` budget-fitting eligible items takes
+  every one and records ``shortfall`` with the frames-module cause tag
   (``F.cell_cause``); fewer than the production floor (15, plan v4 section 8)
   is recorded ``below_production_floor``; zero eligible items is ``empty``.
 
@@ -43,11 +50,10 @@ per-split ``requests_sha256`` over the fully expanded (item_id,
 response_index, seed) list in cell order, so the 30-seed schedule per prompt
 is content-addressed without materializing half a million integers.
 
-Per-item shas: each selected item carries the frame loader's ``prompt_sha256``
-(``sha_kind`` "text" for bank/keyed frames where the loader sha IS the prompt
-text sha, "group-key" for correctness benchmark frames whose loader sha is
-id-addressed because prompt text is resolved lazily through the sha-pinned
-vendored #2388 loaders). Generation verifies resolved text against the "text"
+Per-item shas: the length gate resolves every candidate's TEXT through the
+same pinned loaders generation uses, so each selected item carries its
+resolved prompt-TEXT sha (``sha_kind`` "text" for every cell, correctness
+benchmark frames included). Generation verifies resolved text against these
 shas and against the frozen pilot pin table for every pilot-reused item.
 
 Usage:
@@ -128,6 +134,9 @@ def load_frozen_inputs(eval_root: Path) -> dict[str, Any]:
         "frame_body": frame_body,
         "split_body": split_body,
         "n_common": n_common,
+        "production_prompt_budget": G.prompt_budget_for_cap(
+            int(cap_record["production_max_new_tokens"])
+        ),
         "production_n_sha256": file_sha256(prod_n_path),
         "frame_sha": frame_body["content_sha256"],
         "split_sha": split_body["content_sha256"],
@@ -137,14 +146,29 @@ def load_frozen_inputs(eval_root: Path) -> dict[str, Any]:
     }
 
 
+def _candidate_lengths(item_ids: list[str], tok) -> dict[str, tuple[int, str]]:
+    """Rendered token count + resolved TEXT sha per candidate item (one batch).
+
+    Resolution goes through the SAME pinned loaders generation uses
+    (``verify_pins=False``: the frozen pilot pin table covers only pilot
+    items) and the count reuses ``G.rendered_token_count``, the exact
+    quantity the generator's budget assert enforces, so the length gate can
+    never drift from generation (round 15: the amended production cap 4096
+    shrinks the prompt budget to 4096 tokens, and real-corpus banks carry a
+    long tail the pilot budget of 7168 never exposed)."""
+    if not item_ids:
+        return {}
+    resolved = R.resolve_items(sorted(item_ids), verify_pins=False)
+    out: dict[str, tuple[int, str]] = {}
+    for iid, item in resolved.items():
+        _, n_tok = G.rendered_token_count(tok, item.text)
+        out[iid] = (n_tok, item.prompt_sha256)
+    return out
+
+
 def _registered_cells(row: str) -> list[str]:
     rf = F.FRAMES[row]
     return [f"{fr.name}|{s.name}" for fr in rf.frames for s in rf.strata]
-
-
-def _sha_kind(row: str, frame_name: str) -> str:
-    spec = next(fr for fr in F.FRAMES[row].frames if fr.name == frame_name)
-    return "group-key" if spec.source_kind == "benchmark" else "text"
 
 
 def _row_split_lookup(split_body: dict, row: str) -> tuple[dict[str, str], frozenset[str]]:
@@ -203,8 +227,17 @@ def _select_row_split(
     n_common: int,
     seed_material: str,
     dev_selected_sfs: frozenset[str],
+    lengths: dict[str, tuple[int, str]],
+    prompt_budget: int,
 ) -> dict[str, Any]:
-    """One (row, split) selection: per registered cell the ordered ids + record."""
+    """One (row, split) selection: per registered cell the ordered ids + record.
+
+    The walk applies the LENGTH GATE (round 15): candidates whose rendered
+    prompt exceeds ``prompt_budget`` (the amended production cap's budget,
+    plan v6 A7) are skipped in walk order and counted per cell as
+    ``n_overlong_excluded`` — the generator asserts the same bound loudly, so
+    a frozen over-budget item would make P4 structurally unrunnable.
+    """
     frame_rr = next(rr for rr in frame_body["rows"] if rr["row"] == row)
     sf_splits, barred = _row_split_lookup(split_body, row)
     pilot_ids, pilot_sfs = _pilot_ids_and_sfs(frame_rr)
@@ -238,29 +271,53 @@ def _select_row_split(
             pilot_pool = sorted(
                 (it for it in eligible if it.item_id in pilot_ids), key=lambda i: key[i.item_id]
             )
-            chosen = (non_pilot + pilot_pool)[:n_common]
+            ordered = non_pilot + pilot_pool
         else:
-            chosen = sorted(eligible, key=lambda i: key[i.item_id])[:n_common]
-        n_eligible = len(eligible)
-        if n_eligible == 0:
-            status = "empty"
-        elif n_eligible < F.PRODUCTION_TEST_PROMPTS_PER_CELL_FLOOR:
-            status = "below_production_floor"
-        elif n_eligible < n_common:
-            status = "below_common_n"
-        else:
+            ordered = sorted(eligible, key=lambda i: key[i.item_id])
+        chosen: list[F.PromptItem] = []
+        sha_of: dict[str, str] = {}
+        n_overlong = 0
+        for it in ordered:
+            if len(chosen) == n_common:
+                break
+            rec = lengths.get(it.item_id)
+            if rec is None:
+                raise ProductionSelectionError(
+                    f"{row}/{cell}: candidate {it.item_id!r} has no resolved length "
+                    "(length-gate batch missed it)"
+                )
+            n_tok, text_sha = rec
+            if n_tok > prompt_budget:
+                n_overlong += 1
+                continue
+            chosen.append(it)
+            sha_of[it.item_id] = text_sha
+        n_split_eligible = len(eligible)
+        n_fit = len(chosen)
+        if n_fit == n_common:
             status = "ok"
+        elif n_fit == 0:
+            status = "empty"
+        elif n_fit < F.PRODUCTION_TEST_PROMPTS_PER_CELL_FLOOR:
+            status = "below_production_floor"
+        else:
+            status = "below_common_n"
         shortfall = None
-        if n_eligible < n_common:
+        if n_fit < n_common:
+            # the whole ordered pool was walked, so n_fit IS the cell's
+            # realizable (budget-fitting) eligibility
             shortfall = {
-                "eligible": n_eligible,
-                "cause": F.cell_cause(n_eligible, contributing, barred),
+                "eligible": n_fit,
+                "split_eligible": n_split_eligible,
+                "n_overlong_excluded": n_overlong,
+                "cause": F.cell_cause(n_fit, contributing, barred),
             }
         out[cell] = {
             "item_ids": [it.item_id for it in chosen],
-            "item_sha256": {it.item_id: it.prompt_sha256 for it in chosen},
-            "sha_kind": _sha_kind(row, cell.partition("|")[0]),
-            "n_eligible": n_eligible,
+            "item_sha256": dict(sha_of),
+            "sha_kind": "text",
+            "n_eligible": n_split_eligible,
+            "n_overlong_excluded": n_overlong,
             "status": status,
             "shortfall": shortfall,
             "n_pilot_reused": sum(1 for it in chosen if it.item_id in pilot_ids),
@@ -361,7 +418,7 @@ def assert_selection_invariants(body: dict, frame_body: dict) -> None:
 def _split_totals(body_splits: dict[str, Any], responses_per_prompt: int) -> dict[str, Any]:
     totals: dict[str, Any] = {}
     for split, rows in body_splits.items():
-        n_ok = n_short = n_floor = n_empty = n_items = 0
+        n_ok = n_short = n_floor = n_empty = n_items = n_overlong = 0
         requests: list[tuple[str, int, int]] = []
         for row in sorted(rows):
             for cell in sorted(rows[row]):
@@ -372,6 +429,7 @@ def _split_totals(body_splits: dict[str, Any], responses_per_prompt: int) -> dic
                 n_floor += st == "below_production_floor"
                 n_empty += st == "empty"
                 n_items += len(rec["item_ids"])
+                n_overlong += rec["n_overlong_excluded"]
                 requests.extend(
                     (iid, k, C.response_seed(iid, k))
                     for iid in rec["item_ids"]
@@ -385,6 +443,7 @@ def _split_totals(body_splits: dict[str, Any], responses_per_prompt: int) -> dic
             "cells_below_common_n": n_short,
             "cells_below_production_floor": n_floor,
             "cells_empty": n_empty,
+            "n_overlong_excluded": n_overlong,
             "n_items": n_items,
             "n_requests": n_items * responses_per_prompt,
             "requests_sha256": req_sha,
@@ -399,11 +458,22 @@ def build_selection(eval_root: Path | None = None) -> dict[str, Any]:
     frame_body, split_body = fin["frame_body"], fin["split_body"]
     n_common = fin["n_common"]
     seed_material = f"{fin['frame_sha']}|{fin['split_sha']}|{fin['pins_sha']}"
+    budget = int(fin["production_prompt_budget"])
     responses = int(C.DECODER["n_responses_per_prompt_production"])
+    tok = G.load_tokenizer()
     splits_out: dict[str, Any] = {"dev": {}, "test": {}}
     for rr in frame_body["rows"]:
         row = rr["row"]
         pools = _cell_pools(row, frame_body)
+        sf_splits, barred = _row_split_lookup(split_body, row)
+        cand_ids = sorted(
+            it.item_id
+            for pool in pools.values()
+            for it in pool
+            if sf_splits.get(R.superfamily_of(frame_body, row, it.item_id)) in ("dev", "test")
+            and R.superfamily_of(frame_body, row, it.item_id) not in barred
+        )
+        lengths = _candidate_lengths(cand_ids, tok)
         dev_sel = _select_row_split(
             row=row,
             split="dev",
@@ -413,6 +483,8 @@ def build_selection(eval_root: Path | None = None) -> dict[str, Any]:
             n_common=n_common,
             seed_material=seed_material,
             dev_selected_sfs=frozenset(),
+            lengths=lengths,
+            prompt_budget=budget,
         )
         dev_sfs = frozenset(
             R.superfamily_of(frame_body, row, iid)
@@ -428,6 +500,8 @@ def build_selection(eval_root: Path | None = None) -> dict[str, Any]:
             n_common=n_common,
             seed_material=seed_material,
             dev_selected_sfs=dev_sfs,
+            lengths=lengths,
+            prompt_budget=budget,
         )
         splits_out["dev"][row] = dev_sel
         splits_out["test"][row] = test_sel
@@ -444,6 +518,14 @@ def build_selection(eval_root: Path | None = None) -> dict[str, Any]:
         "split_manifest_content_sha256": fin["split_sha"],
         "prompt_pins_sha256": fin["pins_sha"],
         "production_max_new_tokens": int(fin["cap_record"]["production_max_new_tokens"]),
+        "production_prompt_budget": budget,
+        "length_gate": (
+            "candidates whose chat-rendered prompt exceeds production_prompt_budget "
+            "tokens (issue2658_generate.rendered_token_count: render_user_prompt + "
+            "encode(add_special_tokens=False)) are skipped in walk order and counted "
+            "per cell as n_overlong_excluded (plan v6 A7; the generator asserts the "
+            "same bound loudly)"
+        ),
         "cap_amendment_sha256": fin["cap_amendment_sha256"],
         "responses_per_prompt": responses,
         "seed_scheme": C.DECODER["seed_scheme"],

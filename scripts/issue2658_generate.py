@@ -76,6 +76,11 @@ CAP_AMENDMENT_REL = "power_inputs/cap_amendment.json"
 # this constant (round 14, review r13 minor 2).
 CAP_AMENDMENT_SCHEMA = "i2658-cap-amendment-v1"
 CHUNK_SIZE = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
+# Frozen production prompt selection (plan v4 section 4; round 15). Single
+# source of truth for the schema id + path: issue2658_production_selection.py
+# (the writer) imports BOTH from here, so writer and reader cannot fork.
+SELECTION_REL = "production_selection.json"
+SELECTION_SCHEMA = "i2658-production-selection-v1"
 N_EMPTY_RETRIES = 3
 CAP_HIT_AMEND_THRESHOLD = 0.02  # strictly-above trigger (plan §5)
 EXPERIMENT_NAME = "issue2658_dirvalid"  # HF data-repo prefix (unit-2 convention)
@@ -88,6 +93,11 @@ class EmptyOutputError(C.Issue2658GuardError):
 
 class GenerationBudgetError(C.Issue2658GuardError):
     """A resolved prompt exceeds the frozen prompt token budget (loud, no skip)."""
+
+
+class ProductionSelectionRecordError(C.Issue2658GuardError):
+    """Frozen production selection absent, drifted, or disagreeing with the
+    live frozen artifacts (always fail loud, never a bare default)."""
 
 
 class OrderManifestDriftError(C.Issue2658GuardError):
@@ -287,8 +297,13 @@ def build_manifest_row(
     response_index: int,
     answer_sha256: str,
     raw_text_sha256: str,
+    prompt_sha256: str | None = None,
 ) -> dict[str, Any]:
-    """One TEXT-FREE generation manifest row; validated against the unit-1 schema."""
+    """One TEXT-FREE generation manifest row; validated against the unit-1 schema.
+
+    ``prompt_sha256`` None keeps the pilot path byte-identical (the frozen pilot
+    pin table via ``_pin_sha``); dev/test callers pass the RESOLVED text sha,
+    already verified against the frozen production selection (round 15)."""
     construct = C.CONSTRUCTS[row]
     judge_scored = construct.judge_scored
     d = {
@@ -296,7 +311,7 @@ def build_manifest_row(
         "row": row,
         "split": split,
         "prompt_id": item_id,
-        "prompt_sha256": _pin_sha(item_id),
+        "prompt_sha256": prompt_sha256 if prompt_sha256 is not None else _pin_sha(item_id),
         "superfamily_id": superfamily_id,
         "source_frame": frame,
         "stratum": band,
@@ -348,6 +363,139 @@ def write_immutable_json(path: Path, body: dict[str, Any]) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Frozen production selection (dev/test prompt membership; plan v4 section 4).
+# ---------------------------------------------------------------------------
+def load_production_selection(split: str, eval_root: Path | None = None) -> dict[str, Any]:
+    """The frozen, content-addressed production selection for ``split``.
+
+    Fails loud when the file is absent, when its content sha drifts, or when
+    its header disagrees with the LIVE frozen artifacts (n_common from
+    ``power/production_n.json``, frame/split manifest content shas, the
+    production responses-per-prompt config, the amended decoder cap).
+    """
+    if split not in ("dev", "test"):
+        raise ValueError(f"production selection is dev/test only, got {split!r}")
+    root = Path(eval_root) if eval_root is not None else F.OUT_DIR
+    path = root / SELECTION_REL
+    if not path.is_file():
+        raise ProductionSelectionRecordError(
+            f"split {split!r} requires the frozen production selection at {path}: freeze it "
+            "with 'scripts/issue2658_production_selection.py --freeze-production-selection', "
+            "never a bare default"
+        )
+    body = json.loads(path.read_text())
+    if body.get("schema") != SELECTION_SCHEMA:
+        raise ProductionSelectionRecordError(
+            f"{path}: schema {body.get('schema')!r} != {SELECTION_SCHEMA!r}"
+        )
+    addressable = {k: v for k, v in body.items() if k not in ("metadata", "content_sha256")}
+    got = F._canonical_sha(addressable)
+    if got != body.get("content_sha256"):
+        raise ProductionSelectionRecordError(
+            f"{path}: content drift: recomputed {got} != stored {body.get('content_sha256')}"
+        )
+    prod_n = json.loads((root / "power" / "production_n.json").read_text())
+    if body["n_common"] != prod_n.get("n_common"):
+        raise ProductionSelectionRecordError(
+            f"{path}: n_common {body['n_common']} != live power/production_n.json "
+            f"{prod_n.get('n_common')}"
+        )
+    for name, live_path in (
+        ("frame_manifest_content_sha256", root / "frame_manifest.json"),
+        ("split_manifest_content_sha256", root / "split_manifest.json"),
+    ):
+        live = json.loads(live_path.read_text())["content_sha256"]
+        if body[name] != live:
+            raise ProductionSelectionRecordError(
+                f"{path}: {name} {body[name]} != live {live_path.name} {live} "
+                "(the selection was frozen against a different manifest)"
+            )
+    want_responses = int(C.DECODER["n_responses_per_prompt_production"])
+    if int(body["responses_per_prompt"]) != want_responses:
+        raise ProductionSelectionRecordError(
+            f"{path}: responses_per_prompt {body['responses_per_prompt']} != frozen "
+            f"config {want_responses}"
+        )
+    cap = resolve_max_new_tokens(split, root)
+    if int(body["production_max_new_tokens"]) != cap:
+        raise ProductionSelectionRecordError(
+            f"{path}: production_max_new_tokens {body['production_max_new_tokens']} != "
+            f"amended cap {cap} (plan v6 A7)"
+        )
+    if int(body["production_prompt_budget"]) != prompt_budget_for_cap(cap):
+        raise ProductionSelectionRecordError(
+            f"{path}: production_prompt_budget {body['production_prompt_budget']} != "
+            f"prompt_budget_for_cap({cap}) = {prompt_budget_for_cap(cap)}"
+        )
+    for s in ("dev", "test"):
+        if s not in body.get("splits", {}):
+            raise ProductionSelectionRecordError(f"{path}: split {s!r} missing from selection")
+    return body
+
+
+def production_item_triples(
+    split: str, eval_root: Path | None = None
+) -> list[tuple[str, str, str]]:
+    """Ordered (row, cell, item_id) triples of the frozen ``split`` selection.
+
+    The capture-side anchor for dev/test (the split-aware sibling of
+    ``R.pilot_item_ids``); empty cells contribute nothing by construction.
+    """
+    body = load_production_selection(split, eval_root)
+    triples: list[tuple[str, str, str]] = []
+    seen: set[str] = set()
+    for row in sorted(body["splits"][split]):
+        cells = body["splits"][split][row]
+        for cell in sorted(cells):
+            for iid in cells[cell]["item_ids"]:
+                if iid in seen:
+                    raise ProductionSelectionRecordError(
+                        f"item_id {iid!r} appears in two {split} cells"
+                    )
+                seen.add(iid)
+                triples.append((row, cell, iid))
+    if not triples:
+        raise ProductionSelectionRecordError(f"frozen {split} selection yielded zero items")
+    return triples
+
+
+def verify_resolved_against_selection(
+    resolved: dict[str, "R.ResolvedItem"], body: dict[str, Any], split: str
+) -> None:
+    """Resolved dev/test texts must match the frozen selection shas; drift RAISES.
+
+    ``sha_kind`` "text" cells carry the prompt-text sha (bank/keyed loaders), so
+    the resolved text is checked against it directly. "group-key" cells
+    (correctness benchmarks) are id-addressed in the selection; their text
+    integrity rides the sha-pinned vendored loaders instead. Every resolved item
+    that ALSO carries a frozen pilot pin is additionally checked against the pin
+    table (pilot-reused dev items keep the pilot integrity guarantee).
+    """
+    recs: dict[str, tuple[str, str]] = {}
+    for row_cells in body["splits"][split].values():
+        for rec in row_cells.values():
+            kind = rec["sha_kind"]
+            for iid, sha in rec["item_sha256"].items():
+                recs[iid] = (sha, kind)
+    foreign = [iid for iid in resolved if iid not in recs]
+    if foreign:
+        raise ProductionSelectionRecordError(
+            f"{len(foreign)} resolved items are not in the frozen {split} selection "
+            f"(e.g. {foreign[:3]})"
+        )
+    pins = R.load_pins()["items"]
+    for iid, item in resolved.items():
+        sha, kind = recs[iid]
+        if kind == "text" and item.prompt_sha256 != sha:
+            raise C.RowHashMismatchError(
+                f"{iid}: resolved text sha {item.prompt_sha256} != frozen selection sha {sha}"
+            )
+        pin = pins.get(iid)
+        if pin is not None:
+            C.assert_row_hash(item.text, pin["prompt_sha256"])
+
+
+# ---------------------------------------------------------------------------
 # Work-list construction.
 # ---------------------------------------------------------------------------
 @dataclass(frozen=True)
@@ -367,19 +515,34 @@ class CellWork:
         return f"{self.frame}|{self.band}"
 
 
-def build_cells(rows_filter: list[str] | None = None) -> list[CellWork]:
-    """Deterministic pilot cell list from the committed, immutability-checked
-    frame manifest.  Cells realized empty (below-floor cells with zero items)
-    are skipped WITH a printed count — their shortfall is already recorded in
-    ``pilot_selection.cells_below_pilot_floor`` by unit 2."""
+def build_cells(rows_filter: list[str] | None = None, split: str = "pilot") -> list[CellWork]:
+    """Deterministic cell list for one split, from frozen, immutability-checked
+    records only. Pilot cells come from the frame manifest's ``pilot_selection``
+    (unchanged); dev/test cells come from the frozen production selection
+    (round 15, plan v4 section 4), which ``load_production_selection`` verifies
+    against the live artifacts before any use. Cells recorded empty are skipped
+    WITH a printed count: pilot shortfalls are recorded in
+    ``pilot_selection.cells_below_pilot_floor`` by unit 2, production
+    shortfalls in the selection's per-cell ``status``/``shortfall`` records."""
+    if split not in C.SPLITS:
+        raise ValueError(f"unknown split {split!r}; registered splits: {C.SPLITS}")
     body = json.loads(F.FRAME_MANIFEST_PATH.read_text())
     F.assert_manifest_immutable(body)
     cells: list[CellWork] = []
     n_empty = 0
+    prod_sel = None if split == "pilot" else load_production_selection(split)
     for rr in body["rows"]:
         if rows_filter and rr["row"] not in rows_filter:
             continue
-        sel = rr["pilot_selection"]["per_cell_item_ids"]
+        if split == "pilot":
+            sel = rr["pilot_selection"]["per_cell_item_ids"]
+        else:
+            row_cells = prod_sel["splits"][split].get(rr["row"])
+            if row_cells is None:
+                raise ProductionSelectionRecordError(
+                    f"row {rr['row']!r} missing from the frozen {split} selection"
+                )
+            sel = {cell: rec["item_ids"] for cell, rec in row_cells.items()}
         for cell_key in sorted(sel):
             iids = tuple(sel[cell_key])
             if not iids:
@@ -387,15 +550,15 @@ def build_cells(rows_filter: list[str] | None = None) -> list[CellWork]:
                 continue
             frame, _, band = cell_key.partition("|")
             if not band:
-                raise F.FrameManifestError(f"malformed pilot cell key {cell_key!r}")
+                raise F.FrameManifestError(f"malformed {split} cell key {cell_key!r}")
             sfs = {iid: R.superfamily_of(body, rr["row"], iid) for iid in iids}
             cells.append(CellWork(rr["row"], frame, band, iids, sfs))
     if not cells:
-        raise F.FrameManifestError("zero pilot cells selected (rows filter too narrow?)")
+        raise F.FrameManifestError(f"zero {split} cells selected (rows filter too narrow?)")
     if n_empty:
         print(
-            f"[gen] {n_empty} registered cells realized EMPTY (below-floor; recorded "
-            "by unit 2) — skipped with this disclosure",
+            f"[gen] {n_empty} registered {split} cells realized EMPTY (recorded in the "
+            "frozen selection) — skipped with this disclosure",
             flush=True,
         )
     return cells
@@ -498,11 +661,21 @@ def load_tokenizer():
     return tok
 
 
+def rendered_token_count(tok, text: str) -> tuple[str, int]:
+    """Chat-render one prompt text and count its tokens (the budget quantity).
+
+    Single source for the generation-side budget assert below AND the
+    production-selection length gate (issue2658_production_selection.py) —
+    the two must count identically or a frozen selection could still crash
+    generation at the budget check (round 15)."""
+    rendered = R.render_user_prompt(tok, text)
+    return rendered, len(tok.encode(rendered, add_special_tokens=False))
+
+
 def rendered_prompt_or_raise(tok, item: R.ResolvedItem, max_new_tokens: int) -> tuple[str, int]:
     """Chat-render one prompt and enforce the split's frozen prompt budget (loud)."""
     budget = prompt_budget_for_cap(max_new_tokens)
-    rendered = R.render_user_prompt(tok, item.text)
-    n_tok = len(tok.encode(rendered, add_special_tokens=False))
+    rendered, n_tok = rendered_token_count(tok, item.text)
     if n_tok > budget:
         raise GenerationBudgetError(
             f"prompt {item.item_id!r} renders to {n_tok} tokens > budget {budget} "
@@ -665,8 +838,13 @@ def generate_cell(
     }
 
 
-def manifest_rows_for_cell(cell: CellWork, body: dict[str, Any]) -> list[dict[str, Any]]:
-    """Validated TEXT-FREE manifest rows for one generated cell body."""
+def manifest_rows_for_cell(
+    cell: CellWork, body: dict[str, Any], sha_by_item: dict[str, str] | None = None
+) -> list[dict[str, Any]]:
+    """Validated TEXT-FREE manifest rows for one generated cell body.
+
+    ``sha_by_item`` (dev/test) carries the resolved-text sha per item; None
+    keeps the pilot pin-table path byte-identical."""
     return [
         build_manifest_row(
             row=cell.row,
@@ -678,6 +856,7 @@ def manifest_rows_for_cell(cell: CellWork, body: dict[str, Any]) -> list[dict[st
             response_index=r["response_index"],
             answer_sha256=r["answer_sha256"],
             raw_text_sha256=r["raw_text_sha256"],
+            prompt_sha256=None if sha_by_item is None else sha_by_item[r["prompt_id"]],
         )
         for r in body["records"]
     ]
@@ -711,7 +890,12 @@ def load_resume_cell(raw_path: Path, expected_fingerprint: str, n_expected: int)
 
 
 def resume_cell_with_manifest(
-    raw_path: Path, man_path: Path, cell: CellWork, expected_fingerprint: str, n_expected: int
+    raw_path: Path,
+    man_path: Path,
+    cell: CellWork,
+    expected_fingerprint: str,
+    n_expected: int,
+    sha_by_item: dict[str, str] | None = None,
 ) -> dict | None:
     """Resume one completed cell AND idempotently rewrite its gen manifest.
 
@@ -726,7 +910,7 @@ def resume_cell_with_manifest(
     body = load_resume_cell(raw_path, expected_fingerprint, n_expected)
     if body is None:
         return None
-    write_jsonl_atomic(man_path, manifest_rows_for_cell(cell, body))
+    write_jsonl_atomic(man_path, manifest_rows_for_cell(cell, body, sha_by_item))
     return body
 
 
@@ -772,7 +956,7 @@ def run(args: argparse.Namespace) -> int:
     if args.smoke:
         out_root = out_root / "smoke_gen"
 
-    cells = build_cells(args.rows)
+    cells = build_cells(args.rows, split)
     if args.smoke:
         cells = cells[: args.smoke_cells]
     cells = cells[args.shard_index :: args.num_shards]
@@ -788,9 +972,16 @@ def run(args: argparse.Namespace) -> int:
         flush=True,
     )
 
-    # Resolve ALL texts up front (pins verified; loud on any miss).
+    # Resolve ALL texts up front, loud on any miss. Pilot items verify against
+    # the frozen pin table; dev/test items verify against the frozen production
+    # selection (text-sha cells directly, pilot-reused items against the pin
+    # table too; round 15).
     all_ids = [iid for cw in cells for iid in cw.item_ids]
-    resolved = R.resolve_items(all_ids, verify_pins=True)
+    if split == "pilot":
+        resolved = R.resolve_items(all_ids, verify_pins=True)
+    else:
+        resolved = R.resolve_items(all_ids, verify_pins=False)
+        verify_resolved_against_selection(resolved, load_production_selection(split), split)
 
     verify_frozen_file_pins()
     tok = load_tokenizer()
@@ -824,14 +1015,19 @@ def run(args: argparse.Namespace) -> int:
         for i, cw in enumerate(cells):
             raw_path, man_path = out_paths(out_root, split, cw.name)
             fp = generation_fingerprint(cw, n_responses, split, max_new_tokens)
+            sha_by_item = (
+                None
+                if split == "pilot"
+                else {iid: resolved[iid].prompt_sha256 for iid in cw.item_ids}
+            )
             body = resume_cell_with_manifest(
-                raw_path, man_path, cw, fp, len(cw.item_ids) * n_responses
+                raw_path, man_path, cw, fp, len(cw.item_ids) * n_responses, sha_by_item
             )
             was_resumed = body is not None
             if body is None:
                 body = generate_cell(llm, tok, cw, resolved, n_responses, split, max_new_tokens)
                 write_text_atomic(raw_path, json.dumps(body, ensure_ascii=False))
-                write_jsonl_atomic(man_path, manifest_rows_for_cell(cw, body))
+                write_jsonl_atomic(man_path, manifest_rows_for_cell(cw, body, sha_by_item))
             else:
                 n_resumed += 1
             cap_rows.extend(

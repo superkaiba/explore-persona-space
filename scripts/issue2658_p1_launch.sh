@@ -166,6 +166,9 @@ for arg in "$@"; do
 done
 
 SPLIT="${EPS_P1_SPLIT:-pilot}"
+# Frozen production selection (round 15): the dev/test completeness gate anchors
+# its expected cell list here (the canonical committed copy in the repo clone).
+SELECTION_PATH="${EPS_P1_SELECTION_PATH:-eval_results/issue_2658/production_selection.json}"
 OUT_ROOT="${EPS_P1_OUT_ROOT:-$REPO_ROOT/eval_results/issue_2658}"
 LOG_DIR="${EPS_P1_LOG_DIR:-$REPO_ROOT/logs/issue_2658_p1}"
 mkdir -p "$LOG_DIR"
@@ -301,13 +304,15 @@ run_wave() {
 # ---------------------------------------------------------------------------
 gate_generation_complete() {
     local groot="$1"
-    echo "[phase=gen_gate] asserting generation completeness under $groot"
-    uv run python - "$groot" "$SPLIT" "$NUM_SHARDS" <<'PY'
+    local gate_mode="${2:-production}"
+    echo "[phase=gen_gate] asserting generation completeness under $groot (mode=$gate_mode)"
+    uv run python - "$groot" "$SPLIT" "$NUM_SHARDS" "$gate_mode" "$SELECTION_PATH" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 groot, split, n = Path(sys.argv[1]), sys.argv[2], int(sys.argv[3])
+gate_mode, selection_path = sys.argv[4], Path(sys.argv[5])
 problems: list[str] = []
 cells_seen: dict[str, str] = {}
 for s in range(n):
@@ -332,6 +337,34 @@ for s in range(n):
         problems.append(f"gen summary absent (shard never reached its terminal write): {summary}")
 if not cells_seen:
     problems.append("zero cells enumerated across shard order manifests")
+# Round 15 (plan v4 section 4): for dev/test PRODUCTION gates the expected cell
+# list comes from the frozen production selection, not the order manifests
+# alone (an order manifest that silently dropped a selected cell would
+# otherwise self-certify). Smoke truncates the cell grid by design, so the
+# selection anchor applies only in production mode.
+if split != "pilot" and gate_mode == "production":
+    if not selection_path.is_file():
+        problems.append(f"frozen production selection absent: {selection_path}")
+    else:
+        sel = json.loads(selection_path.read_text())
+        expected = {
+            f"{row}__{cell.replace('|', '__')}"
+            for row, cells in sel["splits"][split].items()
+            for cell, rec in cells.items()
+            if rec["item_ids"]
+        }
+        missing = sorted(expected - set(cells_seen))
+        foreign = sorted(set(cells_seen) - expected)
+        if missing:
+            problems.append(
+                f"{len(missing)} selected {split} cells absent from shard order "
+                f"manifests (e.g. {missing[:3]})"
+            )
+        if foreign:
+            problems.append(
+                f"{len(foreign)} generated cells not in the frozen {split} selection "
+                f"(e.g. {foreign[:3]})"
+            )
 if problems:
     print(f"[p1] GENERATION INCOMPLETE ({len(problems)} problem(s)):", file=sys.stderr)
     for m in problems:
@@ -597,13 +630,13 @@ run_p1() {
         local groot="$OUT_ROOT/smoke_gen"
         run_wave generate_smoke issue2658_generate \
             --smoke --smoke-cells "$SMOKE_CELLS" --responses "$SMOKE_RESPONSES"
-        gate_generation_complete "$groot"
+        gate_generation_complete "$groot" smoke
         reclaim_gpu_between_waves generate_smoke
         run_wave capture_smoke issue2658_capture --smoke --responses "$SMOKE_RESPONSES"
         echo "[p1] smoke chain complete (no uploads by design — see blind-spot enumeration)"
     else
         run_wave generate issue2658_generate
-        gate_generation_complete "$OUT_ROOT"
+        gate_generation_complete "$OUT_ROOT" production
         upload_generation
         reclaim_gpu_between_waves generate
         run_wave capture issue2658_capture --upload
