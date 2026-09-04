@@ -146,3 +146,16 @@ driver grain (nothing REAL overstated) → fold into the marker-shape one-post
 fix, not `substantive`. For mixed-registry multi-driver rounds (tuple PHASES +
 argparse choices + dict FIGS), the N/A-form line is the cheapest conforming
 re-post (tolerates dotted rows + embedded commands).
+
+Ninth hit #2658 R12 g4 (2026-09-03), NEW WRINKLE — SAME-TASK REGRESSION: the task's
+v2 smoke-arch row (posted earlier the same day) carried a fully conforming
+`source=sorted(judged_rows()) file=... n=8 members=...` line, and the round-12 v3
+re-post regressed to the dominant command-transcript form (argparse-choices driver,
+`build_argparser()` printout). Before hand-judging or letting an implementer
+hand-compose, CHECK THE TASK'S PRIOR smoke-arch rows for a conforming sibling line
+to copy. Second wrinkle: an `all` dispatcher member present in the argparse choices
+was simply OMITTED from per-arm rows (not mis-stubbed as in #2552) — under
+PASS_UNIFIED with all-REAL rows the omission is invisible to verdict↔row
+consistency and only clause-5 set-equality catches it; fix row: `- all: N/A —
+dispatcher (sequences the phases)`. Substance verified complete → marker-shape
+one-post fix, never substantive.
