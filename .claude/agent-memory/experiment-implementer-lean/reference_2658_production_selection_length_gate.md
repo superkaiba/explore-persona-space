@@ -26,3 +26,11 @@ on a 4,720-token rendered prompt. Consequences baked into the freeze
 
 Related: [[2658-refreeze-mechanics]] (rm-then-rerun to replace a frozen
 artifact committed earlier in the SAME round, before any consumer).
+
+Round-15 addendum: the selection body embeds a git-provenance metadata
+block that is EXCLUDED from content_sha256 but INCLUDED in the write-once
+full-byte drift compare. So a disk re-freeze after ANY commit raises the
+designed OrderManifestDriftError even when the selection content is
+identical. Verify determinism across HEADs via an in-memory rebuild
+comparing the ADDRESSABLE sha (build_selection, strip metadata +
+content_sha256, F._canonical_sha), never by re-freezing to disk.
