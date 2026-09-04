@@ -266,6 +266,7 @@ def stream_sae_moments(
     regime_path: Path,
     regime: dict,
     block: int = SAE_BLOCK,
+    max_blocks: int | None = None,
 ) -> dict:
     """Stream SAE activations/reconstructions, checkpointing moment sums per block."""
     n_rows = x.shape[0]
@@ -321,8 +322,11 @@ def stream_sae_moments(
     threshold = float(ctx["threshold"])
     total_blocks = (n_rows + block - 1) // block
     started = time.time()
+    stop_row = (
+        n_rows if max_blocks is None else min(n_rows, done_rows + max_blocks * block)
+    )
     for block_index, lo in enumerate(
-        range(done_rows, n_rows, block), start=done_rows // block
+        range(done_rows, stop_row, block), start=done_rows // block
     ):
         hi = min(lo + block, n_rows)
         xb = np.asarray(x[lo:hi], dtype=np.float32)
@@ -362,7 +366,7 @@ def stream_sae_moments(
             f"elapsed={elapsed:.1f}s",
             flush=True,
         )
-    return {"done_rows": n_rows, **state}
+    return {"done_rows": stop_row, **state}
 
 
 def sae_accounting(
@@ -726,6 +730,12 @@ def main() -> None:
     parser.add_argument("--max-rows", type=int, default=100_000)
     parser.add_argument("--block", type=int, default=SAE_BLOCK)
     parser.add_argument("--threads", type=int, default=8)
+    parser.add_argument(
+        "--stop-after-sae-blocks",
+        type=int,
+        default=None,
+        help="pilot-only: stop after this many new SAE blocks, before result writes",
+    )
     args = parser.parse_args()
     torch.set_num_threads(args.threads)
     args.work.mkdir(parents=True, exist_ok=True)
@@ -800,7 +810,15 @@ def main() -> None:
         args.work / "sae_stream_stats.regime.json",
         regime,
         block=args.block,
+        max_blocks=args.stop_after_sae_blocks,
     )
+    if moments["done_rows"] < x.shape[0]:
+        print(
+            f"[sae-pilot-stop] rows={moments['done_rows']}/{x.shape[0]} "
+            f"blocks={args.stop_after_sae_blocks}",
+            flush=True,
+        )
+        return
     accounting = sae_accounting(
         moments, decoder_norm2, kernel_share, raw_partition["mask"], x.shape[0]
     )
