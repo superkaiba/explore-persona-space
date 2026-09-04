@@ -787,6 +787,30 @@ def run_wave(
 # ── MF-D pilots (VERBATIM #2552 run_pilot; gates w1 AND w2 AND w4) ────────────────
 
 
+def _pilot_attempt_root(p, label: str, *, fresh_after_verdict: bool):
+    """Pick the pilot attempt dir. RESUME the newest attempt when it holds a
+    dispatcher checkpoint but produced no verdict (a poller death after batch
+    submission — re-running must RE-ATTACH to the recorded batch id, never
+    resubmit: the 2026-09-04 pilot-w1 duplicate-batch incident). Mint a FRESH
+    attempt when there are none yet, when the prior verdict was a real FAIL
+    (fresh_after_verdict — pilot independence requires a clean cache), or when
+    the newest attempt never reached submission (no checkpoint state)."""
+    attempt = 0
+    while (p.work / "pilot" / label / f"attempt_{attempt}").exists():
+        attempt += 1
+    if attempt > 0 and not fresh_after_verdict:
+        prev = p.work / "pilot" / label / f"attempt_{attempt - 1}"
+        if list(prev.glob("cache/*/.dispatch/*/*/state.json")):
+            logger.warning(
+                "[pilot-%s] resuming attempt_%d: un-reported dispatcher checkpoint present "
+                "(re-attach to the submitted batch, never resubmit)",
+                label,
+                attempt - 1,
+            )
+            return prev
+    return p.work / "pilot" / label / f"attempt_{attempt}"
+
+
 def _pilot_sample(
     arms: dict[str, list[tuple[str, str]]], *, allow_small: bool = False
 ) -> dict[str, list[tuple[str, str]]]:
@@ -819,22 +843,21 @@ def run_pilot(
     < 0.10; >= 51 effective draws/arm."""
     label = label or wave
     report_path = p.agg / f"pilot_report_{label}.json"
+    fresh_after_verdict = False
     if report_path.exists() and not args.dry_run:
         prior = json.loads(report_path.read_text())
         if prior.get("verdict") == "PASS":
             logger.info("[pilot-%s] resume: prior PASS report present; skip", label)
             return
         logger.warning("[pilot-%s] prior verdict=%s — fresh attempt", label, prior.get("verdict"))
+        fresh_after_verdict = True
     if not args.dry_run:
         _require_estimate(args, manifest)
     max_tokens = MAX_TOKENS[wave]
     parser = WAVE_PARSERS[wave]
     wave_n_calls = sum(len(v) for v in arms.values())
     pilot_arms = _pilot_sample(arms, allow_small=bool(args.smoke or args.dry_run))
-    attempt = 0
-    while (p.work / "pilot" / label / f"attempt_{attempt}").exists():
-        attempt += 1
-    root = p.work / "pilot" / label / f"attempt_{attempt}"
+    root = _pilot_attempt_root(p, label, fresh_after_verdict=fresh_after_verdict)
     per_arm_report: dict[str, dict] = {}
     failures: list[str] = []
     for arm, items in pilot_arms.items():

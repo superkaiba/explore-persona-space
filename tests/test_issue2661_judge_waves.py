@@ -169,3 +169,24 @@ def test_w1_block_shows_activations_and_negatives():
     assert "activation=3.2500" in block and "how do I cook rice" in block
     assert "NON-ACTIVATING NEGATIVES" in block and "python question" in block
     assert block.index("how do I cook rice") < block.index("python question")
+
+
+def test_pilot_attempt_root_resumes_unreported_checkpoint(tmp_path):
+    """r7 guard (duplicate-batch incident): a newest attempt holding a
+    dispatcher checkpoint but no verdict is RESUMED; a real FAIL verdict or a
+    checkpoint-less attempt mints a fresh one."""
+    from types import SimpleNamespace
+
+    p = SimpleNamespace(work=tmp_path)
+    # no attempts yet -> attempt_0
+    assert J._pilot_attempt_root(p, "w1", fresh_after_verdict=False).name == "attempt_0"
+    # crashed-after-submit attempt: checkpoint state present, no verdict -> RESUME
+    st = tmp_path / "pilot" / "w1" / "attempt_0" / "cache" / "ctx" / ".dispatch" / "w1" / "dispatch_ab12"
+    st.mkdir(parents=True)
+    (st / "state.json").write_text("{}")
+    assert J._pilot_attempt_root(p, "w1", fresh_after_verdict=False).name == "attempt_0"
+    # real FAIL verdict -> fresh attempt even though the checkpoint exists
+    assert J._pilot_attempt_root(p, "w1", fresh_after_verdict=True).name == "attempt_1"
+    # checkpoint-less newest attempt (died before submission) -> fresh attempt
+    (tmp_path / "pilot" / "w2" / "attempt_0").mkdir(parents=True)
+    assert J._pilot_attempt_root(p, "w2", fresh_after_verdict=False).name == "attempt_1"
