@@ -41,6 +41,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import scipy.linalg  # noqa: E402
 from huggingface_hub import hf_hub_download, list_repo_tree  # noqa: E402
+from huggingface_hub.errors import EntryNotFoundError  # noqa: E402
 from scipy.stats import rankdata, spearmanr  # noqa: E402
 from sklearn.utils.extmath import randomized_svd  # noqa: E402
 
@@ -111,6 +112,23 @@ class MapSpec:
 QWEN_COLUMN = "Qwen h=5120 column"
 LEGACY_FAMILY_LABELS = {"Qwen 27B column": QWEN_COLUMN}  # pre-2026-09-03 payloads
 SAME_WIDTH_DIM = 5120
+# Reader-facing family labels for the 2026-09-03 full-panel extension rows.
+QWEN25_FAMILY = "Qwen2.5"
+QWEN38FN_FAMILY = "Qwen3.8 Flash Next"
+DEEPSEEK_FAMILY = "DeepSeek V4"
+GLM_FAMILY = "GLM 5.3"
+# One marker per family on every scatter (grayscale-distinguishable shapes).
+FAMILY_MARKERS = {
+    "Qwen3.5": "o",
+    QWEN_COLUMN: "s",
+    "OLMo": "^",
+    QWEN25_FAMILY: "D",
+    QWEN38FN_FAMILY: "v",
+    DEEPSEEK_FAMILY: "P",
+    GLM_FAMILY: "X",
+}
+# Families the Qwen-focused figures draw (rows with no AA value drop out too).
+QWEN_FIGURE_FAMILIES = ("Qwen3.5", QWEN_COLUMN, QWEN25_FAMILY, QWEN38FN_FAMILY)
 POINT_NUMBERS = {
     "Q3.5 0.8B": "1",
     "Q3.5 2B": "2",
@@ -127,6 +145,12 @@ POINT_NUMBERS = {
     "Q3 32B": "11",
     "QwQ 32B": "12",
     "OLMo3 32B T": "13",
+    "Q2.5 7B": "14",
+    "Q3.8 FN": "15",
+    "Q3.5 397B": "16",
+    "DSv4 Flash": "17",
+    "GLM 5.3": "18",
+    "DSv4 Pro": "19",
 }
 # Reader-facing names for the point keys (the short labels stay internal).
 DISPLAY_NAMES = {
@@ -145,26 +169,34 @@ DISPLAY_NAMES = {
     "Q3 32B": "Qwen3 32B",
     "QwQ 32B": "QwQ 32B",
     "OLMo3 32B T": "OLMo3 32B Think",
+    "Q2.5 7B": "Qwen2.5 7B Instruct",
+    "Q3.8 FN": "Qwen3.8 Flash Next",
+    "Q3.5 397B": "Qwen3.5 397B A17B",
+    "DSv4 Flash": "DeepSeek V4 Flash",
+    "GLM 5.3": "GLM 5.3",
+    "DSv4 Pro": "DeepSeek V4 Pro",
 }
 POINT_KEY_ALL = (
     "Point key\n"
     "1  Qwen3.5 0.8B\n2  Qwen3.5 2B\n3  Qwen3.5 4B\n4  Qwen3.5 9B\n"
     "5  Qwen3.5 27B\n6  Qwen3.6 27B\n7  Qwen3.8 27B\n"
     "8  OLMo3 7B I/T\n9  OLMo3.1 32B I/T\n"
-    "10 Qwen2.5 32B\n11 Qwen3 32B\n12 QwQ 32B\n13 OLMo3 32B Think"
+    "10 Qwen2.5 32B\n11 Qwen3 32B\n12 QwQ 32B\n13 OLMo3 32B Think\n"
+    "14 Qwen2.5 7B\n15 Qwen3.8 Flash Next\n16 Qwen3.5 397B\n"
+    "17 DeepSeek V4 Flash\n18 GLM 5.3\n19 DeepSeek V4 Pro"
 )
 POINT_KEY_QWEN = (
     "Checkpoint key\n"
     "1   Qwen3.5 0.8B\n2   Qwen3.5 2B\n3   Qwen3.5 4B\n"
     "4   Qwen3.5 9B\n5   Qwen3.5 27B\n6   Qwen3.6 27B\n"
-    "7   Qwen3.8 27B\n10  Qwen2.5 32B\n11  Qwen3 32B\n12  QwQ 32B"
+    "7   Qwen3.8 27B\n10  Qwen2.5 32B\n11  Qwen3 32B\n12  QwQ 32B\n"
+    "15  Qwen3.8 Flash Next\n16  Qwen3.5 397B"
 )
 
 # The first 18 maps are the parent's two n=9 capability trends.  The two OLMo
-# pre-think diagnostic maps and the no-AA Qwen2.5-7B anchor are excluded from
-# the trend by construction, matching issue 2588.  The last six maps are the
-# 2026-09-03 same-width extension (registry keys q3_32b, qwq_32b, q25_32b,
-# o3_32b_t; every AA value measured on v4.1.1).
+# pre-think diagnostic maps are excluded by construction, matching issue 2588.
+# The six maps after them are the 2026-09-03 same-width extension (registry
+# keys q3_32b, qwq_32b, q25_32b, o3_32b_t; every AA value measured on v4.1.1).
 MAPS = (
     MapSpec("q35_0p8b_a", "prompt_last", "Q3.5 0.8B", "Qwen3.5", "no-thinking", 5, "estimated"),
     MapSpec("q35_2b_a", "prompt_last", "Q3.5 2B", "Qwen3.5", "no-thinking", 7, "estimated"),
@@ -193,6 +225,40 @@ MAPS = (
     MapSpec("q3_32b_b", "cot_boundary", "Q3 32B", QWEN_COLUMN, "end-of-thought", 11, "measured", 8),
     MapSpec("qwq_32b_b", "cot_boundary", "QwQ 32B", QWEN_COLUMN, "end-of-thought", 13, "measured"),
     MapSpec("o3_32b_t_b", "cot_boundary", "OLMo3 32B T", "OLMo", "end-of-thought", 6, "measured"),
+    # 2026-09-03 full-panel extension (the EPS_CAP_PROFILE=long rerun covers
+    # every panel cell): the Qwen2.5-7B anchor plus the five 2588x frontier
+    # rows.  AA values are the panel registry's AA_PIN entries; the anchor has
+    # none (its AA page 404s), so its aa_index stays None and every AA-keyed
+    # correlation and figure skips it rather than inventing a number.  None of
+    # these keys carries a separate non-reasoning AA value in AA_PIN.
+    MapSpec(
+        "q25_7b_a", "prompt_last", "Q2.5 7B", QWEN25_FAMILY, "no-thinking", None, "no-AA-value"
+    ),
+    MapSpec("q38fn_a", "prompt_last", "Q3.8 FN", QWEN38FN_FAMILY, "no-thinking", 56, "measured"),
+    MapSpec(
+        "q38fn_b", "cot_boundary", "Q3.8 FN", QWEN38FN_FAMILY, "end-of-thought", 56, "measured"
+    ),
+    MapSpec("q35_397b_a", "prompt_last", "Q3.5 397B", "Qwen3.5", "no-thinking", 34, "measured"),
+    MapSpec("q35_397b_b", "cot_boundary", "Q3.5 397B", "Qwen3.5", "end-of-thought", 34, "measured"),
+    MapSpec(
+        "dsv4_flash_a", "prompt_last", "DSv4 Flash", DEEPSEEK_FAMILY, "no-thinking", 52, "measured"
+    ),
+    MapSpec(
+        "dsv4_flash_b",
+        "cot_boundary",
+        "DSv4 Flash",
+        DEEPSEEK_FAMILY,
+        "end-of-thought",
+        52,
+        "measured",
+    ),
+    MapSpec("glm53_b", "cot_boundary", "GLM 5.3", GLM_FAMILY, "end-of-thought", 60, "measured"),
+    MapSpec(
+        "dsv4_pro_a", "prompt_last", "DSv4 Pro", DEEPSEEK_FAMILY, "no-thinking", 53, "measured"
+    ),
+    MapSpec(
+        "dsv4_pro_b", "cot_boundary", "DSv4 Pro", DEEPSEEK_FAMILY, "end-of-thought", 53, "measured"
+    ),
 )
 
 
@@ -763,7 +829,12 @@ def _column_summary(column: list[dict[str, Any]], note: str) -> dict[str, Any]:
 def summarize_trends(results: list[dict[str, Any]]) -> dict[str, Any]:
     out: dict[str, Any] = {}
     for arm in ("no-thinking", "end-of-thought"):
-        rows = sorted((r for r in results if r["arm"] == arm), key=lambda r: r["aa_index"])
+        arm_rows = [r for r in results if r["arm"] == arm]
+        # AA-keyed statistics skip rows with no AA value (the Qwen2.5-7B anchor)
+        # instead of inventing one; the measured-GPQA axis keeps every row.
+        rows = sorted(
+            (r for r in arm_rows if r["aa_index"] is not None), key=lambda r: r["aa_index"]
+        )
         x = [float(r["aa_index"]) for r in rows]
         out[arm] = {
             "stable_rank": exact_spearman_permutation(
@@ -779,25 +850,29 @@ def summarize_trends(results: list[dict[str, Any]]) -> dict[str, Any]:
                 x, [float(r["operational_rank"]["rank_fraction"]) for r in rows]
             ),
         }
-        gpqa_x = [float(r["measured_capability"]["accuracy"]) for r in rows]
+        gpqa_x = [float(r["measured_capability"]["accuracy"]) for r in arm_rows]
         out[arm]["secondary_measured_gpqa_axis"] = {
             "note": (
                 "Fully measured secondary capability axis from the parent; valid for "
-                "these generic-corpus maps, but not for GPQA mapping-performance reads."
+                "these generic-corpus maps, but not for GPQA mapping-performance reads. "
+                "Computed over every row in the arm, including rows with no AA value."
             ),
             "stable_rank": exact_spearman_permutation(
-                gpqa_x, [float(r["spectrum"]["stable_rank"]) for r in rows]
+                gpqa_x, [float(r["spectrum"]["stable_rank"]) for r in arm_rows]
             ),
             "stable_rank_fraction": exact_spearman_permutation(
-                gpqa_x, [float(r["spectrum"]["stable_rank_fraction"]) for r in rows]
+                gpqa_x, [float(r["spectrum"]["stable_rank_fraction"]) for r in arm_rows]
             ),
             "operational_rank": exact_spearman_permutation(
-                gpqa_x, [float(r["operational_rank"]["rank"]) for r in rows]
+                gpqa_x, [float(r["operational_rank"]["rank"]) for r in arm_rows]
             ),
             "operational_rank_fraction": exact_spearman_permutation(
-                gpqa_x, [float(r["operational_rank"]["rank_fraction"]) for r in rows]
+                gpqa_x, [float(r["operational_rank"]["rank_fraction"]) for r in arm_rows]
             ),
         }
+        no_aa = sorted(r["model"] for r in arm_rows if r["aa_index"] is None)
+        if no_aa:
+            out[arm]["aa_excluded_models"] = no_aa
         dimensions = [float(r["dimension"]) for r in rows]
         op_fractions = [float(r["operational_rank"]["rank_fraction"]) for r in rows]
         stable_ranks = [float(r["spectrum"]["stable_rank"]) for r in rows]
@@ -847,9 +922,12 @@ def _plot_one_arm(
     multiplier: float,
 ) -> None:
     colors = {"no-thinking": "#0072B2", "end-of-thought": "#D55E00"}
-    markers = {"Qwen3.5": "o", QWEN_COLUMN: "s", "OLMo": "^"}
-    for family, marker in markers.items():
-        subset = sorted((r for r in rows if r["family"] == family), key=lambda r: r["aa_index"])
+    for family, marker in FAMILY_MARKERS.items():
+        # Rows with no AA value (the Qwen2.5-7B anchor) have no x coordinate here.
+        subset = sorted(
+            (r for r in rows if r["family"] == family and r["aa_index"] is not None),
+            key=lambda r: r["aa_index"],
+        )
         if not subset:
             continue
         x = [r["aa_index"] for r in subset]
@@ -978,7 +1056,9 @@ def render_figure(results: list[dict[str, Any]], output: Path) -> None:
 
 def render_rank_fraction_figure(results: list[dict[str, Any]], output: Path) -> None:
     """Render the focused Qwen-only rank-fraction/capability comparison."""
-    results = [r for r in results if r["family"] != "OLMo"]
+    results = [
+        r for r in results if r["family"] in QWEN_FIGURE_FAMILIES and r["aa_index"] is not None
+    ]
     colors = {"no-thinking": "#0072B2", "end-of-thought": "#D55E00"}
     model_numbers = POINT_NUMBERS
     point_key = POINT_KEY_QWEN
@@ -1016,10 +1096,7 @@ def render_rank_fraction_figure(results: list[dict[str, Any]], output: Path) -> 
             )
 
     for record in results:
-        marker = {
-            "Qwen3.5": "o",
-            QWEN_COLUMN: "s",
-        }[record["family"]]
+        marker = FAMILY_MARKERS[record["family"]]
         x = float(record["aa_index"])
         y = 100.0 * float(record["operational_rank"]["rank_fraction"])
         face = colors[record["arm"]] if record["aa_status"] == "measured" else "white"
@@ -1064,7 +1141,7 @@ def render_rank_fraction_figure(results: list[dict[str, Any]], output: Path) -> 
         handlelength=2.4,
         columnspacing=1.4,
     )
-    ax.set_xlim(0, 56)
+    ax.set_xlim(0, 60)
     fractions = [100.0 * float(r["operational_rank"]["rank_fraction"]) for r in results]
     ax.set_ylim(max(0.0, min(fractions) - 2.0), max(fractions) + 2.0)
     ax.set_xlabel("Generic capability: Artificial Analysis Intelligence Index")
@@ -1101,7 +1178,7 @@ def render_rank_fraction_figure(results: list[dict[str, Any]], output: Path) -> 
     fig.text(
         0.805,
         0.34,
-        "Not shown: Qwen2.5-7B\n(no AA index in parent panel)",
+        "Not shown: Qwen2.5-7B (no AA index);\nDeepSeek V4 and GLM 5.3 (non-Qwen)",
         ha="left",
         va="top",
         fontsize=7.2,
@@ -1131,7 +1208,8 @@ def render_rank_fraction_figure(results: list[dict[str, Any]], output: Path) -> 
                     "n_maps": len(results),
                     "n_scored_checkpoints": len({r["model"] for r in results}),
                     "omitted_checkpoint": (
-                        "Qwen2.5-7B anchor: no Artificial Analysis index in the parent panel"
+                        "Qwen2.5-7B anchor (no Artificial Analysis index); "
+                        "DeepSeek V4 and GLM 5.3 rows (non-Qwen figure)"
                     ),
                 },
                 "rank_definition": PRIMARY_RANK_DEFINITION + ", divided by hidden dimension",
@@ -1154,7 +1232,9 @@ def render_rank_fraction_figure(results: list[dict[str, Any]], output: Path) -> 
 
 def render_mapping_performance_figure(results: list[dict[str, Any]], output: Path) -> None:
     """Render Qwen mapping R2 and calibrated retrieval acc@1 vs capability."""
-    results = [r for r in results if r["family"] != "OLMo"]
+    results = [
+        r for r in results if r["family"] in QWEN_FIGURE_FAMILIES and r["aa_index"] is not None
+    ]
     missing = [r["key"] for r in results if "mapping_performance" not in r]
     if missing:
         raise ValueError(
@@ -1204,7 +1284,7 @@ def render_mapping_performance_figure(results: list[dict[str, Any]], output: Pat
                     zorder=1,
                 )
         for record in results:
-            marker = "s" if record["family"] == QWEN_COLUMN else "o"
+            marker = FAMILY_MARKERS[record["family"]]
             x = float(record["aa_index"])
             y = multiplier * float(record["mapping_performance"][field])
             face = colors[record["arm"]] if record["aa_status"] == "measured" else "white"
@@ -1233,7 +1313,7 @@ def render_mapping_performance_figure(results: list[dict[str, Any]], output: Pat
                 color="#222222",
                 zorder=4,
             )
-        ax.set_xlim(0, 56)
+        ax.set_xlim(0, 60)
         values = [multiplier * float(r["mapping_performance"][field]) for r in results]
         pad = 0.08 * (max(values) - min(values))
         ax.set_ylim(min(values) - pad, max(values) + pad)
@@ -1279,7 +1359,7 @@ def render_mapping_performance_figure(results: list[dict[str, Any]], output: Pat
     fig.text(
         0.81,
         0.34,
-        "Not shown: Qwen2.5-7B\n(no AA index in parent panel)",
+        "Not shown: Qwen2.5-7B (no AA index);\nDeepSeek V4 and GLM 5.3 (non-Qwen)",
         ha="left",
         va="top",
         fontsize=7.2,
@@ -1318,7 +1398,8 @@ def render_mapping_performance_figure(results: list[dict[str, Any]], output: Pat
                     "n_maps": len(results),
                     "n_scored_checkpoints": len({r["model"] for r in results}),
                     "omitted_checkpoint": (
-                        "Qwen2.5-7B anchor: no Artificial Analysis index in the parent panel"
+                        "Qwen2.5-7B anchor (no Artificial Analysis index); "
+                        "DeepSeek V4 and GLM 5.3 rows (non-Qwen figure)"
                     ),
                 },
                 "panels": {
@@ -1591,7 +1672,8 @@ def main() -> None:
     ap.add_argument(
         "--allow-partial-render",
         action="store_true",
-        help="compute trends and render figures even when some registered maps are missing",
+        help="skip maps whose fit record is missing under the current profile "
+        "(recorded in the payload as skipped_maps) and summarize/render the rest",
     )
     ap.add_argument("--no-figure", action="store_true")
     ap.add_argument(
@@ -1635,10 +1717,25 @@ def main() -> None:
         missing = wanted - {m.key for m in selected} - {m.cell for m in selected}
         if missing:
             raise SystemExit(f"unknown --maps values: {sorted(missing)}")
-    results = [
-        analyze_map(m, args.cache_dir, max_rank=args.max_rank, svd_iters=args.svd_iters)
-        for m in selected
-    ]
+    results = []
+    skipped: list[dict[str, str]] = []
+    for m in selected:
+        if args.allow_partial_render:
+            # A fit record missing under the current profile is a SKIP with a
+            # recorded reason; without the flag the EntryNotFoundError propagates.
+            try:
+                _fit_record(m)
+            except EntryNotFoundError:
+                reason = (
+                    f"fit record {PANEL_PREFIX}/fits/{m.cell}/fits_{m.position}.json "
+                    f"not found at revision {HF_REVISION}"
+                )
+                print(f"[{m.key}] SKIP: {reason}", flush=True)
+                skipped.append({"key": m.key, "cell": m.cell, "reason": reason})
+                continue
+        results.append(
+            analyze_map(m, args.cache_dir, max_rank=args.max_rank, svd_iters=args.svd_iters)
+        )
     if args.merge_into is not None:
         base = json.loads(args.merge_into.read_text(encoding="utf-8"))
         fresh_keys = {r["key"] for r in results}
@@ -1650,6 +1747,8 @@ def main() -> None:
     payload = _build_payload(results, complete, summarize_trends(results) if summarize else None)
     if not complete:
         payload["missing_maps"] = sorted({m.key for m in MAPS} - {r["key"] for r in results})
+    if args.allow_partial_render:
+        payload["skipped_maps"] = skipped
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     if summarize and not args.no_figure:
