@@ -472,7 +472,8 @@ def _manifest_prompt_shas(man_path: Path) -> dict[tuple[str, int], str]:
     The raw-completion cell records are text-bearing but carry NO prompt sha;
     the generation-side prompt_sha256 lives in the sibling gen manifest rows
     (``G.build_manifest_row``: pin sha for pilot, resolved selection sha for
-    dev/test). A missing manifest or a row lacking the field fails LOUD.
+    dev/test). A missing manifest, a row lacking the field, and a duplicate
+    (prompt_id, response_index) key each fail LOUD (the join is one-to-one).
     """
     if not man_path.is_file():
         raise CaptureSpanError(f"gen manifest missing for cell: {man_path}")
@@ -487,7 +488,13 @@ def _manifest_prompt_shas(man_path: Path) -> dict[tuple[str, int], str]:
                 raise CaptureSpanError(
                     f"{man_path.name}: gen record for {row.get('prompt_id')!r} lacks prompt_sha256"
                 )
-            shas[(row["prompt_id"], int(row["response_index"]))] = sha
+            key = (row["prompt_id"], int(row["response_index"]))
+            if key in shas:
+                raise CaptureSpanError(
+                    f"{man_path.name}: duplicate gen-manifest key {key!r} "
+                    "(the record-to-manifest join must be one-to-one)"
+                )
+            shas[key] = sha
     return shas
 
 
@@ -498,7 +505,9 @@ def load_generation_rows(
 
     Each row also carries the generation-side ``prompt_sha256`` (from the
     cell's gen manifest); ``attach_rendered_prompts`` cross-checks it against
-    the re-resolved prompt sha on every split.
+    the re-resolved prompt sha on every split. The per-cell record-to-manifest
+    join is strictly one-to-one: duplicate manifest keys and orphaned manifest
+    rows (no matching raw record) fail LOUD.
     """
     gen_dir = out_root / "raw_completions" / split
     files = sorted(gen_dir.glob("*.json"))
@@ -512,6 +521,7 @@ def load_generation_rows(
         if body.get("schema") != G.GEN_SCHEMA:
             raise CaptureSpanError(f"{path.name}: unexpected gen schema {body.get('schema')!r}")
         prompt_shas = _manifest_prompt_shas(G.out_paths(out_root, split, path.stem)[1])
+        cell_keys: set[tuple[str, int]] = set()
         for r in body["records"]:
             C.assert_row_hash(r["text"], r["answer_sha256"])  # gen record integrity
             key = (r["prompt_id"], int(r["response_index"]))
@@ -520,6 +530,7 @@ def load_generation_rows(
                 raise CaptureSpanError(
                     f"{path.name}: gen record {key!r} has no gen-manifest prompt_sha256 row"
                 )
+            cell_keys.add(key)
             out.append(
                 CaptureRow(
                     prompt_id=r["prompt_id"],
@@ -528,6 +539,12 @@ def load_generation_rows(
                     prompt_sha256=sha,
                     answer_text=r["text"],
                 )
+            )
+        orphans = sorted(set(prompt_shas) - cell_keys)
+        if orphans:
+            raise CaptureSpanError(
+                f"{path.name}: {len(orphans)} orphaned gen-manifest row(s) with "
+                f"no raw-completion record, first 3 keys: {orphans[:3]!r}"
             )
     keys = [c.key for c in out]
     if len(set(keys)) != len(keys):

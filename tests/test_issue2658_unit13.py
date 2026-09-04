@@ -645,3 +645,40 @@ def test_load_generation_rows_requires_manifest_prompt_sha(tmp_path):
     (tmp_path / "gen_manifest" / "test" / f"{cell}.jsonl").unlink()
     with pytest.raises(K.CaptureSpanError, match="gen manifest missing"):
         K.load_generation_rows(tmp_path, "test", None)
+
+
+def test_load_generation_rows_duplicate_manifest_key_raises(tmp_path):
+    iid = f"{ROW}|advbench_requests|synth#0"
+    text = "synthetic answer text"
+    psha = F._sha_text("synthetic capture prompt")
+    rec = {
+        "prompt_id": iid,
+        "response_index": 0,
+        "answer_sha256": F._sha_text(text),
+        "text": text,
+    }
+    cell = f"{ROW}__advbench_requests__direct"
+    man_row = {"prompt_id": iid, "response_index": 0, "prompt_sha256": psha}
+    # duplicate (prompt_id, response_index) manifest key: fail loud, never last-wins
+    _write_gen_cell(tmp_path, "dev", cell, [rec], [man_row, {**man_row, "prompt_sha256": "f" * 64}])
+    with pytest.raises(K.CaptureSpanError, match="duplicate gen-manifest key"):
+        K.load_generation_rows(tmp_path, "dev", None)
+
+
+def test_load_generation_rows_orphaned_manifest_row_raises(tmp_path):
+    iid = f"{ROW}|advbench_requests|synth#0"
+    text = "synthetic answer text"
+    psha = F._sha_text("synthetic capture prompt")
+    rec = {
+        "prompt_id": iid,
+        "response_index": 0,
+        "answer_sha256": F._sha_text(text),
+        "text": text,
+    }
+    cell = f"{ROW}__advbench_requests__direct"
+    man_row = {"prompt_id": iid, "response_index": 0, "prompt_sha256": psha}
+    orphan = {"prompt_id": iid, "response_index": 1, "prompt_sha256": psha}
+    # manifest row with no matching raw-completion record: fail loud
+    _write_gen_cell(tmp_path, "dev", cell, [rec], [man_row, orphan])
+    with pytest.raises(K.CaptureSpanError, match="orphaned gen-manifest row"):
+        K.load_generation_rows(tmp_path, "dev", None)
