@@ -4,6 +4,7 @@ title: Flat Der-recipe context SAE and a full-dictionary context-feature to answ
 kind: experiment
 tags:
 - lean-run
+- keep-running
 created_at: '2026-09-03T18:48:50Z'
 has_clean_result: false
 parent_id: 2552
