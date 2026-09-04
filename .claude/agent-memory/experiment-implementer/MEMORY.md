@@ -1,4 +1,4 @@
-- [SDPA padded-batch quadratic on 32k+ rollouts](feedback_sdpa_padded_batch_quadratic_long_rollouts.md) — token-budget batching + unpadded mask=None singles + logged OOM backoff (#2588 job 65463)
+- [SDPA padded-batch quadratic on 32k+ rollouts](feedback_sdpa_padded_batch_quadratic_long_rollouts.md) — token-budget batching, chunked prefill over 12k tokens, sdpa_kernel FLASH+EFFICIENT restriction (silent math dispatch: fp32+enable_gqa, vllm import kills cudnn) (#2588 jobs 65463/65464)
 - [No-flags workflow_lint before push](feedback_no_flags_workflow_lint_before_push.md) — ruff+pin-sweep+tests miss it; upload-prefix argparse-default = #1005 clobber shape (#2054 r1)
 - [inline_lint_gate INCONCLUSIVE under load](feedback_inline_lint_gate_inconclusive_under_load.md) — load1>20 red pytest = INCONCLUSIVE, re-run when load drops (#1739)
 - [Public corpus release is toxicity-stripped](feedback_public_corpus_release_is_toxicity_stripped.md) — non-gated release has the moderation FIELD but 0 flagged rows; filter-API COUNT the subset before an invert-filter mine (#2221)
