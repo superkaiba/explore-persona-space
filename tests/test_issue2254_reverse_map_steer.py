@@ -237,3 +237,169 @@ def test_reduce_grain_refusal(tmp_path, monkeypatch):
     jpath.write_text(json.dumps(judged))
     with pytest.raises(RuntimeError, match="truncated grain"):
         rm.phase_reduce(args)
+
+
+# ---------------------------------------------------------------------------
+# judge modes: wave vs per-cell checkpoint parity + cached-skip in wave mode
+# ---------------------------------------------------------------------------
+
+_N_Q_JUDGE = 2  # fixture question grain for the judge-mode tests
+
+
+def _judge_fixture_cells(tmp_path) -> list[dict]:
+    """Four registered cells across two behaviors (2 evil + 2 sycophancy)."""
+    cells = rm.registered_cells(_args(tmp_path, smoke=False))
+    picked = [c for c in cells if c["behavior"] == "evil"][:2]
+    picked += [c for c in cells if c["behavior"] == "sycophancy"][:2]
+    assert len(picked) == 4
+    return picked
+
+
+def _judge_fixture_gen_rec(cell: dict) -> dict:
+    """Tiny gen record in the exact shape ``i2254._iter_gen_qa`` consumes."""
+    return {
+        "cell_id": i2254._cell_id(cell),
+        "cell": cell,
+        "alphas": {"L14": 0.1},
+        "q_of_context": list(range(_N_Q_JUDGE)),
+        "seeds": {
+            "42": {
+                "completions": [["fixture answer a", "fixture answer b"]] * _N_Q_JUDGE,
+                "condition_passes": [True] * _N_Q_JUDGE,
+            }
+        },
+        "max_new_tokens": 2048,
+        "cap_hit_fraction": 0.0,
+    }
+
+
+class _FakeGradedJudge:
+    """Deterministic stand-in for ``fk._judge_graded_with_refusal_reissue``
+    (the external API boundary): per-(item, draw) scores derived from a hash
+    of the item id, so per-cell and wave submissions of the SAME items score
+    identically. Thread-safe call recording (wave mode calls from threads)."""
+
+    def __init__(self):
+        import threading
+
+        self.calls: list[dict] = []
+        self._lock = threading.Lock()
+
+    @staticmethod
+    def _score(iid: str, draw: int) -> float:
+        import hashlib
+
+        return float(int(hashlib.sha256(f"{iid}:{draw}".encode()).hexdigest()[:4], 16) % 101)
+
+    def __call__(self, items, rubric, *, cache_dir, save_raw, n_draws):
+        from explore_persona_space.eval.graded_judge import JudgeResult
+
+        with self._lock:
+            self.calls.append({"rubric": rubric, "iids": [it[0] for it in items]})
+        per = {iid: [self._score(iid, d) for d in range(n_draws)] for iid, _q, _a in items}
+        result = JudgeResult(
+            scores={iid: float(np.mean(v)) for iid, v in per.items()},
+            n_total_draws=len(items) * n_draws,
+            n_dropped_draws=0,
+            per_item_draw_counts={iid: n_draws for iid in per},
+            per_item_scores={iid: list(v) for iid, v in per.items()},
+        )
+        return result, {iid: list(v) for iid, v in per.items()}, None
+
+
+@pytest.fixture()
+def judge_mode_env(tmp_path, monkeypatch):
+    fake = _FakeGradedJudge()
+    monkeypatch.setattr(rm.fk, "_judge_graded_with_refusal_reissue", fake)
+    monkeypatch.setattr(
+        i2254, "_eval_questions", lambda b: [f"{b} fixture q{i}" for i in range(_N_Q_JUDGE)]
+    )
+    cells = _judge_fixture_cells(tmp_path)
+    rubrics = {b: f"rubric-{b}" for b in rm.ROUND_BEHAVIORS}
+    return fake, cells, rubrics
+
+
+def _write_gen_recs(root: Path, cells: list[dict]) -> Path:
+    comp = root / "steer" / "raw_completions"
+    for c in cells:
+        i2254._write_json_atomic(comp / f"{i2254._cell_id(c)}.json", _judge_fixture_gen_rec(c))
+    return comp
+
+
+def test_wave_and_percell_checkpoints_identical(tmp_path, judge_mode_env):
+    fake, cells, rubrics = judge_mode_env
+    args = _args(tmp_path)
+    n_draws = 3
+    root_a = tmp_path / "percell_root"
+    root_b = tmp_path / "wave_root"
+    comp_a = _write_gen_recs(root_a, cells)
+    comp_b = _write_gen_recs(root_b, cells)
+    for c in cells:
+        cid = i2254._cell_id(c)
+        rm._judge_revmap_cell(args, root_a, comp_a / f"{cid}.json", rubrics[c["behavior"]], n_draws)
+    n_percell_calls = len(fake.calls)
+    assert n_percell_calls == len(cells)  # per-cell mode: one submission per cell
+    cell_by_id = {i2254._cell_id(c): c for c in cells}
+    n_judged = rm._judge_revmap_wave(args, root_b, comp_b, cell_by_id, rubrics, n_draws)
+    assert n_judged == len(cells)
+    wave_calls = fake.calls[n_percell_calls:]
+    # wave mode: ONE submission per behavior, never one per cell
+    assert len(wave_calls) == 2
+    assert sorted(c["rubric"] for c in wave_calls) == ["rubric-evil", "rubric-sycophancy"]
+    for call in wave_calls:
+        behavior = call["rubric"].removeprefix("rubric-")
+        assert all(iid.startswith(behavior) for iid in call["iids"])
+    for c in cells:
+        cid = i2254._cell_id(c)
+        a = json.loads((root_a / "judge" / "judged" / f"{cid}.json").read_text())
+        b = json.loads((root_b / "judge" / "judged" / f"{cid}.json").read_text())
+        assert set(a) == set(b), cid  # identical top-level keys
+        assert set(a["accounting"]) == set(b["accounting"]), cid
+        assert set(a["judge"]) == set(b["judge"]), cid
+        # identical scores + item meta (the reduce-consumed surface)
+        assert a["per_item_scores_merged"] == b["per_item_scores_merged"], cid
+        for k in (
+            "cell_id",
+            "items",
+            "gen_sha",
+            "judge_fp",
+            "n_questions",
+            "per_question_mean_score",
+            "per_question_rate",
+            "per_question_n",
+            "mean_score",
+            "rate",
+            "coherence_rate",
+            "coherence_pass",
+        ):
+            assert a[k] == b[k], (cid, k)
+        for k in ("frac_items_complete", "n_total_draws", "n_items", "n_items_zero_valid"):
+            assert a["accounting"][k] == b["accounting"][k], (cid, k)
+
+
+def test_wave_mode_skips_already_judged_cells(tmp_path, judge_mode_env):
+    fake, cells, rubrics = judge_mode_env
+    args = _args(tmp_path)
+    n_draws = 2
+    root = tmp_path / "wave_skip_root"
+    comp = _write_gen_recs(root, cells)
+    pre = cells[0]
+    pre_cid = i2254._cell_id(pre)
+    rm._judge_revmap_cell(args, root, comp / f"{pre_cid}.json", rubrics[pre["behavior"]], n_draws)
+    ckpt = root / "judge" / "judged" / f"{pre_cid}.json"
+    before_bytes = ckpt.read_bytes()
+    before_mtime = ckpt.stat().st_mtime_ns
+    fake.calls.clear()
+    cell_by_id = {i2254._cell_id(c): c for c in cells}
+    n_judged = rm._judge_revmap_wave(args, root, comp, cell_by_id, rubrics, n_draws)
+    assert n_judged == len(cells)  # cached + freshly judged
+    # the pre-judged cell's items never re-entered any wave submission
+    wave_iids = {iid for call in fake.calls for iid in call["iids"]}
+    rec = json.loads((comp / f"{pre_cid}.json").read_text())
+    items, _meta = rm._judge_cell_items(rec)
+    assert wave_iids.isdisjoint({it[0] for it in items})
+    # checkpoint untouched (bytes + mtime)
+    assert ckpt.read_bytes() == before_bytes
+    assert ckpt.stat().st_mtime_ns == before_mtime
+    # remaining 3 cells judged, all 4 checkpoints now present
+    assert len(list((root / "judge" / "judged").glob("*.json"))) == len(cells)

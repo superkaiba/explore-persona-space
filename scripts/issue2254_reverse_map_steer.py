@@ -1027,35 +1027,44 @@ def _stage_revmap_completions(args, rroot: Path, expected_fp: dict[str, str]) ->
     return comp_root
 
 
-def _judge_revmap_cell(args, rroot: Path, gen_path: Path, rubric: str, n_draws: int) -> dict:
-    """Judge one steer cell via ``fk._judge_graded_with_refusal_reissue``
-    (Batch-first + rule-28 targeted SYNC re-issue at the identical
-    instrument). Per-cell checkpoint at judge/judged/<cid>.json, resume keyed
-    on (gen-file byte sha, judge instrument fingerprint)."""
-    from explore_persona_space.experiments.issue_1739.constants import (
-        JUDGE_MODEL,
-        JUDGE_TEMPERATURE,
-    )
-    from explore_persona_space.experiments.issue_1739.judging import (
-        judge_tallies,
-        rollout_item_id,
-    )
+_JUDGE_TRANSPORT_PERCELL = "batch (threshold_base=0 pin) + rule-28 sync re-issue"
+_JUDGE_TRANSPORT_WAVE = (
+    "batch (threshold_base=0 pin) + rule-28 sync re-issue; judge-mode=wave: ONE "
+    "behavior-wave submission — n_refusal_draws / stop_reason_tally / sync_reissue are "
+    "BEHAVIOR-WAVE-scope telemetry (no per-item breakdown exists); every other "
+    "accounting field is exact per-cell"
+)
 
+
+def _judge_cell_precheck(args, rroot: Path, gen_path: Path, rubric: str, n_draws: int):
+    """Shared cached-skip predicate (BOTH judge modes): per-cell checkpoint at
+    judge/judged/<cid>.json, resume keyed on (gen-file byte sha, judge
+    instrument fingerprint); ``--force`` bypasses. Returns
+    ``(rec, gen_sha, judge_fp, cached-checkpoint | None)``."""
     raw = gen_path.read_bytes()
     rec = json.loads(raw)
-    cell = rec["cell"]
-    cid = rec["cell_id"]
     gen_sha = hashlib.sha256(raw).hexdigest()[:12]
     judge_fp = fk._judge_instrument_fp(rubric, n_draws)
-    out_path = rroot / "judge" / "judged" / f"{cid}.json"
+    out_path = rroot / "judge" / "judged" / f"{rec['cell_id']}.json"
     if out_path.exists() and not args.force:
         cached = json.loads(out_path.read_text())
         if cached.get("gen_sha") == gen_sha and cached.get("judge_fp") == judge_fp:
-            return cached
+            return rec, gen_sha, judge_fp, cached
         logger.info(
             "[revmap-judge] %s judged checkpoint stale (gen_sha/judge_fp mismatch) — re-judging",
-            cid,
+            rec["cell_id"],
         )
+    return rec, gen_sha, judge_fp, None
+
+
+def _judge_cell_items(rec: dict) -> tuple[list[tuple[str, str, str]], dict[str, dict]]:
+    """Per-cell judge items + meta — IDENTICAL item ids in both judge modes
+    (the iid embeds the cell tokens + seed + within-cell index via
+    ``_judge_ctx_id``, so per-cell and wave submissions produce byte-identical
+    item keys and the wave split-back is unambiguous)."""
+    from explore_persona_space.experiments.issue_1739.judging import rollout_item_id
+
+    cell = rec["cell"]
     qs = i2254._eval_questions(cell["behavior"])
     items: list[tuple[str, str, str]] = []
     meta: dict[str, dict] = {}
@@ -1063,13 +1072,34 @@ def _judge_revmap_cell(args, rroot: Path, gen_path: Path, rubric: str, n_draws: 
         iid = rollout_item_id(i2254._judge_ctx_id(cell, seed, len(items)), di)
         items.append((iid, qs[qi], text))
         meta[iid] = {"qi": qi, "seed": seed, "ci": ci, "di": di}
-    result, merged, reissue = fk._judge_graded_with_refusal_reissue(
-        items,
-        rubric,
-        cache_dir=rroot / "judge" / "cache" / cid,
-        save_raw=rroot / "judge" / "raw" / cid,
-        n_draws=n_draws,
+    return items, meta
+
+
+def _write_judge_checkpoint(
+    rroot: Path,
+    rec: dict,
+    gen_sha: str,
+    judge_fp: str,
+    meta: dict[str, dict],
+    n_items: int,
+    result,
+    merged: dict[str, list[float]],
+    reissue: dict | None,
+    n_draws: int,
+    transport: str,
+) -> dict:
+    """The shared 'scores → checkpoint dict → atomic write' tail (BOTH judge
+    modes call this; the per-cell mode output is byte-identical to the
+    pre-refactor shape, ``judge.transport`` string included)."""
+    from explore_persona_space.experiments.issue_1739.constants import (
+        JUDGE_MODEL,
+        JUDGE_TEMPERATURE,
     )
+    from explore_persona_space.experiments.issue_1739.judging import judge_tallies
+
+    cell = rec["cell"]
+    cid = rec["cell_id"]
+    out_path = rroot / "judge" / "judged" / f"{cid}.json"
     per_q: dict[int, list[float]] = {}
     for iid, scores in merged.items():
         if scores:
@@ -1100,7 +1130,7 @@ def _judge_revmap_cell(args, rroot: Path, gen_path: Path, rubric: str, n_draws: 
             "n_draws": n_draws,
             "max_tokens": i2254.JUDGE_MAX_TOKENS_2254,
             "temperature": JUDGE_TEMPERATURE,
-            "transport": "batch (threshold_base=0 pin) + rule-28 sync re-issue",
+            "transport": transport,
         },
         "items": meta,
         "accounting": {
@@ -1111,7 +1141,7 @@ def _judge_revmap_cell(args, rroot: Path, gen_path: Path, rubric: str, n_draws: 
             "frac_items_complete_batch": (result.frac_items_complete if result.scores else None),
             "frac_items_complete": fc_merged,
             "sync_reissue": reissue,
-            "n_items": len(items),
+            "n_items": n_items,
             "n_items_zero_valid": sum(1 for sc in merged.values() if not sc),
         },
         "per_item_scores_merged": merged,
@@ -1129,6 +1159,196 @@ def _judge_revmap_cell(args, rroot: Path, gen_path: Path, rubric: str, n_draws: 
     }
     i2254._write_json_atomic(out_path, _round_metadata(out))
     return out
+
+
+def _judge_revmap_cell(args, rroot: Path, gen_path: Path, rubric: str, n_draws: int) -> dict:
+    """Judge one steer cell via ``fk._judge_graded_with_refusal_reissue``
+    (Batch-first + rule-28 targeted SYNC re-issue at the identical
+    instrument). Per-cell checkpoint at judge/judged/<cid>.json, resume keyed
+    on (gen-file byte sha, judge instrument fingerprint)."""
+    rec, gen_sha, judge_fp, cached = _judge_cell_precheck(args, rroot, gen_path, rubric, n_draws)
+    if cached is not None:
+        return cached
+    items, meta = _judge_cell_items(rec)
+    result, merged, reissue = fk._judge_graded_with_refusal_reissue(
+        items,
+        rubric,
+        cache_dir=rroot / "judge" / "cache" / rec["cell_id"],
+        save_raw=rroot / "judge" / "raw" / rec["cell_id"],
+        n_draws=n_draws,
+    )
+    return _write_judge_checkpoint(
+        rroot,
+        rec,
+        gen_sha,
+        judge_fp,
+        meta,
+        len(items),
+        result,
+        merged,
+        reissue,
+        n_draws,
+        transport=_JUDGE_TRANSPORT_PERCELL,
+    )
+
+
+def _slice_judge_result(result, iids: list[str], n_draws: int):
+    """Per-cell VIEW of a behavior-wave ``JudgeResult`` (wave mode only).
+
+    Every per-item field is sliced exactly; the per-item-attributable
+    aggregates are recomputed from the slice (each pass-1 item receives
+    exactly ``n_draws`` draws, each classified into exactly one of kept /
+    content-dropped / transport-lost / api-refusal — the ``JudgeResult``
+    contract). ``n_refusal_draws`` and ``stop_reason_tally`` carry NO
+    per-item breakdown, so the WAVE-scope values are carried through —
+    disclosed in the checkpoint's ``judge.transport`` string."""
+    from explore_persona_space.eval.graded_judge import JudgeResult
+
+    idset = set(iids)
+    missing = sorted(idset - set(result.scores))
+    if missing:
+        raise RuntimeError(
+            f"wave judge: {len(missing)} cell item id(s) absent from the wave JudgeResult "
+            f"(e.g. {missing[:4]}) — split-back refused"
+        )
+    per_item_scores = {i: list(result.per_item_scores.get(i, [])) for i in iids}
+    n_kept = sum(len(v) for v in per_item_scores.values())
+    transport = {i: v for i, v in result.per_item_transport_losses.items() if i in idset}
+    trunc = {i: v for i, v in result.per_item_truncation_drops.items() if i in idset}
+    api_ref = {i: v for i, v in result.per_item_api_refusals.items() if i in idset}
+    n_total = n_draws * len(iids)
+    n_dropped = n_total - n_kept - sum(transport.values()) - sum(api_ref.values())
+    if n_dropped < 0:
+        raise RuntimeError(
+            "wave judge split-back: per-item draw accounting exceeds n_draws×n_items "
+            f"(kept={n_kept} transport={sum(transport.values())} "
+            f"api_refusal={sum(api_ref.values())} total={n_total}) — the n-draws-per-item "
+            "contract is violated; refusing to fabricate per-cell tallies"
+        )
+    return JudgeResult(
+        scores={i: result.scores[i] for i in iids},
+        n_total_draws=n_total,
+        n_dropped_draws=n_dropped,
+        per_item_draw_counts={
+            i: result.per_item_draw_counts.get(i, len(per_item_scores[i])) for i in iids
+        },
+        per_item_scores=per_item_scores,
+        n_transport_lost_draws=sum(transport.values()),
+        per_item_transport_losses=transport,
+        n_refusal_draws=result.n_refusal_draws,
+        n_truncation_dropped_draws=sum(trunc.values()),
+        per_item_truncation_drops=trunc,
+        stop_reason_tally=dict(result.stop_reason_tally),
+        n_api_refusal_draws=sum(api_ref.values()),
+        per_item_api_refusals=api_ref,
+    )
+
+
+def _judge_behavior_wave(
+    rroot: Path, behavior: str, pending: list[dict], rubric: str, n_draws: int
+) -> list[dict]:
+    """ONE judge submission for every pending cell of one behavior (the
+    inherited entrypoint sub-batches internally; never one API call per
+    cell), then split back to the IDENTICAL per-cell checkpoints."""
+    combined: list[tuple[str, str, str]] = []
+    owner: dict[str, str] = {}
+    for p in pending:
+        for it in p["items"]:
+            if it[0] in owner:
+                raise RuntimeError(
+                    f"wave judge: item id {it[0]!r} collides across cells "
+                    f"({owner[it[0]]} vs {p['rec']['cell_id']}) — split-back would misattribute"
+                )
+            owner[it[0]] = p["rec"]["cell_id"]
+            combined.append(it)
+    logger.info(
+        "[revmap-judge] wave %s: %d cell(s) / %d items in ONE submission",
+        behavior,
+        len(pending),
+        len(combined),
+    )
+    result, merged, reissue = fk._judge_graded_with_refusal_reissue(
+        combined,
+        rubric,
+        cache_dir=rroot / "judge" / "cache" / f"wave_{behavior}",
+        save_raw=rroot / "judge" / "raw" / f"wave_{behavior}",
+        n_draws=n_draws,
+    )
+    outs: list[dict] = []
+    for p in pending:
+        iids = [it[0] for it in p["items"]]
+        view = _slice_judge_result(result, iids, n_draws)
+        cell_merged = {iid: [float(s) for s in merged[iid]] for iid in iids}
+        outs.append(
+            _write_judge_checkpoint(
+                rroot,
+                p["rec"],
+                p["gen_sha"],
+                p["judge_fp"],
+                p["meta"],
+                len(iids),
+                view,
+                cell_merged,
+                reissue,
+                n_draws,
+                transport=_JUDGE_TRANSPORT_WAVE,
+            )
+        )
+    return outs
+
+
+def _judge_revmap_wave(
+    args, rroot: Path, comp_root: Path, cell_by_id: dict[str, dict], rubrics: dict, n_draws: int
+) -> int:
+    """``--judge-mode wave``: select non-cached cells with the SAME predicate
+    per-cell mode uses (``_judge_cell_precheck``; already-judged cells stay
+    untouched), group their items by BEHAVIOR (the rubric differs per
+    behavior), and run the (up to) three behavior waves CONCURRENTLY.
+
+    Thread-safety of the concurrent waves (verified against the stack):
+    ``judge_dispatch`` constructs FRESH anthropic clients per call and runs
+    ``asyncio.run`` per thread (own event loop); ``graded_temperature`` is a
+    ContextVar (thread-scoped); cache_dir / save_raw / the derived
+    ``.dispatch`` checkpoint roots are DISJOINT per behavior (``wave_<b>``);
+    the only module-global mutation on the path is api_dispatch's
+    headroom-sidecar write-throttle timestamp (benign telemetry)."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    t0 = time.time()
+    pending_by_b: dict[str, list[dict]] = {}
+    n_cached = 0
+    for cid in sorted(cell_by_id):
+        b = cell_by_id[cid]["behavior"]
+        rec, gen_sha, judge_fp, cached = _judge_cell_precheck(
+            args, rroot, comp_root / f"{cid}.json", rubrics[b], n_draws
+        )
+        if cached is not None:
+            n_cached += 1
+            continue
+        items, meta = _judge_cell_items(rec)
+        pending_by_b.setdefault(b, []).append(
+            {"rec": rec, "gen_sha": gen_sha, "judge_fp": judge_fp, "items": items, "meta": meta}
+        )
+    n_pending = sum(len(v) for v in pending_by_b.values())
+    logger.info(
+        "[revmap-judge] wave mode: %d cell(s) cached-skip, %d pending across %d behavior wave(s)",
+        n_cached,
+        n_pending,
+        len(pending_by_b),
+    )
+    if not pending_by_b:
+        return n_cached
+    n_done = 0
+    with ThreadPoolExecutor(max_workers=len(pending_by_b)) as ex:
+        futs = {
+            b: ex.submit(_judge_behavior_wave, rroot, b, pending, rubrics[b], n_draws)
+            for b, pending in sorted(pending_by_b.items())
+        }
+        for b, fut in futs.items():
+            outs = fut.result()  # re-raises the behavior wave's exception
+            n_done += len(outs)
+            i2254._progress("revmap-judge-wave", n_done, n_pending, b, t0)
+    return n_cached + n_done
 
 
 def _enforce_judge_completeness(rroot: Path) -> dict:
@@ -1158,8 +1378,11 @@ def phase_judge(args) -> None:
     """Off-pod judge wave: stage/verify the 36 gen records (set-EQUALITY:
     missing cells AND unexpected extras both refused), run the rule-26 pilot
     gate per behavior (parent instrument, truncation unwaivable), then the
-    per-cell Batch wave with the rule-28 sync re-issue; rule-29 completeness
-    ENFORCED before the wave sentinel."""
+    judge wave (``--judge-mode per-cell``: one Batch per cell, the recipe
+    default; ``--judge-mode wave``: ONE submission per behavior over every
+    non-cached cell, concurrent across behaviors, split back to identical
+    per-cell checkpoints) with the rule-28 sync re-issue; rule-29
+    completeness ENFORCED before the wave sentinel."""
     from explore_persona_space.experiments.issue_1739.judging import load_trait_rubric
 
     out_root = i2254._out_root(args)
@@ -1196,16 +1419,19 @@ def phase_judge(args) -> None:
     if args.pilot:
         logger.info("[revmap-judge] --pilot: rule-26 gate PASSed; stopping before the wave")
         return
-    t0 = time.time()
-    for k, cid in enumerate(sorted(expected_fp), 1):
-        j = _judge_revmap_cell(
-            args,
-            rroot,
-            comp_root / f"{cid}.json",
-            rubrics[cell_by_id[cid]["behavior"]],
-            n_draws,
-        )
-        i2254._progress("revmap-judge", k, len(expected_fp), j["cell_id"], t0)
+    if args.judge_mode == "wave":
+        _judge_revmap_wave(args, rroot, comp_root, cell_by_id, rubrics, n_draws)
+    else:
+        t0 = time.time()
+        for k, cid in enumerate(sorted(expected_fp), 1):
+            j = _judge_revmap_cell(
+                args,
+                rroot,
+                comp_root / f"{cid}.json",
+                rubrics[cell_by_id[cid]["behavior"]],
+                n_draws,
+            )
+            i2254._progress("revmap-judge", k, len(expected_fp), j["cell_id"], t0)
     _enforce_judge_completeness(rroot)
     n_judged = len(sorted((rroot / "judge" / "judged").glob("*.json")))
     i2254._write_json_atomic(
@@ -2155,6 +2381,18 @@ def build_argparser() -> argparse.ArgumentParser:
         "--pilot",
         action="store_true",
         help="judge phase: run the rule-26 pilot gate and STOP before the 36k wave",
+    )
+    ap.add_argument(
+        "--judge-mode",
+        choices=("per-cell", "wave"),
+        default="per-cell",
+        help=(
+            "judge submission grain: 'per-cell' (default; recipe fidelity — one Batch per "
+            "cell, blocking) or 'wave' (opt-in throughput mode: ONE submission per behavior "
+            "over every non-cached cell, concurrent across behaviors, split back to "
+            "IDENTICAL per-cell checkpoints; cached-skip predicate, rule-28 re-issue and "
+            "the rule-29 floor unchanged)"
+        ),
     )
     ap.add_argument(
         "--waive-judge-parse-fail-arms",
