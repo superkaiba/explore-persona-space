@@ -228,6 +228,15 @@ def _steer_alphas(cell: dict, rho_pooled: dict[str, float]) -> dict[str, float]:
 # ---------------------------------------------------------------------------
 
 
+def _round7_direction_names() -> tuple[str, ...]:
+    """Exact HF-backed reverse-map tensor names consumed by this round."""
+    return tuple(
+        f"{behavior}_{r7.SLUG}_L{layer}.pt"
+        for behavior in ROUND_BEHAVIORS
+        for layer in ROUND_LAYERS
+    )
+
+
 def _stage_directions(args) -> dict[str, str]:
     """Stage the six banked round-7 tensors into the parent's consumer layout."""
     import torch
@@ -1613,11 +1622,10 @@ def import_check() -> None:
     )
     assert callable(judge_pilot_gate)
     assert "FORM-ONLY" in coherence_rubric()
-    for behavior in ROUND_BEHAVIORS:
-        for layer in ROUND_LAYERS:
-            source = ROUND7_ROOT / "directions_revmap" / f"{behavior}_revmap_L{layer}.pt"
-            if not source.is_file():
-                raise FileNotFoundError(f"committed reused direction absent: {source}")
+    direction_names = _round7_direction_names()
+    assert len(direction_names) == 6
+    assert len(set(direction_names)) == 6
+    assert all(Path(name).name == name and name.endswith(".pt") for name in direction_names)
     logger.info("[revmap8-import-check] PASS: %d registered cells", len(cells))
 
 

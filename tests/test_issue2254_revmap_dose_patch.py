@@ -74,6 +74,16 @@ def test_four_way_sharding_covers_each_cell_once_and_balances_phases():
     assert sorted(realized) == sorted(r8._cell_id(cell) for cell in steer + patch)
 
 
+def test_import_check_does_not_require_hf_backed_directions_in_git(tmp_path, monkeypatch):
+    monkeypatch.setattr(r8, "ROUND7_ROOT", tmp_path / "round7-not-checked-out")
+    r8.import_check()
+    assert set(r8._round7_direction_names()) == {
+        f"{behavior}_revmap_L{layer}.pt"
+        for behavior in r8.ROUND_BEHAVIORS
+        for layer in r8.ROUND_LAYERS
+    }
+
+
 @pytest.mark.parametrize("dose,expected", [(8.0, 504.0), (16.0, 1008.0)])
 def test_high_dose_to_alpha(dose: float, expected: float):
     cell = next(cell for cell in r8.registered_steer_cells() if cell["c"] == dose)
