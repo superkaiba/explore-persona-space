@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2663,
+  "highest_id": 2664,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12837,6 +12837,13 @@
       "path": "tasks/proposed/2663",
       "status": "proposed",
       "title": "hub._upload returns empty instead of raising on missing token/path, defeating raise_on_error=True"
+    },
+    "2664": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2664",
+      "status": "proposed",
+      "title": "pod bootstrap runs the GPU-default preflight on CPU intents (nvidia-smi + 50 GB floor): thread the intent into the preflight argv"
     },
     "267": {
       "has_clean_result": true,
