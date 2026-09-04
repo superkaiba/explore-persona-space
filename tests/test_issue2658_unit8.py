@@ -774,6 +774,8 @@ def test_phase_all_with_stale_selection_on_disk_cannot_certify(tmp_path):
 def test_gate_status_vocabulary_is_closed():
     with pytest.raises(ValueError, match="invalid gate status"):
         P.Gate("x", "d", "MAYBE", None, "t", "a")
+    # plan v6 A7: AMENDED is a member of the closed vocabulary (never PASS)
+    assert P.Gate("x", "d", P.GATE_AMENDED, None, "t", "a").status == "AMENDED"
 
 
 def test_import_check_mode_runs():
@@ -1251,54 +1253,95 @@ def test_stager_writes_provenance_offline(tmp_path, monkeypatch):
     assert all(not f["path_in_repo"].endswith(".npy") for f in prov["files"])
     assert (dest / "shard03of08" / "_capture_manifest.json").read_text().startswith("payload:")
     # the alignment gate reports the staged provenance (empty store + empty
-    # gen dir align vacuously; the store_source string is what is under test)
+    # gen dir align vacuously; the store_source string is what is under test).
+    # r12/g1 concern 3: point the gate at a MINIMAL provenance fixture in the
+    # tmp root so this test never reads the committed direction_provenance.json.
     gen_dir = tmp_path / "out" / "raw_completions" / "pilot"
     gen_dir.mkdir(parents=True)
+    prov_path = tmp_path / "out" / "direction_provenance.json"
+    prov_path.write_text(
+        json.dumps({"rows": [{"row": "evil", "c2_c3": "eligible", "shape": [3584]}]})
+    )
+    monkeypatch.setattr(P.F, "PROVENANCE_PATH", prov_path)
     gate = P._gate_row_vector_alignment(tmp_path / "out", tmp_path / "out", "pilot")
     assert "hub-staged (" + "f" * 40 + ")" in str(gate.measured)
 
 
-def _gen_summary_fixture(tmp_path, split: str, frac_by_cell: dict[str, float]) -> Path:
-    """One shard gen-summary in the OBSERVED unit-5 schema (cap_hit key with
-    per_cell_fraction keyed row|frame|stratum)."""
-    over = sorted(k for k, v in frac_by_cell.items() if v > G_CAP_THRESHOLD)
-    body = {
-        "split": split,
-        "cap_hit": {
-            "amendment_required": bool(over),
-            "cells_over_threshold": over,
-            "per_cell_fraction": frac_by_cell,
-            "threshold": G_CAP_THRESHOLD,
-        },
-    }
+def _write_gen_summaries(
+    tmp_path,
+    split: str,
+    frac_by_cell: dict[str, float],
+    n_shards: int = 2,
+    n_per_cell: int = 50,
+    threshold_override: float | None = None,
+) -> list:
+    """Multi-shard gen summaries whose cap_hit blocks are DERIVED via the real
+    ``G.cap_hit_report`` over synthetic finish_reason rows (r12/g2 nit 5:
+    never a re-implemented rule), in the observed unit-5 schema."""
     d = tmp_path / "gen_summary"
     d.mkdir(parents=True, exist_ok=True)
-    p = d / f"{split}_shard00of01.json"
-    p.write_text(json.dumps(body))
-    return p
+    keys = sorted(frac_by_cell)
+    paths = []
+    for si in range(n_shards):
+        rows = []
+        for key in keys[si::n_shards]:
+            row, frame, band = key.split("|")
+            n_hit = round(frac_by_cell[key] * n_per_cell)
+            rows.extend(
+                {
+                    "row": row,
+                    "cell": f"{frame}|{band}",
+                    "finish_reason": "length" if j < n_hit else "stop",
+                }
+                for j in range(n_per_cell)
+            )
+        rep = P.G.cap_hit_report(rows)
+        if threshold_override is not None:
+            rep["threshold"] = threshold_override
+        body = {"split": split, "shard": f"shard{si:02d}of{n_shards:02d}", "cap_hit": rep}
+        path = d / f"{split}_shard{si:02d}of{n_shards:02d}.json"
+        path.write_text(json.dumps(body))
+        paths.append(path)
+    return paths
 
 
-G_CAP_THRESHOLD = float(P.G.CAP_HIT_AMEND_THRESHOLD)
+def _all_cell_keys(frac: float = 0.0) -> dict[str, float]:
+    return {cell.replace("__", "|"): frac for row in C.ROW_IDS for cell in P.expected_cells(row)}
+
+
+def _raw_decoder_fixture(tmp_path, split: str = "pilot", cap: int = 1024) -> None:
+    d = tmp_path / "raw_completions" / split
+    d.mkdir(parents=True, exist_ok=True)
+    for cell in ("evil__arc_c_tasks__direct", "evil__arc_c_tasks__indirect"):
+        (d / f"{cell}.json").write_text(
+            json.dumps({"schema": "i2658-gen-cell-v1", "decoder": {"max_new_tokens": cap}})
+        )
 
 
 def test_gate_cap_hit_reads_shard_summaries(tmp_path):
-    all_keys = {cell.replace("__", "|"): 0.0 for row in C.ROW_IDS for cell in P.expected_cells(row)}
-    _gen_summary_fixture(tmp_path, "pilot", all_keys)
-    gate = P._gate_cap_hit(tmp_path, "pilot")
+    all_keys = _all_cell_keys()
+    _write_gen_summaries(tmp_path, "pilot", all_keys)
+    gate = P._gate_cap_hit(tmp_path, tmp_path, "pilot")
     assert gate.status == P.GATE_PASS
     assert gate.measured["n_cells_covered"] == 132
-    # one cell over the 2% threshold => honest FAIL naming the shard summary
+    assert gate.measured["n_shard_summaries"] == 2
+    # one cell over the 2% threshold with NO amendment record => honest FAIL
     hot = dict(all_keys)
-    hot[next(iter(hot))] = 0.16
-    _gen_summary_fixture(tmp_path, "pilot", hot)
-    gate2 = P._gate_cap_hit(tmp_path, "pilot")
-    assert gate2.status == P.GATE_FAIL and "over threshold" in gate2.detail
+    hot_key = sorted(hot)[0]
+    hot[hot_key] = 0.16
+    _write_gen_summaries(tmp_path, "pilot", hot)
+    gate2 = P._gate_cap_hit(tmp_path, tmp_path, "pilot")
+    assert gate2.status == P.GATE_FAIL and "no amendment record" in gate2.detail
     assert gate2.measured["worst_per_cell_fraction"] == 0.16
-    # incomplete coverage without a declaration stays NOT-ESTIMABLE
-    partial = dict(list(all_keys.items())[:100])
-    _gen_summary_fixture(tmp_path, "pilot", partial)
-    gate3 = P._gate_cap_hit(tmp_path, "pilot")
+    assert hot_key.replace("|", "__") in gate2.detail
+    # incomplete coverage without a declaration stays NOT-ESTIMABLE, and the
+    # r12/g2 concern-2 detail NAMES the missing cells
+    partial = dict(sorted(all_keys.items())[:100])
+    _write_gen_summaries(tmp_path, "pilot", partial)
+    gate3 = P._gate_cap_hit(tmp_path, tmp_path, "pilot")
     assert gate3.status == P.GATE_NOT_ESTIMABLE
+    a_missing = sorted(set(all_keys) - set(partial))[0].replace("|", "__")
+    assert a_missing in gate3.detail
     # a declared never-generated cell shrinks the denominator instead
     missing_cell = sorted(set(all_keys) - set(partial))[0].replace("|", "__")
     declared = {
@@ -1309,6 +1352,206 @@ def test_gate_cap_hit_reads_shard_summaries(tmp_path):
         }
     }
     almost = {k: v for k, v in all_keys.items() if k.replace("|", "__") != missing_cell}
-    _gen_summary_fixture(tmp_path, "pilot", almost)
-    gate4 = P._gate_cap_hit(tmp_path, "pilot", declared)
+    _write_gen_summaries(tmp_path, "pilot", almost)
+    gate4 = P._gate_cap_hit(tmp_path, tmp_path, "pilot", declared)
     assert gate4.status == P.GATE_PASS and gate4.measured["n_expected"] == 131
+
+
+def test_gate_cap_hit_input_errors(tmp_path):
+    # threshold drift in a shard summary raises, naming the shard path (g2 c1)
+    a = tmp_path / "a"
+    hot = _all_cell_keys()
+    hot[sorted(hot)[0]] = 0.16
+    _write_gen_summaries(a, "pilot", hot, threshold_override=0.05)
+    with pytest.raises(P.PowerInputError, match="shard00of02"):
+        P._gate_cap_hit(a, a, "pilot")
+    # a cell key outside the registered grid raises, naming it (g2 c2)
+    b = tmp_path / "b"
+    foreign = _all_cell_keys()
+    foreign["evil|not_a_frame|direct"] = 0.0
+    _write_gen_summaries(b, "pilot", foreign)
+    with pytest.raises(P.PowerInputError, match="not_a_frame"):
+        P._gate_cap_hit(b, b, "pilot")
+    # a malformed shard summary raises with the path, never a bare KeyError (g2 nit 3)
+    c = tmp_path / "c"
+    d = c / "gen_summary"
+    d.mkdir(parents=True)
+    (d / "pilot_shard00of01.json").write_text(json.dumps({"split": "pilot"}))
+    with pytest.raises(P.PowerInputError, match="malformed"):
+        P._gate_cap_hit(c, c, "pilot")
+
+
+def test_cap_amendment_producer_on_synthetic_shards(tmp_path):
+    keys = _all_cell_keys()
+    offender_keys = sorted(keys)[:3]
+    fracs = (0.16, 0.58, 0.04)
+    for k, f in zip(offender_keys, fracs, strict=True):
+        keys[k] = f
+    _write_gen_summaries(tmp_path, "pilot", keys)
+    _raw_decoder_fixture(tmp_path)
+    rec = P.build_cap_amendment(tmp_path, tmp_path, "pilot")
+    assert rec["schema"] == P.CAP_AMENDMENT_SCHEMA and rec["plan_version"] == "v6"
+    assert rec["pilot_max_new_tokens"] == 1024  # derived from the decoder records
+    assert rec["production_max_new_tokens"] == C.PRODUCTION_MAX_NEW_TOKENS == 4096
+    assert sorted(rec["cells_over_threshold"]) == sorted(offender_keys)
+    assert rec["n_offender_cells"] == 3
+    assert rec["n_truncated_records"] == sum(round(f * 50) for f in fracs)
+    assert rec["n_records_total"] == 132 * 50
+    assert rec["threshold"] == P.G.CAP_HIT_AMEND_THRESHOLD
+    assert rec["registered_rule_plan_v4_section5"].startswith("realized length-cap fraction")
+    assert "truncated answers" in rec["disclosure"]
+    assert (tmp_path / P.CAP_AMENDMENT_REL).exists()
+    for k in offender_keys:
+        assert rec["cells_over_threshold"][k]["n"] == 50
+
+
+def test_cap_amendment_producer_fails_loud(tmp_path):
+    keys = _all_cell_keys()
+    _raw_decoder_fixture(tmp_path)
+    # an EMPTY offender set is a wiring error, not a record
+    _write_gen_summaries(tmp_path, "pilot", keys)
+    with pytest.raises(P.PowerInputError, match="ZERO cells"):
+        P.build_cap_amendment(tmp_path, tmp_path, "pilot")
+    # a missing shard summary fails loud (shardXXofYY completeness)
+    hot = dict(keys)
+    hot[sorted(hot)[0]] = 0.16
+    paths = _write_gen_summaries(tmp_path, "pilot", hot)
+    paths[1].unlink()
+    with pytest.raises(P.PowerInputError, match="missing pilot shard summaries"):
+        P.build_cap_amendment(tmp_path, tmp_path, "pilot")
+    # mixed decoder caps across raw-completion bodies fail loud
+    _write_gen_summaries(tmp_path, "pilot", hot)
+    (tmp_path / "raw_completions" / "pilot" / "z.json").write_text(
+        json.dumps({"decoder": {"max_new_tokens": 2048}})
+    )
+    with pytest.raises(P.PowerInputError, match="mixed decoder caps"):
+        P.build_cap_amendment(tmp_path, tmp_path, "pilot")
+
+
+def test_gate_cap_hit_amended_and_fail_paths(tmp_path):
+    keys = _all_cell_keys()
+    offenders = sorted(keys)[:12]  # 12 > 10: r12/g2 nit 4, detail never truncated
+    for k in offenders:
+        keys[k] = 0.16
+    _write_gen_summaries(tmp_path, "pilot", keys)
+    _raw_decoder_fixture(tmp_path)
+    rec = P.build_cap_amendment(tmp_path, tmp_path, "pilot")
+    gate = P._gate_cap_hit(tmp_path, tmp_path, "pilot")
+    assert gate.status == P.GATE_AMENDED
+    assert gate.status != P.GATE_PASS  # AMENDED is never reported PASS
+    for k in offenders:
+        assert k.replace("|", "__") in gate.detail
+    assert gate.measured["amendment_record"]["production_max_new_tokens"] == 4096
+    rec_path = tmp_path / P.CAP_AMENDMENT_REL
+    # a record whose cap sits below the registered 2x floor keeps FAIL
+    bad = dict(rec)
+    bad["production_max_new_tokens"] = 1500
+    rec_path.write_text(json.dumps(bad))
+    gate2 = P._gate_cap_hit(tmp_path, tmp_path, "pilot")
+    assert gate2.status == P.GATE_FAIL and "2x pilot cap" in gate2.detail
+    # a record not covering one realized offender keeps FAIL, naming the cell
+    bad2 = dict(rec)
+    bad2["cells_over_threshold"] = {
+        k: v for k, v in rec["cells_over_threshold"].items() if k != offenders[0]
+    }
+    rec_path.write_text(json.dumps(bad2))
+    gate3 = P._gate_cap_hit(tmp_path, tmp_path, "pilot")
+    assert gate3.status == P.GATE_FAIL and "not covered" in gate3.detail
+    assert offenders[0].replace("|", "__") in gate3.detail
+
+
+def test_amended_gate_is_nonblocking_and_verdict_carries_amendment(tmp_path):
+    keys = _all_cell_keys()
+    keys[sorted(keys)[0]] = 0.16
+    _write_gen_summaries(tmp_path, "pilot", keys)
+    _raw_decoder_fixture(tmp_path)
+    P.build_cap_amendment(tmp_path, tmp_path, "pilot")
+    cost = P.cost_report(tmp_path, tmp_path, "pilot", n_common=None)
+    profiles = P.load_pilot_label_profile(tmp_path, "pilot")
+    verdict = P.evaluate_gates(tmp_path, tmp_path, "pilot", profiles, None, None, cost)
+    by_id = {g["gate_id"]: g for g in verdict["gates"]}
+    assert by_id["measured_cap_hit_rate"]["status"] == P.GATE_AMENDED
+    assert "measured_cap_hit_rate" not in verdict["blockers"]
+    assert verdict["verdict"] == "PARK"  # everything else is still not-estimable
+    assert verdict["amendments"] and verdict["amendments"][0]["production_max_new_tokens"] == 4096
+    assert verdict["amendments"][0]["n_offender_cells"] == 1
+    assert P.CAP_AMENDMENT_DISCLOSURE_V6A7 in verdict["disclosures"]
+
+
+def test_cost_report_scales_gen_projection_under_cap_amendment(tmp_path):
+    timing = tmp_path / P.PILOT_TIMING_REL
+    timing.parent.mkdir(parents=True)
+    timing.write_text(json.dumps(_timing_fixture()))
+    keys = _all_cell_keys()
+    keys[sorted(keys)[0]] = 0.16  # 8 truncated of 132 x 50 = 6600 records
+    _write_gen_summaries(tmp_path, "pilot", keys)
+    _raw_decoder_fixture(tmp_path)
+    P.build_cap_amendment(tmp_path, tmp_path, "pilot")
+    rep = P.cost_report(tmp_path, tmp_path, "pilot", n_common=30)
+    proj = rep["gpu_hours"]["projected_production_gpu_h_measured_marginal"]
+    scaling = proj["cap_amendment_scaling"]
+    assert scaling["applied"] is True
+    mult = 1.0 + (8 / 6600) * (4096 / 1024 - 1.0)
+    assert abs(scaling["gen_marginal_multiplier"] - mult) < 1e-12
+    n_prod = 11 * 12 * 30 * 30 * 2
+    gen = n_prod * 0.14 * mult / 3600 + 2 * 0.135
+    cap = n_prod / 35.0 / 3600
+    assert abs(proj["value"] - (gen + cap)) < 1e-9
+    assert "upper bound" in scaling["assumption"]
+    # absent record: the projection stays unscaled and says so
+    bare = tmp_path / "bare"
+    timing2 = bare / P.PILOT_TIMING_REL
+    timing2.parent.mkdir(parents=True)
+    timing2.write_text(json.dumps(_timing_fixture()))
+    rep2 = P.cost_report(bare, bare, "pilot", n_common=30)
+    proj2 = rep2["gpu_hours"]["projected_production_gpu_h_measured_marginal"]
+    assert proj2["cap_amendment_scaling"]["applied"] is False
+    assert abs(proj2["value"] - (n_prod * 0.14 / 3600 + 2 * 0.135 + cap)) < 1e-9
+
+
+def test_resolve_max_new_tokens_split_behavior(tmp_path):
+    G = P.G
+    assert G.resolve_max_new_tokens("pilot", eval_root=tmp_path) == 1024
+    with pytest.raises(G.GenerationBudgetError, match="cap amendment record"):
+        G.resolve_max_new_tokens("dev", eval_root=tmp_path)
+    with pytest.raises(ValueError, match="unknown split"):
+        G.resolve_max_new_tokens("prod", eval_root=tmp_path)
+    rec_path = tmp_path / G.CAP_AMENDMENT_REL
+    rec_path.parent.mkdir(parents=True)
+    rec_path.write_text(
+        json.dumps(
+            {
+                "schema": P.CAP_AMENDMENT_SCHEMA,
+                "plan_version": "v6",
+                "pilot_max_new_tokens": 1024,
+                "production_max_new_tokens": 4096,
+            }
+        )
+    )
+    assert G.resolve_max_new_tokens("dev", eval_root=tmp_path) == 4096
+    assert G.resolve_max_new_tokens("test", eval_root=tmp_path) == 4096
+    # pilot stays 1024 even with the record present
+    assert G.resolve_max_new_tokens("pilot", eval_root=tmp_path) == 1024
+    assert G.prompt_budget_for_cap(4096) == G.MAX_MODEL_LEN - 4096 == 4096
+    assert G.prompt_budget_for_cap(1024) == 7168
+    with pytest.raises(G.GenerationBudgetError, match="no prompt budget"):
+        G.prompt_budget_for_cap(G.MAX_MODEL_LEN)
+    rec_path.write_text(json.dumps({"schema": "x"}))
+    with pytest.raises(G.GenerationBudgetError, match="missing field"):
+        G.resolve_max_new_tokens("dev", eval_root=tmp_path)
+
+
+def test_generation_fingerprint_carries_realized_cap():
+    G = P.G
+    cw = G.CellWork(
+        row="evil",
+        frame="arc_c_tasks",
+        band="direct",
+        item_ids=("i0",),
+        superfamilies={"i0": "s0"},
+    )
+    fp_pilot_1024 = G.generation_fingerprint(cw, 10, "pilot", 1024)
+    assert fp_pilot_1024 != G.generation_fingerprint(cw, 10, "pilot", 4096)
+    assert fp_pilot_1024 != G.generation_fingerprint(cw, 10, "dev", 4096)
+    # deterministic for a fixed cap (the pilot resume contract)
+    assert fp_pilot_1024 == G.generation_fingerprint(cw, 10, "pilot", 1024)

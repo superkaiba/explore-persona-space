@@ -66,6 +66,14 @@ DECODER: dict[str, Any] = {
     "seed_scheme": "sha256('i2658-gen|'+prompt_id+'|'+response_index) mod 2**31",
 }
 
+# Production (dev + sealed-test) length cap. Applied ONLY through the frozen
+# amendment record power_inputs/cap_amendment.json (issue2658_generate reads
+# the record, never this constant, so a non-pilot run without the record
+# fails loud). Source: plan v6 A7 (the pre-registered v4 section 5 cap
+# amendment fired on the pilot: 25 of 131 cells over the 2 percent threshold,
+# worst cell 0.58 truncated at 1024, hence 4x rather than the 2x floor).
+PRODUCTION_MAX_NEW_TOKENS = 4096
+
 # Judge instrument (plan §3; CLAUDE.md judge pin; llm-judging.md rules 4/6/7/23).
 JUDGE: dict[str, Any] = {
     "model": "claude-sonnet-4-5-20250929",

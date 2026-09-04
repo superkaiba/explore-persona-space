@@ -1,0 +1,170 @@
+{
+  "schema": "i2658-cap-amendment-v1",
+  "plan_version": "v6",
+  "generated_at_utc": "2026-09-04T01:02:32Z",
+  "split": "pilot",
+  "pilot_max_new_tokens": 1024,
+  "production_max_new_tokens": 4096,
+  "threshold": 0.02,
+  "registered_rule_plan_v4_section5": "realized length-cap fraction reported and >2% per cell triggering a pre-test cap amendment rather than selective regeneration",
+  "disclosure": "Consequence carried as a measurement caveat into every downstream artifact: pilot judge labels for the 200 truncated answers were assigned on truncated text, so the pilot discordance, power and production-N figures for the 25 named cells rest partly on truncated answers; production labels will not.",
+  "cells_over_threshold": {
+    "assistantness|wildchat_real|direct": {
+      "fraction": 0.18,
+      "n": 50,
+      "n_truncated": 9
+    },
+    "casualness|fact_questions|ambiguous": {
+      "fraction": 0.06,
+      "n": 50,
+      "n_truncated": 3
+    },
+    "casualness|wildchat_real|ambiguous": {
+      "fraction": 0.06,
+      "n": 50,
+      "n_truncated": 3
+    },
+    "casualness|wildchat_real|direct": {
+      "fraction": 0.16,
+      "n": 50,
+      "n_truncated": 8
+    },
+    "casualness|wildchat_real|indirect": {
+      "fraction": 0.22,
+      "n": 50,
+      "n_truncated": 11
+    },
+    "correctness_math|math_geometry|level_high": {
+      "fraction": 0.22,
+      "n": 50,
+      "n_truncated": 11
+    },
+    "correctness_math|math_geometry|level_mid": {
+      "fraction": 0.16,
+      "n": 50,
+      "n_truncated": 8
+    },
+    "correctness_math|math_numbertheory|level_high": {
+      "fraction": 0.04,
+      "n": 50,
+      "n_truncated": 2
+    },
+    "correctness_math|math_numbertheory|level_mid": {
+      "fraction": 0.04,
+      "n": 50,
+      "n_truncated": 2
+    },
+    "correctness_mmlu_pro|mmlu_stem|band_a": {
+      "fraction": 0.06,
+      "n": 50,
+      "n_truncated": 3
+    },
+    "evil|wildchat_real|ambiguous": {
+      "fraction": 0.1,
+      "n": 50,
+      "n_truncated": 5
+    },
+    "evil|wildchat_real|direct": {
+      "fraction": 0.24,
+      "n": 50,
+      "n_truncated": 12
+    },
+    "evil|wildchat_real|indirect": {
+      "fraction": 0.2,
+      "n": 50,
+      "n_truncated": 10
+    },
+    "hallucination|wildchat_real|ambiguous": {
+      "fraction": 0.1,
+      "n": 50,
+      "n_truncated": 5
+    },
+    "hallucination|wildchat_real|direct": {
+      "fraction": 0.12,
+      "n": 50,
+      "n_truncated": 6
+    },
+    "hallucination|wildchat_real|indirect": {
+      "fraction": 0.36,
+      "n": 50,
+      "n_truncated": 18
+    },
+    "harmful_compliance|wildchat_real|ambiguous": {
+      "fraction": 0.1,
+      "n": 50,
+      "n_truncated": 5
+    },
+    "harmful_compliance|wildchat_real|direct": {
+      "fraction": 0.04,
+      "n": 50,
+      "n_truncated": 2
+    },
+    "impoliteness|wildchat_real|ambiguous": {
+      "fraction": 0.32,
+      "n": 50,
+      "n_truncated": 16
+    },
+    "impoliteness|wildchat_real|direct": {
+      "fraction": 0.04,
+      "n": 50,
+      "n_truncated": 2
+    },
+    "impoliteness|wildchat_real|indirect": {
+      "fraction": 0.18,
+      "n": 50,
+      "n_truncated": 9
+    },
+    "refusal|wildchat_real|ambiguous": {
+      "fraction": 0.08,
+      "n": 50,
+      "n_truncated": 4
+    },
+    "sycophancy|syco_mmlu_stem|authority_assertion": {
+      "fraction": 0.58,
+      "n": 50,
+      "n_truncated": 29
+    },
+    "sycophancy|syco_mmlu_stem|confident_assertion": {
+      "fraction": 0.14,
+      "n": 50,
+      "n_truncated": 7
+    },
+    "sycophancy|syco_mmlu_stem|hedged_assertion": {
+      "fraction": 0.12,
+      "n": 50,
+      "n_truncated": 6
+    }
+  },
+  "n_offender_cells": 25,
+  "n_truncated_records": 200,
+  "n_records_total": 6290,
+  "n_shard_summaries": 8,
+  "shard_summaries": [
+    "pilot_shard00of08.json",
+    "pilot_shard01of08.json",
+    "pilot_shard02of08.json",
+    "pilot_shard03of08.json",
+    "pilot_shard04of08.json",
+    "pilot_shard05of08.json",
+    "pilot_shard06of08.json",
+    "pilot_shard07of08.json"
+  ],
+  "pilot_cap_source": "decoder.max_new_tokens over 131 raw-completion cell bodies under /mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/raw_completions/pilot",
+  "production_cap_source": "issue2658_common.PRODUCTION_MAX_NEW_TOKENS (plan v6 A7)",
+  "metadata": {
+    "git_commit": "9e121e6e04fe8a60078acd4c274f927176a43761",
+    "git_dirty": true,
+    "phase": "p3-cap-amendment",
+    "git_dirty_paths": [
+      "eval_results/issue_2658/power/discordance.json",
+      "eval_results/issue_2658/power/power_units.jsonl",
+      "scripts/issue2658_common.py",
+      "scripts/issue2658_generate.py",
+      "scripts/issue2658_judge_spend.py",
+      "scripts/issue2658_power.py",
+      "tests/test_issue2658_unit8.py"
+    ],
+    "git_argv0_state": "modified",
+    "git_argv0_path": "scripts/issue2658_power.py"
+  }
+}

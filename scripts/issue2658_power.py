@@ -57,6 +57,7 @@ import argparse
 import hashlib
 import json
 import math
+import re
 import sys
 import time
 from dataclasses import asdict, dataclass, field
@@ -105,6 +106,22 @@ HUMAN_AUDIT_REL = "human_audit/adjudications.json"  # producer: blinded packet r
 # the human-audit gate reports the distinct status WAIVED (never PASS).
 HUMAN_AUDIT_WAIVER_REL = "human_audit/waiver.json"
 WAIVER_SCHEMA = "i2658-human-audit-waiver-v1"
+# Frozen length-cap amendment record (plan v6 A7); producer: --phase cap-amendment.
+CAP_AMENDMENT_REL = "power_inputs/cap_amendment.json"
+CAP_AMENDMENT_SCHEMA = "i2658-cap-amendment-v1"
+# Registered rule text, verbatim from plan v4 section 5.
+CAP_AMENDMENT_RULE_V4S5 = (
+    "realized length-cap fraction reported and >2% per cell triggering a "
+    "pre-test cap amendment rather than selective regeneration"
+)
+# Disclosure text, verbatim from plan v6 A7.
+CAP_AMENDMENT_DISCLOSURE_V6A7 = (
+    "Consequence carried as a measurement caveat into every downstream "
+    "artifact: pilot judge labels for the 200 truncated answers were assigned "
+    "on truncated text, so the pilot discordance, power and production-N "
+    "figures for the 25 named cells rest partly on truncated answers; "
+    "production labels will not."
+)
 
 
 @dataclass(frozen=True)
@@ -178,6 +195,10 @@ GATE_NOT_ESTIMABLE = "NOT-ESTIMABLE"
 # Distinct owner-waiver status (plan v5 A1): non-blocking for the verdict but
 # NEVER collapsed into PASS (the disclosure must survive into every artifact).
 GATE_WAIVED = "WAIVED"
+# Distinct pre-registered length-cap amendment status (plan v6 A7): the cap-hit
+# gate reports AMENDED when every realized offender cell is covered by the
+# frozen amendment record. Non-blocking like WAIVED, and NEVER reported PASS.
+GATE_AMENDED = "AMENDED"
 
 
 class PowerInputError(C.Issue2658GuardError):
@@ -1249,6 +1270,204 @@ def select_production_n(
 # ---------------------------------------------------------------------------
 # Deliverable D — cost report (measured-or-not-estimable; projections labeled).
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Plan v6 A7 — pre-registered length-cap amendment (producer + loader).
+# ---------------------------------------------------------------------------
+_SHARD_SUMMARY_RE = r"_shard(\d+)of(\d+)\.json$"
+
+
+def _read_cap_hit_block(path: Path) -> dict[str, Any]:
+    """Parse + validate one gen-summary's ``cap_hit`` block (loud, path named).
+
+    Asserts the recorded per-shard ``threshold`` equals the registered
+    ``G.CAP_HIT_AMEND_THRESHOLD`` constant (round-12 review concern 1: the
+    consumer never trusts a producer flag or a drifted threshold).
+    """
+    try:
+        body = json.loads(path.read_text())
+    except json.JSONDecodeError as err:
+        raise PowerInputError(f"{path}: unparseable gen summary ({err})") from err
+    try:
+        rep = body["cap_hit"]
+        per_cell = rep["per_cell_fraction"]
+        thr = float(rep["threshold"])
+    except (KeyError, TypeError) as err:
+        raise PowerInputError(
+            f"{path}: malformed gen-summary cap_hit block (missing/invalid {err})"
+        ) from err
+    if not isinstance(per_cell, dict):
+        raise PowerInputError(f"{path}: per_cell_fraction is not a mapping")
+    if thr != float(G.CAP_HIT_AMEND_THRESHOLD):
+        raise PowerInputError(
+            f"{path}: recorded cap-hit threshold {thr} != registered "
+            f"G.CAP_HIT_AMEND_THRESHOLD {G.CAP_HIT_AMEND_THRESHOLD}"
+        )
+    return rep
+
+
+def _shard_summary_paths(gen_root: Path, split: str) -> list[Path]:
+    """Sorted shard summaries, FAIL-LOUD complete (every shardXXofYY present)."""
+    summary_dir = Path(gen_root) / "gen_summary"
+    paths = sorted(summary_dir.glob(f"{split}_shard*.json"))
+    if not paths:
+        raise PowerInputError(f"no {split} shard summaries under {summary_dir}")
+    indices: set[int] = set()
+    totals: set[int] = set()
+    for path in paths:
+        m = re.search(_SHARD_SUMMARY_RE, path.name)
+        if m is None:
+            raise PowerInputError(f"{path}: unparseable shard summary filename")
+        indices.add(int(m.group(1)))
+        totals.add(int(m.group(2)))
+    if len(totals) != 1:
+        raise PowerInputError(
+            f"{summary_dir}: mixed shard-count declarations {sorted(totals)} in filenames"
+        )
+    n_declared = totals.pop()
+    missing = sorted(set(range(n_declared)) - indices)
+    if missing:
+        raise PowerInputError(
+            f"{summary_dir}: missing {split} shard summaries for indices {missing} "
+            f"of declared {n_declared}"
+        )
+    return paths
+
+
+def _pilot_cap_from_raw(gen_root: Path, split: str) -> tuple[int, int]:
+    """(realized decoder cap, n cell bodies read) from raw-completion records.
+
+    Never hand-typed: every cell body's ``decoder.max_new_tokens`` is read and
+    the set must be a singleton.
+    """
+    raw_dir = Path(gen_root) / "raw_completions" / split
+    paths = sorted(raw_dir.glob("*.json"))
+    if not paths:
+        raise PowerInputError(
+            f"no raw-completion cell files under {raw_dir} to derive the pilot cap from"
+        )
+    caps: set[int] = set()
+    for path in paths:
+        try:
+            caps.add(int(json.loads(path.read_text())["decoder"]["max_new_tokens"]))
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as err:
+            raise PowerInputError(f"{path}: cannot read decoder.max_new_tokens ({err})") from err
+    if len(caps) != 1:
+        raise PowerInputError(f"{raw_dir}: mixed decoder caps across cell bodies: {sorted(caps)}")
+    return caps.pop(), len(paths)
+
+
+def build_cap_amendment(out_root: Path, gen_root: Path, split: str = "pilot") -> dict[str, Any]:
+    """Derive + freeze the plan v6 A7 cap-amendment record (``--phase cap-amendment``).
+
+    Everything is derived from realized artifacts: the offender set and the
+    truncation counts from the shard gen summaries, the pilot cap from the
+    raw-completion decoder records. Fails loud on a missing shard summary,
+    a duplicate cell, a threshold mismatch, or an EMPTY offender set (an
+    amendment with no offenders is a wiring error, not a record).
+    """
+    paths = _shard_summary_paths(gen_root, split)
+    frac: dict[str, float] = {}
+    n_by_cell: dict[str, int] = {}
+    n_records_declared = 0
+    for path in paths:
+        rep = _read_cap_hit_block(path)
+        if "per_cell_n" not in rep or "n_records" not in rep:
+            raise PowerInputError(f"{path}: cap_hit block missing per_cell_n/n_records")
+        n_records_declared += int(rep["n_records"])
+        for key, f in rep["per_cell_fraction"].items():
+            if key in frac:
+                raise PowerInputError(f"{path}: duplicate cell {key!r} across shard summaries")
+            if key not in rep["per_cell_n"]:
+                raise PowerInputError(f"{path}: cell {key!r} lacks a per_cell_n entry")
+            frac[key] = float(f)
+            n_by_cell[key] = int(rep["per_cell_n"][key])
+    n_records_total = sum(n_by_cell.values())
+    if n_records_total != n_records_declared:
+        raise PowerInputError(
+            f"per-cell n sum {n_records_total} != summed shard n_records {n_records_declared}"
+        )
+    n_truncated = 0
+    offenders: dict[str, dict[str, Any]] = {}
+    for key in sorted(frac):
+        hit_float = frac[key] * n_by_cell[key]
+        hit = round(hit_float)
+        if abs(hit_float - hit) > 1e-6:
+            raise PowerInputError(
+                f"cell {key!r}: fraction {frac[key]} x n {n_by_cell[key]} is not an "
+                "integer count (corrupt shard summary)"
+            )
+        n_truncated += hit
+        if frac[key] > float(G.CAP_HIT_AMEND_THRESHOLD):
+            offenders[key] = {
+                "fraction": frac[key],
+                "n": n_by_cell[key],
+                "n_truncated": hit,
+            }
+    if not offenders:
+        raise PowerInputError(
+            "cap amendment requested but ZERO cells exceed "
+            f"{G.CAP_HIT_AMEND_THRESHOLD} (an amendment with no offenders is a wiring error)"
+        )
+    pilot_cap, n_raw_bodies = _pilot_cap_from_raw(gen_root, split)
+    production_cap = int(C.PRODUCTION_MAX_NEW_TOKENS)
+    if production_cap < 2 * pilot_cap:
+        raise PowerInputError(
+            f"production cap {production_cap} < 2x pilot cap {pilot_cap} "
+            "(plan v6 A7 requires at least the registered 2x floor)"
+        )
+    record = {
+        "schema": CAP_AMENDMENT_SCHEMA,
+        "plan_version": "v6",
+        "generated_at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "split": split,
+        "pilot_max_new_tokens": pilot_cap,
+        "production_max_new_tokens": production_cap,
+        "threshold": float(G.CAP_HIT_AMEND_THRESHOLD),
+        "registered_rule_plan_v4_section5": CAP_AMENDMENT_RULE_V4S5,
+        "disclosure": CAP_AMENDMENT_DISCLOSURE_V6A7,
+        "cells_over_threshold": offenders,
+        "n_offender_cells": len(offenders),
+        "n_truncated_records": n_truncated,
+        "n_records_total": n_records_total,
+        "n_shard_summaries": len(paths),
+        "shard_summaries": [path.name for path in paths],
+        "pilot_cap_source": (
+            f"decoder.max_new_tokens over {n_raw_bodies} raw-completion cell bodies "
+            f"under {Path(gen_root) / 'raw_completions' / split}"
+        ),
+        "production_cap_source": "issue2658_common.PRODUCTION_MAX_NEW_TOKENS (plan v6 A7)",
+        "metadata": as_metadata_dict(git_provenance(), phase="p3-cap-amendment"),
+    }
+    write_json_atomic(Path(out_root) / CAP_AMENDMENT_REL, record)
+    return record
+
+
+def load_cap_amendment_record(out_root: Path) -> dict[str, Any] | None:
+    """The frozen amendment record under ``out_root``, or None if absent (loud
+    on a malformed record, never a silent default)."""
+    path = Path(out_root) / CAP_AMENDMENT_REL
+    if not path.exists():
+        return None
+    body = json.loads(path.read_text())
+    required = (
+        "schema",
+        "plan_version",
+        "pilot_max_new_tokens",
+        "production_max_new_tokens",
+        "threshold",
+        "disclosure",
+        "cells_over_threshold",
+        "n_truncated_records",
+        "n_records_total",
+    )
+    for fld in required:
+        if fld not in body:
+            raise PowerInputError(f"{path}: cap amendment record missing field {fld!r}")
+    if body["schema"] != CAP_AMENDMENT_SCHEMA:
+        raise PowerInputError(f"{path}: schema {body['schema']!r} != {CAP_AMENDMENT_SCHEMA!r}")
+    return body
+
+
 def _not_estimable(missing: Path | str, detail: str = "") -> dict[str, Any]:
     return {
         "value": None,
@@ -1323,7 +1542,41 @@ def cost_report(out_root: Path, gen_root: Path, split: str, n_common: int | None
             )
             gen_marginal_s = float(t["gen_marginal_s_per_response_per_gpu"])
             init_gpu_h_per_wave = float(t["fixed_overhead_hours"])  # sum over 8 shards
-            gen_gpu_h = n_prod_resp * gen_marginal_s / 3600.0 + 2 * init_gpu_h_per_wave
+            # Plan v6 A7: when the frozen cap-amendment record exists, scale
+            # the TRUNCATED share of responses by the cap ratio (an upper
+            # bound on token growth under vLLM continuous batching); the
+            # projection stays unscaled when the record is absent.
+            amend = load_cap_amendment_record(out_root)
+            gen_scale = 1.0
+            if amend is not None:
+                trunc_share = float(amend["n_truncated_records"]) / float(amend["n_records_total"])
+                cap_ratio = float(amend["production_max_new_tokens"]) / float(
+                    amend["pilot_max_new_tokens"]
+                )
+                gen_scale = 1.0 + trunc_share * (cap_ratio - 1.0)
+                cap_scaling: dict[str, Any] = {
+                    "applied": True,
+                    "record": str(out_root / CAP_AMENDMENT_REL),
+                    "truncated_share": trunc_share,
+                    "cap_ratio": cap_ratio,
+                    "gen_marginal_multiplier": gen_scale,
+                    "assumption": (
+                        "upper bound (plan v6 A7): the truncated share of pilot "
+                        "responses grows by at most the cap ratio, untruncated "
+                        "responses keep the measured pilot marginal rate, and "
+                        "engine-init overhead plus the capture lower bound are "
+                        "unchanged"
+                    ),
+                }
+            else:
+                cap_scaling = {
+                    "applied": False,
+                    "detail": (
+                        f"no cap amendment record at {out_root / CAP_AMENDMENT_REL}, "
+                        "projection unscaled"
+                    ),
+                }
+            gen_gpu_h = n_prod_resp * gen_marginal_s * gen_scale / 3600.0 + 2 * init_gpu_h_per_wave
             capture_rate = float(t["capture_rows_per_s_per_gpu"])
             capture_gpu_h = n_prod_resp / capture_rate / 3600.0
             projected_production_gpu_h = gen_gpu_h + capture_gpu_h
@@ -1332,8 +1585,10 @@ def cost_report(out_root: Path, gen_root: Path, split: str, n_common: int | None
                 "basis": "projected (measured-marginal, v5 A4)",
                 "gen_gpu_h": gen_gpu_h,
                 "capture_gpu_h_lower_bound": capture_gpu_h,
+                "cap_amendment_scaling": cap_scaling,
                 "formula": (
                     f"gen: {n_prod_resp} responses x {gen_marginal_s:.4f} s/resp/GPU "
+                    f"x {gen_scale:.4f} cap-amendment multiplier "
                     f"/ 3600 + 2 waves x {init_gpu_h_per_wave:.4f} engine-init GPU-h; "
                     f"capture: {n_prod_resp} rows / {capture_rate:.2f} rows/s/GPU / 3600 "
                     f"(responses = 11 rows x 12 cells x N={n_common} x 30 responses x "
@@ -1393,11 +1648,12 @@ def cost_report(out_root: Path, gen_root: Path, split: str, n_common: int | None
     srec: dict[str, Any] | None = None
     if spend_path.exists():
         srec = json.loads(spend_path.read_text())
-        if "dollars" not in srec:
-            raise PowerInputError(f"{spend_path}: missing field 'dollars'")
+        for fld in ("dollars", "basis"):
+            if fld not in srec:
+                raise PowerInputError(f"{spend_path}: missing field {fld!r}")
         api["measured_dollars"] = {
             "value": float(srec["dollars"]),
-            "basis": str(srec.get("basis", "measured")),
+            "basis": str(srec["basis"]),
             "artifact": str(spend_path),
         }
     else:
@@ -1447,16 +1703,33 @@ def cost_report(out_root: Path, gen_root: Path, split: str, n_common: int | None
             if n_meas_calls <= 0:
                 raise PowerInputError(f"{spend_path}: n_calls_succeeded must be > 0")
             dollars_per_call = float(srec["dollars"]) / n_meas_calls
+            # r12/g1 concern 2: the spend artifact spans pilot + canary batches,
+            # so the per-call mean's denominator includes the canary calls —
+            # same instrument/population as the numerator, so the mean stays
+            # unbiased for the pilot instrument; state the share when derivable.
+            canary_calls = sum(
+                int(b.get("n_succeeded", 0))
+                for b in srec.get("per_batch", [])
+                if b.get("subtree") != "pilot"
+            )
+            canary_note = (
+                f"denominator includes {canary_calls} canary calls "
+                f"({canary_calls / n_meas_calls:.1%} of {n_meas_calls}; same "
+                "population as the numerator, mean unbiased for the pilot instrument)"
+                if canary_calls
+                else "denominator scope: see the spend artifact's n_batches_by_subtree"
+            )
             api["projected_production_judge_dollars"] = {
                 "value": n_prod_calls * dollars_per_call,
                 "basis": "projected",
                 "detail": (
                     f"{n_prod_calls} calls x measured mean ${dollars_per_call:.6f}/call "
                     f"(measured token mix incl. cache reads/writes over {n_meas_calls} "
-                    f"pilot calls, per-call means {srec['per_call_mean_input_tokens']:.1f} "
+                    f"pilot + canary calls, per-call means "
+                    f"{srec['per_call_mean_input_tokens']:.1f} "
                     f"in / {srec['per_call_mean_output_tokens']:.1f} out tokens, priced at "
                     f"the published Sonnet 4.5 batch rates; source "
-                    f"{srec['price_source_url']})"
+                    f"{srec['price_source_url']}; {canary_note})"
                 ),
             }
         else:
@@ -1786,7 +2059,8 @@ class Gate:
     detail: str = ""
 
     def __post_init__(self) -> None:
-        if self.status not in (GATE_PASS, GATE_FAIL, GATE_NOT_ESTIMABLE, GATE_WAIVED):
+        allowed = (GATE_PASS, GATE_FAIL, GATE_NOT_ESTIMABLE, GATE_WAIVED, GATE_AMENDED)
+        if self.status not in allowed:
             raise ValueError(f"invalid gate status {self.status!r}")
 
 
@@ -1960,7 +2234,9 @@ def _gate_row_vector_alignment(out_root: Path, gen_root: Path, split: str) -> Ga
     staged_path = store_root / "_staged_from_hub.json"
     if staged_path.exists():
         staged = json.loads(staged_path.read_text())
-        store_source = f"hub-staged ({staged.get('revision')})"
+        if "revision" not in staged:
+            raise PowerInputError(f"{staged_path}: missing field 'revision'")
+        store_source = f"hub-staged ({staged['revision']})"
     return Gate(
         "row_vector_alignment",
         "provenance rows pin vector shape/layer; pilot capture store aligns 1:1 "
@@ -2136,14 +2412,28 @@ def _gate_judge_quality(
 
 
 def _gate_cap_hit(
-    gen_root: Path, split: str, declared: dict[str, dict[str, str]] | None = None
+    out_root: Path,
+    gen_root: Path,
+    split: str,
+    declared: dict[str, dict[str, str]] | None = None,
 ) -> Gate:
     # Observed unit-5 schema: the cap-hit report lives in the per-shard gen
     # summaries (gen_summary/<split>_shard*.json, key ``cap_hit`` with
     # per_cell_fraction keyed ``row|frame|stratum``) — NOT in the per-cell
     # raw-completion bodies (those carry records/fingerprint only; reading
     # body["cap_hit"] there KeyErrors, the round-12 wiring find).
+    #
+    # Round-13 (plan v6 A7 + review r12/g2): the offender set is recomputed
+    # GATE-SIDE from per_cell_fraction against the registered threshold (the
+    # producer's amendment_required flag is never trusted), coverage is
+    # set-based against the registered cell grid, and a frozen amendment
+    # record covering every realized offender yields the distinct
+    # non-blocking status AMENDED (never PASS). Any other state keeps FAIL.
     declared = declared or {}
+    description = (
+        "realized length-cap-hit fraction <= 2% per cell (plan section 5), or every "
+        "offender covered by the frozen pre-test cap amendment (plan v6 A7, AMENDED)"
+    )
     summary_dir = Path(gen_root) / "gen_summary"
     paths = sorted(summary_dir.glob(f"{split}_shard*.json"))
     # v5 A2: only NEVER-GENERATED declared cells (frame-manifest source) leave
@@ -2154,50 +2444,121 @@ def _gate_cap_hit(
         for cell, rec in declared.items()
         if rec.get("source") == "frame-manifest-pilot-selection"
     }
-    n_expected = len(C.ROW_IDS) * C.PILOT.cells_per_row - len(declared_ungenerated)
+    expected = {cell for row in C.ROW_IDS for cell in expected_cells(row)}
+    n_expected = len(expected) - len(declared_ungenerated)
     covered: set[str] = set()
-    problems = []
+    offenders: dict[str, float] = {}
     worst = 0.0
-    for p in paths:
-        rep = json.loads(p.read_text())["cap_hit"]
+    for path in paths:
+        rep = _read_cap_hit_block(path)
         for cell_key, frac in rep["per_cell_fraction"].items():
-            covered.add(cell_key.replace("|", "__"))
+            cell = cell_key.replace("|", "__")
+            covered.add(cell)
             worst = max(worst, float(frac))
-        if rep["amendment_required"]:
-            problems.append(f"{p.name}: cells over threshold {sorted(rep['cells_over_threshold'])}")
+            if float(frac) > float(G.CAP_HIT_AMEND_THRESHOLD):
+                offenders[cell] = float(frac)
     overlap = sorted(covered & set(declared_ungenerated))
     if overlap:
         raise PowerInputError(
             f"declared never-generated cells appear in gen summaries: {overlap[:3]} — "
             "stale frame-manifest declaration"
         )
+    foreign = sorted(covered - expected)
+    if foreign:
+        raise PowerInputError(
+            f"gen summaries carry cells outside the registered {len(expected)}-cell grid: {foreign}"
+        )
     measured: dict[str, Any] = {
         "n_cells_covered": len(covered),
         "n_expected": n_expected,
         "n_shard_summaries": len(paths),
         "worst_per_cell_fraction": worst,
+        "cells_over_threshold": {cell: offenders[cell] for cell in sorted(offenders)},
         "cells_declared_not_estimable": declared_ungenerated,
     }
-    if len(covered) < n_expected:
+    threshold_txt = (
+        f"<= {G.CAP_HIT_AMEND_THRESHOLD} per cell over {n_expected} generated cells "
+        "(132-scope minus declared never-generated)"
+    )
+    missing = sorted(expected - set(declared_ungenerated) - covered)
+    if missing:
+        detail = "pilot generation cap-hit coverage incomplete (undocumented absence): " + (
+            f"no {split} shard summaries under {summary_dir}"
+            if not paths
+            else f"missing cells {missing}"
+        )
         return Gate(
             "measured_cap_hit_rate",
-            "realized length-cap-hit fraction <= 2% per cell (plan section 5)",
+            description,
             GATE_NOT_ESTIMABLE,
             measured,
-            f"<= {G.CAP_HIT_AMEND_THRESHOLD} per cell over {n_expected} generated cells "
-            "(132-scope minus declared never-generated)",
+            threshold_txt,
             str(summary_dir),
-            "pilot generation cap-hit coverage incomplete (undocumented absence)",
+            detail,
+        )
+    if not offenders:
+        return Gate(
+            "measured_cap_hit_rate",
+            description,
+            GATE_PASS,
+            measured,
+            threshold_txt,
+            str(summary_dir),
+            "",
+        )
+    offender_txt = ", ".join(f"{cell}={offenders[cell]:.4f}" for cell in sorted(offenders))
+    record = load_cap_amendment_record(out_root)
+    record_path = Path(out_root) / CAP_AMENDMENT_REL
+    if record is None:
+        return Gate(
+            "measured_cap_hit_rate",
+            description,
+            GATE_FAIL,
+            measured,
+            threshold_txt,
+            str(summary_dir),
+            f"{len(offenders)} cells over threshold with no amendment record at "
+            f"{record_path}: {offender_txt}",
+        )
+    problems: list[str] = []
+    pilot_cap = int(record["pilot_max_new_tokens"])
+    production_cap = int(record["production_max_new_tokens"])
+    if production_cap < 2 * pilot_cap:
+        problems.append(f"record production cap {production_cap} < 2x pilot cap {pilot_cap}")
+    if float(record["threshold"]) != float(G.CAP_HIT_AMEND_THRESHOLD):
+        problems.append(
+            f"record threshold {record['threshold']} != registered {G.CAP_HIT_AMEND_THRESHOLD}"
+        )
+    record_cells = {key.replace("|", "__") for key in record["cells_over_threshold"]}
+    uncovered = sorted(set(offenders) - record_cells)
+    if uncovered:
+        problems.append(f"offender cells not covered by the record: {uncovered}")
+    measured["amendment_record"] = {
+        "path": str(record_path),
+        "pilot_max_new_tokens": pilot_cap,
+        "production_max_new_tokens": production_cap,
+        "n_record_cells": len(record_cells),
+    }
+    if problems:
+        return Gate(
+            "measured_cap_hit_rate",
+            description,
+            GATE_FAIL,
+            measured,
+            threshold_txt,
+            str(summary_dir),
+            " | ".join(problems) + f" | offenders: {offender_txt}",
         )
     return Gate(
         "measured_cap_hit_rate",
-        "realized length-cap-hit fraction <= 2% per cell (plan section 5)",
-        GATE_FAIL if problems else GATE_PASS,
+        description,
+        GATE_AMENDED,
         measured,
-        f"<= {G.CAP_HIT_AMEND_THRESHOLD} per cell over {n_expected} generated cells "
-        "(132-scope minus declared never-generated)",
+        threshold_txt,
         str(summary_dir),
-        "; ".join(problems[:10]),
+        f"AMENDED (plan v6 A7): {len(offenders)} cells over "
+        f"{G.CAP_HIT_AMEND_THRESHOLD}, all covered by {record_path} "
+        f"(cap {pilot_cap} -> {production_cap}): {offender_txt}",
     )
 
 
@@ -2207,13 +2568,24 @@ def _gate_human_audit(out_root: Path) -> tuple[Gate, dict[str, Any]]:
     detail = rel.get("detail", "")
     if status == GATE_NOT_ESTIMABLE and not detail:
         detail = "reliability not established for every judged trait"
+    base_description = (
+        "blinded double-human audit adjudicated at plan section 3 sizing with "
+        "reliability gates passed (sens/spec lower95 >= 0.80, kappa >= 0.70, "
+        "ICC >= 0.75)"
+    )
+    if status == GATE_WAIVED:
+        description = (
+            base_description + ". WAIVED by owner ruling (plan v5 A1), disclosure carried top-level"
+        )
+    else:
+        description = (
+            base_description + "; with no real adjudications on disk this is NOT-ESTIMABLE "
+            "and the verdict PARKs — the honest pre-audit output, not a bug"
+        )
     return (
         Gate(
             "human_audit_feasibility",
-            "blinded double-human audit adjudicated at plan section 3 sizing with "
-            "reliability gates passed (sens/spec lower95 >= 0.80, kappa >= 0.70, "
-            "ICC >= 0.75); with no real adjudications on disk this is NOT-ESTIMABLE "
-            "and the verdict PARKs — the honest pre-audit output, not a bug",
+            description,
             status,
             {k: v.get("status") for k, v in rel.get("per_trait", {}).items()} or None,
             "every judged trait PASS",
@@ -2464,7 +2836,7 @@ def evaluate_gates(
         _gate_row_vector_alignment(out_root, gen_root, split),
         _gate_discordance(discordance, out_root),
         _gate_judge_quality(out_root, split, declared),
-        _gate_cap_hit(gen_root, split, declared),
+        _gate_cap_hit(Path(out_root), Path(gen_root), split, declared),
         human_gate,
         _gate_power(selection, out_root),
         _gate_profile_freshness(profiles, discordance, selection, out_root),
@@ -2472,13 +2844,41 @@ def evaluate_gates(
     ]
     # WAIVED is non-blocking (plan v5 A1) but never renamed PASS: the waiver +
     # disclosure travel top-level so every downstream artifact can quote them.
-    blockers = [g.gate_id for g in gates if g.status not in (GATE_PASS, GATE_WAIVED)]
+    # AMENDED (plan v6 A7) is non-blocking the same way and never renamed PASS.
+    nonblocking = (GATE_PASS, GATE_WAIVED, GATE_AMENDED)
+    blockers = [g.gate_id for g in gates if g.status not in nonblocking]
     verdict = "LAUNCH" if not blockers else "PARK"
     waivers = []
     disclosures = []
     if rel.get("status") == GATE_WAIVED:
         waivers.append(rel["waiver"])
         disclosures.append(rel["disclosure"])
+    # Plan v6 A7: an AMENDED cap-hit gate carries the record summary +
+    # disclosure top-level so every downstream artifact can quote them.
+    amendments: list[dict[str, Any]] = []
+    cap_gate = next(g for g in gates if g.gate_id == "measured_cap_hit_rate")
+    if cap_gate.status == GATE_AMENDED:
+        rec = load_cap_amendment_record(Path(out_root))
+        if rec is None:  # pragma: no cover - AMENDED implies the record exists
+            raise PowerInputError(
+                f"cap-hit gate is AMENDED but {Path(out_root) / CAP_AMENDMENT_REL} is absent"
+            )
+        amendments.append(
+            {
+                "gate_id": "measured_cap_hit_rate",
+                "schema": rec["schema"],
+                "plan_version": rec["plan_version"],
+                "record": str(Path(out_root) / CAP_AMENDMENT_REL),
+                "pilot_max_new_tokens": rec["pilot_max_new_tokens"],
+                "production_max_new_tokens": rec["production_max_new_tokens"],
+                "threshold": rec["threshold"],
+                "n_offender_cells": len(rec["cells_over_threshold"]),
+                "n_truncated_records": rec["n_truncated_records"],
+                "n_records_total": rec["n_records_total"],
+                "disclosure": rec["disclosure"],
+            }
+        )
+        disclosures.append(rec["disclosure"])
     # Per-cell estimability roll-up (plan v5 A3) for the launch record.
     cells_estimable: list[str] | None = None
     cells_not_estimable: dict[str, str] | None = None
@@ -2511,6 +2911,7 @@ def evaluate_gates(
         "blockers": blockers,
         "waivers": waivers,
         "disclosures": disclosures,
+        "amendments": amendments,
         "cells_estimable": cells_estimable,
         "cells_not_estimable": cells_not_estimable,
         "rows_dead": rows_dead,
@@ -2669,9 +3070,13 @@ def build_argparser() -> argparse.ArgumentParser:
     )
     ap.add_argument(
         "--phase",
-        choices=("discordance", "power", "cost", "gate", "all"),
+        choices=("discordance", "power", "cost", "gate", "cap-amendment", "all"),
         default="all",
-        help="which deliverable phase(s) to run",
+        help=(
+            "which deliverable phase(s) to run (all = discordance+power+cost+gate; "
+            "cap-amendment runs alone and freezes power_inputs/cap_amendment.json, "
+            "plan v6 A7)"
+        ),
     )
     ap.add_argument(
         "--out-root", type=Path, default=None, help="artifact root (judge/labels/power)"
@@ -2747,6 +3152,16 @@ def run(args: argparse.Namespace) -> int:
     for row in rows:
         if row not in C.ROW_IDS:
             raise PowerInputError(f"unknown row {row!r}")
+    if args.phase == "cap-amendment":
+        rec = build_cap_amendment(Path(out_root), Path(gen_root), args.split)
+        print(
+            f"[power] wrote {Path(out_root) / CAP_AMENDMENT_REL}: "
+            f"{rec['n_offender_cells']} cells over {rec['threshold']}, "
+            f"{rec['n_truncated_records']}/{rec['n_records_total']} truncated records, "
+            f"cap {rec['pilot_max_new_tokens']} -> {rec['production_max_new_tokens']}",
+            flush=True,
+        )
+        return 0
     power_dir = Path(out_root) / "power"
     power_dir.mkdir(parents=True, exist_ok=True)
 

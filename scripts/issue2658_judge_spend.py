@@ -1,12 +1,16 @@
-"""Issue #2658 — pilot judge Batch-API spend artifact producer (plan v5 A4).
+"""Issue #2658 — pilot + canary judge Batch-API spend artifact producer (plan v5 A4).
 
-Enumerates the pilot judge batch ids from the on-disk dispatch results file
-NAMES (``raw_completions/judge/**/.dispatch/*/results_msgbatch_*.json`` —
-bodies are NEVER opened: judge outputs are referenced by path/count only),
-retrieves each batch's per-result ``usage`` via the Anthropic Batches API
-(read-only; no new inference requests), sums the four token categories over
-succeeded results, and prices them at the PUBLISHED Sonnet 4.5 Message
-Batches rates into ``eval_results/issue_2658/power_inputs/judge_spend.json``
+Scope: EVERY judge batch under ``raw_completions/judge/**`` — the pilot
+production batches AND the canary batches (the per-subtree split rides
+``n_batches_by_subtree``; canary calls are ~2 percent of the total and come
+from the same instrument/population, so per-call means stay unbiased for the
+pilot instrument). Enumerates batch ids from the on-disk dispatch results
+file NAMES (bodies are NEVER opened: judge outputs are referenced by
+path/count only), retrieves each batch's per-result ``usage`` via the
+Anthropic Batches API (read-only; no new inference requests), sums the four
+token categories over succeeded results, and prices them at the PUBLISHED
+Sonnet 4.5 Message Batches rates into
+``eval_results/issue_2658/power_inputs/judge_spend.json``
 (``basis: "priced from measured tokens, not billed"``).
 
 # API_DISPATCH_ROUTING_EXEMPT: read-only usage retrieval of already-completed
@@ -58,6 +62,8 @@ _BATCH_FILE_RE = re.compile(r"results_(msgbatch_[A-Za-z0-9]+)\.json$")
 # caching multipliers STACK with the batch discount (cache read 0.1x batch
 # input = $0.15; 5-minute cache write 1.25x batch input = $1.875).
 PRICE_SOURCE_URL = "https://platform.claude.com/docs/en/about-claude/pricing"
+# A calendar DATE (the day the pricing page was read), not a timestamp; kept
+# frozen so re-running the producer from checkpoints never mutates the record.
 PRICE_RETRIEVED_AT = "2026-09-03"
 RATES_PER_MTOK = {
     "input_per_mtok": 1.50,
@@ -192,6 +198,10 @@ def build_spend(out_root: Path) -> dict:
         subtree_counts[rec["subtree"]] = subtree_counts.get(rec["subtree"], 0) + 1
     return {
         "schema": "i2658-judge-spend-v1",
+        "scope": (
+            "pilot + canary judge Batch-API spend (every batch under "
+            "raw_completions/judge; per-subtree split in n_batches_by_subtree)"
+        ),
         "dollars": dollars,
         "basis": "priced from measured tokens, not billed",
         "price_source_url": PRICE_SOURCE_URL,
@@ -208,8 +218,8 @@ def build_spend(out_root: Path) -> dict:
         "per_batch": per_batch,
         "enumeration": {
             "root": str(judge_root),
-            "pattern": "**/.dispatch/*/results_msgbatch_*.json",
-            "detail": "batch ids from results file NAMES; bodies never opened",
+            "pattern": "**/results_msgbatch_*.json",
+            "detail": "batch ids from results file NAMES (rglob, any depth); bodies never opened",
         },
         "metadata": as_metadata_dict(git_provenance(), phase="p3-judge-spend"),
     }

@@ -2,7 +2,9 @@
 
 Plan §5 recipe: frozen model/tokenizer/chat-template pins (``issue2658_common``),
 bf16, batched ``LLM.generate()`` (never sequential HF), no tools / steering /
-hooks, temperature 1.0, top_p 0.95, max_new_tokens 1024 (#779 parity),
+hooks, temperature 1.0, top_p 0.95, split-aware max_new_tokens (pilot 1024 for
+#779 parity, dev/test read the amended production cap from the frozen
+``power_inputs/cap_amendment.json`` record, plan v6 A7, never a bare default),
 SHA-derived per-request seeds from the unit-1 schedule, immutable prompt /
 system-message / order manifests.  EVERY answer is retained — no filtering, no
 selection, no exclusion (``assert_iid_generation`` audits each prompt).
@@ -64,7 +66,12 @@ from explore_persona_space.atomic_io import (  # noqa: E402
 
 # #1092 / #1739 / #2388 rig parity (the #779-lineage behavior-corpus window).
 MAX_MODEL_LEN = 8192
+# PILOT prompt budget (7168). Kept as a module constant because the pilot
+# capture rig (issue2658_capture.py) keys its formatted-length guard and
+# fingerprint on it; split-aware code paths use prompt_budget_for_cap().
 PROMPT_BUDGET = MAX_MODEL_LEN - int(C.DECODER["max_new_tokens"])  # 7168
+# Frozen length-cap amendment record (plan v6 A7), relative to the eval root.
+CAP_AMENDMENT_REL = "power_inputs/cap_amendment.json"
 CHUNK_SIZE = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
 N_EMPTY_RETRIES = 3
 CAP_HIT_AMEND_THRESHOLD = 0.02  # strictly-above trigger (plan §5)
@@ -82,6 +89,61 @@ class GenerationBudgetError(C.Issue2658GuardError):
 
 class OrderManifestDriftError(C.Issue2658GuardError):
     """An immutable order manifest already exists with different content."""
+
+
+# ---------------------------------------------------------------------------
+# Split-aware decoder cap (plan v6 A7).
+# ---------------------------------------------------------------------------
+def load_cap_amendment(eval_root: Path | None = None) -> dict[str, Any] | None:
+    """The frozen length-cap amendment record (plan v6 A7), or None if absent.
+
+    ``eval_root`` defaults to the canonical committed eval root ``F.OUT_DIR``
+    (the record is frozen and committed, so pod clones carry it after sync).
+    """
+    root = Path(eval_root) if eval_root is not None else F.OUT_DIR
+    path = root / CAP_AMENDMENT_REL
+    if not path.exists():
+        return None
+    body = json.loads(path.read_text())
+    for fld in ("schema", "plan_version", "pilot_max_new_tokens", "production_max_new_tokens"):
+        if fld not in body:
+            raise GenerationBudgetError(f"{path}: cap amendment record missing field {fld!r}")
+    return body
+
+
+def resolve_max_new_tokens(split: str, eval_root: Path | None = None) -> int:
+    """Split-aware decoder cap: pilot keeps the frozen 1024, dev/test read the
+    amended production cap from the frozen record (plan v6 A7).
+
+    There is deliberately NO bare default for a non-pilot split: an absent
+    record raises, so production generation can never silently run at the
+    pilot cap (or at any hand-typed value).
+    """
+    if split not in C.SPLITS:
+        raise ValueError(f"unknown split {split!r}; registered splits: {C.SPLITS}")
+    if split == "pilot":
+        return int(C.DECODER["max_new_tokens"])
+    rec = load_cap_amendment(eval_root)
+    if rec is None:
+        root = Path(eval_root) if eval_root is not None else F.OUT_DIR
+        raise GenerationBudgetError(
+            f"split {split!r} requires the frozen cap amendment record at "
+            f"{root / CAP_AMENDMENT_REL} (plan v6 A7): produce it with "
+            "'scripts/issue2658_power.py --phase cap-amendment', never a bare default"
+        )
+    return int(rec["production_max_new_tokens"])
+
+
+def prompt_budget_for_cap(max_new_tokens: int) -> int:
+    """Prompt token budget under a given decoder cap (the frozen plan section 5
+    assertion keeps failing loud through :func:`rendered_prompt_or_raise`)."""
+    budget = MAX_MODEL_LEN - int(max_new_tokens)
+    if budget <= 0:
+        raise GenerationBudgetError(
+            f"max_new_tokens {max_new_tokens} leaves no prompt budget under "
+            f"max_model_len {MAX_MODEL_LEN}"
+        )
+    return budget
 
 
 # ---------------------------------------------------------------------------
@@ -292,9 +354,16 @@ def build_cells(rows_filter: list[str] | None = None) -> list[CellWork]:
     return cells
 
 
-def generation_fingerprint(cell: CellWork, n_responses: int, split: str) -> str:
+def generation_fingerprint(
+    cell: CellWork, n_responses: int, split: str, max_new_tokens: int
+) -> str:
     """Machine-stable resume fingerprint over GENERATING PARAMETERS (#1336 rule:
-    never hash recomputed floats; every value here is a frozen pin or an int)."""
+    never hash recomputed floats; every value here is a frozen pin or an int).
+
+    ``max_new_tokens`` is the REALIZED split cap (plan v6 A7). Pilot callers
+    pass the frozen 1024, so pilot fingerprints are byte-identical to the
+    pre-amendment payload and the realized pilot cells keep resuming.
+    """
     payload = json.dumps(
         {
             "schema": GEN_SCHEMA,
@@ -304,7 +373,7 @@ def generation_fingerprint(cell: CellWork, n_responses: int, split: str) -> str:
             "decoder": {
                 "temperature": C.DECODER["temperature"],
                 "top_p": C.DECODER["top_p"],
-                "max_new_tokens": C.DECODER["max_new_tokens"],
+                "max_new_tokens": int(max_new_tokens),
             },
             "max_model_len": MAX_MODEL_LEN,
             "split": split,
@@ -382,15 +451,16 @@ def load_tokenizer():
     return tok
 
 
-def rendered_prompt_or_raise(tok, item: R.ResolvedItem) -> tuple[str, int]:
-    """Chat-render one prompt and enforce the frozen prompt budget (loud)."""
+def rendered_prompt_or_raise(tok, item: R.ResolvedItem, max_new_tokens: int) -> tuple[str, int]:
+    """Chat-render one prompt and enforce the split's frozen prompt budget (loud)."""
+    budget = prompt_budget_for_cap(max_new_tokens)
     rendered = R.render_user_prompt(tok, item.text)
     n_tok = len(tok.encode(rendered, add_special_tokens=False))
-    if n_tok > PROMPT_BUDGET:
+    if n_tok > budget:
         raise GenerationBudgetError(
-            f"prompt {item.item_id!r} renders to {n_tok} tokens > budget {PROMPT_BUDGET} "
+            f"prompt {item.item_id!r} renders to {n_tok} tokens > budget {budget} "
             f"(max_model_len {MAX_MODEL_LEN} - max_new_tokens "
-            f"{C.DECODER['max_new_tokens']}); plan §5 fails loud, never skips"
+            f"{int(max_new_tokens)}); plan §5 fails loud, never skips"
         )
     return rendered, n_tok
 
@@ -419,14 +489,14 @@ def build_engine(tensor_parallel: int):
     )
 
 
-def _sampling_params(seed: int):
+def _sampling_params(seed: int, max_new_tokens: int):
     from vllm import SamplingParams
 
     return SamplingParams(
         n=1,
         temperature=float(C.DECODER["temperature"]),
         top_p=float(C.DECODER["top_p"]),
-        max_tokens=int(C.DECODER["max_new_tokens"]),
+        max_tokens=int(max_new_tokens),
         seed=seed,
     )
 
@@ -438,16 +508,19 @@ def generate_cell(
     resolved: dict[str, R.ResolvedItem],
     n_responses: int,
     split: str,
+    max_new_tokens: int,
 ) -> dict[str, Any]:
     """Generate all draws for one cell (batched, chunked); returns the cell body."""
     rendered: dict[str, str] = {}
     n_prompt_tokens: dict[str, int] = {}
     for iid in cell.item_ids:
-        rendered[iid], n_prompt_tokens[iid] = rendered_prompt_or_raise(tok, resolved[iid])
+        rendered[iid], n_prompt_tokens[iid] = rendered_prompt_or_raise(
+            tok, resolved[iid], max_new_tokens
+        )
 
     plan = [(iid, k) for iid in cell.item_ids for k in range(n_responses)]
     prompts = [rendered[iid] for iid, _ in plan]
-    params = [_sampling_params(C.response_seed(iid, k)) for iid, k in plan]
+    params = [_sampling_params(C.response_seed(iid, k), max_new_tokens) for iid, k in plan]
 
     outputs: list[Any] = []
     for start in range(0, len(prompts), max(1, CHUNK_SIZE)):
@@ -475,7 +548,9 @@ def generate_cell(
         if len(result["token_ids"]) == 0:
 
             def gen_once(seed: int, prompt: str = rendered[iid]) -> dict[str, Any]:
-                o = llm.generate([prompt], [_sampling_params(seed)], use_tqdm=False)[0].outputs[0]
+                o = llm.generate(
+                    [prompt], [_sampling_params(seed, max_new_tokens)], use_tqdm=False
+                )[0].outputs[0]
                 return {
                     "text": o.text,
                     "token_ids": list(o.token_ids),
@@ -526,14 +601,14 @@ def generate_cell(
         "frame": cell.frame,
         "band": cell.band,
         "split": split,
-        "fingerprint": generation_fingerprint(cell, n_responses, split),
+        "fingerprint": generation_fingerprint(cell, n_responses, split, max_new_tokens),
         "model_id": C.MODEL_ID,
         "model_revision": C.MODEL_REVISION,
         "chat_template_sha256": C.CHAT_TEMPLATE_SHA256,
         "decoder": {
             "temperature": C.DECODER["temperature"],
             "top_p": C.DECODER["top_p"],
-            "max_new_tokens": C.DECODER["max_new_tokens"],
+            "max_new_tokens": int(max_new_tokens),
         },
         "n_items": len(cell.item_ids),
         "n_responses_per_prompt": n_responses,
@@ -643,6 +718,9 @@ def exit_hard_under_live_engine(exc: BaseException) -> None:
 def run(args: argparse.Namespace) -> int:
     split = args.split
     n_responses = resolve_n_responses(args.responses, split)
+    # Split-aware cap (plan v6 A7): pilot 1024, dev/test from the frozen
+    # committed amendment record (loud when absent, never a bare default).
+    max_new_tokens = resolve_max_new_tokens(split)
     out_root = Path(args.out_root) if args.out_root else F.OUT_DIR
     if args.smoke:
         out_root = out_root / "smoke_gen"
@@ -658,7 +736,8 @@ def run(args: argparse.Namespace) -> int:
     shard_tag = f"shard{args.shard_index:02d}of{args.num_shards:02d}"
     print(
         f"[gen] {shard_tag}: {len(cells)} cells x {n_responses} responses/prompt "
-        f"(split={split}, smoke={args.smoke})",
+        f"(split={split}, max_new_tokens={max_new_tokens}, "
+        f"prompt_budget={prompt_budget_for_cap(max_new_tokens)}, smoke={args.smoke})",
         flush=True,
     )
 
@@ -672,7 +751,7 @@ def run(args: argparse.Namespace) -> int:
     # Budget-check every prompt BEFORE the engine spends anything.
     for cw in cells:
         for iid in cw.item_ids:
-            rendered_prompt_or_raise(tok, resolved[iid])
+            rendered_prompt_or_raise(tok, resolved[iid], max_new_tokens)
 
     order_body = order_manifest_body(cells, n_responses, split, shard_tag)
     write_immutable_json(out_root / "gen_order_manifest" / f"{split}_{shard_tag}.json", order_body)
@@ -697,13 +776,13 @@ def run(args: argparse.Namespace) -> int:
         n_resumed = 0
         for i, cw in enumerate(cells):
             raw_path, man_path = out_paths(out_root, split, cw.name)
-            fp = generation_fingerprint(cw, n_responses, split)
+            fp = generation_fingerprint(cw, n_responses, split, max_new_tokens)
             body = resume_cell_with_manifest(
                 raw_path, man_path, cw, fp, len(cw.item_ids) * n_responses
             )
             was_resumed = body is not None
             if body is None:
-                body = generate_cell(llm, tok, cw, resolved, n_responses, split)
+                body = generate_cell(llm, tok, cw, resolved, n_responses, split, max_new_tokens)
                 write_text_atomic(raw_path, json.dumps(body, ensure_ascii=False))
                 write_jsonl_atomic(man_path, manifest_rows_for_cell(cw, body))
             else:
@@ -726,6 +805,10 @@ def run(args: argparse.Namespace) -> int:
             "issue": 2658,
             "split": split,
             "shard": shard_tag,
+            # Realized split cap + budget (plan v6 A7): P4/P5 artifacts are
+            # self-describing without re-deriving the decoder.
+            "max_new_tokens": int(max_new_tokens),
+            "prompt_budget": prompt_budget_for_cap(max_new_tokens),
             "n_cells": len(cells),
             "n_cells_resumed": n_resumed,
             "cap_hit": report,
