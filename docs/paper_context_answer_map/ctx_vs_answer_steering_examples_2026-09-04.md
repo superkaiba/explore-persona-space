@@ -14,7 +14,7 @@ Comparison for task #2254 (pre-image steering line). All numbers are read from c
 
 ## Figure
 
-![ctx vs answer steering](https://raw.githubusercontent.com/superkaiba/explore-persona-space/COMMITSHA/figures/issue_2254/ctx_vs_answer_compare/ctx_vs_answer_steering.png)
+![ctx vs answer steering](https://raw.githubusercontent.com/superkaiba/explore-persona-space/ce1cefb22683793b4db7c69c4bc036045632bcff/figures/issue_2254/ctx_vs_answer_compare/ctx_vs_answer_steering.png)
 
 Bars are the selected operating cell per (direction, position). Error bars are the persisted question-clustered bootstrap intervals, frozen at the operating point. Dashed lines are the 97.5th-percentile null-band edges per position (context band from the decisive wave for evil and sycophancy, answer band from the localize wave, both localize bands for hallucination). Gray crosses mark (direction, position) combinations that were never run. Selection rule: the cell named in `decisive/verdicts.json` where one exists, otherwise the argmax of the wave's delta over its layer-config families (ties prefer the single-layer family). Evil and sycophancy use the decisive wave (200 judged completions per cell) except the measured context direction and shuffled-map control at answer tokens, which the decisive wave never ran and which come from the first-k position round (120 completions per cell). Hallucination uses the localize wave throughout (30 completions per cell) because it was demoted before the decisive wave: its rig positive control failed, with a best answer-token persona-vector delta of 50.0 under a 65.0 random-direction answer band.
 
