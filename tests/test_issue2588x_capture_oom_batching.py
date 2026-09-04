@@ -302,3 +302,187 @@ def test_shard_arrays_row_order_under_oom_splits():
     assert stats["n_backoffs"] > 0
     np.testing.assert_array_equal(pos_new[0], pos_ref[0])
     np.testing.assert_array_equal(y_new[0], y_ref[0])
+
+
+# ---------------------------------------------------------------------------
+# 5. Chunked prefill for long rows (#2659 round 2)
+# ---------------------------------------------------------------------------
+
+from types import SimpleNamespace  # noqa: E402
+
+
+class _StubCacheModel(_StubModel):
+    """Stub with KV-cache plumbing: returns an object carrying past_key_values
+    and logs per-call position_ids, so the REAL chunked driver
+    (_capture_forward_chunked) and the REAL reducer chunk accumulation run
+    against it end to end."""
+
+    def __init__(self, reducer: RC._CaptureReducer):
+        super().__init__(reducer)
+        self.position_ids_log: list = []
+        self.past_log: list = []
+
+    def __call__(self, input_ids=None, attention_mask=None, **kw):
+        self.batch_shapes.append(tuple(input_ids.shape))
+        self.masks.append(attention_mask)
+        self.position_ids_log.append(kw.get("position_ids"))
+        self.past_log.append(kw.get("past_key_values"))
+        h = input_ids.unsqueeze(-1).to(torch.float32) + torch.arange(H, dtype=torch.float32)
+        for li in self.reducer.layers:
+            self.reducer.hook_for(li)(None, None, h)
+        return SimpleNamespace(past_key_values=kw.get("past_key_values") or ["cache"])
+
+
+def test_should_chunk_predicate_and_env(monkeypatch):
+    monkeypatch.setenv("EPS_CAPTURE_CHUNK_THRESHOLD", "16")
+    monkeypatch.setenv("EPS_CAPTURE_CHUNK_TOKENS", "12")
+    assert RC._capture_chunk_threshold() == 16
+    assert RC._capture_chunk_tokens() == 12
+    assert RC._should_chunk_capture([[1] * 17])
+    assert not RC._should_chunk_capture([[1] * 16])  # threshold is strict >
+    assert not RC._should_chunk_capture([[1] * 40, [1] * 40])  # multi-row never chunks
+    monkeypatch.setenv("EPS_CAPTURE_CHUNK_TOKENS", "0")
+    with pytest.raises(AssertionError):
+        RC._capture_chunk_tokens()
+
+
+def test_chunked_stub_matches_unchunked_across_boundaries(monkeypatch):
+    """Chunk-aware reduction: boundary positions gathered from the right
+    chunk, span mean accumulated across chunks, identical output shape and
+    values vs the unchunked single-row forward."""
+    rng = np.random.default_rng(11)
+    seq = [int(x) for x in rng.integers(5, 1000, size=50)]
+    # Chunks of 12 over 50 tokens: [0:12) [12:24) [24:36) [36:48) [48:50).
+    meta = {"pos_list": [4, 11, 12, 49], "ans_span": (5, 50), "row_id": "rlong"}
+
+    monkeypatch.setenv("EPS_CAPTURE_CHUNK_THRESHOLD", "1000000")
+    red_ref = RC._CaptureReducer([0, 2], H)
+    ref = RC._capture_forward(_StubModel(red_ref), red_ref, [meta], [seq], 0)
+
+    monkeypatch.setenv("EPS_CAPTURE_CHUNK_THRESHOLD", "16")
+    monkeypatch.setenv("EPS_CAPTURE_CHUNK_TOKENS", "12")
+    red = RC._CaptureReducer([0, 2], H)
+    hf = _StubCacheModel(red)
+    stats: dict = {}
+    out = RC._capture_forward(hf, red, [meta], [seq], 0, stats)
+
+    assert hf.batch_shapes == [(1, 12), (1, 12), (1, 12), (1, 12), (1, 2)]
+    assert all(m is None for m in hf.masks)
+    assert hf.past_log[0] is None and all(p == ["cache"] for p in hf.past_log[1:])
+    starts = [int(p[0, 0]) for p in hf.position_ids_log]
+    assert starts == [0, 12, 24, 36, 48]
+    assert stats["chunked_row_ids"] == {"rlong"}
+    for li in (0, 2):
+        assert out[li][0].shape == (1, 4, H) and out[li][1].shape == (1, H)
+        np.testing.assert_allclose(out[li][0], ref[li][0], rtol=1e-6)
+        np.testing.assert_allclose(out[li][1], ref[li][1], rtol=1e-6)
+
+    # A span fully inside one chunk also matches.
+    meta2 = {"pos_list": [0, 30], "ans_span": (30, 34), "row_id": "rin"}
+    red_ref2 = RC._CaptureReducer([0], H)
+    monkeypatch.setenv("EPS_CAPTURE_CHUNK_THRESHOLD", "1000000")
+    ref2 = RC._capture_forward(_StubModel(red_ref2), red_ref2, [meta2], [seq], 0)
+    monkeypatch.setenv("EPS_CAPTURE_CHUNK_THRESHOLD", "16")
+    red2 = RC._CaptureReducer([0], H)
+    out2 = RC._capture_forward(_StubCacheModel(red2), red2, [meta2], [seq], 0)
+    np.testing.assert_allclose(out2[0][0], ref2[0][0], rtol=1e-6)
+    np.testing.assert_allclose(out2[0][1], ref2[0][1], rtol=1e-6)
+
+
+def test_chunked_uncovered_read_point_raises(monkeypatch):
+    monkeypatch.setenv("EPS_CAPTURE_CHUNK_THRESHOLD", "16")
+    monkeypatch.setenv("EPS_CAPTURE_CHUNK_TOKENS", "12")
+    seq = list(range(5, 45))
+    meta = {"pos_list": [4, 60], "ans_span": (5, 40), "row_id": "rbad"}  # 60 out of range
+    red = RC._CaptureReducer([0], H)
+    with pytest.raises(AssertionError, match="never covered"):
+        RC._capture_forward(_StubCacheModel(red), red, [meta], [seq], 0)
+
+
+def test_chunked_real_tiny_model_equivalence(monkeypatch):
+    """Chunked vs unchunked capture on a REAL tiny AutoModelForCausalLM (local
+    LlamaConfig, fp32 CPU, real DynamicCache semantics): same read-point
+    vectors and span means within 1e-4 relative, identical row order, and the
+    cache really threads across chunks."""
+    from transformers import AutoModelForCausalLM, LlamaConfig
+
+    torch.manual_seed(0)
+    cfg = LlamaConfig(
+        hidden_size=32,
+        intermediate_size=64,
+        num_hidden_layers=2,
+        num_attention_heads=4,
+        num_key_value_heads=2,
+        vocab_size=97,
+        max_position_embeddings=512,
+    )
+    model = AutoModelForCausalLM.from_config(cfg)
+    model.eval()
+    blocks, depth = RC.G._resolve_decoder_blocks(model)
+    assert blocks is not None and depth == 1 and len(blocks) == 2
+
+    rng = np.random.default_rng(13)
+
+    def _mk(row_id, n_prompt, total):
+        toks = [int(x) for x in rng.integers(0, 97, size=total)]
+        return {
+            "row_id": row_id,
+            "prompt_ids": toks[:n_prompt],
+            "comp_ids": toks[n_prompt:],
+            "positions": {
+                "prompt_last": n_prompt - 1,
+                "mid": total // 2,
+                "resp_last": total - 1,
+            },
+            "spans": {"ans": (n_prompt, total)},
+        }
+
+    rows = [_mk("short_a", 10, 40), _mk("long", 50, 300), _mk("short_b", 8, 25)]
+    pw = ("prompt_last", "mid", "resp_last")
+    lengths = [len(r["prompt_ids"]) + len(r["comp_ids"]) for r in rows]
+
+    reducer = RC._CaptureReducer([0, 1], 32)
+    handles = [blocks[li].register_forward_hook(reducer.hook_for(li)) for li in (0, 1)]
+    n_cached_calls = {"n": 0}
+
+    def _pre(mod, args, kwargs):
+        if kwargs.get("past_key_values") is not None:
+            n_cached_calls["n"] += 1
+
+    pre_handle = model.register_forward_pre_hook(_pre, with_kwargs=True)
+    try:
+        # Reference: every row unchunked (threshold far above every length).
+        monkeypatch.setenv("EPS_CAPTURE_CHUNK_THRESHOLD", "1000000")
+        pos_ref: dict[int, list] = {0: [], 1: []}
+        y_ref: dict[int, list] = {0: [], 1: []}
+        for row in rows:
+            metas, seqs = _metas_seqs([row], pw)
+            r = RC._capture_forward(model, reducer, metas, seqs, 0)
+            for li in (0, 1):
+                pos_ref[li].append(r[li][0][0])
+                y_ref[li].append(r[li][1][0])
+        assert n_cached_calls["n"] == 0
+
+        # Chunked path: the 300-token row runs as 4 chunks of <= 96 tokens.
+        monkeypatch.setenv("EPS_CAPTURE_CHUNK_THRESHOLD", "128")
+        monkeypatch.setenv("EPS_CAPTURE_CHUNK_TOKENS", "96")
+        plan = RC._plan_capture_batches(lengths, max_rows=8, token_budget=200)
+        assert [1] in plan  # the long row is alone in its group
+        stats = {"n_backoffs": 0}
+        pos_new, y_new = RC._capture_shard_arrays(model, reducer, rows, pw, 0, plan, stats)
+    finally:
+        pre_handle.remove()
+        for hn in handles:
+            hn.remove()
+
+    assert stats["chunked_row_ids"] == {"long"}
+    assert n_cached_calls["n"] == 3  # chunks 2..4 of the long row carried the cache
+    for li in (0, 1):
+        assert pos_new[li].shape == (3, 3, 32) and y_new[li].shape == (3, 32)
+        for i in range(3):  # identical row order: shard_rows order
+            np.testing.assert_allclose(
+                pos_new[li][i], pos_ref[li][i], rtol=1e-4, atol=1e-6, err_msg=f"pos L{li} row {i}"
+            )
+            np.testing.assert_allclose(
+                y_new[li][i], y_ref[li][i], rtol=1e-4, atol=1e-6, err_msg=f"y L{li} row {i}"
+            )

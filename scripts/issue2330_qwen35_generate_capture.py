@@ -815,12 +815,28 @@ def _load_capture_model(model_id: str, device: str, dtype_str: str):
     else:
         load_kwargs["device_map"] = None
     load_kwargs["config"] = _native_config(model_id)
-    # #2659: pin SDPA explicitly (it was already the resolved default on these
-    # classes, the job-65463 traceback runs sdpa_attention_forward). Capture
-    # forwards pass attention_mask=None on single-row batches so SDPA can take
-    # the flash or memory-efficient kernel on 40k-73k token rollouts.
-    load_kwargs["attn_implementation"] = "sdpa"
     quant_method = _quant_method(model_id)
+    # #2659: pin the attention implementation explicitly. Round 2: prefer
+    # flash-attention-2 when the package is installed and the load dtype is
+    # half precision (the flash kernels are fp16/bf16 only; fp8 checkpoints
+    # stay on SDPA, untested interplay), else pin SDPA (already the resolved
+    # default on these classes, the job-65463 traceback runs
+    # sdpa_attention_forward). SDPA capture forwards then run under the
+    # flash-or-efficient kernel restriction (run_cell _sdpa_capture_ctx), so a
+    # math-kernel fallback raises instead of allocating the quadratic score
+    # tensor (job 65464: 47.83 GiB at batch size 1).
+    from transformers.utils import is_flash_attn_2_available
+
+    if (
+        device == "cuda"
+        and quant_method != "fp8"
+        and dtype in (torch.float16, torch.bfloat16)
+        and is_flash_attn_2_available()
+    ):
+        load_kwargs["attn_implementation"] = "flash_attention_2"
+        logger.info("[load] flash-attn installed: preferring attn_implementation=flash_attention_2")
+    else:
+        load_kwargs["attn_implementation"] = "sdpa"
     if quant_method == "fp8":
         logger.info("[load] fp8 checkpoint detected (%s): native load, no dtype kwarg", model_id)
         _disable_fp8_tp_plan_rewrite()
@@ -861,22 +877,43 @@ def _load_capture_model(model_id: str, device: str, dtype_str: str):
         )
         hf = AutoModelForImageTextToText.from_pretrained(model_id, **load_kwargs)
     except ValueError as exc:
-        # #2659: a class whose attention is not routed through SDPA rejects
-        # the explicit pin at construction. LOGGED retry on the class default
-        # (exactly the pre-pin behavior for such classes, e.g. eager). Any
-        # other ValueError propagates.
+        # #2659: a class that rejects the explicit attention pin at
+        # construction walks a LOGGED ladder: flash_attention_2 -> sdpa ->
+        # class default (the sdpa->default leg is exactly the pre-pin behavior
+        # for classes not routed through SDPA, e.g. eager). Any other
+        # ValueError propagates.
         msg = str(exc)
-        if "attn_implementation" not in load_kwargs or (
-            "sdpa" not in msg.lower() and "scaled_dot_product_attention" not in msg
-        ):
+        impl = load_kwargs.get("attn_implementation")
+        if impl == "flash_attention_2" and "flash" in msg.lower():
+            logger.warning(
+                "[load] flash_attention_2 rejected for %s (%s): retrying with sdpa",
+                model_id,
+                exc,
+            )
+            load_kwargs["attn_implementation"] = "sdpa"
+            try:
+                hf = AutoModelForCausalLM.from_pretrained(model_id, **load_kwargs)
+            except ValueError as exc2:
+                msg2 = str(exc2)
+                if "sdpa" not in msg2.lower() and "scaled_dot_product_attention" not in msg2:
+                    raise
+                logger.warning(
+                    "[load] sdpa attention rejected for %s (%s): retrying with the class default",
+                    model_id,
+                    exc2,
+                )
+                load_kwargs.pop("attn_implementation")
+                hf = AutoModelForCausalLM.from_pretrained(model_id, **load_kwargs)
+        elif impl == "sdpa" and ("sdpa" in msg.lower() or "scaled_dot_product_attention" in msg):
+            logger.warning(
+                "[load] sdpa attention rejected for %s (%s): retrying with the class default",
+                model_id,
+                exc,
+            )
+            load_kwargs.pop("attn_implementation")
+            hf = AutoModelForCausalLM.from_pretrained(model_id, **load_kwargs)
+        else:
             raise
-        logger.warning(
-            "[load] sdpa attention rejected for %s (%s): retrying with the class default",
-            model_id,
-            exc,
-        )
-        load_kwargs.pop("attn_implementation")
-        hf = AutoModelForCausalLM.from_pretrained(model_id, **load_kwargs)
     hf.eval()
     if quant_method == "fp8":
         _dequantize_fp8_embeddings(hf, _checkpoint_scale_lookup(model_id))

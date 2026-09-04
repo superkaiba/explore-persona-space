@@ -26,6 +26,7 @@ from ``scripts/issue2330_qwen35_generate_capture.py`` (G), fit cores from
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import logging
 import math
@@ -1008,14 +1009,83 @@ class _CaptureReducer:
         self.h_dim = h_dim
         self.batch_meta: list[dict] | None = None
         self.out: dict[int, dict[str, list[np.ndarray]]] = {}
+        # Chunked-prefill state (#2659 round 2): one long row runs as several
+        # sequential forwards; positions are gathered from the chunk that
+        # contains them, span means accumulate sum and count across chunks.
+        self._chunk_meta: dict | None = None
+        self._chunk_offset: int | None = None
+        self._chunk_pos: dict[int, dict[int, np.ndarray]] = {}
+        self._chunk_y_sum: dict[int, torch.Tensor | None] = {}
+        self._chunk_y_n: dict[int, int] = {}
 
     def set_batch(self, metas: list[dict]) -> None:
         self.batch_meta = metas
+        self._chunk_meta = None
         self.out = {li: {"pos": [], "y": []} for li in self.layers}
+
+    def begin_chunked_row(self, meta: dict) -> None:
+        """Arm chunked accumulation for ONE row (batch dim 1); the driver then
+        calls set_chunk_offset per chunk and finish_chunked_row at the end."""
+        self.batch_meta = None
+        self._chunk_meta = meta
+        self._chunk_offset = None
+        self._chunk_pos = {li: {} for li in self.layers}
+        self._chunk_y_sum = {li: None for li in self.layers}
+        self._chunk_y_n = {li: 0 for li in self.layers}
+
+    def set_chunk_offset(self, offset: int) -> None:
+        self._chunk_offset = offset
+
+    def _chunk_accumulate(self, layer_idx: int, h) -> None:
+        """Chunk-aware reduction: h is (1, T_chunk, ...) with trailing dims
+        passed through untouched (hyper-connection streams collapse at fits
+        load time, never here). Read-point positions are ABSOLUTE indices into
+        the full row, gathered from the chunk that contains them; the answer
+        span accumulates sum and count over its overlap with each chunk."""
+        meta, c0 = self._chunk_meta, self._chunk_offset
+        assert meta is not None and c0 is not None and h.shape[0] == 1, (h.shape, c0)
+        t = h.shape[1]
+        for p in dict.fromkeys(meta["pos_list"]):
+            if c0 <= p < c0 + t:
+                assert p not in self._chunk_pos[layer_idx], (layer_idx, p, c0)
+                self._chunk_pos[layer_idx][p] = h[0, p - c0].float().cpu().numpy()
+        s, e = meta["ans_span"]
+        lo, hi = max(s, c0), min(e, c0 + t)
+        if lo < hi:
+            part = h[0, lo - c0 : hi - c0].float().sum(dim=0).cpu()
+            prev = self._chunk_y_sum[layer_idx]
+            self._chunk_y_sum[layer_idx] = part if prev is None else prev + part
+            self._chunk_y_n[layer_idx] += hi - lo
+
+    def finish_chunked_row(self) -> dict[int, tuple[np.ndarray, np.ndarray]]:
+        """Assemble the (1, P, ...) position reads and the (1, ...) span mean
+        from the accumulated chunks; asserts every read point was covered."""
+        meta = self._chunk_meta
+        assert meta is not None, "finish_chunked_row without begin_chunked_row"
+        out: dict[int, tuple[np.ndarray, np.ndarray]] = {}
+        for li in self.layers:
+            missing = [p for p in meta["pos_list"] if p not in self._chunk_pos[li]]
+            assert not missing, f"chunked capture: layer {li} read points never covered: {missing}"
+            n = self._chunk_y_n[li]
+            y_sum = self._chunk_y_sum[li]
+            assert n > 0 and y_sum is not None, (li, n)
+            y = (y_sum / n).numpy()[None]
+            if meta["pos_list"]:
+                pos = np.stack([self._chunk_pos[li][p] for p in meta["pos_list"]])[None]
+            else:
+                pos = np.zeros((1, 0, *y.shape[1:]), dtype=np.float32)
+            out[li] = (pos, y)
+        self._chunk_meta = None
+        self._chunk_offset = None
+        self._chunk_pos, self._chunk_y_sum, self._chunk_y_n = {}, {}, {}
+        return out
 
     def hook_for(self, layer_idx: int):
         def _hook(_mod, _inp, output):
             h = G._unwrap(output)  # (B, T, H)
+            if self._chunk_meta is not None:
+                self._chunk_accumulate(layer_idx, h)
+                return
             metas = self.batch_meta
             assert metas is not None and h.shape[0] == len(metas), (h.shape, len(metas or []))
             pos_rows, y_rows = [], []
@@ -1081,6 +1151,69 @@ def _capture_token_budget() -> int:
     return v
 
 
+def _capture_chunk_threshold() -> int:
+    """Rows LONGER than this many total tokens run as chunked prefill (#2659
+    round 2). Past the threshold even an unpadded single-row forward is one
+    kernel-dispatch fallback away from a quadratic-in-L score tensor (job
+    65464: 47.83 GiB inside scaled_dot_product_attention at batch size 1);
+    the chunked path bounds attention memory at chunk x context instead."""
+    v = int(os.environ.get("EPS_CAPTURE_CHUNK_THRESHOLD", "12288"))
+    assert v >= 1, f"EPS_CAPTURE_CHUNK_THRESHOLD must be >= 1, got {v}"
+    return v
+
+
+def _capture_chunk_tokens() -> int:
+    """Tokens per forward on the chunked-prefill capture path (#2659 round 2)."""
+    v = int(os.environ.get("EPS_CAPTURE_CHUNK_TOKENS", "8192"))
+    assert v >= 1, f"EPS_CAPTURE_CHUNK_TOKENS must be >= 1, got {v}"
+    return v
+
+
+def _should_chunk_capture(seqs: list[list[int]]) -> bool:
+    """Chunked prefill applies to SINGLE-row forwards over the threshold. The
+    batch planner already isolates every row longer than the token budget, so
+    multi-row batches stay short and keep the padded path."""
+    return len(seqs) == 1 and len(seqs[0]) > _capture_chunk_threshold()
+
+
+def _sdpa_capture_ctx(hf):
+    """Restrict SDPA to the flash and memory-efficient kernels for CUDA
+    capture forwards (#2659 round 2). A math-kernel fallback then raises with
+    the dispatcher's stated reasons instead of silently allocating the
+    (heads, L, L) score tensor (job 65464: a 47.83 GiB allocation at L about
+    40k with the model already resident). CPU forwards (tests, smoke) and
+    non-SDPA attention implementations run unrestricted."""
+    impl = getattr(getattr(hf, "config", None), "_attn_implementation", None)
+    try:
+        on_cuda = next(hf.parameters()).is_cuda
+    except (AttributeError, StopIteration, TypeError):
+        on_cuda = False
+    if impl != "sdpa" or not on_cuda:
+        return contextlib.nullcontext()
+    from torch.nn.attention import SDPBackend, sdpa_kernel
+
+    return sdpa_kernel([SDPBackend.FLASH_ATTENTION, SDPBackend.EFFICIENT_ATTENTION])
+
+
+def _cache_position_kwargs(hf, pos: torch.Tensor) -> dict:
+    """Pass cache_position only when the forward names it EXPLICITLY. Classes
+    that only take it through **kwargs (Qwen3.5) derive positions and mask
+    offsets from past_key_values.get_seq_length() plus the explicit
+    position_ids the chunked driver always passes."""
+    import inspect
+
+    fn = getattr(hf, "forward", None)
+    if fn is None:
+        return {}
+    try:
+        params = inspect.signature(fn).parameters
+    except (TypeError, ValueError):
+        return {}
+    if "cache_position" in params:
+        return {"cache_position": pos}
+    return {}
+
+
 def _plan_capture_batches(lengths: list[int], max_rows: int, token_budget: int) -> list[list[int]]:
     """Greedy length-aware batch plan: contiguous groups in ascending-length order.
 
@@ -1109,7 +1242,7 @@ def _plan_capture_batches(lengths: list[int], max_rows: int, token_budget: int) 
 
 
 def _capture_forward(
-    hf, reducer: _CaptureReducer, metas: list[dict], seqs: list[list[int]], pad_id
+    hf, reducer: _CaptureReducer, metas: list[dict], seqs: list[list[int]], pad_id, stats=None
 ):
     """One teacher-forced forward. Returns {layer: (pos (B, P, H), y (B, H))}.
 
@@ -1117,8 +1250,16 @@ def _capture_forward(
     stays eligible for the flash and memory-efficient kernels (any padding
     mask forces the mask-bearing path, quadratic in padded length). Multi-row
     batches keep the RIGHT-padded boolean-valued 2D 0/1 mask, absolute
-    positions intact.
+    positions intact. Single rows over _capture_chunk_threshold() run as
+    sequential chunked prefill instead (#2659 round 2), and every CUDA SDPA
+    forward runs under the flash-or-efficient kernel restriction
+    (_sdpa_capture_ctx) so a math fallback raises instead of allocating L^2.
     """
+    if _should_chunk_capture(seqs):
+        chunk_tokens = _capture_chunk_tokens()
+        if stats is not None:
+            stats.setdefault("chunked_row_ids", set()).add(metas[0].get("row_id"))
+        return _capture_forward_chunked(hf, reducer, metas[0], seqs[0], chunk_tokens)
     if len(seqs) == 1:
         ids = torch.as_tensor(seqs[0], dtype=torch.long).unsqueeze(0)
         mask = None
@@ -1131,13 +1272,56 @@ def _capture_forward(
             mask2d[i, : len(sq)] = 1
         mask = mask2d.to(hf.device)
     reducer.set_batch(metas)
-    with torch.no_grad():
+    with torch.no_grad(), _sdpa_capture_ctx(hf):
         hf(
             input_ids=ids.to(hf.device),
             attention_mask=mask,
             **G._logits_to_keep_kwargs(hf),
         )
     return {li: (reducer.out[li]["pos"][0], reducer.out[li]["y"][0]) for li in reducer.layers}
+
+
+def _capture_forward_chunked(
+    hf, reducer: _CaptureReducer, meta: dict, seq: list[int], chunk_tokens: int
+):
+    """Sequential chunked prefill for ONE long row (#2659 round 2). Returns
+    {layer: (pos (1, P, H), y (1, H))}, matching _capture_forward.
+
+    The row runs as ceil(L / chunk_tokens) forwards with a growing
+    past_key_values cache and explicit position_ids (plus cache_position where
+    the forward names it), so full-attention memory is chunk x context instead
+    of context squared. The model allocates its own cache class on the first
+    chunk (Qwen3.5 builds DynamicCache(config=...) internally, which threads
+    the GatedDeltaNet linear-attention state correctly). The reducer gathers
+    read points from the chunk containing them and accumulates span sums
+    across chunks. Any OOM here raises: there is no further backoff below
+    chunk granularity.
+    """
+    total = len(seq)
+    ids_full = torch.as_tensor(seq, dtype=torch.long)
+    reducer.begin_chunked_row(meta)
+    past = None
+    with torch.no_grad(), _sdpa_capture_ctx(hf):
+        for c0 in range(0, total, chunk_tokens):
+            c1 = min(total, c0 + chunk_tokens)
+            reducer.set_chunk_offset(c0)
+            pos = torch.arange(c0, c1, dtype=torch.long, device=hf.device)
+            out = hf(
+                input_ids=ids_full[c0:c1].unsqueeze(0).to(hf.device),
+                attention_mask=None,
+                position_ids=pos.unsqueeze(0),
+                past_key_values=past,
+                use_cache=True,
+                **_cache_position_kwargs(hf, pos),
+                **G._logits_to_keep_kwargs(hf),
+            )
+            past = getattr(out, "past_key_values", None)
+            assert c1 == total or past is not None, (
+                f"chunked capture needs a cache-returning forward: no past_key_values "
+                f"after chunk [{c0}:{c1}) of {total} tokens"
+            )
+    del past
+    return reducer.finish_chunked_row()
 
 
 def _capture_batch_with_backoff(
@@ -1152,13 +1336,14 @@ def _capture_batch_with_backoff(
     counted in oom_stats (surfaced in the stage's rows.json), never silent.
     """
     try:
-        return _capture_forward(hf, reducer, metas, seqs, pad_id)
+        return _capture_forward(hf, reducer, metas, seqs, pad_id, oom_stats)
     except _OOM_ERROR:
         if len(seqs) == 1:
             logger.error(
-                "[i2588] [capture oom-backoff] single row of %d tokens OOMed at batch size 1, "
+                "[i2588] [capture oom-backoff] single row of %d tokens OOMed at batch size 1%s, "
                 "raising (no further fallback)",
                 len(seqs[0]),
+                " (chunked prefill)" if _should_chunk_capture(seqs) else "",
             )
             raise
         maxlen = max(len(sq) for sq in seqs)
@@ -1209,7 +1394,13 @@ def _capture_shard_arrays(
             row = shard_rows[i]
             full = row["prompt_ids"] + row["comp_ids"]
             pos_list = [row["positions"][p] for p in positions_wanted if p in row["positions"]]
-            metas.append({"pos_list": pos_list, "ans_span": row["spans"]["ans"]})
+            metas.append(
+                {
+                    "pos_list": pos_list,
+                    "ans_span": row["spans"]["ans"],
+                    "row_id": row.get("row_id"),
+                }
+            )
             seqs.append(full)
         outs = _capture_batch_with_backoff(hf, reducer, metas, seqs, pad_id, oom_stats)
         for li in layers:
@@ -1300,6 +1491,8 @@ def _capture_stage(
     shard_size = 500
     pad_id = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
     token_budget = _capture_token_budget()
+    chunk_threshold = _capture_chunk_threshold()
+    chunk_tokens = _capture_chunk_tokens()
     oom_stats = {"n_backoffs": 0}
     try:
         order = sorted(
@@ -1324,12 +1517,17 @@ def _capture_stage(
                     for pi, p in enumerate(realized_pos):
                         payload[f"x_{p}"] = pos_arr[:, pi].astype(np.float32)
                 savez_atomic(ldir / f"shard{shard_k:03d}.npz", **payload)
+            chunked_ids = oom_stats.get("chunked_row_ids", set())
             for r in shard_rows:
                 rows_meta.append(
                     {
                         "row_id": r["row_id"],
                         "qid": r.get("qid"),
                         "gold": r.get("gold"),
+                        "capture_chunked": r["row_id"] in chunked_ids,
+                        "capture_chunk_tokens": chunk_tokens
+                        if r["row_id"] in chunked_ids
+                        else None,
                         "n_prompt_tokens": r["n_prompt_tokens"],
                         "n_ans_tokens": int(r["spans"]["ans"][1] - r["spans"]["ans"][0]),
                         "n_think_tokens": int(
@@ -1364,6 +1562,9 @@ def _capture_stage(
             "stage": stage,
             "positions": list(positions_wanted),
             "capture_token_budget": token_budget,
+            "capture_chunk_threshold": chunk_threshold,
+            "capture_chunk_tokens": chunk_tokens,
+            "n_chunked_rows": len(oom_stats.get("chunked_row_ids", set())),
             "oom_backoffs": oom_stats["n_backoffs"],
             "rows": rows_meta,
         },
