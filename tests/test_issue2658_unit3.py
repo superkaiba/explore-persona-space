@@ -188,6 +188,49 @@ def test_resolve_evidence_packet_contract(monkeypatch, tmp_path):
         R.resolve_evidence_packet("sycophancy", iid)
 
 
+def test_evidence_store_path_split_mapping(monkeypatch, tmp_path):
+    """Round 18: pilot keeps EVIDENCE_PATH; dev/test map to write-once
+    siblings; an unknown split raises (never a pilot fallback)."""
+    ev = tmp_path / "evidence_packets.json"
+    monkeypatch.setattr(R, "EVIDENCE_PATH", ev)
+    assert R.evidence_store_path("pilot") == ev
+    assert R.evidence_store_path("dev") == tmp_path / "evidence_packets_dev.json"
+    assert R.evidence_store_path("test") == tmp_path / "evidence_packets_test.json"
+    with pytest.raises(ValueError, match="unknown split"):
+        R.evidence_store_path("holdout")
+
+
+def test_resolve_evidence_packet_split_routing(monkeypatch, tmp_path):
+    """Round 18: split='dev' reads the dev sibling store, never the pilot file;
+    exclusions load from the same split store."""
+    ev = tmp_path / "evidence_packets.json"
+    monkeypatch.setattr(R, "EVIDENCE_PATH", ev)
+    iid = "sycophancy|x|y#0"
+    packet = {"claim_id": "c-dev", "n_sources": 1}
+    sha = R.evidence_packet_sha256(packet)
+    ev.write_text(json.dumps({"items": {}}))  # pilot store present but EMPTY
+    (tmp_path / "evidence_packets_dev.json").write_text(
+        json.dumps(
+            {
+                "items": {iid: {"packet": packet, "evidence_sha256": sha}},
+                "exclusions": [
+                    {"item_id": "sycophancy|x|z#1", "row": "sycophancy", "reason": "no ref"}
+                ],
+            }
+        )
+    )
+    got, got_sha = R.resolve_evidence_packet("sycophancy", iid, split="dev")
+    assert got == packet and got_sha == sha
+    # the pilot store (empty) is NOT consulted on the dev path...
+    with pytest.raises(R.EvidencePacketMissingError, match="no frozen evidence packet"):
+        R.resolve_evidence_packet("sycophancy", iid)  # default split=pilot
+    # ...and the test store (absent) fails loud with the split named
+    with pytest.raises(R.EvidencePacketMissingError, match="split 'test'"):
+        R.resolve_evidence_packet("sycophancy", iid, split="test")
+    assert R.load_evidence_exclusions("sycophancy", split="dev") == {"sycophancy|x|z#1": "no ref"}
+    assert R.load_evidence_exclusions("sycophancy") == {}  # pilot store has none
+
+
 # ---------------------------------------------------------------------------
 # Generation: empty-output retry schedule.
 # ---------------------------------------------------------------------------

@@ -568,6 +568,177 @@ def freeze_evidence(path: Path | None = None) -> dict[str, Any]:
     return core
 
 
+_SPLIT_EXTRA_KEYS = ("split", "skipped_cells", "content_sha256")
+
+
+def build_store_core_for_split(split: str) -> dict[str, Any]:
+    """Deterministic PRODUCTION store core for one split (round 18).
+
+    Item universe: the frozen production selection's evidence-row cells —
+    never the pilot pin table (the pilot store's universe). Covered frames
+    build through the SAME builders as the pilot store; ``EXCLUSIONS`` frames
+    record per-item exclusion records (packets are never fabricated) and
+    their cells land in ``skipped_cells`` with the verbatim reason, as do
+    cells the selection froze empty (the power ledger's not-estimable
+    vocabulary rides the selection's per-cell status). Every selected
+    evidence-row item must end covered or excluded — anything else raises.
+    """
+    if split not in ("dev", "test"):
+        raise EvidenceBuildError(
+            f"production evidence store is dev/test only, got {split!r} "
+            "(the pilot store is built by build_store_core)"
+        )
+    sel = G.load_production_selection(split)
+    rows = evidence_rows()
+    items: dict[str, dict[str, Any]] = {}
+    exclusions: list[dict[str, Any]] = []
+    skipped_cells: list[dict[str, Any]] = []
+    per_frame: dict[tuple[str, str], dict[str, int]] = {}
+    for row in sorted(sel["splits"][split]):
+        if row not in rows:
+            continue
+        for cell, rec in sorted(sel["splits"][split][row].items()):
+            frame, band = cell.split("|", 1)
+            cell_name = f"{row}__{frame}__{band}"
+            item_ids = list(rec["item_ids"])
+            if not item_ids:
+                skipped_cells.append(
+                    {
+                        "cell": cell_name,
+                        "row": row,
+                        "frame": frame,
+                        "band": band,
+                        "reason": (
+                            f"empty selection cell (status={rec.get('status')!r}, "
+                            f"cause={(rec.get('shortfall') or {}).get('cause')!r})"
+                        ),
+                    }
+                )
+                continue
+            key = (row, frame)
+            stats = per_frame.setdefault(key, {"n_pinned": 0, "n_covered": 0, "n_excluded": 0})
+            stats["n_pinned"] += len(item_ids)
+            if key in EXCLUSIONS:
+                stats["n_excluded"] += len(item_ids)
+                for iid in item_ids:
+                    exclusions.append(
+                        {"item_id": iid, "row": row, "frame": frame, "reason": EXCLUSIONS[key]}
+                    )
+                skipped_cells.append(
+                    {
+                        "cell": cell_name,
+                        "row": row,
+                        "frame": frame,
+                        "band": band,
+                        "reason": f"no-reference frame: {EXCLUSIONS[key]}",
+                    }
+                )
+                continue
+            builder = _PACKET_BUILDERS.get(key)
+            if builder is None:
+                raise EvidenceBuildError(
+                    f"(row={row!r}, frame={frame!r}) has neither a packet builder nor a "
+                    "recorded exclusion — refusing to silently drop selected items"
+                )
+            for iid in item_ids:
+                if iid in items:
+                    raise EvidenceBuildError(f"item {iid!r} selected in two {split} cells")
+                packet = builder(iid)
+                items[iid] = {
+                    "packet": packet,
+                    "evidence_sha256": R.evidence_packet_sha256(packet),
+                }
+                stats["n_covered"] += 1
+    required = {
+        iid
+        for row in rows
+        for rec in sel["splits"][split].get(row, {}).values()
+        for iid in rec["item_ids"]
+    }
+    covered_or_excluded = set(items) | {e["item_id"] for e in exclusions}
+    missing = sorted(required - covered_or_excluded)
+    if missing:
+        raise EvidenceBuildError(
+            f"{len(missing)} selected {split} evidence-row items have neither a packet "
+            f"nor a recorded exclusion (first 3: {missing[:3]})"
+        )
+    frames_cov = {
+        f"{row}|{frame}": dict(stats, meets_any_coverage=stats["n_covered"] > 0)
+        for (row, frame), stats in sorted(per_frame.items())
+    }
+    return {
+        "issue": 2658,
+        "schema": EVIDENCE_SCHEMA,
+        "sha_domain": EVIDENCE_SHA_DOMAIN,
+        "split": split,
+        "items": items,
+        "exclusions": exclusions,
+        "skipped_cells": skipped_cells,
+        "coverage": {
+            "frames": frames_cov,
+            "selection_content_sha256": sel["content_sha256"],
+        },
+        "n_items": len(items),
+        "n_excluded": len(exclusions),
+    }
+
+
+def _assert_split_core_match(existing: dict[str, Any], rebuilt: dict[str, Any]) -> None:
+    """Write-once immutability for a split store: any drift RAISES."""
+    _assert_core_match(existing, rebuilt)
+    for key in ("split", "skipped_cells"):
+        if existing.get(key) != rebuilt.get(key):
+            raise C.RowHashMismatchError(
+                f"frozen evidence store drift at top-level key {key!r}: the store on "
+                "disk no longer matches a rebuild from the frozen selection + sources"
+            )
+    addressable = {k: v for k, v in existing.items() if k not in ("metadata", "content_sha256")}
+    got = F._canonical_sha(addressable)
+    if got != existing.get("content_sha256"):
+        raise C.RowHashMismatchError(
+            f"frozen evidence store content drift: recomputed {got} != stored "
+            f"{existing.get('content_sha256')}"
+        )
+
+
+def freeze_evidence_for_split(split: str, path: Path | None = None) -> dict[str, Any]:
+    """Build + freeze the write-once PRODUCTION store for ``split``.
+
+    An existing file is verified against a rebuild (and its content sha),
+    never rewritten; the frozen pilot store is never touched."""
+    path = path or R.evidence_store_path(split)
+    core = build_store_core_for_split(split)
+    if path.exists():
+        existing = json.loads(path.read_text())
+        _assert_split_core_match(existing, core)
+        print(f"[evidence] frozen {split} store at {path} verified against rebuild (unchanged)")
+        return existing
+    from explore_persona_space.atomic_io import write_text_atomic
+    from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
+
+    core["content_sha256"] = F._canonical_sha(core)
+    core["metadata"] = as_metadata_dict(git_provenance(), phase=f"evidence-freeze-{split}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    write_text_atomic(path, G.canonical_json(core))
+    print(f"[evidence] froze {core['n_items']} {split} packets -> {path}")
+    return core
+
+
+def print_split_report(store: dict[str, Any]) -> None:
+    """Digest-only per-split report (ids/counts/shas — never item text)."""
+    print(
+        f"[evidence] split={store['split']} items={store['n_items']} "
+        f"excluded={store['n_excluded']} skipped_cells={len(store['skipped_cells'])}"
+    )
+    for key, stats in store["coverage"]["frames"].items():
+        print(
+            f"[evidence] frame {key}: pinned={stats['n_pinned']} "
+            f"covered={stats['n_covered']} excluded={stats['n_excluded']}"
+        )
+    for rec in store["skipped_cells"]:
+        print(f"[evidence]   SKIPPED CELL {rec['cell']}: {rec['reason']}")
+
+
 def print_report(store: dict[str, Any]) -> None:
     """Digest-only coverage report (ids/counts/shas — never item text)."""
     cov = store["coverage"]
@@ -589,6 +760,13 @@ def print_report(store: dict[str, Any]) -> None:
 def build_argparser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--verify", action="store_true", help="verify-only; never writes")
+    ap.add_argument(
+        "--split",
+        choices=["pilot", "dev", "test"],
+        default="pilot",
+        help="pilot: the original store (unchanged); dev/test: the write-once "
+        "production sibling evidence_packets_<split>.json",
+    )
     ap.add_argument("--out", type=Path, default=None, help="store path (default: frozen)")
     ap.add_argument("--import-check", action="store_true")
     return ap
@@ -601,12 +779,32 @@ def main(argv: list[str] | None = None) -> int:
 
         assert_args_attributes_defined(__file__)
         raise SystemExit(0)
+    if args.split == "pilot":
+        if args.verify:
+            store = verify_store(args.out or R.EVIDENCE_PATH)
+            print("[evidence] verify PASS")
+        else:
+            store = freeze_evidence(args.out)
+        print_report(store)
+        return 0
+    path = args.out or R.evidence_store_path(args.split)
     if args.verify:
-        store = verify_store(args.out or R.EVIDENCE_PATH)
+        if not path.exists():
+            raise R.EvidencePacketMissingError(f"no evidence store at {path}")
+        existing = json.loads(path.read_text())
+        for iid, entry in existing.get("items", {}).items():
+            got = R.evidence_packet_sha256(entry["packet"])
+            if got != entry["evidence_sha256"]:
+                raise C.RowHashMismatchError(
+                    f"evidence packet drift for {iid!r}: recomputed {got} != stored "
+                    f"{entry['evidence_sha256']}"
+                )
+        _assert_split_core_match(existing, build_store_core_for_split(args.split))
+        store = existing
         print("[evidence] verify PASS")
     else:
-        store = freeze_evidence(args.out)
-    print_report(store)
+        store = freeze_evidence_for_split(args.split, args.out)
+    print_split_report(store)
     return 0
 
 

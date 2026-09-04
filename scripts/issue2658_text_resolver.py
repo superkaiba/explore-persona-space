@@ -526,28 +526,45 @@ def evidence_packet_sha256(packet: dict[str, Any]) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def resolve_evidence_packet(row: str, item_id: str) -> tuple[dict[str, Any], str]:
+def evidence_store_path(split: str = "pilot") -> Path:
+    """Frozen evidence-store path for ``split`` (round 18).
+
+    Pilot keeps the original ``EVIDENCE_PATH`` (a module attribute, read at
+    call time so tests may repoint it); dev/test read the write-once siblings
+    frozen by ``issue2658_evidence.py --split <split>``. Any other split
+    raises — a new split can never silently fall back to the pilot store.
+    """
+    if split == "pilot":
+        return EVIDENCE_PATH
+    if split in ("dev", "test"):
+        return EVIDENCE_PATH.with_name(f"evidence_packets_{split}.json")
+    raise ValueError(f"unknown split {split!r} for the evidence store; expected pilot, dev or test")
+
+
+def resolve_evidence_packet(
+    row: str, item_id: str, split: str = "pilot"
+) -> tuple[dict[str, Any], str]:
     """Frozen evidence packet for one evidence-conditioned item.
 
     Raises ``EvidencePacketMissingError`` (loud) while the frozen packet store
-    has not been built — the judge phase (unit 4) depends on it; generation
-    never does (the model never sees evidence).
+    for ``split`` has not been built — the judge phase (unit 4) depends on it;
+    generation never does (the model never sees evidence).
     """
     construct = C.CONSTRUCTS[row]
     if not construct.uses_evidence_packet:
         raise ValueError(f"row {row!r} does not use evidence packets (caller bug)")
-    if not EVIDENCE_PATH.exists():
+    path = evidence_store_path(split)
+    if not path.exists():
         raise EvidencePacketMissingError(
-            f"frozen evidence packets not built: {EVIDENCE_PATH} is absent. The "
-            "evidence-conditioned rows (sycophancy, hallucination) need frozen packets "
-            "BEFORE the unit-4 judge phase; see the persisted concern on task 2658."
+            f"frozen evidence packets not built for split {split!r}: {path} is absent. "
+            "The evidence-conditioned rows (sycophancy, hallucination) need frozen "
+            "packets BEFORE the unit-4 judge phase; freeze with "
+            "'scripts/issue2658_evidence.py --split <split>'."
         )
-    store = json.loads(EVIDENCE_PATH.read_text())
+    store = json.loads(path.read_text())
     entry = store.get("items", {}).get(item_id)
     if entry is None:
-        raise EvidencePacketMissingError(
-            f"no frozen evidence packet for {item_id!r} in {EVIDENCE_PATH}"
-        )
+        raise EvidencePacketMissingError(f"no frozen evidence packet for {item_id!r} in {path}")
     packet, stored_sha = entry["packet"], entry["evidence_sha256"]
     got = evidence_packet_sha256(packet)
     if got != stored_sha:
@@ -557,7 +574,7 @@ def resolve_evidence_packet(row: str, item_id: str) -> tuple[dict[str, Any], str
     return packet, stored_sha
 
 
-def load_evidence_exclusions(row: str) -> dict[str, str]:
+def load_evidence_exclusions(row: str, split: str = "pilot") -> dict[str, str]:
     """Per-item VERBATIM exclusion reasons for ``row`` from the frozen store.
 
     The store records DELIBERATE (row, frame)-grain exclusions as per-item
@@ -570,9 +587,10 @@ def load_evidence_exclusions(row: str) -> dict[str, str]:
     missing from ``items`` with NO exclusion record still raises loud (a
     genuine coverage bug is never silent data loss).
     """
-    if not EVIDENCE_PATH.exists():
+    path = evidence_store_path(split)
+    if not path.exists():
         return {}
-    store = json.loads(EVIDENCE_PATH.read_text())
+    store = json.loads(path.read_text())
     return {
         str(rec["item_id"]): str(rec["reason"])
         for rec in store.get("exclusions", [])

@@ -1,0 +1,33 @@
+{
+  "issue": 2658,
+  "regen_command": "uv run python scripts/issue2658_evidence.py --split <dev|test>",
+  "schema": "i2658-evidence-split-index-v1",
+  "splits": {
+    "dev": {
+      "bytes": 1585928,
+      "content_sha256": "19a3b4e25a4441dab631d8be827246094d89f22c5a1a3f944395b48d799ad1c3",
+      "file_sha256": "44bcc056848140cb67641317e971e5ab6a2252ee76c6ea846d6053016b6776c0",
+      "hub_path": "issue2658_dirvalid/evidence_packets/evidence_packets_dev.json",
+      "hub_repo": "superkaiba1/explore-persona-space-data",
+      "hub_repo_type": "dataset",
+      "local_path": "eval_results/issue_2658/evidence_packets_dev.json",
+      "n_excluded": 216,
+      "n_items": 854,
+      "n_skipped_cells": 6
+    },
+    "test": {
+      "bytes": 1537523,
+      "content_sha256": "e5da5f50816de3cf0ea42cf5a192b5455d9f252c87b6e1501e332162db441fb4",
+      "file_sha256": "7b5409651c32fd3cfd4744a70086fccaf9a1a46405398e11ca0b5a738ebe65d8",
+      "hub_path": "issue2658_dirvalid/evidence_packets/evidence_packets_test.json",
+      "hub_repo": "superkaiba1/explore-persona-space-data",
+      "hub_repo_type": "dataset",
+      "local_path": "eval_results/issue_2658/evidence_packets_test.json",
+      "n_excluded": 200,
+      "n_items": 850,
+      "n_skipped_cells": 7
+    }
+  },
+  "verify_command": "uv run python scripts/issue2658_evidence.py --split <dev|test> --verify",
+  "why": "the frozen production evidence stores exceed the 500 KB pre-commit file cap (dev 1,585,928 B; test 1,537,523 B), so the bytes persist on the HF data repo and regenerate deterministically from committed sources; this index pins their identity"
+}

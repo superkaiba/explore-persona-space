@@ -473,3 +473,59 @@ class TestCellIO:
         self._write_cell(tmp_path, ["$\\boxed{7}$", "$\\boxed{9}$", "$\\boxed{7}$"])
         with pytest.raises(C.CacheStaleError):
             L.run_cell(fake, cell, "pilot", tmp_path, refs)
+
+
+# ---------------------------------------------------------------------------
+# Round 18: write-once PRODUCTION evidence stores (dev/test siblings).
+# ---------------------------------------------------------------------------
+def _synthetic_split_core(split: str) -> dict:
+    packet = {"claim_id": f"c-{split}", "n_sources": 1}
+    import issue2658_text_resolver as R
+
+    return {
+        "issue": 2658,
+        "schema": E.EVIDENCE_SCHEMA,
+        "sha_domain": E.EVIDENCE_SHA_DOMAIN,
+        "split": split,
+        "items": {
+            "sycophancy|x|y#0": {
+                "packet": packet,
+                "evidence_sha256": R.evidence_packet_sha256(packet),
+            }
+        },
+        "exclusions": [],
+        "skipped_cells": [
+            {
+                "cell": "a__b__c",
+                "row": "a",
+                "frame": "b",
+                "band": "c",
+                "reason": "no-reference frame: synthetic",
+            }
+        ],
+        "coverage": {"frames": {}, "selection_content_sha256": "0" * 64},
+        "n_items": 1,
+        "n_excluded": 0,
+    }
+
+
+def test_freeze_evidence_for_split_write_once(monkeypatch, tmp_path):
+    monkeypatch.setattr(E, "build_store_core_for_split", lambda split: _synthetic_split_core(split))
+    path = tmp_path / "evidence_packets_dev.json"
+    store = E.freeze_evidence_for_split("dev", path)
+    assert path.exists() and store["split"] == "dev" and store["content_sha256"]
+    # idempotent second freeze: verified, never rewritten
+    before = path.read_bytes()
+    E.freeze_evidence_for_split("dev", path)
+    assert path.read_bytes() == before
+    # tampering with the frozen file raises on the next freeze/verify
+    body = json.loads(path.read_text())
+    body["skipped_cells"] = []
+    path.write_text(json.dumps(body))
+    with pytest.raises(C.RowHashMismatchError):
+        E.freeze_evidence_for_split("dev", path)
+
+
+def test_build_store_core_for_split_rejects_pilot():
+    with pytest.raises(E.EvidenceBuildError, match="dev/test only"):
+        E.build_store_core_for_split("pilot")

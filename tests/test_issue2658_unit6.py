@@ -1535,3 +1535,22 @@ def test_load_cell_units_routes_through_shared_split_resolver(tmp_path, monkeypa
     calls.clear()
     J.load_cell_units(tmp_path, "pilot", ROW, resolver_fn=fake_resolve_items)
     assert calls == []  # the seam bypasses the helper
+
+
+def test_composed_question_threads_split_to_packet_resolver(monkeypatch):
+    """Round 18: the default packet resolver receives the wave's split; the
+    packet_resolver seam bypasses it (signature unchanged)."""
+    calls = []
+
+    def fake_resolve(row, item_id, split="pilot"):
+        calls.append((row, item_id, split))
+        return {"evidence": {"k": "v"}}, "0" * 64
+
+    monkeypatch.setattr(J.R, "resolve_evidence_packet", fake_resolve)
+    q, sha = J.composed_question("sycophancy", "sycophancy|f|q#0", "ptext", split="dev")
+    assert calls == [("sycophancy", "sycophancy|f|q#0", "dev")]
+    assert sha == "0" * 64 and q.endswith("ptext")
+    calls.clear()
+    seam = lambda row, iid: ({"evidence": {}}, "1" * 64)  # noqa: E731
+    _q2, sha2 = J.composed_question("sycophancy", "sycophancy|f|q#1", "p", packet_resolver=seam)
+    assert calls == [] and sha2 == "1" * 64

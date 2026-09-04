@@ -377,6 +377,7 @@ def composed_question(
     item_id: str,
     prompt_text: str,
     packet_resolver: Callable[[str, str], tuple[dict[str, Any], str]] | None = None,
+    split: str = "pilot",
 ) -> tuple[str, str | None]:
     """The judge-facing ``{question}`` content for one item.
 
@@ -397,8 +398,10 @@ def composed_question(
     c = C.CONSTRUCTS[row]
     if not c.uses_evidence_packet:
         return prompt_text, None
-    resolver = packet_resolver or R.resolve_evidence_packet
-    packet, evidence_sha = resolver(row, item_id)
+    if packet_resolver is not None:
+        packet, evidence_sha = packet_resolver(row, item_id)
+    else:
+        packet, evidence_sha = R.resolve_evidence_packet(row, item_id, split=split)
     ev = json.dumps(packet["evidence"], sort_keys=True, ensure_ascii=False)
     question = f"[EVIDENCE sha256={evidence_sha}]\n{ev}\n[/EVIDENCE]\n\n{prompt_text}"
     return question, evidence_sha
@@ -501,7 +504,11 @@ def load_cell_units(
     # resolver's own store-not-built error then stays the binding failure).
     excluded: dict[str, str] = {}
     if C.CONSTRUCTS[row].uses_evidence_packet:
-        excluded = (exclusions_fn or R.load_evidence_exclusions)(row)
+        excluded = (
+            exclusions_fn(row)
+            if exclusions_fn is not None
+            else R.load_evidence_exclusions(row, split)
+        )
 
     units_by_cell: dict[str, list[JudgeUnit]] = {}
     question_cache: dict[str, tuple[str, str | None]] = {}
@@ -518,7 +525,7 @@ def load_cell_units(
                 continue
             if iid not in question_cache:
                 question_cache[iid] = composed_question(
-                    row, iid, resolved[iid].text, packet_resolver=packet_resolver
+                    row, iid, resolved[iid].text, packet_resolver=packet_resolver, split=split
                 )
             question, evidence_sha = question_cache[iid]
             u = JudgeUnit(
@@ -543,7 +550,7 @@ def load_cell_units(
                 not_estimable_out[cell] = {
                     "status": "not-estimable",
                     "detail": "; ".join(sorted(set(cell_excluded.values()))),
-                    "artifact": str(R.EVIDENCE_PATH),
+                    "artifact": str(R.evidence_store_path(split)),
                     "n_excluded_items": len(cell_excluded),
                     "n_excluded_answers": n_excluded_answers,
                     "item_ids": sorted(cell_excluded),
