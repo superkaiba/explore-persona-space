@@ -32,3 +32,19 @@ artifacts, not just the unit test: recompute the fingerprint with the NEW code
 for a sample of stored cell bodies and compare to their stored `fingerprint`
 field (12/12 matched here). A determinism test alone cannot prove parity with
 the frozen on-disk payloads. Related: [[fingerprint_resume_ids_not_content]].
+
+Closure round (#2658 r14, validated): grade a CONDITIONAL integrity check by
+what binds UNCONDITIONALLY around it. The gate's split-total cross-foot ran
+only when a shard00of01 manifest existed beside a multi-shard set, yet no
+wrong tree could sneak through, because the per-summary same-named-manifest
+requirement plus completeness plus duplicate-cell checks bind on every path.
+Certify such a fix three ways in one round: (1) HEAD tests re-run against the
+PARENT blobs in an isolated /tmp tree (module __file__ printed, new symbols
+absent, r13 failure shape reproduced), (2) live injections on a cp -a REAL
+copy of the realized tree (never hardlink when the checked code may rewrite
+files in place), (3) a direct read of the realized twin-manifest layout (the
+per-shard manifests and a split-total manifest coexist, so a naive directory
+sum doubles the declared total). Also probe superset shapes: a missing-only
+completeness check (range - indices) passes an out-of-range extra index, so
+ask whether downstream conjunction or filename grammar closes it before
+ranking severity. Related: [[fails_pre_fix_probe_parent_commit]].
