@@ -537,3 +537,111 @@ def test_expected_capture_keys_split_routing(monkeypatch):
         R, "pilot_item_ids", lambda: [(ROW, "advbench_requests|direct", "evil|a|s#0")]
     )
     assert K.expected_capture_keys(None, 2, 0, 1) == [("evil|a|s#0", 0), ("evil|a|s#0", 1)]
+
+
+# ---------------------------------------------------------------------------
+# Capture round 16: split-aware prompt verification + gen-record sha check.
+# ---------------------------------------------------------------------------
+def _wire_attach_seams(monkeypatch, iid: str, text: str):
+    """Recording fakes at every verification seam attach_rendered_prompts hits."""
+    calls = {"resolve": [], "verify_sel": [], "verify_pins": []}
+    item = _mk_resolved(iid, text)
+
+    def fake_resolve(ids, *, verify_pins=True):
+        calls["resolve"].append((tuple(ids), verify_pins))
+        return {iid: item}
+
+    monkeypatch.setattr(R, "resolve_items", fake_resolve)
+    monkeypatch.setattr(
+        R, "verify_against_pins", lambda resolved: calls["verify_pins"].append(tuple(resolved))
+    )
+    monkeypatch.setattr(
+        G, "load_production_selection", lambda split, eval_root=None: {"sel_for": split}
+    )
+    monkeypatch.setattr(
+        G,
+        "verify_resolved_against_selection",
+        lambda resolved, body, split: calls["verify_sel"].append(
+            (tuple(resolved), body["sel_for"], split)
+        ),
+    )
+    monkeypatch.setattr(R, "render_user_prompt", lambda tok, t: f"<render>{t}")
+    return calls, item
+
+
+def _attach_rows(iid: str, prompt_sha: str, n: int = 2) -> list:
+    return [
+        K.CaptureRow(
+            prompt_id=iid, response_index=k, answer_sha256="0" * 64, prompt_sha256=prompt_sha
+        )
+        for k in range(n)
+    ]
+
+
+def test_attach_rendered_prompts_dev_routes_selection_not_pins(monkeypatch):
+    iid = f"{ROW}|advbench_requests|synth#0"
+    text = "synthetic capture prompt"
+    calls, item = _wire_attach_seams(monkeypatch, iid, text)
+    rows = _attach_rows(iid, item.prompt_sha256)
+    K.attach_rendered_prompts(rows, object(), "dev")
+    assert calls["resolve"] == [((iid,), False)]  # dev: no pilot-pin verification
+    assert calls["verify_sel"] == [((iid,), "dev", "dev")]  # frozen dev selection consulted
+    assert calls["verify_pins"] == []  # pilot pin table never consulted
+    assert all(r.rendered_prompt == f"<render>{text}" for r in rows)
+
+
+def test_attach_rendered_prompts_pilot_path_unchanged(monkeypatch):
+    iid = f"{ROW}|advbench_requests|synth#0"
+    calls, item = _wire_attach_seams(monkeypatch, iid, "synthetic capture prompt")
+    K.attach_rendered_prompts(_attach_rows(iid, item.prompt_sha256), object(), "pilot")
+    assert calls["resolve"] == [((iid,), True)]  # pilot: pins verified inside resolve_items
+    assert calls["verify_sel"] == []  # production selection never consulted
+
+
+def test_attach_rendered_prompts_gen_sha_mismatch_raises(monkeypatch):
+    iid = f"{ROW}|advbench_requests|synth#0"
+    _wire_attach_seams(monkeypatch, iid, "synthetic capture prompt")
+    rows = _attach_rows(iid, "0" * 64)  # gen-record sha disagrees with re-resolution
+    with pytest.raises(C.RowHashMismatchError) as exc:
+        K.attach_rendered_prompts(rows, object(), "dev")
+    assert iid in str(exc.value)
+
+
+def _write_gen_cell(root: Path, split: str, cell: str, records, manifest_rows) -> None:
+    raw = root / "raw_completions" / split
+    man = root / "gen_manifest" / split
+    raw.mkdir(parents=True, exist_ok=True)
+    man.mkdir(parents=True, exist_ok=True)
+    (raw / f"{cell}.json").write_text(json.dumps({"schema": G.GEN_SCHEMA, "records": records}))
+    (man / f"{cell}.jsonl").write_text("".join(json.dumps(r) + "\n" for r in manifest_rows))
+
+
+def test_load_generation_rows_requires_manifest_prompt_sha(tmp_path):
+    iid = f"{ROW}|advbench_requests|synth#0"
+    text = "synthetic answer text"
+    psha = F._sha_text("synthetic capture prompt")
+    rec = {
+        "prompt_id": iid,
+        "response_index": 0,
+        "answer_sha256": F._sha_text(text),
+        "text": text,
+    }
+    cell = f"{ROW}__advbench_requests__direct"
+    # happy path: the manifest's prompt_sha256 rides onto the CaptureRow
+    _write_gen_cell(
+        tmp_path,
+        "dev",
+        cell,
+        [rec],
+        [{"prompt_id": iid, "response_index": 0, "prompt_sha256": psha}],
+    )
+    rows = K.load_generation_rows(tmp_path, "dev", None)
+    assert [r.prompt_sha256 for r in rows] == [psha]
+    # a gen record whose manifest row lacks prompt_sha256: fail loud
+    _write_gen_cell(tmp_path, "test", cell, [rec], [{"prompt_id": iid, "response_index": 0}])
+    with pytest.raises(K.CaptureSpanError, match="lacks prompt_sha256"):
+        K.load_generation_rows(tmp_path, "test", None)
+    # missing manifest file entirely: fail loud
+    (tmp_path / "gen_manifest" / "test" / f"{cell}.jsonl").unlink()
+    with pytest.raises(K.CaptureSpanError, match="gen manifest missing"):
+        K.load_generation_rows(tmp_path, "test", None)

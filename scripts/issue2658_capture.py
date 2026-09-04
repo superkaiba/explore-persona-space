@@ -84,6 +84,7 @@ class CaptureRow:
     prompt_id: str
     response_index: int
     answer_sha256: str
+    prompt_sha256: str = ""
     rendered_prompt: str = field(repr=False, default="")
     answer_text: str = field(repr=False, default="")
 
@@ -465,10 +466,40 @@ def assert_store_complete(store_dir: Path, expected_keys: list[tuple[str, int]])
 # ---------------------------------------------------------------------------
 # Driver.
 # ---------------------------------------------------------------------------
+def _manifest_prompt_shas(man_path: Path) -> dict[tuple[str, int], str]:
+    """(prompt_id, response_index) -> prompt_sha256 from one gen manifest jsonl.
+
+    The raw-completion cell records are text-bearing but carry NO prompt sha;
+    the generation-side prompt_sha256 lives in the sibling gen manifest rows
+    (``G.build_manifest_row``: pin sha for pilot, resolved selection sha for
+    dev/test). A missing manifest or a row lacking the field fails LOUD.
+    """
+    if not man_path.is_file():
+        raise CaptureSpanError(f"gen manifest missing for cell: {man_path}")
+    shas: dict[tuple[str, int], str] = {}
+    with man_path.open(encoding="utf-8") as fh:
+        for line in fh:
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            sha = row.get("prompt_sha256")
+            if not sha:
+                raise CaptureSpanError(
+                    f"{man_path.name}: gen record for {row.get('prompt_id')!r} lacks prompt_sha256"
+                )
+            shas[(row["prompt_id"], int(row["response_index"]))] = sha
+    return shas
+
+
 def load_generation_rows(
     out_root: Path, split: str, rows_filter: list[str] | None
 ) -> list[CaptureRow]:
-    """Every retained answer from the gen cell files, sha-verified, text in memory."""
+    """Every retained answer from the gen cell files, sha-verified, text in memory.
+
+    Each row also carries the generation-side ``prompt_sha256`` (from the
+    cell's gen manifest); ``attach_rendered_prompts`` cross-checks it against
+    the re-resolved prompt sha on every split.
+    """
     gen_dir = out_root / "raw_completions" / split
     files = sorted(gen_dir.glob("*.json"))
     if rows_filter:
@@ -480,13 +511,21 @@ def load_generation_rows(
         body = json.loads(path.read_text())
         if body.get("schema") != G.GEN_SCHEMA:
             raise CaptureSpanError(f"{path.name}: unexpected gen schema {body.get('schema')!r}")
+        prompt_shas = _manifest_prompt_shas(G.out_paths(out_root, split, path.stem)[1])
         for r in body["records"]:
             C.assert_row_hash(r["text"], r["answer_sha256"])  # gen record integrity
+            key = (r["prompt_id"], int(r["response_index"]))
+            sha = prompt_shas.get(key)
+            if sha is None:
+                raise CaptureSpanError(
+                    f"{path.name}: gen record {key!r} has no gen-manifest prompt_sha256 row"
+                )
             out.append(
                 CaptureRow(
                     prompt_id=r["prompt_id"],
                     response_index=int(r["response_index"]),
                     answer_sha256=r["answer_sha256"],
+                    prompt_sha256=sha,
                     answer_text=r["text"],
                 )
             )
@@ -496,11 +535,30 @@ def load_generation_rows(
     return out
 
 
-def attach_rendered_prompts(rows: list[CaptureRow], tokenizer) -> None:
-    """Re-resolve + re-render every prompt (pins verified) — bit-identical to
-    the string generation consumed (same tokenizer revision, same template)."""
+def attach_rendered_prompts(rows: list[CaptureRow], tokenizer, split: str) -> None:
+    """Re-resolve + re-render every prompt — bit-identical to the string
+    generation consumed (same tokenizer revision, same template).
+
+    Split-aware verification, the SAME rule generation applies (round 15/16):
+    pilot items verify against the frozen pin table; dev/test items verify
+    against the frozen production selection (text-sha cells directly,
+    pilot-reused items against the pin table too). Every row's gen-side
+    prompt_sha256 must equal the re-resolved sha — the capture-side proof
+    that the prompt captured is the prompt generation consumed.
+    """
     ids = sorted({c.prompt_id for c in rows})
-    resolved = R.resolve_items(ids, verify_pins=True)
+    if split == "pilot":
+        resolved = R.resolve_items(ids, verify_pins=True)
+    else:
+        resolved = R.resolve_items(ids, verify_pins=False)
+        G.verify_resolved_against_selection(resolved, G.load_production_selection(split), split)
+    for c in rows:
+        got = resolved[c.prompt_id].prompt_sha256
+        if got != c.prompt_sha256:
+            raise C.RowHashMismatchError(
+                f"{c.prompt_id}: gen-record prompt_sha256 {c.prompt_sha256!r} != "
+                f"re-resolved prompt sha {got!r}"
+            )
     rendered = {iid: R.render_user_prompt(tokenizer, resolved[iid].text) for iid in ids}
     for c in rows:
         c.rendered_prompt = rendered[c.prompt_id]
@@ -570,7 +628,7 @@ def run(args: argparse.Namespace) -> int:
     print(f"[capture] {len(rows)} answers to capture -> {store_dir}", flush=True)
 
     tok = G.load_tokenizer()
-    attach_rendered_prompts(rows, tok)
+    attach_rendered_prompts(rows, tok, split)
 
     if args.dry_run:
         # Everything except the model forward: span arithmetic on every row.
