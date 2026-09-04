@@ -1,0 +1,12 @@
+{
+  "title": "Matched-n mapping ranks",
+  "description": "Per map: the rank at +10% relative validation SSE refit at matched n = 4500 (filled marker, hollow marker is the unmatched production-split rank) and the log-log slope of rank versus training size with a bootstrap-over-seeds interval.",
+  "source_data": "eval_results/issue_2588/matched_n_ranks.json",
+  "public_url": "https://eps.superkaiba.com/tasks/2588/figure/matched_n_ranks.png",
+  "cap_profile": "v1",
+  "hf_revision": "74bb871a5edf1afe777ac9b64a4e2fec5e9947c2",
+  "panels": {
+    "left": "rank at matched n = 4500 vs hidden width, one filled marker per map (seed min/max bars), arm as color, production rank hollow on the same x",
+    "right": "log-log slope of rank vs n_train per map, bootstrap 95% interval bars"
+  }
+}
