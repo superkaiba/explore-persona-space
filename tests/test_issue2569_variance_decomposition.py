@@ -14,6 +14,7 @@ S_abs = sigma^2 * d (Var(cos(g)) = (1 + e^-2)/2 - e^-1 for g ~ N(0,1)).
 
 from __future__ import annotations
 
+import logging
 import sys
 from pathlib import Path
 
@@ -150,3 +151,49 @@ def test_binned_intercept_zero_for_noiseless_linear() -> None:
     fit = VD.binned_intercept(d2[:, 0].astype(np.float64), stat, frac=0.5, n_boot=100)
     scale = float(y.var(axis=0).sum())
     assert abs(fit["intercept"]) < 0.05 * scale, (fit["intercept"], scale)
+
+
+def test_memory_bounded_pair_and_knn_match_dense_reference(caplog) -> None:
+    """Chunked crash-fix paths reproduce the former dense formulas exactly."""
+    caplog.set_level(logging.INFO, logger="leg10")
+    rng = np.random.default_rng(SEED + 3)
+    y = rng.standard_normal((47, 13)).astype(np.float32)
+    x = rng.standard_normal((47, 9)).astype(np.float32)
+    dirs = rng.standard_normal((5, 13))
+    dirs /= np.linalg.norm(dirs, axis=1, keepdims=True)
+    idx, d2, _ = VD.topk_neighbors(x, k=8, block=11, threads=2)
+
+    got_pair = VD.pair_stats_chunked(y, idx, d2, kth=3, dirs=dirs, row_block=7)
+    dense_dy = y.astype(np.float64) - y[idx[:, 2]].astype(np.float64)
+    assert np.allclose(got_pair["stat_pooled"], 0.5 * (dense_dy**2).sum(axis=1))
+    assert np.allclose(got_pair["stat_dirs"], 0.5 * (dense_dy @ dirs.T) ** 2)
+
+    got_knn = VD.knn_r2_pooled(y, idx, (2, 5, 8), row_block=6)
+    y64 = y.astype(np.float64)
+    ss_tot = float(((y64 - y64.mean(axis=0)) ** 2).sum())
+    for k in (2, 5, 8):
+        pred = y64[idx[:, :k]].mean(axis=1)
+        expected = 1.0 - float(((y64 - pred) ** 2).sum()) / ss_tot
+        assert abs(got_knn[str(k)] - expected) < 1e-12
+    assert "[memory-bounded] pair-stats kth=3" in caplog.text
+    assert "[memory-bounded] knn-r2 k=8" in caplog.text
+
+
+def test_batched_bootstraps_are_batch_size_invariant() -> None:
+    """Draw batching preserves the exact seeded bootstrap sample stream and estimates."""
+    rng = np.random.default_rng(SEED + 4)
+    values = rng.normal(size=91)
+    assert np.allclose(
+        VD.bootstrap_ci(values, n_boot=73, seed=17, batch_size=1),
+        VD.bootstrap_ci(values, n_boot=73, seed=17, batch_size=19),
+    )
+
+    d2 = rng.uniform(0.1, 4.0, size=127)
+    stat = 2.0 + 0.7 * d2 + rng.normal(scale=0.2, size=d2.size)
+    serial_batches = VD.binned_intercept(
+        d2, stat, frac=0.75, n_bins=8, n_boot=71, seed=23, bootstrap_batch=1
+    )
+    grouped_batches = VD.binned_intercept(
+        d2, stat, frac=0.75, n_bins=8, n_boot=71, seed=23, bootstrap_batch=17
+    )
+    assert np.allclose(serial_batches["ci95"], grouped_batches["ci95"])
