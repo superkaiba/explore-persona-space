@@ -139,3 +139,4 @@
 - [Shard-summary coverage gate probes](shard_summary_coverage_gate_probes.md) — partition-agnostic glob + count coverage + producer-flag trust; live-invoke gate on realized artifacts
 - [Producer/gate asymmetric input validation](producer_gate_asymmetric_input_validation.md) — diff producer raises vs the gate re-reading the same files; realized-artifact fingerprint parity probe
 - [Selection-time exclusion gate review](selection_time_exclusion_gate_review.md) — shared-quantity helper, realized-bias jq on shortfall cells, status-vs-field grain, single-source-comment grep
+- [Re-freeze equal-totals membership diff](refreeze_equal_totals_membership_diff.md) — gated re-freeze w/ unchanged totals: jq-diff id sets across commit states + recompute request shas
