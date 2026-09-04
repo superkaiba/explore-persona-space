@@ -46,6 +46,7 @@ Phases checkpoint to --work; a re-run skips completed phases.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import sys
@@ -53,6 +54,7 @@ import time
 from pathlib import Path
 
 from explore_persona_space.orchestrate.env import load_dotenv
+from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
 
 load_dotenv()  # BEFORE heavy imports: binds shared-VM thread caps in-process (#847)
 
@@ -85,6 +87,9 @@ BIN_FRACS = (0.25, 0.5, 1.0)
 PRIMARY_FRAC = 0.5
 N_BINS = 20
 N_BOOT = 2000
+ROW_BLOCK = 512
+PAIR_BLOCK = 1024
+BOOTSTRAP_BATCH = 64
 SEED = 25690
 DUP_EPS = 1e-6
 POOLED_L_GIVEN = 0.726  # leg-2 population linear ceiling (task brief)
@@ -134,13 +139,20 @@ def within_between(draws: np.ndarray) -> dict:
     }
 
 
-def bootstrap_ci(values: np.ndarray, stat, n_boot: int = N_BOOT, seed: int = SEED) -> list[float]:
-    """Percentile 95% CI of ``stat`` over resampled rows of ``values`` (axis 0)."""
+def bootstrap_ci(
+    values: np.ndarray,
+    n_boot: int = N_BOOT,
+    seed: int = SEED,
+    batch_size: int = BOOTSTRAP_BATCH,
+) -> list[float]:
+    """Percentile 95% CI for the mean, batching bootstrap draws to bound RAM."""
     rng = np.random.default_rng(seed)
     n = values.shape[0]
     draws = np.empty(n_boot, dtype=np.float64)
-    for b in range(n_boot):
-        draws[b] = stat(values[rng.integers(0, n, size=n)])
+    for lo in range(0, n_boot, batch_size):
+        hi = min(lo + batch_size, n_boot)
+        idx = rng.integers(0, n, size=(hi - lo, n))
+        draws[lo:hi] = np.asarray(values, dtype=np.float64)[idx].mean(axis=1)
     return [float(np.percentile(draws, 2.5)), float(np.percentile(draws, 97.5))]
 
 
@@ -151,6 +163,7 @@ def binned_intercept(
     n_bins: int = N_BINS,
     n_boot: int = N_BOOT,
     seed: int = SEED,
+    bootstrap_batch: int = BOOTSTRAP_BATCH,
 ) -> dict:
     """Weighted linear regression of the pair statistic on ||dv_C||^2 across bins.
 
@@ -182,17 +195,30 @@ def binned_intercept(
     rng = np.random.default_rng(seed)
     boots = np.empty(n_boot, dtype=np.float64)
     n = x.size
-    for b in range(n_boot):
-        idx = rng.integers(0, n, size=n)
-        cnt = np.bincount(bin_of[idx], minlength=n_bins).astype(np.float64)
-        bxs = np.bincount(bin_of[idx], weights=x[idx], minlength=n_bins)
-        bys = np.bincount(bin_of[idx], weights=y[idx], minlength=n_bins)
-        ok = cnt > 0
-        bxb, byb, w = bxs[ok] / cnt[ok], bys[ok] / cnt[ok], cnt[ok]
-        wsum = w.sum()
-        mx, my = (w * bxb).sum() / wsum, (w * byb).sum() / wsum
-        sl = (w * (bxb - mx) * (byb - my)).sum() / (w * (bxb - mx) ** 2).sum()
-        boots[b] = my - sl * mx
+    for lo in range(0, n_boot, bootstrap_batch):
+        hi = min(lo + bootstrap_batch, n_boot)
+        batch = hi - lo
+        idx = rng.integers(0, n, size=(batch, n))
+        flat_bin = bin_of[idx] + n_bins * np.arange(batch)[:, None]
+        cnt = np.bincount(flat_bin.ravel(), minlength=batch * n_bins).reshape(batch, n_bins)
+        bxs = np.bincount(
+            flat_bin.ravel(), weights=x[idx].ravel(), minlength=batch * n_bins
+        ).reshape(batch, n_bins)
+        bys = np.bincount(
+            flat_bin.ravel(), weights=y[idx].ravel(), minlength=batch * n_bins
+        ).reshape(batch, n_bins)
+        bx_boot = np.divide(bxs, cnt, out=np.zeros_like(bxs), where=cnt > 0)
+        by_boot = np.divide(bys, cnt, out=np.zeros_like(bys), where=cnt > 0)
+        weights = cnt.astype(np.float64)
+        wsum = weights.sum(axis=1)
+        mx = (weights * bx_boot).sum(axis=1) / wsum
+        my = (weights * by_boot).sum(axis=1) / wsum
+        x_centered = bx_boot - mx[:, None]
+        y_centered = by_boot - my[:, None]
+        slope_boot = (weights * x_centered * y_centered).sum(axis=1) / (
+            weights * x_centered**2
+        ).sum(axis=1)
+        boots[lo:hi] = my - slope_boot * mx
     return {
         "frac": float(frac),
         "n_pairs": int(n),
@@ -256,27 +282,156 @@ def topk_neighbors(
             tmp = ckpt.with_suffix(".tmp.npz")
             np.savez(tmp, idx=idx_out, d2=d2_out, n=n, k=k, done_blocks=bi + 1)
             tmp.replace(ckpt)
+    validate_neighbor_checkpoint(xt, idx_out, d2_out, k, ckpt)
     n_dup = int((d2_out[:, 0] < dup_eps).sum())
     return idx_out, d2_out, n_dup
 
 
-def knn_r2_pooled(y: np.ndarray, nn_idx: np.ndarray, ks: tuple[int, ...]) -> dict:
-    """Held-out kNN regression R^2 (neighbor-mean prediction, self excluded)."""
-    y64 = np.asarray(y, dtype=np.float64)
-    ss_tot = float(((y64 - y64.mean(axis=0)) ** 2).sum())
+def validate_neighbor_checkpoint(
+    x: torch.Tensor,
+    idx: np.ndarray,
+    d2: np.ndarray,
+    k: int,
+    ckpt: Path | None,
+    n_probe: int = 4,
+) -> None:
+    """Validate a complete neighbor checkpoint against exact production-coordinate queries."""
+    n = x.shape[0]
+    assert idx.shape == d2.shape == (n, k), (idx.shape, d2.shape, n, k)
+    assert np.all((idx >= 0) & (idx < n))
+    assert np.isfinite(d2).all() and (d2 >= 0).all()
+    probe = np.unique(np.linspace(0, n - 1, min(n_probe, n), dtype=np.int64))
+    q = torch.as_tensor(probe, dtype=torch.long)
+    sq = (x * x).sum(dim=1)
+    exact_d2 = sq[q, None] + sq[None, :] - 2.0 * (x[q] @ x.T)
+    exact_d2.clamp_(min=0.0)
+    exact_d2[torch.arange(q.numel()), q] = float("inf")
+    exact_vals, exact_idx = torch.topk(exact_d2, k, dim=1, largest=False)
+    got_idx = idx[probe]
+    got_vals = d2[probe]
+    assert np.array_equal(got_idx, exact_idx.numpy()), f"stale/corrupt checkpoint: {ckpt}"
+    assert np.allclose(got_vals, exact_vals.numpy(), rtol=2e-4, atol=2e-3), ckpt
+    logger.info("[checkpoint-validated] %s exact_rows=%d k=%d", ckpt, probe.size, k)
+
+
+def centered_sum_squares(y: np.ndarray, row_block: int = 4096) -> tuple[np.ndarray, float]:
+    """Return the float64 column mean and centered total sum of squares in row blocks."""
+    mean = np.asarray(y).mean(axis=0, dtype=np.float64)
+    ss = 0.0
+    for lo in range(0, y.shape[0], row_block):
+        block = np.asarray(y[lo : lo + row_block], dtype=np.float64)
+        block -= mean
+        ss += float((block * block).sum())
+    return mean, ss
+
+
+def covariance_matrix(y: np.ndarray, row_block: int = 2048) -> np.ndarray:
+    """Compute an unbiased float64 covariance matrix with bounded row working memory."""
+    mean = np.asarray(y).mean(axis=0, dtype=np.float64)
+    gram = np.zeros((y.shape[1], y.shape[1]), dtype=np.float64)
+    for lo in range(0, y.shape[0], row_block):
+        block = np.asarray(y[lo : lo + row_block], dtype=np.float64)
+        block -= mean
+        gram += block.T @ block
+    return gram / (y.shape[0] - 1)
+
+
+def projected_variances(y: np.ndarray, dirs: np.ndarray, row_block: int = 4096) -> np.ndarray:
+    """Unbiased variances of all row projections without materializing a float64 copy of y."""
+    sums = np.zeros(dirs.shape[0], dtype=np.float64)
+    sumsq = np.zeros(dirs.shape[0], dtype=np.float64)
+    for lo in range(0, y.shape[0], row_block):
+        projected = np.asarray(y[lo : lo + row_block], dtype=np.float64) @ dirs.T
+        sums += projected.sum(axis=0)
+        sumsq += (projected * projected).sum(axis=0)
+    return (sumsq - sums * sums / y.shape[0]) / (y.shape[0] - 1)
+
+
+def apply_centered_transform(
+    x: np.ndarray,
+    mean: np.ndarray,
+    transform: np.ndarray,
+    row_block: int = 1024,
+) -> np.ndarray:
+    """Apply ``(x - mean) @ transform`` with bounded float64 working memory."""
+    out = np.empty(x.shape, dtype=np.float32)
+    for lo in range(0, x.shape[0], row_block):
+        hi = min(lo + row_block, x.shape[0])
+        block = np.asarray(x[lo:hi], dtype=np.float64)
+        block -= mean
+        out[lo:hi] = (block @ transform).astype(np.float32)
+    logger.info("[memory-bounded] centered-transform rows=%d row_block=%d", x.shape[0], row_block)
+    return out
+
+
+def pair_stats_chunked(
+    y: np.ndarray,
+    nn_idx: np.ndarray,
+    nn_d2: np.ndarray,
+    kth: int,
+    dirs: np.ndarray | None = None,
+    row_block: int = PAIR_BLOCK,
+) -> dict:
+    """Compute neighbor-pair statistics in bounded row blocks."""
+    j = nn_idx[:, kth - 1]
+    ok = nn_d2[:, kth - 1] >= DUP_EPS
+    rows = np.flatnonzero(ok)
+    pooled = np.empty(rows.size, dtype=np.float64)
+    directional = None if dirs is None else np.empty((rows.size, dirs.shape[0]), dtype=np.float64)
+    for lo in range(0, rows.size, row_block):
+        hi = min(lo + row_block, rows.size)
+        source_rows = rows[lo:hi]
+        dy = np.asarray(y[source_rows], dtype=np.float64)
+        dy -= np.asarray(y[j[source_rows]], dtype=np.float64)
+        pooled[lo:hi] = 0.5 * (dy * dy).sum(axis=1)
+        if directional is not None:
+            directional[lo:hi] = 0.5 * (dy @ dirs.T) ** 2
+    logger.info(
+        "[memory-bounded] pair-stats kth=%d rows=%d row_block=%d dirs=%d",
+        kth,
+        rows.size,
+        row_block,
+        0 if dirs is None else dirs.shape[0],
+    )
+    return {
+        "d2": nn_d2[ok, kth - 1].astype(np.float64),
+        "stat_pooled": pooled,
+        "stat_dirs": directional,
+        "n_dropped_dup": int((~ok).sum()),
+    }
+
+
+def knn_r2_pooled(
+    y: np.ndarray,
+    nn_idx: np.ndarray,
+    ks: tuple[int, ...],
+    row_block: int = ROW_BLOCK,
+) -> dict:
+    """Held-out kNN regression R^2 with bounded neighbor-gather working memory."""
+    _mean, ss_tot = centered_sum_squares(y)
     out = {}
     for k in ks:
-        pred = y64[nn_idx[:, :k]].mean(axis=1)
-        ss_res = float(((y64 - pred) ** 2).sum())
+        ss_res = 0.0
+        for lo in range(0, y.shape[0], row_block):
+            hi = min(lo + row_block, y.shape[0])
+            neighbors = np.asarray(y[nn_idx[lo:hi, :k]], dtype=np.float64)
+            pred = neighbors.mean(axis=1)
+            diff = np.asarray(y[lo:hi], dtype=np.float64) - pred
+            ss_res += float((diff * diff).sum())
         out[str(k)] = 1.0 - ss_res / ss_tot
+        logger.info(
+            "[memory-bounded] knn-r2 k=%d rows=%d row_block=%d r2=%.6f",
+            k,
+            y.shape[0],
+            row_block,
+            out[str(k)],
+        )
     return out
 
 
 def per_direction_r2(y: np.ndarray, resid: np.ndarray, dirs: np.ndarray) -> np.ndarray:
     """R^2 of the map along unit directions: 1 - Var(resid @ u) / Var(y @ u)."""
-    py = np.asarray(y, dtype=np.float64) @ dirs.T
-    pr = np.asarray(resid, dtype=np.float64) @ dirs.T
-    return 1.0 - pr.var(axis=0, ddof=1) / py.var(axis=0, ddof=1)
+    return 1.0 - projected_variances(resid, dirs) / projected_variances(y, dirs)
 
 
 def whitener(sigma: np.ndarray, shrink: float = 1e-2) -> np.ndarray:
@@ -289,6 +444,7 @@ def whitener(sigma: np.ndarray, shrink: float = 1e-2) -> np.ndarray:
 
 
 def unit(v: np.ndarray) -> np.ndarray:
+    """Normalize a nonzero vector to unit Euclidean norm."""
     v = np.asarray(v, dtype=np.float64)
     nrm = float(np.linalg.norm(v))
     assert nrm > 0
@@ -303,7 +459,15 @@ def load_sample(manifest: dict, n_rows: int, work: Path) -> dict:
     ck = work / "sample_L19.npz"
     if ck.exists():
         z = np.load(ck)
-        return {"x": z["x"], "y": z["y"], "ci": z["ci"]}
+        sample = {"x": z["x"], "y": z["y"], "ci": z["ci"]}
+        assert sample["x"].shape == sample["y"].shape == (n_rows, D), (
+            sample["x"].shape,
+            sample["y"].shape,
+            n_rows,
+        )
+        assert sample["ci"].shape == (n_rows,), sample["ci"].shape
+        logger.info("[checkpoint-validated] %s rows=%d dims=%d", ck, n_rows, D)
+        return sample
     xs, ys, cis = [], [], []
     chunk_keys = sorted(k for k in manifest["paths"] if "final_token_capture" in k)
     for key in chunk_keys:
@@ -489,6 +653,12 @@ def main() -> None:
     ap.add_argument("--n-boot", type=int, default=N_BOOT)
     args = ap.parse_args()
     torch.set_num_threads(args.threads)
+    logger.info(
+        "[memory-bounded] pair_block=%d knn_regression_block=%d bootstrap_batch=%d",
+        PAIR_BLOCK,
+        ROW_BLOCK,
+        BOOTSTRAP_BATCH,
+    )
     work: Path = args.work
     repo: Path = args.repo_root
     out_dir = repo / "eval_results/issue_2569/weights/leg10"
@@ -512,8 +682,7 @@ def main() -> None:
     for lo_i in range(0, n, 8192):
         hi_i = min(lo_i + 8192, n)
         resid[lo_i:hi_i] = (y[lo_i:hi_i] - OP.predict(payload, x[lo_i:hi_i])).astype(np.float32)
-    y64c = y.astype(np.float64) - y.astype(np.float64).mean(axis=0)
-    ss_tot = float((y64c**2).sum())
+    _y_mean, ss_tot = centered_sum_squares(y)
     total_var_abs = ss_tot / (n - 1)
     r2_pooled_sample = 1.0 - float((resid.astype(np.float64) ** 2).sum()) / ss_tot
     logger.info(
@@ -529,14 +698,11 @@ def main() -> None:
     top5 = [unit(evecs_a[:, -1 - i]) for i in range(5)]
     bot5 = [unit(evecs_a[:, i]) for i in range(5)]
 
-    r64 = resid.astype(np.float64)
-    r64 -= r64.mean(axis=0)
-    sig_res = (r64.T @ r64) / (n - 1)
-    sig_a_smp = (y64c.T @ y64c) / (n - 1)
+    sig_res = covariance_matrix(resid)
+    sig_a_smp = covariance_matrix(y)
     shrink_b = sig_a_smp + 1e-3 * (np.trace(sig_a_smp) / D) * np.eye(D)
     gev, gvec = scipy_eigh(sig_res, shrink_b, subset_by_index=[D - 10, D - 1])
     worst10 = [unit(gvec[:, -1 - i]) for i in range(10)]
-    del r64
 
     dir_names = (
         ["refusal_axis_2617", "r_B_evil", "r_B_sycophancy", "r_B_hallucination"]
@@ -583,7 +749,7 @@ def main() -> None:
     s_ci = {}
     for b in banks:
         w = b["within_per_ctx"]
-        b["s_abs_ci95"] = bootstrap_ci(w, lambda v: float(v.mean()), args.n_boot)
+        b["s_abs_ci95"] = bootstrap_ci(w, args.n_boot)
         s_ci[b["name"]] = b["s_abs_ci95"]
 
     # 4) NN neighbor passes -----------------------------------------------------------
@@ -595,34 +761,27 @@ def main() -> None:
     mu_c = np.asarray(gxx["mean"], dtype=np.float64)
     sig_c = 0.5 * (sig_c + sig_c.T) - np.outer(mu_c, mu_c)
     wt = whitener(sig_c, shrink=1e-2)
-    xw = ((x.astype(np.float64) - mu_c) @ wt).astype(np.float32)
+    xw = apply_centered_transform(x, mu_c, wt)
     idx_wht, d2_wht, dup_wht = topk_neighbors(
         xw, k=max(KTH_NEIGHBORS) + 1, ckpt=work / "nn_wht.npz", threads=args.threads
     )
-
-    def pair_stats(nn_idx: np.ndarray, nn_d2: np.ndarray, kth: int) -> dict:
-        j = nn_idx[:, kth - 1]
-        ok = nn_d2[:, kth - 1] >= DUP_EPS
-        dy = y[ok].astype(np.float64) - y[j[ok]].astype(np.float64)
-        return {
-            "d2": nn_d2[ok, kth - 1].astype(np.float64),
-            "stat_pooled": 0.5 * (dy**2).sum(axis=1),
-            "stat_dirs": 0.5 * (dy @ dirs.T) ** 2,
-            "n_dropped_dup": int((~ok).sum()),
-        }
+    del xw, wt
 
     nn = {}
     for tag, (nn_idx, nn_d2) in (("raw", (idx_raw, d2_raw)), ("whitened", (idx_wht, d2_wht))):
         per_k = {}
+        ps1 = None
         for kth in KTH_NEIGHBORS:
-            ps = pair_stats(nn_idx, nn_d2, kth)
+            ps = pair_stats_chunked(y, nn_idx, nn_d2, kth, dirs if kth == 1 else None)
             per_k[str(kth)] = {
                 "mean_stat_pooled": float(ps["stat_pooled"].mean()),
                 "mean_d2": float(ps["d2"].mean()),
                 "n_pairs": int(ps["d2"].size),
                 "n_dropped_dup": ps["n_dropped_dup"],
             }
-        ps1 = pair_stats(nn_idx, nn_d2, 1)
+            if kth == 1:
+                ps1 = ps
+        assert ps1 is not None
         fits = {
             str(f): binned_intercept(ps1["d2"], ps1["stat_pooled"], frac=f, n_boot=args.n_boot)
             for f in BIN_FRACS
@@ -644,6 +803,7 @@ def main() -> None:
     # 5) kNN regression + linear per direction ---------------------------------------
     knn = knn_r2_pooled(y, idx_raw[:, : max(KNN_KS)], KNN_KS)
     l_dirs = per_direction_r2(y, resid, dirs)
+    var_dirs = projected_variances(y, dirs)
 
     # 6) assemble ---------------------------------------------------------------------
     l_frac = POOLED_L_GIVEN
@@ -651,7 +811,7 @@ def main() -> None:
     knn_best = max(knn.values())
     rows = []
     for jd, name in enumerate(dir_names):
-        var_u_sample = float((y64c @ dirs[jd]).var(ddof=1))
+        var_u_sample = float(var_dirs[jd])
         s_u_abs = (
             w_lm * bank_dir_pieces(banks[0], jd)["s_abs"]
             + (1 - w_lm) * bank_dir_pieces(banks[1], jd)["s_abs"]
@@ -736,10 +896,22 @@ def main() -> None:
             "seed": SEED,
             "n_boot": args.n_boot,
             "threads": args.threads,
+            "sample_ci_sha256": hashlib.sha256(
+                np.asarray(ci, dtype=np.int64).tobytes()
+            ).hexdigest(),
+            "checkpoint_reuse": {
+                "sample": str(work / "sample_L19.npz"),
+                "raw_neighbors": str(work / "nn_raw.npz"),
+                "whitened_neighbors": str(work / "nn_wht.npz"),
+                "validation": "shape/range/finiteness plus four exact production-coordinate queries",
+            },
+            **as_metadata_dict(
+                git_provenance(repo, argv0=__file__), phase="leg10-variance-decomposition"
+            ),
         },
     }
     out_json = out_dir / "variance_decomposition_L19.json"
-    out_json.write_text(json.dumps(doc, indent=1, default=float))
+    write_text_atomic(out_json, json.dumps(doc, indent=1, default=float) + "\n")
     logger.info("[out] %s", out_json)
 
     render_md(doc, out_dir / "variance_decomposition_L19.md")
@@ -748,6 +920,7 @@ def main() -> None:
 
 
 def render_md(doc: dict, path: Path) -> None:
+    """Render the human-readable leg-10 results table."""
     p = doc["pooled"]
     pr = doc["provenance"]
     lines = [
@@ -801,13 +974,21 @@ def render_md(doc: dict, path: Path) -> None:
         )
     lines += ["", "## Caveats", ""]
     lines += [f"- {c}" for c in pr["caveats"]]
-    path.write_text("\n".join(lines) + "\n")
+    write_text_atomic(path, "\n".join(lines) + "\n")
+
+
+def write_text_atomic(path: Path, content: str) -> None:
+    """Write text via a sibling temporary file and atomic replacement."""
+    tmp = path.with_name(f"{path.name}.tmp")
+    tmp.write_text(content)
+    tmp.replace(path)
 
 
 PIECE_COLORS = {"L": "#4C72B0", "N": "#DD8452", "W": "#55A868", "S": "#C44E52"}
 
 
 def render_figure(doc: dict, fig_dir: Path) -> None:
+    """Render the pooled/directional decomposition and neighbor-intercept diagnostic."""
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5.5), gridspec_kw={"width_ratios": [2, 1]})
     rows = [
         {
@@ -850,7 +1031,10 @@ def render_figure(doc: dict, fig_dir: Path) -> None:
     ax2.legend(fontsize=8)
     fig.tight_layout()
     for ext in ("png", "pdf"):
-        fig.savefig(fig_dir / f"leg10_variance_decomposition.{ext}", dpi=200)
+        path = fig_dir / f"leg10_variance_decomposition.{ext}"
+        tmp = path.with_name(f"{path.stem}.tmp{path.suffix}")
+        fig.savefig(tmp, dpi=200)
+        tmp.replace(path)
     plt.close(fig)
 
 
