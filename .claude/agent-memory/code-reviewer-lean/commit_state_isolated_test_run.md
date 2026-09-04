@@ -22,3 +22,14 @@ by commit X". Caveat: `ruff check` on the /tmp copies loses pyproject
 `per-file-ignores` (path patterns don't match /tmp) — spurious style hits;
 re-run ruff on the real repo paths before reporting a lint finding. Clean up
 the /tmp tree after.
+
+**Missing-repo-artifact false FAIL (#2658 r12 g1):** the inverse of the
+contamination trap — a test that routes through a gate reading a
+module-level path constant (e.g. `F.PROVENANCE_PATH` under
+`REPO_ROOT/eval_results/...`) FAILS in the bare /tmp extraction because the
+committed artifact is absent there, not because the commit is broken.
+Before reporting such a failure, check whether the failing assert's path
+resolves under the extraction root; if so, symlink the real committed dir
+(`ln -sfn "$PWD/eval_results/issue_<N>" /tmp/<slug>/eval_results/issue_<N>`)
+and re-run that one test. Report the dependency as a portability nit, never
+a blocker.
