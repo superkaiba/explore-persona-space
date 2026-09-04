@@ -1186,6 +1186,10 @@ def test_realized_judge_draws_summed_from_wave_summaries(tmp_path):
         "n_calls_succeeded": 4300,
         "per_call_mean_input_tokens": 2000.0,
         "per_call_mean_output_tokens": 300.0,
+        "per_batch": [
+            {"batch_id": "b0", "subtree": "pilot", "n_succeeded": 4200},
+            {"batch_id": "b1", "subtree": "canary", "n_succeeded": 100},
+        ],
     }
     sp = tmp_path / P.JUDGE_SPEND_REL
     sp.parent.mkdir(parents=True)
@@ -1200,8 +1204,19 @@ def test_realized_judge_draws_summed_from_wave_summaries(tmp_path):
     dollars = rep["api"]["projected_production_judge_dollars"]
     assert abs(dollars["value"] - calls["value"] * 43.0 / 4300) < 1e-9
     assert dollars["basis"] == "projected"
+    assert "100 canary calls" in dollars["detail"]
     assert rep["api"]["measured_dollars"]["value"] == 43.0
     assert rep["api"]["measured_dollars"]["basis"] == "priced from measured tokens, not billed"
+    # r14 (review r13 minor 3): producer-always-written per_batch fields are
+    # required reads, never .get defaults
+    spend["per_batch"] = [{"batch_id": "b0", "n_succeeded": 4200}]
+    sp.write_text(json.dumps(spend))
+    with pytest.raises(P.PowerInputError, match="per_batch record missing field 'subtree'"):
+        P.cost_report(tmp_path, tmp_path, "pilot", n_common=48)
+    del spend["per_batch"]
+    sp.write_text(json.dumps(spend))
+    with pytest.raises(P.PowerInputError, match="missing field 'per_batch'"):
+        P.cost_report(tmp_path, tmp_path, "pilot", n_common=48)
 
 
 def test_stager_writes_provenance_offline(tmp_path, monkeypatch):
@@ -1280,6 +1295,8 @@ def _write_gen_summaries(
     never a re-implemented rule), in the observed unit-5 schema."""
     d = tmp_path / "gen_summary"
     d.mkdir(parents=True, exist_ok=True)
+    od = tmp_path / "gen_order_manifest"
+    od.mkdir(parents=True, exist_ok=True)
     keys = sorted(frac_by_cell)
     paths = []
     for si in range(n_shards):
@@ -1301,6 +1318,9 @@ def _write_gen_summaries(
         body = {"split": split, "shard": f"shard{si:02d}of{n_shards:02d}", "cap_hit": rep}
         path = d / f"{split}_shard{si:02d}of{n_shards:02d}.json"
         path.write_text(json.dumps(body))
+        # r14: the gate reconciles each shard summary against the SAME
+        # shard's frozen gen-order manifest, so the fixture writes both.
+        (od / path.name).write_text(json.dumps({"n_requests": len(rows)}))
         paths.append(path)
     return paths
 
@@ -1379,6 +1399,62 @@ def test_gate_cap_hit_input_errors(tmp_path):
     (d / "pilot_shard00of01.json").write_text(json.dumps({"split": "pilot"}))
     with pytest.raises(P.PowerInputError, match="malformed"):
         P._gate_cap_hit(c, c, "pilot")
+
+
+def test_gate_cap_hit_shard_set_integrity(tmp_path):
+    """r14 ledger concern gate-cap-hit-duplicate-shard-summaries."""
+    # gate-side completeness: a deleted shard summary raises (was producer-only)
+    a = tmp_path / "a"
+    paths = _write_gen_summaries(a, "pilot", _all_cell_keys())
+    paths[1].unlink()
+    with pytest.raises(P.PowerInputError, match="missing pilot shard summaries"):
+        P._gate_cap_hit(a, a, "pilot")
+    # a stale 1-shard summary beside the 2-shard set: mixed filename totals raise
+    b = tmp_path / "b"
+    paths = _write_gen_summaries(b, "pilot", _all_cell_keys())
+    (paths[0].parent / "pilot_shard00of01.json").write_text(paths[0].read_text())
+    with pytest.raises(P.PowerInputError, match="mixed shard-count"):
+        P._gate_cap_hit(b, b, "pilot")
+    # a duplicate cell across shards raises naming the key and BOTH files
+    c = tmp_path / "c"
+    paths = _write_gen_summaries(c, "pilot", _all_cell_keys())
+    b1 = json.loads(paths[1].read_text())
+    dup_key = next(iter(json.loads(paths[0].read_text())["cap_hit"]["per_cell_fraction"]))
+    b1["cap_hit"]["per_cell_fraction"][dup_key] = 0.0
+    b1["cap_hit"]["per_cell_n"][dup_key] = 50
+    paths[1].write_text(json.dumps(b1))
+    with pytest.raises(P.PowerInputError, match="duplicate cell") as ei:
+        P._gate_cap_hit(c, c, "pilot")
+    assert "shard00of02" in str(ei.value) and "shard01of02" in str(ei.value)
+    assert dup_key in str(ei.value)
+    # per-shard n_records vs the frozen gen-order manifest n_requests raises
+    d = tmp_path / "d"
+    paths = _write_gen_summaries(d, "pilot", _all_cell_keys())
+    man = d / "gen_order_manifest" / paths[0].name
+    man.write_text(json.dumps({"n_requests": 1}))
+    with pytest.raises(P.PowerInputError, match="!= declared n_requests 1 in"):
+        P._gate_cap_hit(d, d, "pilot")
+    # an absent per-shard manifest beside a present summary raises
+    man.unlink()
+    with pytest.raises(P.PowerInputError, match="gen-order manifest absent"):
+        P._gate_cap_hit(d, d, "pilot")
+    # split-total (shard00of01) manifest reconciliation for multi-shard sets
+    e = tmp_path / "e"
+    _write_gen_summaries(e, "pilot", _all_cell_keys())
+    total = e / "gen_order_manifest" / "pilot_shard00of01.json"
+    total.write_text(json.dumps({"n_requests": 132 * 50}))
+    assert P._gate_cap_hit(e, e, "pilot").status == P.GATE_PASS
+    total.write_text(json.dumps({"n_requests": 132 * 50 + 1}))
+    with pytest.raises(P.PowerInputError, match="split-total"):
+        P._gate_cap_hit(e, e, "pilot")
+    # a body shard tag disagreeing with the filename raises
+    f = tmp_path / "f"
+    paths = _write_gen_summaries(f, "pilot", _all_cell_keys())
+    bf = json.loads(paths[0].read_text())
+    bf["shard"] = "shard05of08"
+    paths[0].write_text(json.dumps(bf))
+    with pytest.raises(P.PowerInputError, match="filename tag"):
+        P._gate_cap_hit(f, f, "pilot")
 
 
 def test_cap_amendment_producer_on_synthetic_shards(tmp_path):
@@ -1518,16 +1594,14 @@ def test_resolve_max_new_tokens_split_behavior(tmp_path):
         G.resolve_max_new_tokens("prod", eval_root=tmp_path)
     rec_path = tmp_path / G.CAP_AMENDMENT_REL
     rec_path.parent.mkdir(parents=True)
-    rec_path.write_text(
-        json.dumps(
-            {
-                "schema": P.CAP_AMENDMENT_SCHEMA,
-                "plan_version": "v6",
-                "pilot_max_new_tokens": 1024,
-                "production_max_new_tokens": 4096,
-            }
-        )
-    )
+    rec = {
+        "schema": P.CAP_AMENDMENT_SCHEMA,
+        "plan_version": "v6",
+        "pilot_max_new_tokens": 1024,
+        "production_max_new_tokens": 4096,
+        "cells_over_threshold": {"evil|arc_c_tasks|direct": {"fraction": 0.16, "n": 50}},
+    }
+    rec_path.write_text(json.dumps(rec))
     assert G.resolve_max_new_tokens("dev", eval_root=tmp_path) == 4096
     assert G.resolve_max_new_tokens("test", eval_root=tmp_path) == 4096
     # pilot stays 1024 even with the record present
@@ -1539,6 +1613,32 @@ def test_resolve_max_new_tokens_split_behavior(tmp_path):
     rec_path.write_text(json.dumps({"schema": "x"}))
     with pytest.raises(G.GenerationBudgetError, match="missing field"):
         G.resolve_max_new_tokens("dev", eval_root=tmp_path)
+    # r14 (review r13 minor 2): VALUE validation, not presence only
+    for bad, msg in (
+        ({**rec, "schema": "i2658-cap-amendment-v2"}, "cap amendment schema"),
+        ({**rec, "pilot_max_new_tokens": 0}, "positive int"),
+        ({**rec, "production_max_new_tokens": "4096"}, "positive int"),
+        ({**rec, "production_max_new_tokens": True}, "positive int"),
+        ({**rec, "production_max_new_tokens": 1500}, "2x pilot cap"),
+        ({**rec, "cells_over_threshold": {}}, "non-empty mapping"),
+    ):
+        rec_path.write_text(json.dumps(bad))
+        with pytest.raises(G.GenerationBudgetError, match=msg):
+            G.resolve_max_new_tokens("dev", eval_root=tmp_path)
+    # the power-side loader shares the same value checks (PowerInputError),
+    # with the 2x floor deliberately left to the gate verdict
+    full = {
+        **rec,
+        "threshold": 0.02,
+        "disclosure": "d",
+        "n_truncated_records": 200,
+        "n_records_total": 6290,
+    }
+    rec_path.write_text(json.dumps({**full, "cells_over_threshold": {}}))
+    with pytest.raises(P.PowerInputError, match="non-empty mapping"):
+        P.load_cap_amendment_record(tmp_path)
+    rec_path.write_text(json.dumps({**full, "production_max_new_tokens": 1500}))
+    assert P.load_cap_amendment_record(tmp_path)["production_max_new_tokens"] == 1500
 
 
 def test_generation_fingerprint_carries_realized_cap():

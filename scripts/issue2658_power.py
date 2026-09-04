@@ -108,7 +108,7 @@ HUMAN_AUDIT_WAIVER_REL = "human_audit/waiver.json"
 WAIVER_SCHEMA = "i2658-human-audit-waiver-v1"
 # Frozen length-cap amendment record (plan v6 A7); producer: --phase cap-amendment.
 CAP_AMENDMENT_REL = "power_inputs/cap_amendment.json"
-CAP_AMENDMENT_SCHEMA = "i2658-cap-amendment-v1"
+CAP_AMENDMENT_SCHEMA = G.CAP_AMENDMENT_SCHEMA  # single source: issue2658_generate (r14)
 # Registered rule text, verbatim from plan v4 section 5.
 CAP_AMENDMENT_RULE_V4S5 = (
     "realized length-cap fraction reported and >2% per cell triggering a "
@@ -1287,6 +1287,17 @@ def _read_cap_hit_block(path: Path) -> dict[str, Any]:
         body = json.loads(path.read_text())
     except json.JSONDecodeError as err:
         raise PowerInputError(f"{path}: unparseable gen summary ({err})") from err
+    # r14 (ledger concern gate-cap-hit-duplicate-shard-summaries): when the
+    # body carries its shard tag, it must agree with the filename.
+    m = re.search(_SHARD_SUMMARY_RE, path.name)
+    body_shard = body.get("shard")
+    if m is not None and body_shard is not None:
+        expected_tag = f"shard{m.group(1)}of{m.group(2)}"
+        if body_shard != expected_tag:
+            raise PowerInputError(
+                f"{path}: body shard tag {body_shard!r} != filename tag "
+                f"{expected_tag!r} (stale or foreign gen summary)"
+            )
     try:
         rep = body["cap_hit"]
         per_cell = rep["per_cell_fraction"]
@@ -1303,6 +1314,17 @@ def _read_cap_hit_block(path: Path) -> dict[str, Any]:
             f"G.CAP_HIT_AMEND_THRESHOLD {G.CAP_HIT_AMEND_THRESHOLD}"
         )
     return rep
+
+
+def _read_order_manifest_n_requests(path: Path) -> int:
+    """``n_requests`` from a frozen gen-order manifest (loud, path named)."""
+    try:
+        body = json.loads(path.read_text())
+    except json.JSONDecodeError as err:
+        raise PowerInputError(f"{path}: unparseable gen-order manifest ({err})") from err
+    if "n_requests" not in body:
+        raise PowerInputError(f"{path}: gen-order manifest missing field 'n_requests'")
+    return int(body["n_requests"])
 
 
 def _shard_summary_paths(gen_root: Path, split: str) -> list[Path]:
@@ -1463,8 +1485,11 @@ def load_cap_amendment_record(out_root: Path) -> dict[str, Any] | None:
     for fld in required:
         if fld not in body:
             raise PowerInputError(f"{path}: cap amendment record missing field {fld!r}")
-    if body["schema"] != CAP_AMENDMENT_SCHEMA:
-        raise PowerInputError(f"{path}: schema {body['schema']!r} != {CAP_AMENDMENT_SCHEMA!r}")
+    # Round 14 (review r13 minor 2): shared VALUE validation, one source of
+    # truth with the generate-side loader. The 2x floor is deliberately NOT
+    # enforced here: a below-floor record is a GATE_FAIL verdict in
+    # _gate_cap_hit, never a loader raise.
+    G.validate_cap_amendment_values(body, path, PowerInputError, require_2x_floor=False)
     return body
 
 
@@ -1696,6 +1721,7 @@ def cost_report(out_root: Path, gen_root: Path, split: str, n_common: int | None
                 "n_calls_succeeded",
                 "rates_per_mtok",
                 "price_source_url",
+                "per_batch",
             ):
                 if fld not in srec:
                     raise PowerInputError(f"{spend_path}: missing field {fld!r}")
@@ -1707,11 +1733,17 @@ def cost_report(out_root: Path, gen_root: Path, split: str, n_common: int | None
             # so the per-call mean's denominator includes the canary calls —
             # same instrument/population as the numerator, so the mean stays
             # unbiased for the pilot instrument; state the share when derivable.
-            canary_calls = sum(
-                int(b.get("n_succeeded", 0))
-                for b in srec.get("per_batch", [])
-                if b.get("subtree") != "pilot"
-            )
+            # r14 (review r13 minor 3): producer-always-written fields are
+            # required reads, never .get defaults.
+            canary_calls = 0
+            for b in srec["per_batch"]:
+                for fld in ("subtree", "n_succeeded"):
+                    if fld not in b:
+                        raise PowerInputError(
+                            f"{spend_path}: per_batch record missing field {fld!r}"
+                        )
+                if b["subtree"] != "pilot":
+                    canary_calls += int(b["n_succeeded"])
             canary_note = (
                 f"denominator includes {canary_calls} canary calls "
                 f"({canary_calls / n_meas_calls:.1%} of {n_meas_calls}; same "
@@ -2436,6 +2468,13 @@ def _gate_cap_hit(
     )
     summary_dir = Path(gen_root) / "gen_summary"
     paths = sorted(summary_dir.glob(f"{split}_shard*.json"))
+    if paths:
+        # r14 (ledger concern gate-cap-hit-duplicate-shard-summaries): the
+        # gate re-runs the producer's shard-set completeness contract
+        # (parseable shardNNofMM names, ONE declared total, indices exactly
+        # 0..MM-1) instead of trusting the bare glob. ABSENT summaries keep
+        # the NOT-ESTIMABLE branch below, so this runs on a non-empty set.
+        paths = _shard_summary_paths(gen_root, split)
     # v5 A2: only NEVER-GENERATED declared cells (frame-manifest source) leave
     # the generation-scope denominator; judge-scope declarations (no frozen
     # reference) still have generated answers and stay counted here.
@@ -2447,16 +2486,63 @@ def _gate_cap_hit(
     expected = {cell for row in C.ROW_IDS for cell in expected_cells(row)}
     n_expected = len(expected) - len(declared_ungenerated)
     covered: set[str] = set()
+    covered_by: dict[str, Path] = {}
     offenders: dict[str, float] = {}
     worst = 0.0
+    n_records_sum = 0
+    order_dir = Path(gen_root) / "gen_order_manifest"
     for path in paths:
         rep = _read_cap_hit_block(path)
+        if "n_records" not in rep:
+            raise PowerInputError(f"{path}: cap_hit block missing field 'n_records'")
+        # Mixed-totals check (r14): every shard summary reconciles against
+        # the SAME shard's frozen gen-order manifest, per shard by filename
+        # (the realized tree also carries the dry-run's split-total
+        # shard00of01 manifest, which a naive directory sum would double).
+        manifest_path = order_dir / path.name
+        if not manifest_path.exists():
+            raise PowerInputError(
+                f"{manifest_path}: gen-order manifest absent for shard summary "
+                f"{path.name} (frozen per shard before generation, so absence "
+                "means a stale or foreign summary)"
+            )
+        n_requests = _read_order_manifest_n_requests(manifest_path)
+        if int(rep["n_records"]) != n_requests:
+            raise PowerInputError(
+                f"{path}: cap_hit n_records {rep['n_records']} != declared "
+                f"n_requests {n_requests} in {manifest_path} "
+                "(stale or foreign shard summary)"
+            )
+        n_records_sum += int(rep["n_records"])
         for cell_key, frac in rep["per_cell_fraction"].items():
+            # Duplicate-cell detection (r14): the producer partitions cells
+            # across shards, so any overlap means a stale or foreign summary.
+            if cell_key in covered_by:
+                raise PowerInputError(
+                    f"duplicate cell {cell_key!r} across shard summaries "
+                    f"{covered_by[cell_key]} and {path} (the producer "
+                    "partitions cells, so overlap means a stale or foreign "
+                    "summary)"
+                )
+            covered_by[cell_key] = path
             cell = cell_key.replace("|", "__")
             covered.add(cell)
             worst = max(worst, float(frac))
             if float(frac) > float(G.CAP_HIT_AMEND_THRESHOLD):
                 offenders[cell] = float(frac)
+    # Split-total reconciliation (r14): when the run also froze a
+    # single-shard order manifest for the whole split (the realized tree
+    # does: the dry-run wrote shard00of01), the summed shard n_records must
+    # equal its declared n_requests.
+    total_manifest = order_dir / f"{split}_shard00of01.json"
+    if len(paths) > 1 and total_manifest.exists():
+        n_total_declared = _read_order_manifest_n_requests(total_manifest)
+        if n_records_sum != n_total_declared:
+            raise PowerInputError(
+                f"{summary_dir}: summed shard n_records {n_records_sum} != "
+                f"split-total n_requests {n_total_declared} declared in "
+                f"{total_manifest}"
+            )
     overlap = sorted(covered & set(declared_ungenerated))
     if overlap:
         raise PowerInputError(

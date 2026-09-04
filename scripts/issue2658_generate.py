@@ -72,6 +72,9 @@ MAX_MODEL_LEN = 8192
 PROMPT_BUDGET = MAX_MODEL_LEN - int(C.DECODER["max_new_tokens"])  # 7168
 # Frozen length-cap amendment record (plan v6 A7), relative to the eval root.
 CAP_AMENDMENT_REL = "power_inputs/cap_amendment.json"
+# Frozen record schema id. Single source of truth: issue2658_power aliases
+# this constant (round 14, review r13 minor 2).
+CAP_AMENDMENT_SCHEMA = "i2658-cap-amendment-v1"
 CHUNK_SIZE = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
 N_EMPTY_RETRIES = 3
 CAP_HIT_AMEND_THRESHOLD = 0.02  # strictly-above trigger (plan §5)
@@ -94,6 +97,47 @@ class OrderManifestDriftError(C.Issue2658GuardError):
 # ---------------------------------------------------------------------------
 # Split-aware decoder cap (plan v6 A7).
 # ---------------------------------------------------------------------------
+def validate_cap_amendment_values(
+    body: dict[str, Any],
+    path: Path,
+    err_cls: type[Exception] | None = None,
+    *,
+    require_2x_floor: bool = True,
+) -> None:
+    """VALUE validation for a loaded cap-amendment record (plan v6 A7).
+
+    One source of truth shared by this module's :func:`load_cap_amendment`
+    and ``issue2658_power.load_cap_amendment_record`` (power.py already
+    imports this module, so the shared checks live here): schema id
+    EQUALITY, both caps positive ints, the registered production >= 2x
+    pilot floor, and a non-empty offender mapping. ``require_2x_floor=False``
+    is for the power-side loader, where a below-floor record is reported as
+    a GATE_FAIL verdict by ``_gate_cap_hit``, never a loader raise.
+    """
+    err = err_cls or GenerationBudgetError
+    if body.get("schema") != CAP_AMENDMENT_SCHEMA:
+        raise err(
+            f"{path}: cap amendment schema {body.get('schema')!r} != {CAP_AMENDMENT_SCHEMA!r}"
+        )
+    caps: dict[str, int] = {}
+    for fld in ("pilot_max_new_tokens", "production_max_new_tokens"):
+        val = body.get(fld)
+        if isinstance(val, bool) or not isinstance(val, int) or val <= 0:
+            raise err(f"{path}: {fld} must be a positive int, got {val!r}")
+        caps[fld] = val
+    if require_2x_floor and caps["production_max_new_tokens"] < 2 * caps["pilot_max_new_tokens"]:
+        raise err(
+            f"{path}: production cap {caps['production_max_new_tokens']} < 2x pilot cap "
+            f"{caps['pilot_max_new_tokens']} (plan v6 A7 registered floor)"
+        )
+    offenders = body.get("cells_over_threshold")
+    if not isinstance(offenders, dict) or not offenders:
+        raise err(
+            f"{path}: cells_over_threshold must be a non-empty mapping, got {offenders!r} "
+            "(an amendment with no offenders is a wiring error)"
+        )
+
+
 def load_cap_amendment(eval_root: Path | None = None) -> dict[str, Any] | None:
     """The frozen length-cap amendment record (plan v6 A7), or None if absent.
 
@@ -108,6 +152,9 @@ def load_cap_amendment(eval_root: Path | None = None) -> dict[str, Any] | None:
     for fld in ("schema", "plan_version", "pilot_max_new_tokens", "production_max_new_tokens"):
         if fld not in body:
             raise GenerationBudgetError(f"{path}: cap amendment record missing field {fld!r}")
+    # Round 14 (review r13 minor 2): values, not just presence — a future
+    # schema-v2 record with renamed semantics must never reach the decoder.
+    validate_cap_amendment_values(body, path)
     return body
 
 
