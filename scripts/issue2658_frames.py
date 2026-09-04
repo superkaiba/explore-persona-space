@@ -810,6 +810,19 @@ def _band_from_key(row: str, key: str) -> str:
     return strata[h % len(strata)].name
 
 
+def partition_band_of(row: str, prompt_sha256: str) -> str:
+    """Deterministic wrapper-band PARTITION for one prompt (the pilot rule).
+
+    Partitions a frame's pool into DISJOINT per-band prompt sets (plan section 4
+    freezes row/cell membership). Single source for the pilot selection AND the
+    production selection freeze (issue2658_production_selection.py) so the two
+    can never fork. Capture keys and response seeds are (item, draw)-keyed, so
+    an item must belong to at most one cell per split."""
+    strata = [s.name for s in FRAMES[row].strata]
+    idx = int(hashlib.sha256(f"i2658-pilotband|{prompt_sha256}".encode()).hexdigest()[:8], 16)
+    return strata[idx % len(strata)]
+
+
 # ---------------------------------------------------------------------------
 # Frame roster.
 # ---------------------------------------------------------------------------
@@ -2077,10 +2090,7 @@ def _pilot_selection(
         if has_intrinsic_band(it, row):
             band = stratum_band_of(it, row)
         else:
-            idx = int(
-                hashlib.sha256(f"i2658-pilotband|{it.prompt_sha256}".encode()).hexdigest()[:8], 16
-            )
-            band = strata[idx % len(strata)]
+            band = partition_band_of(row, it.prompt_sha256)
         cells[(it.frame, band)].append(it)
     selection: dict[str, list[str]] = {}
     short: list[str] = []
