@@ -80,6 +80,7 @@ def _meta() -> dict:
         vllm_version = "not-installed"
     return {
         "issue": PC.TASK_ID,
+        "cap_profile": PC.CAP_PROFILE,
         "git_sha": G._git_sha(),
         "torch": torch.__version__,
         "transformers": transformers.__version__,
@@ -128,7 +129,13 @@ def _logs_dir(root: Path) -> Path:
 
 def _paths(args, cell: PC.Cell) -> dict[str, Path]:
     root = Path(args.out_root)
-    cell_dir = root / ("smoke" if args.smoke else "cells") / cell.key
+    sub = "smoke" if args.smoke else "cells"
+    if PC.CAP_PROFILE != "v1":
+        # Local isolation mirrors the HF-prefix isolation: a non-v1 profile
+        # must never resume-skip off (or overwrite) the v1 local artifacts
+        # (the gen/capture stage sentinels key on file presence).
+        sub = f"{sub}_cap_{PC.CAP_PROFILE}"
+    cell_dir = root / sub / cell.key
     d = {
         "root": root,
         "cell": cell_dir,
@@ -159,7 +166,9 @@ def _hc_reduce_mode() -> str:
     return os.environ.get("EPS_HC_REDUCE", "mean").strip().lower()
 
 
-def _collapse_hc_streams(v: np.ndarray, key: str, h_dim: int, streams: int, mode: str) -> np.ndarray:
+def _collapse_hc_streams(
+    v: np.ndarray, key: str, h_dim: int, streams: int, mode: str
+) -> np.ndarray:
     """Collapse a captured (n, streams, h) or stream-major-flattened
     (n, streams*h) array to the paper's h_dim residual vector (or keep every
     stream with mode=concat). Fail-closed on any other shape: the fits must
@@ -185,7 +194,7 @@ def _collapse_hc_streams(v: np.ndarray, key: str, h_dim: int, streams: int, mode
     if mode == "concat":
         return v.reshape(n, streams * h_dim)
     if mode.startswith("stream"):
-        k = int(mode[len("stream"):])
+        k = int(mode[len("stream") :])
         return v[:, k, :]
     raise ValueError(f"EPS_HC_REDUCE={mode!r} not in mean|sum|concat|stream<k>")
 
@@ -276,7 +285,13 @@ def phase_prologue(args, cell: PC.Cell, paths: dict) -> None:
     if m.family in ("olmo_instruct", "olmo_think"):
         rec = PC.assert_olmo_rope_split(m.hf_id)
         logger.info("[i2588] G6 rope split OK: %s", rec)
-    PC.assert_max_position_embeddings(m.hf_id)
+    # v1 pinned the regen headroom (23,488) as a hard prologue floor. Non-v1
+    # profiles gate only the BASE engines (prompt budget + the arm's largest
+    # cap): the regen is window-aware and skips when the window is exhausted.
+    if PC.CAP_PROFILE == "v1":
+        PC.assert_max_position_embeddings(m.hf_id)
+    else:
+        PC.assert_max_position_embeddings(m.hf_id, floor=PC.mpe_floor_for_arm(cell.arm))
     from transformers import AutoTokenizer
 
     tok = AutoTokenizer.from_pretrained(m.hf_id)
@@ -555,10 +570,13 @@ def _gen_stage_with_regen(
     """Generate a stage; apply the pre-registered G4/G5 single regen round.
 
     Trigger: cap-hit frac > 2% (G4) or unclosed-think frac > 2% (G5) per stage
-    -> re-generate the affected rows at 2x cap with the engine RE-INSTANTIATED
-    at max_model_len = PROMPT_TOKEN_BUDGET + 2*cap (bounded by 23,488; the
-    max_position_embeddings floor is asserted at prologue). Persistent residue
-    is dropped-and-counted at parse (plan §7 G4/G5).
+    -> re-generate the affected rows at regen_cap = min(2*cap, mpe -
+    PROMPT_TOKEN_BUDGET) with the engine RE-INSTANTIATED at max_model_len =
+    PROMPT_TOKEN_BUDGET + regen_cap (window-aware, bounded by the
+    profile-derived REGEN_MAX_MODEL_LEN_BOUND). When regen_cap <= cap the
+    window is exhausted: the regen is SKIPPED (regen_skipped_reason
+    "cap at context window") and rows at cap ride the existing
+    drop-and-count parse path (plan §7 G4/G5).
 
     Round 3 (gen-capture-stage-resume): a stage whose terminal artifact
     (cap_hit_report.json — written LAST, after every chunk) is already on
@@ -574,6 +592,9 @@ def _gen_stage_with_regen(
         )
         return _iter_stage_rows(paths, stage)
     m = cell.model
+    # Window-aware engine pin: the floor arg asserts the BASE engine fits
+    # (max_model_len = PROMPT_TOKEN_BUDGET + cap <= max_position_embeddings).
+    mpe = PC.assert_max_position_embeddings(m.hf_id, floor=PC.PROMPT_TOKEN_BUDGET + cap)
     if llm_holder.get("llm") is None:
         mml = PC.PROMPT_TOKEN_BUDGET + cap
         llm_holder["llm"] = _build_engine_2588(
@@ -604,29 +625,43 @@ def _gen_stage_with_regen(
         "regen_ran": False,
     }
     if regen_idx and (cap_frac > PC.CAP_HIT_TRIGGER or regen_frac > PC.UNCLOSED_THINK_TRIGGER):
-        new_cap = 2 * cap
-        new_mml = PC.PROMPT_TOKEN_BUDGET + new_cap
-        assert new_mml <= PC.REGEN_MAX_MODEL_LEN_BOUND, (new_mml, PC.REGEN_MAX_MODEL_LEN_BOUND)
-        logger.info(
-            "[i2588] [%s] G4/G5 regen: %d rows at cap=%d (mml=%d)",
-            stage,
-            len(regen_idx),
-            new_cap,
-            new_mml,
-        )
-        G._reap_vllm_engine(llm_holder["llm"])
-        llm_holder["llm"] = _build_engine_2588(
-            m.hf_id, seed, new_mml, args.gpu_count, PC.ENGINE_EXTRA_KWARGS.get(m.family, {})
-        )
-        llm_holder["mml"] = new_mml
-        redo_base = [base_rows[i] for i in regen_idx]
-        redo = _gen_rows(
-            llm_holder["llm"], tok, cell, redo_base, stage=stage, cap=new_cap, seed=seed
-        )
-        for i, rr in zip(regen_idx, redo, strict=True):
-            rows[i] = rr
-        report["regen_ran"] = True
-        report["post_regen_cap_hits"] = sum(1 for r in rows if r["finish_reason"] == "length")
+        new_cap = PC.regen_cap(cap, mpe)
+        if new_cap <= cap:
+            report["regen_skipped_reason"] = "cap at context window"
+            logger.warning(
+                "[i2588] [%s] G4/G5 regen SKIPPED: regen cap %d <= cap %d "
+                "(mpe=%d, prompt budget=%d): rows at cap ride the "
+                "drop-and-count parse path",
+                stage,
+                new_cap,
+                cap,
+                mpe,
+                PC.PROMPT_TOKEN_BUDGET,
+            )
+        else:
+            new_mml = PC.PROMPT_TOKEN_BUDGET + new_cap
+            assert new_mml <= PC.REGEN_MAX_MODEL_LEN_BOUND, (new_mml, PC.REGEN_MAX_MODEL_LEN_BOUND)
+            assert new_mml <= mpe, (new_mml, mpe)
+            logger.info(
+                "[i2588] [%s] G4/G5 regen: %d rows at cap=%d (mml=%d)",
+                stage,
+                len(regen_idx),
+                new_cap,
+                new_mml,
+            )
+            G._reap_vllm_engine(llm_holder["llm"])
+            llm_holder["llm"] = _build_engine_2588(
+                m.hf_id, seed, new_mml, args.gpu_count, PC.ENGINE_EXTRA_KWARGS.get(m.family, {})
+            )
+            llm_holder["mml"] = new_mml
+            redo_base = [base_rows[i] for i in regen_idx]
+            redo = _gen_rows(
+                llm_holder["llm"], tok, cell, redo_base, stage=stage, cap=new_cap, seed=seed
+            )
+            for i, rr in zip(regen_idx, redo, strict=True):
+                rows[i] = rr
+            report["regen_ran"] = True
+            report["post_regen_cap_hits"] = sum(1 for r in rows if r["finish_reason"] == "length")
     stage_dir = paths["raw"] / stage
     stage_dir.mkdir(parents=True, exist_ok=True)
     for k in range(0, len(rows), G.VLLM_CHUNK_SIZE):
@@ -1510,7 +1545,9 @@ def _load_stage_layer(
         if not getattr(_load_stage_layer, "_hc_logged", False):
             logger.info(
                 "[i2588] hyper-connection capture: %d streams x h=%d collapsed with EPS_HC_REDUCE=%s",
-                _HC_CTX["streams"], _HC_CTX["h_dim"], mode,
+                _HC_CTX["streams"],
+                _HC_CTX["h_dim"],
+                mode,
             )
             _load_stage_layer._hc_logged = True  # type: ignore[attr-defined]
     out["row_ids"] = np.concatenate(ids)

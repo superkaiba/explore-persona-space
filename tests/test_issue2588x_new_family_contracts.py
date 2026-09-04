@@ -248,20 +248,25 @@ def test_vl_wrapper_arch_detects_conditional_generation(monkeypatch):
     """Qwen4Exp / Qwen3_5Moe checkpoints expose ``text_config`` and a
     ``*ForConditionalGeneration`` architecture; DeepseekV4 / GlmMoeDsa do not."""
     import types
-    import transformers
+
     import issue2330_qwen35_generate_capture as G
+    import transformers
 
     fake = {
         "Qwen/Qwen3.8-Flash-Next-FP8": types.SimpleNamespace(
-            architectures=["Qwen4ExpForConditionalGeneration"], text_config=object()),
+            architectures=["Qwen4ExpForConditionalGeneration"], text_config=object()
+        ),
         "Qwen/Qwen3.5-397B-A17B-FP8": types.SimpleNamespace(
-            architectures=["Qwen3_5MoeForConditionalGeneration"], text_config=object()),
+            architectures=["Qwen3_5MoeForConditionalGeneration"], text_config=object()
+        ),
         "deepseek-ai/DeepSeek-V4-Flash-0731": types.SimpleNamespace(
-            architectures=["DeepseekV4ForCausalLM"]),
+            architectures=["DeepseekV4ForCausalLM"]
+        ),
         "zai-org/GLM-5.3": types.SimpleNamespace(architectures=["GlmMoeDsaForCausalLM"]),
     }
     monkeypatch.setattr(
-        transformers.AutoConfig, "from_pretrained", staticmethod(lambda mid, **kw: fake[mid]))
+        transformers.AutoConfig, "from_pretrained", staticmethod(lambda mid, **kw: fake[mid])
+    )
     assert G._vl_wrapper_arch("Qwen/Qwen3.8-Flash-Next-FP8") == "Qwen4ExpForConditionalGeneration"
     assert G._vl_wrapper_arch("Qwen/Qwen3.5-397B-A17B-FP8") == "Qwen3_5MoeForConditionalGeneration"
     assert G._vl_wrapper_arch("deepseek-ai/DeepSeek-V4-Flash-0731") is None
@@ -272,9 +277,9 @@ def test_dequantize_fp8_embeddings_gathers_and_scales():
     """A raw-fp8 nn.Embedding (Qwen3.8 PLE n-gram table shape) must emit
     bf16 rows equal to fp8_row * weight_scale; a bf16 embedding is untouched;
     an fp8 embedding with no checkpoint scale fails closed."""
+    import issue2330_qwen35_generate_capture as G
     import pytest
     import torch
-    import issue2330_qwen35_generate_capture as G
 
     if not hasattr(torch, "float8_e4m3fn"):
         pytest.skip("torch without float8")
@@ -296,7 +301,8 @@ def test_dequantize_fp8_embeddings_gathers_and_scales():
 
     bad = torch.nn.ModuleDict({"tab": torch.nn.Embedding(3, 2)})
     bad["tab"].weight = torch.nn.Parameter(
-        torch.zeros(3, 2).to(torch.float8_e4m3fn), requires_grad=False)
+        torch.zeros(3, 2).to(torch.float8_e4m3fn), requires_grad=False
+    )
     with pytest.raises(RuntimeError, match="weight_scale"):
         G._dequantize_fp8_embeddings(bad, lambda name: None)
 
@@ -306,11 +312,13 @@ def test_native_config_undoes_registry_swap(monkeypatch):
     loader reloads with transformers' native class for the model_type and
     defaults a missing pad_token_id to None; a native config passes through."""
     import types
-    import transformers
-    import issue2330_qwen35_generate_capture as G
 
-    native = transformers.LlamaConfig(vocab_size=8, hidden_size=4, num_hidden_layers=1,
-                                      num_attention_heads=1, intermediate_size=4)
+    import issue2330_qwen35_generate_capture as G
+    import transformers
+
+    native = transformers.LlamaConfig(
+        vocab_size=8, hidden_size=4, num_hidden_layers=1, num_attention_heads=1, intermediate_size=4
+    )
     swapped = types.SimpleNamespace(model_type="llama")  # no pad_token_id, not native
     calls = {"native": 0}
 
@@ -320,7 +328,8 @@ def test_native_config_undoes_registry_swap(monkeypatch):
 
     monkeypatch.setattr(transformers.LlamaConfig, "from_pretrained", staticmethod(fake_native))
     monkeypatch.setattr(
-        transformers.AutoConfig, "from_pretrained", staticmethod(lambda mid, **kw: swapped))
+        transformers.AutoConfig, "from_pretrained", staticmethod(lambda mid, **kw: swapped)
+    )
     assert type(native).base_model_tp_plan  # class-level plan exists on Llama
     out = G._native_config("meta-llama/x")
     assert out is native and calls["native"] == 1
@@ -329,21 +338,23 @@ def test_native_config_undoes_registry_swap(monkeypatch):
     assert type(native).base_model_tp_plan  # class attribute untouched
 
     monkeypatch.setattr(
-        transformers.AutoConfig, "from_pretrained", staticmethod(lambda mid, **kw: native))
+        transformers.AutoConfig, "from_pretrained", staticmethod(lambda mid, **kw: native)
+    )
     out2 = G._native_config("meta-llama/x")
     assert out2 is native and calls["native"] == 1  # no reload when already native
 
     nopad = types.SimpleNamespace(model_type="not_a_real_model_type")
     monkeypatch.setattr(
-        transformers.AutoConfig, "from_pretrained", staticmethod(lambda mid, **kw: nopad))
+        transformers.AutoConfig, "from_pretrained", staticmethod(lambda mid, **kw: nopad)
+    )
     out3 = G._native_config("x/y")
     assert out3 is nopad and out3.pad_token_id is None
 
 
 def test_disable_fp8_tp_plan_rewrite_is_identity_and_idempotent():
-    import types
-    import pytest
+
     import issue2330_qwen35_generate_capture as G
+    import pytest
 
     q = pytest.importorskip("transformers.quantizers.quantizer_finegrained_fp8")
     cls = q.FineGrainedFP8HfQuantizer
@@ -360,7 +371,7 @@ def test_disable_fp8_tp_plan_rewrite_is_identity_and_idempotent():
 
 
 def test_capture_slots_env_override(monkeypatch):
-    import importlib
+
     import issue2588_run_cell as RC
 
     monkeypatch.delenv("EPS_CAPTURE_SLOTS", raising=False)
@@ -383,21 +394,21 @@ def test_acquire_capture_slot_uses_all_slots(tmp_path, monkeypatch):
 
 
 def test_collapse_hc_streams_modes_and_fail_closed(monkeypatch):
+    import issue2588_run_cell as RC
     import numpy as np
     import pytest
-    import issue2588_run_cell as RC
 
     rng = np.random.default_rng(0)
-    v3 = rng.standard_normal((5, 4, 8)).astype(np.float32)   # DeepSeek-V4 layout
-    v2 = v3.reshape(5, 32)                                     # Qwen3.8 flattened layout
+    v3 = rng.standard_normal((5, 4, 8)).astype(np.float32)  # DeepSeek-V4 layout
+    v2 = v3.reshape(5, 32)  # Qwen3.8 flattened layout
     for v in (v3, v2):
         assert np.allclose(RC._collapse_hc_streams(v, "x", 8, 4, "mean"), v3.mean(1))
         assert np.allclose(RC._collapse_hc_streams(v, "x", 8, 4, "sum"), v3.sum(1))
         assert RC._collapse_hc_streams(v, "x", 8, 4, "concat").shape == (5, 32)
         assert np.allclose(RC._collapse_hc_streams(v, "x", 8, 4, "stream2"), v3[:, 2])
     plain = rng.standard_normal((5, 8)).astype(np.float32)
-    assert RC._collapse_hc_streams(plain, "x", 8, 4, "mean") is plain      # already h_dim
-    assert RC._collapse_hc_streams(v2, "x", 8, 1, "mean") is v2            # streams=1 no-op
+    assert RC._collapse_hc_streams(plain, "x", 8, 4, "mean") is plain  # already h_dim
+    assert RC._collapse_hc_streams(v2, "x", 8, 1, "mean") is v2  # streams=1 no-op
     with pytest.raises(ValueError, match="neither"):
         RC._collapse_hc_streams(rng.standard_normal((5, 12)), "x", 8, 4, "mean")
     with pytest.raises(ValueError, match="EPS_HC_REDUCE"):
@@ -417,15 +428,34 @@ def test_registry_hc_streams_pins():
 def test_find_checkpoint_key_tolerates_language_model_prefix():
     import issue2330_qwen35_generate_capture as G
 
+    scale_key = "model.language_model.layers.1.ple.ple_embedding.ngram_embedding.weight_scale"
     wm = {
-        "model.language_model.layers.1.ple.ple_embedding.ngram_embedding.weight_scale": "a.safetensors",
+        scale_key: "a.safetensors",
         "model.language_model.layers.1.ple.key_proj.weight": "a.safetensors",
         "model.visual.blocks.0.attn.qkv.weight_scale": "b.safetensors",
         "lm_head.weight": "c.safetensors",
     }
-    assert (G._find_checkpoint_key(wm, "model.layers.1.ple.ple_embedding.ngram_embedding.weight_scale")
-            == "model.language_model.layers.1.ple.ple_embedding.ngram_embedding.weight_scale")
+    want = "model.layers.1.ple.ple_embedding.ngram_embedding.weight_scale"
+    assert G._find_checkpoint_key(wm, want) == scale_key
     assert G._find_checkpoint_key(wm, "lm_head.weight") == "lm_head.weight"
-    assert G._find_checkpoint_key(wm, "model.layers.2.ple.ple_embedding.ngram_embedding.weight_scale") is None
+    miss = "model.layers.2.ple.ple_embedding.ngram_embedding.weight_scale"
+    assert G._find_checkpoint_key(wm, miss) is None
     wm2 = {"a.x.weight_scale": "s", "b.x.weight_scale": "s"}
     assert G._find_checkpoint_key(wm2, "z.x.weight_scale") is None
+
+
+def test_out_root_isolation_by_cap_profile(tmp_path, monkeypatch):
+    """Non-v1 profiles get their own local cells/smoke roots: the gen/capture
+    resume sentinels key on file presence, so sharing the v1 dirs would
+    silently skip the regenerated stages (and v1 stays byte-identical)."""
+    import types
+
+    import issue2588_run_cell as RC
+
+    cell = PC.cell_by_key("q3_32b_a")
+    args = types.SimpleNamespace(out_root=str(tmp_path), smoke=False)
+    assert RC._paths(args, cell)["cell"] == tmp_path / "cells" / "q3_32b_a"
+    monkeypatch.setattr(PC, "CAP_PROFILE", "long")
+    assert RC._paths(args, cell)["cell"] == tmp_path / "cells_cap_long" / "q3_32b_a"
+    args_smoke = types.SimpleNamespace(out_root=str(tmp_path), smoke=True)
+    assert RC._paths(args_smoke, cell)["cell"] == tmp_path / "smoke_cap_long" / "q3_32b_a"

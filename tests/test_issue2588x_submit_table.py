@@ -42,14 +42,13 @@ EXTENSION_KEYS = (
 def _case_table(text: str) -> dict[str, int]:
     # `key) TP=N ;;` or `key) TP=N; BS=M ;;` (BS = HF capture forward batch,
     # exported as EPS_CAPTURE_BS for the job script; optional, default 8).
-    return {
-        k: int(tp)
-        for k, tp in re.findall(r"^\s*(\w+)\)\s+TP=(\d+)(?:;\s*BS=\d+)?(?:;\s*HR=\d+)?\s*;;", text, re.M)
-    }
+    pat = r"^\s*(\w+)\)\s+TP=(\d+)(?:;\s*BS=\d+)?(?:;\s*HR=\d+)?\s*;;"
+    return {k: int(tp) for k, tp in re.findall(pat, text, re.M)}
 
 
 def _submit_bs_table(text: str) -> dict[str, int]:
-    return {k: int(bs) for k, bs in re.findall(r"^\s*(\w+)\)\s+TP=\d+;\s*BS=(\d+)(?:;\s*HR=\d+)?\s*;;", text, re.M)}
+    pat = r"^\s*(\w+)\)\s+TP=\d+;\s*BS=(\d+)(?:;\s*HR=\d+)?\s*;;"
+    return {k: int(bs) for k, bs in re.findall(pat, text, re.M)}
 
 
 def test_submit_capture_batch_sizes():
@@ -65,10 +64,12 @@ def test_submit_capture_batch_sizes():
     assert all(1 <= v <= 8 for v in bs.values()), bs
     assert bs["dsv4_flash"] <= 2 and bs["dsv4_pro"] <= 1
     assert 'export EPS_CAPTURE_HEADROOM_GIB="${HR:-24}"' in text
-    assert re.search(r"^\s*dsv4_flash\)\s+TP=2;\s*BS=\d+;\s*HR=(\d+)\s*;;", text, re.M).group(1) >= "40"
-    assert "PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True" in (SUBMIT.parent / "issue2588x_cell_job.sh").read_text()
+    hr = re.search(r"^\s*dsv4_flash\)\s+TP=2;\s*BS=\d+;\s*HR=(\d+)\s*;;", text, re.M)
+    assert hr is not None and int(hr.group(1)) >= 40
+    job_text = JOB.read_text(encoding="utf-8")
+    assert "PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True" in job_text
     assert 'export EPS_CAPTURE_BS="${BS:-8}"' in text
-    assert '--capture-batch-size "${EPS_CAPTURE_BS:-8}"' in (SUBMIT.parent / "issue2588x_cell_job.sh").read_text()
+    assert '--capture-batch-size "${EPS_CAPTURE_BS:-8}"' in job_text
 
 
 def test_submit_tp_table_matches_registry():
@@ -88,7 +89,7 @@ def test_resource_arithmetic_spec():
         '--gres="gpu:${TP}"',
         '--cpus-per-task="$CPUS"',
         '--mem="${MEM}G"',
-        '--job-name="eps2588x-${KEY}"',
+        '--job-name="$JOB_NAME"',
         '--output="${LOGS}/%x-%j.out"',
     ):
         assert frag in text, frag
@@ -143,3 +144,18 @@ def test_cluster_rules_enforced_in_both_scripts():
 def test_bash_syntax_valid():
     for path in (SUBMIT, JOB):
         subprocess.run(["bash", "-n", str(path)], check=True)
+
+
+def test_cap_profile_job_name_rule():
+    """EPS_CAP_PROFILE is exported to the job env (sbatch default export, like
+    HF_TOKEN) and non-v1 jobs are named eps2588x-<profile>-<key> so the queue
+    shows which profile a job runs. v1 keeps the original name."""
+    text = SUBMIT.read_text(encoding="utf-8")
+    assert 'EPS_CAP_PROFILE="${EPS_CAP_PROFILE:-v1}"' in text
+    assert "export EPS_CAP_PROFILE" in text
+    assert 'JOB_NAME="eps2588x-${KEY}"' in text
+    assert 'if [ "$EPS_CAP_PROFILE" != "v1" ]; then' in text
+    assert 'JOB_NAME="eps2588x-${EPS_CAP_PROFILE}-${KEY}"' in text
+    assert '--job-name="$JOB_NAME"' in text
+    job = JOB.read_text(encoding="utf-8")
+    assert "profile=${EPS_CAP_PROFILE:-v1}" in job

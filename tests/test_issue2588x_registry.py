@@ -12,6 +12,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 import issue2588_panel_common as PC
@@ -188,3 +190,104 @@ def test_sweep_layers_rule_43_to_78():
         assert got == want and len(got) == n, (n_layers, got)
         assert len(set(got)) == len(got)  # top index never duplicates an even
         assert max(got) == n_layers - 1 if n_layers > 32 else max(got) == n_layers - 2
+
+
+# ---------------------------------------------------------------------------
+# Cap profiles (EPS_CAP_PROFILE, issue #2659 truncation rerun)
+# ---------------------------------------------------------------------------
+
+CAP_KEYS = {("a", "generic"), ("a", "gpqa"), ("b", "generic"), ("b", "gpqa")}
+V1_CAP = {
+    ("a", "generic"): 2048,
+    ("a", "gpqa"): 2048,
+    ("b", "generic"): 4096,
+    ("b", "gpqa"): 8192,
+}
+LONG_CAP = {
+    ("a", "generic"): 2048,
+    ("a", "gpqa"): 8192,
+    ("b", "generic"): 32768,
+    ("b", "gpqa"): 32768,
+}
+
+
+def test_cap_profiles_table_and_default():
+    """Every profile carries exactly the four (arm, surface) keys. v1 equals
+    the original constants verbatim and is the default under a clean env."""
+    assert set(PC.CAP_PROFILES) == {"v1", "long"}
+    for name, table in PC.CAP_PROFILES.items():
+        assert set(table) == CAP_KEYS, name
+    assert PC.CAP_PROFILES["v1"] == V1_CAP
+    assert PC.CAP_PROFILES["long"] == LONG_CAP
+    assert PC.CAP_PROFILE == "v1"
+    assert PC.CAP == V1_CAP
+    with pytest.raises(ValueError):
+        PC.resolve_cap_profile("bogus")
+
+
+def test_cap_profile_prefix_suffixing():
+    """v1 is the identity (pre-profile paths byte-identical). Any other
+    profile appends _cap_<profile> so a rerun cannot write into v1 artifacts."""
+    assert PC.profile_prefix("issue2588_capability_panel") == "issue2588_capability_panel"
+    assert PC.PANEL_PREFIX == "issue2588_capability_panel"
+    assert PC.G2_SENTINEL_PATH == "issue2588_capability_panel/gates/g2_anchor_pass.json"
+    assert PC.cell_by_key("q3_32b_b").hf_prefix == "issue2588_capability_panel/q3_32b/think"
+    assert (
+        PC.profile_prefix("issue2588_capability_panel", "long")
+        == "issue2588_capability_panel_cap_long"
+    )
+    with pytest.raises(ValueError):
+        PC.profile_prefix("issue2588_capability_panel", "bogus")
+
+
+def test_regen_bound_profile_derived_and_window_rule():
+    """REGEN_MAX_MODEL_LEN_BOUND derives from the active profile (v1 keeps the
+    original 23,488) and regen_cap clamps the doubled cap to the window."""
+    expected = PC.PROMPT_TOKEN_BUDGET + 2 * max(PC.CAP.values())
+    assert expected == PC.REGEN_MAX_MODEL_LEN_BOUND
+    assert PC.REGEN_MAX_MODEL_LEN_BOUND == 23_488
+    assert PC.PROMPT_TOKEN_BUDGET + 2 * max(PC.CAP_PROFILES["long"].values()) == 7104 + 65_536
+    # Doubling allowed (fake mpe 262144: the Qwen3.5 window class).
+    assert PC.regen_cap(32_768, 262_144) == 65_536
+    # Clamped to the window but still above cap (fake mpe 40960: Qwen3-32B /
+    # QwQ class): regen runs at mpe minus the prompt budget.
+    clamped = PC.regen_cap(32_768, 40_960)
+    assert clamped == 33_856
+    assert 32_768 < clamped < 2 * 32_768
+    # Window exhausted (regen_cap <= cap): the caller SKIPS the regen and
+    # writes regen_skipped_reason "cap at context window".
+    assert PC.regen_cap(33_856, 40_960) == 33_856
+    assert PC.regen_cap(16_384, PC.PROMPT_TOKEN_BUDGET + 16_384) == 16_384
+    # v1 behavior unchanged: under the v1 prologue floor (mpe >= 23,488)
+    # every v1 cap still doubles exactly.
+    for cap in PC.CAP_PROFILES["v1"].values():
+        assert PC.regen_cap(cap, 23_488) == 2 * cap
+    # Base-engine mpe floors per arm under the default (v1) profile.
+    assert PC.mpe_floor_for_arm("a") == PC.PROMPT_TOKEN_BUDGET + 2048
+    assert PC.mpe_floor_for_arm("b") == PC.PROMPT_TOKEN_BUDGET + 8192
+
+
+def test_cap_profile_env_threading_reload(monkeypatch):
+    """EPS_CAP_PROFILE threads env -> table -> every PANEL_PREFIX-rooted path
+    (end to end through a module reload, restored after)."""
+    import importlib
+
+    monkeypatch.setenv("EPS_CAP_PROFILE", "long")
+    try:
+        importlib.reload(PC)
+        assert PC.CAP_PROFILE == "long"
+        assert PC.CAP == LONG_CAP
+        assert PC.PANEL_PREFIX == "issue2588_capability_panel_cap_long"
+        assert PC.G2_SENTINEL_PATH == (
+            "issue2588_capability_panel_cap_long/gates/g2_anchor_pass.json"
+        )
+        assert PC.cell_by_key("q3_32b_a").hf_prefix == (
+            "issue2588_capability_panel_cap_long/q3_32b/nothink"
+        )
+        assert PC.REGEN_MAX_MODEL_LEN_BOUND == 7104 + 65_536
+        assert PC.mpe_floor_for_arm("b") == 7104 + 32_768
+    finally:
+        monkeypatch.delenv("EPS_CAP_PROFILE", raising=False)
+        importlib.reload(PC)
+    assert PC.CAP_PROFILE == "v1"
+    assert PC.PANEL_PREFIX == "issue2588_capability_panel"

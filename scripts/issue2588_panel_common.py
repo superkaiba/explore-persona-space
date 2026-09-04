@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -59,7 +60,56 @@ from issue928_common import char_span_to_token_span, repeated_4gram_fraction  # 
 
 TASK_ID = 2588
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
-PANEL_PREFIX = "issue2588_capability_panel"
+# max_new_tokens per (arm, surface), selected by EPS_CAP_PROFILE (default
+# "v1"). "v1" is the original table verbatim (plan §0, Sources: #2330 cap2048 /
+# CLAUDE.md truncation rule + #1426, pilot-gated at smoke). "long" is the
+# #2659 truncation-rerun table: 27-92% of thinking-arm GPQA rollouts stayed
+# cut off after the v1 2x regen, so the rerun raises the caps and the regen
+# becomes window-aware (regen_cap below). Cap VALUES live ONLY in this table.
+CAP_PROFILES: dict[str, dict[tuple[str, str], int]] = {
+    "v1": {
+        ("a", "generic"): 2048,
+        ("a", "gpqa"): 2048,
+        ("b", "generic"): 4096,
+        ("b", "gpqa"): 8192,
+    },
+    "long": {
+        ("a", "generic"): 2048,
+        ("a", "gpqa"): 8192,
+        ("b", "generic"): 32768,
+        ("b", "gpqa"): 32768,
+    },
+}
+
+
+def resolve_cap_profile(name: str | None = None) -> str:
+    """Validate a cap-profile name (default: the EPS_CAP_PROFILE env var)."""
+    got = os.environ.get("EPS_CAP_PROFILE", "v1") if name is None else name
+    if got not in CAP_PROFILES:
+        raise ValueError(
+            f"unknown cap profile {got!r} (EPS_CAP_PROFILE), known: {sorted(CAP_PROFILES)}"
+        )
+    return got
+
+
+CAP_PROFILE = resolve_cap_profile()
+CAP = CAP_PROFILES[CAP_PROFILE]
+
+
+def profile_prefix(base: str, profile: str | None = None) -> str:
+    """Suffix a PANEL_PREFIX-rooted path for output isolation.
+
+    v1 is the identity (every pre-profile path stays byte-identical). Any
+    other profile appends ``_cap_<profile>`` so a rerun can never write into
+    the v1 artifacts (the HF data repo is append-only and the v1 tree is what
+    the promoted panel reads).
+    """
+    p = CAP_PROFILE if profile is None else resolve_cap_profile(profile)
+    return base if p == "v1" else f"{base}_cap_{p}"
+
+
+_PANEL_PREFIX_BASE = "issue2588_capability_panel"
+PANEL_PREFIX = profile_prefix(_PANEL_PREFIX_BASE)
 G2_SENTINEL_PATH = f"{PANEL_PREFIX}/gates/g2_anchor_pass.json"
 
 # #2330 pinned inputs (plan §10 Data)
@@ -134,22 +184,41 @@ GEN_SEED = 42
 GPQA_ROLLOUT_SEEDS = (42, 43, 44, 45, 46)
 CEILING_SEEDS = (43, 44)
 PROMPT_TOKEN_BUDGET = 7104
-# max_new_tokens per (arm, surface): no-think 2048; think-generic 4096;
-# think-GPQA 8192 (plan §0; Sources: #2330 cap2048 / CLAUDE.md truncation rule
-# + #1426, pilot-gated at smoke).
-CAP = {
-    ("a", "generic"): 2048,
-    ("a", "gpqa"): 2048,
-    ("b", "generic"): 4096,
-    ("b", "gpqa"): 8192,
-}
+# CAP (max_new_tokens per (arm, surface)) is profile-selected: the table is
+# CAP_PROFILES / EPS_CAP_PROFILE in the registered-constants block above.
 # Ceiling draws run at the arm's GENERIC cap (arm a 2048 = the §10 pinned
 # fresh-cell 2048-cap; arm b 4096 so think blocks close — plan §10 states
 # "fresh cells 2,048-cap" without an arm split; flagged in the implementation
 # report as an interpretation, never a silent constant change).
 CAP_HIT_TRIGGER = 0.02  # G4
 UNCLOSED_THINK_TRIGGER = 0.02  # G5
-REGEN_MAX_MODEL_LEN_BOUND = 23_488  # 7104 + 2*8192; asserted <= max_position_embeddings
+# Largest max_model_len any regen engine may request under the ACTIVE profile
+# (prompt budget + 2x the profile's largest cap). The v1 value 23,488 = 7104 +
+# 2*8192 is the original constant. A sanity pin on the regen re-pin, NOT an
+# mpe floor: the regen itself is window-aware (regen_cap below).
+REGEN_MAX_MODEL_LEN_BOUND = PROMPT_TOKEN_BUDGET + 2 * max(CAP.values())
+if CAP_PROFILE == "v1":
+    assert REGEN_MAX_MODEL_LEN_BOUND == 23_488, REGEN_MAX_MODEL_LEN_BOUND
+
+
+def regen_cap(cap: int, mpe: int) -> int:
+    """G4/G5 regen cap: 2x the stage cap, clamped to the model's context
+    window less the prompt budget. A return <= cap means the window is
+    already exhausted at the current cap: the caller SKIPS the regen
+    (regen_skipped_reason "cap at context window") and leaves rows at cap to
+    the drop-and-count parse path.
+    """
+    return min(2 * cap, mpe - PROMPT_TOKEN_BUDGET)
+
+
+def mpe_floor_for_arm(arm: str) -> int:
+    """Hard context-window floor for a cell under the active profile: every
+    BASE engine the cell builds must fit (prompt budget + the arm's largest
+    cap). Regen headroom on top of this is soft (window-aware regen_cap).
+    """
+    return PROMPT_TOKEN_BUDGET + max(CAP[(arm, "generic")], CAP[(arm, "gpqa")])
+
+
 REPEAT_4GRAM_MAX_FRAC = 0.50  # ported 2546 constant (parse drop class)
 
 THINK_OPEN, THINK_CLOSE = "<think>", "</think>"
@@ -626,15 +695,16 @@ def resolve_cfg_attr(cfg, attr: str):
 
 
 def assert_max_position_embeddings(model_id: str, floor: int = REGEN_MAX_MODEL_LEN_BOUND) -> int:
-    """Record + HARD-assert max_position_embeddings >= the G4/G5 regen headroom."""
+    """Record + HARD-assert max_position_embeddings >= the requested context floor."""
     from transformers import AutoConfig
 
     cfg = AutoConfig.from_pretrained(model_id)
     mpe = resolve_cfg_attr(cfg, "max_position_embeddings")
     assert isinstance(mpe, int), f"{model_id}: max_position_embeddings unreadable ({mpe!r})"
     assert mpe >= floor, (
-        f"G4/G5 regen headroom FAIL: {model_id} max_position_embeddings={mpe} < {floor} — the "
-        "regen engine re-pin (max_model_len = 7104 + 2*cap) would exceed the context window."
+        f"context-window floor FAIL: {model_id} max_position_embeddings={mpe} < {floor}: an "
+        "engine pinned at max_model_len = PROMPT_TOKEN_BUDGET + cap (or the regen re-pin) "
+        "would exceed the context window."
     )
     return mpe
 

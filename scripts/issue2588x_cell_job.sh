@@ -106,8 +106,14 @@ trap term_handler TERM INT
 ) &
 HB_PID=$!
 
+# Cap profile: rides sbatch's default env export from the submitting shell
+# (issue2588x_submit.sh). panel_common resolves + validates it at import, and
+# the run_cell driver suffixes every HF prefix and local out dir with
+# _cap_<profile> when it is not "v1".
+echo "[job] $(date -u +%FT%TZ) cap profile: ${EPS_CAP_PROFILE:-v1}"
+
 for ARM in $ARMS; do
-  echo "[job] $(date -u +%FT%TZ) launching cell ${MODEL_KEY}_${ARM} --phase all (tp=${TP})"
+  echo "[job] $(date -u +%FT%TZ) launching cell ${MODEL_KEY}_${ARM} --phase all (tp=${TP}, profile=${EPS_CAP_PROFILE:-v1})"
   "$PY" "$BASE/repo/scripts/issue2588_run_cell.py" \
     --cell "${MODEL_KEY}_${ARM}" \
     --phase all \

@@ -22,6 +22,20 @@ KEY="${1:?usage: bash scripts/issue2588x_submit.sh <model_key>  (one of: q38fn q
 BASE=/workspace/superkaiba/eps2588x
 LOGS="$BASE/logs"
 
+# Cap profile (issue #2659 truncation rerun): EPS_CAP_PROFILE selects the
+# max_new_tokens table in issue2588_panel_common.CAP_PROFILES (default "v1"
+# the original caps, "long" the rerun table). It reaches the job through
+# sbatch's default environment export exactly like HF_TOKEN. The job body
+# validates the name on its first python call (panel_common raises at import
+# on an unknown profile, before any GPU work). Non-v1 jobs are named
+# eps2588x-<profile>-<key> so the queue shows which profile a job runs.
+EPS_CAP_PROFILE="${EPS_CAP_PROFILE:-v1}"
+export EPS_CAP_PROFILE
+JOB_NAME="eps2588x-${KEY}"
+if [ "$EPS_CAP_PROFILE" != "v1" ]; then
+  JOB_NAME="eps2588x-${EPS_CAP_PROFILE}-${KEY}"
+fi
+
 # Per-model tensor-parallel width. MUST mirror PanelModel.tp_gpus in
 # scripts/issue2588_panel_common.py — tests/test_issue2588x_submit_table.py
 # pins this table to the registry, and the job body re-asserts the value
@@ -61,6 +75,6 @@ sbatch \
   --gres="gpu:${TP}" \
   --cpus-per-task="$CPUS" \
   --mem="${MEM}G" \
-  --job-name="eps2588x-${KEY}" \
+  --job-name="$JOB_NAME" \
   --output="${LOGS}/%x-%j.out" \
   "$(dirname "$0")/issue2588x_cell_job.sh" "$KEY" "$TP"
