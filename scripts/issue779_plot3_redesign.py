@@ -466,36 +466,48 @@ def _display_path(path: Path) -> str:
         return str(resolved)
 
 
-def make_paper_figure(res: dict, paper_out: Path, source: Path) -> None:
-    """Paper-standard (c2a-v2) render -> ``figures/paper/c3_persona_direction_spectrum``.
+# Offsets tuned on the c2a wide canvas (fontsize-13 labels); the legacy
+# LABEL_OFFSETS above were tuned for the print-size iclr canvas and do not
+# transfer. (dx, dy) in points, then ha/va.
+PAPER_OFFSETS = {
+    "evil": (0, -14, "center", "top"),
+    "sycophancy": (0, 12, "center", "bottom"),
+    "hallucination": (-12, -2, "right", "center"),
+    "refusal": (12, -2, "left", "center"),
+    "assistant axis": (128, 18, "left", "bottom"),
+    "casualness": (30, 16, "left", "bottom"),
+    "impoliteness": (-8, -20, "right", "top"),
+    "harmful compliance": (-10, -28, "right", "top"),
+    "correctness (math)": (20, 10, "left", "bottom"),
+    "correctness (MMLU-Pro)": (20, -10, "left", "top"),
+    "correctness (code)": (16, -12, "left", "top"),
+}
 
-    Same plotted values as :func:`make_figure` (a restyle, not a recompute);
-    style comes entirely from ``analysis/c2a_plot_style`` per
-    ``docs/paper_context_answer_map/figure_standard.md`` (wide = 0.75 include
-    width; teal answer-PCA curve, muted random band, ink labeled points).
+
+def draw_spectrum_panel(
+    ax, res: dict, *, offsets: dict | None = None, legend_frame: bool = False
+) -> None:
+    """Draw the useful-directions spectrum panel (c2a-v2) onto ``ax``.
+
+    Everything inside the axes: the random-direction band, the answer-PCA
+    spectrum curve, the labeled direction points with leader lines, log x
+    scale, axis labels, and the in-axes legend.  Panel furniture (kicker and
+    title) stays with the caller, so the same panel serves the standalone
+    ``c3_persona_direction_spectrum`` figure and combined layouts
+    (``scripts/make_paper_section42_figures.py``).  ``offsets`` overrides
+    :data:`PAPER_OFFSETS` per plot label for hosts whose panel geometry
+    differs from the standalone wide canvas.  ``legend_frame`` puts a white
+    knockout behind the legend for hosts whose narrower axes let the curve
+    descend through the legend area.
     """
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
     from explore_persona_space.analysis.c2a_plot_style import (
         INK,
         METRIC_LABELS,
         MUTED,
         ROLES,
-        STYLE_VERSION,
         better_label,
-        c2a_figure,
-        panel_header,
-        save_c2a_figure,
-        set_c2a_style,
         style_axis,
     )
-
-    set_c2a_style()
-    fig, frac = c2a_figure("wide", aspect=0.48)
-    ax = fig.add_subplot(111)
 
     ranks1 = np.array(res["ranks_evaluated"]) + 1
     r2 = np.array(res["r2_by_rank"])
@@ -511,29 +523,15 @@ def make_paper_figure(res: dict, paper_out: Path, source: Path) -> None:
     ax.plot(ranks1, r2, lw=1.8, color=ROLES["linear"].color, label="answer-PCA direction")
     ax.axhline(0.0, lw=0.8, color=MUTED)
 
-    # Offsets tuned on the c2a wide canvas (fontsize-15 labels); the legacy
-    # LABEL_OFFSETS above were tuned for the print-size iclr canvas and do not
-    # transfer. (dx, dy) in points, then ha/va.
-    paper_offsets = {
-        "evil": (0, -14, "center", "top"),
-        "sycophancy": (0, 12, "center", "bottom"),
-        "hallucination": (-12, -2, "right", "center"),
-        "refusal": (12, -2, "left", "center"),
-        "assistant axis": (128, 18, "left", "bottom"),
-        "casualness": (30, 16, "left", "bottom"),
-        "impoliteness": (-8, -20, "right", "top"),
-        "harmful compliance": (-10, -28, "right", "top"),
-        "correctness (math)": (20, 10, "left", "bottom"),
-        "correctness (MMLU-Pro)": (20, -10, "left", "top"),
-        "correctness (code)": (16, -12, "left", "top"),
-    }
+    label_offsets = dict(PAPER_OFFSETS)
+    label_offsets.update(offsets or {})
     # Headroom for the top label row (the labeled cluster sits at R2 0.84-0.91).
     ax.set_ylim(-0.32, 1.05)
     for name, lab, _ in ROSTER:
         e = res["directions"][name]
         x, y = e["plotted_rank_1based"], e["heldout_r2"]
         ax.scatter([x], [y], s=64, zorder=7, color=INK, marker="o", linewidths=0)
-        dx, dy, ha, va = paper_offsets.get(lab, (8, 6, "left", "bottom"))
+        dx, dy, ha, va = label_offsets.get(lab, (8, 6, "left", "bottom"))
         # A long offset (the crowded upper-right cluster) gets a thin leader line.
         arrow = (
             dict(arrowstyle="-", lw=0.8, color=MUTED, shrinkA=1, shrinkB=3)
@@ -558,13 +556,46 @@ def make_paper_figure(res: dict, paper_out: Path, source: Path) -> None:
     ax.set_xlabel("Variance rank (log)")
     ax.set_ylabel(better_label(METRIC_LABELS["r2"]))
     style_axis(ax)
+    legend = ax.legend(loc="lower left")
+    if legend_frame:
+        legend.set_frame_on(True)
+        frame = legend.get_frame()
+        frame.set_facecolor("white")
+        frame.set_alpha(0.85)
+        frame.set_edgecolor("none")
+
+
+def make_paper_figure(res: dict, paper_out: Path, source: Path) -> None:
+    """Paper-standard (c2a-v2) render -> ``figures/paper/c3_persona_direction_spectrum``.
+
+    Same plotted values as :func:`make_figure` (a restyle, not a recompute);
+    style comes entirely from ``analysis/c2a_plot_style`` per
+    ``docs/paper_context_answer_map/figure_standard.md`` (wide = 0.75 include
+    width; teal answer-PCA curve, muted random band, ink labeled points).
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.c2a_plot_style import (
+        STYLE_VERSION,
+        c2a_figure,
+        panel_header,
+        save_c2a_figure,
+        set_c2a_style,
+    )
+
+    set_c2a_style()
+    fig, frac = c2a_figure("wide", aspect=0.48)
+    ax = fig.add_subplot(111)
+    draw_spectrum_panel(ax, res)
     panel_header(
         ax,
         "",
         "Qwen2.5-7B-Instruct · layer 19 · 5,000 contexts (4,000 train, 1,000 test)",
         title="Per-direction held-out $R^2$ against variance rank",
     )
-    ax.legend(loc="lower left")
 
     paper_out.mkdir(parents=True, exist_ok=True)
     stem = paper_out / "c3_persona_direction_spectrum"

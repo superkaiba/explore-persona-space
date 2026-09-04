@@ -60,6 +60,7 @@ MINPAIR_SOURCE = ROOT / "eval_results/issue_2564/minpair_delta.json"
 PERSONA_SOURCE = ROOT / "eval_results/issue_2564/floor-failed-reelicitation/minpair_delta_ffr.json"
 ONEWORD_SOURCE = ROOT / "eval_results/issue_2564/lang_oneword_pilot/summary.json"
 ONEWORD_PAIRS = ROOT / "eval_results/issue_2564/lang_oneword_pilot/perpair.jsonl"
+SPECTRUM_SOURCE = ROOT / "eval_results/issue_779/plot3_redesign/plot3_redesign.json"
 SVMP_DIR = Path(os.environ.get("C2A_SVMP_DIR", ROOT / "eval_results/issue_2617/svmp_verbharm"))
 
 LINEAR = ROLES["linear"].color
@@ -329,11 +330,22 @@ def _pair_shift_data() -> list[dict]:
     return rows
 
 
-def make_pair_shift_figure(rows: list[dict]) -> tuple[plt.Figure, float]:
-    fig, include_frac = c2a_figure("wide", aspect=0.53)
-    grid = fig.add_gridspec(1, 1, left=0.115, right=0.98, top=0.78, bottom=0.155)
-    ax = fig.add_subplot(grid[0, 0])
+def _draw_pair_shift_axes(
+    ax: plt.Axes,
+    rows: list[dict],
+    *,
+    ylabel: str = "Predicted / observed shift size",
+    stagger_xticklabels: bool = False,
+) -> None:
+    """Errorbar panel content shared by the standalone and combined figures.
 
+    Everything inside the axes: the dashed reference line at one, the per-element
+    point estimates with 95% bootstrap CIs, the value labels, the two-line x tick
+    labels, and the axis treatment.  Panel furniture (kicker and title) stays
+    with the caller.  ``stagger_xticklabels`` drops every second tick label a
+    full label height so the six labels stay legible on a narrow panel (adjacent
+    labels need a wider slot than a half-width panel provides).
+    """
     x = np.arange(len(rows))
     values = np.asarray([row["slope"] for row in rows])
     ci = np.asarray([row["slope_ci95"] for row in rows])
@@ -362,8 +374,19 @@ def make_pair_shift_figure(rows: list[dict]) -> tuple[plt.Figure, float]:
     ax.set_xlim(-0.5, len(rows) - 0.5)
     ax.set_ylim(0.45, 1.42)
     ax.set_yticks([0.5, 0.75, 1.0, 1.25])
-    ax.set_ylabel("Predicted / observed shift size")
+    ax.set_ylabel(ylabel)
     style_axis(ax, grid_axis="y")
+    if stagger_xticklabels:
+        # Two-line labels at 17 pt are ~42 pt tall; +44 pt of pad fully separates rows.
+        for tick in ax.xaxis.get_major_ticks()[1::2]:
+            tick.set_pad(tick.get_pad() + 44)
+
+
+def make_pair_shift_figure(rows: list[dict]) -> tuple[plt.Figure, float]:
+    fig, include_frac = c2a_figure("wide", aspect=0.53)
+    grid = fig.add_gridspec(1, 1, left=0.115, right=0.98, top=0.78, bottom=0.155)
+    ax = fig.add_subplot(grid[0, 0])
+    _draw_pair_shift_axes(ax, rows)
     panel_header(
         ax,
         "",
@@ -372,6 +395,61 @@ def make_pair_shift_figure(rows: list[dict]) -> tuple[plt.Figure, float]:
         kicker_y=1.20,
         title_y=1.075,
     )
+    return fig, include_frac
+
+
+# Panel-A label offsets for the combined figure (panel geometry differs from the
+# standalone wide canvas, so the shared PAPER_OFFSETS do not transfer).
+# (dx, dy) in points from the data point, then ha/va.
+_COMBINED_SPECTRUM_OFFSETS = {
+    "evil": (69, 14, "left", "bottom"),
+    "sycophancy": (56, 6, "right", "bottom"),
+    "hallucination": (-45, 1, "center", "top"),
+    "refusal": (14, 9, "left", "bottom"),
+    "assistant axis": (3, -47, "right", "top"),
+    "casualness": (6, -46, "left", "top"),
+    "impoliteness": (-35, -2, "right", "bottom"),
+    "harmful compliance": (-45, -33, "center", "bottom"),
+    "correctness (math)": (79, 11, "center", "center"),
+    "correctness (MMLU-Pro)": (81, -3, "left", "center"),
+    "correctness (code)": (102, -14, "left", "center"),
+}
+
+
+def make_directions_and_pairs_figure(spectrum: dict, rows: list[dict]) -> tuple[plt.Figure, float]:
+    """Combined manuscript figure: A = useful-directions spectrum, B = pair shifts.
+
+    Panel A reuses the ax-level spectrum drawer from
+    ``scripts/issue779_plot3_redesign.py`` (same plotted values as the standalone
+    ``c3_persona_direction_spectrum``); panel B reuses the errorbar panel of
+    ``c3_pair_shifts``.  Full include width, one figure-level eyebrow, per-panel
+    kickers and descriptive titles.
+    """
+    # Sibling script import (lazy: pulls torch and the #779 analysis modules).
+    from issue779_plot3_redesign import draw_spectrum_panel
+
+    fig, include_frac = c2a_figure("full", aspect=0.40)
+    grid = fig.add_gridspec(
+        1, 2, width_ratios=[0.6, 0.4], left=0.065, right=0.985, top=0.76, bottom=0.26, wspace=0.18
+    )
+    ax_a = fig.add_subplot(grid[0, 0])
+    ax_b = fig.add_subplot(grid[0, 1])
+
+    draw_spectrum_panel(ax_a, spectrum, offsets=_COMBINED_SPECTRUM_OFFSETS, legend_frame=True)
+    panel_header(
+        ax_a,
+        "A",
+        "5,000 contexts (4,000 train, 1,000 test)",
+        title="Per-direction held-out $R^2$ vs variance rank",
+    )
+    _draw_pair_shift_axes(ax_b, rows, ylabel="Predicted / observed", stagger_xticklabels=True)
+    panel_header(
+        ax_b,
+        "B",
+        "Controlled minimal pairs\nError bars: 95% bootstrap CI",
+        title="Answer-shift size by element",
+    )
+    legend_kicker(fig, 0.065, 0.955, "Qwen2.5-7B-Instruct, layer 19")
     return fig, include_frac
 
 
@@ -679,67 +757,126 @@ def make_refusal_by_class_figure(data: dict) -> tuple[plt.Figure, float]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
+    parser.add_argument(
+        "--only",
+        choices=("sae", "pair_shifts", "refusal_by_class", "directions_and_pairs"),
+        default=None,
+        help="render a single figure (default: render all four)",
+    )
     args = parser.parse_args()
     set_c2a_style()
 
-    sae = _sae_data()
-    sae_fig, sae_frac = make_sae_figure(sae)
-    sae_outputs = _save(
-        sae_fig,
-        args.out_dir,
-        "c3_sae_tier_gradient",
-        title="SAE feature properties and context-to-answer predictability",
-        subject="Conditional feature-property associations and activity-adjusted nested-tier gradient",
-        include_frac=sae_frac,
-        sources=[SAE_SOURCE],
-        displayed_data=sae,
-    )
-    plt.close(sae_fig)
+    report: list[tuple[str, dict]] = []
 
-    pair_shifts = _pair_shift_data()
-    pair_fig, pair_frac = make_pair_shift_figure(pair_shifts)
-    pair_outputs = _save(
-        pair_fig,
-        args.out_dir,
-        "c3_pair_shifts",
-        title="Predicted over observed answer-shift size for controlled minimal pairs",
-        subject=(
-            "Through-origin calibration slope of predicted over observed answer-shift size "
-            "per changed element, with 95% confidence intervals"
-        ),
-        include_frac=pair_frac,
-        sources=[MINPAIR_SOURCE, PERSONA_SOURCE, ONEWORD_SOURCE, ONEWORD_PAIRS],
-        displayed_data={
-            "elements": pair_shifts,
-            "reference_line": 1.0,
-            "order": "descending slope",
-        },
-    )
-    plt.close(pair_fig)
+    if args.only in (None, "sae"):
+        sae = _sae_data()
+        sae_fig, sae_frac = make_sae_figure(sae)
+        sae_outputs = _save(
+            sae_fig,
+            args.out_dir,
+            "c3_sae_tier_gradient",
+            title="SAE feature properties and context-to-answer predictability",
+            subject="Conditional feature-property associations and activity-adjusted nested-tier gradient",
+            include_frac=sae_frac,
+            sources=[SAE_SOURCE],
+            displayed_data=sae,
+        )
+        plt.close(sae_fig)
+        report.append(("sae", sae_outputs))
 
-    refusal = _refusal_by_class_data()
-    refusal_fig, refusal_frac = make_refusal_by_class_figure(refusal)
-    refusal_outputs = _save(
-        refusal_fig,
-        args.out_dir,
-        "c3_refusal_swaps_by_class",
-        title="One-word safety swaps by pair class",
-        subject=(
-            "Per-class mean shift-direction cosine, refusal-direction loading, and "
-            "through-origin predicted-over-observed shift size for one-word safety swaps, "
-            "with the raw context-shift baseline and shuffled-pair null"
-        ),
-        include_frac=refusal_frac,
-        sources=[SVMP_DIR / "perpair.jsonl", SVMP_DIR / "summary.json"],
-        displayed_data=refusal,
-    )
-    plt.close(refusal_fig)
+    pair_shifts: list[dict] | None = None
+    if args.only in (None, "pair_shifts", "directions_and_pairs"):
+        pair_shifts = _pair_shift_data()
 
-    for name, outputs in (
-        ("sae", sae_outputs),
-        ("pair_shifts", pair_outputs),
-        ("refusal_by_class", refusal_outputs),
-    ):
+    if args.only in (None, "pair_shifts"):
+        pair_fig, pair_frac = make_pair_shift_figure(pair_shifts)
+        pair_outputs = _save(
+            pair_fig,
+            args.out_dir,
+            "c3_pair_shifts",
+            title="Predicted over observed answer-shift size for controlled minimal pairs",
+            subject=(
+                "Through-origin calibration slope of predicted over observed answer-shift size "
+                "per changed element, with 95% confidence intervals"
+            ),
+            include_frac=pair_frac,
+            sources=[MINPAIR_SOURCE, PERSONA_SOURCE, ONEWORD_SOURCE, ONEWORD_PAIRS],
+            displayed_data={
+                "elements": pair_shifts,
+                "reference_line": 1.0,
+                "order": "descending slope",
+            },
+        )
+        plt.close(pair_fig)
+        report.append(("pair_shifts", pair_outputs))
+
+    if args.only in (None, "refusal_by_class"):
+        refusal = _refusal_by_class_data()
+        refusal_fig, refusal_frac = make_refusal_by_class_figure(refusal)
+        refusal_outputs = _save(
+            refusal_fig,
+            args.out_dir,
+            "c3_refusal_swaps_by_class",
+            title="One-word safety swaps by pair class",
+            subject=(
+                "Per-class mean shift-direction cosine, refusal-direction loading, and "
+                "through-origin predicted-over-observed shift size for one-word safety swaps, "
+                "with the raw context-shift baseline and shuffled-pair null"
+            ),
+            include_frac=refusal_frac,
+            sources=[SVMP_DIR / "perpair.jsonl", SVMP_DIR / "summary.json"],
+            displayed_data=refusal,
+        )
+        plt.close(refusal_fig)
+        report.append(("refusal_by_class", refusal_outputs))
+
+    if args.only in (None, "directions_and_pairs"):
+        spectrum = json.loads(SPECTRUM_SOURCE.read_text())
+        combined_fig, combined_frac = make_directions_and_pairs_figure(spectrum, pair_shifts)
+        combined_outputs = _save(
+            combined_fig,
+            args.out_dir,
+            "c3_directions_and_pairs",
+            title="Useful directions on the answer-PCA spectrum and minimal-pair shift sizes",
+            subject=(
+                "Per-direction held-out R2 of the context-to-answer map at layer 19 against "
+                "variance rank (labeled behavior/persona/correctness directions), alongside "
+                "predicted over observed answer-shift size for six minimal-pair elements "
+                "with 95% bootstrap CIs"
+            ),
+            include_frac=combined_frac,
+            sources=[
+                SPECTRUM_SOURCE,
+                MINPAIR_SOURCE,
+                PERSONA_SOURCE,
+                ONEWORD_SOURCE,
+                ONEWORD_PAIRS,
+            ],
+            displayed_data={
+                "panel_a": {
+                    "layer": spectrum.get("layer", 19),
+                    "ranks_evaluated": spectrum["ranks_evaluated"],
+                    "r2_by_rank": spectrum["r2_by_rank"],
+                    "random_directions": spectrum["random_directions"],
+                    "directions": {
+                        name: {
+                            "plotted_rank_1based": entry["plotted_rank_1based"],
+                            "heldout_r2": entry["heldout_r2"],
+                        }
+                        for name, entry in spectrum["directions"].items()
+                    },
+                },
+                "panel_b": {
+                    "elements": pair_shifts,
+                    "reference_line": 1.0,
+                    "order": "descending slope",
+                },
+            },
+        )
+        plt.close(combined_fig)
+        report.append(("directions_and_pairs", combined_outputs))
+
+    for name, outputs in report:
         for kind, path in outputs.items():
             if isinstance(path, Path):
                 print(f"{name}.{kind}: {path}")
