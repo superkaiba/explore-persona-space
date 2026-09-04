@@ -27,16 +27,21 @@
     "correctness_code",
     "correctness_math",
     "correctness_mmlu_pro",
-    "evil",
+    "hallucination",
     "harmful_compliance",
-    "impoliteness",
     "refusal",
     "sycophancy"
   ],
-  "rows_missing_labels": [
+  "rows_dead": [
+    "casualness",
+    "evil",
+    "impoliteness"
+  ],
+  "rows_with_declared_exclusions": [
     "casualness",
     "hallucination"
   ],
+  "rows_missing_labels_undocumented": [],
   "per_row_power_n": {
     "assistantness": {
       "n_power": 30,
@@ -54,15 +59,11 @@
       "n_power": 30,
       "status": "measured"
     },
-    "evil": {
+    "hallucination": {
       "n_power": 30,
       "status": "measured"
     },
     "harmful_compliance": {
-      "n_power": 30,
-      "status": "measured"
-    },
-    "impoliteness": {
       "n_power": 30,
       "status": "measured"
     },
@@ -73,6 +74,18 @@
     "sycophancy": {
       "n_power": 30,
       "status": "measured"
+    },
+    "casualness": {
+      "n_power": null,
+      "status": "not-estimable: zero pilot discordance in every cell"
+    },
+    "evil": {
+      "n_power": null,
+      "status": "not-estimable: zero pilot discordance in every cell"
+    },
+    "impoliteness": {
+      "n_power": null,
+      "status": "not-estimable: zero pilot discordance in every cell"
     }
   },
   "binding_discordance_cell": {
@@ -80,7 +93,7 @@
     "cell": "refusal__wildchat_real__indirect",
     "n_required": 62
   },
-  "cells_with_unbounded_requirement": [
+  "cells_not_estimable_zero_discordance": [
     "assistantness__arc_c_tasks__ambiguous",
     "assistantness__arc_c_tasks__direct",
     "assistantness__arc_c_tasks__indirect",
@@ -148,18 +161,292 @@
     "sycophancy__syco_arc_science__confident_assertion",
     "sycophancy__syco_arc_science__hedged_assertion"
   ],
+  "cells_estimable": [
+    "assistantness__wildchat_real__ambiguous",
+    "assistantness__wildchat_real__direct",
+    "correctness_code__code_bigcodebench__band_a",
+    "correctness_code__code_bigcodebench__band_b",
+    "correctness_code__code_bigcodebench__band_c",
+    "correctness_code__code_humaneval_mbpp__band_a",
+    "correctness_code__code_humaneval_mbpp__band_b",
+    "correctness_code__code_lcb__band_a",
+    "correctness_code__code_lcb__band_b",
+    "correctness_code__code_leetcode__band_a",
+    "correctness_code__code_leetcode__band_b",
+    "correctness_code__code_leetcode__band_c",
+    "correctness_math__math_algebra__level_high",
+    "correctness_math__math_algebra__level_mid",
+    "correctness_math__math_geometry__level_high",
+    "correctness_math__math_geometry__level_low",
+    "correctness_math__math_geometry__level_mid",
+    "correctness_math__math_numbertheory__level_high",
+    "correctness_math__math_numbertheory__level_low",
+    "correctness_math__math_numbertheory__level_mid",
+    "correctness_math__math_prealgebra__level_high",
+    "correctness_mmlu_pro__mmlu_health__band_a",
+    "correctness_mmlu_pro__mmlu_health__band_b",
+    "correctness_mmlu_pro__mmlu_health__band_c",
+    "correctness_mmlu_pro__mmlu_humanities__band_a",
+    "correctness_mmlu_pro__mmlu_humanities__band_b",
+    "correctness_mmlu_pro__mmlu_humanities__band_c",
+    "correctness_mmlu_pro__mmlu_social__band_a",
+    "correctness_mmlu_pro__mmlu_social__band_b",
+    "correctness_mmlu_pro__mmlu_social__band_c",
+    "correctness_mmlu_pro__mmlu_stem__band_a",
+    "correctness_mmlu_pro__mmlu_stem__band_b",
+    "correctness_mmlu_pro__mmlu_stem__band_c",
+    "hallucination__arc_c_factual__ambiguous",
+    "hallucination__arc_c_factual__direct",
+    "hallucination__fact_questions__ambiguous",
+    "hallucination__fact_questions__direct",
+    "hallucination__fact_questions__indirect",
+    "harmful_compliance__strongreject_requests__direct",
+    "harmful_compliance__strongreject_requests__indirect",
+    "refusal__advbench_requests__ambiguous",
+    "refusal__advbench_requests__direct",
+    "refusal__advbench_requests__indirect",
+    "refusal__sensitive_info_requests__ambiguous",
+    "refusal__sensitive_info_requests__direct",
+    "refusal__sensitive_info_requests__indirect",
+    "refusal__strongreject_requests__ambiguous",
+    "refusal__strongreject_requests__direct",
+    "refusal__strongreject_requests__indirect",
+    "refusal__wildchat_real__indirect",
+    "sycophancy__syco_mmlu_humanities__authority_assertion",
+    "sycophancy__syco_mmlu_humanities__confident_assertion",
+    "sycophancy__syco_mmlu_humanities__hedged_assertion",
+    "sycophancy__syco_mmlu_social_health__authority_assertion",
+    "sycophancy__syco_mmlu_social_health__confident_assertion",
+    "sycophancy__syco_mmlu_social_health__hedged_assertion",
+    "sycophancy__syco_mmlu_stem__authority_assertion",
+    "sycophancy__syco_mmlu_stem__confident_assertion",
+    "sycophancy__syco_mmlu_stem__hedged_assertion"
+  ],
   "binding_power_row": {
     "row": "assistantness",
     "n_required": 30
   },
-  "n_common": null,
-  "status": "not-estimable",
-  "power_curve_at_n_common": {},
-  "first_unit_wall_s": 312.4221041202545,
+  "n_common": 62,
+  "status": "measured",
+  "power_curve_at_n_common": {
+    "assistantness": {
+      "0.55": {
+        "power": 0.9375,
+        "mc_half_width_95": 0.02372202299552043,
+        "mean_stat": 0.5496316719454665,
+        "sd_stat": 0.011650537585964524
+      },
+      "0.60": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.6000846073121422,
+        "sd_stat": 0.011089885345586815
+      },
+      "0.65": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.6495866788374581,
+        "sd_stat": 0.011287873243168408
+      },
+      "0.70": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.7003866908086099,
+        "sd_stat": 0.010820074367917069
+      }
+    },
+    "correctness_code": {
+      "0.55": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.5492506270449407,
+        "sd_stat": 0.008719470455650937
+      },
+      "0.60": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.6005929205861762,
+        "sd_stat": 0.008145164196866369
+      },
+      "0.65": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.6501081049935863,
+        "sd_stat": 0.00834824672351649
+      },
+      "0.70": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.6999312959100291,
+        "sd_stat": 0.007369063294346395
+      }
+    },
+    "correctness_math": {
+      "0.55": {
+        "power": 0.995,
+        "mc_half_width_95": 0.006912300630036286,
+        "mean_stat": 0.5489039062903613,
+        "sd_stat": 0.00917015090398577
+      },
+      "0.60": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.5993737661304985,
+        "sd_stat": 0.009718644387032842
+      },
+      "0.65": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.6504643238601602,
+        "sd_stat": 0.008621287179515562
+      },
+      "0.70": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.6993990691746695,
+        "sd_stat": 0.008837022986875194
+      }
+    },
+    "correctness_mmlu_pro": {
+      "0.55": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.5499392017401179,
+        "sd_stat": 0.007675739896421265
+      },
+      "0.60": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.6003996099614901,
+        "sd_stat": 0.007879266976471146
+      },
+      "0.65": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.6491945101091424,
+        "sd_stat": 0.006998820266873252
+      },
+      "0.70": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.700470017113618,
+        "sd_stat": 0.006381450288388604
+      }
+    },
+    "hallucination": {
+      "0.55": {
+        "power": 0.94,
+        "mc_half_width_95": 0.023273710490594325,
+        "mean_stat": 0.5500831484221409,
+        "sd_stat": 0.011723660527332404
+      },
+      "0.60": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.5998152228033216,
+        "sd_stat": 0.0114370604257514
+      },
+      "0.65": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.6505588898626284,
+        "sd_stat": 0.01147916708017605
+      },
+      "0.70": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.7007531536216463,
+        "sd_stat": 0.010590636697530338
+      }
+    },
+    "harmful_compliance": {
+      "0.55": {
+        "power": 0.9525,
+        "mc_half_width_95": 0.02084516670597767,
+        "mean_stat": 0.550503462133943,
+        "sd_stat": 0.011874537959508965
+      },
+      "0.60": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.6000385006279791,
+        "sd_stat": 0.010626742528514917
+      },
+      "0.65": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.6496378507128273,
+        "sd_stat": 0.011164069896639702
+      },
+      "0.70": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.7002301531340315,
+        "sd_stat": 0.00955064143368097
+      }
+    },
+    "refusal": {
+      "0.55": {
+        "power": 0.9975,
+        "mc_half_width_95": 0.004893871167082302,
+        "mean_stat": 0.5492360833039553,
+        "sd_stat": 0.008651853534532641
+      },
+      "0.60": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.6004277871553024,
+        "sd_stat": 0.008847650456882688
+      },
+      "0.65": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.649475840514866,
+        "sd_stat": 0.007771134491242893
+      },
+      "0.70": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.7000845374562269,
+        "sd_stat": 0.008150142099270941
+      }
+    },
+    "sycophancy": {
+      "0.55": {
+        "power": 0.9975,
+        "mc_half_width_95": 0.004893871167082302,
+        "mean_stat": 0.5497367516450048,
+        "sd_stat": 0.008248748477633726
+      },
+      "0.60": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.5996811125063417,
+        "sd_stat": 0.008363789322492784
+      },
+      "0.65": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.649463296813593,
+        "sd_stat": 0.008405321309901102
+      },
+      "0.70": {
+        "power": 1.0,
+        "mc_half_width_95": 9.799999999999999e-08,
+        "mean_stat": 0.7003427790722094,
+        "sd_stat": 0.007833499016964429
+      }
+    }
+  },
+  "first_unit_wall_s": 136.19881510734558,
   "metadata": {
-    "git_commit": "d30bca7158afe165c8eabcf78ff2cfadb5955291",
-    "git_dirty": false,
+    "git_commit": "9e854d203b4d5c22ace14ec0967584929bcc6934",
+    "git_dirty": true,
     "phase": "p3-power",
+    "git_dirty_paths": [
+      "eval_results/issue_2658/power/discordance.json",
+      "eval_results/issue_2658/power/power_units.jsonl"
+    ],
     "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue2658_power.py"
   }

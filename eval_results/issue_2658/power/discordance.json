@@ -247,11 +247,15 @@
     },
     "casualness": {
       "judged": true,
-      "missing_cells": [
-        "casualness__fact_questions__direct"
-      ],
+      "missing_cells": [],
       "n_unlabeled_prompts": 0,
       "cells": {
+        "casualness__fact_questions__direct": {
+          "status": "declared-not-estimable",
+          "source": "frame-manifest-pilot-selection",
+          "reason": "zero eligible pilot prompts (per_cell_item_ids empty; echoed in cells_below_pilot_floor) — the cell was never generated",
+          "artifact": "/workspace/explore-persona-space/eval_results/issue_2658/frame_manifest.json"
+        },
         "casualness__arc_c_tasks__ambiguous": {
           "status": "measured",
           "m_prompts": 5,
@@ -611,8 +615,8 @@
           "cp_lower95_10draw": 0.010206218313011505,
           "projected_rate_30draw_plugin": 0.19415944225327225,
           "projected_rate_30draw_jeffreys": 0.5747949574618879,
-          "credible_lower05_30draw_jeffreys": 0.33015459411024417,
-          "sizing_lower_bound": 0.33015459411024417,
+          "credible_lower05_30draw_jeffreys": 0.3301545941102442,
+          "sizing_lower_bound": 0.3301545941102442,
           "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
           "n_required_for_target": 61
         },
@@ -651,7 +655,7 @@
           "cp_lower95_10draw": 0.0,
           "projected_rate_30draw_plugin": 0.0,
           "projected_rate_30draw_jeffreys": 0.49529303819314585,
-          "credible_lower05_30draw_jeffreys": 0.2287725370599819,
+          "credible_lower05_30draw_jeffreys": 0.22877253705998196,
           "sizing_lower_bound": 0.0,
           "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
           "n_required_for_target": null
@@ -838,8 +842,8 @@
           "cp_lower95_10draw": 0.07644039141232893,
           "projected_rate_30draw_plugin": 0.39975236777712836,
           "projected_rate_30draw_jeffreys": 0.6995863675976335,
-          "credible_lower05_30draw_jeffreys": 0.48152014795885895,
-          "sizing_lower_bound": 0.48152014795885895,
+          "credible_lower05_30draw_jeffreys": 0.48152014795885906,
+          "sizing_lower_bound": 0.48152014795885906,
           "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
           "n_required_for_target": 42
         },
@@ -898,8 +902,8 @@
           "cp_lower95_10draw": 0.18925537743777085,
           "projected_rate_30draw_plugin": 0.5940530582202024,
           "projected_rate_30draw_jeffreys": 0.7721949676337742,
-          "credible_lower05_30draw_jeffreys": 0.6029199704709948,
-          "sizing_lower_bound": 0.6029199704709948,
+          "credible_lower05_30draw_jeffreys": 0.6029199704709949,
+          "sizing_lower_bound": 0.6029199704709949,
           "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
           "n_required_for_target": 34
         },
@@ -1372,7 +1376,7 @@
           "cp_lower95_10draw": 0.0,
           "projected_rate_30draw_plugin": 0.0,
           "projected_rate_30draw_jeffreys": 0.49529303819314585,
-          "credible_lower05_30draw_jeffreys": 0.23319187330950022,
+          "credible_lower05_30draw_jeffreys": 0.23319187330950028,
           "sizing_lower_bound": 0.0,
           "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
           "n_required_for_target": null
@@ -1461,16 +1465,45 @@
     },
     "hallucination": {
       "judged": true,
-      "missing_cells": [
-        "hallucination__wang44_probes__ambiguous",
-        "hallucination__wang44_probes__direct",
-        "hallucination__wang44_probes__indirect",
-        "hallucination__wildchat_real__ambiguous",
-        "hallucination__wildchat_real__direct",
-        "hallucination__wildchat_real__indirect"
-      ],
+      "missing_cells": [],
       "n_unlabeled_prompts": 0,
       "cells": {
+        "hallucination__wang44_probes__ambiguous": {
+          "status": "declared-not-estimable",
+          "source": "judge-wave-summary",
+          "reason": "Betley-lineage probe bank; open-ended probes with no ground-truth reference to check atomic claims against",
+          "artifact": "/workspace/explore-persona-space/eval_results/issue_2658/judge/pilot/hallucination/_wave_summary.json"
+        },
+        "hallucination__wang44_probes__direct": {
+          "status": "declared-not-estimable",
+          "source": "judge-wave-summary",
+          "reason": "Betley-lineage probe bank; open-ended probes with no ground-truth reference to check atomic claims against",
+          "artifact": "/workspace/explore-persona-space/eval_results/issue_2658/judge/pilot/hallucination/_wave_summary.json"
+        },
+        "hallucination__wang44_probes__indirect": {
+          "status": "declared-not-estimable",
+          "source": "judge-wave-summary",
+          "reason": "Betley-lineage probe bank; open-ended probes with no ground-truth reference to check atomic claims against",
+          "artifact": "/workspace/explore-persona-space/eval_results/issue_2658/judge/pilot/hallucination/_wave_summary.json"
+        },
+        "hallucination__wildchat_real__ambiguous": {
+          "status": "declared-not-estimable",
+          "source": "judge-wave-summary",
+          "reason": "real-user prompts (WildChat) carry no frozen ground truth against which atomic claims could be checked",
+          "artifact": "/workspace/explore-persona-space/eval_results/issue_2658/judge/pilot/hallucination/_wave_summary.json"
+        },
+        "hallucination__wildchat_real__direct": {
+          "status": "declared-not-estimable",
+          "source": "judge-wave-summary",
+          "reason": "real-user prompts (WildChat) carry no frozen ground truth against which atomic claims could be checked",
+          "artifact": "/workspace/explore-persona-space/eval_results/issue_2658/judge/pilot/hallucination/_wave_summary.json"
+        },
+        "hallucination__wildchat_real__indirect": {
+          "status": "declared-not-estimable",
+          "source": "judge-wave-summary",
+          "reason": "real-user prompts (WildChat) carry no frozen ground truth against which atomic claims could be checked",
+          "artifact": "/workspace/explore-persona-space/eval_results/issue_2658/judge/pilot/hallucination/_wave_summary.json"
+        },
         "hallucination__arc_c_factual__ambiguous": {
           "status": "measured",
           "m_prompts": 5,
@@ -1526,7 +1559,7 @@
           "cp_lower95_10draw": 0.0,
           "projected_rate_30draw_plugin": 0.0,
           "projected_rate_30draw_jeffreys": 0.4952930381931459,
-          "credible_lower05_30draw_jeffreys": 0.23675559772193194,
+          "credible_lower05_30draw_jeffreys": 0.23675559772193197,
           "sizing_lower_bound": 0.0,
           "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
           "n_required_for_target": null
@@ -1907,7 +1940,7 @@
           "cp_lower95_10draw": 0.0,
           "projected_rate_30draw_plugin": 0.0,
           "projected_rate_30draw_jeffreys": 0.49529303819314585,
-          "credible_lower05_30draw_jeffreys": 0.2323829158282104,
+          "credible_lower05_30draw_jeffreys": 0.23238291582821047,
           "sizing_lower_bound": 0.0,
           "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
           "n_required_for_target": null
@@ -1947,7 +1980,7 @@
           "cp_lower95_10draw": 0.0,
           "projected_rate_30draw_plugin": 0.0,
           "projected_rate_30draw_jeffreys": 0.49529303819314585,
-          "credible_lower05_30draw_jeffreys": 0.23413119600834556,
+          "credible_lower05_30draw_jeffreys": 0.2341311960083456,
           "sizing_lower_bound": 0.0,
           "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
           "n_required_for_target": null
@@ -2152,8 +2185,8 @@
           "cp_lower95_10draw": 0.016952427508441514,
           "projected_rate_30draw_plugin": 0.33332582021990304,
           "projected_rate_30draw_jeffreys": 0.6617413981184993,
-          "credible_lower05_30draw_jeffreys": 0.3764340860984243,
-          "sizing_lower_bound": 0.3764340860984243,
+          "credible_lower05_30draw_jeffreys": 0.3764340860984244,
+          "sizing_lower_bound": 0.3764340860984244,
           "sizing_lower_bound_rule": "max(cp_lower95_10draw, credible_lower05_30draw)",
           "n_required_for_target": 54
         },
@@ -2272,7 +2305,7 @@
           "cp_lower95_10draw": 0.0,
           "projected_rate_30draw_plugin": 0.0,
           "projected_rate_30draw_jeffreys": 0.49529303819314585,
-          "credible_lower05_30draw_jeffreys": 0.23222231000922564,
+          "credible_lower05_30draw_jeffreys": 0.23222231000922566,
           "sizing_lower_bound": 0.0,
           "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
           "n_required_for_target": null
@@ -2339,7 +2372,7 @@
           "cp_lower95_10draw": 0.0,
           "projected_rate_30draw_plugin": 0.0,
           "projected_rate_30draw_jeffreys": 0.49529303819314585,
-          "credible_lower05_30draw_jeffreys": 0.22507882657461273,
+          "credible_lower05_30draw_jeffreys": 0.22507882657461276,
           "sizing_lower_bound": 0.0,
           "sizing_lower_bound_rule": "unbounded — zero observed discordant prompts (prior-only bound never sizes)",
           "n_required_for_target": null

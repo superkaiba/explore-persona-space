@@ -8,10 +8,20 @@
       "artifact": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/power_inputs/pilot_timing.json"
     },
     "projected_production_gpu_h_measured_marginal": {
-      "value": null,
-      "basis": "not-estimable",
-      "missing_artifact": "production N (power/production_n.json status=measured)",
-      "detail": "no fixed production N yet — projection undefined"
+      "value": 24.887002664113243,
+      "basis": "projected (measured-marginal, v5 A4)",
+      "gen_gpu_h": 20.8535527436045,
+      "capture_gpu_h_lower_bound": 4.033449920508744,
+      "cap_amendment_scaling": {
+        "applied": true,
+        "record": "/mnt/eps-data/thomasjiralerspong/issue779_task_clone/.claude/worktrees/issue-2658/eval_results/issue_2658/power_inputs/cap_amendment.json",
+        "truncated_share": 0.03179650238473768,
+        "cap_ratio": 4.0,
+        "gen_marginal_multiplier": 1.095389507154213,
+        "assumption": "upper bound (plan v6 A7): the truncated share of pilot responses grows by at most the cap ratio, untruncated responses keep the measured pilot marginal rate, and engine-init overhead plus the capture lower bound are unchanged"
+      },
+      "formula": "gen: 491040 responses x 0.1378 s/resp/GPU x 1.0954 cap-amendment multiplier / 3600 + 2 waves x 0.1347 engine-init GPU-h; capture: 491040 rows / 33.82 rows/s/GPU / 3600 (responses = 11 rows x 12 cells x N=62 x 30 responses x 2 banks)",
+      "caveat": "capture model-load overhead is NOT in the P1 logs (basis: not-measured) — the capture component is a LOWER BOUND"
     }
   },
   "api": {
@@ -32,16 +42,14 @@
       "detail": "plan section 10 projection: 8 judged traits x 600 answers x 5 draws — a PROJECTION, never quote as realized"
     },
     "projected_production_judge_calls": {
-      "value": null,
-      "basis": "not-estimable",
-      "missing_artifact": "production N (power/production_n.json status=measured) + judge wave summaries",
-      "detail": "artifact absent — never substituted with a projection"
+      "value": 1674000,
+      "basis": "projected",
+      "detail": "90 judgeable cells (8 judged rows x 12 cells - 6 declared no-reference) x N=62 x 30 responses x 5 draws x 2 banks"
     },
     "projected_production_judge_dollars": {
-      "value": null,
-      "basis": "not-estimable",
-      "missing_artifact": "production N (power/production_n.json status=measured) + judge_spend.json",
-      "detail": "artifact absent — never substituted with a projection"
+      "value": 4771.795251600842,
+      "basis": "projected",
+      "detail": "1674000 calls x measured mean $0.002851/call (measured token mix incl. cache reads/writes over 21395 pilot + canary calls, per-call means 903.8 in / 199.3 out tokens, priced at the published Sonnet 4.5 batch rates; source https://platform.claude.com/docs/en/about-claude/pricing; denominator includes 445 canary calls (2.1% of 21395; same population as the numerator, mean unbiased for the pilot instrument))"
     }
   },
   "human_annotation": {
@@ -74,21 +82,25 @@
       "decomposition": "launcher_main.log shows 4 [phase=p1_width] starts (lines [1, 384, 432, 577]) — the first launch plus 3 crash-fix restarts; the all-in pod wall (crash-fix rounds + upload remediation included) dominates the productive generation+capture compute (< 1 GPU-h)",
       "disposition": "sunk, not actionable — reported as a deviation, never a launch veto (v5 A4); the kill criterion is the 80 GPU-h projected total"
     },
-    "projected_total_gpu_h": null,
-    "margin_gpu_h": null,
-    "within_envelope": null,
-    "basis": "not-estimable — see gpu_hours fields for the missing artifacts"
+    "projected_total_gpu_h": 51.47811377522436,
+    "margin_gpu_h": 28.521886224775642,
+    "pilot_within_ceiling": false,
+    "production_projection_within_ceiling": true,
+    "within_envelope": true,
+    "basis": "all-in measured pilot + measured-marginal projected production (labeled); kill criterion = projected total <= 80 GPU-h (v5 A4); pilot-ceiling overrun reported as a deviation, never a veto"
   },
   "metadata": {
-    "git_commit": "609cc9ee5e285492474ba67aaa0d8db7ff149552",
+    "git_commit": "2e207d1d20d69129af340a97f666b28eff32a94e",
     "git_dirty": true,
     "phase": "p3-cost",
     "git_dirty_paths": [
       "eval_results/issue_2658/power/cost_report.json",
-      "scripts/issue2658_power.py",
-      "tests/test_issue2658_unit8.py"
+      "eval_results/issue_2658/power/discordance.json",
+      "eval_results/issue_2658/power/gate_verdict.json",
+      "eval_results/issue_2658/power/power_units.jsonl",
+      "eval_results/issue_2658/power/production_n.json"
     ],
-    "git_argv0_state": "modified",
+    "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue2658_power.py"
   }
 }
