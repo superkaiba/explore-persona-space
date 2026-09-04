@@ -46,6 +46,9 @@ run_logged() {
 }
 
 phase repository_preflight
+# The frozen selector reuses #2476, whose checked-in split contract lives
+# outside bootstrap's default issue-2569 sparse cone.
+git sparse-checkout add eval_results/issue_1482
 test -x .venv/bin/python || uv sync
 uv run python -m explore_persona_space.orchestrate.preflight
 nvidia-smi
