@@ -550,6 +550,7 @@ def render_figure(doc: dict, raw_view: dict, std_view: dict, fig_dir: Path) -> d
         np.cumsum(raw_view["predicted_variance_fraction"][:n_show]),
         color=orange,
         lw=2.2,
+        ls="--",
         label="Predicted variance · raw",
     )
     ax.plot(
@@ -557,7 +558,7 @@ def render_figure(doc: dict, raw_view: dict, std_view: dict, fig_dir: Path) -> d
         np.cumsum(std_view["context_variance_fraction"][:n_show]),
         color=teal,
         lw=1.7,
-        ls="--",
+        ls=":",
         label="Context variance · standardized",
     )
     ax.plot(
@@ -565,7 +566,7 @@ def render_figure(doc: dict, raw_view: dict, std_view: dict, fig_dir: Path) -> d
         np.cumsum(std_view["predicted_variance_fraction"][:n_show]),
         color=orange,
         lw=1.7,
-        ls="--",
+        ls="-.",
         label="Predicted variance · standardized",
     )
     ax.set_xlabel("PCs in variance order")
@@ -616,6 +617,8 @@ def render_figure(doc: dict, raw_view: dict, std_view: dict, fig_dir: Path) -> d
         [components["kernel"][key] for key in keys],
         width,
         color=orange,
+        edgecolor=PAPER,
+        hatch="///",
         label="Effective kernel",
     )
     ax.bar(
@@ -623,6 +626,7 @@ def render_figure(doc: dict, raw_view: dict, std_view: dict, fig_dir: Path) -> d
         [components["range"][key] for key in keys],
         width,
         color=teal,
+        edgecolor=PAPER,
         label="Read range",
     )
     ax.axhline(0, color=INK, lw=0.8)
