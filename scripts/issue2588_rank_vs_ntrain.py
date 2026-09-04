@@ -393,9 +393,9 @@ def run_cell(
         float(star["test_r2"]),
     )
     print(f"[{spec.key}] load splits at L{layer} (d={d}, lambda={lam_prod:g})", flush=True)
-    xtr, ytr = MR.load_split(spec, "train_10k", layer)
-    xval, yval = MR.load_split(spec, "val_400", layer)
-    xte, yte = MR.load_split(spec, "test_1000", layer)
+    xtr, ytr = MR.load_split(spec, "train_10k", layer, h_dim=d)
+    xval, yval = MR.load_split(spec, "val_400", layer, h_dim=d)
+    xte, yte = MR.load_split(spec, "test_1000", layer, h_dim=d)
     if xtr.shape[1] != d or ytr.shape[1] != d:
         raise RuntimeError(f"{spec.key}: dimension mismatch X={xtr.shape} Y={ytr.shape} d={d}")
     n_total = int(xtr.shape[0])

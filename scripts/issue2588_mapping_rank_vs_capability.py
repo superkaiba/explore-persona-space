@@ -373,7 +373,14 @@ def _capture_files(spec: MapSpec, split: str, layer: int) -> list[str]:
     return paths
 
 
-def load_split(spec: MapSpec, split: str, layer: int) -> tuple[np.ndarray, np.ndarray]:
+def load_split(
+    spec: MapSpec, split: str, layer: int, h_dim: int | None = None
+) -> tuple[np.ndarray, np.ndarray]:
+    """Load one split at one layer, rows sorted by id, hyper-connection streams collapsed.
+
+    h_dim is the model width from the fit record. When None, a 3-D (n, s, h) array still
+    collapses (h read from the array) but a flattened (n, s*h) array cannot be told apart
+    from a wider model and is left for the caller's dimension check to reject."""
     paths = _capture_files(spec, split, layer)
     with ThreadPoolExecutor(max_workers=min(8, len(paths))) as pool:
         local = list(pool.map(_download, paths))
@@ -387,7 +394,46 @@ def load_split(spec: MapSpec, split: str, layer: int) -> tuple[np.ndarray, np.nd
             ys.append(z["y_ans"].astype(np.float32, copy=False))
     row_ids = np.concatenate(ids)
     order = np.argsort(row_ids)
-    return np.concatenate(xs)[order], np.concatenate(ys)[order]
+    x = _collapse_hc_streams(np.concatenate(xs), spec.key, h_dim, "x")
+    y = _collapse_hc_streams(np.concatenate(ys), spec.key, h_dim, "y")
+    return x[order], y[order]
+
+
+def _hc_reduce_mode() -> str:
+    """Hyper-connection stream collapse, mirroring the fits side (run_cell._hc_reduce_mode):
+    mean (default) | sum | concat | stream<k>. Thomas's call which one the paper uses (#2659)."""
+    return os.environ.get("EPS_HC_REDUCE", "mean").strip().lower()
+
+
+def _collapse_hc_streams(v: np.ndarray, key: str, h_dim: int | None, what: str) -> np.ndarray:
+    """Collapse a captured (n, streams, h) or (n, streams*h) array to one h-wide vector.
+
+    DeepSeek V4 and Qwen3.8 Flash-Next carry four parallel residual streams; the fits
+    collapsed them with EPS_HC_REDUCE, so the reconstructed map must see the same input.
+    Plain (n, h) arrays pass through. Any other shape raises."""
+    n = v.shape[0]
+    if v.ndim == 2 and (h_dim is None or v.shape[1] == h_dim):
+        return v
+    h = int(h_dim) if h_dim is not None else int(v.shape[-1])
+    if v.ndim == 3 and v.shape[2] == h:
+        streams = v.shape[1]
+    elif v.ndim == 2 and v.shape[1] % h == 0 and v.shape[1] > h:
+        streams = v.shape[1] // h
+        v = v.reshape(n, streams, h)
+    else:
+        raise ValueError(
+            f"{key}: {what} shape {v.shape} is not (n, {h}), (n, s, {h}) or (n, s*{h})"
+        )
+    mode = _hc_reduce_mode()
+    if mode == "mean":
+        return v.mean(axis=1)
+    if mode == "sum":
+        return v.sum(axis=1)
+    if mode == "concat":
+        return v.reshape(n, streams * h)
+    if mode.startswith("stream"):
+        return v[:, int(mode[len("stream") :]), :]
+    raise ValueError(f"EPS_HC_REDUCE={mode!r} not in mean|sum|concat|stream<k>")
 
 
 def _payload_cache_path(spec: MapSpec, cache_dir: Path) -> Path:
@@ -417,9 +463,9 @@ def reconstruct_map(spec: MapSpec, cache_dir: Path) -> dict[str, Any]:
 
     started = time.time()
     print(f"[{spec.key}] download selected layer L{layer} (d={d})", flush=True)
-    xtr, ytr = load_split(spec, "train_10k", layer)
-    xval, yval = load_split(spec, "val_400", layer)
-    xte, yte = load_split(spec, "test_1000", layer)
+    xtr, ytr = load_split(spec, "train_10k", layer, h_dim=d)
+    xval, yval = load_split(spec, "val_400", layer, h_dim=d)
+    xte, yte = load_split(spec, "test_1000", layer, h_dim=d)
     if xtr.shape[1] != d or ytr.shape[1] != d:
         raise RuntimeError(f"{spec.key}: dimension mismatch X={xtr.shape} Y={ytr.shape} d={d}")
 
@@ -511,7 +557,7 @@ def rrr_curves(spec: MapSpec, cache_dir: Path) -> dict[str, Any]:
     xsd = np.asarray(payload["xsd"], dtype=np.float64)
     ymu = np.asarray(payload["ymu"], dtype=np.float64)
     print(f"[{spec.key}] RRR: download train_10k at L{layer} (d={d})", flush=True)
-    xtr, _ytr = load_split(spec, "train_10k", layer)
+    xtr, _ytr = load_split(spec, "train_10k", layer, h_dim=d)
     xn = (xtr.astype(np.float64) - xmu) / xsd
     n_train = xn.shape[0]
     gram = xn.T @ xn
