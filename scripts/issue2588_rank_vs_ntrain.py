@@ -561,6 +561,8 @@ def render_figure(fits: dict[str, dict[str, Any]]) -> None:
     axes[0].axhline(1024, color="grey", linestyle=":", linewidth=1.2, label="d = 1024")
     axes[0].axvline(5120, color="grey", linestyle="--", linewidth=1.2, label="n = d for 27B")
     axes[0].set_ylabel("rank at +10% relative validation SSE")
+    # Log scale keeps the 40 to 150 rank curves readable next to the d = 1024 reference.
+    axes[0].set_yscale("log")
     axes[0].set_title("Reduced-rank rank vs training set size")
     axes[0].legend(fontsize=8, loc="upper left")
     axes[1].set_ylabel("full-map pooled validation R$^2$")
