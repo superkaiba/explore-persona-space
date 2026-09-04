@@ -41,11 +41,11 @@
       "n_items": 2000,
       "input_chars": 31251688,
       "est_input_tokens": 8929053,
-      "output_token_cap": 2048000,
+      "output_token_cap": 4096000,
       "sync_reissue_cap_items": 100,
-      "usd_sync_reissue_upper_bound": 4.792263428571427,
-      "usd_upper_bound": 52.71489771428571,
-      "usd_expected": 35.122634285714284
+      "usd_sync_reissue_upper_bound": 7.352263428571428,
+      "usd_upper_bound": 80.87489771428572,
+      "usd_expected": 47.92263428571429
     }
   },
   "pilots": {
@@ -61,21 +61,22 @@
     },
     "pilot_w4": {
       "n_items": 51,
-      "usd_upper_bound": 1.3442298917142856,
-      "usd_expected": 0.8956271742857141
+      "usd_upper_bound": 2.062309891714286,
+      "usd_expected": 1.2220271742857143
     }
   },
   "total": {
-    "usd_upper_bound": 266.9,
-    "usd_expected": 179.18
+    "usd_upper_bound": 295.77,
+    "usd_expected": 192.31
   },
   "budget_usd": 300.0,
   "verdict": "UNDER_BUDGET",
   "note": "upper bound assumes every call emits max_tokens AND includes the capped rule-28 sync re-issue at non-batch prices; usd_expected excludes the sync term (re-issues are the exception path); the dispatch gate binds on usd_upper_bound",
-  "git_commit": "f22f6b4e3fc220746c9addc8f9c7edc8d87ad48b",
+  "git_commit": "e4bbe231e856fdad9eacfe220a6b58e3e3c2b2bd",
   "git_dirty": true,
   "phase": "judge-estimate",
   "git_dirty_paths": [
+    "eval_results/issue_2661/judge_estimate.json",
     "scripts/issue2661_judge_waves.py"
   ],
   "git_argv0_state": "modified",
