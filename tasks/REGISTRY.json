@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2666,
+  "highest_id": 2667,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12858,6 +12858,14 @@
       "path": "tasks/completed/2666",
       "status": "completed",
       "title": "Scope the PostToolUse ruff hook to files whose git origin is explore-persona-space"
+    },
+    "2667": {
+      "goal": "Re-run every Section 4.5 metamodel cell with the paper's standard target, the mean answer vector over K sampled rollouts per question, and report the split-half noise ceiling, to learn how much of the gap below R2 = 1 is target sampling noise and whether the ordering of inputs survives.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2667",
+      "status": "proposed",
+      "title": "Reproduce Section 4.5 (chain of thought) with rollout-averaged answer vectors and a split-half noise ceiling"
     },
     "267": {
       "has_clean_result": true,
