@@ -14,3 +14,4 @@
 - [#2658 re-freeze mechanics](reference_2658_refreeze_mechanics.md) — commit-first clean stamp; rm-then-rerun pins/evidence override; freeze_pins ~20 min walls on load_math_full (detach); update unit10 PIN_ITEMS_SHA256
 - [/proc session-scoping test rigs](reference_proc_session_scoping_test_rigs.md) — poll argv0 before reading environ; env -i keeps PWD/SHLVL/_; setsid -w forwards rc; pure-/proc sid walk (#2658 sid-reap)
 - [Hardlink-copy gate smoke on a live dir](feedback_hardlink_copy_gate_smoke_live_dir.md) — `cp -al` same-fs snapshot is safe under atomic os.replace writers; /tmp is cross-device; verify real nlink=1 after (#2658 r13)
+- [#2658 gen_order_manifest shapes](reference_2658_gen_order_manifest_shapes.md) — stale split-total shard00of01 beside 8-shard set: reconcile per shard by filename, never a dir sum; floor check is gate verdict not loader raise (r14)
