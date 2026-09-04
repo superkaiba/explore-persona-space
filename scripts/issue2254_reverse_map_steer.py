@@ -1176,6 +1176,7 @@ def _judge_revmap_cell(args, rroot: Path, gen_path: Path, rubric: str, n_draws: 
         cache_dir=rroot / "judge" / "cache" / rec["cell_id"],
         save_raw=rroot / "judge" / "raw" / rec["cell_id"],
         n_draws=n_draws,
+        force_sync=args.judge_route == "sync",
     )
     return _write_judge_checkpoint(
         rroot,
@@ -1245,7 +1246,13 @@ def _slice_judge_result(result, iids: list[str], n_draws: int):
 
 
 def _judge_behavior_wave(
-    rroot: Path, behavior: str, pending: list[dict], rubric: str, n_draws: int
+    rroot: Path,
+    behavior: str,
+    pending: list[dict],
+    rubric: str,
+    n_draws: int,
+    *,
+    force_sync: bool = False,
 ) -> list[dict]:
     """ONE judge submission for every pending cell of one behavior (the
     inherited entrypoint sub-batches internally; never one API call per
@@ -1273,6 +1280,7 @@ def _judge_behavior_wave(
         cache_dir=rroot / "judge" / "cache" / f"wave_{behavior}",
         save_raw=rroot / "judge" / "raw" / f"wave_{behavior}",
         n_draws=n_draws,
+        force_sync=force_sync,
     )
     outs: list[dict] = []
     for p in pending:
@@ -1339,6 +1347,26 @@ def _judge_revmap_wave(
     if not pending_by_b:
         return n_cached
     n_done = 0
+    force_sync = args.judge_route == "sync"
+    if force_sync:
+        # SEQUENTIAL under --judge-route sync: one sync wave already saturates
+        # the polite per-key caps (api_dispatch constructs a PER-CALL OrgState
+        # AIMD controller sized to the FULL org budget — dispatch_calls builds
+        # fresh org_states per call), so three concurrent sync waves would run
+        # three uncoordinated controllers each targeting the full budget:
+        # ~3x the client-side pacing contract, converted into 429 churn. The
+        # Batch route keeps concurrent waves (server-side queuing, no
+        # client-side pacing to triple-spend).
+        logger.info(
+            "[revmap-judge] wave mode + sync route: %d behavior wave(s) run SEQUENTIALLY "
+            "(per-call AIMD pacing must not be triple-spent across threads)",
+            len(pending_by_b),
+        )
+        for b, pending in sorted(pending_by_b.items()):
+            outs = _judge_behavior_wave(rroot, b, pending, rubrics[b], n_draws, force_sync=True)
+            n_done += len(outs)
+            i2254._progress("revmap-judge-wave", n_done, n_pending, b, t0)
+        return n_cached + n_done
     with ThreadPoolExecutor(max_workers=len(pending_by_b)) as ex:
         futs = {
             b: ex.submit(_judge_behavior_wave, rroot, b, pending, rubrics[b], n_draws)
@@ -1380,8 +1408,10 @@ def phase_judge(args) -> None:
     gate per behavior (parent instrument, truncation unwaivable), then the
     judge wave (``--judge-mode per-cell``: one Batch per cell, the recipe
     default; ``--judge-mode wave``: ONE submission per behavior over every
-    non-cached cell, concurrent across behaviors, split back to identical
-    per-cell checkpoints) with the rule-28 sync re-issue; rule-29
+    non-cached cell, concurrent across behaviors — sequential under
+    ``--judge-route sync``, which forces the sync dispatcher in BOTH modes —
+    split back to identical per-cell checkpoints) with the rule-28 sync
+    re-issue; rule-29
     completeness ENFORCED before the wave sentinel."""
     from explore_persona_space.experiments.issue_1739.judging import load_trait_rubric
 
@@ -2320,7 +2350,7 @@ def _bind_reuse_ledger() -> None:
         (
             fk._judge_graded_with_refusal_reissue,
             (o, "rubric"),
-            dict(cache_dir=o, save_raw=o, n_draws=5),
+            dict(cache_dir=o, save_raw=o, n_draws=5, force_sync=False),
         ),
         (fk._judge_instrument_fp, ("rubric", 5), {}),
         (fk._assert_hub_headroom_for_steer, (1, 1), {}),
@@ -2392,6 +2422,18 @@ def build_argparser() -> argparse.ArgumentParser:
             "over every non-cached cell, concurrent across behaviors, split back to "
             "IDENTICAL per-cell checkpoints; cached-skip predicate, rule-28 re-issue and "
             "the rule-29 floor unchanged)"
+        ),
+    )
+    ap.add_argument(
+        "--judge-route",
+        choices=("auto", "sync"),
+        default="auto",
+        help=(
+            "judge transport: 'auto' (default; Batch-first routing, byte-identical to the "
+            "prior behaviour) or 'sync' (force the sync dispatcher via force_sync=True — "
+            "for server-side Batch stragglers; both judge modes honor it; under wave mode "
+            "the behavior waves then run sequentially, since sync pacing is per-call and "
+            "must not be triple-spent across threads)"
         ),
     )
     ap.add_argument(

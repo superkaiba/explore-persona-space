@@ -105,14 +105,17 @@ def judge_items_graded(
     judge_model: str = JUDGE_MODEL,
     dry_run: bool = False,
     threshold_base: int | None = None,
+    force_sync: bool = False,
 ):
     """Graded 0-100 multi-draw judging via the sanctioned Batch client.
 
     Temperature is threaded through ``judge_dispatch.graded_temperature``
     (an explicit per-request temperature on sync AND batch paths); the
     ``judge_graded`` ``temperature`` kwarg alone is NOT threaded (its
-    docstring). Returns the ``JudgeResult`` (content-drop vs transport-loss
-    split preserved).
+    docstring). ``force_sync`` threads to
+    ``judge_completions_batch(force_sync=...)`` (default False — every
+    existing caller unchanged). Returns the ``JudgeResult`` (content-drop vs
+    transport-loss split preserved).
     """
     from explore_persona_space.eval.graded_judge import judge_graded
     from explore_persona_space.eval.judge_dispatch import graded_temperature
@@ -131,6 +134,7 @@ def judge_items_graded(
             max_tokens=max_tokens,
             dry_run=dry_run,
             threshold_base=threshold_base,
+            force_sync=force_sync,
         )
 
 

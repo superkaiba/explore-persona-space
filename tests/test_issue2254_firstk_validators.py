@@ -655,6 +655,7 @@ def _fake_judge_items_graded(script):
         judge_model="fake-judge",
         dry_run=False,
         threshold_base=None,
+        force_sync=False,
     ):
         calls.append(
             {
@@ -663,6 +664,7 @@ def _fake_judge_items_graded(script):
                 "save_raw": Path(save_raw),
                 "n_draws": n_draws,
                 "tb": threshold_base,
+                "force_sync": force_sync,
             }
         )
         return script(items, threshold_base, n_draws)

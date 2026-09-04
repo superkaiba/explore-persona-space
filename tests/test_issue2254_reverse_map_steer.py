@@ -291,7 +291,7 @@ class _FakeGradedJudge:
 
         return float(int(hashlib.sha256(f"{iid}:{draw}".encode()).hexdigest()[:4], 16) % 101)
 
-    def __call__(self, items, rubric, *, cache_dir, save_raw, n_draws):
+    def __call__(self, items, rubric, *, cache_dir, save_raw, n_draws, force_sync=False):
         from explore_persona_space.eval.graded_judge import JudgeResult
 
         with self._lock:
@@ -403,3 +403,76 @@ def test_wave_mode_skips_already_judged_cells(tmp_path, judge_mode_env):
     assert ckpt.stat().st_mtime_ns == before_mtime
     # remaining 3 cells judged, all 4 checkpoints now present
     assert len(list((root / "judge" / "judged").glob("*.json"))) == len(cells)
+
+
+# ---------------------------------------------------------------------------
+# --judge-route: force_sync plumbing down to the dispatch call (both modes)
+# ---------------------------------------------------------------------------
+
+
+class _CaptureJudgeCompletionsBatch:
+    """Stand-in for ``batch_judge.judge_completions_batch`` (the dispatch
+    seam): records the ``force_sync`` each call received and writes the
+    minimal ``save_raw`` payload ``judge_result_from_save_raw`` needs, so the
+    REAL wrapper chain (fk._judge_graded_with_refusal_reissue →
+    judge_items_graded → judge_graded) runs end-to-end."""
+
+    def __init__(self):
+        import threading
+
+        self.calls: list[dict] = []
+        self._lock = threading.Lock()
+
+    def __call__(self, **kw):
+        with self._lock:
+            self.calls.append({"force_sync": kw["force_sync"], "n_items": len(kw["completions"])})
+        save_raw = Path(kw["save_raw"])
+        save_raw.parent.mkdir(parents=True, exist_ok=True)
+        save_raw.write_text(json.dumps({"all_scores": {}}))
+        return {}
+
+
+def _judge_route_env(tmp_path, monkeypatch):
+    from explore_persona_space.eval import batch_judge
+
+    cap = _CaptureJudgeCompletionsBatch()
+    monkeypatch.setattr(batch_judge, "judge_completions_batch", cap)
+    monkeypatch.setattr(
+        i2254, "_eval_questions", lambda b: [f"{b} fixture q{i}" for i in range(_N_Q_JUDGE)]
+    )
+    cells = _judge_fixture_cells(tmp_path)
+    rubrics = {b: f"rubric-{b}" for b in rm.ROUND_BEHAVIORS}
+    return cap, cells, rubrics
+
+
+def test_judge_route_sync_forces_sync_dispatch(tmp_path, monkeypatch):
+    cap, cells, rubrics = _judge_route_env(tmp_path, monkeypatch)
+    args = _args(tmp_path, judge_route="sync")
+    root = tmp_path / "sync_root"
+    comp = _write_gen_recs(root, cells)
+    c0 = cells[0]
+    cid0 = i2254._cell_id(c0)
+    rm._judge_revmap_cell(args, root, comp / f"{cid0}.json", rubrics[c0["behavior"]], 2)
+    assert [c["force_sync"] for c in cap.calls] == [True]  # per-cell mode honors sync
+    cell_by_id = {i2254._cell_id(c): c for c in cells}
+    n_judged = rm._judge_revmap_wave(args, root, comp, cell_by_id, rubrics, 2)
+    assert n_judged == len(cells)
+    # 1 per-cell call + 2 behavior waves (cell 0 cached-skipped), ALL sync
+    assert len(cap.calls) == 3
+    assert all(c["force_sync"] is True for c in cap.calls)
+
+
+def test_judge_route_auto_passes_force_sync_false(tmp_path, monkeypatch):
+    cap, cells, rubrics = _judge_route_env(tmp_path, monkeypatch)
+    args = _args(tmp_path)
+    assert args.judge_route == "auto"  # the parser default
+    root = tmp_path / "auto_root"
+    comp = _write_gen_recs(root, cells)
+    c0 = cells[0]
+    cid0 = i2254._cell_id(c0)
+    rm._judge_revmap_cell(args, root, comp / f"{cid0}.json", rubrics[c0["behavior"]], 2)
+    cell_by_id = {i2254._cell_id(c): c for c in cells}
+    n_judged = rm._judge_revmap_wave(args, root, comp, cell_by_id, rubrics, 2)
+    assert n_judged == len(cells)
+    assert len(cap.calls) == 3
+    assert all(c["force_sync"] is False for c in cap.calls)

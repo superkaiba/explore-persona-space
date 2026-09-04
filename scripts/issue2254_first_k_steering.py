@@ -2015,6 +2015,7 @@ def _judge_graded_with_refusal_reissue(
     cache_dir: Path,
     save_raw: Path,
     n_draws: int,
+    force_sync: bool = False,
 ) -> tuple[object, dict[str, list[float]], dict | None]:
     """Batch-first graded judging with the rule-28 targeted SYNC re-issue
     (plan §6's named remediation; shared by the pilot's per-cell twin below).
@@ -2025,8 +2026,11 @@ def _judge_graded_with_refusal_reissue(
     are re-dispatched at the IDENTICAL instrument (same judge model / rubric /
     max_tokens / temperature) on the SYNC path: ``threshold_base =
     SYNC_FORCE_THRESHOLD_BASE`` routes sync via ``decide_route`` (the
-    ``force_sync`` kwarg exists only on ``judge_completions_batch`` and is NOT
-    threaded through ``judge_graded`` — the threshold is the reliable lever).
+    pass-1 ``force_sync`` kwarg (default False) now threads through
+    ``judge_items_graded`` → ``judge_graded`` →
+    ``judge_completions_batch(force_sync=...)`` for callers that must bypass
+    the Batch transport entirely, e.g. the #2254 revmap ``--judge-route
+    sync``; the re-issue keeps the threshold lever, and it is already sync).
     Each refusal-count group re-issues with a FRESH sibling cache dir
     (``<name>_syncfix_k<k>``) and ``n_draws=k``: the rubric-keyed cache shares
     ONE key across an item's identical draws, so a same-cache replay would
@@ -2058,6 +2062,7 @@ def _judge_graded_with_refusal_reissue(
         max_tokens=i2254.JUDGE_MAX_TOKENS_2254,
         judge_model=JUDGE_MODEL,
         threshold_base=JUDGE_THRESHOLD_BASE_BATCH,
+        force_sync=force_sync,
     )
     merged: dict[str, list[float]] = {
         iid: [float(s) for s in sc] for iid, sc in result.per_item_scores.items()

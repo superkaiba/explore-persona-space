@@ -250,6 +250,7 @@ def judge_graded(
     max_tokens: int = 64,
     dry_run: bool = False,
     threshold_base: int | None = None,
+    force_sync: bool = False,
 ) -> JudgeResult:
     """Graded 0-100 judge over ``items`` via the sanctioned Batch client.
 
@@ -276,6 +277,9 @@ def judge_graded(
             (#1090 c3: 473/1000 + 307/1000 draws); callers closing such drops
             raise it (a sampling knob — deliberately OUTSIDE the rubric cache
             identity, see ``batch_judge.rubric_fingerprint``).
+        force_sync: passthrough to ``judge_completions_batch(force_sync=...)``
+            — bypasses sync/batch routing and judges synchronously regardless
+            of N (default False: every existing caller unchanged).
         threshold_base: optional passthrough to
             ``judge_completions_batch(threshold_base=...)`` (the sync-vs-batch
             crossover). ``None`` (default) keeps the client default — existing
@@ -331,6 +335,7 @@ def judge_graded(
         cache_dir=cache_dir,
         save_raw=save_raw,
         dry_run=dry_run,
+        force_sync=force_sync,
         **passthrough,
     )
     if dry_run:
