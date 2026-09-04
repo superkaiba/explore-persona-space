@@ -456,6 +456,7 @@ def _upload_pack(args, phase: str, comp_root: Path, shard_id: int, names: list[s
     i2254._upload_folder_to_hf(
         packed,
         f"{_hf_prefix(args)}/raw_completions/{phase}_pack/shard{shard_id}",
+        allow=["*.jsonl", "*.json"],
     )
     return n_shards
 

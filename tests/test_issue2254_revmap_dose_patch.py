@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 
@@ -82,6 +84,24 @@ def test_import_check_does_not_require_hf_backed_directions_in_git(tmp_path, mon
         for behavior in r8.ROUND_BEHAVIORS
         for layer in r8.ROUND_LAYERS
     }
+
+
+def test_upload_pack_includes_jsonl_payloads(tmp_path, monkeypatch):
+    comp_root = tmp_path / "steer" / "raw_completions"
+    comp_root.mkdir(parents=True)
+    (comp_root / "cell.json").write_text("{}")
+    calls = []
+    monkeypatch.setattr(
+        r8.i2254,
+        "_upload_folder_to_hf",
+        lambda local_dir, path_in_repo, allow=None: calls.append(
+            (local_dir, path_in_repo, allow)
+        ),
+    )
+    r8._upload_pack(SimpleNamespace(smoke=False), "steer", comp_root, 0, ["cell.json"])
+    assert calls[0][2] == ["*.jsonl", "*.json"]
+    assert (calls[0][0] / "pack_manifest.json").is_file()
+    assert list(calls[0][0].glob("*.jsonl"))
 
 
 @pytest.mark.parametrize("dose,expected", [(8.0, 504.0), (16.0, 1008.0)])
