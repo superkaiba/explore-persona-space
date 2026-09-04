@@ -113,13 +113,18 @@ def _heat_panel(
     letter: str,
     kicker: str,
     title: str,
-    vmin: float,
+    vmin: float | None = None,
 ) -> dict:
     layers_c, layers_a = grid["layers_c"], grid["layers_a"]
     cmap = LinearSegmentedColormap.from_list("c2a_seq_teal", [PAPER, ROLES["linear"].color])
     cmap.set_bad(GRID)
     masked = np.ma.masked_invalid(matrix)
     vmax = float(np.nanmax(matrix))
+    if vmin is None:
+        # Data-driven floor: the grid minimum rounded down to 0.05, never below 0, so the
+        # 0.05-scale differences between cells stay legible (a 0..max scale renders a
+        # 0.48..0.81 grid as a single teal block).
+        vmin = max(0.0, float(np.floor(np.nanmin(matrix) * 20.0) / 20.0))
     im = ax.imshow(masked, origin="lower", cmap=cmap, vmin=vmin, vmax=vmax, aspect="equal")
 
     # Diagonal (equal-layer) cells: thin outlines. Grid maximum: heavy outline.
@@ -170,10 +175,9 @@ def make_figure(grid: dict) -> tuple[plt.Figure, float, dict]:
         letter="A",
         kicker=f"{grid['n_train']:,} training contexts",
         title="Held-out $R^2$ of the ridge map",
-        vmin=0.0,
     )
     if r2_min < 0.0:
-        print(f"note: {int((grid['r2'] < 0).sum())} cells have R^2 < 0; color scale floors at 0")
+        print(f"note: {int((grid['r2'] < 0).sum())} cells have R^2 < 0; color floor clamps at 0")
     panel_b = _heat_panel(
         fig,
         ax_top1,
@@ -182,7 +186,6 @@ def make_figure(grid: dict) -> tuple[plt.Figure, float, dict]:
         letter="B",
         kicker=f"chance {grid['chance_at_1']:.1%}",
         title="Top-1 retrieval of the ridge map",
-        vmin=0.0,
     )
     return fig, include_frac, {"r2": panel_a, "top1": panel_b}
 
