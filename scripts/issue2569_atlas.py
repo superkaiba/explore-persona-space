@@ -759,15 +759,22 @@ def phase_fits(args) -> None:
 
     out_dir = Path(args.fits_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    pair_manifest = None
+    if args.pair_manifest:
+        pair_manifest = json.loads(Path(args.pair_manifest).read_text())
+        claim_scope = str(pair_manifest["claim_scope"])
+    else:
+        claim_scope = (
+            "transformations of SHARED TEACHER-FORCED QWEN RESPONSES — v_A summarizes "
+            "Qwen's banked answer text under both models; nothing is claimed about "
+            "Llama's own answer policy (C3)"
+        )
     summary: dict = {
         "realized_paired_rows": realized,
         "production": production,
         "folds": {k: int(len(v)) if hasattr(v, "__len__") else v for k, v in folds.items()},
-        "claim_scope": (
-            "transformations of SHARED TEACHER-FORCED QWEN RESPONSES — v_A summarizes "
-            "Qwen's banked answer text under both models; nothing is claimed about "
-            "Llama's own answer policy (C3)"
-        ),
+        "claim_scope": claim_scope,
+        "pair_manifest": pair_manifest,
         "tier1": [],
         "metadata": _meta("fits"),
     }
@@ -870,7 +877,18 @@ def phase_fits(args) -> None:
 
     # -- tier 2/3 routes on the held-out test rows ---------------------------------
     te = folds["te"]
-    a_qwen = _load_qwen_operator(args, qL, realized)
+    if args.center_operator == "matched-source":
+        a_qwen = named[f"qwen_matched_L{qL}"]["payload"]
+        center_source = {
+            "kind": "matched-source",
+            "layer": qL,
+            "fit_name": f"qwen_matched_L{qL}",
+            "selected_lambda": float(a_qwen.selected_lambda),
+            "realized_rows": realized,
+        }
+    else:
+        a_qwen = _load_qwen_operator(args, qL, realized)
+        center_source = {"kind": "banked-qwen", **a_qwen_source(a_qwen)}
     routes: dict[str, dict] = {}
     x_in = Xl_c[te]
     y_true = Xl_a[te]
@@ -896,7 +914,7 @@ def phase_fits(args) -> None:
         pred = fn(x_in)
         routes[rname] = {"r2": pooled_r2(pred, y_true), "knn": _knn(pred, y_true)}
         print(f"[fits] route {rname} r2={routes[rname]['r2']:.4f}", flush=True)
-    routes["a_qwen_source"] = a_qwen_source(a_qwen)
+    routes["a_qwen_source"] = center_source
     summary["tier2_routes"] = routes
     summary["tier3_diagnostics"] = {
         "label": (
@@ -944,7 +962,7 @@ def phase_fits(args) -> None:
         device=args.device,
         n_rows_alignment=int(len(folds["tr"])),
     )
-    t2["a_qwen_source"] = a_qwen_source(a_qwen)
+    t2["a_qwen_source"] = center_source
     summary["tier2_aligned_operator_cosine"] = t2
     print(
         "[fits] tier2 aligned operator cosine "
@@ -2015,6 +2033,11 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     ap.add_argument("--leg7-dir", default=str(LEG7_DIR))
     ap.add_argument("--pairs", default="", help="';'-joined 'q,l' matched layer pairs (override)")
+    ap.add_argument(
+        "--pair-manifest",
+        default="",
+        help="compatibility-label manifest used to state the true model pair and claim scope",
+    )
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--val-rows", type=int, default=512)
     ap.add_argument("--null-draws", type=int, default=200)
@@ -2029,6 +2052,15 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--skip-upload", action="store_true")
     ap.add_argument("--smoke", action="store_true", help="short lambda grid (selftest)")
     ap.add_argument("--map-root", default="", help="banked n1m map root override (pods)")
+    ap.add_argument(
+        "--center-operator",
+        choices=("banked-qwen", "matched-source"),
+        default="banked-qwen",
+        help=(
+            "operator placed between the two alignment maps; matched-source is "
+            "required when compatibility aliases represent a non-Qwen source model"
+        ),
+    )
     ap.add_argument("--skip-passb", action="store_true")
     ap.add_argument(
         "--synthetic-qwen-map",

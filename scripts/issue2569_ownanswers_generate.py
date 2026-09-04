@@ -165,9 +165,10 @@ def phase_generate(args) -> None:
     else:
         _atomic_json(regime_path, regime)
 
+    spec = MODEL_SPECS[args.model]
+    XC.assert_model_stack(XC.MODEL_SPECS[args.model])
     from transformers import AutoTokenizer
 
-    spec = MODEL_SPECS[args.model]
     tok = AutoTokenizer.from_pretrained(spec["model_id"], revision=spec["revision"])
     n_shards = (len(source) + args.chunk_rows - 1) // args.chunk_rows
     pending: list[int] = []
@@ -405,6 +406,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     ap.add_argument("--upload", action="store_true")
     ap.add_argument("--hf-data-repo", default="superkaiba1/explore-persona-space-data")
+    # UPLOAD_PREFIX_EXEMPT: task-local issue2569 driver preserves its historical default.
     ap.add_argument(
         "--hf-prefix",
         default="issue2569_theory/own_generated_answers/raw_completions/llama_seed42",
@@ -415,7 +417,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> None:
     args = _parse_args(argv)
     if args.import_check:
-        assert set(MODEL_SPECS) == {"qwen", "llama"}
+        assert set(MODEL_SPECS) == {"qwen", "llama", "olmo"}
         print("[import-check] PASS")
         return
     assert args.phase, "--phase is required"

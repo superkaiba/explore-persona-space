@@ -162,6 +162,7 @@ MODEL_SPECS = {
         "n_layers": 28,
         "hidden": 3584,
         "default_layers": (14, 19, 26),
+        "template_policy": "default_equals_false",
     },
     "llama": {
         "model_id": "meta-llama/Llama-3.1-8B-Instruct",
@@ -169,6 +170,15 @@ MODEL_SPECS = {
         "n_layers": 32,
         "hidden": 4096,
         "default_layers": (16, 22, 30),
+        "template_policy": "template_bos_once",
+    },
+    "olmo": {
+        "model_id": "allenai/Olmo-3-7B-Instruct",
+        "revision": "6e5971d9eba42665f5bd5a0fcf047f299ce1dccc",
+        "n_layers": 32,
+        "hidden": 4096,
+        "default_layers": (16, 22, 30),
+        "template_policy": "default_equals_false",
     },
 }
 SLOTS = ("v_C", "v_A")
@@ -672,8 +682,8 @@ def template_probe(tok, model_key: str) -> dict:
     - ``gen_suffix``: derived content-independently as the byte suffix
       ``render(add_generation_prompt=True)`` appends over the ``False`` render —
       asserted per-row later (the oracle's GENERATION_SUFFIX assert, generalized).
-    - Qwen: default tokenization must equal ``add_special_tokens=False`` (oracle
-      parity — the banked capture tokenized with defaults).
+    - Qwen/OLMo: default tokenization must equal
+      ``add_special_tokens=False`` (measured tokenizer policy).
     - Llama: the template's own leading BOS must appear EXACTLY once under
       ``add_special_tokens=False`` (the double-BOS hazard is the reason for False).
     """
@@ -691,17 +701,20 @@ def template_probe(tok, model_key: str) -> dict:
     assert gen_suffix, "empty generation suffix (template probe failed)"
     ids_default = tok(with_gen)["input_ids"]
     ids_false = tok(with_gen, add_special_tokens=False)["input_ids"]
-    if model_key == "qwen":
+    policy = MODEL_SPECS[model_key]["template_policy"]
+    if policy == "default_equals_false":
         assert ids_default == ids_false, (
-            "Qwen tokenizer default specials != add_special_tokens=False — oracle "
-            "parity broken (banked capture used defaults)"
+            f"{model_key} tokenizer default specials != add_special_tokens=False — "
+            "measured template policy changed"
         )
-    else:
+    elif policy == "template_bos_once":
         bos = tok.bos_token_id
         assert bos is not None and ids_false[0] == bos and ids_false.count(bos) == 1, (
             "Llama render must carry EXACTLY one leading template BOS under "
             f"add_special_tokens=False (got first={ids_false[:1]}, count={ids_false.count(bos)})"
         )
+    else:  # pragma: no cover - MODEL_SPECS is a code-owned closed registry
+        raise AssertionError(f"unknown template policy for {model_key}: {policy}")
     return {"template_sha": template_sha, "gen_suffix": gen_suffix}
 
 
@@ -764,6 +777,53 @@ def _render_cached(tok, prompt: str, response: str) -> tuple[str, str]:
 # ---------------------------------------------------------------------------
 
 
+def assert_model_stack(spec: dict) -> dict:
+    """Fail closed on model-family-specific library/config contracts.
+
+    OLMo-3's mixed full/sliding-attention YaRN config was interpreted
+    incorrectly by transformers 5.5.3--5.12.x.  The structural probe is the
+    load-bearing guard because it verifies the exact per-attention-type object
+    consumed by both transformers and vLLM, rather than trusting a version
+    print alone.
+    """
+    if spec["model_id"] != MODEL_SPECS["olmo"]["model_id"]:
+        return {"model_id": spec["model_id"], "olmo_rope_probe": "not_applicable"}
+
+    import transformers
+    from packaging.version import Version
+    from transformers import AutoConfig
+
+    realized = Version(transformers.__version__)
+    floor = Version("5.13.0")
+    if realized < floor:
+        raise RuntimeError(
+            f"OLMo-3 requires transformers>={floor}; got {realized}. Versions "
+            "5.5.3--5.12.x silently mis-handle the per-layer YaRN split."
+        )
+    cfg = AutoConfig.from_pretrained(spec["model_id"], revision=spec["revision"])
+    tcfg = getattr(cfg, "text_config", cfg)
+    rope = getattr(tcfg, "rope_parameters", None)
+    if not isinstance(rope, dict):
+        raise RuntimeError(f"OLMo-3 config lacks dict rope_parameters: {type(rope).__name__}")
+    missing = {"full_attention", "sliding_attention"} - set(rope)
+    if missing:
+        raise RuntimeError(f"OLMo-3 rope_parameters missing attention types: {sorted(missing)}")
+    realized_types = {
+        key: rope[key].get("rope_type") if isinstance(rope[key], dict) else None
+        for key in ("full_attention", "sliding_attention")
+    }
+    expected_types = {"full_attention": "yarn", "sliding_attention": "default"}
+    if realized_types != expected_types:
+        raise RuntimeError(
+            f"OLMo-3 rope split mismatch: got {realized_types}, expected {expected_types}"
+        )
+    return {
+        "model_id": spec["model_id"],
+        "transformers": transformers.__version__,
+        "olmo_rope_probe": realized_types,
+    }
+
+
 def _load_model_ctx(args, spec: dict) -> dict:
     """bf16 model on an explicit device with fail-loud config + HBM asserts."""
     device = args.device
@@ -777,6 +837,7 @@ def _load_model_ctx(args, spec: dict) -> dict:
                 f"HBM preflight failed: free={free / 2**30:.1f} GiB < required "
                 f"{args.min_free_hbm_gb:.1f} GiB (total {total / 2**30:.1f} GiB)"
             )
+    stack_probe = assert_model_stack(spec)
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     model = AutoModelForCausalLM.from_pretrained(
@@ -807,6 +868,7 @@ def _load_model_ctx(args, spec: dict) -> dict:
         "tok": tok,
         "device": device,
         "spec": spec,
+        "stack_probe": stack_probe,
         "logits_kwargs": lk,
         "pad_id": int(pad_id),
         "checked": False,
@@ -1494,9 +1556,9 @@ def _capture_gate_name(args) -> str:
     must use the independent-boundary identity gate instead.  The default is
     unchanged for every historical invocation.
     """
-    if args.model == "llama":
-        return "identity_gate_llama"
-    return "identity_gate_qwen" if args.qwen_gate == "identity" else "spot_gate_qwen"
+    if args.model == "qwen":
+        return "identity_gate_qwen" if args.qwen_gate == "identity" else "spot_gate_qwen"
+    return f"identity_gate_{args.model}"
 
 
 def phase_capture(args) -> None:
@@ -1662,7 +1724,9 @@ def _pilot_gate_report(
             )
         return
     per_row_s = fresh_wall_s / fresh_rows
-    extrapolated_h = per_row_s * 60_000 * 2 / 3600.0
+    pilot_model_count = int(args.pilot_model_count)
+    assert pilot_model_count >= 1, pilot_model_count
+    extrapolated_h = per_row_s * 60_000 * pilot_model_count / 3600.0
     booked_h = float(args.pilot_booked_wall_h)
     rec = {
         "per_row_s": per_row_s,
@@ -1670,6 +1734,7 @@ def _pilot_gate_report(
         "fresh_wall_s": float(fresh_wall_s),
         "resumed_chunks": int(resumed_chunks),
         "extrapolated_wall_h": extrapolated_h,
+        "pilot_model_count": pilot_model_count,
         "booked_wall_h": booked_h,
         "capture_params": pilot_params,
         "metadata": _meta("pilot-gate"),
@@ -1678,7 +1743,8 @@ def _pilot_gate_report(
         rec["informational"] = True
         _atomic_json(gate_dir / f"capture_wall_{args.model}.json", rec)
         print(
-            f"[capture-wall] per_row_s={per_row_s:.3f} extrapolated_wall_h(60k x 2 models)="
+            f"[capture-wall] per_row_s={per_row_s:.3f} "
+            f"extrapolated_wall_h(60k x {pilot_model_count} models)="
             f"{extrapolated_h:.2f} booked_h={booked_h:.1f} — informational (production scale)",
             flush=True,
         )
@@ -1686,7 +1752,8 @@ def _pilot_gate_report(
     verdict = "PASS" if extrapolated_h <= 2.0 * booked_h else "FAIL"
     rec["verdict"] = verdict
     print(
-        f"[pilot-gate] per_row_s={per_row_s:.3f} extrapolated_wall_h(60k x 2 models)="
+        f"[pilot-gate] per_row_s={per_row_s:.3f} "
+        f"extrapolated_wall_h(60k x {pilot_model_count} models)="
         f"{extrapolated_h:.2f} booked_h={booked_h:.1f} verdict={verdict}",
         flush=True,
     )
@@ -1866,7 +1933,15 @@ def phase_sentinel(args) -> None:
         "out_root": str(args.out_root),
         "metadata": _meta("sentinel"),
     }
-    for model in MODEL_SPECS:
+    required_models_arg = getattr(args, "required_models", "qwen,llama")
+    required_models = [x.strip() for x in required_models_arg.split(",") if x.strip()]
+    assert required_models, "--required-models resolved to an empty set"
+    unknown = sorted(set(required_models) - set(MODEL_SPECS))
+    assert not unknown, f"--required-models includes unknown models: {unknown}"
+    assert len(required_models) == len(set(required_models)), (
+        "--required-models contains duplicates"
+    )
+    for model in required_models:
         # The done sentinel is the P-D lane's COMPLETION claim (plan §4: the
         # gates are preconditions of the production sentinel) — both models'
         # finalize outputs are REQUIRED before it may be written; a silently
@@ -1925,6 +2000,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--min-free-hbm-gb", type=float, default=20.0)
     ap.add_argument("--out-root", default=str(PROJECT_ROOT / "data" / "issue_2569" / "xmodel"))
     ap.add_argument("--hf-data-repo", default="superkaiba1/explore-persona-space-data")
+    # UPLOAD_PREFIX_EXEMPT: task-local issue2569 driver preserves its historical default.
     ap.add_argument(
         "--hf-prefix",
         default=HF_XMODEL_PREFIX,
@@ -1948,6 +2024,17 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--gate-rel-tol", type=float, default=2e-2)
     ap.add_argument("--spot-chunk", default="shard00_chunk0000.pt")
     ap.add_argument("--pilot-booked-wall-h", type=float, default=6.0)
+    ap.add_argument(
+        "--pilot-model-count",
+        type=int,
+        default=2,
+        help="number of 60k model passes represented by the pilot wall projection",
+    )
+    ap.add_argument(
+        "--required-models",
+        default="qwen,llama",
+        help="comma-separated finalized models required before --phase sentinel",
+    )
     ap.add_argument("--sentinel-path", default="")
     return ap.parse_args(argv)
 
