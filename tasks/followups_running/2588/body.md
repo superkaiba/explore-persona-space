@@ -3,7 +3,8 @@ title: 'Linear context-to-answer mapping quality does not track capability acros
   a fixed-size release column: no-thinking reads invert on the generic corpus (MODERATE
   confidence)'
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-08-25T19:50:48Z'
 has_clean_result: true
 workflow: v1
