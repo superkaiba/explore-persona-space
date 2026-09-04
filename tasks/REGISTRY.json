@@ -9694,7 +9694,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/2254",
       "status": "awaiting_promotion",
-      "title": "Inverting the fitted context-to-answer map yields a direction that predicts persona strongly but cannot steer it at the context vector, where a directly-measured context direction can (MODERATE confidence)"
+      "title": "Inverting the fitted context-to-answer map yields a direction that predicts persona strongly but cannot steer it at the context vector, where a directly-measured context direction can, while a separately fitted answer-to-context map moves evil at layer 14 only (MODERATE confidence)"
     },
     "2255": {
       "has_clean_result": false,

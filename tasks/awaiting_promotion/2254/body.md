@@ -1,7 +1,8 @@
 ---
 title: Inverting the fitted context-to-answer map yields a direction that predicts
   persona strongly but cannot steer it at the context vector, where a directly-measured
-  context direction can (MODERATE confidence)
+  context direction can, while a separately fitted answer-to-context map moves evil
+  at layer 14 only (MODERATE confidence)
 kind: experiment
 tags:
 - followup-auto
