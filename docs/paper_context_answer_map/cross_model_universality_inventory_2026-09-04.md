@@ -60,10 +60,53 @@ Crossed 2x2: answer writer {Qwen, Llama} x activation encoder {Qwen, Llama}, 10,
 - Text divergence explains part, not all, of the own-answer drop: own-answer alignment R2 rises
   from 0.304 (lowest semantic-match quartile) to 0.607 (highest). Spearman 0.431 per row.
 - Reliability: second rollout (seed 137) own-answer CKA 0.621, frozen maps score within 0.011.
-- Caveats: LMSYS-only, 10k rows, the registered 60k scale-up was not triggered.
+- Caveats: LMSYS-only, 10k rows, the registered 60k multi-corpus scale-up was not triggered.
 - Artifacts (HF, revision 8d2694f6eedfbad61b9413299bca096370429d7a):
   https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8d2694f6eedfbad61b9413299bca096370429d7a/issue2569_theory/own_generated_answers
-  Code branch `issue-2569-ownanswers` (6f3d0855e50).
+  Code branch `issue-2569-ownanswers`. Plotted report:
+  https://github.com/superkaiba/explore-persona-space/blob/d8abff94195b626d340d61fdbdc627cb88f4d846/docs/results_summaries/issue2569-own-generated-answers/REPORT.md
+
+### A3. #2569 follow-up "cross-model-mapping-diff" (2026-08-29, pod-2569-mapdiff, same 10k rows, unfolded)
+
+Factorial decomposition of the four native maps (encoder {Qwen, Llama} x answer writer
+{Qwen, Llama}) in one fixed Qwen basis, plus a few-query transfer test and behavior readouts.
+
+- Native held-out R2 of the four cells: Qwen encoder 0.553 (Qwen writer) / 0.505 (Llama
+  writer), Llama encoder 0.528 / 0.519.
+- Writer, encoder, interaction and diagonal contrasts are all prompt-specific (every observed
+  cosine beats 1,000 row-pairing permutations, p = 0.001). The encoder contrast is largest and
+  most stable (split-half cosine 0.809, held-out R2 0.206), the writer contrast smaller
+  (cosine 0.286, split-half 0.688). After alignment the writer and encoder operators are
+  nearly orthogonal (cosine -0.049). Encoder, interaction and diagonal terms carry alignment
+  residual because the fixed Procrustes alignment is incomplete (held-out cosines 0.66 to 0.71).
+- Few-query transfer of a frozen source map through k paired queries: worse than fitting the
+  target from scratch at k of 8 or fewer, break-even at 16, ahead at 32, ahead in 40 of 40
+  cell draws at 64. At k = 256, centered cosine with the full target map 0.815 (transport) vs
+  0.732 (scratch). This is calibration with paired activations, not zero-shot transfer.
+- Behavior readout through the mapping diff: semantic divergence between the two models'
+  answers is the only readout above R2 0.05 (0.267 seed 42, 0.321 seed 137). Log length 0.04,
+  refusal and repetition about zero.
+- Report: https://github.com/superkaiba/explore-persona-space/blob/d8abff94195b626d340d61fdbdc627cb88f4d846/docs/results_summaries/issue2569-mapping-diff/REPORT.md
+- Figures: https://raw.githubusercontent.com/superkaiba/explore-persona-space/d8abff94195b626d340d61fdbdc627cb88f4d846/docs/results_summaries/issue2569-mapping-diff/fig1_factorial_mapping_diff.png
+  https://raw.githubusercontent.com/superkaiba/explore-persona-space/d8abff94195b626d340d61fdbdc627cb88f4d846/docs/results_summaries/issue2569-mapping-diff/fig2_fewshot_transfer.png
+- HF: `issue2569_theory/own_generated_answers/mapping_diff/report_with_plots` at revision
+  83d249cc9d495ca6f5d10f9156a622bcdca29a19.
+
+### A4. Extended paired scaling and unpaired alignment (2026-08-30, commit d8abff94195, pushed 2026-09-04)
+
+This commit sat unpushed in `.claude/worktrees/issue-2569-ownanswers` until this inventory
+was written. It extends A3's transfer curve and adds an unsupervised control.
+
+- Paired transport keeps improving to 4,000 shared prompts: cosine with the full target map
+  0.895 (transport) vs 0.783 (scratch), 40 of 40 comparisons favor transport. Against actual
+  target answers the 4,000-query transport reaches cosine 0.662, vs 0.724 for the original
+  8,000-row target maps.
+- Unpaired alignment (k source prompts and k different target prompts, no row identities,
+  rank-64 PCA plus mutual-nearest-neighbour Procrustes) fails at every k from 64 to 4,000:
+  cosine with the full target map -0.011 to 0.035, while a capacity-matched paired rank-64
+  oracle reaches 0.642 to 0.826. Correspondence is not recoverable from marginal statistics
+  with this method. Stronger unsupervised aligners were not tested.
+- Figure: https://raw.githubusercontent.com/superkaiba/explore-persona-space/d8abff94195b626d340d61fdbdc627cb88f4d846/docs/results_summaries/issue2569-mapping-diff/fig4_query_scaling_unpaired.png
 
 ## B. Same family, different generation: Qwen2.5-7B-Instruct vs Qwen3.5-9B
 
@@ -230,13 +273,17 @@ Question: does map quality or map rank track the Artificial Analysis capability 
 
 ## K. What is missing for a paper claim
 
-1. Cross-family operator comparison where each model writes its own answers at scale. Only the
-   10k LMSYS pilot (A2) exists, the 60k scale-up never ran, and A2 is not folded into #2569.
-2. Any cross-family test on Llama's or OLMo's own answer policy with Qwen-fitted maps. A1's
-   claim scope is explicitly shared Qwen text.
-3. A behavior-level readout transferred across families (persona or behavior direction fit on
-   Qwen, applied through the alignment to Llama).
-4. The honest headline from A1 and A2: answer spaces align well above the reliability floor
-   (R2 0.81 to 0.88 same text), but the operators are similar and not the same (aligned cosine
-   0.37 to 0.59 vs the 0.69 within-model anchor). Spectrum cosines near 1 must never be read as
-   same-operator evidence (A1, E2, F all show this).
+1. The cross-family own-answer comparison EXISTS (A2 to A4: crossed 2x2, factorial mapping
+   diff, few-query transfer to 4,000 paired prompts, unpaired control), but all of it sits on
+   the same 10,000 LMSYS prompts. The registered 60k multi-corpus scale-up never ran, and none
+   of A2 to A4 is folded into #2569's body, claims.md, or the paper. Corpus generalization
+   (WildChat or benchmarks) is the open piece, not the analysis itself.
+2. Any cross-family test on Llama's or OLMo's own answer policy beyond the Qwen/Llama pair
+   (a third family, or OLMo's own answers).
+3. A behavior-level readout transferred across families beyond A3's semantic-divergence read
+   (a persona or behavior direction fit on Qwen, applied through the alignment to Llama).
+4. The honest headline from A1 to A4: answer spaces align well above the reliability floor
+   (R2 0.81 to 0.88 same text, 0.51 to 0.63 own answers), the operators are similar and not
+   the same (aligned cosine 0.37 to 0.67 vs the 0.69 within-model anchor), a frozen map
+   transports across models with a few hundred paired prompts but not zero-shot, and spectrum
+   cosines near 1 must never be read as same-operator evidence (A1, E2, F all show this).
