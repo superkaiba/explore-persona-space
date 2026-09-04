@@ -66,6 +66,16 @@ import numpy as np  # noqa: E402
 import torch  # noqa: E402
 from scipy.linalg import eigh as scipy_eigh  # noqa: E402
 
+from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
+    GRID,
+    INK,
+    MUTED,
+    PAPER,
+    SEAM,
+    save_c2a_figure,
+    set_c2a_style,
+)
+
 _SCRIPTS = Path(__file__).resolve().parent
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
@@ -915,7 +925,7 @@ def main() -> None:
     logger.info("[out] %s", out_json)
 
     render_md(doc, out_dir / "variance_decomposition_L19.md")
-    render_figure(doc, fig_dir)
+    render_figure(doc, fig_dir, repo, out_json)
     logger.info("DONE")
 
 
@@ -984,12 +994,40 @@ def write_text_atomic(path: Path, content: str) -> None:
     tmp.replace(path)
 
 
-PIECE_COLORS = {"L": "#4C72B0", "N": "#DD8452", "W": "#55A868", "S": "#C44E52"}
+PIECE_COLORS = {"L": "#176B87", "N": "#C4553D", "W": "#7A7C78", "S": "#C9A34E"}
+PIECE_HATCHES = {"L": None, "N": "///", "W": "xxx", "S": "..."}
 
 
-def render_figure(doc: dict, fig_dir: Path) -> None:
+def _style_axis(ax: plt.Axes) -> None:
+    """Apply the paper's minimal seams and horizontal grid."""
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_color(SEAM)
+    ax.spines["bottom"].set_color(SEAM)
+    ax.tick_params(length=0, pad=7)
+    ax.grid(axis="y", color=GRID, lw=1.0, alpha=0.5)
+    ax.set_axisbelow(True)
+
+
+def _sha256_file(path: Path) -> str:
+    """Return a streaming digest for a generated or source artifact."""
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while chunk := handle.read(8 << 20):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def render_figure(doc: dict, fig_dir: Path, repo: Path, result_path: Path) -> dict:
     """Render the pooled/directional decomposition and neighbor-intercept diagnostic."""
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5.5), gridspec_kw={"width_ratios": [2, 1]})
+    font = set_c2a_style()
+    fig, (ax1, ax2) = plt.subplots(
+        1,
+        2,
+        figsize=(15, 5.8),
+        facecolor=PAPER,
+        gridspec_kw={"width_ratios": [2, 1]},
+    )
     rows = [
         {
             "direction": "pooled",
@@ -1001,41 +1039,96 @@ def render_figure(doc: dict, fig_dir: Path) -> None:
     bottom = np.zeros(len(rows))
     for piece in ("L", "N", "W", "S"):
         vals = np.array([max(r[piece], 0.0) for r in rows])
-        ax1.bar(xpos, vals, bottom=bottom, color=PIECE_COLORS[piece], label=piece, width=0.8)
+        ax1.bar(
+            xpos,
+            vals,
+            bottom=bottom,
+            color=PIECE_COLORS[piece],
+            edgecolor=PAPER,
+            hatch=PIECE_HATCHES[piece],
+            label=piece,
+            width=0.8,
+        )
         bottom += vals
     neg = np.array([sum(min(r[k], 0.0) for k in ("L", "N", "W", "S")) for r in rows])
     if (neg < 0).any():
-        ax1.bar(xpos, neg, bottom=np.zeros(len(rows)), color="#777777", label="negative (est.)")
-    ax1.axhline(1.0, color="k", lw=0.8, ls=":")
+        ax1.bar(
+            xpos,
+            neg,
+            bottom=np.zeros(len(rows)),
+            color=MUTED,
+            hatch="\\\\",
+            label="Negative estimate",
+        )
+    ax1.axhline(1.0, color=INK, lw=0.8, ls=":")
     ax1.set_xticks(xpos)
     ax1.set_xticklabels(names, rotation=60, ha="right", fontsize=7)
-    ax1.set_ylabel("fraction of single-draw answer-state variance")
-    ax1.set_title("L / N / W / S per direction (layer 19)")
-    ax1.legend(loc="upper right", fontsize=8)
+    ax1.set_ylabel("Answer-state variance fraction ↑")
+    ax1.set_title("A  Linear, nonlinear, context, and sampling components", loc="left")
+    ax1.legend(loc="upper right", fontsize=9, frameon=False, ncol=5)
+    _style_axis(ax1)
 
     fits = doc["nn"]["raw"]["intercept_fits"][str(PRIMARY_FRAC)]
     bx, by = np.array(fits["bin_x"]), np.array(fits["bin_y"])
-    ax2.plot(bx, by, "o", ms=4, color="#4C72B0", label="bin mean (1st neighbor)")
+    ax2.plot(bx, by, "o", ms=4, color=PIECE_COLORS["L"], label="First-neighbor bins")
     xs = np.linspace(0, bx.max(), 50)
-    ax2.plot(xs, fits["intercept"] + fits["slope"] * xs, "-", color="#4C72B0", lw=1)
+    ax2.plot(
+        xs,
+        fits["intercept"] + fits["slope"] * xs,
+        "-",
+        color=PIECE_COLORS["L"],
+        lw=1.7,
+        label="Local extrapolation",
+    )
     for kth, blk in doc["nn"]["raw"]["kth"].items():
-        ax2.plot(blk["mean_d2"], blk["mean_stat_pooled"], "s", ms=5, color="#DD8452")
+        ax2.plot(
+            blk["mean_d2"],
+            blk["mean_stat_pooled"],
+            "D",
+            ms=5,
+            color=PIECE_COLORS["N"],
+        )
         ax2.annotate(f"k={kth}", (blk["mean_d2"], blk["mean_stat_pooled"]), fontsize=7)
     ax2.axhline(
         doc["pooled"]["s_abs_mixture"], color=PIECE_COLORS["S"], ls="--", lw=1, label="S (banks)"
     )
-    ax2.plot(0, fits["intercept"], "*", ms=12, color="k", label="intercept = S + W")
-    ax2.set_xlabel("||dv_C||^2 (raw coordinates)")
-    ax2.set_ylabel("0.5 ||dv_A||^2, pair mean")
-    ax2.set_title("NN pair statistic vs v_C distance")
-    ax2.legend(fontsize=8)
-    fig.tight_layout()
-    for ext in ("png", "pdf"):
-        path = fig_dir / f"leg10_variance_decomposition.{ext}"
-        tmp = path.with_name(f"{path.stem}.tmp{path.suffix}")
-        fig.savefig(tmp, dpi=200)
-        tmp.replace(path)
+    ax2.plot(0, fits["intercept"], "*", ms=12, color=INK, label="Intercept: S + W")
+    ax2.set_xlabel(r"Context distance $\|\Delta v_C\|^2$")
+    ax2.set_ylabel(r"Pair statistic $\frac{1}{2}\|\Delta v_A\|^2$")
+    ax2.set_title("B  Neighbor extrapolation to matched contexts", loc="left")
+    ax2.legend(fontsize=9, frameon=False)
+    _style_axis(ax2)
+    fig.tight_layout(w_pad=2.5)
+    outputs = save_c2a_figure(
+        fig,
+        fig_dir / "leg10_variance_decomposition",
+        title="Variance decomposition of the context-answer map",
+        subject="Task #2569 leg 10",
+        creator="scripts/issue2569_variance_decomposition.py",
+    )
     plt.close(fig)
+    metadata = {
+        "style": "c2a-v1",
+        "font": font,
+        "source": "scripts/issue2569_variance_decomposition.py",
+        "result": str(result_path.relative_to(repo)),
+        "result_sha256": _sha256_file(result_path),
+        "output_sha256": {
+            str(path.relative_to(repo)): _sha256_file(path) for path in outputs.values()
+        },
+        "plotted_values": {
+            "pooled": doc["pooled"],
+            "per_direction": doc["per_direction"],
+            "raw_neighbor_fit": fits,
+            "raw_kth_neighbors": doc["nn"]["raw"]["kth"],
+        },
+        **as_metadata_dict(git_provenance(repo, argv0=__file__), phase="leg10-variance-figure"),
+    }
+    write_text_atomic(
+        fig_dir / "leg10_variance_decomposition.meta.json",
+        json.dumps(metadata, indent=2, sort_keys=True) + "\n",
+    )
+    return {"font": font, "outputs": outputs}
 
 
 if __name__ == "__main__":
