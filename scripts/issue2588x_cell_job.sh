@@ -89,6 +89,16 @@ fi
 
 ARMS="$("$PY" -c 'import sys, issue2588_panel_common as PC; print(" ".join(PC.PANEL[sys.argv[1]].arms))' "$MODEL_KEY")"
 
+# Single-phase mode: EPS_PHASE=<phase> (default all, forwarded by
+# issue2588x_submit.sh through sbatch's default env export) runs ONE
+# run_cell invocation of that phase on the model's FIRST arm only. Use case:
+# --phase g2-anchor is cell-independent and must be published once per cap
+# profile before any long-profile fits phase can pass its sentinel await.
+EPS_PHASE="${EPS_PHASE:-all}"
+if [ "$EPS_PHASE" != "all" ]; then
+  ARMS="${ARMS%% *}"
+fi
+
 term_handler() {
   echo "[trap] $(date -u +%FT%TZ) caught TERM/INT — killing the job's process group" >&2
   trap - TERM INT
@@ -113,10 +123,10 @@ HB_PID=$!
 echo "[job] $(date -u +%FT%TZ) cap profile: ${EPS_CAP_PROFILE:-v1}"
 
 for ARM in $ARMS; do
-  echo "[job] $(date -u +%FT%TZ) launching cell ${MODEL_KEY}_${ARM} --phase all (tp=${TP}, profile=${EPS_CAP_PROFILE:-v1})"
+  echo "[job] $(date -u +%FT%TZ) launching cell ${MODEL_KEY}_${ARM} --phase ${EPS_PHASE} (tp=${TP}, profile=${EPS_CAP_PROFILE:-v1})"
   "$PY" "$BASE/repo/scripts/issue2588_run_cell.py" \
     --cell "${MODEL_KEY}_${ARM}" \
-    --phase all \
+    --phase "${EPS_PHASE:-all}" \
     --out-root "$OUT_ROOT" \
     --gpu-count "$TP" \
     --capture-batch-size "${EPS_CAPTURE_BS:-8}"
