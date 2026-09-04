@@ -89,6 +89,10 @@ def test_stream_sae_moments_matches_dense_and_resumes(tmp_path: Path) -> None:
     checkpoint = tmp_path / "moments.npz"
     regime_path = tmp_path / "regime.json"
     regime = {"fixture": "stream-body-v1"}
+    pilot = BV.stream_sae_moments(
+        x, ctx, q, checkpoint, regime_path, regime, block=2, max_blocks=1
+    )
+    assert pilot["done_rows"] == 2
     got = BV.stream_sae_moments(x, ctx, q, checkpoint, regime_path, regime, block=2)
     resumed = BV.stream_sae_moments(x, ctx, q, checkpoint, regime_path, regime, block=2)
 
