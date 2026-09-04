@@ -37,9 +37,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import issue2588_mapping_rank_vs_capability as MR  # noqa: E402
 
 REPO = MR.REPO
-OUT_JSON = REPO / "eval_results" / "issue_2588" / "rank_relationships.json"
-FIG = REPO / "figures" / "issue_2588" / "rank_relationships.png"
-SWEEP_RRR = REPO / "eval_results" / "issue_2588" / "rank_threshold_sweep_rrr.json"
+OUT_JSON = MR.EVAL_ROOT / "rank_relationships.json"
+FIG = MR.FIG_ROOT / "rank_relationships.png"
+SWEEP_RRR = MR.EVAL_ROOT / "rank_threshold_sweep_rrr.json"
 N_PERM = 20_000
 SEED = 2588
 ARMS = ("no-thinking", "end-of-thought")

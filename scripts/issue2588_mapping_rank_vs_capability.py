@@ -46,22 +46,31 @@ from sklearn.utils.extmath import randomized_svd  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
 HF_REPO = "superkaiba1/explore-persona-space-data"
-HF_REVISION = "74bb871a5edf1afe777ac9b64a4e2fec5e9947c2"  # full same-width panel incl. OLMo-3-32B-Think, 2026-09-03
-PANEL_PREFIX = "issue2588_capability_panel"
-DEFAULT_CACHE = REPO / "data" / "issue_2588" / "mapping_rank_cache"
-DEFAULT_OUT = REPO / "eval_results" / "issue_2588" / "mapping_rank_vs_capability.json"
-DEFAULT_FIGURE = REPO / "figures" / "issue_2588" / "mapping_rank_vs_capability.png"
-DEFAULT_FOCUSED_FIGURE = (
-    REPO / "figures" / "issue_2588" / "rank_fraction_vs_capability_all_models.png"
+# Cap profile (2026-09-04 rerun at larger generation caps). "v1" is the original panel
+# (pinned revision); any other profile reads the panel regenerated under that cap table
+# from its own HF prefix at the moving "main" revision and writes every output under a
+# cap_<profile>/ subdirectory so the two panels never mix on disk.
+CAP_PROFILE = os.environ.get("EPS_CAP_PROFILE", "v1")
+_PROFILE_SUFFIX = "" if CAP_PROFILE == "v1" else f"_cap_{CAP_PROFILE}"
+_PROFILE_DIR = Path() if CAP_PROFILE == "v1" else Path(f"cap_{CAP_PROFILE}")
+HF_REVISION = (
+    "74bb871a5edf1afe777ac9b64a4e2fec5e9947c2"  # full same-width panel incl. OLMo-3-32B-Think
+    if CAP_PROFILE == "v1"
+    else "main"  # pin once the regenerated panel is complete
 )
-DEFAULT_PERFORMANCE_FIGURE = (
-    REPO / "figures" / "issue_2588" / "mapping_performance_vs_capability_qwen.png"
-)
-DEFAULT_SAME_WIDTH_FIGURE = REPO / "figures" / "issue_2588" / "same_width_column_vs_capability.png"
+PANEL_PREFIX = "issue2588_capability_panel" + _PROFILE_SUFFIX
+EVAL_ROOT = REPO / "eval_results" / "issue_2588" / _PROFILE_DIR
+FIG_ROOT = REPO / "figures" / "issue_2588" / _PROFILE_DIR
+DEFAULT_CACHE = REPO / "data" / "issue_2588" / ("mapping_rank_cache" + _PROFILE_SUFFIX)
+DEFAULT_OUT = EVAL_ROOT / "mapping_rank_vs_capability.json"
+DEFAULT_FIGURE = FIG_ROOT / "mapping_rank_vs_capability.png"
+DEFAULT_FOCUSED_FIGURE = FIG_ROOT / "rank_fraction_vs_capability_all_models.png"
+DEFAULT_PERFORMANCE_FIGURE = FIG_ROOT / "mapping_performance_vs_capability_qwen.png"
+DEFAULT_SAME_WIDTH_FIGURE = FIG_ROOT / "same_width_column_vs_capability.png"
 R2_TOLERANCE = 0.02  # secondary rule: absolute validation-R2 gap
 REL_ERROR_TOLERANCE = 0.10  # PRIMARY rule: validation SSE within +10% of the full map (2026-09-03)
 RANDOM_SEED = 2588
-DEFAULT_RRR_CURVES = REPO / "eval_results" / "issue_2588" / "rrr_rank_curves.json"
+DEFAULT_RRR_CURVES = EVAL_ROOT / "rrr_rank_curves.json"
 PRIMARY_RANK_DEFINITION = (
     "reduced-rank regression: smallest rank k of the best rank-k linear map (fitted ridge map "
     "projected onto the top-k principal directions of its fitted training outputs) whose "

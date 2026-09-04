@@ -25,7 +25,7 @@ from pathlib import Path
 import issue2588_mapping_rank_vs_capability as MR
 
 REPO = MR.REPO
-DEFAULT_OUT = REPO / "eval_results" / "issue_2588" / "rrr_rank_curves.json"
+DEFAULT_OUT = MR.EVAL_ROOT / "rrr_rank_curves.json"
 
 
 def rrr_curves(spec: MR.MapSpec, cache_dir: Path) -> dict:

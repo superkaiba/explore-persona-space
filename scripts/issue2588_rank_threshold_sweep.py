@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -32,11 +33,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import spearmanr
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import issue2588_mapping_rank_vs_capability as MR  # noqa: E402
+
 REPO = Path(__file__).resolve().parents[1]
-DEFAULT_TRUNC = REPO / "eval_results" / "issue_2588" / "mapping_rank_vs_capability.json"
-DEFAULT_RRR = REPO / "eval_results" / "issue_2588" / "rrr_rank_curves.json"
-OUT_DIR = REPO / "eval_results" / "issue_2588"
-FIG_DIR = REPO / "figures" / "issue_2588"
+DEFAULT_TRUNC = MR.EVAL_ROOT / "mapping_rank_vs_capability.json"
+DEFAULT_RRR = MR.EVAL_ROOT / "rrr_rank_curves.json"
+OUT_DIR = MR.EVAL_ROOT
+FIG_DIR = MR.FIG_ROOT
 SAME_WIDTH_DIM = 5120
 ARMS = ("no-thinking", "end-of-thought")
 ARM_TITLE = {"no-thinking": "Prompt read", "end-of-thought": "End-of-thought read"}
