@@ -25,3 +25,17 @@ unique), fix is one `seen` set.
 one; count parity + one-sided uniqueness + total-match is NOT a bijection
 proof. Related: [[silent-get-default-beside-fixed-keyerror]] (audit every
 field read at the same boundary), [[consumer-flag-producer-never-writes]].
+
+**Closure verification (#2658 r17):** when a fix round claims the join is now
+bijective, verify FOUR things, not just the two new raises: (1) enumerate all
+four legs and map each to a raise line (within-cell record-key dups may be
+subsumed by a coarser global check — confirm the accumulator spans the cell);
+(2) check the FILTER granularity feeding the join — a whole-file filter cannot
+false-fire a per-file orphan check, a per-record filter would; (3) read the
+PRODUCER — if the manifest is derived one-row-per-record from the same body
+(manifest_rows_for_cell shape), the raises are corruption-only by construction
+and no production false-positive risk exists, which also explains why the
+raise legs are legitimately test-only under the smoke gate; (4) certify
+fails-pre-fix by running the new tests against the parent blob in an isolated
+/tmp tree (both DID NOT RAISE pre-fix). Full recipe validated in one round,
+~10 tool calls.
