@@ -601,7 +601,7 @@ def render_figure(doc: dict, raw_view: dict, std_view: dict, fig_dir: Path) -> d
         "Feature\ndiagonal",
         "Feature\ncovariance",
         "SAE\nresidual",
-        "Recon–resid\n2× covariance",
+        "Recon.–resid.\ncovariance (2×)",
     ]
     keys = (
         "feature_diagonal_fraction_of_context",
@@ -627,6 +627,7 @@ def render_figure(doc: dict, raw_view: dict, std_view: dict, fig_dir: Path) -> d
     )
     ax.axhline(0, color=INK, lw=0.8)
     ax.set_xticks(xpos, labels)
+    ax.tick_params(axis="x", labelsize=10)
     ax.set_ylabel("Fraction of context variance")
     ax.set_title("C  SAE variance accounting", loc="left")
     ax.legend(frameon=False, fontsize=11)
@@ -642,6 +643,38 @@ def render_figure(doc: dict, raw_view: dict, std_view: dict, fig_dir: Path) -> d
     )
     plt.close(fig)
     return {"font": font, "outputs": outputs}
+
+
+def write_figure_artifacts(
+    doc: dict,
+    raw_view: dict,
+    std_view: dict,
+    repo: Path,
+    out_json: Path,
+) -> dict:
+    """Render the figure and write its result- and output-hash sidecar."""
+    fig_dir = repo / "figures/issue_2569"
+    figure = render_figure(doc, raw_view, std_view, fig_dir)
+    output_hashes = {
+        str(path.relative_to(repo)): sha256_file(path)
+        for path in figure["outputs"].values()
+    }
+    figure_meta = {
+        "style": "c2a-v1",
+        "font": figure["font"],
+        "source": "scripts/issue2569_basis_views.py",
+        "result": str(out_json.relative_to(repo)),
+        "result_sha256": sha256_file(out_json),
+        "output_sha256": output_hashes,
+        **as_metadata_dict(
+            git_provenance(repo, argv0=__file__), phase="leg11-basis-figure"
+        ),
+    }
+    write_text_atomic(
+        fig_dir / "leg11_basis_views.meta.json",
+        json.dumps(figure_meta, indent=2, sort_keys=True) + "\n",
+    )
+    return figure
 
 
 def render_markdown(doc: dict) -> str:
@@ -920,31 +953,11 @@ def main() -> None:
     }
 
     out_dir = args.repo_root / "eval_results/issue_2569/weights/leg11"
-    fig_dir = args.repo_root / "figures/issue_2569"
     out_json = out_dir / "basis_views_L19.json"
     out_md = out_dir / "basis_views_L19.md"
     write_text_atomic(out_json, json.dumps(doc, indent=1, ensure_ascii=False) + "\n")
     write_text_atomic(out_md, render_markdown(doc))
-    figure = render_figure(doc, raw_view, std_view, fig_dir)
-
-    output_hashes = {
-        str(path.relative_to(args.repo_root)): sha256_file(path)
-        for path in figure["outputs"].values()
-    }
-    figure_meta = {
-        "style": "c2a-v1",
-        "font": figure["font"],
-        "source": "scripts/issue2569_basis_views.py",
-        "result": str(out_json.relative_to(args.repo_root)),
-        "output_sha256": output_hashes,
-        **as_metadata_dict(
-            git_provenance(args.repo_root, argv0=__file__), phase="leg11-basis-figure"
-        ),
-    }
-    write_text_atomic(
-        fig_dir / "leg11_basis_views.meta.json",
-        json.dumps(figure_meta, indent=2, sort_keys=True) + "\n",
-    )
+    figure = write_figure_artifacts(doc, raw_view, std_view, args.repo_root, out_json)
     print(f"[done] {out_json} {out_md} {figure['outputs']}", flush=True)
 
 
