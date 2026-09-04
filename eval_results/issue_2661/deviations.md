@@ -104,3 +104,18 @@
    (synthetic linear problem: ridge 0.9987, MLP 0.9887 = 0.99x ridge, epoch-1
    R^2 +0.009). Pod re-run set: map_mlp + controls + perfeature_reads + upload
    (edges/eval_lists/mining are ridge-only).
+
+17. **Shuffle-null R^2 clipped at -1e4 before the fp16 store (r5 fix).** The
+   pod controls leg warned "overflow encountered in cast": per-feature R^2
+   under the row-shuffle null goes below fp16's -65,504 minimum on
+   near-zero-variance target columns and cast to -inf. `R2_FP16_FLOOR = -1e4`
+   (exactly fp16-representable, far below any band of interest) now clips at
+   the ONLY R^2-to-fp16 site (`_shuffle_null_r2_blocked`; every other fp16
+   store is coefficients/predictions, every other R^2 array is fp32), with an
+   inf-free assert at store time; the perfeature band pass re-applies the same
+   floor before its percentiles (idempotent on new arrays, sanitizes -inf in
+   any pre-r5 npz — +inf is impossible since R^2 <= 1) and asserts the bands
+   inf-free. NaN semantics unchanged (ss_tot <= 1e-12 columns stay NaN). The
+   floor is recorded in controls.json `shuffle_null.clip_floor_r2`. Controls +
+   perfeature are already in the r4 pod re-run set, so the recomputed arrays
+   carry the clip.

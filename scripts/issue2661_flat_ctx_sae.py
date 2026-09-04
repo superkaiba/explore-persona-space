@@ -150,6 +150,10 @@ MLP_MAX_EPOCHS = 30
 MLP_PATIENCE = 3
 MLP_SEED = 2661
 SHUFFLE_SEEDS = tuple(range(2_661_100, 2_661_120))  # 20-draw row-shuffle null (task body)
+# Per-feature R^2 clip floor for ANY fp16 store: near-zero-variance targets under a
+# null give R^2 < -65,504 (fp16 min), which casts to -inf (pod RuntimeWarning, r5
+# fix). -1e4 is exactly fp16-representable and far below every real band of interest.
+R2_FP16_FLOOR = -1.0e4
 KNN_KS = (1, 5, 10)
 ZERO_VAR_EPS = 1e-12
 
@@ -1660,7 +1664,9 @@ def _shuffle_null_r2_blocked(
 ) -> np.ndarray:
     """(n_draws, d_y) fp16 per-feature R^2 under row-shuffled predictions — the
     T._shuffle_null_r2 kernel (VERBATIM semantics), column-blocked so the fp64
-    temporaries stay bounded at full width."""
+    temporaries stay bounded at full width. R^2 is clipped at R2_FP16_FLOOR
+    BEFORE the fp16 cast: near-zero-variance targets under the null sit below
+    fp16's -65,504 minimum and overflowed to -inf on the pod (r5 fix)."""
     n, d_y = true_csc.shape
     out = np.zeros((len(seeds), d_y), np.float16)
     perms = [np.random.default_rng(s).permutation(n) for s in seeds]
@@ -1673,8 +1679,12 @@ def _shuffle_null_r2_blocked(
         for i, perm in enumerate(perms):
             ss_res = ((t - p[perm]) ** 2).sum(0)
             r2 = np.where(ss_tot > 1e-12, 1.0 - ss_res / np.maximum(ss_tot, 1e-12), np.nan)
-            out[i, c0:c1] = r2.astype(np.float16)
-    print(f"[controls] shuffle-null{tag}: {len(seeds)} draws done", flush=True)
+            out[i, c0:c1] = np.maximum(r2, R2_FP16_FLOOR).astype(np.float16)
+    assert not np.isinf(out).any(), "shuffle-null R2 store carries inf despite clip floor"
+    print(
+        f"[controls] shuffle-null{tag}: {len(seeds)} draws done (clip floor {R2_FP16_FLOOR:g})",
+        flush=True,
+    )
     return out
 
 
@@ -1807,6 +1817,7 @@ def phase_controls(args) -> None:
         "n_draws": len(SHUFFLE_SEEDS),
         "seeds": [int(s) for s in SHUFFLE_SEEDS],
         "convention": "prediction rows permuted; #2476 fp64 R2 kernel",
+        "clip_floor_r2": R2_FP16_FLOOR,
     }
 
     # kNN retrieval in answer-feature space (chance = k/n_pool)
@@ -1961,7 +1972,12 @@ def phase_perfeature_reads(args) -> None:
         )
     for k in nz.files:
         if k.startswith("null_r2_"):
-            band = np.nanpercentile(np.asarray(nz[k], np.float32), [2.5, 97.5], axis=0)
+            # floor-clip BEFORE the percentile: idempotent on r5+ arrays (already
+            # clipped at store time) and sanitizes -inf in any pre-r5 npz; +inf is
+            # impossible (R^2 <= 1), so the bands are inf-free by construction.
+            vals = np.maximum(np.asarray(nz[k], np.float32), R2_FP16_FLOOR)
+            band = np.nanpercentile(vals, [2.5, 97.5], axis=0)
+            assert not np.isinf(band).any(), f"{k} null band carries inf after clip"
             arrays[f"{k}_p025"] = band[0].astype(np.float32)
             arrays[f"{k}_p975"] = band[1].astype(np.float32)
     savez_atomic(out / "perfeature_reads.npz", **arrays)

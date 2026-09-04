@@ -307,3 +307,30 @@ def test_mlp_reaches_ridge_r2_on_linear_problem():
         xv = torch.as_tensor(xs_va, dtype=torch.float32)
         pv = (model(xv) * sy + torch.as_tensor(ymu, dtype=torch.float32)).numpy()
     assert abs(D._pooled_r2(pv.astype(np.float64), y_va) - best_r2) < 5e-3
+
+
+def test_shuffle_null_r2_fp16_clip_floor():
+    """r5 fix guard: near-zero-variance target columns push null R^2 below
+    fp16's -65,504 minimum; the store must clip at R2_FP16_FLOOR (no -inf, no
+    overflow RuntimeWarning), keep NaN for ss_tot <= 1e-12 columns, and leave
+    ordinary columns untouched."""
+    import warnings
+
+    n = 64
+    rng = np.random.default_rng(5)
+    t = np.zeros((n, 3), np.float64)
+    t[:, 0] = 1e-5 * rng.standard_normal(n)  # ss_tot ~ 6e-9 > 1e-12: scored, huge -R^2
+    t[:, 1] = 0.0  # ss_tot = 0: NaN column
+    t[:, 2] = rng.standard_normal(n)  # ordinary column
+    pred = np.zeros((n, 3), np.float32)
+    pred[:, 0] = 100.0  # ss_res ~ 6.4e5 vs ss_tot 6e-9 => raw R^2 ~ -1e14
+    pred[:, 2] = rng.standard_normal(n).astype(np.float32)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", RuntimeWarning)
+        out = D._shuffle_null_r2_blocked(pred, sp.csc_matrix(t), seeds=(1, 2), col_block=2)
+    assert out.dtype == np.float16
+    assert not np.isinf(out).any()
+    np.testing.assert_array_equal(out[:, 0], np.float16(D.R2_FP16_FLOOR))
+    assert np.isnan(out[:, 1]).all()
+    col2 = out[:, 2].astype(np.float64)
+    assert np.isfinite(col2).all() and (col2 > D.R2_FP16_FLOOR).all() and (col2 <= 1.0).all()
