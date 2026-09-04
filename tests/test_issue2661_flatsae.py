@@ -253,3 +253,57 @@ def test_csr_moments_accumulate_fp64_exactly():
     # the scipy fp32 path is measurably WRONG on this fixture (the pre-fix bug)
     scipy_fp32 = np.asarray(X.mean(axis=0), np.float64).ravel()
     assert np.abs(scipy_fp32 - d64.mean(axis=0)).max() > 1e-4
+
+
+def test_mlp_reaches_ridge_r2_on_linear_problem():
+    """r4 divergence-fix guard: on a synthetic LINEAR problem the MLP trainer
+    (production lr/clip/target-transform defaults) must reach >= 0.9x the
+    closed-form ridge's val pooled R^2, start AT the train-mean baseline
+    (zero-init head => epoch-1 val R^2 never off-scale), and return raw-unit
+    predictions via pred = model(x_std) * sy + ymu."""
+    rng = np.random.default_rng(2661)
+    n, d, d_y = 2_400, 24, 12
+    dense = rng.standard_normal((n, d)).astype(np.float32)
+    dense[dense < 0.3] = 0.0  # sparse nonneg inputs, SAE-code-like
+    w = rng.standard_normal((d, d_y)) * 0.5
+    b = rng.standard_normal(d_y) * 2.0
+    y_dense = dense.astype(np.float64) @ w + b + 0.05 * rng.standard_normal((n, d_y))
+    X = sp.csr_matrix(dense)
+    Y = sp.csr_matrix(y_dense.astype(np.float32))
+    tr = np.arange(1_600)
+    va = 1_600 + np.arange(400)
+    xmu, xvar = D._col_moments_csr(X, tr)
+    xsd = np.sqrt(xvar)
+    assert (xsd > 0).all()
+    ymu, _ = D._col_moments_csr(Y, tr)
+    # closed-form ridge on the SAME standardized inputs / centered targets
+    xs_tr = (X[tr].toarray().astype(np.float64) - xmu) / xsd
+    xs_va = (X[va].toarray().astype(np.float64) - xmu) / xsd
+    y_tr = Y[tr].toarray().astype(np.float64)
+    y_va = Y[va].toarray().astype(np.float64)
+    a = xs_tr.T @ xs_tr + 1e-3 * np.eye(d)
+    w_r = np.linalg.solve(a, xs_tr.T @ (y_tr - ymu))
+    ridge_r2 = D._pooled_r2(xs_va @ w_r + ymu, y_va)
+    assert ridge_r2 > 0.95  # the problem IS linear; anchor sanity
+    model, sy, (best_r2, _best_epoch), epochs_log = D._fit_mlp(
+        X,
+        Y,
+        tr,
+        va,
+        xmu,
+        xsd,
+        ymu,
+        torch.device("cpu"),
+        hidden=64,
+        batch=256,
+        max_epochs=200,
+        patience=200,
+    )
+    # stability: zero-init head starts at the train-mean baseline, never off-scale
+    assert epochs_log[0]["val_pooled_r2"] > -0.5, epochs_log[0]
+    assert best_r2 >= 0.9 * ridge_r2, (best_r2, ridge_r2)
+    # raw-unit prediction path matches the phase's un-transform
+    with torch.no_grad():
+        xv = torch.as_tensor(xs_va, dtype=torch.float32)
+        pv = (model(xv) * sy + torch.as_tensor(ymu, dtype=torch.float32)).numpy()
+    assert abs(D._pooled_r2(pv.astype(np.float64), y_va) - best_r2) < 5e-3

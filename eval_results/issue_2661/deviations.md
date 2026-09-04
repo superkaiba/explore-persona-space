@@ -1,8 +1,9 @@
 # Task #2661 — deviations from the reference recipes (brief rule: record every one)
 
-1. **MLP learning rate 1e-3.** The brief pins architecture (2-layer, hidden
+1. **MLP learning rate.** The brief pins architecture (2-layer, hidden
    4,096, GELU), optimizer (Adam), batch (1,024), early stop and seed, but not
-   the lr. 1e-3 chosen (torch Adam default family for MLP heads); logged in
+   the lr. 1e-3 was chosen in r1 and DIVERGED on the pod — superseded by 3e-4
+   plus the target transform / clipping / zero-init head of entry 16; logged in
    `map_mlp_metrics.json`.
 2. **G1 halt basis.** The task body says "Halt if holdout variance-FVE < 0.5";
    the parent #2552 gated on the 10k SAE-val carve. This driver GATES on the
@@ -82,3 +83,24 @@
    sparse-checkout, and hard-asserts the four required committed inputs before
    any leg. The header's fictional by-issue sync subcommand is replaced by the
    real procedure (push the branch; pod-side fetch + checkout + ff-only pull).
+
+16. **MLP target transform + lr 3e-4 + grad clip + zero-init head (r4
+   divergence fix).** The production map_mlp leg trained MSE on RAW answer
+   activations at Adam lr 1e-3 and diverged: measured val pooled R^2 -1019
+   after epoch 1 (train mean-MSE 7.27 -> 0.218 by epoch 3 while val stayed
+   -126/-83), best -27.9 at epoch 8, then oscillation (-81 at 10, -184 at 11),
+   holdout -72 — vs the ridge's 0.637 on the SAME val rows. Mechanism: Adam's
+   per-parameter steps are gradient-scale-free, so ~lr x steps of drift across
+   the 15,216 -> 4,096 -> 32,768 head puts raw-unit predictions ~30x the target
+   sd off-scale (sqrt(1020) ~= 32, matching the measured epoch-1 R^2). Fix
+   (`_fit_mlp`): targets centered by the ridge standardizer's ymu and scaled by
+   ONE global scalar sy (pooled train sd — global, not per-column, so the
+   scaled MSE stays exactly proportional to the pooled-R^2 SS_res and the
+   objective is NOT reweighted vs the eval metric); output head zero-init
+   (epoch-0 prediction IS the train-mean baseline, R^2=0); grad-norm clip 1.0;
+   lr 3e-4. Predictions un-transform to raw units (pred = model(x)*sy + ymu),
+   so `pred_te_mlp.fp32.npy` keeps its units and every downstream consumer is
+   unchanged. Guarded by `test_mlp_reaches_ridge_r2_on_linear_problem`
+   (synthetic linear problem: ridge 0.9987, MLP 0.9887 = 0.99x ridge, epoch-1
+   R^2 +0.009). Pod re-run set: map_mlp + controls + perfeature_reads + upload
+   (edges/eval_lists/mining are ridge-only).

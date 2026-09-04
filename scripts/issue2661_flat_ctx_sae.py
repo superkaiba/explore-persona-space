@@ -144,7 +144,8 @@ I2552_ANSWER_NMSE_HOLDOUT = 0.078  # #2552 rep SAE holdout nMSE (task-body recor
 LAMBDA_GRID_27 = tuple(np.logspace(-5.0, 8.0, 27))  # #2569 issue2569_gateladder VERBATIM
 MLP_HIDDEN = 4_096
 MLP_BATCH = 1_024
-MLP_LR = 1e-3  # unspecified by the brief — recorded in deviations.md
+MLP_LR = 3e-4  # r4 divergence fix (was 1e-3; deviations.md 16) — brief leaves lr open
+MLP_GRAD_CLIP = 1.0  # grad-norm clip (r4 divergence fix)
 MLP_MAX_EPOCHS = 30
 MLP_PATIENCE = 3
 MLP_SEED = 2661
@@ -1251,6 +1252,110 @@ def _dense_rows(Y: sp.csr_matrix, rows: np.ndarray, device) -> torch.Tensor:
     )
 
 
+def _fit_mlp(
+    Xl: sp.csr_matrix,
+    Y: sp.csr_matrix,
+    tr: np.ndarray,
+    va: np.ndarray,
+    xmu_l: np.ndarray,
+    xsd_l: np.ndarray,
+    ymu: np.ndarray,
+    dev,
+    *,
+    hidden: int,
+    lr: float = MLP_LR,
+    batch: int = MLP_BATCH,
+    max_epochs: int = MLP_MAX_EPOCHS,
+    patience: int = MLP_PATIENCE,
+    seed: int = MLP_SEED,
+) -> tuple[torch.nn.Module, float, tuple[float, int], list[dict]]:
+    """2-layer GELU MLP on standardized live ctx inputs -> answer activations
+    CENTERED by the ridge's train mean (ymu) and scaled by ONE global scalar sy
+    (pooled train sd), with a ZERO-INIT output head and grad-norm clipping.
+
+    This is the r4 divergence fix. Training on RAW activations at lr 1e-3 put
+    the pod at val pooled R^2 -1019 after epoch 1 (best -27.9, holdout -72):
+    Adam's per-parameter steps are gradient-scale-free, so ~lr x steps of drift
+    across a 15k->4k->32k head sends raw-unit predictions ~30x the target sd
+    off-scale (sqrt(1020) ~= 32, matching the measured R^2). The global (not
+    per-column) sy keeps the scaled MSE exactly proportional to the pooled-R^2
+    SS_res — no per-feature reweighting vs the eval metric — and the zero-init
+    head makes the epoch-0 prediction exactly the train-mean baseline (R^2=0).
+    Val early-stop scores pooled R^2 in RAW units (ridge-comparable).
+
+    Returns (model restored to the best epoch, sy, (best_val_r2, best_epoch),
+    epochs_log)."""
+    d, d_y = int(Xl.shape[1]), int(Y.shape[1])
+    ymu_chk, yvar_tr = _col_moments_csr(Y, tr)
+    assert np.allclose(ymu_chk, ymu, rtol=1e-7, atol=1e-9), (
+        "ymu mismatch vs the ridge standardizer (same rows, same fp64 helper)"
+    )
+    sy = float(np.sqrt(max(float(yvar_tr.mean()), 1e-24)))
+    torch.manual_seed(seed)
+    model = torch.nn.Sequential(
+        torch.nn.Linear(d, hidden), torch.nn.GELU(), torch.nn.Linear(hidden, d_y)
+    )
+    torch.nn.init.zeros_(model[2].weight)
+    torch.nn.init.zeros_(model[2].bias)
+    model = model.to(dev)
+    opt = torch.optim.Adam(model.parameters(), lr=lr)
+    ymu_t = torch.as_tensor(ymu, dtype=torch.float32, device=dev)
+    xs_va = _std_rows_dense(Xl, va, xmu_l, xsd_l, dev)
+    y_va = Y[va].toarray().astype(np.float64)
+
+    @torch.no_grad()
+    def _val_r2() -> float:
+        model.eval()
+        pv = (model(xs_va) * sy + ymu_t).cpu().numpy().astype(np.float64)
+        model.train()
+        return _pooled_r2(pv, y_va)
+
+    best: tuple[float, dict | None, int] = (-np.inf, None, 0)
+    epochs_log: list[dict] = []
+    t0 = time.time()
+    for epoch in range(max_epochs):
+        rng = np.random.default_rng(seed * 1000 + epoch)
+        perm = rng.permutation(len(tr))
+        run_loss, run_n = 0.0, 0
+        for s in range(0, len(perm), batch):
+            idx = tr[perm[s : s + batch]]
+            xb = _std_rows_dense(Xl, idx, xmu_l, xsd_l, dev)
+            yb = (_dense_rows(Y, idx, dev) - ymu_t) / sy
+            loss = torch.nn.functional.mse_loss(model(xb), yb)
+            opt.zero_grad(set_to_none=True)
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), MLP_GRAD_CLIP)
+            opt.step()
+            run_loss += float(loss.detach())
+            run_n += 1
+        r2 = _val_r2()
+        epochs_log.append(
+            {
+                "epoch": epoch + 1,
+                "mean_mse_scaled": run_loss / max(1, run_n),
+                "val_pooled_r2": r2,
+                "elapsed_s": round(time.time() - t0, 1),
+            }
+        )
+        print(
+            f"[map_mlp] unit epoch {epoch + 1}/{max_epochs} {json.dumps(epochs_log[-1])}",
+            flush=True,
+        )
+        if r2 > best[0]:
+            best = (
+                r2,
+                {k: v.detach().cpu().clone() for k, v in model.state_dict().items()},
+                epoch + 1,
+            )
+        elif epoch + 1 - best[2] >= patience:
+            print(f"[map_mlp] early stop at epoch {epoch + 1} (best {best[2]})", flush=True)
+            break
+    assert best[1] is not None
+    model.load_state_dict(best[1])
+    model.eval()
+    return model, sy, (best[0], best[2]), epochs_log
+
+
 def _pooled_r2(pred: np.ndarray, true: np.ndarray) -> float:
     """Whole-map pooled R^2 (fp64; SS_tot about the scored sample's own mean)."""
     p = np.asarray(pred, np.float64)
@@ -1466,76 +1571,28 @@ def phase_map_mlp(args) -> None:
     std = np.load(_ridge_dir(args) / "standardizer_ridge.npz")
     live = np.asarray(std["live_cols"], np.int64)
     xmu_l, xsd_l = np.asarray(std["xmu_live"]), np.asarray(std["xsd_live"])
+    ymu = np.asarray(std["ymu"], np.float64)
     Xl = X[:, live].tocsr()
-    d, d_y = int(len(live)), int(Y.shape[1])
+    d_y = int(Y.shape[1])
     dev = _torch_dev(args)
     hidden = MLP_HIDDEN if _production(args) else min(MLP_HIDDEN, 128)
-    torch.manual_seed(MLP_SEED)
-    model = torch.nn.Sequential(
-        torch.nn.Linear(d, hidden), torch.nn.GELU(), torch.nn.Linear(hidden, d_y)
-    ).to(dev)
-    opt = torch.optim.Adam(model.parameters(), lr=MLP_LR)
-    xs_va = _std_rows_dense(Xl, va, xmu_l, xsd_l, dev)
-    y_va = Y[va].toarray().astype(np.float64)
     max_epochs = MLP_MAX_EPOCHS if _production(args) else 2
-
-    @torch.no_grad()
-    def _val_r2() -> float:
-        model.eval()
-        pv = model(xs_va).cpu().numpy().astype(np.float64)
-        model.train()
-        return _pooled_r2(pv, y_va)
-
-    best = (-np.inf, None, 0)  # (val_r2, state, epoch)
-    epochs_log: list[dict] = []
-    t0 = time.time()
-    for epoch in range(max_epochs):
-        rng = np.random.default_rng(MLP_SEED * 1000 + epoch)
-        perm = rng.permutation(len(tr))
-        run_loss, run_n = 0.0, 0
-        for s in range(0, len(perm), MLP_BATCH):
-            idx = tr[perm[s : s + MLP_BATCH]]
-            xb = _std_rows_dense(Xl, idx, xmu_l, xsd_l, dev)
-            yb = _dense_rows(Y, idx, dev)
-            loss = torch.nn.functional.mse_loss(model(xb), yb)
-            opt.zero_grad(set_to_none=True)
-            loss.backward()
-            opt.step()
-            run_loss += float(loss.detach())
-            run_n += 1
-        r2 = _val_r2()
-        epochs_log.append(
-            {
-                "epoch": epoch + 1,
-                "mean_mse": run_loss / max(1, run_n),
-                "val_pooled_r2": r2,
-                "elapsed_s": round(time.time() - t0, 1),
-            }
-        )
-        print(
-            f"[map_mlp] unit epoch {epoch + 1}/{max_epochs} {json.dumps(epochs_log[-1])}",
-            flush=True,
-        )
-        if r2 > best[0]:
-            best = (
-                r2,
-                {k: v.detach().cpu().clone() for k, v in model.state_dict().items()},
-                epoch + 1,
-            )
-        elif epoch + 1 - best[2] >= MLP_PATIENCE:
-            print(f"[map_mlp] early stop at epoch {epoch + 1} (best {best[2]})", flush=True)
-            break
-    assert best[1] is not None
-    model.load_state_dict(best[1])
-    model.eval()
+    model, sy, (best_r2, best_epoch), epochs_log = _fit_mlp(
+        Xl, Y, tr, va, xmu_l, xsd_l, ymu, dev, hidden=hidden, max_epochs=max_epochs
+    )
     from safetensors.torch import save_file
 
-    save_file({k: v for k, v in model.state_dict().items()}, str(out / "mlp_ckpt.safetensors"))
+    tensors = {k: v for k, v in model.state_dict().items()}
+    # ckpt is self-contained: raw-unit preds = model(x_std) * sy + ymu
+    tensors["target_transform.ymu"] = torch.as_tensor(ymu, dtype=torch.float32)
+    tensors["target_transform.sy"] = torch.tensor([sy], dtype=torch.float32)
+    save_file(tensors, str(out / "mlp_ckpt.safetensors"))
+    ymu_t = torch.as_tensor(ymu, dtype=torch.float32, device=dev)
     preds = np.empty((n_te, d_y), np.float32)
     with torch.no_grad():
         for s in range(0, n_te, 2048):
             xb = _std_rows_dense(Xl, te[s : s + 2048], xmu_l, xsd_l, dev)
-            preds[s : s + xb.shape[0]] = model(xb).cpu().numpy()
+            preds[s : s + xb.shape[0]] = (model(xb) * sy + ymu_t).cpu().numpy()
     np.save(out / "pred_te_mlp.fp32.npy", preds)
     y_te = Y[te].toarray().astype(np.float64)
     doc = {
@@ -1547,17 +1604,24 @@ def phase_map_mlp(args) -> None:
         "seed": MLP_SEED,
         "max_epochs": max_epochs,
         "patience": MLP_PATIENCE,
-        "best_epoch": best[2],
-        "best_val_pooled_r2": best[0],
+        "grad_clip_norm": MLP_GRAD_CLIP,
+        "head_init": "zeros (epoch-0 prediction IS the train-mean baseline)",
+        "target_transform": (
+            "y' = (y - ymu_ridge) / sy; ONE global sy = pooled train sd, so the "
+            "scaled MSE stays proportional to the pooled-R^2 SS_res (r4 fix)"
+        ),
+        "sy": float(sy),
+        "best_epoch": best_epoch,
+        "best_val_pooled_r2": best_r2,
         "holdout_pooled_r2": _pooled_r2(preds, y_te),
         "epochs": epochs_log,
         "inputs": "standardized live ctx features (ridge standardizer reused)",
         **_meta(args, phase="map_mlp"),
     }
     T._write_json(out / "map_mlp_metrics.json", doc, phase="map_mlp")
-    _measured_update(args, mlp_best_val_r2=best[0], mlp_holdout_pooled_r2=doc["holdout_pooled_r2"])
+    _measured_update(args, mlp_best_val_r2=best_r2, mlp_holdout_pooled_r2=doc["holdout_pooled_r2"])
     _stage_upload_files(args, finals, "analysis_tensors/map_mlp", resume_skip=False)
-    T._sentinel("map_mlp", f"done (best epoch {best[2]} val_r2={best[0]:.4f})")
+    T._sentinel("map_mlp", f"done (best epoch {best_epoch} val_r2={best_r2:.4f})")
 
 
 # ── P7: controls ─────────────────────────────────────────────────────────────────
