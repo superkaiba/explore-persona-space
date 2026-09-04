@@ -2649,24 +2649,81 @@ def _need_set(args) -> tuple[np.ndarray, dict]:
     return need, doc
 
 
+def _scrub_text_files(files: list[Path], *, what: str) -> dict:
+    """In-process secret scrub (same-length X placeholders — the
+    scripts/scrub_secrets.py policy) + the upload-gate re-check. Returns a
+    VALUES-FREE report: counts per finding class only (r6 fix — the pod
+    production run raised SecretUploadGateError on 87 real-secret-grade
+    strings users pasted into mined prompts)."""
+    from explore_persona_space.orchestrate import secret_scrub as SS
+
+    counts: dict[str, int] = {}
+    for f in files:
+        for x in SS.scrub_file(Path(f)):
+            counts[x.pattern] = counts.get(x.pattern, 0) + 1
+    SS.assert_upload_clean([Path(f) for f in files], what=what)
+    report = {
+        "what": what,
+        "n_files": int(len(files)),
+        "total_findings": int(sum(counts.values())),
+        "counts_by_pattern": dict(sorted(counts.items())),
+        "placeholder": "same-length X (scrub_secrets policy; secret values never recorded)",
+    }
+    print(f"[scrub] {json.dumps(report)}", flush=True)
+    return report
+
+
+def _scrub_and_stage_mining(args, out: Path, parts: list[Path], heap_path: Path) -> dict:
+    """Scrub the mined-text shards IN PLACE (so the HF upload copy and the
+    judge-input copy are the SAME scrubbed files), persist the values-free
+    report beside them, then stage/upload."""
+    report = _scrub_text_files(parts, what="raw_completions/mining")
+    T._write_json(
+        out / "scrub_report.json", {**report, **_meta(args, phase="mining")}, phase="mining"
+    )
+    _stage_upload_files(args, [*parts, heap_path], "raw_completions/mining", resume_skip=False)
+    _stage_upload_files(args, [out / "need_set.json"], "analysis_tensors", resume_skip=False)
+    return report
+
+
 def phase_mining(args) -> None:
     """Top-25 activating USER PROMPTS + 20 non-activating negatives per need-set
     feature, over the 120k map-fit rows (eval-disjoint by split construction,
-    hard-asserted). #2552 top25 jsonl shape + a `kind` field for negatives."""
+    hard-asserted). #2552 top25 jsonl shape + a `kind` field for negatives.
+    Mined text is secret-scrubbed BEFORE staging (r6)."""
     C.phase("mining")
     out = _mining_dir(args)
     out.mkdir(parents=True, exist_ok=True)
     heap_path = out / "top25_ctx.npz"
     done_marker = out / ".text_join_done.json"
+    scrub_report_path = out / "scrub_report.json"
     regime, resume_ok = T._enter_phase_regime(
         out,
         args,
         "mining",
-        stale_paths=[heap_path, done_marker, out / "need_set.json", *out.glob("top25_ctx*.jsonl")],
+        stale_paths=[
+            heap_path,
+            done_marker,
+            out / "need_set.json",
+            scrub_report_path,
+            *out.glob("top25_ctx*.jsonl"),
+        ],
     )
-    if resume_ok and heap_path.exists() and done_marker.exists():
-        logger.info("[mining] resume: heap + text join present; skip")
+    if resume_ok and heap_path.exists() and done_marker.exists() and scrub_report_path.exists():
+        logger.info("[mining] resume: heap + text join + scrub present; skip")
         return
+    if resume_ok and heap_path.exists() and done_marker.exists():
+        # "shards written, upload pending" checkpoint (r6): the production gate
+        # failure landed exactly here — never redo the chunk text sweep.
+        parts = [out / n for n in json.loads(done_marker.read_text())["written"]]
+        if parts and all(p.exists() for p in parts):
+            logger.info("[mining] resume: shards written, upload pending — scrub + stage only")
+            n_scrubbed = _scrub_and_stage_mining(args, out, parts, heap_path)["total_findings"]
+            T._sentinel(
+                "mining",
+                f"done (resume: scrubbed {n_scrubbed} finding(s), staged {len(parts)} shards)",
+            )
+            return
     enc = _encodes_dir(args)
     rows = np.load(enc / "rows.npz")
     fit_ids = np.asarray(rows["fit_ids"], np.int64)
@@ -2688,6 +2745,17 @@ def phase_mining(args) -> None:
             out / "need_set.json", {**need_doc, **_meta(args, phase="mining")}, phase="mining"
         )
         T._write_json(done_marker, {"written": {}, "n_unique_rows": 0}, phase="mining")
+        T._write_json(
+            scrub_report_path,
+            {
+                "what": "raw_completions/mining",
+                "n_files": 0,
+                "total_findings": 0,
+                "counts_by_pattern": {},
+                "placeholder": "n/a (empty need set)",
+            },
+            phase="mining",
+        )
         T._sentinel("mining", "done (empty need set)")
         return
     a_dir = T._assemble_dir(args)
@@ -2778,9 +2846,12 @@ def phase_mining(args) -> None:
     print(
         f"[mining] unit done: need={len(need)} examples={len(recs)} files={len(parts)}", flush=True
     )
-    _stage_upload_files(args, [*parts, heap_path], "raw_completions/mining", resume_skip=False)
-    _stage_upload_files(args, [out / "need_set.json"], "analysis_tensors", resume_skip=False)
-    T._sentinel("mining", f"done (need={len(need)}, {len(texts)} unique rows joined)")
+    n_scrubbed = _scrub_and_stage_mining(args, out, parts, heap_path)["total_findings"]
+    T._sentinel(
+        "mining",
+        f"done (need={len(need)}, {len(texts)} unique rows joined, "
+        f"{n_scrubbed} secret finding(s) scrubbed)",
+    )
 
 
 # ── P12: upload ───────────────────────────────────────────────────────────────────

@@ -119,3 +119,25 @@
    floor is recorded in controls.json `shuffle_null.clip_floor_r2`. Controls +
    perfeature are already in the r4 pod re-run set, so the recomputed arrays
    carry the clip.
+
+18. **Secret scrub before every mined-text stage (r6 fix) — and deviation 4's
+   mystery resolved.** The production mining upload raised
+   SecretUploadGateError: 87 real-secret-grade strings (telegram-bot,
+   openai-real, hf-token, jwt-signed) that real users pasted into their
+   prompts sat in the top25_ctx shards. The brief's "16-span placeholder
+   substitution" (deviation 4) meant exactly this: #2552 scrubbed mined text
+   with same-length placeholders before upload/judging. phase_mining now runs
+   the in-process scrub (`secret_scrub.scrub_file`, same-length X
+   placeholders — the scripts/scrub_secrets.py policy, NOT the gate bypass)
+   over every shard BEFORE staging, asserts `assert_upload_clean`, and
+   persists a VALUES-FREE `scrub_report.json` (counts per pattern class only)
+   beside the shards. The scrub is in place, so the HF upload copy and the
+   judge-input copy (judge prep reads top25_ctx*.jsonl from the pod out-root
+   or the HF leaf) are the SAME scrubbed files. New resume checkpoint:
+   "shards written, upload pending" (heap + done-marker present,
+   scrub_report.json absent) re-enters at scrub+stage without redoing the
+   chunk text sweep; full skip now also requires scrub_report.json. Other
+   upload leaves audited for text: eval_lists artifacts are row_id + feature
+   codes (numeric-only), need_set.json is ids, heap npz numeric, all other
+   leaves tensors/JSON metrics — no other prompt/answer text leaves the pod.
+   Guarded by `test_mining_scrub_fixes_planted_token_and_passes_gate`.

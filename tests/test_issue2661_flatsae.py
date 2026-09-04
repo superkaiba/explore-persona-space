@@ -334,3 +334,37 @@ def test_shuffle_null_r2_fp16_clip_floor():
     assert np.isnan(out[:, 1]).all()
     col2 = out[:, 2].astype(np.float64)
     assert np.isfinite(col2).all() and (col2 > D.R2_FP16_FLOOR).all() and (col2 <= 1.0).all()
+
+
+def test_mining_scrub_fixes_planted_token_and_passes_gate(tmp_path):
+    """r6 fix guard: a mined jsonl with a planted real-secret-shaped token is
+    scrubbed IN PLACE to a same-length X placeholder (byte length preserved),
+    the report carries counts only (never values), the upload gate passes on
+    the scrubbed file, and a second scrub is a no-op."""
+    import json as _json
+
+    from explore_persona_space.orchestrate import secret_scrub as SS
+
+    tok = "hf_" + "Qm3v" * 9  # matches hf-token (36 body chars), no dummy markers
+    rec = {
+        "family": "ctx",
+        "feat_id": 1,
+        "rank": 0,
+        "row_id": 5,
+        "activation": 1.0,
+        "kind": "positive",
+        "text": f"pull the repo with my key {tok} please",
+    }
+    p = tmp_path / "top25_ctx.shard000.jsonl"
+    p.write_text(_json.dumps(rec) + "\n")
+    n_bytes = len(p.read_bytes())
+    report = D._scrub_text_files([p], what="unit-test")
+    assert report["total_findings"] == 1
+    assert report["counts_by_pattern"] == {"hf-token": 1}
+    assert tok not in _json.dumps(report)
+    txt = p.read_text()
+    assert tok not in txt
+    assert "X" * len(tok) in txt
+    assert len(p.read_bytes()) == n_bytes  # same-length placeholder
+    SS.assert_upload_clean([p], what="unit-test-recheck")  # must not raise
+    assert D._scrub_text_files([p], what="unit-test-2")["total_findings"] == 0
