@@ -1,7 +1,7 @@
 {
   "font": "Inter",
   "git": {
-    "commit": "0f5ff59c0a53f57c7747b6e7908cd2b4e7f56ba3",
+    "commit": "559acdceb2ed3f4a466d71458ab422f8dcd9028b",
     "tracked_worktree_dirty": true
   },
   "outputs": {
@@ -239,6 +239,30 @@
             "t": 1.0
           }
         ]
+      },
+      "trace_mean": {
+        "necessary": {
+          "arm": 1,
+          "cell": "p7_F_lam1000",
+          "lambda": 1000.0,
+          "layer": 19,
+          "n_rows": 2326,
+          "r2": 0.7411065466307816,
+          "r2_baseline": "corpus",
+          "r2_ci": [
+            0.733950359197831,
+            0.7476728590107589
+          ],
+          "retrieval_acc1": 0.9987102321582115,
+          "retrieval_chance": 0.00016560129940415455,
+          "retrieval_lift": 0.9987102321582115,
+          "retrieval_lift_ci": [
+            0.9974204643164231,
+            1.0
+          ],
+          "source": "eval_results/issue_2546/allfit/p7_F_lam1000__a1.json",
+          "subset": "necessary"
+        }
       }
     },
     "C": {
@@ -381,6 +405,7 @@
       "Position in the thinking span",
       "0\nend of\nprompt",
       "1\nend of\nthought",
+      "mean\nover\ntrace",
       "Inside the reasoning trace",
       "C  \u00b7  QWEN3-8B, LAYER 24",
       "off",

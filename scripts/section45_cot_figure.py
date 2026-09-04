@@ -122,6 +122,13 @@ PANEL_D_MAPS = [
     ("p8_E", "before →\nafter"),
     ("p8_F", "after\nmodel"),
 ]
+# Panel B extra slot: the metamodel whose INPUT is the mean over all reasoning tokens
+# (cell p7_F, scripts/issue2546_allfit_cotmean_cell.py). It is not a position in the
+# trace, so it sits to the right of the 0..1 axis at its own tick. Penalty 1000 is the
+# best held-out penalty of the 316/1000/3162 sweep on all rows for both labeled models
+# (the three differ by at most 0.02 in R^2).
+TRACE_MEAN_CELL = "p7_F_lam1000"
+TRACE_MEAN_X = 1.24
 
 
 def _sha256(path: Path) -> str:
@@ -386,7 +393,13 @@ def load_bundle(bundle_dir: Path, subset: str, baseline: str) -> dict[str, Any]:
             "model": "open-thoughts/OpenThinker3-7B",
             "maps": [{"cell": c, "label": l, subset: cell(c, 1)} for c, l in PANEL_A_MAPS],
         },
-        "B": {"arm": 1, "model": "open-thoughts/OpenThinker3-7B", "series": {subset: series(1)}},
+        "B": {
+            "arm": 1,
+            "model": "open-thoughts/OpenThinker3-7B",
+            "series": {subset: series(1)},
+            # input = mean over all reasoning tokens (not a trace position); drawn at its own slot
+            "trace_mean": {subset: cell(TRACE_MEAN_CELL, 1)},
+        },
         "C": {
             "arm": 3,
             "model": "Qwen/Qwen3-8B",
@@ -523,7 +536,13 @@ def _categorical_panel(
         )
 
 
-def _trajectory_panel(ax: plt.Axes, series: dict[str, list[dict[str, Any]]]) -> None:
+def _trajectory_panel(
+    ax: plt.Axes,
+    series: dict[str, list[dict[str, Any]]],
+    trace_mean: dict[str, dict[str, Any]] | None = None,
+) -> None:
+    """R^2 (solid, filled) and top-1 retrieval (dashed, open) along the trace; optional extra slot at
+    TRACE_MEAN_X for the metamodel whose input is the mean over all reasoning tokens (whiskers = CI)."""
     style_score_axis(ax, y_min=0.0, y_max=1.0, y_step=0.2)
     for subset in PLOT_STRATA:
         style = STRATA[subset]
@@ -559,13 +578,49 @@ def _trajectory_panel(ax: plt.Axes, series: dict[str, list[dict[str, Any]]]) -> 
             linestyle=(0, (5.0, 3.8)),
             zorder=3,
         )
-    ax.set_xlim(-0.04, 1.04)
-    ax.set_xticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
-    ax.set_xticklabels(
-        ["0\nend of\nprompt", "0.2", "0.4", "0.6", "0.8", "1\nend of\nthought"],
-        fontsize=13.5,
-        linespacing=1.15,
-    )
+    ticks = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+    labels = ["0\nend of\nprompt", "0.2", "0.4", "0.6", "0.8", "1\nend of\nthought"]
+    x_max = 1.04
+    if trace_mean is not None:
+        for subset in PLOT_STRATA:
+            style = STRATA[subset]
+            m = trace_mean[subset]
+            r2_err = [[m["r2"] - m["r2_ci"][0]], [m["r2_ci"][1] - m["r2"]]]
+            lift_err = [
+                [m["retrieval_lift"] - m["retrieval_lift_ci"][0]],
+                [m["retrieval_lift_ci"][1] - m["retrieval_lift"]],
+            ]
+            ax.errorbar(
+                [TRACE_MEAN_X],
+                [m["r2"]],
+                yerr=r2_err,
+                fmt=style.marker,
+                color=style.color,
+                markersize=7.5,
+                capsize=3,
+                lw=1.6,
+                zorder=4,
+            )
+            ax.errorbar(
+                [TRACE_MEAN_X],
+                [m["retrieval_lift"]],
+                yerr=lift_err,
+                fmt=style.marker,
+                color=style.color,
+                markerfacecolor=PAPER,
+                markeredgecolor=style.color,
+                markeredgewidth=1.9,
+                markersize=8,
+                capsize=3,
+                lw=1.6,
+                zorder=3,
+            )
+        ticks.append(TRACE_MEAN_X)
+        labels.append("mean\nover\ntrace")
+        x_max = TRACE_MEAN_X + 0.08
+    ax.set_xlim(-0.04, x_max)
+    ax.set_xticks(ticks)
+    ax.set_xticklabels(labels, fontsize=13.5, linespacing=1.15)
     ax.set_xlabel("Position in the thinking span", labelpad=8)
 
 
@@ -667,7 +722,7 @@ def make_figure(panels: dict[str, Any]) -> plt.Figure:
         kicker_y=1.24,
         title_y=1.07,
     )
-    _trajectory_panel(ax_b, panels["B"]["series"])
+    _trajectory_panel(ax_b, panels["B"]["series"], trace_mean=panels["B"].get("trace_mean"))
     _kicker(
         ax_b,
         "Inside the reasoning trace",
