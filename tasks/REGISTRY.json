@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2665,
+  "highest_id": 2666,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12851,6 +12851,13 @@
       "path": "tasks/proposed/2665",
       "status": "proposed",
       "title": "pod.py config --sync: per-clone live pods.conf copies clobber the shared ~/.ssh/config (RUNNING pod alias dropped twice during #2658 P4)"
+    },
+    "2666": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2666",
+      "status": "proposed",
+      "title": "Scope the PostToolUse ruff hook to files whose git origin is explore-persona-space"
     },
     "267": {
       "has_clean_result": true,
