@@ -135,3 +135,5 @@
 - [Opaque-hash schema bump consumer-invisible](opaque_hash_schema_bump_consumer_invisible.md) — fingerprint-in-preimage versioning: trace refuse-vs-regenerate polarity + consumer version-blindness + round-trip parity tests
 - [Disclosure mirror: parallel vs coupled](disclosure_mirror_parallel_vs_coupled.md) — a predicate-mirror disclosure with only a realized-nonzero runtime guard lies silently in the zero case; name the lockstep file when a predicate change is queued
 - [Prefix-filter exactness + residual read](prefix_filter_exactness_and_residual_read.md) — certify "exact" filtered sweeps by full-pool sparse-matmul brute force (integer threshold, partition compare); classify lexical residual pairs via difflib diff-spans (duplicate vs template)
+- [Spend/timing artifact exact recompute](spend_timing_artifact_exact_recompute.md) — window×gpus, tokens×halved batch rates, jsonl cross-foot, manifest-vs-tree name+byte diff, sha256 verbatim-text compare
+- [Shard-summary coverage gate probes](shard_summary_coverage_gate_probes.md) — partition-agnostic glob + count coverage + producer-flag trust; live-invoke gate on realized artifacts
