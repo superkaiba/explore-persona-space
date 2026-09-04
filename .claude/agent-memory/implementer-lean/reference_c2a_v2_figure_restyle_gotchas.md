@@ -27,3 +27,13 @@ Also: `fig.legend` default fontsize is 17 pt script-side under c2a-v2; per-panel
 kicker legends above a 3-panel row fit only ncol=1 with `labelspacing=0.3`, and
 gridspec `top≈0.56` is needed to clear 2-line titles + kickers (panel_header
 `kicker_y≈1.44`, `title_y≈1.06`).
+
+4. **Legend-strip width budget (measured 2026-09-03, c1_cot_maps):** on the
+   13.1 in full canvas, QUESTIONS+METRIC kicker-legends (1 strata + 2 metric
+   entries at 17 pt) end ~11.5 in — a 56-char 12.5 pt note does NOT fit on the
+   same line (content hit 16.8 in). Put the error-bar/note text on a second
+   strip row (~0.08 fig-frac below) instead of shrinking fonts. A one-third
+   width panel fits ~18-26 title chars at the pinned 22 pt ("Thinking on vs
+   off, same weights" = 4.9 in overflowed; "Thinking on vs off" fits).
+   `scripts/section45_cot_figure.py::_legend_strip` places blocks by measured
+   extents (renderer-adaptive) — reuse it rather than hand-tuned x anchors.
