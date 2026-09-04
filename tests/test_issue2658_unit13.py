@@ -682,3 +682,62 @@ def test_load_generation_rows_orphaned_manifest_row_raises(tmp_path):
     _write_gen_cell(tmp_path, "dev", cell, [rec], [man_row, orphan])
     with pytest.raises(K.CaptureSpanError, match="orphaned gen-manifest row"):
         K.load_generation_rows(tmp_path, "dev", None)
+
+
+# ---------------------------------------------------------------------------
+# Round 18: ONE shared split-aware resolver for every consumer.
+# ---------------------------------------------------------------------------
+def _boom(*args, **kwargs):
+    raise AssertionError("this seam must not be reached on this path")
+
+
+def test_resolve_items_for_split_pilot_verifies_pins_only(monkeypatch):
+    calls = []
+    sentinel = {"i1": object()}
+
+    def fake_resolve(ids, *, verify_pins):
+        calls.append((tuple(ids), verify_pins))
+        return sentinel
+
+    monkeypatch.setattr(R, "resolve_items", fake_resolve)
+    monkeypatch.setattr(G, "load_production_selection", _boom)
+    monkeypatch.setattr(G, "verify_resolved_against_selection", _boom)
+    out = G.resolve_items_for_split(["i1"], "pilot")
+    assert out is sentinel
+    assert calls == [(("i1",), True)]  # pilot: pin table verified inside resolve_items
+
+
+def test_resolve_items_for_split_dev_routes_selection_never_pins(monkeypatch):
+    order = []
+    resolved_sentinel = {"i1": object()}
+    body_sentinel = {"sel": "dev"}
+
+    def fake_resolve(ids, *, verify_pins):
+        order.append(("resolve", tuple(ids), verify_pins))
+        return resolved_sentinel
+
+    def fake_load(split, eval_root=None):
+        order.append(("load", split, eval_root))
+        return body_sentinel
+
+    def fake_verify(resolved, body, split):
+        order.append(("verify", resolved is resolved_sentinel, body is body_sentinel, split))
+
+    monkeypatch.setattr(R, "resolve_items", fake_resolve)
+    monkeypatch.setattr(R, "verify_against_pins", _boom)  # pin table never consulted
+    monkeypatch.setattr(G, "load_production_selection", fake_load)
+    monkeypatch.setattr(G, "verify_resolved_against_selection", fake_verify)
+    root = Path("/synthetic-eval-root")
+    out = G.resolve_items_for_split(["i1"], "dev", eval_root=root)
+    assert out is resolved_sentinel
+    assert order == [
+        ("resolve", ("i1",), False),
+        ("load", "dev", root),
+        ("verify", True, True, "dev"),
+    ]
+
+
+def test_resolve_items_for_split_rejects_unknown_split(monkeypatch):
+    monkeypatch.setattr(R, "resolve_items", _boom)  # raises BEFORE any resolution
+    with pytest.raises(ValueError, match="unknown split"):
+        G.resolve_items_for_split(["i1"], "holdout")

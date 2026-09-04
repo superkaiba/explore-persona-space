@@ -1511,8 +1511,6 @@ def assemble_row_data(
     """
     if row not in C.ROW_IDS:
         raise ComparatorInputError(f"unknown row {row!r}")
-    import issue2658_text_resolver as R  # deferred: pins registry
-
     sf_split = _split_assignment_for_row(row)
     rows_out: list[ResponseRow] = []
     vec_list: list[np.ndarray] = []
@@ -1534,7 +1532,7 @@ def assemble_row_data(
             raise ComparatorInputError(f"row {row} split {split}: zero labeled rows kept")
         vectors = _read_store_vectors(out_root, split, set(kept_keys))
         prompt_ids = sorted({k[0] for k in kept_keys})
-        resolved = R.resolve_items(prompt_ids, verify_pins=True)
+        resolved = G.resolve_items_for_split(prompt_ids, split, eval_root=out_root)
         for k in kept_keys:
             m, g = manifest[k], gen[k]
             sf = m["superfamily_id"]

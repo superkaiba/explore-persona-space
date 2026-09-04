@@ -449,7 +449,9 @@ def load_cell_units(
 
     Reads the per-cell raw JSONs (``{gen_root}/raw_completions/{split}/
     {row}__{frame}__{band}.json``, schema ``i2658-gen-cell-v1``), resolves the
-    frozen prompt text for every item (pin-verified), and composes the
+    frozen prompt text for every item through the shared split-aware resolver
+    ``G.resolve_items_for_split`` (pilot: pin-verified; dev/test: verified
+    against the frozen production selection; round 18), and composes the
     judge-facing question (evidence-embedded where the row requires it).
     Fails loud on a missing directory, a schema mismatch, or an answer-sha
     mismatch against the recorded text.
@@ -489,8 +491,10 @@ def load_cell_units(
         bodies.append(body)
 
     item_ids = sorted({rec["prompt_id"] for body in bodies for rec in body["records"]})
-    resolve = resolver_fn or R.resolve_items
-    resolved = resolve(item_ids, verify_pins=True)
+    if resolver_fn is not None:
+        resolved = resolver_fn(item_ids, verify_pins=True)
+    else:
+        resolved = G.resolve_items_for_split(item_ids, split)
 
     # Frozen-store exclusion records (evidence rows only) — ONE store read per
     # call. {} for non-evidence rows and while the store is absent (the

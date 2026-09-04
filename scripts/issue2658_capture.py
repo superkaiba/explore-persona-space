@@ -564,11 +564,7 @@ def attach_rendered_prompts(rows: list[CaptureRow], tokenizer, split: str) -> No
     that the prompt captured is the prompt generation consumed.
     """
     ids = sorted({c.prompt_id for c in rows})
-    if split == "pilot":
-        resolved = R.resolve_items(ids, verify_pins=True)
-    else:
-        resolved = R.resolve_items(ids, verify_pins=False)
-        G.verify_resolved_against_selection(resolved, G.load_production_selection(split), split)
+    resolved = G.resolve_items_for_split(ids, split)
     for c in rows:
         got = resolved[c.prompt_id].prompt_sha256
         if got != c.prompt_sha256:

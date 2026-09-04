@@ -404,6 +404,15 @@ def _write_fixture(out_root: Path, monkeypatch, *, poison_split: bool = False) -
             i: SimpleNamespace(text=f"benign fixture question {i}") for i in ids
         },
     )
+    # Round 18: the assembler resolves through the shared split-aware helper
+    # (synthetic ids have no pins and no frozen production selection).
+    monkeypatch.setattr(
+        G,
+        "resolve_items_for_split",
+        lambda ids, split, *, eval_root=None: {
+            i: SimpleNamespace(text=f"benign fixture question {i}") for i in ids
+        },
+    )
     expected: dict = {"labels": {}, "vectors": {}, "excluded": 0}
     for split in ("dev", "test"):
         # Artifacts always follow base_split (the un-poisoned layout).
@@ -523,6 +532,22 @@ def test_assembler_fires_on_vector_sha_mismatch(tmp_path, monkeypatch):
         np.save(fh, arr)
     with pytest.raises(C.RowHashMismatchError):
         U.assemble_row_data("evil", tmp_path)
+
+
+def test_assembler_routes_prompt_resolution_through_shared_split_resolver(tmp_path, monkeypatch):
+    """Round 18: assemble_row_data resolves prompt text through the shared
+    ``G.resolve_items_for_split``, threading the loop split + its own out_root."""
+    _write_fixture(tmp_path, monkeypatch)
+    calls = []
+
+    def rec(ids, split, *, eval_root=None):
+        calls.append((split, eval_root))
+        return {i: SimpleNamespace(text=f"benign fixture question {i}") for i in ids}
+
+    monkeypatch.setattr(G, "resolve_items_for_split", rec)
+    U.assemble_row_data("evil", tmp_path)
+    assert [c[0] for c in calls] == ["dev", "test"]
+    assert all(c[1] == tmp_path for c in calls)  # eval_root == the assembler's out_root
 
 
 # ---------------------------------------------------------------------------

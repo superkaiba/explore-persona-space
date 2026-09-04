@@ -495,6 +495,35 @@ def verify_resolved_against_selection(
             C.assert_row_hash(item.text, pin["prompt_sha256"])
 
 
+def resolve_items_for_split(
+    item_ids: list[str], split: str, *, eval_root: Path | None = None
+) -> dict[str, "R.ResolvedItem"]:
+    """ONE split-aware frozen prompt-text resolver for every consumer (round 18).
+
+    Pilot items verify against the frozen pilot pin table
+    (``R.resolve_items(..., verify_pins=True)``, byte-identical to the
+    pre-round-18 call sites). Dev/test items resolve WITHOUT the pilot pin
+    table (it covers the pilot selection only) and instead verify against the
+    frozen production selection via ``verify_resolved_against_selection``
+    (text-sha cells directly, pilot-reused items against the pin table too;
+    round 15/16). Any other split value raises. Consumers: generation,
+    capture (``attach_rendered_prompts``), judge (``load_cell_units``) and
+    comparators (``assemble_row_data``) all route here, so a new split can
+    never silently fall back to the pilot pin table again.
+    """
+    if split == "pilot":
+        return R.resolve_items(item_ids, verify_pins=True)
+    if split in ("dev", "test"):
+        resolved = R.resolve_items(item_ids, verify_pins=False)
+        verify_resolved_against_selection(
+            resolved, load_production_selection(split, eval_root), split
+        )
+        return resolved
+    raise ValueError(
+        f"unknown split {split!r} for prompt-text resolution; expected pilot, dev or test"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Work-list construction.
 # ---------------------------------------------------------------------------
@@ -977,11 +1006,7 @@ def run(args: argparse.Namespace) -> int:
     # selection (text-sha cells directly, pilot-reused items against the pin
     # table too; round 15).
     all_ids = [iid for cw in cells for iid in cw.item_ids]
-    if split == "pilot":
-        resolved = R.resolve_items(all_ids, verify_pins=True)
-    else:
-        resolved = R.resolve_items(all_ids, verify_pins=False)
-        verify_resolved_against_selection(resolved, load_production_selection(split), split)
+    resolved = resolve_items_for_split(all_ids, split)
 
     verify_frozen_file_pins()
     tok = load_tokenizer()

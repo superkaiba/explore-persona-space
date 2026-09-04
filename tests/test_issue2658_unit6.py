@@ -1513,3 +1513,25 @@ def test_wire_map_collision_fails_loud():
     merge into one wire uid (their draws would cross-join)."""
     with pytest.raises(J.JudgeInputError, match="collision"):
         J.wire_map_for(["a|b#r00", "a#b|r00"])
+
+
+def test_load_cell_units_routes_through_shared_split_resolver(tmp_path, monkeypatch):
+    """Round 18: dev and pilot both route through ``G.resolve_items_for_split``
+    (the shared split-aware resolver); the ``resolver_fn`` test seam replaces
+    the helper entirely, keeping its ``verify_pins=True`` call shape."""
+    calls = []
+
+    def fake_helper(item_ids, split, *, eval_root=None):
+        calls.append((tuple(item_ids), split, eval_root))
+        return {iid: types.SimpleNamespace(text=f"prompt text for {iid}") for iid in item_ids}
+
+    monkeypatch.setattr(G, "resolve_items_for_split", fake_helper)
+    for split in ("dev", "pilot"):
+        build_gen_tree(tmp_path, ROW, {"frameA__b0": 2}, split=split)
+        units = J.load_cell_units(tmp_path, split, ROW)
+        assert set(units) == {f"{ROW}__frameA__b0"}
+        assert all(len(us) == 2 for us in units.values())
+    assert [(c[1], c[2]) for c in calls] == [("dev", None), ("pilot", None)]
+    calls.clear()
+    J.load_cell_units(tmp_path, "pilot", ROW, resolver_fn=fake_resolve_items)
+    assert calls == []  # the seam bypasses the helper
