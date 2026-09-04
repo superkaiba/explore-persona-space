@@ -1,0 +1,104 @@
+{
+ "source": "HF superkaiba1/explore-persona-space-data issue2254_preimage/directions/{behavior}_{kind}_L{layer}.pt (unit-normalized before the dot product)",
+ "kinds": {
+  "ctxext": "directly-measured context direction",
+  "pre": "pseudo-inverse pre-image",
+  "preshuf": "shuffled-map pre-image control",
+  "random": "matched-norm random control",
+  "rb": "persona vector (answer-side mean difference)",
+  "rl1": "ridge-inverse pullback, near-pseudo-inverse lambda",
+  "rl2": "ridge-inverse pullback, median lambda",
+  "rl3": "ridge-inverse pullback, near-transpose lambda",
+  "tr": "transpose pullback",
+  "revmap": "fitted answer->context reverse-map direction (this round)"
+ },
+ "cos_revmap_vs": {
+  "evil__L14": {
+   "ctxext": 0.6079,
+   "pre": 0.1505,
+   "preshuf": -0.0305,
+   "random": 0.0066,
+   "rb": 0.293,
+   "rl1": 0.1112,
+   "rl2": 0.1933,
+   "rl3": 0.1658,
+   "tr": 0.1152
+  },
+  "evil__L19": {
+   "ctxext": 0.6762,
+   "pre": 0.3298,
+   "preshuf": -0.0292,
+   "random": 0.002,
+   "rb": 0.3486,
+   "rl1": 0.0667,
+   "rl2": 0.3652,
+   "rl3": 0.3475,
+   "tr": 0.218
+  },
+  "evil__L26": {
+   "ctxext": 0.6765,
+   "pre": 0.2929,
+   "preshuf": -0.0498,
+   "random": 0.0056,
+   "rb": 0.3875,
+   "rl1": 0.1095,
+   "rl2": 0.3172,
+   "rl3": 0.3532,
+   "tr": 0.2439
+  },
+  "sycophancy__L14": {
+   "ctxext": 0.5188,
+   "pre": 0.1541,
+   "preshuf": 0.0143,
+   "random": -0.0366,
+   "rb": 0.1875,
+   "rl1": 0.1134,
+   "rl2": 0.2055,
+   "rl3": 0.18,
+   "tr": 0.124
+  },
+  "sycophancy__L19": {
+   "ctxext": 0.6175,
+   "pre": 0.327,
+   "preshuf": 0.0402,
+   "random": -0.0021,
+   "rb": 0.3716,
+   "rl1": 0.0841,
+   "rl2": 0.3744,
+   "rl3": 0.3785,
+   "tr": 0.253
+  },
+  "sycophancy__L26": {
+   "ctxext": 0.6144,
+   "pre": 0.2957,
+   "preshuf": 0.0069,
+   "random": -0.0031,
+   "rb": 0.4649,
+   "rl1": 0.1142,
+   "rl2": 0.3452,
+   "rl3": 0.3601,
+   "tr": 0.2688
+  },
+  "hallucination__L14": {
+   "ctxext": 0.514,
+   "pre": 0.1086,
+   "preshuf": -0.0066,
+   "random": 0.0124,
+   "rb": 0.2118
+  },
+  "hallucination__L19": {
+   "ctxext": 0.7048,
+   "pre": 0.3052,
+   "preshuf": 0.0198,
+   "random": 0.0023,
+   "rb": 0.3351
+  },
+  "hallucination__L26": {
+   "ctxext": 0.7072,
+   "pre": 0.3039,
+   "preshuf": 0.0139,
+   "random": -0.0002,
+   "rb": 0.3633
+  }
+ }
+}

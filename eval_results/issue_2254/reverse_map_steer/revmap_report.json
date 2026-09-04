@@ -1,0 +1,88 @@
+{
+  "experiment": "issue2254_preimage",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "ts": "2026-09-04T07:36:13Z",
+  "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "git_commit": "e9828279",
+  "git_dirty": null,
+  "followup_label": "reverse_map_steer",
+  "source_repo": "superkaiba1/explore-persona-space-data",
+  "source_prefix": "issue2618_reverse_map/analysis_tensors/analysis_tensors/directions",
+  "frame": "d_rev = ((r_B/asd) @ W_rev)/xsd \u2014 raw context residual space at the layer (issue2618_reverse_map.py); unit-normalized before save (parent bank contract)",
+  "slug": "revmap",
+  "behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+  ],
+  "h": 3584,
+  "npz_sha12": {
+    "L14": "a69692243c64",
+    "L19": "bf7856789310",
+    "L26": "bd8e5f9bc0eb"
+  },
+  "n_direction_files": 9,
+  "loader_roundtrip_min_cos": 0.999999999,
+  "layers": {
+    "14": {
+      "evil": {
+        "raw_norm": 31.458939985493206,
+        "loader_roundtrip_cos": 1.0,
+        "cos_vs_parent_pre": 0.15049112972759207,
+        "cos_vs_ctxext": 0.6079367414758898
+      },
+      "sycophancy": {
+        "raw_norm": 28.020939050460168,
+        "loader_roundtrip_cos": 0.9999999999999998,
+        "cos_vs_parent_pre": 0.15413594458958943,
+        "cos_vs_ctxext": 0.5187831572149517
+      },
+      "hallucination": {
+        "raw_norm": 18.986653667256682,
+        "loader_roundtrip_cos": 0.9999999999999998,
+        "cos_vs_parent_pre": 0.10858339498385573,
+        "cos_vs_ctxext": 0.5140131073928765
+      }
+    },
+    "19": {
+      "evil": {
+        "raw_norm": 35.89441891378701,
+        "loader_roundtrip_cos": 1.0,
+        "cos_vs_parent_pre": 0.32982255861175425,
+        "cos_vs_ctxext": 0.676203517482673
+      },
+      "sycophancy": {
+        "raw_norm": 33.713339289731486,
+        "loader_roundtrip_cos": 0.9999999999999996,
+        "cos_vs_parent_pre": 0.3270321823577082,
+        "cos_vs_ctxext": 0.6175040733432496
+      },
+      "hallucination": {
+        "raw_norm": 29.5577535971507,
+        "loader_roundtrip_cos": 0.9999999999999998,
+        "cos_vs_parent_pre": 0.30516287270152986,
+        "cos_vs_ctxext": 0.7047868012904165
+      }
+    },
+    "26": {
+      "evil": {
+        "raw_norm": 24.05114887272024,
+        "loader_roundtrip_cos": 0.9999999999999998,
+        "cos_vs_parent_pre": 0.2929495414607547,
+        "cos_vs_ctxext": 0.6764819187860449
+      },
+      "sycophancy": {
+        "raw_norm": 24.092234268997508,
+        "loader_roundtrip_cos": 1.0,
+        "cos_vs_parent_pre": 0.29569480636767703,
+        "cos_vs_ctxext": 0.614389883929724
+      },
+      "hallucination": {
+        "raw_norm": 17.241761980334715,
+        "loader_roundtrip_cos": 0.9999999999999999,
+        "cos_vs_parent_pre": 0.3038936461336587,
+        "cos_vs_ctxext": 0.7071956270302698
+      }
+    }
+  }
+}

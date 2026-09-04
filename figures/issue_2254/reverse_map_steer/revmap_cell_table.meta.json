@@ -1,0 +1,9 @@
+{
+  "figure": "revmap_cell_table",
+  "git_commit": "873f1bd3",
+  "git_dirty": false,
+  "inputs": [
+    "reduce/delta_score_percell.json"
+  ],
+  "scope_note": "fresh_nulls: false \u2014 bands/floors are reused parent artifacts; the hallucination band, where drawn, is the localize-wave band (3-draw judge grain)"
+}

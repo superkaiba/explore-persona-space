@@ -1,0 +1,37 @@
+{
+  "experiment": "issue2254_preimage",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "ts": "2026-09-04T07:28:27Z",
+  "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "git_commit": "e9828279",
+  "git_dirty": null,
+  "followup_label": "reverse_map_steer",
+  "directions": {
+    "n_direction_files": 9,
+    "npz_sha12": {
+      "L14": "3bd2c19ae147",
+      "L19": "876ee7c62b83",
+      "L26": "f25e31b71a36"
+    }
+  },
+  "missing_key_negative_probe": "raised as designed",
+  "zero_norm_negative_probe": "raised as designed",
+  "reduce_banded": {
+    "label": "H1",
+    "n_clearing": 1,
+    "fresh_nulls": false,
+    "hallucination_band": 24.578611111111123,
+    "hallucination_band_wave": "localize",
+    "undefined_cells": [
+      "evil__rvm__ctx__L26__c0p5"
+    ]
+  },
+  "reduce_band_null": {
+    "hallucination_no_band_caveat": true,
+    "n_no_band_cells": 12
+  },
+  "figures": [
+    "revmap_dose_response",
+    "revmap_cell_table"
+  ]
+}
