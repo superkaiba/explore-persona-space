@@ -1059,6 +1059,175 @@ def _acquire_capture_slot(root: Path):
     return fh
 
 
+# torch >= 2.5 exposes the canonical torch.OutOfMemoryError, older builds only
+# the torch.cuda alias. Same class where both exist.
+_OOM_ERROR = getattr(torch, "OutOfMemoryError", None) or torch.cuda.OutOfMemoryError
+
+
+def _capture_token_budget() -> int:
+    """Max PADDED tokens (rows x padded_len) per capture forward (#2659).
+
+    Under the long cap profile the thinking-arm rollouts reach ~73k total
+    tokens (65,536 completion cap plus the 7,104 prompt budget). Right-padding
+    8 such rows together made SDPA take the mask-bearing path, whose score or
+    mask tensor is quadratic in the padded length: job 65463 (q35_9b arm b,
+    gpqa capture) died on a single 38.37 GiB allocation inside
+    scaled_dot_product_attention with the 9B weights resident. The budget
+    bounds rows x padded_len, so long rows run alone (unpadded, mask=None,
+    flash or memory-efficient kernel eligible) and only short rows batch up.
+    """
+    v = int(os.environ.get("EPS_CAPTURE_TOKEN_BUDGET", "24576"))
+    assert v >= 1, f"EPS_CAPTURE_TOKEN_BUDGET must be >= 1, got {v}"
+    return v
+
+
+def _plan_capture_batches(lengths: list[int], max_rows: int, token_budget: int) -> list[list[int]]:
+    """Greedy length-aware batch plan: contiguous groups in ascending-length order.
+
+    Every group satisfies BOTH caps: len(group) <= max_rows, and
+    len(group) * max(length in group) <= token_budget (the padded-token cost
+    of the forward). A single row longer than the budget forms its own group
+    (it is then forwarded alone, unpadded). Every input index appears exactly
+    once across the returned groups.
+    """
+    assert max_rows >= 1 and token_budget >= 1, (max_rows, token_budget)
+    order = sorted(range(len(lengths)), key=lambda i: (lengths[i], i))
+    batches: list[list[int]] = []
+    cur: list[int] = []
+    cur_max = 0
+    for i in order:
+        new_max = max(cur_max, lengths[i])
+        if cur and (len(cur) + 1 > max_rows or (len(cur) + 1) * new_max > token_budget):
+            batches.append(cur)
+            cur = []
+            new_max = lengths[i]
+        cur.append(i)
+        cur_max = new_max
+    if cur:
+        batches.append(cur)
+    return batches
+
+
+def _capture_forward(
+    hf, reducer: _CaptureReducer, metas: list[dict], seqs: list[list[int]], pad_id
+):
+    """One teacher-forced forward. Returns {layer: (pos (B, P, H), y (B, H))}.
+
+    A single-row batch is forwarded UNPADDED with attention_mask=None so SDPA
+    stays eligible for the flash and memory-efficient kernels (any padding
+    mask forces the mask-bearing path, quadratic in padded length). Multi-row
+    batches keep the RIGHT-padded boolean-valued 2D 0/1 mask, absolute
+    positions intact.
+    """
+    if len(seqs) == 1:
+        ids = torch.as_tensor(seqs[0], dtype=torch.long).unsqueeze(0)
+        mask = None
+    else:
+        maxlen = max(len(sq) for sq in seqs)
+        ids = torch.full((len(seqs), maxlen), pad_id, dtype=torch.long)
+        mask2d = torch.zeros((len(seqs), maxlen), dtype=torch.long)
+        for i, sq in enumerate(seqs):  # RIGHT padding, absolute positions intact
+            ids[i, : len(sq)] = torch.as_tensor(sq)
+            mask2d[i, : len(sq)] = 1
+        mask = mask2d.to(hf.device)
+    reducer.set_batch(metas)
+    with torch.no_grad():
+        hf(
+            input_ids=ids.to(hf.device),
+            attention_mask=mask,
+            **G._logits_to_keep_kwargs(hf),
+        )
+    return {li: (reducer.out[li]["pos"][0], reducer.out[li]["y"][0]) for li in reducer.layers}
+
+
+def _capture_batch_with_backoff(
+    hf, reducer: _CaptureReducer, metas: list[dict], seqs: list[list[int]], pad_id, oom_stats: dict
+):
+    """_capture_forward with an explicit, LOGGED CUDA-OOM backoff (#2659).
+
+    On OOM the batch is split in half (torch.cuda.empty_cache() between
+    tries) and each half retried recursively. A single row that still OOMs
+    raises, there is no further fallback. Halves are run left then right and
+    concatenated, so the caller's row order is preserved. Every backoff is
+    counted in oom_stats (surfaced in the stage's rows.json), never silent.
+    """
+    try:
+        return _capture_forward(hf, reducer, metas, seqs, pad_id)
+    except _OOM_ERROR:
+        if len(seqs) == 1:
+            logger.error(
+                "[i2588] [capture oom-backoff] single row of %d tokens OOMed at batch size 1, "
+                "raising (no further fallback)",
+                len(seqs[0]),
+            )
+            raise
+        maxlen = max(len(sq) for sq in seqs)
+        oom_stats["n_backoffs"] = oom_stats.get("n_backoffs", 0) + 1
+        logger.warning(
+            "[i2588] [capture oom-backoff] CUDA OOM on batch shape (%d, %d) "
+            "(%d padded tokens): empty_cache, split in half, retry (backoff #%d)",
+            len(seqs),
+            maxlen,
+            len(seqs) * maxlen,
+            oom_stats["n_backoffs"],
+        )
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        mid = len(seqs) // 2
+        left = _capture_batch_with_backoff(hf, reducer, metas[:mid], seqs[:mid], pad_id, oom_stats)
+        right = _capture_batch_with_backoff(hf, reducer, metas[mid:], seqs[mid:], pad_id, oom_stats)
+        return {
+            li: (
+                np.concatenate([left[li][0], right[li][0]]),
+                np.concatenate([left[li][1], right[li][1]]),
+            )
+            for li in reducer.layers
+        }
+
+
+def _capture_shard_arrays(
+    hf,
+    reducer: _CaptureReducer,
+    shard_rows: list[dict],
+    positions_wanted,
+    pad_id,
+    batch_plan: list[list[int]],
+    oom_stats: dict,
+):
+    """Run one shard through the batch plan, scattering results back BY ROW
+    INDEX so the output arrays follow shard_rows order exactly (the pre-#2659
+    contract), independent of the forward grouping.
+
+    Returns ({layer: pos (n, P, H)}, {layer: y (n, H)}), both fp32.
+    """
+    layers = reducer.layers
+    pos_rows: dict[int, list] = {li: [None] * len(shard_rows) for li in layers}
+    y_rows: dict[int, list] = {li: [None] * len(shard_rows) for li in layers}
+    for idxs in batch_plan:
+        metas, seqs = [], []
+        for i in idxs:
+            row = shard_rows[i]
+            full = row["prompt_ids"] + row["comp_ids"]
+            pos_list = [row["positions"][p] for p in positions_wanted if p in row["positions"]]
+            metas.append({"pos_list": pos_list, "ans_span": row["spans"]["ans"]})
+            seqs.append(full)
+        outs = _capture_batch_with_backoff(hf, reducer, metas, seqs, pad_id, oom_stats)
+        for li in layers:
+            pos_b, y_b = outs[li]
+            assert pos_b.shape[0] == len(idxs) and y_b.shape[0] == len(idxs), (
+                pos_b.shape,
+                y_b.shape,
+                len(idxs),
+            )
+            for j, i in enumerate(idxs):
+                pos_rows[li][i] = pos_b[j]
+                y_rows[li][i] = y_b[j]
+    return (
+        {li: np.stack(pos_rows[li]) for li in layers},
+        {li: np.stack(y_rows[li]) for li in layers},
+    )
+
+
 def _capture_stage(
     args,
     cell: PC.Cell,
@@ -1130,45 +1299,24 @@ def _capture_stage(
     rows_meta: list[dict] = []
     shard_size = 500
     pad_id = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
+    token_budget = _capture_token_budget()
+    oom_stats = {"n_backoffs": 0}
     try:
         order = sorted(
             range(len(built)), key=lambda i: len(built[i]["prompt_ids"]) + len(built[i]["comp_ids"])
         )
         for shard_k, s0 in enumerate(range(0, len(order), shard_size)):
             shard_rows = [built[i] for i in order[s0 : s0 + shard_size]]
-            per_layer_pos: dict[int, list[np.ndarray]] = {li: [] for li in layers}
-            per_layer_y: dict[int, list[np.ndarray]] = {li: [] for li in layers}
-            for b0 in range(0, len(shard_rows), args.capture_batch_size):
-                batch = shard_rows[b0 : b0 + args.capture_batch_size]
-                metas, seqs = [], []
-                for row in batch:
-                    full = row["prompt_ids"] + row["comp_ids"]
-                    pos_list = [
-                        row["positions"][p] for p in positions_wanted if p in row["positions"]
-                    ]
-                    metas.append({"pos_list": pos_list, "ans_span": row["spans"]["ans"]})
-                    seqs.append(full)
-                maxlen = max(len(sq) for sq in seqs)
-                ids = torch.full((len(seqs), maxlen), pad_id, dtype=torch.long)
-                mask = torch.zeros((len(seqs), maxlen), dtype=torch.long)
-                for i, sq in enumerate(seqs):  # RIGHT padding — absolute positions intact
-                    ids[i, : len(sq)] = torch.as_tensor(sq)
-                    mask[i, : len(sq)] = 1
-                reducer.set_batch(metas)
-                with torch.no_grad():
-                    hf(
-                        input_ids=ids.to(hf.device),
-                        attention_mask=mask.to(hf.device),
-                        **G._logits_to_keep_kwargs(hf),
-                    )
-                for li in layers:
-                    per_layer_pos[li].append(reducer.out[li]["pos"][0])
-                    per_layer_y[li].append(reducer.out[li]["y"][0])
+            lengths = [len(r["prompt_ids"]) + len(r["comp_ids"]) for r in shard_rows]
+            batch_plan = _plan_capture_batches(lengths, args.capture_batch_size, token_budget)
+            per_layer_pos, per_layer_y = _capture_shard_arrays(
+                hf, reducer, shard_rows, positions_wanted, pad_id, batch_plan, oom_stats
+            )
             row_ids = [r["row_id"] for r in shard_rows]
             realized_pos = [p for p in positions_wanted if p in shard_rows[0]["positions"]]
             for li in layers:
-                pos_arr = np.concatenate(per_layer_pos[li])  # (n, n_pos, H) fp32
-                y_arr = np.concatenate(per_layer_y[li])
+                pos_arr = per_layer_pos[li]  # (n, n_pos, H) fp32, shard_rows order
+                y_arr = per_layer_y[li]
                 ldir = stage_dir / f"L{li:02d}"
                 ldir.mkdir(parents=True, exist_ok=True)
                 payload = {"row_ids": np.array(row_ids), "y_ans": y_arr.astype(np.float32)}
@@ -1202,6 +1350,12 @@ def _capture_stage(
     finally:
         for h in handles:
             h.remove()
+    if oom_stats["n_backoffs"]:
+        logger.warning(
+            "[i2588] [capture %s] %d OOM backoff(s) this stage (recorded in rows.json)",
+            stage,
+            oom_stats["n_backoffs"],
+        )
     PC.write_json_atomic(
         stage_dir / "rows.json",
         {
@@ -1209,6 +1363,8 @@ def _capture_stage(
             "cell": cell.key,
             "stage": stage,
             "positions": list(positions_wanted),
+            "capture_token_budget": token_budget,
+            "oom_backoffs": oom_stats["n_backoffs"],
             "rows": rows_meta,
         },
     )

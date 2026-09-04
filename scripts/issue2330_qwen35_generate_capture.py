@@ -807,12 +807,19 @@ def _load_capture_model(model_id: str, device: str, dtype_str: str):
             i: f"{int(torch.cuda.get_device_properties(i).total_memory / 2**30 - headroom)}GiB"
             for i in range(torch.cuda.device_count())
         }
-        logger.info("[load] multi-GPU: device_map=balanced max_memory=%s", load_kwargs["max_memory"])
+        logger.info(
+            "[load] multi-GPU: device_map=balanced max_memory=%s", load_kwargs["max_memory"]
+        )
     elif device == "cuda":
         load_kwargs["device_map"] = {"": 0}
     else:
         load_kwargs["device_map"] = None
     load_kwargs["config"] = _native_config(model_id)
+    # #2659: pin SDPA explicitly (it was already the resolved default on these
+    # classes, the job-65463 traceback runs sdpa_attention_forward). Capture
+    # forwards pass attention_mask=None on single-row batches so SDPA can take
+    # the flash or memory-efficient kernel on 40k-73k token rollouts.
+    load_kwargs["attn_implementation"] = "sdpa"
     quant_method = _quant_method(model_id)
     if quant_method == "fp8":
         logger.info("[load] fp8 checkpoint detected (%s): native load, no dtype kwarg", model_id)
@@ -848,12 +855,36 @@ def _load_capture_model(model_id: str, device: str, dtype_str: str):
         logger.info(
             "[load] %s rejected the top-level VL config (%s); loading %s via "
             "AutoModelForImageTextToText",
-            "AutoModelForCausalLM", exc, arch,
+            "AutoModelForCausalLM",
+            exc,
+            arch,
         )
         hf = AutoModelForImageTextToText.from_pretrained(model_id, **load_kwargs)
+    except ValueError as exc:
+        # #2659: a class whose attention is not routed through SDPA rejects
+        # the explicit pin at construction. LOGGED retry on the class default
+        # (exactly the pre-pin behavior for such classes, e.g. eager). Any
+        # other ValueError propagates.
+        msg = str(exc)
+        if "attn_implementation" not in load_kwargs or (
+            "sdpa" not in msg.lower() and "scaled_dot_product_attention" not in msg
+        ):
+            raise
+        logger.warning(
+            "[load] sdpa attention rejected for %s (%s): retrying with the class default",
+            model_id,
+            exc,
+        )
+        load_kwargs.pop("attn_implementation")
+        hf = AutoModelForCausalLM.from_pretrained(model_id, **load_kwargs)
     hf.eval()
     if quant_method == "fp8":
         _dequantize_fp8_embeddings(hf, _checkpoint_scale_lookup(model_id))
+    logger.info(
+        "[load] realized attn_implementation=%s param_dtype=%s",
+        getattr(hf.config, "_attn_implementation", None),
+        next(hf.parameters()).dtype,
+    )
     return hf
 
 
@@ -954,7 +985,9 @@ def _dequantize_fp8_embeddings(model, scale_lookup) -> int:
         setattr(mod, target, types.MethodType(_dequant_forward, mod))
         logger.info(
             "[load] fp8 embedding %s %s dequantized on lookup (weight_scale=%.6g)",
-            name, tuple(mod.weight.shape), float(mod.weight_scale[0]),
+            name,
+            tuple(mod.weight.shape),
+            float(mod.weight_scale[0]),
         )
         patched += 1
     return patched
@@ -987,7 +1020,9 @@ def _disable_fp8_tp_plan_rewrite() -> None:
 
     _identity_update_tp_plan._eps_identity = True  # type: ignore[attr-defined]
     cls.update_tp_plan = _identity_update_tp_plan
-    logger.info("[load] FineGrainedFP8HfQuantizer.update_tp_plan -> identity (capture never TP-loads)")
+    logger.info(
+        "[load] FineGrainedFP8HfQuantizer.update_tp_plan -> identity (capture never TP-loads)"
+    )
 
 
 def _native_config(model_id: str):
@@ -1018,7 +1053,10 @@ def _native_config(model_id: str):
     if native_cls is not None and type(cfg) is not native_cls:
         logger.info(
             "[load] AutoConfig returned %s.%s for %s; reloading with native transformers.%s",
-            type(cfg).__module__, type(cfg).__name__, model_id, native_name,
+            type(cfg).__module__,
+            type(cfg).__name__,
+            model_id,
+            native_name,
         )
         cfg = native_cls.from_pretrained(model_id)
     if not hasattr(cfg, "pad_token_id"):
