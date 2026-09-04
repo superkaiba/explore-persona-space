@@ -367,7 +367,7 @@ def make_pair_shift_figure(rows: list[dict]) -> tuple[plt.Figure, float]:
     panel_header(
         ax,
         "",
-        "Controlled minimal pairs",
+        "Controlled minimal pairs · Qwen2.5-7B-Instruct · layer 19\nError bars: 95% bootstrap CI",
         "Predicted over observed answer-shift size by element",
         kicker_y=1.20,
         title_y=1.075,

@@ -8,7 +8,7 @@
   "repository_manuscript_asset": "figures/paper/c1_predictability_scaling.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
-    "commit": "6ee6686957519ea9b25b6d51a17987ae524dfe24",
+    "commit": "59f89b77a84a68c299ffc6e9fd48971b6d179e1c",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -27,11 +27,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      5.631
+      4.714
     ],
     "exported_size_inches": [
       13.095,
-      5.805
+      4.89
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -73,6 +73,7 @@
       "0.2",
       "0.4",
       "Scaling with training data",
+      "QWEN2.5-7B-INSTRUCT",
       "PREDICTOR",
       "METRIC",
       "CONTROL",
@@ -692,8 +693,8 @@
     "convention": "identical to figure2_five_rollout_scaling: five-rollout mean targets, whitened cosine + two-sided CSLS (K=10), 942-answer pool, banked 963,444-row whitening"
   },
   "output_sha256": {
-    "pdf": "d7fef8bfba026ac768969cfa8b45d2c0582ce88db0b5d156444be145b6888216",
-    "png": "9ddba3bda46513a23d077cff8890ceda2df1683d7dbb81d502e3a5343960ec76",
-    "grayscale": "4b9081ce5e0b3fd9925b7218aa3c0d3477c6deb31fc7cb51c1c12f5fd19d7e02"
+    "pdf": "57ba7546c98f9fb803ded892f5529a8609bba1cbc654a706b91e3c389e669d9a",
+    "png": "6ce7f6da9aec4f1e7c0cc6faf9e03b824887906ca2751907a626e37c3eeb1290",
+    "grayscale": "ab57380dd859299821f1cc7626ccb3668660793ef6d2428292c2f2bb078c6d6f"
   }
 }

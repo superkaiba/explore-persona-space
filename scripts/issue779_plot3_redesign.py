@@ -494,7 +494,7 @@ def make_paper_figure(res: dict, paper_out: Path, source: Path) -> None:
     )
 
     set_c2a_style()
-    fig, frac = c2a_figure("wide", aspect=0.5)
+    fig, frac = c2a_figure("wide", aspect=0.48)
     ax = fig.add_subplot(111)
 
     ranks1 = np.array(res["ranks_evaluated"]) + 1
@@ -561,7 +561,7 @@ def make_paper_figure(res: dict, paper_out: Path, source: Path) -> None:
     panel_header(
         ax,
         "",
-        "Qwen2.5-7B-Instruct · layer 19",
+        "Qwen2.5-7B-Instruct · layer 19 · 5,000 contexts (4,000 train, 1,000 test)",
         title="Per-direction held-out $R^2$ against variance rank",
     )
     ax.legend(loc="lower left")

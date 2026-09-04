@@ -6,50 +6,30 @@
  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
  "reproduction_command": "uv run python scripts/issue779_plot3_redesign.py --figure-only",
  "git": {
-  "git_commit": "adeed6da49516182b9577311a4fd40804938044c",
+  "git_commit": "59f89b77a84a68c299ffc6e9fd48971b6d179e1c",
   "git_dirty": true,
   "git_dirty_paths": [
-   ".claude/agent-memory/implementer-lean/MEMORY.md",
-   "docs/paper_context_answer_map/plotting_style.md",
-   "docs/paper_context_answer_map/qualitative_examples.md",
-   "eval_results/issue_779/plot3_redesign/plot3_redesign.json",
-   "figures/paper/c1_offpolicy_origin.pdf",
-   "figures/paper/c1_offpolicy_origin.png",
-   "figures/paper/c1_offpolicy_origin_data.json",
-   "figures/paper/c1_offpolicy_origin_grayscale.png",
-   "figures/paper/c3_persona_direction_spectrum.meta.json",
+   ".claude/agent-memory/experiment-implementer-lean/MEMORY.md",
+   ".claude/agent-memory/experimenter/feedback_pod_sparse_clone_committed_inputs.md",
+   "eval_results/issue_2546/necessity_r2/summary.json",
+   "figures/issue_1902/section43/c1_posttraining_dynamics.pdf",
+   "figures/issue_1902/section43/c1_posttraining_dynamics.png",
+   "figures/issue_1902/section43/c1_posttraining_dynamics_data.json",
+   "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+   "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+   "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+   "figures/paper/c1_predictability_scaling.meta.json",
+   "figures/paper/c1_predictability_scaling.pdf",
+   "figures/paper/c1_predictability_scaling.png",
+   "figures/paper/c1_predictability_scaling_grayscale.png",
    "figures/paper/c3_persona_direction_spectrum.pdf",
    "figures/paper/c3_persona_direction_spectrum.png",
-   "figures/paper/c3_persona_topic_separation.meta.json",
-   "figures/paper/c3_persona_topic_separation.pdf",
-   "figures/paper/c3_persona_topic_separation.png",
-   "figures/paper/c3_persona_topic_separation_grayscale.png",
-   "figures/paper/c3_qualitative_discrimination.meta.json",
-   "figures/paper/c3_qualitative_discrimination.pdf",
-   "figures/paper/c3_qualitative_discrimination.png",
-   "figures/paper/c3_qualitative_discrimination_grayscale.png",
-   "figures/paper/c3_sae_tier_gradient.meta.json",
-   "figures/paper/c3_sae_tier_gradient.pdf",
-   "figures/paper/c3_sae_tier_gradient.png",
-   "figures/paper/c3_sae_tier_gradient_grayscale.png",
-   "figures/paper/c5_claim4_margin_forest.meta.json",
-   "figures/paper/c5_claim4_margin_forest.pdf",
-   "figures/paper/c5_claim4_margin_forest.png",
-   "figures/paper/c5_pv_methods_regimes.meta.json",
-   "figures/paper/c5_pv_methods_regimes.pdf",
-   "figures/paper/c5_pv_methods_regimes.png",
-   "figures/paper/figure2_predictability_scaling.meta.json",
-   "figures/paper/figure2_predictability_scaling.pdf",
-   "figures/paper/figure2_predictability_scaling.png",
-   "figures/paper/figure2_predictability_scaling_grayscale.png",
-   "scripts/issue1739_claim4_relabel_figs.py",
-   "scripts/issue1739_result2_fourpanel_fig.py",
+   "figures/paper/c3_persona_direction_spectrum_grayscale.png",
+   "scripts/codex_daemon_reaper.py",
    "scripts/issue779_plot3_redesign.py",
    "scripts/make_paper_figure2.py",
-   "scripts/make_paper_section42_figures.py",
-   "scripts/section43_posttraining_figure.py",
-   "scripts/section4_offpolicy_figure.py",
-   "src/explore_persona_space/analysis/c2a_plot_style.py"
+   "scripts/section45_cot_figure.py",
+   "tests/test_codex_daemon_reaper.py"
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue779_plot3_redesign.py"
@@ -66,11 +46,11 @@
   "resolved_font": "Inter",
   "authoring_size_inches": [
    9.821,
-   4.911
+   4.714
   ],
   "exported_size_inches": [
    9.821,
-   5.28
+   5.114
   ],
   "scale": 0.42,
   "include_width_frac": 0.75,
@@ -95,7 +75,7 @@
    "correctness (math)",
    "correctness (MMLU-Pro)",
    "correctness (code)",
-   "QWEN2.5-7B-INSTRUCT \u00b7 LAYER 19",
+   "QWEN2.5-7B-INSTRUCT \u00b7 LAYER 19 \u00b7 5,000 CONTEXTS (4,000 TRAIN, 1,000 TEST)",
    "Variance rank (log)",
    "$\\mathdefault{10^{-2}}$",
    "$\\mathdefault{10^{-1}}$",
@@ -919,8 +899,8 @@
   }
  },
  "output_sha256": {
-  "pdf": "cd5f13b457d60f7a8518a4ddc08439fc37dfa01256997cd4b920b9a7d42edd82",
-  "png": "4ddaf8fb2e8606b43480a79058b1195c0aec01bb733eba10ab34d588dcc36f3f",
-  "grayscale": "cb8663bdcbee266d72f149d6119e406e55723b2c9cba2d12c6e9e1ca91f44e08"
+  "pdf": "9fba75739f27e1c7080c77ebe0620234602cf129db7e799819d05c4866fc2b9e",
+  "png": "aeeaace55f36d647933c3cce2914aa146ecb5c89adfbe3ac176b3755068ed4d8",
+  "grayscale": "a3450e0e7b932aa0265a4a8f1a71f452f868e21bc292f7a374aa170298711a3a"
  }
 }

@@ -41,6 +41,7 @@ from matplotlib.ticker import FixedLocator, FuncFormatter  # noqa: E402
 from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     INK,
     METRIC_LABELS,
+    MUTED,
     PAPER,
     PREDICTOR_STYLES,
     ROLES,
@@ -220,7 +221,7 @@ def _plot_panel(
     show_retrieval: bool,
 ) -> None:
     style_score_axis(ax)
-    panel_header(ax, letter, kicker, title, kicker_y=1.17)
+    panel_header(ax, letter, kicker, title, kicker_y=1.24, title_y=1.08)
 
     for key, style in PREDICTOR_STYLES.items():
         x, r2 = _series(rows, key, "r2")
@@ -296,14 +297,14 @@ def make_figure(
     layer: dict, scaling: dict, boundary: dict | None = None, extension: dict | None = None
 ) -> tuple[plt.Figure, float]:
     set_c2a_style()
-    fig, include_frac = c2a_figure("full", aspect=0.43)
+    fig, include_frac = c2a_figure("full", aspect=0.36)
     grid = fig.add_gridspec(
         1,
         2,
         left=0.075,
         right=0.985,
-        top=0.66,
-        bottom=0.12,
+        top=0.594,
+        bottom=0.143,
         wspace=0.20,
     )
     ax_layer = fig.add_subplot(grid[0, 0])
@@ -350,12 +351,23 @@ def make_figure(
     ax_scale.set_ylabel(better_label("Score"), labelpad=13)
 
     predictor_handles, metric_handles = _legend_handles()
-    row_y = 0.946 if not controls else 0.875
+    row_y = 0.936 if not controls else 0.851
+    # Figure-level kicker: the model, right-aligned on the topmost kicker row.
+    fig.text(
+        0.985,
+        0.994 if controls else row_y,
+        "QWEN2.5-7B-INSTRUCT",
+        color=MUTED,
+        fontsize=11.5,
+        fontweight=750,
+        ha="right",
+        va="center",
+    )
     legend_kicker(fig, 0.075, row_y, "Predictor")
     fig.legend(
         handles=predictor_handles,
         loc="upper left",
-        bbox_to_anchor=(0.074, row_y - 0.021),
+        bbox_to_anchor=(0.074, row_y - 0.025),
         ncol=3,
         frameon=False,
         columnspacing=1.45,
@@ -367,7 +379,7 @@ def make_figure(
     fig.legend(
         handles=metric_handles,
         loc="upper left",
-        bbox_to_anchor=(0.571, row_y - 0.021),
+        bbox_to_anchor=(0.571, row_y - 0.025),
         ncol=2,
         frameon=False,
         columnspacing=1.35,
@@ -376,11 +388,11 @@ def make_figure(
         borderaxespad=0,
     )
     if controls:
-        legend_kicker(fig, 0.075, 0.995, "Control")
+        legend_kicker(fig, 0.075, 0.994, "Control")
         fig.legend(
             handles=_control_legend_handles(boundary, extension),
             loc="upper left",
-            bbox_to_anchor=(0.074, 0.974),
+            bbox_to_anchor=(0.074, 0.969),
             ncol=2,
             frameon=False,
             columnspacing=1.2,
