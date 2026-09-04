@@ -217,13 +217,34 @@ if CAP_PROFILE == "v1":
     assert REGEN_MAX_MODEL_LEN_BOUND == 23_488, REGEN_MAX_MODEL_LEN_BOUND
 
 
+# A window-clamped stage cap below this floor is unusable (thinking answers
+# need generation room): the prologue refuses the cell instead of running a
+# degenerate cap. Equal to the smallest registered cap in any profile.
+MIN_EFFECTIVE_CAP = 2048
+assert MIN_EFFECTIVE_CAP <= min(v for t in CAP_PROFILES.values() for v in t.values())
+# Regen bump floor: a regen whose cap gain is below this multiple of the
+# effective cap is skipped (an engine rebuild for a few percent more tokens
+# buys nothing; the 40,960-window models otherwise rebuilt for +1088 tokens).
+REGEN_MIN_BUMP = 1.25
+
+
+def cap_effective(arm: str, surface: str, mpe: int, table: dict | None = None) -> int:
+    """Per-model window clamp of the BASE stage cap: the registered cap,
+    clamped to the model's context window less the prompt budget. Keeps
+    models whose window is smaller than a profile's registered cap runnable
+    (the clamp is a no-op for every v1 panel model: the v1 prologue floor
+    23,488 guarantees window room 16,384 >= every v1 cap).
+    """
+    t = CAP if table is None else table
+    return min(t[(arm, surface)], mpe - PROMPT_TOKEN_BUDGET)
+
+
 def regen_cap(cap: int, mpe: int, ceiling: int | None = None) -> int:
-    """G4/G5 regen cap: 2x the stage cap, clamped to the model's context
-    window less the prompt budget AND to the profile's regen ceiling
-    (REGEN_CAP_CEILING, None = unbounded). A return <= cap means no headroom
-    remains at the current cap: the caller SKIPS the regen
-    (regen_skipped_reason via regen_skip_reason) and leaves rows at cap to
-    the drop-and-count parse path.
+    """G4/G5 regen cap: 2x the (effective) stage cap, clamped to the model's
+    context window less the prompt budget AND to the profile's regen ceiling
+    (REGEN_CAP_CEILING, None = unbounded). The caller skips the regen when
+    regen_skip_reason returns non-None (bump below REGEN_MIN_BUMP) and leaves
+    rows at cap to the drop-and-count parse path.
     """
     out = min(2 * cap, mpe - PROMPT_TOKEN_BUDGET)
     if ceiling is not None:
@@ -232,24 +253,36 @@ def regen_cap(cap: int, mpe: int, ceiling: int | None = None) -> int:
 
 
 def regen_skip_reason(cap: int, mpe: int, ceiling: int | None = None) -> str | None:
-    """None when the regen may run (regen_cap > cap), else the binding
-    constraint: "cap at regen ceiling" when the profile ceiling binds (a tie
-    with the window reads as the ceiling, the deliberate residual), else
-    "cap at context window".
+    """None when the regen may run (regen_cap >= REGEN_MIN_BUMP x cap), else
+    the binding constraint, in precedence order:
+
+    - "cap at regen ceiling": the cap already sits at/above the profile
+      ceiling (the deliberate accepted residual, e.g. long arm-b gpqa 65,536).
+    - "cap at context window": no ceiling is set and the window leaves no
+      headroom above the cap (the v1-shaped skip).
+    - "regen bump below 25 percent": everything else under the bump floor,
+      including a window-clamped bump too small to be worth an engine rebuild.
     """
-    if regen_cap(cap, mpe, ceiling) > cap:
+    rc = regen_cap(cap, mpe, ceiling)
+    if rc >= REGEN_MIN_BUMP * cap:
         return None
-    if ceiling is not None and ceiling <= mpe - PROMPT_TOKEN_BUDGET:
+    if ceiling is not None and ceiling <= cap:
         return "cap at regen ceiling"
-    return "cap at context window"
+    if ceiling is None and rc <= cap:
+        return "cap at context window"
+    return "regen bump below 25 percent"
 
 
 def mpe_floor_for_arm(arm: str) -> int:
-    """Hard context-window floor for a cell under the active profile: every
-    BASE engine the cell builds must fit (prompt budget + the arm's largest
-    cap). Regen headroom on top of this is soft (window-aware regen_cap).
+    """Hard context-window floor for a cell under the active profile: the
+    window-clamped BASE caps (cap_effective) must leave at least
+    MIN_EFFECTIVE_CAP generation room. A registered cap above the window
+    clamps down rather than refusing the model, so the floor is the prompt
+    budget plus the smaller of the arm's largest registered cap and
+    MIN_EFFECTIVE_CAP.
     """
-    return PROMPT_TOKEN_BUDGET + max(CAP[(arm, "generic")], CAP[(arm, "gpqa")])
+    biggest = max(CAP[(arm, "generic")], CAP[(arm, "gpqa")])
+    return PROMPT_TOKEN_BUDGET + min(biggest, MIN_EFFECTIVE_CAP)
 
 
 REPEAT_4GRAM_MAX_FRAC = 0.50  # ported 2546 constant (parse drop class)

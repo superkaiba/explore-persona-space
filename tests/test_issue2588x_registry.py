@@ -266,9 +266,11 @@ def test_regen_bound_profile_derived_and_window_rule():
     for cap in PC.CAP_PROFILES["v1"].values():
         assert PC.regen_cap(cap, 23_488, PC.REGEN_CAP_CEILING["v1"]) == 2 * cap
         assert PC.regen_skip_reason(cap, 23_488, None) is None
-    # Base-engine mpe floors per arm under the default (v1) profile.
+    # mpe floors per arm: the prompt budget plus min(largest registered cap,
+    # MIN_EFFECTIVE_CAP), since registered caps above the window clamp down.
+    assert PC.MIN_EFFECTIVE_CAP == 2048
     assert PC.mpe_floor_for_arm("a") == PC.PROMPT_TOKEN_BUDGET + 2048
-    assert PC.mpe_floor_for_arm("b") == PC.PROMPT_TOKEN_BUDGET + 8192
+    assert PC.mpe_floor_for_arm("b") == PC.PROMPT_TOKEN_BUDGET + 2048
 
 
 def test_regen_ceiling_three_cases():
@@ -280,10 +282,10 @@ def test_regen_ceiling_three_cases():
     # already sits at the ceiling, regen never runs, residual accepted.
     assert PC.regen_cap(65_536, 262_144, ceil) == 65_536
     assert PC.regen_skip_reason(65_536, 262_144, ceil) == "cap at regen ceiling"
-    # Window binds (cap already at mpe minus the prompt budget): skip with the
-    # window reason even though a ceiling is set.
+    # Window-clamped bump under a set ceiling: the skip reads as the 25-percent
+    # bump floor (the window reason is reserved for ceiling-None profiles).
     assert PC.regen_cap(33_856, 40_960, ceil) == 33_856
-    assert PC.regen_skip_reason(33_856, 40_960, ceil) == "cap at context window"
+    assert PC.regen_skip_reason(33_856, 40_960, ceil) == "regen bump below 25 percent"
     # Neither binds below cap (long arm-b generic 32768 on a 262144-window
     # model): regen runs once, to exactly the ceiling.
     assert PC.regen_cap(32_768, 262_144, ceil) == 65_536
@@ -315,9 +317,51 @@ def test_cap_profile_env_threading_reload(monkeypatch):
             "issue2588_capability_panel_cap_long/q3_32b/nothink"
         )
         assert PC.REGEN_MAX_MODEL_LEN_BOUND == 7104 + 65_536
-        assert PC.mpe_floor_for_arm("b") == 7104 + 65_536
+        assert PC.mpe_floor_for_arm("b") == 7104 + PC.MIN_EFFECTIVE_CAP
     finally:
         monkeypatch.delenv("EPS_CAP_PROFILE", raising=False)
         importlib.reload(PC)
     assert PC.CAP_PROFILE == "v1"
     assert PC.PANEL_PREFIX == "issue2588_capability_panel"
+
+
+def test_cap_effective_window_clamp_and_bump_floor():
+    """Per-model window clamp of the BASE cap + the 25-percent regen bump
+    floor. v1 is a provable no-op: the v1 prologue floor (mpe >= 23,488)
+    guarantees window room 16,384 >= every v1 cap, so iterating every panel
+    cell at the WORST v1-permissible window leaves every cap unclamped."""
+    # v1 no-op across the whole registry at the minimum v1-permissible mpe.
+    for cell in PC.all_cells():
+        for surface in ("generic", "gpqa"):
+            eff = PC.cap_effective(cell.arm, surface, 23_488)
+            assert eff == PC.CAP[(cell.arm, surface)], (cell.key, surface, eff)
+    # Long profile on a 40,960-window model (Qwen3-32B / QwQ arm b): the
+    # registered gpqa 65,536 clamps to the window, generic stays 32,768, and
+    # the largest base engine pins max_model_len exactly at the window.
+    long_t = PC.CAP_PROFILES["long"]
+    assert PC.cap_effective("b", "generic", 40_960, table=long_t) == 32_768
+    assert PC.cap_effective("b", "gpqa", 40_960, table=long_t) == 33_856
+    assert PC.PROMPT_TOKEN_BUDGET + 33_856 == 40_960
+    # Prologue floor under the long table: 40,960-window models PASS (the
+    # floor asks only MIN_EFFECTIVE_CAP of room, since bigger caps clamp).
+    floor_b_long = PC.PROMPT_TOKEN_BUDGET + min(
+        max(long_t[("b", "generic")], long_t[("b", "gpqa")]), PC.MIN_EFFECTIVE_CAP
+    )
+    assert floor_b_long == 9_152
+    assert floor_b_long <= 40_960
+    # Bump floor at mpe 40,960 under the long ceiling: both arm-b stages skip
+    # the regen with the bump-floor reason (no +1088-token engine rebuild).
+    ceil = PC.REGEN_CAP_CEILING["long"]
+    assert PC.REGEN_MIN_BUMP == 1.25
+    assert PC.regen_cap(33_856, 40_960, ceil) == 33_856
+    assert PC.regen_skip_reason(33_856, 40_960, ceil) == "regen bump below 25 percent"
+    assert PC.regen_cap(32_768, 40_960, ceil) == 33_856  # +1088 only: below the floor
+    assert PC.regen_skip_reason(32_768, 40_960, ceil) == "regen bump below 25 percent"
+    # mpe 262,144 is unchanged from the previous round: full doubling for the
+    # generic cap (to the ceiling) and the at-ceiling gpqa skip.
+    assert PC.regen_cap(32_768, 262_144, ceil) == 65_536
+    assert PC.regen_skip_reason(32_768, 262_144, ceil) is None
+    assert PC.regen_skip_reason(65_536, 262_144, ceil) == "cap at regen ceiling"
+    # v1 unaffected: a 2x bump always clears the 1.25x floor.
+    for cap in PC.CAP_PROFILES["v1"].values():
+        assert PC.regen_skip_reason(cap, 23_488, None) is None

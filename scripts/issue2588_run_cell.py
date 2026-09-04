@@ -277,6 +277,19 @@ def _run_phases(args, cell: PC.Cell, paths: dict, seq: tuple[str, ...]) -> list[
 # ---------------------------------------------------------------------------
 
 
+def _mpe_for_cell(cell: PC.Cell) -> int:
+    """max_position_embeddings, asserted against the profile's prologue floor.
+
+    v1 keeps the legacy hard 23,488 regen-headroom pin (byte-identical).
+    Non-v1 profiles clamp the BASE caps to the window (PC.cap_effective), so
+    the hard floor only requires MIN_EFFECTIVE_CAP of generation room
+    (PC.mpe_floor_for_arm); the regen is window- and ceiling-aware on top.
+    """
+    if PC.CAP_PROFILE == "v1":
+        return PC.assert_max_position_embeddings(cell.model.hf_id)
+    return PC.assert_max_position_embeddings(cell.model.hf_id, floor=PC.mpe_floor_for_arm(cell.arm))
+
+
 def phase_prologue(args, cell: PC.Cell, paths: dict) -> None:
     G._phase("prologue")
     tf_version = PC.assert_transformers_floor()
@@ -285,13 +298,7 @@ def phase_prologue(args, cell: PC.Cell, paths: dict) -> None:
     if m.family in ("olmo_instruct", "olmo_think"):
         rec = PC.assert_olmo_rope_split(m.hf_id)
         logger.info("[i2588] G6 rope split OK: %s", rec)
-    # v1 pinned the regen headroom (23,488) as a hard prologue floor. Non-v1
-    # profiles gate only the BASE engines (prompt budget + the arm's largest
-    # cap): the regen is window-aware and skips when the window is exhausted.
-    if PC.CAP_PROFILE == "v1":
-        PC.assert_max_position_embeddings(m.hf_id)
-    else:
-        PC.assert_max_position_embeddings(m.hf_id, floor=PC.mpe_floor_for_arm(cell.arm))
+    _mpe_for_cell(cell)
     from transformers import AutoTokenizer
 
     tok = AutoTokenizer.from_pretrained(m.hf_id)
@@ -563,21 +570,28 @@ def _gen_stage_with_regen(
     *,
     stage: str,
     cap: int,
+    cap_requested: int | None = None,
     seed: int,
     paths: dict,
     llm_holder: dict,
 ) -> list[dict]:
     """Generate a stage; apply the pre-registered G4/G5 single regen round.
 
+    ``cap`` is the EFFECTIVE stage cap (PC.cap_effective: the registered cap
+    window-clamped per model); ``cap_requested`` is the registered table value
+    (defaults to ``cap``). Both are recorded in cap_hit_report.json, with the
+    legacy "cap" key equal to the effective cap so downstream readers keep
+    working.
+
     Trigger: cap-hit frac > 2% (G4) or unclosed-think frac > 2% (G5) per stage
     -> re-generate the affected rows at regen_cap = min(2*cap, mpe -
     PROMPT_TOKEN_BUDGET, profile regen ceiling) with the engine
     RE-INSTANTIATED at max_model_len = PROMPT_TOKEN_BUDGET + regen_cap
     (window- and ceiling-aware, bounded by the profile-derived
-    REGEN_MAX_MODEL_LEN_BOUND). When regen_cap <= cap there is no headroom:
-    the regen is SKIPPED (regen_skipped_reason "cap at regen ceiling" when
-    the ceiling binds, "cap at context window" when the window binds) and
-    rows at cap ride the existing drop-and-count parse path (plan §7 G4/G5).
+    REGEN_MAX_MODEL_LEN_BOUND). When regen_cap < REGEN_MIN_BUMP x cap the
+    regen is SKIPPED (regen_skipped_reason from PC.regen_skip_reason: the
+    ceiling / window / 25-percent bump floor) and rows at cap ride the
+    existing drop-and-count parse path (plan §7 G4/G5).
 
     Round 3 (gen-capture-stage-resume): a stage whose terminal artifact
     (cap_hit_report.json — written LAST, after every chunk) is already on
@@ -593,6 +607,8 @@ def _gen_stage_with_regen(
         )
         return _iter_stage_rows(paths, stage)
     m = cell.model
+    if cap_requested is None:
+        cap_requested = cap
     # Window-aware engine pin: the floor arg asserts the BASE engine fits
     # (max_model_len = PROMPT_TOKEN_BUDGET + cap <= max_position_embeddings).
     mpe = PC.assert_max_position_embeddings(m.hf_id, floor=PC.PROMPT_TOKEN_BUDGET + cap)
@@ -618,6 +634,8 @@ def _gen_stage_with_regen(
     report = {
         "stage": stage,
         "cap": cap,
+        "cap_requested": cap_requested,
+        "cap_effective": cap,
         "n": len(rows),
         "cap_hits": cap_hits,
         "cap_hit_frac": cap_frac,
@@ -628,17 +646,18 @@ def _gen_stage_with_regen(
     if regen_idx and (cap_frac > PC.CAP_HIT_TRIGGER or regen_frac > PC.UNCLOSED_THINK_TRIGGER):
         ceiling = PC.REGEN_CAP_CEILING[PC.CAP_PROFILE]
         new_cap = PC.regen_cap(cap, mpe, ceiling)
-        if new_cap <= cap:
-            reason = PC.regen_skip_reason(cap, mpe, ceiling)
+        reason = PC.regen_skip_reason(cap, mpe, ceiling)
+        if reason is not None:
             report["regen_skipped_reason"] = reason
             logger.warning(
-                "[i2588] [%s] G4/G5 regen SKIPPED (%s): regen cap %d <= cap %d "
-                "(mpe=%d, prompt budget=%d, ceiling=%s): rows at cap ride the "
-                "drop-and-count parse path",
+                "[i2588] [%s] G4/G5 regen SKIPPED (%s): regen cap %d vs cap %d "
+                "(bump floor %.2fx, mpe=%d, prompt budget=%d, ceiling=%s): rows "
+                "at cap ride the drop-and-count parse path",
                 stage,
                 reason,
                 new_cap,
                 cap,
+                PC.REGEN_MIN_BUMP,
                 mpe,
                 PC.PROMPT_TOKEN_BUDGET,
                 ceiling,
@@ -696,6 +715,9 @@ def phase_gen(args, cell: PC.Cell, paths: dict) -> None:
     # into the out-root HF cache (conservative: counted even if already cached).
     _assert_headroom(paths, 4.0 + _est_model_gb(cell), f"gen:{cell.key}")
     tok = AutoTokenizer.from_pretrained(cell.model.hf_id)
+    # Per-model window clamp of the BASE caps (no-op for every v1 panel model;
+    # under larger-cap profiles a 40,960-window model clamps to mpe - budget).
+    mpe = _mpe_for_cell(cell)
     llm_holder: dict = {"llm": None, "mml": 0}
     gpqa = _load_gpqa_prompts(args)
     gpqa_base = [
@@ -705,7 +727,7 @@ def phase_gen(args, cell: PC.Cell, paths: dict) -> None:
     ]
     if cell.fresh:
         generic = _load_generic_rows(args, paths["cache"])
-        cap = PC.CAP[(cell.arm, "generic")]
+        cap = PC.cap_effective(cell.arm, "generic", mpe)
         for split in GENERIC_SPLITS:
             base = [
                 {
@@ -722,6 +744,7 @@ def phase_gen(args, cell: PC.Cell, paths: dict) -> None:
                 base,
                 stage=split,
                 cap=cap,
+                cap_requested=PC.CAP[(cell.arm, "generic")],
                 seed=PC.GEN_SEED,
                 paths=paths,
                 llm_holder=llm_holder,
@@ -742,13 +765,14 @@ def phase_gen(args, cell: PC.Cell, paths: dict) -> None:
                 base,
                 stage=f"ceiling_s{seed}",
                 cap=cap,
+                cap_requested=PC.CAP[(cell.arm, "generic")],
                 seed=seed,
                 paths=paths,
                 llm_holder=llm_holder,
             )
     # GPQA rollouts run for EVERY cell (banked cells generate GPQA fresh; the
     # behavioral gap_GPQA + transfer read need them).
-    gcap = PC.CAP[(cell.arm, "gpqa")]
+    gcap = PC.cap_effective(cell.arm, "gpqa", mpe)
     # Rollout seed rides SamplingParams per row group; vLLM seeds per-request via
     # SamplingParams.seed, so one engine pass per seed keeps draws independent.
     for seed in _gpqa_seeds(args):
@@ -760,6 +784,7 @@ def phase_gen(args, cell: PC.Cell, paths: dict) -> None:
             base,
             stage=f"gpqa_s{seed}",
             cap=gcap,
+            cap_requested=PC.CAP[(cell.arm, "gpqa")],
             seed=seed,
             paths=paths,
             llm_holder=llm_holder,
