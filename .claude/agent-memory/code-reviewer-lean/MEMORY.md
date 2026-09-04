@@ -141,3 +141,4 @@
 - [Selection-time exclusion gate review](selection_time_exclusion_gate_review.md) — shared-quantity helper, realized-bias jq on shortfall cells, status-vs-field grain, single-source-comment grep
 - [Re-freeze equal-totals membership diff](refreeze_equal_totals_membership_diff.md) — gated re-freeze w/ unchanged totals: jq-diff id sets across commit states + recompute request shas
 - [New assert probed on realized legacy store](new_assert_probed_on_realized_legacy_store.md) — a check added outside a branch newly runs on the realized legacy path: machine-verify the predicate over ALL realized rows (r16 pilot 6,290-row probe)
+- [Marker per-row digest cross-foot](marker_perrow_digest_crossfoot.md) — sum a durable marker's per-row lines vs its own claimed total, then one live re-run resolves which side is wrong (#2658 r18: 5 of 8 rows mis-transcribed, sum 428,100 vs total 427,500)
