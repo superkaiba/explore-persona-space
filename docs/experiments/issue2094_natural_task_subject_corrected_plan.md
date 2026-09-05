@@ -115,7 +115,7 @@ Resume is per generation-ID JSONL row with schema validation and duplicate refus
 
 ## 9. Compute and storage sizing
 
-One H100 in eval intent. Model weights require roughly 15 GB bf16. At batch size 12 and <=1,000 total tokens per sequence, KV/cache plus activations should remain below 25 GB, leaving wide headroom on an 80 GB H100; smoke measures peak allocation and production falls back once to batch 6 on OOM. Expected generation is 129 × <=768 tokens, approximately 0.8–1.5 wall-hours including model load and answer-vector-free analysis; hard stop 3 GPU-hours. Greedy generation seed: 0 for provenance (sampling is disabled); blind-key shuffling uses an OS-random frozen key and is never redrawn.
+One H100 in eval intent. Model weights require roughly 15 GB bf16. Production uses batch size 1 for both source-state capture and generation. The real-model smoke showed that unequal batch shapes can perturb greedy continuations even for an exact self patch; batch size 1 made both the layer-19 and all-layer self-patch answers byte-identical to the unpatched anchor while using about 15 GB of an 80 GB H100. Expected generation is 129 × <=768 tokens, approximately 0.8–1.5 wall-hours including model load and answer-vector-free analysis; hard stop 3 GPU-hours. Greedy generation seed: 0 for provenance (sampling is disabled); blind-key shuffling uses an OS-random frozen key and is never redrawn.
 
 | Component | n_cells | GPU width | planned_wall_h | Basis |
 |---|---:|---:|---:|---|
@@ -139,6 +139,6 @@ Source: the separate all-layer arm and formatting manipulation check respond dir
 
 Source: the 768-token initial cap is more than 2× the observed answer length requested by the explicit <=220-word prompt constraint; the 1,536-token rerun is the preregistered cap-remediation rung.
 
-Source: batch size 12 and the 3 GPU-hour fence are ungrounded — needs smoke-test.
+Source: batch size 1 is smoke-validated at commit `ff0903d750a`: the 9-row real-model smoke completed with EOS, zero source-copy error, the expected one-versus-28 edit counts, and byte-identical self-patch controls. The 3 GPU-hour fence remains a conservative operational bound.
 
-Load-bearing assumptions needing smoke validation: forcing `Response:\n` does not prevent later patch effects; greedy decoding is stable enough for self-patch exactness; the 220-word limits avoid caps; all nine task×subject combinations are natural; and the fixed label set adequately describes outputs. Any violated assumption is reported rather than silently relaxed.
+Load-bearing assumptions needing smoke validation: forcing `Response:\n` does not prevent later patch effects; greedy decoding is stable enough for self-patch exactness under the fixed batch-size-1 pipeline; the 220-word limits avoid caps; all nine task×subject combinations are natural; and the fixed label set adequately describes outputs. Any violated assumption is reported rather than silently relaxed.

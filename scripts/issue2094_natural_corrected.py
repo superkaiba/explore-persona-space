@@ -866,7 +866,7 @@ def main() -> None:
         type=Path,
         default=Path("/workspace/issue2094-natural-task-subject-corrected"),
     )
-    parser.add_argument("--batch-size", type=int, default=12)
+    parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--hard-stop-hours", type=float, default=3.0)
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--write-sentinel", action="store_true")
