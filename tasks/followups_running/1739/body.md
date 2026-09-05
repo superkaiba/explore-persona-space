@@ -309,7 +309,9 @@ What is plotted: D(U), mapped-answer ridge minus direct context ridge in held-ou
 
 > **Figure.** *More generic pairs usually narrow the deficit but do not reproduce judged-pair benefits.* Solid: generic-only; dashed: union-scaled; horizontal line: context-ridge parity.
 
-The primary trend interval is positive in 8 of 9 panels, but full-U D remains negative in 8 of 9. Evil generic transfer is the only positive endpoint (+0.0245, 95% interval +0.0212 to +0.0278). None is supported; eight are refuted because the judged-minus-generic contrast's 90% lower bound exceeds +0.02. Evil generic is unresolved: its +0.0509 contrast interval (+0.0175 to +0.0842) is neither equivalent nor materially separated. Union-scaled maps yield the same verdicts.
+The primary trend interval is positive in 8 of 9 panels, but full-U D remains negative in 8 of 9. Evil generic transfer is the only positive endpoint (+0.0245, 95% interval +0.0212 to +0.0278).
+
+None is supported; eight are refuted because the judged-minus-generic contrast's 90% lower bound exceeds +0.02. Evil generic is unresolved: its +0.0509 contrast interval (+0.0175 to +0.0842) is neither equivalent nor materially separated. Union-scaled maps yield the same verdicts.
 
 | Behavior | In-distribution | Generic transfer | OOD |
 |---|---:|---:|---:|
