@@ -139,6 +139,13 @@ def test_runner_pilot_uses_separate_output_and_binds_scorer() -> None:
     assert parsed.pilot is True and parsed.behaviors == ["evil"] and parsed.seed == 0
 
 
+def test_runner_allows_distinct_cuda_pilot_hf_prefix() -> None:
+    args = runner.parse_args(
+        ["--pilot", "--hf-prefix", "/issue1739_uladder_h100_pilot/"]
+    )
+    assert runner._hf_prefix(args) == "issue1739_uladder_h100_pilot"
+
+
 def test_resume_fingerprint_distinguishes_pilot_from_production(tmp_path: Path) -> None:
     path = tmp_path / "all_arms_spearman.json"
     path.write_text(

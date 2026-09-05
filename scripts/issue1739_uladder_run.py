@@ -38,6 +38,13 @@ def _log(message: str) -> None:
     print(f"[uladder-run {time.strftime('%H:%M:%S')}] {message}", flush=True)
 
 
+def _hf_prefix(args: argparse.Namespace) -> str:
+    """Resolve the durable output prefix without conflating separate pilots."""
+    if args.hf_prefix is not None:
+        return args.hf_prefix
+    return HF_PILOT_PREFIX if args.pilot else HF_OUT_PREFIX
+
+
 def _atomic_json(path: Path, payload: dict) -> None:
     from explore_persona_space.atomic_io import atomic_replace
 
@@ -152,7 +159,7 @@ def upload_seed(args: argparse.Namespace, behavior: str, seed: int) -> dict:
     )
     if not relative_files:
         raise RuntimeError(f"seed output empty: {local}")
-    root_prefix = HF_PILOT_PREFIX if args.pilot else HF_OUT_PREFIX
+    root_prefix = _hf_prefix(args)
     prefix = f"{root_prefix}/{behavior}/seed{seed}"
     url = hub._upload(
         local,
@@ -215,7 +222,7 @@ def _sentinel(
             "behaviors": results,
             "wall_s": round(time.time() - started, 3),
             "filesystems": filesystems,
-            "hf_prefix": HF_PILOT_PREFIX if args.pilot else HF_OUT_PREFIX,
+            "hf_prefix": _hf_prefix(args),
             "out_root": str(args.out_root),
         },
     }
@@ -243,6 +250,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--min-free-gib", type=float, default=115.0)
     ap.add_argument("--canary-gib", type=float, default=2.0)
     ap.add_argument("--skip-upload", action="store_true")
+    ap.add_argument(
+        "--hf-prefix",
+        default=None,
+        help="Override the durable HF output prefix (for distinct rerun/pilot provenance).",
+    )
     ap.add_argument("--no-reap", action="store_true")
     ap.add_argument("--stage-only", action="store_true")
     ap.add_argument("--sentinel-dir", type=Path, default=Path("/workspace/logs"))
@@ -250,6 +262,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     args = ap.parse_args(argv)
     if len(set(args.seeds)) != len(args.seeds):
         ap.error("--seeds contains duplicates")
+    if args.hf_prefix is not None:
+        args.hf_prefix = args.hf_prefix.strip("/")
+        if not args.hf_prefix or any(part in {".", ".."} for part in args.hf_prefix.split("/")):
+            ap.error("--hf-prefix must be a non-empty repository-relative path")
     if args.pilot:
         args.behaviors = args.behaviors[:1]
         args.seeds = args.seeds[:1]
