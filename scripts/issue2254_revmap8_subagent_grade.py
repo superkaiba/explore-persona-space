@@ -58,6 +58,12 @@ PILOT_GRADES_PER_RUBRIC = 165
 PILOT_MIN_PER_ARM = 51
 MAX_JOB_ATTEMPTS = 2
 PROMPT_TEMPLATE_VERSION = "issue2254-codex-batch-v1"
+POLICY_PACKET_SPLITS = {
+    "production__coherence__pass01__chunk012": {
+        "prompt_sha256": "291929a1908bd0c8447c945a790aa9415fae3102f13fed552752c8b22c13130f",
+        "parts": 2,
+    }
+}
 REFERENCE_PREFIX = f"{i2254.HF_PREFIX}/raw_completions/baseline_ceiling"
 REFERENCE_IDS = ("evil__a0", "evil__cl", "sycophancy__a0", "sycophancy__cl")
 RUBRIC_SHA256 = {
@@ -118,12 +124,13 @@ class JobSpec:
     prompt: str
     prompt_tokens_o200k: int
     instrument_fp: str
+    job_suffix: str = ""
 
     @property
     def job_id(self) -> str:
         return (
             f"{self.scope}__{self.rubric_id}__pass{self.pass_index:02d}"
-            f"__chunk{self.chunk_index:03d}"
+            f"__chunk{self.chunk_index:03d}{self.job_suffix}"
         )
 
 
@@ -738,7 +745,56 @@ def build_production_jobs(
                     instrument_fp=_instrument_for_rubric(instrument, rubric_id),
                 )
             )
-    return jobs
+    return _apply_policy_packet_splits(jobs, rubrics)
+
+
+def _apply_policy_packet_splits(jobs: list[JobSpec], rubrics: dict[str, str]) -> list[JobSpec]:
+    """Deterministically split only packets rejected by an upstream content filter."""
+    output: list[JobSpec] = []
+    matched: set[str] = set()
+    for job in jobs:
+        split = POLICY_PACKET_SPLITS.get(job.job_id)
+        if split is None:
+            output.append(job)
+            continue
+        expected_hash = str(split["prompt_sha256"])
+        realized_hash = _sha256_text(job.prompt)
+        if realized_hash != expected_hash:
+            raise SubagentGradeHaltError(
+                f"{job.job_id}: policy-split prompt changed: {realized_hash} != {expected_hash}"
+            )
+        parts = int(split["parts"])
+        if parts < 2 or len(job.items) % parts:
+            raise SubagentGradeHaltError(
+                f"{job.job_id}: invalid policy split parts={parts} items={len(job.items)}"
+            )
+        width = len(job.items) // parts
+        for part_index in range(parts):
+            part_items = job.items[part_index * width : (part_index + 1) * width]
+            prompt = _prompt(job.rubric_id, rubrics[job.rubric_id], list(part_items))
+            tokens = _count_o200k_tokens(prompt)
+            if len(part_items) > MAX_ITEMS_PER_JOB or tokens > PROMPT_TOKEN_CAP:
+                raise SubagentGradeHaltError(
+                    f"{job.job_id}: policy split {part_index} violates a session ceiling"
+                )
+            output.append(
+                JobSpec(
+                    scope=job.scope,
+                    rubric_id=job.rubric_id,
+                    pass_index=job.pass_index,
+                    chunk_index=job.chunk_index,
+                    items=part_items,
+                    prompt=prompt,
+                    prompt_tokens_o200k=tokens,
+                    instrument_fp=job.instrument_fp,
+                    job_suffix=f"__policy_split{part_index:02d}",
+                )
+            )
+        matched.add(job.job_id)
+    if matched != set(POLICY_PACKET_SPLITS):
+        missing = sorted(set(POLICY_PACKET_SPLITS) - matched)
+        raise SubagentGradeHaltError(f"policy-split registry did not match jobs: {missing}")
+    return output
 
 
 def _output_schema(job: JobSpec) -> dict:
@@ -849,7 +905,7 @@ def _job_record_path(sroot: Path, job: JobSpec) -> Path:
         / job.scope
         / job.rubric_id
         / f"pass{job.pass_index:02d}"
-        / f"chunk{job.chunk_index:03d}.json"
+        / f"chunk{job.chunk_index:03d}{job.job_suffix}.json"
     )
 
 

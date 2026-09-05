@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import subprocess
 from dataclasses import replace
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import create_autospec
 
@@ -218,6 +219,48 @@ def test_chunking_enforces_80_items_and_40k_o200k_tokens(monkeypatch):
     assert all(len(job.items) <= 80 for job in jobs)
     assert all(job.prompt_tokens_o200k <= 40_000 for job in jobs)
     assert tokenization_calls == 3
+
+
+def test_policy_blocked_packet_split_is_exact_and_preserves_registry(monkeypatch):
+    base = _one_item()
+    items = tuple(
+        replace(
+            base,
+            source_item_id=f"source-{index}",
+            opaque_id=f"i{index:020d}",
+        )
+        for index in range(4)
+    )
+    rubric = "score {answer}"
+    prompt = sg._prompt("coherence", rubric, list(items))
+    parent = replace(
+        _job("coherence"),
+        scope="production",
+        pass_index=1,
+        chunk_index=12,
+        items=items,
+        prompt=prompt,
+        prompt_tokens_o200k=1,
+    )
+    monkeypatch.setattr(
+        sg,
+        "POLICY_PACKET_SPLITS",
+        {parent.job_id: {"prompt_sha256": sg._sha256_text(prompt), "parts": 2}},
+    )
+    monkeypatch.setattr(sg, "_count_o200k_tokens", lambda text: len(text))
+
+    children = sg._apply_policy_packet_splits([parent], {"coherence": rubric})
+
+    assert [child.job_suffix for child in children] == [
+        "__policy_split00",
+        "__policy_split01",
+    ]
+    assert [item.opaque_id for child in children for item in child.items] == [
+        item.opaque_id for item in items
+    ]
+    assert all(len(child.items) == 2 for child in children)
+    assert len({child.job_id for child in children}) == 2
+    assert len({sg._job_record_path(Path("/tmp/out"), child) for child in children}) == 2
 
 
 def test_codex_command_is_fresh_ephemeral_read_only_and_pinned(tmp_path):
