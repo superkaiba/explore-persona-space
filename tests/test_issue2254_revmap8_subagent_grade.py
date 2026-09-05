@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+from dataclasses import replace
 from types import SimpleNamespace
 from unittest.mock import create_autospec
 
@@ -275,6 +276,77 @@ def test_run_one_job_executes_real_body_and_writes_immutable_record(tmp_path, mo
     assert fake_run.call_count == 1
 
 
+def test_run_one_job_retries_transport_once_but_never_retries_invalid_content(
+    tmp_path, monkeypatch
+):
+    job = _job()
+    sroot = tmp_path / "transport"
+    (sroot / "tmp").mkdir(parents=True)
+    attempts = 0
+
+    def transport_then_success(command, **kwargs):
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            return subprocess.CompletedProcess(command, 1, stdout="", stderr="transient")
+        output = command[command.index("--output-last-message") + 1]
+        with open(output, "w", encoding="utf-8") as handle:
+            json.dump(_response(job), handle)
+        stdout = "\n".join(
+            [
+                json.dumps({"type": "thread.started", "thread_id": "retry-thread"}),
+                json.dumps({"type": "turn.completed"}),
+            ]
+        )
+        return subprocess.CompletedProcess(command, 0, stdout=stdout, stderr="")
+
+    monkeypatch.setattr(sg.subprocess, "run", transport_then_success)
+    monkeypatch.setattr(sg.time, "sleep", lambda _: None)
+    args = SimpleNamespace(
+        job_timeout_seconds=60,
+        isolated_cwd=str(tmp_path / "isolated"),
+    )
+    record = sg._run_one_job(args, sroot, job)
+    assert record["attempt_index"] == 2
+    assert attempts == 2
+
+    bad_root = tmp_path / "content"
+    (bad_root / "tmp").mkdir(parents=True)
+    attempts = 0
+
+    def invalid_content(command, **kwargs):
+        nonlocal attempts
+        attempts += 1
+        output = command[command.index("--output-last-message") + 1]
+        with open(output, "w", encoding="utf-8") as handle:
+            handle.write("not-json")
+        stdout = "\n".join(
+            [
+                json.dumps({"type": "thread.started", "thread_id": "bad-thread"}),
+                json.dumps({"type": "turn.completed"}),
+            ]
+        )
+        return subprocess.CompletedProcess(command, 0, stdout=stdout, stderr="")
+
+    monkeypatch.setattr(sg.subprocess, "run", invalid_content)
+    with pytest.raises(sg.SubagentGradeHaltError, match="invalid model response"):
+        sg._run_one_job(args, bad_root, job)
+    assert attempts == 1
+
+
+def test_codex_event_validation_rejects_tool_use():
+    job = _job()
+    stdout = "\n".join(
+        [
+            json.dumps({"type": "thread.started", "thread_id": "tool-thread"}),
+            json.dumps({"type": "item.completed", "item": {"type": "command_execution"}}),
+            json.dumps({"type": "turn.completed"}),
+        ]
+    )
+    with pytest.raises(sg.SubagentGradeHaltError, match="forbidden item type"):
+        sg._validate_codex_events(job, stdout)
+
+
 def test_collect_production_requires_exact_five_passes(tmp_path):
     item = _one_item()
     jobs = []
@@ -306,6 +378,36 @@ def test_collect_production_requires_exact_five_passes(tmp_path):
         rec = sg._validate_completed_job(sg._job_record_path(tmp_path, job), job)
         by_pass[job.pass_index] = sg._validate_response(job, rec["response"])[item.opaque_id]
     assert [by_pass[index] for index in range(5)] == [40, 41, 42, 43, 44]
+
+
+def test_partial_payload_reports_draw_and_item_completeness_separately(tmp_path):
+    base = _one_item()
+    items = [
+        replace(
+            base,
+            source_item_id=f"source-{index}",
+            opaque_id=f"i{index:020d}",
+        )
+        for index in range(200)
+    ]
+    record_path = tmp_path / "record.json"
+    record_path.write_text("{}", encoding="utf-8")
+    score_map = {item.opaque_id: [10, 20, 30, 40, 50] for item in items}
+    score_map[items[0].opaque_id] = []
+    partial = sg._partial_payload(
+        record={"cell_id": "secret_cell", "cell": {"kind": "steer"}},
+        record_path=record_path,
+        phase="steer",
+        rubric_id="trait_evil",
+        items=items,
+        score_map=score_map,
+        instrument_fp="fp",
+    )
+    accounting = partial["accounting"]
+    assert accounting["n_content_dropped_draws"] == 5
+    assert accounting["frac_draws_scored"] == pytest.approx(995 / 1000)
+    assert accounting["frac_items_complete"] == pytest.approx(199 / 200)
+    assert accounting["n_items_zero_valid"] == 1
 
 
 def test_paired_delta_is_question_paired_and_has_no_parent_verdict_fields():

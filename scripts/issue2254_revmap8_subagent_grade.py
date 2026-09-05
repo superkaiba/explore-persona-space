@@ -237,6 +237,8 @@ def _base_instrument_manifest(rubrics: dict[str, str], codex_version: str) -> di
         "prompt_tokenizer": "o200k_base",
         "prompt_token_cap": PROMPT_TOKEN_CAP,
         "model_context_tokens": CODEX_CONTEXT_TOKENS,
+        "temperature_control": "not exposed by codex exec",
+        "response_token_budget": "model-native structured-output budget; no CLI max-output flag",
         "concurrency": CONCURRENCY,
         "passes": N_PASSES,
         "max_job_attempts": MAX_JOB_ATTEMPTS,
@@ -900,6 +902,8 @@ def _run_one_job(args, sroot: Path, job: JobSpec) -> dict:
                 }
                 _failure_record(sroot, job, {"status": "failed_timeout", **common})
                 last_error = f"timed out after {args.job_timeout_seconds}s"
+                if attempt_index < MAX_JOB_ATTEMPTS:
+                    time.sleep(attempt_index)
                 continue
             common = {
                 "job_id": job.job_id,
@@ -925,6 +929,8 @@ def _run_one_job(args, sroot: Path, job: JobSpec) -> dict:
             if result.returncode != 0 or not output_path.is_file():
                 _failure_record(sroot, job, {"status": "failed_transport", **common})
                 last_error = f"codex exec failed rc={result.returncode}"
+                if attempt_index < MAX_JOB_ATTEMPTS:
+                    time.sleep(attempt_index)
                 continue
             raw_response = output_path.read_text(encoding="utf-8")
             try:
@@ -937,8 +943,9 @@ def _run_one_job(args, sroot: Path, job: JobSpec) -> dict:
                     job,
                     {"status": "failed_content", "raw_response": raw_response, **common},
                 )
-                last_error = f"invalid model response/events: {exc}"
-                continue
+                raise SubagentGradeHaltError(
+                    f"{job.job_id}: invalid model response/events: {exc}; see attempts/"
+                ) from exc
             record = {
                 "status": "complete",
                 "response": response,
@@ -981,6 +988,7 @@ def _run_jobs(args, jobs: list[JobSpec]) -> None:
             done, _ = concurrent.futures.wait(
                 futures, return_when=concurrent.futures.FIRST_COMPLETED
             )
+            freed_slots = 0
             for future in done:
                 job = futures.pop(future)
                 try:
@@ -989,16 +997,18 @@ def _run_jobs(args, jobs: list[JobSpec]) -> None:
                     for sibling in futures:
                         sibling.cancel()
                     raise
+                freed_slots += 1
                 completed += 1
                 print(
                     f"[subagent-grade] unit {completed}/{len(jobs)} {job.job_id} "
                     f"elapsed={time.time() - started:.1f}s",
                     flush=True,
                 )
+            for _ in range(freed_slots):
                 try:
                     next_job = next(iterator)
                 except StopIteration:
-                    continue
+                    break
                 futures[pool.submit(_run_one_job, args, sroot, next_job)] = next_job
 
 
@@ -1177,7 +1187,8 @@ def _partial_payload(
             "n_refusal_draws": n_total_draws - n_valid_draws,
             "n_transport_lost_draws": 0,
             "n_truncation_dropped_draws": 0,
-            "frac_items_complete": n_valid_draws / n_total_draws,
+            "frac_draws_scored": n_valid_draws / n_total_draws,
+            "frac_items_complete": sum(bool(values) for values in per_item.values()) / 200,
             "n_items": 200,
             "n_items_zero_valid": sum(not values for values in per_item.values()),
             "repeat_interpretation": (
@@ -1202,6 +1213,7 @@ def _aggregate_cell(
     coherent_by_q: dict[int, list[float]] = {}
     coherence_by_q: dict[int, list[float]] = {}
     n_coherent = 0
+    n_valid_coherence = 0
     for source_id, metadata in trait["items"].items():
         trait_scores = trait["per_item_scores"][source_id]
         coherence_scores = coherence["per_item_scores"][source_id]
@@ -1215,6 +1227,7 @@ def _aggregate_cell(
         if coherence_scores:
             coherence_mean = float(np.mean(coherence_scores))
             coherence_by_q.setdefault(qi, []).append(coherence_mean)
+            n_valid_coherence += 1
             if coherence_mean >= r8.COHERENCE_THRESHOLD:
                 coherent_by_q.setdefault(qi, []).append(trait_mean)
                 n_coherent += 1
@@ -1261,11 +1274,9 @@ def _aggregate_cell(
                 else None
             ),
             "fraction_at_or_above_threshold": (
-                n_coherent / (200 - coherence["accounting"]["n_items_zero_valid"])
-                if 200 - coherence["accounting"]["n_items_zero_valid"]
-                else None
+                n_coherent / n_valid_coherence if n_valid_coherence else None
             ),
-            "n_valid_items": 200 - coherence["accounting"]["n_items_zero_valid"],
+            "n_valid_items": n_valid_coherence,
             "accounting": coherence["accounting"],
         },
         "degradation": {
@@ -1699,3 +1710,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    sys.stdout.flush()
+    sys.stderr.flush()
+    sys.exit(0)
