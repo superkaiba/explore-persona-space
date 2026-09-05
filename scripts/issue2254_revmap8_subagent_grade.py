@@ -384,6 +384,24 @@ def _validate_records(args) -> dict[str, dict]:
 
 def phase_stage(args) -> None:
     """Stage exact HF inputs through existing helpers and freeze provenance."""
+    sroot = sensitivity_root(args.out_root)
+    frozen_paths = [
+        sroot / "inputs_manifest.json",
+        sroot / "instrument_manifest.json",
+        sroot / "runner_manifest.json",
+    ]
+    existing = [path.is_file() for path in frozen_paths]
+    if any(existing):
+        if not all(existing):
+            missing = [str(path) for path, present in zip(frozen_paths, existing) if not present]
+            raise SubagentGradeHaltError(f"incomplete frozen stage metadata; missing={missing}")
+        _load_manifests(args)
+        print(
+            "[subagent-stage] reused frozen provenance exact_cells=20 exact_items=4000",
+            flush=True,
+        )
+        return
+
     from huggingface_hub import HfApi
 
     before = HfApi().repo_info(i2254.HF_DATA_REPO, repo_type="dataset").sha
@@ -420,7 +438,6 @@ def phase_stage(args) -> None:
             cid: hashlib.sha256(paths[cid].read_bytes()).hexdigest() for cid in sorted(paths)
         },
     }
-    sroot = sensitivity_root(args.out_root)
     _write_or_verify_immutable(sroot / "inputs_manifest.json", input_manifest)
     instrument = _base_instrument_manifest(rubrics, _codex_version())
     _write_or_verify_immutable(sroot / "instrument_manifest.json", instrument)

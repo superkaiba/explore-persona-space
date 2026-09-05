@@ -111,6 +111,24 @@ def test_runner_manifest_pins_current_script_and_launcher_bytes():
         sg._validate_runner_manifest(manifest)
 
 
+def test_stage_retry_reuses_complete_frozen_provenance(monkeypatch, tmp_path, capsys):
+    for name in ("inputs_manifest.json", "instrument_manifest.json", "runner_manifest.json"):
+        (tmp_path / name).write_text("{}", encoding="utf-8")
+    loaded = []
+    monkeypatch.setattr(sg, "sensitivity_root", lambda unused: tmp_path)
+    monkeypatch.setattr(
+        sg,
+        "_load_manifests",
+        lambda args: loaded.append(args) or ({}, {}),
+    )
+    args = SimpleNamespace(out_root=tmp_path)
+
+    sg.phase_stage(args)
+
+    assert loaded == [args]
+    assert "reused frozen provenance" in capsys.readouterr().out
+
+
 def test_exact_item_registry_and_applicable_metric_counts():
     items = sg.build_item_registry(_records())
     assert len(items) == 4_000
