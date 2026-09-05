@@ -1,6 +1,6 @@
 ---
-title: Mapped-answer probes lead context probes on 10 of 13 held-out rungs, but only
-  one flagship clears the control intervals (MODERATE confidence)
+title: Scaling context-to-answer maps narrows probe deficits but does not establish
+  unlabeled pairs as a substitute for judged pairs (HIGH confidence)
 kind: experiment
 tags:
 - trigger-dense
