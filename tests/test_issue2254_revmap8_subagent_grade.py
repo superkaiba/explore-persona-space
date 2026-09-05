@@ -103,6 +103,14 @@ def test_frozen_rubric_hashes_and_honest_instrument():
     assert instrument["cjk"].startswith("Existing programmatic audit only")
 
 
+def test_runner_manifest_pins_current_script_and_launcher_bytes():
+    manifest = sg._runner_manifest()
+    sg._validate_runner_manifest(manifest)
+    manifest["script_sha256"] = "0" * 64
+    with pytest.raises(sg.SubagentGradeHaltError, match="runner bytes differ"):
+        sg._validate_runner_manifest(manifest)
+
+
 def test_exact_item_registry_and_applicable_metric_counts():
     items = sg.build_item_registry(_records())
     assert len(items) == 4_000

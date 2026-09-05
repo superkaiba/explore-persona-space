@@ -218,6 +218,59 @@ def _codex_version() -> str:
     return result.stdout.strip()
 
 
+def _git_commit() -> str:
+    """Return the exact repository commit that staged this grading run."""
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=_REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    commit = result.stdout.strip()
+    if result.returncode != 0 or not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise SubagentGradeHaltError(
+            f"git rev-parse HEAD failed rc={result.returncode}: {result.stderr.strip()}"
+        )
+    return commit
+
+
+def _runner_manifest() -> dict:
+    """Pin executable runner bytes independently of unrelated later commits."""
+    script = Path(__file__).resolve()
+    launcher = script.with_suffix(".sh")
+    if not launcher.is_file():
+        raise SubagentGradeHaltError(f"grading launcher missing: {launcher}")
+    return {
+        "git_commit_at_stage": _git_commit(),
+        "script_path": str(script.relative_to(_REPO_ROOT)),
+        "script_sha256": hashlib.sha256(script.read_bytes()).hexdigest(),
+        "launcher_path": str(launcher.relative_to(_REPO_ROOT)),
+        "launcher_sha256": hashlib.sha256(launcher.read_bytes()).hexdigest(),
+    }
+
+
+def _validate_runner_manifest(manifest: dict) -> None:
+    """Require current grading and launcher bytes to match the staged pins."""
+    script = _REPO_ROOT / str(manifest.get("script_path", ""))
+    launcher = _REPO_ROOT / str(manifest.get("launcher_path", ""))
+    if not script.is_file() or not launcher.is_file():
+        raise SubagentGradeHaltError("runner-manifest paths do not resolve")
+    realized = {
+        "script_sha256": hashlib.sha256(script.read_bytes()).hexdigest(),
+        "launcher_sha256": hashlib.sha256(launcher.read_bytes()).hexdigest(),
+    }
+    expected = {
+        "script_sha256": manifest.get("script_sha256"),
+        "launcher_sha256": manifest.get("launcher_sha256"),
+    }
+    if realized != expected:
+        raise SubagentGradeHaltError(
+            f"current runner bytes differ from staged pins: realized={realized} expected={expected}"
+        )
+
+
 def _base_instrument_manifest(rubrics: dict[str, str], codex_version: str) -> dict:
     """Build the honest, non-Sonnet instrument manifest."""
     manifest = {
@@ -371,6 +424,7 @@ def phase_stage(args) -> None:
     _write_or_verify_immutable(sroot / "inputs_manifest.json", input_manifest)
     instrument = _base_instrument_manifest(rubrics, _codex_version())
     _write_or_verify_immutable(sroot / "instrument_manifest.json", instrument)
+    _write_or_verify_immutable(sroot / "runner_manifest.json", _runner_manifest())
     print("[subagent-stage] unit 20/20 exact_cells=20 exact_items=4000", flush=True)
 
 
@@ -379,7 +433,8 @@ def _load_manifests(args) -> tuple[dict, dict[str, str]]:
     sroot = sensitivity_root(args.out_root)
     input_path = sroot / "inputs_manifest.json"
     instrument_path = sroot / "instrument_manifest.json"
-    if not input_path.is_file() or not instrument_path.is_file():
+    runner_path = sroot / "runner_manifest.json"
+    if not input_path.is_file() or not instrument_path.is_file() or not runner_path.is_file():
         raise SubagentGradeHaltError("run phase 'stage' before grading")
     inputs = json.loads(input_path.read_text(encoding="utf-8"))
     records = _validate_records(args)
@@ -394,6 +449,7 @@ def _load_manifests(args) -> tuple[dict, dict[str, str]]:
     expected = _base_instrument_manifest(rubrics, _codex_version())
     if instrument != expected:
         raise SubagentGradeHaltError("current Codex/rubric instrument differs from frozen manifest")
+    _validate_runner_manifest(json.loads(runner_path.read_text(encoding="utf-8")))
     return {"inputs": inputs, "instrument": instrument, "records": records}, rubrics
 
 
@@ -1596,11 +1652,13 @@ def phase_upload(args) -> None:
     from huggingface_hub import HfApi
 
     sroot = sensitivity_root(args.out_root)
+    completeness_path = sroot / "judge" / "completeness.json"
     required = [
         sroot / "inputs_manifest.json",
         sroot / "instrument_manifest.json",
+        sroot / "runner_manifest.json",
         sroot / "pilot" / "all.pass.json",
-        sroot / "judge" / "completeness.json",
+        completeness_path,
         sroot / "judge" / "reference_judged_percell.json",
         sroot / "reduce" / "trait_delta_vs_subagent_alpha0.json",
         sroot / "reduce" / "patch_fraction_vs_subagent_references.json",
@@ -1610,7 +1668,7 @@ def phase_upload(args) -> None:
     missing = [str(path) for path in required if not path.is_file()]
     if missing:
         raise SubagentGradeHaltError(f"upload refused; required artifacts missing: {missing}")
-    completeness = json.loads(required[3].read_text(encoding="utf-8"))
+    completeness = json.loads(completeness_path.read_text(encoding="utf-8"))
     if (
         completeness.get("exact_attempt_coverage") is not True
         or completeness.get("pass") is not True
