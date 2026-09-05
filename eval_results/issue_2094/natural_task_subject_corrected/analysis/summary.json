@@ -1,0 +1,504 @@
+{
+ "generated_utc": "2026-09-05T03:30:51.235662+00:00",
+ "planned_n_rows": 129,
+ "realized_n_rows": 129,
+ "all_rows_eos": true,
+ "all_rows_blind_annotated": true,
+ "all_rows_complete_blind": true,
+ "anchors": {
+  "n": 15,
+  "main_form_accuracy": {
+   "k": 9,
+   "n": 9,
+   "rate": 1.0,
+   "wilson95": [
+    0.7008549515804559,
+    1.0
+   ]
+  },
+  "main_subject_accuracy": {
+   "k": 9,
+   "n": 9,
+   "rate": 1.0,
+   "wilson95": [
+    0.7008549515804559,
+    1.0
+   ]
+  },
+  "format_label_accuracy": {
+   "k": 6,
+   "n": 6,
+   "rate": 1.0,
+   "wilson95": [
+    0.6096657120978346,
+    1.0
+   ]
+  },
+  "format_structural_accuracy": {
+   "k": 6,
+   "n": 6,
+   "rate": 1.0,
+   "wilson95": [
+    0.6096657120978346,
+    1.0
+   ]
+  },
+  "complete": {
+   "k": 15,
+   "n": 15,
+   "rate": 1.0,
+   "wilson95": [
+    0.7961166989641515,
+    1.0
+   ]
+  },
+  "coherent_ge_60": {
+   "k": 15,
+   "n": 15,
+   "rate": 1.0,
+   "wilson95": [
+    0.7961166989641515,
+    1.0
+   ]
+  }
+ },
+ "self_patch": {
+  "L19": {
+   "n": 15,
+   "exact_text_match": {
+    "k": 15,
+    "n": 15,
+    "rate": 1.0,
+    "wilson95": [
+     0.7961166989641515,
+     1.0
+    ]
+   },
+   "complete": {
+    "k": 15,
+    "n": 15,
+    "rate": 1.0,
+    "wilson95": [
+     0.7961166989641515,
+     1.0
+    ]
+   },
+   "coherent_ge_60": {
+    "k": 15,
+    "n": 15,
+    "rate": 1.0,
+    "wilson95": [
+     0.7961166989641515,
+     1.0
+    ]
+   },
+   "max_injection_error": 0.0
+  },
+  "all28": {
+   "n": 15,
+   "exact_text_match": {
+    "k": 15,
+    "n": 15,
+    "rate": 1.0,
+    "wilson95": [
+     0.7961166989641515,
+     1.0
+    ]
+   },
+   "complete": {
+    "k": 15,
+    "n": 15,
+    "rate": 1.0,
+    "wilson95": [
+     0.7961166989641515,
+     1.0
+    ]
+   },
+   "coherent_ge_60": {
+    "k": 15,
+    "n": 15,
+    "rate": 1.0,
+    "wilson95": [
+     0.7961166989641515,
+     1.0
+    ]
+   },
+   "max_injection_error": 0.0
+  }
+ },
+ "format_self_accuracy": {
+  "L19": {
+   "k": 6,
+   "n": 6,
+   "rate": 1.0,
+   "wilson95": [
+    0.6096657120978346,
+    1.0
+   ]
+  },
+  "all28": {
+   "k": 6,
+   "n": 6,
+   "rate": 1.0,
+   "wilson95": [
+    0.6096657120978346,
+    1.0
+   ]
+  }
+ },
+ "format_gate_by_setting": {
+  "L19": false,
+  "all28": false
+ },
+ "settings": {
+  "L19": {
+   "task_swap": {
+    "n": 18,
+    "donor_task": {
+     "k": 0,
+     "n": 18,
+     "rate": 0.0,
+     "wilson95": [
+      0.0,
+      0.17587922364665765
+     ]
+    },
+    "recipient_task": {
+     "k": 18,
+     "n": 18,
+     "rate": 1.0,
+     "wilson95": [
+      0.8241207763533425,
+      1.0
+     ]
+    },
+    "recipient_subject": {
+     "k": 18,
+     "n": 18,
+     "rate": 1.0,
+     "wilson95": [
+      0.8241207763533425,
+      1.0
+     ]
+    },
+    "complete": {
+     "k": 18,
+     "n": 18,
+     "rate": 1.0,
+     "wilson95": [
+      0.8241207763533425,
+      1.0
+     ]
+    },
+    "coherent_ge_60": {
+     "k": 18,
+     "n": 18,
+     "rate": 1.0,
+     "wilson95": [
+      0.8241207763533425,
+      1.0
+     ]
+    },
+    "observed_form_counts": {
+     "itinerary": 6,
+     "quiz": 6,
+     "briefing": 6
+    }
+   },
+   "subject_swap": {
+    "n": 18,
+    "donor_subject": {
+     "k": 0,
+     "n": 18,
+     "rate": 0.0,
+     "wilson95": [
+      0.0,
+      0.17587922364665765
+     ]
+    },
+    "recipient_subject": {
+     "k": 18,
+     "n": 18,
+     "rate": 1.0,
+     "wilson95": [
+      0.8241207763533425,
+      1.0
+     ]
+    },
+    "recipient_task": {
+     "k": 18,
+     "n": 18,
+     "rate": 1.0,
+     "wilson95": [
+      0.8241207763533425,
+      1.0
+     ]
+    },
+    "complete": {
+     "k": 18,
+     "n": 18,
+     "rate": 1.0,
+     "wilson95": [
+      0.8241207763533425,
+      1.0
+     ]
+    },
+    "coherent_ge_60": {
+     "k": 18,
+     "n": 18,
+     "rate": 1.0,
+     "wilson95": [
+      0.8241207763533425,
+      1.0
+     ]
+    },
+    "observed_subject_counts": {
+     "vancouver": 6,
+     "japan": 6,
+     "rome": 6
+    }
+   },
+   "positive_format_control": {
+    "n": 6,
+    "donor_format_blind": {
+     "k": 0,
+     "n": 6,
+     "rate": 0.0,
+     "wilson95": [
+      2.7755575615628914e-17,
+      0.3903342879021653
+     ]
+    },
+    "recipient_format_blind": {
+     "k": 6,
+     "n": 6,
+     "rate": 1.0,
+     "wilson95": [
+      0.6096657120978346,
+      1.0
+     ]
+    },
+    "donor_format_structural": {
+     "k": 0,
+     "n": 6,
+     "rate": 0.0,
+     "wilson95": [
+      2.7755575615628914e-17,
+      0.3903342879021653
+     ]
+    },
+    "recipient_subject": {
+     "k": 6,
+     "n": 6,
+     "rate": 1.0,
+     "wilson95": [
+      0.6096657120978346,
+      1.0
+     ]
+    },
+    "complete": {
+     "k": 6,
+     "n": 6,
+     "rate": 1.0,
+     "wilson95": [
+      0.6096657120978346,
+      1.0
+     ]
+    },
+    "coherent_ge_60": {
+     "k": 6,
+     "n": 6,
+     "rate": 1.0,
+     "wilson95": [
+      0.6096657120978346,
+      1.0
+     ]
+    }
+   }
+  },
+  "all28": {
+   "task_swap": {
+    "n": 18,
+    "donor_task": {
+     "k": 0,
+     "n": 18,
+     "rate": 0.0,
+     "wilson95": [
+      0.0,
+      0.17587922364665765
+     ]
+    },
+    "recipient_task": {
+     "k": 18,
+     "n": 18,
+     "rate": 1.0,
+     "wilson95": [
+      0.8241207763533425,
+      1.0
+     ]
+    },
+    "recipient_subject": {
+     "k": 18,
+     "n": 18,
+     "rate": 1.0,
+     "wilson95": [
+      0.8241207763533425,
+      1.0
+     ]
+    },
+    "complete": {
+     "k": 18,
+     "n": 18,
+     "rate": 1.0,
+     "wilson95": [
+      0.8241207763533425,
+      1.0
+     ]
+    },
+    "coherent_ge_60": {
+     "k": 18,
+     "n": 18,
+     "rate": 1.0,
+     "wilson95": [
+      0.8241207763533425,
+      1.0
+     ]
+    },
+    "observed_form_counts": {
+     "itinerary": 6,
+     "quiz": 6,
+     "briefing": 6
+    }
+   },
+   "subject_swap": {
+    "n": 18,
+    "donor_subject": {
+     "k": 0,
+     "n": 18,
+     "rate": 0.0,
+     "wilson95": [
+      0.0,
+      0.17587922364665765
+     ]
+    },
+    "recipient_subject": {
+     "k": 18,
+     "n": 18,
+     "rate": 1.0,
+     "wilson95": [
+      0.8241207763533425,
+      1.0
+     ]
+    },
+    "recipient_task": {
+     "k": 18,
+     "n": 18,
+     "rate": 1.0,
+     "wilson95": [
+      0.8241207763533425,
+      1.0
+     ]
+    },
+    "complete": {
+     "k": 18,
+     "n": 18,
+     "rate": 1.0,
+     "wilson95": [
+      0.8241207763533425,
+      1.0
+     ]
+    },
+    "coherent_ge_60": {
+     "k": 18,
+     "n": 18,
+     "rate": 1.0,
+     "wilson95": [
+      0.8241207763533425,
+      1.0
+     ]
+    },
+    "observed_subject_counts": {
+     "vancouver": 6,
+     "japan": 6,
+     "rome": 6
+    }
+   },
+   "positive_format_control": {
+    "n": 6,
+    "donor_format_blind": {
+     "k": 0,
+     "n": 6,
+     "rate": 0.0,
+     "wilson95": [
+      2.7755575615628914e-17,
+      0.3903342879021653
+     ]
+    },
+    "recipient_format_blind": {
+     "k": 6,
+     "n": 6,
+     "rate": 1.0,
+     "wilson95": [
+      0.6096657120978346,
+      1.0
+     ]
+    },
+    "donor_format_structural": {
+     "k": 0,
+     "n": 6,
+     "rate": 0.0,
+     "wilson95": [
+      2.7755575615628914e-17,
+      0.3903342879021653
+     ]
+    },
+    "recipient_subject": {
+     "k": 6,
+     "n": 6,
+     "rate": 1.0,
+     "wilson95": [
+      0.6096657120978346,
+      1.0
+     ]
+    },
+    "complete": {
+     "k": 6,
+     "n": 6,
+     "rate": 1.0,
+     "wilson95": [
+      0.6096657120978346,
+      1.0
+     ]
+    },
+    "coherent_ge_60": {
+     "k": 6,
+     "n": 6,
+     "rate": 1.0,
+     "wilson95": [
+      0.6096657120978346,
+      1.0
+     ]
+    }
+   }
+  }
+ },
+ "positive_format_gate_pass": false,
+ "self_patch_gate_pass": true,
+ "primary_specificity_gate_pass": true,
+ "primary_coherence_gate_pass": true,
+ "primary_verdict": "inconclusive_pipeline_control_failed",
+ "annotation_corrections": 0,
+ "annotation_audit": {
+  "backend": "codex-cli",
+  "model": "gpt-6-astra",
+  "n_packets": 8,
+  "n_rows": 129,
+  "all_leakage_scans_clean": true,
+  "all_tool_audits_clean": true,
+  "all_payloads_replayed": true,
+  "all_raw_parsed_final_equal": true,
+  "protocol_deviations": [
+   "Direct Anthropic API and Claude CLI both failed authentication; used an isolated content-only Codex CLI reader with the frozen key"
+  ]
+ }
+}
