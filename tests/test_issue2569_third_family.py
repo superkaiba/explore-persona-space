@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import json
 import sys
 import types
@@ -73,6 +74,36 @@ def test_olmo_stack_probe_checks_version_and_structural_rope(monkeypatch):
     fake.__version__ = "5.12.0"
     with pytest.raises(RuntimeError, match=r"transformers>=5\.13\.0"):
         XC.assert_model_stack(XC.MODEL_SPECS["olmo"])
+
+
+def test_vllm_accelerator_compat_rejects_flashinfer_and_checks_compile_import(monkeypatch):
+    imported = []
+    monkeypatch.setenv("VLLM_USE_FLASHINFER_SAMPLER", "0")
+    monkeypatch.setattr(importlib.util, "find_spec", lambda _name: None)
+    monkeypatch.setattr(importlib, "import_module", lambda name: imported.append(name))
+    record = TF.assert_vllm_accelerator_compat()
+    assert imported == ["vllm.compilation.backends"]
+    assert record == {
+        "banned_distributions_absent": ["flashinfer-python"],
+        "launch_env": {"VLLM_USE_FLASHINFER_SAMPLER": "0"},
+        "compile_backend_import": "pass",
+    }
+
+    monkeypatch.setattr(
+        importlib.util,
+        "find_spec",
+        lambda name: object() if name == "flashinfer" else None,
+    )
+    with pytest.raises(RuntimeError, match="banned accelerator"):
+        TF.assert_vllm_accelerator_compat()
+
+
+def test_workload_removes_incompatible_flashinfer_after_vllm_install():
+    source = (REPO_ROOT / "scripts" / "issue2569_third_family_workload.sh").read_text()
+    install = source.index("uv pip install --python .venv/bin/python")
+    uninstall = source.index("uv pip uninstall --python .venv/bin/python flashinfer-python")
+    assert install < uninstall
+    assert "export VLLM_USE_FLASHINFER_SAMPLER=0" in source
 
 
 def _write_bundle(root: Path, model: str, layer: int, tag: str, ci: list[int]) -> None:

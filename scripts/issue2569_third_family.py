@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
+import importlib.util
 import json
 import os
 import sys
@@ -47,6 +49,8 @@ TRUE_LAYERS = {
 }
 ALIAS_LAYERS = {"qwen": (14, 19, 26), "llama": (16, 22, 30)}
 MODEL_IDS = {key: spec["model_id"] for key, spec in XC.MODEL_SPECS.items()}
+VLLM_BANNED_ACCEL_DISTS = {"flashinfer-python": "flashinfer"}
+VLLM_LAUNCH_ENV_PINS = {"VLLM_USE_FLASHINFER_SAMPLER": "0"}
 
 
 def _atomic_json(path: Path, obj: object) -> None:
@@ -223,6 +227,35 @@ def materialize_candidate_source(
     return record
 
 
+def assert_vllm_accelerator_compat() -> dict[str, Any]:
+    """Fail before engine init on the known vLLM/Python 3.11 incompatibility."""
+    banned_present = [
+        module
+        for module in VLLM_BANNED_ACCEL_DISTS.values()
+        if importlib.util.find_spec(module) is not None
+    ]
+    if banned_present:
+        raise RuntimeError(
+            f"banned accelerator import(s) present: {banned_present}; "
+            "uninstall them after resolving the vLLM dependency closure"
+        )
+    wrong_env = {
+        key: os.environ.get(key)
+        for key, expected in VLLM_LAUNCH_ENV_PINS.items()
+        if os.environ.get(key) != expected
+    }
+    if wrong_env:
+        raise RuntimeError(f"vLLM launch environment pins differ: {wrong_env}")
+    # Deliberately unguarded: EngineCore imports this lazily and an optional
+    # dependency's non-ImportError exception would otherwise escape there.
+    importlib.import_module("vllm.compilation.backends")
+    return {
+        "banned_distributions_absent": sorted(VLLM_BANNED_ACCEL_DISTS),
+        "launch_env": dict(VLLM_LAUNCH_ENV_PINS),
+        "compile_backend_import": "pass",
+    }
+
+
 def phase_preflight(args: argparse.Namespace) -> None:
     import transformers
     import vllm
@@ -232,6 +265,7 @@ def phase_preflight(args: argparse.Namespace) -> None:
     realized = {"transformers": transformers.__version__, "vllm": vllm.__version__}
     if realized != expected:
         raise RuntimeError(f"third-family stack mismatch: got {realized}, expected {expected}")
+    accelerator_compat = assert_vllm_accelerator_compat()
     spec = XC.MODEL_SPECS["olmo"]
     stack = XC.assert_model_stack(spec)
     tok = AutoTokenizer.from_pretrained(spec["model_id"], revision=spec["revision"])
@@ -242,6 +276,7 @@ def phase_preflight(args: argparse.Namespace) -> None:
         "stack": stack,
         "template": template,
         "expected_stack": expected,
+        "accelerator_compat": accelerator_compat,
     }
     _atomic_json(Path(args.work_root) / "preflight.json", record)
     print(f"[third-family] preflight PASS: {realized}", flush=True)

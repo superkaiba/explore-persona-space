@@ -27,6 +27,7 @@ export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
 export HF_HUB_ENABLE_HF_TRANSFER=1
 export HF_XET_HIGH_PERFORMANCE=1
 export TOKENIZERS_PARALLELISM=false
+export VLLM_USE_FLASHINFER_SAMPLER=0
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-16}"
 export MKL_NUM_THREADS="${MKL_NUM_THREADS:-16}"
 
@@ -63,6 +64,11 @@ uv pip install --dry-run --python .venv/bin/python \
   "transformers==$TRANSFORMERS_PIN" "vllm==$VLLM_PIN"
 uv pip install --python .venv/bin/python \
   "transformers==$TRANSFORMERS_PIN" "vllm==$VLLM_PIN"
+# vLLM 0.27.1 hard-pins flashinfer-python 0.6.16.post3, whose runtime
+# array.array[int] annotation is incompatible with this image's Python 3.11.
+# Remove it after every resolver pass; TP=1 uses neither its all-reduce fusion
+# nor its sampler (disabled authoritatively above).
+uv pip uninstall --python .venv/bin/python flashinfer-python
 export UV_NO_SYNC=1
 PY=(uv run --no-sync python)
 
