@@ -158,3 +158,53 @@ def test_reconstruct_completion_shards_is_regime_and_roster_bound(tmp_path):
     )
     with pytest.raises(RuntimeError, match="roster hash"):
         TF.reconstruct_completion_shards(tmp_path)
+
+
+def test_materialize_candidate_source_recovers_historical_order_and_content(tmp_path):
+    qwriter_rows = [
+        {"ci": 8, "corpus": "wildchat", "prompt": "p8", "response": "q8"},
+        {"ci": 3, "corpus": "lmsys", "prompt": "p3", "response": "q3"},
+        {"ci": 11, "corpus": "wildchat", "prompt": "p11", "response": "q11"},
+    ]
+    historical_rows = [
+        {"ci": 3, "corpus": "lmsys", "prompt": "p3", "response": "l3"},
+        {"ci": 8, "corpus": "wildchat", "prompt": "p8", "response": "l8"},
+    ]
+    expected = [qwriter_rows[1], qwriter_rows[0]]
+    source = tmp_path / "source_qwen" / "texts_kept.jsonl"
+    raw = tmp_path / "gen_llama_s42"
+    TF._atomic_jsonl(source, qwriter_rows)
+    TF._atomic_jsonl(raw / "answers.jsonl", historical_rows)
+    TF._atomic_json(
+        raw / "regime.json",
+        {
+            "source_rows": 2,
+            "ci_sha256": TF._sha_int64(np.asarray([3, 8], dtype=np.int64)),
+            "source_text_sha256": XC._texts_content_sha(expected),
+        },
+    )
+
+    record = TF.materialize_candidate_source(
+        qwriter_source=source,
+        raw_completion_root=raw,
+        destination=tmp_path / "source_candidate",
+    )
+
+    candidate = [
+        json.loads(line)
+        for line in (tmp_path / "source_candidate" / "texts_kept.jsonl").read_text().splitlines()
+    ]
+    assert candidate == expected
+    assert record["n_full_qwriter_source"] == 3
+    assert record["n_candidate"] == 2
+    assert record["candidate_ci_sha256"] == record["pinned_regime_ci_sha256"]
+    assert record["candidate_text_sha256"] == record["pinned_regime_text_sha256"]
+
+    historical_rows[0]["prompt"] = "drifted"
+    TF._atomic_jsonl(raw / "answers.jsonl", historical_rows)
+    with pytest.raises(RuntimeError, match="prompt drift"):
+        TF.materialize_candidate_source(
+            qwriter_source=source,
+            raw_completion_root=raw,
+            destination=tmp_path / "source_candidate",
+        )

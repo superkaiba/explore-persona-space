@@ -9,6 +9,7 @@ cd "$REPO_ROOT"
 WORK_ROOT="${EPM_I2569_THIRD_ROOT:-/workspace/issue2569-third-family}"
 LOG_ROOT="${EPM_I2569_THIRD_LOG_ROOT:-/workspace/logs/issue2569-third-family}"
 SOURCE_ROOT="$WORK_ROOT/source_qwen"
+CANDIDATE_SOURCE_ROOT="$WORK_ROOT/source_candidate"
 QWRITER_OLMO_ROOT="$WORK_ROOT/capture/qwriter_olmo"
 LWRITER_ROOT="$WORK_ROOT/bank/lwriter"
 OWRITER_GEN="$WORK_ROOT/capture/gen_olmo_s42"
@@ -87,18 +88,20 @@ run_logged stage-existing "${PY[@]}" scripts/issue2569_third_family.py \
   --phase stage-existing --work-root "$WORK_ROOT" --hf-data-repo "$DATA_REPO"
 run_logged prepare-llama-s42 "${PY[@]}" scripts/issue2569_ownanswers_generate.py \
   --phase prepare --model llama --seed 42 --rows "$CANDIDATE_ROWS" \
-  --source-root "$SOURCE_ROOT" --out-root "$WORK_ROOT/bank/gen_llama_s42" \
+  --source-root "$CANDIDATE_SOURCE_ROOT" --out-root "$WORK_ROOT/bank/gen_llama_s42" \
   --capture-root "$LWRITER_ROOT"
 
 phase generate_olmo_seed42
 run_logged generate-olmo-s42 "${PY[@]}" scripts/issue2569_ownanswers_generate.py \
   --phase generate --model olmo --seed 42 --rows "$CANDIDATE_ROWS" \
-  --source-root "$SOURCE_ROOT" --out-root "$OWRITER_GEN" --capture-root "$OWRITER_ROOT" \
+  --source-root "$CANDIDATE_SOURCE_ROOT" --out-root "$OWRITER_GEN" \
+  --capture-root "$OWRITER_ROOT" \
   --upload --hf-data-repo "$DATA_REPO" \
   --hf-prefix "$RESULT_PREFIX/raw_completions/olmo_seed42"
 run_logged prepare-olmo-s42 "${PY[@]}" scripts/issue2569_ownanswers_generate.py \
   --phase prepare --model olmo --seed 42 --rows "$CANDIDATE_ROWS" \
-  --source-root "$SOURCE_ROOT" --out-root "$OWRITER_GEN" --capture-root "$OWRITER_ROOT"
+  --source-root "$CANDIDATE_SOURCE_ROOT" --out-root "$OWRITER_GEN" \
+  --capture-root "$OWRITER_ROOT"
 
 mkdir -p "$QWRITER_OLMO_ROOT"
 ln -f "$SOURCE_ROOT/texts_kept.jsonl" "$QWRITER_OLMO_ROOT/texts_kept.jsonl"
@@ -209,7 +212,7 @@ run_crossed_pair() {
 
 run_atlas_pair qo
 run_atlas_pair lo
-run_crossed_pair qo "$SOURCE_ROOT"
+run_crossed_pair qo "$CANDIDATE_SOURCE_ROOT"
 run_crossed_pair lo "$LWRITER_ROOT"
 
 phase assemble_and_upload

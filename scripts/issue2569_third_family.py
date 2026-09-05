@@ -62,6 +62,15 @@ def _atomic_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
+def _read_jsonl(path: Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    with open(path, encoding="utf-8") as handle:
+        for line in handle:
+            if line.strip():
+                rows.append(json.loads(line))
+    return rows
+
+
 def _sha_int64(values: np.ndarray) -> str:
     arr = np.ascontiguousarray(np.asarray(values, dtype=np.int64))
     return hashlib.sha256(arr.tobytes()).hexdigest()
@@ -152,6 +161,68 @@ def reconstruct_completion_shards(root: Path) -> dict[str, Any]:
     }
 
 
+def materialize_candidate_source(
+    *, qwriter_source: Path, raw_completion_root: Path, destination: Path
+) -> dict[str, Any]:
+    """Recover the exact historical generation roster from immutable shards.
+
+    The raw completion records pin roster order and prompt identity, while the
+    full Qwen-written source supplies the response text needed by the crossed
+    Qwen-vs-new-writer semantic analysis.
+    """
+    answers_path = raw_completion_root / "answers.jsonl"
+    regime_path = raw_completion_root / "regime.json"
+    if not qwriter_source.is_file() or not answers_path.is_file() or not regime_path.is_file():
+        raise RuntimeError("candidate source inputs are incomplete")
+    qwriter_rows = _read_jsonl(qwriter_source)
+    answers = _read_jsonl(answers_path)
+    regime = json.loads(regime_path.read_text())
+    qwriter_ci = [int(row["ci"]) for row in qwriter_rows]
+    answer_ci = [int(row["ci"]) for row in answers]
+    if len(set(qwriter_ci)) != len(qwriter_ci):
+        raise RuntimeError("Qwen source contains duplicate ci values")
+    if len(set(answer_ci)) != len(answer_ci):
+        raise RuntimeError("historical answer roster contains duplicate ci values")
+    if len(answers) != int(regime["source_rows"]):
+        raise RuntimeError(
+            f"historical answer count {len(answers)} != regime source_rows "
+            f"{regime['source_rows']}"
+        )
+    answer_ci_sha = _sha_int64(np.asarray(answer_ci, dtype=np.int64))
+    if answer_ci_sha != str(regime["ci_sha256"]):
+        raise RuntimeError("historical answer roster differs from the pinned regime")
+
+    qwriter_by_ci = {int(row["ci"]): row for row in qwriter_rows}
+    missing = [ci for ci in answer_ci if ci not in qwriter_by_ci]
+    if missing:
+        raise RuntimeError(f"{len(missing)} historical rows are absent from the Qwen source")
+    candidate_rows = [qwriter_by_ci[ci] for ci in answer_ci]
+    for source, generated in zip(candidate_rows, answers, strict=True):
+        ci = int(source["ci"])
+        if str(source["prompt"]) != str(generated["prompt"]):
+            raise RuntimeError(f"ci={ci}: prompt drift between source and historical generation")
+        if str(source["corpus"]) != str(generated["corpus"]):
+            raise RuntimeError(f"ci={ci}: corpus drift between source and historical generation")
+    source_text_sha = XC._texts_content_sha(candidate_rows)
+    if source_text_sha != str(regime["source_text_sha256"]):
+        raise RuntimeError("candidate source content differs from the pinned generation regime")
+
+    _atomic_jsonl(destination / "texts_kept.jsonl", candidate_rows)
+    record = {
+        "source": str(qwriter_source.resolve()),
+        "historical_generation_root": str(raw_completion_root.resolve()),
+        "n_full_qwriter_source": len(qwriter_rows),
+        "n_candidate": len(candidate_rows),
+        "candidate_ci_sha256": answer_ci_sha,
+        "candidate_text_sha256": source_text_sha,
+        "pinned_regime_ci_sha256": str(regime["ci_sha256"]),
+        "pinned_regime_text_sha256": str(regime["source_text_sha256"]),
+        "selection": "historical raw-completion CI order indexed into full Qwen source",
+    }
+    _atomic_json(destination / "source_manifest.json", record)
+    return record
+
+
 def phase_preflight(args: argparse.Namespace) -> None:
     import transformers
     import vllm
@@ -202,6 +273,11 @@ def phase_stage_existing(args: argparse.Namespace) -> None:
         destination=raw_lwriter,
     )
     reconstruction = reconstruct_completion_shards(raw_lwriter)
+    candidate_source = materialize_candidate_source(
+        qwriter_source=root / "source_qwen" / "texts_kept.jsonl",
+        raw_completion_root=raw_lwriter,
+        destination=root / "source_candidate",
+    )
     record = {
         "qwriter": {
             "prefix": QWRITER_PREFIX,
@@ -216,6 +292,7 @@ def phase_stage_existing(args: argparse.Namespace) -> None:
             "raw_files": raw_names,
             "reconstruction": reconstruction,
         },
+        "candidate_source": candidate_source,
     }
     _atomic_json(root / "bank" / "staged_inputs.json", record)
     print("[third-family] immutable Qwen/Llama inputs staged and verified", flush=True)
