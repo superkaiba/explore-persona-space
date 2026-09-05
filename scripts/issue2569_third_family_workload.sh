@@ -143,6 +143,20 @@ capture_model() {
     gate_args+=(--max-batch-rows 1)
   fi
 
+  # A completed cell is an immutable resume boundary.  Re-running its 32-row
+  # pilot would replace the production chunk regime before capture can notice
+  # that the finalized and uploaded outputs already exist.
+  if [ -f "$out_root/final/${model}_finalize_meta.json" ]; then
+    run_logged "verify-$(basename "$out_root")-$model" \
+      "${PY[@]}" scripts/issue2569_third_family.py \
+        --phase verify-capture --work-root "$WORK_ROOT" \
+        --capture-root "$out_root" --capture-model "$model" --capture-rows "$rows" \
+        --capture-prefix "$prefix" --capture-max-batch-rows 1 \
+        --analysis-rows "$ANALYSIS_ROWS" --hf-data-repo "$DATA_REPO"
+    echo "[third-family] capture_model resume-skip: model=$model root=$out_root"
+    return
+  fi
+
   phase "identity_gate_${model}"
   run_logged "identity-$(basename "$out_root")-$model" \
     "${PY[@]}" scripts/issue2569_xmodel_capture.py \

@@ -109,6 +109,97 @@ def test_workload_removes_incompatible_flashinfer_after_vllm_install():
 def test_workload_uses_batch_one_for_alternate_writer_qwen_identity_gate():
     source = (REPO_ROOT / "scripts" / "issue2569_third_family_workload.sh").read_text()
     assert "gate_args+=(--qwen-gate identity --max-batch-rows 1)" in source
+    assert "--phase verify-capture" in source
+    assert "capture_model resume-skip" in source
+
+
+def test_verify_capture_accepts_bound_local_and_remote_outputs(tmp_path, monkeypatch, capsys):
+    root = tmp_path / "capture"
+    root.mkdir()
+    rows = [
+        {"ci": ci, "corpus": "lmsys", "prompt": f"p{ci}", "response": f"a{ci}"}
+        for ci in range(10_000)
+    ]
+    with open(root / "texts_kept.jsonl", "w", encoding="utf-8") as handle:
+        for row in rows:
+            handle.write(json.dumps(row) + "\n")
+    final = root / "final"
+    final.mkdir(parents=True)
+    files = TF._bundle_names("qwen")
+    ci_sha = TF._sha_int64(np.arange(10_000, dtype=np.int64))
+    (final / "qwen_finalize_meta.json").write_text(
+        json.dumps(
+            {
+                "model": "qwen",
+                "realized": 10_000,
+                "n_selected_texts": 10_000,
+                "drops": {},
+                "layers": list(TF.TRUE_LAYERS["qwen"]),
+                "files": files,
+                "ci_sha256": ci_sha,
+            }
+        )
+    )
+    gate_dir = root / "gates"
+    gate_dir.mkdir()
+    binding = {
+        "model_id": TF.MODEL_IDS["qwen"],
+        "layers": list(TF.TRUE_LAYERS["qwen"]),
+        "device": "cuda",
+        "max_capture_tokens": 8192,
+        "batch_tokens": 8192,
+        "max_batch_rows": 1,
+        "gate_rows": XC.GATE_ROWS,
+        "selection_ci_sha256": ci_sha,
+        "texts_sha256": XC._texts_content_sha(rows),
+        "n_texts": 10_000,
+    }
+    (gate_dir / "identity_gate_qwen.json").write_text(
+        json.dumps({"verdict": "PASS", "regime": binding})
+    )
+    pilot_params = {
+        key: binding[key]
+        for key in (
+            "model_id",
+            "layers",
+            "max_capture_tokens",
+            "batch_tokens",
+            "max_batch_rows",
+            "device",
+        )
+    }
+    (gate_dir / "pilot_gate_qwen.json").write_text(
+        json.dumps({"verdict": "PASS", "capture_params": pilot_params})
+    )
+    monkeypatch.setattr(
+        TF,
+        "_verify_bundle",
+        lambda *_args, **_kwargs: {"n": 10_000, "ci_sha256": ci_sha},
+    )
+
+    expected_remote = {
+        f"prefix/{name}" for name in [*files, "qwen_finalize_meta.json"]
+    }
+
+    class FakeApi:
+        def get_paths_info(self, *_args, **_kwargs):
+            return [types.SimpleNamespace(path=path) for path in expected_remote]
+
+    monkeypatch.setattr("huggingface_hub.HfApi", FakeApi)
+    args = types.SimpleNamespace(
+        capture_root=str(root),
+        capture_model="qwen",
+        capture_prefix="prefix",
+        capture_rows=10_000,
+        capture_device="cuda",
+        capture_max_tokens=8192,
+        capture_batch_tokens=8192,
+        capture_max_batch_rows=1,
+        analysis_rows=10_000,
+        hf_data_repo="repo",
+    )
+    TF.phase_verify_capture(args)
+    assert "capture resume-skip verified" in capsys.readouterr().out
 
 
 def _write_bundle(root: Path, model: str, layer: int, tag: str, ci: list[int]) -> None:

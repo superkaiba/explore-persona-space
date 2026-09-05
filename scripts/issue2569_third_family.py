@@ -506,6 +506,123 @@ def phase_merge_topup(args: argparse.Namespace) -> None:
     )
 
 
+def phase_verify_capture(args: argparse.Namespace) -> None:
+    """Verify a finalized/uploaded capture before whole-cell resume-skip."""
+    if not args.capture_root or not args.capture_model or not args.capture_prefix:
+        raise AssertionError(
+            "--capture-root, --capture-model, and --capture-prefix are required"
+        )
+    model = str(args.capture_model)
+    if model not in MODEL_IDS:
+        raise AssertionError(f"unknown --capture-model: {model}")
+    root = Path(args.capture_root)
+    final = root / "final"
+    meta = _read_required(final / f"{model}_finalize_meta.json")
+    texts = XC.load_selection(argparse.Namespace(out_root=str(root)))
+    selected = texts[: args.capture_rows] if args.capture_rows > 0 else texts
+    expected_files = _bundle_names(model)
+    expected_layers = list(TRUE_LAYERS[model])
+    expected_selected = len(selected)
+    if meta.get("model") != model:
+        raise RuntimeError(f"capture meta model mismatch: {meta.get('model')!r} != {model!r}")
+    if meta.get("layers") != expected_layers:
+        raise RuntimeError(
+            f"capture meta layers mismatch: {meta.get('layers')!r} != {expected_layers!r}"
+        )
+    if meta.get("files") != expected_files:
+        raise RuntimeError("capture meta file roster mismatch")
+    if int(meta.get("n_selected_texts", -1)) != expected_selected:
+        raise RuntimeError(
+            "capture selected-row count mismatch: "
+            f"{meta.get('n_selected_texts')} != {expected_selected}"
+        )
+    realized = int(meta.get("realized", -1))
+    if realized != expected_selected - sum(int(v) for v in meta.get("drops", {}).values()):
+        raise RuntimeError("capture meta realized/drop bookkeeping mismatch")
+    if realized < args.analysis_rows:
+        raise RuntimeError(
+            f"capture realized rows {realized} below analysis floor {args.analysis_rows}"
+        )
+
+    bundle_records = [
+        _verify_bundle(
+            final / f"{model}_{tag}_L{layer}.pt",
+            true_model=model,
+            true_layer=layer,
+            tag=tag,
+            min_rows=args.analysis_rows,
+        )
+        for layer in TRUE_LAYERS[model]
+        for tag in ("vc", "va")
+    ]
+    if {rec["n"] for rec in bundle_records} != {realized}:
+        raise RuntimeError("capture bundle realized-row counts disagree with finalize meta")
+    if {rec["ci_sha256"] for rec in bundle_records} != {meta.get("ci_sha256")}:
+        raise RuntimeError("capture bundle roster hashes disagree with finalize meta")
+
+    gate_path = root / "gates" / f"identity_gate_{model}.json"
+    gate = _read_required(gate_path)
+    expected_gate_binding = {
+        "model_id": MODEL_IDS[model],
+        "layers": expected_layers,
+        "device": args.capture_device,
+        "max_capture_tokens": args.capture_max_tokens,
+        "batch_tokens": args.capture_batch_tokens,
+        "max_batch_rows": args.capture_max_batch_rows,
+        "gate_rows": XC.GATE_ROWS,
+        "selection_ci_sha256": _sha_int64(
+            np.asarray([int(row["ci"]) for row in texts], dtype=np.int64)
+        ),
+        "texts_sha256": XC._texts_content_sha(texts),
+        "n_texts": len(texts),
+    }
+    if gate.get("verdict") != "PASS":
+        raise RuntimeError(f"capture gate is not PASS: {gate_path}")
+    gate_regime = gate.get("regime", {})
+    gate_diffs = {
+        key: {"recorded": gate_regime.get(key), "expected": value}
+        for key, value in expected_gate_binding.items()
+        if gate_regime.get(key) != value
+    }
+    if gate_diffs:
+        raise RuntimeError(f"capture gate binding mismatch: {gate_diffs}")
+
+    pilot_path = root / "gates" / f"pilot_gate_{model}.json"
+    pilot = _read_required(pilot_path)
+    expected_pilot = {
+        "model_id": MODEL_IDS[model],
+        "layers": expected_layers,
+        "max_capture_tokens": args.capture_max_tokens,
+        "batch_tokens": args.capture_batch_tokens,
+        "max_batch_rows": args.capture_max_batch_rows,
+        "device": args.capture_device,
+    }
+    if pilot.get("verdict") != "PASS" or pilot.get("capture_params") != expected_pilot:
+        raise RuntimeError(f"capture pilot is absent, failed, or mis-bound: {pilot_path}")
+
+    from huggingface_hub import HfApi
+
+    remote_paths = [
+        f"{args.capture_prefix}/{name}"
+        for name in [*expected_files, f"{model}_finalize_meta.json"]
+    ]
+    remote = hub._retry_upload(
+        lambda: HfApi().get_paths_info(
+            args.hf_data_repo,
+            remote_paths,
+            repo_type="dataset",
+        ),
+        what=f"verify finalized capture {args.capture_prefix}",
+    )
+    if {item.path for item in remote} != set(remote_paths):
+        raise RuntimeError(f"capture remote file roster did not verify: {args.capture_prefix}")
+    print(
+        f"[third-family] capture resume-skip verified: model={model} "
+        f"realized={realized} remote_files={len(remote_paths)}",
+        flush=True,
+    )
+
+
 def _verify_bundle(
     path: Path, *, true_model: str, true_layer: int, tag: str, min_rows: int
 ) -> dict[str, Any]:
@@ -943,6 +1060,7 @@ PHASES = {
     "stage-existing": phase_stage_existing,
     "topup-roster": phase_topup_roster,
     "merge-topup": phase_merge_topup,
+    "verify-capture": phase_verify_capture,
     "build-pairs": phase_build_pairs,
     "validate-bank": phase_validate_bank,
     "summarize": phase_summarize,
@@ -962,6 +1080,14 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--hf-data-repo", default=HF_DATA_REPO)
     parser.add_argument("--result-prefix", default=None)
     parser.add_argument("--sentinel-path", default="")
+    parser.add_argument("--capture-root", default="")
+    parser.add_argument("--capture-model", default="")
+    parser.add_argument("--capture-prefix", default="")
+    parser.add_argument("--capture-rows", type=int, default=0)
+    parser.add_argument("--capture-device", default="cuda")
+    parser.add_argument("--capture-max-tokens", type=int, default=8192)
+    parser.add_argument("--capture-batch-tokens", type=int, default=8192)
+    parser.add_argument("--capture-max-batch-rows", type=int, default=1)
     parser.add_argument(
         "--ql-fits-summary",
         default=str(PROJECT_ROOT / "eval_results" / "issue_2569" / "xmodel" / "fits_summary.json"),
