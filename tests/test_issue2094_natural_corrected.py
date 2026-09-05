@@ -26,6 +26,23 @@ blind = load_script("issue2094_natural_blind_annotate")
 analysis = load_script("issue2094_natural_analyze")
 
 
+def test_repository_revision_resolution() -> None:
+    class FakeApi:
+        def model_info(self, model_id: str, revision: str):
+            assert model_id == runner.MODEL_ID
+            assert revision == runner.MODEL_REVISION
+            return type("Info", (), {"sha": runner.MODEL_REVISION})()
+
+    assert runner.resolve_repository_revision(FakeApi()) == runner.MODEL_REVISION
+
+    class WrongApi:
+        def model_info(self, model_id: str, revision: str):
+            return type("Info", (), {"sha": "wrong"})()
+
+    with pytest.raises(RuntimeError, match="repository revision mismatch"):
+        runner.resolve_repository_revision(WrongApi())
+
+
 def test_prompt_bank_and_generation_census() -> None:
     bank = runner.prompt_bank()
     rows = runner.planned_rows()

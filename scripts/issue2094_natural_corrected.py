@@ -25,6 +25,7 @@ load_dotenv()
 
 import torch  # noqa: E402
 import transformers  # noqa: E402
+from huggingface_hub import HfApi  # noqa: E402
 from transformers import AutoModelForCausalLM, AutoTokenizer, LogitsProcessorList  # noqa: E402
 
 from explore_persona_space.experiments.issue2094.hooks import joint_hooks  # noqa: E402
@@ -79,6 +80,25 @@ FORMAT_INSTRUCTIONS: tuple[tuple[str, str], ...] = (
         "Use one continuous paragraph, with no bullets, numbering, or headings.",
     ),
 )
+
+
+def resolve_repository_revision(api: Any | None = None) -> str:
+    """Resolve the requested Hub revision before loading either artifact.
+
+    Fast tokenizers do not consistently retain ``_commit_hash`` in
+    ``init_kwargs``. The authoritative shared provenance check is therefore
+    the Hub repository resolution: both model and tokenizer are loaded from
+    this exact immutable revision, and the model config is checked again after
+    loading.
+    """
+    info = (api or HfApi()).model_info(MODEL_ID, revision=MODEL_REVISION)
+    resolved = info.sha
+    if resolved != MODEL_REVISION:
+        raise RuntimeError(
+            f"resolved repository revision mismatch: requested={MODEL_REVISION}, "
+            f"resolved={resolved}"
+        )
+    return resolved
 
 
 @dataclass(frozen=True)
@@ -619,6 +639,8 @@ def run(args: argparse.Namespace) -> None:
     out.mkdir(parents=True, exist_ok=True)
     _atomic_json(out / "prompt_bank.json", {"sha256": bank_hash, "prompts": bank_payload})
 
+    print("[phase=revision_resolve]", flush=True)
+    repository_revision = resolve_repository_revision()
     print("[phase=model_load]", flush=True)
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, revision=MODEL_REVISION)
     if tokenizer.pad_token_id is None:
@@ -639,10 +661,10 @@ def run(args: argparse.Namespace) -> None:
     if len(model.model.layers) != N_LAYERS:
         raise RuntimeError(f"expected {N_LAYERS} layers, got {len(model.model.layers)}")
     model_revision = getattr(model.config, "_commit_hash", None)
-    tokenizer_revision = tokenizer.init_kwargs.get("_commit_hash")
-    if model_revision != MODEL_REVISION or tokenizer_revision != MODEL_REVISION:
+    if model_revision != repository_revision:
         raise RuntimeError(
-            f"resolved revision mismatch: model={model_revision}, tokenizer={tokenizer_revision}"
+            f"resolved model revision mismatch: model={model_revision}, "
+            f"repository={repository_revision}"
         )
 
     print("[phase=capture]", flush=True)
@@ -683,7 +705,12 @@ def run(args: argparse.Namespace) -> None:
         "started_utc": datetime.now(UTC).isoformat(),
         "model_id": MODEL_ID,
         "model_revision": MODEL_REVISION,
-        "tokenizer_revision": tokenizer_revision,
+        "repository_revision": repository_revision,
+        "tokenizer_revision": repository_revision,
+        "tokenizer_revision_evidence": (
+            "AutoTokenizer loaded with the immutable requested revision; "
+            "Hub model_info resolved that repository revision exactly"
+        ),
         "model_dtype": str(next(model.parameters()).dtype),
         "n_layers": N_LAYERS,
         "primary_layer": PRIMARY_LAYER,
