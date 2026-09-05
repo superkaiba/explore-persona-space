@@ -104,6 +104,20 @@ def test_frozen_rubric_hashes_and_honest_instrument():
     assert instrument["cjk"].startswith("Existing programmatic audit only")
 
 
+def test_frozen_instrument_can_be_read_posthoc_after_live_cli_patch(monkeypatch):
+    rubrics = sg.load_frozen_rubrics()
+    instrument = sg._base_instrument_manifest(rubrics, "codex-cli old")
+    monkeypatch.setattr(sg, "_codex_version", lambda: "codex-cli new")
+
+    sg._validate_frozen_instrument(instrument, rubrics, require_live_cli=False)
+
+    with pytest.raises(sg.SubagentGradeHaltError, match="differs from frozen launch client"):
+        sg._validate_frozen_instrument(instrument, rubrics, require_live_cli=True)
+    instrument["model"] = "changed-model"
+    with pytest.raises(sg.SubagentGradeHaltError, match="semantics differ"):
+        sg._validate_frozen_instrument(instrument, rubrics, require_live_cli=False)
+
+
 def test_runner_manifest_pins_current_script_and_launcher_bytes():
     manifest = sg._runner_manifest()
     sg._validate_runner_manifest(manifest)

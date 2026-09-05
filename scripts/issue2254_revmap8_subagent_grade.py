@@ -27,6 +27,7 @@ import sys
 import tempfile
 import time
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -63,6 +64,15 @@ POLICY_PACKET_SPLITS = {
         "prompt_sha256": "291929a1908bd0c8447c945a790aa9415fae3102f13fed552752c8b22c13130f",
         "parts": 2,
     }
+}
+CODEX_CLIENT_TRANSITION = {
+    "from_version": "codex-cli 0.153.2",
+    "to_version": "codex-cli 0.153.4",
+    "switch_epoch": 1788582616.388262,
+    "switch_utc": "2026-09-05T04:30:16.388262+00:00",
+    "symlink_path": "/home/thomasjiralerspong/.local/bin/codex",
+    "expected_session_counts": {"codex-cli 0.153.2": 419, "codex-cli 0.153.4": 84},
+    "expected_grade_counts": {"codex-cli 0.153.2": 33_280, "codex-cli 0.153.4": 6_720},
 }
 REFERENCE_PREFIX = f"{i2254.HF_PREFIX}/raw_completions/baseline_ceiling"
 REFERENCE_IDS = ("evil__a0", "evil__cl", "sycophancy__a0", "sycophancy__cl")
@@ -398,16 +408,21 @@ def phase_stage(args) -> None:
         sroot / "runner_manifest.json",
     ]
     existing = [path.is_file() for path in frozen_paths]
-    if any(existing):
-        if not all(existing):
-            missing = [str(path) for path, present in zip(frozen_paths, existing) if not present]
-            raise SubagentGradeHaltError(f"incomplete frozen stage metadata; missing={missing}")
+    if existing[0] and existing[1]:
+        if not existing[2]:
+            _load_manifests(args, require_live_cli=False, require_runner=False)
+            _write_or_verify_immutable(sroot / "runner_manifest.json", _runner_manifest())
+            print("[subagent-stage] refreshed runner pin against frozen inputs", flush=True)
+            return
         _load_manifests(args)
         print(
             "[subagent-stage] reused frozen provenance exact_cells=20 exact_items=4000",
             flush=True,
         )
         return
+    if any(existing):
+        missing = [str(path) for path, present in zip(frozen_paths, existing) if not present]
+        raise SubagentGradeHaltError(f"incomplete frozen stage metadata; missing={missing}")
 
     from huggingface_hub import HfApi
 
@@ -452,13 +467,36 @@ def phase_stage(args) -> None:
     print("[subagent-stage] unit 20/20 exact_cells=20 exact_items=4000", flush=True)
 
 
-def _load_manifests(args) -> tuple[dict, dict[str, str]]:
+def _validate_frozen_instrument(
+    instrument: dict, rubrics: dict[str, str], *, require_live_cli: bool
+) -> None:
+    """Validate frozen semantics, optionally requiring the live launch client."""
+    frozen_cli = instrument.get("codex_cli_version")
+    if not isinstance(frozen_cli, str) or not frozen_cli:
+        raise SubagentGradeHaltError("frozen instrument has no Codex CLI version")
+    expected = _base_instrument_manifest(rubrics, frozen_cli)
+    if instrument != expected:
+        raise SubagentGradeHaltError("rubric/instrument semantics differ from frozen manifest")
+    if require_live_cli:
+        live_cli = _codex_version()
+        if live_cli != frozen_cli:
+            raise SubagentGradeHaltError(
+                f"live Codex CLI {live_cli!r} differs from frozen launch client {frozen_cli!r}"
+            )
+
+
+def _load_manifests(
+    args, *, require_live_cli: bool = True, require_runner: bool = True
+) -> tuple[dict, dict[str, str]]:
     """Load immutable input/instrument manifests and revalidate local inputs."""
     sroot = sensitivity_root(args.out_root)
     input_path = sroot / "inputs_manifest.json"
     instrument_path = sroot / "instrument_manifest.json"
     runner_path = sroot / "runner_manifest.json"
-    if not input_path.is_file() or not instrument_path.is_file() or not runner_path.is_file():
+    required_paths = [input_path, instrument_path]
+    if require_runner:
+        required_paths.append(runner_path)
+    if any(not path.is_file() for path in required_paths):
         raise SubagentGradeHaltError("run phase 'stage' before grading")
     inputs = json.loads(input_path.read_text(encoding="utf-8"))
     records = _validate_records(args)
@@ -470,10 +508,9 @@ def _load_manifests(args) -> tuple[dict, dict[str, str]]:
         raise SubagentGradeHaltError("staged generation bytes changed after input freeze")
     rubrics = load_frozen_rubrics()
     instrument = json.loads(instrument_path.read_text(encoding="utf-8"))
-    expected = _base_instrument_manifest(rubrics, _codex_version())
-    if instrument != expected:
-        raise SubagentGradeHaltError("current Codex/rubric instrument differs from frozen manifest")
-    _validate_runner_manifest(json.loads(runner_path.read_text(encoding="utf-8")))
+    _validate_frozen_instrument(instrument, rubrics, require_live_cli=require_live_cli)
+    if require_runner:
+        _validate_runner_manifest(json.loads(runner_path.read_text(encoding="utf-8")))
     return {"inputs": inputs, "instrument": instrument, "records": records}, rubrics
 
 
@@ -1281,6 +1318,129 @@ def collect_production_scores(
     return output
 
 
+def _utc_iso(epoch: float) -> str:
+    """Render a UTC epoch with microsecond precision."""
+    return datetime.fromtimestamp(epoch, timezone.utc).isoformat()
+
+
+def _client_version_transition_audit(sroot: Path, jobs: list[JobSpec], instrument: dict) -> dict:
+    """Reconstruct the mid-run CLI patch transition from immutable job timing."""
+    transition = CODEX_CLIENT_TRANSITION
+    symlink = Path(str(transition["symlink_path"]))
+    if not symlink.is_symlink():
+        raise SubagentGradeHaltError(f"Codex transition evidence is not a symlink: {symlink}")
+    realized_switch = symlink.lstat().st_mtime
+    expected_switch = float(transition["switch_epoch"])
+    if abs(realized_switch - expected_switch) > 1e-6:
+        raise SubagentGradeHaltError(
+            f"Codex symlink transition time changed: {realized_switch} != {expected_switch}"
+        )
+    current_target = str(symlink.resolve())
+    if str(transition["to_version"]).removeprefix("codex-cli ") not in current_target:
+        raise SubagentGradeHaltError(
+            f"Codex symlink target does not contain expected post-transition version: "
+            f"{current_target}"
+        )
+    if instrument.get("codex_cli_version") != transition["from_version"]:
+        raise SubagentGradeHaltError("frozen instrument does not match transition origin")
+    if len(jobs) != 503 or sum(len(job.items) for job in jobs) != 40_000:
+        raise SubagentGradeHaltError("client-version audit requires exact production coverage")
+
+    assignments = []
+    session_counts = {version: 0 for version in transition["expected_session_counts"]}
+    grade_counts = {version: 0 for version in transition["expected_grade_counts"]}
+    rubric_counts = {
+        rubric_id: {version: 0 for version in transition["expected_session_counts"]}
+        for rubric_id in RUBRIC_IDS
+    }
+    session_ids: set[str] = set()
+    boundary_margins = []
+    crossed_while_running = 0
+    for job in jobs:
+        path = _job_record_path(sroot, job)
+        record = _validate_completed_job(path, job)
+        elapsed = record.get("elapsed_seconds")
+        session_id = record.get("grader_session_id")
+        if not isinstance(elapsed, (int, float)) or elapsed <= 0:
+            raise SubagentGradeHaltError(f"{job.job_id}: invalid elapsed time for CLI audit")
+        if not isinstance(session_id, str) or not session_id or session_id in session_ids:
+            raise SubagentGradeHaltError(f"{job.job_id}: invalid/duplicate grader session id")
+        session_ids.add(session_id)
+        finished = path.stat().st_mtime
+        started = finished - float(elapsed)
+        margin = abs(started - expected_switch)
+        if margin < 0.5:
+            raise SubagentGradeHaltError(
+                f"{job.job_id}: reconstructed start is too close to the CLI transition"
+            )
+        version = (
+            str(transition["from_version"])
+            if started < expected_switch
+            else str(transition["to_version"])
+        )
+        if started < expected_switch < finished:
+            crossed_while_running += 1
+        session_counts[version] += 1
+        grade_counts[version] += len(job.items)
+        rubric_counts[job.rubric_id][version] += 1
+        boundary_margins.append(margin)
+        assignments.append(
+            {
+                "job_id": job.job_id,
+                "rubric_id": job.rubric_id,
+                "grader_session_id": session_id,
+                "n_grades": len(job.items),
+                "client_version_at_launch": version,
+                "estimated_process_start_utc": _utc_iso(started),
+                "record_finished_utc": _utc_iso(finished),
+                "record_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            }
+        )
+    if session_counts != transition["expected_session_counts"]:
+        raise SubagentGradeHaltError(f"CLI transition session counts changed: {session_counts}")
+    if grade_counts != transition["expected_grade_counts"]:
+        raise SubagentGradeHaltError(f"CLI transition grade counts changed: {grade_counts}")
+    return {
+        "verdict": "RECORDED_INSTRUMENT_DEVIATION",
+        "scope": "exploratory Codex-subagent sensitivity only",
+        "uniform_client_version": False,
+        "frozen_instrument_client_version": instrument["codex_cli_version"],
+        "observed_transition": {
+            "from_version": transition["from_version"],
+            "to_version": transition["to_version"],
+            "switch_utc": transition["switch_utc"],
+            "symlink_path": str(symlink),
+            "symlink_target_after_switch": current_target,
+        },
+        "classification_method": (
+            "Each fresh codex process resolves the executable at launch. Process start is "
+            "reconstructed as immutable-record mtime minus recorded subprocess elapsed time; "
+            "the exact global symlink lstat mtime is the version boundary."
+        ),
+        "minimum_reconstructed_start_boundary_margin_seconds": min(boundary_margins),
+        "sessions_started_before_and_finished_after_switch": crossed_while_running,
+        "n_sessions": len(assignments),
+        "n_grades": sum(grade_counts.values()),
+        "n_sessions_by_client_version": session_counts,
+        "n_grades_by_client_version": grade_counts,
+        "n_sessions_by_rubric_and_client_version": rubric_counts,
+        "substantive_settings_unchanged": [
+            "model gpt-5.6-sol",
+            "reasoning effort low",
+            "rubric bytes and hashes",
+            "prompt template and per-job prompt hashes",
+            "structured output schemas",
+            "fresh ephemeral read-only sessions",
+        ],
+        "limitation": (
+            "The effect, if any, of the CLI patch transition on service behavior is not "
+            "independently identifiable. Results must not be described as uniform-client or "
+            "as the planned Anthropic Sonnet instrument."
+        ),
+        "assignments": sorted(assignments, key=lambda row: row["job_id"]),
+    }
+
+
 def _partial_payload(
     *,
     record: dict,
@@ -1447,12 +1607,23 @@ def _aggregate_cell(
 
 def phase_import(args) -> None:
     """Import exact production coverage into Round-8-shaped judged artifacts."""
-    loaded, rubrics = _load_manifests(args)
+    loaded, rubrics = _load_manifests(args, require_live_cli=False)
     del rubrics
     records = loaded["records"]
     items = build_item_registry(records)
     jobs = build_production_jobs(items, load_frozen_rubrics(), loaded["instrument"])
     sroot = sensitivity_root(args.out_root)
+    client_audit = _client_version_transition_audit(sroot, jobs, loaded["instrument"])
+    client_audit_path = sroot / "audit" / "client_version_transition.json"
+    _write_or_verify_immutable(client_audit_path, client_audit)
+    client_summary = {
+        "verdict": client_audit["verdict"],
+        "audit_path": str(client_audit_path.relative_to(sroot)),
+        "uniform_client_version": False,
+        "n_sessions_by_client_version": client_audit["n_sessions_by_client_version"],
+        "n_grades_by_client_version": client_audit["n_grades_by_client_version"],
+        "limitation": client_audit["limitation"],
+    }
     score_maps = collect_production_scores(sroot, jobs, items)
     cjk_spec = json.loads((r8.INPUTS_ROOT / "decisive" / "cjk_audit.json").read_text())
     cjk_rx = re.compile(cjk_spec["regex"])
@@ -1491,6 +1662,7 @@ def phase_import(args) -> None:
             partials["coherence"],
             flags,
         )
+        judged["client_version_transition"] = client_summary
         if not judged["completeness"]["pass"]:
             below_floor.append(cid)
         if cid in REFERENCE_IDS:
@@ -1515,6 +1687,7 @@ def phase_import(args) -> None:
     reference = {
         "instrument": INSTRUMENT_NAME,
         "same_instrument_as_round8": True,
+        "client_version_transition": client_summary,
         "behaviors": {},
     }
     for behavior in r8.ROUND_BEHAVIORS:
@@ -1564,6 +1737,7 @@ def phase_import(args) -> None:
         "completeness_floor": tl.COMPLETENESS_FLOOR,
         "below_floor_cells": sorted(below_floor),
         "pass": not below_floor,
+        "client_version_transition": client_summary,
         "repeat_interpretation": (
             "Five fresh-session procedural repeats; statistical independence is unverified."
         ),
@@ -1609,6 +1783,18 @@ def phase_reduce(args) -> None:
     refs = {
         cid: json.loads((ref_root / f"{cid}.json").read_text(encoding="utf-8"))
         for cid in REFERENCE_IDS
+    }
+    client_audit_path = sroot / "audit" / "client_version_transition.json"
+    if not client_audit_path.is_file():
+        raise SubagentGradeHaltError("client-version transition audit is missing")
+    client_audit = json.loads(client_audit_path.read_text(encoding="utf-8"))
+    client_summary = {
+        "verdict": client_audit["verdict"],
+        "audit_path": str(client_audit_path.relative_to(sroot)),
+        "uniform_client_version": client_audit["uniform_client_version"],
+        "n_sessions_by_client_version": client_audit["n_sessions_by_client_version"],
+        "n_grades_by_client_version": client_audit["n_grades_by_client_version"],
+        "limitation": client_audit["limitation"],
     }
     trait_delta = {
         "namespace": SENSITIVITY_NAMESPACE,
@@ -1721,14 +1907,15 @@ def phase_reduce(args) -> None:
             "per_question_mean_score": judged["coherence"]["per_question_mean_score"],
         }
     common = {
+        "client_version_transition": client_summary,
         "repeat_interpretation": (
             "Five fresh-session procedural repeats; statistical independence is unverified."
-        )
+        ),
     }
     trait_delta.update(common)
     patch_fraction.update(common)
     coherence.update(common)
-    cjk.update(common)
+    cjk["subagent_client_transition_applicable"] = False
     _atomic_json(sroot / "reduce" / "trait_delta_vs_subagent_alpha0.json", trait_delta)
     _atomic_json(sroot / "reduce" / "patch_fraction_vs_subagent_references.json", patch_fraction)
     _atomic_json(sroot / "reduce" / "coherence_language_neutral.json", coherence)
@@ -1747,6 +1934,7 @@ def phase_upload(args) -> None:
         sroot / "instrument_manifest.json",
         sroot / "runner_manifest.json",
         sroot / "pilot" / "all.pass.json",
+        sroot / "audit" / "client_version_transition.json",
         completeness_path,
         sroot / "judge" / "reference_judged_percell.json",
         sroot / "reduce" / "trait_delta_vs_subagent_alpha0.json",
