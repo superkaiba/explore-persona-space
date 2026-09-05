@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 
 import scripts.issue2254_revmap_dose_patch as r8
+from explore_persona_space.experiments.issue_1739 import judging
 
 
 def test_round8_registry_is_exact_and_collision_free():
@@ -102,6 +103,32 @@ def test_upload_pack_includes_jsonl_payloads(tmp_path, monkeypatch):
     assert calls[0][2] == ["*.jsonl", "*.json"]
     assert (calls[0][0] / "pack_manifest.json").is_file()
     assert list(calls[0][0].glob("*.jsonl"))
+
+
+def test_judge_stages_frozen_e1_assets_before_loading_rubrics(monkeypatch):
+    events = []
+    monkeypatch.setattr(r8, "_stage_all_completions", lambda _args: {})
+    monkeypatch.setattr(
+        r8.i2254,
+        "_stage_e1_assets",
+        lambda: events.append("stage_e1"),
+    )
+    monkeypatch.setattr(
+        judging,
+        "load_trait_rubric",
+        lambda behavior: events.append(f"rubric:{behavior}") or behavior,
+    )
+    monkeypatch.setattr(r8, "_run_pilots", lambda *_args: events.append("pilots"))
+    monkeypatch.setattr(r8, "_upload_judge_artifacts", lambda _args: None)
+
+    r8.phase_judge(SimpleNamespace(pilot=True))
+
+    assert events == [
+        "stage_e1",
+        "rubric:evil",
+        "rubric:sycophancy",
+        "pilots",
+    ]
 
 
 @pytest.mark.parametrize("dose,expected", [(8.0, 504.0), (16.0, 1008.0)])

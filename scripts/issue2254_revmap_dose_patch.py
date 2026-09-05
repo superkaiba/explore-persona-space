@@ -983,6 +983,11 @@ def phase_judge(args) -> None:
     from explore_persona_space.experiments.issue_1739.judging import load_trait_rubric
 
     roots = _stage_all_completions(args)
+    # Load the frozen, hash-pinned E1 assets from the issue-owned Hub prefix
+    # before constructing trait rubrics.  A fresh judge pod has no local
+    # data/issue_779/artifacts cache; without this staging call the inherited
+    # loader falls through to a new Sonnet generation, changing the instrument.
+    i2254._stage_e1_assets()
     trait_rubrics = {behavior: load_trait_rubric(behavior) for behavior in ROUND_BEHAVIORS}
     try:
         _run_pilots(args, roots, trait_rubrics)
