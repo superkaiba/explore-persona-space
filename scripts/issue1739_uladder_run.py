@@ -62,6 +62,7 @@ def _jobd_namespace(args: argparse.Namespace, behavior: str) -> argparse.Namespa
         revision=args.revision,
         stage_workers=args.stage_workers,
         materialize_labeling_tars=args.materialize_labeling_tars,
+        labeling_tar_staging_dir=args.labeling_tar_staging_dir,
     )
 
 
@@ -252,6 +253,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="use hf_transfer whole-tar staging (requires roughly 2x tar-size free space)",
     )
+    ap.add_argument(
+        "--labeling-tar-staging-dir",
+        type=Path,
+        default=None,
+        help="separate scratch filesystem for temporary materialized labeling tars",
+    )
     ap.add_argument("--stage-timeout-s", type=int, default=28800)
     ap.add_argument("--min-free-gib", type=float, default=115.0)
     ap.add_argument("--canary-gib", type=float, default=2.0)
@@ -272,6 +279,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         args.hf_prefix = args.hf_prefix.strip("/")
         if not args.hf_prefix or any(part in {".", ".."} for part in args.hf_prefix.split("/")):
             ap.error("--hf-prefix must be a non-empty repository-relative path")
+    if args.labeling_tar_staging_dir is not None and not args.materialize_labeling_tars:
+        ap.error("--labeling-tar-staging-dir requires --materialize-labeling-tars")
     if args.pilot:
         args.behaviors = args.behaviors[:1]
         args.seeds = args.seeds[:1]

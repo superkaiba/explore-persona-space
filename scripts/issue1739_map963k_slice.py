@@ -234,6 +234,10 @@ def _download_tar(
     )
 
 
+def _same_filesystem(left: Path, right: Path) -> bool:
+    return os.stat(left).st_dev == os.stat(right).st_dev
+
+
 def _extract_selected_members(
     tar: tarfile.TarFile,
     *,
@@ -283,23 +287,37 @@ def _materialized_slice(
     kinds: tuple[str, ...],
     layers: tuple[int, ...],
     token: str,
+    materialize_dir: Path | None,
 ) -> dict:
     """Download a tar with hf_transfer, extract its slice, then reap the tar."""
     pat = wanted_re(kinds, layers)
     dest.mkdir(parents=True, exist_ok=True)
     total = head_size(tar_url(behavior, revision), token)
-    free = shutil.disk_usage(dest.parent).free
     reserve = 5 << 30
-    required = 2 * total + reserve
-    if free < required:
-        raise RuntimeError(
-            "materialized labeling stage lacks peak headroom: "
-            f"free={free / 2**30:.1f} GiB required={required / 2**30:.1f} GiB "
-            f"(2x {total / 2**30:.1f} GiB tar + 5 GiB reserve)"
-        )
-
-    staging_dir = dest.parent / "labeling_tars"
+    staging_dir = (
+        Path(materialize_dir)
+        if materialize_dir is not None
+        else dest.parent / "labeling_tars"
+    )
     staging_dir.mkdir(parents=True, exist_ok=True)
+    separate_filesystems = not _same_filesystem(staging_dir, dest.parent)
+    dest_required = total + reserve if separate_filesystems else 2 * total + reserve
+    dest_free = shutil.disk_usage(dest.parent).free
+    if dest_free < dest_required:
+        raise RuntimeError(
+            "materialized labeling destination lacks peak headroom: "
+            f"free={dest_free / 2**30:.1f} GiB "
+            f"required={dest_required / 2**30:.1f} GiB"
+        )
+    if separate_filesystems:
+        staging_free = shutil.disk_usage(staging_dir).free
+        staging_required = total + reserve
+        if staging_free < staging_required:
+            raise RuntimeError(
+                "materialized labeling scratch lacks peak headroom: "
+                f"free={staging_free / 2**30:.1f} GiB "
+                f"required={staging_required / 2**30:.1f} GiB"
+            )
     local_tar = staging_dir / f"{behavior}_labeling.tar"
     local_tar.unlink(missing_ok=True)
     for stale in staging_dir.glob(".hfstage-*"):
@@ -348,6 +366,8 @@ def _materialized_slice(
         "elapsed_s": round(elapsed, 1),
         "mb_per_s": round(total / 1e6 / max(elapsed, 1e-6), 1),
         "transfer_mode": "materialized",
+        "materialize_dir": str(staging_dir.resolve()),
+        "separate_staging_filesystem": separate_filesystems,
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     (dest / "slice_manifest.json").write_text(json.dumps(manifest, indent=2))
@@ -365,6 +385,7 @@ def stream_slice(
     workers: int = 12,
     window: int = 32 << 20,
     materialize: bool = False,
+    materialize_dir: Path | None = None,
 ) -> dict:
     """Stream one behavior's tar; write only members matching the slice regex."""
     if materialize:
@@ -375,6 +396,7 @@ def stream_slice(
             kinds=kinds,
             layers=layers,
             token=token,
+            materialize_dir=materialize_dir,
         )
     pat = wanted_re(kinds, layers)
     dest.mkdir(parents=True, exist_ok=True)
@@ -468,6 +490,12 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="download the complete tar with hf_transfer before extracting the slice",
     )
+    ap.add_argument(
+        "--materialize-dir",
+        type=Path,
+        default=None,
+        help="scratch filesystem for the temporary full tar (for example /dev/shm)",
+    )
     args = ap.parse_args(argv)
 
     logging.basicConfig(
@@ -488,6 +516,7 @@ def main(argv: list[str] | None = None) -> int:
         workers=args.workers,
         window=args.window_mib << 20,
         materialize=args.materialize,
+        materialize_dir=args.materialize_dir,
     )
     sys.stdout.flush()
     sys.stderr.flush()

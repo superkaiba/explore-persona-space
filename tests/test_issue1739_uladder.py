@@ -147,10 +147,19 @@ def test_runner_allows_distinct_cuda_pilot_hf_prefix() -> None:
 
 
 def test_runner_materialized_staging_flag_reaches_base_stage_namespace() -> None:
-    args = runner.parse_args(["--materialize-labeling-tars", "--behaviors", "evil"])
+    args = runner.parse_args(
+        [
+            "--materialize-labeling-tars",
+            "--labeling-tar-staging-dir",
+            "/dev/shm/issue1739-labeling-tars",
+            "--behaviors",
+            "evil",
+        ]
+    )
     staged = runner._jobd_namespace(args, "evil")
     assert args.materialize_labeling_tars is True
     assert staged.materialize_labeling_tars is True
+    assert staged.labeling_tar_staging_dir == Path("/dev/shm/issue1739-labeling-tars")
 
 
 def test_resume_fingerprint_distinguishes_pilot_from_production(tmp_path: Path) -> None:

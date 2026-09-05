@@ -52,12 +52,14 @@ def test_materialized_slice_downloads_extracts_and_reaps(tmp_path, monkeypatch):
 
     monkeypatch.setattr(slice_mod, "_download_tar", fake_download)
     monkeypatch.setattr(slice_mod, "head_size", lambda url, token: source.stat().st_size)
+    monkeypatch.setattr(slice_mod, "_same_filesystem", lambda left, right: False)
     monkeypatch.setattr(
         slice_mod.shutil,
         "disk_usage",
         lambda path: SimpleNamespace(free=10 << 30),
     )
     dest = tmp_path / "store" / "evil_labeling"
+    scratch = tmp_path / "scratch"
     manifest = slice_mod.stream_slice(
         "evil",
         dest,
@@ -66,6 +68,7 @@ def test_materialized_slice_downloads_extracts_and_reaps(tmp_path, monkeypatch):
         layers=(7,),
         token="secret",
         materialize=True,
+        materialize_dir=scratch,
     )
 
     assert (dest / "context_end_L07_shard0.npy").read_bytes() == wanted
@@ -75,11 +78,12 @@ def test_materialized_slice_downloads_extracts_and_reaps(tmp_path, monkeypatch):
     assert manifest["n_kept"] == 2
     assert manifest["n_skipped"] == 1
     assert manifest["bytes_fetched"] == source.stat().st_size
+    assert manifest["separate_staging_filesystem"] is True
     assert downloads == [
         (
             "evil",
             "deadbeef",
-            dest.parent / "labeling_tars" / "evil_labeling.tar",
+            scratch / "evil_labeling.tar",
             "secret",
         )
     ]
@@ -108,6 +112,37 @@ def test_materialized_slice_refuses_insufficient_peak_headroom(tmp_path, monkeyp
             layers=(7,),
             token="secret",
             materialize=True,
+        )
+
+
+def test_materialized_slice_checks_separate_scratch_headroom(tmp_path, monkeypatch):
+    tar_bytes = 4 << 30
+    scratch = tmp_path / "scratch"
+    dest = tmp_path / "store" / "hallucination_labeling"
+    monkeypatch.setattr(slice_mod, "head_size", lambda url, token: tar_bytes)
+    monkeypatch.setattr(slice_mod, "_same_filesystem", lambda left, right: False)
+
+    def disk_usage(path):
+        free = 8 << 30 if path == scratch else 20 << 30
+        return SimpleNamespace(free=free)
+
+    monkeypatch.setattr(slice_mod.shutil, "disk_usage", disk_usage)
+    monkeypatch.setattr(
+        slice_mod,
+        "_download_tar",
+        lambda *args, **kwargs: pytest.fail("download must not start without scratch headroom"),
+    )
+
+    with pytest.raises(RuntimeError, match="scratch lacks peak headroom"):
+        slice_mod.stream_slice(
+            "hallucination",
+            dest,
+            revision="main",
+            kinds=("context_end",),
+            layers=(7,),
+            token="secret",
+            materialize=True,
+            materialize_dir=scratch,
         )
 
 

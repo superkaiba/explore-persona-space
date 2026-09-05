@@ -133,6 +133,7 @@ def stage_inputs(args, token: str) -> None:
         token=token,
         workers=args.stage_workers,
         materialize=materialize,
+        materialize_dir=getattr(args, "labeling_tar_staging_dir", None),
     )
     _log(
         f"[phase=stage] {args.behavior}: DONE written={m['kept_bytes'] / 1e9:.1f} GB "
