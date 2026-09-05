@@ -7,7 +7,6 @@ import sys
 from pathlib import Path
 
 import pytest
-import torch
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -100,15 +99,15 @@ def test_smoke_census_exercises_all_paths() -> None:
     }
 
 
-def test_forced_opening_processor_and_termination() -> None:
-    processor = runner.ForcedOpeningProcessor(prompt_width=4, prefix_ids=[2, 3])
-    scores = torch.arange(10, dtype=torch.float32).repeat(2, 1)
-    forced0 = processor(torch.ones((2, 4), dtype=torch.long), scores)
-    assert torch.isfinite(forced0[:, 2]).all()
-    assert torch.isneginf(forced0[:, [i for i in range(10) if i != 2]]).all()
-    forced1 = processor(torch.ones((2, 5), dtype=torch.long), scores)
-    assert torch.isfinite(forced1[:, 3]).all()
-    assert torch.equal(processor(torch.ones((2, 6), dtype=torch.long), scores), scores)
+def test_generation_has_no_forced_opening() -> None:
+    source = Path(runner.__file__).read_text(encoding="utf-8")
+    assert "LogitsProcessorList" not in source
+    assert "ForcedOpeningProcessor" not in source
+    assert '"forced_opening": None' in source
+    assert '"forced_opening_token_ids": []' in source
+
+
+def test_termination() -> None:
     assert runner.classify_termination([7, 8, 9, 8], {8}) == ("eos", [7, 8])
     assert runner.classify_termination([7, 9], {8}) == ("length", [7, 9])
 

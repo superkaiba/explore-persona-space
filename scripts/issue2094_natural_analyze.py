@@ -482,7 +482,7 @@ def report_markdown(rows: list[dict[str, Any]], summary: dict[str, Any]) -> str:
         ),
     }[summary["primary_verdict"]]
     lines = [
-        "# Corrected natural task/subject context-vector patching",
+        "# Corrected natural task/subject context-vector patching — no forced opening",
         "",
         "## Bottom line",
         "",
@@ -505,7 +505,7 @@ def report_markdown(rows: list[dict[str, Any]], summary: dict[str, Any]) -> str:
         "",
         "## Annotation protocol deviation",
         "",
-        "The planned direct Claude reader could not be used because both the Anthropic API smoke and a Claude CLI retry returned HTTP 401 for the configured credential. The already-frozen opaque key was retained. An isolated `gpt-6-astra` Codex CLI process read each content-only packet in a new empty directory with user configuration ignored and a read-only sandbox. This preserves arm/content blinding, and the event transcripts prove that no tools were used, but it changes the preregistered judge family and introduces the CLI's built-in system context. The realized temporary-workspace basename also contained `issue2094`; it exposed no arm or hypothesis but prevents a claim of zero project-context cues. Results should be read with these deviations in mind.",
+        "The planned direct Claude reader could not be used because the Anthropic API credential returned HTTP 401. The already-frozen opaque key was retained. An isolated `gpt-6-astra` Codex CLI process read each content-only packet in a new neutral empty directory with user configuration ignored and a read-only sandbox. This preserves arm/content blinding, and the event transcripts prove that no tools were used, but it changes the preregistered judge family and introduces the CLI's built-in system context. Results should be read with these deviations in mind.",
         "",
         "## Primary and secondary results",
         "",
@@ -568,7 +568,7 @@ def report_markdown(rows: list[dict[str, Any]], summary: dict[str, Any]) -> str:
         (
             "## Scope",
             "",
-            "The bank contains three natural single-turn response tasks and three travel/history subjects. Greedy decoding gives one outcome per directed pair; the 18 prompt swaps per axis, not stochastic samples, are the replication units. The controlled templates are necessary for one-axis swaps but limit generalization. The forced common opening removes the pilot's greeting-copy artifact and may also attenuate a weak patch effect, so a null is specific to this intervention.",
+            "The bank contains three natural single-turn response tasks and three travel/history subjects. Greedy decoding gives one outcome per directed pair; the 18 prompt swaps per axis, not stochastic samples, are the replication units. The controlled templates are necessary for one-axis swaps but limit generalization. Generation begins directly from the patched final context token; no answer tokens are forced.",
             "",
         )
     )

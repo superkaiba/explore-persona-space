@@ -2,11 +2,21 @@
 
 ## 0.0 TL;DR / change-my-mind
 
-This user-requested follow-up asks whether the final-context-token state causally carries the kind of response more strongly than its subject. The primary intervention is replacement of Qwen2.5-7B-Instruct decoder block 19's output at the final prompt token. A separately reported maximal intervention replaces that position at all 28 blocks. A crossed bank of natural single-turn requests supplies same-subject/different-task and same-task/different-subject swaps. Every generation has the same literal user greeting and a forced identical assistant opening. A minimal-pair bullet-versus-paragraph arm uses the exact same capture, patch, and generation pipeline as a positive manipulation control. Complete answers and a frozen-key, content-only blinded annotation are persisted row by row.
+This user-requested follow-up asks whether the final-context-token state causally carries the kind of response more strongly than its subject. The primary intervention is replacement of Qwen2.5-7B-Instruct decoder block 19's output at the final prompt token. A separately reported maximal intervention replaces that position at all 28 blocks. A crossed bank of natural single-turn requests supplies same-subject/different-task and same-task/different-subject swaps. Every user request has the same literal greeting, but no assistant answer tokens are forced: generation begins directly from the patched position. A minimal-pair bullet-versus-paragraph arm uses the exact same capture, patch, and generation pipeline as a positive manipulation control. Complete answers and a frozen-key, content-only blinded annotation are persisted row by row.
 
 The result changes my mind in favor of selective task-vector sufficiency only if the positive formatting control works and layer-19 task swaps follow the donor task more often/strongly than subject swaps follow the donor subject. A formatting-control failure makes the task/subject null uninterpretable. All-layer results are secondary and cannot rescue a failed layer-19 primary claim.
 
 Estimated GPU-hours (total): 1.5 on one H100, with a hard stop at 3 GPU-hours.
+
+## 0.1 User-requested no-forced-opening amendment
+
+The completed first pass forced the tokens `Response:\n` immediately after the patched
+position and its formatting control failed. This rerun changes exactly that decoding choice:
+there is no logits processor and no forced answer prefix. The model revision, 15-prompt bank,
+129-row census, final-token capture convention, layer-19 and all-layer interventions, greedy
+decoding, token caps, and blinded labels remain fixed. Results are written under a new output
+root and compared against the preserved first pass; no cached generation or annotation from
+the first pass is eligible for resume.
 
 ## 1. Goal and claim scope
 
@@ -44,7 +54,7 @@ Positive-format gate: at least 4 of 6 directed all-layer format swaps must be an
 - Patch: replace, not add, the recipient state at that position during prefill only with the donor's clean state at the same layer. The decode steps are unedited; the edited cached K/V persists.
 - Arms: `unpatched`; `self_patch_L19`; `self_patch_all28`; `donor_patch_L19` (primary); `donor_patch_all28` (secondary).
 - Generation: greedy; `max_new_tokens=768`, automatic 1,536-token cap rerun; `do_sample=False`; `temperature=None`; `top_p=None`; `top_k=None`; `repetition_penalty=1.0`; explicit EOS and padding IDs. Store generated token IDs, token count, termination reason, effective generation config, package versions, model/tokenizer revisions, and per-layer edit telemetry.
-- Greeting control: every user request begins with the exact bytes `Hello. `, and generation is constrained to begin with the exact tokenization of `Response:\n`. The patch remains at the original assistant-header final token; the forced opening is generated afterward and is identical across every arm.
+- Greeting control: every user request begins with the exact bytes `Hello. `. No assistant answer tokens are forced, so the patched state retains its direct first-token-logit pathway.
 
 Injection gates assert one prefill edit per patched layer, correct unpadded/padded position, source-vector shape, finite values, and zero maximum error after conversion to the hidden dtype. A self patch must leave the greedy response identical to unpatched for at least 13 of 15 prompts; failure is reported as numerical sensitivity and blocks strong causal wording.
 
@@ -68,7 +78,7 @@ Total planned generations: 15 + 30 + 72 + 12 = 129. Greedy decoding has one draw
 
 ## 5. Dependent variables and blinded annotation
 
-Objective row fields are termination reason, generated token count, forced-prefix match, and edit telemetry. A blind reader classifies observable output form (`itinerary`, `quiz`, `briefing`, `explanation`, `other_or_mixed`), subject (the three subject labels plus `other_or_mixed`), format (`bullets`, `paragraph`, `neither_or_mixed`), completeness, 0–100 coherence, and a short evidence phrase.
+Objective row fields are termination reason, generated token count, confirmation that no decoding constraint was applied, and edit telemetry. A blind reader classifies observable output form (`itinerary`, `quiz`, `briefing`, `explanation`, `other_or_mixed`), subject (the three subject labels plus `other_or_mixed`), format (`bullets`, `paragraph`, `neither_or_mixed`), completeness, 0–100 coherence, and a short evidence phrase.
 
 Before the first API call, a random opaque row-ID→generation-ID key is frozen to disk. Outbound packets contain only the opaque row ID, the full generated answer, neutral candidate labels, and the classification request; they omit prompts, source/recipient identities, arm, layer, selection rule, expected result, file paths, and project context. A scope-aware leakage scan fails loud. The planned direct Anthropic Messages reader (`claude-sonnet-4-5-20250929`, temperature 0, `max_tokens=8192`) failed its one-row smoke with HTTP 401, and a Claude CLI diagnostic retry failed with the same invalid credential. The frozen key is retained. The declared recovery uses `gpt-6-astra` through a fresh ephemeral `codex exec` process per packet, in a temporary empty directory outside any repository, with user configuration ignored, a read-only sandbox, and an explicit no-tools instruction. The JSON event transcript must contain exactly one agent-message item and no tool/non-message items. This judge substitution is a protocol deviation and is reported as such; it preserves content/arm blinding but does not preserve the planned judge family or absence of a runtime-supplied system prompt. There are eight production packet calls after one successful one-row smoke. Persist the exact outbound request, scan terms/hits, model parameters, raw response, event transcript, usage, and tool-use audit beside each response. Any nonzero exit, tool event, truncation, parse failure, duplicate/missing ID, or invalid enum fails the annotation phase without partial aggregate output.
 
@@ -97,7 +107,7 @@ No large judge wave is used (under 10 calls), so the >=5,000-call judge pilot is
 
 ## 7. Smoke run and kill criteria
 
-Smoke executes the production model loader, capture hooks, forced-prefix decoder, layer-19 and all-layer patch arms, unpatched/self patch, one task swap, one subject swap, one format swap, JSONL writer, cap/termination parser, and injection assertions on one small batch. It then runs the production blind-packet builder/parser offline with a realistic fenced and unfenced response; one live one-row annotation packet validates the API contract.
+Smoke executes the production model loader, capture hooks, unconstrained decoder, layer-19 and all-layer patch arms, unpatched/self patch, one task swap, one subject swap, one format swap, JSONL writer, cap/termination parser, and injection assertions on one small batch. It then runs the production blind-packet builder/parser offline with a realistic fenced and unfenced response; one live one-row annotation packet validates the API contract.
 
 Smoke blind-spot enumeration:
 
@@ -105,7 +115,7 @@ Smoke blind-spot enumeration:
 - The production-only paths are multi-batch resume, the 1,536-token cap-rerun branch if no smoke answer caps, the remaining blinded packet calls, Hub upload, and aggregate report construction over all 129 rows.
 - No third-party import is production-only; smoke loads the real model, hooks, tokenizer, and the selected annotation backend.
 
-Kill before production if any patch fails injection telemetry, the forced prefix differs, a self patch materially changes the smoke answer, any required model/revision field is unresolved, a nominally complete short-answer smoke hits the cap, or the blind parser/API smoke fails. During production, abort on CUDA OOM after one batch-size reduction, non-finite source states, wrong realized row count, duplicate generation IDs, or projected wall time above 3 GPU-hours.
+Kill before production if any patch fails injection telemetry, the generation metadata records any forced tokens, a self patch materially changes the smoke answer, any required model/revision field is unresolved, a nominally complete short-answer smoke hits the cap, or the blind parser/API smoke fails. During production, abort on CUDA OOM after one batch-size reduction, non-finite source states, wrong realized row count, duplicate generation IDs, or projected wall time above 3 GPU-hours.
 
 ## 8. Implementation and tests
 
@@ -121,11 +131,11 @@ One H100 in eval intent. Model weights require roughly 15 GB bf16. Production us
 |---|---:|---:|---:|---|
 | Model load + full 129-row capture/generation run | 129 | 1 | 1.5 | Qwen2.5-7B bf16 on one H100; conservative from the prior 48-row inline run plus 3.5× rows and longer cap |
 
-Outputs are small text/JSON (<50 MB expected) under `/workspace/issue2094-natural-task-subject-corrected` on the RunPod `/workspace` volume (per-pod quota ~130 GB). Before generation, call the shared out-root headroom check with a 2 GB floor and canary. No checkpoints, merged weights, training artifacts, or retained tensor ladders are produced. Source states are at most 15×28×3584×4 ≈24 MB. End-of-run footprint is therefore <2 GB plus the pre-existing model cache. N/A — no per-rung checkpoint persistence, fan-out, or cross-machine staging.
+Outputs are small text/JSON (<50 MB expected) under `/workspace/issue2094-natural-task-subject-no-forced-opening` on the RunPod `/workspace` volume (per-pod quota ~130 GB). Before generation, call the shared out-root headroom check with a 2 GB floor and canary. No checkpoints, merged weights, training artifacts, or retained tensor ladders are produced. Source states are at most 15×28×3584×4 ≈24 MB. End-of-run footprint is therefore <2 GB plus the pre-existing model cache. N/A — no per-rung checkpoint persistence, fan-out, or cross-machine staging.
 
 ## 10. Persistence and operational plan
 
-Write generations incrementally as JSONL and fsync each completed batch. Persist prompt bank, resolved config/revisions, source-state provenance/checksums, row-level generations/token IDs/termination/edit telemetry, frozen blind key, exact request/response sidecars, parsed annotations, summary, and qualitative Markdown report. Raw text/JSON goes to `superkaiba1/explore-persona-space-data` under `issue2094_natural_task_subject_corrected/`; small aggregate JSON and the report are committed on the issue branch. No tensor is discarded before verified upload.
+Write generations incrementally as JSONL and fsync each completed batch. Persist prompt bank, resolved config/revisions, source-state provenance/checksums, row-level generations/token IDs/termination/edit telemetry, frozen blind key, exact request/response sidecars, parsed annotations, summary, and qualitative Markdown report. Raw text/JSON goes to `superkaiba1/explore-persona-space-data` under a versioned `issue2094_natural_task_subject_no_forced_opening/` prefix; small aggregate JSON and the report are committed on the issue branch. No tensor is discarded before verified upload.
 
 Provision only after preflight passes. Launch detached with a PID file and full stdio redirection; emit phase lines and a valid results sentinel, verify PID plus first log line within 15 minutes, monitor process exit/log freshness/GPU utilization, upload and exact-set verify, then terminate the ephemeral pod. The final report records planned versus realized cells and supplies a browser-accessible Hub URL.
 
@@ -141,4 +151,4 @@ Source: the 768-token initial cap is more than 2× the observed answer length re
 
 Source: batch size 1 is smoke-validated at commit `ff0903d750a`: the 9-row real-model smoke completed with EOS, zero source-copy error, the expected one-versus-28 edit counts, and byte-identical self-patch controls. The 3 GPU-hour fence remains a conservative operational bound.
 
-Load-bearing assumptions needing smoke validation: forcing `Response:\n` does not prevent later patch effects; greedy decoding is stable enough for self-patch exactness under the fixed batch-size-1 pipeline; the 220-word limits avoid caps; all nine task×subject combinations are natural; and the fixed label set adequately describes outputs. Any violated assumption is reported rather than silently relaxed.
+Load-bearing assumptions needing smoke validation: unconstrained first-token generation does not reintroduce a donor-greeting artifact because every prompt begins with the exact same `Hello. ` bytes; greedy decoding is stable enough for self-patch exactness under the fixed batch-size-1 pipeline; the 220-word limits avoid caps; all nine task×subject combinations are natural; and the fixed label set adequately describes outputs. Any violated assumption is reported rather than silently relaxed.

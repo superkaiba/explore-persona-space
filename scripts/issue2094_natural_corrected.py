@@ -3,7 +3,7 @@
 
 The primary intervention replaces the final-context-token block output at
 layer 19.  The all-28-layer replacement is a separately labelled secondary
-arm.  All generations share an identical forced ``Response:\n`` opening.
+arm.  Generation begins directly from the patched final context token.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ load_dotenv()
 import torch  # noqa: E402
 import transformers  # noqa: E402
 from huggingface_hub import HfApi  # noqa: E402
-from transformers import AutoModelForCausalLM, AutoTokenizer, LogitsProcessorList  # noqa: E402
+from transformers import AutoModelForCausalLM, AutoTokenizer  # noqa: E402
 
 from explore_persona_space.experiments.issue2094.hooks import joint_hooks  # noqa: E402
 from explore_persona_space.orchestrate.preflight import assert_out_root_headroom  # noqa: E402
@@ -40,7 +40,6 @@ MODEL_REVISION = "a09a35458c702b33eeacc393d103063234e8bc28"
 N_LAYERS = 28
 PRIMARY_LAYER = 19
 ALL_LAYERS = tuple(range(N_LAYERS))
-FORCED_OPENING = "Response:\n"
 INITIAL_MAX_NEW_TOKENS = 768
 RERUN_MAX_NEW_TOKENS = 1536
 GREEDY_SEED = 0
@@ -398,23 +397,6 @@ def capture_source_states(
     return states
 
 
-class ForcedOpeningProcessor:
-    """Force an exact token prefix while leaving later logits untouched."""
-
-    def __init__(self, prompt_width: int, prefix_ids: list[int]):
-        self.prompt_width = int(prompt_width)
-        self.prefix_ids = list(prefix_ids)
-
-    def __call__(self, input_ids: torch.Tensor, scores: torch.Tensor) -> torch.Tensor:
-        step = int(input_ids.shape[1]) - self.prompt_width
-        if 0 <= step < len(self.prefix_ids):
-            token_id = self.prefix_ids[step]
-            forced = torch.full_like(scores, -torch.inf)
-            forced[:, token_id] = scores[:, token_id]
-            return forced
-        return scores
-
-
 def classify_termination(token_ids: list[int], eos_ids: set[int]) -> tuple[str, list[int]]:
     """Trim decode padding at the first EOS and classify EOS versus length stop."""
     for index, token_id in enumerate(token_ids):
@@ -465,10 +447,6 @@ def generate_chunk(
     input_ids = enc["input_ids"].to(device)
     attention_mask = enc["attention_mask"].to(device)
     width = int(input_ids.shape[1])
-    prefix_ids = tokenizer(FORCED_OPENING, add_special_tokens=False)["input_ids"]
-    if not prefix_ids:
-        raise RuntimeError("forced opening tokenized to zero tokens")
-    processor = LogitsProcessorList([ForcedOpeningProcessor(width, prefix_ids)])
     eos = model.generation_config.eos_token_id
     eos_ids = set(eos if isinstance(eos, (list, tuple)) else [int(eos)])
     pad_id = tokenizer.pad_token_id
@@ -491,7 +469,6 @@ def generate_chunk(
             max_new_tokens=max_new_tokens,
             eos_token_id=sorted(eos_ids),
             pad_token_id=pad_id,
-            logits_processor=processor,
             return_dict_in_generate=True,
         ).sequences
 
@@ -527,11 +504,7 @@ def generate_chunk(
     for row_index, row in enumerate(rows):
         raw_new = sequences[row_index, width:].tolist()
         termination, actual_ids = classify_termination(raw_new, eos_ids)
-        if actual_ids[: len(prefix_ids)] != prefix_ids:
-            raise RuntimeError(f"forced opening mismatch for {row['gen_id']}")
         text = tokenizer.decode(actual_ids, skip_special_tokens=True)
-        if not text.startswith(FORCED_OPENING):
-            raise RuntimeError(f"decoded opening mismatch for {row['gen_id']}: {text[:30]!r}")
 
         telemetry: dict[str, Any] | None = None
         if layers:
@@ -587,8 +560,8 @@ def generate_chunk(
                 "donor_prompt": (
                     bank_by_id[str(row["donor_prompt_id"])].text if row["donor_prompt_id"] else None
                 ),
-                "forced_opening": FORCED_OPENING,
-                "forced_opening_token_ids": prefix_ids,
+                "forced_opening": None,
+                "forced_opening_token_ids": [],
                 "output_text": text,
                 "generated_token_ids": actual_ids,
                 "n_new_tokens": len(actual_ids),
@@ -700,7 +673,7 @@ def run(args: argparse.Namespace) -> None:
         raise RuntimeError(f"source state shape {tuple(source_states.shape)} != {expected_shape}")
 
     metadata = {
-        "experiment": "issue2094_natural_task_subject_corrected",
+        "experiment": "issue2094_natural_task_subject_no_forced_opening",
         "schema_version": SCHEMA_VERSION,
         "started_utc": datetime.now(UTC).isoformat(),
         "model_id": MODEL_ID,
@@ -726,10 +699,8 @@ def run(args: argparse.Namespace) -> None:
             "repetition_penalty": 1.0,
             "initial_max_new_tokens": INITIAL_MAX_NEW_TOKENS,
             "cap_rerun_max_new_tokens": RERUN_MAX_NEW_TOKENS,
-            "forced_opening": FORCED_OPENING,
-            "forced_opening_token_ids": tokenizer(FORCED_OPENING, add_special_tokens=False)[
-                "input_ids"
-            ],
+            "forced_opening": None,
+            "forced_opening_token_ids": [],
             "eos_token_id": model.generation_config.eos_token_id,
             "pad_token_id": tokenizer.pad_token_id,
         },
@@ -843,12 +814,12 @@ def run(args: argparse.Namespace) -> None:
                 "kind": "epm:results",
                 "version": 1,
                 "task_id": 2094,
-                "gate": "natural-task-subject-corrected-generation",
+                "gate": "natural-task-subject-no-forced-opening-generation",
                 "blocks_pipeline": False,
                 "by": "issue2094_natural_corrected.py",
                 "ts": datetime.now(UTC).isoformat(),
                 "note": {
-                    "followup_label": "natural-task-subject-corrected",
+                    "followup_label": "natural-task-subject-no-forced-opening",
                     "out_root": str(out),
                     "realized_n_rows": len(ordered),
                     "all_rows_eos": True,
@@ -864,7 +835,7 @@ def main() -> None:
     parser.add_argument(
         "--out",
         type=Path,
-        default=Path("/workspace/issue2094-natural-task-subject-corrected"),
+        default=Path("/workspace/issue2094-natural-task-subject-no-forced-opening"),
     )
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--hard-stop-hours", type=float, default=3.0)
