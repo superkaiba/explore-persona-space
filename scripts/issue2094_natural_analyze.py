@@ -109,9 +109,18 @@ def validate_and_join(
 
 
 def validate_annotation_audit(
-    annotation_path: Path, annotations: list[dict[str, Any]]
+    annotation_path: Path,
+    annotations: list[dict[str, Any]],
+    generations: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    """Validate the frozen-reader sidecars before using any blind labels."""
+    """Replay the frozen-reader sidecars before using any blind labels."""
+    from issue2094_natural_blind_annotate import (
+        build_segments,
+        parse_annotations,
+        parse_codex_events,
+        scan_for_leakage,
+    )
+
     audit_root = annotation_path.parent
     done_path = audit_root / "DONE.json"
     if not done_path.exists():
@@ -127,6 +136,17 @@ def validate_annotation_audit(
     if not (len(request_paths) == len(response_paths) == len(parsed_paths) == expected_packets):
         raise ValueError("annotation sidecar packet census mismatch")
 
+    key_path = audit_root / "blind_key.json"
+    if not key_path.exists():
+        raise ValueError("missing frozen annotation key")
+    mapping = json.loads(key_path.read_text(encoding="utf-8"))["row_id_to_gen_id"]
+    annotation_mapping = {str(row["row_id"]): str(row["gen_id"]) for row in annotations}
+    if mapping != annotation_mapping:
+        raise ValueError("frozen annotation key does not match final annotations")
+    generations_by_id = {str(row["gen_id"]): row for row in generations}
+    if set(generations_by_id) != set(mapping.values()):
+        raise ValueError("frozen annotation key does not match generation IDs")
+
     requests = [json.loads(path.read_text(encoding="utf-8")) for path in request_paths]
     row_ids = [row_id for request in requests for row_id in request["row_ids"]]
     expected_row_ids = [str(row["row_id"]) for row in annotations]
@@ -140,6 +160,51 @@ def validate_annotation_audit(
         raise ValueError("annotation request leakage scan is not clean")
     if any(request.get("tool_item_types_observed", []) for request in requests):
         raise ValueError("annotation reader tool-use audit is not clean")
+
+    final_by_row = {
+        str(row["row_id"]): {key: value for key, value in row.items() if key != "gen_id"}
+        for row in annotations
+    }
+    for request_path, response_path, parsed_path, request in zip(
+        request_paths, response_paths, parsed_paths, requests, strict=True
+    ):
+        if not (
+            request_path.stem.removesuffix(".request")
+            == response_path.stem.removesuffix(".response")
+            == parsed_path.stem.removesuffix(".parsed")
+        ):
+            raise ValueError("annotation sidecar stems do not align")
+        packet_ids = [str(row_id) for row_id in request["row_ids"]]
+        items = [
+            (row_id, str(generations_by_id[str(mapping[row_id])]["output_text"]))
+            for row_id in packet_ids
+        ]
+        segments = build_segments(items)
+        expected_request = "".join(text for _scope, text in segments)
+        if request["outbound_request_verbatim"] != expected_request:
+            raise ValueError("annotation outbound request does not match frozen-key payload")
+        if any(scan_for_leakage(segments).values()):
+            raise ValueError("replayed annotation leakage scan is not clean")
+
+        response = json.loads(response_path.read_text(encoding="utf-8"))
+        parsed_file = json.loads(parsed_path.read_text(encoding="utf-8"))
+        parsed_raw = parse_annotations(str(response["raw_text"]), packet_ids)
+        if parsed_file != parsed_raw:
+            raise ValueError("parsed annotation sidecar differs from raw response")
+        if parsed_file != [final_by_row[row_id] for row_id in packet_ids]:
+            raise ValueError("parsed annotation sidecar differs from final annotations")
+
+        if done["backend"] == "codex-cli":
+            events, _usage = parse_codex_events(str(response["provider_event_jsonl"]))
+            agent_messages = [
+                event["item"]["text"].strip()
+                for event in events
+                if event.get("type") == "item.completed"
+                and isinstance(event.get("item"), dict)
+                and event["item"].get("type") == "agent_message"
+            ]
+            if agent_messages != [str(response["raw_text"]).strip()]:
+                raise ValueError("annotation event transcript differs from raw response")
 
     deviations = sorted(
         {
@@ -155,6 +220,8 @@ def validate_annotation_audit(
         "n_rows": len(row_ids),
         "all_leakage_scans_clean": True,
         "all_tool_audits_clean": True,
+        "all_payloads_replayed": True,
+        "all_raw_parsed_final_equal": True,
         "protocol_deviations": deviations,
     }
 
@@ -324,13 +391,26 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
             group, lambda row: row["blind_annotation"]["format"] == row["recipient_format"]
         )
 
-    gate_pass = (
-        settings["all28"]["positive_format_control"]["donor_format_blind"]["k"] >= 4
-        and anchor_summary["format_label_accuracy"]["k"] >= 5
-        and format_self["all28"]["k"] >= 5
-    )
+    format_gate_by_setting = {
+        setting: (
+            settings[setting]["positive_format_control"]["donor_format_blind"]["k"] >= 4
+            and anchor_summary["format_label_accuracy"]["k"] >= 5
+            and format_self[setting]["k"] >= 5
+        )
+        for setting in ("L19", "all28")
+    }
+    gate_pass = format_gate_by_setting["all28"]
     self_patch_gate_pass = all(
         self_summary[setting]["exact_text_match"]["k"] >= 13 for setting in ("L19", "all28")
+    )
+    primary_specificity_gate_pass = (
+        settings["L19"]["task_swap"]["recipient_subject"]["k"] == settings["L19"]["task_swap"]["n"]
+        and settings["L19"]["subject_swap"]["recipient_task"]["k"]
+        == settings["L19"]["subject_swap"]["n"]
+    )
+    primary_coherence_gate_pass = all(
+        settings["L19"][axis]["coherent_ge_60"]["rate"] >= 0.8
+        for axis in ("task_swap", "subject_swap")
     )
     task_k = settings["L19"]["task_swap"]["donor_task"]["k"]
     subject_k = settings["L19"]["subject_swap"]["donor_subject"]["k"]
@@ -338,6 +418,10 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         verdict = "inconclusive_self_patch_control_failed"
     elif not gate_pass:
         verdict = "inconclusive_pipeline_control_failed"
+    elif not primary_coherence_gate_pass:
+        verdict = "inconclusive_coherence_floor_failed"
+    elif task_k > subject_k and not primary_specificity_gate_pass:
+        verdict = "inconclusive_specificity_failed"
     elif task_k > subject_k:
         verdict = "consistent_with_selective_layer19_task_transfer"
     else:
@@ -353,9 +437,12 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "anchors": anchor_summary,
         "self_patch": self_summary,
         "format_self_accuracy": format_self,
+        "format_gate_by_setting": format_gate_by_setting,
         "settings": settings,
         "positive_format_gate_pass": gate_pass,
         "self_patch_gate_pass": self_patch_gate_pass,
+        "primary_specificity_gate_pass": primary_specificity_gate_pass,
+        "primary_coherence_gate_pass": primary_coherence_gate_pass,
         "primary_verdict": verdict,
         "annotation_corrections": 0,
     }
@@ -374,6 +461,14 @@ def report_markdown(rows: list[dict[str, Any]], summary: dict[str, Any]) -> str:
         "inconclusive_pipeline_control_failed": (
             "The exact-pipeline formatting manipulation check failed, so the task/subject "
             "comparison is inconclusive."
+        ),
+        "inconclusive_coherence_floor_failed": (
+            "The layer-19 arm did not meet the preregistered coherence floor, so its "
+            "task/subject comparison is descriptive only."
+        ),
+        "inconclusive_specificity_failed": (
+            "Layer 19 showed donor-task expression without fully retaining the recipient "
+            "subject/task safeguards, so selective task-vector sufficiency is inconclusive."
         ),
         "consistent_with_selective_layer19_task_transfer": (
             "With the formatting manipulation check passed, layer 19 transferred the donor "
@@ -403,14 +498,14 @@ def report_markdown(rows: list[dict[str, Any]], summary: dict[str, Any]) -> str:
         f"- Frozen-key blinded row annotations: {summary['all_rows_blind_annotated']} ({summary['annotation_corrections']} corrections).",
         f"- Blind reader: `{summary['annotation_audit']['model']}` via `{summary['annotation_audit']['backend']}`; {summary['annotation_audit']['n_packets']} production packets; leakage and tool-use audits clean.",
         f"- Unpatched main form accuracy: {pct(summary['anchors']['main_form_accuracy'])}; subject accuracy: {pct(summary['anchors']['main_subject_accuracy'])}.",
-        f"- Unpatched requested-format accuracy: {pct(summary['anchors']['format_label_accuracy'])} blind, {pct(summary['anchors']['format_structural_accuracy'])} structural.",
+        f"- Unpatched bullet/paragraph category accuracy: {pct(summary['anchors']['format_label_accuracy'])} blind, {pct(summary['anchors']['format_structural_accuracy'])} structural.",
         f"- Self-patch exact-answer agreement: L19 {pct(summary['self_patch']['L19']['exact_text_match'])}; all-layer {pct(summary['self_patch']['all28']['exact_text_match'])}.",
         f"- Self-patch no-op gate: {'PASS' if summary['self_patch_gate_pass'] else 'FAIL'} (minimum 13/15 in each setting).",
         f"- Maximum recorded source-state injection error: L19 {summary['self_patch']['L19']['max_injection_error']:.3g}; all-layer {summary['self_patch']['all28']['max_injection_error']:.3g}.",
         "",
         "## Annotation protocol deviation",
         "",
-        "The planned direct Claude reader could not be used because both the Anthropic API smoke and a Claude CLI retry returned HTTP 401 for the configured credential. The already-frozen opaque key was retained. An isolated `gpt-6-astra` Codex CLI process read each content-only packet in a new empty directory with user configuration ignored and a read-only sandbox. This preserves arm/content blinding, and the event transcripts prove that no tools were used, but it changes the preregistered judge family and introduces the CLI's built-in system context. Results should be read with that deviation in mind.",
+        "The planned direct Claude reader could not be used because both the Anthropic API smoke and a Claude CLI retry returned HTTP 401 for the configured credential. The already-frozen opaque key was retained. An isolated `gpt-6-astra` Codex CLI process read each content-only packet in a new empty directory with user configuration ignored and a read-only sandbox. This preserves arm/content blinding, and the event transcripts prove that no tools were used, but it changes the preregistered judge family and introduces the CLI's built-in system context. The realized temporary-workspace basename also contained `issue2094`; it exposed no arm or hypothesis but prevents a claim of zero project-context cues. Results should be read with these deviations in mind.",
         "",
         "## Primary and secondary results",
         "",
@@ -429,7 +524,7 @@ def report_markdown(rows: list[dict[str, Any]], summary: dict[str, Any]) -> str:
                     pct(block["subject_swap"]["donor_subject"]),
                     pct(block["subject_swap"]["recipient_task"]),
                     pct(block["positive_format_control"]["donor_format_blind"]),
-                    "PASS" if summary["positive_format_gate_pass"] else "FAIL",
+                    "PASS" if summary["format_gate_by_setting"][setting] else "FAIL",
                 )
             )
             + " |"
@@ -484,12 +579,16 @@ def run(args: argparse.Namespace) -> None:
     generations = read_jsonl(args.generations)
     annotations = read_jsonl(args.annotations)
     rows = validate_and_join(generations, annotations)
-    annotation_audit = validate_annotation_audit(args.annotations, annotations)
+    annotation_audit = validate_annotation_audit(args.annotations, annotations, generations)
     summary = summarize(rows)
     summary["annotation_audit"] = annotation_audit
     args.out.mkdir(parents=True, exist_ok=True)
     write_jsonl(args.out / "rows_annotated.jsonl", rows)
-    (args.out / "annotation_corrections.jsonl").write_text("", encoding="utf-8")
+    corrections_path = args.out / "annotation_corrections.jsonl"
+    if not corrections_path.exists():
+        corrections_path.write_text("", encoding="utf-8")
+    corrections = read_jsonl(corrections_path)
+    summary["annotation_corrections"] = len(corrections)
     atomic_json(args.out / "summary.json", summary)
     report = report_markdown(rows, summary)
     report_bytes = (report + "\n").encode()

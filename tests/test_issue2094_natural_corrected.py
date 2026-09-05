@@ -226,7 +226,35 @@ def test_summary_denominators_and_control_gates() -> None:
     assert summary["settings"]["L19"]["task_swap"]["n"] == 18
     assert summary["settings"]["L19"]["subject_swap"]["n"] == 18
     assert summary["settings"]["all28"]["positive_format_control"]["n"] == 6
+    assert summary["format_gate_by_setting"] == {"L19": False, "all28": True}
     assert summary["primary_verdict"] == "no_selective_layer19_task_transfer"
+
+
+def test_positive_verdict_requires_specificity_and_coherence() -> None:
+    specificity_rows = fake_joined_rows()
+    primary_task_rows = [
+        row
+        for row in specificity_rows
+        if row["axis"] == "same_subject_different_task" and row["layer_setting"] == "L19"
+    ]
+    for row in primary_task_rows:
+        row["blind_annotation"]["form"] = row["donor_task"]
+    primary_task_rows[0]["blind_annotation"]["subject"] = "other_or_mixed"
+    summary = analysis.summarize(specificity_rows)
+    assert summary["primary_specificity_gate_pass"] is False
+    assert summary["primary_verdict"] == "inconclusive_specificity_failed"
+
+    coherence_rows = fake_joined_rows()
+    primary_task_rows = [
+        row
+        for row in coherence_rows
+        if row["axis"] == "same_subject_different_task" and row["layer_setting"] == "L19"
+    ]
+    for row in primary_task_rows[:4]:
+        row["blind_annotation"]["coherence"] = 59
+    summary = analysis.summarize(coherence_rows)
+    assert summary["primary_coherence_gate_pass"] is False
+    assert summary["primary_verdict"] == "inconclusive_coherence_floor_failed"
 
 
 def test_validate_join_requires_all_129_annotations() -> None:
@@ -249,7 +277,14 @@ def test_validate_join_requires_all_129_annotations() -> None:
 def test_annotation_audit_requires_clean_complete_sidecars(tmp_path: Path) -> None:
     packet_dir = tmp_path / "packets"
     packet_dir.mkdir()
-    annotations = [{"row_id": "R0001"}, {"row_id": "R0002"}]
+    annotations = [
+        {**annotation("R0001"), "gen_id": "g1"},
+        {**annotation("R0002"), "gen_id": "g2"},
+    ]
+    generations = [
+        {"gen_id": "g1", "output_text": "Response:\nA Rome itinerary."},
+        {"gen_id": "g2", "output_text": "Response:\nA Japan briefing."},
+    ]
     (tmp_path / "DONE.json").write_text(
         json.dumps(
             {
@@ -262,23 +297,51 @@ def test_annotation_audit_requires_clean_complete_sidecars(tmp_path: Path) -> No
         ),
         encoding="utf-8",
     )
+    (tmp_path / "blind_key.json").write_text(
+        json.dumps({"row_id_to_gen_id": {"R0001": "g1", "R0002": "g2"}}),
+        encoding="utf-8",
+    )
+    items = [("R0001", generations[0]["output_text"]), ("R0002", generations[1]["output_text"])]
+    outbound = "".join(text for _scope, text in blind.build_segments(items))
+    parsed = [{key: value for key, value in row.items() if key != "gen_id"} for row in annotations]
+    raw_text = json.dumps(parsed)
+    event_jsonl = "\n".join(
+        [
+            json.dumps({"type": "thread.started", "thread_id": "opaque"}),
+            json.dumps({"type": "turn.started"}),
+            json.dumps(
+                {
+                    "type": "item.completed",
+                    "item": {"type": "agent_message", "text": raw_text},
+                }
+            ),
+            json.dumps({"type": "turn.completed", "usage": {"input_tokens": 7}}),
+        ]
+    )
     request = {
         "row_ids": ["R0001", "R0002"],
         "leakage_scan_scopes": {"wrapper": {"hits": []}, "payload": {"hits": []}},
         "tool_item_types_observed": [],
         "protocol_deviation": "judge changed",
+        "outbound_request_verbatim": outbound,
     }
     (packet_dir / "packet_000.request.json").write_text(json.dumps(request), encoding="utf-8")
-    (packet_dir / "packet_000.response.json").write_text("{}", encoding="utf-8")
-    (packet_dir / "packet_000.parsed.json").write_text("[]", encoding="utf-8")
-    audit = analysis.validate_annotation_audit(tmp_path / "annotations.jsonl", annotations)
+    (packet_dir / "packet_000.response.json").write_text(
+        json.dumps({"raw_text": raw_text, "provider_event_jsonl": event_jsonl}),
+        encoding="utf-8",
+    )
+    (packet_dir / "packet_000.parsed.json").write_text(json.dumps(parsed), encoding="utf-8")
+    audit = analysis.validate_annotation_audit(
+        tmp_path / "annotations.jsonl", annotations, generations
+    )
     assert audit["all_leakage_scans_clean"] is True
+    assert audit["all_payloads_replayed"] is True
     assert audit["protocol_deviations"] == ["judge changed"]
 
     request["tool_item_types_observed"] = ["command_execution"]
     (packet_dir / "packet_000.request.json").write_text(json.dumps(request), encoding="utf-8")
     with pytest.raises(ValueError, match="tool-use"):
-        analysis.validate_annotation_audit(tmp_path / "annotations.jsonl", annotations)
+        analysis.validate_annotation_audit(tmp_path / "annotations.jsonl", annotations, generations)
 
 
 def test_report_done_hash_matches_written_bytes(tmp_path: Path, monkeypatch) -> None:
@@ -303,7 +366,7 @@ def test_report_done_hash_matches_written_bytes(tmp_path: Path, monkeypatch) -> 
     monkeypatch.setattr(
         analysis,
         "validate_annotation_audit",
-        lambda _path, _rows: {
+        lambda _path, _rows, _generations: {
             "backend": "test",
             "model": "test",
             "n_packets": 1,
@@ -314,6 +377,11 @@ def test_report_done_hash_matches_written_bytes(tmp_path: Path, monkeypatch) -> 
         },
     )
     out = tmp_path / "analysis"
+    out.mkdir()
+    correction = {"row_id": "R0001", "reason": "test append-only correction"}
+    (out / "annotation_corrections.jsonl").write_text(
+        json.dumps(correction) + "\n", encoding="utf-8"
+    )
     analysis.run(
         type(
             "Args",
@@ -326,3 +394,6 @@ def test_report_done_hash_matches_written_bytes(tmp_path: Path, monkeypatch) -> 
         done["report_sha256"]
         == hashlib.sha256((out / "qualitative_report.md").read_bytes()).hexdigest()
     )
+    assert json.loads((out / "annotation_corrections.jsonl").read_text()) == correction
+    summary = json.loads((out / "summary.json").read_text(encoding="utf-8"))
+    assert summary["annotation_corrections"] == 1

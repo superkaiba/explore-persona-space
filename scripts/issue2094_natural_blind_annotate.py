@@ -340,7 +340,7 @@ def call_codex_packet(
         raise RuntimeError(f"refusing outbound blind packet: leakage hits {hits}")
     user_message = "".join(text for _scope, text in segments)
     expected_ids = [row_id for row_id, _text in items]
-    with tempfile.TemporaryDirectory(prefix="issue2094-blind-") as temp_dir:
+    with tempfile.TemporaryDirectory(prefix="blind-reader-") as temp_dir:
         temp_path = Path(temp_dir)
         last_message_path = temp_path / "last_message.txt"
         command = [
