@@ -62,6 +62,9 @@ THEORY = Path("/mnt/eps-data/thomasjiralerspong/issue2569_theory")
 DEFAULT_SAMPLE = THEORY / "leg10_dl/sample_L19.npz"
 DEFAULT_MANIFEST = THEORY / "leg10_dl/download_manifest.json"
 DEFAULT_LEG9_MANIFEST = THEORY / "leg9_dl/leg9_manifest.json"
+DEFAULT_LEG8_MANIFEST = Path(
+    "/mnt/eps-data/thomasjiralerspong/wt-2569-kernel-work/download_manifest.json"
+)
 DEFAULT_MOMENTS = THEORY / "moments"
 DEFAULT_WORK = THEORY / "leg12_dl"
 OUTPUT_RELPATH = Path("eval_results/issue_2569/weights/leg12")
@@ -199,6 +202,7 @@ def build_directions(
     repo_root: Path,
     map_root: Path,
     manifest: dict,
+    leg8_manifest: dict,
     leg9_manifest: dict,
     moments: Path,
     x: np.ndarray,
@@ -297,13 +301,13 @@ def build_directions(
     ctxext_directions: dict[str, np.ndarray] = {}
     for trait in TRAITS:
         rb_payload = torch.load(
-            _lookup_manifest_path(manifest, f"r_b/{trait}.pt"),
+            _lookup_manifest_path(leg8_manifest, f"r_b/{trait}.pt"),
             map_location="cpu",
             weights_only=False,
         )
         rb_directions[trait] = unit(np.asarray(rb_payload["r_b"][LAYER]))
         ctxext_payload = torch.load(
-            _lookup_manifest_path(manifest, f"{trait}_ctxext_L19.pt"),
+            _lookup_manifest_path(leg8_manifest, f"{trait}_ctxext_L19.pt"),
             map_location="cpu",
             weights_only=False,
         )
@@ -878,6 +882,7 @@ def main() -> None:
     )
     parser.add_argument("--sample", type=Path, default=DEFAULT_SAMPLE)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
+    parser.add_argument("--leg8-manifest", type=Path, default=DEFAULT_LEG8_MANIFEST)
     parser.add_argument("--leg9-manifest", type=Path, default=DEFAULT_LEG9_MANIFEST)
     parser.add_argument("--moments", type=Path, default=DEFAULT_MOMENTS)
     parser.add_argument("--work", type=Path, default=DEFAULT_WORK)
@@ -896,6 +901,9 @@ def main() -> None:
     manifest = json.loads(args.manifest.read_text())
     if manifest.get("errors"):
         raise RuntimeError(manifest["errors"])
+    leg8_manifest = json.loads(args.leg8_manifest.read_text())
+    if leg8_manifest.get("errors"):
+        raise RuntimeError(leg8_manifest["errors"])
     leg9_manifest = json.loads(args.leg9_manifest.read_text())
     x_all = npz_member_memmap(args.sample, "x")
     y_all = npz_member_memmap(args.sample, "y")
@@ -916,6 +924,7 @@ def main() -> None:
             repo_root=args.repo_root,
             map_root=args.map_root,
             manifest=manifest,
+            leg8_manifest=leg8_manifest,
             leg9_manifest=leg9_manifest,
             moments=args.moments,
             x=x,
@@ -1075,6 +1084,7 @@ def main() -> None:
             "sample_sha256": sha256_file(args.sample),
             "sample_ci_sha256": ci_hash,
             "manifest": str(args.manifest),
+            "leg8_manifest": str(args.leg8_manifest),
             "leg9_manifest": str(args.leg9_manifest),
             "population_moments": str(args.moments),
             "n_rows": int(args.n_rows),
