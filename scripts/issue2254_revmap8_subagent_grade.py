@@ -589,28 +589,44 @@ def _chunks_for_pass(
     """Pack one pass under both the 80-item and 40k-o200k-token ceilings."""
     if not items:
         raise SubagentGradeHaltError(f"{scope}/{rubric_id}/pass{pass_index}: empty pass")
-    chunks: list[list[GradeItem]] = []
-    current: list[GradeItem] = []
-    for item in items:
-        candidate = [*current, item]
-        candidate_prompt = _prompt(rubric_id, rubric, candidate)
-        candidate_tokens = _count_o200k_tokens(candidate_prompt)
-        if current and (len(candidate) > MAX_ITEMS_PER_JOB or candidate_tokens > PROMPT_TOKEN_CAP):
-            chunks.append(current)
-            current = [item]
-            one_tokens = _count_o200k_tokens(_prompt(rubric_id, rubric, current))
-            if one_tokens > PROMPT_TOKEN_CAP:
-                raise SubagentGradeHaltError(
-                    f"{item.source_item_id}: one-item prompt has {one_tokens} o200k tokens"
-                )
-        else:
-            current = candidate
-    if current:
-        chunks.append(current)
-    jobs: list[JobSpec] = []
-    for chunk_index, chunk in enumerate(chunks):
-        prompt = _prompt(rubric_id, rubric, chunk)
+    packed: list[tuple[list[GradeItem], str, int]] = []
+    start = 0
+    while start < len(items):
+        upper = min(start + MAX_ITEMS_PER_JOB, len(items))
+        prompt = _prompt(rubric_id, rubric, items[start:upper])
         tokens = _count_o200k_tokens(prompt)
+        if tokens <= PROMPT_TOKEN_CAP:
+            chosen_end = upper
+            chosen_prompt = prompt
+            chosen_tokens = tokens
+        else:
+            low = start + 1
+            high = upper - 1
+            chosen_end = start
+            chosen_prompt = ""
+            chosen_tokens = 0
+            while low <= high:
+                middle = (low + high) // 2
+                candidate_prompt = _prompt(rubric_id, rubric, items[start:middle])
+                candidate_tokens = _count_o200k_tokens(candidate_prompt)
+                if candidate_tokens <= PROMPT_TOKEN_CAP:
+                    chosen_end = middle
+                    chosen_prompt = candidate_prompt
+                    chosen_tokens = candidate_tokens
+                    low = middle + 1
+                else:
+                    high = middle - 1
+            if chosen_end == start:
+                one_prompt = _prompt(rubric_id, rubric, [items[start]])
+                one_tokens = _count_o200k_tokens(one_prompt)
+                raise SubagentGradeHaltError(
+                    f"{items[start].source_item_id}: one-item prompt has {one_tokens} o200k tokens"
+                )
+        chunk = items[start:chosen_end]
+        packed.append((chunk, chosen_prompt, chosen_tokens))
+        start = chosen_end
+    jobs: list[JobSpec] = []
+    for chunk_index, (chunk, prompt, tokens) in enumerate(packed):
         if len(chunk) > MAX_ITEMS_PER_JOB or tokens > PROMPT_TOKEN_CAP:
             raise SubagentGradeHaltError("job packer violated a hard session ceiling")
         jobs.append(

@@ -180,7 +180,14 @@ def test_chunking_enforces_80_items_and_40k_o200k_tokens(monkeypatch):
         )
         for index in range(161)
     ]
-    monkeypatch.setattr(sg, "_count_o200k_tokens", lambda text: len(text))
+    tokenization_calls = 0
+
+    def count_tokens(text):
+        nonlocal tokenization_calls
+        tokenization_calls += 1
+        return len(text)
+
+    monkeypatch.setattr(sg, "_count_o200k_tokens", count_tokens)
     jobs = sg._chunks_for_pass(
         scope="production",
         rubric_id="trait_evil",
@@ -192,6 +199,7 @@ def test_chunking_enforces_80_items_and_40k_o200k_tokens(monkeypatch):
     assert sum(len(job.items) for job in jobs) == 161
     assert all(len(job.items) <= 80 for job in jobs)
     assert all(job.prompt_tokens_o200k <= 40_000 for job in jobs)
+    assert tokenization_calls == 3
 
 
 def test_codex_command_is_fresh_ephemeral_read_only_and_pinned(tmp_path):
