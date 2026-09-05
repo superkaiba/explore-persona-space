@@ -3,8 +3,7 @@ title: The layer-19 context-answer map reaches its population linear ceiling wit
   reproducible singular structure, contracts only at layer 26, and no gate metric
   separates from its panel (MODERATE confidence)
 kind: experiment
-tags:
-- followup-manual
+tags: []
 created_at: '2026-08-25T06:45:51Z'
 has_clean_result: true
 parent_id: 1774
