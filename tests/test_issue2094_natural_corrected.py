@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import sys
@@ -278,3 +279,50 @@ def test_annotation_audit_requires_clean_complete_sidecars(tmp_path: Path) -> No
     (packet_dir / "packet_000.request.json").write_text(json.dumps(request), encoding="utf-8")
     with pytest.raises(ValueError, match="tool-use"):
         analysis.validate_annotation_audit(tmp_path / "annotations.jsonl", annotations)
+
+
+def test_report_done_hash_matches_written_bytes(tmp_path: Path, monkeypatch) -> None:
+    generations = []
+    annotations = []
+    for index, planned in enumerate(runner.planned_rows(), 1):
+        generations.append(
+            {
+                **planned,
+                "termination_reason": "eos",
+                "output_text": "Response:\nComplete.",
+                "injection_telemetry": (
+                    None if planned["layer_setting"] == "none" else {"max_abs_source_error": 0.0}
+                ),
+            }
+        )
+        annotations.append({**annotation(f"R{index:04d}"), "gen_id": planned["gen_id"]})
+    generations_path = tmp_path / "generations.jsonl"
+    annotations_path = tmp_path / "annotations.jsonl"
+    runner._write_jsonl(generations_path, generations)
+    runner._write_jsonl(annotations_path, annotations)
+    monkeypatch.setattr(
+        analysis,
+        "validate_annotation_audit",
+        lambda _path, _rows: {
+            "backend": "test",
+            "model": "test",
+            "n_packets": 1,
+            "n_rows": 129,
+            "all_leakage_scans_clean": True,
+            "all_tool_audits_clean": True,
+            "protocol_deviations": [],
+        },
+    )
+    out = tmp_path / "analysis"
+    analysis.run(
+        type(
+            "Args",
+            (),
+            {"generations": generations_path, "annotations": annotations_path, "out": out},
+        )()
+    )
+    done = json.loads((out / "DONE.json").read_text(encoding="utf-8"))
+    assert (
+        done["report_sha256"]
+        == hashlib.sha256((out / "qualitative_report.md").read_bytes()).hexdigest()
+    )

@@ -492,7 +492,8 @@ def run(args: argparse.Namespace) -> None:
     (args.out / "annotation_corrections.jsonl").write_text("", encoding="utf-8")
     atomic_json(args.out / "summary.json", summary)
     report = report_markdown(rows, summary)
-    (args.out / "qualitative_report.md").write_text(report + "\n", encoding="utf-8")
+    report_bytes = (report + "\n").encode()
+    (args.out / "qualitative_report.md").write_bytes(report_bytes)
     atomic_json(
         args.out / "DONE.json",
         {
@@ -502,7 +503,7 @@ def run(args: argparse.Namespace) -> None:
             "positive_format_gate_pass": summary["positive_format_gate_pass"],
             "annotation_backend": annotation_audit["backend"],
             "annotation_model": annotation_audit["model"],
-            "report_sha256": hashlib.sha256(report.encode()).hexdigest(),
+            "report_sha256": hashlib.sha256(report_bytes).hexdigest(),
         },
     )
     print(json.dumps(summary, indent=2))
