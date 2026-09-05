@@ -243,3 +243,38 @@ def test_validate_join_requires_all_129_annotations() -> None:
     assert len(analysis.validate_and_join(generations, annotations)) == 129
     with pytest.raises(ValueError, match="ID sets differ"):
         analysis.validate_and_join(generations, annotations[:-1])
+
+
+def test_annotation_audit_requires_clean_complete_sidecars(tmp_path: Path) -> None:
+    packet_dir = tmp_path / "packets"
+    packet_dir.mkdir()
+    annotations = [{"row_id": "R0001"}, {"row_id": "R0002"}]
+    (tmp_path / "DONE.json").write_text(
+        json.dumps(
+            {
+                "backend": "codex-cli",
+                "model": "gpt-6-astra",
+                "n_rows": 2,
+                "n_packets": 1,
+                "all_rows_annotated": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    request = {
+        "row_ids": ["R0001", "R0002"],
+        "leakage_scan_scopes": {"wrapper": {"hits": []}, "payload": {"hits": []}},
+        "tool_item_types_observed": [],
+        "protocol_deviation": "judge changed",
+    }
+    (packet_dir / "packet_000.request.json").write_text(json.dumps(request), encoding="utf-8")
+    (packet_dir / "packet_000.response.json").write_text("{}", encoding="utf-8")
+    (packet_dir / "packet_000.parsed.json").write_text("[]", encoding="utf-8")
+    audit = analysis.validate_annotation_audit(tmp_path / "annotations.jsonl", annotations)
+    assert audit["all_leakage_scans_clean"] is True
+    assert audit["protocol_deviations"] == ["judge changed"]
+
+    request["tool_item_types_observed"] = ["command_execution"]
+    (packet_dir / "packet_000.request.json").write_text(json.dumps(request), encoding="utf-8")
+    with pytest.raises(ValueError, match="tool-use"):
+        analysis.validate_annotation_audit(tmp_path / "annotations.jsonl", annotations)

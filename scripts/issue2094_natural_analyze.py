@@ -108,6 +108,57 @@ def validate_and_join(
     return joined
 
 
+def validate_annotation_audit(
+    annotation_path: Path, annotations: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Validate the frozen-reader sidecars before using any blind labels."""
+    audit_root = annotation_path.parent
+    done_path = audit_root / "DONE.json"
+    if not done_path.exists():
+        raise ValueError("missing annotation DONE.json")
+    done = json.loads(done_path.read_text(encoding="utf-8"))
+    if done.get("n_rows") != len(annotations) or not done.get("all_rows_annotated"):
+        raise ValueError("annotation DONE.json census mismatch")
+    packet_root = audit_root / "packets"
+    request_paths = sorted(packet_root.glob("*.request.json"))
+    response_paths = sorted(packet_root.glob("*.response.json"))
+    parsed_paths = sorted(packet_root.glob("*.parsed.json"))
+    expected_packets = int(done["n_packets"])
+    if not (len(request_paths) == len(response_paths) == len(parsed_paths) == expected_packets):
+        raise ValueError("annotation sidecar packet census mismatch")
+
+    requests = [json.loads(path.read_text(encoding="utf-8")) for path in request_paths]
+    row_ids = [row_id for request in requests for row_id in request["row_ids"]]
+    expected_row_ids = [str(row["row_id"]) for row in annotations]
+    if len(row_ids) != len(set(row_ids)) or set(row_ids) != set(expected_row_ids):
+        raise ValueError("annotation request row-ID census mismatch")
+    if any(
+        request["leakage_scan_scopes"][scope]["hits"]
+        for request in requests
+        for scope in ("wrapper", "payload")
+    ):
+        raise ValueError("annotation request leakage scan is not clean")
+    if any(request.get("tool_item_types_observed", []) for request in requests):
+        raise ValueError("annotation reader tool-use audit is not clean")
+
+    deviations = sorted(
+        {
+            str(request["protocol_deviation"])
+            for request in requests
+            if request.get("protocol_deviation")
+        }
+    )
+    return {
+        "backend": done["backend"],
+        "model": done["model"],
+        "n_packets": expected_packets,
+        "n_rows": len(row_ids),
+        "all_leakage_scans_clean": True,
+        "all_tool_audits_clean": True,
+        "protocol_deviations": deviations,
+    }
+
+
 def subset(
     rows: list[dict[str, Any]],
     *,
@@ -298,6 +349,7 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "realized_n_rows": len(rows),
         "all_rows_eos": all(row["termination_reason"] == "eos" for row in rows),
         "all_rows_blind_annotated": all("blind_annotation" in row for row in rows),
+        "all_rows_complete_blind": all(row["blind_annotation"]["complete"] for row in rows),
         "anchors": anchor_summary,
         "self_patch": self_summary,
         "format_self_accuracy": format_self,
@@ -347,12 +399,18 @@ def report_markdown(rows: list[dict[str, Any]], summary: dict[str, Any]) -> str:
         "",
         f"- Planned/realized generations: {summary['planned_n_rows']}/{summary['realized_n_rows']}.",
         f"- Complete EOS-terminated answers: {summary['all_rows_eos']}.",
+        f"- Blind reader marked every answer complete: {summary['all_rows_complete_blind']}.",
         f"- Frozen-key blinded row annotations: {summary['all_rows_blind_annotated']} ({summary['annotation_corrections']} corrections).",
+        f"- Blind reader: `{summary['annotation_audit']['model']}` via `{summary['annotation_audit']['backend']}`; {summary['annotation_audit']['n_packets']} production packets; leakage and tool-use audits clean.",
         f"- Unpatched main form accuracy: {pct(summary['anchors']['main_form_accuracy'])}; subject accuracy: {pct(summary['anchors']['main_subject_accuracy'])}.",
         f"- Unpatched requested-format accuracy: {pct(summary['anchors']['format_label_accuracy'])} blind, {pct(summary['anchors']['format_structural_accuracy'])} structural.",
         f"- Self-patch exact-answer agreement: L19 {pct(summary['self_patch']['L19']['exact_text_match'])}; all-layer {pct(summary['self_patch']['all28']['exact_text_match'])}.",
         f"- Self-patch no-op gate: {'PASS' if summary['self_patch_gate_pass'] else 'FAIL'} (minimum 13/15 in each setting).",
         f"- Maximum recorded source-state injection error: L19 {summary['self_patch']['L19']['max_injection_error']:.3g}; all-layer {summary['self_patch']['all28']['max_injection_error']:.3g}.",
+        "",
+        "## Annotation protocol deviation",
+        "",
+        "The planned direct Claude reader could not be used because both the Anthropic API smoke and a Claude CLI retry returned HTTP 401 for the configured credential. The already-frozen opaque key was retained. An isolated `gpt-6-astra` Codex CLI process read each content-only packet in a new empty directory with user configuration ignored and a read-only sandbox. This preserves arm/content blinding, and the event transcripts prove that no tools were used, but it changes the preregistered judge family and introduces the CLI's built-in system context. Results should be read with that deviation in mind.",
         "",
         "## Primary and secondary results",
         "",
@@ -426,7 +484,9 @@ def run(args: argparse.Namespace) -> None:
     generations = read_jsonl(args.generations)
     annotations = read_jsonl(args.annotations)
     rows = validate_and_join(generations, annotations)
+    annotation_audit = validate_annotation_audit(args.annotations, annotations)
     summary = summarize(rows)
+    summary["annotation_audit"] = annotation_audit
     args.out.mkdir(parents=True, exist_ok=True)
     write_jsonl(args.out / "rows_annotated.jsonl", rows)
     (args.out / "annotation_corrections.jsonl").write_text("", encoding="utf-8")
@@ -440,6 +500,8 @@ def run(args: argparse.Namespace) -> None:
             "n_rows": len(rows),
             "primary_verdict": summary["primary_verdict"],
             "positive_format_gate_pass": summary["positive_format_gate_pass"],
+            "annotation_backend": annotation_audit["backend"],
+            "annotation_model": annotation_audit["model"],
             "report_sha256": hashlib.sha256(report.encode()).hexdigest(),
         },
     )
