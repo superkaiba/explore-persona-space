@@ -1,0 +1,9 @@
+{
+ "status": "complete",
+ "n_rows": 100000,
+ "n_directions": 159,
+ "sample_ci_sha256": "f9b45b4f5d9e1c81a72a872ae477137e2aa1f8bd671d4381d73aabd1903daaad",
+ "json_sha256": "5c4d44a14c2c965f51a69f6954ab6fddf8a30b65f1d2cee2bdf0e1fbe9a12ccf",
+ "markdown_sha256": "06e6ca673b321ec458a3aa436d326a4d55ad65da3decff3c5a34978ac175f201",
+ "elapsed_seconds": 25.085570335388184
+}
