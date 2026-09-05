@@ -1,8 +1,8 @@
 {
  "estimand": "D(U)=rho(mapped-answer ridge)-rho(context ridge)",
  "git": {
-  "commit": "0d155ded15ba516e5f207821e4ff5d0eda78cbc2",
-  "dirty": true
+  "commit": "7202c3671c051dc2e6e61386d6ab6d4a865ac284",
+  "dirty": false
  },
  "outputs": {
   "grayscale": {
