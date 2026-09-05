@@ -145,6 +145,29 @@ def test_blind_packet_scan_is_scope_aware() -> None:
     assert blind.scan_for_leakage(payload_hit)["payload"] == ["recipient_prompt_id"]
 
 
+def test_codex_event_parser_proves_no_tool_use() -> None:
+    raw = "\n".join(
+        [
+            json.dumps({"type": "thread.started", "thread_id": "opaque"}),
+            json.dumps({"type": "turn.started"}),
+            json.dumps(
+                {
+                    "type": "item.completed",
+                    "item": {"type": "agent_message", "text": "[]"},
+                }
+            ),
+            json.dumps({"type": "turn.completed", "usage": {"input_tokens": 7}}),
+        ]
+    )
+    events, usage = blind.parse_codex_events(raw)
+    assert len(events) == 4
+    assert usage == {"input_tokens": 7}
+
+    tool_raw = raw.replace('"type": "agent_message"', '"type": "command_execution"')
+    with pytest.raises(RuntimeError, match="used a tool"):
+        blind.parse_codex_events(tool_raw)
+
+
 def test_frozen_key_is_stable_and_census_checked(tmp_path: Path) -> None:
     generations = [{"gen_id": "a"}, {"gen_id": "b"}]
     key_path = tmp_path / "blind_key.json"

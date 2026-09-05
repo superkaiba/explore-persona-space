@@ -12,8 +12,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import secrets
+import subprocess
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -25,9 +28,11 @@ load_dotenv()
 import anthropic  # noqa: E402
 
 MODEL = "claude-sonnet-4-5-20250929"
+CODEX_MODEL = "gpt-6-astra"
 MAX_TOKENS = 8192
 TEMPERATURE = 0.0
 PACKET_SIZE = 17
+CODEX_TIMEOUT_SECONDS = 300
 
 FORM_LABELS = ("itinerary", "quiz", "briefing", "explanation", "other_or_mixed")
 SUBJECT_LABELS = ("vancouver", "japan", "rome", "other_or_mixed")
@@ -78,7 +83,7 @@ Use these observable labels:
 
 Return only a JSON array in the same order, with exactly this object shape:
 {"row_id":"R0001","form":"itinerary","subject":"vancouver","format":"bullets","complete":true,"coherence":95,"evidence":"Three dated days and Vancouver restaurant suggestions."}
-Do not add markdown or commentary."""
+Do not use tools. Do not add markdown or commentary."""
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -282,6 +287,162 @@ def call_packet(
     return parsed
 
 
+def parse_codex_events(raw: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Validate a JSON-event transcript and prove that no tool was invoked."""
+    events: list[dict[str, Any]] = []
+    for line_number, line in enumerate(raw.splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"malformed Codex event at line {line_number}") from exc
+        if not isinstance(event, dict):
+            raise ValueError(f"non-object Codex event at line {line_number}")
+        events.append(event)
+    if not events:
+        raise ValueError("empty Codex event transcript")
+
+    observed_item_types = {
+        str(event["item"].get("type"))
+        for event in events
+        if event.get("type") in {"item.started", "item.completed"}
+        and isinstance(event.get("item"), dict)
+    }
+    unexpected = sorted(observed_item_types - {"agent_message"})
+    if unexpected:
+        raise RuntimeError(f"blind Codex reader used a tool or non-message item: {unexpected}")
+    messages = [
+        event["item"].get("text", "")
+        for event in events
+        if event.get("type") == "item.completed"
+        and isinstance(event.get("item"), dict)
+        and event["item"].get("type") == "agent_message"
+    ]
+    if len(messages) != 1:
+        raise RuntimeError(f"expected exactly one Codex agent message, got {len(messages)}")
+    completed = [event for event in events if event.get("type") == "turn.completed"]
+    if len(completed) != 1:
+        raise RuntimeError(f"expected exactly one completed Codex turn, got {len(completed)}")
+    return events, dict(completed[0].get("usage") or {})
+
+
+def call_codex_packet(
+    items: list[tuple[str, str]],
+    request_path: Path,
+    response_path: Path,
+    parsed_path: Path,
+) -> list[dict[str, Any]]:
+    """Run one content-only packet in a fresh, isolated Codex CLI process."""
+    segments = build_segments(items)
+    hits = scan_for_leakage(segments)
+    if any(hits.values()):
+        raise RuntimeError(f"refusing outbound blind packet: leakage hits {hits}")
+    user_message = "".join(text for _scope, text in segments)
+    expected_ids = [row_id for row_id, _text in items]
+    with tempfile.TemporaryDirectory(prefix="issue2094-blind-") as temp_dir:
+        temp_path = Path(temp_dir)
+        last_message_path = temp_path / "last_message.txt"
+        command = [
+            "codex",
+            "exec",
+            "--ephemeral",
+            "--skip-git-repo-check",
+            "--ignore-user-config",
+            "--ignore-rules",
+            "--sandbox",
+            "read-only",
+            "--model",
+            CODEX_MODEL,
+            "--color",
+            "never",
+            "--json",
+            "-C",
+            str(temp_path),
+            "-o",
+            str(last_message_path),
+            "-",
+        ]
+        environment = os.environ.copy()
+        completed = subprocess.run(
+            command,
+            input=user_message,
+            text=True,
+            capture_output=True,
+            timeout=CODEX_TIMEOUT_SECONDS,
+            check=False,
+            env=environment,
+        )
+        if completed.returncode != 0:
+            raise RuntimeError(
+                f"Codex blind reader failed with exit {completed.returncode}: "
+                f"{completed.stderr[-500:]}"
+            )
+        if not last_message_path.exists():
+            raise RuntimeError("Codex blind reader did not write a final message")
+        raw_text = last_message_path.read_text(encoding="utf-8").strip()
+        events, usage = parse_codex_events(completed.stdout)
+        agent_text = next(
+            event["item"]["text"]
+            for event in events
+            if event.get("type") == "item.completed"
+            and isinstance(event.get("item"), dict)
+            and event["item"].get("type") == "agent_message"
+        ).strip()
+        if raw_text != agent_text:
+            raise RuntimeError("Codex final-message file and event transcript differ")
+
+    if not raw_text:
+        raise RuntimeError("empty annotation response; no packet artifact written")
+    timestamp = datetime.now(UTC).isoformat()
+    request_audit = {
+        "timestamp_utc": timestamp,
+        "backend": "codex_cli",
+        "model": CODEX_MODEL,
+        "model_context": "fresh ephemeral session in a temporary empty directory",
+        "system_prompt": "Codex CLI built-in; not supplied by the experiment",
+        "tools": "runtime available but prohibited by the user message and event-audited",
+        "sandbox": "read-only",
+        "user_config": "ignored",
+        "project_rules": "none (isolated directory outside a repository)",
+        "n_messages": 1,
+        "row_ids": expected_ids,
+        "outbound_request_verbatim": user_message,
+        "outbound_chars": len(user_message),
+        "leakage_scan_scopes": {
+            "wrapper": {
+                "banned_terms": list(WRAPPER_BANNED),
+                "hits": hits["wrapper"],
+                "chars": sum(len(text) for scope, text in segments if scope == "wrapper"),
+            },
+            "payload": {
+                "banned_terms": list(PAYLOAD_BANNED),
+                "hits": hits["payload"],
+                "chars": sum(len(text) for scope, text in segments if scope == "payload"),
+            },
+        },
+        "stop_reason": "process_exit_0_turn_completed",
+        "usage": usage,
+        "tool_item_types_observed": [],
+        "protocol_deviation": (
+            "Direct Anthropic API and Claude CLI both failed authentication; "
+            "used an isolated content-only Codex CLI reader with the frozen key"
+        ),
+    }
+    response_audit = {
+        "timestamp_utc": timestamp,
+        "raw_text": raw_text,
+        "provider_event_jsonl": completed.stdout,
+        "provider_stderr": completed.stderr,
+        "returncode": completed.returncode,
+    }
+    atomic_json(request_path, request_audit)
+    atomic_json(response_path, response_audit)
+    parsed = parse_annotations(raw_text, expected_ids)
+    atomic_json(parsed_path, parsed)
+    return parsed
+
+
 def run(args: argparse.Namespace) -> None:
     generations = read_jsonl(args.generations)
     if not generations:
@@ -304,7 +465,7 @@ def run(args: argparse.Namespace) -> None:
         if len(packets) >= 10:
             raise RuntimeError(f"{len(packets)} calls is a volume path; use the dispatcher")
     packet_dir.mkdir(parents=True, exist_ok=True)
-    client = anthropic.Anthropic()
+    client = anthropic.Anthropic() if args.backend == "anthropic" else None
     all_annotations: list[dict[str, Any]] = []
     for index, packet in enumerate(packets):
         stem = f"packet_{index:03d}"
@@ -316,13 +477,22 @@ def run(args: argparse.Namespace) -> None:
             parsed = json.loads(parsed_path.read_text(encoding="utf-8"))
             parsed = parse_annotations(json.dumps(parsed), expected_ids)
         else:
-            parsed = call_packet(
-                client,
-                packet,
-                request_path=request_path,
-                response_path=response_path,
-                parsed_path=parsed_path,
-            )
+            if args.backend == "anthropic":
+                assert client is not None
+                parsed = call_packet(
+                    client,
+                    packet,
+                    request_path=request_path,
+                    response_path=response_path,
+                    parsed_path=parsed_path,
+                )
+            else:
+                parsed = call_codex_packet(
+                    packet,
+                    request_path=request_path,
+                    response_path=response_path,
+                    parsed_path=parsed_path,
+                )
         all_annotations.extend(parsed)
         print(f"annotated packet {index + 1}/{len(packets)} ({len(packet)} rows)", flush=True)
 
@@ -332,7 +502,8 @@ def run(args: argparse.Namespace) -> None:
             {
                 "timestamp_utc": datetime.now(UTC).isoformat(),
                 "row_id": all_annotations[0]["row_id"],
-                "model": MODEL,
+                "model": MODEL if args.backend == "anthropic" else CODEX_MODEL,
+                "backend": args.backend,
                 "parsed": True,
             },
         )
@@ -352,7 +523,8 @@ def run(args: argparse.Namespace) -> None:
         args.out / "DONE.json",
         {
             "timestamp_utc": datetime.now(UTC).isoformat(),
-            "model": MODEL,
+            "model": MODEL if args.backend == "anthropic" else CODEX_MODEL,
+            "backend": args.backend,
             "n_rows": len(joined),
             "n_packets": len(packets),
             "all_rows_annotated": True,
@@ -368,6 +540,7 @@ def main() -> None:
     parser.add_argument("--generations", required=True, type=Path)
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--smoke", action="store_true")
+    parser.add_argument("--backend", choices=("anthropic", "codex-cli"), default="anthropic")
     args = parser.parse_args()
     run(args)
 
