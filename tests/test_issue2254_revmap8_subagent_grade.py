@@ -1,0 +1,333 @@
+"""Focused tests for the issue #2254 Codex-subagent sensitivity grader."""
+
+from __future__ import annotations
+
+import json
+import subprocess
+from types import SimpleNamespace
+from unittest.mock import create_autospec
+
+import numpy as np
+import pytest
+
+import scripts.issue2254_revmap8_subagent_grade as sg
+
+
+def _record(cell: dict, cid: str) -> dict:
+    """Small-text production-shape fixture with exactly 200 generations."""
+    return {
+        "cell_id": cid,
+        "cell": cell,
+        "q_of_context": list(range(20)),
+        "seeds": {
+            str(seed): {
+                "completions": [
+                    [f"fixture answer {cid} q{qi} seed{seed} draw{draw}" for draw in range(5)]
+                    for qi in range(20)
+                ],
+                "condition_passes": [True] * 20,
+            }
+            for seed in (42, 43)
+        },
+        "cap_hit_fraction": 0.0,
+    }
+
+
+def _records() -> dict[str, dict]:
+    records = {}
+    for cell in sg.r8.registered_cells():
+        cid = sg.r8._cell_id(cell)
+        records[cid] = _record(cell, cid)
+    for behavior in sg.r8.ROUND_BEHAVIORS:
+        for kind, suffix in (("alpha0", "a0"), ("ceiling", "cl")):
+            cid = f"{behavior}__{suffix}"
+            records[cid] = _record({"behavior": behavior, "kind": kind}, cid)
+    return records
+
+
+def _instrument() -> dict:
+    rubrics = sg.load_frozen_rubrics()
+    return sg._base_instrument_manifest(rubrics, "codex-cli fixture")
+
+
+def _one_item() -> sg.GradeItem:
+    return sg.GradeItem(
+        source_item_id="secret_cell|s42|c0|d0",
+        opaque_id="i0123456789abcdefabcd",
+        cell_id="secret_cell",
+        behavior="evil",
+        arm="steer",
+        phase="steer",
+        qi=0,
+        seed=42,
+        context_index=0,
+        draw_index=0,
+        question="Neutral fixture question?",
+        answer="Neutral fixture answer.",
+    )
+
+
+def _job(rubric_id: str = "trait_evil") -> sg.JobSpec:
+    rubrics = sg.load_frozen_rubrics()
+    item = _one_item()
+    prompt = sg._prompt(rubric_id, rubrics[rubric_id], [item])
+    return sg.JobSpec(
+        scope="pilot",
+        rubric_id=rubric_id,
+        pass_index=0,
+        chunk_index=0,
+        items=(item,),
+        prompt=prompt,
+        prompt_tokens_o200k=sg._count_o200k_tokens(prompt),
+        instrument_fp="fixture-instrument",
+    )
+
+
+def _response(job: sg.JobSpec, score: object = 42) -> dict:
+    row = {"item_id": job.items[0].opaque_id, "score": score}
+    if job.rubric_id == "coherence":
+        row["reasoning"] = "The response is fluent."
+    return {"rubric_id": job.rubric_id, "scores": [row]}
+
+
+def test_frozen_rubric_hashes_and_honest_instrument():
+    rubrics = sg.load_frozen_rubrics()
+    assert {name: sg._sha256_text(text) for name, text in rubrics.items()} == sg.RUBRIC_SHA256
+    instrument = sg._base_instrument_manifest(rubrics, "codex-cli fixture")
+    assert instrument["model"] == "gpt-5.6-sol"
+    assert instrument["reasoning_effort"] == "low"
+    assert instrument["provider_path"] == "codex exec"
+    assert "sonnet" not in instrument["instrument_name"].lower()
+    assert instrument["repeat_interpretation"].endswith("independence is unverified.")
+    assert instrument["cjk"].startswith("Existing programmatic audit only")
+
+
+def test_exact_item_registry_and_applicable_metric_counts():
+    items = sg.build_item_registry(_records())
+    assert len(items) == 4_000
+    assert len({item.opaque_id for item in items}) == 4_000
+    assert len({item.source_item_id for item in items}) == 4_000
+    assert len(sg._applicable(items, "trait_evil")) == 2_000
+    assert len(sg._applicable(items, "trait_sycophancy")) == 2_000
+    assert len(sg._applicable(items, "coherence")) == 4_000
+
+
+def test_pilot_repeats_same_33_items_five_times_and_55_grades_per_arm(monkeypatch):
+    items = sg.build_item_registry(_records())
+    rubrics = sg.load_frozen_rubrics()
+    monkeypatch.setattr(sg, "_count_o200k_tokens", lambda text: len(text) // 10)
+    jobs = sg.build_pilot_jobs(items, rubrics, _instrument())
+    for rubric_id in sg.RUBRIC_IDS:
+        rubric_jobs = [job for job in jobs if job.rubric_id == rubric_id]
+        registry = None
+        arm_counts = {"steer": 0, "proj": 0, "ablate": 0}
+        for pass_index in range(5):
+            pass_items = [
+                item for job in rubric_jobs if job.pass_index == pass_index for item in job.items
+            ]
+            assert len(pass_items) == 33
+            pass_registry = {item.opaque_id for item in pass_items}
+            registry = pass_registry if registry is None else registry
+            assert pass_registry == registry
+            assert {arm: sum(item.arm == arm for item in pass_items) for arm in arm_counts} == {
+                "steer": 11,
+                "proj": 11,
+                "ablate": 11,
+            }
+            for item in pass_items:
+                arm_counts[item.arm] += 1
+        assert len(registry) == 33
+        assert arm_counts == {"steer": 55, "proj": 55, "ablate": 55}
+
+
+def test_packet_blinds_condition_ids_and_contains_one_rubric():
+    rubric = sg.load_frozen_rubrics()["trait_evil"]
+    prompt = sg._prompt("trait_evil", rubric, [_one_item()])
+    assert "secret_cell" not in prompt
+    assert "i0123456789abcdefabcd" in prompt
+    assert prompt.count("<RUBRIC>") == 1
+    assert prompt.count("</RUBRIC>") == 1
+    assert sg._sha256_text(rubric) in prompt
+    assert "experimental conditions" in prompt
+
+
+def test_coherence_packet_contains_answer_but_not_question_or_condition():
+    rubric = sg.load_frozen_rubrics()["coherence"]
+    prompt = sg._prompt("coherence", rubric, [_one_item()])
+    assert "Neutral fixture answer." in prompt
+    assert "Neutral fixture question?" not in prompt
+    assert "secret_cell" not in prompt
+
+
+def test_chunking_enforces_80_items_and_40k_o200k_tokens(monkeypatch):
+    base = _one_item()
+    items = [
+        sg.GradeItem(
+            **{
+                **base.__dict__,
+                "source_item_id": f"source-{index}",
+                "opaque_id": f"i{index:020d}",
+            }
+        )
+        for index in range(161)
+    ]
+    monkeypatch.setattr(sg, "_count_o200k_tokens", lambda text: len(text))
+    jobs = sg._chunks_for_pass(
+        scope="production",
+        rubric_id="trait_evil",
+        rubric="score {question} {answer}",
+        pass_index=0,
+        items=items,
+        instrument_fp="fp",
+    )
+    assert sum(len(job.items) for job in jobs) == 161
+    assert all(len(job.items) <= 80 for job in jobs)
+    assert all(job.prompt_tokens_o200k <= 40_000 for job in jobs)
+
+
+def test_codex_command_is_fresh_ephemeral_read_only_and_pinned(tmp_path):
+    command = sg._codex_command(tmp_path / "schema.json", tmp_path / "out.json", tmp_path)
+    joined = " ".join(command)
+    assert command[:4] == ["codex", "-a", "never", "exec"]
+    assert "--ephemeral" in command
+    assert "--ignore-rules" in command
+    assert "--ignore-user-config" in command
+    assert "--sandbox read-only" in joined
+    assert "--model gpt-5.6-sol" in joined
+    assert "--json" in command
+    assert 'model_reasoning_effort="low"' in command
+    assert "resume" not in command
+
+
+def test_subagent_env_removes_anthropic_and_unrelated_service_keys():
+    env = sg._subagent_env(
+        {
+            "PATH": "/bin",
+            "CODEX_HOME": "/codex",
+            "ANTHROPIC_API_KEY": "a",
+            "ANTHROPIC_BATCH_KEY": "b",
+            "OPENAI_API_KEY": "o",
+            "HF_TOKEN": "h",
+            "WANDB_API_KEY": "w",
+        }
+    )
+    assert env == {"PATH": "/bin", "CODEX_HOME": "/codex"}
+
+
+@pytest.mark.parametrize("bad", ["42", 42.0, True, -1, 101])
+def test_response_validation_never_coerces_invalid_scores(bad):
+    job = _job()
+    with pytest.raises(sg.SubagentGradeHaltError):
+        sg._validate_response(job, _response(job, bad))
+
+
+def test_trait_refusal_is_preserved_as_content_drop_but_coherence_refusal_is_invalid():
+    trait_job = _job("trait_evil")
+    assert sg._validate_response(trait_job, _response(trait_job, "REFUSAL")) == {
+        trait_job.items[0].opaque_id: None
+    }
+    coherence_job = _job("coherence")
+    with pytest.raises(sg.SubagentGradeHaltError):
+        sg._validate_response(coherence_job, _response(coherence_job, "REFUSAL"))
+
+
+def test_response_validation_requires_exact_ids_order_and_count():
+    job = _job()
+    assert sg._validate_response(job, _response(job)) == {job.items[0].opaque_id: 42}
+    wrong = _response(job)
+    wrong["scores"][0]["item_id"] = "iwrong"
+    with pytest.raises(sg.SubagentGradeHaltError):
+        sg._validate_response(job, wrong)
+
+
+def test_run_one_job_executes_real_body_and_writes_immutable_record(tmp_path, monkeypatch):
+    job = _job()
+    sroot = tmp_path / "sensitivity"
+    (sroot / "tmp").mkdir(parents=True)
+    fake_run = create_autospec(subprocess.run)
+
+    def run_side_effect(command, **kwargs):
+        output = command[command.index("--output-last-message") + 1]
+        with open(output, "w", encoding="utf-8") as handle:
+            json.dump(_response(job), handle)
+        stdout = "\n".join(
+            [
+                json.dumps({"type": "thread.started", "thread_id": "fixture-thread"}),
+                json.dumps({"type": "turn.completed"}),
+            ]
+        )
+        return subprocess.CompletedProcess(command, 0, stdout=stdout, stderr="")
+
+    fake_run.side_effect = run_side_effect
+    monkeypatch.setattr(sg.subprocess, "run", fake_run)
+    args = SimpleNamespace(
+        job_timeout_seconds=60,
+        isolated_cwd=str(tmp_path / "isolated"),
+    )
+    record = sg._run_one_job(args, sroot, job)
+    assert record["status"] == "complete"
+    assert record["grader_session_id"] == "fixture-thread"
+    canonical = sg._job_record_path(sroot, job)
+    before = canonical.read_bytes()
+    cached = sg._run_one_job(args, sroot, job)
+    assert cached == record
+    assert canonical.read_bytes() == before
+    assert fake_run.call_count == 1
+
+
+def test_collect_production_requires_exact_five_passes(tmp_path):
+    item = _one_item()
+    jobs = []
+    for pass_index in range(5):
+        job = sg.JobSpec(
+            scope="production",
+            rubric_id="trait_evil",
+            pass_index=pass_index,
+            chunk_index=0,
+            items=(item,),
+            prompt=f"prompt-{pass_index}",
+            prompt_tokens_o200k=1,
+            instrument_fp="fp",
+        )
+        jobs.append(job)
+        record = {
+            "status": "complete",
+            "job_id": job.job_id,
+            "instrument_fp": "fp",
+            "prompt_sha256": sg._sha256_text(job.prompt),
+            "source_item_ids": [item.source_item_id],
+            "response": _response(job, 40 + pass_index),
+        }
+        sg._immutable_json(sg._job_record_path(tmp_path, job), record)
+    # The public collector validates all three complete populations. Exercise
+    # its exact-five logic through the rubric-local invariant instead.
+    by_pass = {}
+    for job in jobs:
+        rec = sg._validate_completed_job(sg._job_record_path(tmp_path, job), job)
+        by_pass[job.pass_index] = sg._validate_response(job, rec["response"])[item.opaque_id]
+    assert [by_pass[index] for index in range(5)] == [40, 41, 42, 43, 44]
+
+
+def test_paired_delta_is_question_paired_and_has_no_parent_verdict_fields():
+    read = sg._paired_delta(np.arange(20.0) + 3.0, np.arange(20.0), key="fixture")
+    assert read["delta_score"] == pytest.approx(3.0)
+    assert read["ci95"] == pytest.approx([3.0, 3.0])
+    serialized = json.dumps(read).lower()
+    assert "null" not in serialized
+    assert "h1" not in serialized
+    assert "h2" not in serialized
+    assert "band" not in serialized
+
+
+def test_output_schema_keeps_refusal_as_drop_signal_not_numeric_coercion():
+    schema = sg._output_schema(_job())
+    score = schema["properties"]["scores"]["items"]["properties"]["score"]
+    assert {"type": "string", "enum": ["REFUSAL"]} in score["anyOf"]
+    assert schema["properties"]["scores"]["minItems"] == 1
+    assert schema["properties"]["scores"]["maxItems"] == 1
+
+
+def test_coherence_output_schema_is_numeric_only():
+    schema = sg._output_schema(_job("coherence"))
+    score = schema["properties"]["scores"]["items"]["properties"]["score"]
+    assert score == {"type": "integer", "minimum": 0, "maximum": 100}
