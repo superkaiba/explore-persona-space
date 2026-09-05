@@ -1,0 +1,130 @@
+{
+ "forced_primary_verdict": "inconclusive_pipeline_control_failed",
+ "unforced_primary_verdict": "no_selective_layer19_task_transfer",
+ "settings": {
+  "L19": {
+   "donor_task": {
+    "forced": {
+     "k": 0,
+     "n": 18,
+     "rate": 0.0,
+     "wilson95": [
+      0.0,
+      0.17587922364665765
+     ]
+    },
+    "unforced": {
+     "k": 0,
+     "n": 18,
+     "rate": 0.0,
+     "wilson95": [
+      0.0,
+      0.17587922364665765
+     ]
+    }
+   },
+   "donor_subject": {
+    "forced": {
+     "k": 0,
+     "n": 18,
+     "rate": 0.0,
+     "wilson95": [
+      0.0,
+      0.17587922364665765
+     ]
+    },
+    "unforced": {
+     "k": 0,
+     "n": 18,
+     "rate": 0.0,
+     "wilson95": [
+      0.0,
+      0.17587922364665765
+     ]
+    }
+   },
+   "donor_format": {
+    "forced": {
+     "k": 0,
+     "n": 6,
+     "rate": 0.0,
+     "wilson95": [
+      2.7755575615628914e-17,
+      0.3903342879021653
+     ]
+    },
+    "unforced": {
+     "k": 1,
+     "n": 6,
+     "rate": 0.16666666666666666,
+     "wilson95": [
+      0.030053369748306635,
+      0.5635028221864702
+     ]
+    }
+   }
+  },
+  "all28": {
+   "donor_task": {
+    "forced": {
+     "k": 0,
+     "n": 18,
+     "rate": 0.0,
+     "wilson95": [
+      0.0,
+      0.17587922364665765
+     ]
+    },
+    "unforced": {
+     "k": 0,
+     "n": 18,
+     "rate": 0.0,
+     "wilson95": [
+      0.0,
+      0.17587922364665765
+     ]
+    }
+   },
+   "donor_subject": {
+    "forced": {
+     "k": 0,
+     "n": 18,
+     "rate": 0.0,
+     "wilson95": [
+      0.0,
+      0.17587922364665765
+     ]
+    },
+    "unforced": {
+     "k": 0,
+     "n": 18,
+     "rate": 0.0,
+     "wilson95": [
+      0.0,
+      0.17587922364665765
+     ]
+    }
+   },
+   "donor_format": {
+    "forced": {
+     "k": 0,
+     "n": 6,
+     "rate": 0.0,
+     "wilson95": [
+      2.7755575615628914e-17,
+      0.3903342879021653
+     ]
+    },
+    "unforced": {
+     "k": 6,
+     "n": 6,
+     "rate": 1.0,
+     "wilson95": [
+      0.6096657120978346,
+      1.0
+     ]
+    }
+   }
+  }
+ }
+}

@@ -452,7 +452,43 @@ def pct(record: dict[str, Any]) -> str:
     return f"{record['k']}/{record['n']} ({100 * record['rate']:.1f}%)"
 
 
-def report_markdown(rows: list[dict[str, Any]], summary: dict[str, Any]) -> str:
+def markdown_text(text: str) -> str:
+    """Keep answer content verbatim apart from Markdown-invisible line-end spaces."""
+    return "\n".join(line.rstrip() for line in text.strip().splitlines())
+
+
+def forced_opening_comparison(baseline: dict[str, Any], current: dict[str, Any]) -> dict[str, Any]:
+    """Extract the preregistered forced-prefix ablation from two summaries."""
+    settings: dict[str, Any] = {}
+    for setting in ("L19", "all28"):
+        before = baseline["settings"][setting]
+        after = current["settings"][setting]
+        settings[setting] = {
+            "donor_task": {
+                "forced": before["task_swap"]["donor_task"],
+                "unforced": after["task_swap"]["donor_task"],
+            },
+            "donor_subject": {
+                "forced": before["subject_swap"]["donor_subject"],
+                "unforced": after["subject_swap"]["donor_subject"],
+            },
+            "donor_format": {
+                "forced": before["positive_format_control"]["donor_format_blind"],
+                "unforced": after["positive_format_control"]["donor_format_blind"],
+            },
+        }
+    return {
+        "forced_primary_verdict": baseline["primary_verdict"],
+        "unforced_primary_verdict": current["primary_verdict"],
+        "settings": settings,
+    }
+
+
+def report_markdown(
+    rows: list[dict[str, Any]],
+    summary: dict[str, Any],
+    comparison: dict[str, Any] | None = None,
+) -> str:
     verdict_text = {
         "inconclusive_self_patch_control_failed": (
             "The self-patch no-op control changed too many greedy answers, so numerical "
@@ -481,6 +517,17 @@ def report_markdown(rows: list[dict[str, Any]], summary: dict[str, Any]) -> str:
             "support selective task-vector sufficiency on this bank."
         ),
     }[summary["primary_verdict"]]
+    if (
+        summary["primary_verdict"] == "no_selective_layer19_task_transfer"
+        and not summary["format_gate_by_setting"]["L19"]
+    ):
+        verdict_text = (
+            "The all-layer exact-pipeline formatting control passed, but the layer-19 "
+            "formatting control failed. The observed layer-19 task/subject null is therefore "
+            "only weakly interpretable and supplies no support for selective task-vector "
+            "sufficiency. Under the separately reported maximal all-layer edit, format "
+            "transferred while neither task nor subject did."
+        )
     lines = [
         "# Corrected natural task/subject context-vector patching — no forced opening",
         "",
@@ -534,6 +581,40 @@ def report_markdown(rows: list[dict[str, Any]], summary: dict[str, Any]) -> str:
             "",
             "Wilson intervals and every denominator are in `summary.json`. The manipulation gate is defined on the all-layer format arm plus unpatched/all-layer-self requested-format accuracy; it is not retrofitted to the observed task result.",
             "",
+        )
+    )
+    if comparison is not None:
+        lines.extend(
+            (
+                "## Forced-opening ablation",
+                "",
+                "| Intervention | Donor task (forced → unforced) | Donor subject (forced → unforced) | Donor format (forced → unforced) |",
+                "|---|---:|---:|---:|",
+            )
+        )
+        for setting, label in (("L19", "Layer 19"), ("all28", "All 28 layers")):
+            block = comparison["settings"][setting]
+            lines.append(
+                "| "
+                + " | ".join(
+                    (
+                        label,
+                        f"{pct(block['donor_task']['forced'])} → {pct(block['donor_task']['unforced'])}",
+                        f"{pct(block['donor_subject']['forced'])} → {pct(block['donor_subject']['unforced'])}",
+                        f"{pct(block['donor_format']['forced'])} → {pct(block['donor_format']['unforced'])}",
+                    )
+                )
+                + " |"
+            )
+        lines.extend(
+            (
+                "",
+                "Removing the fixed opening restored the all-layer positive control without creating task or subject transfer. This changes the earlier pipeline-inconclusive result into an interpretable negative for the maximal all-layer edit; the single-layer null remains weak because its own formatting control still failed.",
+                "",
+            )
+        )
+    lines.extend(
+        (
             "## Fixed qualitative roster",
             "",
             "The roster below was selected mechanically before reading outcomes: for each ordered task pair, the Vancouver row; for each ordered subject pair, the itinerary row; and all six primary layer-19 formatting controls. Answers are complete, not excerpts.",
@@ -560,7 +641,7 @@ def report_markdown(rows: list[dict[str, Any]], summary: dict[str, Any]) -> str:
                 "",
                 f"Blind label: form `{ann['form']}`, subject `{ann['subject']}`, format `{ann['format']}`, complete `{ann['complete']}`, coherence `{ann['coherence']}`.",
                 "",
-                row["output_text"].strip(),
+                markdown_text(str(row["output_text"])),
                 "",
             )
         )
@@ -572,7 +653,7 @@ def report_markdown(rows: list[dict[str, Any]], summary: dict[str, Any]) -> str:
             "",
         )
     )
-    return "\n".join(lines)
+    return "\n".join(lines).rstrip()
 
 
 def run(args: argparse.Namespace) -> None:
@@ -590,7 +671,13 @@ def run(args: argparse.Namespace) -> None:
     corrections = read_jsonl(corrections_path)
     summary["annotation_corrections"] = len(corrections)
     atomic_json(args.out / "summary.json", summary)
-    report = report_markdown(rows, summary)
+    comparison = None
+    baseline_path = getattr(args, "forced_baseline_summary", None)
+    if baseline_path is not None:
+        baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
+        comparison = forced_opening_comparison(baseline, summary)
+        atomic_json(args.out / "forced_opening_comparison.json", comparison)
+    report = report_markdown(rows, summary, comparison)
     report_bytes = (report + "\n").encode()
     (args.out / "qualitative_report.md").write_bytes(report_bytes)
     atomic_json(
@@ -613,6 +700,7 @@ def main() -> None:
     parser.add_argument("--generations", required=True, type=Path)
     parser.add_argument("--annotations", required=True, type=Path)
     parser.add_argument("--out", required=True, type=Path)
+    parser.add_argument("--forced-baseline-summary", type=Path)
     run(parser.parse_args())
 
 

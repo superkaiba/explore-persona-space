@@ -1,0 +1,9 @@
+{
+ "generated_utc": "2026-09-05T07:01:10.494768+00:00",
+ "n_rows": 129,
+ "primary_verdict": "no_selective_layer19_task_transfer",
+ "positive_format_gate_pass": true,
+ "annotation_backend": "codex-cli",
+ "annotation_model": "gpt-6-astra",
+ "report_sha256": "7b5717b9079690840c2f8100c49d3fe53455d18866653a865aaebdd82a828a07"
+}

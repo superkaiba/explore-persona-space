@@ -229,6 +229,27 @@ def test_summary_denominators_and_control_gates() -> None:
     assert summary["primary_verdict"] == "no_selective_layer19_task_transfer"
 
 
+def test_forced_opening_comparison_keeps_layer_settings_separate() -> None:
+    current = analysis.summarize(fake_joined_rows())
+    current["annotation_audit"] = {
+        "model": "test-reader",
+        "backend": "test",
+        "n_packets": 1,
+    }
+    baseline = json.loads(json.dumps(current))
+    for setting in ("L19", "all28"):
+        baseline["settings"][setting]["positive_format_control"]["donor_format_blind"]["k"] = 0
+        baseline["settings"][setting]["positive_format_control"]["donor_format_blind"]["rate"] = 0.0
+    baseline["primary_verdict"] = "inconclusive_pipeline_control_failed"
+    comparison = analysis.forced_opening_comparison(baseline, current)
+    assert comparison["settings"]["L19"]["donor_format"]["forced"]["k"] == 0
+    assert comparison["settings"]["L19"]["donor_format"]["unforced"]["k"] == 0
+    assert comparison["settings"]["all28"]["donor_format"]["forced"]["k"] == 0
+    assert comparison["settings"]["all28"]["donor_format"]["unforced"]["k"] == 6
+    report = analysis.report_markdown(fake_joined_rows(), current, comparison)
+    assert "single-layer null remains weak" in report
+
+
 def test_positive_verdict_requires_specificity_and_coherence() -> None:
     specificity_rows = fake_joined_rows()
     primary_task_rows = [
