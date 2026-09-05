@@ -106,6 +106,11 @@ def test_workload_removes_incompatible_flashinfer_after_vllm_install():
     assert "export VLLM_USE_FLASHINFER_SAMPLER=0" in source
 
 
+def test_workload_uses_batch_one_for_alternate_writer_qwen_identity_gate():
+    source = (REPO_ROOT / "scripts" / "issue2569_third_family_workload.sh").read_text()
+    assert "gate_args+=(--qwen-gate identity --max-batch-rows 1)" in source
+
+
 def _write_bundle(root: Path, model: str, layer: int, tag: str, ci: list[int]) -> None:
     root.mkdir(parents=True, exist_ok=True)
     hidden = XC.MODEL_SPECS[model]["hidden"]

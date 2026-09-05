@@ -132,7 +132,11 @@ capture_model() {
   local model="$1" out_root="$2" rows="$3" prefix="$4"
   local -a gate_args=()
   if [ "$model" = qwen ]; then
-    gate_args+=(--qwen-gate identity)
+    # Alternate-writer text has no banked v_A oracle.  Use the independent
+    # identity gate and batch-1 for both the gate-certified and production
+    # capture paths; Qwen's padded-batch bf16 tail crossed the registered 2%
+    # agreement bar on one of 48 fixed comparisons (0.02059 at v_C L26).
+    gate_args+=(--qwen-gate identity --max-batch-rows 1)
   elif [ "$model" = llama ] || [ "$model" = olmo ]; then
     # Batch-1 makes the independent identity recompute exact and is the
     # production packing shape certified by the timing pilot.
