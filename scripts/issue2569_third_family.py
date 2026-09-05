@@ -12,6 +12,7 @@ the historical ``qwen``/``llama`` labels to the true model and layer.
 from __future__ import annotations
 
 import argparse
+import collections
 import hashlib
 import importlib
 import importlib.util
@@ -51,6 +52,7 @@ ALIAS_LAYERS = {"qwen": (14, 19, 26), "llama": (16, 22, 30)}
 MODEL_IDS = {key: spec["model_id"] for key, spec in XC.MODEL_SPECS.items()}
 VLLM_BANNED_ACCEL_DISTS = {"flashinfer-python": "flashinfer"}
 VLLM_LAUNCH_ENV_PINS = {"VLLM_USE_FLASHINFER_SAMPLER": "0"}
+CAP_HIT_REGEN_THRESHOLD = 0.02
 
 
 def _atomic_json(path: Path, obj: object) -> None:
@@ -78,6 +80,14 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
 def _sha_int64(values: np.ndarray) -> str:
     arr = np.ascontiguousarray(np.asarray(values, dtype=np.int64))
     return hashlib.sha256(arr.tobytes()).hexdigest()
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _bundle_names(model: str) -> list[str]:
@@ -163,6 +173,140 @@ def reconstruct_completion_shards(root: Path) -> dict[str, Any]:
         "n_shards": len(shards),
         "ci_sha256": _sha_int64(ci),
     }
+
+
+def build_cap_hit_roster(
+    *, base_root: Path, roster_path: Path, threshold: float = CAP_HIT_REGEN_THRESHOLD
+) -> dict[str, Any]:
+    """Persist the ordered CIs requiring the registered cap-hit regeneration."""
+    answers = _read_jsonl(base_root / "answers.jsonl")
+    audit = json.loads((base_root / "audit.json").read_text())
+    if len(answers) != int(audit["n_rows"]):
+        raise RuntimeError("base generation answers and audit row counts differ")
+    roster = [
+        int(row["ci"])
+        for row in answers
+        if row.get("drop_reason") is None and row.get("finish_reason") == "length"
+    ]
+    expected = int(audit.get("finish_reasons", {}).get("length", 0))
+    if len(roster) != expected:
+        raise RuntimeError(f"observed cap hits {len(roster)} != audit count {expected}")
+    fraction = len(roster) / len(answers)
+    if not roster or fraction <= threshold:
+        raise RuntimeError(
+            f"cap-hit regeneration was requested but fraction={fraction:.6f} "
+            f"does not exceed threshold={threshold:.6f}"
+        )
+    record = {
+        "ci": roster,
+        "n_rows": len(answers),
+        "n_cap_hit": len(roster),
+        "cap_hit_fraction": fraction,
+        "threshold": threshold,
+        "triggered": True,
+        "ci_sha256": _sha_int64(np.asarray(roster, dtype=np.int64)),
+        "base_audit_sha256": _file_sha256(base_root / "audit.json"),
+    }
+    _atomic_json(roster_path, record)
+    return record
+
+
+def merge_cap_hit_topup(
+    *,
+    base_root: Path,
+    topup_root: Path,
+    roster_path: Path,
+    destination: Path,
+    threshold: float = CAP_HIT_REGEN_THRESHOLD,
+) -> dict[str, Any]:
+    """Replace capped base rows with longer deterministic regeneration rows."""
+    base_rows = _read_jsonl(base_root / "answers.jsonl")
+    topup_rows = _read_jsonl(topup_root / "answers.jsonl")
+    roster_obj = json.loads(roster_path.read_text())
+    roster = [int(ci) for ci in roster_obj["ci"]]
+    base_hits = [
+        int(row["ci"])
+        for row in base_rows
+        if row.get("drop_reason") is None and row.get("finish_reason") == "length"
+    ]
+    topup_ci = [int(row["ci"]) for row in topup_rows]
+    if base_hits != roster or topup_ci != roster:
+        raise RuntimeError("base cap-hit, persisted roster, and top-up row orders differ")
+    topup_by_ci = {int(row["ci"]): row for row in topup_rows}
+    if len(topup_by_ci) != len(topup_rows):
+        raise RuntimeError("top-up generation contains duplicate ci values")
+
+    merged: list[dict[str, Any]] = []
+    for base in base_rows:
+        ci = int(base["ci"])
+        if ci not in topup_by_ci:
+            merged.append(base)
+            continue
+        topup = topup_by_ci[ci]
+        if str(base["prompt"]) != str(topup["prompt"]):
+            raise RuntimeError(f"ci={ci}: prompt drift in cap-hit regeneration")
+        if str(base["corpus"]) != str(topup["corpus"]):
+            raise RuntimeError(f"ci={ci}: corpus drift in cap-hit regeneration")
+        if topup.get("drop_reason") is not None or not str(topup.get("response", "")).strip():
+            raise RuntimeError(f"ci={ci}: cap-hit regeneration produced an unusable response")
+        replacement = dict(topup)
+        replacement["regeneration"] = {
+            "reason": "base_finish_reason_length",
+            "base_response_tokens": int(base.get("response_tokens", 0)),
+            "base_seed": int(base["seed"]),
+            "topup_seed": int(topup["seed"]),
+        }
+        merged.append(replacement)
+
+    if len(merged) != len(base_rows) or len({int(row["ci"]) for row in merged}) != len(merged):
+        raise RuntimeError("merged generation roster is incomplete or duplicated")
+    cap_hits_after = sum(row.get("finish_reason") == "length" for row in merged)
+    fraction_after = cap_hits_after / len(merged)
+    if fraction_after > threshold:
+        raise RuntimeError(
+            f"post-regeneration cap-hit fraction {fraction_after:.6f} exceeds {threshold:.6f}"
+        )
+    drops = collections.Counter(
+        str(row["drop_reason"]) for row in merged if row.get("drop_reason") is not None
+    )
+    finishes = collections.Counter(str(row.get("finish_reason")) for row in merged)
+    audit = {
+        "kind": "cap-hit-regeneration-merge",
+        "n_rows": len(merged),
+        "n_kept": sum(row.get("drop_reason") is None for row in merged),
+        "drops": dict(drops),
+        "finish_reasons": dict(finishes),
+        "cap_hit": {
+            "threshold": threshold,
+            "n_before": len(base_hits),
+            "fraction_before": len(base_hits) / len(base_rows),
+            "n_after": cap_hits_after,
+            "fraction_after": fraction_after,
+            "n_replaced": len(topup_rows),
+        },
+        "base": {
+            "root": str(base_root.resolve()),
+            "audit_sha256": _file_sha256(base_root / "audit.json"),
+        },
+        "topup": {
+            "root": str(topup_root.resolve()),
+            "audit_sha256": _file_sha256(topup_root / "audit.json"),
+            "roster_sha256": _file_sha256(roster_path),
+        },
+        "ci_sha256": _sha_int64(np.asarray([int(row["ci"]) for row in merged])),
+    }
+    _atomic_jsonl(destination / "answers.jsonl", merged)
+    _atomic_json(destination / "audit.json", audit)
+    _atomic_json(
+        destination / "regime.json",
+        {
+            "kind": "base-plus-cap-hit-regeneration",
+            "base_regime": json.loads((base_root / "regime.json").read_text()),
+            "topup_regime": json.loads((topup_root / "regime.json").read_text()),
+            "merge_audit_sha256": _file_sha256(destination / "audit.json"),
+        },
+    )
+    return audit
 
 
 def materialize_candidate_source(
@@ -331,6 +475,35 @@ def phase_stage_existing(args: argparse.Namespace) -> None:
     }
     _atomic_json(root / "bank" / "staged_inputs.json", record)
     print("[third-family] immutable Qwen/Llama inputs staged and verified", flush=True)
+
+
+def phase_topup_roster(args: argparse.Namespace) -> None:
+    root = Path(args.work_root)
+    record = build_cap_hit_roster(
+        base_root=root / "capture" / "gen_olmo_s42",
+        roster_path=root / "capture" / "gen_olmo_s42_topup" / "roster.json",
+    )
+    print(
+        f"[third-family] OLMo cap-hit top-up triggered: "
+        f"{record['n_cap_hit']}/{record['n_rows']}",
+        flush=True,
+    )
+
+
+def phase_merge_topup(args: argparse.Namespace) -> None:
+    root = Path(args.work_root)
+    audit = merge_cap_hit_topup(
+        base_root=root / "capture" / "gen_olmo_s42",
+        topup_root=root / "capture" / "gen_olmo_s42_topup",
+        roster_path=root / "capture" / "gen_olmo_s42_topup" / "roster.json",
+        destination=root / "capture" / "gen_olmo_s42_merged",
+    )
+    cap = audit["cap_hit"]
+    print(
+        f"[third-family] OLMo cap-hit merge PASS: "
+        f"{cap['n_before']} -> {cap['n_after']} ({cap['fraction_after']:.6f})",
+        flush=True,
+    )
 
 
 def _verify_bundle(
@@ -630,6 +803,15 @@ def phase_summarize(args: argparse.Namespace) -> None:
             "llama_writer_captures": OWNANSWER_REVISION,
         },
         "bank_manifest": _read_required(root / "bank" / "three_by_three_manifest.json"),
+        "olmo_generation": {
+            "base": _read_required(root / "capture" / "gen_olmo_s42" / "audit.json"),
+            "topup": _read_required(
+                root / "capture" / "gen_olmo_s42_topup" / "audit.json"
+            ),
+            "merged": _read_required(
+                root / "capture" / "gen_olmo_s42_merged" / "audit.json"
+            ),
+        },
         "all_pairs_atlas": {
             "metric": "activation-Procrustes-aligned cosine between matched native operators",
             "cosine_matrix": cosine.tolist(),
@@ -759,6 +941,8 @@ def phase_selftest(args: argparse.Namespace) -> None:
 PHASES = {
     "preflight": phase_preflight,
     "stage-existing": phase_stage_existing,
+    "topup-roster": phase_topup_roster,
+    "merge-topup": phase_merge_topup,
     "build-pairs": phase_build_pairs,
     "validate-bank": phase_validate_bank,
     "summarize": phase_summarize,

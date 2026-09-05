@@ -239,3 +239,64 @@ def test_materialize_candidate_source_recovers_historical_order_and_content(tmp_
             raw_completion_root=raw,
             destination=tmp_path / "source_candidate",
         )
+
+
+def test_cap_hit_roster_and_merge_replace_only_capped_rows(tmp_path):
+    base = tmp_path / "base"
+    topup = tmp_path / "topup"
+    merged = tmp_path / "merged"
+    base_rows = [
+        {
+            "ci": ci,
+            "corpus": "lmsys",
+            "prompt": f"p{ci}",
+            "response": f"base{ci}",
+            "finish_reason": "length" if ci in {1, 3} else "stop",
+            "response_tokens": 1024 if ci in {1, 3} else 10,
+            "drop_reason": None,
+            "seed": 42,
+        }
+        for ci in range(100)
+    ]
+    TF._atomic_jsonl(base / "answers.jsonl", base_rows)
+    TF._atomic_json(
+        base / "audit.json",
+        {"n_rows": 100, "finish_reasons": {"length": 2, "stop": 98}},
+    )
+    TF._atomic_json(base / "regime.json", {"max_tokens": 1024, "seed": 42})
+    roster_path = topup / "roster.json"
+    roster = TF.build_cap_hit_roster(base_root=base, roster_path=roster_path, threshold=0.01)
+    assert roster["ci"] == [1, 3]
+
+    topup_rows = [
+        {
+            **base_rows[ci],
+            "response": f"long{ci}",
+            "finish_reason": "stop",
+            "response_tokens": 1500,
+            "seed": 1667586269,
+        }
+        for ci in (1, 3)
+    ]
+    TF._atomic_jsonl(topup / "answers.jsonl", topup_rows)
+    TF._atomic_json(topup / "audit.json", {"n_rows": 2})
+    TF._atomic_json(topup / "regime.json", {"max_tokens": 4096, "seed": 1667586269})
+    audit = TF.merge_cap_hit_topup(
+        base_root=base,
+        topup_root=topup,
+        roster_path=roster_path,
+        destination=merged,
+    )
+    rows = TF._read_jsonl(merged / "answers.jsonl")
+    assert [row["ci"] for row in rows] == list(range(100))
+    assert rows[0]["response"] == "base0"
+    assert rows[1]["response"] == "long1"
+    assert rows[3]["regeneration"]["base_response_tokens"] == 1024
+    assert audit["cap_hit"] == {
+        "threshold": 0.02,
+        "n_before": 2,
+        "fraction_before": 0.02,
+        "n_after": 0,
+        "fraction_after": 0.0,
+        "n_replaced": 2,
+    }

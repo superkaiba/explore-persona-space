@@ -78,6 +78,8 @@ def test_prepare_materializes_capture_contract_and_preserves_source_order(tmp_pa
     assert manifest["n_source"] == 3
     assert manifest["n_kept"] == 2
     assert manifest["drops"] == {"empty_response": 1}
+    assert manifest["response_seeds"] == [42]
+    assert manifest["cap_hit_regeneration"] is None
 
 
 def test_source_roster_can_select_frozen_test_partition(tmp_path):
@@ -97,6 +99,26 @@ def test_source_roster_can_select_frozen_test_partition(tmp_path):
     )
     selected = gen._load_source(args)
     assert [row["ci"] for row in selected] == [7, 9]
+
+
+def test_generation_regime_accepts_explicit_cap_and_preserves_prompt_budget():
+    args = gen._parse_args(
+        [
+            "--phase",
+            "generate",
+            "--model",
+            "olmo",
+            "--max-new-tokens",
+            "4096",
+            "--max-model-len",
+            "12288",
+        ]
+    )
+    rows = [{"ci": 1, "corpus": "lmsys", "prompt": "p", "response": "q"}]
+    regime = gen._regime(args, rows)
+    assert regime["max_tokens"] == 4096
+    assert regime["max_model_len"] == 12288
+    assert regime["max_prompt_tokens"] == 8128
 
 
 def test_row_cosine_and_subset_r2_helpers():

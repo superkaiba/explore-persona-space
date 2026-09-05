@@ -13,10 +13,15 @@ CANDIDATE_SOURCE_ROOT="$WORK_ROOT/source_candidate"
 QWRITER_OLMO_ROOT="$WORK_ROOT/capture/qwriter_olmo"
 LWRITER_ROOT="$WORK_ROOT/bank/lwriter"
 OWRITER_GEN="$WORK_ROOT/capture/gen_olmo_s42"
+OWRITER_TOPUP="$WORK_ROOT/capture/gen_olmo_s42_topup"
+OWRITER_MERGED="$WORK_ROOT/capture/gen_olmo_s42_merged"
 OWRITER_ROOT="$WORK_ROOT/capture/owriter"
 DATA_REPO=superkaiba1/explore-persona-space-data
 RESULT_PREFIX=issue2569_theory/third_family
 CANDIDATE_ROWS=10500
+TOPUP_MAX_TOKENS=4096
+TOPUP_MAX_MODEL_LEN=12288
+TOPUP_SEED=1667586269
 ANALYSIS_ROWS=10000
 SAME_TEXT_ROWS=60000
 TRANSFORMERS_PIN=5.15.0
@@ -104,9 +109,20 @@ run_logged generate-olmo-s42 "${PY[@]}" scripts/issue2569_ownanswers_generate.py
   --capture-root "$OWRITER_ROOT" \
   --upload --hf-data-repo "$DATA_REPO" \
   --hf-prefix "$RESULT_PREFIX/raw_completions/olmo_seed42"
+run_logged olmo-topup-roster "${PY[@]}" scripts/issue2569_third_family.py \
+  --phase topup-roster --work-root "$WORK_ROOT"
+run_logged generate-olmo-s42-topup "${PY[@]}" scripts/issue2569_ownanswers_generate.py \
+  --phase generate --model olmo --seed "$TOPUP_SEED" --rows 0 \
+  --max-new-tokens "$TOPUP_MAX_TOKENS" --max-model-len "$TOPUP_MAX_MODEL_LEN" \
+  --source-root "$CANDIDATE_SOURCE_ROOT" --ci-roster "$OWRITER_TOPUP/roster.json" \
+  --out-root "$OWRITER_TOPUP" --capture-root "$OWRITER_ROOT" \
+  --upload --hf-data-repo "$DATA_REPO" \
+  --hf-prefix "$RESULT_PREFIX/raw_completions/olmo_seed42_cap4096"
+run_logged merge-olmo-s42-topup "${PY[@]}" scripts/issue2569_third_family.py \
+  --phase merge-topup --work-root "$WORK_ROOT"
 run_logged prepare-olmo-s42 "${PY[@]}" scripts/issue2569_ownanswers_generate.py \
   --phase prepare --model olmo --seed 42 --rows "$CANDIDATE_ROWS" \
-  --source-root "$CANDIDATE_SOURCE_ROOT" --out-root "$OWRITER_GEN" \
+  --source-root "$CANDIDATE_SOURCE_ROOT" --out-root "$OWRITER_MERGED" \
   --capture-root "$OWRITER_ROOT"
 
 mkdir -p "$QWRITER_OLMO_ROOT"
@@ -193,7 +209,7 @@ run_crossed_pair() {
   phase "crossed_${pair}"
   run_logged "semantic-$pair" "${PY[@]}" scripts/issue2569_ownanswers_analyze.py \
     --phase semantic --analysis-rows "$ANALYSIS_ROWS" --source-root "$source_root" \
-    --llama-answers "$OWRITER_GEN/answers.jsonl" --out-dir "$analysis" --device cuda
+    --llama-answers "$OWRITER_MERGED/answers.jsonl" --out-dir "$analysis" --device cuda
   run_logged "crossed-geometry-$pair" "${PY[@]}" scripts/issue2569_ownanswers_analyze.py \
     --phase analyze --analysis-rows "$ANALYSIS_ROWS" --n-train 8000 --n-val 500 \
     --n-test 1500 --null-draws 200 --qwriter-dir "$pair_root/source_writer" \

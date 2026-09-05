@@ -45,10 +45,9 @@ MODEL_SPECS = {
     for key, spec in XC.MODEL_SPECS.items()
 }
 
-MAX_MODEL_LEN = 8192
-MAX_NEW_TOKENS = 1024
+DEFAULT_MAX_MODEL_LEN = 8192
+DEFAULT_MAX_NEW_TOKENS = 1024
 LENGTH_MARGIN = 64
-MAX_PROMPT_TOKENS = MAX_MODEL_LEN - MAX_NEW_TOKENS - LENGTH_MARGIN
 NON_LFS_TEXT_LIMIT = 9_000_000
 
 
@@ -113,6 +112,11 @@ def _load_source(args) -> list[dict]:
 def _regime(args, source: list[dict]) -> dict:
     spec = MODEL_SPECS[args.model]
     cis = [int(r["ci"]) for r in source]
+    max_prompt_tokens = int(args.max_model_len) - int(args.max_new_tokens) - LENGTH_MARGIN
+    assert max_prompt_tokens > 0, (
+        f"invalid length budget: model={args.max_model_len}, "
+        f"generation={args.max_new_tokens}, margin={LENGTH_MARGIN}"
+    )
     return {
         "issue": 2569,
         "round": "cross-model-own-generated-answers",
@@ -122,11 +126,11 @@ def _regime(args, source: list[dict]) -> dict:
         "n": 1,
         "temperature": 1.0,
         "top_p": 0.95,
-        "max_tokens": MAX_NEW_TOKENS,
+        "max_tokens": int(args.max_new_tokens),
         "seed": int(args.seed),
-        "max_model_len": MAX_MODEL_LEN,
+        "max_model_len": int(args.max_model_len),
         "length_margin": LENGTH_MARGIN,
-        "max_prompt_tokens": MAX_PROMPT_TOKENS,
+        "max_prompt_tokens": max_prompt_tokens,
         "source_rows": len(source),
         "source_text_sha256": XC._texts_content_sha(source),
         "ci_sha256": XC._sha_int64(cis),
@@ -188,7 +192,7 @@ def phase_generate(args) -> None:
         llm = LLM(
             model=spec["model_id"],
             revision=spec["revision"],
-            max_model_len=MAX_MODEL_LEN,
+            max_model_len=int(args.max_model_len),
             dtype="bfloat16",
             seed=int(args.seed),
             tensor_parallel_size=1,
@@ -197,7 +201,7 @@ def phase_generate(args) -> None:
             n=1,
             temperature=1.0,
             top_p=0.95,
-            max_tokens=MAX_NEW_TOKENS,
+            max_tokens=int(args.max_new_tokens),
             seed=int(args.seed),
         )
 
@@ -207,7 +211,9 @@ def phase_generate(args) -> None:
         rendered = [_generation_prompt(tok, str(r["prompt"])) for r in rows]
         encoded = tok(rendered, add_special_tokens=False, truncation=False)
         prompt_lens = [len(ids) for ids in encoded["input_ids"]]
-        eligible_pos = [i for i, n_tok in enumerate(prompt_lens) if n_tok <= MAX_PROMPT_TOKENS]
+        eligible_pos = [
+            i for i, n_tok in enumerate(prompt_lens) if n_tok <= regime["max_prompt_tokens"]
+        ]
         outputs_by_pos: dict[int, tuple[str, str | None, int]] = {}
         if eligible_pos:
             assert llm is not None and sampling is not None
@@ -334,9 +340,11 @@ def phase_prepare(args) -> None:
         )
     capture_root = Path(args.capture_root)
     _atomic_jsonl(capture_root / "texts_kept.jsonl", kept)
+    generation_audit = json.loads((Path(args.out_root) / "audit.json").read_text())
     manifest = {
         "writer": args.model,
         "seed": int(args.seed),
+        "response_seeds": sorted({int(row.get("seed", args.seed)) for row in generated}),
         "source_root": str(Path(args.source_root).resolve()),
         "generation_root": str(Path(args.out_root).resolve()),
         "n_source": len(source),
@@ -346,6 +354,7 @@ def phase_prepare(args) -> None:
         "kept_ci_sha256": XC._sha_int64([int(r["ci"]) for r in kept]),
         "kept_text_sha256": XC._texts_content_sha(kept),
         "generation_audit_sha256": _file_sha(Path(args.out_root) / "audit.json"),
+        "cap_hit_regeneration": generation_audit.get("cap_hit"),
     }
     _atomic_json(capture_root / "writer_manifest.json", manifest)
     assert kept, "no generated answers survived preparation"
@@ -386,6 +395,8 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--rows", type=int, default=0)
     ap.add_argument("--chunk-rows", type=int, default=250)
+    ap.add_argument("--max-model-len", type=int, default=DEFAULT_MAX_MODEL_LEN)
+    ap.add_argument("--max-new-tokens", type=int, default=DEFAULT_MAX_NEW_TOKENS)
     ap.add_argument("--ci-roster", default="")
     ap.add_argument(
         "--ci-roster-key",
