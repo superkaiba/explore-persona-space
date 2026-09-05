@@ -146,6 +146,13 @@ def test_runner_allows_distinct_cuda_pilot_hf_prefix() -> None:
     assert runner._hf_prefix(args) == "issue1739_uladder_h100_pilot"
 
 
+def test_runner_materialized_staging_flag_reaches_base_stage_namespace() -> None:
+    args = runner.parse_args(["--materialize-labeling-tars", "--behaviors", "evil"])
+    staged = runner._jobd_namespace(args, "evil")
+    assert args.materialize_labeling_tars is True
+    assert staged.materialize_labeling_tars is True
+
+
 def test_resume_fingerprint_distinguishes_pilot_from_production(tmp_path: Path) -> None:
     path = tmp_path / "all_arms_spearman.json"
     path.write_text(

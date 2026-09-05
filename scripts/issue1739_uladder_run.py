@@ -61,6 +61,7 @@ def _jobd_namespace(args: argparse.Namespace, behavior: str) -> argparse.Namespa
         tensors_root=args.tensors_root,
         revision=args.revision,
         stage_workers=args.stage_workers,
+        materialize_labeling_tars=args.materialize_labeling_tars,
     )
 
 
@@ -246,6 +247,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--ood-mirror-root", type=Path, default=None)
     ap.add_argument("--revision", default="main")
     ap.add_argument("--stage-workers", type=int, default=12)
+    ap.add_argument(
+        "--materialize-labeling-tars",
+        action="store_true",
+        help="use hf_transfer whole-tar staging (requires roughly 2x tar-size free space)",
+    )
     ap.add_argument("--stage-timeout-s", type=int, default=28800)
     ap.add_argument("--min-free-gib", type=float, default=115.0)
     ap.add_argument("--canary-gib", type=float, default=2.0)

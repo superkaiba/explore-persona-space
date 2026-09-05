@@ -117,7 +117,13 @@ def stage_inputs(args, token: str) -> None:
     if why:
         _log(f"[phase=stage] {args.behavior}: re-staging — {why}")
     write_canary(args.store_root, gib=2.0)
-    _log(f"[phase=stage] {args.behavior}: streaming labeling tar (member-selective)")
+    materialize = bool(getattr(args, "materialize_labeling_tars", False))
+    transfer = (
+        "materializing labeling tar (hf_transfer)"
+        if materialize
+        else ("streaming labeling tar (member-selective)")
+    )
+    _log(f"[phase=stage] {args.behavior}: {transfer}")
     m = stream_slice(
         args.behavior,
         dest,
@@ -126,6 +132,7 @@ def stage_inputs(args, token: str) -> None:
         layers=tuple(ns.layers),
         token=token,
         workers=args.stage_workers,
+        materialize=materialize,
     )
     _log(
         f"[phase=stage] {args.behavior}: DONE written={m['kept_bytes'] / 1e9:.1f} GB "

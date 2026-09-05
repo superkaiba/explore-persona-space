@@ -33,6 +33,7 @@ import json
 import logging
 import os
 import re
+import shutil
 import sys
 import tarfile
 import threading
@@ -215,6 +216,144 @@ def _replace_with_retry(tmp, out, size: int, attempts: int = 6) -> None:
     raise last  # type: ignore[misc]
 
 
+def _download_tar(
+    behavior: str, revision: str, local_tar: Path, *, token: str | None = None
+) -> Path:
+    """Download one complete labeling tar through the accelerated Hub client."""
+    from explore_persona_space.orchestrate import hub
+
+    stem = f"{behavior}_labeling"
+    path_in_repo = f"issue1739_ctxmap/capture_store/{stem}/{stem}.tar"
+    return hub.stage_hub_file(
+        REPO,
+        path_in_repo,
+        local_tar,
+        repo_type="dataset",
+        revision=revision,
+        token=token,
+    )
+
+
+def _extract_selected_members(
+    tar: tarfile.TarFile,
+    *,
+    dest: Path,
+    pat: re.Pattern,
+    on_write=None,
+) -> tuple[int, int, int, int]:
+    """Extract matching members and return kept/reused/skipped/kept-bytes."""
+    kept = skipped = reused = 0
+    kept_bytes = 0
+    for member in tar:
+        if not member.isfile():
+            continue
+        name = member.name.rsplit("/", 1)[-1]
+        if not pat.match(name):
+            skipped += 1
+            continue
+        out = dest / name
+        if out.is_file() and out.stat().st_size == member.size:
+            reused += 1
+            continue
+        src = tar.extractfile(member)
+        if src is None:
+            raise RuntimeError(f"unreadable tar member: {member.name}")
+        tmp = out.with_suffix(out.suffix + ".tmp")
+        with open(tmp, "wb") as fh:
+            while True:
+                chunk = src.read(4 << 20)
+                if not chunk:
+                    break
+                fh.write(chunk)
+            fh.flush()
+            os.fsync(fh.fileno())
+        _replace_with_retry(tmp, out, member.size)
+        kept += 1
+        kept_bytes += member.size
+        if on_write is not None:
+            on_write(kept, kept_bytes, skipped, reused)
+    return kept, reused, skipped, kept_bytes
+
+
+def _materialized_slice(
+    behavior: str,
+    dest: Path,
+    *,
+    revision: str,
+    kinds: tuple[str, ...],
+    layers: tuple[int, ...],
+    token: str,
+) -> dict:
+    """Download a tar with hf_transfer, extract its slice, then reap the tar."""
+    pat = wanted_re(kinds, layers)
+    dest.mkdir(parents=True, exist_ok=True)
+    total = head_size(tar_url(behavior, revision), token)
+    free = shutil.disk_usage(dest.parent).free
+    reserve = 5 << 30
+    required = 2 * total + reserve
+    if free < required:
+        raise RuntimeError(
+            "materialized labeling stage lacks peak headroom: "
+            f"free={free / 2**30:.1f} GiB required={required / 2**30:.1f} GiB "
+            f"(2x {total / 2**30:.1f} GiB tar + 5 GiB reserve)"
+        )
+
+    staging_dir = dest.parent / "labeling_tars"
+    staging_dir.mkdir(parents=True, exist_ok=True)
+    local_tar = staging_dir / f"{behavior}_labeling.tar"
+    local_tar.unlink(missing_ok=True)
+    for stale in staging_dir.glob(".hfstage-*"):
+        if stale.is_dir():
+            shutil.rmtree(stale)
+
+    t0 = time.time()
+    try:
+        got = _download_tar(behavior, revision, local_tar, token=token)
+
+        def on_write(kept: int, kept_bytes: int, skipped: int, reused: int) -> None:
+            if kept % 500 == 0:
+                logger.info(
+                    "[%s] materialized slice kept %d (%.2f GB) skipped %d reused %d",
+                    behavior,
+                    kept,
+                    kept_bytes / 1e9,
+                    skipped,
+                    reused,
+                )
+
+        with tarfile.open(got, "r:") as tar:
+            kept, reused, skipped, kept_bytes = _extract_selected_members(
+                tar,
+                dest=dest,
+                pat=pat,
+                on_write=on_write,
+            )
+    finally:
+        local_tar.unlink(missing_ok=True)
+
+    elapsed = time.time() - t0
+    manifest = {
+        "behavior": behavior,
+        "repo": REPO,
+        "revision": revision,
+        "url": tar_url(behavior, revision),
+        "kinds": list(kinds),
+        "layers": list(layers),
+        "n_kept": kept,
+        "n_reused": reused,
+        "n_skipped": skipped,
+        "kept_bytes": kept_bytes,
+        "tar_bytes": total,
+        "bytes_fetched": total,
+        "elapsed_s": round(elapsed, 1),
+        "mb_per_s": round(total / 1e6 / max(elapsed, 1e-6), 1),
+        "transfer_mode": "materialized",
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    (dest / "slice_manifest.json").write_text(json.dumps(manifest, indent=2))
+    return manifest
+
+
 def stream_slice(
     behavior: str,
     dest: Path,
@@ -225,14 +364,22 @@ def stream_slice(
     token: str,
     workers: int = 12,
     window: int = 32 << 20,
+    materialize: bool = False,
 ) -> dict:
     """Stream one behavior's tar; write only members matching the slice regex."""
+    if materialize:
+        return _materialized_slice(
+            behavior,
+            dest,
+            revision=revision,
+            kinds=kinds,
+            layers=layers,
+            token=token,
+        )
     pat = wanted_re(kinds, layers)
     dest.mkdir(parents=True, exist_ok=True)
     url = tar_url(behavior, revision)
     t0 = time.time()
-    kept = skipped = reused = 0
-    kept_bytes = 0
     total = head_size(url, token)
     logger.info(
         "[%s] streaming %.1f GB via %d-way parallel ranges (window %d MiB)",
@@ -246,32 +393,8 @@ def stream_slice(
         buffered = io.BufferedReader(reader, buffer_size=8 << 20)
         # mode="r|" = sequential/streaming tar read (no seeking on the fileobj).
         with tarfile.open(fileobj=buffered, mode="r|") as tar:
-            for member in tar:
-                if not member.isfile():
-                    continue
-                name = member.name.rsplit("/", 1)[-1]
-                if not pat.match(name):
-                    skipped += 1
-                    continue
-                out = dest / name
-                if out.is_file() and out.stat().st_size == member.size:
-                    reused += 1
-                    continue
-                src = tar.extractfile(member)
-                if src is None:
-                    continue
-                tmp = out.with_suffix(out.suffix + ".tmp")
-                with open(tmp, "wb") as fh:
-                    while True:
-                        chunk = src.read(4 << 20)
-                        if not chunk:
-                            break
-                        fh.write(chunk)
-                    fh.flush()
-                    os.fsync(fh.fileno())
-                _replace_with_retry(tmp, out, member.size)
-                kept += 1
-                kept_bytes += member.size
+
+            def on_write(kept: int, kept_bytes: int, skipped: int, reused: int) -> None:
                 if kept % 20 == 0:
                     el = max(time.time() - t0, 1e-6)
                     got = reader.bytes_fetched
@@ -289,6 +412,13 @@ def stream_slice(
                         el,
                         (total - got) / max(got / el, 1.0),
                     )
+
+            kept, reused, skipped, kept_bytes = _extract_selected_members(
+                tar,
+                dest=dest,
+                pat=pat,
+                on_write=on_write,
+            )
     el = time.time() - t0
     fetched = reader.bytes_fetched
     manifest = {
@@ -306,6 +436,7 @@ def stream_slice(
         "bytes_fetched": fetched,
         "elapsed_s": round(el, 1),
         "mb_per_s": round(fetched / 1e6 / max(el, 1e-6), 1),
+        "transfer_mode": "range_stream",
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     (dest / "slice_manifest.json").write_text(json.dumps(manifest, indent=2))
@@ -332,6 +463,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--kinds", default=",".join(WANTED_KINDS))
     ap.add_argument("--workers", type=int, default=12, help="concurrent Range fetchers")
     ap.add_argument("--window-mib", type=int, default=32, help="bytes per Range window")
+    ap.add_argument(
+        "--materialize",
+        action="store_true",
+        help="download the complete tar with hf_transfer before extracting the slice",
+    )
     args = ap.parse_args(argv)
 
     logging.basicConfig(
@@ -351,6 +487,7 @@ def main(argv: list[str] | None = None) -> int:
         token=token,
         workers=args.workers,
         window=args.window_mib << 20,
+        materialize=args.materialize,
     )
     sys.stdout.flush()
     sys.stderr.flush()
