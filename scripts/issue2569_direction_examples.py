@@ -832,6 +832,16 @@ def render_markdown(document: dict) -> str:
         f"Total: **{coverage['n_directions']} directions/modes** over "
         f"**{coverage['n_rows']:,} paired rows**. Every selected row has both prompt and answer text.",
         "",
+        "## Reading",
+        "",
+    ]
+    for reading in document["interpretation"]["readings"]:
+        lines.append(f"- {reading}")
+        lines.append("")
+    lines += [
+        "The readings are analyst summaries of the displayed extrema, not a separate judged",
+        "annotation or statistical test.",
+        "",
     ]
     for family in document["families"]:
         lines += [
@@ -1057,6 +1067,55 @@ def main() -> None:
         )
 
     n_directions = sum(row["n_directions"] for row in coverage_rows)
+    all_directions = [
+        direction
+        for family in finalized_families
+        for direction in family["directions"]
+    ]
+    line_directions = [row for row in all_directions if row["kind"] == "line"]
+    n_high_with_raw_duplicate = sum(
+        row["duplicate_diagnostics"]["raw_high_unique_ranking_texts"] < args.top_k
+        for row in all_directions
+    )
+    n_low_with_raw_duplicate = sum(
+        row["duplicate_diagnostics"]["raw_low_unique_ranking_texts"] < args.top_k
+        for row in line_directions
+    )
+    operator_top_cis = [
+        row["unique_high"][0]["ci"]
+        for family in finalized_families
+        if family["family"] in {"singular_read", "singular_write", "eigen_read", "eigen_write"}
+        for row in family["directions"]
+    ]
+    worst_rows = next(
+        family for family in finalized_families if family["family"] == "answer_behavior"
+    )["directions"][-10:]
+    worst_max_scale = max(
+        max(
+            abs(row["unique_high"][0]["score_in_sample_scale"]),
+            abs(row["unique_low"][0]["score_in_sample_scale"]),
+        )
+        for row in worst_rows
+    )
+    interpretation = {
+        "readings": [
+            "The persona and refusal axes have direct face validity. Evil directions peak on hostile jailbreak/persona prompts and answers; sycophancy peaks on affectionate, encouraging, or positively framed dialogue; hallucination peaks on florid fictional generation and runs negative on constrained factual or missing-context answers. The mean refusal context direction peaks on direct killing requests, while the answer refusal axis peaks on explicit refusal openers.",
+            "Top singular read/write extrema are mostly language, task, and reply-format templates (one-word protocol replies, translation, long structured prose, code, lists, and role play). The direct examples make the earlier SAE reading concrete without revealing one compact semantic factor.",
+            "Eigen read maxima are especially language- and domain-heavy (Hungarian, Chinese, Vietnamese, Greek, Persian, travel, medicine, history, and technical questions). Eigen write maxima mix domain prose with conversational openers and response registers. This is consistent with broad rotating planes rather than maintained one-dimensional concepts.",
+            "The answer PCs separate coarse output regimes: short acknowledgements versus long reports, markup/tables versus refusals, language, poetic prose, constrained snippets, terminal/code output, addresses, and citations. Their signs are arbitrary; the high/low contrasts, not the polarity labels, are the invariant observation.",
+            "The ten worst-R2 directions are dominated by brittle output regimes: very short templated dialogue, JSON/SVG-only responses, emoji or character repetition, role-play openers, and constrained extraction/classification strings. Their extrema reach far into the sample tails, reinforcing that the map's worst errors are structured directions it acts on rather than a diffuse low-gain null-space residue.",
+            f"Raw top-five repetition is present but not dominant: {n_high_with_raw_duplicate}/{len(all_directions)} high tails and {n_low_with_raw_duplicate}/{len(line_directions)} line low tails contain a repeated ranked-side text. The 128 operator-mode top examples contain {len(set(operator_top_cis))} distinct conversations, and the worst-R2 extrema reach {worst_max_scale:.1f} sample-scale units. Exact-text-deduplicated lists prevent the known corpus boilerplate from monopolizing the readable examples.",
+        ],
+        "diagnostics": {
+            "n_high_tails_with_duplicate_in_raw_top_k": n_high_with_raw_duplicate,
+            "n_high_tails": len(all_directions),
+            "n_low_tails_with_duplicate_in_raw_top_k": n_low_with_raw_duplicate,
+            "n_low_tails": len(line_directions),
+            "operator_top_examples_distinct_ci": len(set(operator_top_cis)),
+            "operator_top_examples_total": len(operator_top_cis),
+            "worst_r2_max_abs_score_in_sample_scale": float(worst_max_scale),
+        },
+    }
     document = {
         "task": "issue2569 leg12 direct direction examples",
         "definitions": {
@@ -1078,6 +1137,7 @@ def main() -> None:
             ],
         },
         "direction_reconstruction": direction_metadata,
+        "interpretation": interpretation,
         "families": finalized_families,
         "repro": {
             "sample": str(args.sample),
