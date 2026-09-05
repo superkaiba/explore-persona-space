@@ -396,3 +396,41 @@ def test_cap_hit_roster_and_merge_replace_only_capped_rows(tmp_path):
         "fraction_after": 0.0,
         "n_replaced": 2,
     }
+
+
+def test_result_upload_files_include_provenance_and_exclude_capture_chunks(tmp_path):
+    included = (
+        "preflight.json",
+        "atlas/qo/pair_manifest.json",
+        "atlas/lo/pair_manifest.json",
+        "pairs/qo/pair_manifest.json",
+        "pairs/lo/pair_manifest.json",
+        "capture/gen_olmo_s42_merged/answers.jsonl",
+        "capture/gen_olmo_s42_merged/audit.json",
+        "capture/gen_olmo_s42_merged/regime.json",
+        "capture/gen_olmo_s42_topup/roster.json",
+        "capture/owriter/writer_manifest.json",
+        "capture/owriter/gates/identity_gate_qwen.json",
+        "capture/owriter/chunks/qwen/regime.json",
+        "capture/qwriter_olmo/gates/identity_gate_olmo.json",
+        "capture/qwriter_olmo/chunks/olmo/regime.json",
+        "source_candidate/source_manifest.json",
+        "source_qwen/selection_meta.json",
+        "source_qwen/texts_processed.json",
+        "results/third_family_summary.json",
+        "bank/three_by_three_manifest.json",
+    )
+    excluded = (
+        "bank/qwriter/final/qwen_vc_L14.pt",
+        "capture/owriter/chunks/qwen/chunk00000.pt",
+        "capture/qwriter_olmo/chunks/olmo/chunk00000.pt",
+        "capture/owriter/texts_kept.jsonl",
+    )
+    for relative in (*included, *excluded):
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("{}\n")
+
+    names = {str(path.relative_to(tmp_path)) for path in TF._result_upload_files(tmp_path)}
+    assert set(included) <= names
+    assert not (set(excluded) & names)

@@ -943,10 +943,7 @@ def phase_summarize(args: argparse.Namespace) -> None:
     print(f"[third-family] wrote {out}", flush=True)
 
 
-def phase_upload_results(args: argparse.Namespace) -> None:
-    if not args.result_prefix:
-        raise AssertionError("--result-prefix is required for --phase upload-results")
-    root = Path(args.work_root)
+def _result_upload_files(root: Path) -> list[Path]:
     candidates: list[Path] = []
     for relative in (
         "atlas/qo/fits",
@@ -959,10 +956,41 @@ def phase_upload_results(args: argparse.Namespace) -> None:
         "pairs/lo/analysis/query_scaling_unpaired",
         "results",
         "bank",
+        "capture/gen_olmo_s42_merged",
     ):
         base = root / relative
         if base.exists():
             candidates.extend(path for path in base.rglob("*") if path.is_file())
+    for relative in (
+        "preflight.json",
+        "atlas/qo/pair_manifest.json",
+        "atlas/lo/pair_manifest.json",
+        "pairs/qo/pair_manifest.json",
+        "pairs/lo/pair_manifest.json",
+        "capture/gen_olmo_s42_topup/roster.json",
+        "capture/owriter/writer_manifest.json",
+        "source_candidate/source_manifest.json",
+        "source_qwen/selection_meta.json",
+        "source_qwen/texts_processed.json",
+    ):
+        path = root / relative
+        if path.is_file():
+            candidates.append(path)
+    for relative in (
+        "capture/owriter/gates",
+        "capture/qwriter_olmo/gates",
+    ):
+        base = root / relative
+        if base.exists():
+            candidates.extend(path for path in base.rglob("*") if path.is_file())
+    for capture_root, models in (
+        ("capture/owriter", ("qwen", "llama", "olmo")),
+        ("capture/qwriter_olmo", ("olmo",)),
+    ):
+        for model in models:
+            regime = root / capture_root / "chunks" / model / "regime.json"
+            if regime.is_file():
+                candidates.append(regime)
     allowed_suffixes = {".json", ".jsonl", ".pt", ".npz"}
     files = sorted({path for path in candidates if path.suffix in allowed_suffixes})
     files = [
@@ -970,6 +998,14 @@ def phase_upload_results(args: argparse.Namespace) -> None:
         for path in files
         if not (path.is_relative_to(root / "bank") and path.suffix in {".pt", ".npz"})
     ]
+    return files
+
+
+def phase_upload_results(args: argparse.Namespace) -> None:
+    if not args.result_prefix:
+        raise AssertionError("--result-prefix is required for --phase upload-results")
+    root = Path(args.work_root)
+    files = _result_upload_files(root)
     if not files:
         raise RuntimeError("no third-family result files found for upload")
     names = [str(path.relative_to(root)) for path in files]
