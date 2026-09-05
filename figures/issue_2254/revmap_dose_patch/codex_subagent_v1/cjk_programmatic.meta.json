@@ -1,0 +1,131 @@
+{
+  "data": {
+    "patching": {
+      "labels": [
+        "Evil \u00b7 Ablation L14",
+        "Evil \u00b7 Ablation L19",
+        "Evil \u00b7 Ablation L26",
+        "Evil \u00b7 Projection L14",
+        "Evil \u00b7 Projection L19",
+        "Evil \u00b7 Projection L26",
+        "Sycophancy \u00b7 Ablation L14",
+        "Sycophancy \u00b7 Ablation L19",
+        "Sycophancy \u00b7 Ablation L26",
+        "Sycophancy \u00b7 Projection L14",
+        "Sycophancy \u00b7 Projection L19",
+        "Sycophancy \u00b7 Projection L26"
+      ],
+      "percent": [
+        5.0,
+        7.000000000000001,
+        5.0,
+        2.0,
+        4.0,
+        4.5,
+        2.5,
+        2.5,
+        2.0,
+        6.5,
+        4.0,
+        0.5
+      ]
+    },
+    "steering": {
+      "labels": [
+        "Evil \u00b7 c=8",
+        "Evil \u00b7 c=16",
+        "Sycophancy \u00b7 c=8",
+        "Sycophancy \u00b7 c=16"
+      ],
+      "percent": [
+        33.5,
+        32.5,
+        27.0,
+        23.0
+      ]
+    }
+  },
+  "figure": "cjk_programmatic",
+  "input": {
+    "path": "eval_results/issue_2254/revmap_dose_patch/exploratory_sensitivity/codex_subagent_v1/report/eligible_report_summary.json",
+    "sha256": "e838795305598e69d54a72fb40d88eb7ebd2e5ca9c440d40ee93b5d40aece77a"
+  },
+  "outputs": {
+    "grayscale": {
+      "path": "figures/issue_2254/revmap_dose_patch/codex_subagent_v1/cjk_programmatic_grayscale.png",
+      "sha256": "8504e1dbf6db194ce9a7ed73303611a8b03583de02578b9b175d28b7acd6d15c"
+    },
+    "pdf": {
+      "path": "figures/issue_2254/revmap_dose_patch/codex_subagent_v1/cjk_programmatic.pdf",
+      "sha256": "0b94886712b8c9a21995ba988162697d148c42442f44ae63d9ba008d906b879d"
+    },
+    "png": {
+      "path": "figures/issue_2254/revmap_dose_patch/codex_subagent_v1/cjk_programmatic.png",
+      "sha256": "5fb81af014ca9812ead5b305777bbbaeb0d4cf30994fbe7c0642b27692d01ad5"
+    }
+  },
+  "render": {
+    "authoring_size_inches": [
+      13.095,
+      7.202
+    ],
+    "background": "#FFFFFF",
+    "exported_size_inches": [
+      13.095,
+      6.543
+    ],
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/cjk_programmatic.pdf}",
+    "png_dpi": 240,
+    "realized_font_pt": {
+      "body": 7.56,
+      "label": 8.4,
+      "tick": 7.14,
+      "title": 9.24
+    },
+    "resolved_font": "Inter",
+    "scale": 0.42,
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "style_version": "c2a-v2",
+    "text": [
+      "67/200",
+      "65/200",
+      "54/200",
+      "46/200",
+      "A  \u00b7  STEERING",
+      "CJK-script intrusion (%)",
+      "0",
+      "10",
+      "20",
+      "30",
+      "40",
+      "Evil \u00b7 c=8",
+      "Evil \u00b7 c=16",
+      "Sycophancy \u00b7 c=8",
+      "Sycophancy \u00b7 c=16",
+      "Programmatic CJK audit",
+      "10/200",
+      "14/200",
+      "4/200",
+      "8/200",
+      "9/200",
+      "5/200",
+      "13/200",
+      "1/200",
+      "B  \u00b7  PATCHING",
+      "Evil \u00b7 Ablation L14",
+      "Evil \u00b7 Ablation L19",
+      "Evil \u00b7 Ablation L26",
+      "Evil \u00b7 Projection L14",
+      "Evil \u00b7 Projection L19",
+      "Evil \u00b7 Projection L26",
+      "Sycophancy \u00b7 Ablation L14",
+      "Sycophancy \u00b7 Ablation L19",
+      "Sycophancy \u00b7 Ablation L26",
+      "Sycophancy \u00b7 Projection L14",
+      "Sycophancy \u00b7 Projection L19",
+      "Sycophancy \u00b7 Projection L26"
+    ]
+  },
+  "source_head": "4be1f4959fdab576f5e121bc8e24226041db67ef"
+}

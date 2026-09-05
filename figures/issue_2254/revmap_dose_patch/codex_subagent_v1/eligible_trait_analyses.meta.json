@@ -1,0 +1,172 @@
+{
+  "data": {
+    "steering": {
+      "evil": {
+        "ci95": [
+          [
+            5.76304375,
+            16.329731249999995
+          ],
+          [
+            2.96995,
+            9.31505
+          ]
+        ],
+        "dose": [
+          8.0,
+          16.0
+        ],
+        "point": [
+          10.91725,
+          5.956999999999999
+        ]
+      },
+      "sycophancy": {
+        "ci95": [
+          [
+            8.083400000000001,
+            16.50145
+          ],
+          [
+            8.755024999999998,
+            17.249050000000004
+          ]
+        ],
+        "dose": [
+          8.0,
+          16.0
+        ],
+        "point": [
+          12.106,
+          12.930000000000001
+        ]
+      }
+    },
+    "sycophancy_patch": {
+      "ablate": {
+        "ci95": [
+          [
+            0.17708494098039737,
+            0.3558917928307211
+          ],
+          [
+            -0.10853514773349807,
+            0.07390818867296918
+          ],
+          [
+            -0.019691376330585045,
+            0.10405932454955626
+          ]
+        ],
+        "layer": [
+          14,
+          19,
+          26
+        ],
+        "point": [
+          0.2563379102478234,
+          -0.011152042866711264,
+          0.045311453449430716
+        ]
+      },
+      "proj": {
+        "ci95": [
+          [
+            0.02421166870128235,
+            0.1725738504589381
+          ],
+          [
+            -0.006069217803685029,
+            0.07227800356332226
+          ],
+          [
+            -0.011465106781964723,
+            0.0722446695348858
+          ]
+        ],
+        "layer": [
+          14,
+          19,
+          26
+        ],
+        "point": [
+          0.09124246483590084,
+          0.028198258539852597,
+          0.0287675820495646
+        ]
+      }
+    }
+  },
+  "figure": "eligible_trait_analyses",
+  "input": {
+    "path": "eval_results/issue_2254/revmap_dose_patch/exploratory_sensitivity/codex_subagent_v1/report/eligible_report_summary.json",
+    "sha256": "e838795305598e69d54a72fb40d88eb7ebd2e5ca9c440d40ee93b5d40aece77a"
+  },
+  "outputs": {
+    "grayscale": {
+      "path": "figures/issue_2254/revmap_dose_patch/codex_subagent_v1/eligible_trait_analyses_grayscale.png",
+      "sha256": "b3b1f5e58ad4d90e70cf7017a8c890f6809844d343b5434cd4caeb83da81ff74"
+    },
+    "pdf": {
+      "path": "figures/issue_2254/revmap_dose_patch/codex_subagent_v1/eligible_trait_analyses.pdf",
+      "sha256": "d5620e187535b9ba3e8bdbddaf0d0d2bb4d3445d8cc01fc1d2f7b39402875313"
+    },
+    "png": {
+      "path": "figures/issue_2254/revmap_dose_patch/codex_subagent_v1/eligible_trait_analyses.png",
+      "sha256": "9cc7f5829ac84b6f84c904d6b83835e7e654cd5b1cef5f1dd77fe3da9c359f51"
+    }
+  },
+  "render": {
+    "authoring_size_inches": [
+      13.095,
+      5.238
+    ],
+    "background": "#FFFFFF",
+    "exported_size_inches": [
+      13.095,
+      4.143
+    ],
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/eligible_trait_analyses.pdf}",
+    "png_dpi": 240,
+    "realized_font_pt": {
+      "body": 7.56,
+      "label": 8.4,
+      "tick": 7.14,
+      "title": 9.24
+    },
+    "resolved_font": "Inter",
+    "scale": 0.42,
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "style_version": "c2a-v2",
+    "text": [
+      "A  \u00b7  EVIL \u00b7 STEERING",
+      "Dose multiplier c",
+      "8",
+      "16",
+      "Trait-score change \u2191",
+      "\u22125",
+      "0",
+      "5",
+      "10",
+      "15",
+      "20",
+      "Trait-score change",
+      "B  \u00b7  SYCOPHANCY \u00b7 STEERING",
+      "C  \u00b7  SYCOPHANCY \u00b7 PATCHING",
+      "Layer",
+      "14",
+      "19",
+      "26",
+      "Fraction of ceiling \u2191",
+      "\u22120.2",
+      "0.0",
+      "0.2",
+      "0.4",
+      "Patch fraction",
+      "Projection",
+      "Ablation"
+    ]
+  },
+  "source_head": "4be1f4959fdab576f5e121bc8e24226041db67ef"
+}

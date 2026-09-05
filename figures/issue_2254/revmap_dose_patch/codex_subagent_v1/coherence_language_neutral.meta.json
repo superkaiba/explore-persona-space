@@ -1,0 +1,141 @@
+{
+  "data": {
+    "patching": {
+      "labels": [
+        "Evil \u00b7 Ablation L14",
+        "Evil \u00b7 Ablation L19",
+        "Evil \u00b7 Ablation L26",
+        "Evil \u00b7 Projection L14",
+        "Evil \u00b7 Projection L19",
+        "Evil \u00b7 Projection L26",
+        "Sycophancy \u00b7 Ablation L14",
+        "Sycophancy \u00b7 Ablation L19",
+        "Sycophancy \u00b7 Ablation L26",
+        "Sycophancy \u00b7 Projection L14",
+        "Sycophancy \u00b7 Projection L19",
+        "Sycophancy \u00b7 Projection L26"
+      ],
+      "mean_score": [
+        98.48299999999999,
+        98.60000000000001,
+        98.523,
+        99.521,
+        99.397,
+        99.407,
+        99.31800000000001,
+        99.51299999999999,
+        99.749,
+        99.34,
+        99.32400000000001,
+        99.089
+      ],
+      "percent_at_or_above_50": [
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0
+      ]
+    },
+    "steering": {
+      "labels": [
+        "Evil \u00b7 c=8",
+        "Evil \u00b7 c=16",
+        "Sycophancy \u00b7 c=8",
+        "Sycophancy \u00b7 c=16"
+      ],
+      "mean_score": [
+        85.506,
+        78.998,
+        90.215,
+        89.29
+      ],
+      "percent_at_or_above_50": [
+        93.5,
+        85.0,
+        98.0,
+        97.0
+      ]
+    }
+  },
+  "figure": "coherence_language_neutral",
+  "input": {
+    "path": "eval_results/issue_2254/revmap_dose_patch/exploratory_sensitivity/codex_subagent_v1/report/eligible_report_summary.json",
+    "sha256": "e838795305598e69d54a72fb40d88eb7ebd2e5ca9c440d40ee93b5d40aece77a"
+  },
+  "outputs": {
+    "grayscale": {
+      "path": "figures/issue_2254/revmap_dose_patch/codex_subagent_v1/coherence_language_neutral_grayscale.png",
+      "sha256": "06f31dc59f3cb3c087baaf989b9ad60f277e3c83d409614d0abd04733a9654c0"
+    },
+    "pdf": {
+      "path": "figures/issue_2254/revmap_dose_patch/codex_subagent_v1/coherence_language_neutral.pdf",
+      "sha256": "9debf0c9291cf5d21f70f923aa8321a2171ce859929dcc1c3d93b0b728fc6a36"
+    },
+    "png": {
+      "path": "figures/issue_2254/revmap_dose_patch/codex_subagent_v1/coherence_language_neutral.png",
+      "sha256": "438f8bf1bdb85bbaf25583db088802c0b07fcee6c8f6fef2bb6c9ddc6882ead7"
+    }
+  },
+  "render": {
+    "authoring_size_inches": [
+      13.095,
+      7.202
+    ],
+    "background": "#FFFFFF",
+    "exported_size_inches": [
+      13.095,
+      6.538
+    ],
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/coherence_language_neutral.pdf}",
+    "png_dpi": 240,
+    "realized_font_pt": {
+      "body": 7.56,
+      "label": 8.4,
+      "tick": 7.14,
+      "title": 9.24
+    },
+    "resolved_font": "Inter",
+    "scale": 0.42,
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "style_version": "c2a-v2",
+    "text": [
+      "A  \u00b7  STEERING \u00b7 LANGUAGE NEUTRAL",
+      "Coherence (score or %) \u2191",
+      "0",
+      "25",
+      "50",
+      "75",
+      "100",
+      "Evil \u00b7 c=8",
+      "Evil \u00b7 c=16",
+      "Sycophancy \u00b7 c=8",
+      "Sycophancy \u00b7 c=16",
+      "Coherence scores",
+      "B  \u00b7  PATCHING \u00b7 LANGUAGE NEUTRAL",
+      "Evil \u00b7 Ablation L14",
+      "Evil \u00b7 Ablation L19",
+      "Evil \u00b7 Ablation L26",
+      "Evil \u00b7 Projection L14",
+      "Evil \u00b7 Projection L19",
+      "Evil \u00b7 Projection L26",
+      "Sycophancy \u00b7 Ablation L14",
+      "Sycophancy \u00b7 Ablation L19",
+      "Sycophancy \u00b7 Ablation L26",
+      "Sycophancy \u00b7 Projection L14",
+      "Sycophancy \u00b7 Projection L19",
+      "Sycophancy \u00b7 Projection L26",
+      "Mean score",
+      "Items \u2265 50 (%)"
+    ]
+  },
+  "source_head": "4be1f4959fdab576f5e121bc8e24226041db67ef"
+}
