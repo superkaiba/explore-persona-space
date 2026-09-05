@@ -1,6 +1,6 @@
 # Theoretical analysis of the context→answer map: compiled report
 
-*2026-09-02, revised the same day to add the full eigenvector, null-space, and inverse-map record, on 2026-09-03 with the whitened eigen dashboards and null-space interpretation, and on 2026-09-04 with the variance decomposition, PCA/SAE basis views, and direct direction examples. Compiled from the task clean-results, the docs listed in §7, the June leakage-theory paper, and Thomas's Obsidian notes. Numbers are quoted from the cited artifacts; the direct-example section reports the leg-12 measurement added on 2026-09-04.*
+*2026-09-02, revised the same day to add the full eigenvector, null-space, and inverse-map record, on 2026-09-03 with the whitened eigen dashboards and null-space interpretation, on 2026-09-04 with the variance decomposition, PCA/SAE basis views, and direct direction examples, and on 2026-09-05 with the complete Qwen/Llama/OLMo parity result. Compiled from the task clean-results, the docs listed in §7, the June leakage-theory paper, and Thomas's Obsidian notes. Numbers are quoted from the cited artifacts.*
 
 ## 1. Summary
 
@@ -10,7 +10,7 @@
 - **Inverting the map is the wrong way to go back to the context.** The pseudoinverse pre-image of a persona vector picks sensible contexts (#1615) but cannot steer at the context vector (#2254, #2225) and is a poor context predictor (R² 0.14). A directly fitted answer→context map recovers held-out contexts at R² 0.75 and points in a different direction (cosine 0.3–0.4) (#2618).
 - **The map describes a correlation. It is not the causal mechanism.** Jacobians of the true forward map recover none of its predictive power and full-state substitution at the map's input slot moves nothing (#1776).
 - **The bridge to the leakage theory is weak in behavior space and real in activation space.** No gate metric, including the map's own Gram matrix, separates from its panel (#2569 leg 2). The coherence condition holds on constructed contexts and on natural data only under the whitened metric (#658, #1092).
-- **The map is the same object across settings up to a change of coordinates, and only partly shared across model families** (#825, #1345, #1639, #1902, #2569 leg 7).
+- **The map is the same object across settings up to a change of coordinates, and only partly shared across model families.** The complete Qwen/Llama/OLMo atlas puts all three shared-text aligned-operator cosines in a narrow 0.475–0.499 band: unmistakably above the rotation null, below the 0.686 within-model anchor, and not evidence for one architecture-invariant matrix. When each model writes its own answer, activation alignment falls with semantic divergence. Paired prompt identities support few-query operator transport (R² 0.365–0.504 at k = 4,000), while equal-budget unpaired alignment fails (R² −0.319 to −0.167) (#2569 third-family follow-up).
 
 ## 2. The object
 
@@ -326,9 +326,12 @@ Reading: fine-tuning writes into the raw read directions, not into where the map
 | Assistant vs four story characters | one shared operator recovers 81–98% of each ceiling; framing moves the operator more than character identity | #1639 |
 | Qwen L14 vs Llama L16, same Qwen text | CKA 0.91 answers / 0.76 contexts; aligned operator cosine 0.37–0.59 vs within-model anchor 0.69, rotation null ≤ 0.0005 | #2569 leg 7 |
 | Qwen vs Llama, each writing its own answers | alignment R² 0.51/0.61 vs 0.76/0.84 same text; aligned operator cosine 0.48 | #2569 follow-up |
+| Three-family shared-text atlas | aligned native-operator cosine Qwen–Llama 0.475, Qwen–OLMo 0.481, Llama–OLMo 0.499; Qwen→OLMo and Llama→OLMo composed-map R² 0.513/0.530 vs OLMo native 0.560; alignment-only R² is negative | #2569 third-family follow-up |
+| Qwen–OLMo and Llama–OLMo, each writing its own answers | same-text alignment R² 0.738–0.840 and 0.757–0.784 falls to 0.537/0.610 and 0.520/0.501 on own-written pairs; higher text similarity predicts higher activation alignment | #2569 third-family follow-up |
+| Paired versus unpaired low-query transport | at k = 4,000, paired held-out R² is 0.365–0.504 across eight direction/writer cells; equal-budget unpaired alignment is −0.319 to −0.167 | #2569 third-family follow-up |
 | Operator atlas over 19 maps | fine-tuning shift maps form one block at distance ≈1.0 from all read maps | #2569 leg 7 |
 
-The reparameterization family (direct transfer → bias offset → global scale → rotation → one-sided → two-sided linear change of coordinates) is written up in the Obsidian note "Explanation of different kinds of mapping transfer". Dan's simplification (one context-side map fixes the answer-side map when the operator is shared) is noted there and in "Address Dan's comment"; verifying that the fitted answer-side map obeys that identity is still to do.
+The reparameterization family (direct transfer → bias offset → global scale → rotation → one-sided → two-sided linear change of coordinates) is written up in the Obsidian note "Explanation of different kinds of mapping transfer". Dan's simplification (one context-side map fixes the answer-side map when the operator is shared) is noted there and in "Address Dan's comment". The new paired-versus-unpaired result supplies the operational boundary: paired correspondences can estimate a useful bridge with few thousand rows, but the registered marginal-cloud alignment cannot recover one without identities.
 
 ### 4.9 Feature-level wiring (#2569 legs 3–4)
 
@@ -345,6 +348,7 @@ A context-SAE → answer-SAE map (65,536 → 2,150 features) predicts which answ
 - The fitted reverse map: going back to the context works well once you fit it directly instead of inverting.
 - The slow eigen-shell of the next-token map, the one eigenvector read that found trait and context content far above chance.
 - The reparameterization framework: one operator, different coordinates, across post-training, templates, and framings.
+- Completing the three-family writer × encoder bank. Every pair has nonrandom shared-text operator correspondence, and paired few-query transport stays positive in every direction/writer cell at k = 4,000.
 - Whitened spread as the observable for the coherence condition on natural data.
 
 **Did not work**
@@ -356,6 +360,7 @@ A context-SAE → answer-SAE map (65,536 → 2,150 features) predicts which answ
 - The "stable contraction" headline from #1774: on the large map, only L26 has ρ < 1.
 - The null space as an explanation of what the map gets wrong: the worst directions sit in the high-gain subspace.
 - Nearest-neighbor regression as a nonlinear readout: its best R² (0.643) stays below the linear map (0.728), and the nearest-neighbor intercept cannot resolve a positive whole-context contribution beyond the last-token state.
+- Equal-budget unpaired cross-model alignment: every k = 4,000 transport cell is negative (R² −0.319 to −0.167), despite positive paired and paired-rank controls.
 
 **Interesting**
 
@@ -367,16 +372,16 @@ A context-SAE → answer-SAE map (65,536 → 2,150 features) predicts which answ
 - Context-SAE features do not yield an additive explanation of the ignored/read split. Feature correlations carry 49.3% of context variance, more than the 44.1% assigned to individual-feature diagonals.
 - The forward and reverse maps are both good and are not inverses of each other. Context information the forward map maps weakly is exactly what the reverse map recovers.
 - Fine-tuning writes into raw read directions and ignores where the map would transport them.
-- Cross-model operators are alignable and similar but distinct, and the distinctness grows once each model writes its own answers.
+- Cross-model operators are alignable and similar but distinct across three architectures. Their shared-text operator cosines are nearly equidistant (0.475–0.499), while own-answer representation alignment varies continuously with answer-text similarity.
 - The theory's two ingredients (difficulty and curvature) separate cleanly on natural data with opposite spread metrics.
 
 ## 6. Status and to do
 
-- **Done:** #922, #1092, #1482, #1615, #1774, #1775, #1776, #1895, #1902, #1945, #2091, #2225, #2254, #2618, and #779's dissection round have clean results or completed inline rounds. #2569's original battery, own-answers follow-up, refusal-kernel read, variance decomposition, PCA/SAE basis views, and direct direction examples are complete on pushed branches; a separately owned third-family parity round was still running at the last process audit on 2026-09-04.
+- **Done:** #922, #1092, #1482, #1615, #1774, #1775, #1776, #1895, #1902, #1945, #2091, #2225, #2254, #2618, and #779's dissection round have clean results or completed inline rounds. #2569's original battery, own-answers follow-up, refusal-kernel read, variance decomposition, PCA/SAE basis views, direct direction examples, and complete Qwen/Llama/OLMo parity round are complete on pushed branches. The third-family upload passed the 339-file out-root sweep and nine-cell tensor-row reconciliation; its pod was terminated on 2026-09-05.
 - **To do, paper:** `sections/04_results.tex` has an empty `\subsection{Theoretical analysis}`. The paper plan says to present this material as "structure of the learned operator" and to keep the gate null, fixed point, atlas, SAE wiring, and kernel-pair battery in the appendix unless a claim needs them. Main-text candidates: learning curve, high-rank non-normal spectrum with the direction-class anatomy, firing-versus-magnitude split, cross-model operator comparison, and the reverse-map vs pseudoinverse contrast.
 - **To do, theory paper:** the Overleaf theory paper has not been touched since 2026-06-28. The coherence-condition result (whitened metric; difficulty vs curvature) and the gate-ladder null belong in it.
 - **To do, reconcile:** the spectral-radius disagreement between #1774 (0.91 at L14) and the 963k map (1.66 at L14); the trait pass-through disagreement between #1774 (rotated away) and the #779 dissection (preserved at L19); and the singular-subspace side label (#2571).
-- **To do, follow-up:** steer along the fitted reverse-map direction (#2618 caveat), since every steering negative so far used the pseudoinverse pre-image; re-dose the kernel addition test (#1774 positive control failed). Done 2026-09-03–04: answer-feature labels, eigen dashboards with the imaginary part, the whitened-cosine companion, the data-weighted kernel share, the kernel-pair reading, persona-direction kernel shares, the refusal-pairs kernel read, the four-way variance decomposition, and raw/standardized PCA plus context-SAE accounting (source branches `issue-2569-eigen-v2`, `issue-2569-kernel-interp`, `issue-2569-refusal-kernel`, `issue-2569-variance-decomp`, and `issue-2569-basis-views`; all consolidated on this report branch, not yet on `main`). Open next after the separately owned third-family parity round lands: a held-out kernel-pair test on the 20k holdout, and a properly dosed erase-and-inject test along kernel vs range directions with a behavioral read.
+- **To do, follow-up:** steer along the fitted reverse-map direction (#2618 caveat), since every steering negative so far used the pseudoinverse pre-image; re-dose the kernel addition test (#1774 positive control failed); run a held-out kernel-pair test on the 20k holdout; and test a properly dosed erase-and-inject intervention along kernel versus range directions with a behavioral read. The third-family round closes the previously open architecture-parity question. Its remaining scope limits are one stochastic OLMo answer per prompt (with deterministic cap-hit regeneration), an LMSYS-only 10k crossed roster, and an exploratory factorial decomposition whose encoder and interaction terms can retain coordinate-alignment error.
 - **Open on #2569:** nine provenance concerns (cache keys, unpinned model revisions), none affecting a reported number; the wiring gate and two of four leg-1 clauses at L14/L26 were never evaluable; the interpretation is un-reviewed (review ensemble did not run).
 
 ## 7. Sources
@@ -386,6 +391,7 @@ A context-SAE → answer-SAE map (65,536 → 2,150 features) predicts which answ
 - 2026-09-04 variance decomposition: https://github.com/superkaiba/explore-persona-space/blob/issue-2569-variance-decomp/eval_results/issue_2569/weights/leg10/variance_decomposition_L19.md; figure: https://github.com/superkaiba/explore-persona-space/blob/issue-2569-variance-decomp/figures/issue_2569/leg10_variance_decomposition.png
 - 2026-09-04 PCA/SAE basis views: https://github.com/superkaiba/explore-persona-space/blob/issue-2569-basis-views/eval_results/issue_2569/weights/leg11/basis_views_L19.md; figure: https://github.com/superkaiba/explore-persona-space/blob/issue-2569-basis-views/figures/issue_2569/leg11_basis_views.png
 - 2026-09-04 direct direction examples: https://github.com/superkaiba/explore-persona-space/blob/issue-2569-direction-examples/eval_results/issue_2569/weights/leg12/direction_examples_L19.md (all five raw and deduplicated extrema in the JSON companion)
+- 2026-09-05 third-family parity result: https://github.com/superkaiba/explore-persona-space/blob/issue-2569-direction-examples/eval_results/issue_2569/third_family/summary.md; full JSON and durable artifacts: https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/issue2569_theory/third_family
 - #779 https://eps.superkaiba.com/tasks/779 (the map; pseudoinverse probe read; 2026-08-26 operator dissection at `eval_results/issue_779/ctxansviz/operator_stats.json`, dashboards at https://eps.superkaiba.com/ctxansviz-779-scatter-full.html)
 - #1774 https://eps.superkaiba.com/tasks/1774 (operator characterization, co-kernel, LEACE)
 - #1775 https://eps.superkaiba.com/tasks/1775 (nonlinear ladder, bilinear interaction)
