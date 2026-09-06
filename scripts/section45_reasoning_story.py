@@ -1,6 +1,6 @@
 """Render the approved reasoning story from banked #2546 results, without refits.
 
-All-question metrics; own-generated answers in both thinking conditions.
+Needs-reasoning evaluation of existing all-question fits; own-generated answers.
 The residual panel uses the prespecified penalties, not the best plotted result.
 """
 
@@ -69,10 +69,11 @@ def interval(ax, x, y, bounds, **kwargs):
 
 
 def metrics(cell, arm):
-    """Use the all-question subset from the production five-fold evaluation."""
+    """Score only needs-reasoning rows of the unchanged production evaluation."""
     d = read(DATA / f"allfit/{cell}__a{arm}.json")
     assert d["subsets"]["all"]["n"] == {1: 30193, 3: 33810}[arm]
-    return d["subsets"]["all"]
+    assert d["subsets"]["necessary"]["n"] == {1: 2326, 3: 4522}[arm]
+    return d["subsets"]["necessary"]
 
 
 def pair(ax, rows, key, labels, title):
@@ -90,16 +91,16 @@ def pair(ax, rows, key, labels, title):
 
 
 def main_plot():
-    """Four panels: toggle, observed state, residual prediction, operator geometry."""
+    """Qwen observed state, toggle and residual; existing OpenThinker geometry."""
     fig, _ = c2a_figure("full", 0.80)
     grid = fig.add_gridspec(
         2, 2, left=0.10, right=0.98, bottom=0.09, top=0.89, wspace=0.36, hspace=0.68
     )
-    a = [metrics("p7_Aoff", 3), metrics("p7_A", 3)]
-    b = [metrics("p7_A", 1), metrics("p7_D", 1)]
+    a = [metrics("p7_A", 3), metrics("p7_D", 3)]
+    b = [metrics("p7_Aoff", 3), metrics("p7_A", 3)]
     for slot, letter, model, title, rows, labels in [
-        (grid[0, 0], "A", "Qwen3-8B", "Enabling CoT", a, ["Off", "On"]),
-        (grid[0, 1], "B", "OpenThinker3-7B", "Observing CoT", b, ["Context", "CoT end"]),
+        (grid[0, 0], "A", "Qwen3-8B · needs reasoning", "Observing CoT", a, ["Context", "CoT end"]),
+        (grid[0, 1], "B", "Qwen3-8B · needs reasoning", "Enabling CoT", b, ["Off", "On"]),
     ]:
         inner = slot.subgridspec(1, 2, wspace=0.55)
         axes = [fig.add_subplot(inner[0, j]) for j in range(2)]
@@ -119,7 +120,8 @@ def main_plot():
     ):
         vals = []
         for i, scheme in enumerate(["random5", "loco7"]):
-            row = residual["results"][scheme]["subsets"]["all"][kind]
+            row = residual["results"][scheme]["subsets"]["necessary"][kind]
+            assert row["n"] == 4522
             y = row["incremental_residual_r2"]
             interval(
                 ax,
@@ -139,7 +141,7 @@ def main_plot():
     ax.set_ylabel("Fraction of residual\nerror removed")
     style_axis(ax, grid_axis="y")
     ax.legend(frameon=False, loc="center right", fontsize=15)
-    panel_header(ax, "C", "Qwen3-8B", "Predicting answer residuals")
+    panel_header(ax, "C", "Qwen3-8B · needs reasoning", "Predicting answer residuals")
     diff = read(DATA / "allfit/eot_vs_context/diffs/diffs.json")
     ov = diff["A3_operator_comparison"]["operators"]["subspace_overlaps"]
     ax = fig.add_subplot(grid[1, 1])
@@ -169,8 +171,19 @@ def main_plot():
     ax.set_ylabel("Mean principal cosine")
     ax.legend(frameon=False, fontsize=14, loc="center right")
     style_axis(ax, grid_axis="y")
-    panel_header(ax, "D", "OpenThinker3-7B", "Input/output subspace overlap")
-    save(fig, "c1_cot_story", {"toggle": a, "observed": b, "residual": rv, "overlap": ov})
+    panel_header(ax, "D", "OpenThinker3-7B · existing maps", "Input/output subspace overlap")
+    save(
+        fig,
+        "c1_cot_story",
+        {
+            "observed": a,
+            "toggle": b,
+            "residual": rv,
+            "overlap": ov,
+            "evaluation_subset": "necessary",
+            "maps_refit": False,
+        },
+    )
 
 
 def appendix():
@@ -221,8 +234,7 @@ def appendix():
         "c1_cot_token_scan",
         {"scan_ids": scans[0]["ids"], "dimensions": scans[0]["dimensions"]},
     )
-    diff = read(DATA / "allfit/eot_vs_context/diffs/diffs.json")
-    shift = diff["B1_prepost_context_shift"]
+    shift = read(NEW / "necessary_diagnostics.json")["finetuning"]
     fig, _ = c2a_figure("full", 0.40)
     axes = fig.subplots(1, 2)
     fig.subplots_adjust(left=0.11, right=0.98, top=0.77, bottom=0.28, wspace=0.40)
@@ -351,7 +363,7 @@ def derive_similarity():
 
 def similarity_plot():
     """Expose similarity after removing mean and/or the three massive coordinates."""
-    data = read(NEW / "state_similarity.json")
+    data = read(NEW / "necessary_diagnostics.json")["similarity"]
     fig, _ = c2a_figure("wide", 0.42)
     ax = fig.subplots()
     fig.subplots_adjust(left=0.15, right=0.98, top=0.74, bottom=0.24)
@@ -378,11 +390,160 @@ def similarity_plot():
     save(fig, "c1_cot_state_similarity", data)
 
 
+def derive_necessary():
+    """Restrict cached diagnostics to necessary rows without fitting any map."""
+    import issue2546_cx_eot_prepost_diffs as prior
+
+    sources = {}
+
+    def record(path):
+        """Record content hashes for every input, including external caches."""
+        h = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(8 << 20), b""):
+                h.update(chunk)
+        sources[str(path)] = h.hexdigest()
+        return path
+
+    with np.load(record(prior.PRED_DIR / "p7_A__all__a1.npz")) as bank:
+        ids = bank["conv_ids"].astype(str)
+        folds = bank["folds"]
+        labels = bank["labels"].astype(str)
+    mask = labels == "necessary"
+    assert len(ids) == 30193 and mask.sum() == 2326 and len(set(ids)) == len(ids)
+    selected = ids[mask]
+    ds = np.char.partition(selected, ":")[:, 0]
+    result = {
+        "n": 2326,
+        "subset": "necessary",
+        "maps_refit": False,
+        "training_n": 30193,
+        "row_ids": selected.tolist(),
+    }
+    x = prior.load_target("cx_last", "post", selected).astype(np.float64)
+    z = prior.load_target("cot_boundary", "post", selected).astype(np.float64)
+    delta = z - x
+    mean = delta.mean(0)
+    total = prior.sq_sum(delta)
+    result["context_to_eot"] = {
+        "mean_offset_share": len(selected) * prior.sq_sum(mean) / total,
+        "mean_offset_top3_share": prior.sq_sum(mean[[458, 2570, 2718]]) / prior.sq_sum(mean),
+    }
+    similarity = {}
+    for remove in [False, True]:
+        keep = np.ones(3584, dtype=bool)
+        if remove:
+            keep[[458, 2570, 2718]] = False
+        for center in [False, True]:
+            a, b = x[:, keep].copy(), z[:, keep].copy()
+            if center:
+                a -= a.mean(0)
+                b -= b.mean(0)
+            denominator = np.linalg.norm(a, axis=1) * np.linalg.norm(b, axis=1)
+            assert (denominator > 0).all()
+            cosine = np.einsum("ij,ij->i", a, b) / denominator
+            similarity[f"remove3={remove},center={center}"] = {
+                "mean": float(cosine.mean()),
+                "median": float(np.median(cosine)),
+                "q25": float(np.quantile(cosine, 0.25)),
+                "q75": float(np.quantile(cosine, 0.75)),
+            }
+    result["similarity"] = {
+        "n": 2326,
+        "results": similarity,
+        "centering": "Each readout centered over the 2,326 necessary rows.",
+    }
+    del x, z, delta, a, b
+
+    old = json.loads(record(DATA / "allfit/eot_vs_context/diffs/diffs.json").read_text())
+    shift = {}
+    for side, kind in [("context", "cx_last"), ("answer", "ans_mean")]:
+        pre = prior.load_target(kind, "pre", ids)
+        post = prior.load_target(kind, "post", ids)
+        scales = old["B1_prepost_context_shift"][side]["oof_split"]["scale_s_per_fold"]
+        sums = np.zeros(3, dtype=np.float64)
+        for k in range(5):
+            tr, te = folds != k, (folds == k) & mask
+            # Reconstruct existing training-fold intercepts; reuse banked scalars.
+            pmu = pre[tr].mean(0, dtype=np.float64)
+            qmu = post[tr].mean(0, dtype=np.float64)
+            p, q = pre[te], post[te]
+            offset = (qmu - pmu).astype(np.float32)
+            scaled = np.float32(scales[k]) * p + (qmu - scales[k] * pmu).astype(np.float32)
+            sums += [prior.sq_sum(q - p), prior.sq_sum(q - p - offset), prior.sq_sum(q - scaled)]
+        relative = np.linalg.norm(post[mask].astype(np.float64) - pre[mask], axis=1)
+        relative /= np.linalg.norm(pre[mask].astype(np.float64), axis=1)
+        shift[side] = {
+            "relnorm_median": {
+                **{c: float(np.median(relative[ds == c])) for c in prior.DATASETS},
+                "all": float(np.median(relative)),
+            },
+            "oof_split": {
+                "mean_offset_share": float(1 - sums[1] / sums[0]),
+                "global_scaling_extra_share": float((sums[1] - sums[2]) / sums[0]),
+                "question_specific_share": float(sums[2] / sums[0]),
+                "scale_s_per_fold": scales,
+            },
+        }
+        del pre, post
+        print(f"necessary diagnostics: {side}", flush=True)
+    result["finetuning"] = shift
+
+    base = prior.BASE / "input_sae_qualitative_20260906"
+    with np.load(record(base / "validated_retrieval.npz")) as cache:
+        assert np.array_equal(cache["ids"].astype(str), ids)
+        assert np.array_equal(cache["folds"], folds)
+        ah, dh = cache["A_hit"].astype(bool), cache["D_hit"].astype(bool)
+        recovered = mask & ~ah & dh
+        counts = {
+            "both": int((mask & ah & dh).sum()),
+            "recovered": int(recovered.sum()),
+            "lost": int((mask & ah & ~dh).sum()),
+            "neither": int((mask & ~ah & ~dh).sum()),
+        }
+        assert sum(counts.values()) == 2326 and recovered.any()
+        ranks = cache["A_rank"][recovered]
+        result["retrieval"] = {
+            "counts": counts,
+            "recovered_context_rank2": int((ranks == 2).sum()),
+            "recovered_context_rank_le10": int((ranks <= 10).sum()),
+            "recovered_context_rank_max": int(ranks.max()),
+        }
+        pairs = json.loads(record(base / "qualitative_pairs.json").read_text())
+        chosen = [r for r in pairs["items"] if r["row_id"] in set(selected)]
+        assert len(chosen) == 20
+        positions = {rid: i for i, rid in enumerate(ids)}
+        for row in chosen:
+            i = positions[row["row_id"]]
+            for letter, key in [("A", "rank_context"), ("D", "rank_eot")]:
+                assert row[key] == int(cache[f"{letter}_rank"][i])
+            assert row["neighbor_id"] == ids[cache[f"{row['neighbor_map']}_nn_other"][i]]
+        result["qualitative"] = {
+            "selection": "All necessary rows in the previous export: "
+            "two recovered cases and all 18 EOT misses; illustrative, unblinded.",
+            "items": chosen,
+        }
+    for c in prior.DATASETS:
+        for kind, sides in [
+            ("cx_last", ["pre", "post"]),
+            ("ans_mean", ["pre", "post"]),
+            ("cot_boundary", ["post"]),
+        ]:
+            for side in sides:
+                record(prior.TG / f"{kind}__arm1__{side}__{c}__l19.npz")
+    result["sources_sha256"] = sources
+    result["script_sha256"] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    (NEW / "necessary_diagnostics.json").write_text(json.dumps(result, indent=2, allow_nan=False))
+    print("necessary_diagnostics.json complete", flush=True)
+
+
 if __name__ == "__main__":
     if sys.argv[1:] == ["--derive-similarity"]:
         derive_similarity()
+    elif sys.argv[1:] == ["--derive-necessary"]:
+        derive_necessary()
     else:
-        assert len(sys.argv) == 1, "Only --derive-similarity is supported."
+        assert len(sys.argv) == 1, "Use --derive-similarity or --derive-necessary."
         set_c2a_style()
         main_plot()
         appendix()

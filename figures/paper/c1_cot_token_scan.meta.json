@@ -1,9 +1,8 @@
 {
   "sources_sha256": {
-    "eval_results/issue_2546/allfit/p7_Aoff__a3.json": "233151f9ec2e292023de27a35b9b81cad4de6dcb5aa95e8303a9b4269eb63947",
     "eval_results/issue_2546/allfit/p7_A__a3.json": "a3ea0a543a3b40a6024b90e280d832c5d8fa62ffcdf61b9372b8f7cb2725af13",
-    "eval_results/issue_2546/allfit/p7_A__a1.json": "32b5a415096b6dfd619bd3446d408bb84932ce7d98451ce0245157a3b1e29f67",
-    "eval_results/issue_2546/allfit/p7_D__a1.json": "b2ecc6e8bfe74f8f4a69613285c2c28cb10e4f93a3ca0f19bd11aef589861210",
+    "eval_results/issue_2546/allfit/p7_D__a3.json": "ce426b14ca2912ee9328de3d189959dfcee365eaa15f7a5f788422adf3035eae",
+    "eval_results/issue_2546/allfit/p7_Aoff__a3.json": "233151f9ec2e292023de27a35b9b81cad4de6dcb5aa95e8303a9b4269eb63947",
     "eval_results/issue_2546/paper_reasoning_20260906/residual.json": "b5f261f31d06e9bff30be3d5373e5fba09a0400c1265a968fff99505c3e87056",
     "eval_results/issue_2546/allfit/eot_vs_context/diffs/diffs.json": "8b7485da3e76ff3cbbe199263d104c2f51b38ae754183053d95449548610595e",
     "eval_results/issue_2546/paper_reasoning_20260906/qwen.json": "859461a043048519aa8b48e7bca83430e934c0dc8fec6eb03898ba3fb4c66d41",
@@ -401,7 +400,7 @@
       2718
     ]
   },
-  "script_sha256": "0781686eff0c16f6497191cb98aa10c1b97c37f6aca4e8c343ccfcc73af9c523",
+  "script_sha256": "bbffec7e4f51d435e1ae1b7aedd53f2a0d977155c64c98f5741f3495f1d73416",
   "render": {
     "style_version": "c2a-v2",
     "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
