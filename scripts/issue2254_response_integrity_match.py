@@ -36,12 +36,12 @@ import scripts.issue2254_preimage as i2254  # noqa: E402
 import scripts.issue2254_revmap8_subagent_grade as runner  # noqa: E402
 
 OUT_REL = Path(
-    "eval_results/issue_2254/response_integrity_matched_steering/codex_subagent_v1"
+    "eval_results/issue_2254/response_integrity_matched_steering/codex_subagent_v2"
 )
 FIG_REL = Path("figures/issue_2254/response_integrity_matched_steering")
-INSTRUMENT_NAME = "codex-subagent-gpt-5.6-sol-low-response-integrity-v1"
+INSTRUMENT_NAME = "codex-subagent-gpt-5.6-sol-low-response-integrity-v2"
 RUBRIC_ID = "coherence"  # Runner compatibility; reported construct is response integrity.
-PROMPT_TEMPLATE_VERSION = "issue2254-response-integrity-batch-v1"
+PROMPT_TEMPLATE_VERSION = "issue2254-response-integrity-batch-v2"
 COMMON_HORIZON_TOKENS = 2048
 N_PASSES = 5
 MAX_ITEMS_PER_JOB = 80
@@ -53,9 +53,11 @@ CELL_PASS_FLOOR = 0.90
 MEAN_MATCH_MARGIN = 5.0
 PASS_RATE_MATCH_MARGIN = 0.05
 TRAIT_COMPLETENESS_FLOOR = 0.95
-N_BOOTSTRAP = 10_000
+N_BOOTSTRAP = 200_000
 N_MATCH_COMPARISONS = 20  # 2 behaviors x 5 candidates x 2 quality metrics.
 MATCH_CI_LEVEL = 1.0 - 0.05 / N_MATCH_COMPARISONS
+TRAIT_CI_FAMILY_SIZE = 10  # 2 behaviors x 5 strict answer candidates.
+TRAIT_FAMILYWISE_CI_LEVEL = 1.0 - 0.05 / TRAIT_CI_FAMILY_SIZE
 STRICT_POSITIONS = ("t1", "t2", "t3", "s13", "s15")
 REFERENCE_POSITIONS = ("aans",)
 POSITION_LABELS = {
@@ -414,7 +416,7 @@ def build_registry(out_root: Path | str) -> tuple[list[AnalysisItem], dict[str, 
                 raise IntegrityMatchError(f"duplicate effective-seed row {spec.cell_id}/{pair_key}")
             source_id = f"{spec.cell_id}|q{int(qi):02d}|e{effective_seed}"
             opaque_id = "i" + _sha256_text(
-                f"issue2254-response-integrity-v1\0{source_id}"
+                f"issue2254-response-integrity-v2\0{source_id}"
             )[:20]
             if opaque_id in opaque_seen:
                 raise IntegrityMatchError(f"opaque-id collision at {source_id}")
@@ -606,6 +608,8 @@ def phase_stage(args) -> None:
         ),
         "match_ci_level": MATCH_CI_LEVEL,
         "match_ci_family_size": N_MATCH_COMPARISONS,
+        "trait_familywise_ci_level": TRAIT_FAMILYWISE_CI_LEVEL,
+        "trait_ci_family_size": TRAIT_CI_FAMILY_SIZE,
         "inference": (
             "Five grader scores averaged within response; six effective seeds averaged "
             "within question; paired 20-question bootstrap; selection repeated within "
@@ -887,7 +891,7 @@ def phase_pilot(args) -> None:
     jobs = []
     for pass_index in range(N_PASSES):
         ordered = list(pilot_items)
-        random.Random(f"issue2254-integrity-pilot-v1|{pass_index}").shuffle(ordered)
+        random.Random(f"issue2254-integrity-pilot-v2|{pass_index}").shuffle(ordered)
         jobs.extend(
             _job_specs(
                 scope="pilot",
@@ -962,7 +966,7 @@ def _production_jobs(
     jobs: list[runner.JobSpec] = []
     for pass_index in range(N_PASSES):
         ordered = list(items)
-        random.Random(f"issue2254-integrity-production-v1|{pass_index}").shuffle(ordered)
+        random.Random(f"issue2254-integrity-production-v2|{pass_index}").shuffle(ordered)
         jobs.extend(
             _job_specs(
                 scope="production",
@@ -1048,7 +1052,7 @@ def _test_retest_reliability(
 
 def _bootstrap_indices(behavior: str) -> np.ndarray:
     rng = np.random.default_rng(
-        int(_sha256_text(f"issue2254-integrity-bootstrap-v1|{behavior}")[:16], 16)
+        int(_sha256_text(f"issue2254-integrity-bootstrap-v2|{behavior}")[:16], 16)
     )
     return rng.integers(0, 20, size=(N_BOOTSTRAP, 20))
 
@@ -1124,8 +1128,10 @@ def _paired_trait_summary(
     return (
         {
             "estimate": float(per_question.mean()),
-            "ci": _ci(draws),
-            "confidence_level": 0.95,
+            "ci95": _ci(draws),
+            "familywise_ci": _ci(draws, TRAIT_FAMILYWISE_CI_LEVEL),
+            "familywise_confidence_level": TRAIT_FAMILYWISE_CI_LEVEL,
+            "family_size": TRAIT_CI_FAMILY_SIZE,
             "n_paired_response_coordinates": int(common.sum()),
             "per_question_paired_counts": counts.tolist(),
             "missingness": (

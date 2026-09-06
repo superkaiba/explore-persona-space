@@ -93,7 +93,11 @@ completeness. The invalid historical sycophancy all-answer cell is record-only.
 
 Five integrity judgments are averaged within response, six effective seeds are
 averaged within question, and uncertainty is obtained by resampling the 20
-paired questions. Candidate reselection inside each bootstrap resample is
+paired questions with 200,000 deterministic bootstrap draws. The direct trait
+contrasts include both ordinary 95% intervals and 99.5% per-comparison
+Bonferroni intervals across the two-behavior × five-candidate family; the latter
+retain familywise coverage for a quality-selected cell. Candidate reselection
+inside each bootstrap resample is
 reported only as a conditional selection-stability diagnostic, not as a
 post-selection confidence interval. The complete integrity/trait frontier is
 reported alongside any selected cell.
