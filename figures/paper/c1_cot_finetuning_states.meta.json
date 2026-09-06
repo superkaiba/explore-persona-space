@@ -1,0 +1,152 @@
+{
+  "sources_sha256": {
+    "eval_results/issue_2546/allfit/p7_Aoff__a3.json": "233151f9ec2e292023de27a35b9b81cad4de6dcb5aa95e8303a9b4269eb63947",
+    "eval_results/issue_2546/allfit/p7_A__a3.json": "a3ea0a543a3b40a6024b90e280d832c5d8fa62ffcdf61b9372b8f7cb2725af13",
+    "eval_results/issue_2546/allfit/p7_A__a1.json": "32b5a415096b6dfd619bd3446d408bb84932ce7d98451ce0245157a3b1e29f67",
+    "eval_results/issue_2546/allfit/p7_D__a1.json": "b2ecc6e8bfe74f8f4a69613285c2c28cb10e4f93a3ca0f19bd11aef589861210",
+    "eval_results/issue_2546/paper_reasoning_20260906/residual.json": "b5f261f31d06e9bff30be3d5373e5fba09a0400c1265a968fff99505c3e87056",
+    "eval_results/issue_2546/allfit/eot_vs_context/diffs/diffs.json": "8b7485da3e76ff3cbbe199263d104c2f51b38ae754183053d95449548610595e",
+    "eval_results/issue_2546/paper_reasoning_20260906/qwen.json": "859461a043048519aa8b48e7bca83430e934c0dc8fec6eb03898ba3fb4c66d41",
+    "eval_results/issue_2546/paper_reasoning_20260906/openthinker.json": "03ce9c342b762433ee3364463f10a226ae1d79e754a9d4ebc44219e1c6dfac6a"
+  },
+  "values": {
+    "context": {
+      "relnorm_median": {
+        "math": 231.93655226186377,
+        "gsm8k_train": 243.12067638701373,
+        "contexthub": 233.81999448406546,
+        "mmlu": 235.64120702414948,
+        "arc_challenge": 233.60558598647415,
+        "csqa": 235.1152925744371,
+        "piqa": 234.13279376566746,
+        "all": 235.99271633289388
+      },
+      "cos_median": {
+        "math": 0.48401670710283606,
+        "gsm8k_train": 0.48337766373430885,
+        "contexthub": 0.47056027938581074,
+        "mmlu": 0.41156659301029225,
+        "arc_challenge": 0.4196715229252347,
+        "csqa": 0.4236033788040546,
+        "piqa": 0.4189753183267342,
+        "all": 0.4690757719073932
+      },
+      "oof_split": {
+        "ss_total": 15264983339065.617,
+        "mean_offset_share": 0.999739243674948,
+        "global_scaling_extra_share": 2.767825081742637e-06,
+        "question_specific_share": 0.000257988499970196,
+        "scale_s_per_fold": [
+          0.2239121581837708,
+          0.22040412841162377,
+          0.2211729326131392,
+          0.2225194435349282,
+          0.22336376129296415
+        ],
+        "scale_s_all_rows": 0.2222740861411751
+      },
+      "qspec_effective_rank_90pct": 1,
+      "qspec_effective_rank_entropy": 1.173970155739836,
+      "share_of_delta_in_top50_pcs_of_pre": 0.2561108325458662,
+      "share_of_centered_delta_in_top50_pcs_of_pre": 0.2480626192983156,
+      "share_of_mean_offset_in_top50_pcs_of_pre": 0.2561130187982725,
+      "chance_share_top50": 0.013950892857142858,
+      "pre_effective_rank_90pct": 130
+    },
+    "answer": {
+      "relnorm_median": {
+        "math": 0.5398387361300993,
+        "gsm8k_train": 0.5422250431201618,
+        "contexthub": 0.5874314148227073,
+        "mmlu": 0.9272662390354618,
+        "arc_challenge": 0.923421640855787,
+        "csqa": 0.9327457473254587,
+        "piqa": 0.941655843798581,
+        "all": 0.5837915893123183
+      },
+      "cos_median": {
+        "math": 0.8686494320245999,
+        "gsm8k_train": 0.865655333840395,
+        "contexthub": 0.852027652210822,
+        "mmlu": 0.47302944682429615,
+        "arc_challenge": 0.481428907641541,
+        "csqa": 0.46688881434518675,
+        "piqa": 0.4689513139267852,
+        "all": 0.8517898261451182
+      },
+      "oof_split": {
+        "ss_total": 110710933.71712534,
+        "mean_offset_share": 0.38327850528671825,
+        "global_scaling_extra_share": 0.33522558781187006,
+        "question_specific_share": 0.2814959069014116,
+        "scale_s_per_fold": [
+          0.2331423145509553,
+          0.2331859229920343,
+          0.23380519507893488,
+          0.23419929353855531,
+          0.2329414558971747
+        ],
+        "scale_s_all_rows": 0.2334539568042458
+      },
+      "qspec_effective_rank_90pct": 202,
+      "qspec_effective_rank_entropy": 41.87746811506353,
+      "share_of_delta_in_top50_pcs_of_pre": 0.6514966628403929,
+      "share_of_centered_delta_in_top50_pcs_of_pre": 0.738568308432818,
+      "share_of_mean_offset_in_top50_pcs_of_pre": 0.511415267504422,
+      "chance_share_top50": 0.013950892857142858,
+      "pre_effective_rank_90pct": 66
+    }
+  },
+  "script_sha256": "0781686eff0c16f6497191cb98aa10c1b97c37f6aca4e8c343ccfcc73af9c523",
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      5.238
+    ],
+    "exported_size_inches": [
+      13.095,
+      4.208
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c1_cot_finetuning_states.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  \u00b7  REASONING FINE-TUNING",
+      "Context",
+      "Own answer",
+      "Share of squared\ndisplacement",
+      "0.00",
+      "0.25",
+      "0.50",
+      "0.75",
+      "1.00",
+      "1.25",
+      "Displacement decomposition",
+      "Shared offset",
+      "Scaling",
+      "Question-specific",
+      "B  \u00b7  REASONING FINE-TUNING",
+      "Median relative\ndisplacement",
+      "$\\mathdefault{10^{-2}}$",
+      "$\\mathdefault{10^{-1}}$",
+      "$\\mathdefault{10^{0}}$",
+      "$\\mathdefault{10^{1}}$",
+      "$\\mathdefault{10^{2}}$",
+      "$\\mathdefault{10^{3}}$",
+      "$\\mathdefault{10^{4}}$",
+      "Relative shift magnitude"
+    ]
+  },
+  "uncertainty": "Banked intervals only; no new bootstrap or inference."
+}

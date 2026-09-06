@@ -1,0 +1,48 @@
+{
+  "n": 30193,
+  "results": {
+    "remove3=False,center=False": {
+      "mean": 0.42013250460573487,
+      "median": 0.4525053538450889,
+      "q25": 0.36182583416090996,
+      "q75": 0.4743807272236345
+    },
+    "remove3=False,center=True": {
+      "mean": 0.07056282382861641,
+      "median": 0.1256857056479842,
+      "q25": -0.04732879818271875,
+      "q75": 0.17033268199426588
+    },
+    "remove3=True,center=False": {
+      "mean": -0.045995430567654996,
+      "median": -0.04648266739286578,
+      "q25": -0.0547451281726099,
+      "q75": -0.03749705009991109
+    },
+    "remove3=True,center=True": {
+      "mean": 0.048721924223032655,
+      "median": 0.04824615041263508,
+      "q25": 0.03074609858396374,
+      "q75": 0.06702599659188962
+    }
+  },
+  "sources_sha256": {
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/allfit/preds/p7_A__all__a1.npz": "a5baf4ddb8166eb3f3511dda9c66002729e3e01a5535dd150d0b20f56e302d63",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm1__post__math__l19.npz": "c473ba168a4a55be08e5a734c7302cc060a17a7686ea77638fe41709f72e1e89",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm1__post__math__l19.npz": "c4751c52763fcb29ddf8c233faa40ce7f89df87890449271fdaecab371d5f223",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm1__post__gsm8k_train__l19.npz": "962a50e8eff28dc545b7a26055b883d9d14e2c1654b87175ea922754a82d3514",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm1__post__gsm8k_train__l19.npz": "10a2993429ae43f0d7c1d7ee89b4e2d40c7898664e28063204fbe88b499c33c3",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm1__post__contexthub__l19.npz": "3c98e8304a6009b29ff845bea7c1736f9887229c0a4f599aee33469f8fdb7e32",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm1__post__contexthub__l19.npz": "ad432aeab99137dcf6cf8d7d279c07b96a07fba93388d9257587fede88368515",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm1__post__mmlu__l19.npz": "b1ce89d813bdaf1fa988e86daae3121f26e409b7a3c41c47ca935a929e958ed5",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm1__post__mmlu__l19.npz": "e55064670f57642b244e5119f646949df7977de7c7b2369a1aa4500e7ce2099c",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm1__post__arc_challenge__l19.npz": "89addc8de413f08af48797f4a8ec16da82168363cf8eedf8213d2415546d27bc",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm1__post__arc_challenge__l19.npz": "f75148317f11daa78927935dbc65dab6f631bfe56804618c025d456a9ae23f04",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm1__post__csqa__l19.npz": "65f3400c4c36c8a2c0006fd42f15c0132a8d381a2f45158034d71ee8ee908510",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm1__post__csqa__l19.npz": "26ca3b7c102fc5ba51120354b92999120a0e16491695d7954d0e1f4e41daa2f9",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm1__post__piqa__l19.npz": "b8c4b48eb1e461a6e2def074bcc0ec8963da3d255c6da435fd495e929477781a",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm1__post__piqa__l19.npz": "d193fb7c0f728a87e4504696d764318fc56eb9756e64feff4239a91fe7dc685f"
+  },
+  "centering": "Each readout centered separately over the same 30,193 rows.",
+  "interval": "Across-question interquartile range, not confidence interval."
+}

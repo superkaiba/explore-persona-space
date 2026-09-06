@@ -1,0 +1,102 @@
+{
+  "sources_sha256": {
+    "eval_results/issue_2546/allfit/p7_Aoff__a3.json": "233151f9ec2e292023de27a35b9b81cad4de6dcb5aa95e8303a9b4269eb63947",
+    "eval_results/issue_2546/allfit/p7_A__a3.json": "a3ea0a543a3b40a6024b90e280d832c5d8fa62ffcdf61b9372b8f7cb2725af13",
+    "eval_results/issue_2546/allfit/p7_A__a1.json": "32b5a415096b6dfd619bd3446d408bb84932ce7d98451ce0245157a3b1e29f67",
+    "eval_results/issue_2546/allfit/p7_D__a1.json": "b2ecc6e8bfe74f8f4a69613285c2c28cb10e4f93a3ca0f19bd11aef589861210",
+    "eval_results/issue_2546/paper_reasoning_20260906/residual.json": "b5f261f31d06e9bff30be3d5373e5fba09a0400c1265a968fff99505c3e87056",
+    "eval_results/issue_2546/allfit/eot_vs_context/diffs/diffs.json": "8b7485da3e76ff3cbbe199263d104c2f51b38ae754183053d95449548610595e",
+    "eval_results/issue_2546/paper_reasoning_20260906/qwen.json": "859461a043048519aa8b48e7bca83430e934c0dc8fec6eb03898ba3fb4c66d41",
+    "eval_results/issue_2546/paper_reasoning_20260906/openthinker.json": "03ce9c342b762433ee3364463f10a226ae1d79e754a9d4ebc44219e1c6dfac6a",
+    "eval_results/issue_2546/paper_reasoning_20260906/sae_matches.json": "594cb984a24ead639594e698ff944b4a004060b9b7d9a584817ea14cce27b558",
+    "eval_results/issue_2546/paper_reasoning_20260906/state_similarity.json": "05ba8accb311bfd1bfcfdeafcde28b004a21543691cd5ec19036b54f2880dffa"
+  },
+  "values": {
+    "n": 30193,
+    "results": {
+      "remove3=False,center=False": {
+        "mean": 0.42013250460573487,
+        "median": 0.4525053538450889,
+        "q25": 0.36182583416090996,
+        "q75": 0.4743807272236345
+      },
+      "remove3=False,center=True": {
+        "mean": 0.07056282382861641,
+        "median": 0.1256857056479842,
+        "q25": -0.04732879818271875,
+        "q75": 0.17033268199426588
+      },
+      "remove3=True,center=False": {
+        "mean": -0.045995430567654996,
+        "median": -0.04648266739286578,
+        "q25": -0.0547451281726099,
+        "q75": -0.03749705009991109
+      },
+      "remove3=True,center=True": {
+        "mean": 0.048721924223032655,
+        "median": 0.04824615041263508,
+        "q25": 0.03074609858396374,
+        "q75": 0.06702599659188962
+      }
+    },
+    "sources_sha256": {
+      "/mnt/eps-data/thomasjiralerspong/cot_necessity/allfit/preds/p7_A__all__a1.npz": "a5baf4ddb8166eb3f3511dda9c66002729e3e01a5535dd150d0b20f56e302d63",
+      "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm1__post__math__l19.npz": "c473ba168a4a55be08e5a734c7302cc060a17a7686ea77638fe41709f72e1e89",
+      "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm1__post__math__l19.npz": "c4751c52763fcb29ddf8c233faa40ce7f89df87890449271fdaecab371d5f223",
+      "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm1__post__gsm8k_train__l19.npz": "962a50e8eff28dc545b7a26055b883d9d14e2c1654b87175ea922754a82d3514",
+      "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm1__post__gsm8k_train__l19.npz": "10a2993429ae43f0d7c1d7ee89b4e2d40c7898664e28063204fbe88b499c33c3",
+      "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm1__post__contexthub__l19.npz": "3c98e8304a6009b29ff845bea7c1736f9887229c0a4f599aee33469f8fdb7e32",
+      "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm1__post__contexthub__l19.npz": "ad432aeab99137dcf6cf8d7d279c07b96a07fba93388d9257587fede88368515",
+      "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm1__post__mmlu__l19.npz": "b1ce89d813bdaf1fa988e86daae3121f26e409b7a3c41c47ca935a929e958ed5",
+      "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm1__post__mmlu__l19.npz": "e55064670f57642b244e5119f646949df7977de7c7b2369a1aa4500e7ce2099c",
+      "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm1__post__arc_challenge__l19.npz": "89addc8de413f08af48797f4a8ec16da82168363cf8eedf8213d2415546d27bc",
+      "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm1__post__arc_challenge__l19.npz": "f75148317f11daa78927935dbc65dab6f631bfe56804618c025d456a9ae23f04",
+      "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm1__post__csqa__l19.npz": "65f3400c4c36c8a2c0006fd42f15c0132a8d381a2f45158034d71ee8ee908510",
+      "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm1__post__csqa__l19.npz": "26ca3b7c102fc5ba51120354b92999120a0e16491695d7954d0e1f4e41daa2f9",
+      "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm1__post__piqa__l19.npz": "b8c4b48eb1e461a6e2def074bcc0ec8963da3d255c6da435fd495e929477781a",
+      "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm1__post__piqa__l19.npz": "d193fb7c0f728a87e4504696d764318fc56eb9756e64feff4239a91fe7dc685f"
+    },
+    "centering": "Each readout centered separately over the same 30,193 rows.",
+    "interval": "Across-question interquartile range, not confidence interval."
+  },
+  "script_sha256": "0781686eff0c16f6497191cb98aa10c1b97c37f6aca4e8c343ccfcc73af9c523",
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      9.821,
+      4.125
+    ],
+    "exported_size_inches": [
+      9.821,
+      2.934
+    ],
+    "scale": 0.42,
+    "include_width_frac": 0.75,
+    "latex_include_line": "\\includegraphics[width=0.75\\textwidth]{figures/paper/c1_cot_state_similarity.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "OPENTHINKER3-7B \u00b7 LAYER 19",
+      "All coordinates",
+      "Three coordinates removed",
+      "Context-to-CoT-end\ncosine",
+      "\u22120.25",
+      "0.00",
+      "0.25",
+      "0.50",
+      "0.75",
+      "Similarity beyond the massive coordinates",
+      "Raw",
+      "Mean-centered"
+    ]
+  },
+  "uncertainty": "Banked intervals only; no new bootstrap or inference."
+}

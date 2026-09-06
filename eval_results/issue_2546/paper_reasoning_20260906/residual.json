@@ -1,0 +1,1179 @@
+{
+  "arm": 3,
+  "created_utc": "2026-09-04T22:21:14.408156+00:00",
+  "dimension": 4096,
+  "estimand": "fraction of held-out context-to-answer squared residual error removed by a linear map from the portion of a CoT state not linearly predicted from context",
+  "formula": "1 - SSE(context_prediction + delta_prediction) / SSE(context_prediction)",
+  "git_commit": "6c2d7765d4e5745af1374f532e8b6a74570f8300",
+  "label_counts": {
+    "both_correct": 17693,
+    "both_wrong": 9419,
+    "necessary": 4522,
+    "rescued_by_no_think": 2174,
+    "unknown": 2
+  },
+  "layer": 24,
+  "limitations": [
+    "This is conditional linear predictability in observational activations, not evidence that reasoning causally adds information.",
+    "The answer state is downstream of the same generated trace; temporal order alone does not identify a causal contribution.",
+    "Trace-mean and answer targets are both token averages, so shared pooling geometry may favor the trace-mean candidate.",
+    "The leave-one-corpus-out uncertainty has only seven independent corpus units."
+  ],
+  "method": {
+    "base_lambda": 1000.0,
+    "bootstrap_draws": 2000,
+    "candidate_residualizer_lambda": 1000.0,
+    "delta_lambda_sensitivity": [
+      316.2277660168379,
+      1000.0,
+      3162.2776601683795
+    ],
+    "identity_baseline": "delta_hat = candidate_residual + train-mean(answer_residual-candidate_residual)",
+    "inner_residual_crossfit": "two folds entirely inside each outer-training set; random-row for random5 and balanced corpus-group folds for loco7",
+    "negative_control": "fit the primary delta map after permuting answer residual targets independently within each corpus in the outer-training set",
+    "outer_evaluation": "every reported row is predicted by models fit without that outer-test row",
+    "primary_delta_lambda": {
+      "end_of_thought": 316.2277660168379,
+      "trace_mean": 1000.0
+    },
+    "retrieval": "standard answer-state retrieval from context-plus-delta predictions: train-fold true-answer whitening (shrinkage 0.1), cosine plus CSLS k=10, own answer in the outer-test pool; no residual-identity retrieval is claimed",
+    "ridge": "standardize X on training rows, center Y, primal float64 ridge"
+  },
+  "model": "Qwen3-8B",
+  "n": 33810,
+  "numpy_version": "2.2.6",
+  "provenance": [
+    {
+      "bytes": 562633468,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/allfit/preds/p7_A__all__a3.npz",
+      "sha256": "16185f1398a98263157f6489a7345a0b039821dda7a8639750e55183d0383352"
+    },
+    {
+      "bytes": 57212914,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__math__l24.npz",
+      "sha256": "37190bf21bba24f469a00fcd1df12060b4c02d629a26d77a5b8238ef2caf0bec"
+    },
+    {
+      "bytes": 57212924,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm3__think_on__math__l24.npz",
+      "sha256": "39670a9fb15669d5c4f81a73c6e73877e0c325b1ba9adb750ee8522245d0d087"
+    },
+    {
+      "bytes": 57212916,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_mean__arm3__think_on__math__l24.npz",
+      "sha256": "b8651d8f01b3024943b6a0bd89db966bd55d0aa76ba4f6444182b1f2dce01d41"
+    },
+    {
+      "bytes": 57212916,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__math__l24.npz",
+      "sha256": "a77ce2084bf89b92a2c24a5130f948ab8b165052799c4575dae581e037cc528b"
+    },
+    {
+      "bytes": 59163010,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__gsm8k_train__l24.npz",
+      "sha256": "486532be18a667aac8d27f8aa2c6a68c5d7b4029e784f9c564aecb31348da511"
+    },
+    {
+      "bytes": 59163020,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm3__think_on__gsm8k_train__l24.npz",
+      "sha256": "5ae492b6e91daef2ff9009f5141d849ca909242e0bf978f3b34c80bbded1989e"
+    },
+    {
+      "bytes": 59163012,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_mean__arm3__think_on__gsm8k_train__l24.npz",
+      "sha256": "76dd3d3bc0bb5f0a3f3ce2e44fe7775bb97c1ef48073a17974fcd3e979cd3f73"
+    },
+    {
+      "bytes": 59163012,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__gsm8k_train__l24.npz",
+      "sha256": "2db7ae83eff66fbda1c3054a90fa92127b507c6ac7e75c14682ea1083d4e6643"
+    },
+    {
+      "bytes": 70383574,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__contexthub__l24.npz",
+      "sha256": "a2111d691f72c66b096afec8994bcabc8719ed8197e22591dc4497860289a92c"
+    },
+    {
+      "bytes": 70383584,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm3__think_on__contexthub__l24.npz",
+      "sha256": "e7f4948b42413a0b915416a52234bc55e54caf52c65ad88bc8a9771f7527c00a"
+    },
+    {
+      "bytes": 70383576,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_mean__arm3__think_on__contexthub__l24.npz",
+      "sha256": "d6259cb3cd5ac422f53756eecf422471d1d9cdbbe0ac104ec728c53582074f76"
+    },
+    {
+      "bytes": 70383576,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__contexthub__l24.npz",
+      "sha256": "8fd12b00682f4a39028bf63c6944a646dc9f9ddc8539b8b4cb5723a0e8396adb"
+    },
+    {
+      "bytes": 60752674,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__mmlu__l24.npz",
+      "sha256": "f8f84b191948299bae6be0cfd182fd2adc8b027841ed66ddf9e21c70f6c0e455"
+    },
+    {
+      "bytes": 60752684,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm3__think_on__mmlu__l24.npz",
+      "sha256": "8ea68a8253a736aecd9dd261cccd5db8ab921de66286286a319ed589e036bd43"
+    },
+    {
+      "bytes": 60752676,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_mean__arm3__think_on__mmlu__l24.npz",
+      "sha256": "d38fe493a3e89dda5327c1c0d406c55de6bd2465eadf41e3fa398f3a949c1240"
+    },
+    {
+      "bytes": 60752676,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__mmlu__l24.npz",
+      "sha256": "a11538acf72588d523c7cb5e1659f03bd128846e6b3bbe0233cbee65f54ad565"
+    },
+    {
+      "bytes": 9561962,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__arc_challenge__l24.npz",
+      "sha256": "cf9d158434bd9bdf4a930e9919159d7cd4f6bb315a4343769e9135202a6b1051"
+    },
+    {
+      "bytes": 9561972,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm3__think_on__arc_challenge__l24.npz",
+      "sha256": "af3b07895d5f6c4a507b020bf8cf9038c3165fe8257541f058a4e6a83cdd37d2"
+    },
+    {
+      "bytes": 9561964,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_mean__arm3__think_on__arc_challenge__l24.npz",
+      "sha256": "9c62bae9fcece369a0ac10a25888469a578b0f2befdb4db6fbc619b3ebc8707d"
+    },
+    {
+      "bytes": 9561964,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__arc_challenge__l24.npz",
+      "sha256": "ef05775039bca703a4d037f6f07a92ed7f1095f7473eef1dbe11a1e7ff55a789"
+    },
+    {
+      "bytes": 9972850,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__csqa__l24.npz",
+      "sha256": "4465dd0148d678e8d3c8f20d7d9afc8d476460eb1ee56f55c3b8a653b3af74d5"
+    },
+    {
+      "bytes": 9972860,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm3__think_on__csqa__l24.npz",
+      "sha256": "df91131c1ce6bdfce2d590e1d7be86b08dea7a0503ab7268a41d2c8cf3b51539"
+    },
+    {
+      "bytes": 9972852,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_mean__arm3__think_on__csqa__l24.npz",
+      "sha256": "f68142d8eb08714f42db5111fa5159d72c5e5dc9054512ba7038f2d2e4b3d28c"
+    },
+    {
+      "bytes": 9972852,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__csqa__l24.npz",
+      "sha256": "226ef9bfa15d42a6b69f2c890fffa0aeddecd619d93a7b3001c46ebf77a70933"
+    },
+    {
+      "bytes": 14736862,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__piqa__l24.npz",
+      "sha256": "930a2eaeb341dfd482a3854697708dad99c6ce21c890dd44d5da206f7b805aa7"
+    },
+    {
+      "bytes": 14736872,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_boundary__arm3__think_on__piqa__l24.npz",
+      "sha256": "688837ff3332fe9a734ee05e51995bc377b0278619e2818191bb5ed94e3fa265"
+    },
+    {
+      "bytes": 14736864,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cot_mean__arm3__think_on__piqa__l24.npz",
+      "sha256": "254777e7ce55d9ed47c131c427f62549c99761167a0edae2552791ef05337f30"
+    },
+    {
+      "bytes": 14736864,
+      "path": "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__piqa__l24.npz",
+      "sha256": "74cc78bdbc74fcfd52d2c19b0c7d0033f976d1acf5803a119e3f5a7bb25bfd14"
+    }
+  ],
+  "python_version": "3.12.13",
+  "results": {
+    "loco7": {
+      "outer_fold_scheme": "seven leave-one-corpus-out folds",
+      "per_heldout_corpus": {
+        "arc_challenge": {
+          "end_of_thought": 0.15741430672870071,
+          "n": 1157,
+          "trace_mean": 0.6297785494165712
+        },
+        "contexthub": {
+          "end_of_thought": -0.11352182056817117,
+          "n": 8384,
+          "trace_mean": 0.5371452942190165
+        },
+        "csqa": {
+          "end_of_thought": 0.13203156442272868,
+          "n": 1210,
+          "trace_mean": 0.574779567783974
+        },
+        "gsm8k_train": {
+          "end_of_thought": 0.14200031810171687,
+          "n": 7162,
+          "trace_mean": 0.5234522935423409
+        },
+        "math": {
+          "end_of_thought": 0.10984908605662902,
+          "n": 6745,
+          "trace_mean": 0.5449606045830842
+        },
+        "mmlu": {
+          "end_of_thought": 0.11976648538316337,
+          "n": 7361,
+          "trace_mean": 0.5821227189120319
+        },
+        "piqa": {
+          "end_of_thought": 0.12154431297039492,
+          "n": 1791,
+          "trace_mean": 0.40482051425250887
+        }
+      },
+      "subsets": {
+        "all": {
+          "base": {
+            "absolute_answer_mse_reduction_per_dimension": 0.0,
+            "answer_acc1_whitened_csls": 0.23593611357586514,
+            "answer_acc1_whitened_csls_ci95": [
+              0.1217474243450645,
+              0.3877574320847741
+            ],
+            "answer_mse_per_dimension": 0.5898860816358463,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.4338217784126872,
+            "incremental_residual_r2": 0.0,
+            "incremental_residual_r2_ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 33810
+          },
+          "end_of_thought__identity": {
+            "absolute_answer_mse_reduction_per_dimension": -0.414195390460976,
+            "answer_mse_per_dimension": 1.0040814720968223,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.036273138325215504,
+            "incremental_residual_r2": -0.7021616602859104,
+            "incremental_residual_r2_ci95": [
+              -0.8393201249658266,
+              -0.4737432656204661
+            ],
+            "n": 33810
+          },
+          "end_of_thought__ridge_lam1000": {
+            "absolute_answer_mse_reduction_per_dimension": 0.039041506251948285,
+            "answer_mse_per_dimension": 0.550844575383898,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.47129418412959945,
+            "incremental_residual_r2": 0.06618482359115863,
+            "incremental_residual_r2_ci95": [
+              -0.0006648777525027071,
+              0.14057467746112762
+            ],
+            "n": 33810
+          },
+          "end_of_thought__ridge_lam316": {
+            "absolute_answer_mse_reduction_per_dimension": 0.022762438519525037,
+            "answer_acc1_whitened_csls": 0.6485063590653652,
+            "answer_acc1_whitened_csls_ci95": [
+              0.4156680127479308,
+              0.8673946421764965
+            ],
+            "answer_mse_per_dimension": 0.5671236431163212,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.4556693814689179,
+            "incremental_residual_r2": 0.03858785488954275,
+            "incremental_residual_r2_ci95": [
+              -0.06088190070950753,
+              0.13220177582496215
+            ],
+            "n": 33810
+          },
+          "end_of_thought__ridge_lam3162": {
+            "absolute_answer_mse_reduction_per_dimension": 0.04377878241737794,
+            "answer_mse_per_dimension": 0.5461072992184683,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.4758410664480853,
+            "incremental_residual_r2": 0.07421565583641598,
+            "incremental_residual_r2_ci95": [
+              0.0336744159657516,
+              0.12884959297655396
+            ],
+            "n": 33810
+          },
+          "end_of_thought__shuffle": {
+            "absolute_answer_mse_reduction_per_dimension": -0.28146959499893626,
+            "answer_mse_per_dimension": 0.8713556766347825,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.16366460792060966,
+            "incremental_residual_r2": -0.4771592410154466,
+            "incremental_residual_r2_ci95": [
+              -0.6996824595530846,
+              -0.15156382641698807
+            ],
+            "n": 33810
+          },
+          "trace_mean__identity": {
+            "absolute_answer_mse_reduction_per_dimension": 0.20194723086058472,
+            "answer_mse_per_dimension": 0.3879388507752616,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.6276526342044544,
+            "incremental_residual_r2": 0.3423495436619788,
+            "incremental_residual_r2_ci95": [
+              0.28221530369132886,
+              0.38540901208883294
+            ],
+            "n": 33810
+          },
+          "trace_mean__ridge_lam1000": {
+            "absolute_answer_mse_reduction_per_dimension": 0.31853787759751095,
+            "answer_acc1_whitened_csls": 0.9716651878142561,
+            "answer_acc1_whitened_csls_ci95": [
+              0.9531600027153622,
+              0.9908506429277942
+            ],
+            "answer_mse_per_dimension": 0.27134820403833537,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.7395574359590041,
+            "incremental_residual_r2": 0.5399989718593726,
+            "incremental_residual_r2_ci95": [
+              0.4960969951301664,
+              0.5693563186952489
+            ],
+            "n": 33810
+          },
+          "trace_mean__ridge_lam316": {
+            "absolute_answer_mse_reduction_per_dimension": 0.3099564205958933,
+            "answer_mse_per_dimension": 0.279929661039953,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.7313208726376081,
+            "incremental_residual_r2": 0.5254513205945387,
+            "incremental_residual_r2_ci95": [
+              0.4808116047135087,
+              0.5464224823401052
+            ],
+            "n": 33810
+          },
+          "trace_mean__ridge_lam3162": {
+            "absolute_answer_mse_reduction_per_dimension": 0.31648345924497595,
+            "answer_mse_per_dimension": 0.2734026223908703,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.737585585858712,
+            "incremental_residual_r2": 0.5365162344012557,
+            "incremental_residual_r2_ci95": [
+              0.5001595499115095,
+              0.5706974746992317
+            ],
+            "n": 33810
+          },
+          "trace_mean__shuffle": {
+            "absolute_answer_mse_reduction_per_dimension": -0.22520686462406916,
+            "answer_mse_per_dimension": 0.8150929462599155,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.21766610688283394,
+            "incremental_residual_r2": -0.3817802650971782,
+            "incremental_residual_r2_ci95": [
+              -0.47795202720847146,
+              -0.1740442582757175
+            ],
+            "n": 33810
+          }
+        },
+        "both_correct": {
+          "base": {
+            "absolute_answer_mse_reduction_per_dimension": 0.0,
+            "answer_acc1_whitened_csls": 0.31362685807946644,
+            "answer_acc1_whitened_csls_ci95": [
+              0.2364351414389145,
+              0.4140025674651317
+            ],
+            "answer_mse_per_dimension": 0.4745408620868,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.5309796894699655,
+            "incremental_residual_r2": 0.0,
+            "incremental_residual_r2_ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 17693
+          },
+          "end_of_thought__identity": {
+            "absolute_answer_mse_reduction_per_dimension": -0.3407913921175466,
+            "answer_mse_per_dimension": 0.8153322542043466,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.1941528799639427,
+            "incremental_residual_r2": -0.7181497302864748,
+            "incremental_residual_r2_ci95": [
+              -0.8896269443857352,
+              -0.43068565425288236
+            ],
+            "n": 17693
+          },
+          "end_of_thought__ridge_lam1000": {
+            "absolute_answer_mse_reduction_per_dimension": 0.057604764976314206,
+            "answer_mse_per_dimension": 0.4169360971104858,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.5879143117876082,
+            "incremental_residual_r2": 0.12139052625098812,
+            "incremental_residual_r2_ci95": [
+              0.09569604578072127,
+              0.140317102871444
+            ],
+            "n": 17693
+          },
+          "end_of_thought__ridge_lam316": {
+            "absolute_answer_mse_reduction_per_dimension": 0.05574948689080801,
+            "answer_acc1_whitened_csls": 0.7906516701520375,
+            "answer_acc1_whitened_csls_ci95": [
+              0.6818151836950069,
+              0.8814306403878849
+            ],
+            "answer_mse_per_dimension": 0.41879137519599197,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.5860806170032284,
+            "incremental_residual_r2": 0.11748089857983757,
+            "incremental_residual_r2_ci95": [
+              0.08642008519072306,
+              0.13290051095580055
+            ],
+            "n": 17693
+          },
+          "end_of_thought__ridge_lam3162": {
+            "absolute_answer_mse_reduction_per_dimension": 0.050590246443388914,
+            "answer_mse_per_dimension": 0.4239506156434111,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.5809813963668715,
+            "incremental_residual_r2": 0.10660883073570859,
+            "incremental_residual_r2_ci95": [
+              0.08310777735871444,
+              0.12908576565136443
+            ],
+            "n": 17693
+          },
+          "end_of_thought__shuffle": {
+            "absolute_answer_mse_reduction_per_dimension": -0.13664478270936106,
+            "answer_mse_per_dimension": 0.6111856447961611,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.3959245582072529,
+            "incremental_residual_r2": -0.287951562502887,
+            "incremental_residual_r2_ci95": [
+              -0.42042052653301376,
+              -0.1441559097115872
+            ],
+            "n": 17693
+          },
+          "trace_mean__identity": {
+            "absolute_answer_mse_reduction_per_dimension": 0.1456443294684078,
+            "answer_mse_per_dimension": 0.3288965326183922,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.674929671635498,
+            "incremental_residual_r2": 0.3069163081719346,
+            "incremental_residual_r2_ci95": [
+              0.24364622630746888,
+              0.37874125754596233
+            ],
+            "n": 17693
+          },
+          "trace_mean__ridge_lam1000": {
+            "absolute_answer_mse_reduction_per_dimension": 0.2517314785311278,
+            "answer_acc1_whitened_csls": 0.9764313570338552,
+            "answer_acc1_whitened_csls_ci95": [
+              0.9515987376075781,
+              0.9898626553302813
+            ],
+            "answer_mse_per_dimension": 0.22280938355567217,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.7797826602228998,
+            "incremental_residual_r2": 0.5304737666302016,
+            "incremental_residual_r2_ci95": [
+              0.4395625700075051,
+              0.5745536025021876
+            ],
+            "n": 17693
+          },
+          "trace_mean__ridge_lam316": {
+            "absolute_answer_mse_reduction_per_dimension": 0.24146960008448204,
+            "answer_mse_per_dimension": 0.23307126200231795,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.7696401629161306,
+            "incremental_residual_r2": 0.5088489092859488,
+            "incremental_residual_r2_ci95": [
+              0.4273157579859903,
+              0.5479805128368566
+            ],
+            "n": 17693
+          },
+          "trace_mean__ridge_lam3162": {
+            "absolute_answer_mse_reduction_per_dimension": 0.2525762588073322,
+            "answer_mse_per_dimension": 0.2219646032794678,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.7806176127825859,
+            "incremental_residual_r2": 0.5322539721798132,
+            "incremental_residual_r2_ci95": [
+              0.4522856291889513,
+              0.5750890913507121
+            ],
+            "n": 17693
+          },
+          "trace_mean__shuffle": {
+            "absolute_answer_mse_reduction_per_dimension": -0.153919544583823,
+            "answer_mse_per_dimension": 0.628460406670623,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.3788507615629282,
+            "incremental_residual_r2": -0.3243546697052804,
+            "incremental_residual_r2_ci95": [
+              -0.49181294939258136,
+              -0.16933400340049976
+            ],
+            "n": 17693
+          }
+        },
+        "necessary": {
+          "base": {
+            "absolute_answer_mse_reduction_per_dimension": 0.0,
+            "answer_acc1_whitened_csls": 0.3157894736842105,
+            "answer_acc1_whitened_csls_ci95": [
+              0.1995920120592079,
+              0.45229681978798586
+            ],
+            "answer_mse_per_dimension": 0.5993592578622691,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.47551151226692,
+            "incremental_residual_r2": 0.0,
+            "incremental_residual_r2_ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 4522
+          },
+          "end_of_thought__identity": {
+            "absolute_answer_mse_reduction_per_dimension": -0.40402648246988737,
+            "answer_mse_per_dimension": 1.0033857403321564,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.12195521691485489,
+            "incremental_residual_r2": -0.6740973417361169,
+            "incremental_residual_r2_ci95": [
+              -0.8479884451271478,
+              -0.3509688339742385
+            ],
+            "n": 4522
+          },
+          "end_of_thought__ridge_lam1000": {
+            "absolute_answer_mse_reduction_per_dimension": 0.06766482724741607,
+            "answer_mse_per_dimension": 0.531694430614853,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.5347237834551507,
+            "incremental_residual_r2": 0.11289527334366334,
+            "incremental_residual_r2_ci95": [
+              0.07967908083194965,
+              0.14417792224304338
+            ],
+            "n": 4522
+          },
+          "end_of_thought__ridge_lam316": {
+            "absolute_answer_mse_reduction_per_dimension": 0.06541216959044696,
+            "answer_acc1_whitened_csls": 0.7616099071207431,
+            "answer_acc1_whitened_csls_ci95": [
+              0.6232607920085622,
+              0.881488567351906
+            ],
+            "answer_mse_per_dimension": 0.533947088271822,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.5327525233262956,
+            "incremental_residual_r2": 0.10913683026062226,
+            "incremental_residual_r2_ci95": [
+              0.042532869833148815,
+              0.13954470506422745
+            ],
+            "n": 4522
+          },
+          "end_of_thought__ridge_lam3162": {
+            "absolute_answer_mse_reduction_per_dimension": 0.05959015003734667,
+            "answer_mse_per_dimension": 0.5397691078249224,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.5276577789123207,
+            "incremental_residual_r2": 0.09942309100202518,
+            "incremental_residual_r2_ci95": [
+              0.07943517702745394,
+              0.13317113253136967
+            ],
+            "n": 4522
+          },
+          "end_of_thought__shuffle": {
+            "absolute_answer_mse_reduction_per_dimension": -0.19189201280714374,
+            "answer_mse_per_dimension": 0.7912512706694128,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.3075902692310719,
+            "incremental_residual_r2": -0.3201619234039428,
+            "incremental_residual_r2_ci95": [
+              -0.4676593873239756,
+              -0.12884526276518118
+            ],
+            "n": 4522
+          },
+          "trace_mean__identity": {
+            "absolute_answer_mse_reduction_per_dimension": 0.22731001669894732,
+            "answer_mse_per_dimension": 0.3720492411633217,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.6744264123724737,
+            "incremental_residual_r2": 0.379255035635376,
+            "incremental_residual_r2_ci95": [
+              0.31046161531733785,
+              0.44924823431645733
+            ],
+            "n": 4522
+          },
+          "trace_mean__ridge_lam1000": {
+            "absolute_answer_mse_reduction_per_dimension": 0.3314815460585335,
+            "answer_acc1_whitened_csls": 0.9849624060150376,
+            "answer_acc1_whitened_csls_ci95": [
+              0.9654687664944458,
+              0.9952774498229043
+            ],
+            "answer_mse_per_dimension": 0.2678777118037355,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.7655850408276745,
+            "incremental_residual_r2": 0.5530598580237615,
+            "incremental_residual_r2_ci95": [
+              0.5102450833928911,
+              0.5788737060423246
+            ],
+            "n": 4522
+          },
+          "trace_mean__ridge_lam316": {
+            "absolute_answer_mse_reduction_per_dimension": 0.3181927181397601,
+            "answer_mse_per_dimension": 0.28116653972250893,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.7539562269444589,
+            "incremental_residual_r2": 0.5308881342296373,
+            "incremental_residual_r2_ci95": [
+              0.4953392696697383,
+              0.5529166208996876
+            ],
+            "n": 4522
+          },
+          "trace_mean__ridge_lam3162": {
+            "absolute_answer_mse_reduction_per_dimension": 0.33200113444050827,
+            "answer_mse_per_dimension": 0.26735812342176074,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.7660397232591725,
+            "incremental_residual_r2": 0.553926764432829,
+            "incremental_residual_r2_ci95": [
+              0.5116488033769946,
+              0.5802896475132953
+            ],
+            "n": 4522
+          },
+          "trace_mean__shuffle": {
+            "absolute_answer_mse_reduction_per_dimension": -0.22027414376195786,
+            "answer_mse_per_dimension": 0.8196334016242269,
+            "answer_r2_corpus_train_mean": null,
+            "answer_r2_corpus_train_mean_note": "inapplicable when the held-out corpus is absent from outer training",
+            "answer_r2_global_train_mean": 0.2827535778012492,
+            "incremental_residual_r2": -0.36751604463007426,
+            "incremental_residual_r2_ci95": [
+              -0.481637590690019,
+              -0.17690951475348998
+            ],
+            "n": 4522
+          }
+        }
+      },
+      "uncertainty_unit": "corpus-cluster bootstrap over seven held-out corpora"
+    },
+    "random5": {
+      "outer_fold_scheme": "five seeded random-row folds reused exactly from allfit",
+      "per_heldout_corpus": {},
+      "subsets": {
+        "all": {
+          "base": {
+            "absolute_answer_mse_reduction_per_dimension": 0.0,
+            "answer_acc1_whitened_csls": 0.8765454007690032,
+            "answer_acc1_whitened_csls_ci95": [
+              0.8731144631765749,
+              0.8798587695947945
+            ],
+            "answer_mse_per_dimension": 0.28768243953804684,
+            "answer_r2_corpus_train_mean": 0.4978318434869623,
+            "answer_r2_global_train_mean": 0.6728728104580242,
+            "incremental_residual_r2": 0.0,
+            "incremental_residual_r2_ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 33810
+          },
+          "end_of_thought__identity": {
+            "absolute_answer_mse_reduction_per_dimension": -0.1011175747928013,
+            "answer_mse_per_dimension": 0.3888000143308481,
+            "answer_r2_corpus_train_mean": 0.32132462877372403,
+            "answer_r2_global_train_mean": 0.5578907903236499,
+            "incremental_residual_r2": -0.35149025764371755,
+            "incremental_residual_r2_ci95": [
+              -0.35460269058146826,
+              -0.3484946848861829
+            ],
+            "n": 33810
+          },
+          "end_of_thought__ridge_lam1000": {
+            "absolute_answer_mse_reduction_per_dimension": 0.0517638375487565,
+            "answer_mse_per_dimension": 0.23591860198929032,
+            "answer_r2_corpus_train_mean": 0.5881889432030248,
+            "answer_r2_global_train_mean": 0.7317340976621486,
+            "incremental_residual_r2": 0.17993394950306163,
+            "incremental_residual_r2_ci95": [
+              0.17844474499844712,
+              0.18149550258945704
+            ],
+            "n": 33810
+          },
+          "end_of_thought__ridge_lam316": {
+            "absolute_answer_mse_reduction_per_dimension": 0.047900721704838875,
+            "answer_acc1_whitened_csls": 0.9847973972197575,
+            "answer_acc1_whitened_csls_ci95": [
+              0.983466430050281,
+              0.9861882579118604
+            ],
+            "answer_mse_per_dimension": 0.23978171783320795,
+            "answer_r2_corpus_train_mean": 0.5814456266319769,
+            "answer_r2_global_train_mean": 0.7273413018038921,
+            "incremental_residual_r2": 0.16650554612146862,
+            "incremental_residual_r2_ci95": [
+              0.16482451377930343,
+              0.1681468593530086
+            ],
+            "n": 33810
+          },
+          "end_of_thought__ridge_lam3162": {
+            "absolute_answer_mse_reduction_per_dimension": 0.05040034189100805,
+            "answer_mse_per_dimension": 0.23728209764703878,
+            "answer_r2_corpus_train_mean": 0.5858088740477279,
+            "answer_r2_global_train_mean": 0.7301836502202117,
+            "incremental_residual_r2": 0.17519436352090045,
+            "incremental_residual_r2_ci95": [
+              0.17368381988445006,
+              0.1766676228379952
+            ],
+            "n": 33810
+          },
+          "end_of_thought__shuffle": {
+            "absolute_answer_mse_reduction_per_dimension": -0.030237092049792226,
+            "answer_mse_per_dimension": 0.31791953158783903,
+            "answer_r2_corpus_train_mean": 0.4450510592397854,
+            "answer_r2_global_train_mean": 0.6384898465271918,
+            "incremental_residual_r2": -0.10510579685832111,
+            "incremental_residual_r2_ci95": [
+              -0.10619705480299076,
+              -0.10401938610163777
+            ],
+            "n": 33810
+          },
+          "trace_mean__identity": {
+            "absolute_answer_mse_reduction_per_dimension": 0.09403650676207939,
+            "answer_mse_per_dimension": 0.19364593277596745,
+            "answer_r2_corpus_train_mean": 0.6619785996166285,
+            "answer_r2_global_train_mean": 0.7798028622916388,
+            "incremental_residual_r2": 0.3268760752761998,
+            "incremental_residual_r2_ci95": [
+              0.3228355214790014,
+              0.3306938851233839
+            ],
+            "n": 33810
+          },
+          "trace_mean__ridge_lam1000": {
+            "absolute_answer_mse_reduction_per_dimension": 0.15030097723759636,
+            "answer_acc1_whitened_csls": 0.9977817213842058,
+            "answer_acc1_whitened_csls_ci95": [
+              0.9972493345164153,
+              0.9982845312037859
+            ],
+            "answer_mse_per_dimension": 0.13738146230045045,
+            "answer_r2_corpus_train_mean": 0.7601918428762536,
+            "answer_r2_global_train_mean": 0.8437818737574712,
+            "incremental_residual_r2": 0.522454472643328,
+            "incremental_residual_r2_ci95": [
+              0.5191410772343276,
+              0.5257310101926329
+            ],
+            "n": 33810
+          },
+          "trace_mean__ridge_lam316": {
+            "absolute_answer_mse_reduction_per_dimension": 0.1453628238711333,
+            "answer_mse_per_dimension": 0.1423196156669135,
+            "answer_r2_corpus_train_mean": 0.7515719793329753,
+            "answer_r2_global_train_mean": 0.8381666396997641,
+            "incremental_residual_r2": 0.5052891796404162,
+            "incremental_residual_r2_ci95": [
+              0.5019951609140857,
+              0.5085836202865788
+            ],
+            "n": 33810
+          },
+          "trace_mean__ridge_lam3162": {
+            "absolute_answer_mse_reduction_per_dimension": 0.1533916051947572,
+            "answer_mse_per_dimension": 0.13429083434328964,
+            "answer_r2_corpus_train_mean": 0.7655867322765497,
+            "answer_r2_global_train_mean": 0.847296264274909,
+            "incremental_residual_r2": 0.5331976655963762,
+            "incremental_residual_r2_ci95": [
+              0.529870705657865,
+              0.536437393562147
+            ],
+            "n": 33810
+          },
+          "trace_mean__shuffle": {
+            "absolute_answer_mse_reduction_per_dimension": -0.03652998296416864,
+            "answer_mse_per_dimension": 0.3242124225022155,
+            "answer_r2_corpus_train_mean": 0.4340664143838656,
+            "answer_r2_global_train_mean": 0.6313341239804149,
+            "incremental_residual_r2": -0.12698023217137466,
+            "incremental_residual_r2_ci95": [
+              -0.12823244769768674,
+              -0.1257097844779907
+            ],
+            "n": 33810
+          }
+        },
+        "both_correct": {
+          "base": {
+            "absolute_answer_mse_reduction_per_dimension": 0.0,
+            "answer_acc1_whitened_csls": 0.904538518057989,
+            "answer_acc1_whitened_csls_ci95": [
+              0.9001851014525518,
+              0.9088905216752388
+            ],
+            "answer_mse_per_dimension": 0.272128365039151,
+            "answer_r2_corpus_train_mean": 0.4985899292521677,
+            "answer_r2_global_train_mean": 0.680248987958566,
+            "incremental_residual_r2": 0.0,
+            "incremental_residual_r2_ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 17693
+          },
+          "end_of_thought__identity": {
+            "absolute_answer_mse_reduction_per_dimension": -0.09500014985817042,
+            "answer_mse_per_dimension": 0.3671285148973214,
+            "answer_r2_corpus_train_mean": 0.3235474199768601,
+            "answer_r2_global_train_mean": 0.5686237479477805,
+            "incremental_residual_r2": -0.34910050572825346,
+            "incremental_residual_r2_ci95": [
+              -0.35356513299392495,
+              -0.3447574516753715
+            ],
+            "n": 17693
+          },
+          "end_of_thought__ridge_lam1000": {
+            "absolute_answer_mse_reduction_per_dimension": 0.04458639002054905,
+            "answer_mse_per_dimension": 0.22754197501860193,
+            "answer_r2_corpus_train_mean": 0.5807425742782664,
+            "answer_r2_global_train_mean": 0.7326380262357539,
+            "incremental_residual_r2": 0.16384322896341375,
+            "incremental_residual_r2_ci95": [
+              0.1618759078336864,
+              0.1659577964493389
+            ],
+            "n": 17693
+          },
+          "end_of_thought__ridge_lam316": {
+            "absolute_answer_mse_reduction_per_dimension": 0.042292647872363205,
+            "answer_acc1_whitened_csls": 0.986887469620754,
+            "answer_acc1_whitened_csls_ci95": [
+              0.9850788447408579,
+              0.9885265359181598
+            ],
+            "answer_mse_per_dimension": 0.2298357171667878,
+            "answer_r2_corpus_train_mean": 0.5765162400898634,
+            "answer_r2_global_train_mean": 0.7299428776681323,
+            "incremental_residual_r2": 0.15541433127075366,
+            "incremental_residual_r2_ci95": [
+              0.1532245539510993,
+              0.15750506924350913
+            ],
+            "n": 17693
+          },
+          "end_of_thought__ridge_lam3162": {
+            "absolute_answer_mse_reduction_per_dimension": 0.04221236850687523,
+            "answer_mse_per_dimension": 0.22991599653227576,
+            "answer_r2_corpus_train_mean": 0.576368321359219,
+            "answer_r2_global_train_mean": 0.7298485493596623,
+            "incremental_residual_r2": 0.15511932576672838,
+            "incremental_residual_r2_ci95": [
+              0.1532373839393595,
+              0.1568939995098547
+            ],
+            "n": 17693
+          },
+          "end_of_thought__shuffle": {
+            "absolute_answer_mse_reduction_per_dimension": -0.02576154788247041,
+            "answer_mse_per_dimension": 0.2978899129216214,
+            "answer_r2_corpus_train_mean": 0.4511229937694783,
+            "answer_r2_global_train_mean": 0.6499791518612204,
+            "incremental_residual_r2": -0.09466689692110597,
+            "incremental_residual_r2_ci95": [
+              -0.0961891361314102,
+              -0.09320753971306099
+            ],
+            "n": 17693
+          },
+          "trace_mean__identity": {
+            "absolute_answer_mse_reduction_per_dimension": 0.08135229838803844,
+            "answer_mse_per_dimension": 0.19077606665111257,
+            "answer_r2_corpus_train_mean": 0.6484855922212835,
+            "answer_r2_global_train_mean": 0.7758379933080437,
+            "incremental_residual_r2": 0.29894824957455024,
+            "incremental_residual_r2_ci95": [
+              0.2931731375194194,
+              0.30487453021342237
+            ],
+            "n": 17693
+          },
+          "trace_mean__ridge_lam1000": {
+            "absolute_answer_mse_reduction_per_dimension": 0.13765151140263623,
+            "answer_acc1_whitened_csls": 0.9978522579551234,
+            "answer_acc1_whitened_csls_ci95": [
+              0.997172610636975,
+              0.9985304922850845
+            ],
+            "answer_mse_per_dimension": 0.13447685363651476,
+            "answer_r2_corpus_train_mean": 0.752219697178095,
+            "answer_r2_global_train_mean": 0.8419896064850236,
+            "incremental_residual_r2": 0.5058330151758799,
+            "incremental_residual_r2_ci95": [
+              0.5003208697797799,
+              0.5111666784243056
+            ],
+            "n": 17693
+          },
+          "trace_mean__ridge_lam316": {
+            "absolute_answer_mse_reduction_per_dimension": 0.13258187734458324,
+            "answer_mse_per_dimension": 0.13954648769456776,
+            "answer_r2_corpus_train_mean": 0.7428786438434003,
+            "answer_r2_global_train_mean": 0.8360327830553567,
+            "incremental_residual_r2": 0.48720344652608605,
+            "incremental_residual_r2_ci95": [
+              0.4820728787976491,
+              0.4926213926522524
+            ],
+            "n": 17693
+          },
+          "trace_mean__ridge_lam3162": {
+            "absolute_answer_mse_reduction_per_dimension": 0.14096830759096043,
+            "answer_mse_per_dimension": 0.13116005744819056,
+            "answer_r2_corpus_train_mean": 0.7583310594067421,
+            "answer_r2_global_train_mean": 0.8458868442382408,
+            "incremental_residual_r2": 0.5180213667571161,
+            "incremental_residual_r2_ci95": [
+              0.5123612994471538,
+              0.5232633173968292
+            ],
+            "n": 17693
+          },
+          "trace_mean__shuffle": {
+            "absolute_answer_mse_reduction_per_dimension": -0.036341044635736855,
+            "answer_mse_per_dimension": 0.30846940967488784,
+            "answer_r2_corpus_train_mean": 0.4316297439027523,
+            "answer_r2_global_train_mean": 0.6375482360569845,
+            "incremental_residual_r2": -0.13354375840426802,
+            "incremental_residual_r2_ci95": [
+              -0.13550202430174915,
+              -0.1314779824129957
+            ],
+            "n": 17693
+          }
+        },
+        "necessary": {
+          "base": {
+            "absolute_answer_mse_reduction_per_dimension": 0.0,
+            "answer_acc1_whitened_csls": 0.8794781070322866,
+            "answer_acc1_whitened_csls_ci95": [
+              0.8701846528084918,
+              0.8889871738168952
+            ],
+            "answer_mse_per_dimension": 0.35939963465078034,
+            "answer_r2_corpus_train_mean": 0.46520927389251265,
+            "answer_r2_global_train_mean": 0.6457365319922954,
+            "incremental_residual_r2": 0.0,
+            "incremental_residual_r2_ci95": [
+              0.0,
+              0.0
+            ],
+            "n": 4522
+          },
+          "end_of_thought__identity": {
+            "absolute_answer_mse_reduction_per_dimension": -0.10390806367306007,
+            "answer_mse_per_dimension": 0.4633076983238404,
+            "answer_r2_corpus_train_mean": 0.31059289851936045,
+            "answer_r2_global_train_mean": 0.5433134145437988,
+            "incremental_residual_r2": -0.28911566305298275,
+            "incremental_residual_r2_ci95": [
+              -0.2951248945092696,
+              -0.2833631053657859
+            ],
+            "n": 4522
+          },
+          "end_of_thought__ridge_lam1000": {
+            "absolute_answer_mse_reduction_per_dimension": 0.058593136257662215,
+            "answer_mse_per_dimension": 0.3008064983931181,
+            "answer_r2_corpus_train_mean": 0.5523965241372093,
+            "answer_r2_global_train_mean": 0.7034923159464357,
+            "incremental_residual_r2": 0.163030594938127,
+            "incremental_residual_r2_ci95": [
+              0.1597397492512279,
+              0.16658411807714746
+            ],
+            "n": 4522
+          },
+          "end_of_thought__ridge_lam316": {
+            "absolute_answer_mse_reduction_per_dimension": 0.05638215827710524,
+            "answer_acc1_whitened_csls": 0.9893852277753207,
+            "answer_acc1_whitened_csls_ci95": [
+              0.9862892525431225,
+              0.9922600619195047
+            ],
+            "answer_mse_per_dimension": 0.3030174763736751,
+            "answer_r2_corpus_train_mean": 0.5491065638656063,
+            "answer_r2_global_train_mean": 0.7013129349689289,
+            "incremental_residual_r2": 0.1568787300852167,
+            "incremental_residual_r2_ci95": [
+              0.15325326988045476,
+              0.16039013252042994
+            ],
+            "n": 4522
+          },
+          "end_of_thought__ridge_lam3162": {
+            "absolute_answer_mse_reduction_per_dimension": 0.05521553559315087,
+            "answer_mse_per_dimension": 0.30418409905762944,
+            "answer_r2_corpus_train_mean": 0.5473706161013531,
+            "answer_r2_global_train_mean": 0.7001629844458136,
+            "incremental_residual_r2": 0.15363269817122227,
+            "incremental_residual_r2_ci95": [
+              0.15064372420607947,
+              0.15688702831465307
+            ],
+            "n": 4522
+          },
+          "end_of_thought__shuffle": {
+            "absolute_answer_mse_reduction_per_dimension": -0.03181760555470453,
+            "answer_mse_per_dimension": 0.3912172402054849,
+            "answer_r2_corpus_train_mean": 0.4178643165328987,
+            "answer_r2_global_train_mean": 0.6143736306402577,
+            "incremental_residual_r2": -0.08852987729278272,
+            "incremental_residual_r2_ci95": [
+              -0.09072322372290263,
+              -0.08627324958539982
+            ],
+            "n": 4522
+          },
+          "trace_mean__identity": {
+            "absolute_answer_mse_reduction_per_dimension": 0.14649054477262383,
+            "answer_mse_per_dimension": 0.2129090898781565,
+            "answer_r2_corpus_train_mean": 0.6831888633346546,
+            "answer_r2_global_train_mean": 0.7901335859067045,
+            "incremental_residual_r2": 0.40759792345077106,
+            "incremental_residual_r2_ci95": [
+              0.3982186839394148,
+              0.4169652946775253
+            ],
+            "n": 4522
+          },
+          "trace_mean__ridge_lam1000": {
+            "absolute_answer_mse_reduction_per_dimension": 0.19436298077539546,
+            "answer_acc1_whitened_csls": 0.9991154356479434,
+            "answer_acc1_whitened_csls_ci95": [
+              0.9982308712958867,
+              0.9997788589119858
+            ],
+            "answer_mse_per_dimension": 0.16503665387538485,
+            "answer_r2_corpus_train_mean": 0.7544235902016783,
+            "answer_r2_global_train_mean": 0.8373218787295335,
+            "incremental_residual_r2": 0.5407990494043021,
+            "incremental_residual_r2_ci95": [
+              0.5331185543949505,
+              0.5483340225600368
+            ],
+            "n": 4522
+          },
+          "trace_mean__ridge_lam316": {
+            "absolute_answer_mse_reduction_per_dimension": 0.18684225188691947,
+            "answer_mse_per_dimension": 0.17255738276386084,
+            "answer_r2_corpus_train_mean": 0.7432326604528662,
+            "answer_r2_global_train_mean": 0.8299086282943569,
+            "incremental_residual_r2": 0.5198732382365092,
+            "incremental_residual_r2_ci95": [
+              0.5115961790776404,
+              0.5269894647768519
+            ],
+            "n": 4522
+          },
+          "trace_mean__ridge_lam3162": {
+            "absolute_answer_mse_reduction_per_dimension": 0.1994653825340305,
+            "answer_mse_per_dimension": 0.1599342521167498,
+            "answer_r2_corpus_train_mean": 0.7620160217967855,
+            "answer_r2_global_train_mean": 0.8423513622568026,
+            "incremental_residual_r2": 0.5549960637212279,
+            "incremental_residual_r2_ci95": [
+              0.5470873898875602,
+              0.5623161167158304
+            ],
+            "n": 4522
+          },
+          "trace_mean__shuffle": {
+            "absolute_answer_mse_reduction_per_dimension": -0.05228819404631807,
+            "answer_mse_per_dimension": 0.41168782869709836,
+            "answer_r2_corpus_train_mean": 0.38740384905380687,
+            "answer_r2_global_train_mean": 0.5941955865578139,
+            "incremental_residual_r2": -0.14548761046216763,
+            "incremental_residual_r2_ci95": [
+              -0.14883837160376692,
+              -0.14206879490778648
+            ],
+            "n": 4522
+          }
+        }
+      },
+      "uncertainty_unit": "question-level bootstrap"
+    }
+  },
+  "row_metrics": "eval_results/issue_2546/allfit/residual_increment_qwen3_rows.npz",
+  "schema_version": "issue2546_residual_increment_v1",
+  "side": "think_on",
+  "smoke": false,
+  "task": 2546,
+  "torch_version": "2.8.0+cu128",
+  "wall_seconds": 123.37239027023315
+}
