@@ -5,17 +5,20 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
+import scripts.issue2254_revmap8_subagent_report as report_builder
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SUMMARY = (
+SENSITIVITY_ROOT = (
     REPO_ROOT
     / "eval_results"
     / "issue_2254"
     / "revmap_dose_patch"
     / "exploratory_sensitivity"
     / "codex_subagent_v1"
-    / "report"
-    / "eligible_report_summary.json"
 )
+SUMMARY = SENSITIVITY_ROOT / "report" / "eligible_report_summary.json"
 
 
 def _summary() -> dict:
@@ -56,3 +59,44 @@ def test_coherence_and_cjk_are_separate_complete_reads() -> None:
     overall = report["cjk"]["groups"]["round8_overall"]
     assert overall["n_intrusions"] == 323
     assert overall["n_completions"] == 3200
+
+
+def test_refusal_aware_evil_is_separate_complete_alternative_estimand() -> None:
+    items = {}
+    scores = {}
+    for question in range(20):
+        for item_index in range(10):
+            item_id = f"q{question}-i{item_index}"
+            items[item_id] = {"qi": question}
+            scores[item_id] = [] if item_id == "q0-i0" else [10] * 5
+    partial = {
+        "cell_id": "evil__synthetic",
+        "items": items,
+        "per_item_scores": scores,
+        "accounting": {
+            "n_total_draws": 1000,
+            "n_valid_draws": 995,
+            "n_content_dropped_draws": 5,
+            "n_refusal_draws": 5,
+            "n_transport_lost_draws": 0,
+            "n_truncation_dropped_draws": 0,
+            "n_items_zero_valid": 1,
+        },
+    }
+    imported = {
+        "cell": {"behavior": "evil", "kind": "reference"},
+        "trait": {
+            "mean_score_raw": 10.0,
+            "per_question_mean_score_raw": [10.0] * 20,
+        },
+    }
+
+    row = report_builder._refusal_aware_cell(partial, imported)
+
+    assert row["n_refusal_draws_assigned_zero"] == 5
+    assert row["n_items_with_any_refusal_grade"] == 1
+    assert row["n_items_with_all_five_refusal_grades"] == 1
+    assert row["n_analyzable_items_refusal_as_zero"] == 200
+    assert row["analyzable_item_fraction_refusal_as_zero"] == 1.0
+    assert row["mean_score_conditional_on_numeric"] == 10.0
+    assert row["mean_score_refusal_as_zero"] == pytest.approx(9.95)
