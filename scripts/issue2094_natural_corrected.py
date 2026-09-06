@@ -1005,6 +1005,7 @@ def run(args: argparse.Namespace) -> None:
                 },
             },
         )
+    # workflow-lint: phase-done-reserved -- terminal line for the standalone generator
     print("[phase=done]", flush=True)
 
 
