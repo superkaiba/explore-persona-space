@@ -6,6 +6,8 @@ The current [synthetic comparison](https://raw.githubusercontent.com/superkaiba/
 
 The opening previously used an unrelated #779 within-condition Pearson result. That was the wrong source selection for this post. Replacing the underlying data, rather than relabeling the metric, corrects the opening. The obsolete reproduction-gate caveat and the claim that my method was lower on every trait have been removed. In the selected Spearman run, my method's estimates are higher for evil and hallucination and lower for sycophancy. The post does not claim a statistically established ranking from marginal CI overlap.
 
+A [standalone WildChat comparison](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/synthetic-data-blog-20260906/figures/blog/synthetic-data/06_wildchat_comparison.png) now follows the opening comparison. It uses the same rendering function, two methods, and three traits, with the six WildChat rows copied from the cross-dataset snapshot and verified against the original scoring files. The positive axis still runs to 1; the left edge extends to −0.25 so all negative estimates and intervals are visible. Sample sizes remain in provenance, without a displayed n annotation. The title identifies WildChat, and the caption retains the floor limitation for evil expression.
+
 Suggested outline and paragraph roles:
 
 1. Opening: synthetic-data convenience and the alternative of finding existing data.
@@ -49,7 +51,7 @@ The existing-data panels also show a limitation of the proposed alternative: evi
 
 Self-review: metric names and sample units are explicit; the original paper's counterevidence remains visible; uncertainty is not turned into a causal claim; the plotting code checks that its synthetic rows match the cross-dataset source exactly and recomputes every histogram from the stored scores before rendering.
 
-Reproduce the three comparison figures and 11 standalone distributions with the existing uv environment by running `uv run python scripts/plot_synthetic_data_blog.py`. The producer reads plot_data.json and distribution_data.json and imports the canonical context-to-answer style. Outputs include PDF, color PNG, grayscale PNG, and metadata containing plotted values and input/output hashes. Source paths, SHA-256 hashes, and available browser URLs are in the JSON. To rebuild the distribution snapshot from a checkout with the matching banked labels staged, run `uv run python scripts/build_synthetic_data_distributions.py --source-root /path/to/source-checkout`.
+Reproduce the four comparison figures and 11 standalone distributions with the existing uv environment by running `uv run python scripts/plot_synthetic_data_blog.py`. The producer reads plot_data.json and distribution_data.json and imports the canonical context-to-answer style. Outputs include PDF, color PNG, grayscale PNG, and metadata containing plotted values and input/output hashes. Source paths, SHA-256 hashes, and available browser URLs are in the JSON. To rebuild the distribution snapshot from a checkout with the matching banked labels staged, run `uv run python scripts/build_synthetic_data_distributions.py --source-root /path/to/source-checkout`.
 
 Sources:
 

@@ -92,14 +92,29 @@ def export(fig, name, title, rows, note, data, source=SOURCE):
     print(f"Rendered {name}: {len(rows)} data rows", flush=True)
 
 
-def first_comparison(data):
-    rows = data["initial_comparison"]
+def first_comparison(data, setting="pvsynth"):
+    """Render matching three-trait comparisons from the selected evaluation rows."""
+    assert setting in {"pvsynth", "wildchat_rung"}
+    if setting == "pvsynth":
+        rows = data["initial_comparison"]
+        name, title = "01_initial_comparison", "Predicting traits"
+        footer = "Qwen2.5-7B-Instruct · 200 contexts per trait"
+        note = data["initial_notes"]
+    else:
+        rows = [
+            {**r, "point": r["rho"], "lo": r["ci"][0], "hi": r["ci"][1]}
+            for r in data["followup_comparison"]
+            if r["setting"] == setting
+        ]
+        name, title = "06_wildchat_comparison", "Predicting traits on WildChat"
+        footer = "Qwen2.5-7B-Instruct · Held-out WildChat conversations"
+        note = "WildChat subset of the cross-dataset comparison. " + data["followup_notes"]
     assert len(rows) == 6
     for row in rows:
         (shared,) = [
             r
             for r in data["followup_comparison"]
-            if r["setting"] == "pvsynth"
+            if r["setting"] == setting
             and r["trait"] == row["trait"]
             and r["method"] == row["method"]
         ]
@@ -124,15 +139,15 @@ def first_comparison(data):
             )
     ax.set_yticks([2, 1, 0], [LABELS[t] for t in TRAITS])
     ax.set_ylim(-0.5, 2.55)
-    ax.set_xlim(0, 1)
-    ax.set_xticks(np.arange(0, 1.01, 0.2))
+    ax.set_xlim(0 if setting == "pvsynth" else -0.25, 1)
+    ax.set_xticks(np.arange(0 if setting == "pvsynth" else -0.2, 1.01, 0.2))
     ax.set_xlabel("Spearman ρ with response score  ↑")  # noqa: RUF001
     style_axis(ax, grid_axis="x")
     ax.axvline(0, color=MUTED, linewidth=1)
     fig.text(
         0.04,
         0.95,
-        "Predicting traits",
+        title,
         fontsize=24,
         color=INK,
         weight="bold",
@@ -141,17 +156,16 @@ def first_comparison(data):
     fig.text(
         0.04,
         0.055,
-        "Qwen2.5-7B-Instruct · 200 contexts per trait\n"
-        "Correlation across contexts · 95% context-bootstrap intervals",
+        footer + "\nCorrelation across contexts · 95% context-bootstrap intervals",
         color=MUTED,
         fontsize=15,
     )
     export(
         fig,
-        "01_initial_comparison",
-        "Predicting traits",
+        name,
+        title,
         rows,
-        data["initial_notes"],
+        note,
         data,
     )
 
@@ -385,6 +399,7 @@ def main():
     data = json.loads(SOURCE.read_text())
     set_c2a_style()
     first_comparison(data)
+    first_comparison(data, setting="wildchat_rung")
     paper_correlations(data)
     transfer(data)
     expression_distributions()

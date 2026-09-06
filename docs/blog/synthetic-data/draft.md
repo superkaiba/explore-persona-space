@@ -26,6 +26,12 @@ The synthetic-data results were disappointing, especially for sycophancy.
 
 Persona Vectors performed well on this synthetic suite. My method's point estimates were a little higher for evil and hallucination, but much lower for sycophancy. That made me look more closely at what the evaluation was asking the methods to predict.
 
+Here is the same comparison on held-out WildChat conversations:
+
+![Predicting traits on WildChat](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/synthetic-data-blog-20260906/figures/blog/synthetic-data/06_wildchat_comparison.png)
+
+*The same model and fitted methods, evaluated on generic WildChat conversations. Bars show Spearman correlation with mean judged trait scores; error bars show 95% context-bootstrap intervals. The axis extends below zero to show negative correlations. Evil expression is near zero for most contexts in this sample. [Data and provenance](plot_data.json)*
+
 Here is the relevant part of the paper's monitoring setup:
 
 > “we use Claude 4.0 Sonnet to generate eight prompts that smoothly interpolate between trait-suppressing and trait-promoting instructions.”
