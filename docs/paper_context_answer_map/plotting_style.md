@@ -174,3 +174,19 @@ their own producer, which renders the banked excerpts in
 ```bash
 uv run python scripts/issue1901_qualitative_retrieval_failures.py
 ```
+
+## Theoretical-analysis refusal figure
+
+The SAE interpretation of the mean refusal-flip direction is rendered from the
+frozen layer-19 decomposition without model inference or recomputation:
+
+```bash
+uv run python scripts/make_paper_theory_refusal_sae.py
+```
+
+This writes `c3_refusal_kernel_sae` under `figures/paper/` as vector PDF,
+color PNG, grayscale-audit PNG, and provenance JSON. The two panels show the
+nearest context-side SAE features for the part of the direction read by the map
+and the part in its effective kernel. The short feature descriptions are
+analyst summaries of the maximum-activation examples, and that provenance is
+recorded in the sidecar and disclosed in the paper caption.
