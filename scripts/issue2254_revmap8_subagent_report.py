@@ -764,7 +764,7 @@ def _refusal_aware_figure(summary: dict, figure_root: Path, summary_path: Path) 
     unconditional = np.asarray([row["mean_score_refusal_as_zero"] for row in rows])
     refusal_percent = np.asarray([100 * row["refusal_draw_fraction"] for row in rows])
 
-    fig, _ = c2a_figure("full", aspect=0.48)
+    fig, _ = c2a_figure("full", aspect=0.55)
     axes = fig.subplots(1, 2)
     ax = axes[0]
     y = np.arange(len(rows))
@@ -805,7 +805,15 @@ def _refusal_aware_figure(summary: dict, figure_root: Path, summary_path: Path) 
     ax.set_xlim(-1, 76)
     ax.set_xticks([0, 20, 40, 60])
     ax.set_xlabel("Evil trait score (0–100)")
-    ax.legend(loc="lower right")
+    ax.legend(
+        loc="upper left",
+        bbox_to_anchor=(0, -0.25),
+        ncol=2,
+        frameon=False,
+        fontsize=10,
+        handletextpad=0.4,
+        columnspacing=1.0,
+    )
     style_axis(ax, grid_axis="x")
     panel_header(ax, "A", "evil · two-part read", "Score definition and refusal draws")
 
@@ -849,8 +857,8 @@ def _refusal_aware_figure(summary: dict, figure_root: Path, summary_path: Path) 
     ax.set_ylabel(better_label("Fraction of refusal-aware ceiling"))
     ax.legend(loc="best")
     style_axis(ax)
-    panel_header(ax, "B", "evil · patching", "Post-hoc refusal-aware fraction")
-    fig.subplots_adjust(left=0.17, right=0.98, bottom=0.2, top=0.78, wspace=0.42)
+    panel_header(ax, "B", "evil · patching", "Refusal-aware fraction")
+    fig.subplots_adjust(left=0.19, right=0.96, bottom=0.27, top=0.8, wspace=0.46)
     return _save_figure(
         fig,
         figure_root / "refusal_aware_evil",
