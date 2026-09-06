@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2668,
+  "highest_id": 2669,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12874,6 +12874,14 @@
       "path": "tasks/planning/2668",
       "status": "planning",
       "title": "SAE characterization of finetuning-induced context-to-answer mapping changes"
+    },
+    "2669": {
+      "goal": "Measure how accurately context-only Codex forecasts predict Qwen2.5-7B-Instruct behavior on the manuscript cohorts, against the existing context and mapped-answer readouts under matched evaluation splits.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/planning/2669",
+      "status": "planning",
+      "title": "Codex context-only behavior forecasting baseline"
     },
     "267": {
       "has_clean_result": true,
