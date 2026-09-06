@@ -1,0 +1,13 @@
+{
+  "fold": {
+    "held_out_task_id": "ambiguous",
+    "n_test_contexts": 3,
+    "n_train_rollouts": 544,
+    "selected_c": 1.0
+  },
+  "predictions": [
+    0.042590239800469505,
+    0.009639148482307406,
+    0.05643524208717334
+  ]
+}

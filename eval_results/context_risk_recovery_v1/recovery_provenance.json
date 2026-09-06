@@ -1,0 +1,20 @@
+{
+  "code_hashes": {
+    "scripts/context_risk_analyze.py": "05e7d2fcac63e442cfb7b2b99df244c33340070e8326edaebb16361661025010",
+    "scripts/context_risk_finish.py": "df2087a07f046dd35da1f5495bd439a5a7d7b7668c5057ed95e65d677829a23b"
+  },
+  "git_argv0_path": "scripts/context_risk_finish.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "3ed003a83e4bc2fb5625ca196b6a69c39b6868f9",
+  "git_dirty": false,
+  "new_gpu_hours": 0,
+  "phase": "recovery-analysis",
+  "source_commit": "3ed003a83e4bc2fb5625ca196b6a69c39b6868f9",
+  "validation": {
+    "focused_tests": 12,
+    "independent_code_and_result_review": "passed",
+    "independent_input_review": "passed",
+    "pytest": "passed",
+    "ruff": "passed"
+  }
+}

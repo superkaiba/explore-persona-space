@@ -1,0 +1,15 @@
+{
+  "fold": {
+    "held_out_task_id": "replacement",
+    "n_test_contexts": 5,
+    "n_train_rollouts": 416,
+    "selected_c": 0.01
+  },
+  "predictions": [
+    0.2515285082561335,
+    0.3669133982944864,
+    0.24788917054753584,
+    0.28157304062275834,
+    0.2865783481058871
+  ]
+}

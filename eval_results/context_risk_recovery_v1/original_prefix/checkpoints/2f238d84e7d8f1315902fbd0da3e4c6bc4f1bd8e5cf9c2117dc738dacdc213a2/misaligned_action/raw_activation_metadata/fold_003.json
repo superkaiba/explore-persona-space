@@ -1,0 +1,11 @@
+{
+  "fold": {
+    "held_out_task_id": "27307ae5793c7cdb03bfec0ccaf5866631aed0d93d5007b8066573b40aca96be",
+    "n_test_contexts": 1,
+    "n_train_rollouts": 608,
+    "selected_c": 1.0
+  },
+  "predictions": [
+    0.02058039278947579
+  ]
+}
