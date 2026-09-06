@@ -20,7 +20,7 @@ Naturally, being an avid vibecoder, I asked Claude to implement the comparison.
 
 The synthetic-data results were disappointing, especially for sycophancy.
 
-![Synthetic-data Spearman comparison](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6a9a3eee721ddee7ce73317e71dce2063ed6cc19/figures/blog/synthetic-data/01_initial_comparison.png)
+![Synthetic-data Spearman comparison](https://raw.githubusercontent.com/superkaiba/explore-persona-space/104789ab51936af1100633e84d59662ab3722735/figures/blog/synthetic-data/01_initial_comparison.png)
 
 *Qwen2.5-7B-Instruct, with both methods predicting the same judged response scores. Bars show Spearman correlation across 200 synthetic contexts per trait; error bars are stored 95% intervals from resampling contexts at fixed models and layers. These are the synthetic rows from the same experiment shown below. My method used generic WildChat plus behavior-eliciting training pairs. The synthetic suite crosses five positive/negative instruction pairs with 20 held-out questions; it differs from the paper's eight-prompt monitoring experiment. Collection-code recipe, not independently reverified from every manifest: five on-policy responses per context, temperature 1, 1,024-token cap, top-p unspecified in code; banked Sonnet 4.5 judgments. [Data and provenance](plot_data.json)*
 
@@ -36,7 +36,7 @@ That is a sensible controlled experiment. But an explicit instruction to display
 
 Here are the behavior-expression distributions: one per dataset and trait, including generic WildChat conversations.
 
-![Behavior-expression distributions across all evaluation datasets in the comparison](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6a9a3eee721ddee7ce73317e71dce2063ed6cc19/figures/blog/synthetic-data/05_expression_across_datasets.png)
+![Behavior-expression distributions across all evaluation datasets in the comparison](https://raw.githubusercontent.com/superkaiba/explore-persona-space/104789ab51936af1100633e84d59662ab3722735/figures/blog/synthetic-data/05_expression_across_datasets.png)
 
 *Histograms show the percentage of contexts in each 10-point bin, with identical axis ranges. Each dataset has one pooled distribution per trait, with promoting and suppressing synthetic instructions combined. All 11 panels match the evaluation samples in the correlation comparison later in the post; WildChat uses its held-out split. NQ-Open and SimpleQA measure fabrication rate, rescaled to 0–100; the other panels measure graded trait scores. Missing scores are excluded, and each panel reports its scored sample size. [Scores, counts, and provenance](distribution_data.json)*
 
@@ -44,7 +44,7 @@ Existing datasets do not automatically give us a useful evaluation. Evil express
 
 The authors also examine the difference between predicting across instructions and within a fixed instruction. Their appendix reports Pearson correlations both across all conditions and within each condition. These are the paper's statistics, distinct from the Spearman correlations in our comparison. [Appendix C.2](https://arxiv.org/html/2507.21509v3#A3.SS2)
 
-![Published pooled and within-condition correlations](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6a9a3eee721ddee7ce73317e71dce2063ed6cc19/figures/blog/synthetic-data/02_pooled_vs_within.png)
+![Published pooled and within-condition correlations](https://raw.githubusercontent.com/superkaiba/explore-persona-space/104789ab51936af1100633e84d59662ab3722735/figures/blog/synthetic-data/02_pooled_vs_within.png)
 
 *Bars show published Table 2 estimates; no intervals reported. Conditions with score SD below 1 are excluded from within-condition averages. Targets: 10 on-policy responses per condition/question, GPT-4.1-mini judgments; sampling parameters not independently checked. [Original table](https://arxiv.org/html/2507.21509v3#A3.SS2)*
 
@@ -72,7 +72,7 @@ I also looked at the other evaluation datasets in the same experiment.
 
 With that context, here is prediction performance:
 
-![Spearman comparison across evaluation datasets](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6a9a3eee721ddee7ce73317e71dce2063ed6cc19/figures/blog/synthetic-data/03_followup_datasets.png)
+![Spearman comparison across evaluation datasets](https://raw.githubusercontent.com/superkaiba/explore-persona-space/104789ab51936af1100633e84d59662ab3722735/figures/blog/synthetic-data/03_followup_datasets.png)
 
 *The same Qwen2.5-7B-Instruct experiment, with my method trained on generic WildChat plus behavior-eliciting training pairs. Both methods share each row's contexts and response-score targets. This includes every non-training dataset in the selected R2FAIR result file: 11 datasets-by-trait cells, with two methods each. Error bars are stored 95% intervals from resampling evaluation contexts at fixed fitted models and layers; they do not quantify training-seed variation or uncertainty over shared prompt templates. Source-code recipe: five on-policy responses per context, temperature 1, 1,024-token cap, banked Sonnet 4.5 judgments; top-p is not pinned by the collection code. These settings have not been independently verified against every completion manifest. [Data and full qualifications](plot_data.json)*
 
