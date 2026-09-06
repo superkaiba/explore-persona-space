@@ -26,6 +26,7 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs/blog/synthetic-data/plot_data.json"
+DISTRIBUTIONS = ROOT / "docs/blog/synthetic-data/distribution_data.json"
 OUT = ROOT / "figures/blog/synthetic-data"
 TRAITS = ("evil", "sycophancy", "hallucination")
 LABELS = {"evil": "Evil", "sycophancy": "Sycophancy", "hallucination": "Hallucination"}
@@ -64,7 +65,7 @@ def legend(fig, methods, y):
     )
 
 
-def export(fig, name, title, rows, note, data):
+def export(fig, name, title, rows, note, data, source=SOURCE):
     rendered = save_c2a_figure(
         fig, OUT / name, title=title, subject=note, creator=Path(__file__).name
     )
@@ -74,7 +75,7 @@ def export(fig, name, title, rows, note, data):
         "notes": note,
         "sources": data["sources"],
         "render": rendered["record"],
-        "input_sha256": hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
+        "input_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
         "producer_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "style_module_sha256": hashlib.sha256(
             Path(
@@ -313,12 +314,142 @@ def transfer(data):
     )
 
 
+def expression_distributions():
+    """Show empirical score distributions and the synthetic instruction split."""
+    data = json.loads(DISTRIBUTIONS.read_text())
+    edges = np.asarray(data["bin_edges"])
+    assert np.array_equal(edges, np.arange(0, 101, 10))
+    rows = data["histograms"]
+    for row in rows:
+        assert sum(row["counts"]) == row["n_eval"] > 0
+        assert len(row["counts"]) == len(edges) - 1
+        assert min(row["counts"]) >= 0
+        scores = np.asarray(row["scores"])
+        assert len(scores) == row["n_eval"] and np.isfinite(scores).all()
+        np.testing.assert_array_equal(np.histogram(scores, bins=edges)[0], row["counts"])
+
+    fig, _ = c2a_figure("full", aspect=0.48)
+    split_rows = [r for r in rows if r["group"] in {"pos", "neg"}]
+    assert len(split_rows) == 6
+    for i, trait in enumerate(TRAITS):
+        ax = fig.add_axes([0.075 + i * 0.305, 0.27, 0.255, 0.42])
+        for sign, offset, color, hatch in [
+            ("neg", 0.5, MUTED, "//"),
+            ("pos", 5.0, ROLES["base_model"].color, None),
+        ]:
+            (row,) = [r for r in split_rows if r["trait"] == trait and r["group"] == sign]
+            ax.bar(
+                edges[:-1] + offset,
+                100 * np.asarray(row["counts"]) / row["n_eval"],
+                width=4.5,
+                align="edge",
+                color=color,
+                hatch=hatch,
+                edgecolor="white",
+                linewidth=0.4,
+            )
+        ax.set_title(LABELS[trait], loc="left", fontsize=21, pad=12)
+        ax.set(xlim=(0, 100), ylim=(0, 105), xticks=[0, 50, 100], yticks=[0, 50, 100])
+        ax.set_xlabel("Behavior score", fontsize=17)
+        if i == 0:
+            ax.set_ylabel("Contexts (%)", fontsize=17)
+        style_axis(ax, grid_axis="y")
+    title = "What the synthetic instructions elicit"
+    fig.text(0.04, 0.95, title, fontsize=24, weight="bold", color=INK)
+    fig.legend(
+        handles=[
+            Patch(facecolor=MUTED, edgecolor="white", hatch="//", label="Suppressing instructions"),
+            Patch(facecolor=ROLES["base_model"].color, label="Promoting instructions"),
+        ],
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.87),
+        ncol=2,
+        frameon=False,
+        fontsize=16,
+    )
+    fig.text(
+        0.04,
+        0.07,
+        "100 contexts per instruction polarity, per trait · Share within each polarity\n"
+        "Per-context mean behavior score · 10-point bins · Qwen2.5-7B-Instruct",
+        color=MUTED,
+        fontsize=14,
+    )
+    export(
+        fig, "04_synthetic_expression", title, split_rows, data["notes"], data, source=DISTRIBUTIONS
+    )
+
+    titles = {
+        "pvsynth": "Synthetic prompts",
+        "hhrt": "Human red-team\nattempts",
+        "toxicchat": "ToxicChat (flagged)",
+        "wildchat_rung": "WildChat",
+        "aita": "Held-out Reddit\nadvice",
+        "nqopen": "NQ-Open*",
+        "simpleqa": "SimpleQA*",
+    }
+    order = {
+        "evil": ["pvsynth", "hhrt", "toxicchat", "wildchat_rung"],
+        "sycophancy": ["pvsynth", "aita", "wildchat_rung"],
+        "hallucination": ["pvsynth", "nqopen", "simpleqa", "wildchat_rung"],
+    }
+    pooled = [r for r in rows if r["group"] == "all"]
+    assert len(pooled) == sum(map(len, order.values())) == 11
+    fig, _ = c2a_figure("full", aspect=0.94)
+    grid = fig.add_gridspec(
+        3, 4, left=0.075, right=0.975, bottom=0.14, top=0.87, wspace=0.28, hspace=0.72
+    )
+    for i, trait in enumerate(TRAITS):
+        for j, setting in enumerate(order[trait]):
+            ax = fig.add_subplot(grid[i, j])
+            (row,) = [r for r in pooled if r["trait"] == trait and r["setting"] == setting]
+            ax.bar(
+                edges[:-1],
+                100 * np.asarray(row["counts"]) / row["n_eval"],
+                width=10,
+                align="edge",
+                color=MUTED,
+                edgecolor="white",
+                linewidth=0.6,
+            )
+            ax.set_title(
+                f"{titles[setting]}\nn = {row['n_eval']:,}", loc="left", fontsize=16, pad=10
+            )
+            ax.set(xlim=(0, 100), ylim=(0, 105), xticks=[0, 50, 100], yticks=[0, 50, 100])
+            ax.tick_params(labelsize=15)
+            if j == 0:
+                ax.set_ylabel(f"{LABELS[trait]}\nContexts (%)", fontsize=17)
+            style_axis(ax, grid_axis="y")
+    title = "Behavior expression across evaluation datasets"
+    fig.text(0.04, 0.955, title, fontsize=24, weight="bold", color=INK)
+    fig.text(0.52, 0.095, "Behavior score (0–100)", ha="center", fontsize=20, color=INK)
+    fig.text(
+        0.04,
+        0.025,
+        "Same 11 evaluation cells as the correlation comparison · 10-point bins\n"
+        "*NQ-Open / SimpleQA: fabrication rate (%) · Other panels: mean graded trait score\n"
+        "WildChat uses the held-out split · Missing scores excluded",
+        color=MUTED,
+        fontsize=14,
+    )
+    export(
+        fig,
+        "05_expression_across_datasets",
+        title,
+        pooled,
+        data["notes"],
+        data,
+        source=DISTRIBUTIONS,
+    )
+
+
 def main():
     data = json.loads(SOURCE.read_text())
     set_c2a_style()
     first_comparison(data)
     paper_correlations(data)
     transfer(data)
+    expression_distributions()
 
 
 if __name__ == "__main__":
