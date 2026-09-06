@@ -1,0 +1,388 @@
+{
+  "n_cells": 14,
+  "n_items": 1680,
+  "n_items_per_cell": 120,
+  "n_questions": 20,
+  "effective_seeds": [
+    42,
+    43,
+    44,
+    45,
+    46,
+    47
+  ],
+  "dedup_rule": "context retains source (s42,d0..4)+(s43,d4); answer retains (s42,d0..5); both map to effective RNG seeds 42..47",
+  "common_horizon_tokens": 2048,
+  "tokenizer": "Qwen/Qwen2.5-7B-Instruct",
+  "sources": {
+    "evil__rvm__ctx__L14__c4": {
+      "spec": {
+        "behavior": "evil",
+        "code": "ctx",
+        "cell_id": "evil__rvm__ctx__L14__c4",
+        "route": "reverse-map context vector at final context token",
+        "raw_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/reverse_map_steer/steer/raw_completions/evil__rvm__ctx__L14__c4.json",
+        "judged_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/reverse_map_steer/judge/judged/evil__rvm__ctx__L14__c4.json",
+        "strict_answer_only": false,
+        "common_horizon_trait_compatible": true
+      },
+      "raw_sha256": "75795a6fa8ee1080e03022eb1159ac47ec071a3b5f0b1ea2241899d32580d316",
+      "judged_sha256": "1be609c08021ff0a47a5a353236160f8466210fd7c4119997883679c8561ff36",
+      "n_items": 120,
+      "effective_seeds": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ],
+      "n_trait_items_complete": 119,
+      "trait_draw_completeness": 0.985,
+      "n_common_horizon_truncated": 0
+    },
+    "evil__rb__t1__L14__c4": {
+      "spec": {
+        "behavior": "evil",
+        "code": "t1",
+        "cell_id": "evil__rb__t1__L14__c4",
+        "route": "answer-derived persona vector at answer positions",
+        "raw_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/steer/raw_completions/evil__rb__t1__L14__c4.json",
+        "judged_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/judge/judged/evil__rb__t1__L14__c4.json",
+        "strict_answer_only": true,
+        "common_horizon_trait_compatible": true
+      },
+      "raw_sha256": "ab6a08efe8c8aecc7abf4bf031591f78930ae3e329746d9bf51387dedafa4ac8",
+      "judged_sha256": "ee8d3ea7fff693a29ce962782df9d4502dc98c1cdf778ec919f4e3a608c766f4",
+      "n_items": 120,
+      "effective_seeds": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ],
+      "n_trait_items_complete": 120,
+      "trait_draw_completeness": 1.0,
+      "n_common_horizon_truncated": 0
+    },
+    "evil__rb__t2__L14__c4": {
+      "spec": {
+        "behavior": "evil",
+        "code": "t2",
+        "cell_id": "evil__rb__t2__L14__c4",
+        "route": "answer-derived persona vector at answer positions",
+        "raw_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/steer/raw_completions/evil__rb__t2__L14__c4.json",
+        "judged_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/judge/judged/evil__rb__t2__L14__c4.json",
+        "strict_answer_only": true,
+        "common_horizon_trait_compatible": true
+      },
+      "raw_sha256": "23c8bb429a4b84af5271aa23df3915495a06cb862a647065c967baea62e0f301",
+      "judged_sha256": "59617930b9077adaa0de124e4241bff13f1324d69d37a73480a0eca3820c280b",
+      "n_items": 120,
+      "effective_seeds": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ],
+      "n_trait_items_complete": 119,
+      "trait_draw_completeness": 0.9916666666666667,
+      "n_common_horizon_truncated": 0
+    },
+    "evil__rb__t3__L14__c4": {
+      "spec": {
+        "behavior": "evil",
+        "code": "t3",
+        "cell_id": "evil__rb__t3__L14__c4",
+        "route": "answer-derived persona vector at answer positions",
+        "raw_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/steer/raw_completions/evil__rb__t3__L14__c4.json",
+        "judged_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/judge/judged/evil__rb__t3__L14__c4.json",
+        "strict_answer_only": true,
+        "common_horizon_trait_compatible": true
+      },
+      "raw_sha256": "85e46456057042c3dfb0a6a4f152306aa8ba220e910caa4ed2e0c6e640e2bb5a",
+      "judged_sha256": "590775b872835d8f36804a1785e298a5bfbf8ee23b2fd421f87e116ed78c10de",
+      "n_items": 120,
+      "effective_seeds": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ],
+      "n_trait_items_complete": 120,
+      "trait_draw_completeness": 1.0,
+      "n_common_horizon_truncated": 0
+    },
+    "evil__rb__s13__L14__c4": {
+      "spec": {
+        "behavior": "evil",
+        "code": "s13",
+        "cell_id": "evil__rb__s13__L14__c4",
+        "route": "answer-derived persona vector at answer positions",
+        "raw_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/steer/raw_completions/evil__rb__s13__L14__c4.json",
+        "judged_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/judge/judged/evil__rb__s13__L14__c4.json",
+        "strict_answer_only": true,
+        "common_horizon_trait_compatible": true
+      },
+      "raw_sha256": "a7b21cec0c3b21925e9bcd4022f4e385390d2a56e60aa99556c69c4d174becb0",
+      "judged_sha256": "ec9f96c10e0869b9dace59b7d0c0fa9b517bc7142ba2beefe94a9d53f67662af",
+      "n_items": 120,
+      "effective_seeds": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ],
+      "n_trait_items_complete": 120,
+      "trait_draw_completeness": 1.0,
+      "n_common_horizon_truncated": 0
+    },
+    "evil__rb__s15__L14__c4": {
+      "spec": {
+        "behavior": "evil",
+        "code": "s15",
+        "cell_id": "evil__rb__s15__L14__c4",
+        "route": "answer-derived persona vector at answer positions",
+        "raw_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/steer/raw_completions/evil__rb__s15__L14__c4.json",
+        "judged_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/judge/judged/evil__rb__s15__L14__c4.json",
+        "strict_answer_only": true,
+        "common_horizon_trait_compatible": true
+      },
+      "raw_sha256": "eee46b609c3ed1e55841fe1ee2debb6e2f4f4d243db32f7931e9b16d37751ca4",
+      "judged_sha256": "82b1ee8edbb412a229f708fb5d02f628ce9dddb22f4740d4187dfb8d2d377a32",
+      "n_items": 120,
+      "effective_seeds": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ],
+      "n_trait_items_complete": 120,
+      "trait_draw_completeness": 0.9933333333333333,
+      "n_common_horizon_truncated": 0
+    },
+    "evil__rb__aans__L14__c4": {
+      "spec": {
+        "behavior": "evil",
+        "code": "aans",
+        "cell_id": "evil__rb__aans__L14__c4",
+        "route": "answer-derived persona vector at answer positions",
+        "raw_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/steer/raw_completions/evil__rb__aans__L14__c4.json",
+        "judged_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/judge/judged/evil__rb__aans__L14__c4.json",
+        "strict_answer_only": false,
+        "common_horizon_trait_compatible": false
+      },
+      "raw_sha256": "dae62152ef9a691c16cfb5ecf516ef16ebd59be4aa1c900a68a23e5de3deccb1",
+      "judged_sha256": "97e8007432191cd23287c05ec72926e9a423080af76e0f32d29de5aa9d65c1f1",
+      "n_items": 120,
+      "effective_seeds": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ],
+      "n_trait_items_complete": 120,
+      "trait_draw_completeness": 1.0,
+      "n_common_horizon_truncated": 114
+    },
+    "sycophancy__rvm__ctx__L14__c2": {
+      "spec": {
+        "behavior": "sycophancy",
+        "code": "ctx",
+        "cell_id": "sycophancy__rvm__ctx__L14__c2",
+        "route": "reverse-map context vector at final context token",
+        "raw_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/reverse_map_steer/steer/raw_completions/sycophancy__rvm__ctx__L14__c2.json",
+        "judged_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/reverse_map_steer/judge/judged/sycophancy__rvm__ctx__L14__c2.json",
+        "strict_answer_only": false,
+        "common_horizon_trait_compatible": true
+      },
+      "raw_sha256": "423911ca4039924d4f93d24e57ceb166ccaa803857705ceb05110c498b1b182b",
+      "judged_sha256": "9f05a00895b423a97b04b151fed6e7af83ea4f67b0e5ade9a59e35a0e361106f",
+      "n_items": 120,
+      "effective_seeds": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ],
+      "n_trait_items_complete": 120,
+      "trait_draw_completeness": 1.0,
+      "n_common_horizon_truncated": 0
+    },
+    "sycophancy__rb__t1__L14__c2": {
+      "spec": {
+        "behavior": "sycophancy",
+        "code": "t1",
+        "cell_id": "sycophancy__rb__t1__L14__c2",
+        "route": "answer-derived persona vector at answer positions",
+        "raw_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/steer/raw_completions/sycophancy__rb__t1__L14__c2.json",
+        "judged_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/judge/judged/sycophancy__rb__t1__L14__c2.json",
+        "strict_answer_only": true,
+        "common_horizon_trait_compatible": true
+      },
+      "raw_sha256": "0cbb0e02412b9a3915f61d23e2cbc294a831859c9a808952b7dc74a2e8028a2d",
+      "judged_sha256": "4f35e57e5c6576c85bdb9ce5a5eb5ebeb3f11508d3885302abd55b3aad03fbdf",
+      "n_items": 120,
+      "effective_seeds": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ],
+      "n_trait_items_complete": 120,
+      "trait_draw_completeness": 1.0,
+      "n_common_horizon_truncated": 0
+    },
+    "sycophancy__rb__t2__L14__c2": {
+      "spec": {
+        "behavior": "sycophancy",
+        "code": "t2",
+        "cell_id": "sycophancy__rb__t2__L14__c2",
+        "route": "answer-derived persona vector at answer positions",
+        "raw_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/steer/raw_completions/sycophancy__rb__t2__L14__c2.json",
+        "judged_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/judge/judged/sycophancy__rb__t2__L14__c2.json",
+        "strict_answer_only": true,
+        "common_horizon_trait_compatible": true
+      },
+      "raw_sha256": "fce4860e89b55499d20c5251891b6a85ac2c849960fbcaee66b5fe7437938c6b",
+      "judged_sha256": "4e8f5b25cefc615d1f64d0ef5800b2b3ade414d66585a344c07ca1c37c4035a5",
+      "n_items": 120,
+      "effective_seeds": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ],
+      "n_trait_items_complete": 120,
+      "trait_draw_completeness": 1.0,
+      "n_common_horizon_truncated": 0
+    },
+    "sycophancy__rb__t3__L14__c2": {
+      "spec": {
+        "behavior": "sycophancy",
+        "code": "t3",
+        "cell_id": "sycophancy__rb__t3__L14__c2",
+        "route": "answer-derived persona vector at answer positions",
+        "raw_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/steer/raw_completions/sycophancy__rb__t3__L14__c2.json",
+        "judged_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/judge/judged/sycophancy__rb__t3__L14__c2.json",
+        "strict_answer_only": true,
+        "common_horizon_trait_compatible": true
+      },
+      "raw_sha256": "9a393135d68078d0058e3bb21ab3c18a67974d2090c34ea72854e9ad84fd1f13",
+      "judged_sha256": "d033c724141858faf7525503f170e6c37dfc8c0505e845528071ac313736edbd",
+      "n_items": 120,
+      "effective_seeds": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ],
+      "n_trait_items_complete": 120,
+      "trait_draw_completeness": 1.0,
+      "n_common_horizon_truncated": 0
+    },
+    "sycophancy__rb__s13__L14__c2": {
+      "spec": {
+        "behavior": "sycophancy",
+        "code": "s13",
+        "cell_id": "sycophancy__rb__s13__L14__c2",
+        "route": "answer-derived persona vector at answer positions",
+        "raw_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/steer/raw_completions/sycophancy__rb__s13__L14__c2.json",
+        "judged_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/judge/judged/sycophancy__rb__s13__L14__c2.json",
+        "strict_answer_only": true,
+        "common_horizon_trait_compatible": true
+      },
+      "raw_sha256": "7c30102b88e7fbef655047888ecb24fd1a3e31c7ba655e87feefcdaef37f13eb",
+      "judged_sha256": "b8ece4e2f9f3bd27124748ffc7cb5d8e3c03bf0b0fc08628d7504108ce8d131e",
+      "n_items": 120,
+      "effective_seeds": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ],
+      "n_trait_items_complete": 120,
+      "trait_draw_completeness": 1.0,
+      "n_common_horizon_truncated": 0
+    },
+    "sycophancy__rb__s15__L14__c2": {
+      "spec": {
+        "behavior": "sycophancy",
+        "code": "s15",
+        "cell_id": "sycophancy__rb__s15__L14__c2",
+        "route": "answer-derived persona vector at answer positions",
+        "raw_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/steer/raw_completions/sycophancy__rb__s15__L14__c2.json",
+        "judged_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/judge/judged/sycophancy__rb__s15__L14__c2.json",
+        "strict_answer_only": true,
+        "common_horizon_trait_compatible": true
+      },
+      "raw_sha256": "3c9eebeb22d4f71fb457af3f89203a1cc7b5b0c542c5c42286c54a359aaf441d",
+      "judged_sha256": "1e20899b2cb2a24b8c0c9ec40fb0ea8358fc53c98401390569efe81061a35d0c",
+      "n_items": 120,
+      "effective_seeds": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ],
+      "n_trait_items_complete": 120,
+      "trait_draw_completeness": 1.0,
+      "n_common_horizon_truncated": 0
+    },
+    "sycophancy__rb__aans__L14__c2": {
+      "spec": {
+        "behavior": "sycophancy",
+        "code": "aans",
+        "cell_id": "sycophancy__rb__aans__L14__c2",
+        "route": "answer-derived persona vector at answer positions",
+        "raw_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/steer/raw_completions/sycophancy__rb__aans__L14__c2.json",
+        "judged_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/first-k-answer-token-steering/judge/judged/sycophancy__rb__aans__L14__c2.json",
+        "strict_answer_only": false,
+        "common_horizon_trait_compatible": false
+      },
+      "raw_sha256": "010ab40a2fe6fed3c24e7f9a98c11040e26b78ec3d9ce124ef2e4f7ac1f3d444",
+      "judged_sha256": "8a58acb5ebada4941ad72635ba343138afc63efb9fade8b6502597fc93372614",
+      "n_items": 120,
+      "effective_seeds": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ],
+      "n_trait_items_complete": 95,
+      "trait_draw_completeness": 0.7383333333333333,
+      "n_common_horizon_truncated": 119
+    }
+  },
+  "historical_alpha0": {
+    "path": "eval_results/issue_2254/baseline_ceiling/judged_percell.json",
+    "sha256": "38940256fe1e31da58e5fe86928e9549bb949f9fe3a3e9fcf396c13254ab58f1"
+  },
+  "registry_sha256": "03f348570c89ba5648464f1005b27189b5d116a24293ca99ea26cde3890595c2"
+}

@@ -1,0 +1,9 @@
+{
+  "git_commit_at_stage": "cfb84ad2892a5887400a59693e8018631a863f91",
+  "script_path": "scripts/issue2254_response_integrity_match.py",
+  "script_sha256": "3df75503e64a3e15e0733ce2800db66a35ad278f602d3b13b7bcfa26da6b92d2",
+  "dependency_sha256": {
+    "scripts/issue2254_revmap8_subagent_grade.py": "2d9bbff5be9b6b2e93b986ce24d8ffd1925640493f1e5cee17a88a632c2b3f83",
+    "scripts/issue2254_preimage.py": "7c346866a2aaae47ae66aa976cda91fa5b0f5fbaeba8732664c9c6ee619a5c10"
+  }
+}

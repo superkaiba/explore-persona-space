@@ -1,0 +1,9 @@
+{
+  "pass": true,
+  "n_cells": 14,
+  "n_items": 1680,
+  "n_passes": 5,
+  "n_expected_grades": 8400,
+  "n_valid_grades": 8400,
+  "fraction_valid": 1.0
+}

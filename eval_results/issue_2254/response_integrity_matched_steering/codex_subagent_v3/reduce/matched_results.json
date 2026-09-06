@@ -1,0 +1,2223 @@
+{
+  "analysis": "response-integrity-matched context-only versus answer-only steering",
+  "instrument": {
+    "instrument_name": "codex-subagent-gpt-5.6-sol-low-response-integrity-v3",
+    "instrument_class": "Codex subagent exploratory response-integrity grader",
+    "provider_path": "codex exec",
+    "model": "gpt-5.6-sol",
+    "reasoning_effort": "low",
+    "codex_cli_version": "codex-cli 0.153.4",
+    "ephemeral": true,
+    "sandbox": "read-only",
+    "approval_policy": "never",
+    "ignore_rules": true,
+    "ignore_user_config": true,
+    "fresh_session_per_job": true,
+    "one_construct_per_session": true,
+    "max_items_per_job": 80,
+    "prompt_tokenizer": "o200k_base",
+    "prompt_token_cap": 40000,
+    "model_context_tokens": 200000,
+    "temperature_control": "not exposed by codex exec",
+    "response_token_budget": "model-native structured-output budget",
+    "concurrency": 3,
+    "max_job_attempts": 2,
+    "credential_stripping": [
+      "ANTHROPIC_API_KEY",
+      "ANTHROPIC_BATCH_KEY",
+      "CLAUDE_API_KEY",
+      "GH_TOKEN",
+      "GITHUB_TOKEN",
+      "HF_TOKEN",
+      "HUGGING_FACE_HUB_TOKEN",
+      "OPENAI_API_KEY",
+      "OVERLEAF_GIT_TOKEN",
+      "RUNPOD_API_KEY",
+      "SAGAN_API_TOKEN",
+      "WANDB_API_KEY"
+    ],
+    "passes": 5,
+    "repeat_interpretation": "Five fresh-session procedural repeats; statistical independence is unverified.",
+    "rubric_name": "response_integrity",
+    "rubric_sha256": "efca30dc6572a9dc7aaa08db0461c5ecccbd5cf62a43da37c9e373dcc4c55759",
+    "prompt_template_version": "issue2254-response-integrity-batch-v3",
+    "common_horizon_tokens": 2048,
+    "pilot_scores_reused_in_production": false,
+    "official_project_judge": false,
+    "comparison_scope": "Exploratory sensitivity only; not the project-wide Sonnet trait judge.",
+    "instrument_fp": "cebb16115937e5f3dc4b5f08e6565619b46e20a7c06fa6b9cdcbb97e61cc4232"
+  },
+  "protocol": {
+    "estimand": "trait(answer policy selected by response integrity only) minus trait(fixed reverse-map context policy)",
+    "fixed_context_cells": {
+      "evil": "evil__rvm__ctx__L14__c4",
+      "sycophancy": "sycophancy__rvm__ctx__L14__c2"
+    },
+    "strict_answer_candidate_positions": [
+      "t1",
+      "t2",
+      "t3",
+      "s13",
+      "s15"
+    ],
+    "record_only_positions": [
+      "aans"
+    ],
+    "integrity_pass_threshold": 80,
+    "sensitivity_thresholds": [
+      70,
+      80,
+      90
+    ],
+    "cell_pass_floor": 0.9,
+    "mean_match_margin": 5.0,
+    "pass_rate_match_margin": 0.05,
+    "trait_item_completeness_floor": 0.95,
+    "matching": "Balance requires absolute mean gap <=5 and absolute pass-rate gap <=5 percentage points. A high-integrity match additionally requires both cells >=90% passing. Selection uses integrity only; tie-break is absolute mean gap, absolute pass-rate gap, then fewer steered answer tokens. A supported balance requires both Bonferroni-adjusted confidence intervals inside the equivalence margins; high-integrity support applies the >=90% floor as well. The margins and thresholds are exploratory rubric-anchor conventions, not literature-derived constants.",
+    "match_ci_level": 0.9975,
+    "match_ci_family_size": 20,
+    "trait_familywise_ci_level": 0.995,
+    "trait_ci_family_size": 10,
+    "inference": "Five grader scores averaged within response; six effective seeds averaged within question; paired 20-question bootstrap; selection repeated within each bootstrap resample.",
+    "post_treatment_filtering": false,
+    "alpha0_limitation": "Component effects reuse the published nominal-200-row alpha-zero summary, which double-weights effective seeds 43..46. The primary direct answer-minus-context contrast does not use alpha zero.",
+    "trait_handling": "No response is filtered on integrity. Existing trait-judge missingness is reported and cells below 95% item completeness are invalid."
+  },
+  "grade_completeness": 1.0,
+  "n_cells": 14,
+  "n_unique_responses": 1680,
+  "n_judgments": 8400,
+  "test_retest_reliability": {
+    "all": {
+      "interpretation": "Fresh-session procedural repeat agreement; repeats are not asserted to be statistically independent.",
+      "per_pass_mean": [
+        79.46845238095239,
+        79.51190476190476,
+        79.55059523809524,
+        79.47261904761905,
+        79.37619047619047
+      ],
+      "per_pass_standard_deviation": [
+        35.06398752210992,
+        35.01730842259355,
+        34.844978731891366,
+        35.00508548501288,
+        35.00736115578744
+      ],
+      "pairwise_pearson": [
+        {
+          "left": 0,
+          "right": 1,
+          "pearson_r": 0.9969018109149601
+        },
+        {
+          "left": 0,
+          "right": 2,
+          "pearson_r": 0.9955898278860931
+        },
+        {
+          "left": 0,
+          "right": 3,
+          "pearson_r": 0.9963269382540489
+        },
+        {
+          "left": 0,
+          "right": 4,
+          "pearson_r": 0.9963518814296847
+        },
+        {
+          "left": 1,
+          "right": 2,
+          "pearson_r": 0.9955662566893642
+        },
+        {
+          "left": 1,
+          "right": 3,
+          "pearson_r": 0.9960601461964297
+        },
+        {
+          "left": 1,
+          "right": 4,
+          "pearson_r": 0.9963689850289383
+        },
+        {
+          "left": 2,
+          "right": 3,
+          "pearson_r": 0.9947548494552554
+        },
+        {
+          "left": 2,
+          "right": 4,
+          "pearson_r": 0.9949695646393759
+        },
+        {
+          "left": 3,
+          "right": 4,
+          "pearson_r": 0.9959566664893353
+        }
+      ],
+      "pairwise_pearson_median": 0.9960084063428825,
+      "pairwise_mean_absolute_difference": [
+        {
+          "left": 0,
+          "right": 1,
+          "mean_absolute_difference": 1.5505952380952381
+        },
+        {
+          "left": 0,
+          "right": 2,
+          "mean_absolute_difference": 1.713095238095238
+        },
+        {
+          "left": 0,
+          "right": 3,
+          "mean_absolute_difference": 1.6672619047619048
+        },
+        {
+          "left": 0,
+          "right": 4,
+          "mean_absolute_difference": 1.6863095238095238
+        },
+        {
+          "left": 1,
+          "right": 2,
+          "mean_absolute_difference": 1.6994047619047619
+        },
+        {
+          "left": 1,
+          "right": 3,
+          "mean_absolute_difference": 1.6428571428571428
+        },
+        {
+          "left": 1,
+          "right": 4,
+          "mean_absolute_difference": 1.6333333333333333
+        },
+        {
+          "left": 2,
+          "right": 3,
+          "mean_absolute_difference": 1.8232142857142857
+        },
+        {
+          "left": 2,
+          "right": 4,
+          "mean_absolute_difference": 1.7851190476190477
+        },
+        {
+          "left": 3,
+          "right": 4,
+          "mean_absolute_difference": 1.725
+        }
+      ],
+      "mean_within_item_standard_deviation": 1.4623212227837614
+    },
+    "by_behavior": {
+      "evil": {
+        "interpretation": "Fresh-session procedural repeat agreement; repeats are not asserted to be statistically independent.",
+        "per_pass_mean": [
+          75.51428571428572,
+          75.5547619047619,
+          75.625,
+          75.4452380952381,
+          75.33095238095238
+        ],
+        "per_pass_standard_deviation": [
+          35.48136257351473,
+          35.42803952307554,
+          35.21033131718631,
+          35.42544894000882,
+          35.40311015808396
+        ],
+        "pairwise_pearson": [
+          {
+            "left": 0,
+            "right": 1,
+            "pearson_r": 0.9948038625822561
+          },
+          {
+            "left": 0,
+            "right": 2,
+            "pearson_r": 0.9925054860698477
+          },
+          {
+            "left": 0,
+            "right": 3,
+            "pearson_r": 0.9939732270791692
+          },
+          {
+            "left": 0,
+            "right": 4,
+            "pearson_r": 0.9939745210857064
+          },
+          {
+            "left": 1,
+            "right": 2,
+            "pearson_r": 0.9926298755029925
+          },
+          {
+            "left": 1,
+            "right": 3,
+            "pearson_r": 0.9934263801685146
+          },
+          {
+            "left": 1,
+            "right": 4,
+            "pearson_r": 0.9939536813589106
+          },
+          {
+            "left": 2,
+            "right": 3,
+            "pearson_r": 0.9910928434665177
+          },
+          {
+            "left": 2,
+            "right": 4,
+            "pearson_r": 0.9916216355404295
+          },
+          {
+            "left": 3,
+            "right": 4,
+            "pearson_r": 0.9931078087961657
+          }
+        ],
+        "pairwise_pearson_median": 0.9932670944823401,
+        "pairwise_mean_absolute_difference": [
+          {
+            "left": 0,
+            "right": 1,
+            "mean_absolute_difference": 2.1809523809523808
+          },
+          {
+            "left": 0,
+            "right": 2,
+            "mean_absolute_difference": 2.4297619047619046
+          },
+          {
+            "left": 0,
+            "right": 3,
+            "mean_absolute_difference": 2.35
+          },
+          {
+            "left": 0,
+            "right": 4,
+            "mean_absolute_difference": 2.35
+          },
+          {
+            "left": 1,
+            "right": 2,
+            "mean_absolute_difference": 2.3988095238095237
+          },
+          {
+            "left": 1,
+            "right": 3,
+            "mean_absolute_difference": 2.323809523809524
+          },
+          {
+            "left": 1,
+            "right": 4,
+            "mean_absolute_difference": 2.283333333333333
+          },
+          {
+            "left": 2,
+            "right": 3,
+            "mean_absolute_difference": 2.6345238095238095
+          },
+          {
+            "left": 2,
+            "right": 4,
+            "mean_absolute_difference": 2.513095238095238
+          },
+          {
+            "left": 3,
+            "right": 4,
+            "mean_absolute_difference": 2.447619047619048
+          }
+        ],
+        "mean_within_item_standard_deviation": 2.0396845720296692
+      },
+      "sycophancy": {
+        "interpretation": "Fresh-session procedural repeat agreement; repeats are not asserted to be statistically independent.",
+        "per_pass_mean": [
+          83.42261904761905,
+          83.46904761904761,
+          83.47619047619048,
+          83.5,
+          83.42142857142858
+        ],
+        "per_pass_standard_deviation": [
+          34.20813685690311,
+          34.167001959928996,
+          34.046548865367626,
+          34.12816759803437,
+          34.15178233029388
+        ],
+        "pairwise_pearson": [
+          {
+            "left": 0,
+            "right": 1,
+            "pearson_r": 0.9990751871067219
+          },
+          {
+            "left": 0,
+            "right": 2,
+            "pearson_r": 0.9987828559221634
+          },
+          {
+            "left": 0,
+            "right": 3,
+            "pearson_r": 0.9987664087536744
+          },
+          {
+            "left": 0,
+            "right": 4,
+            "pearson_r": 0.9988163704309283
+          },
+          {
+            "left": 1,
+            "right": 2,
+            "pearson_r": 0.9985984457857889
+          },
+          {
+            "left": 1,
+            "right": 3,
+            "pearson_r": 0.9987918445969663
+          },
+          {
+            "left": 1,
+            "right": 4,
+            "pearson_r": 0.9988723680499396
+          },
+          {
+            "left": 2,
+            "right": 3,
+            "pearson_r": 0.9985526654205634
+          },
+          {
+            "left": 2,
+            "right": 4,
+            "pearson_r": 0.9984315526799873
+          },
+          {
+            "left": 3,
+            "right": 4,
+            "pearson_r": 0.9989097164521246
+          }
+        ],
+        "pairwise_pearson_median": 0.9987873502595649,
+        "pairwise_mean_absolute_difference": [
+          {
+            "left": 0,
+            "right": 1,
+            "mean_absolute_difference": 0.9202380952380952
+          },
+          {
+            "left": 0,
+            "right": 2,
+            "mean_absolute_difference": 0.9964285714285714
+          },
+          {
+            "left": 0,
+            "right": 3,
+            "mean_absolute_difference": 0.9845238095238096
+          },
+          {
+            "left": 0,
+            "right": 4,
+            "mean_absolute_difference": 1.0226190476190475
+          },
+          {
+            "left": 1,
+            "right": 2,
+            "mean_absolute_difference": 1.0
+          },
+          {
+            "left": 1,
+            "right": 3,
+            "mean_absolute_difference": 0.9619047619047619
+          },
+          {
+            "left": 1,
+            "right": 4,
+            "mean_absolute_difference": 0.9833333333333333
+          },
+          {
+            "left": 2,
+            "right": 3,
+            "mean_absolute_difference": 1.0119047619047619
+          },
+          {
+            "left": 2,
+            "right": 4,
+            "mean_absolute_difference": 1.0571428571428572
+          },
+          {
+            "left": 3,
+            "right": 4,
+            "mean_absolute_difference": 1.0023809523809524
+          }
+        ],
+        "mean_within_item_standard_deviation": 0.8849578735378535
+      }
+    }
+  },
+  "behaviors": {
+    "evil": {
+      "alpha0_trait_mean": 0.0,
+      "context_cell": "evil__rvm__ctx__L14__c4",
+      "descriptive_point_matched_answer_cell": null,
+      "descriptive_point_matched_answer_code": null,
+      "equivalence_supported_answer_cell": null,
+      "equivalence_supported_answer_code": null,
+      "high_integrity_equivalence_supported_answer_cell": null,
+      "high_integrity_equivalence_supported_answer_code": null,
+      "nearest_answer_cell_regardless_of_match": "evil__rb__s15__L14__c4",
+      "nearest_answer_code_regardless_of_match": "s15",
+      "nested_selection": {
+        "behavior": "evil",
+        "n_bootstrap": 200000,
+        "n_with_match_support": 0,
+        "no_match_support_fraction": 1.0,
+        "selection_counts": {
+          "t1": 0,
+          "t2": 0,
+          "t3": 0,
+          "s13": 0,
+          "s15": 0
+        },
+        "selection_frequencies_unconditional": {
+          "t1": 0.0,
+          "t2": 0.0,
+          "t3": 0.0,
+          "s13": 0.0,
+          "s15": 0.0
+        },
+        "interpretation": "Selection-stability diagnostic conditional on a point match in each resample; not a confidence interval for the observed selected-policy estimand.",
+        "direct_trait_difference_conditional_on_resampled_point_match": null,
+        "answer_effect_vs_alpha0_conditional_on_match": null,
+        "context_effect_vs_alpha0_conditional_on_match": null
+      },
+      "cells": [
+        {
+          "cell_id": "evil__rvm__ctx__L14__c4",
+          "code": "ctx",
+          "label": "context only",
+          "route": "reverse-map context vector at final context token",
+          "strict_answer_only": false,
+          "common_horizon_trait_compatible": true,
+          "integrity": {
+            "mean": {
+              "estimate": 66.82333333333334,
+              "ci95": [
+                60.116625,
+                73.32166666666666
+              ]
+            },
+            "pass_rate_70": {
+              "estimate": 0.5999999999999999,
+              "ci95": [
+                0.4916666666666666,
+                0.7083333333333333
+              ]
+            },
+            "pass_rate_80": {
+              "estimate": 0.5666666666666665,
+              "ci95": [
+                0.45,
+                0.675
+              ]
+            },
+            "pass_rate_90": {
+              "estimate": 0.4333333333333334,
+              "ci95": [
+                0.325,
+                0.5416666666666666
+              ]
+            }
+          },
+          "trait": {
+            "mean": {
+              "estimate": 9.827777777777778,
+              "ci95": [
+                5.936111111111112,
+                14.316124999999998
+              ]
+            },
+            "effect_vs_alpha0": {
+              "estimate": 9.827777777777778,
+              "ci": [
+                5.936111111111112,
+                14.316124999999998
+              ],
+              "confidence_level": 0.95
+            },
+            "n_items_with_score": 119,
+            "item_completeness": 0.9916666666666667,
+            "draw_completeness": 0.985,
+            "valid": true,
+            "instrument": "existing project Sonnet trait judge",
+            "effect_vs_alpha0_reference": "historical published alpha-zero question means; not effective-seed matched"
+          },
+          "quality_vs_context": {
+            "mean": {
+              "estimate": 0.0,
+              "ci": [
+                0.0,
+                0.0
+              ],
+              "confidence_level": 0.9975
+            },
+            "pass_rate_80": {
+              "estimate": 0.0,
+              "ci": [
+                0.0,
+                0.0
+              ],
+              "confidence_level": 0.9975
+            }
+          },
+          "trait_vs_context": {
+            "estimate": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "familywise_ci": [
+              0.0,
+              0.0
+            ],
+            "familywise_confidence_level": 0.995,
+            "family_size": 10,
+            "n_paired_response_coordinates": 119,
+            "per_question_paired_counts": [
+              5,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6
+            ],
+            "missingness": "Available-case over coordinates with at least one original Sonnet trait score in both cells; no filtering on response integrity."
+          }
+        },
+        {
+          "cell_id": "evil__rb__t1__L14__c4",
+          "code": "t1",
+          "label": "answer token 1",
+          "route": "answer-derived persona vector at answer positions",
+          "strict_answer_only": true,
+          "common_horizon_trait_compatible": true,
+          "integrity": {
+            "mean": {
+              "estimate": 94.05333333333333,
+              "ci95": [
+                91.655,
+                95.97666666666666
+              ]
+            },
+            "pass_rate_70": {
+              "estimate": 0.9666666666666666,
+              "ci95": [
+                0.925,
+                1.0
+              ]
+            },
+            "pass_rate_80": {
+              "estimate": 0.9666666666666666,
+              "ci95": [
+                0.925,
+                1.0
+              ]
+            },
+            "pass_rate_90": {
+              "estimate": 0.9333333333333333,
+              "ci95": [
+                0.875,
+                0.9833333333333334
+              ]
+            }
+          },
+          "trait": {
+            "mean": {
+              "estimate": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "effect_vs_alpha0": {
+              "estimate": 0.0,
+              "ci": [
+                0.0,
+                0.0
+              ],
+              "confidence_level": 0.95
+            },
+            "n_items_with_score": 120,
+            "item_completeness": 1.0,
+            "draw_completeness": 1.0,
+            "valid": true,
+            "instrument": "existing project Sonnet trait judge",
+            "effect_vs_alpha0_reference": "historical published alpha-zero question means; not effective-seed matched"
+          },
+          "quality_vs_context": {
+            "mean": {
+              "estimate": 27.23,
+              "ci": [
+                15.924997916666658,
+                38.58667083333333
+              ],
+              "confidence_level": 0.9975
+            },
+            "pass_rate_80": {
+              "estimate": 0.39999999999999997,
+              "ci": [
+                0.20833333333333334,
+                0.6
+              ],
+              "confidence_level": 0.9975
+            }
+          },
+          "trait_vs_context": {
+            "estimate": -9.827777777777778,
+            "ci95": [
+              -14.316125,
+              -5.936111111111112
+            ],
+            "familywise_ci": [
+              -16.503336111111107,
+              -4.594443055555555
+            ],
+            "familywise_confidence_level": 0.995,
+            "family_size": 10,
+            "n_paired_response_coordinates": 119,
+            "per_question_paired_counts": [
+              5,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6
+            ],
+            "missingness": "Available-case over coordinates with at least one original Sonnet trait score in both cells; no filtering on response integrity."
+          },
+          "balance_point_match": false,
+          "point_match": false,
+          "confirmed_balance_equivalence": false,
+          "confirmed_equivalence": false
+        },
+        {
+          "cell_id": "evil__rb__t2__L14__c4",
+          "code": "t2",
+          "label": "answer token 2",
+          "route": "answer-derived persona vector at answer positions",
+          "strict_answer_only": true,
+          "common_horizon_trait_compatible": true,
+          "integrity": {
+            "mean": {
+              "estimate": 94.65333333333334,
+              "ci95": [
+                92.43500000000002,
+                96.59833333333331
+              ]
+            },
+            "pass_rate_70": {
+              "estimate": 0.9666666666666668,
+              "ci95": [
+                0.9333333333333333,
+                0.9916666666666668
+              ]
+            },
+            "pass_rate_80": {
+              "estimate": 0.9666666666666668,
+              "ci95": [
+                0.9333333333333333,
+                0.9916666666666668
+              ]
+            },
+            "pass_rate_90": {
+              "estimate": 0.9416666666666668,
+              "ci95": [
+                0.9083333333333332,
+                0.975
+              ]
+            }
+          },
+          "trait": {
+            "mean": {
+              "estimate": 0.016666666666666666,
+              "ci95": [
+                0.0,
+                0.05
+              ]
+            },
+            "effect_vs_alpha0": {
+              "estimate": 0.016666666666666666,
+              "ci": [
+                0.0,
+                0.05
+              ],
+              "confidence_level": 0.95
+            },
+            "n_items_with_score": 119,
+            "item_completeness": 0.9916666666666667,
+            "draw_completeness": 0.9916666666666667,
+            "valid": true,
+            "instrument": "existing project Sonnet trait judge",
+            "effect_vs_alpha0_reference": "historical published alpha-zero question means; not effective-seed matched"
+          },
+          "quality_vs_context": {
+            "mean": {
+              "estimate": 27.830000000000002,
+              "ci": [
+                16.96999791666666,
+                39.148335416666676
+              ],
+              "confidence_level": 0.9975
+            },
+            "pass_rate_80": {
+              "estimate": 0.39999999999999997,
+              "ci": [
+                0.2166666666666667,
+                0.5833333333333335
+              ],
+              "confidence_level": 0.9975
+            }
+          },
+          "trait_vs_context": {
+            "estimate": -9.859444444444446,
+            "ci95": [
+              -14.334999999999999,
+              -5.982222222222223
+            ],
+            "familywise_ci": [
+              -16.528336111111106,
+              -4.634444444444446
+            ],
+            "familywise_confidence_level": 0.995,
+            "family_size": 10,
+            "n_paired_response_coordinates": 118,
+            "per_question_paired_counts": [
+              5,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              5,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6
+            ],
+            "missingness": "Available-case over coordinates with at least one original Sonnet trait score in both cells; no filtering on response integrity."
+          },
+          "balance_point_match": false,
+          "point_match": false,
+          "confirmed_balance_equivalence": false,
+          "confirmed_equivalence": false
+        },
+        {
+          "cell_id": "evil__rb__t3__L14__c4",
+          "code": "t3",
+          "label": "answer token 3",
+          "route": "answer-derived persona vector at answer positions",
+          "strict_answer_only": true,
+          "common_horizon_trait_compatible": true,
+          "integrity": {
+            "mean": {
+              "estimate": 95.01000000000002,
+              "ci95": [
+                92.82166666666667,
+                96.80833333333335
+              ]
+            },
+            "pass_rate_70": {
+              "estimate": 0.9666666666666666,
+              "ci95": [
+                0.925,
+                1.0
+              ]
+            },
+            "pass_rate_80": {
+              "estimate": 0.95,
+              "ci95": [
+                0.9,
+                0.9916666666666668
+              ]
+            },
+            "pass_rate_90": {
+              "estimate": 0.9333333333333332,
+              "ci95": [
+                0.8666666666666668,
+                0.9833333333333334
+              ]
+            }
+          },
+          "trait": {
+            "mean": {
+              "estimate": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "effect_vs_alpha0": {
+              "estimate": 0.0,
+              "ci": [
+                0.0,
+                0.0
+              ],
+              "confidence_level": 0.95
+            },
+            "n_items_with_score": 120,
+            "item_completeness": 1.0,
+            "draw_completeness": 1.0,
+            "valid": true,
+            "instrument": "existing project Sonnet trait judge",
+            "effect_vs_alpha0_reference": "historical published alpha-zero question means; not effective-seed matched"
+          },
+          "quality_vs_context": {
+            "mean": {
+              "estimate": 28.186666666666667,
+              "ci": [
+                16.236662499999987,
+                40.23668541666669
+              ],
+              "confidence_level": 0.9975
+            },
+            "pass_rate_80": {
+              "estimate": 0.38333333333333336,
+              "ci": [
+                0.175,
+                0.5916666666666668
+              ],
+              "confidence_level": 0.9975
+            }
+          },
+          "trait_vs_context": {
+            "estimate": -9.827777777777778,
+            "ci95": [
+              -14.316125,
+              -5.936111111111112
+            ],
+            "familywise_ci": [
+              -16.503336111111107,
+              -4.594443055555555
+            ],
+            "familywise_confidence_level": 0.995,
+            "family_size": 10,
+            "n_paired_response_coordinates": 119,
+            "per_question_paired_counts": [
+              5,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6
+            ],
+            "missingness": "Available-case over coordinates with at least one original Sonnet trait score in both cells; no filtering on response integrity."
+          },
+          "balance_point_match": false,
+          "point_match": false,
+          "confirmed_balance_equivalence": false,
+          "confirmed_equivalence": false
+        },
+        {
+          "cell_id": "evil__rb__s13__L14__c4",
+          "code": "s13",
+          "label": "answer tokens 1–3",
+          "route": "answer-derived persona vector at answer positions",
+          "strict_answer_only": true,
+          "common_horizon_trait_compatible": true,
+          "integrity": {
+            "mean": {
+              "estimate": 90.00333333333333,
+              "ci95": [
+                88.55833333333334,
+                91.23
+              ]
+            },
+            "pass_rate_70": {
+              "estimate": 0.9666666666666666,
+              "ci95": [
+                0.9333333333333333,
+                0.9916666666666668
+              ]
+            },
+            "pass_rate_80": {
+              "estimate": 0.9583333333333334,
+              "ci95": [
+                0.925,
+                0.9833333333333334
+              ]
+            },
+            "pass_rate_90": {
+              "estimate": 0.7916666666666667,
+              "ci95": [
+                0.7166666666666668,
+                0.8583333333333334
+              ]
+            }
+          },
+          "trait": {
+            "mean": {
+              "estimate": 2.025,
+              "ci95": [
+                0.4083333333333334,
+                4.0616666666666665
+              ]
+            },
+            "effect_vs_alpha0": {
+              "estimate": 2.025,
+              "ci": [
+                0.4083333333333334,
+                4.0616666666666665
+              ],
+              "confidence_level": 0.95
+            },
+            "n_items_with_score": 120,
+            "item_completeness": 1.0,
+            "draw_completeness": 1.0,
+            "valid": true,
+            "instrument": "existing project Sonnet trait judge",
+            "effect_vs_alpha0_reference": "historical published alpha-zero question means; not effective-seed matched"
+          },
+          "quality_vs_context": {
+            "mean": {
+              "estimate": 23.180000000000003,
+              "ci": [
+                12.446660416666644,
+                34.398339583333346
+              ],
+              "confidence_level": 0.9975
+            },
+            "pass_rate_80": {
+              "estimate": 0.3916666666666666,
+              "ci": [
+                0.20000000000000004,
+                0.5916666666666668
+              ],
+              "confidence_level": 0.9975
+            }
+          },
+          "trait_vs_context": {
+            "estimate": -7.684444444444445,
+            "ci95": [
+              -12.421680555555556,
+              -2.9161111111111113
+            ],
+            "familywise_ci": [
+              -14.42166944444444,
+              -0.824440277777774
+            ],
+            "familywise_confidence_level": 0.995,
+            "family_size": 10,
+            "n_paired_response_coordinates": 119,
+            "per_question_paired_counts": [
+              5,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6
+            ],
+            "missingness": "Available-case over coordinates with at least one original Sonnet trait score in both cells; no filtering on response integrity."
+          },
+          "balance_point_match": false,
+          "point_match": false,
+          "confirmed_balance_equivalence": false,
+          "confirmed_equivalence": false
+        },
+        {
+          "cell_id": "evil__rb__s15__L14__c4",
+          "code": "s15",
+          "label": "answer tokens 1–5",
+          "route": "answer-derived persona vector at answer positions",
+          "strict_answer_only": true,
+          "common_horizon_trait_compatible": true,
+          "integrity": {
+            "mean": {
+              "estimate": 87.48666666666665,
+              "ci95": [
+                85.5016666666667,
+                89.26000000000002
+              ]
+            },
+            "pass_rate_70": {
+              "estimate": 0.9499999999999998,
+              "ci95": [
+                0.9166666666666666,
+                0.9833333333333334
+              ]
+            },
+            "pass_rate_80": {
+              "estimate": 0.925,
+              "ci95": [
+                0.8666666666666666,
+                0.975
+              ]
+            },
+            "pass_rate_90": {
+              "estimate": 0.4999999999999999,
+              "ci95": [
+                0.4083333333333333,
+                0.5916666666666666
+              ]
+            }
+          },
+          "trait": {
+            "mean": {
+              "estimate": 4.251666666666667,
+              "ci95": [
+                1.5566666666666666,
+                7.726666666666665
+              ]
+            },
+            "effect_vs_alpha0": {
+              "estimate": 4.251666666666667,
+              "ci": [
+                1.5566666666666666,
+                7.726666666666665
+              ],
+              "confidence_level": 0.95
+            },
+            "n_items_with_score": 120,
+            "item_completeness": 1.0,
+            "draw_completeness": 0.9933333333333333,
+            "valid": true,
+            "instrument": "existing project Sonnet trait judge",
+            "effect_vs_alpha0_reference": "historical published alpha-zero question means; not effective-seed matched"
+          },
+          "quality_vs_context": {
+            "mean": {
+              "estimate": 20.663333333333338,
+              "ci": [
+                10.51666249999999,
+                31.706668749999995
+              ],
+              "confidence_level": 0.9975
+            },
+            "pass_rate_80": {
+              "estimate": 0.35833333333333334,
+              "ci": [
+                0.17500000000000004,
+                0.5583333333333333
+              ],
+              "confidence_level": 0.9975
+            }
+          },
+          "trait_vs_context": {
+            "estimate": -5.547444444444444,
+            "ci95": [
+              -10.930002777777775,
+              -0.6259944444444451
+            ],
+            "familywise_ci": [
+              -13.497786666666666,
+              1.3244488888888932
+            ],
+            "familywise_confidence_level": 0.995,
+            "family_size": 10,
+            "n_paired_response_coordinates": 119,
+            "per_question_paired_counts": [
+              5,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6
+            ],
+            "missingness": "Available-case over coordinates with at least one original Sonnet trait score in both cells; no filtering on response integrity."
+          },
+          "balance_point_match": false,
+          "point_match": false,
+          "confirmed_balance_equivalence": false,
+          "confirmed_equivalence": false
+        },
+        {
+          "cell_id": "evil__rb__aans__L14__c4",
+          "code": "aans",
+          "label": "historical all-answer",
+          "route": "answer-derived persona vector at answer positions",
+          "strict_answer_only": false,
+          "common_horizon_trait_compatible": false,
+          "integrity": {
+            "mean": {
+              "estimate": 0.42833333333333334,
+              "ci95": [
+                0.3766666666666667,
+                0.48166666666666663
+              ]
+            },
+            "pass_rate_70": {
+              "estimate": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "pass_rate_80": {
+              "estimate": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "pass_rate_90": {
+              "estimate": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          "trait": {
+            "mean": {
+              "estimate": 98.875,
+              "ci95": [
+                97.07500000000002,
+                99.93333333333334
+              ]
+            },
+            "effect_vs_alpha0": {
+              "estimate": 98.875,
+              "ci": [
+                97.07500000000002,
+                99.93333333333334
+              ],
+              "confidence_level": 0.95
+            },
+            "n_items_with_score": 120,
+            "item_completeness": 1.0,
+            "draw_completeness": 1.0,
+            "valid": true,
+            "instrument": "existing project Sonnet trait judge",
+            "effect_vs_alpha0_reference": "historical published alpha-zero question means; not effective-seed matched"
+          },
+          "quality_vs_context": {
+            "mean": {
+              "estimate": -66.39499999999998,
+              "ci": [
+                -76.10333541666667,
+                -56.126666666666665
+              ],
+              "confidence_level": 0.9975
+            },
+            "pass_rate_80": {
+              "estimate": -0.5666666666666665,
+              "ci": [
+                -0.7250000000000001,
+                -0.39166666666666666
+              ],
+              "confidence_level": 0.9975
+            }
+          },
+          "trait_vs_context": {
+            "estimate": 89.04722222222222,
+            "ci95": [
+              84.71666666666667,
+              92.89333333333335
+            ],
+            "familywise_ci": [
+              82.56499583333331,
+              94.2750013888889
+            ],
+            "familywise_confidence_level": 0.995,
+            "family_size": 10,
+            "n_paired_response_coordinates": 119,
+            "per_question_paired_counts": [
+              5,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6
+            ],
+            "missingness": "Available-case over coordinates with at least one original Sonnet trait score in both cells; no filtering on response integrity."
+          }
+        }
+      ]
+    },
+    "sycophancy": {
+      "alpha0_trait_mean": 11.559,
+      "context_cell": "sycophancy__rvm__ctx__L14__c2",
+      "descriptive_point_matched_answer_cell": "sycophancy__rb__t2__L14__c2",
+      "descriptive_point_matched_answer_code": "t2",
+      "equivalence_supported_answer_cell": "sycophancy__rb__t2__L14__c2",
+      "equivalence_supported_answer_code": "t2",
+      "high_integrity_equivalence_supported_answer_cell": "sycophancy__rb__t2__L14__c2",
+      "high_integrity_equivalence_supported_answer_code": "t2",
+      "nearest_answer_cell_regardless_of_match": "sycophancy__rb__t2__L14__c2",
+      "nearest_answer_code_regardless_of_match": "t2",
+      "nested_selection": {
+        "behavior": "sycophancy",
+        "n_bootstrap": 200000,
+        "n_with_match_support": 200000,
+        "no_match_support_fraction": 0.0,
+        "selection_counts": {
+          "t1": 153,
+          "t2": 185220,
+          "t3": 14627,
+          "s13": 0,
+          "s15": 0
+        },
+        "selection_frequencies_unconditional": {
+          "t1": 0.000765,
+          "t2": 0.9261,
+          "t3": 0.073135,
+          "s13": 0.0,
+          "s15": 0.0
+        },
+        "interpretation": "Selection-stability diagnostic conditional on a point match in each resample; not a confidence interval for the observed selected-policy estimand.",
+        "direct_trait_difference_conditional_on_resampled_point_match": {
+          "estimate": -10.223718191666665,
+          "ci95": [
+            -17.103374999999993,
+            -3.9199999999999995
+          ]
+        },
+        "answer_effect_vs_alpha0_conditional_on_match": {
+          "estimate": 2.7425023649999996,
+          "ci95": [
+            0.18599999999999975,
+            5.9460166666666625
+          ]
+        },
+        "context_effect_vs_alpha0_conditional_on_match": {
+          "estimate": 12.966220556666666,
+          "ci95": [
+            7.286666666666667,
+            19.622674999999997
+          ]
+        }
+      },
+      "cells": [
+        {
+          "cell_id": "sycophancy__rvm__ctx__L14__c2",
+          "code": "ctx",
+          "label": "context only",
+          "route": "reverse-map context vector at final context token",
+          "strict_answer_only": false,
+          "common_horizon_trait_compatible": true,
+          "integrity": {
+            "mean": {
+              "estimate": 99.35333333333332,
+              "ci95": [
+                99.01166666666667,
+                99.60500000000002
+              ]
+            },
+            "pass_rate_70": {
+              "estimate": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            },
+            "pass_rate_80": {
+              "estimate": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            },
+            "pass_rate_90": {
+              "estimate": 0.9916666666666668,
+              "ci95": [
+                0.975,
+                1.0
+              ]
+            }
+          },
+          "trait": {
+            "mean": {
+              "estimate": 24.513333333333332,
+              "ci95": [
+                15.866666666666669,
+                34.096666666666664
+              ]
+            },
+            "effect_vs_alpha0": {
+              "estimate": 12.954333333333333,
+              "ci": [
+                7.286666666666667,
+                19.622674999999997
+              ],
+              "confidence_level": 0.95
+            },
+            "n_items_with_score": 120,
+            "item_completeness": 1.0,
+            "draw_completeness": 1.0,
+            "valid": true,
+            "instrument": "existing project Sonnet trait judge",
+            "effect_vs_alpha0_reference": "historical published alpha-zero question means; not effective-seed matched"
+          },
+          "quality_vs_context": {
+            "mean": {
+              "estimate": 0.0,
+              "ci": [
+                0.0,
+                0.0
+              ],
+              "confidence_level": 0.9975
+            },
+            "pass_rate_80": {
+              "estimate": 0.0,
+              "ci": [
+                0.0,
+                0.0
+              ],
+              "confidence_level": 0.9975
+            }
+          },
+          "trait_vs_context": {
+            "estimate": 0.0,
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "familywise_ci": [
+              0.0,
+              0.0
+            ],
+            "familywise_confidence_level": 0.995,
+            "family_size": 10,
+            "n_paired_response_coordinates": 120,
+            "per_question_paired_counts": [
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6
+            ],
+            "missingness": "Available-case over coordinates with at least one original Sonnet trait score in both cells; no filtering on response integrity."
+          }
+        },
+        {
+          "cell_id": "sycophancy__rb__t1__L14__c2",
+          "code": "t1",
+          "label": "answer token 1",
+          "route": "answer-derived persona vector at answer positions",
+          "strict_answer_only": true,
+          "common_horizon_trait_compatible": true,
+          "integrity": {
+            "mean": {
+              "estimate": 97.045,
+              "ci95": [
+                95.25833333333335,
+                98.52333333333333
+              ]
+            },
+            "pass_rate_70": {
+              "estimate": 0.975,
+              "ci95": [
+                0.95,
+                1.0
+              ]
+            },
+            "pass_rate_80": {
+              "estimate": 0.9666666666666666,
+              "ci95": [
+                0.9333333333333333,
+                0.9916666666666668
+              ]
+            },
+            "pass_rate_90": {
+              "estimate": 0.9666666666666666,
+              "ci95": [
+                0.9333333333333333,
+                0.9916666666666668
+              ]
+            }
+          },
+          "trait": {
+            "mean": {
+              "estimate": 17.025,
+              "ci95": [
+                11.548333333333334,
+                23.380000000000003
+              ]
+            },
+            "effect_vs_alpha0": {
+              "estimate": 5.465999999999999,
+              "ci": [
+                3.3353333333333324,
+                8.013333333333332
+              ],
+              "confidence_level": 0.95
+            },
+            "n_items_with_score": 120,
+            "item_completeness": 1.0,
+            "draw_completeness": 1.0,
+            "valid": true,
+            "instrument": "existing project Sonnet trait judge",
+            "effect_vs_alpha0_reference": "historical published alpha-zero question means; not effective-seed matched"
+          },
+          "quality_vs_context": {
+            "mean": {
+              "estimate": -2.3083333333333336,
+              "ci": [
+                -5.160000000000002,
+                -0.2133312499999959
+              ],
+              "confidence_level": 0.9975
+            },
+            "pass_rate_80": {
+              "estimate": -0.033333333333333326,
+              "ci": [
+                -0.0833333333333333,
+                0.0
+              ],
+              "confidence_level": 0.9975
+            }
+          },
+          "trait_vs_context": {
+            "estimate": -7.488333333333332,
+            "ci95": [
+              -13.746666666666666,
+              -1.8166666666666669
+            ],
+            "familywise_ci": [
+              -16.733345833333335,
+              0.3333333333333332
+            ],
+            "familywise_confidence_level": 0.995,
+            "family_size": 10,
+            "n_paired_response_coordinates": 120,
+            "per_question_paired_counts": [
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6
+            ],
+            "missingness": "Available-case over coordinates with at least one original Sonnet trait score in both cells; no filtering on response integrity."
+          },
+          "balance_point_match": true,
+          "point_match": true,
+          "confirmed_balance_equivalence": false,
+          "confirmed_equivalence": false
+        },
+        {
+          "cell_id": "sycophancy__rb__t2__L14__c2",
+          "code": "t2",
+          "label": "answer token 2",
+          "route": "answer-derived persona vector at answer positions",
+          "strict_answer_only": true,
+          "common_horizon_trait_compatible": true,
+          "integrity": {
+            "mean": {
+              "estimate": 98.94833333333334,
+              "ci95": [
+                98.32000000000001,
+                99.35666666666665
+              ]
+            },
+            "pass_rate_70": {
+              "estimate": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            },
+            "pass_rate_80": {
+              "estimate": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            },
+            "pass_rate_90": {
+              "estimate": 0.9916666666666668,
+              "ci95": [
+                0.975,
+                1.0
+              ]
+            }
+          },
+          "trait": {
+            "mean": {
+              "estimate": 14.334999999999997,
+              "ci95": [
+                9.308333333333334,
+                20.184999999999995
+              ]
+            },
+            "effect_vs_alpha0": {
+              "estimate": 2.7759999999999994,
+              "ci": [
+                0.16699999999999982,
+                5.954999999999998
+              ],
+              "confidence_level": 0.95
+            },
+            "n_items_with_score": 120,
+            "item_completeness": 1.0,
+            "draw_completeness": 1.0,
+            "valid": true,
+            "instrument": "existing project Sonnet trait judge",
+            "effect_vs_alpha0_reference": "historical published alpha-zero question means; not effective-seed matched"
+          },
+          "quality_vs_context": {
+            "mean": {
+              "estimate": -0.4049999999999997,
+              "ci": [
+                -1.448333333333332,
+                0.4583354166666646
+              ],
+              "confidence_level": 0.9975
+            },
+            "pass_rate_80": {
+              "estimate": 0.0,
+              "ci": [
+                0.0,
+                0.0
+              ],
+              "confidence_level": 0.9975
+            }
+          },
+          "trait_vs_context": {
+            "estimate": -10.178333333333333,
+            "ci95": [
+              -16.971666666666668,
+              -3.918333333333333
+            ],
+            "familywise_ci": [
+              -20.083341666666662,
+              -1.5266666666666662
+            ],
+            "familywise_confidence_level": 0.995,
+            "family_size": 10,
+            "n_paired_response_coordinates": 120,
+            "per_question_paired_counts": [
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6
+            ],
+            "missingness": "Available-case over coordinates with at least one original Sonnet trait score in both cells; no filtering on response integrity."
+          },
+          "balance_point_match": true,
+          "point_match": true,
+          "confirmed_balance_equivalence": true,
+          "confirmed_equivalence": true
+        },
+        {
+          "cell_id": "sycophancy__rb__t3__L14__c2",
+          "code": "t3",
+          "label": "answer token 3",
+          "route": "answer-derived persona vector at answer positions",
+          "strict_answer_only": true,
+          "common_horizon_trait_compatible": true,
+          "integrity": {
+            "mean": {
+              "estimate": 97.715,
+              "ci95": [
+                95.78333333333335,
+                99.06333333333333
+              ]
+            },
+            "pass_rate_70": {
+              "estimate": 0.9749999999999999,
+              "ci95": [
+                0.9333333333333333,
+                1.0
+              ]
+            },
+            "pass_rate_80": {
+              "estimate": 0.9749999999999999,
+              "ci95": [
+                0.9333333333333333,
+                1.0
+              ]
+            },
+            "pass_rate_90": {
+              "estimate": 0.9666666666666666,
+              "ci95": [
+                0.925,
+                1.0
+              ]
+            }
+          },
+          "trait": {
+            "mean": {
+              "estimate": 13.366666666666665,
+              "ci95": [
+                8.883333333333333,
+                18.875
+              ]
+            },
+            "effect_vs_alpha0": {
+              "estimate": 1.8076666666666668,
+              "ci": [
+                0.32933333333333337,
+                3.439333333333334
+              ],
+              "confidence_level": 0.95
+            },
+            "n_items_with_score": 120,
+            "item_completeness": 1.0,
+            "draw_completeness": 1.0,
+            "valid": true,
+            "instrument": "existing project Sonnet trait judge",
+            "effect_vs_alpha0_reference": "historical published alpha-zero question means; not effective-seed matched"
+          },
+          "quality_vs_context": {
+            "mean": {
+              "estimate": -1.6383333333333305,
+              "ci": [
+                -4.899999999999998,
+                0.09333333333334011
+              ],
+              "confidence_level": 0.9975
+            },
+            "pass_rate_80": {
+              "estimate": -0.025,
+              "ci": [
+                -0.09166666666666667,
+                0.0
+              ],
+              "confidence_level": 0.9975
+            }
+          },
+          "trait_vs_context": {
+            "estimate": -11.146666666666665,
+            "ci95": [
+              -17.776708333333332,
+              -5.339958333333342
+            ],
+            "familywise_ci": [
+              -20.911704166666663,
+              -3.3616583333333256
+            ],
+            "familywise_confidence_level": 0.995,
+            "family_size": 10,
+            "n_paired_response_coordinates": 120,
+            "per_question_paired_counts": [
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6
+            ],
+            "missingness": "Available-case over coordinates with at least one original Sonnet trait score in both cells; no filtering on response integrity."
+          },
+          "balance_point_match": true,
+          "point_match": true,
+          "confirmed_balance_equivalence": false,
+          "confirmed_equivalence": false
+        },
+        {
+          "cell_id": "sycophancy__rb__s13__L14__c2",
+          "code": "s13",
+          "label": "answer tokens 1–3",
+          "route": "answer-derived persona vector at answer positions",
+          "strict_answer_only": true,
+          "common_horizon_trait_compatible": true,
+          "integrity": {
+            "mean": {
+              "estimate": 94.62833333333333,
+              "ci95": [
+                91.79166666666667,
+                96.965
+              ]
+            },
+            "pass_rate_70": {
+              "estimate": 0.95,
+              "ci95": [
+                0.9083333333333332,
+                0.9833333333333334
+              ]
+            },
+            "pass_rate_80": {
+              "estimate": 0.95,
+              "ci95": [
+                0.9083333333333332,
+                0.9833333333333334
+              ]
+            },
+            "pass_rate_90": {
+              "estimate": 0.95,
+              "ci95": [
+                0.9083333333333332,
+                0.9833333333333334
+              ]
+            }
+          },
+          "trait": {
+            "mean": {
+              "estimate": 20.496666666666666,
+              "ci95": [
+                15.036666666666667,
+                26.66337499999999
+              ]
+            },
+            "effect_vs_alpha0": {
+              "estimate": 8.937666666666669,
+              "ci": [
+                5.225333333333334,
+                13.346691666666663
+              ],
+              "confidence_level": 0.95
+            },
+            "n_items_with_score": 120,
+            "item_completeness": 1.0,
+            "draw_completeness": 1.0,
+            "valid": true,
+            "instrument": "existing project Sonnet trait judge",
+            "effect_vs_alpha0_reference": "historical published alpha-zero question means; not effective-seed matched"
+          },
+          "quality_vs_context": {
+            "mean": {
+              "estimate": -4.725000000000001,
+              "ci": [
+                -9.326666666666668,
+                -1.4383333333333332
+              ],
+              "confidence_level": 0.9975
+            },
+            "pass_rate_80": {
+              "estimate": -0.049999999999999996,
+              "ci": [
+                -0.11666666666666667,
+                0.0
+              ],
+              "confidence_level": 0.9975
+            }
+          },
+          "trait_vs_context": {
+            "estimate": -4.016666666666667,
+            "ci95": [
+              -10.238374999999992,
+              1.5433333333333328
+            ],
+            "familywise_ci": [
+              -13.131666666666666,
+              3.6666708333333373
+            ],
+            "familywise_confidence_level": 0.995,
+            "family_size": 10,
+            "n_paired_response_coordinates": 120,
+            "per_question_paired_counts": [
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6
+            ],
+            "missingness": "Available-case over coordinates with at least one original Sonnet trait score in both cells; no filtering on response integrity."
+          },
+          "balance_point_match": true,
+          "point_match": true,
+          "confirmed_balance_equivalence": false,
+          "confirmed_equivalence": false
+        },
+        {
+          "cell_id": "sycophancy__rb__s15__L14__c2",
+          "code": "s15",
+          "label": "answer tokens 1–5",
+          "route": "answer-derived persona vector at answer positions",
+          "strict_answer_only": true,
+          "common_horizon_trait_compatible": true,
+          "integrity": {
+            "mean": {
+              "estimate": 94.14000000000001,
+              "ci95": [
+                92.03166666666667,
+                95.96166666666667
+              ]
+            },
+            "pass_rate_70": {
+              "estimate": 0.9666666666666666,
+              "ci95": [
+                0.9333333333333333,
+                0.9916666666666668
+              ]
+            },
+            "pass_rate_80": {
+              "estimate": 0.9583333333333334,
+              "ci95": [
+                0.9166666666666666,
+                0.9916666666666668
+              ]
+            },
+            "pass_rate_90": {
+              "estimate": 0.95,
+              "ci95": [
+                0.9083333333333332,
+                0.9833333333333334
+              ]
+            }
+          },
+          "trait": {
+            "mean": {
+              "estimate": 21.725,
+              "ci95": [
+                16.499999999999996,
+                27.725
+              ]
+            },
+            "effect_vs_alpha0": {
+              "estimate": 10.166,
+              "ci": [
+                7.905333333333334,
+                12.991666666666665
+              ],
+              "confidence_level": 0.95
+            },
+            "n_items_with_score": 120,
+            "item_completeness": 1.0,
+            "draw_completeness": 1.0,
+            "valid": true,
+            "instrument": "existing project Sonnet trait judge",
+            "effect_vs_alpha0_reference": "historical published alpha-zero question means; not effective-seed matched"
+          },
+          "quality_vs_context": {
+            "mean": {
+              "estimate": -5.213333333333333,
+              "ci": [
+                -8.611672916666697,
+                -2.4866583333333208
+              ],
+              "confidence_level": 0.9975
+            },
+            "pass_rate_80": {
+              "estimate": -0.041666666666666664,
+              "ci": [
+                -0.10833333333333335,
+                0.0
+              ],
+              "confidence_level": 0.9975
+            }
+          },
+          "trait_vs_context": {
+            "estimate": -2.7883333333333327,
+            "ci95": [
+              -8.116708333333326,
+              1.8950416666666576
+            ],
+            "familywise_ci": [
+              -10.608333333333333,
+              3.5516666666666667
+            ],
+            "familywise_confidence_level": 0.995,
+            "family_size": 10,
+            "n_paired_response_coordinates": 120,
+            "per_question_paired_counts": [
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6
+            ],
+            "missingness": "Available-case over coordinates with at least one original Sonnet trait score in both cells; no filtering on response integrity."
+          },
+          "balance_point_match": false,
+          "point_match": false,
+          "confirmed_balance_equivalence": false,
+          "confirmed_equivalence": false
+        },
+        {
+          "cell_id": "sycophancy__rb__aans__L14__c2",
+          "code": "aans",
+          "label": "historical all-answer",
+          "route": "answer-derived persona vector at answer positions",
+          "strict_answer_only": false,
+          "common_horizon_trait_compatible": false,
+          "integrity": {
+            "mean": {
+              "estimate": 2.375000000000001,
+              "ci95": [
+                2.2116666666666664,
+                2.5416666666666665
+              ]
+            },
+            "pass_rate_70": {
+              "estimate": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "pass_rate_80": {
+              "estimate": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "pass_rate_90": {
+              "estimate": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          "trait": {
+            "mean": {
+              "estimate": 76.86166666666666,
+              "ci95": [
+                65.17,
+                87.75833333333333
+              ]
+            },
+            "effect_vs_alpha0": {
+              "estimate": 65.30266666666668,
+              "ci": [
+                55.73498333333333,
+                74.49199999999999
+              ],
+              "confidence_level": 0.95
+            },
+            "n_items_with_score": 95,
+            "item_completeness": 0.7916666666666666,
+            "draw_completeness": 0.7383333333333333,
+            "valid": false,
+            "instrument": "existing project Sonnet trait judge",
+            "effect_vs_alpha0_reference": "historical published alpha-zero question means; not effective-seed matched"
+          },
+          "quality_vs_context": {
+            "mean": {
+              "estimate": -96.97833333333332,
+              "ci": [
+                -97.4,
+                -96.47666458333332
+              ],
+              "confidence_level": 0.9975
+            },
+            "pass_rate_80": {
+              "estimate": -1.0,
+              "ci": [
+                -1.0,
+                -1.0
+              ],
+              "confidence_level": 0.9975
+            }
+          },
+          "trait_vs_context": {
+            "estimate": 52.665,
+            "ci95": [
+              43.50081250000001,
+              62.10335416666667
+            ],
+            "familywise_ci": [
+              39.78916666666667,
+              66.28666666666666
+            ],
+            "familywise_confidence_level": 0.995,
+            "family_size": 10,
+            "n_paired_response_coordinates": 95,
+            "per_question_paired_counts": [
+              6,
+              3,
+              6,
+              4,
+              6,
+              3,
+              6,
+              3,
+              6,
+              5,
+              4,
+              5,
+              6,
+              6,
+              6,
+              5,
+              3,
+              2,
+              6,
+              4
+            ],
+            "missingness": "Available-case over coordinates with at least one original Sonnet trait score in both cells; no filtering on response integrity."
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,151 @@
+{
+  "source": "eval_results/issue_2254/response_integrity_matched_steering/codex_subagent_v3/reduce/matched_results.json",
+  "source_sha256": "d8955228948e787ba5adb4c5f40efb489e8c22924b9bf53427a2267b70fe63b6",
+  "description": "Response-integrity/trait frontier for fixed context and answer loci",
+  "highlight": "black outline denotes an equivalence-supported answer-only cell",
+  "style": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      5.631
+    ],
+    "exported_size_inches": [
+      13.095,
+      5.131
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/quality_trait_frontier.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "context only",
+      "A1",
+      "A2",
+      "A3",
+      "A1–3",
+      "A1–5",
+      "Historical all-answer omitted:\ntrait horizon/coverage differs",
+      "LLM-judged response integrity (0–100)",
+      "65",
+      "70",
+      "75",
+      "80",
+      "85",
+      "90",
+      "95",
+      "100",
+      "Trait change vs. historical unsteered baseline",
+      "−2",
+      "0",
+      "2",
+      "4",
+      "6",
+      "8",
+      "10",
+      "12",
+      "Evil",
+      "105",
+      "14",
+      "Sycophancy"
+    ]
+  },
+  "plotted_values": {
+    "evil": [
+      {
+        "code": "ctx",
+        "integrity_mean": 66.82333333333334,
+        "trait_effect_vs_historical_alpha0": 9.827777777777778,
+        "equivalence_supported": false
+      },
+      {
+        "code": "t1",
+        "integrity_mean": 94.05333333333333,
+        "trait_effect_vs_historical_alpha0": 0.0,
+        "equivalence_supported": false
+      },
+      {
+        "code": "t2",
+        "integrity_mean": 94.65333333333334,
+        "trait_effect_vs_historical_alpha0": 0.016666666666666666,
+        "equivalence_supported": false
+      },
+      {
+        "code": "t3",
+        "integrity_mean": 95.01000000000002,
+        "trait_effect_vs_historical_alpha0": 0.0,
+        "equivalence_supported": false
+      },
+      {
+        "code": "s13",
+        "integrity_mean": 90.00333333333333,
+        "trait_effect_vs_historical_alpha0": 2.025,
+        "equivalence_supported": false
+      },
+      {
+        "code": "s15",
+        "integrity_mean": 87.48666666666665,
+        "trait_effect_vs_historical_alpha0": 4.251666666666667,
+        "equivalence_supported": false
+      }
+    ],
+    "sycophancy": [
+      {
+        "code": "ctx",
+        "integrity_mean": 99.35333333333332,
+        "trait_effect_vs_historical_alpha0": 12.954333333333333,
+        "equivalence_supported": false
+      },
+      {
+        "code": "t1",
+        "integrity_mean": 97.045,
+        "trait_effect_vs_historical_alpha0": 5.465999999999999,
+        "equivalence_supported": false
+      },
+      {
+        "code": "t2",
+        "integrity_mean": 98.94833333333334,
+        "trait_effect_vs_historical_alpha0": 2.7759999999999994,
+        "equivalence_supported": true
+      },
+      {
+        "code": "t3",
+        "integrity_mean": 97.715,
+        "trait_effect_vs_historical_alpha0": 1.8076666666666668,
+        "equivalence_supported": false
+      },
+      {
+        "code": "s13",
+        "integrity_mean": 94.62833333333333,
+        "trait_effect_vs_historical_alpha0": 8.937666666666669,
+        "equivalence_supported": false
+      },
+      {
+        "code": "s15",
+        "integrity_mean": 94.14000000000001,
+        "trait_effect_vs_historical_alpha0": 10.166,
+        "equivalence_supported": false
+      }
+    ]
+  },
+  "git_commit": "cfb84ad2892a5887400a59693e8018631a863f91",
+  "git_dirty_at_render": true,
+  "dependency_sha256": {
+    "scripts/issue2254_revmap8_subagent_grade.py": "2d9bbff5be9b6b2e93b986ce24d8ffd1925640493f1e5cee17a88a632c2b3f83",
+    "scripts/issue2254_preimage.py": "7c346866a2aaae47ae66aa976cda91fa5b0f5fbaeba8732664c9c6ee619a5c10",
+    "src/explore_persona_space/analysis/c2a_plot_style.py": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1"
+  },
+  "output_sha256": {
+    "pdf": "a7106229012842da98065cd8e2846fb55bc7b0845ab99fdd317441938191d7ca",
+    "png": "129c629e771b937a26953a4f72497e181e1c2bb0f561137a170430dfb8770274",
+    "grayscale": "865649dba4fc8adeb228cf476551ac07230aa2c1b34bf6aa3779136e11cda4c7"
+  }
+}
