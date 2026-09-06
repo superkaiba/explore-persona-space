@@ -315,7 +315,7 @@ def transfer(data):
 
 
 def expression_distributions():
-    """Show one pooled score distribution per dataset and trait."""
+    """Export a standalone pooled distribution for each dataset and trait."""
     data = json.loads(DISTRIBUTIONS.read_text())
     edges = np.asarray(data["bin_edges"])
     assert np.array_equal(edges, np.arange(0, 101, 10))
@@ -330,12 +330,12 @@ def expression_distributions():
 
     titles = {
         "pvsynth": "Synthetic prompts",
-        "hhrt": "Human red-team\nattempts",
+        "hhrt": "Human red-team attempts",
         "toxicchat": "ToxicChat (flagged)",
-        "wildchat_rung": "WildChat\n(generic chat)",
-        "aita": "Held-out Reddit\nadvice",
-        "nqopen": "NQ-Open*",
-        "simpleqa": "SimpleQA*",
+        "wildchat_rung": "WildChat",
+        "aita": "Reddit advice",
+        "nqopen": "NQ-Open",
+        "simpleqa": "SimpleQA",
     }
     order = {
         "evil": ["pvsynth", "hhrt", "toxicchat", "wildchat_rung"],
@@ -344,14 +344,10 @@ def expression_distributions():
     }
     pooled = [r for r in rows if r["group"] == "all"]
     assert len(pooled) == sum(map(len, order.values())) == 11
-    fig, _ = c2a_figure("full", aspect=0.94)
-    grid = fig.add_gridspec(
-        3, 4, left=0.075, right=0.975, bottom=0.14, top=0.87, wspace=0.28, hspace=0.72
-    )
-    for i, trait in enumerate(TRAITS):
-        for j, setting in enumerate(order[trait]):
-            column = 3 if setting == "wildchat_rung" else j
-            ax = fig.add_subplot(grid[i, column])
+    for trait in TRAITS:
+        for setting in order[trait]:
+            fig, _ = c2a_figure("wide", aspect=0.60)
+            ax = fig.add_axes([0.13, 0.18, 0.83, 0.68])
             (row,) = [r for r in pooled if r["trait"] == trait and r["setting"] == setting]
             ax.bar(
                 edges[:-1],
@@ -362,35 +358,27 @@ def expression_distributions():
                 edgecolor="white",
                 linewidth=0.6,
             )
-            ax.set_title(
-                f"{titles[setting]}\nn = {row['n_eval']:,}", loc="left", fontsize=16, pad=10
+            is_rate = row["dv_construct"] == "fabrication_rate_percent"
+            title = f"{'Fabrication' if is_rate else LABELS[trait]} · {titles[setting]}"
+            ax.set_title(title, loc="left", fontsize=22, pad=18)
+            ax.set(
+                xlim=(0, 100),
+                ylim=(0, 105),
+                xticks=[0, 20, 40, 60, 80, 100],
+                yticks=[0, 25, 50, 75, 100],
             )
-            ax.set(xlim=(0, 100), ylim=(0, 105), xticks=[0, 50, 100], yticks=[0, 50, 100])
-            ax.tick_params(labelsize=15)
-            if j == 0:
-                ax.set_ylabel(f"{LABELS[trait]}\nContexts (%)", fontsize=17)
+            ax.set_xlabel("Fabricated answers (%)" if is_rate else f"Mean {trait} score")
+            ax.set_ylabel("Contexts (%)")
             style_axis(ax, grid_axis="y")
-    title = "Behavior expression across evaluation datasets"
-    fig.text(0.04, 0.955, title, fontsize=24, weight="bold", color=INK)
-    fig.text(0.52, 0.095, "Behavior score (0–100)", ha="center", fontsize=20, color=INK)
-    fig.text(
-        0.04,
-        0.025,
-        "Same 11 evaluation cells as the correlation comparison · 10-point bins\n"
-        "*NQ-Open / SimpleQA: fabrication rate (%) · Other panels: mean graded trait score\n"
-        "WildChat uses the held-out split · Missing scores excluded",
-        color=MUTED,
-        fontsize=14,
-    )
-    export(
-        fig,
-        "05_expression_across_datasets",
-        title,
-        pooled,
-        data["notes"],
-        data,
-        source=DISTRIBUTIONS,
-    )
+            export(
+                fig,
+                f"05_expression_{trait}_{setting}",
+                title,
+                [row],
+                data["notes"],
+                data,
+                source=DISTRIBUTIONS,
+            )
 
 
 def main():

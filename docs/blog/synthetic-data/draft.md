@@ -36,9 +36,29 @@ That is a sensible controlled experiment. But an explicit instruction to display
 
 Here are the behavior-expression distributions: one per dataset and trait, including generic WildChat conversations.
 
-![Behavior-expression distributions across all evaluation datasets in the comparison](https://raw.githubusercontent.com/superkaiba/explore-persona-space/104789ab51936af1100633e84d59662ab3722735/figures/blog/synthetic-data/05_expression_across_datasets.png)
+![Evil — Synthetic prompts](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/synthetic-data-blog-20260906/figures/blog/synthetic-data/05_expression_evil_pvsynth.png)
 
-*Histograms show the percentage of contexts in each 10-point bin, with identical axis ranges. Each dataset has one pooled distribution per trait, with promoting and suppressing synthetic instructions combined. All 11 panels match the evaluation samples in the correlation comparison later in the post; WildChat uses its held-out split. NQ-Open and SimpleQA measure fabrication rate, rescaled to 0–100; the other panels measure graded trait scores. Missing scores are excluded, and each panel reports its scored sample size. [Scores, counts, and provenance](distribution_data.json)*
+![Evil — Human red-team attempts](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/synthetic-data-blog-20260906/figures/blog/synthetic-data/05_expression_evil_hhrt.png)
+
+![Evil — ToxicChat](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/synthetic-data-blog-20260906/figures/blog/synthetic-data/05_expression_evil_toxicchat.png)
+
+![Evil — WildChat](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/synthetic-data-blog-20260906/figures/blog/synthetic-data/05_expression_evil_wildchat_rung.png)
+
+![Sycophancy — Synthetic prompts](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/synthetic-data-blog-20260906/figures/blog/synthetic-data/05_expression_sycophancy_pvsynth.png)
+
+![Sycophancy — Reddit advice](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/synthetic-data-blog-20260906/figures/blog/synthetic-data/05_expression_sycophancy_aita.png)
+
+![Sycophancy — WildChat](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/synthetic-data-blog-20260906/figures/blog/synthetic-data/05_expression_sycophancy_wildchat_rung.png)
+
+![Hallucination — Synthetic prompts](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/synthetic-data-blog-20260906/figures/blog/synthetic-data/05_expression_hallucination_pvsynth.png)
+
+![Hallucination — NQ-Open](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/synthetic-data-blog-20260906/figures/blog/synthetic-data/05_expression_hallucination_nqopen.png)
+
+![Hallucination — SimpleQA](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/synthetic-data-blog-20260906/figures/blog/synthetic-data/05_expression_hallucination_simpleqa.png)
+
+![Hallucination — WildChat](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/synthetic-data-blog-20260906/figures/blog/synthetic-data/05_expression_hallucination_wildchat_rung.png)
+
+*Each plot shows the percentage of contexts in each score bin, using the same axis ranges. Synthetic instructions are pooled. WildChat is generic chat from the held-out evaluation split. NQ-Open and SimpleQA measure the percentage of fabricated answers; the other datasets use mean trait scores. Missing scores are excluded. [Scores and provenance](distribution_data.json)*
 
 Existing datasets do not automatically give us a useful evaluation. Evil expression is close to zero for most contexts in these human red-team, ToxicChat, and WildChat samples. That leaves little behavioral variation to predict. The sycophancy and hallucination distributions vary by dataset, and the hallucination panels also use different scoring rules.
 
