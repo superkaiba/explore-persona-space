@@ -3,7 +3,6 @@ title: The own-answer advantage in predicting answer activations from context is
   across the captured read-out layer band (MODERATE confidence)
 kind: experiment
 tags:
-- followup-auto
 - followup-manual
 created_at: '2026-07-03T23:33:32Z'
 has_clean_result: true
