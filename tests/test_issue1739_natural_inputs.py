@@ -192,6 +192,39 @@ def test_missing_required_prompt_blocks_publication(tmp_path, remote):
     assert not dest.with_suffix(".manifest.json").exists()
 
 
+def test_duplicate_producer_answers_require_identical_prompt_text(tmp_path, remote, capsys):
+    args = _args(tmp_path)
+    _exclusion_fixture(args, remote)
+    duplicate = f"{n.PREFIX}/raw_completions/evil_ood_spread_full/retry/wide_seed0.json"
+    remote[duplicate] = _bytes({**_doc("wide"), "completion": "different longer answer"})
+    dest = tmp_path / "exclusions.jsonl"
+    report = n.export_exclusions(args, dest)
+    assert report["identical_prompt_copies_collapsed"] == {"wide:evil": 1}
+    assert len(list(n._lines(dest))) == 9
+    signal = "identical_prompt_copies source=wide:evil context_id=wide copies=2"
+    assert signal in capsys.readouterr().out
+
+
+def test_conflicting_producer_prompt_blocks_publication(tmp_path, remote):
+    args = _args(tmp_path)
+    _exclusion_fixture(args, remote)
+    duplicate = f"{n.PREFIX}/raw_completions/evil_ood_spread_full/retry/wide_seed0.json"
+    remote[duplicate] = _bytes(_doc("wide", "different prompt"))
+    dest = tmp_path / "exclusions.jsonl"
+    with pytest.raises(ValueError, match="conflicting raw prompts"):
+        n.export_exclusions(args, dest)
+    assert not dest.exists()
+
+
+def test_filename_document_id_mismatch_blocks_publication(tmp_path, remote):
+    args = _args(tmp_path)
+    _exclusion_fixture(args, remote)
+    source = f"{n.PREFIX}/raw_completions/evil_ood_spread_full/mhj_s0/rollouts/full/wide_seed0.json"
+    remote[source] = _bytes(_doc("different-id"))
+    with pytest.raises(ValueError, match="raw completion ID mismatch"):
+        n.export_exclusions(args, tmp_path / "exclusions.jsonl")
+
+
 def test_corrupt_packed_shard_blocks_export(tmp_path, remote):
     args = _args(tmp_path)
     _exclusion_fixture(args, remote)

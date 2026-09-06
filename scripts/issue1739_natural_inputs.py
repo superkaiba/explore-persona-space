@@ -323,6 +323,34 @@ def _packed_docs(root: Path, group: str):
         raise ValueError(f"packed total-count mismatch: {group}")
 
 
+def _verified_prompt_copy(source: str, cid: str, paths: list[Path]) -> dict:
+    """Collapse producer retries only after checking exact input-text identity.
+
+    Exclusions consume prompts, never answers. Original and longer-cap answer
+    runs can legitimately retain the same context ID under separate producers.
+    """
+    if not paths:
+        raise ValueError(f"no raw completion for {source}/{cid}")
+    first = None
+    reference = None
+    for path in paths:
+        doc = _json(path)
+        if str(doc.get("context_id", "")) != cid:
+            raise ValueError(f"raw completion ID mismatch for {source}/{cid}: {path}")
+        parts = sorted(_prompt_parts(doc))
+        if first is None:
+            first, reference = doc, parts
+        elif parts != reference:
+            raise ValueError(f"conflicting raw prompts for {source}/{cid}: {paths}")
+    if len(paths) > 1:
+        print(
+            f"[natural-exclusion] identical_prompt_copies source={source} "
+            f"context_id={cid} copies={len(paths)}",
+            flush=True,
+        )
+    return first
+
+
 def export_exclusions(args, out_path: Path) -> dict:
     """Stage text at the pin, export {text,source,id}, and require full DV coverage.
 
@@ -350,6 +378,7 @@ def export_exclusions(args, out_path: Path) -> dict:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     tmp = out_path.with_name(out_path.name + f".tmp.{os.getpid()}")
     counts = Counter()
+    identical_prompt_copies = Counter()
     with tmp.open("w") as output:
 
         def consume(source, docs):
@@ -430,12 +459,21 @@ def export_exclusions(args, out_path: Path) -> dict:
                 if name.endswith("_seed0.json"):
                     cid = name.removesuffix("_seed0.json")
                     if cid in required[source]:
-                        if cid in candidates:
-                            raise ValueError(f"ambiguous raw completion for {source}/{cid}")
-                        candidates[cid] = entry.path
-            for cid, remote in sorted(candidates.items()):
-                path = _stage_file(remote, cache / remote, pin, token)
-                consume(source, [_json(path)])
+                        candidates.setdefault(cid, []).append(entry.path)
+            remotes = sorted(remote for paths in candidates.values() for remote in paths)
+
+            def fetch(remote):
+                return _stage_file(remote, cache / remote, pin, token)
+
+            with ThreadPoolExecutor(max_workers=min(int(args.stage_workers), 6)) as pool:
+                # Resolve every required producer copy before deduplicating. The
+                # bounded I/O pool changes neither source choice nor output order.
+                list(pool.map(fetch, remotes))
+            for cid, remotes in sorted(candidates.items()):
+                paths = [cache / remote for remote in sorted(remotes)]
+                doc = _verified_prompt_copy(source, cid, paths)
+                identical_prompt_copies[source] += len(paths) - 1
+                consume(source, [doc])
         missing = {
             source: sorted(ids - covered[source])
             for source, ids in required.items()
@@ -454,6 +492,7 @@ def export_exclusions(args, out_path: Path) -> dict:
         "required_contexts": {k: len(v) for k, v in required.items()},
         "covered_contexts": {k: len(v) for k, v in covered.items()},
         "text_records": dict(counts),
+        "identical_prompt_copies_collapsed": dict(identical_prompt_copies),
         "dv_sha256": dv_hashes,
         "exclusion_sha256": _hash(out_path),
     }
