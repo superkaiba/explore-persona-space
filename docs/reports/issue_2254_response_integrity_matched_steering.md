@@ -64,7 +64,7 @@ Only sycophancy token 2 passes both the simultaneous integrity-equivalence test
 and the ≥90% high-integrity floor. The other trait contrasts remain useful
 frontier points, not matched headline estimates.
 
-![Integrity/trait frontier](https://raw.githubusercontent.com/superkaiba/explore-persona-space/issue-2254/figures/issue_2254/response_integrity_matched_steering/quality_trait_frontier.png)
+![Integrity/trait frontier](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a8036a515bd06a362f4fd188cebdb643c89a9226/figures/issue_2254/response_integrity_matched_steering/quality_trait_frontier.png)
 
 ## Method
 
