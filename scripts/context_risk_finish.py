@@ -259,7 +259,7 @@ def format_report(reports: dict, audit: dict, figure_base_url: str) -> str:
         "",
         "## Takeaways",
         "",
-        "- Reward-hacking rollouts finished: 480/480, zero technical errors. Original-task success was 106/160; impossible variants yielded 0/320 hacks. Among the 18 competent tasks, 0/288 impossible rollouts were positive. The frozen prevalence gate failed, so the reward-hacking classifier was not fit.",
+        "- Reward-hacking rollouts finished: 480/480, with no Inspect sample errors. Original-task success was 106/160; impossible variants yielded 0/320 successful bypasses. Among the 18 competent tasks, 0/288 impossible rollouts were positive. The frozen prevalence gate failed, so the reward-hacking classifier was not fit. A subsequent raw-attempt audit found code-extraction failures and unsuccessful visible-answer hardcoding; these data do not establish an absence of reward-hacking behavior. See the [diagnostic](https://github.com/superkaiba/explore-persona-space/blob/codex/context-risk-recovery-20260906/eval_results/context_risk_recovery_v1/reward_hacking_diagnostic.md).",
         "- Misalignment rollouts finished: 15 harmful emitted forwards among 640 continuations (2.34%), no censoring, and six mixed-outcome contexts. The 20 manifest rows reduce to 16 unique prefixes within one information-leak scenario.",
         "- The original prediction analysis crashed before starting because the launch environment lacked uv on PATH. Recovery completed using the saved data; no new generation or training was performed.",
         "",

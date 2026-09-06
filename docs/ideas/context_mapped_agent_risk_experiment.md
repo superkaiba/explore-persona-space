@@ -1,8 +1,12 @@
 # Context-mapped forecasting of reward hacking and misaligned actions
 
 **Public-development pilot completed 2026-09-06.** The recovered Qwen3.8-27B
-run produced no reward hacks (0/320 impossible-condition continuations), so
-the frozen reward-hacking prevalence gate failed. The misalignment arm produced
+run produced no successful bypasses (0/320 impossible-condition continuations), so
+the frozen reward-hacking prevalence gate failed. A subsequent raw-attempt audit
+found code-extraction failures and unsuccessful visible-answer hardcoding;
+this is not evidence that reward-hacking behavior was absent. See the
+[diagnostic](../../eval_results/context_risk_recovery_v1/reward_hacking_diagnostic.md).
+The misalignment arm produced
 15 harmful emitted forwards in 640 continuations across 16 unique prefixes.
 All four recovered prediction comparisons, including held-out goal framing
 and urgency, left activation-over-text and mapping-over-raw benefits unresolved.
