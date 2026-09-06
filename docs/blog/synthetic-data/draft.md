@@ -20,7 +20,7 @@ Naturally, being an avid vibecoder, I asked Claude to implement the comparison.
 
 The synthetic-data results were disappointing, especially for sycophancy.
 
-![Synthetic-data Spearman comparison](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4d901f7ccd4ce03cd5c5b3dff68b57f2001c678e/figures/blog/synthetic-data/01_initial_comparison.png)
+![Synthetic-data Spearman comparison](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3bc309666b8fa10a3abc8edf6fe9914e5669764a/figures/blog/synthetic-data/01_initial_comparison.png)
 
 *Qwen2.5-7B-Instruct, with both methods predicting the same judged response scores. Bars show Spearman correlation across 200 synthetic contexts per trait; error bars are stored 95% intervals from resampling contexts at fixed models and layers. These are the synthetic rows from the same experiment shown below. My method used generic WildChat plus behavior-eliciting training pairs. The synthetic suite crosses five positive/negative instruction pairs with 20 held-out questions; it differs from the paper's eight-prompt monitoring experiment. Collection-code recipe, not independently reverified from every manifest: five on-policy responses per context, temperature 1, 1,024-token cap, top-p unspecified in code; banked Sonnet 4.5 judgments. [Data and provenance](plot_data.json)*
 
