@@ -1,0 +1,7 @@
+{
+ "source_root": "/home/thomasjiralerspong/explore-persona-space",
+ "output_root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/run_20260906",
+ "main_raw_root": "/mnt/eps-data/thomasjiralerspong/issue1739_judge/raw_completions/labeling",
+ "wildchat_raw_root": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1739/data/issue_1739/wcrung_stage/unpacked/wildchat",
+ "rubrics_root": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1739/eval_results/issue_1739/wildchat_rung/inputs/e1_assets"
+}
