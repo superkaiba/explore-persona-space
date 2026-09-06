@@ -1,0 +1,257 @@
+{
+  "gate": "pass",
+  "gate_scope": "exact coverage, valid output, no tool events; transport recovered",
+  "packets": 126,
+  "forecasts": 288,
+  "n_transport_attempts": 0,
+  "stability": {
+    "evil/trait/0": {
+      "n_contexts": 16,
+      "pairs": [
+        {
+          "repeats": [
+            0,
+            1
+          ],
+          "mae": 0.53125,
+          "spearman": 0.9838905899766399
+        },
+        {
+          "repeats": [
+            0,
+            2
+          ],
+          "mae": 1.0625,
+          "spearman": 0.966951071921621
+        },
+        {
+          "repeats": [
+            1,
+            2
+          ],
+          "mae": 1.09375,
+          "spearman": 0.9693732653084639
+        }
+      ],
+      "mean_repeat_pair_mae": 0.8958333333333334
+    },
+    "evil/trait/32": {
+      "n_contexts": 16,
+      "pairs": [
+        {
+          "repeats": [
+            0,
+            1
+          ],
+          "mae": 0.6875,
+          "spearman": 0.9973130269394064
+        },
+        {
+          "repeats": [
+            0,
+            2
+          ],
+          "mae": 0.6875,
+          "spearman": 0.8953050477731571
+        },
+        {
+          "repeats": [
+            1,
+            2
+          ],
+          "mae": 0.625,
+          "spearman": 0.8858530858495117
+        }
+      ],
+      "mean_repeat_pair_mae": 0.6666666666666666
+    },
+    "hallucination/fabrication/0": {
+      "n_contexts": 11,
+      "pairs": [
+        {
+          "repeats": [
+            0,
+            1
+          ],
+          "mae": 2.090909090909091,
+          "spearman": 0.9838709677419354
+        },
+        {
+          "repeats": [
+            0,
+            2
+          ],
+          "mae": 1.3636363636363635,
+          "spearman": 1.0
+        },
+        {
+          "repeats": [
+            1,
+            2
+          ],
+          "mae": 1.6363636363636365,
+          "spearman": 0.9838709677419354
+        }
+      ],
+      "mean_repeat_pair_mae": 1.696969696969697
+    },
+    "hallucination/fabrication/32": {
+      "n_contexts": 11,
+      "pairs": [
+        {
+          "repeats": [
+            0,
+            1
+          ],
+          "mae": 1.6363636363636365,
+          "spearman": 0.9886130432447054
+        },
+        {
+          "repeats": [
+            0,
+            2
+          ],
+          "mae": 2.090909090909091,
+          "spearman": 0.990909090909091
+        },
+        {
+          "repeats": [
+            1,
+            2
+          ],
+          "mae": 2.272727272727273,
+          "spearman": 0.9886130432447054
+        }
+      ],
+      "mean_repeat_pair_mae": 2.0
+    },
+    "hallucination/trait/0": {
+      "n_contexts": 5,
+      "pairs": [
+        {
+          "repeats": [
+            0,
+            1
+          ],
+          "mae": 1.0,
+          "spearman": 0.8999999999999998
+        },
+        {
+          "repeats": [
+            0,
+            2
+          ],
+          "mae": 0.4,
+          "spearman": 0.9999999999999999
+        },
+        {
+          "repeats": [
+            1,
+            2
+          ],
+          "mae": 1.4,
+          "spearman": 0.8999999999999998
+        }
+      ],
+      "mean_repeat_pair_mae": 0.9333333333333332
+    },
+    "hallucination/trait/32": {
+      "n_contexts": 5,
+      "pairs": [
+        {
+          "repeats": [
+            0,
+            1
+          ],
+          "mae": 2.0,
+          "spearman": 0.9999999999999999
+        },
+        {
+          "repeats": [
+            0,
+            2
+          ],
+          "mae": 1.8,
+          "spearman": 0.9999999999999999
+        },
+        {
+          "repeats": [
+            1,
+            2
+          ],
+          "mae": 1.4,
+          "spearman": 0.9999999999999999
+        }
+      ],
+      "mean_repeat_pair_mae": 1.7333333333333332
+    },
+    "sycophancy/trait/0": {
+      "n_contexts": 16,
+      "pairs": [
+        {
+          "repeats": [
+            0,
+            1
+          ],
+          "mae": 2.25,
+          "spearman": 0.9564640763833029
+        },
+        {
+          "repeats": [
+            0,
+            2
+          ],
+          "mae": 3.1875,
+          "spearman": 0.9571733564780963
+        },
+        {
+          "repeats": [
+            1,
+            2
+          ],
+          "mae": 1.9375,
+          "spearman": 0.9458861012512444
+        }
+      ],
+      "mean_repeat_pair_mae": 2.4583333333333335
+    },
+    "sycophancy/trait/32": {
+      "n_contexts": 16,
+      "pairs": [
+        {
+          "repeats": [
+            0,
+            1
+          ],
+          "mae": 1.25,
+          "spearman": 0.9911441813549151
+        },
+        {
+          "repeats": [
+            0,
+            2
+          ],
+          "mae": 0.96875,
+          "spearman": 0.9837880342567639
+        },
+        {
+          "repeats": [
+            1,
+            2
+          ],
+          "mae": 1.59375,
+          "spearman": 0.9926264484156379
+        }
+      ],
+      "mean_repeat_pair_mae": 1.2708333333333333
+    }
+  },
+  "measured_elapsed_seconds": 541.7519252300262,
+  "summed_attempt_wall_seconds": 1616.3737387657166,
+  "production_eta_seconds": 4622.015466425158,
+  "eta_basis": "pilot mean seconds/context per behavior/instrument/shot; divide total work by concurrency; batch size and queue changes may shift runtime",
+  "source_config_sha256": "cabb8160f5b1282b57f3e8f9be2ebd6b7cf3392d3cedb2aa520fa9e95c1f0063",
+  "selection_sha256": "639e7c2c2b7b4635f8853c2546f63b3e3d3ae14c817865568a32acf439665c98",
+  "packet_manifest_sha256": "5f6278e12b4a8dd1086a6db8f502b67b52abd2d75390fac81fcae5de90b21261",
+  "code_sha256": "4a93d878b2a762622e8f97edd584ad6941aae2c81ace4c31f5b71960775570dd"
+}
