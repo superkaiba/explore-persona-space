@@ -479,6 +479,14 @@ def main(argv=None):
 
 def _complete_phase(args, run_id, report, started, result):
     """Publish the local completion signal only AFTER all durable uploads pass."""
+    launch_log = os.environ.get("EPS_NATURAL_LAUNCH_LOG")
+    if launch_log:
+        sys.stdout.flush()
+        sys.stderr.flush()
+        target = args.root / "logs" / f"{args.phase}_{run_id}.launcher.log"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with data.atomic_replace(target) as tmp:
+            shutil.copyfile(launch_log, tmp)
     data.atomic_json(
         report,
         {

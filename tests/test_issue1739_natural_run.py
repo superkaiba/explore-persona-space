@@ -2,6 +2,7 @@
 
 import inspect
 import sys
+import time
 
 import pytest
 
@@ -75,6 +76,24 @@ def test_child_process_exit_and_pid_are_recorded(tmp_path):
     assert (tmp_path / "child.exit.json").is_file()
     with pytest.raises(RuntimeError, match="child rc=3"):
         r.child([sys.executable, "-c", "raise SystemExit(3)"], tmp_path / "failed.log")
+
+
+def test_phase_completion_includes_launcher_stdout_in_upload(tmp_path, monkeypatch):
+    args = r.parse_args(
+        ["prepare", "--root", str(tmp_path), "--sentinel-dir", str(tmp_path / "sentinels")]
+    )
+    launch_log = tmp_path / "detached.log"
+    launch_log.write_text("real phase progress\n")
+    monkeypatch.setenv("EPS_NATURAL_LAUNCH_LOG", str(launch_log))
+    uploaded = []
+
+    def record_upload(local, _prefix):
+        uploaded.extend(p.read_text() for p in local.rglob("*.log"))
+
+    monkeypatch.setattr(r, "upload_tree", record_upload)
+    r._complete_phase(args, "test", tmp_path / "reports/phase.json", time.monotonic(), {})
+    assert uploaded == ["real phase progress\n"]
+    assert (tmp_path / "sentinels/issue-1739-natural-prepare-test.json").is_file()
 
 
 def test_upload_call_signature():

@@ -26,6 +26,7 @@ if [ ! -x "$PY" ]; then
   exit 4
 fi
 export UV_NO_SYNC=1 PYTHONUNBUFFERED=1 VLLM_WORKER_MULTIPROC_METHOD=spawn
+export EPS_NATURAL_LAUNCH_LOG="$LOG"
 export OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2
 cd "$REPO_ROOT"
 nohup setsid "$PY" scripts/issue1739_natural_run.py "$@" </dev/null >"$LOG" 2>&1 &
