@@ -202,6 +202,7 @@ def write_metadata(
     stem: Path,
     outputs: dict,
     displayed_data: dict,
+    provenance,
 ) -> Path:
     metadata = {
         "status": "Theoretical-analysis manuscript figure",
@@ -216,12 +217,7 @@ def write_metadata(
             kind: _sha256(path) for kind, path in outputs.items() if isinstance(path, Path)
         },
     }
-    metadata.update(
-        as_metadata_dict(
-            git_provenance(cwd=ROOT, argv0=str(Path(__file__).resolve())),
-            phase="paper-theory-refusal-sae",
-        )
-    )
+    metadata.update(as_metadata_dict(provenance, phase="paper-theory-refusal-sae"))
     metadata_path = stem.with_suffix(".meta.json")
     metadata_path.write_text(json.dumps(metadata, indent=2) + "\n")
     return metadata_path
@@ -240,6 +236,8 @@ def main() -> None:
     displayed_data = load_displayed_data(args.source)
     figure, include_frac = make_figure(displayed_data)
     stem = args.out_dir / args.stem
+    # Capture Git state before overwriting tracked render outputs.
+    provenance = git_provenance(cwd=ROOT, argv0=str(Path(__file__).resolve()))
     outputs = save_c2a_figure(
         figure,
         stem,
@@ -257,6 +255,7 @@ def main() -> None:
         stem=stem,
         outputs=outputs,
         displayed_data=displayed_data,
+        provenance=provenance,
     )
     for path in (outputs["pdf"], outputs["png"], outputs["grayscale"], metadata):
         print(path)
