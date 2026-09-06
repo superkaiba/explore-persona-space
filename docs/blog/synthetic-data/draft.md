@@ -34,7 +34,7 @@ Here is the same comparison on held-out WildChat conversations:
 
 Here is the comparison on trait-eliciting datasets, averaging across datasets separately for each trait:
 
-![Predicting traits on eliciting datasets](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/synthetic-data-blog-20260906/figures/blog/synthetic-data/07_trait_eliciting_comparison.png)
+![Predicting traits on eliciting datasets](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f261ec513796039af130f0d7d8a95c3c6dccccaf/figures/blog/synthetic-data/07_trait_eliciting_comparison.png)
 
 *Each bar is the mean of dataset-wise Spearman correlations for one method and one trait, with equal weight per dataset: five datasets for evil, six for sycophancy, and two for hallucination. Traits remain separate. The same fitted methods are evaluated on held-out contexts; training pools, the synthetic instruction suite, and generic WildChat are excluded from these averages. This category includes human, automated, and model-written evaluations. Hallucination measures fabrication rate on NQ-Open and SimpleQA. Error bars are omitted because uncertainty for these means has not been estimated. [Constituent datasets, scores, and provenance](trait_eliciting_data.json)*
 
