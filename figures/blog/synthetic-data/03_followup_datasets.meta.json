@@ -24,26 +24,6 @@
     {
       "behavior": "evil",
       "setting": "pvsynth",
-      "method": "oracle",
-      "arm_id": "arm11_oracle_proj",
-      "map_kind": "linear",
-      "rho": 0.8429115275104073,
-      "ci": [
-        0.7948428572706189,
-        0.8815773348545195
-      ],
-      "n_replicates": 1,
-      "n_eval": 200,
-      "layer": 22,
-      "map_condition": "add (fair protocol)",
-      "readout": "label-free",
-      "dv_construct": "trait_rubric_graded_0_100",
-      "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
-      "trait": "evil"
-    },
-    {
-      "behavior": "evil",
-      "setting": "pvsynth",
       "method": "map",
       "arm_id": "arm6_map_proj_e1",
       "map_kind": "linear",
@@ -75,26 +55,6 @@
       "n_replicates": 1,
       "n_eval": 417,
       "layer": 15,
-      "map_condition": "add (fair protocol)",
-      "readout": "label-free",
-      "dv_construct": "trait_rubric_graded_0_100",
-      "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
-      "trait": "evil"
-    },
-    {
-      "behavior": "evil",
-      "setting": "wildchat_rung",
-      "method": "oracle",
-      "arm_id": "arm11_oracle_proj",
-      "map_kind": "linear",
-      "rho": 0.22644899839439725,
-      "ci": [
-        0.14610273976578803,
-        0.2945632630216805
-      ],
-      "n_replicates": 1,
-      "n_eval": 417,
-      "layer": 22,
       "map_condition": "add (fair protocol)",
       "readout": "label-free",
       "dv_construct": "trait_rubric_graded_0_100",
@@ -144,26 +104,6 @@
     {
       "behavior": "evil",
       "setting": "hhrt",
-      "method": "oracle",
-      "arm_id": "arm11_oracle_proj",
-      "map_kind": "linear",
-      "rho": 0.08267989033931226,
-      "ci": [
-        0.03800769313385561,
-        0.12122373320588911
-      ],
-      "n_replicates": 1,
-      "n_eval": 1868,
-      "layer": 22,
-      "map_condition": "add (fair protocol)",
-      "readout": "label-free",
-      "dv_construct": "trait_rubric_graded_0_100",
-      "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
-      "trait": "evil"
-    },
-    {
-      "behavior": "evil",
-      "setting": "hhrt",
       "method": "map",
       "arm_id": "arm6_map_proj_e1",
       "map_kind": "linear",
@@ -195,26 +135,6 @@
       "n_replicates": 1,
       "n_eval": 519,
       "layer": 15,
-      "map_condition": "add (fair protocol)",
-      "readout": "label-free",
-      "dv_construct": "trait_rubric_graded_0_100",
-      "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
-      "trait": "evil"
-    },
-    {
-      "behavior": "evil",
-      "setting": "toxicchat",
-      "method": "oracle",
-      "arm_id": "arm11_oracle_proj",
-      "map_kind": "linear",
-      "rho": 0.2581151286565159,
-      "ci": [
-        0.16849086192089324,
-        0.33975177038451876
-      ],
-      "n_replicates": 1,
-      "n_eval": 519,
-      "layer": 22,
       "map_condition": "add (fair protocol)",
       "readout": "label-free",
       "dv_construct": "trait_rubric_graded_0_100",
@@ -264,26 +184,6 @@
     {
       "behavior": "sycophancy",
       "setting": "pvsynth",
-      "method": "oracle",
-      "arm_id": "arm11_oracle_proj",
-      "map_kind": "linear",
-      "rho": 0.7640980641705702,
-      "ci": [
-        0.703480522973764,
-        0.807914953003169
-      ],
-      "n_replicates": 1,
-      "n_eval": 200,
-      "layer": 11,
-      "map_condition": "add (fair protocol)",
-      "readout": "label-free",
-      "dv_construct": "trait_rubric_graded_0_100",
-      "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json",
-      "trait": "sycophancy"
-    },
-    {
-      "behavior": "sycophancy",
-      "setting": "pvsynth",
       "method": "map",
       "arm_id": "arm6_map_proj_e1",
       "map_kind": "linear",
@@ -315,26 +215,6 @@
       "n_replicates": 1,
       "n_eval": 415,
       "layer": 16,
-      "map_condition": "add (fair protocol)",
-      "readout": "label-free",
-      "dv_construct": "trait_rubric_graded_0_100",
-      "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json",
-      "trait": "sycophancy"
-    },
-    {
-      "behavior": "sycophancy",
-      "setting": "wildchat_rung",
-      "method": "oracle",
-      "arm_id": "arm11_oracle_proj",
-      "map_kind": "linear",
-      "rho": 0.07624932674428626,
-      "ci": [
-        -0.02296656774691166,
-        0.1671461852774431
-      ],
-      "n_replicates": 1,
-      "n_eval": 415,
-      "layer": 11,
       "map_condition": "add (fair protocol)",
       "readout": "label-free",
       "dv_construct": "trait_rubric_graded_0_100",
@@ -384,26 +264,6 @@
     {
       "behavior": "sycophancy",
       "setting": "aita",
-      "method": "oracle",
-      "arm_id": "arm11_oracle_proj",
-      "map_kind": "linear",
-      "rho": 0.2495902989637087,
-      "ci": [
-        0.1973220508739651,
-        0.2990054164676252
-      ],
-      "n_replicates": 1,
-      "n_eval": 1304,
-      "layer": 11,
-      "map_condition": "add (fair protocol)",
-      "readout": "label-free",
-      "dv_construct": "trait_rubric_graded_0_100",
-      "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json",
-      "trait": "sycophancy"
-    },
-    {
-      "behavior": "sycophancy",
-      "setting": "aita",
       "method": "map",
       "arm_id": "arm6_map_proj_e1",
       "map_kind": "linear",
@@ -435,26 +295,6 @@
       "n_replicates": 1,
       "n_eval": 200,
       "layer": 24,
-      "map_condition": "add (fair protocol)",
-      "readout": "label-free",
-      "dv_construct": "trait_rubric_graded_0_100",
-      "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
-      "trait": "hallucination"
-    },
-    {
-      "behavior": "hallucination",
-      "setting": "pvsynth",
-      "method": "oracle",
-      "arm_id": "arm11_oracle_proj",
-      "map_kind": "linear",
-      "rho": 0.746762226601023,
-      "ci": [
-        0.6621241323784479,
-        0.809757265055035
-      ],
-      "n_replicates": 1,
-      "n_eval": 200,
-      "layer": 27,
       "map_condition": "add (fair protocol)",
       "readout": "label-free",
       "dv_construct": "trait_rubric_graded_0_100",
@@ -504,26 +344,6 @@
     {
       "behavior": "hallucination",
       "setting": "wildchat_rung",
-      "method": "oracle",
-      "arm_id": "arm11_oracle_proj",
-      "map_kind": "linear",
-      "rho": 0.28059178964074377,
-      "ci": [
-        0.18743765826638062,
-        0.38139452492605364
-      ],
-      "n_replicates": 1,
-      "n_eval": 411,
-      "layer": 27,
-      "map_condition": "add (fair protocol)",
-      "readout": "label-free",
-      "dv_construct": "trait_rubric_graded_0_100",
-      "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
-      "trait": "hallucination"
-    },
-    {
-      "behavior": "hallucination",
-      "setting": "wildchat_rung",
       "method": "map",
       "arm_id": "arm6_map_proj_e1",
       "map_kind": "linear",
@@ -555,26 +375,6 @@
       "n_replicates": 1,
       "n_eval": 3167,
       "layer": 24,
-      "map_condition": "add (fair protocol)",
-      "readout": "label-free",
-      "dv_construct": "fabricated_fraction_rescaled_x100",
-      "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
-      "trait": "hallucination"
-    },
-    {
-      "behavior": "hallucination",
-      "setting": "nqopen",
-      "method": "oracle",
-      "arm_id": "arm11_oracle_proj",
-      "map_kind": "linear",
-      "rho": 0.12797090910783324,
-      "ci": [
-        0.09308861249831503,
-        0.1617682692085735
-      ],
-      "n_replicates": 1,
-      "n_eval": 3167,
-      "layer": 27,
       "map_condition": "add (fair protocol)",
       "readout": "label-free",
       "dv_construct": "fabricated_fraction_rescaled_x100",
@@ -624,26 +424,6 @@
     {
       "behavior": "hallucination",
       "setting": "simpleqa",
-      "method": "oracle",
-      "arm_id": "arm11_oracle_proj",
-      "map_kind": "linear",
-      "rho": 0.5787174444636474,
-      "ci": [
-        0.5521300786759493,
-        0.6043085054555212
-      ],
-      "n_replicates": 1,
-      "n_eval": 4021,
-      "layer": 27,
-      "map_condition": "add (fair protocol)",
-      "readout": "label-free",
-      "dv_construct": "fabricated_fraction_rescaled_x100",
-      "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
-      "trait": "hallucination"
-    },
-    {
-      "behavior": "hallucination",
-      "setting": "simpleqa",
       "method": "map",
       "arm_id": "arm6_map_proj_e1",
       "map_kind": "linear",
@@ -662,7 +442,7 @@
       "trait": "hallucination"
     }
   ],
-  "notes": "FAIR: map + whitening = ADD/union (generic WildChat pool + eliciting train pairs), fit once per map kind (linear / MLP) on one shared whitening; the label-consuming readouts (arms 4/7/19) train on the eliciting train budget cell UNION the judged WildChat train split (sha1 mod-5 bucket 4 held out); the projection arms are label-free and share the whitening + eval subsets; pvsynth judged data enters only through r_B (recorded deviation for the regression/MLP readouts) Fixed #1739 R2FAIR artifact slice: all 11 non-train settings x 3 projection methods, 33/33 cells; this is not the entire later #1739 experimental campaign. Generic WildChat plus eliciting training pairs; differs from the historical LMSYS-only map. Context-end, E1 direction; layers frozen from training, map_kind linear. Within each dataset all methods have the same evaluation targets and n; no method averaging. Stored 95% paired bootstrap CIs resample evaluation contexts at fixed fitted model/selected layer, not prompt/question clusters; no training-seed uncertainty. Synthetic n=200 uses 5 instruction pairs x2 signs x20 held-out questions, not the paper monitoring experiment of eight interpolated prompts. Source-inherited on-policy recipe: 5 responses per context, temperature1, max_new_tokens1024 (top_p not explicitly pinned in collection code); banked Sonnet4.5 judge, 3 intended draws with rejudge recovery. Sampling recipe not independently reverified from every completion manifest. Hallucination NQ-Open/SimpleQA use fabrication rate, not the graded trait score in other rows. WildChat harmfulness target has little spread. Actual-answer projection is a post-generation reference, not a hard statistical ceiling. Held-out Reddit row is r/socialskills from a source also present in training, not a new-domain test. No causal attribution to surface shortcuts follows from these differences.",
+  "notes": "FAIR: map + whitening = ADD/union (generic WildChat pool + eliciting train pairs), fit once per map kind (linear / MLP) on one shared whitening; the label-consuming readouts (arms 4/7/19) train on the eliciting train budget cell UNION the judged WildChat train split (sha1 mod-5 bucket 4 held out); the projection arms are label-free and share the whitening + eval subsets; pvsynth judged data enters only through r_B (recorded deviation for the regression/MLP readouts) Fixed #1739 R2FAIR artifact slice: all 11 non-train settings x 2 displayed methods, 22/22 cells; this is not the entire later #1739 experimental campaign. Generic WildChat plus eliciting training pairs; differs from the historical LMSYS-only map. Context-end, E1 direction; layers frozen from training, map_kind linear. Within each dataset all methods have the same evaluation targets and n; no method averaging. Stored 95% paired bootstrap CIs resample evaluation contexts at fixed fitted model/selected layer, not prompt/question clusters; no training-seed uncertainty. Synthetic n=200 uses 5 instruction pairs x2 signs x20 held-out questions, not the paper monitoring experiment of eight interpolated prompts. Source-inherited on-policy recipe: 5 responses per context, temperature1, max_new_tokens1024 (top_p not explicitly pinned in collection code); banked Sonnet4.5 judge, 3 intended draws with rejudge recovery. Sampling recipe not independently reverified from every completion manifest. Hallucination NQ-Open/SimpleQA use fabrication rate, not the graded trait score in other rows. WildChat harmfulness target has little spread. Held-out Reddit row is r/socialskills from a source also present in training, not a new-domain test. No causal attribution to surface shortcuts follows from these differences.",
   "sources": [
     {
       "path": "eval_results/issue_779/stage1_headline.json",
@@ -739,18 +519,17 @@
       "WildChat conversations  (n=411)",
       "Hallucination",
       "A later test across evaluation datasets",
-      "Later map recipe \u00b7 95% context-bootstrap intervals \u00b7 actual-answer readout requires generation\n*NQ-Open / SimpleQA measure fabrication rate; other rows use graded trait scores.",
+      "Later experiment \u00b7 95% context-bootstrap intervals\n*NQ-Open / SimpleQA measure fabrication rate; other rows use graded trait scores.",
       "Persona Vector on context",
-      "Linear map + Persona Vector",
-      "Persona Vector on actual answer"
+      "My method"
     ]
   },
-  "input_sha256": "ea5e30d93eab36516ad6a6067b1e0f7c9ff1307bc15b84baaf6e164d10707bf7",
-  "producer_sha256": "d0de037e5535af419b4f65a6d164baff41f68b49d44d720039f905ad4babf88f",
+  "input_sha256": "7bf01d357c3cea206c5c0c4077a3aaeaff02be7b645d9d599a2dcad05bd818e8",
+  "producer_sha256": "3d4cee8f16881b553a2aa89051751dd5d82abed66f1fa166e43be7f41ad9889a",
   "style_module_sha256": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1",
   "output_sha256": {
-    "pdf": "6d52a12b552efa599ca4dbcd44456a3e4195362b16ca0348ece07bfd399e7bc9",
-    "png": "677ba96c0c398f7cd8dfc29e3e2b7ff79c7665df818b52c56f5c8b4fb4af29a8",
-    "grayscale": "84585e1426b819905f7a5f506cadcfc6c303637bc6c0a41ae0098280dbd19181"
+    "pdf": "eea87e1d893b380c7fae27938902e089dfca157a3018c395482aca58b680d62d",
+    "png": "822bd0642d98c3b98db1db400ebae6ae9ba9f8868d24bcb6fb0e97fe19ebb2f9",
+    "grayscale": "79ed326146d0fafef2b4cdbf1ca0dc6f3f7459a4d3583fa137cf091b4f0e5f9a"
   }
 }

@@ -38,7 +38,7 @@
       "within": 0.4
     }
   ],
-  "notes": "Published Qwen Pearson correlations from Table 2 in v3. Within-condition correlations averaged over conditions; score SD<1 conditions excluded. Both system and many-shot settings shown. No CIs reported in the source table; connectors are paired statistic comparisons, not time trajectories. Paper setup: on-policy responses, 10 rollouts per condition/question, GPT-4.1-mini graded judge; synthetic prompts and questions. Generation sampling parameters not independently checked for this redraw.",
+  "notes": "Published Qwen Pearson correlations from Table 2 in v3. Within-condition correlations averaged over conditions; score SD<1 conditions excluded. Both system and many-shot settings shown. No CIs reported in the source table; grouped bars compare the two statistics within each trait. Paper setup: on-policy responses, 10 rollouts per condition/question, GPT-4.1-mini graded judge; synthetic prompts and questions. Generation sampling parameters not independently checked for this redraw.",
   "sources": [
     {
       "path": "eval_results/issue_779/stage1_headline.json",
@@ -124,12 +124,12 @@
       "Within each prompt condition"
     ]
   },
-  "input_sha256": "ea5e30d93eab36516ad6a6067b1e0f7c9ff1307bc15b84baaf6e164d10707bf7",
-  "producer_sha256": "d0de037e5535af419b4f65a6d164baff41f68b49d44d720039f905ad4babf88f",
+  "input_sha256": "7bf01d357c3cea206c5c0c4077a3aaeaff02be7b645d9d599a2dcad05bd818e8",
+  "producer_sha256": "3d4cee8f16881b553a2aa89051751dd5d82abed66f1fa166e43be7f41ad9889a",
   "style_module_sha256": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1",
   "output_sha256": {
-    "pdf": "c6916456594a72978daf81d935bb3185e250fbce4f00b4248c63a4b539f39e0a",
-    "png": "7b042f934a04bb014c0def97704c061b63a8927de157bea2cc71a26f901c7859",
-    "grayscale": "0e31a4ea65e3e8f0b6ae45f930ff02b793c8c59b7755074308f8efb4e4aca65e"
+    "pdf": "d7c927faf036525be52f576557a35d5e9f87b277c34956f02f387a9906fb111f",
+    "png": "3bb1329e01d6be12186bdf579a8c1ee908eab25d0faa40f3982607f1b72d0dd3",
+    "grayscale": "3d2fad32103ec9c81c14a77e7e89a5c5d353f9dab105a9a17baae4fd7dd9f315"
   }
 }

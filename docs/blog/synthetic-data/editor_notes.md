@@ -5,7 +5,7 @@ The draft preserves the personal anecdote and develops a narrower argument: chea
 Suggested outline and paragraph roles:
 
 1. Opening: the convenience of synthetic data and the alternative of finding existing data.
-2. Method: Persona Vector monitoring and the context-to-answer linear map.
+2. Setup: Persona Vector monitoring and a comparison with my method.
 3. Evidence: the historical, unsuccessful first comparison.
 4. Limitation: explicit trait instructions, and the original paper's own within-condition analysis.
 5. Broader evidence: Chunky Post-Training and the interleaving paper.
@@ -13,6 +13,8 @@ Suggested outline and paragraph roles:
 7. Optional evidence: later evaluation across datasets, with changed recipes and targets disclosed.
 
 Consequential edits:
+
+- Converted all three figures to grouped bar plots. The comparison legends use “My method,” and the follow-up displays only the two pre-generation methods (22 values across 11 dataset/trait cells). Source-level method identifiers remain in the data for reproducibility.
 
 - Removed “290 citations in 1 year.” A current citation count was not verified and is unnecessary to the argument. The paper was first submitted July 29, 2025.
 - Replaced a general deployment-monitoring assertion with the specific pre-generation, prompt-induced result.

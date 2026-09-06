@@ -145,15 +145,15 @@
       "My first comparison on synthetic prompts",
       "Historical run \u00b7 Qwen2.5-7B-Instruct \u00b7 95% condition-bootstrap intervals\n4 / 8 / 8 informative system prompts; the replication check did not pass.",
       "Persona Vector on context",
-      "Linear map + Persona Vector"
+      "My method"
     ]
   },
-  "input_sha256": "ea5e30d93eab36516ad6a6067b1e0f7c9ff1307bc15b84baaf6e164d10707bf7",
-  "producer_sha256": "d0de037e5535af419b4f65a6d164baff41f68b49d44d720039f905ad4babf88f",
+  "input_sha256": "7bf01d357c3cea206c5c0c4077a3aaeaff02be7b645d9d599a2dcad05bd818e8",
+  "producer_sha256": "3d4cee8f16881b553a2aa89051751dd5d82abed66f1fa166e43be7f41ad9889a",
   "style_module_sha256": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1",
   "output_sha256": {
-    "pdf": "3f06c5c83f02aa2c7da5c69b849efe513cc1293857e5ca1c280792eda4f53fc2",
-    "png": "3355da338ed3232a3aa2f4c719671ea71f6b84a76f56260923e238475b75d9ff",
-    "grayscale": "7abaa359f2a42c635c9a25a6ce570c06add796f71fb3848184c3f1f15295f839"
+    "pdf": "410ba2dfe0d83a0fa59c518419513c8291f12ba08b9ab50f354c159931d6df9b",
+    "png": "cf87ff5d3ee0a0e2d12b3ffa297da572cda0f876ec7ed0770cd9575bcf3e3d72",
+    "grayscale": "edb322abf2b128ecbd21e5a7c83873e238a7f9806ea084fcd1790e3a769570c6"
   }
 }
