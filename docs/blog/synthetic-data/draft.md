@@ -28,7 +28,7 @@ Persona Vectors performed well on this synthetic suite. My method's point estima
 
 Here is the same comparison on held-out WildChat conversations:
 
-![Predicting traits on WildChat](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/synthetic-data-blog-20260906/figures/blog/synthetic-data/06_wildchat_comparison.png)
+![Predicting traits on WildChat](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9a8433f6390383311d5e848a115021c97e2cfff5/figures/blog/synthetic-data/06_wildchat_comparison.png)
 
 *The same model and fitted methods, evaluated on generic WildChat conversations. Bars show Spearman correlation with mean judged trait scores; error bars show 95% context-bootstrap intervals. The axis extends below zero to show negative correlations. Evil expression is near zero for most contexts in this sample. [Data and provenance](plot_data.json)*
 
