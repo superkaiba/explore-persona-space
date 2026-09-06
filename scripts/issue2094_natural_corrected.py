@@ -44,6 +44,8 @@ INITIAL_MAX_NEW_TOKENS = 768
 RERUN_MAX_NEW_TOKENS = 1536
 GREEDY_SEED = 0
 SCHEMA_VERSION = 1
+PROFILE_ORIGINAL = "original"
+PROFILE_BROAD_JOINT = "broad_joint"
 
 SUBJECTS: tuple[tuple[str, str], ...] = (
     ("vancouver", "Chinese food and culture in Vancouver"),
@@ -80,6 +82,102 @@ FORMAT_INSTRUCTIONS: tuple[tuple[str, str], ...] = (
     ),
 )
 
+BROAD_BLOCKS: tuple[tuple[str, tuple[tuple[str, str], ...], tuple[tuple[str, str], ...]], ...] = (
+    (
+        "science_finance",
+        (
+            (
+                "explanation",
+                "Hello. Explain {subject} to an intelligent non-specialist. State the "
+                "central idea, explain how it works, and identify one important limitation "
+                "or misconception. Use clear prose and keep the entire answer under 220 words.",
+            ),
+            (
+                "skeptical_peer_review",
+                "Hello. An educational article presents {subject} as simple and largely "
+                "unproblematic. Write a skeptical peer review of that article. Identify its "
+                "strongest point, two important omissions or weaknesses, and a concrete "
+                "revision request. Keep the entire answer under 220 words.",
+            ),
+        ),
+        (
+            ("crispr", "CRISPR gene editing"),
+            ("compound_interest", "compound interest in personal finance"),
+        ),
+    ),
+    (
+        "craft_computing",
+        (
+            (
+                "troubleshooting_checklist",
+                "Hello. A beginner is having trouble with {subject}. Write a practical "
+                "troubleshooting checklist ordered from the quickest checks to the more "
+                "involved fixes. Include likely symptoms and when to seek expert help. Keep "
+                "the entire answer under 220 words.",
+            ),
+            (
+                "radio_news_bulletin",
+                "Hello. Write a concise general-audience radio news bulletin about {subject} "
+                "as today's featured science or technology story. Include a headline, what "
+                "happened, why it matters, and one caveat. Keep the entire answer under 220 words.",
+            ),
+        ),
+        (
+            ("sourdough", "maintaining a sourdough starter"),
+            ("btree_indexing", "B-tree database indexing"),
+        ),
+    ),
+    (
+        "policy",
+        (
+            (
+                "debate_speech",
+                "Hello. Write a short opening debate speech arguing in favor of expanding "
+                "{subject}. Present a clear thesis, two supporting arguments, and a response "
+                "to the strongest objection. Keep the entire answer under 220 words.",
+            ),
+            (
+                "socratic_dialogue",
+                "Hello. Write a Socratic dialogue between an advocate and a skeptic examining "
+                "whether society should expand {subject}. Use at least six alternating turns, "
+                "with questions that expose assumptions rather than a narrator's summary. Keep "
+                "the entire answer under 220 words.",
+            ),
+        ),
+        (
+            ("nuclear_power", "nuclear power"),
+            ("universal_basic_income", "universal basic income"),
+        ),
+    ),
+    (
+        "science_arts",
+        (
+            (
+                "technical_faq",
+                "Hello. Write a compact technical FAQ about {subject} for curious beginners. "
+                "Use exactly five question-and-answer pairs, moving from a definition to one "
+                "subtle technical issue. Keep the entire answer under 220 words.",
+            ),
+            (
+                "free_verse_poem",
+                "Hello. Write a vivid free-verse poem about {subject}. Use four short stanzas, "
+                "concrete imagery, and no explanatory preface or afterword. Keep the entire "
+                "answer under 180 words.",
+            ),
+        ),
+        (
+            ("black_holes", "black holes"),
+            ("jazz_improvisation", "jazz improvisation"),
+        ),
+    ),
+)
+
+BROAD_FORMAT_SUBJECTS: tuple[tuple[str, str], ...] = (
+    ("photosynthesis", "photosynthesis"),
+    ("password_security", "password security"),
+    ("antibiotic_resistance", "antibiotic resistance"),
+)
+
 
 def resolve_repository_revision(api: Any | None = None) -> str:
     """Resolve the requested Hub revision before loading either artifact.
@@ -110,7 +208,7 @@ class PromptRecord:
     output_format: str | None
 
 
-def prompt_bank() -> list[PromptRecord]:
+def _original_prompt_bank() -> list[PromptRecord]:
     """Return the fixed 3x3 bank plus six exact-format minimal pairs."""
     records: list[PromptRecord] = []
     for task, template in TASKS:
@@ -147,13 +245,58 @@ def prompt_bank() -> list[PromptRecord]:
     return records
 
 
+def _broad_joint_prompt_bank() -> list[PromptRecord]:
+    """Return four natural 2x2 blocks plus six exact-format controls."""
+    records: list[PromptRecord] = []
+    for block, tasks, subjects in BROAD_BLOCKS:
+        for task, template in tasks:
+            for subject, subject_text in subjects:
+                records.append(
+                    PromptRecord(
+                        prompt_id=f"broad__{block}__{task}__{subject}",
+                        family="main",
+                        text=template.format(subject=subject_text),
+                        task=task,
+                        subject=subject,
+                        output_format=None,
+                    )
+                )
+    for output_format, instruction in FORMAT_INSTRUCTIONS:
+        for subject, subject_text in BROAD_FORMAT_SUBJECTS:
+            records.append(
+                PromptRecord(
+                    prompt_id=f"broad_format__{output_format}__{subject}",
+                    family="format",
+                    text=(
+                        f"Hello. Explain {subject_text} to a curious non-specialist in 140 to "
+                        f"180 words. {instruction}"
+                    ),
+                    task="explanation",
+                    subject=subject,
+                    output_format=output_format,
+                )
+            )
+    assert len(records) == 22
+    assert len({r.prompt_id for r in records}) == len(records)
+    assert all(r.text.startswith("Hello. ") for r in records)
+    return records
+
+
+def prompt_bank(profile: str = PROFILE_ORIGINAL) -> list[PromptRecord]:
+    if profile == PROFILE_ORIGINAL:
+        return _original_prompt_bank()
+    if profile == PROFILE_BROAD_JOINT:
+        return _broad_joint_prompt_bank()
+    raise ValueError(f"unknown prompt profile: {profile}")
+
+
 def _directed_pairs(values: tuple[str, ...]) -> list[tuple[str, str]]:
     return [(recipient, donor) for recipient in values for donor in values if donor != recipient]
 
 
-def planned_rows() -> list[dict[str, Any]]:
+def _original_planned_rows() -> list[dict[str, Any]]:
     """Build the preregistered 129-row generation census."""
-    bank = prompt_bank()
+    bank = _original_prompt_bank()
     by_id = {p.prompt_id: p for p in bank}
     rows: list[dict[str, Any]] = []
 
@@ -225,80 +368,104 @@ def planned_rows() -> list[dict[str, Any]]:
     return rows
 
 
+def _broad_joint_planned_rows() -> list[dict[str, Any]]:
+    """Build the fixed 174-row broad task/subject/joint generation census."""
+    bank = _broad_joint_prompt_bank()
+    by_id = {p.prompt_id: p for p in bank}
+    rows: list[dict[str, Any]] = []
+
+    def add(
+        arm: str,
+        axis: str,
+        layer_setting: str,
+        recipient_id: str,
+        donor_id: str | None,
+        block: str,
+    ) -> None:
+        recipient = by_id[recipient_id]
+        donor = by_id[donor_id] if donor_id else None
+        gen_id = "__".join((arm, axis, layer_setting, recipient_id, f"from_{donor_id or 'none'}"))
+        rows.append(
+            {
+                "gen_id": gen_id,
+                "arm": arm,
+                "axis": axis,
+                "layer_setting": layer_setting,
+                "block": block,
+                "recipient_prompt_id": recipient_id,
+                "donor_prompt_id": donor_id,
+                "recipient_task": recipient.task,
+                "recipient_subject": recipient.subject,
+                "recipient_format": recipient.output_format,
+                "donor_task": donor.task if donor else None,
+                "donor_subject": donor.subject if donor else None,
+                "donor_format": donor.output_format if donor else None,
+            }
+        )
+
+    for prompt in bank:
+        block = prompt.prompt_id.split("__")[1] if prompt.family == "main" else "format"
+        add("unpatched", "anchor", "none", prompt.prompt_id, None, block)
+    for setting in ("L19", "all28"):
+        for prompt in bank:
+            block = prompt.prompt_id.split("__")[1] if prompt.family == "main" else "format"
+            add("self_patch", "self", setting, prompt.prompt_id, prompt.prompt_id, block)
+
+        for block, tasks, subjects in BROAD_BLOCKS:
+            prompt_ids = [
+                f"broad__{block}__{task}__{subject}"
+                for task, _template in tasks
+                for subject, _subject_text in subjects
+            ]
+            for recipient_id in prompt_ids:
+                for donor_id in prompt_ids:
+                    if recipient_id == donor_id:
+                        continue
+                    recipient = by_id[recipient_id]
+                    donor = by_id[donor_id]
+                    if recipient.subject == donor.subject:
+                        axis = "same_subject_different_task"
+                    elif recipient.task == donor.task:
+                        axis = "same_task_different_subject"
+                    else:
+                        axis = "different_task_different_subject"
+                    add("donor_patch", axis, setting, recipient_id, donor_id, block)
+
+        for subject, _subject_text in BROAD_FORMAT_SUBJECTS:
+            for recipient_format, donor_format in _directed_pairs(("bullets", "paragraph")):
+                add(
+                    "donor_patch",
+                    "positive_format_control",
+                    setting,
+                    f"broad_format__{recipient_format}__{subject}",
+                    f"broad_format__{donor_format}__{subject}",
+                    "format",
+                )
+
+    assert len(rows) == 174, len(rows)
+    assert len({r["gen_id"] for r in rows}) == len(rows)
+    return rows
+
+
+def planned_rows(profile: str = PROFILE_ORIGINAL) -> list[dict[str, Any]]:
+    if profile == PROFILE_ORIGINAL:
+        return _original_planned_rows()
+    if profile == PROFILE_BROAD_JOINT:
+        return _broad_joint_planned_rows()
+    raise ValueError(f"unknown prompt profile: {profile}")
+
+
 def rows_for_smoke(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Small census exercising every production intervention path."""
-    wanted = {
-        ("unpatched", "anchor", "none", "main__itinerary__vancouver", None),
-        (
-            "self_patch",
-            "self",
-            "L19",
-            "main__itinerary__vancouver",
-            "main__itinerary__vancouver",
-        ),
-        (
-            "self_patch",
-            "self",
-            "all28",
-            "main__itinerary__vancouver",
-            "main__itinerary__vancouver",
-        ),
-        (
-            "donor_patch",
-            "same_subject_different_task",
-            "L19",
-            "main__itinerary__vancouver",
-            "main__quiz__vancouver",
-        ),
-        (
-            "donor_patch",
-            "same_subject_different_task",
-            "all28",
-            "main__itinerary__vancouver",
-            "main__quiz__vancouver",
-        ),
-        (
-            "donor_patch",
-            "same_task_different_subject",
-            "L19",
-            "main__itinerary__vancouver",
-            "main__itinerary__japan",
-        ),
-        (
-            "donor_patch",
-            "same_task_different_subject",
-            "all28",
-            "main__itinerary__vancouver",
-            "main__itinerary__japan",
-        ),
-        (
-            "donor_patch",
-            "positive_format_control",
-            "L19",
-            "format__bullets__vancouver",
-            "format__paragraph__vancouver",
-        ),
-        (
-            "donor_patch",
-            "positive_format_control",
-            "all28",
-            "format__bullets__vancouver",
-            "format__paragraph__vancouver",
-        ),
-    }
-    selected = [
-        r
-        for r in rows
-        if (
-            r["arm"],
-            r["axis"],
-            r["layer_setting"],
-            r["recipient_prompt_id"],
-            r["donor_prompt_id"],
-        )
-        in wanted
-    ]
-    assert len(selected) == len(wanted), (len(selected), len(wanted))
+    selected: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for row in rows:
+        key = (row["arm"], row["axis"], row["layer_setting"])
+        if key not in seen:
+            selected.append(row)
+            seen.add(key)
+    expected = {(row["arm"], row["axis"], row["layer_setting"]) for row in rows}
+    assert seen == expected
     return selected
 
 
@@ -600,11 +767,13 @@ def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 
 def run(args: argparse.Namespace) -> None:
     out = args.out.resolve()
-    assert_out_root_headroom(out, 2.0, phase="natural-task-subject", canary_gb=1.0)
-    rows = planned_rows()
+    profile = getattr(args, "profile", PROFILE_ORIGINAL)
+    assert_out_root_headroom(out, 2.0, phase=f"natural-task-subject-{profile}", canary_gb=1.0)
+    full_rows = planned_rows(profile)
+    rows = full_rows
     if args.smoke:
         rows = rows_for_smoke(rows)
-    bank = prompt_bank()
+    bank = prompt_bank(profile)
     bank_by_id = {p.prompt_id: p for p in bank}
     bank_index = {p.prompt_id: i for i, p in enumerate(bank)}
     bank_payload = [p.__dict__ for p in bank]
@@ -673,7 +842,12 @@ def run(args: argparse.Namespace) -> None:
         raise RuntimeError(f"source state shape {tuple(source_states.shape)} != {expected_shape}")
 
     metadata = {
-        "experiment": "issue2094_natural_task_subject_no_forced_opening",
+        "experiment": (
+            "issue2094_joint_broad_qualitative"
+            if profile == PROFILE_BROAD_JOINT
+            else "issue2094_natural_task_subject_no_forced_opening"
+        ),
+        "profile": profile,
         "schema_version": SCHEMA_VERSION,
         "started_utc": datetime.now(UTC).isoformat(),
         "model_id": MODEL_ID,
@@ -706,7 +880,7 @@ def run(args: argparse.Namespace) -> None:
         },
         "prompt_bank_sha256": bank_hash,
         "planned_n_rows": len(rows),
-        "full_planned_n_rows": 129,
+        "full_planned_n_rows": len(full_rows),
         "smoke": bool(args.smoke),
         "batch_size": args.batch_size,
         "torch_version": torch.__version__,
@@ -814,12 +988,16 @@ def run(args: argparse.Namespace) -> None:
                 "kind": "epm:results",
                 "version": 1,
                 "task_id": 2094,
-                "gate": "natural-task-subject-no-forced-opening-generation",
+                "gate": f"natural-task-subject-{profile}-generation",
                 "blocks_pipeline": False,
                 "by": "issue2094_natural_corrected.py",
                 "ts": datetime.now(UTC).isoformat(),
                 "note": {
-                    "followup_label": "natural-task-subject-no-forced-opening",
+                    "followup_label": (
+                        "joint-broad-qualitative"
+                        if profile == PROFILE_BROAD_JOINT
+                        else "natural-task-subject-no-forced-opening"
+                    ),
                     "out_root": str(out),
                     "realized_n_rows": len(ordered),
                     "all_rows_eos": True,
@@ -839,6 +1017,11 @@ def main() -> None:
     )
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--hard-stop-hours", type=float, default=3.0)
+    parser.add_argument(
+        "--profile",
+        choices=(PROFILE_ORIGINAL, PROFILE_BROAD_JOINT),
+        default=PROFILE_ORIGINAL,
+    )
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--write-sentinel", action="store_true")
     args = parser.parse_args()

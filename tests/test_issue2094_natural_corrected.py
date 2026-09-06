@@ -69,6 +69,56 @@ def test_prompt_bank_and_generation_census() -> None:
     assert observed == expected
 
 
+def test_broad_joint_prompt_bank_and_generation_census() -> None:
+    bank = runner.prompt_bank(runner.PROFILE_BROAD_JOINT)
+    rows = runner.planned_rows(runner.PROFILE_BROAD_JOINT)
+    assert len(bank) == 22
+    assert all(prompt.text.startswith("Hello. ") for prompt in bank)
+    assert len(rows) == 174
+    assert len({row["gen_id"] for row in rows}) == 174
+
+    expected = {
+        ("unpatched", "anchor", "none"): 22,
+        ("self_patch", "self", "L19"): 22,
+        ("self_patch", "self", "all28"): 22,
+        ("donor_patch", "same_subject_different_task", "L19"): 16,
+        ("donor_patch", "same_subject_different_task", "all28"): 16,
+        ("donor_patch", "same_task_different_subject", "L19"): 16,
+        ("donor_patch", "same_task_different_subject", "all28"): 16,
+        ("donor_patch", "different_task_different_subject", "L19"): 16,
+        ("donor_patch", "different_task_different_subject", "all28"): 16,
+        ("donor_patch", "positive_format_control", "L19"): 6,
+        ("donor_patch", "positive_format_control", "all28"): 6,
+    }
+    observed = {
+        key: sum((row["arm"], row["axis"], row["layer_setting"]) == key for row in rows)
+        for key in expected
+    }
+    assert observed == expected
+
+    block_rows = [row for row in rows if row["arm"] == "donor_patch" and row["block"] != "format"]
+    for setting in ("L19", "all28"):
+        for block, _tasks, _subjects in runner.BROAD_BLOCKS:
+            group = [
+                row
+                for row in block_rows
+                if row["layer_setting"] == setting and row["block"] == block
+            ]
+            assert len(group) == 12
+            assert {
+                axis: sum(row["axis"] == axis for row in group)
+                for axis in {
+                    "same_subject_different_task",
+                    "same_task_different_subject",
+                    "different_task_different_subject",
+                }
+            } == {
+                "same_subject_different_task": 4,
+                "same_task_different_subject": 4,
+                "different_task_different_subject": 4,
+            }
+
+
 def test_every_donor_swap_changes_exactly_one_axis() -> None:
     for row in runner.planned_rows():
         if row["axis"] == "same_subject_different_task":
@@ -76,6 +126,21 @@ def test_every_donor_swap_changes_exactly_one_axis() -> None:
             assert row["recipient_task"] != row["donor_task"]
         elif row["axis"] == "same_task_different_subject":
             assert row["recipient_task"] == row["donor_task"]
+            assert row["recipient_subject"] != row["donor_subject"]
+        elif row["axis"] == "positive_format_control":
+            assert row["recipient_task"] == row["donor_task"] == "explanation"
+            assert row["recipient_subject"] == row["donor_subject"]
+            assert row["recipient_format"] != row["donor_format"]
+
+    for row in runner.planned_rows(runner.PROFILE_BROAD_JOINT):
+        if row["axis"] == "same_subject_different_task":
+            assert row["recipient_subject"] == row["donor_subject"]
+            assert row["recipient_task"] != row["donor_task"]
+        elif row["axis"] == "same_task_different_subject":
+            assert row["recipient_task"] == row["donor_task"]
+            assert row["recipient_subject"] != row["donor_subject"]
+        elif row["axis"] == "different_task_different_subject":
+            assert row["recipient_task"] != row["donor_task"]
             assert row["recipient_subject"] != row["donor_subject"]
         elif row["axis"] == "positive_format_control":
             assert row["recipient_task"] == row["donor_task"] == "explanation"
@@ -96,6 +161,11 @@ def test_smoke_census_exercises_all_paths() -> None:
         ("same_task_different_subject", "all28"),
         ("positive_format_control", "L19"),
         ("positive_format_control", "all28"),
+    }
+    broad = runner.rows_for_smoke(runner.planned_rows(runner.PROFILE_BROAD_JOINT))
+    assert len(broad) == 11
+    assert ("different_task_different_subject", "L19") in {
+        (row["axis"], row["layer_setting"]) for row in broad
     }
 
 
@@ -134,6 +204,25 @@ def test_blind_parser_round_trip_plain_and_fenced() -> None:
     bad["coherence"] = 101
     with pytest.raises(ValueError, match="outside"):
         blind.parse_annotations(json.dumps([bad]), ["R0001"])
+
+
+def test_broad_blind_parser_and_wrapper_are_profile_scoped() -> None:
+    item = {
+        "row_id": "R0001",
+        "form": "technical_faq",
+        "subject": "black_holes",
+        "format": "neither_or_mixed",
+        "complete": True,
+        "coherence": 95,
+        "evidence": "Five questions explain event horizons.",
+    }
+    parsed = blind.parse_annotations(json.dumps([item]), ["R0001"], blind.PROFILE_BROAD_JOINT)
+    assert parsed == [item]
+    segments = blind.build_segments(
+        [("R0001", "What is an event horizon? A boundary around a black hole.")],
+        blind.PROFILE_BROAD_JOINT,
+    )
+    assert blind.scan_for_leakage(segments) == {"wrapper": [], "payload": []}
 
 
 def test_blind_packet_scan_is_scope_aware() -> None:
@@ -216,6 +305,37 @@ def fake_joined_rows() -> list[dict]:
     return rows
 
 
+def fake_broad_joined_rows() -> list[dict]:
+    rows = []
+    for planned in runner.planned_rows(runner.PROFILE_BROAD_JOINT):
+        form = planned["recipient_task"]
+        subject = planned["recipient_subject"]
+        output_format = planned["recipient_format"] or "neither_or_mixed"
+        if planned["axis"] == "positive_format_control" and planned["layer_setting"] == "all28":
+            output_format = planned["donor_format"]
+        rows.append(
+            {
+                **planned,
+                "output_text": "A complete paragraph.",
+                "termination_reason": "eos",
+                "injection_telemetry": (
+                    None if planned["layer_setting"] == "none" else {"max_abs_source_error": 0.0}
+                ),
+                "blind_annotation": {
+                    "row_id": f"R{len(rows) + 1:04d}",
+                    "form": form,
+                    "subject": subject,
+                    "format": output_format,
+                    "complete": True,
+                    "coherence": 100,
+                    "evidence": "Complete expected structure and subject.",
+                },
+                "structural_format": output_format,
+            }
+        )
+    return rows
+
+
 def test_summary_denominators_and_control_gates() -> None:
     rows = fake_joined_rows()
     summary = analysis.summarize(rows)
@@ -227,6 +347,24 @@ def test_summary_denominators_and_control_gates() -> None:
     assert summary["settings"]["all28"]["positive_format_control"]["n"] == 6
     assert summary["format_gate_by_setting"] == {"L19": False, "all28": True}
     assert summary["primary_verdict"] == "no_selective_layer19_task_transfer"
+
+
+def test_broad_summary_and_joint_outcome_census() -> None:
+    rows = fake_broad_joined_rows()
+    summary = analysis.summarize_broad(rows)
+    assert summary["realized_n_rows"] == 174
+    assert summary["self_patch_gate_pass"] is True
+    assert summary["positive_format_gate_pass"] is True
+    assert summary["settings"]["L19"]["task_only_swap"]["n"] == 16
+    assert summary["settings"]["L19"]["subject_only_swap"]["n"] == 16
+    assert summary["settings"]["L19"]["joint_swap"]["n"] == 16
+    assert summary["settings"]["L19"]["joint_swap"]["outcome_counts"]["neither"] == 16
+    assert sum(summary["settings"]["L19"]["joint_swap"]["outcome_counts"].values()) == 16
+
+    joint = next(row for row in rows if row["axis"] == "different_task_different_subject")
+    joint["blind_annotation"]["form"] = joint["donor_task"]
+    joint["blind_annotation"]["subject"] = joint["donor_subject"]
+    assert analysis.joint_outcome(joint) == "donor_task_and_subject"
 
 
 def test_forced_opening_comparison_keeps_layer_settings_separate() -> None:

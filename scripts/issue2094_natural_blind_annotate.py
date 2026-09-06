@@ -32,7 +32,10 @@ CODEX_MODEL = "gpt-6-astra"
 MAX_TOKENS = 8192
 TEMPERATURE = 0.0
 PACKET_SIZE = 17
+BROAD_PACKET_SIZE = 22
 CODEX_TIMEOUT_SECONDS = 300
+PROFILE_ORIGINAL = "original"
+PROFILE_BROAD_JOINT = "broad_joint"
 
 FORM_LABELS = ("itinerary", "quiz", "briefing", "explanation", "other_or_mixed")
 SUBJECT_LABELS = ("vancouver", "japan", "rome", "other_or_mixed")
@@ -85,6 +88,60 @@ Return only a JSON array in the same order, with exactly this object shape:
 {"row_id":"R0001","form":"itinerary","subject":"vancouver","format":"bullets","complete":true,"coherence":95,"evidence":"Three dated days and Vancouver restaurant suggestions."}
 Do not use tools. Do not add markdown or commentary."""
 
+BROAD_FORM_LABELS = (
+    "explanation",
+    "skeptical_peer_review",
+    "troubleshooting_checklist",
+    "radio_news_bulletin",
+    "debate_speech",
+    "socratic_dialogue",
+    "technical_faq",
+    "free_verse_poem",
+    "other_or_mixed",
+)
+BROAD_SUBJECT_LABELS = (
+    "crispr",
+    "compound_interest",
+    "sourdough",
+    "btree_indexing",
+    "nuclear_power",
+    "universal_basic_income",
+    "black_holes",
+    "jazz_improvisation",
+    "photosynthesis",
+    "password_security",
+    "antibiotic_resistance",
+    "other_or_mixed",
+)
+BROAD_QUESTION = """Read every tagged passage independently and return one annotation per tag.
+
+Classify the observable response task as one of:
+- explanation: clear expository prose for a non-specialist
+- skeptical_peer_review: evaluates an article, names weaknesses, and requests revisions
+- troubleshooting_checklist: diagnostic checks and practical fixes
+- radio_news_bulletin: broadcast-news framing with a headline or what-happened/why-it-matters structure
+- debate_speech: an argumentative opening speech with a thesis and supporting case
+- socratic_dialogue: alternating question-led turns between speakers
+- technical_faq: explicit question-and-answer pairs
+- free_verse_poem: poetic lines or stanzas using imagery
+- other_or_mixed: none of the above is dominant or multiple tasks are substantially mixed
+
+Classify the observable subject as one of: crispr, compound_interest, sourdough, btree_indexing, nuclear_power, universal_basic_income, black_holes, jazz_improvisation, photosynthesis, password_security, antibiotic_resistance, or other_or_mixed.
+
+Classify visible layout as bullets, paragraph, or neither_or_mixed. `complete` is true only if the passage finishes its response rather than ending mid-sentence or mid-structure. `coherence` is an integer from 0 (unreadable) to 100 (fully coherent). `evidence` is at most 18 words and cites only visible content.
+
+Return only a JSON array in the same order, with exactly this object shape:
+{"row_id":"R0001","form":"technical_faq","subject":"black_holes","format":"neither_or_mixed","complete":true,"coherence":95,"evidence":"Five question-and-answer pairs explain event horizons and radiation."}
+Do not use tools. Do not add markdown or commentary."""
+
+
+def annotation_spec(profile: str) -> tuple[tuple[str, ...], tuple[str, ...], str]:
+    if profile == PROFILE_ORIGINAL:
+        return FORM_LABELS, SUBJECT_LABELS, QUESTION
+    if profile == PROFILE_BROAD_JOINT:
+        return BROAD_FORM_LABELS, BROAD_SUBJECT_LABELS, BROAD_QUESTION
+    raise ValueError(f"unknown annotation profile: {profile}")
+
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
@@ -124,14 +181,17 @@ def freeze_key(path: Path, generations: list[dict[str, Any]]) -> dict[str, str]:
     return mapping
 
 
-def build_segments(items: list[tuple[str, str]]) -> list[tuple[str, str]]:
+def build_segments(
+    items: list[tuple[str, str]], profile: str = PROFILE_ORIGINAL
+) -> list[tuple[str, str]]:
     """Build model-visible bytes while retaining wrapper/payload scan scopes."""
     segments: list[tuple[str, str]] = [("wrapper", "<passages>\n")]
     for row_id, output_text in items:
         segments.append(("wrapper", f"[{row_id}]\n"))
         segments.append(("payload", output_text.strip()))
         segments.append(("wrapper", "\n\n"))
-    segments.extend((("wrapper", "</passages>\n\n"), ("wrapper", QUESTION)))
+    _form_labels, _subject_labels, question = annotation_spec(profile)
+    segments.extend((("wrapper", "</passages>\n\n"), ("wrapper", question)))
     return segments
 
 
@@ -146,7 +206,9 @@ def scan_for_leakage(segments: list[tuple[str, str]]) -> dict[str, list[str]]:
     }
 
 
-def parse_annotations(raw: str, expected_ids: list[str]) -> list[dict[str, Any]]:
+def parse_annotations(
+    raw: str, expected_ids: list[str], profile: str = PROFILE_ORIGINAL
+) -> list[dict[str, Any]]:
     """Parse and validate a complete packet, accepting one optional JSON fence."""
     text = raw.strip()
     fenced = re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", text, flags=re.DOTALL | re.I)
@@ -158,6 +220,7 @@ def parse_annotations(raw: str, expected_ids: list[str]) -> list[dict[str, Any]]
     observed: list[str] = []
     validated: list[dict[str, Any]] = []
     expected_keys = {"row_id", "form", "subject", "format", "complete", "coherence", "evidence"}
+    form_labels, subject_labels, _question = annotation_spec(profile)
     for item in payload:
         if not isinstance(item, dict) or set(item) != expected_keys:
             raise ValueError("annotation object has wrong keys")
@@ -165,9 +228,9 @@ def parse_annotations(raw: str, expected_ids: list[str]) -> list[dict[str, Any]]
         if not isinstance(row_id, str):
             raise ValueError("row_id must be a string")
         observed.append(row_id)
-        if item["form"] not in FORM_LABELS:
+        if item["form"] not in form_labels:
             raise ValueError(f"invalid form label: {item['form']!r}")
-        if item["subject"] not in SUBJECT_LABELS:
+        if item["subject"] not in subject_labels:
             raise ValueError(f"invalid subject label: {item['subject']!r}")
         if item["format"] not in FORMAT_LABELS:
             raise ValueError(f"invalid format label: {item['format']!r}")
@@ -218,8 +281,9 @@ def call_packet(
     request_path: Path,
     response_path: Path,
     parsed_path: Path,
+    profile: str = PROFILE_ORIGINAL,
 ) -> list[dict[str, Any]]:
-    segments = build_segments(items)
+    segments = build_segments(items, profile)
     hits = scan_for_leakage(segments)
     if any(hits.values()):
         raise RuntimeError(f"refusing outbound blind packet: leakage hits {hits}")
@@ -248,6 +312,7 @@ def call_packet(
 
     request_audit = {
         "timestamp_utc": datetime.now(UTC).isoformat(),
+        "profile": profile,
         "model": MODEL,
         "max_tokens": MAX_TOKENS,
         "temperature": TEMPERATURE,
@@ -282,7 +347,7 @@ def call_packet(
     }
     atomic_json(request_path, request_audit)
     atomic_json(response_path, response_audit)
-    parsed = parse_annotations(raw_text, expected_ids)
+    parsed = parse_annotations(raw_text, expected_ids, profile)
     atomic_json(parsed_path, parsed)
     return parsed
 
@@ -332,9 +397,10 @@ def call_codex_packet(
     request_path: Path,
     response_path: Path,
     parsed_path: Path,
+    profile: str = PROFILE_ORIGINAL,
 ) -> list[dict[str, Any]]:
     """Run one content-only packet in a fresh, isolated Codex CLI process."""
-    segments = build_segments(items)
+    segments = build_segments(items, profile)
     hits = scan_for_leakage(segments)
     if any(hits.values()):
         raise RuntimeError(f"refusing outbound blind packet: leakage hits {hits}")
@@ -397,6 +463,7 @@ def call_codex_packet(
     timestamp = datetime.now(UTC).isoformat()
     request_audit = {
         "timestamp_utc": timestamp,
+        "profile": profile,
         "backend": "codex_cli",
         "model": CODEX_MODEL,
         "model_context": "fresh ephemeral session in a temporary empty directory",
@@ -425,8 +492,8 @@ def call_codex_packet(
         "usage": usage,
         "tool_item_types_observed": [],
         "protocol_deviation": (
-            "Direct Anthropic API and Claude CLI both failed authentication; "
-            "used an isolated content-only Codex CLI reader with the frozen key"
+            "An isolated content-only Codex CLI reader was selected for this run; "
+            "the opaque key was frozen before the first request"
         ),
     }
     response_audit = {
@@ -438,12 +505,14 @@ def call_codex_packet(
     }
     atomic_json(request_path, request_audit)
     atomic_json(response_path, response_audit)
-    parsed = parse_annotations(raw_text, expected_ids)
+    parsed = parse_annotations(raw_text, expected_ids, profile)
     atomic_json(parsed_path, parsed)
     return parsed
 
 
 def run(args: argparse.Namespace) -> None:
+    profile = getattr(args, "profile", PROFILE_ORIGINAL)
+    annotation_spec(profile)
     generations = read_jsonl(args.generations)
     if not generations:
         raise ValueError("no generations")
@@ -460,7 +529,8 @@ def run(args: argparse.Namespace) -> None:
         packets = [items[:1]]
         packet_dir = args.out / "smoke"
     else:
-        packets = [items[i : i + PACKET_SIZE] for i in range(0, len(items), PACKET_SIZE)]
+        packet_size = BROAD_PACKET_SIZE if profile == PROFILE_BROAD_JOINT else PACKET_SIZE
+        packets = [items[i : i + packet_size] for i in range(0, len(items), packet_size)]
         packet_dir = args.out / "packets"
         if len(packets) >= 10:
             raise RuntimeError(f"{len(packets)} calls is a volume path; use the dispatcher")
@@ -475,7 +545,7 @@ def run(args: argparse.Namespace) -> None:
         expected_ids = [row_id for row_id, _text in packet]
         if parsed_path.exists():
             parsed = json.loads(parsed_path.read_text(encoding="utf-8"))
-            parsed = parse_annotations(json.dumps(parsed), expected_ids)
+            parsed = parse_annotations(json.dumps(parsed), expected_ids, profile)
         else:
             if args.backend == "anthropic":
                 assert client is not None
@@ -485,6 +555,7 @@ def run(args: argparse.Namespace) -> None:
                     request_path=request_path,
                     response_path=response_path,
                     parsed_path=parsed_path,
+                    profile=profile,
                 )
             else:
                 parsed = call_codex_packet(
@@ -492,6 +563,7 @@ def run(args: argparse.Namespace) -> None:
                     request_path=request_path,
                     response_path=response_path,
                     parsed_path=parsed_path,
+                    profile=profile,
                 )
         all_annotations.extend(parsed)
         print(f"annotated packet {index + 1}/{len(packets)} ({len(packet)} rows)", flush=True)
@@ -504,6 +576,7 @@ def run(args: argparse.Namespace) -> None:
                 "row_id": all_annotations[0]["row_id"],
                 "model": MODEL if args.backend == "anthropic" else CODEX_MODEL,
                 "backend": args.backend,
+                "profile": profile,
                 "parsed": True,
             },
         )
@@ -525,6 +598,7 @@ def run(args: argparse.Namespace) -> None:
             "timestamp_utc": datetime.now(UTC).isoformat(),
             "model": MODEL if args.backend == "anthropic" else CODEX_MODEL,
             "backend": args.backend,
+            "profile": profile,
             "n_rows": len(joined),
             "n_packets": len(packets),
             "all_rows_annotated": True,
@@ -541,6 +615,11 @@ def main() -> None:
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--backend", choices=("anthropic", "codex-cli"), default="anthropic")
+    parser.add_argument(
+        "--profile",
+        choices=(PROFILE_ORIGINAL, PROFILE_BROAD_JOINT),
+        default=PROFILE_ORIGINAL,
+    )
     args = parser.parse_args()
     run(args)
 
