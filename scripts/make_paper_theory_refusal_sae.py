@@ -137,7 +137,7 @@ def make_figure(data: dict) -> tuple[plt.Figure, float]:
         (
             axes[0],
             "A",
-            "READ BY THE MAP",
+            "Read by the map",
             data["components"]["read_by_map"],
             ROLES["linear"].color,
             None,
@@ -145,7 +145,7 @@ def make_figure(data: dict) -> tuple[plt.Figure, float]:
         (
             axes[1],
             "B",
-            "EFFECTIVE KERNEL",
+            "Effective kernel",
             data["components"]["effective_kernel"],
             MUTED,
             "////",
@@ -177,7 +177,7 @@ def make_figure(data: dict) -> tuple[plt.Figure, float]:
             ax,
             letter,
             "MEAN REFUSAL-FLIP DIRECTION",
-            title.title(),
+            title,
             kicker_y=1.18,
             title_y=1.07,
         )
