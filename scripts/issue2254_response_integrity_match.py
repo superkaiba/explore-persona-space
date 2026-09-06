@@ -36,12 +36,12 @@ import scripts.issue2254_preimage as i2254  # noqa: E402
 import scripts.issue2254_revmap8_subagent_grade as runner  # noqa: E402
 
 OUT_REL = Path(
-    "eval_results/issue_2254/response_integrity_matched_steering/codex_subagent_v2"
+    "eval_results/issue_2254/response_integrity_matched_steering/codex_subagent_v3"
 )
 FIG_REL = Path("figures/issue_2254/response_integrity_matched_steering")
-INSTRUMENT_NAME = "codex-subagent-gpt-5.6-sol-low-response-integrity-v2"
+INSTRUMENT_NAME = "codex-subagent-gpt-5.6-sol-low-response-integrity-v3"
 RUBRIC_ID = "coherence"  # Runner compatibility; reported construct is response integrity.
-PROMPT_TEMPLATE_VERSION = "issue2254-response-integrity-batch-v2"
+PROMPT_TEMPLATE_VERSION = "issue2254-response-integrity-batch-v3"
 COMMON_HORIZON_TOKENS = 2048
 N_PASSES = 5
 MAX_ITEMS_PER_JOB = 80
@@ -416,7 +416,7 @@ def build_registry(out_root: Path | str) -> tuple[list[AnalysisItem], dict[str, 
                 raise IntegrityMatchError(f"duplicate effective-seed row {spec.cell_id}/{pair_key}")
             source_id = f"{spec.cell_id}|q{int(qi):02d}|e{effective_seed}"
             opaque_id = "i" + _sha256_text(
-                f"issue2254-response-integrity-v2\0{source_id}"
+                f"issue2254-response-integrity-v3\0{source_id}"
             )[:20]
             if opaque_id in opaque_seen:
                 raise IntegrityMatchError(f"opaque-id collision at {source_id}")
@@ -735,14 +735,30 @@ def _job_specs(
     start = 0
     chunk_index = 0
     while start < len(items):
-        upper = min(start + MAX_ITEMS_PER_JOB, len(items))
-        while upper > start:
-            chosen = items[start:upper]
-            prompt = _prompt(chosen)
-            tokens = runner._count_o200k_tokens(prompt)
-            if tokens <= PROMPT_TOKEN_CAP:
-                break
-            upper -= 1
+        maximum = min(start + MAX_ITEMS_PER_JOB, len(items))
+        maximum_prompt = _prompt(items[start:maximum])
+        maximum_tokens = runner._count_o200k_tokens(maximum_prompt)
+        if maximum_tokens <= PROMPT_TOKEN_CAP:
+            upper = maximum
+            prompt = maximum_prompt
+            tokens = maximum_tokens
+        else:
+            low = start + 1
+            high = maximum - 1
+            upper = start
+            prompt = ""
+            tokens = 0
+            while low <= high:
+                middle = (low + high) // 2
+                candidate_prompt = _prompt(items[start:middle])
+                candidate_tokens = runner._count_o200k_tokens(candidate_prompt)
+                if candidate_tokens <= PROMPT_TOKEN_CAP:
+                    upper = middle
+                    prompt = candidate_prompt
+                    tokens = candidate_tokens
+                    low = middle + 1
+                else:
+                    high = middle - 1
         if upper == start:
             raise IntegrityMatchError(f"one item exceeds prompt cap: {items[start].source_item_id}")
         chosen = items[start:upper]
@@ -891,7 +907,7 @@ def phase_pilot(args) -> None:
     jobs = []
     for pass_index in range(N_PASSES):
         ordered = list(pilot_items)
-        random.Random(f"issue2254-integrity-pilot-v2|{pass_index}").shuffle(ordered)
+        random.Random(f"issue2254-integrity-pilot-v3|{pass_index}").shuffle(ordered)
         jobs.extend(
             _job_specs(
                 scope="pilot",
@@ -966,7 +982,7 @@ def _production_jobs(
     jobs: list[runner.JobSpec] = []
     for pass_index in range(N_PASSES):
         ordered = list(items)
-        random.Random(f"issue2254-integrity-production-v2|{pass_index}").shuffle(ordered)
+        random.Random(f"issue2254-integrity-production-v3|{pass_index}").shuffle(ordered)
         jobs.extend(
             _job_specs(
                 scope="production",
@@ -1052,7 +1068,7 @@ def _test_retest_reliability(
 
 def _bootstrap_indices(behavior: str) -> np.ndarray:
     rng = np.random.default_rng(
-        int(_sha256_text(f"issue2254-integrity-bootstrap-v2|{behavior}")[:16], 16)
+        int(_sha256_text(f"issue2254-integrity-bootstrap-v3|{behavior}")[:16], 16)
     )
     return rng.integers(0, 20, size=(N_BOOTSTRAP, 20))
 
