@@ -1,64 +1,54 @@
 # Editorial and evidence notes
 
-The draft preserves the personal anecdote and develops a narrower argument: cheap construction can produce a convenient but unrepresentative evaluation. It does not equate synthetic provenance with invalidity or establish a particular spurious feature causally.
+The post argues that a convenient evaluation can answer a narrower question than its eventual application. It does not establish that synthetic provenance or a particular superficial feature caused a performance gap.
+
+The current [synthetic comparison](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/synthetic-data-blog-20260906/figures/blog/synthetic-data/01_initial_comparison.png) and [cross-dataset comparison](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/synthetic-data-blog-20260906/figures/blog/synthetic-data/03_followup_datasets.png) both use **Spearman correlation from the same #1739 R2FAIR run**. Their synthetic rows are identical. The [published pooled-versus-within comparison](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/synthetic-data-blog-20260906/figures/blog/synthetic-data/02_pooled_vs_within.png) uses **Pearson correlation**, as explicitly defined in the original paper's Appendix C.2.
+
+The opening previously used an unrelated #779 within-condition Pearson result. That was the wrong source selection for this post. Replacing the underlying data, rather than relabeling the metric, corrects the opening. The obsolete reproduction-gate caveat and the claim that my method was lower on every trait have been removed. In the selected Spearman run, my method's estimates are higher for evil and hallucination and lower for sycophancy. The post does not claim a statistically established ranking from marginal CI overlap.
 
 Suggested outline and paragraph roles:
 
-1. Opening: the convenience of synthetic data and the alternative of finding existing data.
-2. Setup: Persona Vector monitoring and a comparison with my method.
-3. Evidence: the historical, unsuccessful first comparison.
-4. Limitation: explicit trait instructions, and the original paper's own within-condition analysis.
-5. Broader evidence: Chunky Post-Training and the interleaving paper.
+1. Opening: synthetic-data convenience and the alternative of finding existing data.
+2. Setup: Persona Vector monitoring and comparison with my method.
+3. Evidence: performance on the synthetic suite, using Spearman correlation.
+4. Limitation: explicit trait instructions and the original paper's own Pearson analysis within conditions.
+5. Broader evidence: Chunky Post-Training and Mammeri et al.'s interleaving paper.
 6. Recommendation: use automation for discovery and categorization, with auditing.
-7. Optional evidence: later evaluation across datasets, with changed recipes and targets disclosed.
+7. Optional evidence: the same fitted methods on other evaluation datasets.
 
-Consequential edits:
+Presentation and measurement:
 
-- Converted all three figures to grouped bar plots. The comparison legends use “My method,” and the follow-up displays only the two pre-generation methods (22 values across 11 dataset/trait cells). Source-level method identifiers remain in the data for reproducibility.
-
-- Removed “290 citations in 1 year.” A current citation count was not verified and is unnecessary to the argument. The paper was first submitted July 29, 2025.
-- Replaced a general deployment-monitoring assertion with the specific pre-generation, prompt-induced result.
-- Kept a short exact quotation from the monitoring setup; paraphrased the authors' caveat. The quotation has 17 whitespace-delimited tokens including punctuation as counted mechanically; it is below the 25-word quotation limit. Do not expand it by copying the surrounding paragraph.
-- Included the original paper's counterevidence: meaningful within-condition correlations, especially with many-shot prompts. The full paper also evaluates finetuned models on external benchmarks (Appendix B.3) and studies real-world datasets for training (Appendix L). This post addresses the prompt-induced monitoring experiment, not an assertion that the whole paper uses only synthetic data.
-- The first plot uses the stored dot-product mapped readout (`r1_ridge_dot`) to avoid silently changing from a raw projection to a cosine when introducing the map. The older repository presentation used `r1_ridge_cos`; both are in the same source result.
-- The historical #779 artifact's replication gate failed. It is an anecdote about the first attempt, not evidence of failed replication by the original method or of a reliable head-to-head winner.
-- The later #1739 plot is explicitly optional. It covers one fixed result file's non-training datasets, not the complete later research campaign; newer OOD follow-up families exist in other artifacts.
-- No models were called, trained, or judged for this edit. Existing collection recipes are identified as inherited where fresh collection manifests were not checked. The legacy #779 `n_rollouts` summary field actually aliases the number of question-context rows.
+- All three displays use grouped bars. The comparison legends say “My method”; only the two pre-generation methods are displayed. Technical identifiers remain in the source data for reproducibility.
+- The synthetic suite contains 200 contexts per trait: five positive/negative instruction pairs crossed with 20 held-out questions. It is not an exact rerun of the paper's monitoring experiment with eight interpolated system prompts.
+- Our two comparisons use training-frozen layers and Spearman correlations across contexts. Stored 95% intervals resample evaluation contexts at fixed fitted models/layers, not shared prompt/question clusters or training seeds.
+- Coverage is six estimates in the opening and 22 in the cross-dataset comparison: two methods for each of the selected result file's 11 non-training dataset/trait cells. The opening repeats three of those cells. This is a named artifact slice, not the whole later #1739 campaign.
+- The original paper's Table 2 reports six pairs of Pearson estimates, all shown, without CIs. Within-condition correlations exclude conditions whose trait-score SD is below 1. Those statistics should not be numerically equated with our Spearman results.
+- Both methods share each row's evaluation contexts and targets. Across datasets, hallucination NQ-Open/SimpleQA use fabrication rate while the synthetic and WildChat rows use graded trait scores. Held-out Reddit is from a training-source subreddit. WildChat harmfulness has little target variation.
+- Collection-code recipes are identified as inherited where original completion manifests were not checked. No model generation, training, or judging was run for this edit.
+- The original paper acknowledges limitations of pre-generation monitoring and also includes external benchmark validation and real-data experiments elsewhere. This post addresses a particular monitoring setup.
+- Removed the unverified “290 citations in 1 year” claim. The short setup quotation is 17 whitespace-delimited words; the surrounding passage is paraphrased.
 
 Claim–evidence map:
 
 | Claim | Evidence | Status |
 |---|---|---|
-| Initial linear-map estimates were lower for each trait | `stage1_headline.json`, `traits.*.methods.{pv_raw,r1_ridge_dot}.system` | Supported as a descriptive comparison; statistical superiority not claimed |
-| The original monitoring setup uses interpolated trait instructions | Persona Vectors v3, Section 3.3 | Supported |
-| Pooled and within-condition results differ | Persona Vectors v3, Table 2; all six rows transcribed | Supported; varies substantially by trait and setting |
-| Authors discuss the monitoring limitation | Persona Vectors v3, Section 3.3 | Supported; must remain in the post |
-| Post-training data can encode unintended cues | Chunky Post-Training, abstract and main text | Supported |
-| Evaluation prompt length changes measured emergent misalignment | Mammeri et al., abstract reproduced in Mila's publication directory | Supported by primary institutional listing; full OpenReview fetch was blocked |
-| Synthetic wording causes the Persona Vectors generalization gap | No isolating ablation in the figures used here | Not established; explicitly not asserted |
-| Real-data search can partly be automated | Proposed research practice | Recommendation, not a measured result from these experiments |
+| Persona Vectors performs well on the synthetic suite, including evil | result2_fair_points.json, setting=pvsynth, method=pv_context; checked against underlying per-trait all_arms_spearman.json | Supported on this suite |
+| My method's estimate is lower on sycophancy, higher on the other two traits | Same contexts and targets, pv_map_linear versus pv_context | Supported descriptively; no universal method ranking |
+| Original monitoring setup uses interpolated trait instructions | Persona Vectors v3, Section 3.3 | Supported |
+| Pooled and within-condition Pearson results differ | Persona Vectors v3, Table 2; all six rows | Supported; effect varies by setting and trait |
+| Authors discuss monitoring limitations | Persona Vectors v3, Section 3.3 | Supported; retained in the draft |
+| Training data can encode unintended cues | Chunky Post-Training | Supported |
+| Evaluation-prompt length changes measured misalignment | Mammeri et al. abstract in Mila's publication directory | Supported by primary institutional listing; full OpenReview fetch was blocked |
+| Synthetic wording causes the observed generalization gap | No isolating ablation in the displayed results | Not established; not asserted |
 
-Self-review:
+Self-review: the anecdote and recommendation retain their roles; metric names and sample units are explicit; the original paper's counterevidence remains visible; uncertainty is not turned into a causal claim; the plotting code checks that its synthetic rows match the cross-dataset source exactly.
 
-- Contribution: the post offers a data-selection principle illustrated by one investigation; it does not claim a new empirical discovery about the original paper.
-- Writing: the anecdote, original experiment, and later follow-up each have a distinct role and preserve their actual chronology.
-- Experimental strength: the first attempt's failed replication check and uncertainty are explicit. No CI-overlap significance inference is made.
-- Evaluation completeness: all three traits are shown, both prompting regimes are shown for the original paper, and the later selected result file includes all non-training settings. Missing/uninformative conditions are never zero-filled.
-- Method soundness: the post distinguishes explicit behavioral interventions from incidental surface cues; later target and map-recipe changes remain visible.
-
-Reproduction from a full checkout with the existing uv environment:
-
-```bash
-uv run python scripts/plot_synthetic_data_blog.py
-```
-
-The producer reads only the adjacent committed `plot_data.json`. Each output has a PDF, color PNG, grayscale PNG, and metadata with plotted rows, input/output hashes, and style-module provenance. It imports the canonical context-to-answer plotting style.
+Reproduce from a full checkout with the existing uv environment by running uv run python scripts/plot_synthetic_data_blog.py. The producer reads the adjacent plot_data.json and imports the canonical context-to-answer style. Outputs include PDF, color PNG, grayscale PNG, and metadata containing plotted values and input/output hashes. Source paths, SHA-256 hashes, and browser URLs are in the JSON.
 
 Sources:
 
-- [Persona Vectors, v3](https://arxiv.org/html/2507.21509v3)
+- [Persona Vectors v3, Section 3.3](https://arxiv.org/html/2507.21509v3#S3.SS3)
+- [Persona Vectors v3, Appendix C.2](https://arxiv.org/html/2507.21509v3#A3.SS2)
 - [Chunky Post-Training](https://arxiv.org/abs/2602.05910)
 - [When Does Interleaving Prevent Emergent Misalignment?](https://openreview.net/forum?id=DzpyGJQ6dt)
-- [Mila directory: Samy Mammeri, with publication abstracts](https://mila.quebec/en/directory/samy-mammeri)
-
-Search-result caches from this editing session: `/tmp/synthetic-benchmark-sources.json` and `/tmp/samy-mammeri-sources.json`. They are discovery aids; scientific claims above cite the primary sources, not search snippets as standalone evidence.
+- [Mila directory with Samy Mammeri's publication abstracts](https://mila.quebec/en/directory/samy-mammeri)

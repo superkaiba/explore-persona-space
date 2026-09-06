@@ -94,6 +94,15 @@ def export(fig, name, title, rows, note, data):
 def first_comparison(data):
     rows = data["initial_comparison"]
     assert len(rows) == 6
+    for row in rows:
+        (shared,) = [
+            r
+            for r in data["followup_comparison"]
+            if r["setting"] == "pvsynth"
+            and r["trait"] == row["trait"]
+            and r["method"] == row["method"]
+        ]
+        assert (row["point"], row["lo"], row["hi"]) == (shared["rho"], *shared["ci"])
     fig, _ = c2a_figure("full", aspect=0.47)
     ax = fig.add_axes([0.24, 0.28, 0.70, 0.50])
     for i, trait in enumerate(TRAITS):
@@ -114,15 +123,15 @@ def first_comparison(data):
             )
     ax.set_yticks([2, 1, 0], [LABELS[t] for t in TRAITS])
     ax.set_ylim(-0.5, 2.55)
-    ax.set_xlim(-0.45, 0.85)
-    ax.set_xticks(np.arange(-0.4, 0.81, 0.2))
-    ax.set_xlabel("Mean within-prompt Pearson r  ↑")
+    ax.set_xlim(0, 1)
+    ax.set_xticks(np.arange(0, 1.01, 0.2))
+    ax.set_xlabel("Spearman ρ with response score  ↑")  # noqa: RUF001
     style_axis(ax, grid_axis="x")
     ax.axvline(0, color=MUTED, linewidth=1)
     fig.text(
         0.04,
         0.95,
-        "My first comparison on synthetic prompts",
+        "Predicting traits on synthetic prompts",
         fontsize=24,
         color=INK,
         weight="bold",
@@ -131,15 +140,15 @@ def first_comparison(data):
     fig.text(
         0.04,
         0.055,
-        "Historical run · Qwen2.5-7B-Instruct · 95% condition-bootstrap intervals\n"
-        "4 / 8 / 8 informative system prompts; the replication check did not pass.",
+        "Qwen2.5-7B-Instruct · 200 contexts per trait\n"
+        "Correlation across contexts · 95% context-bootstrap intervals",
         color=MUTED,
         fontsize=15,
     )
     export(
         fig,
         "01_initial_comparison",
-        "My first comparison on synthetic prompts",
+        "Predicting traits on synthetic prompts",
         rows,
         data["initial_notes"],
         data,
@@ -219,7 +228,7 @@ def paper_correlations(data):
         0.04,
         0.055,
         "Source: Persona Vectors, Appendix C.2, Table 2 (v3).\n"
-        "Published point estimates; no confidence intervals reported in the table.",
+        "Published Pearson correlations; no confidence intervals reported in the table.",
         fontsize=15,
         color=MUTED,
     )
@@ -278,13 +287,18 @@ def transfer(data):
         if trait == "hallucination":
             ax.set_xlabel("Spearman ρ with response score  ↑")  # noqa: RUF001
     fig.text(
-        0.04, 0.96, "A later test across evaluation datasets", fontsize=24, color=INK, weight="bold"
+        0.04,
+        0.96,
+        "Predicting traits across evaluation datasets",
+        fontsize=24,
+        color=INK,
+        weight="bold",
     )
     legend(fig, ["pv", "map"], 0.91)
     fig.text(
         0.04,
         0.025,
-        "Later experiment · 95% context-bootstrap intervals\n"
+        "Same experiment as the synthetic comparison · 95% context-bootstrap intervals\n"
         "*NQ-Open / SimpleQA measure fabrication rate; other rows use graded trait scores.",
         color=MUTED,
         fontsize=14,
@@ -292,7 +306,7 @@ def transfer(data):
     export(
         fig,
         "03_followup_datasets",
-        "A later test across evaluation datasets",
+        "Predicting traits across evaluation datasets",
         rows,
         data["followup_notes"],
         data,

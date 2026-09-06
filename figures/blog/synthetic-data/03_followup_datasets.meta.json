@@ -1,5 +1,5 @@
 {
-  "title": "A later test across evaluation datasets",
+  "title": "Predicting traits across evaluation datasets",
   "rows": [
     {
       "behavior": "evil",
@@ -442,13 +442,8 @@
       "trait": "hallucination"
     }
   ],
-  "notes": "FAIR: map + whitening = ADD/union (generic WildChat pool + eliciting train pairs), fit once per map kind (linear / MLP) on one shared whitening; the label-consuming readouts (arms 4/7/19) train on the eliciting train budget cell UNION the judged WildChat train split (sha1 mod-5 bucket 4 held out); the projection arms are label-free and share the whitening + eval subsets; pvsynth judged data enters only through r_B (recorded deviation for the regression/MLP readouts) Fixed #1739 R2FAIR artifact slice: all 11 non-train settings x 2 displayed methods, 22/22 cells; this is not the entire later #1739 experimental campaign. Generic WildChat plus eliciting training pairs; differs from the historical LMSYS-only map. Context-end, E1 direction; layers frozen from training, map_kind linear. Within each dataset all methods have the same evaluation targets and n; no method averaging. Stored 95% paired bootstrap CIs resample evaluation contexts at fixed fitted model/selected layer, not prompt/question clusters; no training-seed uncertainty. Synthetic n=200 uses 5 instruction pairs x2 signs x20 held-out questions, not the paper monitoring experiment of eight interpolated prompts. Source-inherited on-policy recipe: 5 responses per context, temperature1, max_new_tokens1024 (top_p not explicitly pinned in collection code); banked Sonnet4.5 judge, 3 intended draws with rejudge recovery. Sampling recipe not independently reverified from every completion manifest. Hallucination NQ-Open/SimpleQA use fabrication rate, not the graded trait score in other rows. WildChat harmfulness target has little spread. Held-out Reddit row is r/socialskills from a source also present in training, not a new-domain test. No causal attribution to surface shortcuts follows from these differences.",
+  "notes": "FAIR: map + whitening = ADD/union (generic WildChat pool + eliciting train pairs), fit once per map kind (linear / MLP) on one shared whitening; the label-consuming readouts (arms 4/7/19) train on the eliciting train budget cell UNION the judged WildChat train split (sha1 mod-5 bucket 4 held out); the projection arms are label-free and share the whitening + eval subsets; pvsynth judged data enters only through r_B (recorded deviation for the regression/MLP readouts) Fixed #1739 R2FAIR artifact slice: all 11 non-train settings x 2 displayed methods, 22/22 cells; this is not the entire later #1739 experimental campaign. Generic WildChat plus eliciting training pairs; the synthetic rows are identical to the opening comparison. Context-end, E1 direction; layers frozen from training, map_kind linear. Within each dataset all methods have the same evaluation targets and n; no method averaging. Stored 95% paired bootstrap CIs resample evaluation contexts at fixed fitted model/selected layer, not prompt/question clusters; no training-seed uncertainty. Synthetic n=200 uses 5 instruction pairs x2 signs x20 held-out questions, not the paper monitoring experiment of eight interpolated prompts. Source-inherited on-policy recipe: 5 responses per context, temperature1, max_new_tokens1024 (top_p not explicitly pinned in collection code); banked Sonnet4.5 judge, 3 intended draws with rejudge recovery. Sampling recipe not independently reverified from every completion manifest. Hallucination NQ-Open/SimpleQA use fabrication rate, not the graded trait score in other rows. WildChat harmfulness target has little spread. Held-out Reddit row is r/socialskills from a source also present in training, not a new-domain test. No causal attribution to surface shortcuts follows from these differences.",
   "sources": [
-    {
-      "path": "eval_results/issue_779/stage1_headline.json",
-      "sha256": "b7fe223ccdad6ebd877aa67875c1dd8932153ba191c335c84c62f953bb0f9b6a",
-      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/2e0334134f8865a4ee07fb8e6bed93f7fcc36e9a/eval_results/issue_779/stage1_headline.json"
-    },
     {
       "path": "eval_results/issue_1739/result2_fair/result2_fair_points.json",
       "sha256": "de01583c4ccdf137d618462485d8ccc6f39f5c2dc43c7425c67b96ab73813a50",
@@ -485,7 +480,7 @@
     ],
     "exported_size_inches": [
       13.095,
-      12.574
+      12.584
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -518,18 +513,18 @@
       "SimpleQA*  (n=4,021)",
       "WildChat conversations  (n=411)",
       "Hallucination",
-      "A later test across evaluation datasets",
-      "Later experiment \u00b7 95% context-bootstrap intervals\n*NQ-Open / SimpleQA measure fabrication rate; other rows use graded trait scores.",
+      "Predicting traits across evaluation datasets",
+      "Same experiment as the synthetic comparison \u00b7 95% context-bootstrap intervals\n*NQ-Open / SimpleQA measure fabrication rate; other rows use graded trait scores.",
       "Persona Vector on context",
       "My method"
     ]
   },
-  "input_sha256": "7bf01d357c3cea206c5c0c4077a3aaeaff02be7b645d9d599a2dcad05bd818e8",
-  "producer_sha256": "3d4cee8f16881b553a2aa89051751dd5d82abed66f1fa166e43be7f41ad9889a",
+  "input_sha256": "ee53f85a79c8cdc5e151b52f58a30c1de7173fa19e3ff519789e1a08e110b338",
+  "producer_sha256": "0c3e2df6b3f87ba048ff4c83a8ce7f915d716b835ddca3a2694e3478d3bef093",
   "style_module_sha256": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1",
   "output_sha256": {
-    "pdf": "eea87e1d893b380c7fae27938902e089dfca157a3018c395482aca58b680d62d",
-    "png": "822bd0642d98c3b98db1db400ebae6ae9ba9f8868d24bcb6fb0e97fe19ebb2f9",
-    "grayscale": "79ed326146d0fafef2b4cdbf1ca0dc6f3f7459a4d3583fa137cf091b4f0e5f9a"
+    "pdf": "815f9ac4691d98eac64252859cd28ebebdcd1a289568cbcbf2d43b74d8095e84",
+    "png": "931df627d2d573f194bfaaadd471b14f8b5198ced88d06eef80277a77002c837",
+    "grayscale": "5ebc46a4f408ec8e0d2daf950713602382da73b04ba3f0cc819164144b87d785"
   }
 }

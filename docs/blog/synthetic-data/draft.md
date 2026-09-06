@@ -18,13 +18,13 @@ I wanted to see how a method I'd been working on compared on the same test.
 
 Naturally, being an avid vibecoder, I asked Claude to implement the comparison.
 
-When I looked at the first results, I was disappointed.
+The synthetic-data results were disappointing, especially for sycophancy.
 
-![Initial synthetic system-prompt comparison](https://raw.githubusercontent.com/superkaiba/explore-persona-space/46db43164dd4ebdccb5dfffe0e4c34d9f71c2a28/figures/blog/synthetic-data/01_initial_comparison.png)
+![Synthetic-data Spearman comparison](https://raw.githubusercontent.com/superkaiba/explore-persona-space/46db43164dd4ebdccb5dfffe0e4c34d9f71c2a28/figures/blog/synthetic-data/01_initial_comparison.png)
 
-*An initial comparison on Qwen2.5-7B-Instruct. Both methods predict the same judged response scores. My method was trained on a separate bank of LMSYS contexts and model-generated answers. Bars show mean Pearson correlation within informative system prompts; error bars show stored 95% intervals from resampling prompt conditions. Four of eight evil conditions and all eight conditions for each other trait contributed. This attempt did not pass its baseline replication check. Collection-code recipe, not independently verified from every run manifest: 10 on-policy responses per context, temperature 1, top-p 0.95, 1,024-token cap; banked Sonnet 4.5 judgments. [Data and provenance](plot_data.json)*
+*Qwen2.5-7B-Instruct, with both methods predicting the same judged response scores. Bars show Spearman correlation across 200 synthetic contexts per trait; error bars are stored 95% intervals from resampling contexts at fixed models and layers. These are the synthetic rows from the same experiment shown below. My method used generic WildChat plus behavior-eliciting training pairs. The synthetic suite crosses five positive/negative instruction pairs with 20 held-out questions; it differs from the paper's eight-prompt monitoring experiment. Collection-code recipe, not independently reverified from every manifest: five on-policy responses per context, temperature 1, 1,024-token cap, top-p unspecified in code; banked Sonnet 4.5 judgments. [Data and provenance](plot_data.json)*
 
-My method's point estimate was lower for each trait. I'm not treating that ordering as a statistically established ranking. It was enough to make me look more closely at what the experiment was actually asking the methods to predict.
+Persona Vectors performed well on this synthetic suite. My method's point estimates were a little higher for evil and hallucination, but much lower for sycophancy. That made me look more closely at what the evaluation was asking the methods to predict.
 
 Here is the relevant part of the paper's monitoring setup:
 
@@ -34,7 +34,7 @@ Here is the relevant part of the paper's monitoring setup:
 
 That is a sensible controlled experiment. But an explicit instruction to display a trait supplies a strong signal. Predicting the behavioral difference between two such instructions is different from predicting which ordinary user request will elicit the behavior under the same system prompt.
 
-The authors examine this distinction themselves. Their appendix reports correlations both across all conditions and within each condition. [Appendix C.2](https://arxiv.org/html/2507.21509v3#A3.SS2)
+The authors examine this distinction themselves. Their appendix reports Pearson correlations both across all conditions and within each condition. These are the paper's statistics, distinct from the Spearman correlations in our comparison. [Appendix C.2](https://arxiv.org/html/2507.21509v3#A3.SS2)
 
 ![Published pooled and within-condition correlations](https://raw.githubusercontent.com/superkaiba/explore-persona-space/46db43164dd4ebdccb5dfffe0e4c34d9f71c2a28/figures/blog/synthetic-data/02_pooled_vs_within.png)
 
@@ -44,7 +44,7 @@ The drop is especially large for hallucination under system prompting. Other res
 
 So I don't think this establishes that persona vectors merely detect superficial wording. Trait-promoting instructions can genuinely cause trait-promoting behavior. The concern is the gap between the behavior the evaluation makes easy to detect and the behavior we eventually want to detect.
 
-The initial comparison above already uses within-prompt correlations, so pooling cannot explain that result by itself. There are also reproduction differences to resolve. I would treat it as the reason I investigated, rather than evidence that the paper's result is invalid.
+Our synthetic-suite comparison pools contexts across trait instructions. It therefore does not isolate prediction under a fixed instruction. The paper's within-condition analysis asks that narrower question, though it uses a different prompting setup and correlation statistic.
 
 This is the broader reason I worry about reaching for synthetic data by default. Training and evaluation can both inherit unintended regularities. During training, a model can learn the wrong cue. During evaluation, a method can succeed by exploiting a cue that will be absent when we use it elsewhere.
 
@@ -60,14 +60,14 @@ Synthetic data remains useful for controlled interventions and for cases where s
 
 **Optional continuation: what happened on other datasets?**
 
-In a later experiment, I compared Persona Vectors with my method across several evaluation datasets.
+I also looked at the other evaluation datasets in the same experiment.
 
-![Later comparison across evaluation datasets](https://raw.githubusercontent.com/superkaiba/explore-persona-space/46db43164dd4ebdccb5dfffe0e4c34d9f71c2a28/figures/blog/synthetic-data/03_followup_datasets.png)
+![Spearman comparison across evaluation datasets](https://raw.githubusercontent.com/superkaiba/explore-persona-space/46db43164dd4ebdccb5dfffe0e4c34d9f71c2a28/figures/blog/synthetic-data/03_followup_datasets.png)
 
-*A separate Qwen2.5-7B-Instruct experiment, with my method trained on generic WildChat plus behavior-eliciting training pairs. Both methods share each row's contexts and response-score targets. This includes every non-training dataset in the selected R2FAIR result file: 11 datasets-by-trait cells, with two methods each. Error bars are stored 95% intervals from resampling evaluation contexts at fixed fitted models and layers; they do not quantify training-seed variation or uncertainty over shared prompt templates. Source-code recipe: five on-policy responses per context, temperature 1, 1,024-token cap, banked Sonnet 4.5 judgments; top-p is not pinned by the collection code. These settings have not been independently verified against every completion manifest. [Data and full qualifications](plot_data.json)*
+*The same Qwen2.5-7B-Instruct experiment, with my method trained on generic WildChat plus behavior-eliciting training pairs. Both methods share each row's contexts and response-score targets. This includes every non-training dataset in the selected R2FAIR result file: 11 datasets-by-trait cells, with two methods each. Error bars are stored 95% intervals from resampling evaluation contexts at fixed fitted models and layers; they do not quantify training-seed variation or uncertainty over shared prompt templates. Source-code recipe: five on-policy responses per context, temperature 1, 1,024-token cap, banked Sonnet 4.5 judgments; top-p is not pinned by the collection code. These settings have not been independently verified against every completion manifest. [Data and full qualifications](plot_data.json)*
 
 Direct context projection is much weaker on several of these datasets than on the synthetic prompts. My method does better in several cases, but it is not a universal fix. For example, on NQ-Open its correlation is slightly negative, and both methods correlate weakly with sycophancy scores in WildChat.
 
-There are important qualifications. The NQ-Open and SimpleQA rows measure fabrication rate, whereas the synthetic and WildChat hallucination rows use graded trait scores. The held-out Reddit set comes from a source also used in training. Harmful behavior is rare in the WildChat sample, limiting the variation available to predict. Finally, this is a later version of my method and a different synthetic suite, so it should not be read as a direct rerun of the opening comparison.
+There are important qualifications. The NQ-Open and SimpleQA rows measure fabrication rate, whereas the synthetic and WildChat hallucination rows use graded trait scores. The held-out Reddit set comes from a source also used in training. Harmful behavior is rare in the WildChat sample, limiting the variation available to predict. The synthetic rows repeat the opening comparison, using the same fitted methods, targets, and Spearman metric.
 
 This motivates evaluation on several relevant distributions. It does not isolate synthetic wording as the cause of any performance gap.
