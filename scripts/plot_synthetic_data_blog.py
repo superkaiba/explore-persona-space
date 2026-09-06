@@ -132,7 +132,7 @@ def first_comparison(data):
     fig.text(
         0.04,
         0.95,
-        "Predicting traits on synthetic prompts",
+        "Predicting traits",
         fontsize=24,
         color=INK,
         weight="bold",
@@ -149,7 +149,7 @@ def first_comparison(data):
     export(
         fig,
         "01_initial_comparison",
-        "Predicting traits on synthetic prompts",
+        "Predicting traits",
         rows,
         data["initial_notes"],
         data,
