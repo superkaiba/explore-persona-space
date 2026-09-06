@@ -8,6 +8,107 @@ import numpy as np
 import scripts.context_risk_analyze as analyze
 
 
+def test_frequency_weighted_fit_matches_expanded_logistic_objective():
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.preprocessing import StandardScaler
+
+    rng = np.random.default_rng(17)
+    # Cover both narrow and activation-like wide feature matrices.
+    for width in (3, 120):
+        x = rng.normal(size=(4, width)).astype(np.float32)
+        rows = _rows()
+        expanded, labels, _ = analyze._expand_binomial(x, rows, np.arange(4))
+        scaler = StandardScaler().fit(expanded)
+        for c_value in (1e-4, 0.01, 1.0):
+            reference = LogisticRegression(
+                C=c_value,
+                solver="liblinear",
+                dual=False,
+                tol=1e-8,
+                max_iter=5000,
+                random_state=analyze.SEED,
+            ).fit(scaler.transform(expanded), labels)
+            observed = analyze._fit_predict_logistic(expanded, labels, x, c_value=c_value)
+            np.testing.assert_allclose(
+                observed, reference.predict_proba(scaler.transform(x))[:, 1], atol=2e-6
+            )
+
+
+def test_vectorized_cluster_bootstrap_matches_seeded_serial_reference():
+    rows = [*_rows(), {"task_id": "a", "positive": 1, "negative": 7}]
+    candidate = np.asarray([0.7, 0.1, 0.4, 0.3, 0.2])
+    baseline = np.repeat(0.3, len(rows))
+    rng = np.random.default_rng(analyze.SEED)
+    tasks = np.asarray(sorted({row["task_id"] for row in rows}))
+    differences = []
+    for _ in range(100):
+        sampled = rng.choice(tasks, size=len(tasks), replace=True)
+        indices = np.asarray(
+            [i for task in sampled for i, row in enumerate(rows) if row["task_id"] == task]
+        )
+        sampled_rows = [rows[i] for i in indices]
+        differences.append(
+            analyze.binomial_log_loss(sampled_rows, candidate[indices])
+            - analyze.binomial_log_loss(sampled_rows, baseline[indices])
+        )
+    observed = analyze.clustered_bootstrap_log_loss_delta(rows, candidate, baseline, replicates=100)
+    np.testing.assert_allclose(
+        [observed["ci95_low"], observed["ci95_high"]],
+        np.quantile(differences, [0.025, 0.975]),
+        atol=1e-14,
+    )
+
+
+def test_grouped_outer_folds_checkpoint_and_resume(tmp_path):
+    rows = [*_rows(), {"task_id": "a", "positive": 1, "negative": 3}]
+    features = np.arange(10, dtype=np.float32).reshape(5, 2)
+    predictions, folds = analyze.leave_one_task_out_predictions(
+        features, rows, checkpoint_dir=tmp_path
+    )
+    assert folds[0]["n_test_contexts"] == 2
+    assert folds[0]["n_train_rollouts"] == 12
+    repeated, repeated_folds = analyze.leave_one_task_out_predictions(
+        features, rows, checkpoint_dir=tmp_path
+    )
+    np.testing.assert_array_equal(predictions, repeated)
+    assert folds == repeated_folds
+
+
+def test_misalignment_framing_keeps_latent_swap_aliases_together(tmp_path):
+    records = []
+    contexts = []
+    for index, goal in enumerate(("latent", "swap", "explicit")):
+        exact_hash = "shared" if index < 2 else "different"
+        records.append(
+            {
+                "condition_id": goal,
+                "goal_type": goal,
+                "exact_context_sha256": exact_hash,
+                "messages": [{"role": "user", "content": exact_hash}],
+            }
+        )
+        contexts.append(
+            {
+                "condition_id": goal,
+                "exact_context_sha256": exact_hash,
+                "n_positive": 1,
+                "n_negative": 3,
+            }
+        )
+    path = tmp_path / "manifest.jsonl"
+    path.write_text("\n".join(json.dumps(row) for row in records))
+    rows, _ = analyze.prepare_misalignment_rows(
+        {"contexts": contexts},
+        {key: {"n_prefix_tokens": 10} for key in ("shared", "different")},
+        path,
+        group_axis="goal_framing",
+    )
+    assert len(rows) == 2
+    implicit = next(row for row in rows if row["task_id"] == "latent_or_swap")
+    assert implicit["condition_ids"] == ["latent", "swap"]
+    assert implicit["positive"] == 2
+
+
 def _rows():
     return [
         {"task_id": "a", "positive": 3, "negative": 1},

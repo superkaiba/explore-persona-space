@@ -9,6 +9,8 @@ import json
 import math
 import os
 import tempfile
+import time
+import warnings
 from pathlib import Path
 from typing import Any
 
@@ -201,21 +203,39 @@ def _fit_predict_logistic(
 ) -> np.ndarray:
     from sklearn.linear_model import LogisticRegression
     from sklearn.preprocessing import StandardScaler
+    from sklearn.exceptions import ConvergenceWarning
 
     if len(np.unique(y_train)) < 2:
         probability = (float(y_train.sum()) + 0.5) / (len(y_train) + 1.0)
         return np.full(len(x_eval), probability, dtype=np.float64)
-    scaler = StandardScaler()
-    train = scaler.fit_transform(x_train)
+    # Binomial expansion repeats the identical feature/label pair contiguously.
+    # Collapse these runs with frequency weights: this preserves both the
+    # standardization and the summed logistic objective, without the huge dual
+    # optimization over repeated observations.
+    starts = np.r_[
+        0,
+        1
+        + np.flatnonzero(
+            (y_train[1:] != y_train[:-1]) | np.any(x_train[1:] != x_train[:-1], axis=1)
+        ),
+    ]
+    weights = np.diff(np.r_[starts, len(y_train)])
+    unique_x = x_train[starts]
+    unique_y = y_train[starts]
+    scaler = StandardScaler().fit(unique_x, sample_weight=weights)
+    train = scaler.transform(unique_x)
     evaluation = scaler.transform(x_eval)
     model = LogisticRegression(
         C=float(c_value),
         solver="liblinear",
-        dual=train.shape[1] > train.shape[0],
+        dual=False,
         max_iter=5000,
+        tol=1e-8,
         random_state=SEED,
     )
-    model.fit(train, y_train)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", ConvergenceWarning)
+        model.fit(train, unique_y, sample_weight=weights)
     return model.predict_proba(evaluation)[:, 1]
 
 
@@ -260,6 +280,8 @@ def _select_c(
 def leave_one_task_out_predictions(
     features: np.ndarray,
     rows: list[dict[str, Any]],
+    *,
+    checkpoint_dir: Path | None = None,
 ) -> tuple[np.ndarray, list[dict[str, Any]]]:
     features = np.asarray(features, dtype=np.float32)
     if features.ndim != 2 or len(features) != len(rows):
@@ -267,7 +289,8 @@ def leave_one_task_out_predictions(
     tasks = sorted({str(row["task_id"]) for row in rows})
     predictions = np.full(len(rows), np.nan, dtype=np.float64)
     fold_reports = []
-    for task_id in tasks:
+    for fold_index, task_id in enumerate(tasks):
+        started = time.monotonic()
         test_indices = np.asarray(
             [index for index, row in enumerate(rows) if row["task_id"] == task_id],
             dtype=np.int64,
@@ -276,6 +299,16 @@ def leave_one_task_out_predictions(
             [index for index, row in enumerate(rows) if row["task_id"] != task_id],
             dtype=np.int64,
         )
+        checkpoint = (
+            None if checkpoint_dir is None else checkpoint_dir / f"fold_{fold_index:03d}.json"
+        )
+        if checkpoint is not None and checkpoint.exists():
+            saved = json.loads(checkpoint.read_text())
+            if saved["fold"]["held_out_task_id"] != task_id:
+                raise RuntimeError(f"checkpoint grouping drift: {checkpoint}")
+            predictions[test_indices] = saved["predictions"]
+            fold_reports.append(saved["fold"])
+            continue
         selected_c = _select_c(features, rows, train_indices)
         x_train, y_train, _groups = _expand_binomial(features, rows, train_indices)
         predictions[test_indices] = _fit_predict_logistic(
@@ -291,6 +324,15 @@ def leave_one_task_out_predictions(
                 "n_train_rollouts": int(len(y_train)),
                 "n_test_contexts": int(len(test_indices)),
             }
+        )
+        if checkpoint is not None:
+            _write_json_atomic(
+                checkpoint,
+                {"fold": fold_reports[-1], "predictions": predictions[test_indices].tolist()},
+            )
+        print(
+            f"[fit] fold {fold_index + 1}/{len(tasks)} {task_id} elapsed={time.monotonic() - started:.2f}s",
+            flush=True,
         )
     if not np.isfinite(predictions).all():
         raise RuntimeError("cross-fitting left missing predictions")
@@ -345,15 +387,18 @@ def clustered_bootstrap_log_loss_delta(
         )
         for task in tasks
     }
-    deltas = np.empty(replicates, dtype=np.float64)
-    for replicate in range(replicates):
-        sampled_tasks = rng.choice(tasks, size=len(tasks), replace=True)
-        sampled_indices = np.concatenate([indices_by_task[task] for task in sampled_tasks])
-        sampled_rows = [rows[int(index)] for index in sampled_indices]
-        deltas[replicate] = binomial_log_loss(
-            sampled_rows,
-            candidate[sampled_indices],
-        ) - binomial_log_loss(sampled_rows, baseline[sampled_indices])
+    positive = np.asarray([row["positive"] for row in rows], dtype=float)
+    negative = np.asarray([row["negative"] for row in rows], dtype=float)
+    candidate = np.clip(candidate, 1e-6, 1 - 1e-6)
+    baseline = np.clip(baseline, 1e-6, 1 - 1e-6)
+    difference = positive * np.log(baseline / candidate) + negative * np.log(
+        (1 - baseline) / (1 - candidate)
+    )
+    group_difference = np.asarray([difference[indices_by_task[task]].sum() for task in tasks])
+    group_size = np.asarray([(positive + negative)[indices_by_task[task]].sum() for task in tasks])
+    # Same seeded cluster draws as the original loop, reduced once per cluster.
+    sampled = rng.integers(len(tasks), size=(replicates, len(tasks)))
+    deltas = group_difference[sampled].sum(axis=1) / group_size[sampled].sum(axis=1)
     point = binomial_log_loss(rows, candidate) - binomial_log_loss(rows, baseline)
     return {
         "delta": float(point),
@@ -411,6 +456,8 @@ def prepare_misalignment_rows(
     misalignment_result: dict[str, Any],
     activation_metadata: dict[str, dict[str, Any]],
     manifest_path: Path,
+    *,
+    group_axis: str = "exact_context_sha256",
 ) -> tuple[list[dict[str, Any]], list[str]]:
     """Aggregate rollout outcomes at the unique visible-prefix grain."""
 
@@ -455,6 +502,22 @@ def prepare_misalignment_rows(
         row["negative"] += int(context["n_negative"])
         row["censored"] += int(context.get("n_censored", 0))
     rows = [aggregated[key] for key in sorted(aggregated)]
+    if group_axis != "exact_context_sha256":
+        for row in rows:
+            groups = set()
+            for condition in row["condition_ids"]:
+                record = manifest_by_condition[condition]
+                group = str(
+                    record["goal_type"] if group_axis == "goal_framing" else record[group_axis]
+                )
+                # Latent and swap aliases include byte-identical prompts and
+                # must never straddle train/test, even in a framing-held-out fit.
+                if group_axis == "goal_framing" and group in {"latent", "swap"}:
+                    group = "latent_or_swap"
+                groups.add(group)
+            if len(groups) != 1:
+                raise RuntimeError(f"duplicate prefix straddles {group_axis} groups")
+            row["task_id"] = groups.pop()
     texts = [texts_by_hash[row["exact_context_sha256"]] for row in rows]
     if sum(row["censored"] for row in rows):
         raise RuntimeError("misalignment prediction rows still contain censored outcomes")
@@ -469,6 +532,7 @@ def predictor_bakeoff(
     metadata: np.ndarray,
     *,
     cluster_label: str,
+    checkpoint_root: Path | None = None,
 ) -> dict[str, Any]:
     """Cross-fit the frozen predictor ladder on one grouped outcome table."""
 
@@ -495,7 +559,11 @@ def predictor_bakeoff(
     predictions = {"prevalence": leave_one_task_out_prevalence(rows)}
     fold_reports = {}
     for name, features in feature_sets.items():
-        predictions[name], fold_reports[name] = leave_one_task_out_predictions(features, rows)
+        predictions[name], fold_reports[name] = leave_one_task_out_predictions(
+            features,
+            rows,
+            checkpoint_dir=None if checkpoint_root is None else checkpoint_root / name,
+        )
     models = {
         name: {
             "metrics": classification_metrics(rows, probability),
@@ -582,6 +650,12 @@ def _format_report(report: dict[str, Any]) -> str:
         )
     if misalignment:
         lines.extend(["", "### Misaligned action", ""])
+        lines.append(
+            f"Split: `{report['analysis_protocol']['outer_split']['misaligned_action']}`; "
+            f"groups: {misalignment.get('n_groups', 'not fit')}; "
+            f"metadata: `{report['analysis_protocol']['misalignment_metadata']}`."
+        )
+        lines.append("")
         if misalignment["prediction_status"] != "completed":
             lines.append(
                 "Prediction was not fit because the frozen misaligned-action prevalence and "
@@ -607,8 +681,19 @@ def _format_report(report: dict[str, Any]) -> str:
                     "",
                     "Misaligned-action raw-activation-minus-text log-loss contrast: "
                     f"{contrast['delta']:.4f} "
-                    f"(exact-prefix-cluster 95% CI {contrast['ci95_low']:.4f}, "
+                    f"({contrast['cluster']}-cluster 95% CI {contrast['ci95_low']:.4f}, "
                     f"{contrast['ci95_high']:.4f}).",
+                ]
+            )
+            mapping = misalignment["mapping_contrast"]
+            lines.extend(
+                [
+                    "",
+                    "Mapped-minus-raw log-loss contrast: "
+                    f"{mapping['delta']:.4f} (95% CI {mapping['ci95_low']:.4f}, {mapping['ci95_high']:.4f}).",
+                    "Intervals resample fixed out-of-fold predictions; they do not refit models. "
+                    "All prompts are from one information-leak scenario. Structured-fold checks are "
+                    "exploratory, with only three or four groups.",
                 ]
             )
     lines.extend(
@@ -624,6 +709,36 @@ def _format_report(report: dict[str, Any]) -> str:
 
 
 def run_analysis(args: argparse.Namespace) -> dict[str, Any]:
+    group_axis = getattr(args, "misalignment_group_axis", "exact_context_sha256")
+    metadata_mode = getattr(args, "misalignment_metadata", "length")
+    # Cache namespaces bind immutable input files, code, dependencies and every
+    # analysis option; do not hash recomputed floating-point features.
+    import importlib.metadata
+
+    input_paths = [args.impossible_result, args.impossible_manifest, args.map_artifact]
+    for key in ("misalignment_result", "misalignment_manifest"):
+        path = getattr(args, key, None)
+        if path is not None:
+            input_paths.append(path)
+    for key, pattern in (
+        ("misalignment_rollout_root", "context_*/*"),
+        ("impossible_capture_root", "chunk_*"),
+    ):
+        root = getattr(args, key, None)
+        if root is not None:
+            input_paths.extend(path for path in root.glob(pattern) if path.is_file())
+    reproducibility = {
+        "source_sha256": _sha256(Path(__file__)),
+        "input_hashes": {str(path): _sha256(path) for path in input_paths},
+        "selected_layer": args.selected_layer,
+        "misalignment_group_axis": group_axis,
+        "misalignment_metadata": metadata_mode,
+        "versions": {
+            name: importlib.metadata.version(name) for name in ("numpy", "scipy", "scikit-learn")
+        },
+    }
+    cache_key = hashlib.sha256(json.dumps(reproducibility, sort_keys=True).encode()).hexdigest()
+    checkpoint_root = args.output_dir / "checkpoints" / cache_key
     impossible_result = json.loads(args.impossible_result.read_text(encoding="utf-8"))
     gate = impossible_result["reward_hacking_prevalence_gate"]
     execution_integrity = {
@@ -703,6 +818,7 @@ def run_analysis(args: argparse.Namespace) -> dict[str, Any]:
             mapped,
             metadata,
             cluster_label="base_task_id",
+            checkpoint_root=checkpoint_root / "reward_hacking",
         )
         activation_signal = bool(bakeoff["activation_signal_detected"])
         mapping_signal = bool(bakeoff["mapping_signal_detected"])
@@ -735,6 +851,7 @@ def run_analysis(args: argparse.Namespace) -> dict[str, Any]:
             misalignment_source,
             misalignment_activation_metadata,
             misalignment_manifest,
+            group_axis=group_axis,
         )
         misalignment_hashes = [row["exact_context_sha256"] for row in misalignment_rows]
         misalignment_raw = np.stack(
@@ -745,13 +862,37 @@ def run_analysis(args: argparse.Namespace) -> dict[str, Any]:
             [[math.log1p(float(row["n_prefix_tokens"]))] for row in misalignment_rows],
             dtype=np.float32,
         )
+        if metadata_mode == "conditions":
+            manifest_records = [
+                json.loads(line) for line in misalignment_manifest.read_text().splitlines() if line
+            ]
+            manifest_by_id = {row["condition_id"]: row for row in manifest_records}
+            conditions = []
+            for row in misalignment_rows:
+                record = manifest_by_id[row["condition_ids"][0]]
+                framing = record["goal_type"]
+                conditions.append(
+                    [
+                        float(framing == "ambiguous"),
+                        float(framing == "explicit"),
+                        float(framing in {"latent", "swap"}),
+                        float(record["goal_value"] == "acceleration"),
+                        float(record["goal_value"] == "safety"),
+                        float(record["urgency_type"] == "replacement"),
+                        float(record["urgency_type"] == "restriction"),
+                    ]
+                )
+            misalignment_metadata = np.column_stack(
+                [misalignment_metadata, np.asarray(conditions, dtype=np.float32)]
+            )
         misalignment_bakeoff = predictor_bakeoff(
             misalignment_rows,
             misalignment_texts,
             misalignment_raw,
             misalignment_mapped,
             misalignment_metadata,
-            cluster_label="exact_context_sha256",
+            cluster_label=group_axis,
+            checkpoint_root=checkpoint_root / "misaligned_action",
         )
         misalignment_activation_signal = bool(misalignment_bakeoff["activation_signal_detected"])
         misalignment_mapping_signal = bool(misalignment_bakeoff["mapping_signal_detected"])
@@ -760,6 +901,7 @@ def run_analysis(args: argparse.Namespace) -> dict[str, Any]:
                 "prediction_status": "completed",
                 "selected_layer": args.selected_layer,
                 "n_contexts": len(misalignment_rows),
+                "n_groups": len({row["task_id"] for row in misalignment_rows}),
                 **misalignment_bakeoff,
                 "context_rows": misalignment_rows,
             }
@@ -797,7 +939,7 @@ def run_analysis(args: argparse.Namespace) -> dict[str, Any]:
                 interpretation = (
                     "The reward-hacking development arm contains a task-held-out activation "
                     "signal, but pre-action activations did not improve held-out misaligned-action "
-                    "prediction over text with an exact-prefix-clustered interval excluding zero."
+                    "prediction over text with a grouped interval excluding zero."
                 )
             else:
                 claim_status = (
@@ -843,20 +985,25 @@ def run_analysis(args: argparse.Namespace) -> dict[str, Any]:
         "full_claim_supported": False,
         "claim_status": claim_status,
         "interpretation": interpretation,
+        "reproducibility": reproducibility,
         "analysis_protocol": {
+            "misalignment_metadata": metadata_mode,
             "outer_split": {
                 "reward_hacking": "leave_one_base_task_out",
-                "misaligned_action": "leave_one_exact_visible_prefix_out",
+                "misaligned_action": f"leave_one_{group_axis}_out",
             },
             "inner_split": "up_to_five_grouped_folds",
             "regularization_grid": list(C_GRID),
             "primary_metric": "held-out binomial log loss",
             "uncertainty": {
                 "reward_hacking": "5000-replicate base-task clustered bootstrap",
-                "misaligned_action": "5000-replicate exact-prefix clustered bootstrap",
+                "misaligned_action": f"5000-replicate {group_axis} clustered bootstrap of fixed out-of-fold predictions",
             },
             "primary_contrast": "raw activation + metadata minus fixed hashed text + metadata",
             "mapping_contrast": "mapped activation + metadata minus raw activation + metadata",
+            "single_class_training_policy": "Jeffreys-smoothed prevalence: (positive + 0.5)/(total + 1)",
+            "small_training_group_policy": "C=0.01 when fewer than three training groups (inherited fallback)",
+            "fit": "frequency-weighted primal liblinear, same summed L2 objective as repeated rows; tol=1e-8; convergence warnings fatal",
         },
         "inputs": {
             "impossible_result": str(args.impossible_result),
@@ -894,6 +1041,14 @@ def main() -> None:
     parser.add_argument("--misalignment-manifest", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--selected-layer", type=int, default=44)
+    parser.add_argument(
+        "--misalignment-metadata", choices=("length", "conditions"), default="length"
+    )
+    parser.add_argument(
+        "--misalignment-group-axis",
+        choices=("exact_context_sha256", "goal_framing", "urgency_type", "goal_value"),
+        default="exact_context_sha256",
+    )
     args = parser.parse_args()
     report = run_analysis(args)
     print(json.dumps(report, indent=2, sort_keys=True))

@@ -1,5 +1,17 @@
 # Context-mapped forecasting of reward hacking and misaligned actions
 
+**Public-development pilot completed 2026-09-06.** The recovered Qwen3.8-27B
+run produced no reward hacks (0/320 impossible-condition continuations), so
+the frozen reward-hacking prevalence gate failed. The misalignment arm produced
+15 harmful emitted forwards in 640 continuations across 16 unique prefixes.
+All four recovered prediction comparisons, including held-out goal framing
+and urgency, left activation-over-text and mapping-over-raw benefits unresolved.
+The full cross-environment claim is unsupported. See the
+[completed report](../../eval_results/context_risk_recovery_v1/results.md) and
+[methodology](../../eval_results/context_risk_recovery_v1/methodology.md).
+The design below remains the broader research proposal; its confirmatory
+environments and independently frozen answer-risk directions were not run.
+
 ## Objective
 
 Test whether an agent's activation at a decision boundary, before it generates any new reasoning or action, predicts the probability of a subsequent reward hack or misaligned action. Test whether the project's already-trained context-to-answer map improves this forecast by expressing the context in answer space.
