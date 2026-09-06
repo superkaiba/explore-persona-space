@@ -34,15 +34,15 @@ Here is the relevant part of the paper's monitoring setup:
 
 That is a sensible controlled experiment. But an explicit instruction to display a trait supplies a strong signal. Predicting the behavioral difference between two such instructions is different from predicting which ordinary user request will elicit the behavior under the same system prompt.
 
-You can see this in the distribution of behavior scores in our synthetic suite:
+Here are the behavior-expression distributions: one per dataset and trait, including generic WildChat conversations.
 
-![Behavior expression under promoting and suppressing synthetic instructions](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6a9a3eee721ddee7ce73317e71dce2063ed6cc19/figures/blog/synthetic-data/04_synthetic_expression.png)
+![Behavior-expression distributions across all evaluation datasets in the comparison](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6a9a3eee721ddee7ce73317e71dce2063ed6cc19/figures/blog/synthetic-data/05_expression_across_datasets.png)
 
-*Each bar shows the percentage of contexts in a 10-point score bin, separately normalized within promoting and suppressing instructions. Each group contains 100 contexts per trait. Scores average the retained judged responses to each context; these are the same targets as the synthetic correlation comparison above. [Scores, counts, and provenance](distribution_data.json)*
+*Histograms show the percentage of contexts in each 10-point bin, with identical axis ranges. Each dataset has one pooled distribution per trait, with promoting and suppressing synthetic instructions combined. All 11 panels match the evaluation samples in the correlation comparison later in the post; WildChat uses its held-out split. NQ-Open and SimpleQA measure fabrication rate, rescaled to 0–100; the other panels measure graded trait scores. Missing scores are excluded, and each panel reports its scored sample size. [Scores, counts, and provenance](distribution_data.json)*
 
-All 100 evil-suppressing contexts have a mean score of zero; 28 of the 100 evil-promoting contexts also score zero. Sycophancy and hallucination scores also shift with instruction polarity. A high correlation across these groups can therefore reflect separation between instructions, while telling us less about variation under a fixed instruction.
+Existing datasets do not automatically give us a useful evaluation. Evil expression is close to zero for most contexts in these human red-team, ToxicChat, and WildChat samples. That leaves little behavioral variation to predict. The sycophancy and hallucination distributions vary by dataset, and the hallucination panels also use different scoring rules.
 
-The authors examine this distinction themselves. Their appendix reports Pearson correlations both across all conditions and within each condition. These are the paper's statistics, distinct from the Spearman correlations in our comparison. [Appendix C.2](https://arxiv.org/html/2507.21509v3#A3.SS2)
+The authors also examine the difference between predicting across instructions and within a fixed instruction. Their appendix reports Pearson correlations both across all conditions and within each condition. These are the paper's statistics, distinct from the Spearman correlations in our comparison. [Appendix C.2](https://arxiv.org/html/2507.21509v3#A3.SS2)
 
 ![Published pooled and within-condition correlations](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6a9a3eee721ddee7ce73317e71dce2063ed6cc19/figures/blog/synthetic-data/02_pooled_vs_within.png)
 
@@ -69,14 +69,6 @@ Synthetic data remains useful for controlled interventions and for cases where s
 **Optional continuation: what happened on other datasets?**
 
 I also looked at the other evaluation datasets in the same experiment.
-
-First, here are their behavior-expression distributions:
-
-![Behavior-expression distributions across all evaluation datasets in the comparison](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6a9a3eee721ddee7ce73317e71dce2063ed6cc19/figures/blog/synthetic-data/05_expression_across_datasets.png)
-
-*Histograms show the percentage of contexts in each 10-point bin, with identical axis ranges. All 11 dataset-by-trait cells match the correlation comparison below, including its held-out WildChat split. NQ-Open and SimpleQA measure fabrication rate, rescaled to 0–100; the other panels measure graded trait scores. Missing scores are excluded, and each panel reports its scored sample size. [Scores, counts, and provenance](distribution_data.json)*
-
-Existing datasets do not automatically give us a useful evaluation. Evil expression is close to zero for most contexts in these human red-team, ToxicChat, and WildChat samples. That leaves little behavioral variation to predict. The sycophancy and hallucination distributions vary by dataset, and the hallucination panels also use different scoring rules.
 
 With that context, here is prediction performance:
 

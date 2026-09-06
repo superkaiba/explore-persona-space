@@ -13021,18 +13021,18 @@
       "source_file": "eval_results/issue_1739/dv_dataset/hallucination/labeling.json"
     }
   ],
-  "notes": "Per-context mean over retained rollout scores; missing scores stay missing. Every label file is SHA-256 matched to the R2FAIR scoring manifest. WildChat uses only sha1(context_id) mod 5 == 4, matching the displayed held-out correlations. Eleven pooled cells match the comparison's sample counts. Synthetic sign rows partition each 200-context suite. NQ-Open/SimpleQA use fabrication rates times 100; other cells use graded trait scores. Empirical frequencies, no confidence intervals or smoothing; no generation, judging, or fitting.",
+  "notes": "Per-context mean over retained rollout scores; missing scores stay missing. Every label file is SHA-256 matched to the R2FAIR scoring manifest. WildChat uses only sha1(context_id) mod 5 == 4, matching the displayed held-out correlations. Eleven pooled cells match the comparison's sample counts. Synthetic instructions are pooled into one distribution per trait. NQ-Open/SimpleQA use fabrication rates times 100; other cells use graded trait scores. Empirical frequencies, no confidence intervals or smoothing; no generation, judging, or fitting.",
   "sources": [
     {
       "path": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
       "sha256": "fbe296dab7c42c9ea43504adf96d56b606e0bbf0ab676cc09c81c44b1c3c2b3d",
-      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/d9cd86b3f612f514bebabe48fb01d1ab474384ec/eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
+      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/f0b3cb5957642664ae1209999be648de81eedbf6/eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
       "availability": "committed source"
     },
     {
       "path": "eval_results/issue_1739/pvsynth/dv_dataset/evil/labeling.json",
       "sha256": "8f38602d8d90e8f623abe3045665389c4a705d329f5a571e3392610fe1bf4d63",
-      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/d9cd86b3f612f514bebabe48fb01d1ab474384ec/eval_results/issue_1739/pvsynth/dv_dataset/evil/labeling.json",
+      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/f0b3cb5957642664ae1209999be648de81eedbf6/eval_results/issue_1739/pvsynth/dv_dataset/evil/labeling.json",
       "availability": "committed source"
     },
     {
@@ -13044,19 +13044,19 @@
     {
       "path": "eval_results/issue_1739/dv_dataset/evil/labeling.json",
       "sha256": "21ce1f8ce437f50399dd81d22553fb84ef3381120217781f94e53dc7b8fe59c1",
-      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/d9cd86b3f612f514bebabe48fb01d1ab474384ec/eval_results/issue_1739/dv_dataset/evil/labeling.json",
+      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/f0b3cb5957642664ae1209999be648de81eedbf6/eval_results/issue_1739/dv_dataset/evil/labeling.json",
       "availability": "committed source"
     },
     {
       "path": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json",
       "sha256": "61ec2e5a52114b8b4ae9e080a0e3669144f7ca3ed76f059dbe517e5d0b14424a",
-      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/d9cd86b3f612f514bebabe48fb01d1ab474384ec/eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json",
+      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/f0b3cb5957642664ae1209999be648de81eedbf6/eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json",
       "availability": "committed source"
     },
     {
       "path": "eval_results/issue_1739/pvsynth/dv_dataset/sycophancy/labeling.json",
       "sha256": "47ceec94fd0910100a1e2ffeb94f6a0d59ff8bd0ce9abb68965efa4938404850",
-      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/d9cd86b3f612f514bebabe48fb01d1ab474384ec/eval_results/issue_1739/pvsynth/dv_dataset/sycophancy/labeling.json",
+      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/f0b3cb5957642664ae1209999be648de81eedbf6/eval_results/issue_1739/pvsynth/dv_dataset/sycophancy/labeling.json",
       "availability": "committed source"
     },
     {
@@ -13068,19 +13068,19 @@
     {
       "path": "eval_results/issue_1739/dv_dataset/sycophancy/labeling.json",
       "sha256": "8d6aed280943e1c6868bfb44448dbfa6fbee17d91b26533fa26896931617defb",
-      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/d9cd86b3f612f514bebabe48fb01d1ab474384ec/eval_results/issue_1739/dv_dataset/sycophancy/labeling.json",
+      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/f0b3cb5957642664ae1209999be648de81eedbf6/eval_results/issue_1739/dv_dataset/sycophancy/labeling.json",
       "availability": "committed source"
     },
     {
       "path": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
       "sha256": "69ae5312fa4b3efef4ce54d78ef15e817d065ec70445dfbf98f838df698b1c53",
-      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/d9cd86b3f612f514bebabe48fb01d1ab474384ec/eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
+      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/f0b3cb5957642664ae1209999be648de81eedbf6/eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
       "availability": "committed source"
     },
     {
       "path": "eval_results/issue_1739/pvsynth/dv_dataset/hallucination/labeling.json",
       "sha256": "8205b84ac2d50f08428b4abd078ec51bf329550b98a3479d28962217679c377e",
-      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/d9cd86b3f612f514bebabe48fb01d1ab474384ec/eval_results/issue_1739/pvsynth/dv_dataset/hallucination/labeling.json",
+      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/f0b3cb5957642664ae1209999be648de81eedbf6/eval_results/issue_1739/pvsynth/dv_dataset/hallucination/labeling.json",
       "availability": "committed source"
     },
     {
@@ -13092,7 +13092,7 @@
     {
       "path": "eval_results/issue_1739/dv_dataset/hallucination/labeling.json",
       "sha256": "39c3a7beaffbba08a01057a730e1e415410537158bf296cdb40adaac9382cf5f",
-      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/d9cd86b3f612f514bebabe48fb01d1ab474384ec/eval_results/issue_1739/dv_dataset/hallucination/labeling.json",
+      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/f0b3cb5957642664ae1209999be648de81eedbf6/eval_results/issue_1739/dv_dataset/hallucination/labeling.json",
       "availability": "committed source"
     }
   ],
@@ -13127,25 +13127,25 @@
       "Synthetic prompts\nn = 200",
       "Human red-team\nattempts\nn = 1,868",
       "ToxicChat (flagged)\nn = 519",
-      "WildChat\nn = 417",
+      "WildChat\n(generic chat)\nn = 417",
       "Sycophancy\nContexts (%)",
       "Held-out Reddit\nadvice\nn = 1,304",
-      "WildChat\nn = 415",
+      "WildChat\n(generic chat)\nn = 415",
       "Hallucination\nContexts (%)",
       "NQ-Open*\nn = 3,167",
       "SimpleQA*\nn = 4,021",
-      "WildChat\nn = 411",
+      "WildChat\n(generic chat)\nn = 411",
       "Behavior expression across evaluation datasets",
       "Behavior score (0\u2013100)",
       "Same 11 evaluation cells as the correlation comparison \u00b7 10-point bins\n*NQ-Open / SimpleQA: fabrication rate (%) \u00b7 Other panels: mean graded trait score\nWildChat uses the held-out split \u00b7 Missing scores excluded"
     ]
   },
-  "input_sha256": "c7532562b20ee9fcc79834d9071d86a926228b32a54abfe660b31406c971610f",
-  "producer_sha256": "daca5d772016b75c2e6e9ccefabe717c4467e88b03459610ebb75b716643620e",
+  "input_sha256": "cdfaa93ae6f5310f5c3c866f68983921888aaf7a936a0e96095a078adbab6f01",
+  "producer_sha256": "188c55a8a0227828fd50689de0c45a95abf49c9f577f0307c9bb1e25c5d05219",
   "style_module_sha256": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1",
   "output_sha256": {
-    "pdf": "7c083103100e8bd86ec4cfc3fcc5b5d9e8cea38c01fcdf7ab597a0e91b5bca17",
-    "png": "4573217262b6a3b9a660f13b0ef6989c2aa1eaf968477f13549a527288fb256c",
-    "grayscale": "fccc44b4393e5015915c2d896090c65f2436807be6d848dddd5381fb7e1e99dd"
+    "pdf": "1153acc3cb36dec2f930950f930b115a805327d94eeea8c4a741e8669b8b7447",
+    "png": "8890d43e6890bb6f51e51891114b251600749936c93bf61bd48a9e1530beb945",
+    "grayscale": "154b3ad54bc39b2e3641dfea83882431096abb3847f210ba6e2d51517a217766"
   }
 }

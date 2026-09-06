@@ -315,7 +315,7 @@ def transfer(data):
 
 
 def expression_distributions():
-    """Show empirical score distributions and the synthetic instruction split."""
+    """Show one pooled score distribution per dataset and trait."""
     data = json.loads(DISTRIBUTIONS.read_text())
     edges = np.asarray(data["bin_edges"])
     assert np.array_equal(edges, np.arange(0, 101, 10))
@@ -328,62 +328,11 @@ def expression_distributions():
         assert len(scores) == row["n_eval"] and np.isfinite(scores).all()
         np.testing.assert_array_equal(np.histogram(scores, bins=edges)[0], row["counts"])
 
-    fig, _ = c2a_figure("full", aspect=0.48)
-    split_rows = [r for r in rows if r["group"] in {"pos", "neg"}]
-    assert len(split_rows) == 6
-    for i, trait in enumerate(TRAITS):
-        ax = fig.add_axes([0.075 + i * 0.305, 0.27, 0.255, 0.42])
-        for sign, offset, color, hatch in [
-            ("neg", 0.5, MUTED, "//"),
-            ("pos", 5.0, ROLES["base_model"].color, None),
-        ]:
-            (row,) = [r for r in split_rows if r["trait"] == trait and r["group"] == sign]
-            ax.bar(
-                edges[:-1] + offset,
-                100 * np.asarray(row["counts"]) / row["n_eval"],
-                width=4.5,
-                align="edge",
-                color=color,
-                hatch=hatch,
-                edgecolor="white",
-                linewidth=0.4,
-            )
-        ax.set_title(LABELS[trait], loc="left", fontsize=21, pad=12)
-        ax.set(xlim=(0, 100), ylim=(0, 105), xticks=[0, 50, 100], yticks=[0, 50, 100])
-        ax.set_xlabel("Behavior score", fontsize=17)
-        if i == 0:
-            ax.set_ylabel("Contexts (%)", fontsize=17)
-        style_axis(ax, grid_axis="y")
-    title = "What the synthetic instructions elicit"
-    fig.text(0.04, 0.95, title, fontsize=24, weight="bold", color=INK)
-    fig.legend(
-        handles=[
-            Patch(facecolor=MUTED, edgecolor="white", hatch="//", label="Suppressing instructions"),
-            Patch(facecolor=ROLES["base_model"].color, label="Promoting instructions"),
-        ],
-        loc="upper center",
-        bbox_to_anchor=(0.5, 0.87),
-        ncol=2,
-        frameon=False,
-        fontsize=16,
-    )
-    fig.text(
-        0.04,
-        0.07,
-        "100 contexts per instruction polarity, per trait · Share within each polarity\n"
-        "Per-context mean behavior score · 10-point bins · Qwen2.5-7B-Instruct",
-        color=MUTED,
-        fontsize=14,
-    )
-    export(
-        fig, "04_synthetic_expression", title, split_rows, data["notes"], data, source=DISTRIBUTIONS
-    )
-
     titles = {
         "pvsynth": "Synthetic prompts",
         "hhrt": "Human red-team\nattempts",
         "toxicchat": "ToxicChat (flagged)",
-        "wildchat_rung": "WildChat",
+        "wildchat_rung": "WildChat\n(generic chat)",
         "aita": "Held-out Reddit\nadvice",
         "nqopen": "NQ-Open*",
         "simpleqa": "SimpleQA*",
@@ -401,7 +350,8 @@ def expression_distributions():
     )
     for i, trait in enumerate(TRAITS):
         for j, setting in enumerate(order[trait]):
-            ax = fig.add_subplot(grid[i, j])
+            column = 3 if setting == "wildchat_rung" else j
+            ax = fig.add_subplot(grid[i, column])
             (row,) = [r for r in pooled if r["trait"] == trait and r["setting"] == setting]
             ax.bar(
                 edges[:-1],

@@ -123,16 +123,6 @@ def main():
             assert pooled["n_eval"] == cell["n_eval"], (trait, setting, pooled, cell["n_eval"])
             pooled["source_file"] = rel
             histograms.append(pooled)
-            if setting == "pvsynth":
-                for sign in ("neg", "pos"):
-                    subset = [r for r in rows if r["group_key"].endswith(f"-{sign}")]
-                    assert len(subset) == 100
-                    split = summarize(subset, trait, setting, sign)
-                    split["source_file"] = rel
-                    histograms.append(split)
-                np.testing.assert_array_equal(
-                    np.sum([r["counts"] for r in histograms[-2:]], axis=0), pooled["counts"]
-                )
     OUT.write_text(
         json.dumps(
             {
@@ -141,7 +131,7 @@ def main():
                 "notes": "Per-context mean over retained rollout scores; missing scores stay missing. "
                 "Every label file is SHA-256 matched to the R2FAIR scoring manifest. "
                 "WildChat uses only sha1(context_id) mod 5 == 4, matching the displayed held-out correlations. "
-                "Eleven pooled cells match the comparison's sample counts. Synthetic sign rows partition each 200-context suite. "
+                "Eleven pooled cells match the comparison's sample counts. Synthetic instructions are pooled into one distribution per trait. "
                 "NQ-Open/SimpleQA use fabrication rates times 100; other cells use graded trait scores. "
                 "Empirical frequencies, no confidence intervals or smoothing; no generation, judging, or fitting.",
                 "sources": list(sources.values()),
