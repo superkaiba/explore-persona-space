@@ -1,0 +1,151 @@
+{
+  "title": "Predicting traits on eliciting datasets",
+  "rows": [
+    {
+      "trait": "evil",
+      "method": "pv",
+      "point": 0.1049184826601673,
+      "datasets": [
+        "evil_mhj",
+        "evil_pair",
+        "evil_tomgibbs",
+        "hhrt",
+        "toxicchat"
+      ]
+    },
+    {
+      "trait": "evil",
+      "method": "map",
+      "point": 0.20903075952752573,
+      "datasets": [
+        "evil_mhj",
+        "evil_pair",
+        "evil_tomgibbs",
+        "hhrt",
+        "toxicchat"
+      ]
+    },
+    {
+      "trait": "sycophancy",
+      "method": "pv",
+      "point": 0.09810753391032911,
+      "datasets": [
+        "aita",
+        "sycoans",
+        "sycoays",
+        "sycofb",
+        "sycomim",
+        "sycomwe"
+      ]
+    },
+    {
+      "trait": "sycophancy",
+      "method": "map",
+      "point": 0.2096040120724804,
+      "datasets": [
+        "aita",
+        "sycoans",
+        "sycoays",
+        "sycofb",
+        "sycomim",
+        "sycomwe"
+      ]
+    },
+    {
+      "trait": "hallucination",
+      "method": "pv",
+      "point": 0.14501562929350292,
+      "datasets": [
+        "nqopen",
+        "simpleqa"
+      ]
+    },
+    {
+      "trait": "hallucination",
+      "method": "map",
+      "point": 0.2147356549758243,
+      "datasets": [
+        "nqopen",
+        "simpleqa"
+      ]
+    }
+  ],
+  "notes": "Arithmetic mean of dataset-wise Spearman correlations, separately for each trait and method. Every dataset within a trait has equal weight. No averaging across traits, no pooling of contexts, and no sample-size weighting. No interval for the mean is estimated. The constituent context-bootstrap intervals are retained for provenance and are not averaged or plotted. Held-out trait-eliciting evaluation datasets from the R2FAIR P-A extension. Evil and sycophancy use mean graded trait scores; hallucination uses fabrication rates on NQ-Open and SimpleQA. Includes human, automated and model-written evaluations; this is not an exclusively natural-data category. Some evil datasets have little behavioral variation. The same ADD/union map recipe and training-frozen layers as the synthetic and WildChat comparisons are retained. No new model runs or fits. Means describe this fixed dataset roster; no significance claim is made.",
+  "sources": {
+    "evil": {
+      "path": "eval_results/issue_1739/r2v2_fits/evil/all_arms_spearman.json",
+      "sha256": "e4ceb6b32d2a7daebe700cac42c91d4eeb689e0906012ad0f190f659b7df1066",
+      "url": "https://github.com/superkaiba/explore-persona-space/blob/82a82557a36fd2952316e564e3c763c20eb20efd/eval_results/issue_1739/r2v2_fits/evil/all_arms_spearman.json",
+      "artifact_code_commit": "b0e6859beb62b9705bd61de97688bc2f8172f4cf",
+      "artifact_timestamp": "2026-08-06T19:54:01Z"
+    },
+    "sycophancy": {
+      "path": "eval_results/issue_1739/r2v2_fits/sycophancy/all_arms_spearman.json",
+      "sha256": "e84534f4a1980baa1bfbbc7746fcb496f6f08f962b012b3043f3a2b18d5085d7",
+      "url": "https://github.com/superkaiba/explore-persona-space/blob/82a82557a36fd2952316e564e3c763c20eb20efd/eval_results/issue_1739/r2v2_fits/sycophancy/all_arms_spearman.json",
+      "artifact_code_commit": "b0e6859beb62b9705bd61de97688bc2f8172f4cf",
+      "artifact_timestamp": "2026-08-06T21:00:49Z"
+    },
+    "hallucination": {
+      "path": "eval_results/issue_1739/r2v2_fits/hallucination/all_arms_spearman.json",
+      "sha256": "cd00f748fdff6729b10df22fd9fa1f3f0a0c39c0594cdd19c93775c1a241efce",
+      "url": "https://github.com/superkaiba/explore-persona-space/blob/82a82557a36fd2952316e564e3c763c20eb20efd/eval_results/issue_1739/r2v2_fits/hallucination/all_arms_spearman.json",
+      "artifact_code_commit": "b0e6859beb62b9705bd61de97688bc2f8172f4cf",
+      "artifact_timestamp": "2026-08-06T22:09:14Z"
+    }
+  },
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      6.155
+    ],
+    "exported_size_inches": [
+      13.095,
+      5.849
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/07_trait_eliciting_comparison.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "0.105",
+      "0.209",
+      "0.098",
+      "0.210",
+      "0.145",
+      "0.215",
+      "Mean Spearman \u03c1  \u2191",
+      "0.0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "1.0",
+      "Evil",
+      "Sycophancy",
+      "Hallucination",
+      "Predicting traits on eliciting datasets",
+      "Qwen2.5-7B-Instruct \u00b7 Held-out trait-eliciting datasets\nEqual weight per dataset, within each trait",
+      "Persona Vector on context",
+      "My method"
+    ]
+  },
+  "input_sha256": "c0d4d9e90f3c225e77ee8b8481b26459b9adfc40451ac9d726ec3b42a96606fc",
+  "producer_sha256": "025797821c00371a5e5815b78c2d54bfdefe3318118dc4a3081ca2e327e7bffa",
+  "style_module_sha256": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1",
+  "output_sha256": {
+    "pdf": "4af1bd750e46ca3ae197ac8a90f6514bb4ad7c57684e5084afbae47aaac06799",
+    "png": "5dec60f30504bc2b7c531eab6adb297847be88c576fb661870ef3eadd7f217ba",
+    "grayscale": "06e4e8855e94c4b7388f12d8b45832877bf86eccf37418e705c4208f39aabc8c"
+  }
+}

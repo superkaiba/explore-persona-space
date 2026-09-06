@@ -27,6 +27,7 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs/blog/synthetic-data/plot_data.json"
 DISTRIBUTIONS = ROOT / "docs/blog/synthetic-data/distribution_data.json"
+ELICITING = ROOT / "docs/blog/synthetic-data/trait_eliciting_data.json"
 OUT = ROOT / "figures/blog/synthetic-data"
 TRAITS = ("evil", "sycophancy", "hallucination")
 LABELS = {"evil": "Evil", "sycophancy": "Sycophancy", "hallucination": "Hallucination"}
@@ -119,6 +120,60 @@ def first_comparison(data, setting="pvsynth"):
             and r["method"] == row["method"]
         ]
         assert (row["point"], row["lo"], row["hi"]) == (shared["rho"], *shared["ci"])
+    comparison_bars(
+        rows,
+        name,
+        title,
+        footer + "\nCorrelation across contexts · 95% context-bootstrap intervals",
+        note,
+        data,
+        xmin=0 if setting == "pvsynth" else -0.25,
+    )
+
+
+def trait_eliciting_comparison():
+    """Average datasets within each trait, preserving all three trait rows."""
+    data = json.loads(ELICITING.read_text())
+    rows = []
+    assert set(data["datasets"]) == set(TRAITS)
+    assert len(data["constituents"]) == 26
+    for trait in TRAITS:
+        expected = set(data["datasets"][trait])
+        for method in METHODS:
+            cells = [
+                r for r in data["constituents"] if r["trait"] == trait and r["method"] == method
+            ]
+            assert len(cells) == len(expected)
+            assert {r["eval_rung"] for r in cells} == expected
+            assert all(r["protocol"] == "P-A" for r in cells)
+            values = [r["rho_frozen"] for r in cells]
+            assert np.isfinite(values).all()
+            assert all(-1 <= value <= 1 for value in values)
+            rows.append(
+                {
+                    "trait": trait,
+                    "method": method,
+                    "point": float(np.mean(values)),
+                    "datasets": sorted(expected),
+                }
+            )
+    comparison_bars(
+        rows,
+        "07_trait_eliciting_comparison",
+        "Predicting traits on eliciting datasets",
+        "Qwen2.5-7B-Instruct · Held-out trait-eliciting datasets\n"
+        "Equal weight per dataset, within each trait",
+        data["aggregation"] + " " + data["uncertainty"] + " " + data["notes"],
+        data,
+        source=ELICITING,
+        intervals=False,
+    )
+
+
+def comparison_bars(
+    rows, name, title, footer, note, data, *, source=SOURCE, xmin=0, intervals=True
+):
+    """Shared layout for individual-dataset and within-trait mean comparisons."""
     fig, _ = c2a_figure("full", aspect=0.47)
     ax = fig.add_axes([0.24, 0.28, 0.70, 0.50])
     for i, trait in enumerate(TRAITS):
@@ -126,10 +181,23 @@ def first_comparison(data, setting="pvsynth"):
             (row,) = [r for r in rows if r["trait"] == trait and r["method"] == method]
             y = 2 - i + offset
             _, color, hatch = METHODS[method]
-            bar_interval(ax, row["point"], y, row["lo"], row["hi"], color, hatch)
+            if intervals:
+                bar_interval(ax, row["point"], y, row["lo"], row["hi"], color, hatch)
+                label_x = row["hi"]
+            else:
+                ax.barh(
+                    y,
+                    row["point"],
+                    height=0.26,
+                    color=color,
+                    hatch=hatch,
+                    edgecolor="white",
+                    linewidth=0.5,
+                )
+                label_x = row["point"]
             ax.annotate(
-                f"{row['point']:.2f}",
-                (row["hi"], y),
+                f"{row['point']:.2f}" if intervals else f"{row['point']:.3f}",
+                (label_x, y),
                 xytext=(8, 0),
                 textcoords="offset points",
                 ha="left",
@@ -139,9 +207,11 @@ def first_comparison(data, setting="pvsynth"):
             )
     ax.set_yticks([2, 1, 0], [LABELS[t] for t in TRAITS])
     ax.set_ylim(-0.5, 2.55)
-    ax.set_xlim(0 if setting == "pvsynth" else -0.25, 1)
-    ax.set_xticks(np.arange(0 if setting == "pvsynth" else -0.2, 1.01, 0.2))
-    ax.set_xlabel("Spearman ρ with response score  ↑")  # noqa: RUF001
+    ax.set_xlim(xmin, 1)
+    ax.set_xticks(np.arange(0 if xmin == 0 else -0.2, 1.01, 0.2))
+    ax.set_xlabel(
+        "Spearman ρ with response score  ↑" if intervals else "Mean Spearman ρ  ↑"  # noqa: RUF001
+    )
     style_axis(ax, grid_axis="x")
     ax.axvline(0, color=MUTED, linewidth=1)
     fig.text(
@@ -156,7 +226,7 @@ def first_comparison(data, setting="pvsynth"):
     fig.text(
         0.04,
         0.055,
-        footer + "\nCorrelation across contexts · 95% context-bootstrap intervals",
+        footer,
         color=MUTED,
         fontsize=15,
     )
@@ -167,6 +237,7 @@ def first_comparison(data, setting="pvsynth"):
         rows,
         note,
         data,
+        source=source,
     )
 
 
@@ -400,6 +471,7 @@ def main():
     set_c2a_style()
     first_comparison(data)
     first_comparison(data, setting="wildchat_rung")
+    trait_eliciting_comparison()
     paper_correlations(data)
     transfer(data)
     expression_distributions()

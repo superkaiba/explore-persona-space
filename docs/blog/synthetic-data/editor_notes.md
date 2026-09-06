@@ -8,6 +8,8 @@ The opening previously used an unrelated #779 within-condition Pearson result. T
 
 A [standalone WildChat comparison](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9a8433f6390383311d5e848a115021c97e2cfff5/figures/blog/synthetic-data/06_wildchat_comparison.png) now follows the opening comparison. It uses the same rendering function, two methods, and three traits, with the six WildChat rows copied from the cross-dataset snapshot and verified against the original scoring files. The positive axis still runs to 1; the left edge extends to −0.25 so all negative estimates and intervals are visible. Sample sizes remain in provenance, without a displayed n annotation. The title identifies WildChat, and the caption retains the floor limitation for evil expression.
 
+The [trait-eliciting comparison](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/synthetic-data-blog-20260906/figures/blog/synthetic-data/07_trait_eliciting_comparison.png) keeps evil, sycophancy, and hallucination separate. Each bar averages dataset-wise Spearman correlations within one trait and method, with equal dataset weight. It uses all 13 held-out trait-eliciting datasets in the matching P-A extension (five evil, six sycophancy, two hallucination), excluding training pools, pvsynth, and generic WildChat. The 26 constituent estimates are preserved in trait_eliciting_data.json with committed source URLs and hashes. All 22 rows shared with the existing snapshot match exactly on rho, both CI endpoints, evaluation count, and frozen layer. The group includes automated jailbreaks and model-written evaluations, so it is not labeled exclusively natural data. No interval for the mean is estimated; constituent interval endpoints are not averaged. No traits or contexts are pooled.
+
 Suggested outline and paragraph roles:
 
 1. Opening: synthetic-data convenience and the alternative of finding existing data.
@@ -20,7 +22,7 @@ Suggested outline and paragraph roles:
 
 Presentation and measurement:
 
-- All three displays use grouped bars. The comparison legends say “My method”; only the two pre-generation methods are displayed. Technical identifiers remain in the source data for reproducibility.
+- All comparison displays use grouped bars. The comparison legends say “My method”; only the two pre-generation methods are displayed. Technical identifiers remain in the source data for reproducibility.
 - The synthetic suite contains 200 contexts per trait: five positive/negative instruction pairs crossed with 20 held-out questions. It is not an exact rerun of the paper's monitoring experiment with eight interpolated system prompts.
 - Our two comparisons use training-frozen layers and Spearman correlations across contexts. Stored 95% intervals resample evaluation contexts at fixed fitted models/layers, not shared prompt/question clusters or training seeds.
 - Coverage is six estimates in the opening and 22 in the cross-dataset comparison: two methods for each of the selected result file's 11 non-training dataset/trait cells. The opening repeats three of those cells. This is a named artifact slice, not the whole later #1739 campaign.
@@ -51,7 +53,7 @@ The existing-data panels also show a limitation of the proposed alternative: evi
 
 Self-review: metric names and sample units are explicit; the original paper's counterevidence remains visible; uncertainty is not turned into a causal claim; the plotting code checks that its synthetic rows match the cross-dataset source exactly and recomputes every histogram from the stored scores before rendering.
 
-Reproduce the four comparison figures and 11 standalone distributions with the existing uv environment by running `uv run python scripts/plot_synthetic_data_blog.py`. The producer reads plot_data.json and distribution_data.json and imports the canonical context-to-answer style. Outputs include PDF, color PNG, grayscale PNG, and metadata containing plotted values and input/output hashes. Source paths, SHA-256 hashes, and available browser URLs are in the JSON. To rebuild the distribution snapshot from a checkout with the matching banked labels staged, run `uv run python scripts/build_synthetic_data_distributions.py --source-root /path/to/source-checkout`.
+Reproduce the five comparison figures and 11 standalone distributions with the existing uv environment by running `uv run python scripts/plot_synthetic_data_blog.py`. The producer reads plot_data.json, trait_eliciting_data.json, and distribution_data.json and imports the canonical context-to-answer style. Outputs include PDF, color PNG, grayscale PNG, and metadata containing plotted values and input/output hashes. Source paths, SHA-256 hashes, and available browser URLs are in the JSON. To rebuild the distribution snapshot from a checkout with the matching banked labels staged, run `uv run python scripts/build_synthetic_data_distributions.py --source-root /path/to/source-checkout`.
 
 Sources:
 
