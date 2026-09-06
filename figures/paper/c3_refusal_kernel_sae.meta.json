@@ -47,7 +47,7 @@
       "SAE 431\nIdentity-targeted toxic requests",
       "SAE 763\nFraud and sexual violence",
       "SAE 1815\nExplosives, drugs, and animal harm",
-      "Read By The Map",
+      "Read by the map",
       "B  \u00b7  MEAN REFUSAL-FLIP DIRECTION",
       "0.41",
       "0.37",
@@ -59,7 +59,7 @@
       "SAE 1010\nHypnosis and coercive role-play",
       "SAE 1318\nIdentity-conditioned toxic persona",
       "SAE 1985\nSexualized narrative framing",
-      "Effective Kernel"
+      "Effective kernel"
     ]
   },
   "displayed_data": {
@@ -124,11 +124,11 @@
     "description_source": "Analyst summaries of the banked maximum-activation examples; not an independent feature classifier."
   },
   "output_sha256": {
-    "pdf": "0e67e411c74e599fea198ef395c0ad266b214001c7a1120a5d68c6bf5a541e8c",
-    "png": "d6073dc97337e8840f4db2ee04fa024d2e09363e4f9a4fdf1995f6340793a55e",
-    "grayscale": "d979baa51b9d63ecfb61481c6eeb73192dacafe9b11c608aeac8a10cc2288902"
+    "pdf": "cab77b553fa93ac5dedc82090eee49eb4335d33d62c7740eab81ce13bf63ff0d",
+    "png": "919c6b8368d1271bc99df5c1327414b6934e81e96633cb50021af9124b25a8fa",
+    "grayscale": "43ee2b015612d15b37b8c6ac8debfeb0a5c0b0f9b3eafbe12a9b3d9cc2e9f0de"
   },
-  "git_commit": "d93c8dd30635de0f797a84651d6f840b7d26ce7e",
+  "git_commit": "1c3d1b1d5a5d676cdc428c177d8883b840731d12",
   "git_dirty": false,
   "phase": "paper-theory-refusal-sae",
   "git_argv0_state": "tracked",
