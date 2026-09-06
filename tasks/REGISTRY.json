@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2667,
+  "highest_id": 2668,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12866,6 +12866,14 @@
       "path": "tasks/proposed/2667",
       "status": "proposed",
       "title": "Reproduce Section 4.5 (chain of thought) with rollout-averaged answer vectors and a split-half noise ceiling"
+    },
+    "2668": {
+      "goal": "Determine which context-feature-to-answer-feature relationships change after controlled sycophancy finetuning, whether these changes predict held-out behavioral differences beyond simpler activation-difference baselines, and whether selected relationships withstand interventions in the model.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/planning/2668",
+      "status": "planning",
+      "title": "SAE characterization of finetuning-induced context-to-answer mapping changes"
     },
     "267": {
       "has_clean_result": true,
