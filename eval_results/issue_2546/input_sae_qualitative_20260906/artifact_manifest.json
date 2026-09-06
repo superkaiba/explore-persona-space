@@ -1,0 +1,263 @@
+{
+  "timestamp": "2026-09-06T21:54:38.894146+00:00",
+  "provenance": {
+    "git_commit": "1421e4a6f5d3ab159aa5a576217422a9ff385658",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "scripts/issue2546_input_sae_qualitative.py"
+    ],
+    "git_argv0_state": "untracked",
+    "git_argv0_path": "scripts/issue2546_input_sae_qualitative.py"
+  },
+  "retrieval_validation": {
+    "checks": {
+      "A_hit_identical": true,
+      "A_rank_identical": true,
+      "A_margin_max_abs_error": 0.0,
+      "A_nn_other_identical": true,
+      "D_hit_identical": true,
+      "D_rank_identical": true,
+      "D_margin_max_abs_error": 0.0,
+      "D_nn_other_identical": true
+    },
+    "n": 30193,
+    "cache_sha256": "55bc2e94c17b876ad47c76b7e833dd0dc1a9b1be9508cfd55875b08c5138b7eb",
+    "retrieval_source_sha256": "dc97f06f10fb30e119b82796ebc5e6eeb06be1e49f2dc55524aec67120325050"
+  },
+  "sae_verified_revision": "c37e53c4bb07127ad17ab88f28b93d4e87142e59",
+  "files": {
+    "context_directions.npz": {
+      "bytes": 58264352,
+      "sha256": "9d5fdb045c174ab50b6fe4c0f335993576e0295525b2732a4d1a286a9893e09d",
+      "arrays": {
+        "v": {
+          "shape": [
+            3584,
+            50
+          ],
+          "dtype": "float32"
+        },
+        "u": {
+          "shape": [
+            3584,
+            50
+          ],
+          "dtype": "float32"
+        },
+        "s": {
+          "shape": [
+            3584
+          ],
+          "dtype": "float32"
+        },
+        "ids": {
+          "shape": [
+            30193
+          ],
+          "dtype": "<U43"
+        },
+        "folds": {
+          "shape": [
+            30193
+          ],
+          "dtype": "int64"
+        },
+        "operator": {
+          "shape": [
+            3584,
+            3584
+          ],
+          "dtype": "float32"
+        }
+      }
+    },
+    "decoder_feature_cosines.npz": {
+      "bytes": 124422656,
+      "sha256": "b376d778a725ec5b779796ace5f099c53a32733f8f820108d7705ab2b7f2632b",
+      "arrays": {
+        "scores": {
+          "shape": [
+            131072,
+            231
+          ],
+          "dtype": "float32"
+        },
+        "vectors": {
+          "shape": [
+            3584,
+            231
+          ],
+          "dtype": "float32"
+        }
+      }
+    },
+    "driver_reference.py": {
+      "bytes": 17952,
+      "sha256": "5869779b283904a2644845217cf00039f8c9576374d2cc3e130ac9ebdebbb608"
+    },
+    "encoder_feature_cosines.npz": {
+      "bytes": 124422656,
+      "sha256": "162ddb94a7c9b6201ceaa102e10abfe9496be3d3b95e872ccd7889851112d0cc",
+      "arrays": {
+        "scores": {
+          "shape": [
+            131072,
+            231
+          ],
+          "dtype": "float32"
+        },
+        "vectors": {
+          "shape": [
+            3584,
+            231
+          ],
+          "dtype": "float32"
+        }
+      }
+    },
+    "eot_directions.npz": {
+      "bytes": 58264352,
+      "sha256": "08a1197360cbd71085664a896e02ec5f64cdd98373c0b3025345ac5ff825a448",
+      "arrays": {
+        "v": {
+          "shape": [
+            3584,
+            50
+          ],
+          "dtype": "float32"
+        },
+        "u": {
+          "shape": [
+            3584,
+            50
+          ],
+          "dtype": "float32"
+        },
+        "s": {
+          "shape": [
+            3584
+          ],
+          "dtype": "float32"
+        },
+        "ids": {
+          "shape": [
+            30193
+          ],
+          "dtype": "<U43"
+        },
+        "folds": {
+          "shape": [
+            30193
+          ],
+          "dtype": "int64"
+        },
+        "operator": {
+          "shape": [
+            3584,
+            3584
+          ],
+          "dtype": "float32"
+        }
+      }
+    },
+    "fit_status.json": {
+      "bytes": 253,
+      "sha256": "852ebecd108c791e6f8c9ebe89b8553dab6db0dc18332f75f485a10b422dcb50"
+    },
+    "matches.json": {
+      "bytes": 559321,
+      "sha256": "594cb984a24ead639594e698ff944b4a004060b9b7d9a584817ea14cce27b558"
+    },
+    "operator_parity.json": {
+      "bytes": 57,
+      "sha256": "6e649440a7a0367dc409cdc6a244a751a4437d5b713b8ecf7bfa059c870a5573"
+    },
+    "qualitative_annotations.json": {
+      "bytes": 8641,
+      "sha256": "89a67f0901821fa1d39cdc21ab64dec251225553d0882af7d340570fc3f587ce"
+    },
+    "qualitative_pairs.json": {
+      "bytes": 690042,
+      "sha256": "24c54716583933c73cc74eff6719caa1541fb0a46e05ddf8a22093c3b843634b"
+    },
+    "report.md": {
+      "bytes": 11252,
+      "sha256": "7f92d978f364b3e046a005f39cbd219ac059e117c205ac53a89fd854acdf07a4"
+    },
+    "retrieval_validation.json": {
+      "bytes": 473,
+      "sha256": "6d9695348c27ecfbb0802d81032a36dfad0222dffe11a8725646a76f307580d3"
+    },
+    "retrieval_validation_progress.json": {
+      "bytes": 210,
+      "sha256": "21a8bee939401ec5a123bcc18e0ac91c5585f505b58330396a9e3bb5dac8d03e"
+    },
+    "validated_retrieval.npz": {
+      "bytes": 6463776,
+      "sha256": "7524764c27733ef545a61b1f01e999b66cf4f278392833e5c193d049516821b6",
+      "arrays": {
+        "ids": {
+          "shape": [
+            30193
+          ],
+          "dtype": "<U43"
+        },
+        "folds": {
+          "shape": [
+            30193
+          ],
+          "dtype": "int64"
+        },
+        "A_hit": {
+          "shape": [
+            30193
+          ],
+          "dtype": "bool"
+        },
+        "A_rank": {
+          "shape": [
+            30193
+          ],
+          "dtype": "int32"
+        },
+        "A_margin": {
+          "shape": [
+            30193
+          ],
+          "dtype": "float64"
+        },
+        "A_nn_other": {
+          "shape": [
+            30193
+          ],
+          "dtype": "int32"
+        },
+        "D_hit": {
+          "shape": [
+            30193
+          ],
+          "dtype": "bool"
+        },
+        "D_rank": {
+          "shape": [
+            30193
+          ],
+          "dtype": "int32"
+        },
+        "D_margin": {
+          "shape": [
+            30193
+          ],
+          "dtype": "float64"
+        },
+        "D_nn_other": {
+          "shape": [
+            30193
+          ],
+          "dtype": "int32"
+        }
+      }
+    }
+  },
+  "verified_hf_destination": "superkaiba1/explore-persona-space-data/issue2546_cotmap/analysis_tensors/input_sae_qualitative_20260906"
+}
