@@ -1,0 +1,136 @@
+{
+  "status": "Theoretical-analysis manuscript figure",
+  "style_version": "c2a-v2",
+  "plotting_script": "scripts/make_paper_theory_refusal_sae.py",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "reproduction_command": "uv run python scripts/make_paper_theory_refusal_sae.py",
+  "source": {
+    "path": "eval_results/issue_2569/weights/leg9/refusal_kernel_L19.json",
+    "sha256": "dd48b46ccec00739e26827942710586976a88340e5a9758ef836993d0cca28e5"
+  },
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      8.381
+    ],
+    "exported_size_inches": [
+      13.095,
+      7.563
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c3_refusal_kernel_sae.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  \u00b7  MEAN REFUSAL-FLIP DIRECTION",
+      "0.17",
+      "0.14",
+      "0.13",
+      "0.12",
+      "Cosine similarity to component",
+      "0.00",
+      "0.15",
+      "0.30",
+      "0.45",
+      "SAE 1204\nTheft, explosives, and drugs",
+      "SAE 1623\nAbusive or sexually violent content",
+      "SAE 431\nIdentity-targeted toxic requests",
+      "SAE 763\nFraud and sexual violence",
+      "SAE 1815\nExplosives, drugs, and animal harm",
+      "Read By The Map",
+      "B  \u00b7  MEAN REFUSAL-FLIP DIRECTION",
+      "0.41",
+      "0.37",
+      "0.35",
+      "0.34",
+      "0.33",
+      "SAE 502\nMoral-boundary jailbreaks",
+      "SAE 478\nExplicit sexual framing",
+      "SAE 1010\nHypnosis and coercive role-play",
+      "SAE 1318\nIdentity-conditioned toxic persona",
+      "SAE 1985\nSexualized narrative framing",
+      "Effective Kernel"
+    ]
+  },
+  "displayed_data": {
+    "layer": 19,
+    "n_primary_refusal_flips": 60,
+    "components": {
+      "read_by_map": [
+        {
+          "feature_id": 1204,
+          "cosine": 0.1745,
+          "description": "Theft, explosives, and drugs"
+        },
+        {
+          "feature_id": 1623,
+          "cosine": 0.1369,
+          "description": "Abusive or sexually violent content"
+        },
+        {
+          "feature_id": 431,
+          "cosine": 0.129,
+          "description": "Identity-targeted toxic requests"
+        },
+        {
+          "feature_id": 763,
+          "cosine": 0.1265,
+          "description": "Fraud and sexual violence"
+        },
+        {
+          "feature_id": 1815,
+          "cosine": 0.1153,
+          "description": "Explosives, drugs, and animal harm"
+        }
+      ],
+      "effective_kernel": [
+        {
+          "feature_id": 502,
+          "cosine": 0.405,
+          "description": "Moral-boundary jailbreaks"
+        },
+        {
+          "feature_id": 478,
+          "cosine": 0.3724,
+          "description": "Explicit sexual framing"
+        },
+        {
+          "feature_id": 1010,
+          "cosine": 0.3478,
+          "description": "Hypnosis and coercive role-play"
+        },
+        {
+          "feature_id": 1318,
+          "cosine": 0.3399,
+          "description": "Identity-conditioned toxic persona"
+        },
+        {
+          "feature_id": 1985,
+          "cosine": 0.3257,
+          "description": "Sexualized narrative framing"
+        }
+      ]
+    },
+    "description_source": "Analyst summaries of the banked maximum-activation examples; not an independent feature classifier."
+  },
+  "output_sha256": {
+    "pdf": "0e67e411c74e599fea198ef395c0ad266b214001c7a1120a5d68c6bf5a541e8c",
+    "png": "d6073dc97337e8840f4db2ee04fa024d2e09363e4f9a4fdf1995f6340793a55e",
+    "grayscale": "d979baa51b9d63ecfb61481c6eeb73192dacafe9b11c608aeac8a10cc2288902"
+  },
+  "git_commit": "d93c8dd30635de0f797a84651d6f840b7d26ce7e",
+  "git_dirty": false,
+  "phase": "paper-theory-refusal-sae",
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/make_paper_theory_refusal_sae.py"
+}
