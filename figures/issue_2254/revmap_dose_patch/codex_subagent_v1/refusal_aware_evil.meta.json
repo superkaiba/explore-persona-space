@@ -1,0 +1,188 @@
+{
+  "data": {
+    "patch_fraction": {
+      "ablate": {
+        "ci95": [
+          [
+            0.3302954725522974,
+            0.5634665957089269
+          ],
+          [
+            -0.044057414026945754,
+            0.1667872538490431
+          ],
+          [
+            -0.03862400150152449,
+            0.07922499561530753
+          ]
+        ],
+        "layer": [
+          14,
+          19,
+          26
+        ],
+        "point": [
+          0.4449380184900433,
+          0.07022039979497728,
+          0.020900962469389165
+        ]
+      },
+      "proj": {
+        "ci95": [
+          [
+            -0.0008185736768414645,
+            0.00011509167496486338
+          ],
+          [
+            -7.774976637037359e-05,
+            0.007872641921257507
+          ],
+          [
+            -0.0006360438578953586,
+            0.0073330048635405895
+          ]
+        ],
+        "layer": [
+          14,
+          19,
+          26
+        ],
+        "point": [
+          -0.00028475425707614316,
+          0.002467870227993241,
+          0.001784460011010498
+        ]
+      }
+    },
+    "score_rows": {
+      "evil__a0": {
+        "conditional": 0.034999999999999996,
+        "refusal_as_zero": 0.033999999999999996,
+        "refusal_draw_percent": 1.6
+      },
+      "evil__cl": {
+        "conditional": 56.311126984126986,
+        "refusal_as_zero": 52.71100000000001,
+        "refusal_draw_percent": 6.9
+      },
+      "evil__rvm__ablate__L14": {
+        "conditional": 30.218833333333333,
+        "refusal_as_zero": 29.272999999999996,
+        "refusal_draw_percent": 4.9
+      },
+      "evil__rvm__ablate__L19": {
+        "conditional": 50.709448412698414,
+        "refusal_as_zero": 49.01199999999999,
+        "refusal_draw_percent": 3.5999999999999996
+      },
+      "evil__rvm__ablate__L26": {
+        "conditional": 53.38055555555555,
+        "refusal_as_zero": 51.61,
+        "refusal_draw_percent": 4.2
+      },
+      "evil__rvm__proj__L14": {
+        "conditional": 0.019,
+        "refusal_as_zero": 0.019,
+        "refusal_draw_percent": 4.8
+      },
+      "evil__rvm__proj__L19": {
+        "conditional": 0.164,
+        "refusal_as_zero": 0.164,
+        "refusal_draw_percent": 0.2
+      },
+      "evil__rvm__proj__L26": {
+        "conditional": 0.12800000000000003,
+        "refusal_as_zero": 0.12800000000000003,
+        "refusal_draw_percent": 0.1
+      }
+    }
+  },
+  "figure": "refusal_aware_evil",
+  "input": {
+    "path": "eval_results/issue_2254/revmap_dose_patch/exploratory_sensitivity/codex_subagent_v1/report/eligible_report_summary.json",
+    "sha256": "8fcd65a8c38e8047e0e88004a12865b9f00268facefee241b824f32cea681d89"
+  },
+  "outputs": {
+    "grayscale": {
+      "path": "figures/issue_2254/revmap_dose_patch/codex_subagent_v1/refusal_aware_evil_grayscale.png",
+      "sha256": "b5ab13e8893d40b382ff8c7a97ab6cf70e17f0a4ff2d32120abf4e9ebe92537c"
+    },
+    "pdf": {
+      "path": "figures/issue_2254/revmap_dose_patch/codex_subagent_v1/refusal_aware_evil.pdf",
+      "sha256": "a7194c71ca45403a22181e484dee2aeb8ea4ef9f4126af97c4a423b1d7af249c"
+    },
+    "png": {
+      "path": "figures/issue_2254/revmap_dose_patch/codex_subagent_v1/refusal_aware_evil.png",
+      "sha256": "bf7dd1efa615492d91b85d40324e7502eb0082e90108453a59536d801a08c9c6"
+    }
+  },
+  "render": {
+    "authoring_size_inches": [
+      13.095,
+      7.202
+    ],
+    "background": "#FFFFFF",
+    "exported_size_inches": [
+      13.095,
+      5.913
+    ],
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/refusal_aware_evil.pdf}",
+    "png_dpi": 240,
+    "realized_font_pt": {
+      "body": 7.56,
+      "label": 8.4,
+      "tick": 7.14,
+      "title": 9.24
+    },
+    "resolved_font": "Inter",
+    "scale": 0.42,
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "style_version": "c2a-v2",
+    "text": [
+      "16/1000 (1.6%)",
+      "69/1000 (6.9%)",
+      "48/1000 (4.8%)",
+      "2/1000 (0.2%)",
+      "1/1000 (0.1%)",
+      "49/1000 (4.9%)",
+      "36/1000 (3.6%)",
+      "42/1000 (4.2%)",
+      "A  \u00b7  EVIL \u00b7 TWO-PART READ",
+      "Evil trait score (0\u2013100)",
+      "0",
+      "20",
+      "40",
+      "60",
+      "Alpha zero",
+      "Donor-swap ceiling",
+      "Projection L14",
+      "Projection L19",
+      "Projection L26",
+      "Ablation L14",
+      "Ablation L19",
+      "Ablation L26",
+      "Score definition and refusal draws",
+      "Conditional on numeric grade",
+      "REFUSAL assigned zero",
+      "B  \u00b7  EVIL \u00b7 PATCHING",
+      "Layer",
+      "14",
+      "19",
+      "26",
+      "Fraction of refusal-aware ceiling \u2191",
+      "\u22120.1",
+      "0.0",
+      "0.1",
+      "0.2",
+      "0.3",
+      "0.4",
+      "0.5",
+      "0.6",
+      "Refusal-aware fraction",
+      "Projection",
+      "Ablation"
+    ]
+  },
+  "source_head": "70e86f9b75272b81521f33d922856df11a7aa2bd"
+}

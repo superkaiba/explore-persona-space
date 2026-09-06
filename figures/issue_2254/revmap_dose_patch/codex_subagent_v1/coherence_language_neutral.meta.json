@@ -68,7 +68,7 @@
   "figure": "coherence_language_neutral",
   "input": {
     "path": "eval_results/issue_2254/revmap_dose_patch/exploratory_sensitivity/codex_subagent_v1/report/eligible_report_summary.json",
-    "sha256": "e838795305598e69d54a72fb40d88eb7ebd2e5ca9c440d40ee93b5d40aece77a"
+    "sha256": "8fcd65a8c38e8047e0e88004a12865b9f00268facefee241b824f32cea681d89"
   },
   "outputs": {
     "grayscale": {
@@ -137,5 +137,5 @@
       "Items \u2265 50 (%)"
     ]
   },
-  "source_head": "4be1f4959fdab576f5e121bc8e24226041db67ef"
+  "source_head": "70e86f9b75272b81521f33d922856df11a7aa2bd"
 }

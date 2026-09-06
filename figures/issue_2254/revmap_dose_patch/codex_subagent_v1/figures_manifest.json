@@ -3,9 +3,11 @@
   "evil_patch_fraction_of_ceiling_withheld": true,
   "figures": [
     "eligible_trait_analyses",
+    "refusal_aware_evil",
     "coherence_language_neutral",
     "cjk_programmatic"
   ],
+  "post_hoc_refusal_aware_evil_fraction_available": true,
   "source_summary": "eval_results/issue_2254/revmap_dose_patch/exploratory_sensitivity/codex_subagent_v1/report/eligible_report_summary.json",
   "style": "c2a-v2"
 }

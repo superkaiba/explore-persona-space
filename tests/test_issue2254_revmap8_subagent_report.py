@@ -100,3 +100,29 @@ def test_refusal_aware_evil_is_separate_complete_alternative_estimand() -> None:
     assert row["analyzable_item_fraction_refusal_as_zero"] == 1.0
     assert row["mean_score_conditional_on_numeric"] == 10.0
     assert row["mean_score_refusal_as_zero"] == pytest.approx(9.95)
+
+
+def test_committed_refusal_aware_result_does_not_change_canonical_gate() -> None:
+    report = _summary()
+    alternative = report["trait"]["refusal_aware_evil"]
+    ceiling = alternative["references"]["evil__cl"]
+    patch = alternative["patch_fraction_of_refusal_aware_ceiling"]
+
+    assert report["schema_version"] == 2
+    assert report["eligibility"]["overall_completeness_pass"] is False
+    assert alternative["status"] == "POST_HOC_EXPLORATORY_ALTERNATIVE_ESTIMAND"
+    assert alternative["canonical_gate_changed"] is False
+    assert alternative["canonical_withheld_fields_changed"] is False
+    assert alternative["new_model_or_judge_calls"] == 0
+    assert len(patch) == 6
+    assert all(row["n_analyzable_items_refusal_as_zero"] == 200 for row in patch.values())
+
+    assert ceiling["n_refusal_draws_assigned_zero"] == 69
+    assert ceiling["n_items_with_any_refusal_grade"] == 16
+    assert ceiling["n_items_with_all_five_refusal_grades"] == 13
+    assert ceiling["mean_score_refusal_as_zero"] == pytest.approx(52.711)
+
+    ablation_l14 = patch["evil__rvm__ablate__L14"]
+    fraction = ablation_l14["fraction_of_refusal_aware_ceiling"]
+    assert fraction["fraction_point"] == pytest.approx(0.4449380184900433)
+    assert fraction["fraction_ci"] == pytest.approx([0.3302954725522974, 0.5634665957089269])
