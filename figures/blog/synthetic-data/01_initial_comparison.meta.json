@@ -1,0 +1,159 @@
+{
+  "title": "My first comparison on synthetic prompts",
+  "rows": [
+    {
+      "trait": "evil",
+      "method": "pv",
+      "source_key": "pv_raw",
+      "point": 0.17225165704905313,
+      "lo": -0.06656688168628616,
+      "hi": 0.3745146661294254,
+      "n_conditions": 4,
+      "n_boot_valid": 997,
+      "layer": 14
+    },
+    {
+      "trait": "evil",
+      "method": "map",
+      "source_key": "r1_ridge_dot",
+      "point": -0.07822852485904752,
+      "lo": -0.3576382548459939,
+      "hi": 0.13196200427007895,
+      "n_conditions": 4,
+      "n_boot_valid": 997,
+      "layer": 14
+    },
+    {
+      "trait": "sycophancy",
+      "method": "pv",
+      "source_key": "pv_raw",
+      "point": 0.6023495002275518,
+      "lo": 0.5486117711952504,
+      "hi": 0.6550277966262059,
+      "n_conditions": 8,
+      "n_boot_valid": 1000,
+      "layer": 26
+    },
+    {
+      "trait": "sycophancy",
+      "method": "map",
+      "source_key": "r1_ridge_dot",
+      "point": 0.5413107340999044,
+      "lo": 0.4798002359673568,
+      "hi": 0.6012550995612814,
+      "n_conditions": 8,
+      "n_boot_valid": 1000,
+      "layer": 26
+    },
+    {
+      "trait": "hallucination",
+      "method": "pv",
+      "source_key": "pv_raw",
+      "point": 0.4559558744478315,
+      "lo": 0.32718734459130167,
+      "hi": 0.5799577818982035,
+      "n_conditions": 8,
+      "n_boot_valid": 1000,
+      "layer": 17
+    },
+    {
+      "trait": "hallucination",
+      "method": "map",
+      "source_key": "r1_ridge_dot",
+      "point": 0.40056444815020614,
+      "lo": 0.3211839181234214,
+      "hi": 0.47791767821137543,
+      "n_conditions": 8,
+      "n_boot_valid": 1000,
+      "layer": 17
+    }
+  ],
+  "notes": "Historical #779 Stage 1, July 1 output. Qwen2.5-7B-Instruct; map trained on a disjoint generic LMSYS bank. PV raw dot projection versus r1_ridge_dot (dot projection after ridge mapping; cosine arm deliberately not substituted). Same per-condition/question targets and readout layer per trait. Mean Pearson correlation within informative system-prompt conditions. Eight configured prompts per trait; only 4 evil, 8 sycophancy, 8 hallucination informative under score SD >=1 and nondegenerate predictor. Stored 95% bootstrap CIs resample prompt conditions (1000 draws, 997 valid evil /1000 others); invalid conditions are omitted, never assigned zero. Original baseline replication gate failed for all three traits across its system/many-shot checks; this is an initial attempt, not a faithful replication or final method verdict. Script-inherited rollout recipe: on-policy vLLM, temperature 1.0, top_p .95, cap 1024, 10 intended rollouts per context; realized rollout count not reverified from collection manifests here. Legacy headline n_rollouts=260 is a per-question-row count, not evidence of actual completion count. Judge: banked Sonnet 4.5 graded scores, 5 intended draws. No generation/judging rerun.",
+  "sources": [
+    {
+      "path": "eval_results/issue_779/stage1_headline.json",
+      "sha256": "b7fe223ccdad6ebd877aa67875c1dd8932153ba191c335c84c62f953bb0f9b6a",
+      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/2e0334134f8865a4ee07fb8e6bed93f7fcc36e9a/eval_results/issue_779/stage1_headline.json"
+    },
+    {
+      "path": "eval_results/issue_1739/result2_fair/result2_fair_points.json",
+      "sha256": "de01583c4ccdf137d618462485d8ccc6f39f5c2dc43c7425c67b96ab73813a50",
+      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/2e0334134f8865a4ee07fb8e6bed93f7fcc36e9a/eval_results/issue_1739/result2_fair/result2_fair_points.json"
+    },
+    {
+      "path": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
+      "sha256": "fbe296dab7c42c9ea43504adf96d56b606e0bbf0ab676cc09c81c44b1c3c2b3d",
+      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/2e0334134f8865a4ee07fb8e6bed93f7fcc36e9a/eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+    },
+    {
+      "path": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
+      "sha256": "69ae5312fa4b3efef4ce54d78ef15e817d065ec70445dfbf98f838df698b1c53",
+      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/2e0334134f8865a4ee07fb8e6bed93f7fcc36e9a/eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+    },
+    {
+      "path": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json",
+      "sha256": "61ec2e5a52114b8b4ae9e080a0e3669144f7ca3ed76f059dbe517e5d0b14424a",
+      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/2e0334134f8865a4ee07fb8e6bed93f7fcc36e9a/eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+    },
+    {
+      "title": "Persona Vectors, v3, Appendix C.2, Table 2",
+      "url": "https://arxiv.org/html/2507.21509v3#A3.SS2",
+      "verification": "Read original HTML Table 2 on 2026-09-06; all six overall/within pairs included."
+    }
+  ],
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      6.155
+    ],
+    "exported_size_inches": [
+      13.095,
+      5.849
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/01_initial_comparison.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "0.17",
+      "-0.08",
+      "0.60",
+      "0.54",
+      "0.46",
+      "0.40",
+      "Mean within-prompt Pearson r  \u2191",
+      "\u22120.4",
+      "\u22120.2",
+      "0.0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "Evil",
+      "Sycophancy",
+      "Hallucination",
+      "My first comparison on synthetic prompts",
+      "Historical run \u00b7 Qwen2.5-7B-Instruct \u00b7 95% condition-bootstrap intervals\n4 / 8 / 8 informative system prompts; the replication check did not pass.",
+      "Persona Vector on context",
+      "Linear map + Persona Vector"
+    ]
+  },
+  "input_sha256": "ea5e30d93eab36516ad6a6067b1e0f7c9ff1307bc15b84baaf6e164d10707bf7",
+  "producer_sha256": "d0de037e5535af419b4f65a6d164baff41f68b49d44d720039f905ad4babf88f",
+  "style_module_sha256": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1",
+  "output_sha256": {
+    "pdf": "3f06c5c83f02aa2c7da5c69b849efe513cc1293857e5ca1c280792eda4f53fc2",
+    "png": "3355da338ed3232a3aa2f4c719671ea71f6b84a76f56260923e238475b75d9ff",
+    "grayscale": "7abaa359f2a42c635c9a25a6ce570c06add796f71fb3848184c3f1f15295f839"
+  }
+}

@@ -1,0 +1,756 @@
+{
+  "title": "A later test across evaluation datasets",
+  "rows": [
+    {
+      "behavior": "evil",
+      "setting": "pvsynth",
+      "method": "pv",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": 0.7550197827954369,
+      "ci": [
+        0.6985700580925162,
+        0.7975039438505617
+      ],
+      "n_replicates": 1,
+      "n_eval": 200,
+      "layer": 15,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
+      "trait": "evil"
+    },
+    {
+      "behavior": "evil",
+      "setting": "pvsynth",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.8429115275104073,
+      "ci": [
+        0.7948428572706189,
+        0.8815773348545195
+      ],
+      "n_replicates": 1,
+      "n_eval": 200,
+      "layer": 22,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
+      "trait": "evil"
+    },
+    {
+      "behavior": "evil",
+      "setting": "pvsynth",
+      "method": "map",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.8180783834780763,
+      "ci": [
+        0.7742893051959095,
+        0.8555290307290423
+      ],
+      "n_replicates": 1,
+      "n_eval": 200,
+      "layer": 22,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
+      "trait": "evil"
+    },
+    {
+      "behavior": "evil",
+      "setting": "wildchat_rung",
+      "method": "pv",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": 0.06707034670126535,
+      "ci": [
+        -0.04204904920766162,
+        0.17185865967135444
+      ],
+      "n_replicates": 1,
+      "n_eval": 417,
+      "layer": 15,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
+      "trait": "evil"
+    },
+    {
+      "behavior": "evil",
+      "setting": "wildchat_rung",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.22644899839439725,
+      "ci": [
+        0.14610273976578803,
+        0.2945632630216805
+      ],
+      "n_replicates": 1,
+      "n_eval": 417,
+      "layer": 22,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
+      "trait": "evil"
+    },
+    {
+      "behavior": "evil",
+      "setting": "wildchat_rung",
+      "method": "map",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.22541778412988908,
+      "ci": [
+        0.14827215723221607,
+        0.291148529449419
+      ],
+      "n_replicates": 1,
+      "n_eval": 417,
+      "layer": 22,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
+      "trait": "evil"
+    },
+    {
+      "behavior": "evil",
+      "setting": "hhrt",
+      "method": "pv",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": 0.009478463580156925,
+      "ci": [
+        -0.03305266864477071,
+        0.04953971723898017
+      ],
+      "n_replicates": 1,
+      "n_eval": 1868,
+      "layer": 15,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
+      "trait": "evil"
+    },
+    {
+      "behavior": "evil",
+      "setting": "hhrt",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.08267989033931226,
+      "ci": [
+        0.03800769313385561,
+        0.12122373320588911
+      ],
+      "n_replicates": 1,
+      "n_eval": 1868,
+      "layer": 22,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
+      "trait": "evil"
+    },
+    {
+      "behavior": "evil",
+      "setting": "hhrt",
+      "method": "map",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.06470666693570033,
+      "ci": [
+        0.016368507417190085,
+        0.11275770159896145
+      ],
+      "n_replicates": 1,
+      "n_eval": 1868,
+      "layer": 22,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
+      "trait": "evil"
+    },
+    {
+      "behavior": "evil",
+      "setting": "toxicchat",
+      "method": "pv",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": 0.0195113243787477,
+      "ci": [
+        -0.06724617872543785,
+        0.10189778515316823
+      ],
+      "n_replicates": 1,
+      "n_eval": 519,
+      "layer": 15,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
+      "trait": "evil"
+    },
+    {
+      "behavior": "evil",
+      "setting": "toxicchat",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.2581151286565159,
+      "ci": [
+        0.16849086192089324,
+        0.33975177038451876
+      ],
+      "n_replicates": 1,
+      "n_eval": 519,
+      "layer": 22,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
+      "trait": "evil"
+    },
+    {
+      "behavior": "evil",
+      "setting": "toxicchat",
+      "method": "map",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.25083424306392416,
+      "ci": [
+        0.17155469785997393,
+        0.3374756156721011
+      ],
+      "n_replicates": 1,
+      "n_eval": 519,
+      "layer": 22,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
+      "trait": "evil"
+    },
+    {
+      "behavior": "sycophancy",
+      "setting": "pvsynth",
+      "method": "pv",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": 0.7921413291952443,
+      "ci": [
+        0.7336054823788072,
+        0.8308330424636039
+      ],
+      "n_replicates": 1,
+      "n_eval": 200,
+      "layer": 16,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json",
+      "trait": "sycophancy"
+    },
+    {
+      "behavior": "sycophancy",
+      "setting": "pvsynth",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.7640980641705702,
+      "ci": [
+        0.703480522973764,
+        0.807914953003169
+      ],
+      "n_replicates": 1,
+      "n_eval": 200,
+      "layer": 11,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json",
+      "trait": "sycophancy"
+    },
+    {
+      "behavior": "sycophancy",
+      "setting": "pvsynth",
+      "method": "map",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.39861803859275446,
+      "ci": [
+        0.279917318014649,
+        0.49865926713300857
+      ],
+      "n_replicates": 1,
+      "n_eval": 200,
+      "layer": 11,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json",
+      "trait": "sycophancy"
+    },
+    {
+      "behavior": "sycophancy",
+      "setting": "wildchat_rung",
+      "method": "pv",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": -0.03910039610309418,
+      "ci": [
+        -0.1326718373241837,
+        0.05271593959266225
+      ],
+      "n_replicates": 1,
+      "n_eval": 415,
+      "layer": 16,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json",
+      "trait": "sycophancy"
+    },
+    {
+      "behavior": "sycophancy",
+      "setting": "wildchat_rung",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.07624932674428626,
+      "ci": [
+        -0.02296656774691166,
+        0.1671461852774431
+      ],
+      "n_replicates": 1,
+      "n_eval": 415,
+      "layer": 11,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json",
+      "trait": "sycophancy"
+    },
+    {
+      "behavior": "sycophancy",
+      "setting": "wildchat_rung",
+      "method": "map",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.09223660209399395,
+      "ci": [
+        -0.0022664946988912534,
+        0.19033619558188314
+      ],
+      "n_replicates": 1,
+      "n_eval": 415,
+      "layer": 11,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json",
+      "trait": "sycophancy"
+    },
+    {
+      "behavior": "sycophancy",
+      "setting": "aita",
+      "method": "pv",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": 0.06085386456800987,
+      "ci": [
+        0.008084902402027725,
+        0.11218376823467346
+      ],
+      "n_replicates": 1,
+      "n_eval": 1304,
+      "layer": 16,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json",
+      "trait": "sycophancy"
+    },
+    {
+      "behavior": "sycophancy",
+      "setting": "aita",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.2495902989637087,
+      "ci": [
+        0.1973220508739651,
+        0.2990054164676252
+      ],
+      "n_replicates": 1,
+      "n_eval": 1304,
+      "layer": 11,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json",
+      "trait": "sycophancy"
+    },
+    {
+      "behavior": "sycophancy",
+      "setting": "aita",
+      "method": "map",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.2398471924190651,
+      "ci": [
+        0.18933593426715917,
+        0.2943153973087339
+      ],
+      "n_replicates": 1,
+      "n_eval": 1304,
+      "layer": 11,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json",
+      "trait": "sycophancy"
+    },
+    {
+      "behavior": "hallucination",
+      "setting": "pvsynth",
+      "method": "pv",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": 0.6471165993837352,
+      "ci": [
+        0.5514134302892959,
+        0.7124564862272461
+      ],
+      "n_replicates": 1,
+      "n_eval": 200,
+      "layer": 24,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
+      "trait": "hallucination"
+    },
+    {
+      "behavior": "hallucination",
+      "setting": "pvsynth",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.746762226601023,
+      "ci": [
+        0.6621241323784479,
+        0.809757265055035
+      ],
+      "n_replicates": 1,
+      "n_eval": 200,
+      "layer": 27,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
+      "trait": "hallucination"
+    },
+    {
+      "behavior": "hallucination",
+      "setting": "pvsynth",
+      "method": "map",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.698968770527766,
+      "ci": [
+        0.6174215640477959,
+        0.7618368331038712
+      ],
+      "n_replicates": 1,
+      "n_eval": 200,
+      "layer": 23,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
+      "trait": "hallucination"
+    },
+    {
+      "behavior": "hallucination",
+      "setting": "wildchat_rung",
+      "method": "pv",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": -0.10319922809106985,
+      "ci": [
+        -0.20481578325495248,
+        -0.011482572855513656
+      ],
+      "n_replicates": 1,
+      "n_eval": 411,
+      "layer": 24,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
+      "trait": "hallucination"
+    },
+    {
+      "behavior": "hallucination",
+      "setting": "wildchat_rung",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.28059178964074377,
+      "ci": [
+        0.18743765826638062,
+        0.38139452492605364
+      ],
+      "n_replicates": 1,
+      "n_eval": 411,
+      "layer": 27,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
+      "trait": "hallucination"
+    },
+    {
+      "behavior": "hallucination",
+      "setting": "wildchat_rung",
+      "method": "map",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.17577133744895965,
+      "ci": [
+        0.06966554265515329,
+        0.2646830716119339
+      ],
+      "n_replicates": 1,
+      "n_eval": 411,
+      "layer": 23,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "trait_rubric_graded_0_100",
+      "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
+      "trait": "hallucination"
+    },
+    {
+      "behavior": "hallucination",
+      "setting": "nqopen",
+      "method": "pv",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": 0.04480219102979353,
+      "ci": [
+        0.010729813867937673,
+        0.07788731686609944
+      ],
+      "n_replicates": 1,
+      "n_eval": 3167,
+      "layer": 24,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "fabricated_fraction_rescaled_x100",
+      "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
+      "trait": "hallucination"
+    },
+    {
+      "behavior": "hallucination",
+      "setting": "nqopen",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.12797090910783324,
+      "ci": [
+        0.09308861249831503,
+        0.1617682692085735
+      ],
+      "n_replicates": 1,
+      "n_eval": 3167,
+      "layer": 27,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "fabricated_fraction_rescaled_x100",
+      "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
+      "trait": "hallucination"
+    },
+    {
+      "behavior": "hallucination",
+      "setting": "nqopen",
+      "method": "map",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": -0.033518388618036826,
+      "ci": [
+        -0.07126316413727529,
+        0.0014981580879753092
+      ],
+      "n_replicates": 1,
+      "n_eval": 3167,
+      "layer": 23,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "fabricated_fraction_rescaled_x100",
+      "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
+      "trait": "hallucination"
+    },
+    {
+      "behavior": "hallucination",
+      "setting": "simpleqa",
+      "method": "pv",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": 0.24522906755721233,
+      "ci": [
+        0.21362539352546595,
+        0.27800247452351207
+      ],
+      "n_replicates": 1,
+      "n_eval": 4021,
+      "layer": 24,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "fabricated_fraction_rescaled_x100",
+      "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
+      "trait": "hallucination"
+    },
+    {
+      "behavior": "hallucination",
+      "setting": "simpleqa",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.5787174444636474,
+      "ci": [
+        0.5521300786759493,
+        0.6043085054555212
+      ],
+      "n_replicates": 1,
+      "n_eval": 4021,
+      "layer": 27,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "fabricated_fraction_rescaled_x100",
+      "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
+      "trait": "hallucination"
+    },
+    {
+      "behavior": "hallucination",
+      "setting": "simpleqa",
+      "method": "map",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.46298969856968547,
+      "ci": [
+        0.43673462778167554,
+        0.4930442134997119
+      ],
+      "n_replicates": 1,
+      "n_eval": 4021,
+      "layer": 23,
+      "map_condition": "add (fair protocol)",
+      "readout": "label-free",
+      "dv_construct": "fabricated_fraction_rescaled_x100",
+      "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
+      "trait": "hallucination"
+    }
+  ],
+  "notes": "FAIR: map + whitening = ADD/union (generic WildChat pool + eliciting train pairs), fit once per map kind (linear / MLP) on one shared whitening; the label-consuming readouts (arms 4/7/19) train on the eliciting train budget cell UNION the judged WildChat train split (sha1 mod-5 bucket 4 held out); the projection arms are label-free and share the whitening + eval subsets; pvsynth judged data enters only through r_B (recorded deviation for the regression/MLP readouts) Fixed #1739 R2FAIR artifact slice: all 11 non-train settings x 3 projection methods, 33/33 cells; this is not the entire later #1739 experimental campaign. Generic WildChat plus eliciting training pairs; differs from the historical LMSYS-only map. Context-end, E1 direction; layers frozen from training, map_kind linear. Within each dataset all methods have the same evaluation targets and n; no method averaging. Stored 95% paired bootstrap CIs resample evaluation contexts at fixed fitted model/selected layer, not prompt/question clusters; no training-seed uncertainty. Synthetic n=200 uses 5 instruction pairs x2 signs x20 held-out questions, not the paper monitoring experiment of eight interpolated prompts. Source-inherited on-policy recipe: 5 responses per context, temperature1, max_new_tokens1024 (top_p not explicitly pinned in collection code); banked Sonnet4.5 judge, 3 intended draws with rejudge recovery. Sampling recipe not independently reverified from every completion manifest. Hallucination NQ-Open/SimpleQA use fabrication rate, not the graded trait score in other rows. WildChat harmfulness target has little spread. Actual-answer projection is a post-generation reference, not a hard statistical ceiling. Held-out Reddit row is r/socialskills from a source also present in training, not a new-domain test. No causal attribution to surface shortcuts follows from these differences.",
+  "sources": [
+    {
+      "path": "eval_results/issue_779/stage1_headline.json",
+      "sha256": "b7fe223ccdad6ebd877aa67875c1dd8932153ba191c335c84c62f953bb0f9b6a",
+      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/2e0334134f8865a4ee07fb8e6bed93f7fcc36e9a/eval_results/issue_779/stage1_headline.json"
+    },
+    {
+      "path": "eval_results/issue_1739/result2_fair/result2_fair_points.json",
+      "sha256": "de01583c4ccdf137d618462485d8ccc6f39f5c2dc43c7425c67b96ab73813a50",
+      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/2e0334134f8865a4ee07fb8e6bed93f7fcc36e9a/eval_results/issue_1739/result2_fair/result2_fair_points.json"
+    },
+    {
+      "path": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
+      "sha256": "fbe296dab7c42c9ea43504adf96d56b606e0bbf0ab676cc09c81c44b1c3c2b3d",
+      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/2e0334134f8865a4ee07fb8e6bed93f7fcc36e9a/eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+    },
+    {
+      "path": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
+      "sha256": "69ae5312fa4b3efef4ce54d78ef15e817d065ec70445dfbf98f838df698b1c53",
+      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/2e0334134f8865a4ee07fb8e6bed93f7fcc36e9a/eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+    },
+    {
+      "path": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json",
+      "sha256": "61ec2e5a52114b8b4ae9e080a0e3669144f7ca3ed76f059dbe517e5d0b14424a",
+      "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/2e0334134f8865a4ee07fb8e6bed93f7fcc36e9a/eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+    },
+    {
+      "title": "Persona Vectors, v3, Appendix C.2, Table 2",
+      "url": "https://arxiv.org/html/2507.21509v3#A3.SS2",
+      "verification": "Read original HTML Table 2 on 2026-09-06; all six overall/within pairs included."
+    }
+  ],
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      13.095
+    ],
+    "exported_size_inches": [
+      13.095,
+      12.574
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/03_followup_datasets.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "\u22120.25",
+      "0.00",
+      "0.25",
+      "0.50",
+      "0.75",
+      "1.00",
+      "Synthetic trait prompts  (n=200)",
+      "Human red-team attempts  (n=1,868)",
+      "ToxicChat (flagged)  (n=519)",
+      "WildChat conversations  (n=417)",
+      "Evil",
+      "Held-out Reddit advice  (n=1,304)",
+      "WildChat conversations  (n=415)",
+      "Sycophancy",
+      "Spearman \u03c1 with response score  \u2191",
+      "NQ-Open*  (n=3,167)",
+      "SimpleQA*  (n=4,021)",
+      "WildChat conversations  (n=411)",
+      "Hallucination",
+      "A later test across evaluation datasets",
+      "Later map recipe \u00b7 95% context-bootstrap intervals \u00b7 actual-answer readout requires generation\n*NQ-Open / SimpleQA measure fabrication rate; other rows use graded trait scores.",
+      "Persona Vector on context",
+      "Linear map + Persona Vector",
+      "Persona Vector on actual answer"
+    ]
+  },
+  "input_sha256": "ea5e30d93eab36516ad6a6067b1e0f7c9ff1307bc15b84baaf6e164d10707bf7",
+  "producer_sha256": "d0de037e5535af419b4f65a6d164baff41f68b49d44d720039f905ad4babf88f",
+  "style_module_sha256": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1",
+  "output_sha256": {
+    "pdf": "6d52a12b552efa599ca4dbcd44456a3e4195362b16ca0348ece07bfd399e7bc9",
+    "png": "677ba96c0c398f7cd8dfc29e3e2b7ff79c7665df818b52c56f5c8b4fb4af29a8",
+    "grayscale": "84585e1426b819905f7a5f506cadcfc6c303637bc6c0a41ae0098280dbd19181"
+  }
+}
