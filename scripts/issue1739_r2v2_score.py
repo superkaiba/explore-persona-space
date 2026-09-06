@@ -533,7 +533,9 @@ def _leakage_assert(readout_ids: set, eval_sets: dict[str, set], label: str) -> 
 # ---------------------------------------------------------------------------
 
 
-def _seed_output_resume_ok(out_dir, *, commit: str, seed: int, map_variants) -> tuple[bool, str]:
+def _seed_output_resume_ok(
+    out_dir, *, commit: str, seed: int, map_variants, natural_key: dict | None = None
+) -> tuple[bool, str]:
     """True iff a prior (behavior, seed) output can satisfy THIS invocation.
 
     The resume predicate is keyed on code SHA + output schema version + seed
@@ -563,6 +565,18 @@ def _seed_output_resume_ok(out_dir, *, commit: str, seed: int, map_variants) -> 
     want_mv = list(map_variants or [])
     if not isinstance(rec_mv, list) or {str(v) for v in rec_mv} != {str(v) for v in want_mv}:
         return False, f"map_variants set mismatch (recorded {rec_mv!r} != current {want_mv!r})"
+    if meta.get("natural_regime_key") != natural_key:
+        return False, "natural_regime_key mismatch"
+    if natural_key is not None:
+        from scripts.issue1739_wcrung_arms import _sha256
+
+        for path, expected in meta.get("input_sha256", {}).items():
+            if not Path(path).is_file() or _sha256(Path(path)) != expected:
+                return False, f"natural input missing/changed: {path}"
+        if natural_key["options"].get("transfer_preds"):
+            names = meta.get("natural_transfer_pred_files", [])
+            if not names or any(not (out_dir / name).is_file() for name in names):
+                return False, "natural transfer prediction sidecars missing"
     return True, "match"
 
 
@@ -1814,6 +1828,7 @@ def _apply_extra_arms(extra: list[str]) -> None:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse legacy options plus an isolated, explicit natural-pair P-B lane."""
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--behaviors", nargs="+", default=list(BEHAVIORS), choices=list(BEHAVIORS))
     ap.add_argument(
@@ -1885,6 +1900,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--evil-ood-dv", type=Path, default=None)
     ap.add_argument("--syco-ood-dv", type=Path, default=None)
     ap.add_argument("--u-store", type=Path, default=None)
+    ap.add_argument(
+        "--natural-u-store",
+        type=Path,
+        default=None,
+        help="Opt into validated non-recombined generic pairs + fixed eliciting pool. "
+        "Requires --generic-u and --protocols B; roster is arms4/7/12 and omitted "
+        "--layers resolves their committed frozen global layers per behavior. Never stages #1092.",
+    )
+    ap.add_argument("--generic-u", type=int, default=None)
     ap.add_argument("--train-dv-root", type=Path, default=None)
     ap.add_argument("--wcrung-dv-root", type=Path, default=None)
     ap.add_argument("--wcrung-store", type=Path, default=None)
@@ -1917,6 +1941,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--allow-overwrite-committed", action="store_true")
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args(argv)
+    if (args.natural_u_store is None) != (args.generic_u is None):
+        ap.error("--natural-u-store and --generic-u must be supplied together")
+    if args.natural_u_store is not None:
+        if args.generic_u < 1 or args.generic_u > 100000:
+            ap.error("natural generic U must be in 1..100000")
+        if args.protocols != "B" or args.variant != "context_end":
+            ap.error("natural-pair lane requires --protocols B --variant context_end")
+        if args.extra_arms or args.map_variants not in (None, ["true"]):
+            ap.error("natural-pair lane has fixed arms4/7/12 and the true map only")
     if args.seeds is not None:
         if len(set(args.seeds)) != len(args.seeds):
             raise SystemExit(f"--seeds carries duplicates: {args.seeds}")
@@ -1950,7 +1983,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Execute independently checkpointed behavior/seed units under the selected pool protocol."""
+    global ROSTER, LABEL_CONSUMING
     args = parse_args(argv)
+    if args.natural_u_store is not None:
+        from scripts.issue1739_natural_score import NATURAL_ROSTER
+
+        ROSTER = LABEL_CONSUMING = NATURAL_ROSTER
     _wire_fits_rss_logging()
     from scripts.issue1739_wcrung_arms import _assert_no_judge_modules
 
@@ -2033,10 +2072,30 @@ def main(argv: list[str] | None = None) -> int:
         t0 = time.time()
         args.seed = int(seed)
         args.out_subdir = f"seed{seed}" if seed_keyed else ""
+        natural_key = None
+        if args.natural_u_store is not None:
+            from scripts.issue1739_jobd_r2aug import behavior_paths
+            from scripts.issue1739_natural_score import (
+                frozen_global_layers,
+                natural_regime_key,
+                remap_frozen,
+            )
+
+            summary = behavior_paths(args, behavior)["train_summary"]
+            global_frozen = frozen_global_layers(
+                summary, variant=args.variant, regime=args.regime, roster=ROSTER
+            )
+            layers = args.layers or sorted(set(global_frozen.values()))
+            remap_frozen(global_frozen, layers)  # fail before loading/fitting, never clamp
+            natural_key = natural_regime_key(args, behavior, layers, ROSTER)
         if seed_keyed:
             resume_dir = _behavior_out_dir(args, behavior)
             ok, why = _seed_output_resume_ok(
-                resume_dir, commit=commit, seed=int(seed), map_variants=args.map_variants
+                resume_dir,
+                commit=commit,
+                seed=int(seed),
+                map_variants=args.map_variants,
+                natural_key=natural_key,
             )
             if ok:
                 _log(
@@ -2068,6 +2127,23 @@ def main(argv: list[str] | None = None) -> int:
         # completion sentinel (_write_companions_then_summary docstring);
         # deferred behind a def so the summary lands after the companions.
         def write_summary(res=res, out_path=out_path, loaded=loaded):
+            """Write the completion sentinel after all companion artifacts exist."""
+            natural_meta = {}
+            if natural_key is not None:
+                from explore_persona_space.orchestrate.provenance import (
+                    as_metadata_dict,
+                    git_provenance,
+                )
+
+                natural_meta = {
+                    "natural_pool": loaded.natural_meta,
+                    "natural_regime_key": natural_key,
+                    "natural_transfer_pred_files": [
+                        str(path.relative_to(out_dir))
+                        for path in sorted((out_dir / "transfer_preds").glob("*.jsonl"))
+                    ],
+                    **as_metadata_dict(git_provenance(), phase="natural-pb-score"),
+                }
             arms.write_summary(
                 [],
                 out_path,
@@ -2130,6 +2206,7 @@ def main(argv: list[str] | None = None) -> int:
                     "env_versions": env,
                     "wall_s": round(time.time() - t0, 1),
                     "judge_called": False,
+                    **natural_meta,
                 },
                 extra={
                     "transfer_rows": res["rows"],

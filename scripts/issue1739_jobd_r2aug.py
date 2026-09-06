@@ -234,6 +234,7 @@ class Loaded:
 
 
 def load_behavior(args: argparse.Namespace, behavior: str, layers: list[int]) -> Loaded:
+    """Load the behavior tables and the explicitly selected generic input family."""
     import numpy as np
 
     from explore_persona_space.experiments.issue_1739 import store_io
@@ -276,22 +277,58 @@ def load_behavior(args: argparse.Namespace, behavior: str, layers: list[int]) ->
     for name, t in (("eval", tbl_ev), ("wildchat", tbl_wc)):
         if t.z_ans.shape[-1] != dim:
             raise RuntimeError(f"[{behavior}] {name} hidden dim {t.z_ans.shape[-1]} != {dim}")
-    rb, rb_meta = _rb_for_behavior(args, behavior, tbl, layers, dim, paths)
+    if getattr(args, "natural_u_store", None) is not None:
+        from scripts.issue1739_natural_score import load_natural_pool
 
-    store_io.stage_u_store(Path(args.u_store), ("prefix_end", "context_end", "t1"), tuple(layers))
-    u_arrays, u_meta = store_io.load_summaries(
-        args.u_store, ("prefix_end", "context_end", "t1"), tuple(layers), hidden_dim=dim
-    )
-    u_fit_rows = np.flatnonzero(store_io.fit_pool_mask(u_meta))
+        # The natural lane reads an explicit store and can never stage #1092.
+        u_arrays, u_fit_rows, natural_meta = load_natural_pool(
+            args.natural_u_store, layers, u=args.generic_u, seed=args.seed, hidden_dim=dim
+        )
+        for name in ("manifest.json", "row_index.jsonl"):
+            path = Path(args.natural_u_store) / name
+            shas[str(path)] = _sha256(path)
+        # Banks contain all 28 layers; select by their actual IDs, not positions
+        # in the reduced scoring grid. Existing full-grid calls remain untouched.
+        bank = args.tensors_root / "r_b_e1" / f"{behavior}.npz"
+        if args.rb_source in ("auto", "bank") and bank.exists():
+            with np.load(bank, allow_pickle=False) as data:
+                bank_layers = [int(x) for x in data["layers"]]
+                if len(set(bank_layers)) != len(bank_layers) or set(layers) - set(bank_layers):
+                    raise ValueError(f"{bank}: requested layers {layers} not in {bank_layers}")
+                rb = np.asarray(data["rb"], dtype=np.float64)
+                if rb.shape != (len(bank_layers), dim):
+                    raise ValueError(f"{bank}: invalid rb shape {rb.shape}")
+                rb = rb[[bank_layers.index(layer) for layer in layers]]
+            rb_meta = {
+                "rb_source": "bank",
+                "rb_path": str(bank),
+                "rb_dtype_on_disk": "float16",
+                "global_layers": list(layers),
+            }
+            shas[str(bank)] = _sha256(bank)
+        else:
+            rb, rb_meta = _rb_for_behavior(args, behavior, tbl, layers, dim, paths)
+    else:
+        rb, rb_meta = _rb_for_behavior(args, behavior, tbl, layers, dim, paths)
+        store_io.stage_u_store(
+            Path(args.u_store), ("prefix_end", "context_end", "t1"), tuple(layers)
+        )
+        u_arrays, u_meta = store_io.load_summaries(
+            args.u_store, ("prefix_end", "context_end", "t1"), tuple(layers), hidden_dim=dim
+        )
+        u_fit_rows = np.flatnonzero(store_io.fit_pool_mask(u_meta))
     print(
         f"[jobd-r2aug] {behavior}: train n={len(tbl.ctx_order)} eval n={len(tbl_ev.ctx_order)} "
         f"rungs={tbl_ev.rungs} | wc n={len(tbl_wc.ctx_order)} | u_fit={len(u_fit_rows)} | "
         f"load={time.time() - t0:.0f}s",
         flush=True,
     )
-    return Loaded(
+    loaded = Loaded(
         behavior, tbl, tbl_ev, tbl_wc, rb, rb_meta, u_arrays, u_fit_rows, dim, shas, paths
     )
+    if getattr(args, "natural_u_store", None) is not None:
+        loaded.natural_meta = natural_meta
+    return loaded
 
 
 def committed_frozen(
@@ -320,7 +357,16 @@ def committed_frozen(
     missing = sorted(set(roster) - set(frozen))
     if missing:
         raise RuntimeError(f"[{behavior}/{variant}] no committed frozen layer for {missing}")
-    _assert_committed_frozen_indexable(frozen, layers, behavior, variant, summary)
+    if getattr(args, "natural_u_store", None) is not None:
+        from scripts.issue1739_natural_score import frozen_global_layers, remap_frozen
+
+        global_frozen = frozen_global_layers(
+            summary, variant=variant, regime=args.regime, roster=roster
+        )
+        frozen = remap_frozen(global_frozen, layers)
+        loaded.natural_meta["frozen_global_layers"] = global_frozen
+    else:
+        _assert_committed_frozen_indexable(frozen, layers, behavior, variant, summary)
     loaded.shas[str(summary)] = _sha256(summary)
     return frozen, f"modal-committed-train-cells:{summary}"
 
@@ -344,6 +390,8 @@ def build_pool(args, loaded: Loaded, variant: str, layers: list[int], condition:
     from scripts.issue1739_fits import RunSpec, _u_pool_for_spec
 
     n_ctx = len(loaded.tbl.ctx_order)
+    if getattr(args, "natural_u_store", None) is not None and condition != "add":
+        raise ValueError("natural-pair scaling only supports the full-eliciting ADD condition")
     cap = min(len(loaded.u_fit_rows), int(n_ctx / R2AUG_MAX_F_U))
     lmax = LMAX[loaded.behavior]
     if condition in ("swap", "generic_matched"):
@@ -404,6 +452,9 @@ def build_pool(args, loaded: Loaded, variant: str, layers: list[int], condition:
                 "add_realized_pool": int(n),
                 "add_sources": ["u_store_fit_pool", "trait_eliciting_train_pairs"],
                 "add_excluded_sources": ["e1_extraction_pairs (union_all — R5 lane)"],
+                **(
+                    {"natural_pool": loaded.natural_meta} if hasattr(loaded, "natural_meta") else {}
+                ),
             },
         )
     raise ValueError(f"unknown map condition: {condition}")
