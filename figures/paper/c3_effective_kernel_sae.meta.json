@@ -1,0 +1,172 @@
+{
+  "status": "Theoretical-analysis manuscript figure",
+  "style_version": "c2a-v2",
+  "plotting_script": "scripts/make_paper_theory_kernel_sae.py",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "reproduction_command": "uv run python scripts/make_paper_theory_kernel_sae.py",
+  "source": {
+    "path": "eval_results/issue_2569/weights/leg8/kernel_interpretation_L19.json",
+    "sha256": "2c3f5d96d71aeeaf17fbfff62f229ce64d88b57a9f293a3855b88fc13a6240c5"
+  },
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      9.429
+    ],
+    "exported_size_inches": [
+      13.095,
+      8.96
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c3_effective_kernel_sae.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  ·  REPRESENTATIVE EXTREME SAE FEATURES",
+      "0.71",
+      "0.69",
+      "0.67",
+      "0.65",
+      "0.63",
+      "Squared share in named subspace",
+      "0.00",
+      "0.25",
+      "0.50",
+      "0.75",
+      "1.00",
+      "SAE 855 · Swedish-language context\n“Hej! Kan du svenska?”",
+      "SAE 267 · Vietnamese-language context\n“giúp tôi”",
+      "SAE 137 · Hungarian-language context\n“szia, ki vagy?”",
+      "SAE 454 · Polish-language context\n“witaj, czy możemy porozmawiać?”",
+      "SAE 7412 · Dutch-language request\n“answer prompt in the dutch language”",
+      "Read strongly by the map",
+      "B  ·  REPRESENTATIVE EXTREME SAE FEATURES",
+      "0.98",
+      "0.95",
+      "0.94",
+      "0.92",
+      "SAE 1197 · Polite help request\n“Can you help me make a python script?”",
+      "SAE 1051 · Explain-it-simply request\n“explain them like I'm a 5 years old”",
+      "SAE 755 · Scripted refusal opener\n“start your reply with the following line”",
+      "SAE 1961 · SEO and metadata block\n“Headline: NAME_1 #02 (Preview)”",
+      "SAE 1386 · Long word-count demand\n“Write a 5000 word essay on Brexit”",
+      "Effective kernel"
+    ]
+  },
+  "displayed_data": {
+    "layer": 19,
+    "cutoff": 0.99,
+    "components": {
+      "read_by_map": [
+        {
+          "feature_id": 855,
+          "description": "Swedish-language context",
+          "maximum_activation_example": "Hej! Kan du svenska?",
+          "kernel_share": 0.288952,
+          "named_subspace_share": 0.711048
+        },
+        {
+          "feature_id": 267,
+          "description": "Vietnamese-language context",
+          "maximum_activation_example": "giúp tôi",
+          "kernel_share": 0.307037,
+          "named_subspace_share": 0.692963
+        },
+        {
+          "feature_id": 137,
+          "description": "Hungarian-language context",
+          "maximum_activation_example": "szia, ki vagy?",
+          "kernel_share": 0.332418,
+          "named_subspace_share": 0.667582
+        },
+        {
+          "feature_id": 454,
+          "description": "Polish-language context",
+          "maximum_activation_example": "witaj, czy możemy porozmawiać?",
+          "kernel_share": 0.345916,
+          "named_subspace_share": 0.654084
+        },
+        {
+          "feature_id": 7412,
+          "description": "Dutch-language request",
+          "maximum_activation_example": "answer prompt in the dutch language",
+          "kernel_share": 0.371006,
+          "named_subspace_share": 0.628994
+        }
+      ],
+      "effective_kernel": [
+        {
+          "feature_id": 1197,
+          "description": "Polite help request",
+          "maximum_activation_example": "Can you help me make a python script?",
+          "kernel_share": 0.983548,
+          "named_subspace_share": 0.983548
+        },
+        {
+          "feature_id": 1051,
+          "description": "Explain-it-simply request",
+          "maximum_activation_example": "explain them like I'm a 5 years old",
+          "kernel_share": 0.949429,
+          "named_subspace_share": 0.949429
+        },
+        {
+          "feature_id": 755,
+          "description": "Scripted refusal opener",
+          "maximum_activation_example": "start your reply with the following line",
+          "kernel_share": 0.942014,
+          "named_subspace_share": 0.942014
+        },
+        {
+          "feature_id": 1961,
+          "description": "SEO and metadata block",
+          "maximum_activation_example": "Headline: NAME_1 #02 (Preview)",
+          "kernel_share": 0.939275,
+          "named_subspace_share": 0.939275
+        },
+        {
+          "feature_id": 1386,
+          "description": "Long word-count demand",
+          "maximum_activation_example": "Write a 5000 word essay on Brexit",
+          "kernel_share": 0.921026,
+          "named_subspace_share": 0.921026
+        }
+      ]
+    },
+    "random_direction_bands": {
+      "read_by_map": [
+        0.42528278327828983,
+        0.4725494341934706
+      ],
+      "effective_kernel": [
+        0.5274505658065294,
+        0.5747172167217102
+      ]
+    },
+    "selection_note": "Five representatives from each top-20 extreme list. Read-side examples use Latin scripts; kernel-side examples span recurring patterns.",
+    "description_source": "Analyst summaries of maximum-activation examples; not an independent classifier."
+  },
+  "output_sha256": {
+    "pdf": "1ec9aa7696f93a1e0bf73a31e8cc6f521e19b59356b64ededa6725bb734c0a9b",
+    "png": "5061ad9c8018f20dd49e6fc4b2b34f68fd120e504dbe01ead26f0a1404777035",
+    "grayscale": "13e8cbcc7116ff531ebeaf60155b946c146f3791c51876a8813245d34dd8d8fb"
+  },
+  "git_commit": "31c6956ab18bfbc3160e31ac97762a4855e96c1c",
+  "git_dirty": true,
+  "phase": "paper-theory-kernel-sae",
+  "git_dirty_paths": [
+    "scripts/make_paper_theory_kernel_sae.py",
+    "docs/paper_context_answer_map/plotting_style.md"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/make_paper_theory_kernel_sae.py"
+}

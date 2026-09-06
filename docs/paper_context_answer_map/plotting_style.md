@@ -190,3 +190,18 @@ nearest context-side SAE features for the part of the direction read by the map
 and the part in its effective kernel. The short feature descriptions are
 analyst summaries of the maximum-activation examples, and that provenance is
 recorded in the sidecar and disclosed in the paper caption.
+
+## Theoretical-analysis kernel SAE figure
+
+The representative context-side SAE features for the read and effective-kernel
+subspaces are rendered from the frozen layer-19 interpretation artifact:
+
+```bash
+uv run python scripts/make_paper_theory_kernel_sae.py
+```
+
+This writes `c3_effective_kernel_sae` under `figures/paper/` as vector PDF,
+color PNG, grayscale-audit PNG, and provenance JSON. Bars show the squared share
+of each feature in the named subspace; labels include a maximum-activation
+example. The figure and sidecar disclose that the descriptions are qualitative
+analyst summaries.
