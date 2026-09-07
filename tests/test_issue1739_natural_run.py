@@ -22,6 +22,25 @@ def test_composed_score_cli_uses_natural_pb(tmp_path):
     assert ns.transfer_preds
 
 
+def test_materialized_transport_opt_in_is_forwarded(tmp_path):
+    args = r.parse_args(
+        [
+            "stage",
+            "--root",
+            str(tmp_path),
+            "--materialize-labeling-tars",
+            "--labeling-tar-staging-dir",
+            str(tmp_path / "tars"),
+        ]
+    )
+    ns = r.input_args(args)
+    assert ns.materialize_labeling_tars is True
+    assert ns.labeling_tar_staging_dir == tmp_path / "tars"
+    assert not r.input_args(
+        r.parse_args(["stage", "--root", str(tmp_path)])
+    ).materialize_labeling_tars
+
+
 def test_production_data_one_contiguous_range_per_gpu(tmp_path, monkeypatch):
     args = r.parse_args(["data", "--root", str(tmp_path)])
     calls = []

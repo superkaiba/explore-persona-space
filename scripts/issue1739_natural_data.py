@@ -2,7 +2,7 @@
 
 Generation and HF capture are separate processes. Every 500-row unit has an
 atomic, content-keyed completion record. Raw text is retained in <=8.5 MB shards.
-Only the audited #779 PROMPTS are reused; answers are fresh #1092-recipe greedy.
+Prompts come directly from pinned LMSYS; answers are fresh #1092-recipe greedy.
 """
 
 from __future__ import annotations
@@ -30,9 +30,10 @@ import numpy as np
 from explore_persona_space.atomic_io import atomic_replace
 from scripts import issue1092_gpu_phase as reference
 
-SOURCE_REVISION = "7a47ff5ce42f16308bebaba29c1286a4e9bc8008"
-SOURCE_PREFIX = "issue779_monitoring/fitter-fair-comparison-n1m"
-SOURCE_PROMPT_SHA = "2b14762a15d316c602332a749ebd87c733d687d4165eb5d0038c298e0d27ce46"
+SOURCE_REPO = "lmsys/lmsys-chat-1m"
+SOURCE_REVISION = "200748d9d3cddcc9d782887541057aca0b18c5da"
+SOURCE_ROWS = 1_000_000
+SOURCE_BATCH = 10_000
 LAYERS = [17, 18, 19, 20]
 CHUNK = 500  # #1092/#779 real-corpus vLLM safe chunk.
 PART_BYTES = 8_500_000
@@ -183,15 +184,134 @@ class IndexedNearDupeGate:
         }
 
 
+def source_inventory() -> list[dict]:
+    """Resolve the complete six-file train split at its immutable upstream pin."""
+    from huggingface_hub import HfApi
+    from explore_persona_space.orchestrate import hub
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    entries = hub.retry_transient(
+        lambda: list(
+            api.list_repo_tree(
+                SOURCE_REPO,
+                path_in_repo="data",
+                revision=SOURCE_REVISION,
+                repo_type="dataset",
+                recursive=True,
+            )
+        ),
+        what="natural LMSYS source inventory",
+    )
+    files = sorted(
+        (e for e in entries if hasattr(e, "size") and e.path.endswith(".parquet")),
+        key=lambda e: e.path,
+    )
+    if len(files) != 6 or any(
+        not e.path.startswith(f"data/train-{i:05d}-of-00006-") or e.lfs is None or not e.lfs.sha256
+        for i, e in enumerate(files)
+    ):
+        raise ValueError("pinned LMSYS train inventory is incomplete or not LFS-hashed")
+    return [{"path": e.path, "bytes": e.size, "sha256": e.lfs.sha256} for e in files]
+
+
+def source_batches(root: Path, inventory: list[dict]):
+    """Verified original bytes plus resumable 10k-row first-turn projections.
+
+    Each checkpoint retains original conversation ID and exact first user text;
+    neither third-party answers nor subsequent conversation turns are reused.
+    """
+    import pyarrow.parquet as pq
+    from explore_persona_space.orchestrate import hub
+
+    cache = root / "upstream_lmsys" / SOURCE_REVISION
+    for entry in inventory:
+        path = hub.stage_hub_file(
+            SOURCE_REPO,
+            entry["path"],
+            cache / Path(entry["path"]).name,
+            repo_type="dataset",
+            revision=SOURCE_REVISION,
+            size_bytes=entry["bytes"],
+        )
+        if path.stat().st_size != entry["bytes"] or file_sha(path) != entry["sha256"]:
+            raise ValueError(f"upstream parquet content mismatch: {path}")
+        parquet = pq.ParquetFile(path)
+        if not {"conversation_id", "conversation"}.issubset(parquet.schema_arrow.names):
+            raise ValueError(f"upstream parquet lacks required columns: {path}")
+        offset = 0
+        for batch_i, batch in enumerate(
+            parquet.iter_batches(
+                batch_size=SOURCE_BATCH,
+                columns=["conversation_id", "conversation"],
+            )
+        ):
+            dest = cache / path.stem / f"batch_{batch_i:05d}"
+            identity = {
+                "source": entry,
+                "offset": offset,
+                "rows": len(batch),
+                "schema_version": 1,
+                "implementation": file_sha(Path(__file__)),
+            }
+            done = dest / "complete.json"
+            if done.exists():
+                if json.loads(done.read_text()) != identity:
+                    raise ValueError(f"source checkpoint fingerprint mismatch: {dest}")
+                rows = load_parts(dest)
+            else:
+                rows = []
+                for j, row in enumerate(batch.to_pylist()):
+                    cid, conversation = row["conversation_id"], row["conversation"]
+                    if not isinstance(cid, str) or not cid or not isinstance(conversation, list):
+                        raise ValueError(
+                            f"invalid source conversation at {entry['path']}:{offset + j}"
+                        )
+                    first = conversation[0] if conversation else None
+                    if first is not None and (
+                        not isinstance(first, dict)
+                        or not isinstance(first.get("role"), str)
+                        or not isinstance(first.get("content"), str)
+                    ):
+                        raise ValueError(f"invalid source first turn: {cid}")
+                    rows.append(
+                        {
+                            "conversation_id": cid,
+                            "source_file": entry["path"],
+                            "source_row": offset + j,
+                            "first_role": first["role"] if first else None,
+                            "prompt": first["content"]
+                            if first and first["role"] == "user"
+                            else None,
+                        }
+                    )
+                write_parts(dest, rows)
+                atomic_json(done, identity)
+            if len(rows) != len(batch):
+                raise ValueError(f"source checkpoint row-count mismatch: {dest}")
+            offset += len(batch)
+            LOG.info(
+                "upstream file=%s rows=%d/%d checkpoint=%s",
+                path.name,
+                offset,
+                parquet.metadata.num_rows,
+                dest.name,
+            )
+            yield rows
+        if offset != parquet.metadata.num_rows:
+            raise ValueError(f"source parquet scan incomplete: {path}")
+
+
 def prepare(args) -> None:
-    from scripts.issue779_ffc_n1m_generate_capture import _download_manifest, _norm
+    from scripts.issue779_ffc_n1m_generate_capture import _norm
 
     excluded = list(read_rows(args.exclusions))
     if not excluded or any(not isinstance(r.get("text"), str) for r in excluded):
         raise ValueError("complete nonempty text exclusion export is required")
     config = {
         "recipe": recipe(),
+        "source_repo": SOURCE_REPO,
         "source_revision": SOURCE_REVISION,
+        "source_inventory": source_inventory(),
         "n_candidates": args.n_candidates,
         "exclusions_sha256": file_sha(args.exclusions),
         "filter": {
@@ -210,33 +330,26 @@ def prepare(args) -> None:
             raise ValueError("prepared pool fingerprint mismatch; use a fresh root")
         load_parts(dest)
         return
-    manifest = _download_manifest(
-        SOURCE_PREFIX, args.root / "source_manifest", revision=SOURCE_REVISION
-    )
-    meta = json.loads((manifest / "meta.json").read_text())
-    if meta["new_prompt_sha256"] != SOURCE_PROMPT_SHA:
-        raise ValueError("source manifest metadata pin mismatch")
-    gate = IndexedNearDupeGate([r["text"] for r in excluded])
-    tokenizer = reference._get_tokenizer()
-    seen, candidates = set(), []
+    seen, conversation_ids, candidates = set(), set(), []
     counts = {
         "scanned": 0,
         "lmsys": 0,
+        "non_user_first_turn": 0,
         "duplicate": 0,
         "empty": 0,
         "eval_overlap": 0,
         "overlength": 0,
     }
     # Rank ALL LMSYS rows before selecting, avoiding source stream-order bias.
-    source_hash = hashlib.sha256()
-    for part in sorted(manifest.glob("part_*.jsonl")):
-        for row in read_rows(part):
-            if row["i"] != counts["scanned"]:
-                raise ValueError("source manifest global index misalignment")
-            source_hash.update(row["prompt"].encode("utf-8"))
-            source_hash.update(bytes([0]))
+    for batch in source_batches(args.root, config["source_inventory"]):
+        for row in batch:
             counts["scanned"] += 1
-            if row["corpus"] != "lmsys":
+            cid = row["conversation_id"]
+            if cid in conversation_ids:
+                raise ValueError(f"duplicate upstream conversation ID: {cid}")
+            conversation_ids.add(cid)
+            if row["first_role"] != "user":
+                counts["non_user_first_turn"] += 1
                 continue
             counts["lmsys"] += 1
             text = row["prompt"]
@@ -250,10 +363,12 @@ def prepare(args) -> None:
                 continue
             seen.add(digest)
             candidates.append((sha("1739:20260906:" + digest), row))
-    # SHA domain is #779 _sha_prompts: UTF-8 prompt bytes followed by NUL.
-    if source_hash.hexdigest() != SOURCE_PROMPT_SHA or counts["scanned"] != meta["n_new"]:
-        raise ValueError("source manifest content/count does not match pinned metadata")
+    if counts["scanned"] != SOURCE_ROWS:
+        raise ValueError(f"upstream train row-count mismatch: {counts['scanned']}")
     candidates.sort(key=lambda pair: pair[0])
+    LOG.info("upstream complete; unique candidates=%d counts=%s", len(candidates), counts)
+    gate = IndexedNearDupeGate([r["text"] for r in excluded])
+    tokenizer = reference._get_tokenizer()
     selected = []
     rejected = []
     checkpoint_dir = args.root / "prepare_checkpoints"
@@ -282,13 +397,23 @@ def prepare(args) -> None:
         n_tokens = len(tokenizer.encode(rendered, add_special_tokens=False))
         if n_tokens > recipe()["max_prompt_tokens"]:
             counts["overlength"] += 1
-            rejected.append({"source_i": row["i"], "reason": "overlength", "tokens": n_tokens})
+            rejected.append(
+                {
+                    "conversation_id": row["conversation_id"],
+                    "reason": "overlength",
+                    "tokens": n_tokens,
+                }
+            )
             continue
         selected.append(
             {
-                "context_id": f"natural_lmsys_{row['i']:07d}",
-                "source_dataset": "lmsys-chat-1m",
-                "source_id": f"manifest_i={row['i']};stream_pos={row['stream_pos']}",
+                "context_id": f"natural_lmsys_{row['conversation_id']}",
+                "source_dataset": SOURCE_REPO,
+                "source_id": row["conversation_id"],
+                "source_revision": SOURCE_REVISION,
+                "source_file": row["source_file"],
+                "source_row": row["source_row"],
+                "source_first_role": "user",
                 "prompt_sha256": sha(text),
                 "no_recombination": True,
                 "prompt": text,
@@ -634,6 +759,10 @@ def assemble(args) -> None:
         "context_id",
         "source_dataset",
         "source_id",
+        "source_revision",
+        "source_file",
+        "source_row",
+        "source_first_role",
         "prompt_sha256",
         "answer_sha256",
         "no_recombination",
@@ -674,9 +803,10 @@ def assemble(args) -> None:
             "row_index_sha256": file_sha(index_path),
             "matrices_sha256": matrices,
             "source": {
-                "repo": reference.HF_DATA_REPO,
+                "repo": SOURCE_REPO,
                 "revision": SOURCE_REVISION,
-                "prefix": SOURCE_PREFIX + "/sampling_manifest",
+                "split": "train",
+                "input": "intact first user turn; original conversation ID",
                 "corpus": "lmsys",
                 "prepared": prepared,
             },

@@ -47,7 +47,7 @@ def test_units_refuse_changed_inputs(tmp_path):
 def test_reused_signatures():
     from explore_persona_space.analysis.extraction import _logits_to_keep_kwargs
     from explore_persona_space.eval.generation import create_vllm_engine
-    from scripts.issue779_ffc_n1m_generate_capture import _download_manifest
+    from explore_persona_space.orchestrate.hub import stage_hub_file
 
     inspect.signature(_logits_to_keep_kwargs).bind(object(), return_logits=False)
     inspect.signature(create_vllm_engine).bind(
@@ -59,7 +59,86 @@ def test_reused_signatures():
         hang_mitigations=True,
         seed=42,
     )
-    inspect.signature(_download_manifest).bind(d.SOURCE_PREFIX, None, revision=d.SOURCE_REVISION)
+    inspect.signature(stage_hub_file).bind(
+        d.SOURCE_REPO, "data/train.parquet", None, revision=d.SOURCE_REVISION, size_bytes=100
+    )
+
+
+def source_fixture(tmp_path, monkeypatch):
+    """Real Parquet I/O; replace only the external download boundary."""
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    from explore_persona_space.orchestrate import hub
+
+    rows = [
+        {
+            "conversation_id": "original-a",
+            "conversation": [
+                {"role": "user", "content": "How do ocean tides work?"},
+                {"role": "assistant", "content": "third-party answer MUST NOT enter pool"},
+                {"role": "user", "content": "later query MUST NOT enter pool"},
+            ],
+        },
+        {
+            "conversation_id": "original-b",
+            "conversation": [{"role": "user", "content": "How do ocean tides work?"}],
+        },
+        {
+            "conversation_id": "original-c",
+            "conversation": [{"role": "system", "content": "not a first user prompt"}],
+        },
+        {
+            "conversation_id": "original-d",
+            "conversation": [{"role": "user", "content": "Explain the seasons.\u2028Thanks!"}],
+        },
+    ]
+    path = tmp_path / "fixture.parquet"
+    pq.write_table(pa.Table.from_pylist(rows), path)
+    inventory = [
+        {
+            "path": "data/train-fixture.parquet",
+            "bytes": path.stat().st_size,
+            "sha256": d.file_sha(path),
+        }
+    ]
+    monkeypatch.setattr(hub, "stage_hub_file", lambda *a, **kw: path)
+    monkeypatch.setattr(d, "source_inventory", lambda: inventory)
+    monkeypatch.setattr(d, "SOURCE_ROWS", len(rows))
+    monkeypatch.setattr(d, "SOURCE_BATCH", 2)
+    return inventory, path
+
+
+def test_upstream_first_user_checkpoints_and_integrity(tmp_path, monkeypatch):
+    inventory, path = source_fixture(tmp_path, monkeypatch)
+    batches = list(d.source_batches(tmp_path, inventory))
+    assert [len(b) for b in batches] == [2, 2]
+    assert batches[0][0]["conversation_id"] == "original-a"
+    assert batches[0][0]["prompt"] == "How do ocean tides work?"
+    assert batches[1][0]["first_role"] == "system"
+    assert batches[1][0]["prompt"] is None
+    assert batches == list(d.source_batches(tmp_path, inventory))
+    with path.open("ab") as stream:
+        stream.write(b"corruption")
+    with pytest.raises(ValueError, match="parquet content mismatch"):
+        list(d.source_batches(tmp_path, inventory))
+
+
+def test_prepare_real_parquet_dedups_and_retains_original_provenance(tmp_path, monkeypatch):
+    source_fixture(tmp_path, monkeypatch)
+    exclusion = tmp_path / "excluded.jsonl"
+    exclusion.write_text('{"text": "unrelated held-out evaluation question"}\n')
+    args = SimpleNamespace(root=tmp_path / "pool", exclusions=exclusion, n_candidates=2)
+    d.prepare(args)
+    selected = d.load_parts(args.root / "prepared")
+    assert {r["source_id"] for r in selected} == {"original-a", "original-d"}
+    assert all(r["source_revision"] == d.SOURCE_REVISION for r in selected)
+    assert all(r["source_first_role"] == "user" for r in selected)
+    assert all("MUST NOT" not in r["rendered_prompt"] for r in selected)
+    assert {r["source_row"] for r in selected} == {0, 3}
+    # Complete-pool resume validates the same immutable inventory and shards.
+    d.prepare(args)
+    assert selected == d.load_parts(args.root / "prepared")
 
 
 def test_tiny_real_hf_capture_matches_reference(tmp_path, monkeypatch):

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import logging
 import os
 from pathlib import Path
 import shutil
@@ -76,8 +77,8 @@ def input_args(args):
         tensors_root=args.root / "reused" / "analysis_tensors",
         ood_mirror_root=args.root / "reused" / "ood",
         exclusion_stage_root=args.root / "text_sources",
-        materialize_labeling_tars=False,
-        labeling_tar_staging_dir=None,
+        materialize_labeling_tars=args.materialize_labeling_tars,
+        labeling_tar_staging_dir=args.labeling_tar_staging_dir,
     )
 
 
@@ -417,6 +418,8 @@ def parse_args(argv=None):
         "--behaviors", nargs="+", default=list(inputs.BEHAVIORS), choices=inputs.BEHAVIORS
     )
     p.add_argument("--prepared-revision")
+    p.add_argument("--materialize-labeling-tars", action="store_true")
+    p.add_argument("--labeling-tar-staging-dir", type=Path)
     p.add_argument("--sentinel-dir", type=Path, default=Path("/workspace/logs"))
     args = p.parse_args(argv)
     if len(set(args.gpus)) != len(args.gpus):
@@ -425,6 +428,7 @@ def parse_args(argv=None):
 
 
 def main(argv=None):
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     args = parse_args(argv)
     args.root.mkdir(parents=True, exist_ok=True)
     run_id = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
