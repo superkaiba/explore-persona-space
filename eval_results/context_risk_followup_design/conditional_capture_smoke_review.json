@@ -1,0 +1,24 @@
+{
+  "verdict": "PASS",
+  "scope": "Read-only review of helper-based conditional diagnostic; no GPU execution yet",
+  "reviewer": "codex primary independent of Pascal helper author",
+  "script_sha256": "076e50453855a1758f5b4f49978a5c9ebfeee49c1f62be60066da38c42248080",
+  "checks": [
+    "Uses exact reviewed capture helper closure",
+    "Requires selected complete fresh996 generation and frozen249 context roster",
+    "Selects longest complete prefix and heaviest unequal two-row batch under actual15-row chunk packing",
+    "Checks exact server token IDs and repeated activation equality",
+    "Enforces logits_to_keep1 before forwards",
+    "Records per-phase measured peak/free memory",
+    "Hook/tuple check uses longest complete prefix when conservative measured headroom permits; otherwise explicitly reports use of shortest complete prefix",
+    "Writes separate diagnostic evidence; cannot count as production capture",
+    "Failures are recorded and raised"
+  ],
+  "execution_pending": true,
+  "caveats": [
+    "Exact repeated-capture equality is an implementation gate, not a cross-runtime parity claim",
+    "The optional tuple fallback never truncates a prefix and does not replace the required longest-prefix capture itself",
+    "Run Python without optimization so assertions remain enabled",
+    "Recheck runtime/package identities and free GPU after generation server group has drained before launch"
+  ]
+}

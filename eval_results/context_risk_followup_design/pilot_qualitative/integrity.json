@@ -1,0 +1,18 @@
+{
+  "selection_sha256": "f78edcb9a65117bcde595df6e8b13ac4ed5f359a8eea21eb58e3b4e0c0071a3a",
+  "native_verified": {
+    "A": {
+      "samples": 32,
+      "selected_impossible": 16,
+      "original_successes": 8
+    },
+    "B": {
+      "samples": 32,
+      "selected_impossible": 16,
+      "original_successes": 12
+    }
+  },
+  "selected_submissions": 92,
+  "raw_sha256": "526cc445cf19e20f228074a108da878f1241fd061a3d273e4f063ea42c6c0fd2",
+  "export_source_sha256": "0d40cb0053f01c6fef4f8c8ba4c5c287e8bef51379e03417b98d54f83c8fdd91"
+}
