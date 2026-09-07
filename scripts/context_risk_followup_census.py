@@ -177,7 +177,7 @@ def no_downstream_artifacts(root: Path) -> dict:
     }
 
 
-def requests(sample, model: str) -> tuple[list[dict], list[dict]]:
+def requests(sample, model: str) -> tuple[list[dict], list[dict], list[dict]]:
     """Bind every native request/response to the planned feedback and preserve non-stop events."""
     history = sample.metadata["agentic_results"]["attempt_history"]
     events = [e for e in sample.events if e.event == "model"]
@@ -186,7 +186,8 @@ def requests(sample, model: str) -> tuple[list[dict], list[dict]]:
     if not 1 <= len(history) <= 10:
         raise ValueError("Invalid submission count")
     expected_input = [("user", sample.input)]
-    completed, non_stop = [], []
+    completed, non_stop, recovered_errors = [], [], []
+    retry_counts = Counter()
     index = 0
     for event in events:
         if index >= len(history):
@@ -206,7 +207,33 @@ def requests(sample, model: str) -> tuple[list[dict], list[dict]]:
         if event.model != model or [(m.role, m.text) for m in event.input] != expected_input:
             raise ValueError("Per-request model or exact feedback differs")
         if event.error is not None:
-            raise ValueError("Transport error needs a separate explicit audit")
+            if (
+                event.error != "Connection error."
+                or event.output.completion
+                or event.output.usage is not None
+                or event.completed is not None
+            ):
+                raise ValueError("Unexpected transport error requires explicit investigation")
+            retry_counts[index] += 1
+            if retry_counts[index] > 2:
+                raise ValueError("Transport retries exceed the frozen limit")
+            recovered_errors.append(
+                {
+                    "sample_id": sample.id,
+                    "epoch": sample.epoch,
+                    "attempt": attempt["attempt"],
+                    "seed": attempt["request_seed"],
+                    "error": event.error,
+                    "timestamp": event.timestamp.isoformat(),
+                    "input_sha256": hashlib.sha256(
+                        json.dumps(expected_input, ensure_ascii=False).encode()
+                    ).hexdigest(),
+                    "config": expected_config,
+                }
+            )
+            # The next event must retain this attempt's exact input/config/seed.
+            # Index advances only on a matching completion; trailing errors fail below.
+            continue
         if event.output.model != model.removeprefix("openai-api/local/"):
             raise ValueError("Served model differs")
         if event.output.completion != attempt["response"]:
@@ -260,7 +287,7 @@ def requests(sample, model: str) -> tuple[list[dict], list[dict]]:
         sample.metadata["agentic_results"]["censored"]
     ):
         raise ValueError("Censor flag/score differs from native truncation")
-    return completed, non_stop
+    return completed, non_stop, recovered_errors
 
 
 def census_arm(root: Path, arm: str, launch: dict, base_url: str, model: str) -> dict:
@@ -360,11 +387,12 @@ def census_arm(root: Path, arm: str, launch: dict, base_url: str, model: str) ->
             int(pid) == launch["supervisor_pid"] or int(group) == launch["worker_pid"]
         ):
             raise ValueError("Owned supervisor or worker group is still live")
-    request_rows, censored_events = [], []
+    request_rows, censored_events, recovered_errors = [], [], []
     for sample in native_samples:
-        verified, truncated = requests(sample, model)
+        verified, truncated, retried = requests(sample, model)
         request_rows.extend(verified)
         censored_events.extend(truncated)
+        recovered_errors.extend(retried)
     if len(censored_events) != report["technical_errors"]:
         raise ValueError("Native censor census differs")
     contexts = [
@@ -404,6 +432,8 @@ def census_arm(root: Path, arm: str, launch: dict, base_url: str, model: str) ->
         "attempt_categories": actual["attempt_categories"],
         "censored_events": censored_events,
         "verified_requests": len(request_rows),
+        "verified_model_events": len(request_rows) + len(recovered_errors),
+        "recovered_transport_errors": recovered_errors,
         "stop_reasons": dict(Counter(r for row in request_rows for r in row["stop_reasons"])),
         "probe_status": "not_run",
         "mapping_benefit_status": "not_tested",
@@ -415,7 +445,13 @@ def census_arm(root: Path, arm: str, launch: dict, base_url: str, model: str) ->
         or any(sha256(Path(p)) != h for p, h in input_hashes.items())
     ):
         raise ValueError("Source or input artifact changed during verification")
-    save_json(root / "terminal_census" / f"{arm}_requests.json", {"requests": request_rows})
+    save_json(
+        root / "terminal_census" / f"{arm}_requests.json",
+        {
+            "requests": request_rows,
+            "recovered_transport_errors": recovered_errors,
+        },
+    )
     save_json(root / "terminal_census" / f"{arm}.json", result)
     return result
 

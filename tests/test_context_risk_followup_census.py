@@ -3,19 +3,23 @@
 from __future__ import annotations
 
 import os
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from inspect_ai.model import ModelUsage
 
 from scripts.context_risk_followup_census import (
     counts,
     no_downstream_artifacts,
+    requests,
     support,
     verify_exit,
     verify_freshness,
 )
+from scripts.context_risk_impossiblebench_inspect import GENERATION_EXTRA_BODY
 
 
 def context(task, condition, success, failure, censored):
@@ -155,3 +159,95 @@ def test_launch_freshness_rejects_an_older_successful_run(tmp_path):
     native[0].stats.started_at = "2026-09-07T16:59:59Z"
     with pytest.raises(ValueError, match="chronology"):
         verify_freshness(tmp_path, launch, native, report, exit_record)
+
+
+def retried_sample():
+    """Construct the observed native error/recovery shape using real token-usage schema."""
+    model = "openai-api/local/test-model"
+    config = SimpleNamespace(
+        max_tokens=65536,
+        temperature=1.0,
+        top_p=1.0,
+        max_connections=16,
+        max_retries=2,
+        extra_body=GENERATION_EXTRA_BODY,
+        seed=123,
+    )
+    user = SimpleNamespace(role="user", text="fixture input")
+    assistant = SimpleNamespace(role="assistant", text="fixture response")
+    start = datetime.fromisoformat("2026-09-07T17:00:00+00:00")
+    error = SimpleNamespace(
+        event="model",
+        config=config,
+        model=model,
+        input=[user],
+        error="Connection error.",
+        timestamp=start,
+        completed=None,
+        output=SimpleNamespace(completion="", usage=None),
+    )
+    completed = SimpleNamespace(
+        event="model",
+        config=deepcopy(config),
+        model=model,
+        input=[deepcopy(user)],
+        error=None,
+        timestamp=start,
+        completed=datetime.fromisoformat("2026-09-07T17:00:05+00:00"),
+        output=SimpleNamespace(
+            model="test-model",
+            completion=assistant.text,
+            choices=[SimpleNamespace(stop_reason="stop")],
+            usage=ModelUsage(input_tokens=2, output_tokens=3, total_tokens=5),
+        ),
+    )
+    sample = SimpleNamespace(
+        id="fixture",
+        epoch=1,
+        input=user.text,
+        messages=[user, assistant],
+        events=[error, completed],
+        error=None,
+        invalidation=None,
+        scores={"successful_submission": SimpleNamespace(value="C")},
+        metadata={
+            "agentic_results": {
+                "censored": False,
+                "attempt_history": [
+                    {
+                        "attempt": 1,
+                        "request_seed": 123,
+                        "response": assistant.text,
+                        "stop_reasons": ["stop"],
+                        "success": True,
+                    }
+                ],
+            }
+        },
+    )
+    return sample, model
+
+
+def test_recovered_transport_event_is_retained_without_advancing_submission():
+    sample, model = retried_sample()
+    completed, censored, errors = requests(sample, model)
+    assert len(completed) == 1 and censored == [] and len(errors) == 1
+    assert completed[0]["attempt"] == errors[0]["attempt"] == 1
+    assert completed[0]["request_seed"] == errors[0]["seed"] == 123
+
+
+@pytest.mark.parametrize("mutation", ["seed", "input", "unrecovered", "partial_output", "too_many"])
+def test_retry_cannot_change_the_request_or_hide_missing_completions(mutation):
+    sample, model = retried_sample()
+    if mutation == "seed":
+        sample.events[-1].config.seed = 124
+    elif mutation == "input":
+        sample.events[-1].input[0].text = "changed input"
+    elif mutation == "unrecovered":
+        sample.events.pop()
+    elif mutation == "partial_output":
+        sample.events[0].output.completion = "unaccounted output"
+    else:
+        sample.events = [deepcopy(sample.events[0]) for _ in range(3)] + [sample.events[-1]]
+    with pytest.raises(ValueError):
+        requests(sample, model)
