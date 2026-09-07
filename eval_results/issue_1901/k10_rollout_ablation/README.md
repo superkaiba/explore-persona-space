@@ -62,4 +62,14 @@ uv run python scripts/issue1901_k10_compare.py \
   --figure figures/issue_1901/k10_rollout_ablation
 ```
 
-The new per-query/bootstrap archive is [uploaded and hash-verified](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/b7c473e88f49cadd5defba3ce95e50c7d312ddd0/issue1901_k10_rollout_ablation/analysis_tensors); its location, hash, and producing revisions are in [publication.json](publication.json). No manuscript or Overleaf files were edited.
+The new per-query/bootstrap archive is [uploaded and hash-verified](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/b7c473e88f49cadd5defba3ce95e50c7d312ddd0/issue1901_k10_rollout_ablation/analysis_tensors); its location, hash, and producing revisions are in [publication.json](publication.json). The experiment run itself did not edit manuscript or Overleaf files.
+
+## Manuscript figure
+
+The subsequent manuscript integration adds a concise K=5 justification to Methodology and the full K=1,2,3,4,5,10 curves to the appendix. Reproduce the paper figure from the persisted summaries, without refitting or generating answers:
+
+```bash
+uv run python scripts/issue1901_k_rollout_ablation.py --plot-through-k10 --paper-style
+```
+
+This writes `figures/paper/c1_rollout_count.{pdf,png,meta.json}` and a grayscale preview. The sidecar preserves the plotted values, confidence intervals, input hashes, and producing script hash. The values match the previously published combined plot exactly.

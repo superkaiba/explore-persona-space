@@ -297,6 +297,7 @@ def make_figure(
     include_baseline: bool = False,
     curve: dict | None = None,
     source_metadata: dict | None = None,
+    paper: bool = False,
 ) -> None:
     """Render both outcome curves using the manuscript's shared visual system."""
     import matplotlib.pyplot as plt
@@ -305,13 +306,19 @@ def make_figure(
     from explore_persona_space.analysis import c2a_plot_style as style
 
     style.set_c2a_style()
-    fig, frac = style.c2a_figure("full", aspect=0.50 if curve is not None else 0.44)
+    fig, frac = style.c2a_figure("full", aspect=0.50 if curve is not None and not paper else 0.44)
     axes = fig.subplots(1, 2)
     fig.subplots_adjust(
-        left=0.08, right=0.98, bottom=0.28 if curve is not None else 0.20, top=0.78, wspace=0.28
+        left=0.08,
+        right=0.98,
+        bottom=0.28 if curve is not None and not paper else 0.20,
+        top=0.78,
+        wspace=0.28,
     )
     roles = {"ridge": "linear", "mlp": "nonlinear", "identity_bias": "control"}
     labels = {"ridge": "Linear map", "mlp": "Nonlinear map", "identity_bias": "Identity + bias"}
+    if paper:
+        labels.update(ridge="Linear metamodel", mlp="Nonlinear metamodel")
     cells = summary["all_subsets"]["per_k"] if curve is None else curve
     ks = sorted(map(int, cells))
     for arm in ARMS if include_baseline else ARMS[:2]:
@@ -354,18 +361,23 @@ def make_figure(
     fig.legend(
         handles, names, loc="upper center", bbox_to_anchor=(0.5, 0.97), ncol=3, frameon=False
     )
-    fig.text(
-        0.5,
-        0.035,
-        "Frozen maps · 1,000 contexts · 942 candidates · Whitened cosine + CSLS · 95% intervals",
-        ha="center",
-        color=style.MUTED,
-        fontsize=14,
-    )
+    if paper:
+        style.panel_header(axes[0], "A", "Reconstruction", kicker_y=1.12)
+        style.panel_header(axes[1], "B", "Retrieval", kicker_y=1.12)
+    else:
+        fig.text(
+            0.5,
+            0.035,
+            "Frozen maps · 1,000 contexts · 942 candidates · Whitened cosine + CSLS · 95% intervals",
+            ha="center",
+            color=style.MUTED,
+            fontsize=14,
+        )
     subject = "All subsets of five fixed on-policy draws; evaluation K only"
     if curve is not None:
         subject = "K=1–5: subset-averaged metrics from five draws; K=10: all ten draws"
-        fig.text(0.5, 0.085, subject, ha="center", color=style.MUTED, fontsize=14)
+        if not paper:
+            fig.text(0.5, 0.085, subject, ha="center", color=style.MUTED, fontsize=14)
     exported = style.save_c2a_figure(
         fig,
         stem,
@@ -382,13 +394,14 @@ def make_figure(
             "data": summary["all_subsets"] if curve is None else {"per_k": curve},
             "plotted_k": ks,
             "sources": source_metadata,
+            "paper_style": paper,
             "outputs_sha256": {k: FINAL._sha256(exported[k]) for k in ("pdf", "png", "grayscale")},
         },
     )
     plt.close(fig)
 
 
-def make_combined_figure(k5_path: Path, k10_path: Path, stem: Path) -> None:
+def make_combined_figure(k5_path: Path, k10_path: Path, stem: Path, *, paper: bool = False) -> None:
     """Join verified, persisted results without inference or metric recomputation."""
     old, new = [json.loads(path.read_text()) for path in (k5_path, k10_path)]
     for key in ("model", "layer", "n_train", "n_test", "whitening", "provenance", "chance_top1"):
@@ -426,7 +439,7 @@ def make_combined_figure(k5_path: Path, k10_path: Path, stem: Path) -> None:
         "unmeasured_k": [6, 7, 8, 9],
         "chance_top1": new["chance_top1"],
     }
-    make_figure(old, stem, curve=curve, source_metadata=sources)
+    make_figure(old, stem, curve=curve, source_metadata=sources, paper=paper)
 
 
 def main() -> None:
@@ -435,6 +448,9 @@ def main() -> None:
     parser.add_argument("--paths", type=Path)
     parser.add_argument(
         "--plot-through-k10", action="store_true", help="Plot persisted K=1–5,10 only"
+    )
+    parser.add_argument(
+        "--paper-style", action="store_true", help="Use manuscript labels and caption-free canvas"
     )
     parser.add_argument(
         "--k5-summary",
@@ -456,12 +472,16 @@ def main() -> None:
     args = parser.parse_args()
     if args.figure is None:
         name = "k_rollout_ablation_k1_to_10" if args.plot_through_k10 else "k_rollout_ablation"
-        args.figure = ROOT / "figures/issue_1901" / name
+        args.figure = ROOT / (
+            "figures/paper/c1_rollout_count" if args.paper_style else f"figures/issue_1901/{name}"
+        )
     if args.plot_through_k10:
         if args.paths is not None:
             parser.error("--paths does not apply to --plot-through-k10")
-        make_combined_figure(args.k5_summary, args.k10_summary, args.figure)
+        make_combined_figure(args.k5_summary, args.k10_summary, args.figure, paper=args.paper_style)
         return
+    if args.paper_style:
+        parser.error("--paper-style requires --plot-through-k10")
     if args.paths is None:
         parser.error("--paths is required for scoring")
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
