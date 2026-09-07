@@ -1,0 +1,25 @@
+{
+  "fold": 0,
+  "test_carriers": [
+    "c01",
+    "c02"
+  ],
+  "n_train": 200,
+  "dimension": 3584,
+  "n_test": 200,
+  "alpha": 100.0,
+  "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+  "inner_metric": "balanced_accuracy",
+  "inner_mean_metrics": [
+    0.9416666666666668,
+    0.9416666666666668,
+    0.9375,
+    0.9416666666666668,
+    0.9319444444444445,
+    0.8472222222222223,
+    0.7958333333333334,
+    0.7625000000000001
+  ],
+  "test_primary_metric": 0.9949999999999999,
+  "wall_seconds": 0.09670933149755001
+}

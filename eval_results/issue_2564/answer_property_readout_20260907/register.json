@@ -1,0 +1,202 @@
+{
+  "panel": "register",
+  "label_kind": "assigned_condition",
+  "classes": [
+    "v1",
+    "v2"
+  ],
+  "training_draws": [
+    0,
+    1
+  ],
+  "evaluation_draws": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "folds": [
+    {
+      "fold": 0,
+      "test_carriers": [
+        "c01",
+        "c02"
+      ],
+      "n_train": 80,
+      "dimension": 3584,
+      "n_test": 80,
+      "alpha": 1000000.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "balanced_accuracy",
+      "inner_mean_metrics": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "test_primary_metric": 1.0,
+      "wall_seconds": 0.04967806302011013
+    },
+    {
+      "fold": 1,
+      "test_carriers": [
+        "c03",
+        "c04"
+      ],
+      "n_train": 80,
+      "dimension": 3584,
+      "n_test": 80,
+      "alpha": 1000000.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "balanced_accuracy",
+      "inner_mean_metrics": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "test_primary_metric": 1.0,
+      "wall_seconds": 0.048963554203510284
+    },
+    {
+      "fold": 2,
+      "test_carriers": [
+        "c05",
+        "c06"
+      ],
+      "n_train": 80,
+      "dimension": 3584,
+      "n_test": 80,
+      "alpha": 1000000.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "balanced_accuracy",
+      "inner_mean_metrics": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "test_primary_metric": 1.0,
+      "wall_seconds": 0.05362897552549839
+    },
+    {
+      "fold": 3,
+      "test_carriers": [
+        "c07",
+        "c08"
+      ],
+      "n_train": 80,
+      "dimension": 3584,
+      "n_test": 80,
+      "alpha": 1000000.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "balanced_accuracy",
+      "inner_mean_metrics": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "test_primary_metric": 1.0,
+      "wall_seconds": 0.051784005016088486
+    },
+    {
+      "fold": 4,
+      "test_carriers": [
+        "c09",
+        "c10"
+      ],
+      "n_train": 80,
+      "dimension": 3584,
+      "n_test": 80,
+      "alpha": 1000000.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "balanced_accuracy",
+      "inner_mean_metrics": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "test_primary_metric": 1.0,
+      "wall_seconds": 0.054546138271689415
+    },
+    {
+      "fold": 5,
+      "test_carriers": [
+        "c11",
+        "c12"
+      ],
+      "n_train": 80,
+      "dimension": 3584,
+      "n_test": 80,
+      "alpha": 1000000.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "balanced_accuracy",
+      "inner_mean_metrics": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "test_primary_metric": 1.0,
+      "wall_seconds": 0.05366019904613495
+    }
+  ],
+  "pilot_only": false,
+  "wall_seconds": 0.3171358201652765,
+  "peak_rss_mib_process": 719.58203125,
+  "metrics": {
+    "balanced_accuracy": 1.0,
+    "balanced_accuracy_ci95": [
+      1.0,
+      1.0
+    ],
+    "chance_balanced_accuracy": 0.5,
+    "macro_ovr_auroc": 1.0,
+    "chance_auroc": 0.5,
+    "per_class_auroc": {
+      "v1": 1.0,
+      "v2": 1.0
+    },
+    "positive_prevalence": {
+      "v1": 0.5,
+      "v2": 0.5
+    },
+    "n_carriers": 12,
+    "n_contexts": 48,
+    "n_answers": 480,
+    "uncertainty": "percentile bootstrap of 12 carrier clusters; exploratory precision",
+    "bootstrap_draws": 2000
+  }
+}

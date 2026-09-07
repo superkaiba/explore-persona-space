@@ -1,0 +1,25 @@
+{
+  "fold": 2,
+  "test_carriers": [
+    "c05",
+    "c06"
+  ],
+  "n_train": 200,
+  "dimension": 3584,
+  "n_test": 200,
+  "alpha": 100.0,
+  "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+  "inner_metric": "macro_ovr_auroc",
+  "inner_mean_metrics": [
+    0.9863711436952256,
+    0.9863711436952256,
+    0.9864868844359663,
+    0.9865978712492672,
+    0.982770206756148,
+    0.9655457138515177,
+    0.9517792963984135,
+    0.946754399016405
+  ],
+  "test_primary_metric": 0.9985347985347985,
+  "wall_seconds": 0.3542459439486265
+}

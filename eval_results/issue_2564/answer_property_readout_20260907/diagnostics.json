@@ -1,0 +1,133 @@
+{
+  "timestamp_utc": "2026-09-07T18:40:47.645602+00:00",
+  "kind": "post-fit descriptive analysis; no additional fits",
+  "summary_sha256": "37343f4717b40d222c059b42d929c7acfdb088139634cd48be5d47760509b22d",
+  "prediction_inputs": [
+    {
+      "path": "persona_predictions.jsonl",
+      "sha256": "d9a6b1dc626fc0c26b047bb4653a4225b54d5e0bded6956558baa0f464ba3b5f"
+    },
+    {
+      "path": "format_predictions.jsonl",
+      "sha256": "47364e2510943cd328c6c10a111216f54d9947c7ba9615ed7893c5bd874c8adf"
+    },
+    {
+      "path": "register_predictions.jsonl",
+      "sha256": "252cb99a7d0a2b03c3a18b749840402069a81d40421a33eb31a1eed515744638"
+    },
+    {
+      "path": "lexical_marker_predictions.jsonl",
+      "sha256": "f3d84652ebd2a8fe75b1a66aff8e7753c38527e27054222fa33bdd33bec74cb4"
+    },
+    {
+      "path": "observed_marker_presence_predictions.jsonl",
+      "sha256": "ee3f9adbdace26cf6f9905d22c9c389aff2ac58da55fd213777e282792493d32"
+    },
+    {
+      "path": "answer_language_predictions.jsonl",
+      "sha256": "6b124cef7656b32aee39a145a91708176c9d6caef1abd41ab7b44f22ddb7741e"
+    }
+  ],
+  "foldwise_auroc": {
+    "persona": {
+      "folds": [
+        1.0,
+        0.9999375,
+        1.0,
+        0.9997187499999999,
+        0.9998437499999999,
+        0.9999062500000001
+      ],
+      "unweighted_mean": 0.9999010416666668
+    },
+    "format": {
+      "folds": [
+        0.99596875,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "unweighted_mean": 0.9993281249999999
+    },
+    "register": {
+      "folds": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "unweighted_mean": 1.0
+    },
+    "lexical_marker": {
+      "folds": [
+        0.9999687500000001,
+        0.9803749999999999,
+        0.999125,
+        0.9901249999999999,
+        0.9987812500000001,
+        0.99940625
+      ],
+      "unweighted_mean": 0.9946302083333333
+    },
+    "observed_marker_presence": {
+      "folds": [
+        0.9999687500000001,
+        0.9750513196042337,
+        0.9985347985347985,
+        0.9686181999698613,
+        0.9923417174796748,
+        0.9981562499999999
+      ],
+      "unweighted_mean": 0.9887785059314281
+    },
+    "answer_language": {
+      "folds": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "unweighted_mean": 1.0
+    }
+  },
+  "instruction_only_marker_baseline": {
+    "rule": "one-hot requested word present, other four absent; no activation access or fitting",
+    "metrics": {
+      "balanced_accuracy": 0.9937377522365457,
+      "balanced_accuracy_ci95": [
+        0.987022974921295,
+        0.9986500487787703
+      ],
+      "chance_balanced_accuracy": 0.5,
+      "macro_ovr_auroc": 0.9937377522365457,
+      "chance_auroc": 0.5,
+      "per_class_auroc": {
+        "moreover": 0.971804032705736,
+        "honestly": 0.9994797086368366,
+        "surely": 0.9994797086368366,
+        "notably": 1.0,
+        "essentially": 0.9979253112033195
+      },
+      "positive_prevalence": {
+        "moreover": 0.21083333333333334,
+        "honestly": 0.19916666666666666,
+        "surely": 0.19916666666666666,
+        "notably": 0.2,
+        "essentially": 0.20083333333333334
+      },
+      "n_carriers": 12,
+      "n_contexts": 120,
+      "n_answers": 1200,
+      "uncertainty": "percentile bootstrap of 12 carrier clusters; exploratory precision",
+      "bootstrap_draws": 2000
+    },
+    "n_answers_with_any_label_mismatch": 18,
+    "n_binary_label_mismatches": 18
+  }
+}

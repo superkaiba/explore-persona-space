@@ -1,0 +1,211 @@
+{
+  "panel": "observed_marker_presence",
+  "label_kind": "actual_output_whole_word_presence",
+  "classes": [
+    "moreover",
+    "honestly",
+    "surely",
+    "notably",
+    "essentially"
+  ],
+  "training_draws": [
+    0,
+    1
+  ],
+  "evaluation_draws": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "folds": [
+    {
+      "fold": 0,
+      "test_carriers": [
+        "c01",
+        "c02"
+      ],
+      "n_train": 200,
+      "dimension": 3584,
+      "n_test": 200,
+      "alpha": 100.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "macro_ovr_auroc",
+      "inner_mean_metrics": [
+        0.9788121993942309,
+        0.9788121993942309,
+        0.9791034180322238,
+        0.9791177392386361,
+        0.9773774530947644,
+        0.9640333827059732,
+        0.9519510697960033,
+        0.9483772096964079
+      ],
+      "test_primary_metric": 0.9999687500000001,
+      "wall_seconds": 0.3277812320739031
+    },
+    {
+      "fold": 1,
+      "test_carriers": [
+        "c03",
+        "c04"
+      ],
+      "n_train": 200,
+      "dimension": 3584,
+      "n_test": 200,
+      "alpha": 100.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "macro_ovr_auroc",
+      "inner_mean_metrics": [
+        0.9890589954278813,
+        0.9889432546871406,
+        0.9891769826892111,
+        0.9898280243558775,
+        0.9868446899442144,
+        0.9772387026972624,
+        0.9651714724235104,
+        0.9609180002012883
+      ],
+      "test_primary_metric": 0.9750513196042337,
+      "wall_seconds": 0.37106993421912193
+    },
+    {
+      "fold": 2,
+      "test_carriers": [
+        "c05",
+        "c06"
+      ],
+      "n_train": 200,
+      "dimension": 3584,
+      "n_test": 200,
+      "alpha": 100.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "macro_ovr_auroc",
+      "inner_mean_metrics": [
+        0.9863711436952256,
+        0.9863711436952256,
+        0.9864868844359663,
+        0.9865978712492672,
+        0.982770206756148,
+        0.9655457138515177,
+        0.9517792963984135,
+        0.946754399016405
+      ],
+      "test_primary_metric": 0.9985347985347985,
+      "wall_seconds": 0.3542459439486265
+    },
+    {
+      "fold": 3,
+      "test_carriers": [
+        "c07",
+        "c08"
+      ],
+      "n_train": 200,
+      "dimension": 3584,
+      "n_test": 200,
+      "alpha": 100.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "macro_ovr_auroc",
+      "inner_mean_metrics": [
+        0.9896703661233541,
+        0.9896703661233541,
+        0.9896197295492802,
+        0.9900021858707774,
+        0.9897795351524685,
+        0.9783730148652815,
+        0.9634351902170529,
+        0.9580274067067586
+      ],
+      "test_primary_metric": 0.9686181999698613,
+      "wall_seconds": 0.39404968172311783
+    },
+    {
+      "fold": 4,
+      "test_carriers": [
+        "c09",
+        "c10"
+      ],
+      "n_train": 200,
+      "dimension": 3584,
+      "n_test": 200,
+      "alpha": 1.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "macro_ovr_auroc",
+      "inner_mean_metrics": [
+        0.986679924781641,
+        0.986679924781641,
+        0.9866732947883089,
+        0.9856592055709479,
+        0.9817717753563326,
+        0.964551594047117,
+        0.9390756400566499,
+        0.9318355315916689
+      ],
+      "test_primary_metric": 0.9923417174796748,
+      "wall_seconds": 0.31918347626924515
+    },
+    {
+      "fold": 5,
+      "test_carriers": [
+        "c11",
+        "c12"
+      ],
+      "n_train": 200,
+      "dimension": 3584,
+      "n_test": 200,
+      "alpha": 100.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "macro_ovr_auroc",
+      "inner_mean_metrics": [
+        0.9879445681795587,
+        0.9880480878482958,
+        0.9881675621613185,
+        0.9891071326945147,
+        0.9848152715703898,
+        0.9621864721763336,
+        0.9380549481339013,
+        0.9307751194797694
+      ],
+      "test_primary_metric": 0.9981562499999999,
+      "wall_seconds": 0.3630255628377199
+    }
+  ],
+  "pilot_only": false,
+  "wall_seconds": 2.1395377591252327,
+  "peak_rss_mib_process": 725.37890625,
+  "metrics": {
+    "balanced_accuracy": 0.9355091561486228,
+    "balanced_accuracy_ci95": [
+      0.9036108694153151,
+      0.9649928454134132
+    ],
+    "chance_balanced_accuracy": 0.5,
+    "macro_ovr_auroc": 0.987038630733957,
+    "chance_auroc": 0.5,
+    "per_class_auroc": {
+      "moreover": 0.9771360359946742,
+      "honestly": 0.9984413028618202,
+      "surely": 0.990795849860022,
+      "notably": 0.9828949652777778,
+      "essentially": 0.9859249996754919
+    },
+    "positive_prevalence": {
+      "moreover": 0.21083333333333334,
+      "honestly": 0.19916666666666666,
+      "surely": 0.19916666666666666,
+      "notably": 0.2,
+      "essentially": 0.20083333333333334
+    },
+    "n_carriers": 12,
+    "n_contexts": 120,
+    "n_answers": 1200,
+    "uncertainty": "percentile bootstrap of 12 carrier clusters; exploratory precision",
+    "bootstrap_draws": 2000
+  }
+}
