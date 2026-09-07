@@ -1,0 +1,80 @@
+verify_task_body — /home/thomasjiralerspong/explore-persona-space/tasks/reviewing/2670/body.md
+  [PASS] body is not a stub — 28247 chars + H1 present
+  [PASS] no duplicate frontmatter — 1 leading frontmatter block
+  [PASS] title confidence tag — level=MODERATE
+  [PASS] four required H2 sections in order
+  [PASS] v4 structure (Takeaways / Goal / Methodology / Results) — v4 structure clean — Takeaways (4 bullets), Goal (both slots), Methodology (Training + Evaluation), Results (1 `### ` result(s))
+  [PASS] TL;DR nested-design structure (v2) — v2 sentinel absent — pre-nested-design body, nested-shape rule skipped
+  [PASS] hero image present — 1 image(s)
+  [PASS] Figure URL resolvable — 1 URL(s)
+  [PASS] Figure caption sanity — all 1 `## Results` caption(s) open `**Figure.** *lead claim.*`
+  [PASS] Confidence sentence matches title — nested-design (v2/v3 sentinel present); title carries `(MODERATE confidence)` tag — no body `Confidence:` sentence required
+  [PASS] Repro/Context footer present (v4) — Repro + Context
+  [PASS] Reproducibility URL permanence
+  [PASS] Reproducibility sentinel scrub
+  [PASS] Cherry-picked label discipline — 8 sample block(s) labelled
+  [PASS] Qualitative-data link — 8 sample block(s) link to a qualitative-data artifact
+  [PASS] planned-vs-actual denominator consistency — TL;DR claims=0, whole-body scope-correction claims=0 — insufficient signal for a denominator drift check
+  [PASS] `## Figure` H2 deprecation hook (dormant) — stray `## Figure` H2 is rejected by check 2; this hook is dormant under the 2-content-section spec
+  [PASS] Results narrative flow — no mechanical narrative-shape regressions detected
+  [PASS] MDX-safe prose — real-parse backstop + no `<https://...>` autolinks, `<` before digit, or `<|` in table cell — regex clean (real MDX parse skipped: mdx_parse_check: parser harness unavailable — Cannot find package 'mdast-util-from-markdown' imported from /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/dashboard/scripts/mdx_parse_check.mjs)
+  [PASS] Reproducibility committed-at-sha claims resolve — no `committed ... at commit `<sha>`` claim with a paired repo-relative artifact path found
+  [PASS] Reproducibility artifact URLs exist — 2 URL(s)
+  [PASS] Data section shape (v3) — skipped — not a v3 body
+  [PASS] Data subset-disclosure (v3) — skipped — not a v3 body
+  [PASS] Methodology unwrapped example table (v4) — no unwrapped `## Methodology` example table with condition codes
+  [PASS] v3 conciseness caps — skipped — not a v3 body
+  [PASS] Methodology completeness (v4) — ## Methodology has the Training hyperparameter table (or no-training marker) and a Sample slot with a complete-artifact link
+  [PASS] Results three-beat shape (v4) — all 1 `### <result>`(s) framed (figure-bearing ones)
+  [PASS] no bare issue refs in standalone sections (v4) — Takeaways/Methodology/Results carry no bare `#K` refs or prior-issue task links
+  [PASS] Results paragraph sentence cap (v4) — all `### <result>` paragraphs ≤3 sentences
+  [PASS] Quantitative results carry a figure (v4) — all 1 `### <result>`(s) scanned — no figure-less quantitative section
+  [PASS] One inline figure per result, or a declared pair (v4) — all 1 `### <result>`(s) scanned — no unpaired multi-figure section
+  [PASS] footer Reused bullets carry a revision/path pin — all footer Reused issue-referencing bullets pinned + canonical-form
+  [PASS] Sample-slot disclosure count (v4) — 4 disclosure count claim(s) reconcile
+  [PASS] dropped-at-gate condition placement (v4) — no dropped-at-gate declaration in ## Methodology
+  [PASS] Single aggregate-stat figure has per-unit evidence or exemption (v4) — all 1 `### <result>`(s) scanned — no exemption-less single-figure aggregate statistic
+  [PASS] figure URL sha matches Reproducibility — no per-figure commit claim in `## Reproducibility` `**Figures:**`
+  [PASS] HF URL pins resolve at the cited revision — 5 HF URL(s)
+  [PASS] figure text vs body prose (figure-text staleness) — 1 figure sidecar(s) consistent with body prose
+  [PASS] audit-availability claims match HF Hub — no availability-denial claim near a data artifact
+  [PASS] figure panel prose vs figure sidecar (panel/series drift) — no panel/series prose claims to compare against a sidecar
+  [WARN] figure text opaque config codes (slug / @L-pin / H-code / slot-family / P-M candidate / letter-arrow / arm-slug / role@span tokens) — 1 figure(s) with opaque code tokens of 1 scanned: `observed_outcomes.png` figure text carries opaque config-code token(s) `lcbhard_1`, `lcbhard_6`, `lcbhard_7`, `lcbhard_9` … — use plain-English condition names in rendered figure text (slugs belong in the Repro config row / provenance keys); regenerate, or acknowledge in body
+  [WARN] figure tracked at live refs — body-linked figure `figures/issue_2670/observed_outcomes.png` is tracked at its pinned-SHA URL but MISSING from every live local ref (`HEAD`) — the immutable pinned URL still renders, so this tracking loss is otherwise silent (incident #841); restore with `git restore --source=<pinned-sha> -- <path>` and commit on the intended live branch
+  [PASS] HF file-count claims match the Hub tree — no file-count claims adjacent to HF tree links
+  [PASS] HF-adjacent backtick file claims exist under the pinned tree — no backtick file claims adjacent to HF tree links
+  [PASS] figure prose numerics vs figure sidecar (plotted-value drift) — no figure with bolded what-is-plotted decimals AND a value-bearing sidecar
+  [PASS] figure beat claims vs sidecar rendered text (series-structure drift) — no beat-phrase claim with a text-bearing sidecar — nothing to compare
+  [PASS] backtick HF-path count claims carry an adjacent pinned /tree link — no unpinned backtick HF-path count claims
+  [PASS] figure sidecar coverage (sidecar-less embedded figures) — 1 embedded figure(s) all carry sidecar files at their cited shas
+  [PASS] figure sidecar text coverage (text-less sidecars) — 1 sidecar-bearing figure(s) all carry rendered-text blocks at their cited shas
+  [PASS] Body-wide same-repo artifact URLs exist — 1 URL(s)
+  [PASS] GitHub-tree-adjacent backtick file claims exist in the pinned tree — no backtick file claims adjacent to same-repo git tree links
+  [PASS] footer HF artifact paths carry an adjacent pinned link — all footer HF artifact paths pinned
+  [PASS] footer code shas / eval_results paths carry an adjacent pinned github link — all footer code shas / eval_results paths github-pinned
+  [PASS] figure caption count claims vs sidecar point values (count drift) — no figure caption with a registered count claim AND a value-bearing sidecar
+  [PASS] HF brace-expanded path claims resolve at the adjacent pin — no brace-expanded path claims adjacent to pinned HF tree links
+  [PASS] repro-named result dirs clean in working tree — no repro-named eval_results dirs to check
+  [PASS] figure PNG/sidecar render pairing (render_id) — 1 figure(s) checked; every stamped PNG/sidecar pair agrees
+  [PASS] figure sidecar categorical-slot completeness — 1 figure sidecar(s) checked; no labeled-K/covered-M slot gap
+  [PASS] artifact-content claims match the pinned JSON structure — no per-unit artifact-content claims in Takeaways/Results
+  [PASS] v4 sidecar-less Results figures (caption codes / post-cutover block) — 1 same-repo figure(s) checked — 0 sidecar-less, 0 exempt-pre-cutover, none blocking
+  [PASS] positional result cross-refs resolve (v4) — <2 results — no positional target space
+  [PASS] Goal-of-experiment field — frontmatter goal present (188 chars)
+  [PASS] H1 matches frontmatter title — H1 == frontmatter title (whitespace-normalized)
+  [PASS] concerns audit (Lens 14) — skipped — no concerns.jsonl sibling (file-only or pre-concerns task)
+  [PASS] Reproducibility lr matches plan — skipped — no learning rate stated in Methodology
+  [PASS] plan conditions coverage — skipped — no plan version carries a conditions table with a config-slug column
+  [PASS] Reproducibility Context provenance row — **Context:** row present with lineage token
+  [PASS] Body Parameters ⊆ methodology doc §2 — skipped — not a v3 body
+  [PASS] v4 conciseness caps — all v4 conciseness caps satisfied
+  [PASS] judge-API-error denominator disclosed — no judge denominator asserted
+  [PASS] judge drop-line population reconciles — no judge drop-line asserted
+  [WARN] cross-issue reuse pins declared (footer Reused bullets) — skipped — eval root unresolved
+  [PASS] per-unit companion figures embedded — no orphaned per-unit figures at body-cited SHAs (widened scan, #2169: every committed `figures/issue_<N>/*.png` at those SHAs whose stem the task's own plan names is a class-C candidate — one neither embedded nor named would WARN; class-C candidate set: plan-named figures only (4 plan file(s) read))
+  [PASS] Results figures embedded, not linked — no linked-but-unembedded `figures/issue_<N>/` PNGs in `## Results`
+  [PASS] Context follow-up provenance vs followup-scope markers — skipped — no epm:followup-scope markers
+  [PASS] Acknowledgment result-count matches folded body (v4) — acknowledgment claims reconcile with the folded body (1 `### ` result section(s))
+  [PASS] Every result section has per-unit evidence or exemption (v4) — all 1 `### <result>`(s) carry per-unit evidence or an exemption
+
+OVERALL: PASS

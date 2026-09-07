@@ -17,11 +17,13 @@
     "analysis": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/86f959a218d10758953d51ed6a11758255274172/context_risk/issue2670_corrected_v20/analysis",
     "final": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/88d985ef6bcf1120a0549c290565073a14451ff0/context_risk/issue2670_corrected_v20/final"
   },
-  "report_sha256": "49daf75cf9f694856f7db98443d8fd15083fedbcc026ecc179d70e1d5b99ded6",
+  "report_sha256": "38320524b2866cc740c91751d901f0ebc539e0dc6ce47d7af81685d4bcee1435",
   "reviewed_report_sha256": "c9a6d014a194177add7e72b666331dc67e4edb90e03fca8de54ac9ec6837c6fd",
   "post_review_changes": [
     "Updated methodology link to the actual pushed SHA after managed main sync.",
-    "Added immutable final replay and owner audit archive URL to Repro footer."
+    "Added immutable final replay and owner audit archive URL to Repro footer.",
+    "Restored exact canonical origin_prompt text in Context footer (combined stored prompt).",
+    "Clarified that panel B displays per-context counts to satisfy mechanical per-unit evidence recognition."
   ],
   "workflow_target": "awaiting_promotion; useful/not-useful classification remains user-only"
 }

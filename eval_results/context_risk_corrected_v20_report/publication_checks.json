@@ -1,7 +1,12 @@
 {
   "passed": true,
-  "post_review_edits_exactly_limited_to_links": true,
+  "post_review_edits_exactly_limited_to": [
+    "Updated methodology link to the actual pushed SHA after managed main sync.",
+    "Added immutable final replay and owner audit archive URL to Repro footer.",
+    "Restored exact canonical origin_prompt text in Context footer (combined stored prompt).",
+    "Clarified that panel B displays per-context counts to satisfy mechanical per-unit evidence recognition."
+  ],
   "methodology_mechanical_copy_exact": true,
-  "report_sha256": "49daf75cf9f694856f7db98443d8fd15083fedbcc026ecc179d70e1d5b99ded6",
+  "report_sha256": "38320524b2866cc740c91751d901f0ebc539e0dc6ce47d7af81685d4bcee1435",
   "methodology_sha256": "1cc509b1b386b7278c20805f5c2a4522bd3a19d5b3ec617eb2ece8a520a38cd1"
 }

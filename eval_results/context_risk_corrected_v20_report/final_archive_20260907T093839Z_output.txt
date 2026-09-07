@@ -1,0 +1,61 @@
+[supervisor-start] mode=final_archive pid=512557 root=/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_livecodebench_v20_corrected utc=2026-09-07T09:38:39Z
+[worker-start] mode=final_archive pid=512564
+Processing Files (0 / 0)      : |          |  0.00B /  0.00B            
+New Data Upload               : |          |  0.00B /  0.00B            [A
+
+  ...res/observed_outcomes.png:  94%|█████████▍|  218kB /  233kB            [A[A
+
+
+  ...uKtMMB8JeFttJpExyMoJ.eval:  94%|█████████▍| 1.40MB / 1.49MB            [A[A[A
+
+  ...res/observed_outcomes.png:  94%|█████████▍|  218kB /  233kB            [A[A
+
+
+  ...uKtMMB8JeFttJpExyMoJ.eval:  94%|█████████▍| 1.40MB / 1.49MB            [A[A[AProcessing Files (0 / 2)      :  94%|█████████▍| 1.61MB / 1.72MB, 5.01MB/s  
+New Data Upload               :  94%|█████████▍| 1.61MB / 1.72MB, 5.01MB/s  [A
+
+  ...res/observed_outcomes.png: 100%|██████████|  233kB /  233kB            [A[A
+
+
+  ...uKtMMB8JeFttJpExyMoJ.eval: 100%|██████████| 1.49MB / 1.49MB            [A[A[AProcessing Files (2 / 2)      : 100%|██████████| 1.72MB / 1.72MB, 3.30MB/s  
+New Data Upload               : 100%|██████████| 1.72MB / 1.72MB, 3.30MB/s  [A
+
+  ...res/observed_outcomes.png: 100%|██████████|  233kB /  233kB            [A[A
+
+
+  ...uKtMMB8JeFttJpExyMoJ.eval: 100%|██████████| 1.49MB / 1.49MB            [A[A[A
+
+  ...res/observed_outcomes.png: 100%|██████████|  233kB /  233kB            [A[A
+
+
+  ...uKtMMB8JeFttJpExyMoJ.eval: 100%|██████████| 1.49MB / 1.49MB            [A[A[AProcessing Files (2 / 2)      : 100%|██████████| 1.72MB / 1.72MB, 2.38MB/s  
+New Data Upload               : 100%|██████████| 1.72MB / 1.72MB, 2.38MB/s  
+  ...res/observed_outcomes.png: 100%|██████████|  233kB /  233kB            
+  ...uKtMMB8JeFttJpExyMoJ.eval: 100%|██████████| 1.49MB / 1.49MB            
+upload_folder transient error (attempt 1, elapsed 122s / budget 1800s): 504 Server Error: Gateway Time-out for url: https://huggingface.co/api/datasets/superkaiba1/explore-persona-space-data/commit/main (Amz CF ID: T0hH8ZL8poNXESMr6znVbZkenRy-rGdEk-isXEgsejoT6cCvBRDPMw==); retrying in 12s
+Processing Files (0 / 0)      : |          |  0.00B /  0.00B            
+New Data Upload               : |          |  0.00B /  0.00B            [A
+
+  ...res/observed_outcomes.png: 100%|██████████|  233kB /  233kB            [A[A
+
+
+  ...uKtMMB8JeFttJpExyMoJ.eval: 100%|██████████| 1.49MB / 1.49MB            [A[A[A
+
+  ...res/observed_outcomes.png: 100%|██████████|  233kB /  233kB            [A[A
+
+
+  ...uKtMMB8JeFttJpExyMoJ.eval: 100%|██████████| 1.49MB / 1.49MB            [A[A[AProcessing Files (2 / 2)      : 100%|██████████| 1.72MB / 1.72MB,   ???B/s  
+
+  ...res/observed_outcomes.png: 100%|██████████|  233kB /  233kB            [A[A
+
+
+  ...uKtMMB8JeFttJpExyMoJ.eval: 100%|██████████| 1.49MB / 1.49MB            [A[A[A
+
+  ...res/observed_outcomes.png: 100%|██████████|  233kB /  233kB            [A[A
+
+
+  ...uKtMMB8JeFttJpExyMoJ.eval: 100%|██████████| 1.49MB / 1.49MB            [A[A[AProcessing Files (2 / 2)      : 100%|██████████| 1.72MB / 1.72MB,  0.00B/s  
+New Data Upload               : |          |  0.00B /  0.00B,  0.00B/s  
+  ...res/observed_outcomes.png: 100%|██████████|  233kB /  233kB            
+  ...uKtMMB8JeFttJpExyMoJ.eval: 100%|██████████| 1.49MB / 1.49MB            
+No files have been modified since last commit. Skipping to prevent empty commit.
