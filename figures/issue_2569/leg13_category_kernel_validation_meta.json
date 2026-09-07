@@ -1,0 +1,98 @@
+{
+  "git_commit": "095442be89861d5892646d87601b5f2f96b62f90",
+  "git_dirty_at_analysis": false,
+  "input_config_sha256": "b3eb391d4c9a6cb593e10a9600873def5b63abd22dd2f088c9753a7c0a0c1f75",
+  "input_result_sha256": "0cbc58517d5258f139e15f4bbefcf55da1c320c615edc8c3d6746990a450f568",
+  "outputs": {
+    "grayscale": {
+      "path": "/home/thomasjiralerspong/issue2569_category_validation_run/git_payload/figures/issue_2569/leg13_category_kernel_validation_grayscale.png",
+      "sha256": "0b4d64a385bc866a7e543c4f79a12886fe44848aee98322caa5ef589ce06b3ae",
+      "size": 105966
+    },
+    "pdf": {
+      "path": "/home/thomasjiralerspong/issue2569_category_validation_run/git_payload/figures/issue_2569/leg13_category_kernel_validation.pdf",
+      "sha256": "d07cd1ccc46938bdccd9eab3ca747519f06ce260a39ca260b32f0493bad95866",
+      "size": 13774
+    },
+    "png": {
+      "path": "/home/thomasjiralerspong/issue2569_category_validation_run/git_payload/figures/issue_2569/leg13_category_kernel_validation.png",
+      "sha256": "c9767c3f1334b244cf7dd7d746b87964f155aefb70818b9dd634591a5bf3d3bb",
+      "size": 247883
+    }
+  },
+  "plotted": {
+    "format": {
+      "kappa_99": 0.9191156881769954,
+      "kappa_99_ci": [
+        0.9170226848724776,
+        0.92518495700974
+      ],
+      "tau": 0.30226019849659796,
+      "tau_ci": [
+        0.27551555425953006,
+        0.33314120024093496
+      ]
+    },
+    "language": {
+      "kappa_99": 0.7287325568583668,
+      "kappa_99_ci": [
+        0.71932173688136,
+        0.7324329427148567
+      ],
+      "tau": 0.7649364044650656,
+      "tau_ci": [
+        0.7633808765950656,
+        0.798245022944845
+      ]
+    },
+    "safety": {
+      "kappa_99": 0.8959775986537578,
+      "kappa_99_ci": [
+        0.8897034957172365,
+        0.9422053096921109
+      ],
+      "tau": 0.36096214617880384,
+      "tau_ci": [
+        0.25913229535699306,
+        0.5344166799402031
+      ]
+    },
+    "topic": {
+      "kappa_99": 0.8900341742914087,
+      "kappa_99_ci": [
+        0.8882905721885335,
+        0.8944089326573308
+      ],
+      "tau": 0.41495118645202733,
+      "tau_ci": [
+        0.4002063112952853,
+        0.4357130449920194
+      ]
+    }
+  },
+  "resolved_font": "Inter",
+  "style_version": "c2a-v1",
+  "visual_encodings": {
+    "format": {
+      "color": "#B7791F",
+      "label": "Observed answer format",
+      "marker": "D"
+    },
+    "language": {
+      "color": "#176B87",
+      "label": "Prompt language",
+      "marker": "s"
+    },
+    "safety": {
+      "color": "#C4553D",
+      "label": "Request refusal-adjacency",
+      "marker": "^"
+    },
+    "topic": {
+      "color": "#6B7280",
+      "label": "Coarse topic/task",
+      "marker": "o"
+    }
+  },
+  "xscale_panel_b": "log"
+}
