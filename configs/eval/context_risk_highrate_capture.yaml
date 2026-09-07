@@ -1,0 +1,13 @@
+defaults:
+  - context_risk_qwen38_impossible_capture
+  - _self_
+
+root: ${oc.env:EPM_CONTEXT_RISK_HIGHRATE_ROOT}
+review: ${oc.env:EPM_CONTEXT_RISK_HIGHRATE_CAPTURE_REVIEW}
+mode: capture
+input_binding_sha256: ${oc.env:EPM_CONTEXT_RISK_HIGHRATE_CAPTURE_INPUT_SHA256,null}
+manifest_path: ${root}/manifests/fresh_B.jsonl
+output_dir: ${root}/capture
+
+model:
+  capture_layers: [44]

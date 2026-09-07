@@ -1,0 +1,86 @@
+{
+  "blocking_findings": [],
+  "executed_evidence": [
+    {
+      "command": "thread-capped UV_NO_SYNC=1 uv run --with inspect-ai==0.3.261 --with openai==3.7.0 python -m pytest tests/test_context_risk_highrate_design.py -q",
+      "result": "13 passed in 4.15s before added native/selection integration cases"
+    },
+    {
+      "command": "same pinned runtime: python -m pytest tests/test_context_risk_highrate_collect.py -q",
+      "result": "10 passed; old missing-row fixture mutation failed before audit; corrected missing-row case later passed"
+    },
+    {
+      "command": "same pinned runtime: python -m pytest tests/test_context_risk_highrate_collect.py tests/test_context_risk_highrate_design.py -q --maxfail=2",
+      "result": "23 passed; one deliberate source-byte drift rejection during concurrent lint edits; one real native-header timestamp precision failure, now fixed"
+    },
+    {
+      "command": "same runtime: selected true_failure, all 3 terminal_validation_failures, native_terminal_process, select_persists cases",
+      "result": "5 passed in 32.88s; terminal fixture rejected a concurrent final import-comment source change"
+    },
+    {
+      "command": "same runtime: python -m pytest tests/test_context_risk_highrate_design.py::test_native_terminal_process_roundtrip_and_evidence_mutations -q",
+      "result": "1 passed in 13.16s after final source freeze, including both timestamp-boundary regressions"
+    },
+    {
+      "command": "independent temporary critic fixture using real collect.run/verify_report; change saved prefix from 3 to 4 IDs, resign prefix and report hashes",
+      "fixture_root": "/tmp/highrate_critic_input_tokens_2j6ob7cq/fixture_only",
+      "result": "PASS: specifically rejected First native request token count differs from saved initial prefix"
+    },
+    {
+      "command": "pinned runtime python scripts/context_risk_highrate_collect.py --cfg job",
+      "result": "PASS; resolves fixed model, epochs dispatch, max_connections 16 and Hydra configuration"
+    }
+  ],
+  "files_sha256": {
+    "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+    "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+    "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+    "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+    "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+    "tests/test_context_risk_highrate_collect.py": "4c1a8292ae55aa8d6bb19ece5983c4d4d0aab428bc2f5484456c0b88f63903cd",
+    "tests/test_context_risk_highrate_design.py": "cdfa14a8850ae2c5aa84f83f1a818e638712ccdb76e77c1894f15a5109a227ec"
+  },
+  "fixed_findings": [
+    {
+      "finding": "Distinct textual seed namespaces alone did not prove disjoint truncated 32-bit random seeds",
+      "resolution": "Cross-checked all new planned streams against 37,080 prior possibilities; no overlap."
+    },
+    {
+      "finding": "Whole-second native header versus fractional launch timestamp rejected a valid same-second launch",
+      "resolution": "Both terminal validators use documented math.floor(started) at header precision, with independent acceptance/rejection regression."
+    }
+  ],
+  "plan_sha256": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+  "remaining_runtime_checks": [
+    "Production pilot must validate actual pinned vLLM model/revision/seed/usage behavior and longest-prompt allocator capacity on managed H200; these software fixtures are not model behavioral evidence.",
+    "Only native output max_tokens censors are currently automatically verified. Context-window rejections and unresolved native errors remain unknown diagnostic rows and fail verification pending explicit investigation; never recode them as negatives or reroll them.",
+    "Successful real screening/fresh bodies still require independent exact-history review before selection/claims; this code PASS is not an experiment success verdict.",
+    "Highrate capture and downstream fitting require their separate independent source-bound reviews and real runtime evidence."
+  ],
+  "reviewed_utc": "2026-09-07T22:52:04.020530+00:00",
+  "reviewer": "independent Codex subagent /root/verify_vllm_runtime; not the design/collector/supervisor implementation author",
+  "schema_version": "context_risk_highrate_independent_code_review_v1",
+  "scope": "Scientific design implementation, collector, supervisor, native evidence and immutable selection. Excludes highrate capture implementation, which this reviewer authored and another agent independently reviews.",
+  "test_coverage_note": "All 26 distinct design/collection test cases have passing evidence across these bounded runs. There was no single all 26 pass invocation after the final comment-only import guards; only affected cases were repeated. Source-drift failures demonstrate fail-closed behavior, not inferred success.",
+  "verdict": "PASS",
+  "verified": [
+    "Pinned official 309-row/103-task source and unique normalized task specifications.",
+    "Uniform 103x3x2 screening, conservative S/4 ranking with unknown bounds, hash tie breaking, 30 selected tasks, 20/10 task-group split and 360 planned independent fresh trajectories.",
+    "All 18,540 new possible request seeds checked against each other and37,080 prior possible corrected A/B requests, with zero overlap.",
+    "Actual Inspect 0.3.261/Docker collector/solver/scorer bodies exercised through an explicitly fake external ModelAPI/tokenizer boundary; no external model, GPU or API calls.",
+    "Four fresh epochs; exactly 32 pilot censored samples retained once through native PreviousTask resume ; 120 submissions produce 12 complete negative trajectories; capped generations remain unknown.",
+    "Full native attachment resolution, exact input/config/model/seed replay, source closure, live-prefix identity, complete raw/census checkpointing, final readback demotion and immutable native reuse.",
+    "First native prompt usage equals saved prefix token count; an independently rehashed mismatching prefix/report was rejected by this semantic guard.",
+    "Actual owned supervisor execution records nonzero worker exit and drains its process group; duplicate launch evidence is rejected.",
+    "Actual native terminal receipt creation/consumption validates required evidence roster, PID identities, log markers, header/exit chronology and absence of live owned groups.",
+    "Native header timestamp resolution accounted for: launch within the same recorded second passes; native header in an earlier whole second fails.",
+    "select(root) persists exact ranking and roles; load_phase(fresh) reconstructs official prompts and rejects a rehashed changed ranking or missing successful-body/history review."
+  ]
+}

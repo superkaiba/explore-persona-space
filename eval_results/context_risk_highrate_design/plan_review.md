@@ -1,0 +1,15 @@
+Independent exact-plan review: PASS
+
+Plan SHA256: `7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6`. Goal preserved verbatim. This verdict covers scientific, statistical and methodological validity and practical feasibility; code review and live production preflight remain required before launch. Exact artifact hashes and executed evidence are in plan_review.json.
+
+The plan uniformly screens 103 tasks, freezes 30 selected tasks and a 20/10 task split, then collects four independent fresh repeats per condition. Its 978 trajectories answer forecasting within the screen-selected population. Prior labels, selection rates and fresh test labels have appropriately separated roles; context-only primary predictors and screen-augmented secondary predictors have distinct information budgets. Censors remain unknown, and conditional estimates remain reportable without an unconditional benefit claim.
+
+The corrected capture is decoder-block 44 output at the final unpadded initial-prefix token. Training requires five usable task groups for five-fold tuning, with explicit prevalence-only behavior below that count. Claim-support rules separately require the prespecified positive/negative group support. The affine map's interpretation and controls are valid.
+
+Both paired loss signs are correct: text minus raw and raw minus mapped are positive for improvement. Executing the reused interval utility on controlled logits produced+0.379885 and+0.186334, respectively; reversing the first comparison changed its sign. These are utility fixtures, not model results. Manifest checks confirmed 309 rows,103 base tasks and no cross-task normalized-spec duplicates. All 18,540 possible request seeds across the 103-task screen and potential 103-task fresh namespace were distinct under the stated formatter. The fixed map hash was verified.
+
+The corrected prior-B timing is pilot plus resume,7683.667 seconds for 120 unique trajectories, giving 17.395 projected collection hours for 978 trajectories. The 18.5-hour total remains provisional. The plan requires production-shape throughput/allocator checks and now separates the generation/capture archive before GPU teardown from the subsequent VM-fit/prediction archive.
+
+Resolved issues were the initial mean-pooling wording, ambiguous population/training claim gates, fewer-than-five-group tuning, cross-task duplicate scope and the archive-ordering conflict. No unresolved design revisions remain. Ten test tasks, a coarse screening ranking and marginal fixed-prediction bootstrap intervals remain material precision limitations, explicitly acknowledged.
+
+Implementation review must test all real dispatch/resume/censor paths and 90-context token/capture joins, including empty/single-class/insufficient-group cases. Live preflight must validate the pinned runtime, actual hardware, persistent storage and adequately sized deadlines. No production edits, model calls, GPU work, task mutations, Claude usage or recursive reviews were performed.

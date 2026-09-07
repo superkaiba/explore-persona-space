@@ -1,0 +1,80 @@
+[
+  {
+    "url": "https://api.github.com/repos/safety-research/impossiblebench/issues/1",
+    "repository_url": "https://api.github.com/repos/safety-research/impossiblebench",
+    "labels_url": "https://api.github.com/repos/safety-research/impossiblebench/issues/1/labels{/name}",
+    "comments_url": "https://api.github.com/repos/safety-research/impossiblebench/issues/1/comments",
+    "events_url": "https://api.github.com/repos/safety-research/impossiblebench/issues/1/events",
+    "html_url": "https://github.com/safety-research/impossiblebench/pull/1",
+    "id": 5361359961,
+    "node_id": "PR_kwDOQHi1Bs8AAAABCXCA2g",
+    "number": 1,
+    "title": "Fix tools scaffold crash when a test patch deletes or renames its first file",
+    "user": {
+      "login": "SJCaldwell",
+      "id": 9037594,
+      "node_id": "MDQ6VXNlcjkwMzc1OTQ=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/9037594?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/SJCaldwell",
+      "html_url": "https://github.com/SJCaldwell",
+      "followers_url": "https://api.github.com/users/SJCaldwell/followers",
+      "following_url": "https://api.github.com/users/SJCaldwell/following{/other_user}",
+      "gists_url": "https://api.github.com/users/SJCaldwell/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/SJCaldwell/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/SJCaldwell/subscriptions",
+      "organizations_url": "https://api.github.com/users/SJCaldwell/orgs",
+      "repos_url": "https://api.github.com/users/SJCaldwell/repos",
+      "events_url": "https://api.github.com/users/SJCaldwell/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/SJCaldwell/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "labels": [
+
+    ],
+    "state": "open",
+    "locked": false,
+    "assignees": [
+
+    ],
+    "milestone": null,
+    "comments": 0,
+    "created_at": "2026-09-05T22:32:30Z",
+    "updated_at": "2026-09-05T22:34:23Z",
+    "closed_at": null,
+    "assignee": null,
+    "author_association": "NONE",
+    "issue_field_values": [
+
+    ],
+    "type": null,
+    "active_lock_reason": null,
+    "draft": false,
+    "pull_request": {
+      "url": "https://api.github.com/repos/safety-research/impossiblebench/pulls/1",
+      "html_url": "https://github.com/safety-research/impossiblebench/pull/1",
+      "diff_url": "https://github.com/safety-research/impossiblebench/pull/1.diff",
+      "patch_url": "https://github.com/safety-research/impossiblebench/pull/1.patch",
+      "merged_at": null
+    },
+    "body": "## Summary\r\n\r\nThe full `tools` scaffold (`swebench_agent_full.py`) crashes during initialization for `astropy__astropy-7336`, before the model is invoked. The scaffold collects the files touched by `test_patch` from the old side of the diff (`--- a/...`) and then verifies the applied patch by reading the first of them. For this task the first diff deletes that file, so its absence is the expected post-patch state, and `sandbox().read_file` raises:\r\n\r\n```text\r\nFileNotFoundError: [Errno 2] No such file or directory: '/testbed/astropy/units/tests/py3_test_quantity_annotations.py'\r\n```\r\n\r\nEvery affected sample ends with one initial message, no model usage, and no score.\r\n\r\n## Affected task\r\n\r\n- Dataset: `fjzzq2002/impossible_swebench` at revision `9c2d34f364b7229e8c0ff807c646100bdc18bbb5`\r\n- Instance: `astropy__astropy-7336` (base commit `732d89c2940156bdc0e200bb36dc38b5e424bcba`)\r\n- Splits: all three. The `oneoff` and `conflicting` test patches delete `astropy/units/tests/py3_test_quantity_annotations.py`; the `original` test patch renames it to `test_quantity_annotations.py`. In each case the first `--- a/` path does not exist after `git apply`.\r\n- Scaffold: `tools` only. The `minimal` scaffold applies the patch the same way but never performs the sample read, so it is unaffected.\r\n\r\nA scan of all 349 instances in each split found no other instance whose first old-side path is missing after the patch.\r\n\r\n## Fix\r\n\r\n- Add `get_test_patch_files(test_patch)`, which returns the `--- a/` paths (present at the base commit) and the `+++ b/` paths (present after the patch) separately. Deleted files only appear in the former, added files only in the latter, and renamed files appear under their old and new names respectively.\r\n- Keep using the old-side list to reset touched files before applying the patch, which is unchanged behavior.\r\n- Sample the verification read from the new-side list, and only when `git apply` succeeded. If the apply failed, a new-side path may legitimately not exist, and the existing \"Failed to apply test patch\" warning already reports it.\r\n\r\n## Tests\r\n\r\n`tests/test_swebench_agent_full.py` builds real patches with `git diff` in a temporary repository for five cases (modify, add, rename, delete-first-then-modify, delete-only) and asserts, after a real `git apply`, that every path reported for a side of the patch exists on that side and that deleted or renamed old paths are gone.\r\n\r\n```text\r\n$ pytest tests/\r\n5 passed\r\n```\r\n\r\n## Verification against the real instance\r\n\r\nShallow-fetched astropy at the base commit and applied the `test_patch` from each split with git:\r\n\r\n| split | old code reads | exists after apply | new code reads | exists after apply |\r\n|---|---|---|---|---|\r\n| oneoff | `py3_test_quantity_annotations.py` | no | `test_quantity_decorator.py` | yes |\r\n| conflicting | `py3_test_quantity_annotations.py` | no | `test_quantity_decorator.py` | yes |\r\n| original | `py3_test_quantity_annotations.py` | no | `test_quantity_annotations.py` | yes |\r\n\r\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+    "closed_by": null,
+    "reactions": {
+      "url": "https://api.github.com/repos/safety-research/impossiblebench/issues/1/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "timeline_url": "https://api.github.com/repos/safety-research/impossiblebench/issues/1/timeline",
+    "performed_via_github_app": null,
+    "state_reason": null
+  }
+]

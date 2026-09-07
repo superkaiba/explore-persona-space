@@ -1,0 +1,291 @@
+{
+  "sha": "0718bf9e21124384f1a48d94752803b9bc485372",
+  "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/trees/0718bf9e21124384f1a48d94752803b9bc485372",
+  "tree": [
+    {
+      "path": "LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2639ad598c360fc0ecf2aca3f17c024c0334b15b",
+      "size": 1077,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/2639ad598c360fc0ecf2aca3f17c024c0334b15b"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "881136de8ae72481f16c3dd3b1869e38ce08bbb8",
+      "size": 4994,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/881136de8ae72481f16c3dd3b1869e38ce08bbb8"
+    },
+    {
+      "path": "demo.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7325da92dfc2c65bba3083c8f50248a1ff1f410d",
+      "size": 9653,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/7325da92dfc2c65bba3083c8f50248a1ff1f410d"
+    },
+    {
+      "path": "fig1.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "512d9b1e9e787771b60be0956218f1f151e24492",
+      "size": 405671,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/512d9b1e9e787771b60be0956218f1f151e24492"
+    },
+    {
+      "path": "gen",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "2febd0173951795ef90c85ff7c8df808dd701baf",
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/trees/2febd0173951795ef90c85ff7c8df808dd701baf"
+    },
+    {
+      "path": "gen/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9fcf6bde154e6216973ad758992cabf48401d5fd",
+      "size": 1848,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/9fcf6bde154e6216973ad758992cabf48401d5fd"
+    },
+    {
+      "path": "gen/apply_patch.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "41a115e3f3545be853f9449cc67261d049681339",
+      "size": 18173,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/41a115e3f3545be853f9449cc67261d049681339"
+    },
+    {
+      "path": "gen/livecodebench_mutate.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "27e0eb51c390d2a76519c66ef3180fcec4112e4f",
+      "size": 10824,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/27e0eb51c390d2a76519c66ef3180fcec4112e4f"
+    },
+    {
+      "path": "gen/livecodebench_transcribe.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b169a243099a18c86f3a8880e4b027403457aedf",
+      "size": 15398,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/b169a243099a18c86f3a8880e4b027403457aedf"
+    },
+    {
+      "path": "gen/swebench_mutate.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "c6cb7f71a3068877df5ecc551a7a92f2dfa8ad46",
+      "size": 23405,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/c6cb7f71a3068877df5ecc551a7a92f2dfa8ad46"
+    },
+    {
+      "path": "main.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cae651b8ca720653ad75e89593cc09d17f1b6883",
+      "size": 93,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/cae651b8ca720653ad75e89593cc09d17f1b6883"
+    },
+    {
+      "path": "pyproject.toml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8756ec2e52a9afe36712f02b60f920e2d799c268",
+      "size": 161,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/8756ec2e52a9afe36712f02b60f920e2d799c268"
+    },
+    {
+      "path": "requirements.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b82123f46729d850db4e0e345e5428876880e140",
+      "size": 355,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/b82123f46729d850db4e0e345e5428876880e140"
+    },
+    {
+      "path": "setup.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bcd47483f12095d0041e53a65bc9fed0e17d33e0",
+      "size": 1851,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/bcd47483f12095d0041e53a65bc9fed0e17d33e0"
+    },
+    {
+      "path": "src",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "05b2a954a78b2806ae4d62f7016f4154738f16e2",
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/trees/05b2a954a78b2806ae4d62f7016f4154738f16e2"
+    },
+    {
+      "path": "src/impossiblebench",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d7794b894e6a77b566b7ec0d6529f3806afeea8b",
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/trees/d7794b894e6a77b566b7ec0d6529f3806afeea8b"
+    },
+    {
+      "path": "src/impossiblebench/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "03b74105d1e6c4c4d2a311facf293d1273e4d83a",
+      "size": 1525,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/03b74105d1e6c4c4d2a311facf293d1273e4d83a"
+    },
+    {
+      "path": "src/impossiblebench/analysis",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "762b551823a816622ea25d900a7fb7045ec4305d",
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/trees/762b551823a816622ea25d900a7fb7045ec4305d"
+    },
+    {
+      "path": "src/impossiblebench/analysis/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "69e9f7e22943cc1e711d5b7439a745ec701b85b6",
+      "size": 509,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/69e9f7e22943cc1e711d5b7439a745ec701b85b6"
+    },
+    {
+      "path": "src/impossiblebench/analysis/data_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ae8396ce983aa295c06a42beedee76e968f53c81",
+      "size": 19168,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/ae8396ce983aa295c06a42beedee76e968f53c81"
+    },
+    {
+      "path": "src/impossiblebench/analysis/example_usage.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "05a6f3cfa8861e2f4fabbf897051702495ecddcb",
+      "size": 8308,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/05a6f3cfa8861e2f4fabbf897051702495ecddcb"
+    },
+    {
+      "path": "src/impossiblebench/analysis/llm_judge.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9f7425a7e85b33670b6eee105b4380c7ad09b92b",
+      "size": 41045,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/9f7425a7e85b33670b6eee105b4380c7ad09b92b"
+    },
+    {
+      "path": "src/impossiblebench/analysis/test_data_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fffaa9f162fa46c1ba3f02b596cc6729aaebe9f7",
+      "size": 2470,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/fffaa9f162fa46c1ba3f02b596cc6729aaebe9f7"
+    },
+    {
+      "path": "src/impossiblebench/apply_patch.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "41a115e3f3545be853f9449cc67261d049681339",
+      "size": 18173,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/41a115e3f3545be853f9449cc67261d049681339"
+    },
+    {
+      "path": "src/impossiblebench/compose.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "af1d7ca6fb9ebf48a2fca2ff8c545a038044b88c",
+      "size": 177,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/af1d7ca6fb9ebf48a2fca2ff8c545a038044b88c"
+    },
+    {
+      "path": "src/impossiblebench/livecodebench_agent_full.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "90a18d864b77b1c7ed90e41f1f5b85b1b1eda056",
+      "size": 6378,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/90a18d864b77b1c7ed90e41f1f5b85b1b1eda056"
+    },
+    {
+      "path": "src/impossiblebench/livecodebench_agent_mini.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d373da272dfbabcbb00235041e4496d6ffda48d0",
+      "size": 7633,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/d373da272dfbabcbb00235041e4496d6ffda48d0"
+    },
+    {
+      "path": "src/impossiblebench/livecodebench_scorers.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "38f72be2b508cfabcb25de0cff5d6545c17adc73",
+      "size": 10917,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/38f72be2b508cfabcb25de0cff5d6545c17adc73"
+    },
+    {
+      "path": "src/impossiblebench/livecodebench_tasks.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e02911baec77c344debe6c932a4e4b681fdbca91",
+      "size": 10343,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/e02911baec77c344debe6c932a4e4b681fdbca91"
+    },
+    {
+      "path": "src/impossiblebench/swebench_agent_full.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "013f3772cd9a53fdedbea1eabd3c4870284737a8",
+      "size": 14372,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/013f3772cd9a53fdedbea1eabd3c4870284737a8"
+    },
+    {
+      "path": "src/impossiblebench/swebench_agent_mini.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4a82b20b9f202b101625383a73abfbe91c655f34",
+      "size": 29532,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/4a82b20b9f202b101625383a73abfbe91c655f34"
+    },
+    {
+      "path": "src/impossiblebench/swebench_build_images.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "89854074833f505059ba1d518953f1405ad0b733",
+      "size": 6778,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/89854074833f505059ba1d518953f1405ad0b733"
+    },
+    {
+      "path": "src/impossiblebench/swebench_dummytest.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2d0f28727fceed99a127b0f79747f35378a88379",
+      "size": 2070,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/2d0f28727fceed99a127b0f79747f35378a88379"
+    },
+    {
+      "path": "src/impossiblebench/swebench_scorers.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2b0311b02a89cf99315268f40ee000363089f2a0",
+      "size": 22282,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/2b0311b02a89cf99315268f40ee000363089f2a0"
+    },
+    {
+      "path": "src/impossiblebench/swebench_tasks.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c86c29cfa999fca77bbea0df1555f6624768967c",
+      "size": 16711,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/c86c29cfa999fca77bbea0df1555f6624768967c"
+    },
+    {
+      "path": "uv.lock",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c5b93fc7d727b021498013762ed1d78617a33855",
+      "size": 135,
+      "url": "https://api.github.com/repos/arianaazarbal/impossiblebench/git/blobs/c5b93fc7d727b021498013762ed1d78617a33855"
+    }
+  ],
+  "truncated": false
+}

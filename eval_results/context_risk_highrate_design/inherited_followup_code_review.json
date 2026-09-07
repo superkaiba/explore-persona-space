@@ -1,0 +1,50 @@
+{
+  "reviewer": "/root/reward_harness_critic",
+  "verdict": "PASS",
+  "reviewed_at": "2026-09-07T16:00:22.377205+00:00",
+  "scope": "Independent pre-generation review of the follow-up manifest freeze, A/B selection, ten-attempt behavioral runner, pinned configuration and detached supervisor; no actual model/API calls, provisioning, training or task mutations.",
+  "files_sha256": {
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "configs/eval/context_risk_followup.yaml": "3e435740c63a580bd7ee058835e455586d22334183a0179219ff0d14034172cc",
+    "scripts/context_risk_followup_supervise.sh": "04326e2bdded90a62f061fcda90ba4ede2c226142b14b3f47cb0400f12b022cf",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c"
+  },
+  "plan_source": "eval_results/context_risk_followup_design/plan.md",
+  "plan_sha256": "381dfaecca9432ffb642902ca03a064e325513eb81f7e1f953db4f0fb622475a",
+  "blocking_findings": [],
+  "resolved_findings": [
+    "Fresh selection now binds frozen roster and both development result hashes; development selection recomputes counts and complete sample/epoch coverage from hash-bound native logs and requires zero censoring/successful native status.",
+    "Resume checks native model, provider settings, generation/evaluator settings, Inspect version, exact inputs, sample metadata, first message, deterministic attempt seeds and observed score consistency.",
+    "Initial token evidence is retained and compared on subsequent launches; launch configuration artifacts use unique timestamps/PIDs.",
+    "Missing scores, invalidations, infrastructure failures and generation truncation are exported as censored trajectories; unsafe apparently complete missing-score reuse is rejected.",
+    "Run pins the exact reviewed model revision and 16 active slots; supervisor derives phase/arm/pilot limit from its mode and places fixed arguments last.",
+    "Both complete 16-context/two-epoch production-shape development pilots are required before nonpilot generation."
+  ],
+  "verification": {
+    "cpu_cases": 36,
+    "cpu_all_passed": true,
+    "cpu_evidence": "eval_results/context_risk_followup_design/software_fixtures/independent_results_final.json",
+    "cpu_evidence_sha256": "fce4eff0fcb104fbcff91065c76f56ef8f7280f8456bd4704549844df76d4a74",
+    "cpu_fixture_source": "eval_results/context_risk_followup_design/software_fixtures/followup_review.py",
+    "cpu_fixture_source_sha256": "85a0785e153d5d0e845a11585ef28de9e50e8cb53d88f3d0a479ae61e9981ccb",
+    "cpu_rerun_command": "timeout --kill-after=10s 90s env UV_NO_SYNC=1 PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 uv run --with 'inspect-ai==0.3.261' --with 'openai==3.7.0' python eval_results/context_risk_followup_design/software_fixtures/followup_review.py --output /tmp/context-risk-followup-independent-review.json",
+    "docker_tests": 2,
+    "docker_all_passed": true,
+    "docker_evidence": "eval_results/context_risk_followup_design/software_fixtures/docker_review_evidence.json",
+    "docker_evidence_sha256": "612b05c2294fb1e7796443cb12abe34a692f2d6ee7e7b9e9cdefcfbf94e4048d",
+    "fixture_ruff": "PASS"
+  },
+  "interpretive_and_remaining_stage_limits": [
+    "PASS verifies the collection implementation; neither software fixtures nor a development pilot establish a useful Qwen bypass prevalence.",
+    "Initial activations forecast context-level success probability under the fixed attempt budget; repeated seeds are not independent activation vectors.",
+    "Retain measured full-history runtime/context-length and exact live-server token-prefix parity evidence. Deterministic context-limit failures stay censored.",
+    "The future capture/readout implementation is outside these reviewed sources. Freeze concrete text/metadata features and random-control construction before fresh outcome inspection and verify analysis code independently before fitting.",
+    "Reconcile final native model events and submission histories before quantitative claims; manually audit every positive for operational bypass interpretation and original successes for hardcoding.",
+    "The map is affine and full rank but ill-conditioned; any linear-probe improvement concerns regularization/conditioning rather than added per-example information."
+  ],
+  "real_model_calls": 0,
+  "probe_fits": 0,
+  "task_mutations": 0
+}

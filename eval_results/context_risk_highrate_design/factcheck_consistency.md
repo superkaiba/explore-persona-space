@@ -1,0 +1,17 @@
+# Independent exact-plan fact check and consistency review
+
+**PASS** for plan SHA256 `7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6`. Reviewed by `/root/published_task_rates` at 2026-09-07T22:01:49.424614+00:00. This covers source accuracy, artifact compatibility, arithmetic and plan consistency; implementation review and live preflight remain separate requirements.
+
+The Goal is preserved verbatim. The independently documented source search supports the statement that no denominator-complete external task ranking was found in the inspected releases. All 309 manifest rows and 103 base IDs were checked directly, including one instance of each condition per task and 103 unique normalized specifications. Both the byte hash and the repository's canonical JSON semantic hash match the plan.
+
+The frozen map's hash, model revision, layer44,5120-dimensional layout, finite values and positive scaling match its independent fit provenance. The corrected capture convention is the decoder-block output at the last unpadded initial-prefix token. Mean pooling would have changed the map input and is no longer specified. The retained geometry result supports the stated affine-map interpretation and avoiding an explicit inverse.
+
+The screen has618 trajectories; the30-task fresh panel has360, comprising240 impossible and120 original, for978 total and90 fresh prefixes. The ten blocks of three produce20 training and10 test tasks. Four repeats inherit the prior planned conditional allocation; the old996-trajectory conditional cohort was never run. The new plan explicitly targets held-out fitting inside a screened panel, with fresh outcomes and grouped folds, and does not claim the tasks are untouched. Its ranking retains unknown outcomes and fixed zero-score padding;65.61% is correctly identified as an illustrative four-IID-draw probability.
+
+I read the two prior native B logs with the pinned Inspect reader. All32 pilot samples recur unchanged in the120-sample final native log, including UUIDs, inputs, scores, messages, events, metadata and timestamps. The collection clock is therefore2059.784312343225+5623.882286828011=7683.666599171236seconds for120 unique trajectories. Scaling that complete cohort to978 yields17.394967439790438 GPU-hours, consistent with the provisional18.5-hour total including overhead.
+
+The verified H200 memory is150109880320bytes, or139.80072021484375GiB. The corrected139GiB floor avoids rejecting that device. The prior233.8GiB host-RAM number is explicitly documentary inheritance from the reviewed prior plan; the new224GiB minimum still requires independent live preflight. The32 pinned model files total55586114863bytes, consistent with55.586GB decimal.
+
+Earlier inconsistencies are resolved: last-token capture replaces mean-context wording; HBM units are corrected; the Bernoulli illustration is qualified; fewer than five usable training groups has a prevalence-only branch; support checks distinguish the all-selected primary population from the competence sensitivity; and GPU archival/teardown precedes VM fits, which have their own final archive milestone. No unresolved fact-check finding remains.
+
+The allocation is not a power guarantee, and no high-rate ranking or probe result exists yet. This review made no evaluation/model requests, fitted no models, and changed only this Markdown file and its JSON receipt. Detailed checks, source hashes, numeric results, read-tool limitations and resolved findings are recorded in `factcheck_consistency.json`.

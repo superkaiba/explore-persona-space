@@ -1,0 +1,104 @@
+{
+  "assessment": {
+    "capture_and_map": "Plan now matches single final unpadded initial-prefix decoder-block44 output, not mean pooling. Frozen affine map adds no information; regularization/conditioning interpretation and algebraic controls are retained.",
+    "censoring": "Screening S/F/U stays explicit with lower/upper bounds; missing rows prevent selection. Fresh censors remain unknown; complete-case estimates are conditional and unsupported unconditional claims remain barred. Same-request recovered transport retries are distinguished from completed submissions.",
+    "claim_support": "Five usable training groups required for five-fold fitting; fewer yield prevalence-only. Exploratory fits below class-bearing group thresholds remain reportable; supported claims require declared train/test class support, zero fresh censoring and positive marginal interval.",
+    "compute_and_persistence": "978 trajectories with corrected pilot-plus-resume calibration;18.5h total is explicitly provisional. Live allocator/throughput preflight and separate GPU-expensive-data versus final-VM-fit archive milestones are correctly separated.",
+    "loss_signs": "text-minus-raw and raw-minus-mapped loss differences are positive when the latter method improves prediction; verified against the reused paired_task_interval implementation.",
+    "readouts": "Linear methods, fold-local preprocessing and fixed grouped tuning preserve comparison fairness; context-only primary and screen-augmented secondary information budgets are separated.",
+    "selection_and_leakage": "Panel and task split are frozen using screening evidence before disjoint fresh labels; screen outcomes are excluded from context-only primary predictors and labels. Claims condition on the selected population.",
+    "source_basis": "Retained primary-source audit supports uniform same-model screening when denominator-complete external task outcomes were not found; success-selected monitoring counts are not treated as rates."
+  },
+  "automated_Claude_usage": false,
+  "design": {
+    "captured_contexts": 90,
+    "fresh_epochs": 4,
+    "fresh_trajectories": 360,
+    "primary_population": "all selected impossible-condition trajectories",
+    "ranking": "screen impossible S/4 with fixed hash ties and explicit unknown-outcome bounds",
+    "screen_conditions": 3,
+    "screen_epochs": 2,
+    "screen_tasks": 103,
+    "screen_trajectories": 618,
+    "secondary_population": "operational-competence subset",
+    "selected_tasks": 30,
+    "split": "one hash-selected test task from each rank block of three; all task conditions/seeds grouped",
+    "test_tasks": 10,
+    "total_trajectories": 978,
+    "training_tasks": 20
+  },
+  "executed_read_only_evidence": {
+    "controlled_paired_loss_utility_check": {
+      "interpretation": "Mathematical utility fixture only, not experimental outcomes.",
+      "raw_minus_mapped": 0.18633367647525037,
+      "reverse": -0.3798854930417225,
+      "text_minus_raw": 0.3798854930417225
+    },
+    "manifest": {
+      "base_tasks": 103,
+      "cross_task_normalized_duplicate_groups": 0,
+      "file_sha256": "3631d2b51f7fe610e26f674f2c036a74771761a1e8d5dd48d1103817fb10fb48",
+      "rows": 309
+    },
+    "map_hash_verified": "680935a244cc39c29797d66b312b95e3741889a541dcee8bde7c69ac33c5242d",
+    "prior_B_accounting": {
+      "collection_projection_hours": 17.394967439790438,
+      "pilot_seconds": 2059.784312343225,
+      "resume_seconds": 5623.882286828011,
+      "sum_seconds": 7683.666599171236,
+      "unique_trajectories": 120
+    },
+    "seed_enumeration": {
+      "canonical_ID_format": "highrate_{screen|fresh}:B:<task_id>:<condition>",
+      "collisions": 0,
+      "potential_request_seeds_including_all103_possible_fresh_tasks": 18540,
+      "scope": "All ten potential attempts, two screen epochs and four fresh epochs; implementation must use the exact reviewed formatter."
+    }
+  },
+  "git_head": "432f0610a9625f34de71eb69fb495b65232322a3",
+  "goal": "Test whether the model activation before generating new reasoning or an action predicts a later successful reward hack, and whether the frozen context-to-answer map improves that forecast.",
+  "goal_preserved_verbatim": true,
+  "gpu_work": false,
+  "limitations": [
+    "Ten held-out base tasks and coarse four-draw ranking do not establish prospective power or accurate true-rate ordering.",
+    "Task bootstrap is conditional on fitted predictors and selected panel; it omits refitting and screening/ranking uncertainty.",
+    "An arbitrary success/censor distribution may still leave scientific claims inconclusive; PASS certifies the defined design, not a positive result."
+  ],
+  "model_calls": 0,
+  "plan_path": "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/plan.md",
+  "plan_sha256": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+  "production_code_edits": 0,
+  "recursive_reviews": false,
+  "remaining_implementation_and_live_checks": [
+    "Independent code review of new wrappers, exact roster/seed/source/model/request bindings,32-row included pilot,618-row screening,360-row fresh resume and all censor/error paths; do not weaken old frozen validators.",
+    "Verify exact90-context capture join, final-prefix-token position, longest-prefix and actual multi-row GPU smoke, token equality, no truncation, finite dimensions and pinned runtime/map compatibility.",
+    "Exercise no usable training data,fewer than five training groups,single-class folds,zero or one usable test group and undefined metric/interval cases without inventing labels or coefficients.",
+    "Live managed preflight must verify HBM/host RAM,persistent model/out-root placement and free space; fit whole-process deadlines to measured production throughput and tails, not a shortened inherited deadline.",
+    "Reverify source and selection hashes before fresh generation; do not adapt panel,epochs,folds,features or claims to fresh outcomes."
+  ],
+  "resolved_review_findings": [
+    "Replaced incorrect mean-context capture wording with final unpadded initial-prefix token convention verified in actual helper code.",
+    "Made training class-support thresholds explicit and removed legacy competence eligibility ambiguity from the unconditional primary claim gate.",
+    "Specified prevalence-only behavior below five usable training groups, avoiding invalid five-fold GroupKFold tuning.",
+    "Clarified normalized specification uniqueness across distinct base task IDs and qualified the four-draw Bernoulli illustration.",
+    "Separated verified GPU-input/output archive before teardown from later VM-fit/prediction archive; labeled intervals marginal rather than familywise."
+  ],
+  "reviewed_artifacts_sha256": {
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_followup_design/analysis_spec.json": "a47ce4131959f8a7da9a75c367355713927e39e91692fbf017a1cad737d155d0",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/design_initial_review.md": "7a9bdc1aa1418de3338a0f5fc32a05861392c002f25b8241441d7c89fc9ba493",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/findings.md": "b9ce9f612cadacce1938aa2a2057507cdcea3d761d3bccdc673582ad43f2dda5",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/data/impossible_livecodebench/public_development_manifest.jsonl": "3631d2b51f7fe610e26f674f2c036a74771761a1e8d5dd48d1103817fb10fb48",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_ten_attempts_followup/development_B/pilot_result.json": "4e28683a1442ca4269bb19caa43803b73cbbcc5b5edf97a918b256ef7ed23854",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_ten_attempts_followup/development_B/run_result.json": "233effc8e87e523f282cfdcfd7d9b6fdc4d0c497194d0c9938073074724400f4",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_map_pilot/map_layer_44.npz": "680935a244cc39c29797d66b312b95e3741889a541dcee8bde7c69ac33c5242d"
+  },
+  "reviewed_utc": "2026-09-07T22:02:58.192638+00:00",
+  "reviewer": "/root/verify_vllm_runtime",
+  "scope": "Scientific/statistical/methodological plan review and practical feasibility; implementation and live production preflight remain separately gated.",
+  "task_path_mutations": 0,
+  "unresolved_findings": [],
+  "verdict": "PASS"
+}

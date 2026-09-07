@@ -1,0 +1,267 @@
+{
+  "sha": "061dc3dce6a96ab6cf02a855157263033dcfa3ba",
+  "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/trees/061dc3dce6a96ab6cf02a855157263033dcfa3ba",
+  "tree": [
+    {
+      "path": "LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2639ad598c360fc0ecf2aca3f17c024c0334b15b",
+      "size": 1077,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/2639ad598c360fc0ecf2aca3f17c024c0334b15b"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "881136de8ae72481f16c3dd3b1869e38ce08bbb8",
+      "size": 4994,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/881136de8ae72481f16c3dd3b1869e38ce08bbb8"
+    },
+    {
+      "path": "demo.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7325da92dfc2c65bba3083c8f50248a1ff1f410d",
+      "size": 9653,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/7325da92dfc2c65bba3083c8f50248a1ff1f410d"
+    },
+    {
+      "path": "fig1.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "512d9b1e9e787771b60be0956218f1f151e24492",
+      "size": 405671,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/512d9b1e9e787771b60be0956218f1f151e24492"
+    },
+    {
+      "path": "gen",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "f3df0c0131dd8e09c7637c8d087543f246bf7253",
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/trees/f3df0c0131dd8e09c7637c8d087543f246bf7253"
+    },
+    {
+      "path": "gen/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9fcf6bde154e6216973ad758992cabf48401d5fd",
+      "size": 1848,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/9fcf6bde154e6216973ad758992cabf48401d5fd"
+    },
+    {
+      "path": "gen/apply_patch.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "41a115e3f3545be853f9449cc67261d049681339",
+      "size": 18173,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/41a115e3f3545be853f9449cc67261d049681339"
+    },
+    {
+      "path": "gen/livecodebench_mutate.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7c8a630a628556d483867a0e1125c2137f307a69",
+      "size": 10790,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/7c8a630a628556d483867a0e1125c2137f307a69"
+    },
+    {
+      "path": "gen/livecodebench_transcribe.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "91f334f2657853350ff78d0822b92430218bf43d",
+      "size": 14167,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/91f334f2657853350ff78d0822b92430218bf43d"
+    },
+    {
+      "path": "gen/swebench_mutate.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "c6cb7f71a3068877df5ecc551a7a92f2dfa8ad46",
+      "size": 23405,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/c6cb7f71a3068877df5ecc551a7a92f2dfa8ad46"
+    },
+    {
+      "path": "requirements.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f393fb979e3c1782e4aa508919f35dac62ff399d",
+      "size": 356,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/f393fb979e3c1782e4aa508919f35dac62ff399d"
+    },
+    {
+      "path": "setup.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bcd47483f12095d0041e53a65bc9fed0e17d33e0",
+      "size": 1851,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/bcd47483f12095d0041e53a65bc9fed0e17d33e0"
+    },
+    {
+      "path": "src",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "64222d3a8b039b25a731ead939a0b6b8c03285d2",
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/trees/64222d3a8b039b25a731ead939a0b6b8c03285d2"
+    },
+    {
+      "path": "src/impossiblebench",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "cf9e262a29b11b4e67cc53bb80100019f152426b",
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/trees/cf9e262a29b11b4e67cc53bb80100019f152426b"
+    },
+    {
+      "path": "src/impossiblebench/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "03b74105d1e6c4c4d2a311facf293d1273e4d83a",
+      "size": 1525,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/03b74105d1e6c4c4d2a311facf293d1273e4d83a"
+    },
+    {
+      "path": "src/impossiblebench/analysis",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "762b551823a816622ea25d900a7fb7045ec4305d",
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/trees/762b551823a816622ea25d900a7fb7045ec4305d"
+    },
+    {
+      "path": "src/impossiblebench/analysis/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "69e9f7e22943cc1e711d5b7439a745ec701b85b6",
+      "size": 509,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/69e9f7e22943cc1e711d5b7439a745ec701b85b6"
+    },
+    {
+      "path": "src/impossiblebench/analysis/data_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ae8396ce983aa295c06a42beedee76e968f53c81",
+      "size": 19168,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/ae8396ce983aa295c06a42beedee76e968f53c81"
+    },
+    {
+      "path": "src/impossiblebench/analysis/example_usage.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "05a6f3cfa8861e2f4fabbf897051702495ecddcb",
+      "size": 8308,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/05a6f3cfa8861e2f4fabbf897051702495ecddcb"
+    },
+    {
+      "path": "src/impossiblebench/analysis/llm_judge.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9f7425a7e85b33670b6eee105b4380c7ad09b92b",
+      "size": 41045,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/9f7425a7e85b33670b6eee105b4380c7ad09b92b"
+    },
+    {
+      "path": "src/impossiblebench/analysis/test_data_loader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fffaa9f162fa46c1ba3f02b596cc6729aaebe9f7",
+      "size": 2470,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/fffaa9f162fa46c1ba3f02b596cc6729aaebe9f7"
+    },
+    {
+      "path": "src/impossiblebench/apply_patch.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "41a115e3f3545be853f9449cc67261d049681339",
+      "size": 18173,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/41a115e3f3545be853f9449cc67261d049681339"
+    },
+    {
+      "path": "src/impossiblebench/compose.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "af1d7ca6fb9ebf48a2fca2ff8c545a038044b88c",
+      "size": 177,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/af1d7ca6fb9ebf48a2fca2ff8c545a038044b88c"
+    },
+    {
+      "path": "src/impossiblebench/livecodebench_agent_full.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "90a18d864b77b1c7ed90e41f1f5b85b1b1eda056",
+      "size": 6378,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/90a18d864b77b1c7ed90e41f1f5b85b1b1eda056"
+    },
+    {
+      "path": "src/impossiblebench/livecodebench_agent_mini.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d373da272dfbabcbb00235041e4496d6ffda48d0",
+      "size": 7633,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/d373da272dfbabcbb00235041e4496d6ffda48d0"
+    },
+    {
+      "path": "src/impossiblebench/livecodebench_scorers.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "38f72be2b508cfabcb25de0cff5d6545c17adc73",
+      "size": 10917,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/38f72be2b508cfabcb25de0cff5d6545c17adc73"
+    },
+    {
+      "path": "src/impossiblebench/livecodebench_tasks.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8d2f5e91161c11477607c776b5ab1eb22cccf09a",
+      "size": 9591,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/8d2f5e91161c11477607c776b5ab1eb22cccf09a"
+    },
+    {
+      "path": "src/impossiblebench/swebench_agent_full.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "013f3772cd9a53fdedbea1eabd3c4870284737a8",
+      "size": 14372,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/013f3772cd9a53fdedbea1eabd3c4870284737a8"
+    },
+    {
+      "path": "src/impossiblebench/swebench_agent_mini.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4a82b20b9f202b101625383a73abfbe91c655f34",
+      "size": 29532,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/4a82b20b9f202b101625383a73abfbe91c655f34"
+    },
+    {
+      "path": "src/impossiblebench/swebench_build_images.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "89854074833f505059ba1d518953f1405ad0b733",
+      "size": 6778,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/89854074833f505059ba1d518953f1405ad0b733"
+    },
+    {
+      "path": "src/impossiblebench/swebench_dummytest.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2d0f28727fceed99a127b0f79747f35378a88379",
+      "size": 2070,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/2d0f28727fceed99a127b0f79747f35378a88379"
+    },
+    {
+      "path": "src/impossiblebench/swebench_scorers.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2b0311b02a89cf99315268f40ee000363089f2a0",
+      "size": 22282,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/2b0311b02a89cf99315268f40ee000363089f2a0"
+    },
+    {
+      "path": "src/impossiblebench/swebench_tasks.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c86c29cfa999fca77bbea0df1555f6624768967c",
+      "size": 16711,
+      "url": "https://api.github.com/repos/AlignmentResearch/impossiblebench/git/blobs/c86c29cfa999fca77bbea0df1555f6624768967c"
+    }
+  ],
+  "truncated": false
+}

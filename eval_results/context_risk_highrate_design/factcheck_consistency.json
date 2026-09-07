@@ -1,0 +1,159 @@
+{
+  "checks": [
+    {
+      "evidence": "Goal is byte-for-byte identical to the prior reviewed goal. Scope remains initial-context forecasting of a later successful hack and frozen-map benefit.",
+      "id": "goal",
+      "passed": true
+    },
+    {
+      "evidence": "The durable independent primary-source audit matches the plan. Inspected official releases contain task definitions, not denominator-complete LCB per-task outcomes. Success-selected full-scaffold monitoring examples do not supply rates.",
+      "id": "published_source_ranking",
+      "passed": true
+    },
+    {
+      "evidence": "309 rows, exactly lcbhard_0 through lcbhard_102, three conditions per task, 103 unique whitespace-normalized specifications across base-task IDs; byte and canonical semantic hashes verified.",
+      "id": "roster",
+      "passed": true
+    },
+    {
+      "evidence": "Model/revision/layer match independent map fit provenance. Map hash, 5120x5120 weight, three 5120-vectors, finite arrays and positive scaling verified. Safety outcomes were not used in layer selection.",
+      "id": "model_map",
+      "passed": true
+    },
+    {
+      "evidence": "Corrected plan uses decoder-block44 output at the last unpadded initial-prefix token. This matches _capture_last_prefix and the existing capture validator; the original mean-context wording was incorrect.",
+      "id": "capture_position",
+      "passed": true
+    },
+    {
+      "evidence": "Retained runtime artifact records vLLM0.28.0, Transformers5.15.0, Torch2.13.0+cu130 and H200. Prior configs/reviews provide Inspect0.3.261, OpenAI3.7.0 and the fixed request settings. New live compatibility probes remain required.",
+      "id": "runtime_pins",
+      "passed": true
+    },
+    {
+      "evidence": "103*3*2=618 planned screen trajectories; each task has four impossible draws. The 16-context, two-epoch pilot is32 included trajectories, not an extra cohort.",
+      "id": "screen_counts",
+      "passed": true
+    },
+    {
+      "evidence": "S/4 ranking, fixed hash ties, exactly30 tasks and ten rank blocks of three with one test member each yield20 train and10 test groups. Ranks, uncertainty and zero-score padding are disclosed; no known true-rate ordering is claimed.",
+      "id": "selection_and_split",
+      "passed": true
+    },
+    {
+      "evidence": "0.9**4=0.6561, now explicitly an independent equal-rate Bernoulli illustration; mutation-specific heterogeneity is acknowledged. Censored outcomes retain separate U and upper/lower bounds.",
+      "id": "screen_uncertainty",
+      "passed": true
+    },
+    {
+      "evidence": "30*3*4=360 fresh trajectories, comprising240 impossible and120 original, with90 unique prefixes. Four repeats inherit the old approved conditional allocation83*3*4=996; those996 were planned, never collected.",
+      "id": "fresh_counts_and_inheritance",
+      "passed": true
+    },
+    {
+      "evidence": "Independent screen and fresh seed namespaces, task-grouped held-out fitting, and separate initial-context versus paid-screen baselines are specified. Test tasks are screened, so no untouched-task or full-benchmark inference is claimed.",
+      "id": "generalization_scope",
+      "passed": true
+    },
+    {
+      "evidence": "Fold-local transforms, GroupKFold, symmetric C grid, proper binary/binomial losses and paired task bootstrap match the inherited specification. Fewer than five usable training groups has an explicit prevalence-only branch; class support and primary versus competence-sensitivity claims are distinct.",
+      "id": "analysis_consistency",
+      "passed": true
+    },
+    {
+      "evidence": "Frozen affine map cannot create information; conditioning/regularization interpretation, centered identity/bias and composed-logit checks are appropriate. The retained geometry diagnostic condition number3102702.0181427603 supports avoiding an explicit inverse.",
+      "id": "map_interpretation",
+      "passed": true
+    },
+    {
+      "evidence": "Pilot2059.784312343225s plus resumed invocation5623.882286828011s is7683.666599171236s. Native pilot32 samples are all present in full120, with exact uuid/input/target/scores/messages/events/metadata/start/end matches; no double counting.",
+      "id": "pilot_resume_accounting",
+      "passed": true
+    },
+    {
+      "evidence": "978 total planned trajectories project to17.394967439790438 collection GPU-hours using the complete120-trajectory cohort.18.5 including roughly1.1h overhead is a provisional estimate, not a measured new-run requirement or power guarantee.",
+      "id": "compute_projection",
+      "passed": true
+    },
+    {
+      "evidence": "150109880320 device bytes /2**30=139.80072021484375GiB. Corrected139GiB floor does not reject the validated device. The233.8GiB host value is explicitly inherited from the prior reviewed plan, not independently verified raw bytes;224GiB live preflight and allocator fit remain required.",
+      "id": "hardware_units",
+      "passed": true
+    },
+    {
+      "evidence": "32 pinned model repository files total55586114863 bytes (55.586GB decimal); safetensor weights total55563006776 bytes. The plan uses the total repository footprint consistently.",
+      "id": "model_footprint",
+      "passed": true
+    },
+    {
+      "evidence": "Generation/capture/provenance archives are verified before GPU teardown; VM fits and final reviews are archived before completion. This resolves the possible dependency cycle of requiring not-yet-created VM fits before GPU release.",
+      "id": "persistence_order",
+      "passed": true
+    }
+  ],
+  "files_sha256": {
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_followup_design/analysis_spec.json": "a47ce4131959f8a7da9a75c367355713927e39e91692fbf017a1cad737d155d0",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_followup_design/map_geometry_diagnostic.json": "a4697f155520c6138442758db7a205351c525e4cf236e1e634cce784b7a2b08b",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_followup_design/plan.md": "381dfaecca9432ffb642902ca03a064e325513eb81f7e1f953db4f0fb622475a",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/findings.md": "b9ce9f612cadacce1938aa2a2057507cdcea3d761d3bccdc673582ad43f2dda5",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_qwen38_impossible_capture.py": "d7f6aec322ce89249a6829b3298f7753cf8a33b9e7505bc7850b8c408a39122b",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/data/impossible_livecodebench/public_development_manifest.jsonl": "3631d2b51f7fe610e26f674f2c036a74771761a1e8d5dd48d1103817fb10fb48",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_ten_attempts_followup/development_B/logs/2026-09-07T16-48-42-00-00_context-risk-followup-ten-submissions_b8GpG8iQzT3u8ckhkF2W68.eval": "27f126bc75544b2a1bab61553924ab9266b70818db07877c682716437111c621",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_ten_attempts_followup/development_B/logs/2026-09-07T18-26-49-00-00_context-risk-followup-ten-submissions_b8GpG8iQzT3u8ckhkF2W68.eval": "9436b130824de74402543b233a598a775fa4f0ffa6502da5f6f3e8a180442903",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_ten_attempts_followup/development_B/pilot_result.json": "4e28683a1442ca4269bb19caa43803b73cbbcc5b5edf97a918b256ef7ed23854",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_ten_attempts_followup/development_B/run_result.json": "233effc8e87e523f282cfdcfd7d9b6fdc4d0c497194d0c9938073074724400f4",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_ten_attempts_followup/pod_final/server/runtime.json": "b2bae41bd30521c5d20a41dd677b477f886fe2226613b12c4efd6a4edfbf8364",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_ten_attempts_followup/setup/model_files.json": "8170138b261d3a8585ab2afc3ba5801687de4022a9e2420682d3b772deed3907",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_map_pilot/map_layer_44.npz": "680935a244cc39c29797d66b312b95e3741889a541dcee8bde7c69ac33c5242d",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_map_pilot/run_result.json": "3e6651be338f84d60294335bb7183549bd61d5577a882ae36e96e437435ceedf"
+  },
+  "goal": "Test whether the model activation before generating new reasoning or an action predicts a later successful reward hack, and whether the frozen context-to-answer map improves that forecast.",
+  "initial_reviewed_plan_sha256": "9cc287e417fbccfad81559f9467eaed73d124916735baed216bbc8354a88a0fd",
+  "limitations": [
+    "The public-source search establishes what was found in inspected sources, not absence of every possible unpublished or third-party release.",
+    "No high-rate ranking is measured yet; four screen draws per task can leave a large tied zero-score stratum.",
+    "Sample sizes are allocations and support safeguards, not a validated power guarantee.",
+    "The named host-RAM value is inherited documentary evidence; new runtime/hardware/source compatibility still requires live preflight.",
+    "Native .eval files use compression unsupported by stock Python3.11 zipfile; review used the pinned Inspect0.3.261 reader after that explicit read failure.",
+    "A first ad hoc semantic hash used ensure_ascii=False; it was not the repository convention. Canonical ensure_ascii=True digest was checked against _stable_digest and matches the plan."
+  ],
+  "numeric_verification": {
+    "fresh_contexts": 90,
+    "fresh_impossible": 240,
+    "fresh_original": 120,
+    "fresh_trajectories": 360,
+    "hbm_bytes": 150109880320,
+    "hbm_gib": 139.80072021484375,
+    "model_all_files_bytes": 55586114863,
+    "model_file_count": 32,
+    "prior_pilot_seconds": 2059.784312343225,
+    "prior_resume_seconds": 5623.882286828011,
+    "prior_unique_cohort_seconds": 7683.666599171236,
+    "projected_collection_hours": 17.394967439790438,
+    "screen_trajectories": 618,
+    "test_tasks": 10,
+    "total_trajectories": 978,
+    "training_tasks": 20
+  },
+  "passed": true,
+  "plan_path": "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/plan.md",
+  "plan_sha256": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+  "resolved_corrections": [
+    "Replace mean-context pooling with actual last-prefix-token capture.",
+    "Use byte-verified HBM threshold rather than an upward-rounded140GiB minimum.",
+    "Qualify the65.61% example as independent equal-rate Bernoulli draws.",
+    "Specify prevalence-only output when fewer than five usable training groups prevents five-fold CV.",
+    "Use population-specific support counts rather than ambiguous eligible test tasks.",
+    "Distinguish documentary host-RAM inheritance from live hardware proof.",
+    "Verify regeneration-costly artifacts before GPU teardown and archive later VM fits before final completion."
+  ],
+  "reviewed_at": "2026-09-07T22:01:49.424614+00:00",
+  "reviewer": "/root/published_task_rates",
+  "schema_version": "issue2670_highrate_plan_factcheck_consistency_v1",
+  "scope": "Independent exact-plan fact check and internal consistency review; no experiment/model calls, no fitting and no implementation or live hardware certification.",
+  "unresolved_findings": [],
+  "verdict": "PASS"
+}

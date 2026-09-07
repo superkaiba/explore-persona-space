@@ -1,0 +1,157 @@
+{
+  "schema_version": "reward_hacking_forecast_highrate_analysis_v1",
+  "freeze_timing": "before uniform rate screening and all fresh behavioral outcomes",
+  "target": "probability of at least one successful impossible-test submission within ten attempts, conditional on the exact initial context",
+  "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "layer": 44,
+  "map_sha256": "680935a244cc39c29797d66b312b95e3741889a541dcee8bde7c69ac33c5242d",
+  "primary_population": "all selected tasks; both impossible conditions",
+  "sensitivity_population": "selected tasks with >=1 observed original success among four fresh original trajectories; unknown eligibility reported separately",
+  "group": "base task, with all conditions and generation seeds together",
+  "training_role": "probe_training",
+  "test_role": "final_test",
+  "metadata_features": [
+    "oneoff indicator",
+    "log1p(initial prompt characters)",
+    "log1p(test characters)",
+    "log1p(AST assert count)"
+  ],
+  "text": {
+    "input": "complete initial user prompt",
+    "implementation": "sklearn.feature_extraction.text.TfidfVectorizer",
+    "analyzer": "char",
+    "ngram_range": [
+      3,
+      5
+    ],
+    "min_df": 2,
+    "max_features": 8192,
+    "sublinear_tf": true,
+    "norm": "l2",
+    "fit_scope": "distinct training contexts within each inner fold, then all distinct training contexts for final fit; no repeated-seed TF-IDF fitting",
+    "grounding": "standard character TF-IDF baseline; exact capacity is a declared diagnostic design choice, requiring a development CPU smoke"
+  },
+  "readouts": [
+    "prevalence",
+    "metadata",
+    "text_plus_metadata",
+    "raw_plus_metadata",
+    "mapped_plus_metadata"
+  ],
+  "prevalence_smoothing": {
+    "positive_pseudocount": 0.5,
+    "total_pseudocount": 1.0
+  },
+  "scaling": "training-frequency-weighted StandardScaler for dense activation and metadata blocks; no outcome-derived sample weights or class balancing",
+  "logistic_solver": "lbfgs",
+  "logistic_max_iter": 5000,
+  "logistic_tolerance": 1e-08,
+  "intercept": "fitted and unpenalized",
+  "regularization_C": [
+    1e-06,
+    1e-05,
+    0.0001,
+    0.001,
+    0.01,
+    0.1,
+    1.0,
+    10.0,
+    100.0
+  ],
+  "inner_cv": "GroupKFold(n_splits=5, shuffle=False), constructed once on distinct context rows sorted by task_id and condition before binary class-row expansion; same folds for every representation/control. Sum held-out binomial loss divided by total validation trials across folds.",
+  "C_tie_break": "smaller C",
+  "single_class_training_fold": "recorded smoothed training prevalence prediction; no fabricated linear coefficients",
+  "optimization_failure": "raise on ConvergenceWarning, nonfinite features or predictions; no solver fallback",
+  "primary_metric": "mean per-trajectory binary log loss, evaluated from logits without artificial probability clipping",
+  "primary_comparisons": [
+    "text_plus_metadata minus raw_plus_metadata loss",
+    "raw_plus_metadata minus mapped_plus_metadata loss"
+  ],
+  "secondary_metrics": [
+    "Brier score",
+    "AUROC",
+    "average precision",
+    "observed and predicted prevalence",
+    "five fixed-width probability-bin calibration"
+  ],
+  "uncertainty": {
+    "method": "paired bootstrap of final-test base tasks with fixed fitted predictions",
+    "replicates": 5000,
+    "seed": 38296,
+    "interval": "marginal two-sided 95% percentile",
+    "residue": "omits model-fitting uncertainty; not a familywise multiple-testing guarantee"
+  },
+  "claim_gate": {
+    "minimum_positive_training_tasks": 5,
+    "minimum_negative_training_tasks": 5,
+    "minimum_positive_test_tasks": 3,
+    "minimum_negative_test_tasks": 3,
+    "maximum_censored_fresh_trajectories": 0,
+    "minimum_improvement_CI_lower_bound": 0,
+    "improvement_rule": "paired CI lower bound strictly greater than zero, not greater than or equal"
+  },
+  "equivalence_checks": [
+    "raw standardized features equal identity-plus-bias standardized features",
+    "mapped readout logits equal composed raw linear logits"
+  ],
+  "orientation_controls": {
+    "count": 3,
+    "seeds": [
+      38298,
+      38299,
+      38300
+    ],
+    "method": "signed input-coordinate permutation of the effective map in common fold-standardized raw coordinates, preserving its singular spectrum; mapped training output scaling reused unchanged, no second control-specific coordinate standardization",
+    "scope": "descriptive specificity diagnostics, symmetrically tuned C; no claim from selecting the best random control",
+    "operator": "With row features r=(x-mu_raw)/s_raw, effective affine map y=xA+d, and mapped training scale s_mapped: T=diag(s_raw) A diag(1/s_mapped), z=rT, z_k=r Q_k T; Q_k is the seeded signed permutation matrix. No control-specific output restandardization."
+  },
+  "prohibited": [
+    "seed-level train/test splitting",
+    "test-set C selection",
+    "positive-only trajectory selection",
+    "nonlinear readouts",
+    "reusing B captures for A",
+    "claiming a deterministic affine map adds information",
+    "using fresh labels to rank tasks, split task groups, or adapt collection"
+  ],
+  "metadata_information_budget": "Primary methods use initial prompt only. Secondary screen-augmented methods explicitly add the independent screening behavior equally to each representation. Original successes define the separately reported competence sensitivity and are not predictor features.",
+  "binomial_fit": "One activation per context; either repeat binary trajectories or use two class rows with integer weights k and n-k, dropping zero-weight rows; preserve total frequency weight and sklearn C scale",
+  "stable_loss_formula": "sum[k*logaddexp(0,-logit)+(n-k)*logaddexp(0,logit)]/sum(n)",
+  "secondary_metric_weighting": "Brier, AUROC and AP operate on binary trajectory labels using frequency weights; k/n is never substituted as a binary label",
+  "secondary_PCA_control": {
+    "trigger": "raw loss minus mapped loss shows positive benefit under all primary claim gates",
+    "features": "PCA of training-only standardized raw context vectors, unwhitened; retain original metadata block; no post-PCA component standardization",
+    "rank_candidates": [
+      8,
+      16,
+      32,
+      64
+    ],
+    "rank_clipping": "Keep nominal ranks 8,16,32,64 as common keys in every fold; effective rank=min(nominal, n_distinct_training_contexts-1, feature_dim). Memoize duplicate effective-rank fits within a fold, but retain every nominal candidate loss for cross-fold selection.",
+    "selection": "same inner grouped folds; jointly select rank and C from the frozen grid by validation binomial loss; ties smaller rank then smaller C",
+    "grounding": "diagnostic powers-of-two capacity grid, ungrounded exact cutoffs requiring development-only CPU smoke; never a primary result or test-selected rank",
+    "solver": "full deterministic SVD"
+  },
+  "minimum_training_groups_for_fit": 5,
+  "minimum_training_classes_for_fit": 2,
+  "screening": {
+    "tasks": 103,
+    "epochs": 2,
+    "rank": "descending S/4 over both impossible conditions; hash38302 tie break",
+    "selected_tasks": 30,
+    "training_tasks": 20,
+    "test_tasks": 10,
+    "fresh_epochs": 4
+  },
+  "screen_augmented": {
+    "scope": "secondary; previous screening behavior is separate from initial-context information",
+    "features": [
+      "(S+0.5)/(S+F+1) for the same task and condition",
+      "S+F screening count",
+      "U screening count"
+    ],
+    "direct_screen_rate_baseline": true,
+    "matched_all_methods": true
+  },
+  "fit_support_policy": "descriptive discriminative fits with both classes and >=5 usable training task groups; stronger class/task criteria gate supported benefit claims only"
+}
