@@ -1,0 +1,63 @@
+{
+  "array_shapes": {
+    "weight": [
+      5120,
+      5120
+    ],
+    "x_mean": [
+      5120
+    ],
+    "x_scale": [
+      5120
+    ],
+    "y_mean": [
+      5120
+    ]
+  },
+  "compatibility": {
+    "capture_layer_convention": "extract_layer_activations hooks decoder block index44 output, corresponding to hidden_states[45] for this non-final block.",
+    "fit_X": "load_capture_bank reads arrays[context]; run_fit uses context[:,layer_index] as X with no context-token pooling.",
+    "new_X_position": "Frozen impossible-prefix helper selects captured[44][row_index,len(unpadded_ids)-1], identical to the map input convention.",
+    "serialized_features": "Old training inputs and new capture inputs are saved as float16 vectors from the BF16 model; the map stores float32 weights and normalization vectors.",
+    "training_X_position": "render_pair sets context_position=len(prefix_ids)-1 and verifies full teacher-forced token IDs start with the exact generation prefix; _capture_chunk reads captured[layer][batch_index,context_position].",
+    "training_Y_pooling": "Only the answer target averages captured[layer][batch_index,answer_start:answer_end]; the context input is not mean-pooled."
+  },
+  "dtype": "float32",
+  "finite_arrays": true,
+  "hidden_dimension": 5120,
+  "layer": 44,
+  "limits": [
+    "The full historical map-training chunk bank was not reloaded: the receipt points to an old /workspace path, and the complete bank is not in the checked VM map directory. This review uses the persisted chunk-hash inventory, capture/fit source and actual frozen map bytes.",
+    "A separately available 64-row Toucan capture is a different fingerprint and was not misrepresented as the actual map training bank.",
+    "No representation recapture, model load, map refit or behavior generation was performed.",
+    "Same position and recipe establish instrument compatibility, not predictive performance on the newly selected tasks; that remains the fresh experiment outcome."
+  ],
+  "map_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_map_pilot/map_layer_44.npz",
+  "map_receipt_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_map_pilot/run_result.json",
+  "map_receipt_sha256": "3e6651be338f84d60294335bb7183549bd61d5577a882ae36e96e437435ceedf",
+  "map_sha256": "680935a244cc39c29797d66b312b95e3741889a541dcee8bde7c69ac33c5242d",
+  "model_id": "Qwen/Qwen3.8-27B",
+  "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "reviewed_utc": "2026-09-07T22:56:57.007435+00:00",
+  "reviewer": "Codex independent read-only compatibility check /root/verify_vllm_runtime",
+  "schema_version": "context_risk_highrate_map_reuse_review_v1",
+  "scope": "Frozen map input position, decoder block, pooling convention, model revision and consumer array layout; does not replace independent highrate capture code review.",
+  "sources_sha256": {
+    "configs/eval/context_risk_highrate_capture.yaml": "7140a2fcc3e1ed38e4127a1c65d8dbb8ec3b40034713cffca8d15be177e80eec",
+    "configs/eval/context_risk_qwen38_capture.yaml": "d5b60c5b3e391ccf4185d12d17743b836f854fd8c7b3c5a1d62b6ba16b6793f7",
+    "configs/eval/context_risk_qwen38_fit_map.yaml": "c2726ab0f6e9396ea981ff80e2cfded49897316c129b155d0424f589d38ef383",
+    "scripts/context_risk_highrate_capture.py": "d4b558eafdcedad4c29dca4aae432d0641d7f434300e4ee2e93343fa44a5a763",
+    "scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+    "scripts/context_risk_qwen38_fit_map.py": "3f34b37aa96d4b7c960755296488b2448910cce82354bdffb4572c31ea1c95ae",
+    "scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+    "src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79"
+  },
+  "strictly_positive_input_scales": true,
+  "training_capture_provenance": {
+    "archive_capture_root": "/workspace/context_risk_results/qwen38_capture_pilot",
+    "chunks": 1588,
+    "ordered_chunk_records_sha256": "6d84910141060ac91937947845a4c4d9ee955628eba61b874edb37fad11bcaf9",
+    "rows": 15888
+  },
+  "verdict": "PASS"
+}

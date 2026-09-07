@@ -1,0 +1,100 @@
+{
+  "checks": [
+    "Frozen 618-draw screening and 360-draw fresh native/process evidence is revalidated; exact 90-context activation, manifest, role and generation-token joins are required.",
+    "All fresh successful impossible trajectories and original successes require an independent PASS tied to current native logs and every exact successful raw row/history.",
+    "Map, specification, manifest, selection, token records and source hashes are snapshotted before consumption and rechecked after loading and fitting; actual imported fitting and activation-loader bytes must match reviewed paths.",
+    "First launch cannot adopt orphan outputs; fit checkpoints and resumed analysis require the identical source, review, runtime, rows, map and validation regime.",
+    "Primary all-selected and competence-sensitivity populations each run context-only and screen-augmented analyses. Prior screen counts are added equally to every discriminative method only in the secondary budget; the direct screen-rate baseline is separate.",
+    "Original successes define the reported sensitivity only. Unknown original eligibility is explicit; censored impossible trajectories reduce completed trial counts and are never converted to failures.",
+    "Five-fold inner splits keep base tasks together, and all transformations, vocabularies, exact L2 spans, regularization selection and PCA fitting use training folds only. Final-label mutation leaves tuning and held-out predictions unchanged.",
+    "Descriptive full-grid discriminative fits remain available with at least five usable training task groups and both classes. Claim gates separately require five positive/negative training groups, three positive/negative test groups and zero fresh censors.",
+    "Inherited binomial fitting and stable weighted binary metrics retain actual trial frequencies; single-class or insufficient-group training reports prevalence-only predictions and undefined metrics remain absent.",
+    "Paired improvement signs are text loss minus raw loss and raw loss minus mapped loss. Bootstrap intervals resample held-out base tasks with fixed fitted predictions; positive lower bounds indicate improvement, with marginal rather than familywise coverage.",
+    "The mapped readout is checked by exact composition into raw coordinates. Orientation controls retain the fixed shared information budget. The extra training-only PCA grid runs only after supported initial-context primary mapped-over-raw benefit.",
+    "All inherited collection/capture/fitting helper sources remain unchanged; collection and capture independent reviews still match their current closures."
+  ],
+  "executed_evidence": [
+    {
+      "command": "UV_NO_SYNC=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 uv run --with inspect-ai==0.3.261 --with openai==3.7.0 python -m pytest tests/test_context_risk_highrate_analyze.py -q -x",
+      "result": "18 passed in 15.83s; independent execution on final stable source"
+    },
+    {
+      "command": "Same pinned thread-capped runtime: python scripts/context_risk_highrate_analyze.py --cfg job",
+      "result": "PASS; direct-script import and frozen path configuration resolved"
+    },
+    {
+      "command": "Independent exact source/review checks and numerical paired_task_interval sign fixture",
+      "result": "30-source analysis closure loaded; current collection/capture reviews match; better second predictor produced positive improvement 0.5662191695169728 with positive interval"
+    }
+  ],
+  "fixed_findings": [
+    {
+      "finding": "Fresh independent successful-body review was not required by the first analysis wrapper.",
+      "resolution": "validated_evidence requires a nonempty independent reviewer, PASS, exact native hashes and complete success_evidence; omissions, altered bodies and stale native hashes are rejected."
+    },
+    {
+      "finding": "First launch could adopt preexisting analysis outputs without an initial immutable binding.",
+      "resolution": "A nonempty output directory without analysis_launch.json is rejected before fitting; identical resumes still work."
+    },
+    {
+      "finding": "Late file hashes could miss a pinned-map/specification change between initial verification and consumption, and expected helper path hashes did not prove actual import parity.",
+      "resolution": "Pre-read pinned snapshots and post-load/end rechecks preserve original expected hashes; source_hashes verifies actual imported fitting/helper module files. Mutation regressions reject both seams."
+    }
+  ],
+  "fixture_boundaries": [
+    "No GPU, language-model weight loading, external model/API calls or real behavioral generation occurred.",
+    "The full artifact join used 90 real on-disk context records and six float16 [15,1,5120] NPZ shards with an explicitly synthetic identity map; previously tested native authorization was replaced by a declared fixture boundary.",
+    "Actual fitting/control/C-grid/bootstrap bodies used small synthetic feature dimensions. The full run-dispatch fixture used declared input authorization; validators were separately exercised through direct calls and mutation cases.",
+    "The conditional PCA test forces only the positive-interval branch field; its PCA transformation, 180 fold/rank/C candidates and final fit execute the inherited real bodies. It is not evidence of actual mapping benefit."
+  ],
+  "inherited_reviews_sha256": {
+    "capture_code_review.json": "8b2b21944bc7a73416568924dfd75cb83f13e7bac0848eb409fef56879e34750",
+    "code_review.json": "a9d6ff46e1e839c817a6485f14fdabe459cf1bd9c38f6247919bfbbd81a35c8b",
+    "map_reuse_review.json": "234055bf34f371163569ee7416fb211b34a49f3163f61762e9b19d8c7ab57c8d"
+  },
+  "plan_sha256": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+  "remaining_runtime_checks": [
+    "Actual screening/fresh native outputs and all successful bodies must pass their independent reviews before analysis; exact real capture inputs and shards must pass validate_binding.",
+    "Real 5120-dimensional map/activation fitting still needs completion, finite/convergence validation and source-bound output receipts on the production data.",
+    "Task-level sample size is ten held-out groups before sensitivity or censor exclusions. Sparse classes, coarse screen rankings and bootstrap intervals conditional on fitted predictions limit scientific inference; code PASS does not remove those limits.",
+    "Final claims and numbers require independent verification against current output artifacts and the planned archive receipts."
+  ],
+  "reviewed_utc": "2026-09-07T23:08:24.605564+00:00",
+  "reviewer": "Independent Codex subagent /root/verify_vllm_runtime; not the highrate analysis implementation author",
+  "schema_version": "context_risk_highrate_analysis_independent_review_v1",
+  "scope": "New highrate analysis wrapper, configuration and tests; inherited fitting, feature and capture-loader bodies reviewed read-only. This is a software/protocol verdict, not an experimental benefit claim.",
+  "sources_sha256": {
+    "configs/eval/context_risk_followup_capture.yaml": "cdbc76b49d639a61d349becf984aafd30ff5372ea88f6e92f89f2cac4cc25285",
+    "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+    "configs/eval/context_risk_highrate_analyze.yaml": "874d68cea3df17bfc8aff653b33915a8406f5798a8e5d0b8a85763e08058aa13",
+    "configs/eval/context_risk_highrate_capture.yaml": "7140a2fcc3e1ed38e4127a1c65d8dbb8ec3b40034713cffca8d15be177e80eec",
+    "configs/eval/context_risk_qwen38_impossible_capture.yaml": "7018d151ebf4534ad3ecfa4d88cb48c12b847e98bba46dce2e1ba3e8b0dc53aa",
+    "configs/eval/context_risk_qwen38_smoke.yaml": "d5ad816cb64e7da10d7e22bf79e4525e7d04f6d9df4808e678fd9d4cb9f5f352",
+    "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+    "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+    "scripts/context_risk_analyze.py": "05e7d2fcac63e442cfb7b2b99df244c33340070e8326edaebb16361661025010",
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "scripts/context_risk_followup_analyze.py": "b00ba257966beaa6ae75f37ec35e4579ec8429a118b2db370c16e3f3d6c38b38",
+    "scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
+    "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+    "scripts/context_risk_followup_features.py": "3258ddf56332e99c90c14808b83206670b7693e9b2e6bbf82f6d116e6cfdd7d4",
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "scripts/context_risk_highrate_analyze.py": "e9e4c586f83008d24edd2b406b4d6a4dfe39c9d145ec97fcf98acda86b6fa926",
+    "scripts/context_risk_highrate_capture.py": "d4b558eafdcedad4c29dca4aae432d0641d7f434300e4ee2e93343fa44a5a763",
+    "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+    "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+    "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+    "scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
+    "scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+    "scripts/context_risk_qwen38_impossible_capture.py": "d7f6aec322ce89249a6829b3298f7753cf8a33b9e7505bc7850b8c408a39122b",
+    "scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+    "src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79",
+    "tests/test_context_risk_highrate_analyze.py": "d06a063f328b293afffe5f94812ccb810d56d9ef8f68f501c7f2069f80b85c7b",
+    "tests/test_context_risk_highrate_capture.py": "968f8aa33131ff757760608f77686503dc7d3ff46058f81c7c4fad52ec54146f"
+  },
+  "unresolved_findings": [],
+  "verdict": "PASS"
+}
