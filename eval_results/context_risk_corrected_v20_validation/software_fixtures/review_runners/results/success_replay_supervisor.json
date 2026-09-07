@@ -1,0 +1,30 @@
+{
+  "passed": true,
+  "source_sha256": "4d270c881fe5fae339c6426b9277221ef52ccb250a6fdeb42de70c5e908548e5",
+  "case": "pinned_uv_dispatch_and_nonzero_exit_preserved",
+  "arguments": [
+    "run",
+    "--with",
+    "inspect-ai==0.3.261",
+    "--with",
+    "openai==3.7.0",
+    "python",
+    "-m",
+    "scripts.context_risk_corrected_success_replay",
+    "--run-result",
+    "/tmp/context-risk-success-replay-supervisor-critic-z09bdl8u/out/full/run_result.json",
+    "--manifest",
+    "/tmp/context-risk-success-replay-supervisor-critic-z09bdl8u/manifest with spaces.jsonl",
+    "--output-dir",
+    "/tmp/context-risk-success-replay-supervisor-critic-z09bdl8u/out/success_replay_fixture"
+  ],
+  "exit_record": {
+    "mode": "success_replay",
+    "supervisor_pid": 5631,
+    "worker_pid": 5636,
+    "exit_code": 7,
+    "cleanup": "no_live_members",
+    "finished_unix": 1788769326
+  },
+  "scope": "Fake uv in a temporary PATH; no model, upload, task or pod calls."
+}

@@ -1,0 +1,123 @@
+{
+  "verdict": "PASS",
+  "source": "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_corrected_success_replay.py",
+  "source_sha256": "8c16c5f4699fd20aa2d6ac38d737cd4db9f6451778db247ce75b4af210033ca8",
+  "fixture_root": "/tmp/context-risk-success-replay-review-nrrtcp_g",
+  "n_cases": 22,
+  "cases": [
+    {
+      "case": "all_three_success_conditions_selected",
+      "passed": true,
+      "selected": 3,
+      "executions": 6
+    },
+    {
+      "case": "missing_export_pair",
+      "passed": true,
+      "rejected": "Exported rollout roster differs from the frozen protocol"
+    },
+    {
+      "case": "duplicate_export_pair",
+      "passed": true,
+      "rejected": "Exported rollout roster differs from the frozen protocol"
+    },
+    {
+      "case": "duplicate_native_pair",
+      "passed": true,
+      "rejected": "Native rollout roster differs from the frozen protocol"
+    },
+    {
+      "case": "wrong_export_context",
+      "passed": true,
+      "rejected": "Exported rollout differs from the frozen manifest/native record"
+    },
+    {
+      "case": "changed_export_history",
+      "passed": true,
+      "rejected": "Exported rollout differs from the frozen manifest/native record"
+    },
+    {
+      "case": "missing_primary_score",
+      "passed": true,
+      "rejected": "Exported rollout differs from the frozen manifest/native record"
+    },
+    {
+      "case": "wrong_aggregate_successes",
+      "passed": true,
+      "rejected": "Positive export counts differ from the audited result"
+    },
+    {
+      "case": "failed_native_audit",
+      "passed": true,
+      "rejected": "Expected the reconciled, frozen, complete 480-rollout run"
+    },
+    {
+      "case": "changed_run_result",
+      "passed": true,
+      "rejected": "Expected the reconciled, frozen, complete 480-rollout run"
+    },
+    {
+      "case": "changed_native_bytes",
+      "passed": true,
+      "rejected": "Native log changed: /tmp/context-risk-success-replay-review-nrrtcp_g/changed_native_bytes/fixture-native.eval"
+    },
+    {
+      "case": "changed_manifest",
+      "passed": true,
+      "rejected": "Expected the reconciled, frozen, complete 480-rollout run"
+    },
+    {
+      "case": "nonterminal_success_rejected",
+      "passed": true,
+      "rejected": "Positive primary score lacks exactly one terminal success"
+    },
+    {
+      "case": "real_docker_isolated_six_executions",
+      "passed": true,
+      "native_logs": {
+        "/tmp/context-risk-success-replay-review-nrrtcp_g/real_docker/logs/2026-09-07T08-17-31-00-00_context-risk-saved-success-audit_34WpqueJXmmjPgzegTHdc6.eval": "c8f306d3996f780a508a5105d75fbb7769368cac5f5f52fe49caf7022c4660d4"
+      },
+      "model_calls": 0
+    },
+    {
+      "case": "native_replay_status_error",
+      "passed": true,
+      "rejected": "Replay task did not finish: error"
+    },
+    {
+      "case": "native_replay_sample_error",
+      "passed": true,
+      "rejected": "Replay sample was censored: ordinary:observed"
+    },
+    {
+      "case": "native_replay_invalidation",
+      "passed": true,
+      "rejected": "Replay sample was censored: ordinary:observed"
+    },
+    {
+      "case": "unexpected_model_event",
+      "passed": true,
+      "rejected": "Unexpected model call during saved-output replay"
+    },
+    {
+      "case": "duplicate_replay_output",
+      "passed": true,
+      "rejected": "Duplicate replay sample"
+    },
+    {
+      "case": "missing_replay_output",
+      "passed": true,
+      "rejected": "Replay coverage is incomplete"
+    },
+    {
+      "case": "input_changed_during_replay",
+      "passed": true,
+      "rejected": "Input changed during replay: /tmp/context-risk-success-replay-review-nrrtcp_g/replay-input-fixture.txt"
+    },
+    {
+      "case": "zero_successes_does_not_invoke_eval",
+      "passed": true
+    }
+  ],
+  "scope": "Local synthetic selection/error fixtures and six isolated Docker executions; zero model calls."
+}
