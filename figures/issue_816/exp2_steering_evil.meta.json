@@ -1,0 +1,86 @@
+{
+  "commit": "95f363fdd9",
+  "created": "2026-07-02T16:01:13Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "steering coefficient": 2.0,
+      "graded trait score (0-100)": 38.27447916666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering coefficient": 4.0,
+      "graded trait score (0-100)": 82.61603375527426,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering coefficient": 8.0,
+      "graded trait score (0-100)": 4.142992424242424,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering coefficient": -4.0,
+      "graded trait score (0-100)": 0.0,
+      "series": "real vector",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "steering coefficient": -2.0,
+      "graded trait score (0-100)": 0.0,
+      "series": "real vector",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "steering coefficient": -1.0,
+      "graded trait score (0-100)": 0.0,
+      "series": "real vector",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "steering coefficient": 0.0,
+      "graded trait score (0-100)": 0.0,
+      "series": "real vector",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "steering coefficient": 1.0,
+      "graded trait score (0-100)": 8.46360544217687,
+      "series": "real vector",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "steering coefficient": 2.0,
+      "graded trait score (0-100)": 85.21794871794873,
+      "series": "real vector",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "steering coefficient": 4.0,
+      "graded trait score (0-100)": 28.099593495934965,
+      "series": "real vector",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "steering coefficient": 8.0,
+      "graded trait score (0-100)": 0.0,
+      "series": "real vector",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 11
+}

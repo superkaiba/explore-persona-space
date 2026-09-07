@@ -1,0 +1,114 @@
+{
+  "commit": "95f363fdd9",
+  "created": "2026-07-02T16:01:18Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "evil",
+      "|Pearson r| (DeltaP vs shift)": 0.9372468838401116,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "sycophancy",
+      "|Pearson r| (DeltaP vs shift)": 0.5880521920535999,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "hallucination",
+      "|Pearson r| (DeltaP vs shift)": 0.6673285878032998,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.12,
+      "|Pearson r| (DeltaP vs shift)": 0.9123929234691973,
+      "series": "randnorm p97.5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.88,
+      "|Pearson r| (DeltaP vs shift)": 0.7378012093076685,
+      "series": "randnorm p97.5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.88,
+      "|Pearson r| (DeltaP vs shift)": 0.6784498152676054,
+      "series": "randnorm p97.5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.04,
+      "|Pearson r| (DeltaP vs shift)": 0.917976248338018,
+      "series": "perm p97.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.96,
+      "|Pearson r| (DeltaP vs shift)": 0.6976132048552526,
+      "series": "perm p97.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.96,
+      "|Pearson r| (DeltaP vs shift)": 0.6907887400359431,
+      "series": "perm p97.5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.04,
+      "|Pearson r| (DeltaP vs shift)": 0.3803875086787151,
+      "series": "crosstrait p97.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.04,
+      "|Pearson r| (DeltaP vs shift)": 0.6509313011519449,
+      "series": "crosstrait p97.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.04,
+      "|Pearson r| (DeltaP vs shift)": 0.6767489695512154,
+      "series": "crosstrait p97.5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.12,
+      "|Pearson r| (DeltaP vs shift)": 0.49961513218984765,
+      "series": "pca p97.5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.12,
+      "|Pearson r| (DeltaP vs shift)": 0.2758836420574886,
+      "series": "pca p97.5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.12,
+      "|Pearson r| (DeltaP vs shift)": 0.44102887008371155,
+      "series": "pca p97.5",
+      "_kind": "scatter",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 15
+}

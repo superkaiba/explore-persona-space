@@ -1,0 +1,66 @@
+{
+  "commit": "95f363fdd9",
+  "created": "2026-07-02T16:01:16Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.25,
+      "post-ft graded trait score": 85.05977312390922,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.75,
+      "post-ft graded trait score": 94.19466666666668,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.75,
+      "post-ft graded trait score": 99.19070512820514,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "evil",
+      "post-ft graded trait score": 56.11488095238095,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy",
+      "post-ft graded trait score": 86.8257264957265,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "hallucination",
+      "post-ft graded trait score": 98.93115942028986,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.25,
+      "post-ft graded trait score": 83.67886112091395,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.25,
+      "post-ft graded trait score": 92.62102523475966,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.25,
+      "post-ft graded trait score": 98.96814328080039,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 9
+}
