@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import gzip
 import hashlib
 import json
 import math
@@ -154,6 +155,29 @@ def upload(stage: Path, phase: str) -> dict:
     return receipt
 
 
+def preserve_finalized_trace(source: Path, destination: Path) -> dict:
+    """Inspect 0.3.261 compresses and removes its live trace on normal exit."""
+    with gzip.open(source, "rb") as stream:
+        content = stream.read()
+    records = [json.loads(line) for line in content.splitlines()]
+    if not records or any(not {"timestamp", "level", "message"} <= set(row) for row in records):
+        raise ValueError("Finalized Inspect trace is not a nonempty JSONL event log")
+    temporary = destination.with_suffix(destination.suffix + ".tmp")
+    temporary.write_bytes(content)
+    temporary.replace(destination)
+    return {
+        "source": str(source),
+        "source_sha256": sha(source),
+        "destination": str(destination),
+        "destination_sha256": sha(destination),
+        "n_records": len(records),
+        "connection_retries": [
+            row for row in records if "[APIConnectionError]" in str(row["message"])
+        ],
+        "verification": "Gzip CRC checked on complete decompression; every JSONL record parsed. Plain JSONL is archived and line-sharded by the existing upload helper if required.",
+    }
+
+
 def upload_bounded(stage: Path, name: str) -> dict:
     pilot = json.loads((ROOT / "setup/smoke_archive_pilot.json").read_text())
     if not pilot["passed"] or pilot["staged_bytes"] <= 0:
@@ -269,10 +293,11 @@ def finish() -> None:
         {"state": "running", "phase": "archiving_raw", "updated_at": datetime.now(UTC).isoformat()},
     )
     if not (ROOT / "raw_snapshot.json").exists():
-        shutil.copy2(
-            Path("/home/thomasjiralerspong/.local/share/inspect_ai/traces/trace-3704829.log"),
-            ROOT / "setup/full_inspect_trace.log",
+        trace = preserve_finalized_trace(
+            Path("/home/thomasjiralerspong/.local/share/inspect_ai/traces/trace-3704829.log.gz"),
+            ROOT / "setup/full_inspect_trace.jsonl",
         )
+        write_json(ROOT / "setup/full_inspect_trace_receipt.json", trace)
         own_pod_present()
         # Stop only this task's server supervisor, then collect its completed logs.
         stop = "import json,os,signal,time\nfrom pathlib import Path\np=Path('/workspace/logs/issue2670-context-risk-v20/server_20260907T0705_server_process.pid')\npid=int(p.read_text())\nassert pid==3973\nexit_path=p.with_suffix('.exit.json')\nif not exit_path.exists():\n cmd=Path(f'/proc/{pid}/cmdline')\n assert cmd.exists()\n command=cmd.read_bytes()\n assert b'context_risk_corrected_supervise.sh' in command and b'server' in command\n os.kill(pid,signal.SIGTERM)\ndeadline=time.time()+100\nwhile not exit_path.exists():\n if time.time()>deadline: raise TimeoutError('Server did not record shutdown')\n time.sleep(1)\nrecord=json.loads(exit_path.read_text())\nassert record['mode']=='server' and record['supervisor_pid']==3973\nassert record['cleanup'] in {'no_live_members','terminated_descendants','killed_descendants'}\nassert record['exit_code'] in {0,143}\nprint(json.dumps(record))\n"

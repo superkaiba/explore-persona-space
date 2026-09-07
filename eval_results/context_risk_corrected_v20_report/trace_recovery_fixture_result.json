@@ -1,0 +1,64 @@
+{
+  "verdict": "PASS",
+  "source": "scripts/context_risk_corrected_finish.py",
+  "source_sha256": "04eb2c59060c5bee823bebcede79596f4fa75ea00424f28891afd61b83dffe37",
+  "n_cases": 10,
+  "cases": [
+    {
+      "case": "valid",
+      "passed": true,
+      "n_records": 2
+    },
+    {
+      "case": "missing",
+      "passed": true,
+      "exception": "FileNotFoundError"
+    },
+    {
+      "case": "not_gzip",
+      "passed": true,
+      "exception": "BadGzipFile"
+    },
+    {
+      "case": "corrupt_crc",
+      "passed": true,
+      "exception": "BadGzipFile"
+    },
+    {
+      "case": "truncated_stream",
+      "passed": true,
+      "exception": "EOFError"
+    },
+    {
+      "case": "empty",
+      "passed": true,
+      "exception": "ValueError"
+    },
+    {
+      "case": "non_json",
+      "passed": true,
+      "exception": "JSONDecodeError"
+    },
+    {
+      "case": "missing_event_fields",
+      "passed": true,
+      "exception": "ValueError"
+    },
+    {
+      "case": "non_object",
+      "passed": true,
+      "exception": "ValueError"
+    },
+    {
+      "case": "actual_completed_full_trace",
+      "passed": true,
+      "source_sha256": "e45380a5b7b313823caf66982145adff7423d9b6a0163a2363595de450ddc94c",
+      "destination_sha256": "bcd3ab14916ec8d3a9c486e9ec75dbf875de97cb8419989a85785f4c2821e9e0",
+      "compressed_bytes": 863329,
+      "decompressed_bytes": 14951239,
+      "n_records": 19838,
+      "connection_retry_events": 6
+    }
+  ],
+  "scope": "Nine local gzip/JSONL fixtures plus the real finalized trace; no model/pod/upload calls."
+}

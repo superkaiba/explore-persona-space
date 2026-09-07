@@ -4,7 +4,7 @@
   "verdict": "PASS",
   "reviewed_at_utc": "2026-09-07T07:55:27.560168+00:00",
   "source": "scripts/context_risk_corrected_finish.py",
-  "source_sha256": "f9180cb9b2ae9084e561237c7f05ddda2713ce1240ba9261440fb83d2cbb18f7",
+  "source_sha256": "04eb2c59060c5bee823bebcede79596f4fa75ea00424f28891afd61b83dffe37",
   "supervisor_source": "scripts/context_risk_corrected_finish_supervise.sh",
   "supervisor_source_sha256": "d78c8bc0aa79c6852f8957107e93dc6468bc1088038bce2173624eab7f5e11da",
   "five_approved_production_sources_unchanged": true,
@@ -53,5 +53,22 @@
     "Qualitative original-success auditing and final owner-side persistence of completion receipts/status/logs remain required before claiming the overall research task complete."
   ],
   "external_model_calls": 0,
-  "automated_claude_usage": false
+  "automated_claude_usage": false,
+  "compressed_trace_fix_review": {
+    "reviewer": "/root/reward_harness_critic",
+    "reviewed_at": "2026-09-07T09:07:27.093765+00:00",
+    "verdict": "PASS",
+    "prior_approved_source_sha256": "f9180cb9b2ae9084e561237c7f05ddda2713ce1240ba9261440fb83d2cbb18f7",
+    "diff_scope": "Only gzip import, bounded finalized-trace preservation helper and finalized .log.gz call site (+28/-3). Other orchestration unchanged.",
+    "fixture_runner": "eval_results/context_risk_corrected_v20_report/trace_recovery_fixture.py",
+    "fixture_runner_sha256": "94030d5644ec72e0d91433db870afbc00514ace354081ec97086fab0ebb549db",
+    "fixture_result": "eval_results/context_risk_corrected_v20_report/trace_recovery_fixture_result.json",
+    "fixture_result_sha256": "44cc18a88f949b22d873aafd7cf17cbca4c45cd09fc5ff09c4ea0c7e043f2320",
+    "n_cases": 10,
+    "actual_trace_records": 19838,
+    "actual_trace_retry_events": 6,
+    "finding": "Inspect finalized the trace as gzip and removed the live .log. Complete decompression validates CRC; all records parse; corrupt/missing/empty/invalid logs fail before destination creation. Actual decompressed 14,951,239-byte JSONL will use existing line sharding.",
+    "no_model_upload_pod_or_task_calls": true,
+    "ruff": "PASS"
+  }
 }
