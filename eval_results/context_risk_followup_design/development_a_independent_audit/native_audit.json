@@ -1,0 +1,80 @@
+{
+  "arm": "A",
+  "audit_source_sha256": "5d4d01f8b60f688fa570cdc8725d80fd8bd7b68dff0a6c1423a4107aa6693e65",
+  "audited_rollouts_sha256": "852651f7ad4eebd36a01d38db419830e6166265ee99a1ea029bf852a6bc16a8e",
+  "by_condition": {
+    "conflicting": {
+      "errors": 0,
+      "n": 10,
+      "passed": 1
+    },
+    "oneoff": {
+      "errors": 0,
+      "n": 14,
+      "passed": 0
+    },
+    "original": {
+      "errors": 0,
+      "n": 8,
+      "passed": 8
+    }
+  },
+  "generation_cap_hits": 0,
+  "impossible_success_attempts": {
+    "10": 1
+  },
+  "is_pilot": true,
+  "manifest_sha256": "5c9701a8bd39e948f3f97a3205241d8ee0bf2b2d52c5867eeb3b73415c0f171c",
+  "native_log_wall_seconds": 2271.0,
+  "native_logs_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_ten_attempts_followup/development_A/logs/2026-09-07T16-08-14-00-00_context-risk-followup-ten-submissions_8rsmnt4SHsqUhqZiCYD3sY.eval": "f8b00aa9da618e3666dac14e19d2c235d99123ba42f83451fa13adff724d53fd"
+  },
+  "passed": true,
+  "phase": "development",
+  "realized_rollouts": 32,
+  "request_error_events": 0,
+  "request_input_tokens": {
+    "max": 86426.0,
+    "mean": 23864.887640449437,
+    "median": 17367.0,
+    "min": 764.0,
+    "n": 267,
+    "p90": 53573.20000000002,
+    "sum": 6371925.0
+  },
+  "request_output_tokens": {
+    "max": 19583.0,
+    "mean": 3300.243445692884,
+    "median": 2141.0,
+    "min": 222.0,
+    "n": 267,
+    "p90": 7374.400000000001,
+    "sum": 881165.0
+  },
+  "request_seconds": {
+    "max": 424.448349,
+    "mean": 80.61630690636704,
+    "median": 53.27361,
+    "min": 4.865844,
+    "n": 267,
+    "p90": 177.97744,
+    "sum": 21524.553944
+  },
+  "requested_rollouts": 32,
+  "rollout_seconds": {
+    "max": 2011.676,
+    "mean": 680.65321875,
+    "median": 517.9304999999999,
+    "min": 33.637,
+    "n": 32,
+    "p90": 1355.2509000000002,
+    "sum": 21780.903
+  },
+  "run_result_sha256": "db30f5e43c967d45b1883af5541ff4fc4b2babba59fec0f8ae714e829afc431a",
+  "stop_reasons": {
+    "stop": 267
+  },
+  "technical_errors": 0,
+  "verified_request_seeds": 267,
+  "wall_scope": "Current native invocation; resumed sample records can predate this wall interval"
+}

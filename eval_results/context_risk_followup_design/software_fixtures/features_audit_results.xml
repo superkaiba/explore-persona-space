@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="27" time="16.122" timestamp="2026-09-07T09:53:59.744101-07:00" hostname="cia-benchmark-vm"><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_map_composition_and_signed_input_control_keep_common_metric" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="53" time="0.038" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_training_transforms_do_not_depend_on_heldout_inputs_or_outcomes" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="83" time="0.037" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_pca_is_training_only_unwhitened_and_nominal_rank_clipping_is_consistent" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="106" time="0.021" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_map_scale_is_rejected_without_silent_repair[0.0]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="126" time="0.002" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_map_scale_is_rejected_without_silent_repair[-1.0]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="126" time="0.002" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_map_scale_is_rejected_without_silent_repair[1e-12]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="126" time="0.004" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_map_scale_is_rejected_without_silent_repair[nan]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="126" time="0.003" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_map_scale_is_rejected_without_silent_repair[inf]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="126" time="0.001" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_valid_audit_and_identical_transport_retry_are_preserved" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="204" time="0.521" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_audit_rejects_native_or_report_inconsistency[freeze]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="223" time="0.431" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_audit_rejects_native_or_report_inconsistency[requested]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="223" time="0.414" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_audit_rejects_native_or_report_inconsistency[epochs]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="223" time="0.420" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_audit_rejects_native_or_report_inconsistency[coverage]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="223" time="0.610" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_audit_rejects_native_or_report_inconsistency[top_p]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="223" time="0.436" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_audit_rejects_native_or_report_inconsistency[extra_body]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="223" time="0.442" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_audit_rejects_native_or_report_inconsistency[event_model]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="223" time="0.427" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_audit_rejects_native_or_report_inconsistency[output_model]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="223" time="0.418" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_audit_rejects_native_or_report_inconsistency[input]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="223" time="0.436" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_audit_rejects_native_or_report_inconsistency[response]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="223" time="0.464"><failure message="Failed: DID NOT RAISE any of (&lt;class 'ValueError'&gt;, &lt;class 'KeyError'&gt;)">tmp_path = PosixPath('/tmp/context-risk-features-audit-critic-20260907/test_audit_rejects_native_or_r9')
+defect = 'response'
+
+    @pytest.mark.parametrize(
+        "defect",
+        [
+            "freeze",
+            "requested",
+            "epochs",
+            "coverage",
+            "top_p",
+            "extra_body",
+            "event_model",
+            "output_model",
+            "input",
+            "response",
+            "seed",
+            "negative_duration",
+            "negative_tokens",
+            "retry_seed",
+            "trailing_error",
+            "nonstop",
+            "missing_event",
+            "score",
+        ],
+    )
+    def test_audit_rejects_native_or_report_inconsistency(tmp_path, defect):
+        log, report, report_path, manifest = native_fixture(tmp_path)
+        sample = log.samples[0]
+        event = sample.events[0]
+        if defect == "freeze":
+            log.eval.metadata["freeze_sha256"] = "wrong"
+        elif defect in {"requested", "epochs", "coverage"}:
+            report[
+                {
+                    "requested": "requested_rollouts",
+                    "epochs": "epochs",
+                    "coverage": "coverage_complete",
+                }[defect]
+            ] = 999 if defect != "coverage" else False
+            report_path.write_text(json.dumps(report))
+        elif defect == "top_p":
+            event.config.top_p = 0.5
+        elif defect == "extra_body":
+            event.config.extra_body = {"chat_template_kwargs": {"enable_thinking": True}}
+        elif defect == "event_model":
+            event.model = "wrong/model"
+        elif defect == "output_model":
+            event.output.model = "wrong/model"
+        elif defect == "input":
+            event.input[0].content = "changed initial prompt"
+        elif defect == "response":
+            event.output.choices[0].message.content = "changed completion"
+        elif defect == "seed":
+            event.config.seed = 0
+        elif defect == "negative_duration":
+            event.completed = event.timestamp - timedelta(seconds=1)
+        elif defect == "negative_tokens":
+            event.output.usage.input_tokens = -1
+        elif defect in {"retry_seed", "trailing_error"}:
+            error = copy.deepcopy(event)
+            error.error = "fixture retry"
+            error.output = None
+            if defect == "retry_seed":
+                error.config.seed = 0
+                sample.events.insert(0, error)
+            else:
+                sample.events.append(error)
+        elif defect == "nonstop":
+            event.output.choices[0].stop_reason = "max_tokens"
+            sample.metadata["agentic_results"]["attempt_history"][0]["stop_reasons"] = ["max_tokens"]
+        elif defect == "missing_event":
+            sample.events.pop()
+        elif defect == "score":
+            sample.scores["successful_submission"].value = "N"
+&gt;       with pytest.raises((ValueError, KeyError)):
+E       Failed: DID NOT RAISE any of (&lt;class 'ValueError'&gt;, &lt;class 'KeyError'&gt;)
+
+eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py:296: Failed</failure></testcase><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_audit_rejects_native_or_report_inconsistency[seed]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="223" time="0.448" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_audit_rejects_native_or_report_inconsistency[negative_duration]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="223" time="0.466" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_audit_rejects_native_or_report_inconsistency[negative_tokens]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="223" time="0.661" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_audit_rejects_native_or_report_inconsistency[retry_seed]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="223" time="0.485" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_audit_rejects_native_or_report_inconsistency[trailing_error]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="223" time="0.491" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_audit_rejects_native_or_report_inconsistency[nonstop]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="223" time="0.446" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_audit_rejects_native_or_report_inconsistency[missing_event]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="223" time="0.449" /><testcase classname="eval_results.context_risk_followup_design.software_fixtures.test_features_audit_independent" name="test_audit_rejects_native_or_report_inconsistency[score]" file="eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py" line="223" time="0.448" /></testsuite></testsuites>

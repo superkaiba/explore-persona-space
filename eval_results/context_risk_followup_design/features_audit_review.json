@@ -1,0 +1,82 @@
+{
+  "reviewer": "/root/reward_harness_critic",
+  "verdict": "PASS",
+  "reviewed_at": "2026-09-07T16:59:10.698130+00:00",
+  "files_sha256": {
+    "scripts/context_risk_followup_features.py": "3cf0d6ba1787bebd90804d07273eee581ccab7ce1ef85996fa669b5c01fe9f04",
+    "scripts/context_risk_followup_audit.py": "5d4d01f8b60f688fa570cdc8725d80fd8bd7b68dff0a6c1423a4107aa6693e65",
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "eval_results/context_risk_followup_design/analysis_spec.json": "a47ce4131959f8a7da9a75c367355713927e39e91692fbf017a1cad737d155d0"
+  },
+  "collection_sources_unchanged": {
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "configs/eval/context_risk_followup.yaml": "3e435740c63a580bd7ee058835e455586d22334183a0179219ff0d14034172cc",
+    "scripts/context_risk_followup_supervise.sh": "04326e2bdded90a62f061fcda90ba4ede2c226142b14b3f47cb0400f12b022cf",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c"
+  },
+  "scope": "Independent feature algebra and native-audit code review; low-dimensional software-only fixtures plus read-only replay of completed development A pilot. No generation, experiment fits or task mutations.",
+  "blocking_findings": [],
+  "resolved_findings": [
+    {
+      "id": "silent_map_scale_repair",
+      "resolution": "Map scales are preserved exactly; nonfinite or below-1e-9 values are rejected. The frozen map minimum scale was independently read as 0.35907018184661865, so this changes no valid mapping value."
+    },
+    {
+      "id": "immutable_roster_coverage",
+      "resolution": "Audit binds adjacent freeze, manifest name/hash, phase/arm/epochs, requested and realized coverage, complete native sample/epoch roster and source fingerprints."
+    },
+    {
+      "id": "request_provenance",
+      "resolution": "Audit checks full per-request sampling settings, pinned event and served output models, exact initial/assistant/feedback history, stable seed retries and final transcript. It rejects trailing unmatched model events and negative timing/token observations."
+    },
+    {
+      "id": "censor_and_stop_consistency",
+      "resolution": "Complete audit requires exactly one normal stop per completed generation, one through ten attempts, and immediate termination at the first successful submission."
+    },
+    {
+      "id": "resolved_native_attachments",
+      "resolution": "Read native logs with resolve_attachments=full before comparing event-input strings. Verified successfully against actual completed Qwen pilot records."
+    }
+  ],
+  "verified_features": [
+    "Effective affine map and fold-standardized operator agree algebraically; mapped-head logits equal composed raw-head logits without inversion.",
+    "Signed input permutations preserve the complete standardized operator singular spectrum and reuse the real map output scaling. Metadata is unchanged.",
+    "Scaling, TF-IDF vocabulary and PCA depend only on specified training contexts. Held-out input and irrelevant outcome changes cannot alter training features.",
+    "PCA remains unwhitened, uses full deterministic SVD and retains nominal rank identities when effective ranks coincide.",
+    "Metadata excludes companion original-task outcome counts; identity-plus-bias normalization parity passes."
+  ],
+  "software_evidence": {
+    "tests_passed": 27,
+    "elapsed_seconds": 17.03,
+    "fixture_source": "eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py",
+    "fixture_sha256": "4c2221fc0c74db0f45761cad2aa54af808ca4fb3300a06394a1e07b3a388a4db",
+    "junit_path": "eval_results/context_risk_followup_design/software_fixtures/features_audit_results_final.xml",
+    "junit_sha256": "6adead7fb78389e7ea6e616b7d4b84b238b4ecd9223a53931ead386ed1ed7ffb",
+    "ruff": "PASS",
+    "command": "timeout --kill-after=10s 120s env UV_NO_SYNC=1 PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 uv run --with 'inspect-ai==0.3.261' --with 'openai==3.7.0' python -m pytest -q eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py --junitxml=eval_results/context_risk_followup_design/software_fixtures/features_audit_results_final.xml --basetemp=/tmp/context-risk-features-audit-critic-final-20260907"
+  },
+  "actual_completed_pilot_replay": {
+    "path": "eval_results/context_risk_followup_design/development_a_independent_audit/native_audit.json",
+    "sha256": "eadde69b442c906ccf7309d96fb24774cf644af5f28c471a44b855583721cc34",
+    "requested_and_realized": 32,
+    "completed_model_events": 267,
+    "technical_errors": 0,
+    "all_completed_stop_reasons_normal": true,
+    "audit_output_roster_sha256": "852651f7ad4eebd36a01d38db419830e6166265ee99a1ea029bf852a6bc16a8e",
+    "run_result_sha256": "db30f5e43c967d45b1883af5541ff4fc4b2babba59fec0f8ae714e829afc431a",
+    "native_logs_sha256": {
+      "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_ten_attempts_followup/development_A/logs/2026-09-07T16-08-14-00-00_context-risk-followup-ten-submissions_8rsmnt4SHsqUhqZiCYD3sY.eval": "f8b00aa9da618e3666dac14e19d2c235d99123ba42f83451fa13adff724d53fd"
+    },
+    "scope": "Read-only software audit of already-completed generation; no new model requests."
+  },
+  "remaining_limits": [
+    "The analysis driver must enforce exact map/capture/context joins and train/test index grouping; a feature utility cannot establish those joins alone.",
+    "The complete-cohort audit intentionally rejects censored cohorts; it does not silently produce complete-case primary labels. The collection report retains failures and the driver must implement the frozen inconclusive behavior.",
+    "Observed sandbox success remains an operational label; successful code still requires the separately planned semantic audit."
+  ],
+  "model_calls": 0,
+  "experiment_fits": 0,
+  "task_mutations": 0
+}
