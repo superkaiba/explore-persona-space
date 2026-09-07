@@ -1,8 +1,8 @@
 {
   "actual_imported_sources_sha256": {
     "scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
-    "scripts/context_risk_qwen38_capture.py": "cdd14cc2b74ce7032ac6da6b846f0105f4bfee395280e7a8081382adbf201185",
-    "scripts/context_risk_qwen38_impossible_capture.py": "5f1828ef3a5274307fc922d714db0f0a360c073e0b2bc7ca2cc8746f223a8ee2",
+    "scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+    "scripts/context_risk_qwen38_impossible_capture.py": "d7f6aec322ce89249a6829b3298f7753cf8a33b9e7505bc7850b8c408a39122b",
     "scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
     "src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79"
   },
@@ -49,6 +49,91 @@
     "torch_module_version": "2.13.0+cu130",
     "transformers_module_version": "5.15.0"
   },
+  "refresh_reviews": [
+    {
+      "base_commit": "f5c862dda8a",
+      "changed_sources": [
+        "scripts/context_risk_followup_capture.py",
+        "scripts/context_risk_qwen38_impossible_capture.py",
+        "scripts/context_risk_qwen38_capture.py"
+      ],
+      "created_utc": "2026-09-07T17:42:00.387707+00:00",
+      "fresh_outcome_labels_opened": false,
+      "gpu_weights_loaded": false,
+      "model_calls_made": 0,
+      "nonblocking_findings": [
+        {
+          "current_experiment_impact": "None: both immutable fresh manifests contain zero raw Unicode line separators and each parses249 contexts through the actual helper. Wrapper Unicode correctness does not imply the inherited loader supports arbitrary future manifests.",
+          "finding": "scripts/context_risk_qwen38_impossible_capture.py still splits read_text with splitlines and rejects a synthetic raw U+2028/U+2029 JSON string with JSONDecodeError.",
+          "recommendation": "Use text-file iteration if this helper is generalized to manifests containing raw Unicode separators.",
+          "scope": "Inherited general load_manifest outside wrapper"
+        }
+      ],
+      "previous_review_sha256": "570fa40f3cee24aa28b7cee9fc3528f97f459aa07437f7e556b00c1a22f802c9",
+      "previous_sources_sha256": {
+        "configs/eval/context_risk_followup_capture.yaml": "cdbc76b49d639a61d349becf984aafd30ff5372ea88f6e92f89f2cac4cc25285",
+        "configs/eval/context_risk_qwen38_impossible_capture.yaml": "7018d151ebf4534ad3ecfa4d88cb48c12b847e98bba46dce2e1ba3e8b0dc53aa",
+        "configs/eval/context_risk_qwen38_smoke.yaml": "d5ad816cb64e7da10d7e22bf79e4525e7d04f6d9df4808e678fd9d4cb9f5f352",
+        "scripts/context_risk_followup_capture.py": "0c3534e86ce22e2737a6c892eeff72e0a00bf5d30a07aff6f5f0de2c1ad4f409",
+        "scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
+        "scripts/context_risk_qwen38_capture.py": "cdd14cc2b74ce7032ac6da6b846f0105f4bfee395280e7a8081382adbf201185",
+        "scripts/context_risk_qwen38_impossible_capture.py": "5f1828ef3a5274307fc922d714db0f0a360c073e0b2bc7ca2cc8746f223a8ee2",
+        "scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+        "src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79"
+      },
+      "scope": "Narrow workflow-lint cleanup: four wrapper JSONL file-iteration reads, direct invocation sys.path guards for two inherited helpers, formatting-only runtime dictionaries. Model and capture constants verified AST-identical to f5c862dda8a.",
+      "source_edits_by_reviewer": [],
+      "tests": [
+        {
+          "command": "UV_NO_SYNC=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 uv run python -m pytest -q eval_results/context_risk_followup_design/software_fixtures/capture_review.py tests/test_context_risk_qwen38_smoke.py tests/test_context_risk_qwen38_impossible_capture.py tests/test_context_risk_qwen38_capture.py",
+          "elapsed_seconds": 3.28,
+          "passed": 33
+        },
+        {
+          "checks": [
+            "raw U+2028/U+2029/U+0085 in all249 manifest records",
+            "raw Unicode separators in17 chunk row files",
+            "run wrapper completes",
+            "downstream validate_binding accepts exact Unicode content"
+          ],
+          "command": "UV_NO_SYNC=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 uv run python -m pytest -q /tmp/test_context_capture_unicode_review.py",
+          "elapsed_seconds": 19.69,
+          "fixture_sha256": "d37fbc4eba261df1693d3e1ab7b6d57b39e4fe691e1e57a0718036744dfe67ea",
+          "passed": 1,
+          "persisted_fixture_path": "eval_results/context_risk_followup_design/software_fixtures/capture_unicode_review.py"
+        },
+        {
+          "arguments": [
+            "--cfg",
+            "job"
+          ],
+          "gpu_work": false,
+          "name": "Direct inherited script invocation from unrelated /tmp directory",
+          "passed": true,
+          "scripts": [
+            "scripts/context_risk_qwen38_capture.py",
+            "scripts/context_risk_qwen38_impossible_capture.py"
+          ]
+        },
+        {
+          "name": "MODEL and CAPTURE AST constants identical to f5c862dda8a",
+          "passed": true
+        },
+        {
+          "name": "Actual imported helper files equal reviewed worktree bytes",
+          "passed": true
+        },
+        {
+          "contexts_each": 249,
+          "name": "Frozen fresh_A and fresh_B load through inherited load_manifest",
+          "passed": true,
+          "raw_Unicode_line_separator_count_each": 0
+        }
+      ],
+      "verdict": "PASS"
+    }
+  ],
+  "refreshed_utc": "2026-09-07T17:42:00.387707+00:00",
   "remaining_gpu_runtime_checks": [
     "Before capture, install/resolve the explicit capture dependency closure and verify the wrapper runtime guards pass; Accelerate is absent from the existing generation server environment.",
     "Release the co-resident generation model allocation before loading the BF16 Transformers capture model.",
@@ -64,10 +149,10 @@
     "configs/eval/context_risk_followup_capture.yaml": "cdbc76b49d639a61d349becf984aafd30ff5372ea88f6e92f89f2cac4cc25285",
     "configs/eval/context_risk_qwen38_impossible_capture.yaml": "7018d151ebf4534ad3ecfa4d88cb48c12b847e98bba46dce2e1ba3e8b0dc53aa",
     "configs/eval/context_risk_qwen38_smoke.yaml": "d5ad816cb64e7da10d7e22bf79e4525e7d04f6d9df4808e678fd9d4cb9f5f352",
-    "scripts/context_risk_followup_capture.py": "0c3534e86ce22e2737a6c892eeff72e0a00bf5d30a07aff6f5f0de2c1ad4f409",
+    "scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
     "scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
-    "scripts/context_risk_qwen38_capture.py": "cdd14cc2b74ce7032ac6da6b846f0105f4bfee395280e7a8081382adbf201185",
-    "scripts/context_risk_qwen38_impossible_capture.py": "5f1828ef3a5274307fc922d714db0f0a360c073e0b2bc7ca2cc8746f223a8ee2",
+    "scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+    "scripts/context_risk_qwen38_impossible_capture.py": "d7f6aec322ce89249a6829b3298f7753cf8a33b9e7505bc7850b8c408a39122b",
     "scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
     "src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79"
   },

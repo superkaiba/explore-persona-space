@@ -13,3 +13,11 @@ Both frozen fresh manifests contain249 distinct contexts from83 tasks across3 co
 Read-only inspection of the actual generation-server environment found Transformers5.15.0, Torch distribution2.13.0 / module2.13.0+cu130, CUDA13.0, NumPy2.3.5 and vLLM0.28.0. Accelerate is absent. The capture launcher must add the explicitly pinned capture dependencies and preserve runtime pins. Before full capture, verify GPU hook/replay parity and production-shape memory, including the longest prefix and a two-row unequal-length batch. The16384 padded batching budget permits longer singleton rows; it never truncates them.
 
 This PASS approves the reviewed software for its gated runtime validation. It does not claim that the GPU capture has already completed or that the scientific hypothesis is supported.
+
+## Workflow-lint cleanup refresh
+
+**PASS** after review of changes since `f5c862dda8a`. The refreshed JSON receipt pins the current exact source hashes. Model and capture constants are AST-identical. The change consists of file iteration for four wrapper JSONL reads, standard direct-script import guards in two inherited helpers, and runtime-dictionary formatting.
+
+Reran33 existing capture/helper fixtures successfully and added one Unicode regression fixture that runs the full wrapper and downstream binding validation with raw U+2028, U+2029 and U+0085 inside249 manifest records and17 chunk metadata files. Both inherited scripts also resolved their Hydra configurations when invoked directly from `/tmp`, without model or GPU work.
+
+One non-blocking inherited limitation remains: the lower-level ImpossibleBench manifest loader still uses `splitlines()` and rejects synthetic raw Unicode separators. The two immutable fresh manifests contain none and both load249 contexts through that helper, so this does not affect this frozen experiment. The Unicode fixture establishes the wrapper's behavior, not general support for arbitrary manifests in the inherited loader.

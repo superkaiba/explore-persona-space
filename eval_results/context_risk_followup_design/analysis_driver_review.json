@@ -1,15 +1,15 @@
 {
   "reviewer": "/root/reward_harness_critic",
   "verdict": "PASS",
-  "reviewed_at": "2026-09-07T17:23:47.397831+00:00",
+  "reviewed_at": "2026-09-07T17:41:01.731139+00:00",
   "source": "scripts/context_risk_followup_analyze.py",
-  "source_sha256": "f00523f3b78e6cab0a4b1b856f3f0e7738aeb96e20cbe87cb375f20e44e18bd9",
+  "source_sha256": "b00ba257966beaa6ae75f37ec35e4579ec8429a118b2db370c16e3f3d6c38b38",
   "files_sha256": {
-    "scripts/context_risk_followup_analyze.py": "f00523f3b78e6cab0a4b1b856f3f0e7738aeb96e20cbe87cb375f20e44e18bd9",
-    "scripts/context_risk_followup_features.py": "3cf0d6ba1787bebd90804d07273eee581ccab7ce1ef85996fa669b5c01fe9f04",
+    "scripts/context_risk_followup_analyze.py": "b00ba257966beaa6ae75f37ec35e4579ec8429a118b2db370c16e3f3d6c38b38",
+    "scripts/context_risk_followup_features.py": "3258ddf56332e99c90c14808b83206670b7693e9b2e6bbf82f6d116e6cfdd7d4",
     "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
-    "scripts/context_risk_followup_audit.py": "1b2fcf63ab21ea5efd5c18adda20b1c30b13e0d64f539092b3c388d137f1457b",
-    "scripts/context_risk_followup_capture.py": "0c3534e86ce22e2737a6c892eeff72e0a00bf5d30a07aff6f5f0de2c1ad4f409",
+    "scripts/context_risk_followup_audit.py": "c60356ffaa49831c2843d8b77a93cd171d143fe1e7196857a91dd40cbf4c4534",
+    "scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
     "scripts/context_risk_analyze.py": "05e7d2fcac63e442cfb7b2b99df244c33340070e8326edaebb16361661025010"
   },
   "spec_source": "eval_results/context_risk_followup_design/analysis_spec.json",
@@ -87,5 +87,63 @@
   ],
   "model_calls": 0,
   "experiment_fits": 0,
-  "task_mutations": 0
+  "task_mutations": 0,
+  "addenda": [
+    {
+      "reviewed_at": "2026-09-07T17:41:01.731139+00:00",
+      "verdict": "PASS",
+      "base_revision": "f5c862dda8aad62c7075adc37c9f3f2006c327ab",
+      "scope": "Narrow workflow cleanup: early shared load_dotenv, documented pinned Inspect overlay imports, and file-iterator JSONL parsing. No scientific readout, metric, CV or guard change.",
+      "software_evidence": {
+        "tests_passed": 81,
+        "pytest_elapsed_seconds": 28.29,
+        "junit_path": "eval_results/context_risk_followup_design/software_fixtures/workflow_cleanup_review.xml",
+        "junit_sha256": "ef4a66d6694cdee3c7d82f8adca398139407dbdc80ddad5fb0c54d8357c9230b",
+        "fixture_files_sha256": {
+          "tests/test_context_risk_followup_probe_core.py": "4e7dff45bac80cdf3d83e6f10f1d4af0ba2d6da9872a6f4e1918d65a5222ee92",
+          "tests/test_context_risk_followup_analyze.py": "bd10ca3d024388960ae22231f0097e55f158e5d29ef8ecf737b542d151b5221c",
+          "eval_results/context_risk_followup_design/software_fixtures/test_probe_core_independent.py": "b1415bc0b028720fd33f82a140ddaede790f9382231704ef81e44f5f0c12ecf5",
+          "eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py": "591529d7e5e7769b30bd5475b77e6fc6c34dd92ebfee91a0eb73a1deb6f0e00b",
+          "eval_results/context_risk_followup_design/software_fixtures/test_driver_independent.py": "7d7e217f148a3968ec8ad00e3d1ceef0214c00809e61b063bcfbec299b1170f6",
+          "eval_results/context_risk_followup_design/software_fixtures/test_driver_loading_independent.py": "06f33dd38b1268fb736d2da7b7c60c5d2a9b5dfefacdf13e711a1847c750a4ef"
+        },
+        "new_regression": "test_jsonl_preserves_literal_unicode_line_separators_inside_strings injects literal U+2028 and U+2029 into JSON string values in both virtual manifest and audited rollout JSONL; the exact 249-context/996-trajectory join remains valid and all text is preserved.",
+        "command": "timeout --kill-after=10s 150s env UV_NO_SYNC=1 PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 uv run --with 'inspect-ai==0.3.261' --with 'openai==3.7.0' python -m pytest -q tests/test_context_risk_followup_probe_core.py tests/test_context_risk_followup_analyze.py eval_results/context_risk_followup_design/software_fixtures/test_probe_core_independent.py eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py eval_results/context_risk_followup_design/software_fixtures/test_driver_independent.py eval_results/context_risk_followup_design/software_fixtures/test_driver_loading_independent.py --junitxml=eval_results/context_risk_followup_design/software_fixtures/workflow_cleanup_review.xml --basetemp=/tmp/context-risk-workflow-cleanup-critic-20260907",
+        "ruff": "PASS for updated independent loader fixture"
+      },
+      "environment_dependency": {
+        "source": "src/explore_persona_space/orchestrate/env.py",
+        "source_sha256": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759",
+        "review": "Existing load_dotenv respects explicit environment values (override=False), configures shared-VM thread caps before NumPy imports, and exposes no secrets in review output."
+      },
+      "collection_sources_unchanged": {
+        "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+        "configs/eval/context_risk_followup.yaml": "3e435740c63a580bd7ee058835e455586d22334183a0179219ff0d14034172cc",
+        "scripts/context_risk_followup_supervise.sh": "04326e2bdded90a62f061fcda90ba4ede2c226142b14b3f47cb0400f12b022cf",
+        "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+        "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+        "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c"
+      },
+      "model_calls": 0,
+      "experiment_fits": 0,
+      "task_mutations": 0,
+      "historical_evidence": "Prior evidence fields and JUnit files are retained as historical runs; prior executable fixture bytes are preserved in the base revision.",
+      "previous_files_sha256": {
+        "scripts/context_risk_followup_analyze.py": "f00523f3b78e6cab0a4b1b856f3f0e7738aeb96e20cbe87cb375f20e44e18bd9",
+        "scripts/context_risk_followup_features.py": "3cf0d6ba1787bebd90804d07273eee581ccab7ce1ef85996fa669b5c01fe9f04",
+        "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+        "scripts/context_risk_followup_audit.py": "1b2fcf63ab21ea5efd5c18adda20b1c30b13e0d64f539092b3c388d137f1457b",
+        "scripts/context_risk_followup_capture.py": "0c3534e86ce22e2737a6c892eeff72e0a00bf5d30a07aff6f5f0de2c1ad4f409",
+        "scripts/context_risk_analyze.py": "05e7d2fcac63e442cfb7b2b99df244c33340070e8326edaebb16361661025010"
+      },
+      "current_files_sha256": {
+        "scripts/context_risk_followup_analyze.py": "b00ba257966beaa6ae75f37ec35e4579ec8429a118b2db370c16e3f3d6c38b38",
+        "scripts/context_risk_followup_features.py": "3258ddf56332e99c90c14808b83206670b7693e9b2e6bbf82f6d116e6cfdd7d4",
+        "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+        "scripts/context_risk_followup_audit.py": "c60356ffaa49831c2843d8b77a93cd171d143fe1e7196857a91dd40cbf4c4534",
+        "scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
+        "scripts/context_risk_analyze.py": "05e7d2fcac63e442cfb7b2b99df244c33340070e8326edaebb16361661025010"
+      }
+    }
+  ]
 }

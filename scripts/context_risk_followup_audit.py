@@ -13,13 +13,19 @@ from pathlib import Path
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import numpy as np
-from inspect_ai.log import read_eval_log
-from omegaconf import OmegaConf
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from scripts.context_risk_followup import load_samples, sha256, source_hashes, validate_native
-from scripts.context_risk_followup_probe_core import save_json
-from scripts.context_risk_impossiblebench_inspect import GENERATION_EXTRA_BODY, summarize_logs
+load_dotenv()
+
+import numpy as np  # noqa: E402
+
+# PROD_IMPORT_LINT_EXEMPT: Run with uv --with inspect-ai==0.3.261, isolated from the shared environment.
+from inspect_ai.log import read_eval_log  # noqa: E402
+from omegaconf import OmegaConf  # noqa: E402
+
+from scripts.context_risk_followup import load_samples, sha256, source_hashes, validate_native  # noqa: E402
+from scripts.context_risk_followup_probe_core import save_json  # noqa: E402
+from scripts.context_risk_impossiblebench_inspect import GENERATION_EXTRA_BODY, summarize_logs  # noqa: E402
 
 
 def describe(values: list[float]) -> dict | None:

@@ -122,15 +122,21 @@ def validate_binding(
         or binding["selection_sha256"] != sha256(selection_path)
     ):
         raise ValueError("Capture inputs differ from the generation/selection evidence")
-    runtime_pins = {"transformers": "5.15.0", "torch": "2.13.0+cu130",
-                    "torch_distribution": "2.13.0", "cuda": "13.0",
-                    "accelerate": "1.13.0", "numpy": "2.3.5"}
+    runtime_pins = {
+        "transformers": "5.15.0",
+        "torch": "2.13.0+cu130",
+        "torch_distribution": "2.13.0",
+        "cuda": "13.0",
+        "accelerate": "1.13.0",
+        "numpy": "2.3.5",
+    }
     if any(binding["runtime"][key] != value for key, value in runtime_pins.items()):
         raise ValueError("Capture runtime differs from the validated model regime")
     report = json.loads((capture_root / "run_result.json").read_text())
     if sha256(capture_root / "run_result.json") != binding["run_result_sha256"]:
         raise ValueError("Capture run report changed")
-    rows = [json.loads(line) for line in manifest.read_text().splitlines()]
+    with manifest.open() as handle:
+        rows = [json.loads(line) for line in handle if line.strip()]
     if len(rows) != 249 or len({r["exact_context_sha256"] for r in rows}) != 249:
         raise ValueError("Capture binding requires exactly 249 distinct frozen contexts")
     expected = digest(
@@ -168,7 +174,8 @@ def validate_binding(
         done = json.loads((capture_root / f"{stem}.done.json").read_text())
         chunk_rows_path = capture_root / f"{stem}.rows.jsonl"
         npz_path = capture_root / f"{stem}.npz"
-        chunk_rows = [json.loads(line) for line in chunk_rows_path.read_text().splitlines()]
+        with chunk_rows_path.open() as handle:
+            chunk_rows = [json.loads(line) for line in handle if line.strip()]
         expected_rows = rows[start : start + CAPTURE["checkpoint_rows"]]
         if (
             done["fingerprint"] != expected
@@ -256,7 +263,8 @@ def run(cfg: DictConfig) -> dict:
         raise ValueError("Capture requires complete selected fresh generation")
     prefix_path = fresh / "prefix_tokens.json"
     prefix_record = json.loads(prefix_path.read_text())
-    manifest_rows = [json.loads(line) for line in manifest.read_text().splitlines()]
+    with manifest.open() as handle:
+        manifest_rows = [json.loads(line) for line in handle if line.strip()]
     prefixes = {r["exact_context_sha256"]: r for r in prefix_record["contexts"]}
     if (
         not prefix_record["passed"]
@@ -276,9 +284,14 @@ def run(cfg: DictConfig) -> dict:
     runtime["torch_distribution"] = runtime["torch"]
     runtime["torch"] = torch.__version__
     runtime["cuda"] = torch.version.cuda
-    runtime_pins = {"transformers": "5.15.0", "torch": "2.13.0+cu130",
-                    "torch_distribution": "2.13.0", "cuda": "13.0",
-                    "accelerate": "1.13.0", "numpy": "2.3.5"}
+    runtime_pins = {
+        "transformers": "5.15.0",
+        "torch": "2.13.0+cu130",
+        "torch_distribution": "2.13.0",
+        "cuda": "13.0",
+        "accelerate": "1.13.0",
+        "numpy": "2.3.5",
+    }
     if any(runtime[key] != value for key, value in runtime_pins.items()):
         raise ValueError("Capture package versions differ from the validated runtime")
     out.mkdir(parents=True, exist_ok=True)
@@ -305,7 +318,8 @@ def run(cfg: DictConfig) -> dict:
     report = run_capture(cfg)
     captured = []
     for path in sorted(out.glob("chunk_*.rows.jsonl")):
-        captured.extend(json.loads(line) for line in path.read_text().splitlines())
+        with path.open() as handle:
+            captured.extend(json.loads(line) for line in handle if line.strip())
     if len(captured) != 249 or {r["exact_context_sha256"] for r in captured} != set(prefixes):
         raise ValueError("Captured context roster differs from generation")
     for row in captured:

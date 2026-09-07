@@ -2,6 +2,7 @@
 
 import copy
 import hashlib
+import io
 import json
 from pathlib import Path
 from unittest.mock import patch
@@ -32,7 +33,7 @@ def memory_fixture():
     manifest = root / "manifests/fresh_A.jsonl"
     manifest_text = (ACTUAL_ROOT / "manifests/fresh_A.jsonl").read_text()
     freeze_text = (ACTUAL_ROOT / "manifests/freeze.json").read_text()
-    rows = [json.loads(line) for line in manifest_text.splitlines()]
+    rows = [json.loads(line) for line in io.StringIO(manifest_text) if line.strip()]
     files = {manifest: manifest_text, root / "manifests/freeze.json": freeze_text}
 
     def put(path, value):
@@ -134,10 +135,17 @@ def invoke_fixture(state, *, binding_error=False):
     """Patch only I/O and the separately reviewed native-audit/capture-loader boundaries."""
     root, captures, files, report, activation, capture_rows = state
     original_read, original_sha = Path.read_text, driver.sha256
+    original_open = Path.open
     original_glob, original_iterdir, original_is_file = Path.glob, Path.iterdir, Path.is_file
 
     def read(path, *args, **kwargs):
         return files[path] if path in files else original_read(path, *args, **kwargs)
+
+    def open_file(path, mode="r", *args, **kwargs):
+        if path not in files:
+            return original_open(path, mode, *args, **kwargs)
+        assert mode in {"r", "rb"}, "Virtual artifacts are read-only"
+        return io.BytesIO(files[path].encode()) if mode == "rb" else io.StringIO(files[path])
 
     def sha(path):
         return (
@@ -163,6 +171,7 @@ def invoke_fixture(state, *, binding_error=False):
 
     with (
         patch.object(Path, "read_text", read),
+        patch.object(Path, "open", open_file),
         patch.object(driver, "sha256", side_effect=sha),
         patch.object(Path, "glob", glob),
         patch.object(Path, "iterdir", iterdir),
@@ -203,6 +212,35 @@ def test_capture_validator_rejection_propagates_without_fallback():
     """The separately reviewed capture binding must approve before inputs are returned."""
     with pytest.raises(ValueError, match="software binding rejected"):
         invoke_fixture(memory_fixture(), binding_error=True)
+
+
+def test_jsonl_preserves_literal_unicode_line_separators_inside_strings():
+    """U+2028/U+2029 delimit text within a JSON string, not JSONL records."""
+    state = memory_fixture()
+    root, _, files, _, _, _ = state
+    manifest = root / "manifests/fresh_A.jsonl"
+    note = "software before\u2028middle\u2029after"
+    for path in (manifest, root / "fresh_A/audit/audited_rollouts.jsonl"):
+        values = [json.loads(line) for line in io.StringIO(files[path]) if line.strip()]
+        for value in values:
+            value["software_unicode_note"] = note
+        files[path] = "\n".join(json.dumps(value, ensure_ascii=False) for value in values)
+    manifest_sha = hashlib.sha256(files[manifest].encode()).hexdigest()
+    freeze_path = root / "manifests/freeze.json"
+    freeze = json.loads(files[freeze_path])
+    freeze["manifests"][manifest.name]["sha256"] = manifest_sha
+    files[freeze_path] = json.dumps(freeze)
+    selection_path = root / "selection.json"
+    selection = json.loads(files[selection_path])
+    selection["freeze_sha256"] = hashlib.sha256(files[freeze_path].encode()).hexdigest()
+    files[selection_path] = json.dumps(selection)
+    launch_path = root / "fresh_A/launch_config_fixture.json"
+    launch = json.loads(files[launch_path])
+    launch["metadata"]["manifest_sha256"] = manifest_sha
+    files[launch_path] = json.dumps(launch)
+    rows, _, _, _, _ = invoke_fixture(state)
+    assert len(rows) == 249 and all(row["software_unicode_note"] == note for row in rows)
+    assert sum(row["trials"] for row in rows) == 996
 
 
 @pytest.mark.parametrize(

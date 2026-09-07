@@ -9,11 +9,15 @@ from pathlib import Path
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import numpy as np
-from sklearn.decomposition import PCA
-from sklearn.feature_extraction.text import TfidfVectorizer
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from scripts.context_risk_followup_probe_core import weighted_standardize
+load_dotenv()
+
+import numpy as np  # noqa: E402
+from sklearn.decomposition import PCA  # noqa: E402
+from sklearn.feature_extraction.text import TfidfVectorizer  # noqa: E402
+
+from scripts.context_risk_followup_probe_core import weighted_standardize  # noqa: E402
 
 
 def metadata_matrix(rows: list[dict]) -> np.ndarray:

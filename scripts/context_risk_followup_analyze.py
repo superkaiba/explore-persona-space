@@ -12,12 +12,16 @@ from pathlib import Path
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import numpy as np
-from sklearn.model_selection import GroupKFold
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from scripts.context_risk_analyze import load_impossible_activations
-from scripts.context_risk_followup_features import FeatureBank
-from scripts.context_risk_followup_probe_core import (
+load_dotenv()
+
+import numpy as np  # noqa: E402
+from sklearn.model_selection import GroupKFold  # noqa: E402
+
+from scripts.context_risk_analyze import load_impossible_activations  # noqa: E402
+from scripts.context_risk_followup_features import FeatureBank  # noqa: E402
+from scripts.context_risk_followup_probe_core import (  # noqa: E402
     fit_logistic,
     l2_basis,
     loss_terms,
@@ -49,6 +53,7 @@ def digest(value) -> str:
 
 def incomplete_census(root: Path) -> dict | None:
     """Persist a verified inconclusive result when the fresh cohort is censored or partial."""
+    # PROD_IMPORT_LINT_EXEMPT: Run with uv --with inspect-ai==0.3.261, isolated from the shared environment.
     from inspect_ai.log import read_eval_log
     from omegaconf import OmegaConf
     from scripts.context_risk_followup import load_samples, source_hashes, validate_native
@@ -192,12 +197,11 @@ def load_inputs(root: Path, captures: Path, map_path: Path, spec_path: Path):
             raise ValueError("Fresh launch metadata differs from selected manifest")
     if report["realized_rollouts"] != 996 or report["is_pilot"] or report["phase"] != "fresh":
         raise ValueError("Prediction requires the full prespecified fresh cohort")
-    rows = [json.loads(line) for line in manifest.read_text().splitlines()]
+    with manifest.open() as handle:
+        rows = [json.loads(line) for line in handle if line.strip()]
     rows.sort(key=lambda r: (r["task_id"], r["condition"]))
-    observed = [
-        json.loads(line)
-        for line in (stage / "audit/audited_rollouts.jsonl").read_text().splitlines()
-    ]
+    with (stage / "audit/audited_rollouts.jsonl").open() as handle:
+        observed = [json.loads(line) for line in handle if line.strip()]
     by_context = {}
     for outcome in observed:
         by_context.setdefault(outcome["exact_context_sha256"], []).append(outcome)
