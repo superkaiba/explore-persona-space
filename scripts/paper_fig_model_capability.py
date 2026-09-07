@@ -21,7 +21,9 @@ from scipy.stats import rankdata, spearmanr
 from explore_persona_space.analysis.c2a_plot_style import (
     INK,
     ROLES,
+    better_label,
     c2a_figure,
+    panel_header,
     save_c2a_figure,
     set_c2a_style,
     style_score_axis,
@@ -57,8 +59,8 @@ OFFSETS = {
     "q35_27b": (12, 7),
     "q36_27b": (12, -21),
     "q38_27b": (-12, 9),
-    "o3_7b_i": (12, -16),
-    "o31_32b_i": (12, -19),
+    "o3_7b_i": (12, -5),
+    "o31_32b_i": (12, -10),
     "q25_32b": (12, 7),
     "q3_32b": (-12, -20),
 }
@@ -222,17 +224,24 @@ def load_panel() -> tuple[list[dict], dict]:
 
 
 def main() -> None:
+    """Render the unchanged ten-model panel in the shared manuscript visual style."""
     rows, provenance = load_panel()
     set_c2a_style()
-    fig, frac = c2a_figure("full", aspect=0.53)
+    fig, frac = c2a_figure("full", aspect=0.47)
     ax = fig.add_subplot(111)
-    fig.subplots_adjust(left=0.10, right=0.985, bottom=0.14, top=0.98)
+    fig.subplots_adjust(left=0.10, right=0.985, bottom=0.16, top=0.80)
+    panel_header(
+        ax,
+        "",
+        "10 models · thinking disabled",
+        "Predictability versus model capability",
+    )
     style_score_axis(ax, y_min=0.59, y_max=0.756, y_step=0.04)
     ax.set_yticks([0.60, 0.65, 0.70, 0.75])
     ax.set_xlim(-3, 64)
     ax.set_xticks([0, 10, 20, 30, 40, 50, 60])
-    ax.set_xlabel("Artificial Analysis Intelligence Index")
-    ax.set_ylabel(r"Held-out $R^2$ $\uparrow$")
+    ax.set_xlabel(better_label("Artificial Analysis Intelligence Index"))
+    ax.set_ylabel(better_label(r"Held-out $R^2$"))
     color = ROLES["linear"].color
     ax.scatter(
         [r["aa_index"] for r in rows],
