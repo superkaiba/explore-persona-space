@@ -5,23 +5,23 @@
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
   "reproduction_command": "uv run python scripts/issue1901_qualitative_retrieval_failures.py",
   "rendered_row_ids": [
-    "vocabulary_to_property_quiz",
-    "vancouver_to_japan_itinerary"
+    "vocabulary_to_cloud_quiz",
+    "vancouver_to_hawaii_itinerary"
   ],
   "rendered_rows_note": "The manuscript figure renders the two rows in MANUSCRIPT_ROW_IDS out of the banked selection below; --row-ids all renders every banked row.",
-  "input": "eval_results/issue_1901/content_divergent_retrieval_examples.json",
-  "input_sha256": "0e0056dc38b9b75b1b78de923dd49597bfd14a7785648d48be3a62a04d22c6fb",
+  "input": "eval_results/issue_1901/content_divergent_retrieval_examples_10k.json",
+  "input_sha256": "ac120a0c363285b876565a3e78481428a789692b2d743a670f318cbbf2c0907b",
   "render": {
     "style_version": "c2a-v2",
     "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      6.95
+      6.64
     ],
     "exported_size_inches": [
       13.095,
-      6.99
+      6.68
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -35,40 +35,44 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "TRUE ANSWER  \u00b7  RANK 2",
+      "TRUE ANSWER  \u00b7  RANK 5",
       "RETRIEVED ANSWER  \u00b7  RANK 1",
       "QUERY",
-      "Create a definition quiz for [...]\n\u201cinnovative\u201d, with four answers, only one\n[...] correct [...]",
-      "create a easy quiz [...] \"Sales contract\nfor house in Poland\" [...]",
+      "Create a definition quiz for the word\n\u201cinnovative\u201d, with four answers, only one\nanswer should be clearly the correct one\n[...]",
+      "do mind helpin me with 50 cloud computing\nquestions with choie answers that i can\nuse for revision",
       "ANSWER",
       "1. Innovative (Correct Answer)\na. Characterized by original and creative\nideas or methods. [...]",
-      "Quiz: Sales Contract for a House in Poland\n1. What is the minimum required information\n[...]?\nA) [...] B) The price, address, and terms of\npayment. [...]",
-      "TRUE ANSWER  \u00b7  RANK 4",
-      "Plan a three day trip to vancouver [...]\nChinese cuisine",
-      "create an 7 day itinerary [...] Japan.\n[...] tokyo [...] mnt. fugi.",
-      "Day 1: Exploring Chinatown and Beyond\n\u2022 Dim sum breakfast at a local Cantonese\nrestaurant.\n\u2022 Visit Hon Shing for [...] chicken chop,\nshrimp dumplings [...]",
-      "Day 1: Arrival and Tokyo City Tour\n\u2022 Arrive at Narita or Haneda Airport.\n\u2022 Check-in [...] recover from the journey.\n[...]"
+      "1. What does IaaS stand for?\nA) Infrastructure as a Service [...]",
+      "TRUE ANSWER  \u00b7  RANK 8",
+      "Plan a three day trip to vancouver with\nemphasis on Chinese cuisine",
+      "Can you create an itinerary for Hawaii for\n4 days with my family. We enjoy adventures\nand learning about the history of the\nplace.",
+      "Day 1: Exploring Chinatown and Beyond\n[...] dim sum breakfast at a local Cantonese\nrestaurant. [...]",
+      "Day 1: Honolulu and Pearl Harbor\n[...] Start your day with a visit to Diamond\nHead State Monument. [...]"
     ]
   },
   "selection": {
-    "rule": "Post-hoc selection of the three most content-divergent pairs after excluding semantic near-duplicate queries from the 25 rank-1 failures.",
-    "representative_answer": "The displayed text is the stored on-policy generation with seed 43. Retrieval uses the mean of five answer vectors, not this draw alone.",
-    "display_substitutions": "Markdown markers are removed, whitespace is normalized, and omitted query or answer text is marked with an ellipsis in brackets."
+    "rule": "Two previously illustrated query topics, now paired with their actual rank-1 competitors in the 10,000-candidate evaluation. These examples are illustrative, not a prevalence estimate.",
+    "source_audit": "eval_results/issue_1901/retrieval_10k/linear_failures/audit.json",
+    "source_audit_sha256": "58fc98545ff70e239174abea10a4421986bc8f186412011e52a34922fec7ac26",
+    "source_packet_sha256": "f4abbc30ef5f7630acb2177a6c1071138ab19ca7375afd5cc35f91bb96efb9bf",
+    "representative_answer": "Stored seed-43 on-policy generation. Retrieval uses the mean of five answer vectors.",
+    "display_substitutions": "Markdown heading/bold/list markers are removed, whitespace is normalized, and omissions are marked [...]. Every displayed segment was checked against the corresponding normalized raw prompt or answer in sequence."
   },
   "evaluation": {
     "model": "Qwen2.5-7B-Instruct",
     "layer": 19,
     "predictor": "ridge",
+    "n_train": 963444,
     "answer_target": "mean of five on-policy answer vectors",
     "retrieval": "whitened cosine with two-sided CSLS (K=10)",
-    "pool_size": 942,
-    "top1_failures": 25,
-    "top1_accuracy": 0.9734607218683652,
-    "deduplication": "exact source-answer-vector deduplication"
+    "pool_size": 10000,
+    "n_queries": 942,
+    "top1_failures": 90,
+    "top1_accuracy": 0.9044585987261147
   },
   "output_sha256": {
-    "pdf": "575a25cc5d672d9e13e2e429cfca0881c7eafa3878d66571fd89e3ea968b7cc5",
-    "png": "8b1a59f104c285df6c1c39e3b51a7151e16c91d314b367b8306331b644e7f54b",
-    "grayscale": "63bbf8d6b7083e8d5c160834597dd08cc26df2bc26442b813cde60fab71bb46b"
+    "pdf": "a8c3c385632a57b45b1cd21b6fd8039cd1e5bdfb9842682e2a6fabf8ae7662b3",
+    "png": "3a8860dd0a2b01b68045d61fabaf50715332d94e3ba34e0d92ffcd1f281b8a77",
+    "grayscale": "15e0218789d28738cec1e3bef70f6f7c79375fe32d3e3f836d652e71d038e18e"
   }
 }

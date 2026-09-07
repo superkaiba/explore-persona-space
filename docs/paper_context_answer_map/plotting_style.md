@@ -25,6 +25,16 @@ This command requires no model inference, GPU, or network access. It reads:
 
 - `eval_results/issue_1901/avgtarget_plots/plot1_avg.json`
 - `eval_results/issue_1901/figure2_five_rollout_scaling.json`
+- `eval_results/issue_1901/retrieval_10k/summary.json`
+
+Panel B keeps the original held-out R² values and replaces retrieval with the
+completed 10,000-candidate evaluation (942 query targets plus 9,058 added LMSYS
+distractors, chance top-1 0.01%). All nine training sizes from 5,000 through
+963,444 use that same candidate pool. The 1,200-context extension contributes
+R² only because it was not scored in the 10k run. Its original small-pool
+retrieval scores remain labeled as unplotted source metadata. The loader checks
+prediction hashes, query identities, whitening, and original-pool parity before
+combining the two summaries.
 
 and writes:
 
@@ -47,18 +57,26 @@ uv run python scripts/make_paper_figure2.py \
   --stem figure2_experiment
 ```
 
-The input paths are also configurable with `--layer-source` and
-`--scaling-source`.
+The input paths are also configurable with `--layer-source`, `--scaling-source`,
+and `--retrieval-source`.
 
 ## Recomputing the evaluation summaries
 
-Most visual edits should use the checked-in JSON files above. Recomputing the
-right-panel metrics downloads the pinned banked predictions and activations, but
-does not refit a model or run inference:
+Most visual edits should use the checked-in JSON files above. The original
+942-candidate summary and R² values are produced from pinned banked predictions:
 
 ```bash
 uv run python scripts/issue1901_figure2_five_rollout_scaling.py
 ```
+
+The displayed 10,000-candidate retrieval scores are produced by:
+
+```bash
+uv run python scripts/issue1901_figure2_retrieval_pool.py --n-pool 10000
+```
+
+Both routes reuse existing predictions and answer activations. Neither refits
+the metamodels nor generates answers. A plot-only edit needs neither command.
 
 That script pins the dataset revision, verifies source and prediction hashes,
 reconstructs the five-rollout targets, removes exact duplicate answer-vector
@@ -169,8 +187,33 @@ are the only statistics recomputed by this plot-only script; they use a pinned
 
 The qualitative retrieval-failure cards (`c3_qualitative_discrimination`) have
 their own producer, which renders the banked excerpts in
-`eval_results/issue_1901/content_divergent_retrieval_examples.json` verbatim:
+`eval_results/issue_1901/content_divergent_retrieval_examples_10k.json`:
 
 ```bash
 uv run python scripts/issue1901_qualitative_retrieval_failures.py
 ```
+
+These two examples use the same 10,000-candidate evaluation as the main
+training-size panel. The source records the audit and raw-text hashes, actual
+retrieved candidate identities, and true-answer ranks. Excerpts preserve source
+text with Markdown/whitespace normalization and explicit `[...]` omissions.
+Each displayed answer is a representative seed-43 draw, while retrieval uses
+five-answer means. The examples illustrate shared output structure with changed content,
+not the full error distribution.
+[Current qualitative examples](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/1901-retrieval-10k-20260907/figures/paper/c3_qualitative_discrimination.png).
+
+The appendix distractor-scaling panel uses saved results for the fixed linear
+metamodel trained on 963,444 contexts:
+
+```bash
+uv run python scripts/issue1901_distractor_curve.py --stem figures/paper/c1_distractor_scaling
+```
+
+It writes vector PDF, color PNG, grayscale PNG, and provenance JSON under that
+stem. The x-axis counts additional distractor contexts, and every pool also
+contains the fixed query targets. Five measured points use nested distractor
+prefixes, with no fitted curve or extrapolation. Top-1 bars show the saved
+pointwise 95% query-bootstrap intervals, conditional on each fixed pool. No
+top-5 intervals were banked. This render needs no generations, fitting, or
+retrieval rescoring.
+[Appendix distractor-scaling curve](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/1901-retrieval-10k-20260907/figures/paper/c1_distractor_scaling.png).

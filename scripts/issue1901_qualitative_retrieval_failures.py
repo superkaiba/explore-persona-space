@@ -6,7 +6,7 @@ the c2a-v2 figure standard (fixed authoring scale, Inter, provenance sidecar).
 Rows may be flat (``rows``) or grouped by failure category (``groups``).
 
 The display-ready text and evaluation provenance live in
-``eval_results/issue_1901/content_divergent_retrieval_examples.json``.
+``eval_results/issue_1901/content_divergent_retrieval_examples_10k.json``.
 """
 
 from __future__ import annotations
@@ -46,13 +46,13 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     set_c2a_style,
 )
 
-DEFAULT_INPUT = ROOT / "eval_results/issue_1901/content_divergent_retrieval_examples.json"
+DEFAULT_INPUT = ROOT / "eval_results/issue_1901/content_divergent_retrieval_examples_10k.json"
 DEFAULT_OUTPUT = ROOT / "figures/paper/c3_qualitative_discrimination"
 # Manuscript selection (Thomas 2026-09-03: "change figure 4 to only have 2 examples",
 # drop the Django pair). Pass --row-ids all to render every banked row.
 MANUSCRIPT_ROW_IDS: tuple[str, ...] = (
-    "vocabulary_to_property_quiz",
-    "vancouver_to_japan_itinerary",
+    "vocabulary_to_cloud_quiz",
+    "vancouver_to_hawaii_itinerary",
 )
 
 TRUE = ROLES["linear"].color

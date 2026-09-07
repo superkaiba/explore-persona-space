@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "title": "Examples of retrieval failures at 10,000 candidates",
+  "evaluation": {
+    "model": "Qwen2.5-7B-Instruct",
+    "layer": 19,
+    "predictor": "ridge",
+    "n_train": 963444,
+    "answer_target": "mean of five on-policy answer vectors",
+    "retrieval": "whitened cosine with two-sided CSLS (K=10)",
+    "pool_size": 10000,
+    "n_queries": 942,
+    "top1_failures": 90,
+    "top1_accuracy": 0.9044585987261147
+  },
+  "selection": {
+    "rule": "Two previously illustrated query topics, now paired with their actual rank-1 competitors in the 10,000-candidate evaluation. These examples are illustrative, not a prevalence estimate.",
+    "source_audit": "eval_results/issue_1901/retrieval_10k/linear_failures/audit.json",
+    "source_audit_sha256": "58fc98545ff70e239174abea10a4421986bc8f186412011e52a34922fec7ac26",
+    "source_packet_sha256": "f4abbc30ef5f7630acb2177a6c1071138ab19ca7375afd5cc35f91bb96efb9bf",
+    "representative_answer": "Stored seed-43 on-policy generation. Retrieval uses the mean of five answer vectors.",
+    "display_substitutions": "Markdown heading/bold/list markers are removed, whitespace is normalized, and omissions are marked [...]. Every displayed segment was checked against the corresponding normalized raw prompt or answer in sequence."
+  },
+  "rows": [
+    {
+      "id": "vocabulary_to_cloud_quiz",
+      "query_index": 810,
+      "true_answer_rank": 5,
+      "true": {
+        "ci": -857,
+        "final_query": "Create a definition quiz for the word “innovative”, with four answers, only one answer should be clearly the correct one [...]",
+        "answer_excerpt": "1. Innovative (Correct Answer)\na. Characterized by original and creative ideas or methods. [...]",
+        "prompt_sha256": "6c04ff19ce981e0cc3ea6eb4cde3cf3163164936e208836d11974e17d4ee7653",
+        "response_sha256": "52f976b87172832a06b6156b51aded1c23e4e3bf0bc654b0bacb1aab2d55381c",
+        "response_source": "issue1901_avgpool/raw_completions/test/shard00/gen_seed43_chunk1.json"
+      },
+      "retrieved": {
+        "ci": 52513,
+        "final_query": "do mind helpin me with 50 cloud computing questions with choie answers that i can use for revision",
+        "answer_excerpt": "1. What does IaaS stand for?\nA) Infrastructure as a Service [...]",
+        "prompt_sha256": "12abb59970b866914ee45ed99a7bf5af2a2bff3656efb96dc08bb49c2ac99a24",
+        "response_sha256": "3725358019a229b37e7ac5ad484c6a1cfe83152f1a9e0c8aaf825e69a39df1f8",
+        "response_source": "issue1901_avgpool/raw_completions/distr/shard03/gen_seed43_chunk3.json"
+      }
+    },
+    {
+      "id": "vancouver_to_hawaii_itinerary",
+      "query_index": 307,
+      "true_answer_rank": 8,
+      "true": {
+        "ci": -322,
+        "final_query": "Plan a three day trip to vancouver with emphasis on Chinese cuisine",
+        "answer_excerpt": "Day 1: Exploring Chinatown and Beyond\n[...] dim sum breakfast at a local Cantonese restaurant. [...]",
+        "prompt_sha256": "7450119ff1464650545b595141d52d9c8c758d04fe299d22a5154f92cce1b268",
+        "response_sha256": "da77ee03a3ecfc9d4a50cce391c1fd1a8d1471b5a483b08f2b718eb1e0a82896",
+        "response_source": "issue1901_avgpool/raw_completions/test/shard00/gen_seed43_chunk0.json"
+      },
+      "retrieved": {
+        "ci": 6465,
+        "final_query": "Can you create an itinerary for Hawaii for 4 days with my family. We enjoy adventures and learning about the history of the place.",
+        "answer_excerpt": "Day 1: Honolulu and Pearl Harbor\n[...] Start your day with a visit to Diamond Head State Monument. [...]",
+        "prompt_sha256": "98398a4150a5d5d6b4d12aff7ab2a936190dad0b3647d10b8b95f08ad913e7af",
+        "response_sha256": "bf6763bae964e585f3b0e0505f2e1f1ff4a7c8db10cdbc7282b0b2b41e9966ba",
+        "response_source": "issue1901_avgpool/raw_completions/distr/shard00/gen_seed43_chunk0.json"
+      }
+    }
+  ]
+}

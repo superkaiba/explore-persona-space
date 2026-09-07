@@ -46,6 +46,26 @@ the context vector — its raw-context-similarity numbers are span-mean-scoped).
 
 ## C1. The mapping is mostly linear; nonlinear gains only as training contexts scale
 
+**Manuscript retrieval setting, 2026-09-07:** the training-size panel now uses
+`eval_results/issue_1901/retrieval_10k/summary.json`: 942 fixed unique queries
+against 10,000 candidates, with five-answer means and fixed training-only
+whitening plus CSLS. At 963,444 training contexts, linear/nonlinear top-1 is
+90.45%/91.83% (chance 0.01%), a 1.38-percentage-point gap. The original R² values
+remain 0.8026/0.8588. All nine training sizes from 5,000 through 963,444 use this
+pool. The 1,200-context extension contributes R² only. The manuscript's failure
+analysis uses the same 10,000-candidate setting: 90 linear rank-1 errors, with
+the correct answer still in the top five in 74 cases. The exploratory annotation
+counts are 52 shared-task/different-content, 24 near-duplicate requests,
+6 similar representative responses, 6 format/framework overlaps, and 2 larger
+or unclear mismatches. These are descriptive categories, not semantic-correctness
+labels. The appendix varies added distractor contexts from zero to 19,000 using
+the same fixed linear metamodel and query targets, with top-1/top-5 retrieval
+87.26%/96.28% at the largest setting. Source summaries and annotation provenance
+are under `eval_results/issue_1901/retrieval_10k/`. Producer:
+`scripts/make_paper_figure2.py`.
+[Current manuscript figure](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/1901-retrieval-10k-20260907/figures/paper/c1_predictability_scaling.png).
+[Appendix distractor-scaling curve](https://raw.githubusercontent.com/superkaiba/explore-persona-space/codex/1901-retrieval-10k-20260907/figures/paper/c1_distractor_scaling.png).
+
 | Planned plot | Evidence | Class | Figure | Status |
 |---|---|---|---|---|
 | Main: R² + acc@1, linear vs nonlinear vs identity+bias, vs #training contexts | #1901 within-store dense ladder (2026-08-25, `mlp_scaling_dense_L19.json`): fresh MLP + ridge at eight sizes 5k→500k drawn from the one 963k store, every point scored on the one pinned 1,000-row pool — **ridge slope +0.016 vs MLP +0.047 over 50k→500k** (paired-bootstrap slope-gap 95% CI +0.028 to +0.033, clearing the registered 0.01 margin); ridge is ahead of the MLP through 10k, crossover ≈25k. The earlier cross-store scaling join (scale7-store ≤25k points from `scaling_ladder_L19.json`/`mlp_scaling_L19.json` joined with n1m ≥50k points from `scaling_bigN_acc1_L19.json`) is **superseded (different eval pools, #1901 finding 2026-08-25)** — 0/400 pinned rows match across stores; each banked file stays valid within its own store. #1901 battery: at 963k train rows fitted maps beat every baseline (euclid acc@1 ridge 0.800, wide neural 0.844, identity+bias 0.527); nonlinear-over-ridge acc@1 gap **grows with pool size 0.036→0.101** (LMSYS, pools 1k→100k); ridge acc@1 falls 0.81→0.065 as train rows drop 963k→50 while identity+bias stays ~0.50. #1775: rank-32 bilinear closes 93% of the additive→full-context gap (+0.049); dedup'd 1M MLP gain ≈ +0.056. #722: at small n (50-context sweep) nonlinear estimators buy nothing (MLP negative at every layer) | AP | `figures/issue_1901/mlp_scaling_dense_L19.png`, `ladder_by_metric_grid_v2.png`, `hero_r2_vs_acc1_scatter_v2.png`; `figures/paper/c1_scaling_train_pool.png` still renders the superseded join — generator re-point filed as #2570 | **SOLID** — training-size axis now rests on the within-store ladder; paper/poster figure re-render pending (#2570) |

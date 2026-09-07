@@ -1,0 +1,102 @@
+{
+  "source": "eval_results/issue_1901/retrieval_10k/distractor_curve/summary.json",
+  "source_sha256": "b27692c5e3bc9f2ffbfc70aff5b1c77b083f937b310a18dba1d8ac6000394da2",
+  "plotted": [
+    {
+      "n_added_distractors": 0,
+      "n_candidates": 942,
+      "n_wrong_candidates_per_query": 941,
+      "top1": 0.9734607218683652,
+      "top5": 1.0,
+      "top1_ci95_lo": 0.9628450106157113,
+      "top1_ci95_hi": 0.9830148619957537,
+      "source": "eval_results/issue_1901/singleturn_retrieval_final/summary.json",
+      "source_cell": "ridge|avg|keep_one|pool_1000"
+    },
+    {
+      "n_added_distractors": 1000,
+      "n_candidates": 1942,
+      "n_wrong_candidates_per_query": 1941,
+      "top1": 0.9522292993630573,
+      "top5": 0.9989384288747346,
+      "top1_ci95_lo": 0.9373673036093418,
+      "top1_ci95_hi": 0.964968152866242,
+      "source": "eval_results/issue_1901/singleturn_retrieval_final/summary.json",
+      "source_cell": "ridge|avg|keep_one|pool_2000"
+    },
+    {
+      "n_added_distractors": 4000,
+      "n_candidates": 4942,
+      "n_wrong_candidates_per_query": 4941,
+      "top1": 0.9256900212314225,
+      "top5": 0.9904458598726115,
+      "top1_ci95_lo": 0.9087048832271762,
+      "top1_ci95_hi": 0.9426751592356688,
+      "source": "eval_results/issue_1901/singleturn_retrieval_final/summary.json",
+      "source_cell": "ridge|avg|keep_one|pool_5000"
+    },
+    {
+      "n_added_distractors": 9058,
+      "n_candidates": 10000,
+      "n_wrong_candidates_per_query": 9999,
+      "top1": 0.9044585987261147,
+      "top5": 0.9830148619957537,
+      "top1_ci95_lo": 0.8853503184713376,
+      "top1_ci95_hi": 0.9235668789808917,
+      "source": "eval_results/issue_1901/retrieval_10k/summary.json",
+      "source_cell": "per_n/963444/ridge/metrics/whiten_csls"
+    },
+    {
+      "n_added_distractors": 19000,
+      "n_candidates": 19942,
+      "n_wrong_candidates_per_query": 19941,
+      "top1": 0.8726114649681529,
+      "top5": 0.9628450106157113,
+      "top1_ci95_lo": 0.8503184713375797,
+      "top1_ci95_hi": 0.8938428874734607,
+      "source": "eval_results/issue_1901/singleturn_retrieval_final/summary.json",
+      "source_cell": "ridge|avg|keep_one|pool_20000"
+    }
+  ],
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      9.821,
+      5.402
+    ],
+    "exported_size_inches": [
+      9.821,
+      4.995
+    ],
+    "scale": 0.42,
+    "include_width_frac": 0.75,
+    "latex_include_line": "\\includegraphics[width=0.75\\textwidth]{figures/paper/c1_distractor_scaling.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "Top-1\n87.3%",
+      "Top-5\n96.3%",
+      "Added distractor contexts",
+      "0",
+      "5k",
+      "10k",
+      "15k",
+      "19k",
+      "Retrieval accuracy \u2191",
+      "80%",
+      "85%",
+      "90%",
+      "95%",
+      "100%",
+      "Linear retrieval vs. distractors"
+    ]
+  }
+}

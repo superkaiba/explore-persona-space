@@ -3,12 +3,12 @@
   "style_version": "c2a-v2",
   "plotting_script": "scripts/make_paper_figure2.py",
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
-  "rescore_script": "scripts/issue1901_figure2_five_rollout_scaling.py",
+  "rescore_script": "scripts/issue1901_figure2_retrieval_pool.py",
   "reproduction_command": "uv run python scripts/make_paper_figure2.py",
   "repository_manuscript_asset": "figures/paper/c1_predictability_scaling.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
-    "commit": "59f89b77a84a68c299ffc6e9fd48971b6d179e1c",
+    "commit": "938c13bf0d35b57a3cc733806280eb302c8609f4",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -19,6 +19,10 @@
     "scaling": {
       "path": "eval_results/issue_1901/figure2_five_rollout_scaling.json",
       "sha256": "34f4c8f4f14cccb4c4e712b3ba729cd581611b4307413ff2d13a0edd1cc7cdac"
+    },
+    "retrieval": {
+      "path": "eval_results/issue_1901/retrieval_10k/summary.json",
+      "sha256": "0562bdb1bf7cd71e8309c5e9b9f634fd252a07bbe9bb310271d713d1df3edca0"
     }
   },
   "render": {
@@ -74,7 +78,7 @@
       "0.4",
       "Scaling with training data",
       "QWEN2.5-7B-INSTRUCT",
-      "PREDICTOR",
+      "METAMODEL",
       "METRIC",
       "CONTROL",
       "Linear",
@@ -488,11 +492,11 @@
         "arms": {
           "ridge": {
             "r2": 0.7001223865964977,
-            "retrieval": 0.7498230714791223
+            "retrieval": null
           },
           "mlp_w8192": {
             "r2": 0.6621053982064322,
-            "retrieval": 0.5360934182590233
+            "retrieval": null
           }
         }
       },
@@ -501,11 +505,11 @@
         "arms": {
           "ridge": {
             "r2": 0.7340952598140646,
-            "retrieval": 0.9097664543524416
+            "retrieval": 0.7367303609341825
           },
           "mlp_w8192": {
             "r2": 0.7130610290746502,
-            "retrieval": 0.8779193205944799
+            "retrieval": 0.6157112526539278
           }
         }
       },
@@ -514,11 +518,11 @@
         "arms": {
           "ridge": {
             "r2": 0.758128432318094,
-            "retrieval": 0.9235668789808917
+            "retrieval": 0.7951167728237792
           },
           "mlp_w8192": {
             "r2": 0.7493962682171261,
-            "retrieval": 0.9055201698513801
+            "retrieval": 0.727176220806794
           }
         }
       },
@@ -527,11 +531,11 @@
         "arms": {
           "ridge": {
             "r2": 0.778166233260706,
-            "retrieval": 0.9596602972399151
+            "retrieval": 0.8556263269639066
           },
           "mlp_w8192": {
             "r2": 0.7822545861862669,
-            "retrieval": 0.9416135881104034
+            "retrieval": 0.821656050955414
           }
         }
       },
@@ -540,11 +544,11 @@
         "arms": {
           "ridge": {
             "r2": 0.7916953124958028,
-            "retrieval": 0.9734607218683652
+            "retrieval": 0.89171974522293
           },
           "mlp_w8192": {
             "r2": 0.8072485725108495,
-            "retrieval": 0.964968152866242
+            "retrieval": 0.8779193205944799
           }
         }
       },
@@ -553,11 +557,11 @@
         "arms": {
           "ridge": {
             "r2": 0.8004696802376142,
-            "retrieval": 0.975583864118896
+            "retrieval": 0.8980891719745223
           },
           "mlp_w8192": {
             "r2": 0.8285725753953739,
-            "retrieval": 0.970276008492569
+            "retrieval": 0.8895966029723992
           }
         }
       },
@@ -566,11 +570,11 @@
         "arms": {
           "ridge": {
             "r2": 0.8037822938875063,
-            "retrieval": 0.9734607218683652
+            "retrieval": 0.9055201698513801
           },
           "mlp_w8192": {
             "r2": 0.8351598293809467,
-            "retrieval": 0.9787685774946921
+            "retrieval": 0.910828025477707
           }
         }
       },
@@ -579,11 +583,11 @@
         "arms": {
           "ridge": {
             "r2": 0.8072234380837277,
-            "retrieval": 0.9766454352441614
+            "retrieval": 0.9065817409766455
           },
           "mlp_w8192": {
             "r2": 0.8436077459009027,
-            "retrieval": 0.9798301486199575
+            "retrieval": 0.9140127388535032
           }
         }
       },
@@ -592,11 +596,11 @@
         "arms": {
           "ridge": {
             "r2": 0.8096102674849024,
-            "retrieval": 0.9777070063694268
+            "retrieval": 0.9055201698513801
           },
           "mlp_w8192": {
             "r2": 0.856355986204875,
-            "retrieval": 0.9830148619957537
+            "retrieval": 0.9256900212314225
           }
         }
       },
@@ -605,19 +609,38 @@
         "arms": {
           "ridge": {
             "r2": 0.8026158129630123,
-            "retrieval": 0.9734607218683652
+            "retrieval": 0.9044585987261147
           },
           "mlp_w8192": {
             "r2": 0.8588115628207151,
-            "retrieval": 0.9787685774946921
+            "retrieval": 0.9182590233545648
           }
         }
       }
     ],
     "layer": 19,
     "n_test": 1000,
+    "n_retrieval_queries": 942,
+    "n_retrieval_candidates": 10000,
+    "chance_top1": 0.0001,
+    "retrieval_coverage": {
+      "training_sizes": [
+        5000,
+        10000,
+        25000,
+        50000,
+        100000,
+        150000,
+        250000,
+        500000,
+        963444
+      ],
+      "planned_cells": 18,
+      "unscored_1200_extension": "producer persisted summary scores only; no predictions or fits are regenerated in this rescore",
+      "completed_cells": 18
+    },
     "target": "five-rollout mean",
-    "retrieval": "whitened cosine + CSLS (K=10), deduplicated pool n=942"
+    "retrieval": "whitened cosine + CSLS (K=10), deduplicated pool n=10000"
   },
   "boundary_control": {
     "source": {
@@ -666,7 +689,7 @@
       "path": "eval_results/issue_1901/figure2_extension_1200.json",
       "sha256": "8059ce3af58a576f08fd1bd93392e51bf6f8515964cbf2dd90b68c2a5e6a0a3e"
     },
-    "encoding": "1,200-context rung joins the predictor curves; the copy-context baselines are recorded here but not drawn",
+    "encoding": "1,200-context rung joins only the R^2 curves. Its original 942-candidate retrieval scores and copy-context baselines are preserved as source metadata but are not drawn.",
     "rows": [
       {
         "x": 1200,
@@ -693,8 +716,8 @@
     "convention": "identical to figure2_five_rollout_scaling: five-rollout mean targets, whitened cosine + two-sided CSLS (K=10), 942-answer pool, banked 963,444-row whitening"
   },
   "output_sha256": {
-    "pdf": "57ba7546c98f9fb803ded892f5529a8609bba1cbc654a706b91e3c389e669d9a",
-    "png": "6ce7f6da9aec4f1e7c0cc6faf9e03b824887906ca2751907a626e37c3eeb1290",
-    "grayscale": "ab57380dd859299821f1cc7626ccb3668660793ef6d2428292c2f2bb078c6d6f"
+    "pdf": "f71e93059974df08cb4a4569f84991a8f292019ac2d1df90c86a1299a5b52803",
+    "png": "756747f11ab03dec506242b856c129f7099a238127ea77c012a9d4ef6c6e2459",
+    "grayscale": "d7c09de99be87a7081fdd6b004146639e3ecf154b094075c0f142cc55d71a14d"
   }
 }

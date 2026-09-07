@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the manuscript's predictability-and-scaling figure (paper Figure 3).
+"""Render the manuscript's predictability-and-scaling figure.
 
 The figure combines the single-turn, five-rollout layer and data-scaling
 evaluations with pooled R^2 and whitened-cosine + CSLS top-1 retrieval.
@@ -58,6 +58,7 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
 
 DEFAULT_LAYER_SOURCE = ROOT / "eval_results/issue_1901/avgtarget_plots/plot1_avg.json"
 DEFAULT_SCALING_SOURCE = ROOT / "eval_results/issue_1901/figure2_five_rollout_scaling.json"
+DEFAULT_RETRIEVAL_SOURCE = ROOT / "eval_results/issue_1901/retrieval_10k/summary.json"
 DEFAULT_BOUNDARY_SOURCE = ROOT / "eval_results/issue_1901/boundary_points_fig2.json"
 DEFAULT_OUT = ROOT / "figures/paper"
 DEFAULT_STEM = "c1_predictability_scaling"
@@ -98,16 +99,48 @@ def _load_layer_data(path: Path) -> dict:
     }
 
 
-def _load_scaling_data(path: Path, extension: dict | None = None) -> dict:
+def _load_scaling_data(path: Path, retrieval_path: Path, extension: dict | None = None) -> dict:
+    """Preserve the R^2 series and use matched 10k-candidate retrieval scores."""
     source = json.loads(path.read_text())
-    rows = [] if extension is None else [dict(r) for r in extension["rows"]]
+    retrieval = json.loads(retrieval_path.read_text())
+    assert retrieval["status"] == "complete"
+    assert retrieval["coverage"]["completed_cells"] == retrieval["coverage"]["planned_cells"] == 18
+    assert retrieval["retrieval"]["n_pool"] == 10_000
+    assert retrieval["retrieval"]["n_query"] == source["retrieval"]["n_query"] == 942
+    for key in ("layer", "n_rollouts", "data_revision", "test_rows_sha256", "whitening"):
+        assert source[key] == retrieval[key], key
+    for key in ("csls_k", "duplicate_policy", "rank"):
+        assert source["retrieval"][key] == retrieval["retrieval"][key], key
+    assert source["per_n"].keys() == retrieval["per_n"].keys()
+    rows = []
+    if extension is not None:
+        # The extension has no 10k retrieval measurement. Keep its R^2 only.
+        rows = [
+            {
+                "x": row["x"],
+                "arms": {
+                    key: {"r2": values["r2"], "retrieval": None}
+                    for key, values in row["arms"].items()
+                },
+            }
+            for row in extension["rows"]
+        ]
     for n_text, cell in source["per_n"].items():
         arms = {}
         for plot_key, source_key in SCALING_KEYS.items():
             rec = cell[source_key]
+            rescored = retrieval["per_n"][n_text][source_key]
+            assert (
+                rec["prediction_sha256"] == retrieval["input_sha256"][f"pred_{source_key}_{n_text}"]
+            )
+            assert np.isclose(rec["r2"], rescored["r2"], atol=1e-12, rtol=0)
+            assert rec["top1"] == _acc1(rescored["original_pool_metrics"]["whiten_csls"])
+            metric = rescored["metrics"]["whiten_csls"]
+            assert metric["n_pool"] == 10_000 and metric["n_query"] == 942
+            assert rescored["top1"] == _acc1(metric)
             arms[plot_key] = {
                 "r2": float(rec["r2"]),
-                "retrieval": float(rec["top1"]),
+                "retrieval": _acc1(metric),
             }
         rows.append({"x": int(n_text), "arms": arms})
     rows.sort(key=lambda row: row["x"])
@@ -119,10 +152,14 @@ def _load_scaling_data(path: Path, extension: dict | None = None) -> dict:
         "rows": rows,
         "layer": int(source["layer"]),
         "n_test": int(source["duplicate_audit"]["source_n_pool"]),
+        "n_retrieval_queries": retrieval["retrieval"]["n_query"],
+        "n_retrieval_candidates": retrieval["retrieval"]["n_pool"],
+        "chance_top1": retrieval["retrieval"]["chance_top1"],
+        "retrieval_coverage": retrieval["coverage"],
         "target": "five-rollout mean",
         "retrieval": (
             f"whitened cosine + CSLS (K={source['retrieval']['csls_k']}), "
-            f"deduplicated pool n={source['retrieval']['n_pool']}"
+            f"deduplicated pool n={retrieval['retrieval']['n_pool']}"
         ),
     }
 
@@ -205,9 +242,11 @@ def _control_legend_handles(boundary: dict | None, extension: dict | None) -> li
 
 
 def _series(rows: list[dict], predictor: str, metric: str) -> tuple[np.ndarray, np.ndarray]:
+    measured = [row for row in rows if row["arms"][predictor][metric] is not None]
+    assert measured, (predictor, metric)
     return (
-        np.asarray([row["x"] for row in rows], dtype=float),
-        np.asarray([row["arms"][predictor][metric] for row in rows], dtype=float),
+        np.asarray([row["x"] for row in measured], dtype=float),
+        np.asarray([row["arms"][predictor][metric] for row in measured], dtype=float),
     )
 
 
@@ -237,9 +276,9 @@ def _plot_panel(
             zorder=4,
         )
         if show_retrieval:
-            _, retrieval = _series(rows, key, "retrieval")
+            retrieval_x, retrieval = _series(rows, key, "retrieval")
             ax.plot(
-                x,
+                retrieval_x,
                 retrieval,
                 color=style.color,
                 marker=style.marker,
@@ -363,7 +402,7 @@ def make_figure(
         ha="right",
         va="center",
     )
-    legend_kicker(fig, 0.075, row_y, "Predictor")
+    legend_kicker(fig, 0.075, row_y, "Metamodel")
     fig.legend(
         handles=predictor_handles,
         loc="upper left",
@@ -446,6 +485,7 @@ def _write_outputs(
     stem_name: str,
     layer_source: Path,
     scaling_source: Path,
+    retrieval_source: Path,
     layer: dict,
     scaling: dict,
     include_frac: float,
@@ -472,7 +512,7 @@ def _write_outputs(
                 "style_version": STYLE_VERSION,
                 "plotting_script": "scripts/make_paper_figure2.py",
                 "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
-                "rescore_script": "scripts/issue1901_figure2_five_rollout_scaling.py",
+                "rescore_script": "scripts/issue1901_figure2_retrieval_pool.py",
                 "reproduction_command": "uv run python scripts/make_paper_figure2.py",
                 "repository_manuscript_asset": _display_path(outputs["pdf"]),
                 "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
@@ -485,6 +525,10 @@ def _write_outputs(
                     "scaling": {
                         "path": _display_path(scaling_source),
                         "sha256": _sha256(scaling_source),
+                    },
+                    "retrieval": {
+                        "path": _display_path(retrieval_source),
+                        "sha256": _sha256(retrieval_source),
                     },
                 },
                 "render": outputs["record"],
@@ -526,8 +570,9 @@ def _write_outputs(
                             "path": _display_path(extension_source),
                             "sha256": _sha256(extension_source),
                         },
-                        "encoding": "1,200-context rung joins the predictor curves; the copy-context "
-                        "baselines are recorded here but not drawn",
+                        "encoding": "1,200-context rung joins only the R^2 curves. Its original "
+                        "942-candidate retrieval scores and copy-context baselines are preserved "
+                        "as source metadata but are not drawn.",
                         **extension,
                     }
                 ),
@@ -546,6 +591,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--layer-source", type=Path, default=DEFAULT_LAYER_SOURCE)
     parser.add_argument("--scaling-source", type=Path, default=DEFAULT_SCALING_SOURCE)
+    parser.add_argument("--retrieval-source", type=Path, default=DEFAULT_RETRIEVAL_SOURCE)
     parser.add_argument("--boundary-source", type=Path, default=DEFAULT_BOUNDARY_SOURCE)
     parser.add_argument(
         "--no-boundary", action="store_true", help="render without the control overlay"
@@ -560,7 +606,7 @@ def main() -> None:
 
     layer = _load_layer_data(args.layer_source)
     extension = None if args.no_extension else _load_extension_data(args.extension_source)
-    scaling = _load_scaling_data(args.scaling_source, extension)
+    scaling = _load_scaling_data(args.scaling_source, args.retrieval_source, extension)
     boundary = None if args.no_boundary else _load_boundary_data(args.boundary_source)
     assert layer["n_test"] == scaling["n_test"] == 1_000
     for dataset in (layer, scaling):
@@ -568,7 +614,8 @@ def main() -> None:
             for values in row["arms"].values():
                 assert np.isfinite(values["r2"])
                 assert 0.0 <= values["r2"] <= 1.0
-                assert 0.0 <= values["retrieval"] <= 1.0
+                if values["retrieval"] is not None:
+                    assert 0.0 <= values["retrieval"] <= 1.0
 
     git_state = _git_state()
     fig, include_frac = make_figure(layer, scaling, boundary, extension)
@@ -578,6 +625,7 @@ def main() -> None:
         args.stem,
         args.layer_source,
         args.scaling_source,
+        args.retrieval_source,
         layer,
         scaling,
         include_frac,
