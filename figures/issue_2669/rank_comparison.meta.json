@@ -118,5 +118,35 @@
       "path": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/figures/issue_2669/rank_comparison_grayscale.png",
       "sha256": "cfba463d2eebb0896420924399664d251ff39e59bae21ed5e4a0af103ddef056"
     }
-  }
+  },
+  "text": [
+    "Spearman correlation \u2191",
+    "\u22121.0",
+    "\u22120.5",
+    "0.0",
+    "0.5",
+    "1.0",
+    "Malicious harm \u00b7 ID",
+    "Malicious harm \u00b7 Generic",
+    "Malicious harm \u00b7 OOD",
+    "Sycophancy \u00b7 ID",
+    "Sycophancy \u00b7 Generic",
+    "Sycophancy \u00b7 OOD",
+    "Factual-QA fabrication \u00b7 ID",
+    "Hallucination trait \u00b7 Generic",
+    "Factual-QA fabrication \u00b7 OOD",
+    "A  Rank agreement",
+    "CIs undefined",
+    "Probe \u2212 Codex 32-shot",
+    "\u22120.6",
+    "\u22120.3",
+    "0.3",
+    "0.6",
+    "B  Paired difference\n(95% CI)",
+    "Codex zero-shot",
+    "Codex 32-shot",
+    "Context",
+    "Mapped answer",
+    "Observed answer"
+  ]
 }

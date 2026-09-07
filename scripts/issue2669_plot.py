@@ -312,6 +312,7 @@ def export(fig, fraction: float, out: Path, name: str, provenance: dict) -> dict
     record = {
         **provenance,
         "render": outputs["record"],
+        "text": outputs["record"]["text"],
         "outputs": {
             key: {"path": str(outputs[key]), "sha256": checksum(outputs[key])}
             for key in ("pdf", "png", "grayscale")
