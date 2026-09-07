@@ -1,55 +1,53 @@
 {
-  "render": {
-    "style_version": "c2a-v2",
-    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
-    "resolved_font": "Inter",
-    "authoring_size_inches": [
-      13.095,
-      5.762
-    ],
-    "exported_size_inches": [
-      13.095,
-      5.349
-    ],
-    "scale": 0.42,
-    "include_width_frac": 1.0,
-    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/k_rollout_ablation_baselines.pdf}",
-    "realized_font_pt": {
-      "body": 7.56,
-      "tick": 7.14,
-      "label": 8.4,
-      "title": 9.24
-    },
-    "png_dpi": 240,
-    "background": "#FFFFFF",
-    "text": [
-      "Rollouts averaged, $K$",
-      "1",
-      "2",
-      "3",
-      "4",
-      "5",
-      "Held-out $R^2$ \u2191",
-      "\u22121.5",
-      "\u22121.0",
-      "\u22120.5",
-      "0.0",
-      "0.5",
-      "1.0",
-      "Variance explained",
-      "Top-1 retrieval \u2191",
-      "0.2",
-      "0.4",
-      "0.6",
-      "0.8",
-      "1.2",
-      "Answer identification",
-      "Frozen maps \u00b7 1,000 contexts \u00b7 942 candidates \u00b7 Whitened cosine + CSLS \u00b7 95% intervals",
-      "Linear map",
-      "Nonlinear map",
-      "Identity + bias"
-    ]
+  "style_version": "c2a-v2",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "resolved_font": "Inter",
+  "authoring_size_inches": [
+    13.095,
+    5.762
+  ],
+  "exported_size_inches": [
+    13.095,
+    5.349
+  ],
+  "scale": 0.42,
+  "include_width_frac": 1.0,
+  "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/k_rollout_ablation_baselines.pdf}",
+  "realized_font_pt": {
+    "body": 7.56,
+    "tick": 7.14,
+    "label": 8.4,
+    "title": 9.24
   },
+  "png_dpi": 240,
+  "background": "#FFFFFF",
+  "text": [
+    "Rollouts averaged, $K$",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "Held-out $R^2$ \u2191",
+    "\u22121.5",
+    "\u22121.0",
+    "\u22120.5",
+    "0.0",
+    "0.5",
+    "1.0",
+    "Variance explained",
+    "Top-1 retrieval \u2191",
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8",
+    "1.2",
+    "Answer identification",
+    "Frozen maps \u00b7 1,000 contexts \u00b7 942 candidates \u00b7 Whitened cosine + CSLS \u00b7 95% intervals",
+    "Linear map",
+    "Nonlinear map",
+    "Identity + bias"
+  ],
   "plotted_arms": [
     "ridge",
     "mlp",

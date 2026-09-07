@@ -359,7 +359,7 @@ def make_figure(summary: dict, stem: Path, *, include_baseline: bool = False) ->
     FINAL._write_json(
         stem.with_suffix(".meta.json"),
         {
-            "render": exported["record"],
+            **exported["record"],
             "plotted_arms": list(ARMS if include_baseline else ARMS[:2]),
             "data": summary["all_subsets"],
             "outputs_sha256": {k: FINAL._sha256(exported[k]) for k in ("pdf", "png", "grayscale")},
