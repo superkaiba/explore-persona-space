@@ -1,0 +1,14 @@
+defaults:
+  - context_risk_qwen38_smoke
+  - _self_
+
+manifest_path: ${oc.env:EPM_CONTEXT_RISK_IMPOSSIBLE_MANIFEST,eval_results/context_risk/data/impossible_livecodebench/public_pilot_manifest.jsonl}
+output_dir: ${oc.env:EPM_CONTEXT_RISK_IMPOSSIBLE_CAPTURE_OUT,eval_results/context_risk/qwen38_impossible_contexts}
+
+capture:
+  max_contexts: null
+  checkpoint_rows: 15
+  max_sequence_tokens: 32768
+  batch_max_rows: 2
+  batch_max_tokens: 16384
+  enable_thinking: false

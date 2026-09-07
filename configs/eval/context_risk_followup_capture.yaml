@@ -1,0 +1,12 @@
+defaults:
+  - context_risk_qwen38_impossible_capture
+  - _self_
+
+root: ${oc.env:EPM_CONTEXT_RISK_FOLLOWUP_ROOT}
+arm: null
+review: ${oc.env:EPM_CONTEXT_RISK_CAPTURE_REVIEW}
+manifest_path: ${root}/manifests/fresh_${arm}.jsonl
+output_dir: ${root}/captures_${arm}
+
+model:
+  capture_layers: [44]

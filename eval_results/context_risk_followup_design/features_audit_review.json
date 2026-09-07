@@ -1,10 +1,10 @@
 {
   "reviewer": "/root/reward_harness_critic",
   "verdict": "PASS",
-  "reviewed_at": "2026-09-07T16:59:10.698130+00:00",
+  "reviewed_at": "2026-09-07T17:23:47.397831+00:00",
   "files_sha256": {
     "scripts/context_risk_followup_features.py": "3cf0d6ba1787bebd90804d07273eee581ccab7ce1ef85996fa669b5c01fe9f04",
-    "scripts/context_risk_followup_audit.py": "5d4d01f8b60f688fa570cdc8725d80fd8bd7b68dff0a6c1423a4107aa6693e65",
+    "scripts/context_risk_followup_audit.py": "1b2fcf63ab21ea5efd5c18adda20b1c30b13e0d64f539092b3c388d137f1457b",
     "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
     "eval_results/context_risk_followup_design/analysis_spec.json": "a47ce4131959f8a7da9a75c367355713927e39e91692fbf017a1cad737d155d0"
   },
@@ -78,5 +78,24 @@
   ],
   "model_calls": 0,
   "experiment_fits": 0,
-  "task_mutations": 0
+  "task_mutations": 0,
+  "addenda": [
+    {
+      "reviewed_at": "2026-09-07T17:23:47.397831+00:00",
+      "verdict": "PASS",
+      "scope": "Only native earliest-model-event timestamp was added to production audit; original native validation logic unchanged.",
+      "previous_audit_sha256": "5d4d01f8b60f688fa570cdc8725d80fd8bd7b68dff0a6c1423a4107aa6693e65",
+      "audit_sha256": "1b2fcf63ab21ea5efd5c18adda20b1c30b13e0d64f539092b3c388d137f1457b",
+      "test": "test_valid_audit_and_identical_transport_retry_are_preserved",
+      "assertion": "The first native model timestamp equals an errored transport retry five seconds before all successful events, so retries cannot evade the fresh-after-selection fence.",
+      "tests_passed": 1,
+      "elapsed_seconds": 8.03,
+      "fixture_source": "eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py",
+      "fixture_sha256": "591529d7e5e7769b30bd5475b77e6fc6c34dd92ebfee91a0eb73a1deb6f0e00b",
+      "junit_path": "eval_results/context_risk_followup_design/software_fixtures/audit_timestamp_addendum.xml",
+      "junit_sha256": "ed835302b1fb54a210f517fe0a38d3912383fa8d653155040e49e8cc3b57d394",
+      "command": "timeout --kill-after=10s 60s env UV_NO_SYNC=1 PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 uv run --with 'inspect-ai==0.3.261' --with 'openai==3.7.0' python -m pytest -q eval_results/context_risk_followup_design/software_fixtures/test_features_audit_independent.py::test_valid_audit_and_identical_transport_retry_are_preserved --junitxml=eval_results/context_risk_followup_design/software_fixtures/audit_timestamp_addendum.xml --basetemp=/tmp/context-risk-audit-timestamp-critic-20260907",
+      "historical_evidence": "Original 27-test fixture and review are preserved in git revision 11118961cf3922aedff3f6cff1111f0bcd5c6731; original actual-pilot replay remains associated with its originally reviewed audit source."
+    }
+  ]
 }

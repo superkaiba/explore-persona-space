@@ -5,3 +5,5 @@ The feature checks verify affine/head composition, signed input controls with th
 The audit now binds the frozen roster and coverage; checks exact per-request model, settings, seed and history; preserves identical transport retries; rejects unmatched events and inconsistent stops; and requires immediate termination after success. Native attachment resolution was validated against real saved Qwen logs.
 
 Exact source hashes, retained fixtures, executed commands and the independent pilot audit are recorded in features_audit_review.json. The analysis driver still needs independent join, split, cache and claim-gate verification. Operational reward labels still need the planned saved-code interpretation review.
+
+Timestamp addendum: PASS. The only audit change adds the earliest timestamp across all native model events. A targeted transport-retry fixture passed (1 test, 8.03 seconds), confirming that an earlier failed request determines the timestamp. The exact current audit hash and executable evidence are recorded in the JSON addendum; original 27-test and actual-pilot evidence retain their historical source association.

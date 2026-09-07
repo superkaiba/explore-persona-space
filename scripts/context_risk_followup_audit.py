@@ -109,7 +109,7 @@ def audit(run_result: Path, manifest: Path, output_dir: Path) -> dict:
     keys = [(s.id, s.epoch) for s in native_samples]
     if len(keys) != len(set(keys)) or set(keys) != expected:
         raise ValueError("Native cohort does not exactly match requested coverage")
-    request_seconds, input_tokens, output_tokens, seeds = [], [], [], []
+    request_seconds, input_tokens, output_tokens, seeds, request_timestamps = [], [], [], [], []
     rows, all_stop_reasons, request_errors = [], [], []
     for sample in native_samples:
         history = sample.metadata["agentic_results"]["attempt_history"]
@@ -125,6 +125,7 @@ def audit(run_result: Path, manifest: Path, output_dir: Path) -> dict:
         expected_input = [("user", sample.input)]
         next_attempt = 0
         for event in events:
+            request_timestamps.append(event.timestamp.timestamp())
             if next_attempt >= len(history):
                 raise ValueError("Trailing unmatched model event")
             attempt = history[next_attempt]
@@ -223,6 +224,7 @@ def audit(run_result: Path, manifest: Path, output_dir: Path) -> dict:
         "by_condition": actual["by_condition"],
         "technical_errors": 0,
         "verified_request_seeds": len(seeds),
+        "first_model_request_unix": min(request_timestamps),
         "request_error_events": len(request_errors),
         "stop_reasons": dict(Counter(all_stop_reasons)),
         "generation_cap_hits": sum(x >= 65536 for x in output_tokens),

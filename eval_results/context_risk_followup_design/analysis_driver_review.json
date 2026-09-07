@@ -1,0 +1,91 @@
+{
+  "reviewer": "/root/reward_harness_critic",
+  "verdict": "PASS",
+  "reviewed_at": "2026-09-07T17:23:47.397831+00:00",
+  "source": "scripts/context_risk_followup_analyze.py",
+  "source_sha256": "f00523f3b78e6cab0a4b1b856f3f0e7738aeb96e20cbe87cb375f20e44e18bd9",
+  "files_sha256": {
+    "scripts/context_risk_followup_analyze.py": "f00523f3b78e6cab0a4b1b856f3f0e7738aeb96e20cbe87cb375f20e44e18bd9",
+    "scripts/context_risk_followup_features.py": "3cf0d6ba1787bebd90804d07273eee581ccab7ce1ef85996fa669b5c01fe9f04",
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "scripts/context_risk_followup_audit.py": "1b2fcf63ab21ea5efd5c18adda20b1c30b13e0d64f539092b3c388d137f1457b",
+    "scripts/context_risk_followup_capture.py": "0c3534e86ce22e2737a6c892eeff72e0a00bf5d30a07aff6f5f0de2c1ad4f409",
+    "scripts/context_risk_analyze.py": "05e7d2fcac63e442cfb7b2b99df244c33340070e8326edaebb16361661025010"
+  },
+  "spec_source": "eval_results/context_risk_followup_design/analysis_spec.json",
+  "spec_sha256": "a47ce4131959f8a7da9a75c367355713927e39e91692fbf017a1cad737d155d0",
+  "scope": "Independent analysis driver review and software validation. Future behavioral, launch, audit and capture artifacts are virtualized in memory. No actual fresh outcomes were fabricated or fitted.",
+  "blocking_findings": [],
+  "resolved_findings": [
+    {
+      "id": "incomplete_censor_terminal_state",
+      "resolution": "The driver independently recomputes native cohort census and validates frozen provenance before emitting an explicit inconclusive outcome with zero fits. Missing and censored outcomes remain separate; condition rates use only observed completed trajectories and are null when none completed."
+    },
+    {
+      "id": "incomplete_provenance",
+      "resolution": "Incomplete handling binds both development reports, selected freeze and manifest, source closure, native hashes and metadata, phase/arm/epochs/requested coverage, realized roster and derived status flags."
+    },
+    {
+      "id": "capture_binding",
+      "resolution": "The loader requires the dedicated capture validator with exact capture, manifest, prefix and selection paths before consuming activations. Validator rejection propagates. Internal capture implementation receives its own independent review."
+    },
+    {
+      "id": "prefix_duplicates",
+      "resolution": "The exact 249-record prefix census is checked before dictionary lookup; duplicate entries cannot silently collapse."
+    },
+    {
+      "id": "selection_timing",
+      "resolution": "Fresh generation must follow selected-recipe freeze in both saved launches and the actual earliest native model event, including transport retries."
+    },
+    {
+      "id": "cache_payload_integrity",
+      "resolution": "Reuse requires the exact regime fingerprint, C, valid status/diagnostics, finite correctly shaped coefficients and predictions, row-span membership and reconstructed-logit equality. Single-class heads must match the prescribed smoothed prevalence exactly."
+    }
+  ],
+  "verified_invariants": [
+    "Full analysis joins 249 exact frozen contexts, four unique trajectories per context, the 63/20 task partition, pinned map/model/layer and untruncated capture/generation token identities.",
+    "Every method uses the same five task-disjoint training folds before frequency-weighted binomial class expansion. Validation losses sum all trajectory loss numerators and divide by total validation trials.",
+    "Held-out label flips do not change any primary or orientation-control C selection, CV loss or predicted logit.",
+    "PCA keeps all nominal rank/C candidates; identical effective ranks within a fold reuse fitting work. Rank/C ties prefer smaller rank then C; PCA is conditional and secondary.",
+    "Map-head logits are checked against the equivalent composed raw linear head. Prevalence uses training outcomes only, and insufficient training support performs no fits.",
+    "Benefit flags require prespecified test-task class support and a paired whole-task bootstrap interval strictly above zero. Primary eligibility and all-task sensitivity are separately reported.",
+    "Analysis input, source and software package hashes enter fit-cache regime provenance. Collection production source hashes remain unchanged."
+  ],
+  "software_evidence": {
+    "tests_passed": 36,
+    "elapsed_seconds": 28.34,
+    "fixture_files_sha256": {
+      "tests/test_context_risk_followup_probe_core.py": "4e7dff45bac80cdf3d83e6f10f1d4af0ba2d6da9872a6f4e1918d65a5222ee92",
+      "tests/test_context_risk_followup_analyze.py": "bd10ca3d024388960ae22231f0097e55f158e5d29ef8ecf737b542d151b5221c",
+      "eval_results/context_risk_followup_design/software_fixtures/test_driver_independent.py": "7d7e217f148a3968ec8ad00e3d1ceef0214c00809e61b063bcfbec299b1170f6",
+      "eval_results/context_risk_followup_design/software_fixtures/test_driver_loading_independent.py": "06c8b66d7cf3ff86c1acf30d05b226c72da108a70f9d80c70b192f104b0aa476"
+    },
+    "junit_path": "eval_results/context_risk_followup_design/software_fixtures/driver_review_final.xml",
+    "junit_sha256": "b609837b754eb2c6f1219cbad37733d56038b8f06816e1bf94fdf642f748aad6",
+    "ruff": "PASS for all three independent driver/audit fixture files",
+    "command": "timeout --kill-after=10s 150s env UV_NO_SYNC=1 PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 uv run --with 'inspect-ai==0.3.261' --with 'openai==3.7.0' python -m pytest -q tests/test_context_risk_followup_probe_core.py tests/test_context_risk_followup_analyze.py eval_results/context_risk_followup_design/software_fixtures/test_driver_independent.py eval_results/context_risk_followup_design/software_fixtures/test_driver_loading_independent.py --junitxml=eval_results/context_risk_followup_design/software_fixtures/driver_review_final.xml --basetemp=/tmp/context-risk-driver-combined-critic-20260907"
+  },
+  "dependency_review_boundary": {
+    "features_and_native_audit": "features_audit_review.json; timestamp addition separately validated and recorded there",
+    "weighted_fit_and_metrics": "probe_core_review.json",
+    "capture_internal_implementation": "Reviewed independently by parent-assigned Pascal reviewer. This record tests the consumer boundary and records the current dependency hash; it does not substitute for capture review."
+  },
+  "collection_sources_unchanged": {
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "configs/eval/context_risk_followup.yaml": "3e435740c63a580bd7ee058835e455586d22334183a0179219ff0d14034172cc",
+    "scripts/context_risk_followup_supervise.sh": "04326e2bdded90a62f061fcda90ba4ede2c226142b14b3f47cb0400f12b022cf",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c"
+  },
+  "remaining_limits": [
+    "This is software approval, not evidence that the planned fresh cohort or captures have completed.",
+    "Frozen task support gates can still make prediction or mapping-benefit claims inconclusive. Software success does not establish behavioral prevalence or predictive usefulness.",
+    "Bootstrap intervals condition on fitted predictions and omit refitting uncertainty; two primary marginal intervals are not a familywise significance guarantee.",
+    "A deterministic affine map cannot add information; measured gains would concern finite-sample inductive bias relative to specified controls.",
+    "Public benchmark novelty to the pretrained model is unverified. Original-test success defines operational eligibility and does not establish general algorithmic competence."
+  ],
+  "model_calls": 0,
+  "experiment_fits": 0,
+  "task_mutations": 0
+}

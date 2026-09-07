@@ -208,10 +208,12 @@ def test_valid_audit_and_identical_transport_retry_are_preserved(tmp_path):
     retry = copy.deepcopy(log.samples[0].events[0])
     retry.error = "fixture transient transport error"
     retry.output = None
+    retry.timestamp -= timedelta(seconds=5)
     log.samples[0].events.insert(0, retry)
     result = run_mocked_audit(tmp_path, log, report_path, manifest)
     assert result["passed"] and result["realized_rollouts"] == 32
     assert result["request_error_events"] == 1
+    assert result["first_model_request_unix"] == retry.timestamp.timestamp()
     assert result["verified_request_seeds"] == sum(
         len(s.metadata["agentic_results"]["attempt_history"]) for s in log.samples
     )

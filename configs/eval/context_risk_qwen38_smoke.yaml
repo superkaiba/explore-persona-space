@@ -1,0 +1,22 @@
+model:
+  id: Qwen/Qwen3.8-27B
+  revision: 1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0
+  transformers_version: 5.15.0
+  dtype: bfloat16
+  expected_layers: 64
+  expected_hidden_dim: 5120
+  capture_layers: [32, 44, 56]
+
+smoke:
+  exact_replay_rows: 8
+  hook_relative_tolerance: 1.0e-5
+  max_new_tokens: 12
+  enable_thinking: false
+
+output_dir: ${oc.env:EPM_CONTEXT_RISK_OUT,eval_results/context_risk/qwen38_smoke}
+
+hydra:
+  run:
+    dir: .
+  output_subdir: null
+
