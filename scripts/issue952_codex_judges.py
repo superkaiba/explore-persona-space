@@ -7,6 +7,12 @@ module never calls an external model API and never reads an API credential.
 
 from __future__ import annotations
 
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# Configure caches and upload accelerators without loading the repository .env;
+# this workflow deliberately must not read an external-judge API credential.
+load_dotenv("/dev/null")
+
 import argparse
 import collections
 import hashlib
@@ -19,6 +25,9 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from huggingface_hub import HfApi, hf_hub_download
+
+from explore_persona_space.orchestrate import hub
 
 ISSUE = 952
 BACKEND = "codex-subagent-pair-v2"
@@ -41,6 +50,10 @@ RUBRIC_SHA256 = hashlib.sha256(RUBRIC.encode()).hexdigest()
 N_BOOT = 10_000
 BOOT_SEED = 952_031
 SOURCE_SHA256 = "bfdc36b445f45e1373078b61f0ad6e8aa2972c52361ec13e70c23c00b7c00b79"
+HF_REPO = "superkaiba1/explore-persona-space-data"
+HF_PREFIX = (
+    "issue952_position_divergence/followups/china_refusal_topic_stratified_bilingual_v1"
+)
 AUTHOR_BACKEND = "codex-subagent-authors-v1"
 AUDIT_BACKEND = "codex-subagent-cross-audit-v1"
 AUTHOR_KEYS = (
@@ -335,6 +348,8 @@ def _load_agent_outputs(packet_manifest: dict[str, Any]) -> dict[str, dict[str, 
         if got != expected or len(set(got)) != len(got):
             raise RuntimeError(f"Codex judgment coverage/order mismatch: {output_path}")
         for row in rows:
+            if set(row) != {"opaque_id", "verdict", "raw_output"}:
+                raise RuntimeError(f"invalid Codex judgment row schema: {output_path}")
             verdict = row.get("verdict")
             raw_output = row.get("raw_output")
             expected_raw = "<refusal>yes</refusal>" if verdict is True else "<refusal>no</refusal>"
@@ -958,6 +973,351 @@ def finalize_bank(out_dir: Path) -> dict[str, Any]:
     return report
 
 
+def archive_invalid_calibration(out_dir: Path, invalid_root: Path) -> dict[str, Any]:
+    """Preserve the superseded v1 packet/output bytes as invalid diagnostics."""
+
+    packet = invalid_root / "calibration" / "agent_a" / "batch_000.json"
+    if not packet.exists():
+        raise RuntimeError("invalid-calibration archive has no v1 packet")
+    payload = json.loads(packet.read_text())
+    if payload.get("instrument", {}).get("backend") != "codex-subagent-pair-v1":
+        raise RuntimeError("refusing to archive a packet root that is not v1")
+    destination = out_dir / "calibration_codex" / "invalid_instrument_v1"
+    files: dict[str, dict[str, Any]] = {}
+    for source in sorted(invalid_root.rglob("*")):
+        if source.is_symlink():
+            raise RuntimeError(f"invalid-calibration artifact is a symlink: {source}")
+        if not source.is_file():
+            continue
+        relative = source.relative_to(invalid_root)
+        target = destination / relative
+        if target.exists() and _sha256(target) != _sha256(source):
+            raise RuntimeError(f"archived invalid-calibration artifact drift: {relative}")
+        if not target.exists():
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, target)
+        files[relative.as_posix()] = {
+            "sha256": _sha256(target),
+            "n_bytes": target.stat().st_size,
+        }
+    if not files:
+        raise RuntimeError("invalid-calibration archive is empty")
+    manifest = {
+        "issue": ISSUE,
+        "backend": "codex-subagent-pair-v1",
+        "valid_for_any_gate_or_analysis": False,
+        "invalidation_reason": "packet omitted the frozen verbatim rubric",
+        "n_files": len(files),
+        "files": files,
+    }
+    _write_json(destination / "invalidation_manifest.json", manifest)
+    print(f"[codex-calibration-invalid-archive] files={len(files)}", flush=True)
+    return manifest
+
+
+def _tree_file_map(root: Path, *, excluded: set[str] | None = None) -> dict[str, dict[str, Any]]:
+    excluded = excluded or set()
+    if not root.is_dir():
+        raise RuntimeError(f"upload root is not a directory: {root}")
+    files: dict[str, dict[str, Any]] = {}
+    for path in sorted(root.rglob("*")):
+        if path.is_symlink():
+            raise RuntimeError(f"upload tree contains a symlink: {path}")
+        if not path.is_file():
+            continue
+        relative = path.relative_to(root).as_posix()
+        if relative in excluded or relative.endswith(".tmp"):
+            continue
+        files[relative] = {"sha256": _sha256(path), "n_bytes": path.stat().st_size}
+    if not files:
+        raise RuntimeError(f"upload tree has no eligible files: {root}")
+    return files
+
+
+def _upload_tree_verified(
+    root: Path,
+    prefix: str,
+    message: str,
+    *,
+    excluded: set[str] | None = None,
+) -> tuple[Any, str, dict[str, dict[str, Any]]]:
+    files = _tree_file_map(root, excluded=excluded)
+    hub.assert_upload_clean([root], what=f"issue952 Codex artifacts: {prefix}")
+    ignore = ["*.tmp", *(sorted(excluded or set()))]
+    info = hub.retry_transient(
+        lambda: HfApi().upload_folder(
+            repo_id=HF_REPO,
+            repo_type="dataset",
+            folder_path=str(root),
+            path_in_repo=prefix,
+            ignore_patterns=ignore,
+            commit_message=message,
+        ),
+        what=message,
+    )
+    revision = getattr(info, "oid", None) or "main"
+    expected = [f"{prefix}/{relative}" for relative in files]
+    missing = hub.verify_repo_paths_uploaded(
+        HfApi(),
+        HF_REPO,
+        expected,
+        path_in_repo=prefix,
+        repo_type="dataset",
+        revision=revision,
+    )
+    if missing:
+        raise RuntimeError(f"revision-scoped upload verification missing {len(missing)} files")
+    return info, revision, files
+
+
+def upload_calibration(out_dir: Path) -> dict[str, Any]:
+    calibration_dir = out_dir / "calibration_codex"
+    report_path = calibration_dir / "report.json"
+    raw_path = calibration_dir / "raw_classifier.jsonl"
+    report = json.loads(report_path.read_text())
+    if (
+        report.get("n_valid") != report.get("n_total")
+        or report.get("inputs", {}).get("raw_classifier_sha256") != _sha256(raw_path)
+        or report.get("inputs", {}).get("manifest_sha256")
+        != _sha256(calibration_dir / "manifest.json")
+        or report.get("inputs", {}).get("packet_manifest_sha256")
+        != _sha256(calibration_dir / "packet_manifest.json")
+    ):
+        raise RuntimeError("calibration upload blocked: result identity is incomplete or stale")
+    info, data_revision, files = _upload_tree_verified(
+        calibration_dir,
+        f"{HF_PREFIX}/calibration_codex",
+        "Issue 952: Codex refusal calibration result",
+        excluded={"upload.json"},
+    )
+    marker = {
+        "data_revision": data_revision,
+        "data_commit_url": str(info),
+        "prefix": f"{HF_PREFIX}/calibration_codex",
+        "calibration_passed": report.get("passed"),
+        "report_sha256": _sha256(report_path),
+        "raw_classifier_sha256": _sha256(raw_path),
+        "n_verified_files": len(files),
+        "files": files,
+    }
+    marker_path = calibration_dir / "upload.json"
+    _write_json(marker_path, marker)
+    marker_info = hub.retry_transient(
+        lambda: HfApi().upload_file(
+            repo_id=HF_REPO,
+            repo_type="dataset",
+            path_or_fileobj=str(marker_path),
+            path_in_repo=f"{HF_PREFIX}/calibration_codex/upload.json",
+            commit_message="Issue 952: verify Codex calibration snapshot",
+        ),
+        what="issue952 Codex calibration verification marker",
+    )
+    marker_revision = getattr(marker_info, "oid", None) or "main"
+    critical = {
+        "calibration_codex/upload.json": _sha256(marker_path),
+        "calibration_codex/report.json": _sha256(report_path),
+        "calibration_codex/raw_classifier.jsonl": _sha256(raw_path),
+    }
+    for relative, expected_sha in critical.items():
+        remote = _stage_hf_file(out_dir / "_calibration_verify", marker_revision, relative)
+        if _sha256(remote) != expected_sha:
+            raise RuntimeError(f"revision-scoped calibration hash mismatch: {relative}")
+    print(
+        f"[codex-calibration-upload] verified={len(files) + 1} revision={marker_revision}",
+        flush=True,
+    )
+    return {**marker, "marker_revision": marker_revision, "marker_commit_url": str(marker_info)}
+
+
+def _stage_hf_file(out_dir: Path, revision: str, relative: str) -> Path:
+    fetched = Path(
+        hub.retry_transient(
+            lambda: hf_hub_download(
+                HF_REPO,
+                f"{HF_PREFIX}/{relative}",
+                repo_type="dataset",
+                revision=revision,
+                local_dir=out_dir / "_judge_stage",
+            ),
+            what=f"issue952 Codex judge stage {relative}",
+        )
+    )
+    destination = out_dir / relative
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if destination.exists() and _sha256(destination) != _sha256(fetched):
+        raise RuntimeError(f"local production-judge input drift: {relative}")
+    if not destination.exists():
+        shutil.copyfile(fetched, destination)
+    return destination
+
+
+def upload_inputs(out_dir: Path) -> dict[str, Any]:
+    report_path = out_dir / "inputs" / "bank_audit_report.json"
+    bank_path = out_dir / "inputs" / "prompt_bank.jsonl"
+    calibration_path = out_dir / "calibration_codex" / "report.json"
+    report = json.loads(report_path.read_text())
+    calibration = json.loads(calibration_path.read_text())
+    if (
+        report.get("passed") is not True
+        or calibration.get("passed") is not True
+        or report.get("prompt_bank_sha256") != _sha256(bank_path)
+        or calibration.get("inputs", {}).get("raw_classifier_sha256")
+        != _sha256(out_dir / "calibration_codex" / "raw_classifier.jsonl")
+    ):
+        raise RuntimeError("input upload blocked: bank/calibration identity gate did not pass")
+    input_info, _input_revision, input_files = _upload_tree_verified(
+        out_dir / "inputs",
+        f"{HF_PREFIX}/inputs",
+        "Issue 952: Codex-audited bilingual China input bank",
+        excluded={"upload_verified.json"},
+    )
+    calibration_info, data_revision, calibration_files = _upload_tree_verified(
+        out_dir / "calibration_codex",
+        f"{HF_PREFIX}/calibration_codex",
+        "Issue 952: Codex refusal calibration artifacts",
+    )
+    for prefix, files in (
+        (f"{HF_PREFIX}/inputs", input_files),
+        (f"{HF_PREFIX}/calibration_codex", calibration_files),
+    ):
+        missing = hub.verify_repo_paths_uploaded(
+            HfApi(),
+            HF_REPO,
+            [f"{prefix}/{relative}" for relative in files],
+            path_in_repo=prefix,
+            repo_type="dataset",
+            revision=data_revision,
+        )
+        if missing:
+            raise RuntimeError(
+                f"latest input snapshot verification missing {len(missing)} files under {prefix}"
+            )
+    marker = {
+        "data_revision": data_revision,
+        "input_commit_url": str(input_info),
+        "calibration_commit_url": str(calibration_info),
+        "prefix": HF_PREFIX,
+        "prompt_bank_sha256": _sha256(bank_path),
+        "bank_audit_report_sha256": _sha256(report_path),
+        "calibration_report_sha256": _sha256(calibration_path),
+        "n_verified_input_files": len(input_files),
+        "n_verified_calibration_files": len(calibration_files),
+        "input_files": input_files,
+        "calibration_files": calibration_files,
+    }
+    marker_path = out_dir / "inputs" / "upload_verified.json"
+    _write_json(marker_path, marker)
+    marker_info = hub.retry_transient(
+        lambda: HfApi().upload_file(
+            repo_id=HF_REPO,
+            repo_type="dataset",
+            path_or_fileobj=str(marker_path),
+            path_in_repo=f"{HF_PREFIX}/inputs/upload_verified.json",
+            commit_message="Issue 952: verify Codex-audited input snapshot",
+        ),
+        what="issue952 Codex input verification marker",
+    )
+    marker_revision = getattr(marker_info, "oid", None) or "main"
+    critical = {
+        "inputs/upload_verified.json": _sha256(marker_path),
+        "inputs/prompt_bank.jsonl": _sha256(bank_path),
+        "inputs/bank_audit_report.json": _sha256(report_path),
+        "calibration_codex/report.json": _sha256(calibration_path),
+    }
+    for relative, expected_sha in critical.items():
+        remote = _stage_hf_file(out_dir / "_input_verify", marker_revision, relative)
+        if _sha256(remote) != expected_sha:
+            raise RuntimeError(f"revision-scoped input payload hash mismatch: {relative}")
+    print(
+        f"[codex-input-upload] verified={len(input_files) + len(calibration_files) + 1} "
+        f"revision={marker_revision}",
+        flush=True,
+    )
+    return {**marker, "marker_revision": marker_revision, "marker_commit_url": str(marker_info)}
+
+
+def _validate_staged_gpu_provenance(
+    *,
+    done: dict[str, Any],
+    generation: dict[str, Any],
+    capture: dict[str, Any],
+    marker: dict[str, Any],
+    prompt_bank_sha256: str,
+    audit_sha256: str,
+    rollouts_sha256: str,
+) -> None:
+    bank_sha = marker.get("prompt_bank_sha256")
+    if (
+        done.get("status") != "done"
+        or done.get("generation", {}).get("rollouts_sha256")
+        != generation.get("rollouts_sha256")
+        or generation.get("regime", {}).get("smoke") is not False
+        or rollouts_sha256 != generation.get("rollouts_sha256")
+        or bank_sha != prompt_bank_sha256
+        or bank_sha != generation.get("regime", {}).get("bank_sha256")
+        or bank_sha != capture.get("capture_regime", {}).get("bank_sha256")
+        or marker.get("bank_audit_report_sha256") != audit_sha256
+    ):
+        raise RuntimeError("post-GPU judge staging provenance/hash gate failed")
+
+
+def stage_production(out_dir: Path) -> dict[str, Any]:
+    api = HfApi()
+    revision = hub.retry_transient(
+        lambda: api.repo_info(HF_REPO, repo_type="dataset", revision="main").sha,
+        what="issue952 Codex production judge snapshot resolution",
+    )
+    relatives = (
+        "inputs/upload_verified.json",
+        "inputs/prompt_bank.jsonl",
+        "inputs/bank_audit_report.json",
+        "manifests/input_stage.json",
+        "manifests/generation.json",
+        "manifests/raw_upload.json",
+        "manifests/capture.json",
+        "manifests/capture_upload.json",
+        "issue952_china_definitive_done.json",
+    )
+    paths = {relative: _stage_hf_file(out_dir, revision, relative) for relative in relatives}
+    staged_rollouts = out_dir / "_judge_stage" / "raw_completions" / "rollouts.jsonl"
+    hub.stage_sharded_text(
+        HF_REPO,
+        f"{HF_PREFIX}/raw_completions/rollouts.jsonl",
+        staged_rollouts,
+        repo_type="dataset",
+        revision=revision,
+        overwrite=True,
+    )
+    rollouts_path = out_dir / "raw_completions" / "rollouts.jsonl"
+    rollouts_path.parent.mkdir(parents=True, exist_ok=True)
+    if rollouts_path.exists() and _sha256(rollouts_path) != _sha256(staged_rollouts):
+        raise RuntimeError("local production rollouts differ from immutable Hub snapshot")
+    if not rollouts_path.exists():
+        shutil.copyfile(staged_rollouts, rollouts_path)
+    paths["raw_completions/rollouts.jsonl"] = rollouts_path
+    done = json.loads(paths["issue952_china_definitive_done.json"].read_text())
+    generation = json.loads(paths["manifests/generation.json"].read_text())
+    capture = json.loads(paths["manifests/capture.json"].read_text())
+    marker = json.loads(paths["inputs/upload_verified.json"].read_text())
+    _validate_staged_gpu_provenance(
+        done=done,
+        generation=generation,
+        capture=capture,
+        marker=marker,
+        prompt_bank_sha256=_sha256(paths["inputs/prompt_bank.jsonl"]),
+        audit_sha256=_sha256(paths["inputs/bank_audit_report.json"]),
+        rollouts_sha256=_sha256(rollouts_path),
+    )
+    report = {
+        "snapshot_revision": revision,
+        "files": {relative: _sha256(path) for relative, path in paths.items()},
+        "rollouts_sha256": generation["rollouts_sha256"],
+    }
+    _write_json(out_dir / "judge" / "production_stage.json", report)
+    print(f"[codex-production-stage] revision={revision} files={len(paths)}", flush=True)
+    return report
+
+
 def _production_rows(rollouts_path: Path, *, pilot: bool) -> list[dict[str, Any]]:
     rows = _jsonl(rollouts_path)
     if len(rows) != 8640 or len({row["item_id"] for row in rows}) != 8640:
@@ -999,15 +1359,56 @@ def prepare_production(
 ) -> dict[str, Any]:
     calibration_path = out_dir / "calibration_codex" / "report.json"
     calibration = json.loads(calibration_path.read_text())
-    if calibration.get("passed") is not True:
-        raise RuntimeError("production judging blocked: Codex calibration gate did not pass")
+    calibration_manifest_path = out_dir / "calibration_codex" / "manifest.json"
+    calibration_manifest = json.loads(calibration_manifest_path.read_text())
+    calibration_identity_ok = bool(
+        calibration.get("passed") is True
+        and calibration.get("model") == BACKEND
+        and calibration.get("rubric_sha256") == RUBRIC_SHA256
+        and calibration.get("inputs", {}).get("manifest_sha256")
+        == _sha256(calibration_manifest_path)
+        and calibration.get("inputs", {}).get("items_sha256")
+        == _sha256(out_dir / "calibration_codex" / "items.jsonl")
+        == calibration_manifest.get("items_sha256")
+        and calibration.get("inputs", {}).get("raw_classifier_sha256")
+        == _sha256(out_dir / "calibration_codex" / "raw_classifier.jsonl")
+        and calibration_manifest.get("backend") == BACKEND
+        and calibration_manifest.get("rubric_sha256") == RUBRIC_SHA256
+    )
+    if not calibration_identity_ok:
+        raise RuntimeError("production judging blocked: Codex calibration identity did not pass")
     audit_path = out_dir / "inputs" / "bank_audit_report.json"
     if json.loads(audit_path.read_text()).get("passed") is not True:
         raise RuntimeError("production judging blocked: bank audit gate did not pass")
+    rollouts_sha = _sha256(rollouts_path)
+    stage_path = out_dir / "judge" / "production_stage.json"
+    if not stage_path.exists():
+        raise RuntimeError("production judging requires the immutable post-GPU staging report")
+    stage = json.loads(stage_path.read_text())
+    if (
+        stage.get("rollouts_sha256") != rollouts_sha
+        or stage.get("files", {}).get("raw_completions/rollouts.jsonl") != rollouts_sha
+    ):
+        raise RuntimeError("production judging rollouts differ from the staged GPU snapshot")
     if not pilot:
         pilot_path = out_dir / "judge" / "pilot_summary.json"
-        if not pilot_path.exists() or json.loads(pilot_path.read_text()).get("passed") is not True:
-            raise RuntimeError("production wave blocked: Codex pilot did not pass")
+        pilot_manifest_path = out_dir / "judge" / "pilot_request_manifest.json"
+        if not pilot_path.exists() or not pilot_manifest_path.exists():
+            raise RuntimeError("production wave blocked: Codex pilot is missing")
+        pilot_summary = json.loads(pilot_path.read_text())
+        pilot_manifest = json.loads(pilot_manifest_path.read_text())
+        if not (
+            pilot_summary.get("passed") is True
+            and pilot_summary.get("rollouts_sha256") == rollouts_sha
+            and pilot_summary.get("model") == BACKEND
+            and pilot_summary.get("rubric_sha256") == RUBRIC_SHA256
+            and pilot_summary.get("request_manifest_sha256")
+            == _sha256(pilot_manifest_path)
+            and pilot_manifest.get("rollouts_sha256") == rollouts_sha
+            and pilot_manifest.get("model") == BACKEND
+            and pilot_manifest.get("rubric_sha256") == RUBRIC_SHA256
+        ):
+            raise RuntimeError("production wave blocked: Codex pilot is stale or mismatched")
     rows = _production_rows(rollouts_path, pilot=pilot)
     suffix = "pilot" if pilot else "wave"
     packet_manifest = _prepare_packets(
@@ -1048,7 +1449,7 @@ def prepare_production(
     manifest = {
         "pilot": pilot,
         "n_requests": len(rows),
-        "rollouts_sha256": _sha256(rollouts_path),
+        "rollouts_sha256": rollouts_sha,
         "lookup_sha256": _sha256(lookup_path),
         "packet_manifest_sha256": _sha256(packet_manifest_path),
         "ordered_item_ids_sha256": hashlib.sha256(
@@ -1263,11 +1664,15 @@ def build_argparser() -> argparse.ArgumentParser:
         choices=(
             "calibration-prepare",
             "calibration-collect",
+            "calibration-invalid-archive",
+            "calibration-upload",
             "bank-author-prepare",
             "bank-audit-prepare",
             "bank-retry-prepare",
             "bank-retry-audit-prepare",
             "bank-finalize",
+            "input-upload",
+            "production-stage",
             "production-pilot-prepare",
             "production-pilot-collect",
             "production-wave-prepare",
@@ -1276,6 +1681,7 @@ def build_argparser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--packet-root", type=Path)
+    parser.add_argument("--invalid-root", type=Path)
     parser.add_argument("--rollouts", type=Path)
     return parser
 
@@ -1289,6 +1695,12 @@ def main() -> int:
     elif args.phase == "calibration-collect":
         report = collect_calibration(args.out_dir)
         return 0 if report["passed"] else 7
+    elif args.phase == "calibration-invalid-archive":
+        if args.invalid_root is None:
+            raise RuntimeError("calibration-invalid-archive requires --invalid-root")
+        archive_invalid_calibration(args.out_dir, args.invalid_root)
+    elif args.phase == "calibration-upload":
+        upload_calibration(args.out_dir)
     elif args.phase == "bank-author-prepare":
         if args.packet_root is None:
             raise RuntimeError("bank-author-prepare requires --packet-root")
@@ -1308,6 +1720,10 @@ def main() -> int:
     elif args.phase == "bank-finalize":
         report = finalize_bank(args.out_dir)
         return 0 if report["passed"] else 8
+    elif args.phase == "input-upload":
+        upload_inputs(args.out_dir)
+    elif args.phase == "production-stage":
+        stage_production(args.out_dir)
     elif args.phase in {"production-pilot-prepare", "production-wave-prepare"}:
         if args.packet_root is None or args.rollouts is None:
             raise RuntimeError("production prepare requires --packet-root and --rollouts")

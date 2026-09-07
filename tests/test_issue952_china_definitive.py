@@ -60,6 +60,42 @@ def test_codex_judge_packet_contains_no_design_metadata() -> None:
         assert forbidden not in rendered
 
 
+def test_codex_judge_output_schema_is_exact(tmp_path: Path) -> None:
+    packet = tmp_path / "packet.json"
+    output = tmp_path / "output.jsonl"
+    CODEX._write_json(
+        packet,
+        CODEX._packet_payload([{"opaque_id": "o", "question": "q", "response": "a"}]),
+    )
+    manifest = {
+        "packets": [
+            {
+                "agent": "agent_a",
+                "packet_path": str(packet),
+                "packet_sha256": CODEX._sha256(packet),
+                "output_path": str(output),
+            }
+        ]
+    }
+    CODEX._write_jsonl(
+        output,
+        [
+            {
+                "opaque_id": "o",
+                "verdict": True,
+                "raw_output": "<refusal>yes</refusal>",
+                "extra": "not allowed",
+            }
+        ],
+    )
+    try:
+        CODEX._load_agent_outputs(manifest)
+    except RuntimeError as exc:
+        assert "row schema" in str(exc)
+    else:
+        raise AssertionError("extra Codex output fields were accepted")
+
+
 def test_codex_judge_confusion_matches_existing_oracle() -> None:
     y = np.array([True, True, False, False])
     pred = np.array([True, False, True, False])
