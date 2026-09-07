@@ -1,0 +1,11 @@
+{
+ "mode": "auxiliary",
+ "output_root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay",
+ "local_stores": {
+   "evil": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1739/data/issue_1739/store/evil_labeling",
+   "sycophancy": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1739/data/issue_1739/store/sycophancy_labeling",
+   "hallucination": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1739/data/issue_1739/store/hallucination_labeling",
+   "wildchat": "/home/thomasjiralerspong/explore-persona-space/data/issue_1739/hf_dl/wcrung_capture_store/wildchat",
+   "generic_u": "/home/thomasjiralerspong/explore-persona-space/data/issue_1739/hf_dl/u_store"
+ }
+}

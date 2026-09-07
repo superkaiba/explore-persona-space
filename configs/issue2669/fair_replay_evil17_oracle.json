@@ -1,0 +1,17 @@
+{
+  "fit_authorized": true,
+  "behavior": "evil",
+  "layer": 17,
+  "methods": [
+    "reg_oracle"
+  ],
+  "parity_abs_tolerance": 1e-05,
+  "output_root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer17_oracle",
+  "reference_root": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/result2_fair",
+  "dv_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/dv_dataset/evil/labeling.json",
+  "wildchat_dv_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/wildchat_rung/dv_dataset/evil/labeling.json",
+  "store": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1739/data/issue_1739/store/evil_labeling",
+  "wildchat_store": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/wildchat",
+  "u_store": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/u_store",
+  "rb_bank": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-1739/analysis_tensors/issue_1739/r_b_e1/evil.npz"
+}

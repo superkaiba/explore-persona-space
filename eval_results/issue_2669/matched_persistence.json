@@ -1,0 +1,11 @@
+{
+  "repo": "superkaiba1/explore-persona-space-overflow",
+  "prefix": "issue2669_codex_forecast/matched900_v1",
+  "revision": "d0db467c29a1059245cb2ccd1da347373e7f888c",
+  "private": true,
+  "files_verified": 123,
+  "total_bytes": 65000136,
+  "manifest_sha256": "3d0b46f3d98d22cf65df04000965540ceb64faabf0e6a8dbfacb509b41cf3c39",
+  "verification_scope": "Exact expected name set present at pinned revision; all copied source files downloaded and SHA256-verified, including original labels, replay predictions, and matched analysis.",
+  "upload_repair": "Initial recursive-only glob omitted root manifest; exact-set verification failed. Added explicit manifest.json eligibility and replayed identical source bytes, then verified every file."
+}

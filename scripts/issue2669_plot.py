@@ -172,6 +172,10 @@ def summary_figure(report: dict):
                     fontsize=style.BASE_FONT_PT["tick"],
                     color=ENCODING[method][0],
                 )
+        both_undefined = all(
+            metric["paired_spearman_differences"][method + "-minus-codex_32"]["ci95"] is None
+            for method in ("regression_ctx", "reg_map_linear")
+        )
         for offset, method in zip((-0.12, 0.12), ("regression_ctx", "reg_map_linear"), strict=True):
             delta = metric["paired_spearman_differences"][method + "-minus-codex_32"]
             value, interval = delta["point"], delta["ci95"]
@@ -187,7 +191,7 @@ def summary_figure(report: dict):
                     color=ENCODING[method][0],
                     linewidth=1.4,
                 )
-            else:
+            elif not both_undefined:
                 right.text(
                     0.98,
                     row + offset,
@@ -198,6 +202,17 @@ def summary_figure(report: dict):
                     fontsize=style.BASE_FONT_PT["tick"],
                     color=style.MUTED,
                 )
+        if both_undefined:
+            right.text(
+                0.98,
+                row,
+                "CIs undefined",
+                transform=right.get_yaxis_transform(),
+                ha="right",
+                va="center",
+                fontsize=style.BASE_FONT_PT["tick"],
+                color=style.MUTED,
+            )
     for ax in (left, right):
         style.style_axis(ax, grid_axis="x")
         ax.axvline(0, color=style.SEAM, linewidth=1.2, zorder=0)
@@ -230,7 +245,7 @@ def point_figure(groups: dict):
     """Show every observed outcome/forecast pair without jitter or fitted trend lines."""
     fig, fraction = style.c2a_figure("full", aspect=2.05)
     axes = fig.subplots(9, 5)
-    fig.subplots_adjust(left=0.18, right=0.985, bottom=0.055, top=0.94, wspace=0.48, hspace=0.48)
+    fig.subplots_adjust(left=0.18, right=0.985, bottom=0.055, top=0.915, wspace=0.48, hspace=0.48)
     headers = (
         "Codex\nzero-shot\n(0–100)",
         "Codex\n32-shot\n(0–100)",
@@ -247,12 +262,12 @@ def point_figure(groups: dict):
             ax.scatter(
                 x,
                 [r["scores"][method] for r in data],
-                s=19,
+                s=23,
                 marker=marker,
                 facecolors=color if filled else "none",
                 edgecolors=color,
-                linewidths=0.8,
-                alpha=0.65,
+                linewidths=0.9,
+                alpha=0.85,
             )
             style.style_axis(ax, grid_axis="y")
             ax.set_xlim(-3, 103)
@@ -308,13 +323,15 @@ def export(fig, fraction: float, out: Path, name: str, provenance: dict) -> dict
 
 
 def run(root: Path, out: Path) -> dict:
-    """Render only a fully validated frozen comparison; preserve the full plotting data."""
+    """Render a validated comparison and export only whitelisted public numeric point data."""
     if not root.is_absolute() or not out.is_absolute():
         raise ValueError("Absolute input and output paths required")
     report, rows, groups = load_sources(root)
     style.set_c2a_style()
     out.mkdir(parents=True, exist_ok=True)
-    atomic_json(out / "comparison.data.json", {"cells": report["metrics"], "points": rows})
+    public_keys = ("id", "behavior", "instrument", "regime", "rung", "dv", "scores", "probe_layers")
+    public_points = [{key: row[key] for key in public_keys} for row in rows]
+    atomic_json(out / "comparison.data.json", {"cells": report["metrics"], "points": public_points})
     repository = Path(__file__).resolve().parents[1]
     sha = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=repository, check=True, capture_output=True, text=True

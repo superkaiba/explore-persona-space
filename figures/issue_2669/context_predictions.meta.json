@@ -1,0 +1,130 @@
+{
+  "source_inputs": {
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/reduced900_v2/comparison/results.json": "8f1bc95b4a209256c81273ebf04e1a47f6e5f7d984fc3bec4cf1a9bc4437a597",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/reduced900_v2/comparison/percontextjoined.jsonl": "5ccd8f8f95cb6c66bee90c1b5279a7152a89416de677b1e0ee987ae42d3f41fd"
+  },
+  "script_sha256": "36fc5af731ce4d4a376f74ac5443e025de52b8487b03740b2eed9d27ebc92fe0",
+  "style_sha256": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1",
+  "git_sha": "556a2903208325385189d4dd4385827b3c575f4c",
+  "data_sidecar": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/figures/issue_2669/comparison.data.json",
+  "data_sha256": "9f4a7453b4646e34ac99ce212af7f1c9de49a957b61d4e53748676b3d1712293",
+  "method_encodings": {
+    "codex_0": {
+      "label": "Codex zero-shot",
+      "color": "#C98A1B",
+      "marker": "^",
+      "filled": false
+    },
+    "codex_32": {
+      "label": "Codex 32-shot",
+      "color": "#C98A1B",
+      "marker": "^",
+      "filled": true
+    },
+    "regression_ctx": {
+      "label": "Context",
+      "color": "#176B87",
+      "marker": "o",
+      "filled": false
+    },
+    "reg_map_linear": {
+      "label": "Mapped answer",
+      "color": "#176B87",
+      "marker": "o",
+      "filled": true
+    },
+    "reg_oracle": {
+      "label": "Observed answer",
+      "color": "#22272B",
+      "marker": "D",
+      "filled": true
+    }
+  },
+  "n_per_cell": 100,
+  "n_total": 900,
+  "ci": "Frozen paired group bootstrap 95% percentile intervals",
+  "undefined_policy": "No numeric substitution; undefined values annotated",
+  "point_policy": "All 100 raw pairs per cell/method, no jitter or fitted line",
+  "protocol_caveats": [
+    "The original ID map and whitening use all ID context-answer pairs before the behavior-label readout folds. ID evaluation is transductive for these representations, not a strict holdout of all information.",
+    "Original per-pool target means and standard deviations are computed before the ID readout folds; individual held-out labels do not enter a ridge fit, but label preprocessing is not nested.",
+    "Held-out generic and OOD contexts are excluded from the map and readout fitting pools.",
+    "Layer choices are frozen from the original artifacts and may have been selected using original ID outcomes; this replay does not establish independent layer-selection holdout."
+  ],
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      26.845
+    ],
+    "exported_size_inches": [
+      13.095,
+      25.623
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/context_predictions.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "0",
+      "50",
+      "100",
+      "Codex\nzero-shot\n(0\u2013100)",
+      "Codex\n32-shot\n(0\u2013100)",
+      "\u22123.0",
+      "\u22121.5",
+      "0.0",
+      "1.5",
+      "3.0",
+      "Context\n(standardized)",
+      "\u22122",
+      "2",
+      "4",
+      "Mapped\nanswer\n(standardized)",
+      "Observed\nanswer\n(standardized)",
+      "\u22123",
+      "3",
+      "6",
+      "9",
+      "\u22125.0",
+      "\u22122.5",
+      "2.5",
+      "5.0",
+      "\u22124",
+      "Observed score",
+      "Malicious harm\nID",
+      "Malicious harm\nGeneric",
+      "Malicious harm\nOOD",
+      "Sycophancy\nID",
+      "Sycophancy\nGeneric",
+      "Sycophancy\nOOD",
+      "Factual-QA\nfabrication\nID",
+      "Hallucination\ntrait\nGeneric",
+      "Factual-QA\nfabrication\nOOD",
+      "Context-level predictions"
+    ]
+  },
+  "outputs": {
+    "pdf": {
+      "path": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/figures/issue_2669/context_predictions.pdf",
+      "sha256": "2124c0a50ce6119e7d086b41b2e83ee968a4e1505257155d91cf84eb7b74aada"
+    },
+    "png": {
+      "path": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/figures/issue_2669/context_predictions.png",
+      "sha256": "4dc2d4462928859da7fa3b2dc8ff0443d797f0253c3e26467da5103fb45182f4"
+    },
+    "grayscale": {
+      "path": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/figures/issue_2669/context_predictions_grayscale.png",
+      "sha256": "1a952d2288e5a4cdb66f461c4814d16721e7e871f2b742a613cc7df28ac51c30"
+    }
+  }
+}

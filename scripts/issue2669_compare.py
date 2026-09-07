@@ -283,6 +283,7 @@ def run(config_path: Path) -> dict:
         "scope": "exact same selected contexts; no full-cohort aggregate substitute",
         "protocol_caveats": [
             "The original ID map and whitening use all ID context-answer pairs before the behavior-label readout folds. ID evaluation is transductive for these representations, not a strict holdout of all information.",
+            "Original per-pool target means and standard deviations are computed before the ID readout folds; individual held-out labels do not enter a ridge fit, but label preprocessing is not nested.",
             "Held-out generic and OOD contexts are excluded from the map and readout fitting pools.",
             "Layer choices are frozen from the original artifacts and may have been selected using original ID outcomes; this replay does not establish independent layer-selection holdout.",
         ],

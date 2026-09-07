@@ -1,0 +1,50 @@
+{
+  "pass": true,
+  "source_hashes_verified": 38,
+  "joined_contexts": 900,
+  "all_prediction_scores_exact": true,
+  "correlations_checked": 70,
+  "primary_correlations": 45,
+  "max_correlation_abs_delta": 1.1102230246251565e-16,
+  "representative_bootstrap": {
+    "contrast": "hallucination/fabrication/ood reg_map_linear-minus-codex_32",
+    "point": 0.32082284090392255,
+    "ci95": [
+      0.09703939501653873,
+      0.5379168407197251
+    ],
+    "draws": 2000,
+    "seed": 2669,
+    "strata": {
+      "nqopen": {
+        "rows": 44,
+        "groups": 43,
+        "cluster_sizes": {
+          "1": 42,
+          "2": 1
+        }
+      },
+      "simpleqa": {
+        "rows": 56,
+        "groups": 54,
+        "cluster_sizes": {
+          "1": 52,
+          "2": 2
+        }
+      }
+    },
+    "all_draws_finite": true,
+    "max_ci_abs_delta": 1.1102230246251565e-16
+  },
+  "coverage": {
+    "evil/generic": 100,
+    "evil/id": 100,
+    "evil/ood": 100,
+    "hallucination/generic": 100,
+    "hallucination/id": 100,
+    "hallucination/ood": 100,
+    "sycophancy/generic": 100,
+    "sycophancy/id": 100,
+    "sycophancy/ood": 100
+  }
+}

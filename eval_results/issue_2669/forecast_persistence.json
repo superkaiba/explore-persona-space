@@ -1,0 +1,13 @@
+{
+  "repo": "superkaiba1/explore-persona-space-overflow",
+  "private": true,
+  "revision": "87dda8917a31ac634c4dd69d0669045e41014f29",
+  "prefix": "issue2669_codex_forecast/reduced900_v2",
+  "files_verified": 6,
+  "source_files": 3763,
+  "manifest_sha256": "f9e6e36adaac1d65c05c7762b3fe69eaa3dfe19a7b5c95ea4be53f72bb7d7909",
+  "verification_scope": "Downloaded every raw shard at pinned revision; verified shard SHA256, every embedded source-file content SHA256, and exact source-file name/hash set. Post-upload completion records committed separately.",
+  "raw_shards_downloaded_and_sha256_verified": 5,
+  "raw_archive_bytes": 38639358,
+  "restorable_records_verified": 3763
+}

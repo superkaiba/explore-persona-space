@@ -1,0 +1,18 @@
+{
+  "started_unix": 1788739413.6802533,
+  "production_pid": 2269577,
+  "phases": [
+    {
+      "phase": "analysis",
+      "returncode": 0,
+      "finished_unix": 1788739418.4873579
+    },
+    {
+      "phase": "archive",
+      "returncode": 0,
+      "finished_unix": 1788739428.668944
+    }
+  ],
+  "complete": true,
+  "scope": "Codex forecasts and archive complete; matched probe comparison is separate"
+}

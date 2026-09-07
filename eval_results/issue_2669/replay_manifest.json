@@ -1,0 +1,186 @@
+{
+  "probes": [
+    {
+      "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer17_oracle",
+      "behavior": "evil",
+      "layer": 17,
+      "methods": [
+        "reg_oracle"
+      ]
+    },
+    {
+      "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer18_pilot",
+      "behavior": "evil",
+      "layer": 18,
+      "methods": [
+        "regression_ctx"
+      ]
+    },
+    {
+      "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer20_map",
+      "behavior": "evil",
+      "layer": 20,
+      "methods": [
+        "reg_map_linear"
+      ]
+    },
+    {
+      "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer18",
+      "behavior": "hallucination",
+      "layer": 18,
+      "methods": [
+        "reg_oracle"
+      ]
+    },
+    {
+      "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer20",
+      "behavior": "hallucination",
+      "layer": 20,
+      "methods": [
+        "regression_ctx",
+        "reg_map_linear"
+      ]
+    },
+    {
+      "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer19",
+      "behavior": "sycophancy",
+      "layer": 19,
+      "methods": [
+        "reg_map_linear",
+        "reg_oracle"
+      ]
+    },
+    {
+      "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer20",
+      "behavior": "sycophancy",
+      "layer": 20,
+      "methods": [
+        "regression_ctx"
+      ]
+    }
+  ],
+  "source_sha256": {
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/configs/issue2669/fair_replay_evil17_oracle.json": "3b0a3a4533ad5ca6d762800251755964a6da4bd9c95c5133cbc69ae6757d4e7b",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/dv_dataset/evil/labeling.json": "21ce1f8ce437f50399dd81d22553fb84ef3381120217781f94e53dc7b8fe59c1",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/wildchat_rung/dv_dataset/evil/labeling.json": "3fc06817c9d3da512253026d3606b89c410a72e3e143742e1ecb6c3635ba5b96",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer17_oracle/result.json": "db46e31f4f1a996fee78a77c241c530f879603aff4b7df925aef569f4ae7cbd8",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer17_oracle/generic.jsonl": "97f50f4419ca2636f9fe46e9bc5d4fe774fce35ab61ff86ace2f25af6e168ecc",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer17_oracle/id.jsonl": "5983e63cec2d09ba25afad7f3e1cf171593119d156e7efff1d05950ae29d4644",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer17_oracle/ood.jsonl": "aa381f7897e828f8069297ff534f592916a6f7c88e406adee8851103eaaa8ba7",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer17_oracle/producer_script.py": "c1ce59bb00b8e23be90780f53e0f094b30b993c40f30479974dbe42f923a9e90",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/configs/issue2669/fair_replay_evil18_pilot.json": "102be167cc52964660a9cd7e462d2b4c96c16dfb3c6f8f24381fc24515c3ca69",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer18_pilot/result.json": "cc8f572e701741ba3c7af60d915ffff811ee7155e13cd4d5d8915cc5a36c764a",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer18_pilot/generic.jsonl": "c2453323389a668848b037ae285821ed82e161d0d1062f066ba64d655de78157",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer18_pilot/id.jsonl": "b69f18ff9be6f1169fbdad67ad924f831c017ed4b1e289b868f1f92cc58e6a84",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer18_pilot/ood.jsonl": "203de2f77affdbf8e9a54d750db9f3374ae1a9ec5ea969e46a9693d263a9c1ec",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/configs/issue2669/fair_replay_evil20_map.json": "837b7289006b7d76698ead08f96f6f2001fbb38421de98553482aff09207dfd1",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer20_map/inherited_map_diagnostics.json": "0bfc3667233eaa9fc3660497e1ad3b23ac7600814493669afc50e88d6d36e20b",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer20_map/result.json": "dbdd0c9c67db077dd909183618280425e475e09423785a3d8e02130c35814c89",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer20_map/generic.jsonl": "61ac44a102934edac71eb2c602cefdf4310bdcf613796b25bd635b8f7f63b9fe",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer20_map/id.jsonl": "b4ea621edbf0ef99081960608828bc6711f198eebe280a2067ace392b74e7255",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer20_map/ood.jsonl": "4f4926470f965cf0fdb71050307d5408de36a307bcc21f1167559dca2c612a53",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer20_map/producer_script.py": "f91c53bd27a7ed480d1ecfe2e54a09171d2b8bd5f71677af6ff5495ca0f78c4e",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/configs/issue2669/fair_replay_hallucination_layer18.json": "4ee17767d61f33b92a5f9d8d099014ea0db2849299ad5a1fca4c7bf4d1cb8979",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/dv_dataset/hallucination/labeling.json": "39c3a7beaffbba08a01057a730e1e415410537158bf296cdb40adaac9382cf5f",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/wildchat_rung/dv_dataset/hallucination/labeling.json": "bd73ee462436e3aa2fa16812412678377cdceb47c74e89648c3ff40e8fbc1cc5",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer18/ridge_selected_lambdas.json": "83e3fcffd02cfa71535f4c35cef1b273bf3076ab6f5a5f70896eda42bab314fd",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer18/result.json": "f09faff7dd4f2ee47a3caf2979900760d31404954b1e4fcd80f4d269d0f5b65a",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer18/whitening_metadata.json": "86391cc45b309ca94147283a97f4e654af78183278c87fbfa61368859e34c118",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer18/generic.jsonl": "2e65344c1cabbf2106c00f286a77803bef2e6f9dca7963171fa90c7ac6cb11d4",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer18/id.jsonl": "3962eae9f5447783b7999006f7f542c68236174ba7dd64eec9d2f06b1c3cbdd9",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer18/ood.jsonl": "ced4bfaa89e966ed4560399ada3a922500bf72176fa48c7a40c2cb32ef1692a9",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer18/producer_script.py": "9a6ef8255afcc16170e0b0cfeefd9acf097df459b764d62cf17a033e855e7f4e",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/configs/issue2669/fair_replay_hallucination_layer20.json": "12a47395238aba647bfa088bff9760e25643624b679e7363a5e182f7d1df131e",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer20/map_diagnostics.json": "39a161d114e99dfae77120ac5d750f20a018fbd7b7ce55802eb3dfe987921c5d",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer20/ridge_selected_lambdas.json": "312fdadd4e65e227c9644c2812e7263a21ebc06ac9f527017e60ee1a17e31a10",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer20/result.json": "9ce0d4a808a3d275a9da57258a313df1f8ff23ce8e6a83a287a3694726e71b88",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer20/whitening_metadata.json": "0e00d94355768e6121734eeb18ded2ae848412b070c885d668d4d9f6ef47c8a1",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer20/generic.jsonl": "63632c0d131121e50706e47d86fcc3cb8cfbe264f32dfbe1c6dde46d089beb76",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer20/id.jsonl": "bcbf98e3271f8a1d193596ccff67c12dfdeaf08eb4138f1b54fbe69da03a0be2",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer20/ood.jsonl": "27b6e4c9785b8a231bd89d000d1dd06e7de8f1a31da6c3ba2fa0998d8bc85e5a",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer20/producer_script.py": "9a6ef8255afcc16170e0b0cfeefd9acf097df459b764d62cf17a033e855e7f4e",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer20/map_and_whitening.npz": "f5e0cbd60d96a72e7ddfcdb58b962d069582751bc8bc124632fe69ab445c3ad6",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/configs/issue2669/fair_replay_sycophancy_layer19.json": "08bbadbce0ad6486fabfc7afcc4d1e01f1cbdea4461ebabc7c98a5c8b7ce63eb",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/dv_dataset/sycophancy/labeling.json": "8d6aed280943e1c6868bfb44448dbfa6fbee17d91b26533fa26896931617defb",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/wildchat_rung/dv_dataset/sycophancy/labeling.json": "b6217ef9f7089915a87094d3a34ee1d48ec10c17f969353dae93121cc5cb5765",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer19/inherited_map_diagnostics.json": "a51735f9eb46e0f4d936bacad886b77e857dd83c050fdfd719a0ab81a8c7eb61",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer19/result.json": "76746832829ecec90105c9ca41cd8d7205c74ae4e700244ec0c2aa20df898bc6",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer19/generic.jsonl": "1b15e8b8e8504815be66d218905436693a7d3fe4b279b70c1b98def2fad6109d",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer19/id.jsonl": "5282594f81cfed25baee28058ef14367818977525de213b6019b549fbe3b6b0f",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer19/ood.jsonl": "88d43d90aeeef1652e20aaa7c3babd7728e4e75947044767341f17bcb1dbc177",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer19/producer_script.py": "c1ce59bb00b8e23be90780f53e0f094b30b993c40f30479974dbe42f923a9e90",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/configs/issue2669/fair_replay_sycophancy_layer20.json": "0003ad652f20dc9634c5d94db4560589de71dec08a262cd528f94ff2c87cf4bc",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer20/ridge_selected_lambdas.json": "da292619cb3051dedcb8f9c5c7c47f701d928d0283a76b5bc25355ef1e573912",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer20/result.json": "c57d9c7fe12714a7a89fa3fe02cc76bc8992b03bdcba526d4ac1771bde0d9959",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer20/whitening_metadata.json": "0e00d94355768e6121734eeb18ded2ae848412b070c885d668d4d9f6ef47c8a1",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer20/generic.jsonl": "7aa4e878a0412ff0c3401da8837253c4890f78d47c3b721fd956c26ae0e79c31",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer20/id.jsonl": "55ff9e8fa60a2266fe6a95b8799aa5a18086f2c4f8a379df8ed929c50c92b762",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer20/ood.jsonl": "04a75c4ae9dee71b53670863f23b11b6afeeee4955ea0277ebeec477c7234590",
+    "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer20/producer_script.py": "9a6ef8255afcc16170e0b0cfeefd9acf097df459b764d62cf17a033e855e7f4e"
+  },
+  "fits": [
+    {
+      "config_path": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/configs/issue2669/fair_replay_evil17_oracle.json",
+      "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer17_oracle",
+      "wall_seconds": 47.29468393325806,
+      "peak_rss_gib": 2.672504425048828,
+      "parity_pass": true,
+      "max_abs_delta": 0
+    },
+    {
+      "config_path": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/configs/issue2669/fair_replay_evil18_pilot.json",
+      "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer18_pilot",
+      "wall_seconds": 66.64929294586182,
+      "peak_rss_gib": 2.689990997314453,
+      "parity_pass": true,
+      "max_abs_delta": 0
+    },
+    {
+      "config_path": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/configs/issue2669/fair_replay_evil20_map.json",
+      "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer20_map",
+      "wall_seconds": 105.47891855239868,
+      "peak_rss_gib": 6.182891845703125,
+      "parity_pass": true,
+      "max_abs_delta": 0
+    },
+    {
+      "config_path": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/configs/issue2669/fair_replay_hallucination_layer18.json",
+      "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer18",
+      "wall_seconds": 65.67755651473999,
+      "peak_rss_gib": 4.973583221435547,
+      "parity_pass": true,
+      "max_abs_delta": 0
+    },
+    {
+      "config_path": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/configs/issue2669/fair_replay_hallucination_layer20.json",
+      "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer20",
+      "wall_seconds": 145.76230001449585,
+      "peak_rss_gib": 8.266693115234375,
+      "parity_pass": true,
+      "max_abs_delta": 0
+    },
+    {
+      "config_path": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/configs/issue2669/fair_replay_sycophancy_layer19.json",
+      "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer19",
+      "wall_seconds": 586.3759346008301,
+      "peak_rss_gib": 8.153152465820312,
+      "parity_pass": true,
+      "max_abs_delta": 0
+    },
+    {
+      "config_path": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/configs/issue2669/fair_replay_sycophancy_layer20.json",
+      "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer20",
+      "wall_seconds": 60.738083362579346,
+      "peak_rss_gib": 4.251277923583984,
+      "parity_pass": true,
+      "max_abs_delta": 0
+    }
+  ],
+  "binary_artifacts": [
+    {
+      "path": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer20/map_and_whitening.npz",
+      "bytes": 205637298,
+      "sha256": "f5e0cbd60d96a72e7ddfcdb58b962d069582751bc8bc124632fe69ab445c3ad6"
+    }
+  ]
+}

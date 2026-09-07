@@ -1,0 +1,673 @@
+{
+  "metrics": {
+    "evil/trait/generic": {
+      "zero_shot": {
+        "n": 100,
+        "spearman": 0.4050938503800298,
+        "spearman_reason": null,
+        "mae": 1.2246666666666668,
+        "rmse": 5.829057480511846
+      },
+      "few_shot_32": {
+        "n": 100,
+        "spearman": 0.555985920915925,
+        "spearman_reason": null,
+        "mae": 1.1183333333333334,
+        "rmse": 6.501303288144958
+      },
+      "paired_bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original fold for ID; group within corpus otherwise",
+        "n_groups": 100,
+        "mc_setting": "2000 draws ungrounded; compare half/full interval endpoints",
+        "spearman_32_minus_0": {
+          "ci95": null,
+          "reason": "at least one undefined bootstrap statistic",
+          "valid_draws": 1920
+        },
+        "mae_32_minus_0": {
+          "ci95": [
+            -0.3400083333333334,
+            0.14775833333333344
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.01352500000000012
+        },
+        "rmse_32_minus_0": {
+          "ci95": [
+            -0.7459577598168521,
+            1.3934064404355255
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.026128259269861065
+        }
+      }
+    },
+    "evil/trait/id": {
+      "zero_shot": {
+        "n": 100,
+        "spearman": 0.67248256711372,
+        "spearman_reason": null,
+        "mae": 11.939722222222223,
+        "rmse": 18.289015888245434
+      },
+      "few_shot_32": {
+        "n": 100,
+        "spearman": 0.7375860883918779,
+        "spearman_reason": null,
+        "mae": 11.401388888888889,
+        "rmse": 18.657752095887783
+      },
+      "paired_bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original fold for ID; group within corpus otherwise",
+        "n_groups": 94,
+        "mc_setting": "2000 draws ungrounded; compare half/full interval endpoints",
+        "spearman_32_minus_0": {
+          "ci95": [
+            0.018179732451170875,
+            0.12180507968272142
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.0014437232677428913
+        },
+        "mae_32_minus_0": {
+          "ci95": [
+            -1.9915369057846524,
+            0.8919583333333325
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.03514379295532788
+        },
+        "rmse_32_minus_0": {
+          "ci95": [
+            -1.6469335319148115,
+            2.5558565873030474
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.04321379567531558
+        }
+      }
+    },
+    "evil/trait/ood": {
+      "zero_shot": {
+        "n": 100,
+        "spearman": 0.18271149793926655,
+        "spearman_reason": null,
+        "mae": 2.0873333333333335,
+        "rmse": 7.582479805446238
+      },
+      "few_shot_32": {
+        "n": 100,
+        "spearman": 0.2094327959927948,
+        "spearman_reason": null,
+        "mae": 1.31,
+        "rmse": 7.001842614626525
+      },
+      "paired_bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original fold for ID; group within corpus otherwise",
+        "n_groups": 100,
+        "mc_setting": "2000 draws ungrounded; compare half/full interval endpoints",
+        "spearman_32_minus_0": {
+          "ci95": null,
+          "reason": "at least one undefined bootstrap statistic",
+          "valid_draws": 1972
+        },
+        "mae_32_minus_0": {
+          "ci95": [
+            -0.9563666666666661,
+            -0.6129833333333337
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.009658333333334213
+        },
+        "rmse_32_minus_0": {
+          "ci95": [
+            -1.044969325242267,
+            -0.463580500628179
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.021685459737030843
+        }
+      }
+    },
+    "evil/trait/ood/hhrt": {
+      "zero_shot": {
+        "n": 78,
+        "spearman": -0.02326486716026951,
+        "spearman_reason": null,
+        "mae": 1.1555555555555554,
+        "rmse": 1.6326965442782089
+      },
+      "few_shot_32": {
+        "n": 78,
+        "spearman": -0.07867822139981075,
+        "spearman_reason": null,
+        "mae": 0.5132478632478632,
+        "rmse": 1.311036865926227
+      },
+      "paired_bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original fold for ID; group within corpus otherwise",
+        "n_groups": 78,
+        "mc_setting": "2000 draws ungrounded; compare half/full interval endpoints",
+        "spearman_32_minus_0": {
+          "ci95": null,
+          "reason": "at least one undefined bootstrap statistic",
+          "valid_draws": 1270
+        },
+        "mae_32_minus_0": {
+          "ci95": [
+            -0.782051282051282,
+            -0.5192307692307694
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 3.2051282051526186e-05
+        },
+        "rmse_32_minus_0": {
+          "ci95": [
+            -0.6446263741279631,
+            -0.11566712361932695
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.01961011546087743
+        }
+      }
+    },
+    "evil/trait/ood/toxicchat": {
+      "zero_shot": {
+        "n": 22,
+        "spearman": 0.41073799131588223,
+        "spearman_reason": null,
+        "mae": 5.3909090909090915,
+        "rmse": 15.87089324912913
+      },
+      "few_shot_32": {
+        "n": 22,
+        "spearman": 0.5060149193869918,
+        "spearman_reason": null,
+        "mae": 4.134848484848485,
+        "rmse": 14.722450731979226
+      },
+      "paired_bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original fold for ID; group within corpus otherwise",
+        "n_groups": 22,
+        "mc_setting": "2000 draws ungrounded; compare half/full interval endpoints",
+        "spearman_32_minus_0": {
+          "ci95": null,
+          "reason": "at least one undefined bootstrap statistic",
+          "valid_draws": 1915
+        },
+        "mae_32_minus_0": {
+          "ci95": [
+            -1.9471212121212143,
+            -0.6318181818181818
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.015113636363636385
+        },
+        "rmse_32_minus_0": {
+          "ci95": [
+            -2.211941097687491,
+            -0.9383357527253101
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.03216867873833884
+        }
+      }
+    },
+    "hallucination/fabrication/id": {
+      "zero_shot": {
+        "n": 100,
+        "spearman": 0.44681226133433616,
+        "spearman_reason": null,
+        "mae": 29.205,
+        "rmse": 44.1515288523512,
+        "mean_rate_mse": 0.19493575,
+        "per_answer_brier": 0.25413575
+      },
+      "few_shot_32": {
+        "n": 100,
+        "spearman": 0.4515597788802019,
+        "spearman_reason": null,
+        "mae": 27.8,
+        "rmse": 41.07967867449793,
+        "mean_rate_mse": 0.168754,
+        "per_answer_brier": 0.22795400000000005
+      },
+      "paired_bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original fold for ID; group within corpus otherwise",
+        "n_groups": 100,
+        "mc_setting": "2000 draws ungrounded; compare half/full interval endpoints",
+        "spearman_32_minus_0": {
+          "ci95": [
+            -0.04482723784205342,
+            0.054582895034192204
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.00393551815311826
+        },
+        "mae_32_minus_0": {
+          "ci95": [
+            -2.6602500000000036,
+            -0.24962500000000212
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.06512500000000454
+        },
+        "rmse_32_minus_0": {
+          "ci95": [
+            -4.525734675233437,
+            -1.7164755993291279
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.010098208772075346
+        }
+      }
+    },
+    "hallucination/fabrication/ood": {
+      "zero_shot": {
+        "n": 100,
+        "spearman": 0.1205136098707668,
+        "spearman_reason": null,
+        "mae": 43.03,
+        "rmse": 50.98735137266889,
+        "mean_rate_mse": 0.259971,
+        "per_answer_brier": 0.3367709999999999
+      },
+      "few_shot_32": {
+        "n": 100,
+        "spearman": 0.15809031620441286,
+        "spearman_reason": null,
+        "mae": 38.63,
+        "rmse": 47.60850764306733,
+        "mean_rate_mse": 0.226657,
+        "per_answer_brier": 0.30345700000000003
+      },
+      "paired_bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original fold for ID; group within corpus otherwise",
+        "n_groups": 97,
+        "mc_setting": "2000 draws ungrounded; compare half/full interval endpoints",
+        "spearman_32_minus_0": {
+          "ci95": [
+            -0.061886071270908234,
+            0.1609638180879295
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.003797341924427794
+        },
+        "mae_32_minus_0": {
+          "ci95": [
+            -6.857431457431462,
+            -1.9694741532976832
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.058444741532979405
+        },
+        "rmse_32_minus_0": {
+          "ci95": [
+            -5.561941053768144,
+            -0.9476872183405646
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.1938714210856709
+        }
+      }
+    },
+    "hallucination/fabrication/ood/nqopen": {
+      "zero_shot": {
+        "n": 44,
+        "spearman": 0.371798246993933,
+        "spearman_reason": null,
+        "mae": 41.75,
+        "rmse": 51.254489825504336,
+        "mean_rate_mse": 0.2627022727272727,
+        "per_answer_brier": 0.35542954545454547
+      },
+      "few_shot_32": {
+        "n": 44,
+        "spearman": 0.3708754604973625,
+        "spearman_reason": null,
+        "mae": 38.5,
+        "rmse": 48.28278443428126,
+        "mean_rate_mse": 0.23312272727272723,
+        "per_answer_brier": 0.32585
+      },
+      "paired_bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original fold for ID; group within corpus otherwise",
+        "n_groups": 43,
+        "mc_setting": "2000 draws ungrounded; compare half/full interval endpoints",
+        "spearman_32_minus_0": {
+          "ci95": [
+            -0.07696991584022411,
+            0.06813222798576056
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.0021541619675038703
+        },
+        "mae_32_minus_0": {
+          "ci95": [
+            -5.978952020202026,
+            -0.5113372093023246
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.06806348367393955
+        },
+        "rmse_32_minus_0": {
+          "ci95": [
+            -5.061730125819502,
+            -0.9309696950808074
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.07165463084732093
+        }
+      }
+    },
+    "hallucination/fabrication/ood/simpleqa": {
+      "zero_shot": {
+        "n": 56,
+        "spearman": -0.31277981333109145,
+        "spearman_reason": null,
+        "mae": 44.035714285714285,
+        "rmse": 50.77647092896473,
+        "mean_rate_mse": 0.257825,
+        "per_answer_brier": 0.3221107142857143
+      },
+      "few_shot_32": {
+        "n": 56,
+        "spearman": -0.2318275472934974,
+        "spearman_reason": null,
+        "mae": 38.732142857142854,
+        "rmse": 47.071943417951815,
+        "mean_rate_mse": 0.2215767857142857,
+        "per_answer_brier": 0.28586249999999996
+      },
+      "paired_bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original fold for ID; group within corpus otherwise",
+        "n_groups": 54,
+        "mc_setting": "2000 draws ungrounded; compare half/full interval endpoints",
+        "spearman_32_minus_0": {
+          "ci95": [
+            -0.10397912166599865,
+            0.3038482985578243
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.007556068962550622
+        },
+        "mae_32_minus_0": {
+          "ci95": [
+            -9.454755892255891,
+            -1.844689039408868
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.03754310344827538
+        },
+        "rmse_32_minus_0": {
+          "ci95": [
+            -7.639417158520922,
+            0.06886396595472526
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.04681675106679709
+        }
+      }
+    },
+    "hallucination/trait/generic": {
+      "zero_shot": {
+        "n": 100,
+        "spearman": 0.29707507315506726,
+        "spearman_reason": null,
+        "mae": 30.42638888888889,
+        "rmse": 40.31619110386616
+      },
+      "few_shot_32": {
+        "n": 100,
+        "spearman": 0.45537347760086155,
+        "spearman_reason": null,
+        "mae": 25.75572222222223,
+        "rmse": 33.90673546019878
+      },
+      "paired_bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original fold for ID; group within corpus otherwise",
+        "n_groups": 100,
+        "mc_setting": "2000 draws ungrounded; compare half/full interval endpoints",
+        "spearman_32_minus_0": {
+          "ci95": [
+            0.0301983252212682,
+            0.30226540196287627
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.0019662326499318428
+        },
+        "mae_32_minus_0": {
+          "ci95": [
+            -7.70106666666667,
+            -1.7969666666666662
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.1779666666666624
+        },
+        "rmse_32_minus_0": {
+          "ci95": [
+            -9.610954526223122,
+            -3.3056862552011217
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.16024405893293192
+        }
+      }
+    },
+    "sycophancy/trait/generic": {
+      "zero_shot": {
+        "n": 100,
+        "spearman": 0.5761089630447028,
+        "spearman_reason": null,
+        "mae": 11.395999999999999,
+        "rmse": 18.84520392861566
+      },
+      "few_shot_32": {
+        "n": 100,
+        "spearman": 0.6391982457428367,
+        "spearman_reason": null,
+        "mae": 12.049333333333333,
+        "rmse": 19.83886029432583
+      },
+      "paired_bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original fold for ID; group within corpus otherwise",
+        "n_groups": 100,
+        "mc_setting": "2000 draws ungrounded; compare half/full interval endpoints",
+        "spearman_32_minus_0": {
+          "ci95": [
+            0.005686980211480667,
+            0.13203239451680449
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.002849645418416813
+        },
+        "mae_32_minus_0": {
+          "ci95": [
+            -0.2900833333333342,
+            1.6766666666666659
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.01683333333333059
+        },
+        "rmse_32_minus_0": {
+          "ci95": [
+            -0.19669088181706654,
+            2.3443736672513382
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.06041777611141175
+        }
+      }
+    },
+    "sycophancy/trait/id": {
+      "zero_shot": {
+        "n": 100,
+        "spearman": 0.53077419479912,
+        "spearman_reason": null,
+        "mae": 9.378722222222223,
+        "rmse": 11.81717536647296
+      },
+      "few_shot_32": {
+        "n": 100,
+        "spearman": 0.5354934941942849,
+        "spearman_reason": null,
+        "mae": 5.712388888888889,
+        "rmse": 8.225797514714692
+      },
+      "paired_bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original fold for ID; group within corpus otherwise",
+        "n_groups": 100,
+        "mc_setting": "2000 draws ungrounded; compare half/full interval endpoints",
+        "spearman_32_minus_0": {
+          "ci95": [
+            -0.08654558262233121,
+            0.09689761581267643
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.00409363061336776
+        },
+        "mae_32_minus_0": {
+          "ci95": [
+            -4.988433333333333,
+            -2.3625333333333343
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.05055833333333126
+        },
+        "rmse_32_minus_0": {
+          "ci95": [
+            -5.320641555251212,
+            -1.9693861703632123
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.0316809729065024
+        }
+      }
+    },
+    "sycophancy/trait/ood": {
+      "zero_shot": {
+        "n": 100,
+        "spearman": 0.5532500891769705,
+        "spearman_reason": null,
+        "mae": 8.242166666666668,
+        "rmse": 11.149597526368384
+      },
+      "few_shot_32": {
+        "n": 100,
+        "spearman": 0.5752909807554498,
+        "spearman_reason": null,
+        "mae": 6.162166666666667,
+        "rmse": 9.083512077752012
+      },
+      "paired_bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original fold for ID; group within corpus otherwise",
+        "n_groups": 100,
+        "mc_setting": "2000 draws ungrounded; compare half/full interval endpoints",
+        "spearman_32_minus_0": {
+          "ci95": [
+            -0.05737429276731714,
+            0.10392135054120463
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.0011549959803822535
+        },
+        "mae_32_minus_0": {
+          "ci95": [
+            -3.2260166666666668,
+            -0.9652666666666664
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.03261666666666807
+        },
+        "rmse_32_minus_0": {
+          "ci95": [
+            -3.8910181753932744,
+            -0.3474170779948091
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.12420234648810657
+        }
+      }
+    },
+    "sycophancy/trait/ood/aita": {
+      "zero_shot": {
+        "n": 100,
+        "spearman": 0.5532500891769705,
+        "spearman_reason": null,
+        "mae": 8.242166666666668,
+        "rmse": 11.149597526368384
+      },
+      "few_shot_32": {
+        "n": 100,
+        "spearman": 0.5752909807554498,
+        "spearman_reason": null,
+        "mae": 6.162166666666667,
+        "rmse": 9.083512077752012
+      },
+      "paired_bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original fold for ID; group within corpus otherwise",
+        "n_groups": 100,
+        "mc_setting": "2000 draws ungrounded; compare half/full interval endpoints",
+        "spearman_32_minus_0": {
+          "ci95": [
+            -0.05737429276731714,
+            0.10392135054120463
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.0011549959803822535
+        },
+        "mae_32_minus_0": {
+          "ci95": [
+            -3.2260166666666668,
+            -0.9652666666666664
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.03261666666666807
+        },
+        "rmse_32_minus_0": {
+          "ci95": [
+            -3.8910181753932744,
+            -0.3474170779948091
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.12420234648810657
+        }
+      }
+    }
+  },
+  "n_contexts": 900,
+  "comparison_scope": "paired Codex zero-shot vs32 only; no historical probe aggregate comparison",
+  "source_config_sha256": "9e36a5264562e798f5edd56b2d2cc859dfb4a56f343b748d0f3481de6ec5e927",
+  "selection_sha256": "639e7c2c2b7b4635f8853c2546f63b3e3d3ae14c817865568a32acf439665c98",
+  "packet_manifest_sha256": "5f6278e12b4a8dd1086a6db8f502b67b52abd2d75390fac81fcae5de90b21261",
+  "cohort_sha256": "b7ff94b8e39d7637aef91f7b12809eef576745e52f64493faeaef00faeb9b84c",
+  "code_sha256": "4a93d878b2a762622e8f97edd584ad6941aae2c81ace4c31f5b71960775570dd"
+}

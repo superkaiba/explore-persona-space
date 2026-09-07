@@ -1,0 +1,46 @@
+{
+  "status": "pass",
+  "reviewed": [
+    "rank_comparison.png",
+    "rank_comparison_grayscale.png",
+    "context_predictions.png",
+    "context_predictions_grayscale.png",
+    "rank_comparison.pdf"
+  ],
+  "checks": [
+    "Legends, axis labels, construct/regime labels legible",
+    "No supplementary title/header overlap",
+    "All five methods shown; undefined CIs explicitly annotated",
+    "Open/filled marker distinctions survive grayscale",
+    "Codex and standardized probe scales clearly separated",
+    "Summary PDF rendered successfully with Poppler"
+  ],
+  "pdf_font_note": "Poppler emitted font-type/embedded-file mismatch warning for embedded Inter; inspected rendered PDF text and symbols displayed correctly.",
+  "artifacts_sha256": {
+    "rank_comparison_grayscale.png": "cfba463d2eebb0896420924399664d251ff39e59bae21ed5e4a0af103ddef056",
+    "context_predictions.pdf": "2124c0a50ce6119e7d086b41b2e83ee968a4e1505257155d91cf84eb7b74aada",
+    "rank_comparison.png": "930fb71de8063f48526df344a416dc6c1aa44529420c6f2b212f4d61fe3696ef",
+    "context_predictions_grayscale.png": "1a952d2288e5a4cdb66f461c4814d16721e7e871f2b742a613cc7df28ac51c30",
+    "context_predictions.png": "4dc2d4462928859da7fa3b2dc8ff0443d797f0253c3e26467da5103fb45182f4",
+    "rank_comparison.pdf": "7b60362e7e71e982893d473d858a1272610795a9a9ecd2d1b54977e355943821"
+  },
+  "public_numeric_sidecar": {
+    "path": "comparison.data.json",
+    "sha256": "9f4a7453b4646e34ac99ce212af7f1c9de49a957b61d4e53748676b3d1712293",
+    "allowed_point_keys": [
+      "behavior",
+      "dv",
+      "id",
+      "instrument",
+      "probe_layers",
+      "regime",
+      "rung",
+      "scores"
+    ],
+    "n_points": 900,
+    "opaque_ids_verified": true,
+    "matches_private_numeric_values": true,
+    "raw_context_and_group_metadata_excluded": true,
+    "rendered_artifacts_unchanged": true
+  }
+}

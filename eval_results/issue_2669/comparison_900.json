@@ -1,0 +1,869 @@
+{
+  "complete": true,
+  "n_contexts": 900,
+  "coverage": {
+    "evil": {
+      "available": [
+        "reg_map_linear",
+        "reg_oracle",
+        "regression_ctx"
+      ],
+      "oracle_absent": false
+    },
+    "hallucination": {
+      "available": [
+        "reg_map_linear",
+        "reg_oracle",
+        "regression_ctx"
+      ],
+      "oracle_absent": false
+    },
+    "sycophancy": {
+      "available": [
+        "reg_map_linear",
+        "reg_oracle",
+        "regression_ctx"
+      ],
+      "oracle_absent": false
+    }
+  },
+  "metrics": {
+    "evil/trait/generic": {
+      "n": 100,
+      "spearman": {
+        "codex_0": 0.4050938503800298,
+        "codex_32": 0.555985920915925,
+        "reg_map_linear": 0.1078609452792447,
+        "reg_oracle": 0.2577129362733761,
+        "regression_ctx": 0.18741651448182015
+      },
+      "paired_spearman_differences": {
+        "regression_ctx-minus-codex_0": {
+          "point": -0.21767733589820967,
+          "valid_draws": 1920,
+          "ci95": null,
+          "reason": "constant/undefined correlation in at least one bootstrap draw"
+        },
+        "regression_ctx-minus-codex_32": {
+          "point": -0.36856940643410485,
+          "valid_draws": 1920,
+          "ci95": null,
+          "reason": "constant/undefined correlation in at least one bootstrap draw"
+        },
+        "reg_map_linear-minus-codex_0": {
+          "point": -0.29723290510078515,
+          "valid_draws": 1920,
+          "ci95": null,
+          "reason": "constant/undefined correlation in at least one bootstrap draw"
+        },
+        "reg_map_linear-minus-codex_32": {
+          "point": -0.4481249756366803,
+          "valid_draws": 1920,
+          "ci95": null,
+          "reason": "constant/undefined correlation in at least one bootstrap draw"
+        }
+      },
+      "bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original ID fold",
+        "mc_setting": "2000 draws ungrounded; half/full endpoint check reported"
+      },
+      "score_scale_note": "Probe scores use standardized targets; no raw MAE/RMSE comparison"
+    },
+    "evil/trait/id": {
+      "n": 100,
+      "spearman": {
+        "codex_0": 0.67248256711372,
+        "codex_32": 0.7375860883918779,
+        "reg_map_linear": 0.7228898062347089,
+        "reg_oracle": 0.7817163813539267,
+        "regression_ctx": 0.6172937670014897
+      },
+      "paired_spearman_differences": {
+        "regression_ctx-minus-codex_0": {
+          "point": -0.05518880011223026,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.1817171697046214,
+            0.07323040685580423
+          ],
+          "half_full_endpoint_max_abs_delta": 0.00465782983302282
+        },
+        "regression_ctx-minus-codex_32": {
+          "point": -0.12029232139038815,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.24797064226432364,
+            0.0011214651417697531
+          ],
+          "half_full_endpoint_max_abs_delta": 0.007001681066177499
+        },
+        "reg_map_linear-minus-codex_0": {
+          "point": 0.05040723912098888,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.037799842560698335,
+            0.15258080983826539
+          ],
+          "half_full_endpoint_max_abs_delta": 0.006047604571985304
+        },
+        "reg_map_linear-minus-codex_32": {
+          "point": -0.014696282157169005,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.10072202086771156,
+            0.06741768776443802
+          ],
+          "half_full_endpoint_max_abs_delta": 0.004401296528607962
+        }
+      },
+      "bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original ID fold",
+        "mc_setting": "2000 draws ungrounded; half/full endpoint check reported"
+      },
+      "score_scale_note": "Probe scores use standardized targets; no raw MAE/RMSE comparison"
+    },
+    "evil/trait/ood": {
+      "n": 100,
+      "spearman": {
+        "codex_0": 0.18271149793926655,
+        "codex_32": 0.2094327959927948,
+        "reg_map_linear": 0.1909316979145323,
+        "reg_oracle": 0.1506704364270469,
+        "regression_ctx": 0.2607084583853805
+      },
+      "paired_spearman_differences": {
+        "regression_ctx-minus-codex_0": {
+          "point": 0.07799696044611393,
+          "valid_draws": 1972,
+          "ci95": null,
+          "reason": "constant/undefined correlation in at least one bootstrap draw"
+        },
+        "regression_ctx-minus-codex_32": {
+          "point": 0.051275662392585686,
+          "valid_draws": 1972,
+          "ci95": null,
+          "reason": "constant/undefined correlation in at least one bootstrap draw"
+        },
+        "reg_map_linear-minus-codex_0": {
+          "point": 0.00822019997526574,
+          "valid_draws": 1972,
+          "ci95": null,
+          "reason": "constant/undefined correlation in at least one bootstrap draw"
+        },
+        "reg_map_linear-minus-codex_32": {
+          "point": -0.0185010980782625,
+          "valid_draws": 1972,
+          "ci95": null,
+          "reason": "constant/undefined correlation in at least one bootstrap draw"
+        }
+      },
+      "bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original ID fold",
+        "mc_setting": "2000 draws ungrounded; half/full endpoint check reported"
+      },
+      "score_scale_note": "Probe scores use standardized targets; no raw MAE/RMSE comparison"
+    },
+    "evil/trait/ood/hhrt": {
+      "n": 78,
+      "spearman": {
+        "codex_0": -0.02326486716026951,
+        "codex_32": -0.07867822139981075,
+        "reg_map_linear": -0.09363928321200132,
+        "reg_oracle": 0.007592374314486595,
+        "regression_ctx": 0.11388561471729891
+      },
+      "paired_spearman_differences": {
+        "regression_ctx-minus-codex_0": {
+          "point": 0.13715048187756843,
+          "valid_draws": 1270,
+          "ci95": null,
+          "reason": "constant/undefined correlation in at least one bootstrap draw"
+        },
+        "regression_ctx-minus-codex_32": {
+          "point": 0.19256383611710964,
+          "valid_draws": 1270,
+          "ci95": null,
+          "reason": "constant/undefined correlation in at least one bootstrap draw"
+        },
+        "reg_map_linear-minus-codex_0": {
+          "point": -0.07037441605173181,
+          "valid_draws": 1270,
+          "ci95": null,
+          "reason": "constant/undefined correlation in at least one bootstrap draw"
+        },
+        "reg_map_linear-minus-codex_32": {
+          "point": -0.014961061812190576,
+          "valid_draws": 1270,
+          "ci95": null,
+          "reason": "constant/undefined correlation in at least one bootstrap draw"
+        }
+      },
+      "bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original ID fold",
+        "mc_setting": "2000 draws ungrounded; half/full endpoint check reported"
+      },
+      "score_scale_note": "Probe scores use standardized targets; no raw MAE/RMSE comparison"
+    },
+    "evil/trait/ood/toxicchat": {
+      "n": 22,
+      "spearman": {
+        "codex_0": 0.41073799131588223,
+        "codex_32": 0.5060149193869918,
+        "reg_map_linear": 0.45690211723539675,
+        "reg_oracle": 0.2563570885523654,
+        "regression_ctx": 0.3358183263324344
+      },
+      "paired_spearman_differences": {
+        "regression_ctx-minus-codex_0": {
+          "point": -0.07491966498344782,
+          "valid_draws": 1915,
+          "ci95": null,
+          "reason": "constant/undefined correlation in at least one bootstrap draw"
+        },
+        "regression_ctx-minus-codex_32": {
+          "point": -0.17019659305455742,
+          "valid_draws": 1915,
+          "ci95": null,
+          "reason": "constant/undefined correlation in at least one bootstrap draw"
+        },
+        "reg_map_linear-minus-codex_0": {
+          "point": 0.04616412591951452,
+          "valid_draws": 1915,
+          "ci95": null,
+          "reason": "constant/undefined correlation in at least one bootstrap draw"
+        },
+        "reg_map_linear-minus-codex_32": {
+          "point": -0.04911280215159508,
+          "valid_draws": 1915,
+          "ci95": null,
+          "reason": "constant/undefined correlation in at least one bootstrap draw"
+        }
+      },
+      "bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original ID fold",
+        "mc_setting": "2000 draws ungrounded; half/full endpoint check reported"
+      },
+      "score_scale_note": "Probe scores use standardized targets; no raw MAE/RMSE comparison"
+    },
+    "hallucination/fabrication/id": {
+      "n": 100,
+      "spearman": {
+        "codex_0": 0.44681226133433616,
+        "codex_32": 0.4515597788802019,
+        "reg_map_linear": 0.6746053798386119,
+        "reg_oracle": 0.5945006266745108,
+        "regression_ctx": 0.576933794840278
+      },
+      "paired_spearman_differences": {
+        "regression_ctx-minus-codex_0": {
+          "point": 0.1301215335059418,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.06402179690560303,
+            0.3348844609668699
+          ],
+          "half_full_endpoint_max_abs_delta": 0.006695031231340423
+        },
+        "regression_ctx-minus-codex_32": {
+          "point": 0.12537401596007608,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.07258001153472161,
+            0.32289720502703556
+          ],
+          "half_full_endpoint_max_abs_delta": 0.003874981352642873
+        },
+        "reg_map_linear-minus-codex_0": {
+          "point": 0.22779311850427575,
+          "valid_draws": 2000,
+          "ci95": [
+            0.057872644824435895,
+            0.4068780837871884
+          ],
+          "half_full_endpoint_max_abs_delta": 0.0036495937513967014
+        },
+        "reg_map_linear-minus-codex_32": {
+          "point": 0.22304560095841003,
+          "valid_draws": 2000,
+          "ci95": [
+            0.05811440838614134,
+            0.39566120540150845
+          ],
+          "half_full_endpoint_max_abs_delta": 0.006270419955032698
+        }
+      },
+      "bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original ID fold",
+        "mc_setting": "2000 draws ungrounded; half/full endpoint check reported"
+      },
+      "score_scale_note": "Probe scores use standardized targets; no raw MAE/RMSE comparison"
+    },
+    "hallucination/fabrication/ood": {
+      "n": 100,
+      "spearman": {
+        "codex_0": 0.1205136098707668,
+        "codex_32": 0.15809031620441286,
+        "reg_map_linear": 0.4789131571083355,
+        "reg_oracle": 0.5399091306141922,
+        "regression_ctx": 0.3554540828305063
+      },
+      "paired_spearman_differences": {
+        "regression_ctx-minus-codex_0": {
+          "point": 0.23494047295973947,
+          "valid_draws": 2000,
+          "ci95": [
+            0.02555747599664064,
+            0.45149744921937535
+          ],
+          "half_full_endpoint_max_abs_delta": 0.01961113988829811
+        },
+        "regression_ctx-minus-codex_32": {
+          "point": 0.19736376662609342,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.004328491539384007,
+            0.41391492664167917
+          ],
+          "half_full_endpoint_max_abs_delta": 0.008806660018258715
+        },
+        "reg_map_linear-minus-codex_0": {
+          "point": 0.35839954723756867,
+          "valid_draws": 2000,
+          "ci95": [
+            0.14413718599596667,
+            0.574249951224465
+          ],
+          "half_full_endpoint_max_abs_delta": 0.008540245606446673
+        },
+        "reg_map_linear-minus-codex_32": {
+          "point": 0.32082284090392266,
+          "valid_draws": 2000,
+          "ci95": [
+            0.09703939501653873,
+            0.537916840719725
+          ],
+          "half_full_endpoint_max_abs_delta": 0.01148227165890102
+        }
+      },
+      "bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original ID fold",
+        "mc_setting": "2000 draws ungrounded; half/full endpoint check reported"
+      },
+      "score_scale_note": "Probe scores use standardized targets; no raw MAE/RMSE comparison"
+    },
+    "hallucination/fabrication/ood/nqopen": {
+      "n": 44,
+      "spearman": {
+        "codex_0": 0.371798246993933,
+        "codex_32": 0.3708754604973625,
+        "reg_map_linear": 0.3847137676408781,
+        "reg_oracle": 0.49842511381530114,
+        "regression_ctx": 0.285721402824058
+      },
+      "paired_spearman_differences": {
+        "regression_ctx-minus-codex_0": {
+          "point": -0.08607684416987499,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.41601021861784654,
+            0.26704594379577457
+          ],
+          "half_full_endpoint_max_abs_delta": 0.013897050030530878
+        },
+        "regression_ctx-minus-codex_32": {
+          "point": -0.08515405767330447,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.4057274473652679,
+            0.25530594081931596
+          ],
+          "half_full_endpoint_max_abs_delta": 0.006780383026462056
+        },
+        "reg_map_linear-minus-codex_0": {
+          "point": 0.012915520646945122,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.3603167534973855,
+            0.4055580062431484
+          ],
+          "half_full_endpoint_max_abs_delta": 0.002679843483454847
+        },
+        "reg_map_linear-minus-codex_32": {
+          "point": 0.013838307143515638,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.3505650632531746,
+            0.38665207196003626
+          ],
+          "half_full_endpoint_max_abs_delta": 0.009924827317246532
+        }
+      },
+      "bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original ID fold",
+        "mc_setting": "2000 draws ungrounded; half/full endpoint check reported"
+      },
+      "score_scale_note": "Probe scores use standardized targets; no raw MAE/RMSE comparison"
+    },
+    "hallucination/fabrication/ood/simpleqa": {
+      "n": 56,
+      "spearman": {
+        "codex_0": -0.31277981333109145,
+        "codex_32": -0.2318275472934974,
+        "reg_map_linear": 0.39949513677914145,
+        "reg_oracle": 0.4160754172736207,
+        "regression_ctx": 0.29310500360623304
+      },
+      "paired_spearman_differences": {
+        "regression_ctx-minus-codex_0": {
+          "point": 0.6058848169373245,
+          "valid_draws": 2000,
+          "ci95": [
+            0.25900889055766096,
+            0.9192833985536112
+          ],
+          "half_full_endpoint_max_abs_delta": 0.011224953544048621
+        },
+        "regression_ctx-minus-codex_32": {
+          "point": 0.5249325508997305,
+          "valid_draws": 2000,
+          "ci95": [
+            0.1892437907762579,
+            0.8201115351387908
+          ],
+          "half_full_endpoint_max_abs_delta": 0.0034792001522877536
+        },
+        "reg_map_linear-minus-codex_0": {
+          "point": 0.7122749501102329,
+          "valid_draws": 2000,
+          "ci95": [
+            0.343965803699377,
+            1.0223014366418364
+          ],
+          "half_full_endpoint_max_abs_delta": 0.007719239353205731
+        },
+        "reg_map_linear-minus-codex_32": {
+          "point": 0.6313226840726388,
+          "valid_draws": 2000,
+          "ci95": [
+            0.2554821379130395,
+            0.9579231988242799
+          ],
+          "half_full_endpoint_max_abs_delta": 0.010840315810176443
+        }
+      },
+      "bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original ID fold",
+        "mc_setting": "2000 draws ungrounded; half/full endpoint check reported"
+      },
+      "score_scale_note": "Probe scores use standardized targets; no raw MAE/RMSE comparison"
+    },
+    "hallucination/trait/generic": {
+      "n": 100,
+      "spearman": {
+        "codex_0": 0.29707507315506726,
+        "codex_32": 0.45537347760086155,
+        "reg_map_linear": 0.5427802000844698,
+        "reg_oracle": 0.5994861597530518,
+        "regression_ctx": 0.5505131038486979
+      },
+      "paired_spearman_differences": {
+        "regression_ctx-minus-codex_0": {
+          "point": 0.25343803069363063,
+          "valid_draws": 2000,
+          "ci95": [
+            0.023732923329463817,
+            0.4875830634012542
+          ],
+          "half_full_endpoint_max_abs_delta": 0.0016476308513673765
+        },
+        "regression_ctx-minus-codex_32": {
+          "point": 0.09513962624783634,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.11299906119191451,
+            0.3158539278545407
+          ],
+          "half_full_endpoint_max_abs_delta": 0.007720301956201714
+        },
+        "reg_map_linear-minus-codex_0": {
+          "point": 0.24570512692940255,
+          "valid_draws": 2000,
+          "ci95": [
+            0.003361706902397499,
+            0.5025822690624968
+          ],
+          "half_full_endpoint_max_abs_delta": 0.011587156965728262
+        },
+        "reg_map_linear-minus-codex_32": {
+          "point": 0.08740672248360826,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.1171240131655396,
+            0.3053878138562093
+          ],
+          "half_full_endpoint_max_abs_delta": 0.009886638407613835
+        }
+      },
+      "bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original ID fold",
+        "mc_setting": "2000 draws ungrounded; half/full endpoint check reported"
+      },
+      "score_scale_note": "Probe scores use standardized targets; no raw MAE/RMSE comparison"
+    },
+    "sycophancy/trait/generic": {
+      "n": 100,
+      "spearman": {
+        "codex_0": 0.5761089630447028,
+        "codex_32": 0.6391982457428367,
+        "reg_map_linear": 0.5562247218932165,
+        "reg_oracle": 0.5450424696391619,
+        "regression_ctx": 0.579812190643513
+      },
+      "paired_spearman_differences": {
+        "regression_ctx-minus-codex_0": {
+          "point": 0.0037032275988101437,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.19767104977160913,
+            0.19896195742155168
+          ],
+          "half_full_endpoint_max_abs_delta": 0.004685914278253767
+        },
+        "regression_ctx-minus-codex_32": {
+          "point": -0.05938605509932371,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.2575884627418806,
+            0.13043537087697182
+          ],
+          "half_full_endpoint_max_abs_delta": 0.012333211754631257
+        },
+        "reg_map_linear-minus-codex_0": {
+          "point": -0.019884241151486348,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.2378628307783376,
+            0.18747684045012494
+          ],
+          "half_full_endpoint_max_abs_delta": 0.0039685396624675184
+        },
+        "reg_map_linear-minus-codex_32": {
+          "point": -0.0829735238496202,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.2927605498631557,
+            0.1154220604641611
+          ],
+          "half_full_endpoint_max_abs_delta": 0.012640135652838613
+        }
+      },
+      "bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original ID fold",
+        "mc_setting": "2000 draws ungrounded; half/full endpoint check reported"
+      },
+      "score_scale_note": "Probe scores use standardized targets; no raw MAE/RMSE comparison"
+    },
+    "sycophancy/trait/id": {
+      "n": 100,
+      "spearman": {
+        "codex_0": 0.53077419479912,
+        "codex_32": 0.5354934941942849,
+        "reg_map_linear": 0.6535095888333373,
+        "reg_oracle": 0.7305614881670156,
+        "regression_ctx": 0.6561206020147776
+      },
+      "paired_spearman_differences": {
+        "regression_ctx-minus-codex_0": {
+          "point": 0.1253464072156576,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.02788207326816631,
+            0.2778587708036517
+          ],
+          "half_full_endpoint_max_abs_delta": 0.0032784441390375507
+        },
+        "regression_ctx-minus-codex_32": {
+          "point": 0.12062710782049268,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.028778017865504314,
+            0.26143501004264486
+          ],
+          "half_full_endpoint_max_abs_delta": 0.0056863977951371325
+        },
+        "reg_map_linear-minus-codex_0": {
+          "point": 0.1227353940342173,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.02779996682382303,
+            0.27379431539738497
+          ],
+          "half_full_endpoint_max_abs_delta": 0.005774830034550149
+        },
+        "reg_map_linear-minus-codex_32": {
+          "point": 0.11801609463905238,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.021982050446568428,
+            0.25489599316368877
+          ],
+          "half_full_endpoint_max_abs_delta": 0.009282569212973662
+        }
+      },
+      "bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original ID fold",
+        "mc_setting": "2000 draws ungrounded; half/full endpoint check reported"
+      },
+      "score_scale_note": "Probe scores use standardized targets; no raw MAE/RMSE comparison"
+    },
+    "sycophancy/trait/ood": {
+      "n": 100,
+      "spearman": {
+        "codex_0": 0.5532500891769705,
+        "codex_32": 0.5752909807554498,
+        "reg_map_linear": 0.6042484490113956,
+        "reg_oracle": 0.7844436255927724,
+        "regression_ctx": 0.6203607804883724
+      },
+      "paired_spearman_differences": {
+        "regression_ctx-minus-codex_0": {
+          "point": 0.0671106913114019,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.09714553074649203,
+            0.2288325939434116
+          ],
+          "half_full_endpoint_max_abs_delta": 0.003954284350933118
+        },
+        "regression_ctx-minus-codex_32": {
+          "point": 0.04506979973292258,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.10786400844366263,
+            0.19881191343021523
+          ],
+          "half_full_endpoint_max_abs_delta": 2.6428424679425522e-05
+        },
+        "reg_map_linear-minus-codex_0": {
+          "point": 0.05099835983442513,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.1115371418889183,
+            0.2137747927893194
+          ],
+          "half_full_endpoint_max_abs_delta": 0.005686489699386538
+        },
+        "reg_map_linear-minus-codex_32": {
+          "point": 0.028957468255945806,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.13306903959998506,
+            0.20168664605245049
+          ],
+          "half_full_endpoint_max_abs_delta": 0.0046866662412757
+        }
+      },
+      "bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original ID fold",
+        "mc_setting": "2000 draws ungrounded; half/full endpoint check reported"
+      },
+      "score_scale_note": "Probe scores use standardized targets; no raw MAE/RMSE comparison"
+    },
+    "sycophancy/trait/ood/aita": {
+      "n": 100,
+      "spearman": {
+        "codex_0": 0.5532500891769705,
+        "codex_32": 0.5752909807554498,
+        "reg_map_linear": 0.6042484490113956,
+        "reg_oracle": 0.7844436255927724,
+        "regression_ctx": 0.6203607804883724
+      },
+      "paired_spearman_differences": {
+        "regression_ctx-minus-codex_0": {
+          "point": 0.0671106913114019,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.09714553074649203,
+            0.2288325939434116
+          ],
+          "half_full_endpoint_max_abs_delta": 0.003954284350933118
+        },
+        "regression_ctx-minus-codex_32": {
+          "point": 0.04506979973292258,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.10786400844366263,
+            0.19881191343021523
+          ],
+          "half_full_endpoint_max_abs_delta": 2.6428424679425522e-05
+        },
+        "reg_map_linear-minus-codex_0": {
+          "point": 0.05099835983442513,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.1115371418889183,
+            0.2137747927893194
+          ],
+          "half_full_endpoint_max_abs_delta": 0.005686489699386538
+        },
+        "reg_map_linear-minus-codex_32": {
+          "point": 0.028957468255945806,
+          "valid_draws": 2000,
+          "ci95": [
+            -0.13306903959998506,
+            0.20168664605245049
+          ],
+          "half_full_endpoint_max_abs_delta": 0.0046866662412757
+        }
+      },
+      "bootstrap": {
+        "draws": 2000,
+        "seed": 2669,
+        "unit": "group within corpus and original ID fold",
+        "mc_setting": "2000 draws ungrounded; half/full endpoint check reported"
+      },
+      "score_scale_note": "Probe scores use standardized targets; no raw MAE/RMSE comparison"
+    }
+  },
+  "config": {
+    "run_root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/reduced900_v2",
+    "output_root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/reduced900_v2/comparison",
+    "source_sha256": {
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer17_oracle/generic.jsonl": "97f50f4419ca2636f9fe46e9bc5d4fe774fce35ab61ff86ace2f25af6e168ecc",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer17_oracle/id.jsonl": "5983e63cec2d09ba25afad7f3e1cf171593119d156e7efff1d05950ae29d4644",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer17_oracle/ood.jsonl": "aa381f7897e828f8069297ff534f592916a6f7c88e406adee8851103eaaa8ba7",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer17_oracle/result.json": "db46e31f4f1a996fee78a77c241c530f879603aff4b7df925aef569f4ae7cbd8",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer18_pilot/generic.jsonl": "c2453323389a668848b037ae285821ed82e161d0d1062f066ba64d655de78157",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer18_pilot/id.jsonl": "b69f18ff9be6f1169fbdad67ad924f831c017ed4b1e289b868f1f92cc58e6a84",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer18_pilot/ood.jsonl": "203de2f77affdbf8e9a54d750db9f3374ae1a9ec5ea969e46a9693d263a9c1ec",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer18_pilot/result.json": "cc8f572e701741ba3c7af60d915ffff811ee7155e13cd4d5d8915cc5a36c764a",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer20_map/generic.jsonl": "61ac44a102934edac71eb2c602cefdf4310bdcf613796b25bd635b8f7f63b9fe",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer20_map/id.jsonl": "b4ea621edbf0ef99081960608828bc6711f198eebe280a2067ace392b74e7255",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer20_map/ood.jsonl": "4f4926470f965cf0fdb71050307d5408de36a307bcc21f1167559dca2c612a53",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer20_map/result.json": "dbdd0c9c67db077dd909183618280425e475e09423785a3d8e02130c35814c89",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer18/generic.jsonl": "2e65344c1cabbf2106c00f286a77803bef2e6f9dca7963171fa90c7ac6cb11d4",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer18/id.jsonl": "3962eae9f5447783b7999006f7f542c68236174ba7dd64eec9d2f06b1c3cbdd9",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer18/ood.jsonl": "ced4bfaa89e966ed4560399ada3a922500bf72176fa48c7a40c2cb32ef1692a9",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer18/result.json": "f09faff7dd4f2ee47a3caf2979900760d31404954b1e4fcd80f4d269d0f5b65a",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer20/generic.jsonl": "63632c0d131121e50706e47d86fcc3cb8cfbe264f32dfbe1c6dde46d089beb76",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer20/id.jsonl": "bcbf98e3271f8a1d193596ccff67c12dfdeaf08eb4138f1b54fbe69da03a0be2",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer20/ood.jsonl": "27b6e4c9785b8a231bd89d000d1dd06e7de8f1a31da6c3ba2fa0998d8bc85e5a",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer20/result.json": "9ce0d4a808a3d275a9da57258a313df1f8ff23ce8e6a83a287a3694726e71b88",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer19/generic.jsonl": "1b15e8b8e8504815be66d218905436693a7d3fe4b279b70c1b98def2fad6109d",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer19/id.jsonl": "5282594f81cfed25baee28058ef14367818977525de213b6019b549fbe3b6b0f",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer19/ood.jsonl": "88d43d90aeeef1652e20aaa7c3babd7728e4e75947044767341f17bcb1dbc177",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer19/result.json": "76746832829ecec90105c9ca41cd8d7205c74ae4e700244ec0c2aa20df898bc6",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer20/generic.jsonl": "7aa4e878a0412ff0c3401da8837253c4890f78d47c3b721fd956c26ae0e79c31",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer20/id.jsonl": "55ff9e8fa60a2266fe6a95b8799aa5a18086f2c4f8a379df8ed929c50c92b762",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer20/ood.jsonl": "04a75c4ae9dee71b53670863f23b11b6afeeee4955ea0277ebeec477c7234590",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer20/result.json": "c57d9c7fe12714a7a89fa3fe02cc76bc8992b03bdcba526d4ac1771bde0d9959",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/reduced900_v2/analysis_production/metrics.json": "8748fd191aca8cac2519370cb2cd2c6fa229c69c73dcc23cb0b69eb652027bd8",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/reduced900_v2/analysis_production/percontextforecast.jsonl": "ce2ba8b98a077580d3a103ba2eebfecfc0d920ad8ce80ca4489683a7718de4a7",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/reduced900_v2/cohort.jsonl": "b7ff94b8e39d7637aef91f7b12809eef576745e52f64493faeaef00faeb9b84c",
+      "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/reduced900_v2/selection.json": "639e7c2c2b7b4635f8853c2546f63b3e3d3ae14c817865568a32acf439665c98",
+      "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/dv_dataset/evil/labeling.json": "21ce1f8ce437f50399dd81d22553fb84ef3381120217781f94e53dc7b8fe59c1",
+      "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/dv_dataset/hallucination/labeling.json": "39c3a7beaffbba08a01057a730e1e415410537158bf296cdb40adaac9382cf5f",
+      "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/dv_dataset/sycophancy/labeling.json": "8d6aed280943e1c6868bfb44448dbfa6fbee17d91b26533fa26896931617defb",
+      "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/wildchat_rung/dv_dataset/evil/labeling.json": "3fc06817c9d3da512253026d3606b89c410a72e3e143742e1ecb6c3635ba5b96",
+      "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/wildchat_rung/dv_dataset/hallucination/labeling.json": "bd73ee462436e3aa2fa16812412678377cdceb47c74e89648c3ff40e8fbc1cc5",
+      "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/wildchat_rung/dv_dataset/sycophancy/labeling.json": "b6217ef9f7089915a87094d3a34ee1d48ec10c17f969353dae93121cc5cb5765"
+    },
+    "probes": [
+      {
+        "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer18_pilot",
+        "behavior": "evil",
+        "layer": 18,
+        "methods": [
+          "regression_ctx"
+        ]
+      },
+      {
+        "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer20_map",
+        "behavior": "evil",
+        "layer": 20,
+        "methods": [
+          "reg_map_linear"
+        ]
+      },
+      {
+        "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/evil_layer17_oracle",
+        "behavior": "evil",
+        "layer": 17,
+        "methods": [
+          "reg_oracle"
+        ]
+      },
+      {
+        "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer19",
+        "behavior": "sycophancy",
+        "layer": 19,
+        "methods": [
+          "reg_map_linear",
+          "reg_oracle"
+        ]
+      },
+      {
+        "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/sycophancy_layer20",
+        "behavior": "sycophancy",
+        "layer": 20,
+        "methods": [
+          "regression_ctx"
+        ]
+      },
+      {
+        "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer20",
+        "behavior": "hallucination",
+        "layer": 20,
+        "methods": [
+          "regression_ctx",
+          "reg_map_linear"
+        ]
+      },
+      {
+        "root": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/data/issue_2669/probe_replay/hallucination_layer18",
+        "behavior": "hallucination",
+        "layer": 18,
+        "methods": [
+          "reg_oracle"
+        ]
+      }
+    ],
+    "require_oracle": true,
+    "bootstrap_draws": 2000
+  },
+  "config_sha256": "ff4106f4ae23c9ba81212c0936fa713e7a7cf59226dcae5a11b4898df239288f",
+  "script_sha256": "7612aa1249a48f9b586000316b2d08c27c8d831c570ad521c2a16f000599c35f",
+  "scope": "exact same selected contexts; no full-cohort aggregate substitute",
+  "protocol_caveats": [
+    "The original ID map and whitening use all ID context-answer pairs before the behavior-label readout folds. ID evaluation is transductive for these representations, not a strict holdout of all information.",
+    "Original per-pool target means and standard deviations are computed before the ID readout folds; individual held-out labels do not enter a ridge fit, but label preprocessing is not nested.",
+    "Held-out generic and OOD contexts are excluded from the map and readout fitting pools.",
+    "Layer choices are frozen from the original artifacts and may have been selected using original ID outcomes; this replay does not establish independent layer-selection holdout."
+  ]
+}

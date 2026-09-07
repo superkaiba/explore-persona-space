@@ -1,0 +1,50 @@
+{
+  "pilot": {
+    "packets": 126,
+    "forecasts": 288,
+    "statuses": {
+      "complete": 126
+    },
+    "attempt_numbers": {
+      "attempt-001": 126
+    },
+    "wall_seconds": 541.7519252300262,
+    "event_types": {
+      "thread.started": 126,
+      "turn.started": 126,
+      "item.completed": 126,
+      "turn.completed": 126
+    },
+    "usage": {
+      "input_tokens": 3308079,
+      "cached_input_tokens": 1341056,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 22795,
+      "reasoning_output_tokens": 6512
+    }
+  },
+  "production": {
+    "packets": 246,
+    "forecasts": 1800,
+    "statuses": {
+      "complete": 246
+    },
+    "attempt_numbers": {
+      "attempt-001": 246
+    },
+    "wall_seconds": 1734.3985483646393,
+    "event_types": {
+      "thread.started": 246,
+      "turn.started": 246,
+      "item.completed": 246,
+      "turn.completed": 246
+    },
+    "usage": {
+      "input_tokens": 7262135,
+      "cached_input_tokens": 3661824,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 105970,
+      "reasoning_output_tokens": 17565
+    }
+  }
+}

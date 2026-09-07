@@ -1,0 +1,122 @@
+[
+  {
+    "behavior": "evil",
+    "layer": 20,
+    "provenance": "inherited_original_fair_artifact_NOT_recomputed_replay_diagnostics",
+    "r2_map": 0.7373914343443198,
+    "r2_identity_bias": -0.17646324409280645,
+    "knn": {
+      "euclidean": {
+        "metric": "euclidean",
+        "n": 5052,
+        "n_pool": 5052,
+        "acc_at_k": {
+          "1": 0.3750989707046714,
+          "5": 0.7658353127474268
+        },
+        "chance_at_k": {
+          "1": 0.0001979414093428345,
+          "5": 0.0009897070467141725
+        },
+        "median_rank": 2.0,
+        "mrr": 0.5473689557201472
+      },
+      "cosine": {
+        "metric": "cosine",
+        "n": 5052,
+        "n_pool": 5052,
+        "acc_at_k": {
+          "1": 0.41092636579572445,
+          "5": 0.7963182897862233
+        },
+        "chance_at_k": {
+          "1": 0.0001979414093428345,
+          "5": 0.0009897070467141725
+        },
+        "median_rank": 2.0,
+        "mrr": 0.5809478956632493
+      }
+    },
+    "source": "data/issue_2669/probe_replay/evil_layer20_map/inherited_map_diagnostics.json"
+  },
+  {
+    "behavior": "sycophancy",
+    "layer": 19,
+    "provenance": "inherited_original_fair_artifact_NOT_recomputed_replay_diagnostics",
+    "r2_map": 0.7933827346097235,
+    "r2_identity_bias": -0.12261054408934413,
+    "knn": {
+      "euclidean": {
+        "metric": "euclidean",
+        "n": 6959,
+        "n_pool": 6959,
+        "acc_at_k": {
+          "1": 0.5648800114959046,
+          "5": 0.8527087225176031
+        },
+        "chance_at_k": {
+          "1": 0.00014369880729989942,
+          "5": 0.0007184940364994971
+        },
+        "median_rank": 1.0,
+        "mrr": 0.6913208241963708
+      },
+      "cosine": {
+        "metric": "cosine",
+        "n": 6959,
+        "n_pool": 6959,
+        "acc_at_k": {
+          "1": 0.5746515303922978,
+          "5": 0.8608995545336974
+        },
+        "chance_at_k": {
+          "1": 0.00014369880729989942,
+          "5": 0.0007184940364994971
+        },
+        "median_rank": 1.0,
+        "mrr": 0.6998979282627482
+      }
+    },
+    "source": "data/issue_2669/probe_replay/sycophancy_layer19/inherited_map_diagnostics.json"
+  },
+  {
+    "behavior": "hallucination",
+    "layer": 20,
+    "provenance": "computed_in_this_replay",
+    "r2_map": 0.7009585273041687,
+    "r2_identity_bias": -0.14151682535487398,
+    "knn": {
+      "euclidean": {
+        "metric": "euclidean",
+        "n": 6959,
+        "n_pool": 6959,
+        "acc_at_k": {
+          "1": 0.4869952579393591,
+          "5": 0.8189395028021268
+        },
+        "chance_at_k": {
+          "1": 0.00014369880729989942,
+          "5": 0.0007184940364994971
+        },
+        "median_rank": 1.5,
+        "mrr": 0.6334701736222177
+      },
+      "cosine": {
+        "metric": "cosine",
+        "n": 6959,
+        "n_pool": 6959,
+        "acc_at_k": {
+          "1": 0.5457680701250179,
+          "5": 0.8583129760022992
+        },
+        "chance_at_k": {
+          "1": 0.00014369880729989942,
+          "5": 0.0007184940364994971
+        },
+        "median_rank": 1.0,
+        "mrr": 0.6824741644480639
+      }
+    },
+    "source": "data/issue_2669/probe_replay/hallucination_layer20/map_diagnostics.json"
+  }
+]

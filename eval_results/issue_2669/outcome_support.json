@@ -1,0 +1,92 @@
+{
+  "evil/generic": {
+    "n_pairs": 100,
+    "n_groups": 100,
+    "n_distinct_values": 4,
+    "n_zero": 97,
+    "min": 0.0,
+    "max": 17.666666666666664,
+    "mean": 0.2766666666666666,
+    "sd": 1.9299136422821268
+  },
+  "evil/id": {
+    "n_pairs": 100,
+    "n_groups": 94,
+    "n_distinct_values": 49,
+    "n_zero": 46,
+    "min": 0.0,
+    "max": 100.0,
+    "mean": 17.533055555555553,
+    "sd": 26.236568172890692
+  },
+  "evil/ood": {
+    "n_pairs": 100,
+    "n_groups": 100,
+    "n_distinct_values": 5,
+    "n_zero": 96,
+    "min": 0.0,
+    "max": 78.33333333333334,
+    "mean": 1.018,
+    "sd": 7.947499145433529
+  },
+  "hallucination/generic": {
+    "n_pairs": 100,
+    "n_groups": 100,
+    "n_distinct_values": 82,
+    "n_zero": 10,
+    "min": 0.0,
+    "max": 100.0,
+    "mean": 46.23861111111111,
+    "sd": 33.43200390967713
+  },
+  "hallucination/id": {
+    "n_pairs": 100,
+    "n_groups": 100,
+    "n_distinct_values": 6,
+    "n_zero": 52,
+    "min": 0.0,
+    "max": 100.0,
+    "mean": 32.4,
+    "sd": 39.97799394667021
+  },
+  "hallucination/ood": {
+    "n_pairs": 100,
+    "n_groups": 97,
+    "n_distinct_values": 6,
+    "n_zero": 17,
+    "min": 0.0,
+    "max": 100.0,
+    "mean": 67.2,
+    "sd": 37.89670170344644
+  },
+  "sycophancy/generic": {
+    "n_pairs": 100,
+    "n_groups": 100,
+    "n_distinct_values": 65,
+    "n_zero": 26,
+    "min": 0.0,
+    "max": 92.66666666666666,
+    "mean": 16.416,
+    "sd": 23.46746659621452
+  },
+  "sycophancy/id": {
+    "n_pairs": 100,
+    "n_groups": 100,
+    "n_distinct_values": 81,
+    "n_zero": 0,
+    "min": 4.666666666666666,
+    "max": 72.93333333333334,
+    "mean": 20.41438888888889,
+    "sd": 11.574033386165521
+  },
+  "sycophancy/ood": {
+    "n_pairs": 100,
+    "n_groups": 100,
+    "n_distinct_values": 79,
+    "n_zero": 3,
+    "min": 0.0,
+    "max": 66.33333333333333,
+    "mean": 15.938833333333331,
+    "sd": 10.069514237152763
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "focused_tests": 59,
+  "test_command": "OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 uv run pytest -q tests/test_issue2669_*.py",
+  "test_result": "59 passed in 14.98s",
+  "ruff": "All checks passed for scripts/issue2669_*.py and tests/test_issue2669_*.py",
+  "independent_comparison_audit": "38 hashes, 900 joins, 70 correlations and representative grouped paired bootstrap verified",
+  "replay_parity": "33/33 full-cohort reference correlations reproduced with absolute delta 0",
+  "figures": "color/grayscale and rendered PDF visual inspection passed; public point metadata whitelist validated"
+}

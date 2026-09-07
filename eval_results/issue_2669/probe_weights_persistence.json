@@ -1,0 +1,17 @@
+{
+  "repo": "superkaiba1/explore-persona-space-overflow",
+  "prefix": "issue2669_codex_forecast/probe_replay/hallucination_layer20",
+  "revision": "d46b8b294620bd3c8e069b1084bba670867caa36",
+  "private": true,
+  "files_sha256": {
+    "map_and_whitening.npz": "f5e0cbd60d96a72e7ddfcdb58b962d069582751bc8bc124632fe69ab445c3ad6",
+    "generic.jsonl": "63632c0d131121e50706e47d86fcc3cb8cfbe264f32dfbe1c6dde46d089beb76",
+    "map_diagnostics.json": "39a161d114e99dfae77120ac5d750f20a018fbd7b7ce55802eb3dfe987921c5d",
+    "id.jsonl": "bcbf98e3271f8a1d193596ccff67c12dfdeaf08eb4138f1b54fbe69da03a0be2",
+    "ridge_selected_lambdas.json": "312fdadd4e65e227c9644c2812e7263a21ebc06ac9f527017e60ee1a17e31a10",
+    "result.json": "9ce0d4a808a3d275a9da57258a313df1f8ff23ce8e6a83a287a3694726e71b88",
+    "whitening_metadata.json": "0e00d94355768e6121734eeb18ded2ae848412b070c885d668d4d9f6ef47c8a1",
+    "ood.jsonl": "27b6e4c9785b8a231bd89d000d1dd06e7de8f1a31da6c3ba2fa0998d8bc85e5a"
+  },
+  "verification_scope": "Every named file downloaded at pinned revision and SHA256-verified, including the full map/whitening array archive."
+}
