@@ -1,0 +1,8 @@
+{
+  "total_dois": 0,
+  "verified": [],
+  "failed": [],
+  "metadata": {},
+  "scope_note": "The bundled verifier scans DOIs only; zero DOIs is not a citation verification pass. Primary source and claim verification is recorded in the evidence manifest.",
+  "evidence_manifest": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/llm-forecast-baseline/docs/paper_context_answer_map/llm_forecasting_baseline_2026-09-06_evidence.json"
+}

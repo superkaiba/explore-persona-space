@@ -1,0 +1,364 @@
+{
+  "research_date": "2026-09-06",
+  "scope": "Targeted scoping review and proposed methodology; no new experiment run",
+  "local_evidence": [
+    {
+      "path": "/home/thomasjiralerspong/explore-persona-space/docs/methodology/issue_2356.md",
+      "sha256": "6347bc7d38d6d811d956c6fdb92da9ddad4aa2c6ff94d6705abcd8e3e74d1016",
+      "bytes": 16841
+    },
+    {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2356/scripts/issue2356_judge.py",
+      "sha256": "622fd4c534a183950e2bb2f463bc781a61b7cc60c9f57800515bef84eaf1b712",
+      "bytes": 57287
+    },
+    {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2356/eval_results/issue_2356/results/stats.json",
+      "sha256": "dc3f3632f6e530ab08b3482e26dbb4537f26295a029ef46d793edd366ac57bb0",
+      "bytes": 525925
+    },
+    {
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_2356/engage_rate_followup/continuous_dv.json",
+      "sha256": "8069c0209727f6ea2a276664772cc6f2931cc50d9383c124158d892917534c8f",
+      "bytes": 8179
+    },
+    {
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_2356/flippair_2afc/flippair_2afc.json",
+      "sha256": "e567e622771585e8dc90643dfe74ee7f150c16c296c970e5452e65a4c0f7764e",
+      "bytes": 4074
+    },
+    {
+      "path": "/home/thomasjiralerspong/explore-persona-space/src/explore_persona_space/experiments/issue_1739/judging.py",
+      "sha256": "0cc7eb67a2b268b0582ef0ba276b02ae6c9abf3d7f2c06e18b9b33565fd86325",
+      "bytes": 9887
+    },
+    {
+      "path": "/home/thomasjiralerspong/explore-persona-space/data/issue_1739/inputs/e1_assets/evil.json",
+      "sha256": "2687e84e3e1f48903f005a095a20c0adfcef977710ea134c806c3da9ca5969b3",
+      "bytes": 5117
+    },
+    {
+      "path": "/home/thomasjiralerspong/overleaf-6a59c927/sections/results/06_behavior.tex",
+      "sha256": "f2e11337589c96e5e9a64cef8d16052b418f6bdcd98e06170a364b125ca9aa96",
+      "bytes": 2214
+    },
+    {
+      "path": "/home/thomasjiralerspong/overleaf-6a59c927/sections/05_method_details.tex",
+      "sha256": "e9040330b9e242d724f7685db051c5cd21504ee3e887ab0be08755833e595598",
+      "bytes": 50057
+    },
+    {
+      "path": "/home/thomasjiralerspong/explore-persona-space/figures/paper/c5_regression_regimes.meta.json",
+      "sha256": "155b6d6f88d95df1a08d6a8e07e4e099e78d7677b200ea2823dbc611323b31fa",
+      "bytes": 11601
+    },
+    {
+      "path": "/home/thomasjiralerspong/explore-persona-space/figures/paper/c5_claim4_margin_forest.meta.json",
+      "sha256": "babc4adaf3dcd9ca71f3d54a781851b3a8d88a72ff6eb410e77f9c04a406011b",
+      "bytes": 8126
+    },
+    {
+      "path": "/home/thomasjiralerspong/explore-persona-space/src/explore_persona_space/experiments/issue_1739/generation.py",
+      "sha256": "b27341dbe38a28c88cb88c24ff0c362e92af13eb69220510e413f69c62d941ba",
+      "bytes": 23784
+    }
+  ],
+  "verified_local_metrics": {
+    "armA": {
+      "n": 526,
+      "groups": 168,
+      "auroc": {
+        "ctx_ridge": 0.9946507828651564,
+        "judge_fewshot": 0.8955601497780797
+      },
+      "continuous_common_mask": {
+        "ctx_ridge": 0.881070701108526,
+        "ctx_dim": 0.8647468788263605,
+        "map3a_zr": 0.8844477785296678,
+        "map3b_zr": 0.8763705061941558,
+        "pca_ctx": 0.8825149995290599,
+        "ans_greedy": 0.8625688984757297,
+        "text_surface": 0.8004340114259473,
+        "judge_fewshot": 0.7200098065510606
+      }
+    },
+    "armB": {
+      "n": 286,
+      "groups": 271,
+      "auroc": {
+        "ctx_ridge": 0.9506577338745171,
+        "judge_fewshot": 0.742603550295858
+      },
+      "continuous_common_mask": {
+        "ctx_ridge": 0.8222645570049444,
+        "ctx_dim": 0.8210422269943686,
+        "map3a_zr": 0.8058399325045337,
+        "map3b_zr": 0.8207191099722999,
+        "pca_ctx": 0.7999563650554672,
+        "ans_greedy": 0.7884339103215188,
+        "text_surface": 0.34595419432924823,
+        "judge_fewshot": 0.46823505036708757
+      }
+    }
+  },
+  "primary_sources": [
+    {
+      "title": "No Answer Needed: Predicting LLM Answer Accuracy from Question-Only Linear Probes",
+      "url": "https://arxiv.org/html/2509.10625v3",
+      "date": "2025; revised March 2026",
+      "checked_scope": "Sections 3 and 4.2; also inspected v1 and released confidence configuration"
+    },
+    {
+      "title": "I'm Afraid I Can't Do That: Predicting Prompt Refusal in Black-Box Generative Language Models",
+      "url": "https://arxiv.org/abs/2306.03423",
+      "date": "2023",
+      "checked_scope": "Abstract and extracted PDF methodology"
+    },
+    {
+      "title": "Looking Inward: Language Models Can Learn About Themselves by Introspection",
+      "url": "https://arxiv.org/html/2410.13787v1",
+      "date": "2024; ICLR 2025",
+      "checked_scope": "Sections 2 and 3; hypothetical properties, separate object-level contexts, matched self/cross-prediction training"
+    },
+    {
+      "title": "Language Models Can Predict Their Own Behavior",
+      "url": "https://arxiv.org/html/2502.13329v1",
+      "date": "2025",
+      "checked_scope": "Sections 3 to 6; pre-generation probes, conformal selection, abstention and limits"
+    },
+    {
+      "title": "Do Large Language Models Know What They Are Capable Of?",
+      "url": "https://proceedings.iclr.cc/paper_files/paper/2026/file/1a96349bbc03432c5ec8c6c502d102e7-Paper-Conference.pdf",
+      "date": "ICLR 2026",
+      "checked_scope": "Experiment 1 and main results; separate probability elicitation and attempt"
+    },
+    {
+      "title": "Forecasting Future Behavior as a Learning Task",
+      "url": "https://arxiv.org/html/2606.11445v1",
+      "date": "June 2026",
+      "checked_scope": "Sections 2, 4.1, C.1; readers observe original prompt, observed answer, completion text"
+    },
+    {
+      "title": "Predicting Future Behaviors in Reasoning Models Enables Better Steering",
+      "url": "https://arxiv.org/html/2606.11172v1",
+      "date": "June 2026",
+      "checked_scope": "Sections 3 and discussion; continuation probabilities, intermediate reasoning steps"
+    },
+    {
+      "title": "Would This Change Your Answer? Evaluating Explanations of LLM Behavior In The Wild with Counterfactual Experiments",
+      "url": "https://arxiv.org/html/2608.16747v1",
+      "date": "August 2026",
+      "checked_scope": "Main experimental design; transcript-plus-edit forecast and activation-tool comparison; fulltext extraction capped"
+    },
+    {
+      "title": "What Features in Prompts Jailbreak LLMs? Investigating the Mechanisms Behind Attacks",
+      "url": "https://aclanthology.org/2025.blackboxnlp-1.28/",
+      "date": "BlackboxNLP 2025",
+      "checked_scope": "Published abstract and arXiv v3; outcome prediction, attack-family transfer"
+    },
+    {
+      "title": "Measuring the Wrong Thing: Internal Harmfulness Scores Anti-Rank Successful Jailbreaks",
+      "url": "https://arxiv.org/html/2608.09624v1",
+      "date": "August 2026",
+      "checked_scope": "Sections 1, 3 and 5; harmfulness versus model-specific generated outcomes"
+    },
+    {
+      "title": "Language Models (Mostly) Know What They Know",
+      "url": "https://arxiv.org/abs/2207.05221",
+      "date": "2022",
+      "checked_scope": "Abstract and related-method descriptions; P(IK) versus answer-conditioned P(True)"
+    },
+    {
+      "title": "Accounting for Sycophancy in Language Model Uncertainty Estimation",
+      "url": "https://arxiv.org/abs/2410.14746",
+      "date": "2024",
+      "checked_scope": "Abstract-level adjacent work only; confidence and user assertions"
+    },
+    {
+      "title": "Persona Vectors: Monitoring and Controlling Character Traits in Language Models",
+      "url": "https://arxiv.org/abs/2507.21509",
+      "date": "2025",
+      "checked_scope": "Abstract-level lineage; already cited by manuscript"
+    }
+  ],
+  "discovery": [
+    {
+      "path": "/tmp/llm-context-forecast-academic.json",
+      "search_id": "search_037a45f09d83694fd736a7676cc316f5",
+      "result_count": 14,
+      "results": [
+        {
+          "title": "Language Models Can Predict Their Own Behavior",
+          "url": "https://arxiv.org/html/2502.13329v1",
+          "publish_date": "2025-02-18"
+        },
+        {
+          "title": "Forecasting Future Behavior as a Learning Task",
+          "url": "https://arxiv.org/html/2606.11445",
+          "publish_date": "2026-06-09"
+        },
+        {
+          "title": "Language Models Can Predict Their Own Behavior Dhananjay Ashok",
+          "url": "https://arxiv.org/pdf/2502.13329v1",
+          "publish_date": "2025-09-24"
+        },
+        {
+          "title": "Refusal Before Decoding: Detecting and Exploiting Refusal Signals in Intermediate LLM Activations",
+          "url": "https://arxiv.org/html/2605.28553v1",
+          "publish_date": "2026-05-28"
+        },
+        {
+          "title": "[2502.13329] Language Models Can Predict Their Own Behavior",
+          "url": "https://arxiv.org/abs/2502.13329",
+          "publish_date": "2025-02-18"
+        },
+        {
+          "title": "Predicting Future Behaviors in Reasoning Models Enables Better Steering",
+          "url": "https://arxiv.org/html/2606.11172v1",
+          "publish_date": "2026-06-09"
+        },
+        {
+          "title": "(PDF) Language Models Can Predict Their Own Behavior",
+          "url": "https://www.researchgate.net/publication/389167103_Language_Models_Can_Predict_Their_Own_Behavior",
+          "publish_date": "2025-02-18"
+        },
+        {
+          "title": "When Do LLM Preferences Predict Downstream Behavior?",
+          "url": "https://arxiv.org/html/2602.18971v1",
+          "publish_date": null
+        },
+        {
+          "title": "[2605.28553] Refusal Before Decoding: Detecting and Exploiting Refusal Signals in Intermediate LLM Activations",
+          "url": "http://arxiv.org/abs/2605.28553",
+          "publish_date": null
+        },
+        {
+          "title": "Monitoring LLM behavior: Drift, retries, and refusal patterns",
+          "url": "https://venturebeat.com/infrastructure/monitoring-llm-behavior-drift-retries-and-refusal-patterns",
+          "publish_date": "2026-04-29"
+        },
+        {
+          "title": "Forecasting Future Behavior as a Learning Task",
+          "url": "https://arxiv.org/html/2606.11445v1",
+          "publish_date": null
+        },
+        {
+          "title": "Prompt Refusal Prediction",
+          "url": "https://www.emergentmind.com/topics/prompt-refusal-prediction",
+          "publish_date": null
+        },
+        {
+          "title": "Predicting Future Behaviors in Reasoning Models Enables Better Steering",
+          "url": "https://future-probes.github.io/",
+          "publish_date": null
+        },
+        {
+          "title": "Predicting Future Behaviors in Reasoning Models Enables Better Steering | alphaXiv",
+          "url": "https://www.alphaxiv.org/abs/2606.11172",
+          "publish_date": "2026-06-09"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/llm-context-forecast-focused.json",
+      "search_id": "search_370670235656b7f486e808e93ebab6c6",
+      "result_count": 14,
+      "results": [
+        {
+          "title": "I’m Afraid I Can’t Do That: Predicting Prompt Refusal in Black-Box Generative",
+          "url": "https://arxiv.org/pdf/2306.03423",
+          "publish_date": "2023-06-16"
+        },
+        {
+          "title": "Rethinking Psychometric Evaluation of LLMs: When and Why Self-Reports Predict Behavior",
+          "url": "https://arxiv.org/html/2606.12730",
+          "publish_date": "2026-06-10"
+        },
+        {
+          "title": "[2306.03423] I'm Afraid I Can't Do That: Predicting Prompt Refusal in Black-Box Generative Language Models",
+          "url": "https://arxiv.org/abs/2306.03423",
+          "publish_date": "2023-06-06"
+        },
+        {
+          "title": "(PDF) I'm Afraid I Can't Do That: Predicting Prompt Refusal in Black-Box Generative Language Models",
+          "url": "https://www.researchgate.net/publication/371347371_I'm_Afraid_I_Can't_Do_That_Predicting_Prompt_Refusal_in_Black-Box_Generative_Language_Models",
+          "publish_date": "2023-06-06"
+        },
+        {
+          "title": "Prompt Refusal Prediction",
+          "url": "https://www.emergentmind.com/topics/prompt-refusal-prediction",
+          "publish_date": "2025-08-27"
+        },
+        {
+          "title": "Don’t Say No: Jailbreaking LLM by Suppressing Refusal",
+          "url": "https://arxiv.org/pdf/2404.16369",
+          "publish_date": null
+        },
+        {
+          "title": "Refusal Evaluation in Coding LLMs and Code Agents: A Systematic Review of Thirteen Malicious-Code Prompt Corpora (2023-2025)",
+          "url": "https://arxiv.org/pdf/2605.20351v1",
+          "publish_date": null
+        },
+        {
+          "title": "Predicting ChatGPT Prompt Refusal",
+          "url": "https://www.emergentmind.com/papers/2306.03423",
+          "publish_date": null
+        },
+        {
+          "title": "What Drives LLM-Based Exception Oracle Generation?",
+          "url": "https://arxiv.org/html/2608.00884v1",
+          "publish_date": "2026-08-01"
+        },
+        {
+          "title": "Refusal Index: A Metric for LLM Refusal Behavior",
+          "url": "https://www.emergentmind.com/topics/refusal-index-ri",
+          "publish_date": null
+        },
+        {
+          "title": "Can LLMs improve the accuracy of behavior prediction for personnel in high-stakes scenarios by predicting emotions? — A fine-tuning study based on scarce homogeneous cultural data in high-pressure environments - PMC",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13345396/",
+          "publish_date": null
+        },
+        {
+          "title": "Would This Change Your Answer? Evaluating Explanations of LLM Behavior in the Wild with Counterfactual Experiments",
+          "url": "https://alignment.anthropic.com/2026/chive/",
+          "publish_date": "2026-08-21"
+        },
+        {
+          "title": "RefusalBench: Benchmarking AI Refusal Behavior",
+          "url": "https://www.emergentmind.com/topics/refusalbench",
+          "publish_date": "2025-08-29"
+        },
+        {
+          "title": "Prompt Injection Refusal Boundary Paper",
+          "url": "https://arxiv.org/pdf/2601.17911",
+          "publish_date": null
+        }
+      ]
+    }
+  ],
+  "database_limits": {
+    "semantic_scholar": "HTTP 429 on first query and one retry",
+    "openalex": "Two successful broad searches; no additional core inclusions",
+    "initial_arxiv_html_looking_inward_v2": "404; recovered with v1 and current abstract page"
+  },
+  "code_source": {
+    "repo": "https://github.com/ivanvmoreno/correctness-model-internals",
+    "tree_sha": "aa7270c3c1089393eec8d8179d1581f3ec0c7b80",
+    "path": "verbalized_confidence/params.yaml",
+    "local_fetch": "/tmp/llm-context-forecast-noanswer-params.yaml"
+  },
+  "review_limitations": [
+    "No exhaustive absence claim",
+    "No independent replication of external papers",
+    "Current manuscript outcome-consumer lineage must be verified before reuse",
+    "Exact external model and pilot settings are not selected or approved"
+  ],
+  "outcome_lineage_note": "Historical evil asset uses malice and a nonnumeric refusal verdict. Current manuscript source metadata points to result2_fair and claim4_controls. Exact per-row label lineage and any recoding still require verification before an experiment; no claim of raw-label completeness is made.",
+  "verification": {
+    "method": "Primary-page text and released-code inspection, plus local artifact JSON reads; DOI-only helper is not a URL or claim verifier",
+    "sources_in_report": 13,
+    "noanswer_current_revision": "v3 2026-03-03; section 4.2 baseline definitions checked",
+    "dois_in_report": 0
+  }
+}
