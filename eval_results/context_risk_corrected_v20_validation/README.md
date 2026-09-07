@@ -10,7 +10,9 @@ The [frozen rerun protocol](../../docs/ideas/context_risk_corrected_rerun.md) re
 - [Archived extraction replay](archived_extraction_replay.json): among the 187 previously identified extraction failures, 184 now select the audited valid final code; three correctly fail because an additional final fence is unclosed. This replay does not reconstruct new on-policy model outcomes.
 - [Native fixture manifest](fixture_manifest.json): three small Inspect logs, copied and SHA256-verified against the critic's originals. These are software fixtures using prescribed model responses and real Docker execution, never experimental model observations.
 
-Independent validation passed the 36-test suite before two obsolete legacy-controller tests were removed, then passed all five newly added prefix-parity cases. The finalized test collection has 39 cases. The Docker coverage includes a successful test redefinition, ordinary success, impossible-task failure, malformed-fence and syntax-error repair, truncation censoring, timeout classification, and an isolated restored-test diagnostic.
+Independent validation passed the 36-test suite before two obsolete legacy-controller tests were removed, then passed all five newly added prefix-parity cases. The final complete suite passed all 39 cases in 53.98 seconds, with two upstream deprecation warnings. The Docker coverage includes a successful test redefinition, ordinary success, impossible-task failure, malformed-fence and syntax-error repair, truncation censoring, timeout classification, and an isolated restored-test diagnostic.
+
+Ruff, shell syntax, and all applicable commit checks passed, including the targeted workflow checks and secret scans. An optional repository-wide `workflow_lint.py` run was stopped after more than five minutes without completion; it is not reported as a pass. No workflow source files changed.
 
 ## Reproduce software checks
 
