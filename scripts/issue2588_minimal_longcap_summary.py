@@ -52,6 +52,7 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     save_c2a_figure,
     set_c2a_style,
 )
+from explore_persona_space.orchestrate import hub  # noqa: E402
 
 HF_REPO = "superkaiba1/explore-persona-space-data"
 BASELINE_REVISION = "74bb871a5edf1afe777ac9b64a4e2fec5e9947c2"
@@ -90,11 +91,14 @@ MATCHED_COLOR = "#C4553D"
 
 
 def _download_json(prefix: str, relpath: str, revision: str) -> dict[str, Any]:
-    path = hf_hub_download(
-        repo_id=HF_REPO,
-        filename=f"{prefix}/{relpath}",
-        repo_type="dataset",
-        revision=revision,
+    path = hub.retry_transient(
+        lambda: hf_hub_download(
+            repo_id=HF_REPO,
+            filename=f"{prefix}/{relpath}",
+            repo_type="dataset",
+            revision=revision,
+        ),
+        what=f"download {prefix}/{relpath}",
     )
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
@@ -231,12 +235,17 @@ def _validate_source_map(
             f"{LONG_PREFIX}/{model_key}/{generation_dir}/analysis_tensors/"
             f"capture/{stage}/L{layer:02d}"
         )
-        entries = list_repo_tree(
-            HF_REPO,
-            path_in_repo=prefix,
-            recursive=False,
-            revision=revision,
-            repo_type="dataset",
+        entries = hub.retry_transient(
+            lambda: list(
+                list_repo_tree(
+                    HF_REPO,
+                    path_in_repo=prefix,
+                    recursive=False,
+                    revision=revision,
+                    repo_type="dataset",
+                )
+            ),
+            what=f"list capture shards under {prefix}",
         )
         count = sum(entry.path.endswith(".npz") for entry in entries)
         if count < 1:
