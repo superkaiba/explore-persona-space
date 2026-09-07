@@ -401,7 +401,9 @@ def _validate_quality_lineage(
     selection: dict,
     quality_projection: dict,
     primary_result: dict,
+    packetization_sensitivity: dict,
     selection_sha256: str,
+    quality_projection_sha256: str,
 ) -> dict:
     """Bind trait analysis to the frozen, integrity-only quality decision."""
     if selection.get("trait_scores_read") is not False:
@@ -410,6 +412,15 @@ def _validate_quality_lineage(
         raise base.AnalysisError("quality primary projection is not integrity-only")
     if quality_projection.get("selection_sha256") != selection_sha256:
         raise base.AnalysisError("quality primary projection selection hash changed")
+    if packetization_sensitivity.get("trait_scores_read") is not False:
+        raise base.AnalysisError("pre-trait packetization sensitivity read trait scores")
+    replay = packetization_sensitivity.get("no_exclusion_primary_reproduction")
+    if not isinstance(replay, dict) or replay.get("verdict") != "PASS":
+        raise base.AnalysisError("pre-trait quality replay did not pass")
+    if replay.get("selection_sha256") != selection_sha256:
+        raise base.AnalysisError("frozen selection differs from pre-trait commitment")
+    if replay.get("quality_primary_projection_sha256") != quality_projection_sha256:
+        raise base.AnalysisError("quality projection differs from pre-trait commitment")
     if primary_result.get("selection") != selection:
         raise base.AnalysisError("primary reduction selection differs from frozen selection")
     if set(selection.get("behaviors", {})) != set(gen.BEHAVIORS):
@@ -672,27 +683,44 @@ def run(args) -> Path:
     primary_path = root / "reduce" / "matched_results.json"
     selection_path = root / "selection" / "quality_only_selection.json"
     quality_projection_path = root / "reduce" / "quality_primary_projection.json"
+    packetization_path = root / "reduce" / "packetization_sensitivity.json"
     if not all(
-        path.is_file() for path in (primary_path, selection_path, quality_projection_path)
+        path.is_file()
+        for path in (
+            primary_path,
+            selection_path,
+            quality_projection_path,
+            packetization_path,
+        )
     ):
         raise base.AnalysisError(
             "trait sensitivity requires primary reduction, frozen selection, and "
-            "integrity-only quality projection"
+            "the pre-trait integrity-only quality commitment"
         )
     selection = json.loads(selection_path.read_text(encoding="utf-8"))
     quality_projection = json.loads(quality_projection_path.read_text(encoding="utf-8"))
+    packetization_sensitivity = json.loads(packetization_path.read_text(encoding="utf-8"))
     primary_result = json.loads(primary_path.read_text(encoding="utf-8"))
     selection_sha256 = base._sha256_file(selection_path)
+    quality_projection_sha256 = base._sha256_file(quality_projection_path)
     frozen_quality = _validate_quality_lineage(
         selection,
         quality_projection,
         primary_result,
+        packetization_sensitivity,
         selection_sha256,
+        quality_projection_sha256,
     )
     items, instrument, rubrics = base._load_staged(args, require_cli=False)
     if len(items) * base.N_PASSES != EXPECTED_DECISIONS:
         raise base.AnalysisError("trait sensitivity total decision count changed")
     scenarios, provenance, order_only = _administration_sets(args, items, instrument, rubrics)
+    provenance["pretrait_quality_lineage"] = {
+        "packetization_sensitivity_sha256": base._sha256_file(packetization_path),
+        "selection_sha256": selection_sha256,
+        "quality_primary_projection_sha256": quality_projection_sha256,
+        "no_exclusion_primary_reproduction": "PASS",
+    }
     jobs = []
     for rubric_id in ("trait_evil", "trait_sycophancy"):
         jobs.extend(order_recovery._fully_recovered_jobs(items, instrument, rubrics, rubric_id))
@@ -733,7 +761,8 @@ def run(args) -> Path:
         "quality_selection_frozen": True,
         "quality_lineage_validation": "PASS",
         "selection_sha256": selection_sha256,
-        "quality_primary_projection_sha256": base._sha256_file(quality_projection_path),
+        "quality_primary_projection_sha256": quality_projection_sha256,
+        "packetization_sensitivity_sha256": base._sha256_file(packetization_path),
         "primary_results_sha256": base._sha256_file(primary_path),
         "expected_total_decisions": EXPECTED_DECISIONS,
         "minimum_retained_repeats": MIN_RETAINED_REPEATS,

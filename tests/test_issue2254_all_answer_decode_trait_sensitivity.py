@@ -275,14 +275,22 @@ def _quality_lineage_documents():
             for behavior in gen.BEHAVIORS
         },
     }
-    return selection, projection, primary
+    packetization = {
+        "trait_scores_read": False,
+        "no_exclusion_primary_reproduction": {
+            "verdict": "PASS",
+            "selection_sha256": "a" * 64,
+            "quality_primary_projection_sha256": "b" * 64,
+        },
+    }
+    return selection, projection, primary, packetization
 
 
 def test_quality_lineage_binds_frozen_integrity_projection() -> None:
-    selection, projection, primary = _quality_lineage_documents()
+    selection, projection, primary, packetization = _quality_lineage_documents()
 
     frozen = sensitivity._validate_quality_lineage(
-        selection, projection, primary, "a" * 64
+        selection, projection, primary, packetization, "a" * 64, "b" * 64
     )
 
     assert frozen["behaviors"]["sycophancy"]["primary_confirmation"] == (
@@ -291,15 +299,38 @@ def test_quality_lineage_binds_frozen_integrity_projection() -> None:
 
 
 def test_quality_lineage_rejects_post_trait_quality_gate_drift() -> None:
-    selection, projection, primary = _quality_lineage_documents()
+    selection, projection, primary, packetization = _quality_lineage_documents()
     primary["behaviors"]["sycophancy"]["primary_confirmation"].update(
         status="quality_matched",
         quality_equivalence_confirmed=True,
     )
 
     try:
-        sensitivity._validate_quality_lineage(selection, projection, primary, "a" * 64)
+        sensitivity._validate_quality_lineage(
+            selection, projection, primary, packetization, "a" * 64, "b" * 64
+        )
     except base.AnalysisError as exc:
         assert "differs from integrity-only projection" in str(exc)
     else:
         raise AssertionError("post-trait quality-gate drift was accepted")
+
+
+def test_quality_lineage_rejects_paired_projection_and_primary_tampering() -> None:
+    selection, projection, primary, packetization = _quality_lineage_documents()
+    projection["behaviors"]["sycophancy"]["fixed_primary_dose_confirmation"].update(
+        status="quality_matched",
+        quality_equivalence_confirmed=True,
+    )
+    primary["behaviors"]["sycophancy"]["primary_confirmation"].update(
+        status="quality_matched",
+        quality_equivalence_confirmed=True,
+    )
+
+    try:
+        sensitivity._validate_quality_lineage(
+            selection, projection, primary, packetization, "a" * 64, "c" * 64
+        )
+    except base.AnalysisError as exc:
+        assert "differs from pre-trait commitment" in str(exc)
+    else:
+        raise AssertionError("paired quality projection and primary tampering was accepted")
