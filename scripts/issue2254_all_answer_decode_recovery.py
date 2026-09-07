@@ -15,7 +15,13 @@ import hashlib
 import json
 import re
 import subprocess
+import sys
 from pathlib import Path
+
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 import scripts.issue2254_all_answer_decode_analysis as base
 import scripts.issue2254_revmap8_subagent_grade as runner
