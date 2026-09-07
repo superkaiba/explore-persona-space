@@ -240,6 +240,97 @@ def test_duplicate_control_gate_is_repaired_and_remains_excluded_until_fixed(ban
     assert {row["opaque_id"] for row in repair["mapping"]} == set(ids)
 
 
+@pytest.mark.parametrize("accepted_round", [0, 1])
+def test_later_duplicate_preserves_first_accepted_revision(bank, accepted_round):
+    out_dir, packets, initial = bank
+    incumbent, repairing = [row["opaque_id"] for row in initial["mapping"]][:2]
+    _initial(bank, [incumbent, repairing] if accepted_round else [repairing])
+    if accepted_round:
+        _repair(bank, 1, [repairing])
+    before = CODEX._bank_state(out_dir)
+    accepted_value = before["authors"][incumbent]
+    assert before["latest_round"][incumbent] == accepted_round
+    conflict_round = accepted_round + 1
+    author = CODEX.prepare_bank_retry(out_dir, packets, round_no=conflict_round)
+    assert [row["opaque_id"] for row in author["mapping"]] == [repairing]
+    _outputs(author, version=conflict_round)
+    for packet in author["packets"]:
+        path = Path(packet["output_path"])
+        rows = CODEX._jsonl(path)
+        for row in rows:
+            row["value"]["control_subject_key"] = accepted_value["control_subject_key"]
+        CODEX._write_jsonl(path, rows)
+    audit = CODEX.prepare_bank_audit(out_dir, packets, round_no=conflict_round)
+    _outputs(audit)
+
+    report = CODEX.finalize_bank(out_dir)
+    assert report["n_audit_passing_items"] == 89
+    assert report["n_duplicate_control_items_excluded"] == 1
+    state = CODEX._bank_state(out_dir)
+    assert state["accepted_ids"] == before["accepted_ids"]
+    assert state["authors"][incumbent] == accepted_value
+    assert state["latest_round"][incumbent] == accepted_round
+
+    fixed, _ = _repair(bank, conflict_round + 1, [])
+    assert [row["opaque_id"] for row in fixed["mapping"]] == [repairing]
+    report = CODEX.finalize_bank(out_dir)
+    assert report["n_audit_passing_items"] == 90
+    assert report["n_duplicate_control_items_excluded"] == 0
+    state = CODEX._bank_state(out_dir)
+    assert state["authors"][incumbent] == accepted_value
+    assert state["latest_round"][incumbent] == accepted_round
+
+
+def test_legacy_round_one_cannot_replace_an_already_accepted_revision(bank):
+    out_dir, packets, initial = bank
+    incumbent, repairing = [row["opaque_id"] for row in initial["mapping"]][:2]
+    by_agent = {agent: [] for agent in CODEX.AGENTS}
+    for packet in initial["packets"]:
+        output_path = Path(packet["output_path"])
+        rows = CODEX._jsonl(output_path)
+        for row in rows:
+            if row["opaque_id"] in {incumbent, repairing}:
+                row["value"]["control_subject_key"] = "shared synthetic control"
+        CODEX._write_jsonl(output_path, rows)
+        items = json.loads(Path(packet["packet_path"]).read_text())["items"]
+        by_agent[packet["agent"]] = [
+            item for item in items if item["opaque_id"] in {incumbent, repairing}
+        ]
+    _initial(bank, [repairing])
+    accepted_value = CODEX._bank_state(out_dir)["authors"][incumbent]
+    # Original round one included both duplicate keys, even when only one item
+    # failed the audit. Recreate that valid historical selection synthetically.
+    manifest = {
+        "backend": CODEX.AUTHOR_BACKEND,
+        "source_sha256": CODEX.SOURCE_SHA256,
+        "author_manifest_sha256": CODEX._sha256(CODEX._bank_manifest_path(out_dir, "author", 0)),
+        "audit_manifest_sha256": CODEX._sha256(CODEX._bank_manifest_path(out_dir, "audit", 0)),
+        "mapping": sorted(
+            [row for row in initial["mapping"] if row["opaque_id"] in {incumbent, repairing}],
+            key=lambda row: row["opaque_id"],
+        ),
+        "n_retry": 2,
+        **CODEX._write_bank_packets(
+            packet_root=packets,
+            phase="bank_author_retry",
+            by_agent=by_agent,
+            instructions="synthetic repair",
+            output_fields=list(CODEX.AUTHOR_KEYS),
+        ),
+    }
+    CODEX._write_json(CODEX._bank_manifest_path(out_dir, "author", 1), manifest)
+    _outputs(manifest, version=1)
+    audit = CODEX.prepare_bank_audit(out_dir, packets, round_no=1)
+    _outputs(audit)
+    report = CODEX.finalize_bank(out_dir)
+    assert report["n_audit_passing_items"] == 90
+    assert report["round_item_counts"] == {"0": 90, "1": 2}
+    assert report["latest_item_counts_by_round"] == {"0": 89, "1": 1}
+    state = CODEX._bank_state(out_dir)
+    assert state["authors"][incumbent] == accepted_value
+    assert state["latest_round"][incumbent] == 0
+
+
 def test_cli_dispatches_explicit_round_to_real_preparers(bank, monkeypatch):
     out_dir, packets, initial = bank
     _initial(bank, [initial["mapping"][0]["opaque_id"]])

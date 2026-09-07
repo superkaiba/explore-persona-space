@@ -96,6 +96,10 @@ incomplete outputs, schema/coverage failures, and provenance drift fail loudly.
 Each new round selects only current audit failures and duplicate-control gate
 failures. Previously passing records keep their original opaque IDs and results.
 Authors retain their original assignment and the other agent cross-audits them.
+Once an item's revision passes both audit and control uniqueness, it stays
+accepted. A later repair that reuses its control key is excluded and retried;
+the accepted item is preserved. Conflicts first appearing together in the same
+round exclude all conflicting new items until repaired.
 
 For the next round after a completed round 1:
 

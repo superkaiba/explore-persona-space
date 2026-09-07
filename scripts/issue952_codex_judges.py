@@ -808,13 +808,21 @@ def _bank_rounds(out_dir: Path) -> list[int]:
     return sorted(rounds)
 
 
-def _bank_failures(authors: dict, audits: dict) -> tuple[set[str], set[str]]:
-    """Apply the audit and unique-control gates used by finalization."""
+def _bank_failures(
+    authors: dict, audits: dict, *, accepted_ids: set[str]
+) -> tuple[set[str], set[str]]:
+    """Reject conflicting new revisions while preserving previously accepted controls."""
     passing = {opaque_id for opaque_id, value in audits.items() if _audit_pass(value)}
     key_to_ids: dict[str, list[str]] = defaultdict(list)
     for opaque_id in passing:
         key_to_ids[_normalized_key(authors[opaque_id]["control_subject_key"])].append(opaque_id)
-    duplicates = {opaque_id for ids in key_to_ids.values() if len(ids) > 1 for opaque_id in ids}
+    duplicates = set()
+    for ids in key_to_ids.values():
+        if len(ids) > 1:
+            incumbents = set(ids) & accepted_ids
+            if len(incumbents) > 1:
+                raise RuntimeError("accepted bank controls are not unique")
+            duplicates.update(set(ids) - incumbents)
     return (set(authors) - passing) | duplicates, duplicates
 
 
@@ -891,6 +899,7 @@ def _bank_state(out_dir: Path, *, through_round: int | None = None) -> dict[str,
             raise RuntimeError("missing predecessor bank round")
         rounds = list(range(through_round + 1))
     authors, audits, latest_round, counts = {}, {}, {}, {}
+    accepted_ids: set[str] = set()
     for round_no in rounds:
         author_path = _bank_manifest_path(out_dir, "author", round_no)
         if not author_path.exists():
@@ -898,7 +907,7 @@ def _bank_state(out_dir: Path, *, through_round: int | None = None) -> dict[str,
         raw = json.loads(author_path.read_text())
         selected = mapping
         if round_no:
-            failures, _ = _bank_failures(authors, audits)
+            failures, _ = _bank_failures(authors, audits, accepted_ids=accepted_ids)
             # Old round-one packets additionally repaired keys duplicated among failed items.
             if round_no == 1 and "round" not in raw:
                 keys = collections.Counter(
@@ -934,9 +943,14 @@ def _bank_state(out_dir: Path, *, through_round: int | None = None) -> dict[str,
             raise RuntimeError("bank audited author output hash drift")
         _persist_bank_artifacts(out_dir, author_manifest, round_no)
         _persist_bank_artifacts(out_dir, audit_manifest, round_no)
-        authors.update(new_authors)
-        audits.update(new_audits)
-        latest_round.update(dict.fromkeys(new_authors, round_no))
+        # Historical round-one selection could include accepted items. Validate those
+        # artifacts above, but retain each such item's first accepted revision.
+        revised_ids = set(new_authors) - accepted_ids
+        authors.update({i: new_authors[i] for i in revised_ids})
+        audits.update({i: new_audits[i] for i in revised_ids})
+        latest_round.update(dict.fromkeys(revised_ids, round_no))
+        failures, _ = _bank_failures(authors, audits, accepted_ids=accepted_ids)
+        accepted_ids.update(set(authors) - failures)
         counts[str(round_no)] = len(new_authors)
     return {
         "sources": sources,
@@ -944,6 +958,7 @@ def _bank_state(out_dir: Path, *, through_round: int | None = None) -> dict[str,
         "authors": authors,
         "audits": audits,
         "latest_round": latest_round,
+        "accepted_ids": accepted_ids,
         "round_item_counts": counts,
         "rounds": rounds,
     }
@@ -1028,7 +1043,9 @@ def prepare_bank_audit(
         state = _bank_state(out_dir, through_round=round_no - 1)
         if _bank_rounds(out_dir)[-1] != round_no:
             raise RuntimeError("cannot audit a superseded bank round")
-        failures, _ = _bank_failures(state["authors"], state["audits"])
+        failures, _ = _bank_failures(
+            state["authors"], state["audits"], accepted_ids=state["accepted_ids"]
+        )
         if round_no == 1 and "round" not in author_manifest:
             keys = collections.Counter(
                 _normalized_key(v["control_subject_key"]) for v in state["authors"].values()
@@ -1120,7 +1137,7 @@ def prepare_bank_retry(out_dir: Path, packet_root: Path, *, round_no: int = 1) -
     author_manifest_path = _bank_manifest_path(out_dir, "author", round_no - 1)
     audit_manifest_path = _bank_manifest_path(out_dir, "audit", round_no - 1)
     authors, audits = state["authors"], state["audits"]
-    failures, duplicates = _bank_failures(authors, audits)
+    failures, duplicates = _bank_failures(authors, audits, accepted_ids=state["accepted_ids"])
     retry_ids = sorted(failures)
     if not retry_ids:
         raise RuntimeError("no failing bank items to repair")
@@ -1190,7 +1207,7 @@ def finalize_bank(out_dir: Path) -> dict[str, Any]:
     source_by_id = {str(row["prompt_id"]): row for row in sources}
     authors, audits = state["authors"], state["audits"]
     n_retry = sum(count for number, count in state["round_item_counts"].items() if number != "0")
-    failures, duplicate_ids = _bank_failures(authors, audits)
+    failures, duplicate_ids = _bank_failures(authors, audits, accepted_ids=state["accepted_ids"])
     passing = set(authors) - failures
     opaque_to_prompt = {row["opaque_id"]: row["prompt_id"] for row in state["mapping"]}
     passing_prompt_ids = {opaque_to_prompt[opaque_id] for opaque_id in passing}
