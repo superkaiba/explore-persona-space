@@ -397,6 +397,93 @@ def _behavior_metrics(behavior: str, arrays: dict, primary_result: dict) -> dict
     }
 
 
+def _validate_quality_lineage(
+    selection: dict,
+    quality_projection: dict,
+    primary_result: dict,
+    selection_sha256: str,
+) -> dict:
+    """Bind trait analysis to the frozen, integrity-only quality decision."""
+    if selection.get("trait_scores_read") is not False:
+        raise base.AnalysisError("trait sensitivity selection is not quality-only")
+    if quality_projection.get("trait_scores_read") is not False:
+        raise base.AnalysisError("quality primary projection is not integrity-only")
+    if quality_projection.get("selection_sha256") != selection_sha256:
+        raise base.AnalysisError("quality primary projection selection hash changed")
+    if primary_result.get("selection") != selection:
+        raise base.AnalysisError("primary reduction selection differs from frozen selection")
+    if set(selection.get("behaviors", {})) != set(gen.BEHAVIORS):
+        raise base.AnalysisError("frozen selection behavior set changed")
+    if set(quality_projection.get("behaviors", {})) != set(gen.BEHAVIORS):
+        raise base.AnalysisError("quality primary projection behavior set changed")
+    if set(primary_result.get("behaviors", {})) != set(gen.BEHAVIORS):
+        raise base.AnalysisError("primary reduction behavior set changed")
+
+    frozen_quality = {"behaviors": {}}
+    for behavior in gen.BEHAVIORS:
+        frozen_selection = selection["behaviors"][behavior]
+        projection_behavior = quality_projection["behaviors"][behavior]
+        if projection_behavior.get("selection") != frozen_selection:
+            raise base.AnalysisError(
+                f"{behavior}: quality projection selection differs from frozen selection"
+            )
+        projected_confirmation = projection_behavior.get("fixed_primary_dose_confirmation")
+        if not isinstance(projected_confirmation, dict):
+            raise base.AnalysisError(f"{behavior}: quality projection confirmation is missing")
+        if type(projected_confirmation.get("quality_equivalence_confirmed")) is not bool:
+            raise base.AnalysisError(
+                f"{behavior}: projected quality-equivalence flag is not boolean"
+            )
+        selected_cell_id = frozen_selection.get("selected_cell_id")
+        selected_dose = frozen_selection.get("selected_dose")
+        if (
+            projected_confirmation.get("selected_cell_id") != selected_cell_id
+            or projected_confirmation.get("selected_dose") != selected_dose
+        ):
+            raise base.AnalysisError(
+                f"{behavior}: projected confirmation differs from frozen selected dose"
+            )
+        projected_status = projected_confirmation.get("status")
+        projected_quality_ok = projected_confirmation["quality_equivalence_confirmed"]
+        if selected_cell_id is None:
+            internally_valid = (
+                projected_status == "no_selected_point_match" and not projected_quality_ok
+            )
+        else:
+            internally_valid = projected_status in {
+                "quality_matched",
+                "quality_not_confirmed",
+            } and projected_quality_ok == (projected_status == "quality_matched")
+        if not internally_valid:
+            raise base.AnalysisError(
+                f"{behavior}: quality projection confirmation is internally inconsistent"
+            )
+
+        primary_confirmation = primary_result["behaviors"][behavior].get(
+            "primary_confirmation"
+        )
+        if not isinstance(primary_confirmation, dict):
+            raise base.AnalysisError(f"{behavior}: primary confirmation is missing")
+        comparison_keys = (
+            "selected_cell_id",
+            "selected_dose",
+            "status",
+            "quality_equivalence_confirmed",
+        )
+        projection_gate = {
+            key: projected_confirmation.get(key) for key in comparison_keys
+        }
+        primary_gate = {key: primary_confirmation.get(key) for key in comparison_keys}
+        if primary_gate != projection_gate:
+            raise base.AnalysisError(
+                f"{behavior}: primary quality gate differs from integrity-only projection"
+            )
+        frozen_quality["behaviors"][behavior] = {
+            "primary_confirmation": projected_confirmation
+        }
+    return frozen_quality
+
+
 def _affected_cells(items, excluded: set[Decision]) -> list[str]:
     excluded_opaque = {opaque_id for opaque_id, _pass in excluded}
     return sorted({item.cell_id for item in items if item.opaque_id in excluded_opaque})
@@ -584,12 +671,24 @@ def run(args) -> Path:
     root = base.analysis_root(args.out_root)
     primary_path = root / "reduce" / "matched_results.json"
     selection_path = root / "selection" / "quality_only_selection.json"
-    if not primary_path.is_file() or not selection_path.is_file():
-        raise base.AnalysisError("trait sensitivity requires primary reduction and selection")
+    quality_projection_path = root / "reduce" / "quality_primary_projection.json"
+    if not all(
+        path.is_file() for path in (primary_path, selection_path, quality_projection_path)
+    ):
+        raise base.AnalysisError(
+            "trait sensitivity requires primary reduction, frozen selection, and "
+            "integrity-only quality projection"
+        )
     selection = json.loads(selection_path.read_text(encoding="utf-8"))
-    if selection.get("trait_scores_read") is not False:
-        raise base.AnalysisError("trait sensitivity selection is not quality-only")
+    quality_projection = json.loads(quality_projection_path.read_text(encoding="utf-8"))
     primary_result = json.loads(primary_path.read_text(encoding="utf-8"))
+    selection_sha256 = base._sha256_file(selection_path)
+    frozen_quality = _validate_quality_lineage(
+        selection,
+        quality_projection,
+        primary_result,
+        selection_sha256,
+    )
     items, instrument, rubrics = base._load_staged(args, require_cli=False)
     if len(items) * base.N_PASSES != EXPECTED_DECISIONS:
         raise base.AnalysisError("trait sensitivity total decision count changed")
@@ -606,7 +705,7 @@ def run(args) -> Path:
         outcomes,
         scenarios,
         order_only,
-        primary_result,
+        frozen_quality,
         provenance_sha256,
     )
     no_exclusion_projection = {"behaviors": scenario_results["no_exclusion"]["behaviors"]}
@@ -632,7 +731,9 @@ def run(args) -> Path:
         "interpretation_limit": "not a causal packet-size or judge-draw estimate",
         "rejected_original_rows_used": 0,
         "quality_selection_frozen": True,
-        "selection_sha256": base._sha256_file(selection_path),
+        "quality_lineage_validation": "PASS",
+        "selection_sha256": selection_sha256,
+        "quality_primary_projection_sha256": base._sha256_file(quality_projection_path),
         "primary_results_sha256": base._sha256_file(primary_path),
         "expected_total_decisions": EXPECTED_DECISIONS,
         "minimum_retained_repeats": MIN_RETAINED_REPEATS,

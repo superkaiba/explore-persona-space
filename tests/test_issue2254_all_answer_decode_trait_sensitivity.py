@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import replace
 
 import scripts.issue2254_all_answer_decode_analysis as base
@@ -225,3 +226,80 @@ def test_decision_set_rejects_duplicate_ids() -> None:
         assert "duplicate" in str(exc)
     else:
         raise AssertionError("duplicate trait receipt ids were accepted")
+
+
+def _quality_lineage_documents():
+    selection = {
+        "trait_scores_read": False,
+        "behaviors": {
+            "evil": {
+                "selected_cell_id": None,
+                "selected_dose": None,
+                "match_status": "no_point_match",
+            },
+            "sycophancy": {
+                "selected_cell_id": "sycophancy__rb__decodeonly__L14__c1over2",
+                "selected_dose": 0.5,
+                "match_status": "selection_point_match",
+            },
+        },
+    }
+    confirmations = {
+        "evil": {
+            "status": "no_selected_point_match",
+            "selected_cell_id": None,
+            "quality_equivalence_confirmed": False,
+        },
+        "sycophancy": {
+            "status": "quality_not_confirmed",
+            "selected_cell_id": "sycophancy__rb__decodeonly__L14__c1over2",
+            "selected_dose": 0.5,
+            "quality_equivalence_confirmed": False,
+        },
+    }
+    projection = {
+        "trait_scores_read": False,
+        "selection_sha256": "a" * 64,
+        "behaviors": {
+            behavior: {
+                "selection": deepcopy(selection["behaviors"][behavior]),
+                "fixed_primary_dose_confirmation": deepcopy(confirmations[behavior]),
+            }
+            for behavior in gen.BEHAVIORS
+        },
+    }
+    primary = {
+        "selection": deepcopy(selection),
+        "behaviors": {
+            behavior: {"primary_confirmation": deepcopy(confirmations[behavior])}
+            for behavior in gen.BEHAVIORS
+        },
+    }
+    return selection, projection, primary
+
+
+def test_quality_lineage_binds_frozen_integrity_projection() -> None:
+    selection, projection, primary = _quality_lineage_documents()
+
+    frozen = sensitivity._validate_quality_lineage(
+        selection, projection, primary, "a" * 64
+    )
+
+    assert frozen["behaviors"]["sycophancy"]["primary_confirmation"] == (
+        projection["behaviors"]["sycophancy"]["fixed_primary_dose_confirmation"]
+    )
+
+
+def test_quality_lineage_rejects_post_trait_quality_gate_drift() -> None:
+    selection, projection, primary = _quality_lineage_documents()
+    primary["behaviors"]["sycophancy"]["primary_confirmation"].update(
+        status="quality_matched",
+        quality_equivalence_confirmed=True,
+    )
+
+    try:
+        sensitivity._validate_quality_lineage(selection, projection, primary, "a" * 64)
+    except base.AnalysisError as exc:
+        assert "differs from integrity-only projection" in str(exc)
+    else:
+        raise AssertionError("post-trait quality-gate drift was accepted")
