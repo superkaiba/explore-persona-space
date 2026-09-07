@@ -425,7 +425,12 @@ def register_trait_order_replacement(args) -> Path:
         raise base.AnalysisError("trait order replacement artifacts predate registration")
     payload = _receipt_payload(args.out_root, job)
     payload["entry_sha256"] = base._canonical_sha256(payload)
-    base._immutable_json(path, payload)
+    try:
+        runner._immutable_json(path, payload)
+    except runner.SubagentGradeHaltError as exc:
+        raise base.AnalysisError(
+            "trait order replacement registration was already consumed"
+        ) from exc
     print(
         f"[trait-order-recovery] registered {job.job_id} as {_replacement_job(job).job_id}",
         flush=True,
