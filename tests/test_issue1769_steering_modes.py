@@ -147,6 +147,16 @@ def test_decode_only_edits_every_decode_pass_never_the_prefill(model_and_tok, de
     assert n_edits == n_passes - 1
 
 
+def test_decode_only_rejects_multi_position_post_prefill(model_and_tok, delta):
+    model, _tok = model_and_tok
+    hook = DeltaHook(model, LAYER, delta, alpha=1.0, decode_only=True)
+    hook.arm(expected_prompt_len=3)
+    prefill = torch.zeros(1, 3, HIDDEN)
+    assert hook._edit_tensor(prefill) is prefill
+    with pytest.raises(AssertionError, match="post-prefill forward with T=2"):
+        hook._edit_tensor(torch.zeros(1, 2, HIDDEN))
+
+
 def test_both_edits_last_prompt_position_then_every_decode_pass(model_and_tok, delta):
     model, tok = model_and_tok
     edits, n_passes, T, n_edits = _edit_set(model, tok, "both", delta)

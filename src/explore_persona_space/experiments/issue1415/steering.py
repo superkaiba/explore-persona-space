@@ -328,6 +328,7 @@ class DeltaHook:
                 assert self.expected_prompt_len == T, (T, self.expected_prompt_len)
                 self._prefill_seen = True
                 return hidden
+            assert T == 1, f"post-prefill forward with T={T}: decode-step identity undefined"
             out = hidden + (scaled[:, None, :] if scaled.dim() == 2 else scaled)
             self.n_edits += 1
             return out

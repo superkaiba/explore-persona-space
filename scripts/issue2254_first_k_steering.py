@@ -122,6 +122,10 @@ ROUND_BREADTHS = ("single", "mid")
 
 # The 8 position arms (§4.1 decode-step edit sets; 1-indexed decode steps).
 POSITIONS = ("lastctx", "tok1", "tok2", "tok3", "span13", "span15", "combined", "allans")
+# Dedicated pure decode-only comparator for the matched all-answer follow-up.
+# It deliberately stays OUTSIDE ``POSITIONS`` so the historical 160-cell grid
+# and the legacy ``allans`` (prefill T-1 + all decode forwards) remain frozen.
+PURE_DECODE_POSITION = "alldec"
 POSITION_WINDOWS = {
     "tok1": (1, 1),
     "tok2": (2, 2),
@@ -142,6 +146,7 @@ _POS_TOKEN = {
     "span15": "s15",
     "combined": "cmb",
     "allans": "aans",
+    PURE_DECODE_POSITION: PURE_DECODE_POSITION,
 }
 
 Q_STEER_DEFAULT = i2254.N_EVAL_QUESTIONS  # 20 (§4.4)
@@ -417,6 +422,11 @@ class RecordedHook:
                 assert list(ch.edit_fwd_indices) == idx, "stack children edited different forwards"
             return idx, "recorded"
         # Base comparator hooks: the edit pattern is mode-determined (§4.1).
+        if getattr(first, "decode_only", False):
+            assert all(getattr(ch, "decode_only", False) for ch in children), (
+                "stack children disagree on decode_only mode"
+            )
+            return list(range(1, len(self.recorder.records))), "decode-only"
         if getattr(first, "all_positions", False):
             return None, "all-forwards"  # prefill T-1 + every decode step
         return [0], "prefill-only"  # base last-context-token mode
@@ -468,7 +478,7 @@ def expected_edit_profile(position: str, n_layers: int) -> dict:
     generation-length dependent (the all-answer arm). ``prefill`` is True for
     all-answer per the §4.1 caveat (``all_positions=True`` edits prefill T-1).
     """
-    assert position in POSITIONS, position
+    assert position in (*POSITIONS, PURE_DECODE_POSITION), position
     assert n_layers >= 1, n_layers
     if position == "lastctx":
         return {
@@ -480,6 +490,13 @@ def expected_edit_profile(position: str, n_layers: int) -> dict:
     if position == "allans":
         return {
             "prefill": True,
+            "decode_window": None,
+            "all_decode": True,
+            "n_edits_per_draw": None,
+        }
+    if position == PURE_DECODE_POSITION:
+        return {
+            "prefill": False,
             "decode_window": None,
             "all_decode": True,
             "n_edits_per_draw": None,
@@ -528,14 +545,53 @@ def assert_cell_edit_traces(rec: dict) -> dict:
             nd = nf - 1
             assert nf >= 1 and t["consecutive_decode_coords"] is True, (seed, di, t)
             row = {"seed": seed, "draw": di, "prompt_len": T, "n_forwards": nf}
-            if prof["all_decode"]:  # all-answer: base DeltaHook(all_positions=True)
-                assert t["edit_fwd_indices"] is None, (seed, di, t["edit_fwd_indices"])
-                assert t["edit_index_source"] == "all-forwards", t["edit_index_source"]
-                c = t["edit_cache_coords"]
-                assert c["all_forwards"] and c["n"] == nf, (seed, di, c)
-                assert c["first_coord"] == T - 1 and c["last_coord"] == T - 1 + nd, (seed, di, c)
-                assert t["n_edits_draw"] == nf * n_layers, (seed, di, t["n_edits_draw"], nf)
-                row.update({"edit_set": "all-forwards", "n_edits_draw": t["n_edits_draw"]})
+            if prof["all_decode"]:
+                if prof["prefill"]:  # legacy allans: prefill T-1 + every decode forward
+                    assert t["edit_fwd_indices"] is None, (seed, di, t["edit_fwd_indices"])
+                    assert t["edit_index_source"] == "all-forwards", t["edit_index_source"]
+                    c = t["edit_cache_coords"]
+                    assert c["all_forwards"] and c["n"] == nf, (seed, di, c)
+                    assert c["first_coord"] == T - 1 and c["last_coord"] == T - 1 + nd, (
+                        seed,
+                        di,
+                        c,
+                    )
+                    assert t["n_edits_draw"] == nf * n_layers, (
+                        seed,
+                        di,
+                        t["n_edits_draw"],
+                        nf,
+                    )
+                    row.update({"edit_set": "all-forwards", "n_edits_draw": t["n_edits_draw"]})
+                else:  # pure decode-only: no prefill edit, then every decode forward
+                    exp_idx = list(range(1, nf))
+                    exp_coords = [T - 1 + i for i in exp_idx]
+                    assert t["edit_fwd_indices"] == exp_idx, (
+                        seed,
+                        di,
+                        t["edit_fwd_indices"],
+                        exp_idx,
+                    )
+                    assert t["edit_index_source"] == "decode-only", t["edit_index_source"]
+                    assert t["edit_cache_coords"] == exp_coords, (
+                        seed,
+                        di,
+                        t["edit_cache_coords"],
+                        exp_coords,
+                    )
+                    assert t["n_edits_draw"] == nd * n_layers, (
+                        seed,
+                        di,
+                        t["n_edits_draw"],
+                        nd,
+                    )
+                    row.update(
+                        {
+                            "edit_set": exp_idx,
+                            "edit_cache_coords": exp_coords,
+                            "n_edits_draw": t["n_edits_draw"],
+                        }
+                    )
             else:
                 if prof["decode_window"] is None:  # last-ctx: base DeltaHook default
                     exp_idx = [0]
@@ -761,7 +817,7 @@ def _assert_hook_types(position: str, steer) -> None:
     subclass (plan §12.3 / the §7 smoke-gate kill criterion) — asserted in
     production too, per constructed hook."""
     children = steer.hooks if isinstance(steer, MultiLayerDeltaHook) else [steer]
-    if position in ("lastctx", "allans"):
+    if position in ("lastctx", "allans", PURE_DECODE_POSITION):
         bad = [type(h).__name__ for h in children if type(h) is not DeltaHook]
         assert not bad, (position, bad)
     else:
@@ -780,7 +836,10 @@ def build_recorded_hook(
     """
     k = len(layers)
     assert k == len(dirs) == len(alphas) >= 1, (len(layers), len(dirs), len(alphas))
-    if pos in ("lastctx", "allans"):
+    if pos == PURE_DECODE_POSITION:
+        assert k == 1, "pure decode-only comparator currently supports exactly one layer"
+        steer = DeltaHook(model, layers[0], dirs[0], alphas[0], decode_only=True)
+    elif pos in ("lastctx", "allans"):
         all_positions = pos == "allans"
         if k == 1:
             steer = DeltaHook(model, layers[0], dirs[0], alphas[0], all_positions=all_positions)
@@ -804,9 +863,14 @@ def build_recorded_hook(
 def _hook_impl_record(cell: dict, n_layers: int) -> dict:
     """Per-cell record of which hook classes serve this arm (review evidence)."""
     pos = cell["position"]
-    if pos in ("lastctx", "allans"):
+    if pos in ("lastctx", "allans", PURE_DECODE_POSITION):
         cls = "DeltaHook"
-        mode = "all_positions" if pos == "allans" else "last_context_token"
+        if pos == "allans":
+            mode = "all_positions"
+        elif pos == PURE_DECODE_POSITION:
+            mode = "decode_only"
+        else:
+            mode = "last_context_token"
     else:
         cls = "WindowedDeltaHook"
         mode = "combined" if pos == "combined" else "decode_window"
@@ -815,7 +879,7 @@ def _hook_impl_record(cell: dict, n_layers: int) -> dict:
         "mode": mode,
         "n_layers": n_layers,
         "stacked": n_layers > 1,
-        "comparator_base_reused": pos in ("lastctx", "allans"),
+        "comparator_base_reused": pos in ("lastctx", "allans", PURE_DECODE_POSITION),
     }
 
 

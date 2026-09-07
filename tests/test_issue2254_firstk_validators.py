@@ -34,6 +34,7 @@ from types import SimpleNamespace
 
 import numpy as np
 import pytest
+import torch
 
 import scripts.issue2254_first_k_steering as fk
 import scripts.issue2254_firstk_figures as figs
@@ -86,6 +87,83 @@ def _judged_rec(cell: dict, cid: str, *, n_q: int = 3) -> dict:
 # ---------------------------------------------------------------------------
 # producer-schema validators (judge/reduce inputs BEFORE spend)
 # ---------------------------------------------------------------------------
+
+
+class _TinyBlock(torch.nn.Module):
+    def forward(self, hidden, *, cache_position=None, position_ids=None):
+        del cache_position, position_ids
+        return (hidden,)
+
+
+class _TinyModel(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.model = torch.nn.Module()
+        self.model.layers = torch.nn.ModuleList([_TinyBlock()])
+
+
+def _run_recorded_hook(position: str) -> tuple[dict, torch.Tensor, torch.Tensor]:
+    model = _TinyModel()
+    direction = torch.arange(4, dtype=torch.float32)
+    hook = fk.build_recorded_hook(model, position, [0], [direction], [2.0])
+    prefill = torch.zeros(1, 3, 4)
+    decode = torch.zeros(1, 1, 4)
+    with hook:
+        hook.arm(expected_prompt_len=3)
+        prefill_out = model.model.layers[0](
+            prefill,
+            cache_position=torch.arange(3),
+        )[0]
+        decode_out = model.model.layers[0](
+            decode,
+            cache_position=torch.tensor([3]),
+        )[0]
+        model.model.layers[0](
+            decode,
+            cache_position=torch.tensor([4]),
+        )
+    assert len(hook.draw_traces) == 1
+    return hook.draw_traces[0], prefill_out, decode_out
+
+
+def test_alldec_records_no_prefill_and_every_decode_forward() -> None:
+    trace, prefill_out, decode_out = _run_recorded_hook(fk.PURE_DECODE_POSITION)
+    assert torch.equal(prefill_out, torch.zeros_like(prefill_out))
+    assert not torch.equal(decode_out, torch.zeros_like(decode_out))
+    assert trace["edit_fwd_indices"] == [1, 2]
+    assert trace["edit_index_source"] == "decode-only"
+    assert trace["edit_cache_coords"] == [3, 4]
+    assert trace["n_edits_draw"] == 2
+
+    rec = {
+        "expected_edit_profile": fk.expected_edit_profile(fk.PURE_DECODE_POSITION, 1),
+        "hook_impl": fk._hook_impl_record({"position": fk.PURE_DECODE_POSITION}, 1),
+        "seeds": {"42": {"edit_traces": [trace]}},
+    }
+    summary = fk.assert_cell_edit_traces(rec)
+    assert summary["per_draw"][0]["edit_set"] == [1, 2]
+
+
+def test_legacy_allans_still_records_prefill_and_every_decode_forward() -> None:
+    trace, prefill_out, decode_out = _run_recorded_hook("allans")
+    assert not torch.equal(prefill_out[:, -1, :], torch.zeros_like(prefill_out[:, -1, :]))
+    assert not torch.equal(decode_out, torch.zeros_like(decode_out))
+    assert trace["edit_fwd_indices"] is None
+    assert trace["edit_index_source"] == "all-forwards"
+    assert trace["edit_cache_coords"] == {
+        "all_forwards": True,
+        "first_coord": 2,
+        "last_coord": 4,
+        "n": 3,
+    }
+
+    rec = {
+        "expected_edit_profile": fk.expected_edit_profile("allans", 1),
+        "hook_impl": fk._hook_impl_record({"position": "allans"}, 1),
+        "seeds": {"42": {"edit_traces": [trace]}},
+    }
+    summary = fk.assert_cell_edit_traces(rec)
+    assert summary["per_draw"][0]["edit_set"] == "all-forwards"
 
 
 def test_validate_gen_record_passes_on_valid() -> None:
