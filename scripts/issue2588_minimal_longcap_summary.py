@@ -375,6 +375,17 @@ def build_summary(
             ("baseline", BASELINE_PREFIX, BASELINE_REVISION, baseline_maps[cell]),
             ("long", LONG_PREFIX, long_revision, long_maps[cell]),
         ):
+            fit = _download_json(
+                prefix,
+                f"fits/{cell}/fits_cot_boundary.json",
+                revision,
+            )
+            if int(fit["layer_star"]) != int(mapping["layer_star"]):
+                raise ValueError(f"{cell}/{name}: mapping and source select different layers")
+            selected = fit["layers"][str(fit["layer_star"])]
+            identity_retrieval = float(
+                selected["knn_test"]["identity_bias"]["cosine"]["acc_at_k"]["1"]
+            )
             transfer = _download_json(
                 prefix,
                 f"fits/{cell}/gpqa_transfer_cot_boundary.json",
@@ -400,6 +411,12 @@ def build_summary(
                     "test_retrieval_acc1_cos": float(
                         mapping["mapping_performance"]["test_retrieval_acc1_cos"]
                     ),
+                    "identity_bias_test_r2": float(selected["floors_test_r2"]["identity_bias"]),
+                    "identity_bias_test_retrieval_acc1_cos": identity_retrieval,
+                    "learned_increment_over_identity_retrieval": float(
+                        mapping["mapping_performance"]["test_retrieval_acc1_cos"]
+                    )
+                    - identity_retrieval,
                     "gpqa_n": int(transfer["n_rows"]),
                     "gpqa_same_question_acc1_cos": float(transfer["same_question_acc1_cos"]),
                     "gpqa_same_question_chance": float(transfer["same_question_chance"]),
@@ -464,6 +481,10 @@ def build_summary(
             "rrr_rank_rel10": (
                 "smallest reduced-rank-regression rank with validation SSE no more than 10% "
                 "above the full map"
+            ),
+            "identity_plus_bias": (
+                "dimension-matched identity map plus a learned training-fold bias; both held-out "
+                "R2 and raw cosine top-1 retrieval are retained"
             ),
             "matched_n": (
                 "three deterministic subset refits at n=4500, each using its own training "
