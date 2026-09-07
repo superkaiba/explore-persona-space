@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "source_sha256": "d78c8bc0aa79c6852f8957107e93dc6468bc1088038bce2173624eab7f5e11da",
+  "case": "pinned_uv_dispatch_and_nonzero_exit_preserved",
+  "arguments": [
+    "run",
+    "--with",
+    "inspect-ai==0.3.261",
+    "--with",
+    "openai==3.7.0",
+    "python",
+    "-m",
+    "scripts.context_risk_corrected_finish"
+  ],
+  "exit_record": {
+    "mode": "finish",
+    "supervisor_pid": 4007176,
+    "worker_pid": 4007181,
+    "exit_code": 7,
+    "cleanup": "no_live_members",
+    "finished_unix": 1788767593
+  },
+  "scope": "Fake uv in a temporary PATH; no model, upload, task or pod calls."
+}

@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "source_sha256": "f9180cb9b2ae9084e561237c7f05ddda2713ce1240ba9261440fb83d2cbb18f7",
+  "tests": [
+    "git_and_lfs_hashes_phase_receipt_path",
+    "receipt_replay_reverifies_pinned_remote_without_reupload",
+    "remote_content_drift_rejected",
+    "local_content_drift_rejected",
+    "remote_extra_file_rejected",
+    "large_jsonl_lossless_shards_original_retained_excluded",
+    "sharded_upload_replay_is_idempotent"
+  ],
+  "counts": {
+    "upload": 2,
+    "revision": 2,
+    "tree": 6
+  },
+  "scope": "Mocked Hub API/uploads; real sharding and hash checks; no network or model calls."
+}

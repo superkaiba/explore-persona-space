@@ -1,0 +1,57 @@
+{
+  "schema_version": "context_risk_independent_finish_review_v1",
+  "reviewer": "/root/reward_harness_critic (independent Codex critic)",
+  "verdict": "PASS",
+  "reviewed_at_utc": "2026-09-07T07:55:27.560168+00:00",
+  "source": "scripts/context_risk_corrected_finish.py",
+  "source_sha256": "f9180cb9b2ae9084e561237c7f05ddda2713ce1240ba9261440fb83d2cbb18f7",
+  "supervisor_source": "scripts/context_risk_corrected_finish_supervise.sh",
+  "supervisor_source_sha256": "d78c8bc0aa79c6852f8957107e93dc6468bc1088038bce2173624eab7f5e11da",
+  "five_approved_production_sources_unchanged": true,
+  "unresolved_blocking_findings": [],
+  "independent_validation": {
+    "finish_checks_passed": 20,
+    "upload_checks": 7,
+    "restart_and_integrity_checks": 12,
+    "finishing_supervisor_dispatch_checks": 1,
+    "retained_runners_and_evidence": {
+      "finish_upload": {
+        "runner": "eval_results/context_risk_corrected_v20_validation/software_fixtures/review_runners/finish_upload.py",
+        "runner_sha256": "b27de9e82abdb0ea44dcdb20fb7484abc3b652fe4095d6939e0896736aaba9a5",
+        "evidence": "eval_results/context_risk_corrected_v20_validation/software_fixtures/review_runners/results/finish_upload.json",
+        "evidence_sha256": "d384f203d0cedd95023b43ca6018c830c3393df2046867b7b9df60891c15c631"
+      },
+      "finish_replay": {
+        "runner": "eval_results/context_risk_corrected_v20_validation/software_fixtures/review_runners/finish_replay.py",
+        "runner_sha256": "5656fb075c6d1eb48b5507951a19ad33c8499600da6e9260b0b6badf1e0bf022",
+        "evidence": "eval_results/context_risk_corrected_v20_validation/software_fixtures/review_runners/results/finish_replay.json",
+        "evidence_sha256": "1144c04663768733c62f2971b335c8b91d5b7947aa1db1cce35270cc17d43bb7"
+      },
+      "finish_supervisor": {
+        "runner": "eval_results/context_risk_corrected_v20_validation/software_fixtures/review_runners/finish_supervisor.py",
+        "runner_sha256": "0918fa0cc537f6b85124e6ab73f3a31904ba7063e2ed97a8eaf84a8f3b44c7cb",
+        "evidence": "eval_results/context_risk_corrected_v20_validation/software_fixtures/review_runners/results/finish_supervisor.json",
+        "evidence_sha256": "93059f752481ee4dcd29f258c5948438d92d228f74dd96757d8ecca6b670de0a"
+      }
+    },
+    "ruff": "All four retained fixture runners pass ruff check.",
+    "supervisor_review": "Inspected full diff against the previously approved process supervisor; cleanup unchanged, pinned uv module dispatch and exit7 preservation verified with a temporary fake uv."
+  },
+  "resolved_findings": [
+    "Embedded remote programs compile; upload receipts retain the raw/analysis phase names.",
+    "Pod actions require the pinned live name and ID. Full-run and server exit evidence are validated before archival and release.",
+    "Raw census, copied bytes, snapshot hashes and remote file/content hashes are reconciled before the out-root attestation and managed termination.",
+    "Restart fixtures recover after raw upload interruption, lost termination response, analysis interruption and analysis upload interruption without repeated SSH/copy or duplicate termination.",
+    "Local/remote content drift, extra remote files, invalid exit evidence, source changes across the wait and duplicate coordinator ownership fail loudly.",
+    "Oversized JSONL is losslessly sharded with manifests; originals remain local and are excluded from upload. Receipt replay verifies the pinned remote revision.",
+    "Quantitative completion remains separate from interpretation review. Failures preserve local evidence and post task failure status."
+  ],
+  "scope": "All external API, upload, task-marker, server-signal and termination effects were mocked. No model calls or live compute actions performed by this critic. The actual recorded smoke was audited separately.",
+  "limitations": [
+    "This approves software behavior, not completion of the still-running full experiment or its eventual upload/analysis results.",
+    "The real upload pilot and live API identity checks were performed by the parent agent; this review read the saved pilot evidence but did not repeat network actions.",
+    "Qualitative original-success auditing and final owner-side persistence of completion receipts/status/logs remain required before claiming the overall research task complete."
+  ],
+  "external_model_calls": 0,
+  "automated_claude_usage": false
+}

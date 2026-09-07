@@ -1,0 +1,68 @@
+{
+  "passed": true,
+  "source_sha256": "f9180cb9b2ae9084e561237c7f05ddda2713ce1240ba9261440fb83d2cbb18f7",
+  "case_count": 12,
+  "cases": [
+    {
+      "case": "normal_completion_and_replay_after_teardown",
+      "passed": true,
+      "detail": "Raw verification precedes termination; replay skips SSH/copy/termination."
+    },
+    {
+      "case": "restart_after_upload_raw",
+      "passed": true,
+      "detail": "Restart uses frozen snapshot with no repeated signal/copy or duplicate termination."
+    },
+    {
+      "case": "restart_after_after_terminate",
+      "passed": true,
+      "detail": "Restart uses frozen snapshot with no repeated signal/copy or duplicate termination."
+    },
+    {
+      "case": "restart_after_analysis",
+      "passed": true,
+      "detail": "Restart uses frozen snapshot with no repeated signal/copy or duplicate termination."
+    },
+    {
+      "case": "restart_after_upload_analysis",
+      "passed": true,
+      "detail": "Restart uses frozen snapshot with no repeated signal/copy or duplicate termination."
+    },
+    {
+      "case": "snapshot_content_drift_blocks_teardown",
+      "passed": true,
+      "detail": "Changed frozen file fails before upload or termination."
+    },
+    {
+      "case": "census_copy_mismatch_blocks_teardown",
+      "passed": true,
+      "detail": "Mismatched pod/copied bytes fail before archive and termination."
+    },
+    {
+      "case": "wrong_pod_id_blocks_every_remote_action",
+      "passed": true,
+      "detail": "Exact name with wrong ID rejected before signal/census/upload/termination."
+    },
+    {
+      "case": "approved_source_update_during_wait_rejected",
+      "passed": true,
+      "detail": "Changed source plus new approving review cannot replace frozen start hashes."
+    },
+    {
+      "case": "exit_evidence_reconciliation",
+      "passed": true,
+      "detail": "Valid evidence accepted; wrong mode/worker/cleanup/status/freshness rejected."
+    },
+    {
+      "case": "duplicate_lock_is_non_destructive",
+      "passed": true,
+      "detail": "Lock refusal leaves existing status and task markers untouched."
+    },
+    {
+      "case": "remote_programs_compile",
+      "passed": true,
+      "detail": "Both exact embedded Python programs compile locally."
+    }
+  ],
+  "scope": "Local files; remote/model/upload/task/pod calls mocked. No live actions."
+}

@@ -1,0 +1,85 @@
+{
+  "source_sha256": "327dd0606ab751a1076008e565f7c158ab23f3591365dfa94266423bd2e7bda6",
+  "passed": true,
+  "n_cases": 13,
+  "cases": [
+    {
+      "case": "actual_smoke",
+      "passed": true,
+      "execution_passed": true,
+      "verified_request_seeds": 7,
+      "exported_model_events": 7
+    },
+    {
+      "case": "missing_primary_with_other_score",
+      "passed": true,
+      "execution_passed": false,
+      "verified_request_seeds": 7,
+      "exported_model_events": 7
+    },
+    {
+      "case": "errored_sample_unmatched_successful_event",
+      "passed": true,
+      "rejected": "Attempt/model-event count mismatch: lcbhard_1:conflicting:1"
+    },
+    {
+      "case": "native_error_status_report_pass_tampered",
+      "passed": true,
+      "rejected": "Native log/report disagreement: passed"
+    },
+    {
+      "case": "native_error_status_honest_report",
+      "passed": true,
+      "execution_passed": false,
+      "verified_request_seeds": 7,
+      "exported_model_events": 7
+    },
+    {
+      "case": "failed_provider_event_preserved",
+      "passed": true,
+      "execution_passed": true,
+      "verified_request_seeds": 7,
+      "exported_model_events": 8
+    },
+    {
+      "case": "truncated_generation_is_censored",
+      "passed": true,
+      "execution_passed": false,
+      "verified_request_seeds": 7,
+      "exported_model_events": 7
+    },
+    {
+      "case": "changed_manifest_rejected",
+      "passed": true,
+      "rejected": "Manifest differs from the frozen input"
+    },
+    {
+      "case": "changed_native_input_rejected",
+      "passed": true,
+      "rejected": "Native input differs from manifest: lcbhard_1:conflicting"
+    },
+    {
+      "case": "changed_native_context_metadata_rejected",
+      "passed": true,
+      "rejected": "Native metadata differs from manifest: lcbhard_1:conflicting:exact_context_sha256"
+    },
+    {
+      "case": "changed_requested_coverage_rejected",
+      "passed": true,
+      "rejected": "Reported requested coverage differs from the frozen protocol"
+    },
+    {
+      "case": "changed_seed_rejected",
+      "passed": true,
+      "rejected": "Request seed mismatch: 38295:lcbhard_1:conflicting:1:1"
+    },
+    {
+      "case": "changed_response_rejected",
+      "passed": true,
+      "rejected": "Recorded response differs from model event: 38295:lcbhard_1:conflicting:1:1"
+    }
+  ],
+  "scope": "In-memory mutations and temporary report copies; no model calls or original edits.",
+  "actual_smoke_run_result_sha256": "4f7066cddc8a2ee5d9709f46fd5cd67e6353713277269ce762d13f1e617dd765",
+  "actual_smoke_native_log_sha256": "964eee632dfa2ca04547351a0d7c8abc39e716b78e65231f125d3c50e213453e"
+}

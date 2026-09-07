@@ -44,14 +44,14 @@ The independent critic must approve the finalized source and launcher before GPU
 
 ## Runtime and compute
 
-Estimated GPU-hours (total): 24
+Estimated GPU-hours (total): 14.9
 
-This is a provisional scheduling estimate for one H200, not a measured runtime or a claimed cost. The new-runtime smoke must replace it with measured projection and dispersion before the full run; it does not bound or change the scientific sample count. No throughput estimate from the old Transformers server is transferred to vLLM.
+The real-model smoke completed three rollouts in 156 seconds (seven requests, 15,824 output tokens, no truncation or technical errors). Scaling its observed throughput to 480 gives 6.93 H200-hours; applying ×2 dispersion gives 13.87 hours. The scheduling total is 14.9 GPU-hours including one hour for setup/smoke. This is a projection, not a claimed cost or sample-count limit. The smoke includes one base task and at most three concurrent requests, so across-task dispersion and production concurrency remain unmeasured. No timing from the old server is transferred to vLLM.
 
 | Phase | Device | planned_wall_h | planned_gpu_h | basis |
 |---|---|---:|---:|---|
 | Setup and real-model smoke | RunPod 1×H200 | 1 | 1 | Pilot-gated provisional allowance; model transfer measured on its first weight shard, followed by the production three-context smoke. |
-| Corrected full roster | RunPod 1×H200 | 23 | 23 | Pilot-gated provisional allowance; replace with measured production-venue projection and ×2 dispersion before launch. |
+| Corrected full roster | RunPod 1×H200 | 13.87 | 13.87 | Source: fresh native smoke log (156 s / 3 × 480 × 2), with unmeasured task and concurrency variation monitored during production. |
 
 The original run used Transformers 5.15.0 with a custom batching server. The corrected run will use vLLM 0.28.0 with Transformers 5.15.0 if GPU preflight and prefix-token parity pass. This operational change is recorded separately; a before/after difference cannot be attributed exclusively to extraction and scoring. Official sources establish static compatibility, while the actual GPU smoke remains required: [model recipe](https://recipes.vllm.ai/Qwen/Qwen3.8-27B), [vLLM release](https://github.com/vllm-project/vllm/releases/tag/v0.28.0), [pinned model config](https://huggingface.co/Qwen/Qwen3.8-27B/blob/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0/config.json).
 
@@ -72,3 +72,19 @@ Use the RunPod lane for the interactive GPU server and SSH tunnel needed by the 
 The VM hosts the existing Docker sandbox and lightweight request coordinator. It writes new raw outcomes under `/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_livecodebench_v20_corrected`, on `/dev/root`; reserve 5 GB for native logs, expanded reports and staging. Initial headroom was 129 GB free, with 89 GiB memory available. Existing archived manifests and prefix metadata are read locally, so no large download is needed on the VM. Monitor coordinator plus sandbox RSS against the 16 GB VM routing threshold. This coordinator runs concurrently with GPU generation; expensive downstream CPU analysis follows after GPU release.
 
 Wall time is pilot-gated under the new vLLM runtime. Do not reuse the old server's timing estimate. After the real-model smoke, record a range using the measured per-rollout wall scaled to 480, marking within-task dispersion as unsampled and applying the stated default factor of two. Reconcile this estimate with sustained production concurrency once the first full-run completions arrive. The independent rollout axis is batched with up to 16 active requests on this initial feasibility run. Inspect's incremental native logs checkpoint completed sample/epoch pairs; only exact corrected-source resumes are permitted.
+
+## Production smoke evidence (2026-09-07)
+
+The five-source critic check passed, all 60 live tokenized prefixes matched archived hashes, and the separate three-context smoke completed with exit 0 and no remaining worker-group members. The native-log census verified 3/3 unique rollout pairs and all seven deterministic request seeds and recorded responses. Requests lasted 20.23–61.25 seconds and produced 1,195–3,808 output tokens; no generation hit the 65,536-token cap. Full production retains 60 contexts × 8 epochs and 16 maximum concurrent requests. The prediction gate is evaluated only on that full roster. Exact smoke evidence and timing projection are stored under the corrected output root.
+
+## Completion and recovery automation
+
+The independently reviewed completion coordinator waits for the pinned full-run supervisor's fresh exit record, verifies its mode, worker identity and cleanup, then reconciles all 480 native sample/epoch pairs. It preserves every raw response, submission score and model event; malformed or censored outcomes remain explicit. The coordinator pins its own and the audit script's approved source hashes across the wait. The five generation-source hashes remain unchanged.
+
+After generation, it stops only this task's verified model-server process and takes a recursive filename/size/SHA256 census of the declared pod output root. The copied VM tree must match that census exactly. Raw outputs and source/runtime evidence are frozen locally and uploaded in bulk, with oversized JSONL split losslessly using the established shard helper. Original unsharded VM files and the native Inspect binary remain preserved. Upload receipts bind the exact file set and immutable remote revision; retries revalidate those receipts. The standard out-root sweep and row-census attestations precede managed teardown of only pod `upvifie9u2zfa1`, whose live name and ID are checked before any signal or teardown. The existing linear analysis runs on the VM after GPU release and keeps the frozen feasibility gate binding. The existing misalignment results are unchanged.
+
+The real smoke-archive pilot uploaded and verified five files totaling 282,972 bytes in 30.385 seconds. This small-file measurement includes substantial fixed request overhead, so byte scaling is deliberately conservative. Each upload's whole-process deadline is calculated from its actual staged bytes: twice the scaled complete pilot time, plus 4,800 seconds for the declared retry exposure and 600 seconds for processing, with a 7,200-second minimum. The retry exposure covers two 1,800-second shared-helper budgets and two 600-second metadata budgets. Completion failures write a task-visible failure marker and preserve local evidence. Source files, snapshot hashes and receipts govern resumption; an existing filename alone is never completion proof.
+
+The coordinator's terminal status is `quantitative_complete`, followed by the original-success interpretation audit and independent results review. Its final VM status/log/receipt files are archived by the owner after the coordinator exits, resolving the completion-marker circularity. These steps do not alter any scientific outcome, threshold or sample count.
+
+Production timing refinement at 2026-09-07 07:44:35 UTC: 135 completed rollouts after 1,743.91 seconds project 1.72 hours total at the observed rate, with 1.24 hours remaining. This is a partial-run projection, not a completion claim or a replacement for the conservative smoke estimate; long-trajectory tails remain uncertain. Twelve GPU samples across 66 seconds had 99.33% mean and 100% peak utilization. Two connection retries recovered successfully, and their traces are preserved in the archive.
