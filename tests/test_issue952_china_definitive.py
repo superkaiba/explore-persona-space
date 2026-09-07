@@ -66,6 +66,27 @@ def test_codex_judge_confusion_matches_existing_oracle() -> None:
     assert CODEX._confusion(y, pred) == DV._confusion(y, pred)
 
 
+def test_codex_bank_value_validators_are_strict() -> None:
+    author = {key: f"value-{key}" for key in CODEX.AUTHOR_KEYS}
+    assert CODEX._validate_author_value(author)
+    assert not CODEX._validate_author_value({**author, "extra": "x"})
+    audit = {
+        **{key: True for key in CODEX.AUDIT_BOOL_KEYS},
+        **{key: 90 for key in CODEX.AUDIT_SCORE_KEYS},
+        "issues": "",
+    }
+    assert CODEX._validate_audit_value(audit)
+    assert CODEX._audit_pass(audit)
+    assert not CODEX._audit_pass({**audit, CODEX.AUDIT_SCORE_KEYS[0]: 79})
+
+
+def test_codex_bank_assignment_and_normalization_are_deterministic() -> None:
+    opaque = CODEX._bank_opaque_id("17")
+    assert opaque == CODEX._bank_opaque_id("17")
+    assert CODEX._bank_agent(opaque) in CODEX.AGENTS
+    assert CODEX._normalized_key("  A/B: C  ") == "a-b-c"
+
+
 def test_confusion_metrics() -> None:
     out = DV._confusion(np.array([True, True, False, False]), np.array([True, False, True, False]))
     assert out["tp"] == out["tn"] == out["fp"] == out["fn"] == 1
