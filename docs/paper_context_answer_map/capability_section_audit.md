@@ -4,6 +4,35 @@ Date: 2026-09-07. Requested addition: model capability versus held-out context-a
 metamodel R2, with a simple labelled scatter and a connection to neural-trajectory
 straightening. No inference, training, GPU jobs, or new model fits.
 
+## Latest manuscript edit: concise caption and descriptive appendix
+
+Thomas supplied a revised main-text paragraph and confirmed that the panel has
+ten models. The latest edit keeps his interpretation paragraph unchanged,
+corrects the count, replaces Appendix X with `app:capability-details`, and shortens
+the caption to a claim-first lead, plotted quantities and model count, and the
+unadjusted exact permutation-test label. At his request, the manuscript no longer
+names the excluded model. No plotted coordinates or statistics changed.
+
+The new `sections/results/a12_capability_details.tex` contains only two
+descriptive paragraphs: the ten plotted models and the LMSYS-Chat-1M first-user
+prompts, each model's generated answers, and up-to 10,000/400/1,000 data splits.
+It has no interpretation, correlations, selection discussion, or new experiment.
+The model roster is checked against the current figure metadata, and the splits
+against the pinned issue-2588 producer and inherited issue-2330 manifests.
+
+Scoped five-dimension self-review: contribution unchanged; clarity improved by
+replacing the placeholder with a real reference; experimental strength unchanged;
+evaluation coverage explicitly ten models and one prompt dataset; method design
+unchanged. This is a presentation edit, not a new validation of the main claim.
+The historical reviews below describe earlier drafts and remain an audit trail,
+not a claim that every earlier caveat remains in the current manuscript.
+
+Verification: independent read-only review confirmed the ten-model roster,
+LMSYS first-user prompts, own-model answers and split ceilings, descriptive-only
+appendix scope, and reference wiring. The 42-page manuscript compiles with the
+same two pre-existing unresolved introduction citations. The writing gate has no
+hard-ban hits, and the updated caption and appendix were checked in the PDF.
+
 ## Current revision: ten-model display
 
 On 2026-09-07 Thomas requested removing Qwen2.5-32B because it is an older model.
