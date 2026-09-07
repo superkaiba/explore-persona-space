@@ -1,0 +1,9 @@
+{
+  "dispositions": {
+    "exact_evidence_copy": 1309,
+    "pinned_input_cache_not_new_experiment_output": 7768
+  },
+  "remote_receipt": "/workspace/issue1739_cpu_preservation/natstage_packed_verified.json",
+  "source_files": 9077,
+  "source_name_set_and_content_pass": true
+}

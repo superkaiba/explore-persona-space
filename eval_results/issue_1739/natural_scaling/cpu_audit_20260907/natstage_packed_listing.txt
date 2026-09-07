@@ -1,0 +1,11 @@
+/workspace/issue1739_cpu_preservation/natstage_packed/evidence/issue1739_natural/logs/stage_20260907T154836Z.launcher.log
+/workspace/issue1739_cpu_preservation/natstage_packed/evidence/issue1739_natural/logs/stage_20260907T155841Z.launcher.log
+/workspace/issue1739_cpu_preservation/natstage_packed/evidence/issue1739_natural/reused_transfer_manifest.json
+/workspace/issue1739_cpu_preservation/natstage_packed/evidence/launcher_logs/issue-1739-natural-stagepilot-20260907a.log
+/workspace/issue1739_cpu_preservation/natstage_packed/evidence/launcher_logs/issue-1739-natural-stagerest-20260907a.log
+/workspace/issue1739_cpu_preservation/natstage_packed/packed_metadata/index.json
+/workspace/issue1739_cpu_preservation/natstage_packed/packed_metadata/part_00000.jsonl
+/workspace/issue1739_cpu_preservation/natstage_packed/packing_contract.json
+/workspace/issue1739_cpu_preservation/natstage_packed/source_inventory/index.json
+/workspace/issue1739_cpu_preservation/natstage_packed/source_inventory/metadata.json
+/workspace/issue1739_cpu_preservation/natstage_packed/source_inventory/part_00000.jsonl

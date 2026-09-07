@@ -1,0 +1,12 @@
+{
+  "dispositions": {
+    "exact_evidence_copy": 22205,
+    "pinned_input_cache_not_new_experiment_output": 1730,
+    "public_audit_copy_not_resume_input": 14
+  },
+  "prepared_distinct_source_ids": 110000,
+  "prepared_natural_assertions_pass": true,
+  "remote_receipt": "/workspace/issue1739_cpu_preservation/natprep_packed_verified.json",
+  "source_files": 23949,
+  "source_name_set_and_content_pass": true
+}
