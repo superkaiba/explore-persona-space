@@ -1,7 +1,10 @@
 """Integrity tests for the analysis-only natural scaling consumer."""
 
 import copy
+import hashlib
 import json
+from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -308,3 +311,110 @@ def test_validate_cell_end_to_end(tmp_path):
 def test_validate_cell_rejects_incomplete_or_crossed(tmp_path, fault):
     with pytest.raises(ValueError):
         audit.validate_cell(write_cell_fixture(tmp_path, fault), commit="test-sha")
+
+
+@pytest.mark.parametrize("fault", [None, "name", "size", "receipt", "git_content", "lfs_content"])
+def test_remote_verification_is_content_exact(tmp_path, monkeypatch, fault):
+    import huggingface_hub
+    import huggingface_hub.hf_api
+
+    from explore_persona_space.orchestrate import hub
+
+    (tmp_path / "small.json").write_text('{"value": 3}\n')
+    (tmp_path / "large.jsonl").write_text('{"score": 0.3}\n')
+    receipt = {
+        "prefix": "run/cell",
+        "revision": "immutable-revision",
+        "files_sha256": {p.name: audit.file_sha(p) for p in tmp_path.iterdir()},
+    }
+
+    class File(SimpleNamespace):
+        pass
+
+    entries = []
+    for path in tmp_path.iterdir():
+        raw = path.read_bytes()
+        entries.append(
+            File(
+                path="run/cell/" + path.name,
+                size=len(raw),
+                lfs=SimpleNamespace(sha256=audit.file_sha(path))
+                if path.suffix == ".jsonl"
+                else None,
+                blob_id=hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest(),
+            )
+        )
+    if fault == "name":
+        entries[0].path += ".wrong"
+    elif fault == "size":
+        entries[0].size += 1
+    elif fault == "receipt":
+        receipt["files_sha256"]["small.json"] = "wrong"
+    elif fault == "git_content":
+        next(e for e in entries if not e.lfs).blob_id = "wrong"
+    elif fault == "lfs_content":
+        next(e for e in entries if e.lfs).lfs.sha256 = "wrong"
+
+    def tree(repo, **kwargs):
+        assert repo == "superkaiba1/explore-persona-space-data"
+        assert kwargs["revision"] == "immutable-revision"
+        assert kwargs["path_in_repo"] == "run/cell"
+        return entries
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", lambda: SimpleNamespace(list_repo_tree=tree))
+    monkeypatch.setattr(huggingface_hub.hf_api, "RepoFile", File)
+    monkeypatch.setattr(hub, "retry_transient", lambda fn, **kw: fn())
+    if fault:
+        with pytest.raises(ValueError):
+            audit.verify_remote_cell(tmp_path, receipt)
+    else:
+        assert audit.verify_remote_cell(tmp_path, receipt)["all_names_sizes_content_verified"]
+
+
+@pytest.mark.parametrize("n_final", [149, 150])
+def test_watcher_drains_receipts_written_during_final_snapshot(tmp_path, monkeypatch, n_final):
+    args = SimpleNamespace(
+        watch_driver=999999,
+        results_root=tmp_path / "results",
+        receipts_root=tmp_path / "receipts",
+        cache_root=tmp_path / "cache",
+        commit="test",
+        max_watch_hours=1,
+    )
+    args.receipts_root.mkdir()
+
+    class Driver:
+        reads = 0
+
+        def __truediv__(self, _name):
+            return self
+
+        def read_text(self):
+            self.reads += 1
+            if self.reads == 1:
+                return " ".join(["1", "proc", "S"] + ["0"] * 18 + ["identity"])
+            if self.reads == 2:
+                for i in range(n_final):
+                    relative = Path(f"u250/evil/seed{i}")
+                    out = args.receipts_root / relative
+                    out.mkdir(parents=True)
+                    (args.results_root / relative).mkdir(parents=True)
+                    (out / "verified.json").write_text(
+                        json.dumps(
+                            {"prefix": "issue1739_natural100k_20260906/results/" + str(relative)}
+                        )
+                    )
+            raise FileNotFoundError("driver exited")
+
+    driver = Driver()
+    monkeypatch.setattr(
+        audit, "Path", lambda value: driver if str(value) == "/proc/999999" else Path(value)
+    )
+    monkeypatch.setattr(audit, "validate_cell", lambda *a, **k: {"files_sha256": {}})
+    monkeypatch.setattr(audit, "verify_remote_cell", lambda *a, **k: {"status": "PASS"})
+    monkeypatch.setattr(audit.time, "sleep", lambda _: pytest.fail("no sleeping after driver exit"))
+    if n_final == 150:
+        assert len(audit.watch_completed_cells(args)) == 150
+    else:
+        with pytest.raises(ValueError, match="149/150"):
+            audit.watch_completed_cells(args)

@@ -15,6 +15,7 @@ import json
 import math
 from pathlib import Path
 import sys
+import time
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -385,20 +386,131 @@ def aggregate(cells: list[dict], *, require_full: bool) -> dict:
     }
 
 
+def verify_remote_cell(cell: Path, receipt: dict) -> dict:
+    """Check the immutable uploaded tree's exact names, sizes and content IDs."""
+    from huggingface_hub import HfApi
+    from huggingface_hub.hf_api import RepoFile
+    from explore_persona_space.orchestrate import hub
+
+    prefix, revision = receipt["prefix"], receipt["revision"]
+    api = HfApi()
+    entries = hub.retry_transient(
+        lambda: list(
+            api.list_repo_tree(
+                "superkaiba1/explore-persona-space-data",
+                path_in_repo=prefix,
+                repo_type="dataset",
+                revision=revision,
+                recursive=True,
+            )
+        ),
+        what=f"independent content verification {prefix}",
+    )
+    remote = {e.path[len(prefix) + 1 :]: e for e in entries if isinstance(e, RepoFile)}
+    local = {str(p.relative_to(cell)): p for p in cell.rglob("*") if p.is_file()}
+    require(
+        set(remote) == set(local) == set(receipt["files_sha256"]),
+        "remote/local/receipt file-name sets differ",
+    )
+    for name, path in local.items():
+        entry = remote[name]
+        require(entry.size == path.stat().st_size, f"remote size differs: {name}")
+        digest = file_sha(path)
+        require(digest == receipt["files_sha256"][name], f"receipt content differs: {name}")
+        if entry.lfs:
+            require(entry.lfs.sha256 == digest, f"remote LFS content differs: {name}")
+        else:
+            raw = path.read_bytes()
+            blob = hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
+            require(entry.blob_id == blob, f"remote Git blob differs: {name}")
+    return {
+        "status": "PASS",
+        "prefix": prefix,
+        "revision": revision,
+        "files": len(local),
+        "all_names_sizes_content_verified": True,
+    }
+
+
+def watch_completed_cells(args) -> list[dict]:
+    """Audit uploaded cells alongside fitting, bounded by exact driver identity.
+
+    This verifier never dispatches compute, edits fitting outputs or retries a
+    failed scientific cell. Each proof is persisted independently; completion
+    still requires all150 cells and a final local-content recheck.
+    """
+    from explore_persona_space.atomic_io import atomic_replace
+
+    driver = Path(f"/proc/{args.watch_driver}")
+    identity = (driver / "stat").read_text().split()[21]
+    started, cells = time.monotonic(), {}
+    driver_exited = False
+    args.cache_root.mkdir(parents=True, exist_ok=True)
+    while time.monotonic() - started < args.max_watch_hours * 3600:
+        for receipt_path in sorted(args.receipts_root.glob("u*/*/seed*/verified.json")):
+            relative = receipt_path.parent.relative_to(args.receipts_root)
+            if str(relative) in cells:
+                continue
+            cell = args.results_root / relative
+            receipt = json.loads(receipt_path.read_text())
+            expected_suffix = "issue1739_natural100k_20260906/results/" + str(relative)
+            require(receipt["prefix"] == expected_suffix, "crossed remote receipt prefix")
+            result = validate_cell(cell, commit=args.commit)
+            result["remote_verification"] = verify_remote_cell(cell, receipt)
+            target = args.cache_root / relative / "verified.json"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with atomic_replace(target) as tmp:
+                tmp.write_text(json.dumps(result, indent=2, allow_nan=False) + "\n")
+            cells[str(relative)] = result
+            print(json.dumps({"verified_cells": len(cells), "cell": str(relative)}), flush=True)
+        if len(cells) == 150:
+            for relative, result in cells.items():
+                cell = args.results_root / relative
+                actual = {
+                    str(p.relative_to(cell)): file_sha(p) for p in cell.rglob("*") if p.is_file()
+                }
+                require(actual == result["files_sha256"], "cell changed after independent audit")
+            return list(cells.values())
+        try:
+            stat = (driver / "stat").read_text().split()
+            alive = stat[21] == identity and stat[2] != "Z"
+        except FileNotFoundError:
+            alive = False
+        if not alive:
+            # Receipts can land during validation of the earlier directory
+            # snapshot. Drain a fresh snapshot once AFTER observing exit.
+            require(
+                not driver_exited, f"fit driver exited with only {len(cells)}/150 verified cells"
+            )
+            driver_exited = True
+            continue
+        time.sleep(10)
+    raise TimeoutError(f"bounded verification expired at {len(cells)}/150 cells")
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--results-root", type=Path, required=True)
     p.add_argument("--commit", required=True)
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--pilot", action="store_true")
+    p.add_argument("--watch-driver", type=int)
+    p.add_argument("--receipts-root", type=Path)
+    p.add_argument("--cache-root", type=Path)
+    p.add_argument("--max-watch-hours", type=float, default=8)
     args = p.parse_args()
-    cells = []
-    for path in sorted(args.results_root.glob("u*/*/seed*/all_arms_spearman.json")):
-        cells.append(validate_cell(path.parent, commit=args.commit))
-        print(
-            json.dumps({k: cells[-1][k] for k in ("behavior", "generic_u", "seed", "status")}),
-            flush=True,
-        )
+    if args.watch_driver:
+        if args.pilot or not args.receipts_root or not args.cache_root or args.max_watch_hours <= 0:
+            p.error("watch requires receipt/cache roots, positive bound, and full150-cell mode")
+        cells = watch_completed_cells(args)
+    else:
+        cells = []
+        for path in sorted(args.results_root.glob("u*/*/seed*/all_arms_spearman.json")):
+            cells.append(validate_cell(path.parent, commit=args.commit))
+            print(
+                json.dumps({k: cells[-1][k] for k in ("behavior", "generic_u", "seed", "status")}),
+                flush=True,
+            )
     if args.pilot:
         require(
             {(c["behavior"], c["generic_u"], c["seed"]) for c in cells}
