@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "post_review_edits_exactly_limited_to_links": true,
+  "methodology_mechanical_copy_exact": true,
+  "report_sha256": "49daf75cf9f694856f7db98443d8fd15083fedbcc026ecc179d70e1d5b99ded6",
+  "methodology_sha256": "1cc509b1b386b7278c20805f5c2a4522bd3a19d5b3ec617eb2ece8a520a38cd1"
+}

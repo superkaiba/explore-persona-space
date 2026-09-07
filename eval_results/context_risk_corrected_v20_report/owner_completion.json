@@ -1,0 +1,27 @@
+{
+  "state": "experiment_complete",
+  "completed_at": "2026-09-07T09:42:21.675504+00:00",
+  "full_rollouts": 480,
+  "impossible_successes": 4,
+  "impossible_rollouts": 320,
+  "eligible_positives": 4,
+  "eligible_negatives": 300,
+  "eligible_mixed_contexts": 2,
+  "prediction_status": "not_run_frozen_gate_failed",
+  "critic_verdict": "PASS",
+  "replay_executions": 244,
+  "replay_passes": 244,
+  "pod_released": true,
+  "archive_urls": {
+    "raw": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/3fff4530a19a90007935db467d0f059fb8b644a9/context_risk/issue2670_corrected_v20/raw",
+    "analysis": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/86f959a218d10758953d51ed6a11758255274172/context_risk/issue2670_corrected_v20/analysis",
+    "final": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/88d985ef6bcf1120a0549c290565073a14451ff0/context_risk/issue2670_corrected_v20/final"
+  },
+  "report_sha256": "49daf75cf9f694856f7db98443d8fd15083fedbcc026ecc179d70e1d5b99ded6",
+  "reviewed_report_sha256": "c9a6d014a194177add7e72b666331dc67e4edb90e03fca8de54ac9ec6837c6fd",
+  "post_review_changes": [
+    "Updated methodology link to the actual pushed SHA after managed main sync.",
+    "Added immutable final replay and owner audit archive URL to Repro footer."
+  ],
+  "workflow_target": "awaiting_promotion; useful/not-useful classification remains user-only"
+}

@@ -1,0 +1,14 @@
+{
+  "mode": "final_archive",
+  "pid": 512557,
+  "launched_utc": "2026-09-07T09:38:39.654613+00:00",
+  "log": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_livecodebench_v20_corrected/final_archive_20260907T093839Z.log",
+  "exit_file": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_livecodebench_v20_corrected/final_archive_20260907T093839Z_process.exit.json",
+  "deadline_seconds": 7200,
+  "staged_bytes": 3969845,
+  "scaled_pilot_seconds": 426.27416706402926,
+  "snapshot_sha256": "fe4250cd5477383e5ad3f7e509fe8fe8f06c629af8c9b907e0e7ab780acac1c6",
+  "review_sha256": "df055ffdc0e4c182728b82f6ed8d3d72b062d473ffe3bd81bdbd19fd95b7cd13",
+  "source_sha256": "dc2eea8858ee049e6e962ba3fef6d44cc340b4c2456470bc873a28a4881f7621",
+  "supervisor_source_sha256": "4daa3c14fed2d8805e78850f87b40c5982ef05be707867646ea000d55d2ab383"
+}
