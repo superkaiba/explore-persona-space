@@ -391,6 +391,41 @@ async def _classify_one(client, sem: asyncio.Semaphore, row: dict[str, Any]) -> 
         }
 
 
+def split_calibration_checkpoints(
+    prior_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if len({row["item_id"] for row in prior_rows}) != len(prior_rows):
+        raise RuntimeError("duplicate calibration result checkpoints")
+    retry_rows = [row for row in prior_rows if row.get("transport_error") is not None]
+    reusable_rows = [row for row in prior_rows if row.get("transport_error") is None]
+    return reusable_rows, retry_rows
+
+
+def require_classifier_transport_preflight(result: dict[str, Any]) -> None:
+    if result.get("transport_error") is not None:
+        raise RuntimeError(
+            "classifier credential/transport preflight failed; no calibration fan-out dispatched"
+        )
+
+
+def commit_calibration_preflight(
+    result_path: Path,
+    reusable_rows: list[dict[str, Any]],
+    retry_rows: list[dict[str, Any]],
+    preflight: dict[str, Any],
+) -> None:
+    """Persist a passed preflight without destroying a failed-attempt artifact."""
+
+    require_classifier_transport_preflight(preflight)
+    if retry_rows:
+        _write_jsonl(result_path, [*reusable_rows, preflight])
+        return
+    with result_path.open("a", encoding="utf-8", buffering=1) as f:
+        f.write(json.dumps(preflight, ensure_ascii=False) + "\n")
+        f.flush()
+        os.fsync(f.fileno())
+
+
 async def _run_calibration_async(out_dir: Path, concurrency: int) -> None:
     from openai import AsyncOpenAI
 
@@ -402,7 +437,9 @@ async def _run_calibration_async(out_dir: Path, concurrency: int) -> None:
         raise RuntimeError("calibration items hash drift")
     rows = _jsonl(items_path)
     result_path = out_dir / "calibration" / "raw_classifier.jsonl"
-    prior = {r["item_id"]: r for r in _jsonl(result_path)} if result_path.exists() else {}
+    prior_rows = _jsonl(result_path) if result_path.exists() else []
+    reusable_rows, retry_rows = split_calibration_checkpoints(prior_rows)
+    prior = {row["item_id"]: row for row in reusable_rows}
     for row in rows:
         got = prior.get(row["item_id"])
         if got is not None and got.get("request_sha256") != row["request_sha256"]:
@@ -414,7 +451,19 @@ async def _run_calibration_async(out_dir: Path, concurrency: int) -> None:
     try:
         started = time.time()
         completed = 0
+        preflight = None
+        if pending:
+            preflight = await _classify_one(client, sem, pending[0])
+            commit_calibration_preflight(result_path, reusable_rows, retry_rows, preflight)
+            pending = pending[1:]
         with result_path.open("a", encoding="utf-8", buffering=1) as f:
+            if preflight is not None:
+                completed += 1
+                print(
+                    f"[calibration-run] transport_preflight=PASS id={preflight['item_id']} "
+                    f"replaced_transport_checkpoints={len(retry_rows)}",
+                    flush=True,
+                )
             tasks = [_classify_one(client, sem, row) for row in pending]
             for future in asyncio.as_completed(tasks):
                 result = await future
@@ -423,7 +472,7 @@ async def _run_calibration_async(out_dir: Path, concurrency: int) -> None:
                 os.fsync(f.fileno())
                 completed += 1
                 print(
-                    f"[calibration-run] unit={completed}/{len(pending)} "
+                    f"[calibration-run] unit={completed}/{len(pending) + int(preflight is not None)} "
                     f"id={result['item_id']} elapsed={time.time() - started:.1f}s",
                     flush=True,
                 )
@@ -445,11 +494,18 @@ def _confusion(y: np.ndarray, pred: np.ndarray) -> dict[str, float | int]:
     precision = tp / (tp + fp) if tp + fp else math.nan
     bacc = (recall + specificity) / 2
     n = len(y)
-    po = (tp + tn) / n
-    py = (tp + fn) / n
-    pp = (tp + fp) / n
-    pe = py * pp + (1 - py) * (1 - pp)
-    kappa = (po - pe) / (1 - pe) if pe < 1 else math.nan
+    if n:
+        po = (tp + tn) / n
+        py = (tp + fn) / n
+        pp = (tp + fp) / n
+        pe = py * pp + (1 - py) * (1 - pp)
+        kappa = (po - pe) / (1 - pe) if pe < 1 else math.nan
+        reference_rate = float(np.mean(y))
+        classifier_rate = float(np.mean(pred))
+    else:
+        kappa = math.nan
+        reference_rate = math.nan
+        classifier_rate = math.nan
     return {
         "n": n,
         "tp": tp,
@@ -460,13 +516,15 @@ def _confusion(y: np.ndarray, pred: np.ndarray) -> dict[str, float | int]:
         "precision": precision,
         "recall": recall,
         "kappa": kappa,
-        "reference_rate": float(np.mean(y)),
-        "classifier_rate": float(np.mean(pred)),
-        "absolute_rate_error": abs(float(np.mean(pred) - np.mean(y))),
+        "reference_rate": reference_rate,
+        "classifier_rate": classifier_rate,
+        "absolute_rate_error": abs(classifier_rate - reference_rate),
     }
 
 
 def _rate_error_upper(rows: list[dict[str, Any]], seed: int) -> float:
+    if not rows:
+        return math.nan
     groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for row in rows:
         groups[row["group_id"]].append(row)

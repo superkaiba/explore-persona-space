@@ -48,6 +48,43 @@ def test_confusion_metrics() -> None:
     assert out["kappa"] == 0.0
 
 
+def test_confusion_empty_arm_fails_cleanly_without_division_by_zero() -> None:
+    out = DV._confusion(np.array([], dtype=bool), np.array([], dtype=bool))
+    assert out["n"] == 0
+    assert np.isnan(out["balanced_accuracy"])
+    assert np.isnan(out["kappa"])
+    assert np.isnan(DV._rate_error_upper([], 1))
+
+
+def test_calibration_transport_failures_are_not_reused(tmp_path: Path) -> None:
+    result_path = tmp_path / "raw_classifier.jsonl"
+    prior = [
+        {"item_id": "ok", "transport_error": None},
+        {"item_id": "retry", "transport_error": "401"},
+    ]
+    DV._write_jsonl(result_path, prior)
+    prior_bytes = result_path.read_bytes()
+    reusable, retry = DV.split_calibration_checkpoints(prior)
+    assert [row["item_id"] for row in reusable] == ["ok"]
+    assert [row["item_id"] for row in retry] == ["retry"]
+    try:
+        DV.commit_calibration_preflight(
+            result_path,
+            reusable,
+            retry,
+            {"item_id": "retry", "transport_error": "401"},
+        )
+    except RuntimeError as exc:
+        assert "no calibration fan-out" in str(exc)
+    else:
+        raise AssertionError("transport-failed classifier preflight was accepted")
+    assert result_path.read_bytes() == prior_bytes
+
+    passed = {"item_id": "retry", "transport_error": None}
+    DV.commit_calibration_preflight(result_path, reusable, retry, passed)
+    assert DV._jsonl(result_path) == [prior[0], passed]
+
+
 def test_audit_gate_requires_all_fields_and_threshold() -> None:
     value = {
         **{key: True for key in BANK.AUDIT_BOOL_KEYS},
