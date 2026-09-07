@@ -136,3 +136,56 @@ Independent read-only review passed the numerical/provenance/scope checks and
 confirmed that no main geometry paragraph or unrelated theory edit was added.
 Browser previews of both figures are available in the
 [current manuscript](https://www.overleaf.com/project/6a59c927290f8b8b5eee0055).
+
+## Combined A/B bar figure and results-section structure (2026-09-07)
+
+The next author request combines the two plots into one A/B figure and switches
+to bars. The [manuscript](https://www.overleaf.com/project/6a59c927290f8b8b5eee0055)
+now includes only c1_cot_story.pdf for these claims. Panel A groups R2 and
+top-1 retrieval by metric, each with the same three prediction/control
+conditions; retrieval is explicitly a fraction. Panel B groups the context
+and end-of-CoT R2 scores by necessity label. Both y-axes start at zero and
+retain the original confidence intervals. Filled versus open/hatched bars
+distinguish metrics, with a shared condition legend and redundant edge styles.
+
+Current section outline and paragraph roles:
+
+- Opening/design: transition from training and speakers, same-weight Qwen3
+  modes, own-answer metamodel targets, appendix pointer, then "The results are
+  shown in Figure ... We find:".
+- Evidence A: bold finding, panel reference, colon, then the same-answer
+  context/end-of-CoT comparison and own-answer thinking-toggle control.
+- Evidence B: matching finding/reference format, operational group definitions,
+  then the equal-dataset-weighted comparison.
+- Conclusion: observing CoT improves prediction; enabling thinking alone does
+  not consistently improve context predictability; the readout gain occurs
+  in both necessity groups.
+
+Claim/evidence status is unchanged: A uses the three existing allfit summaries,
+B uses the saved necessity snapshot. Both claims remain supported within their
+stated scope, with no causal or statistical-equivalence claim. The author's
+latest removal of the all-training-fit sentence from the main setup is
+preserved; fit scope remains explicit in the appendix. The paragraph and
+caption structure now matches the neighboring results sections. No OpenThinker
+or main geometry text is reintroduced.
+
+The default renderer exports one figure bundle. The superseded standalone
+necessity renderer is removed; its prior assets remain historical and are no
+longer included by the manuscript. All main and appendix references are
+rewired to panel A or B, including the methods' needs-only denominator and
+training-fold baseline statement.
+
+Verification: the real production renderer/exporter is exercised by
+tests/test_section45_reasoning_story.py. It checks all ten bar heights and CI
+endpoints against the saved inputs, zero bar baselines, CI visibility order,
+metric hatching, no point markers, two axes, the one-figure export, source and
+script hashes, and no-refit metadata. Ruff and the test pass. The source
+snapshot's plotted values and source hash match the current shared-root
+artifact. Color/grayscale and compiled manuscript pages 8, 9 and 35 were
+visually inspected. Independent review passed, including methods panel scope
+and byte-identical copied PDF. Compilation succeeds with the same two unrelated
+unresolved effective-kernel-sae references.
+
+Five-dimension self-review: no contribution change; consistent paragraph and
+caption roles; no altered scores or intervals; both metrics and the necessity
+comparison retained; and no change to map fitting or evaluation design.

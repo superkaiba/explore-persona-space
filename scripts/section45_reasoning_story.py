@@ -1,8 +1,8 @@
 """Render the approved reasoning story from banked #2546 results, without refits.
 
 Needs-reasoning evaluation of existing all-question fits; own-generated answers.
-The default export gives each Qwen3 claim its own figure: prediction/control
-and the necessity-group comparison.
+The default export combines prediction/control and necessity groups in two
+bar-chart panels, using only saved scores and confidence intervals.
 Historical appendix renderers are retained but are not called by default.
 """
 
@@ -15,6 +15,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.patches import Patch
 
 from explore_persona_space.analysis.c2a_plot_style import (
     MUTED,
@@ -93,138 +94,154 @@ def pair(ax, rows, key, labels, title):
 
 
 def main_plot():
-    """Qwen3-only prediction/control comparison, without duplicate conditions."""
+    """Export and return the two-panel Qwen3 bar figure from unchanged saved scores."""
     SOURCES.clear()
     cells = ["p7_Aoff", "p7_A", "p7_D"]
     rows = [metrics(cell, 3) for cell in cells]
-    labels = ["Thinking off\nContext", "Thinking on\nContext", "Thinking on\nCoT end"]
+    labels = ["Thinking off · context", "Thinking on · context", "Thinking on · CoT end"]
     colors = [MUTED, ROLES["linear"].color, ROLES["nonlinear"].color]
-    markers = ["D", "o", "s"]
-    fig, _ = c2a_figure("full", 0.36)
-    axes = fig.subplots(1, 2)
-    fig.subplots_adjust(left=0.10, right=0.98, bottom=0.25, top=0.76, wspace=0.40)
-    for ax, letter, key, title, ylabel, scale, limits in zip(
-        axes,
-        ["A", "B"],
-        ["r2_corpus", "acc1"],
-        ["Answer predictability", "Answer retrieval"],
-        [r"$R^2\,\uparrow$", r"Top-1 retrieval (%) $\uparrow$"],
-        [1.0, 100.0],
-        [(0.40, 0.57), (84.0, 102.0)],
-        strict=True,
-    ):
-        ci_key = "r2_corpus_ci" if key == "r2_corpus" else "acc1_ci"
-        x = np.arange(3)
-        ax.plot(
-            x,
-            [scale * row[key] for row in rows],
-            color=MUTED,
-            linewidth=1.4,
-            linestyle="-" if key == "r2_corpus" else "--",
-        )
-        for i, row in enumerate(rows):
-            interval(
-                ax,
-                i,
-                scale * row[key],
-                [scale * bound for bound in row[ci_key]],
-                color=colors[i],
-                marker=markers[i],
-                markerfacecolor=colors[i] if key == "r2_corpus" else "white",
-                markeredgewidth=1.6,
-            )
-        ax.set_xticks(x, labels, fontsize=16)
-        ax.set_xlim(-0.35, 2.35)
-        ax.set_ylim(*limits)
-        ax.set_ylabel(ylabel)
-        style_axis(ax, grid_axis="y")
-        panel_header(ax, letter, "Qwen3-8B · needs reasoning", title)
-    save(
-        fig,
-        "c1_cot_story",
-        {
-            "conditions": [
-                {"cell": cell, "label": label, "metrics": row}
-                for cell, label, row in zip(cells, labels, rows, strict=True)
-            ],
-            "comparisons": {
-                "enabling_cot": "p7_Aoff versus p7_A; each mode's own answer target",
-                "observing_cot": "p7_A versus p7_D; identical thinking-on answer targets",
-            },
-            "evaluation_subset": "necessary",
-            "n_evaluated": 4522,
-            "maps_refit": False,
-        },
-    )
-
-
-def necessity_plot():
-    """Render the two necessity groups from saved equal-dataset-weighted scores."""
-    SOURCES.clear()
+    borders = [":", "-", "--"]
     data = read(NEW / "qwen3_necessity_table.json")
     assert data["model"] == "Qwen3-8B" and data["layer"] == 24
     pooled = data["pooled_equal_corpus_weight"]
     groups = ["necessary", "both_correct"]
-    labels = ["Needs reasoning", "Does not need\nreasoning"]
     expected_counts = {"necessary": 4522, "both_correct": 17693}
-    fig, _ = c2a_figure("wide", 0.46)
-    ax = fig.subplots()
-    fig.subplots_adjust(left=0.14, right=0.97, bottom=0.23, top=0.77)
-    for readout, label, color, marker in [
-        ("context", "Context", ROLES["linear"].color, "o"),
-        ("end_of_thought", "CoT end", ROLES["nonlinear"].color, "s"),
-    ]:
-        rows = [pooled[readout][group] for group in groups]
-        for group, row in zip(groups, rows, strict=True):
+
+    fig, _ = c2a_figure("full", 0.40)
+    axes = fig.subplots(1, 2)
+    fig.subplots_adjust(left=0.075, right=0.98, bottom=0.17, top=0.72, wspace=0.35)
+    fig.legend(
+        handles=[
+            Patch(facecolor=color, edgecolor=color, linestyle=border, linewidth=2, label=label)
+            for label, color, border in zip(labels, colors, borders, strict=True)
+        ],
+        loc="upper center",
+        bbox_to_anchor=(0.53, 1.0),
+        ncol=3,
+        fontsize=16,
+        handlelength=1.4,
+        columnspacing=1.5,
+    )
+
+    ax = axes[0]
+    width = 0.23
+    for metric_index, key in enumerate(["r2_corpus", "acc1"]):
+        ci_key = "r2_corpus_ci" if key == "r2_corpus" else "acc1_ci"
+        for i, row in enumerate(rows):
+            x = metric_index + (i - 1) * width
+            ax.bar(
+                x,
+                row[key],
+                width=width * 0.86,
+                facecolor=colors[i] if key == "r2_corpus" else "white",
+                edgecolor=colors[i],
+                linewidth=1.8,
+                linestyle=borders[i],
+                hatch=None if key == "r2_corpus" else "///",
+                zorder=1,
+            )
+            interval(
+                ax,
+                x,
+                row[key],
+                row[ci_key],
+                color=MUTED,
+                marker="none",
+                zorder=4,
+            )
+            ax.text(x, row[ci_key][1] + 0.025, f"{row[key]:.3f}", ha="center", fontsize=14)
+    ax.set_xticks([0, 1], [r"$R^2$", "Top-1 retrieval\n(fraction)"], fontsize=17)
+    ax.set_xlim(-0.5, 1.5)
+    ax.set_ylim(0, 1.10)
+    ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
+    ax.set_ylabel(r"Score $\uparrow$")
+    style_axis(ax, grid_axis="y")
+    panel_header(ax, "A", "Qwen3-8B · needs reasoning", "Answer prediction")
+
+    ax = axes[1]
+    width = 0.29
+    for readout_index, readout in enumerate(["context", "end_of_thought"]):
+        color = colors[readout_index + 1]
+        for group_index, group in enumerate(groups):
+            row = pooled[readout][group]
             assert row["n"] == sum(row["n_by_corpus"].values()) == expected_counts[group]
             assert len(row["weights"]) == 7
             assert np.allclose(list(row["weights"].values()), 1 / 7)
-        y = [row["r2_corpus_mean"] for row in rows]
-        ax.plot([0, 1], y, color=color, linewidth=1.6)
-        for x, row in enumerate(rows):
+            x = group_index + (readout_index - 0.5) * width
+            ax.bar(
+                x,
+                row["r2_corpus_mean"],
+                width=width * 0.86,
+                facecolor=color,
+                edgecolor=color,
+                linewidth=1.8,
+                linestyle=borders[readout_index + 1],
+                zorder=1,
+            )
             interval(
                 ax,
                 x,
                 row["r2_corpus_mean"],
                 row["r2_corpus_mean_ci"],
-                color=color,
-                marker=marker,
-                markerfacecolor=color,
-                markeredgewidth=1.6,
+                color=MUTED,
+                marker="none",
+                zorder=4,
             )
-        ax.annotate(
-            label,
-            (1, y[-1]),
-            xytext=(12, 0),
-            textcoords="offset points",
-            ha="left",
-            va="center",
-            color=color,
-            fontsize=18,
-        )
-    ax.set_xticks([0, 1], labels, fontsize=17)
-    ax.set_xlim(-0.30, 1.65)
-    ax.set_ylim(0.39, 0.54)
-    ax.set_yticks([0.40, 0.45, 0.50])
+            ax.text(
+                x,
+                row["r2_corpus_mean_ci"][1] + 0.015,
+                f"{row['r2_corpus_mean']:.3f}",
+                ha="center",
+                fontsize=14,
+            )
+    ax.set_xticks([0, 1], ["Needs reasoning", "Does not need\nreasoning"], fontsize=17)
+    ax.set_xlim(-0.5, 1.5)
+    ax.set_ylim(0, 0.60)
+    ax.set_yticks([0, 0.2, 0.4, 0.6])
     ax.set_ylabel(r"Held-out $R^2\,\uparrow$")
     style_axis(ax, grid_axis="y")
-    panel_header(ax, "", "Qwen3-8B · thinking on", "Predictability by necessity group")
+    panel_header(ax, "B", "Qwen3-8B · thinking on", "Predictability by necessity group")
     save(
         fig,
-        "c1_cot_necessity_comparison",
+        "c1_cot_story",
         {
             "model": data["model"],
             "layer": data["layer"],
-            "groups": groups,
-            "readouts": pooled,
-            "aggregation": "Ratio of pooled SSE/SST with equal total weight per dataset",
-            "baseline": "Whole-dataset mean, shared between necessity groups",
-            "targets": "Same thinking-on own-generated answer vectors for both readouts",
-            "intervals": "Saved 95% question-bootstrap intervals, stratified by dataset",
+            "panels": {
+                "A": {
+                    "conditions": [
+                        {"cell": cell, "label": label, "metrics": row}
+                        for cell, label, row in zip(cells, labels, rows, strict=True)
+                    ],
+                    "comparisons": {
+                        "enabling_cot": "p7_Aoff versus p7_A; each mode's own answer target",
+                        "observing_cot": "p7_A versus p7_D; identical thinking-on answer targets",
+                    },
+                    "evaluation_subset": "necessary",
+                    "n_evaluated": 4522,
+                    "retrieval_scale": "Fraction, not percentage; no score normalization",
+                    "baseline": "Training-fold dataset means; no dataset reweighting",
+                    "intervals": "Saved 95% question-bootstrap intervals",
+                },
+                "B": {
+                    "groups": groups,
+                    "readouts": pooled,
+                    "aggregation": "Pooled SSE/SST ratio with equal total weight per dataset",
+                    "baseline": "Whole-dataset mean, shared between necessity groups",
+                    "targets": "Same thinking-on own-generated answer vectors for both readouts",
+                    "intervals": "Saved 95% question-bootstrap intervals within dataset and group",
+                },
+            },
+            "encoding": {
+                "plot_type": "Grouped bars; both y-axes start at zero",
+                "conditions": dict(zip(labels, colors, strict=True)),
+                "condition_border_styles": dict(zip(labels, borders, strict=True)),
+                "metrics": "R2: filled; top-1 retrieval: open and hatched",
+            },
             "maps_refit": False,
-            "geometry": "Not analyzed in this figure",
         },
     )
+    return fig
 
 
 def appendix():
@@ -587,6 +604,5 @@ if __name__ == "__main__":
         assert len(sys.argv) == 1, "Use --derive-similarity or --derive-necessary."
         set_c2a_style()
         main_plot()
-        necessity_plot()
         # Historical OpenThinker diagnostics remain reproducible via their functions,
         # but are no longer part of the Qwen3-only manuscript render.
