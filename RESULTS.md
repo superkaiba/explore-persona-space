@@ -1,5 +1,7 @@
 # Explore Persona Space: Results
 
+**2026-09-07 — Rollout-count ablation:** With the paper's Qwen2.5-7B-Instruct layer-19 maps frozen, averaging K=1→5 answer rollouts raises held-out R² by 0.052 (linear) and 0.055 (nonlinear), while whitened-cosine/CSLS top-1 rises by 0.98 and 1.21 percentage points on 942 fixed candidates. This changes evaluation targets, not fitted maps; K>5 is untested. [Task 1901](https://eps.superkaiba.com/tasks/1901) · [Results](eval_results/issue_1901/k_rollout_ablation/README.md).
+
 **Goals:**
 - Characterize the geometry, localization, and propagation of persona representations in language models
 - Defend the assistant persona against emergent misalignment (EM)

@@ -1,0 +1,9 @@
+{
+  "repo_id": "superkaiba1/explore-persona-space-data",
+  "revision": "a642600ad3d75bea50a1563b84df4d11e2838ef2",
+  "path_in_repo": "issue1901_k_rollout_ablation/analysis_tensors/per_row_and_bootstrap.npz",
+  "bytes": 4927594,
+  "sha256": "ff540cc6b6a9cf98abeaf35dac842b1205a8e8a3df7bf92f8b31b5156cfc4e76",
+  "verification": "PASS: remote LFS sha256 and byte count match local archive",
+  "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/a642600ad3d75bea50a1563b84df4d11e2838ef2/issue1901_k_rollout_ablation/analysis_tensors/per_row_and_bootstrap.npz"
+}

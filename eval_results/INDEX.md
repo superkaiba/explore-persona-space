@@ -8,6 +8,7 @@ Maps each experiment result to its research topic. Updated by the analyzer agent
 
 | Directory | Experiment | Date | Key Finding |
 |-----------|-----------|------|-------------|
+| `issue_1901/k_rollout_ablation/` | All 31 subsets of five stored on-policy answers; frozen layer-19 linear/nonlinear maps and identity+bias; R² and fixed-pool retrieval | 2026-09-07 | Evaluation K=1→5 raises fitted-map R² by 0.052/0.055 and whitened-CSLS top-1 by 0.98/1.21 percentage points (942 candidates); no refits or K>5 claim. |
 | `persona_geometry_dimensionality/` | Intrinsic dimensionality estimation | 2026-04-08 | 8-12D persona manifolds |
 | `aim1_3_composition/` | Compositional structure (SAE features) | 2026-04-08 | 5 global PCs, compositional but entangled |
 | `aim1_5_multidim_identity/` | Multi-dimensional identity test (v2 corrected) | 2026-04-13 | 3/3 tests confirm multi-D (whitened kNN 3× GroupKFold, direction z=516 corrected null, Grassmann 2.96×) |

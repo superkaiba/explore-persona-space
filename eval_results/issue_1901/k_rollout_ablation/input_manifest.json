@@ -1,0 +1,31 @@
+{
+  "repo_id": "superkaiba1/explore-persona-space-data",
+  "repo_type": "dataset",
+  "revision": "83d249cc9d495ca6f5d10f9156a622bcdca29a19",
+  "files": {
+    "pass_b": {
+      "path_in_repo": "issue779_monitoring/analysis_tensors/pass_b/train_context_vectors.pt",
+      "sha256": "46c06e89c513ca598bc83be1c87689694a47bfc927a81d0d738a54df769dbf9a"
+    },
+    "whiten": {
+      "path_in_repo": "issue1901_mlpdense/analysis_tensors/whiten_stats_L19.npz",
+      "sha256": "b9a6f56f0e6b8348a9e936a0c5f265c235accff110086425a7a3e0b826d58c9c"
+    },
+    "ridge_pred": {
+      "path_in_repo": "issue1901_mlpdense/analysis_tensors/preds_L19_n963444_ridge.npz",
+      "sha256": "eac0b81ac9f83b636932a90ad1600734fef91ca04a375d948b6881115d7c8630"
+    },
+    "mlp_pred": {
+      "path_in_repo": "issue1901_mlpdense/analysis_tensors/preds_L19_n963444_mlp.npz",
+      "sha256": "55cf727e85cb5760d3773b62a6be3acc89d927f5035cccf73f67afcb173f309d"
+    },
+    "ridge_weights": {
+      "path_in_repo": "issue779_monitoring/n1m_readout/weights/L19/ridge.pt",
+      "sha256": "188486f8afd9d95221e32492f3a0be2a3bdb2098cbe7fadfecf1d46433567909"
+    },
+    "draws": {
+      "path_in_repo": "issue1901_avgpool/analysis_tensors/kresample/V_test_shard00.npz",
+      "sha256": "b7b4c8ada5b570017c7e9fbd342a7256205d3a7c0f3c518ac26e0405f50dc805"
+    }
+  }
+}
