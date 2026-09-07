@@ -265,6 +265,14 @@ def collapse_rare_language(values: np.ndarray, minimum: int = 50) -> np.ndarray:
     return np.asarray([v if counts[v] >= minimum else "other_language" for v in values], dtype=str)
 
 
+def collapse_rare_depth(values: np.ndarray, minimum: int = 50) -> np.ndarray:
+    """Pool unsupported tail depths without inspecting activations or outcomes."""
+
+    values = np.asarray(values, dtype=str)
+    counts = Counter(values.tolist())
+    return np.asarray([v if counts[v] >= minimum else "other_depth" for v in values], dtype=str)
+
+
 def treatment_columns(values: np.ndarray, name: str) -> tuple[np.ndarray, list[str], list[str]]:
     """Return deterministic treatment-coded columns, names, and ordered levels."""
 
@@ -290,7 +298,7 @@ def build_design(
     if "language" in values:
         values["language"] = collapse_rare_language(values["language"])
     corpus = np.asarray([str(row["corpus"]) for row in rows], dtype=str)
-    depth = np.asarray([str(int(row["depth"])) for row in rows], dtype=str)
+    depth = collapse_rare_depth(np.asarray([str(int(row["depth"])) for row in rows], dtype=str))
     length = np.log1p(np.asarray([float(row["prompt_chars"]) for row in rows]))
     length_centered = length - length.mean()
 
@@ -326,6 +334,7 @@ def build_design(
         "target_columns": registry,
         "levels": levels,
         "values": values,
+        "depth_encoding": "exact integer indicators; globally n<50 pooled as other_depth",
     }
 
 
@@ -2161,6 +2170,7 @@ def analyze_compact(cfg: ValidationConfig, repo_root: Path, out_root: Path) -> d
             "shape": list(design_info["matrix"].shape),
             "columns": design_info["column_names"],
             "levels": design_info["levels"],
+            "depth_encoding": design_info["depth_encoding"],
         },
         "category_inventory": _category_counts(rows, design_info),
         "operator": {

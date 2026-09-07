@@ -365,6 +365,15 @@ def test_design_and_planted_kernel_retained_pattern() -> None:
     assert fit_language["delta"][0] > fit_language["delta"][1:].sum()
 
 
+def test_rare_depths_are_pooled_with_frozen_support_floor() -> None:
+    values = np.asarray(["2"] * 60 + ["3"] * 50 + ["31"] * 3 + ["55"] * 2)
+
+    collapsed = CV.collapse_rare_depth(values)
+
+    assert set(collapsed) == {"2", "3", "other_depth"}
+    assert np.sum(collapsed == "other_depth") == 5
+
+
 def test_analysis_rejects_script_changed_since_extraction(tmp_path: Path) -> None:
     """Checkpoint reuse is impossible after the extracted-script fingerprint changes."""
 
