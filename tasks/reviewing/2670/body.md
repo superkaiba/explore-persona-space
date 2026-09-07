@@ -562,7 +562,7 @@ def count_ways_to_stair(k: int) -> int:
 
 ### Four successful hardcoding trajectories did not pass the prediction gate
 
-The left panel counts successes among 160 rollouts per condition. The right panel shows each context count out of eight; all 60 planned cells are included. These are observed counts, not fitted prediction scores.
+The left panel counts successes among 160 rollouts per condition. The right panel shows per-context counts out of eight; all 60 planned cells are included. These are observed counts, not fitted prediction scores.
 
 ![Observed successes: 118/160 original, 0/160 conflicting, 4/160 one-off; all 20 base tasks shown](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f9b68aae38f48ad5fd31618cdc0d930a11952b03/figures/issue_2670/observed_outcomes.png)
 
@@ -580,6 +580,4 @@ All 244 saved-output replays passed, including hardcoded answers. Two original s
 
 > resume it and finish it to the end
 
-> run the corrected experiment. get a critic to check for bugs first
-
-> approve. start the experiment
+> run the corrected experiment. get a critic to check for bugs first; approve. start the experiment
