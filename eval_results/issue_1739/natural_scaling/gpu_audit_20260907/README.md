@@ -29,6 +29,12 @@ Remote verification compared exact name sets, sizes, and every content ID
 (LFS SHA-256 or Git blob SHA-1), not merely existence. Final manifest SHA-256:
 `abeeb30b42665271e85e1e1f9448dc10ce215d45bb3ff4161dfd518140b6a524`.
 
+The canonical realized-row verifier independently fetched the actual uploaded
+`row_index.jsonl`: 100,000 lines, 100,000 distinct `(source_dataset, source_id)`
+keys, and zero duplicates. Its pinned-revision receipt is
+`realized_rows_verified_20260907.json`; it does not rely on the producer's
+declared count.
+
 ## Verified production-shaped fitting pilot
 
 Each behavior used 100,000 generic pairs and seed0 through all its P-B held-out

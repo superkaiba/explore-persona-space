@@ -1,0 +1,23 @@
+{
+  "detail": "store: OK expected=100000 distinct=100000 lines=100000 duplicates=0 shards=[row_index.jsonl:100000] key=(source_dataset,source_id) | gate quantity: distinct full-key rows, never a raw line count and never a producer-reported field (#2148) | hub revision: 46c0e3d43c0ccf245dbec284c7b4733d29ed811b",
+  "labels": {
+    "store": {
+      "duplicates": 0,
+      "expected": 100000,
+      "key_fields": [
+        "source_dataset",
+        "source_id"
+      ],
+      "realized_distinct": 100000,
+      "realized_lines": 100000,
+      "shards": [
+        "row_index.jsonl:100000"
+      ],
+      "tag": "",
+      "verdict": "OK"
+    }
+  },
+  "revision": "46c0e3d43c0ccf245dbec284c7b4733d29ed811b",
+  "status": "OK",
+  "url": ""
+}
