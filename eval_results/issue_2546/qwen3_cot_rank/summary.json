@@ -1,0 +1,130 @@
+{
+  "status": "complete",
+  "recipe": {
+    "model": "Qwen/Qwen3-8B",
+    "layer": 24,
+    "dimension": 4096,
+    "n_rows": 33810,
+    "mode": "think_on",
+    "answer_target": "ans_mean",
+    "outer_test": "original fold k",
+    "inner_validation": "original fold (k+1)%5",
+    "inner_training": "remaining three folds",
+    "outer_refit": "all four non-test folds",
+    "selection": "minimum TRAIN-output-PCA projection rank with <=10% extra validation SSE",
+    "sensitivity_extra_sse": [
+      0.05,
+      0.1,
+      0.2
+    ],
+    "penalties": "frozen original production values; no new selection",
+    "r2_baseline": "outer TRAIN-fold per-corpus answer means",
+    "input_dimension": "raw centered training-input covariance participation ratio",
+    "inference": "one model; fold ranges are descriptive, no model-population p-value",
+    "independence_limit": "rank selection excludes outer test; penalties/layer inherited from original study, not newly nested",
+    "dtype": "float64",
+    "gpu_hours": 0,
+    "script_sha256": "a943b2ca537799dbabb1604c200e135213d0f6a81710fa360017075701f93376",
+    "production_script_sha256": "356ad1707ecd3eb544e6395712ec7044d178f805499d18b512e2beb0b0f3b932"
+  },
+  "states": {
+    "context": {
+      "r2_full": 0.4978317580508165,
+      "r2_rank10": 0.4423080483511893,
+      "r2_identity_bias": -3.6030098768726466,
+      "rank10_by_fold": [
+        55,
+        55,
+        56,
+        55,
+        56
+      ],
+      "rank_sensitivity": {
+        "0.05": [
+          88,
+          89,
+          90,
+          89,
+          90
+        ],
+        "0.1": [
+          55,
+          55,
+          56,
+          55,
+          56
+        ],
+        "0.2": [
+          30,
+          30,
+          30,
+          30,
+          31
+        ]
+      },
+      "input_pr_by_fold": [
+        6.333301654095789,
+        6.333470286694142,
+        6.336541374526976,
+        6.326828673991782,
+        6.316730165305511
+      ],
+      "input_pr_all_rows": 6.329608419801615,
+      "retrieval_full": 0.8765454007690032,
+      "retrieval_rank10": 0.5623779946761314,
+      "retrieval_identity_bias": 0.0005028098195800059,
+      "test_extra_sse_rank10": 0.11056794329348674
+    },
+    "end_of_thought": {
+      "r2_full": 0.574376858311477,
+      "r2_rank10": 0.5259723270324969,
+      "r2_identity_bias": -1.1746910653864764,
+      "rank10_by_fold": [
+        83,
+        83,
+        84,
+        85,
+        85
+      ],
+      "rank_sensitivity": {
+        "0.05": [
+          129,
+          129,
+          130,
+          131,
+          130
+        ],
+        "0.1": [
+          83,
+          83,
+          84,
+          85,
+          85
+        ],
+        "0.2": [
+          46,
+          47,
+          48,
+          48,
+          48
+        ]
+      },
+      "input_pr_by_fold": [
+        3.8739156659418805,
+        3.8722796109284907,
+        3.8663472258183593,
+        3.8697360854311187,
+        3.8643163109787424
+      ],
+      "input_pr_all_rows": 3.8694016872865293,
+      "retrieval_full": 0.985980479148181,
+      "retrieval_rank10": 0.8945874001774623,
+      "retrieval_identity_bias": 0.0008281573498964803,
+      "test_extra_sse_rank10": 0.11372626753082726
+    }
+  },
+  "n_models": 1,
+  "n_rows": 33810,
+  "n_folds": 5,
+  "completed_cells": 10
+}
