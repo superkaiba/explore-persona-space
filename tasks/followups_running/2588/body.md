@@ -18,7 +18,7 @@ goal: Determine whether linear context-to-answer mapping quality (held-out kNN r
 ---
 # Linear context-to-answer mapping quality does not track capability across a fixed-size release column: no-thinking reads invert on the generic corpus (MODERATE confidence)
 
-<!-- clean-result-v4 -->
+<!-- clean-result-v5 -->
 
 ## Takeaways
 
@@ -212,3 +212,31 @@ At OLMo 32B the end-of-thought read trails pre-think and splits by correctness (
 > "I want to see if our mapping is getting better with capability. Maybe like independently of skill. Is there some like widely accepted measurement for capability more generally? And yeah, there's a question of chain of thought here. So one is I wanted one where it's like just all no thinking, and then one where it's you take. You take every model's like best setting. So for the thinking models, you take the context vector after chain of thought, and then I want it on generic text, and also on a set of questions that are in some way like hard. So like the smaller model doesn't know how to answer them necessarily."
 
 Lineage: fresh direction (no parent). Created 2026-08-25; run 2026-08-26 to 2026-08-27; interpretation rounds and the zero-GPU follow-up analysis round 2026-08-27.
+
+
+## Minimal long-cap follow-up — 2026-09-07
+
+This addendum supersedes the original thinking-arm truncation interpretation where the two conflict. Per the user's minimal scope, only `q35_27b_b`, `q36_27b_b`, and `q38_27b_b` were regenerated at the registered long caps; the already-complete same-width controls were reused. DeepSeek V4, GLM-5.3, Qwen3.8 Flash Next, and Qwen3.5-397B were not run.
+
+### Outcome
+
+- Long caps removed the severe denominator problem. Generic retention became 99.3%, 99.4%, and 98.2% for Qwen3.5/3.6/3.8-27B; GPQA retention became 98.1%, 97.1%, and 96.3%, versus 48.2%, 49.9%, and 73.3% under the original caps.
+- Generic mapping quality remained strong but did not improve monotonically with release capability. Held-out cosine top-1 was 0.799, 0.775, and 0.822; held-out R² was 0.754, 0.746, and 0.743. This does not support a simple "more capable model = better linear context-to-answer map" claim.
+- The prior statement that the Qwen3.8 thinking read was at chance on GPQA must be narrowed. With long caps it rose from 0.008 to 0.031 same-question top-1 (chance 0.0052), but remained far below Qwen3.5 (0.248) and Qwen3.6 (0.164). Truncation amplified the old collapse but did not explain the large cross-release gap.
+- Reduced-rank dimension depends materially on realized training size. Full-data long-cap ranks were 101, 93, and 128; after matching every fit to n=4,500 they were 74.3, 70.0, and 94.0. Qwen3.8 remains the highest-rank 27B map after matching.
+- Across the five same-width Qwen checkpoints, matched-n end-of-thought rank had Spearman rho = 0.80 (n=5, asymptotic p=0.104); prompt-read rank had rho = 0.30 (p=0.624). The end-of-thought association is suggestive, not confirmatory: n is only five and its magnitude shifts with the rank definition (roughly rho 0.41–0.80 across registered reduced-rank thresholds).
+
+The supportable conclusion is therefore asymmetric: mapping **quality** still does not track capability monotonically in this fixed-width panel, while mapping **complexity/rank** may increase with capability for end-of-thought reads and merits replication with more same-width checkpoints. The original headline concerns the no-thinking arm and is not overturned by this thinking-only follow-up.
+
+### Coverage and limitations
+
+All three requested long-cap cells completed. The pinned Hub audit reconciles 14,126 captured Qwen3.8 rows plus 264 explicit drops to all 14,390 planned inputs; Qwen3.5 and Qwen3.6 have their own prior upload-verification PASS records. The final analysis contains 11 maps, 77 matched-size fits, and 11/11 passing source audits. The Qwen3.8 GPQA behavioral judge remains pending because anchored extraction failed on 15.9% of rows and automated Claude use is disabled; the mapping metrics above do not depend on that judge.
+
+The only paid pod was reused sequentially and terminated after upload verification. No result was deleted, no duplicate GPU job was launched, and no paid compute remains active for this issue.
+
+### Artifacts
+
+- [Long-cap result bundle at commit 14a9a3605c6](https://github.com/superkaiba/explore-persona-space/tree/14a9a3605c6f14e0537a7e6407ae71cf5093a972/eval_results/issue_2588/cap_long)
+- [Summary figure](https://raw.githubusercontent.com/superkaiba/explore-persona-space/14a9a3605c6f14e0537a7e6407ae71cf5093a972/figures/issue_2588/cap_long/minimal_longcap_summary.png)
+- [All figures and sidecars](https://github.com/superkaiba/explore-persona-space/tree/14a9a3605c6f14e0537a7e6407ae71cf5093a972/figures/issue_2588/cap_long)
+- [Pinned long-cap raw/capture/fit artifacts at Hub revision 7f968cdfad5](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/7f968cdfad5165b14ab1cedd61f2acc8121114d0/issue2588_capability_panel_cap_long)
