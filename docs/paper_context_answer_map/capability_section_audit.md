@@ -4,7 +4,46 @@ Date: 2026-09-07. Requested addition: model capability versus held-out context-a
 metamodel R2, with a simple labelled scatter and a connection to neural-trajectory
 straightening. No inference, training, GPU jobs, or new model fits.
 
-## Latest manuscript edit: concise caption and descriptive appendix
+## Latest manuscript edit: claim-style heading, introduction, and figure layout
+
+Thomas requested a heading consistent with the neighboring declarative Results
+headings, an introduction claim, and figure styling consistent with the paper.
+The Results heading is now "Linear answer predictability correlates with model
+capability". The same claim appears after CoT in the introduction findings list,
+with a Section 4.6 reference and one evidence sentence explicitly describing the
+ten-model, thinking-disabled comparison as exploratory (Spearman rho = 0.867).
+The existing Results interpretation, caption, and descriptive appendix are unchanged.
+
+Mini-outline and paragraph roles: claim-first heading; introduction evidence
+sentence scoped to the observed comparison; unchanged detailed evidence in Results.
+Claim-evidence map: higher index scores correlate with higher held-out metamodel
+R2 in this ten-model panel; evidence is the pinned plotted coordinates and exact
+Spearman calculation in the figure sidecar; supported as an exploratory association,
+not a causal or confirmatory capability result.
+
+The existing figure already used the shared Inter font, semantic teal circles,
+and axis treatment. The restyle adds the shared descriptive panel header and
+context kicker, uses a shorter canvas, adds the higher-is-better index-axis arrow,
+and repositions the two OLMo labels. The source data, all ten coordinates, score
+provenance, exclusions, and every statistical result are unchanged. No model fits,
+inference, or GPU jobs were run.
+
+Scoped five-dimension self-review: contribution is unchanged; clarity improves
+through parallel claim wording and section order; experimental strength is not
+upgraded by the introduction mention; evaluation scope remains the ten-model
+exploratory panel; method design is unchanged. An independent reviewer verified
+the prose and scientific metadata and identified a crowded label, which was
+repositioned before the final render.
+
+Final verification: the independent reviewer confirmed that the corrected labels
+are separated in both exports. All scientific sidecar fields equal the preceding
+revision, the producer hash matches its committed script, and the Overleaf PDF
+and include width match the export. The 42-page manuscript compiles with the same
+two pre-existing unresolved citations. Introduction page 2, Results page 9, figure
+page 10, and the grayscale audit were checked visually. Ruff and the writing gate
+pass; advisory writing flags are confined to unrelated existing text.
+
+## Previous manuscript edit: concise caption and descriptive appendix
 
 Thomas supplied a revised main-text paragraph and confirmed that the panel has
 ten models. The latest edit keeps his interpretation paragraph unchanged,
