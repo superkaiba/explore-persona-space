@@ -57,7 +57,7 @@ _PROFILE_DIR = Path() if CAP_PROFILE == "v1" else Path(f"cap_{CAP_PROFILE}")
 HF_REVISION = (
     "74bb871a5edf1afe777ac9b64a4e2fec5e9947c2"  # full same-width panel incl. OLMo-3-32B-Think
     if CAP_PROFILE == "v1"
-    else "main"  # pin once the regenerated panel is complete
+    else os.environ.get("EPS_ISSUE2588_HF_REVISION", "main")
 )
 PANEL_PREFIX = "issue2588_capability_panel" + _PROFILE_SUFFIX
 EVAL_ROOT = REPO / "eval_results" / "issue_2588" / _PROFILE_DIR
