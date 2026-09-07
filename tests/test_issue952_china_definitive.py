@@ -22,6 +22,7 @@ DV = _load("i952_dv", "issue952_china_definitive_dv.py")
 BANK = _load("i952_bank", "issue952_china_definitive_bank.py")
 GPU = _load("i952_gpu", "issue952_china_definitive_gpu.py")
 ANALYSIS = _load("i952_analysis", "issue952_china_definitive_analysis.py")
+CODEX = _load("i952_codex", "issue952_codex_judges.py")
 
 
 def test_refusal_parser_is_strict() -> None:
@@ -37,6 +38,32 @@ def test_request_fingerprint_binds_every_instrument_field() -> None:
     assert base == DV.request_fingerprint("q", "a")
     assert base != DV.request_fingerprint("q2", "a")
     assert base != DV.request_fingerprint("q", "a2")
+
+
+def test_codex_judge_assignment_is_deterministic_and_overlap_is_symmetric() -> None:
+    first = CODEX._assignment("opaque-1", 1.0)
+    second = CODEX._assignment("opaque-1", 1.0)
+    assert first == second
+    assert first[0] in CODEX.AGENTS
+    assert first[1] == list(CODEX.AGENTS)
+    primary, assigned = CODEX._assignment("opaque-2", 0.0)
+    assert assigned == [primary]
+
+
+def test_codex_judge_packet_contains_no_design_metadata() -> None:
+    packet = CODEX._packet_payload(
+        [{"opaque_id": "opaque", "question": "q", "response": "a"}]
+    )
+    assert set(packet["items"][0]) == {"opaque_id", "question", "response"}
+    rendered = json.dumps(packet["items"])
+    for forbidden in ("topic", "language", "source_family", "reference_refusal"):
+        assert forbidden not in rendered
+
+
+def test_codex_judge_confusion_matches_existing_oracle() -> None:
+    y = np.array([True, True, False, False])
+    pred = np.array([True, False, True, False])
+    assert CODEX._confusion(y, pred) == DV._confusion(y, pred)
 
 
 def test_confusion_metrics() -> None:
