@@ -599,29 +599,47 @@ def make_figure(summary: dict[str, Any]) -> plt.Figure:
     _panel_heading(axes[0], "A · Truncation", "Long caps restore usable rows")
     axes[0].tick_params(axis="x", labelrotation=24)
 
-    quality_labels: list[str] = []
-    quality_base: list[float] = []
-    quality_long: list[float] = []
-    for row, model in zip(rows, model_labels, strict=True):
-        for field, metric_label in (
-            ("test_r2", "$R^2$"),
-            ("test_retrieval_acc1_cos", "generic\ntop-1"),
-            ("gpqa_same_question_acc1_cos", "GPQA\ntop-1"),
-        ):
-            quality_labels.append(f"{model}\n{metric_label}")
-            quality_base.append(row["profiles"]["baseline"]["mapping"][field])
-            quality_long.append(row["profiles"]["long"]["mapping"][field])
-    _paired_bars(
-        axes[1],
-        quality_labels,
-        quality_base,
-        quality_long,
-        ylabel="Held-out score ↑",
-        y_min=0,
-        y_max=0.9,
+    quality_styles = (
+        ("test_r2", "$R^2$", LONG_COLOR, "o"),
+        ("test_retrieval_acc1_cos", "Generic top-1", MATCHED_COLOR, "s"),
+        ("gpqa_same_question_acc1_cos", "GPQA top-1", "#6B5B95", "D"),
     )
+    quality_x = np.arange(len(rows), dtype=float)
+    for field, _label, color, marker in quality_styles:
+        baseline = [row["profiles"]["baseline"]["mapping"][field] for row in rows]
+        long = [row["profiles"]["long"]["mapping"][field] for row in rows]
+        axes[1].plot(
+            quality_x - 0.035,
+            baseline,
+            color=color,
+            marker=marker,
+            markerfacecolor=PAPER,
+            markeredgewidth=1.7,
+            linestyle="--",
+            lw=1.8,
+            zorder=3,
+        )
+        axes[1].plot(
+            quality_x + 0.035,
+            long,
+            color=color,
+            marker=marker,
+            lw=2.4,
+            zorder=4,
+        )
+    axes[1].set_xticks(quality_x, model_labels)
+    axes[1].set_ylabel("Held-out score ↑")
+    axes[1].set_ylim(0, 0.9)
+    _style_axis(axes[1])
     _panel_heading(axes[1], "B · Mapping quality", "Generic maps remain predictive")
-    axes[1].tick_params(axis="x", labelrotation=31)
+    axes[1].legend(
+        handles=[
+            Line2D([0], [0], color=color, marker=marker, lw=2.2, label=label)
+            for _field, label, color, marker in quality_styles
+        ],
+        frameon=False,
+        loc="center",
+    )
 
     x = np.arange(len(rows), dtype=float)
     old_ranks = [row["profiles"]["baseline"]["mapping"]["rrr_rank_rel10"] for row in rows]
@@ -680,9 +698,13 @@ def make_figure(summary: dict[str, Any]) -> plt.Figure:
             edgecolor=BASELINE_COLOR,
             hatch="///",
             linewidth=1.5,
-            label="Original cap",
+            label="Original cap (hatched / open / dashed)",
         ),
-        Patch(facecolor=LONG_COLOR, edgecolor=LONG_COLOR, label="Long cap"),
+        Patch(
+            facecolor=LONG_COLOR,
+            edgecolor=LONG_COLOR,
+            label="Long cap (filled / solid)",
+        ),
     ]
     fig.legend(
         handles=legend_profiles,
@@ -745,7 +767,17 @@ def make_figure(summary: dict[str, Any]) -> plt.Figure:
     _panel_heading(
         axes[3],
         "D · Same-width controls",
-        f"Matched ranks: Qwen ρ = {prompt_rho:+.2f} / {thought_rho:+.2f}",
+        "Matched-n rank versus capability",
+    )
+    axes[3].text(
+        0.98,
+        0.96,
+        f"Qwen ρ = {prompt_rho:+.2f} prompt; {thought_rho:+.2f} thought",
+        transform=axes[3].transAxes,
+        ha="right",
+        va="top",
+        color=MUTED,
+        fontsize=13,
     )
     axes[3].legend(
         handles=[
