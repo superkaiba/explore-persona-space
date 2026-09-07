@@ -383,6 +383,20 @@ def build_summary(
             if int(fit["layer_star"]) != int(mapping["layer_star"]):
                 raise ValueError(f"{cell}/{name}: mapping and source select different layers")
             selected = fit["layers"][str(fit["layer_star"])]
+            if not math.isclose(
+                float(mapping["mapping_performance"]["test_r2"]),
+                float(selected["test_r2"]),
+                rel_tol=1e-9,
+                abs_tol=1e-7,
+            ):
+                raise ValueError(f"{cell}/{name}: mapping and source test R2 differ")
+            if not math.isclose(
+                float(mapping["selected_lambda"]),
+                float(selected["fit_meta"]["selected_lambda"]),
+                rel_tol=1e-9,
+                abs_tol=1e-7,
+            ):
+                raise ValueError(f"{cell}/{name}: mapping and source ridge penalties differ")
             identity_retrieval = float(
                 selected["knn_test"]["identity_bias"]["cosine"]["acc_at_k"]["1"]
             )
@@ -569,7 +583,7 @@ def make_figure(summary: dict[str, Any]) -> plt.Figure:
     retention_base: list[float] = []
     retention_long: list[float] = []
     for row, model in zip(rows, model_labels, strict=True):
-        for split, split_label in (("generic", "train"), ("gpqa", "GPQA")):
+        for split, split_label in (("generic", "generic"), ("gpqa", "GPQA")):
             retention_labels.append(f"{model}\n{split_label}")
             retention_base.append(100 * row["profiles"]["baseline"][split]["retained_fraction"])
             retention_long.append(100 * row["profiles"]["long"][split]["retained_fraction"])
@@ -655,7 +669,8 @@ def make_figure(summary: dict[str, Any]) -> plt.Figure:
     )
     axes[2].set_xticks(x, model_labels)
     axes[2].set_ylabel("Reduced-rank dimension ↓")
-    axes[2].set_ylim(0, max(old_ranks + long_ranks) * 1.25)
+    matched_max = [row["long_matched_n"]["max_rrr_rank_rel10"] for row in rows]
+    axes[2].set_ylim(0, max(old_ranks + long_ranks + matched_max) * 1.25)
     _style_axis(axes[2])
     _panel_heading(axes[2], "C · Rank robustness", "Sample size explains part of rank")
 
