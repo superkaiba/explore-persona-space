@@ -895,7 +895,7 @@ def _producer_compatibility(repo_root: Path) -> dict[str, Any]:
         "DEFAULT_MODEL = N1M.DEFAULT_MODEL",
         "CAPTURE_LAYERS = list(N1M.CAPTURE_LAYERS)",
         "extract_layer_activations",
-        "hs[-1]",
+        "cx.append(hs[-1, :].float().cpu())",
         '"cx_last"',
         '"layers"',
     )
@@ -908,7 +908,7 @@ def _producer_compatibility(repo_root: Path) -> dict[str, Any]:
         "model": "Qwen/Qwen2.5-7B-Instruct",
         "generation_suffix": "<|im_start|>assistant\n",
         "layers": [14, 19, 26],
-        "context_read": "final prompt token hs[-1]",
+        "context_read": "final prompt token hs[-1, :]",
         "required_fragments": list(required_fragments),
     }
 

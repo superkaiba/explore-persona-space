@@ -688,3 +688,11 @@ def test_compact_ledger_resumes_without_reprocessing_completed_shard(
     assert staged_paths == [records[0]["path"], records[1]["path"]]
     matrix = np.load(out_root / "compact/activations_L19.npy")
     np.testing.assert_array_equal(matrix[:, 0], np.arange(1, 6, dtype=np.float32))
+
+
+def test_pinned_producer_compatibility_uses_exact_last_token_expression() -> None:
+    report = CV._producer_compatibility(MODULE_PATH.parents[1])
+
+    assert report["script_sha256"] == CV.PRODUCER_SCRIPT_SHA256
+    assert report["context_read"] == "final prompt token hs[-1, :]"
+    assert "cx.append(hs[-1, :].float().cpu())" in report["required_fragments"]
