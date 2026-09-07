@@ -23,6 +23,11 @@ original scanner-tripping incident).
 
 from __future__ import annotations
 
+import base64
+import hashlib
+import hmac
+import io
+import json
 import tarfile
 
 import pytest
@@ -58,6 +63,31 @@ def _jwt() -> bytes:
         + b"." + b"eyJ" + b"zdWIiOiIwMHVra2k0OHBzIiwibmFtZSI6IkEifQ"
         + b"." + b"q9DkLm20ZnRs7Yw4Wq8rBv31JmKQmwRb"
     )
+
+
+def _public_jwt_example(*, name="John Doe", key=b"your-256-bit-secret", alg="HS256") -> bytes:
+    """Reconstruct the public JWT.io example without a literal signed token."""
+
+    def encode(value):
+        raw = json.dumps(value, separators=(",", ":")).encode()
+        return base64.urlsafe_b64encode(raw).rstrip(b"=")
+
+    signing_input = b".".join(
+        [
+            encode({"alg": alg, "typ": "JWT"}),
+            encode({"sub": "1234567890", "name": name, "iat": 1516239022}),
+        ]
+    )
+    signature = base64.urlsafe_b64encode(
+        hmac.new(key, signing_input, hashlib.sha256).digest()
+    ).rstrip(b"=")
+    return signing_input + b"." + signature
+
+
+def _malformed_jwt_demonstration() -> bytes:
+    header = base64.urlsafe_b64encode(b'{"alg":"HS256","typ":"JWT"}').rstrip(b"=")
+    payload = base64.urlsafe_b64encode(b'{"some":"payload"}').rstrip(b"=")
+    return b".".join([header, payload, b"4r3XG3xv8Z7z7" + b"Z7" * 25])
 
 
 # ---------------------------------------------------------------- detection
@@ -96,6 +126,97 @@ def test_real_secret_shapes_are_found(name, payload):
 def test_placeholders_are_not_findings(payload):
     data = b'{"text": "set it to ' + payload + b' in your config"}'
     assert scan_bytes(data) == []
+
+
+def test_exact_public_jwt_fixture_is_not_a_secret_and_is_not_mutated(tmp_path):
+    token = _public_jwt_example()
+    assert hashlib.sha256(token).hexdigest() == (
+        "7f75367e7881255134e1375e723d1dea8ad5f6a4fdb79d938df1f1754a830606"
+    )
+    # Deliberately no nearby placeholder/example keywords.
+    data = b'{"answer":"Authorization: Bearer ' + token + b'"}\n'
+    path = tmp_path / "generated.jsonl"
+    path.write_bytes(data)
+    assert scan_bytes(data) == []
+    assert scan_file(path) == []
+    assert scrub_bytes(data) == (data, [])
+    assert_upload_clean([path], what="public documentation fixture")
+    assert path.read_bytes() == data
+
+
+def test_exact_malformed_demonstration_is_not_a_valid_hs256_credential():
+    token = _malformed_jwt_demonstration()
+    assert hashlib.sha256(token).hexdigest() == (
+        "3c5ffb58f91e3eaba1c87e50cd36acd6c465efd7c389d7e9e364accfc98a0710"
+    )
+    signature = token.rsplit(b".", 1)[1]
+    assert len(base64.urlsafe_b64decode(signature + b"=")) == 47
+    assert hashlib.sha256().digest_size == 32
+    assert scan_bytes(token) == []
+    assert scrub_bytes(token) == (token, [])
+
+
+@pytest.mark.parametrize(
+    "changed",
+    [
+        _public_jwt_example(name="Jane Doe"),
+        _public_jwt_example(key=b"unrelated-signing-key"),
+        _public_jwt_example(alg="HS512"),
+        _public_jwt_example() + b"A",
+        _public_jwt_example() + b"-",
+        _public_jwt_example() + b"--",
+        b"-" + _public_jwt_example(),
+        _malformed_jwt_demonstration() + b"A",
+        _malformed_jwt_demonstration() + b"--",
+    ],
+)
+def test_public_jwt_exception_does_not_cover_changed_tokens(changed):
+    hits = scan_bytes(b"Authorization: Bearer " + changed)
+    assert [hit.pattern for hit in hits] == ["jwt-signed"]
+
+
+def test_public_jwt_exception_does_not_hide_adjacent_other_credentials():
+    data = _public_jwt_example() + b" " + _jwt() + b" " + _hf_token()
+    assert [hit.pattern for hit in scan_bytes(data)] == ["hf-token", "jwt-signed"]
+
+
+@pytest.mark.parametrize(
+    "token",
+    [
+        _public_jwt_example(),
+        _public_jwt_example() + b"--",
+        _malformed_jwt_demonstration(),
+        _malformed_jwt_demonstration() + b"--",
+        _jwt(),
+        _hf_token(),
+    ],
+)
+def test_stream_boundaries_preserve_public_exception_and_real_detection(monkeypatch, token):
+    monkeypatch.setattr(secret_scrub, "_CHUNK_BYTES", 256)
+    monkeypatch.setattr(secret_scrub, "_OVERLAP_BYTES", 192)
+    # Put every possible token boundary at the end of the first read, including
+    # signature truncations long enough to satisfy the JWT detection regex.
+    for cut in range(1, len(token) + 1):
+        data = b" " * (256 - cut) + token + b"\n"
+        expected = scan_bytes(data)
+        actual = secret_scrub._scan_stream(io.BytesIO(data), path="stream.jsonl")
+        assert [(f.pattern, f.offset, f.length) for f in actual] == [
+            (f.pattern, f.offset, f.length) for f in expected
+        ], cut
+
+
+@pytest.mark.parametrize("prefix", [b"", b"-", b"example ", b"dummy "])
+def test_stream_overlap_boundary_retains_left_context(monkeypatch, prefix):
+    monkeypatch.setattr(secret_scrub, "_CHUNK_BYTES", 256)
+    monkeypatch.setattr(secret_scrub, "_OVERLAP_BYTES", 192)
+    for token in [_public_jwt_example(), _malformed_jwt_demonstration(), _jwt(), _hf_token()]:
+        for pad in range(513):
+            data = b" " * pad + prefix + token + b" " * 80
+            expected = scan_bytes(data)
+            actual = secret_scrub._scan_stream(io.BytesIO(data), path="stream.jsonl")
+            assert [(f.pattern, f.offset, f.length) for f in actual] == [
+                (f.pattern, f.offset, f.length) for f in expected
+            ], (prefix, pad)
 
 
 def test_long_test_identifiers_are_not_findings():

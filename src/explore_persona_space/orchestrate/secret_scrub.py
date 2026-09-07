@@ -58,6 +58,7 @@ yourself.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
 import re
@@ -71,6 +72,7 @@ logger = logging.getLogger(__name__)
 # Overlap must exceed the longest plausible match (JWTs run ~1-2 KB).
 _CHUNK_BYTES = 8 * 1024 * 1024
 _OVERLAP_BYTES = 4096
+_MATCH_CONTEXT_BYTES = 30
 
 # Extensions we can neither read as text nor patch meaningfully. Gate
 # policy: SKIPPED by default (logged, one line per call) — the 2026-08-16
@@ -113,7 +115,10 @@ SECRET_PATTERNS: list[tuple[str, re.Pattern[bytes]]] = [
     ("hf-token", re.compile(rb"\bhf_[A-Za-z0-9]{30,}\b")),
     ("github-pat-fine", re.compile(rb"\bgithub_pat_[A-Za-z0-9_]{22,}\b")),
     ("github-token", re.compile(rb"\bgh[pousr]_[A-Za-z0-9]{36,}\b")),
-    ("jwt-signed", re.compile(rb"\beyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{20,}\b")),
+    (
+        "jwt-signed",
+        re.compile(rb"\beyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{20,}\b"),
+    ),
     ("slack-token", re.compile(rb"\bxox[bp]-[0-9]{8,}-[0-9]{8,}-[A-Za-z0-9-]{10,}\b")),
     ("slack-webhook-real", re.compile(rb"https?://hooks\.slack\.com/services/T[A-Z0-9]{7,}/B[A-Z0-9]{7,}/[A-Za-z0-9]{20,}")),
     ("telegram-bot", re.compile(rb"\b\d{8,10}:AA[A-Za-z0-9_-]{33}\b")),
@@ -131,6 +136,29 @@ SECRET_PATTERNS: list[tuple[str, re.Pattern[bytes]]] = [
 DUMMY_RX = re.compile(
     rb"(?i)X{6,}|\.{3}|<[a-z_ ]+>|\$\{|YOUR[_-]|xxxx|1234567890|abcdef123"
     rb"|example|placeholder|redacted|_test_|dummy|fake|localhost|0{8}"
+)
+
+# Exact documentation fixtures, never an exemption for decoded claim
+# values or tokens signed with a weak/example key. The legacy JWT.io HS256
+# debugger token (https://www.jwt.io/) is reproduced by language models even
+# when "example" falls outside DUMMY_RX's context window (#1739, 2026-09-07).
+# Its public payload is sub=1234567890, name=John Doe, iat=1516239022 and its
+# documented signing key is your-256-bit-secret. Bind the ENTIRE token bytes:
+# a changed payload, header, signature, or suffix must still be scanned.
+# A second #1739 model-produced PyJWT demonstration has payload some=payload
+# and a fabricated 47-byte signature despite declaring HS256 (requires32).
+# Its exact bytes are demonstrably not a valid signed JWT. Do not generalize
+# this exception to arbitrary malformed tokens or example-looking payloads.
+# Keep tokens out of source so hosting-provider scanners do not mistake this
+# detector's fixture documentation for an exposed credential.
+_DOCUMENTATION_JWT_SHA256 = frozenset(
+    {
+        "7f75367e7881255134e1375e723d1dea8ad5f6a4fdb79d938df1f1754a830606",
+        "3c5ffb58f91e3eaba1c87e50cd36acd6c465efd7c389d7e9e364accfc98a0710",
+    }
+)
+_JWT_BASE64URL_BYTES = frozenset(
+    b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"
 )
 
 
@@ -177,7 +205,9 @@ def _mask(b: bytes) -> str:
     return s[:6] + "…" + s[-4:] if len(s) > 14 else s[:3] + "…"
 
 
-def scan_bytes(data: bytes, *, path: str = "", member: str = "", base_offset: int = 0) -> list[Finding]:
+def scan_bytes(
+    data: bytes, *, path: str = "", member: str = "", base_offset: int = 0
+) -> list[Finding]:
     """All real-secret-grade matches in ``data`` (dummy-filtered)."""
     findings: list[Finding] = []
     seen: set[tuple[int, int]] = set()
@@ -186,7 +216,18 @@ def scan_bytes(data: bytes, *, path: str = "", member: str = "", base_offset: in
             span = (mt.start(), len(mt.group(0)))
             if span in seen:
                 continue
-            ctx = data[max(0, mt.start() - 30) : mt.end() + 30]
+            if (
+                name == "jwt-signed"
+                and hashlib.sha256(mt.group(0)).hexdigest() in _DOCUMENTATION_JWT_SHA256
+                # The detection regex's word boundary can backtrack over '-'.
+                # Never exempt an allowlisted prefix inside a longer token.
+                and (mt.start() == 0 or data[mt.start() - 1] not in _JWT_BASE64URL_BYTES)
+                and (mt.end() == len(data) or data[mt.end()] not in _JWT_BASE64URL_BYTES)
+            ):
+                continue
+            ctx = data[
+                max(0, mt.start() - _MATCH_CONTEXT_BYTES) : mt.end() + _MATCH_CONTEXT_BYTES
+            ]
             if DUMMY_RX.search(mt.group(0)) or DUMMY_RX.search(ctx):
                 continue
             seen.add(span)
@@ -210,18 +251,40 @@ def _scan_stream(fh, *, path: str, member: str = "") -> list[Finding]:
     seen: set[tuple[str, int]] = set()
     pos = 0
     prev_tail = b""
+    emit_floor = 0
     while True:
         chunk = fh.read(_CHUNK_BYTES)
         if not chunk:
+            # The last overlap was deliberately deferred. At EOF its matches
+            # are complete; flush them with their original absolute offsets.
+            for f in scan_bytes(
+                prev_tail, path=path, member=member, base_offset=pos - len(prev_tail)
+            ):
+                if f.offset < emit_floor:
+                    continue
+                key = (f.pattern, f.offset)
+                if key not in seen:
+                    seen.add(key)
+                    findings.append(f)
             break
         buf = prev_tail + chunk
         base = pos - len(prev_tail)
+        # A regex can match a truncated signature at the end of a read. Delay
+        # starts in the final overlap until the next read supplies the whole
+        # token (in particular, before adjudicating an exact public fixture).
+        # The existing overlap contract exceeds plausible credential lengths.
+        commit_before = pos + len(chunk) - _OVERLAP_BYTES
         for f in scan_bytes(buf, path=path, member=member, base_offset=base):
+            if not emit_floor <= f.offset < commit_before:
+                continue
             key = (f.pattern, f.offset)
             if key not in seen:
                 seen.add(key)
                 findings.append(f)
-        prev_tail = buf[-_OVERLAP_BYTES:]
+        # Retain the left context of the first deferred start too. Do not
+        # re-adjudicate already committed starts with clipped context.
+        prev_tail = buf[-(_OVERLAP_BYTES + _MATCH_CONTEXT_BYTES):]
+        emit_floor = max(emit_floor, commit_before)
         pos += len(chunk)
     return findings
 
@@ -284,7 +347,9 @@ def scrub_file(path: Path, *, dry_run: bool = False) -> list[Finding]:
         path.write_bytes(bytes(buf))
     residual = scan_file(path)
     if residual:
-        raise RuntimeError(f"scrub_file left {len(residual)} finding(s) in {path} — refusing to report clean")
+        raise RuntimeError(
+            f"scrub_file left {len(residual)} finding(s) in {path} — refusing to report clean"
+        )
     return findings
 
 
@@ -322,7 +387,9 @@ def assert_upload_clean(paths: list[Path] | list[str], *, what: str) -> None:
             if scan_binary:
                 hits = scan_file(f)
                 for h in hits:
-                    logger.warning("secret gate (binary, warn-only): %s %s %s", h.pattern, h.masked, h.where())
+                    logger.warning(
+                        "secret gate (binary, warn-only): %s %s %s", h.pattern, h.masked, h.where()
+                    )
             else:
                 n_binary_skipped += 1
             continue

@@ -1,0 +1,41 @@
+{
+  "date": "2026-09-07",
+  "scope": "Resolve two demonstrated false positives without changing experiment inputs or outputs; no scanner disable switch or broad JWT exemption.",
+  "generation_run": "20260907T202326Z",
+  "generation_code": "e058fdc2634ddcde303caf5730a730580795e522",
+  "prepared_revision_kept_fixed": "195b718a44d0a4799c8f3802d29783b8214b96f4",
+  "generated_chunks_completed_before_gate": 200,
+  "gate_action": "Refused raw upload, preserving original generated shards and all checksums. Retry uses unchanged generator/capture/scoring source and exact-hash scanner corrections.",
+  "fixtures": [
+    {
+      "context_id": "natural_lmsys_102ff4f16390407a82aa927a0058518c",
+      "chunk": 100,
+      "sha256": "7f75367e7881255134e1375e723d1dea8ad5f6a4fdb79d938df1f1754a830606",
+      "classification": "Legacy public JWT.io documentation example",
+      "source_url": "https://www.jwt.io/",
+      "source_kind": "Indexed official-page excerpt, not the current live debugger example",
+      "source_extraction_sha256": "dc5ed3c82f3a42fa77f2c4e0cce2ed07959fba41eea729ab864f633129bfae2d",
+      "source_json_path": "$.results[3].excerpts[0]",
+      "source_character_span": [1074, 1233],
+      "normalization": "Remove four ASCII presentation spaces around the two JWT dots:159 source characters become155 token characters. The complete encoded segments match; no payload reconstruction was used for source matching.",
+      "header": {"alg": "HS256", "typ": "JWT"},
+      "payload": {"sub": "1234567890", "name": "John Doe", "iat": 1516239022},
+      "public_example_key_signature_verified": true
+    },
+    {
+      "context_id": "natural_lmsys_fd28b32e00534cb79ab361ff76f9bc03",
+      "chunk": 186,
+      "sha256": "3c5ffb58f91e3eaba1c87e50cd36acd6c465efd7c389d7e9e364accfc98a0710",
+      "classification": "Malformed model-produced PyJWT demonstration, not a valid signed HS256 credential",
+      "header": {"alg": "HS256", "typ": "JWT"},
+      "payload": {"some": "payload"},
+      "signature_decoded_bytes": 47,
+      "required_hs256_signature_bytes": 32,
+      "signature_matches_declared_demonstration_key": false,
+      "scope": "Only this entire token hash is exempted. Arbitrary malformed tokens remain subject to detection."
+    }
+  ],
+  "independent_review": "Three boundary findings repaired:base64url continuation, truncated read-boundary signatures, and lost left context at the overlap cutoff. Final native reviewer reported no remaining findings after all64 suffix-byte variations and500 randomized multi-token streams.",
+  "tests": "97 focused scanner/natural-pipeline tests passed;ruff and whitespace checks passed. Exhaustive read/overlap boundary regressions retain other credential findings and original offsets.",
+  "source_safety_note": "Future preparation fingerprints would bind the updated scanner, but this running experiment retains its original immutable prepared pool and filtering provenance. It is not reselected under the corrected scanner."
+}
