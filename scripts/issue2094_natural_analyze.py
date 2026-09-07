@@ -1054,8 +1054,10 @@ def report_markdown_broad(rows: list[dict[str, Any]], summary: dict[str, Any]) -
             (
                 f"### {index}. {row['block']} / {row['axis']} / {row['layer_setting']}",
                 "",
-                f"Recipient: `{row['recipient_prompt_id']}`  ",
-                f"Donor: `{row['donor_prompt_id']}`  ",
+                f"Recipient: `{row['recipient_prompt_id']}`",
+                "",
+                f"Donor: `{row['donor_prompt_id']}`",
+                "",
                 f"Blind label: task `{annotation['form']}`, subject `{annotation['subject']}`, format `{annotation['format']}`, joint outcome `{outcome}`, complete `{annotation['complete']}`, coherence `{annotation['coherence']}`.",
                 "",
                 markdown_text(str(row["output_text"])),
