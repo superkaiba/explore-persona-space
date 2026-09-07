@@ -1,0 +1,20 @@
+[
+  {
+    "path": "eval_results/context_risk_corrected_v20_validation/software_fixtures/2026-09-07T06-06-11-00-00_context-risk-impossible-livecodebench-corrected_jGRFDkaTwDwXSas7mpLsCW.eval",
+    "size_bytes": 30842,
+    "sha256": "ebdd251733b2756c24b589ff05d2c96c60fc0ac0b7406d8cb59d34ef1ad3c29d",
+    "type": "MockLLM software fixture executed in real Docker; not experimental model data"
+  },
+  {
+    "path": "eval_results/context_risk_corrected_v20_validation/software_fixtures/2026-09-07T06-06-30-00-00_task_f3c6gbdvTMyKsxLHdqDW4g.eval",
+    "size_bytes": 5838,
+    "sha256": "ef35cf2a30485115bae561fa8d55d88d150d93eb1e61e8e3ccc3149446505a03",
+    "type": "MockLLM software fixture executed in real Docker; not experimental model data"
+  },
+  {
+    "path": "eval_results/context_risk_corrected_v20_validation/software_fixtures/2026-09-07T06-06-34-00-00_context-risk-impossible-livecodebench-corrected_4j5fGuwUQPSMoYaU8QjzFA.eval",
+    "size_bytes": 8642,
+    "sha256": "129b652e274543447d2824a2b62eac06c13f057ecd5157dafd52a35340dab453",
+    "type": "MockLLM software fixture executed in real Docker; not experimental model data"
+  }
+]
