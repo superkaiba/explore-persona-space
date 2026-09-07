@@ -12879,8 +12879,8 @@
       "goal": "Measure how accurately context-only Codex forecasts predict Qwen2.5-7B-Instruct behavior on the manuscript cohorts, against the existing context and mapped-answer readouts under matched evaluation splits.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/2669",
-      "status": "running",
+      "path": "tasks/awaiting_promotion/2669",
+      "status": "awaiting_promotion",
       "title": "Mapped-answer prediction has higher correlation than Codex on OOD factual QA (MODERATE confidence)"
     },
     "267": {
