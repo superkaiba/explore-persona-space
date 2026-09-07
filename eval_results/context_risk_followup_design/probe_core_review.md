@@ -1,0 +1,11 @@
+The probe core passes independent review at SHA256 `8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31`. The review covers the numerical core and its frozen specification; it does not approve the unfinished analysis driver or claim an experimental result.
+
+Three findings were fixed before PASS: AUROC/AP now rank logits without probability-saturation ties; feature scaling and QR operate in float64; and invalid C/frequency inputs cannot bypass checks through a single-class return. The original failures were reproduced with software-only inputs.
+
+All 21 software tests passed in 2.04 seconds: four repository tests and 17 independently retained cases. They compare integer-frequency fitting with literal binary expansion, verify full versus QR-reduced fits and coefficient norms on rank-deficient inputs, test extreme logits and both single-class branches, and compare the vectorized bootstrap with explicit resampling of unequal-sized whole tasks. The fixture runner and JUnit output are retained under `software_fixtures/`.
+
+The QR argument is sound: a finite-L2 optimum has no coefficient component orthogonal to all training rows. An orthonormal row-span basis therefore preserves training logits and coefficient norm, and the mapped-back coefficient preserves test predictions. This is a computational reduction, not an extra learned bottleneck.
+
+The loss and metrics preserve all binary trajectory frequencies. The bootstrap samples base tasks with paired predictions and recomputes the trial denominator; it does not treat repeated seeds as independent tasks. Its intervals still condition on the fitted models and omit fitting uncertainty.
+
+The analysis driver must still enforce exact capture/outcome joins, training-only preprocessing and tuning, the frozen holdout, every censor/support gate, and correct map/control construction. The core's `positive_interval` flag is only one part of the claim gate. No experiment outcomes were fitted during this review, and no collection sources were edited.

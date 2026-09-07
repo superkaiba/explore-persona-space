@@ -1,0 +1,64 @@
+{
+  "reviewer": "/root/reward_harness_critic",
+  "verdict": "PASS",
+  "reviewed_at": "2026-09-07T16:41:20.271732+00:00",
+  "scope": "Independent code and numerical-software review of weighted binomial linear fits, exact L2 row-span reduction, metrics and paired task bootstrap. No experiment outcome fits, model calls, provisioning, task mutations or collection-source edits.",
+  "files_sha256": {
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "tests/test_context_risk_followup_probe_core.py": "4e7dff45bac80cdf3d83e6f10f1d4af0ba2d6da9872a6f4e1918d65a5222ee92",
+    "eval_results/context_risk_followup_design/analysis_spec.json": "a47ce4131959f8a7da9a75c367355713927e39e91692fbf017a1cad737d155d0",
+    "eval_results/context_risk_followup_design/software_fixtures/test_probe_core_independent.py": "b1415bc0b028720fd33f82a140ddaede790f9382231704ef81e44f5f0c12ecf5"
+  },
+  "source": "scripts/context_risk_followup_probe_core.py",
+  "source_sha256": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+  "blocking_findings": [],
+  "resolved_findings": [
+    {
+      "id": "saturated_ranking",
+      "observed_before_fix": "Finite logits [40,50] with negative/positive pure contexts both became expit=1, giving AUROC/AP 0.5 instead of 1.0.",
+      "resolution": "Rank AUROC and AP using logits. Keep probabilities for Brier and calibration.",
+      "regression": "Two positive/negative extreme-logit cases now give exact AUROC/AP 1.0."
+    },
+    {
+      "id": "float32_qr_failure",
+      "observed_before_fix": "Ordinary float32 standardized 24x64 inputs failed the 1e-9 QR reconstruction requirement.",
+      "resolution": "Promote scaling, QR and fit feature calculations to float64 within core routines.",
+      "regression": "Float32 and float64 rank-deficient inputs reconstruct and match full L2 fit predictions and coefficient norms."
+    },
+    {
+      "id": "invalid_setup_single_class_bypass",
+      "observed_before_fix": "NaN and infinite C were accepted by the early single-class prevalence return.",
+      "resolution": "Validate finite positive C and input shapes before the early return; validate positive integer scaling frequencies.",
+      "regression": "Nonpositive/nonfinite C and zero/negative/nonfinite/fractional scaling counts are rejected."
+    }
+  ],
+  "mathematical_review": [
+    "Two class copies with weights n-k and k produce the same summed binary logistic objective and regularization scale as literal frequency expansion; intercept is unpenalized.",
+    "For orthonormal Q spanning training rows, X=(XQ)Q^T. Any coefficient orthogonal to row(X) changes no training logit but increases finite L2 cost, so removing it preserves the optimum. The mapped-back coefficient Q*coef_reduced correctly predicts unseen test rows.",
+    "Context log-loss sums, Brier, prevalence, discrimination and calibration retain trajectory frequencies; no fractional context mean is treated as a binary label.",
+    "Bootstrap aggregates loss numerators and trial denominators by base task, then samples whole tasks with replacement and paired predictions. Unequal task sizes are normalized after resampling.",
+    "Single-class fitting uses the declared smoothed prevalence without fabricated coefficients. Discrimination metrics are absent with one observed class. Zero-width zero-improvement intervals cannot establish benefit."
+  ],
+  "executed_evidence": {
+    "command": "timeout --kill-after=10s 120s env UV_NO_SYNC=1 PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 uv run python -m pytest -q tests/test_context_risk_followup_probe_core.py eval_results/context_risk_followup_design/software_fixtures/test_probe_core_independent.py --junitxml=eval_results/context_risk_followup_design/software_fixtures/probe_core_test_results.xml --basetemp=/tmp/context-risk-followup-probe-critic-final-20260907",
+    "exit_code": 0,
+    "tests_passed": 21,
+    "repository_tests": 4,
+    "independent_cases": 17,
+    "pytest_elapsed_seconds": 2.04,
+    "junit_path": "eval_results/context_risk_followup_design/software_fixtures/probe_core_test_results.xml",
+    "junit_sha256": "0cf2f792ab82bc6fbddb82c40c76fc67423b59394eaff66e9969671f1fd10a6c",
+    "fixture_source": "eval_results/context_risk_followup_design/software_fixtures/test_probe_core_independent.py",
+    "fixture_sha256": "b1415bc0b028720fd33f82a140ddaede790f9382231704ef81e44f5f0c12ecf5",
+    "fixture_ruff": "PASS",
+    "experiment_fits": 0,
+    "model_calls": 0
+  },
+  "remaining_driver_responsibilities": [
+    "Join exact frozen task/context/capture identities and enforce all train/test, competence, coverage, zero-censor and support gates.",
+    "Fit all preprocessing only inside each inner training fold and preserve the agreed TF-IDF, map/control, C and PCA selection rules.",
+    "Combine positive_interval with every support/censor gate; the core interval flag alone is not an authorized scientific claim.",
+    "Keep atomic checkpoint destinations distinct across concurrent analysis jobs; save_json is an atomic replacement helper, not a multiwriter lock.",
+    "Treat QR as an exact computational reduction under finite L2, not an additional outcome-tuned dimensionality reduction."
+  ]
+}
