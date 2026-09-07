@@ -5,7 +5,7 @@ fill the two reasoning-section TODOs, and minimize plots. A subsequent explicit
 request adds the verified Qwen3 operator-geometry result and aligns the caption
 with the neighboring figures' takeaway-then-panel-findings structure.
 
-## Section outline
+## Initial section outline
 
 - Same-weight thinking toggle; own-generated targets; existing all-training
   fits evaluated on the needs-reasoning subset.
@@ -85,3 +85,54 @@ Independent review passed the new geometry paragraph, appendix and caption
 against the current JSONs. The 40-page manuscript compiled successfully, and
 updated pages 8, 9, 36 and 37 were visually checked. The same two unresolved
 references in the unrelated, author-edited theory block remain unchanged.
+
+## Two-claim revision after author edit df82df7
+
+The author's latest Overleaf edit removes the main geometry paragraph and
+supplies a two-claim draft. The current cleanup preserves that removal;
+geometry and conditional residual prediction remain appendix material. The
+subsection title is narrowed to "The realized chain of thought improves answer
+predictability" to match the analyses presented in the main text.
+
+Current outline and claim-evidence map:
+
+- Setup: Qwen3-8B's same-weight thinking modes, own-generated answer vectors,
+  and existing maps fitted on all training questions.
+- End-of-CoT versus context on needs-reasoning questions, with the thinking
+  toggle as a control. The existing two-panel prediction/control figure
+  supports this single claim; its plotted values are unchanged.
+- Similar observed end-of-CoT gains across necessity groups. A separate,
+  compact figure plots the four saved equal-dataset-weighted scores and
+  intervals from the existing necessity table. No new fits, experiments,
+  bootstraps or interaction tests are run.
+
+The control is described as no consistent improvement across R2 and retrieval,
+not proof of an intrinsic property of answers. "Keeping the input readout at
+h_C" does not assert that thinking-on/off templates produce identical context
+vectors. The group claim says "similar," not "not larger" or "equal": the
+observed R2 gains are 0.08272513714672236 and 0.07823502385365289. The appendix
+states that similarity does not establish statistical equivalence.
+
+The group figure uses qwen3_necessity_table.json, verified against the current
+shared-root necessity_r2/summary.json (SHA256
+76d5e793c2b14b90106d12ce1b25d2a62781ef88715634a2607d0f0f9032083a).
+It retains equal total dataset weight in the pooled SSE/SST ratio and the
+whole-dataset-mean baseline. Saved 95% intervals resample questions within each
+dataset and necessity group. Counts remain 4,522 and 17,693. These numbers use
+a different aggregation and baseline from the first figure; neither metric is
+silently substituted for the other.
+
+Five-dimension writing self-review: the contribution is unchanged; the setup
+defines the exact readouts and fit scope; each claim has its own figure; every
+number comes from a source-hashed saved artifact; and the interpretation avoids
+causal or statistical-equivalence claims. Rendering uses the canonical C2A
+style, preserving the context/CoT-end colors and markers across both figures.
+Color and grayscale outputs and the compiled main pages were visually checked.
+The metadata's source hashes, plotted scores/intervals and final script hash
+were verified. Ruff and manuscript compilation pass; pre-existing unresolved
+effective-kernel-sae references in unrelated theory material remain.
+
+Independent read-only review passed the numerical/provenance/scope checks and
+confirmed that no main geometry paragraph or unrelated theory edit was added.
+Browser previews of both figures are available in the
+[current manuscript](https://www.overleaf.com/project/6a59c927290f8b8b5eee0055).

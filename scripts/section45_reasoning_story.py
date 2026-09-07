@@ -1,7 +1,8 @@
 """Render the approved reasoning story from banked #2546 results, without refits.
 
 Needs-reasoning evaluation of existing all-question fits; own-generated answers.
-The default export is the Qwen3-only two-panel prediction/control comparison.
+The default export gives each Qwen3 claim its own figure: prediction/control
+and the necessity-group comparison.
 Historical appendix renderers are retained but are not called by default.
 """
 
@@ -153,6 +154,75 @@ def main_plot():
             "evaluation_subset": "necessary",
             "n_evaluated": 4522,
             "maps_refit": False,
+        },
+    )
+
+
+def necessity_plot():
+    """Render the two necessity groups from saved equal-dataset-weighted scores."""
+    SOURCES.clear()
+    data = read(NEW / "qwen3_necessity_table.json")
+    assert data["model"] == "Qwen3-8B" and data["layer"] == 24
+    pooled = data["pooled_equal_corpus_weight"]
+    groups = ["necessary", "both_correct"]
+    labels = ["Needs reasoning", "Does not need\nreasoning"]
+    expected_counts = {"necessary": 4522, "both_correct": 17693}
+    fig, _ = c2a_figure("wide", 0.46)
+    ax = fig.subplots()
+    fig.subplots_adjust(left=0.14, right=0.97, bottom=0.23, top=0.77)
+    for readout, label, color, marker in [
+        ("context", "Context", ROLES["linear"].color, "o"),
+        ("end_of_thought", "CoT end", ROLES["nonlinear"].color, "s"),
+    ]:
+        rows = [pooled[readout][group] for group in groups]
+        for group, row in zip(groups, rows, strict=True):
+            assert row["n"] == sum(row["n_by_corpus"].values()) == expected_counts[group]
+            assert len(row["weights"]) == 7
+            assert np.allclose(list(row["weights"].values()), 1 / 7)
+        y = [row["r2_corpus_mean"] for row in rows]
+        ax.plot([0, 1], y, color=color, linewidth=1.6)
+        for x, row in enumerate(rows):
+            interval(
+                ax,
+                x,
+                row["r2_corpus_mean"],
+                row["r2_corpus_mean_ci"],
+                color=color,
+                marker=marker,
+                markerfacecolor=color,
+                markeredgewidth=1.6,
+            )
+        ax.annotate(
+            label,
+            (1, y[-1]),
+            xytext=(12, 0),
+            textcoords="offset points",
+            ha="left",
+            va="center",
+            color=color,
+            fontsize=18,
+        )
+    ax.set_xticks([0, 1], labels, fontsize=17)
+    ax.set_xlim(-0.30, 1.65)
+    ax.set_ylim(0.39, 0.54)
+    ax.set_yticks([0.40, 0.45, 0.50])
+    ax.set_ylabel(r"Held-out $R^2\,\uparrow$")
+    style_axis(ax, grid_axis="y")
+    panel_header(ax, "", "Qwen3-8B · thinking on", "Predictability by necessity group")
+    save(
+        fig,
+        "c1_cot_necessity_comparison",
+        {
+            "model": data["model"],
+            "layer": data["layer"],
+            "groups": groups,
+            "readouts": pooled,
+            "aggregation": "Ratio of pooled SSE/SST with equal total weight per dataset",
+            "baseline": "Whole-dataset mean, shared between necessity groups",
+            "targets": "Same thinking-on own-generated answer vectors for both readouts",
+            "intervals": "Saved 95% question-bootstrap intervals, stratified by dataset",
+            "maps_refit": False,
+            "geometry": "Not analyzed in this figure",
         },
     )
 
@@ -517,5 +587,6 @@ if __name__ == "__main__":
         assert len(sys.argv) == 1, "Use --derive-similarity or --derive-necessary."
         set_c2a_style()
         main_plot()
+        necessity_plot()
         # Historical OpenThinker diagnostics remain reproducible via their functions,
         # but are no longer part of the Qwen3-only manuscript render.

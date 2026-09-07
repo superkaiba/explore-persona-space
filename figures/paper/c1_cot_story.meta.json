@@ -279,7 +279,7 @@
     "n_evaluated": 4522,
     "maps_refit": false
   },
-  "script_sha256": "0986172f95d003d84350536b7996b26810e48dcdfb354f06e258658194ebd282",
+  "script_sha256": "960893b5e07ed4293f2ae1876d55a61b3cf6fcc165d8f4577031b9f942792a92",
   "render": {
     "style_version": "c2a-v2",
     "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",

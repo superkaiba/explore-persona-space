@@ -1,0 +1,187 @@
+{
+  "sources_sha256": {
+    "eval_results/issue_2546/paper_reasoning_20260906/qwen3_necessity_table.json": "880a00cd4b8d15f25381de8ed828602e655bc70922924bfe6f636c9237bba07b"
+  },
+  "values": {
+    "model": "Qwen3-8B",
+    "layer": 24,
+    "groups": [
+      "necessary",
+      "both_correct"
+    ],
+    "readouts": {
+      "context": {
+        "both_correct": {
+          "n": 17693,
+          "n_by_corpus": {
+            "arc_challenge": 774,
+            "contexthub": 389,
+            "csqa": 603,
+            "gsm8k_train": 6329,
+            "math": 4519,
+            "mmlu": 4396,
+            "piqa": 683
+          },
+          "r2_corpus_mean": 0.4312823693509279,
+          "r2_corpus_mean_ci": [
+            0.42486149244342153,
+            0.43748855461146324
+          ],
+          "r2_own_mean": 0.6292927876004348,
+          "r2_own_mean_ci": [
+            0.6241614403976372,
+            0.6339864370941389
+          ],
+          "weights": {
+            "arc_challenge": 0.14285714285714285,
+            "contexthub": 0.14285714285714285,
+            "csqa": 0.14285714285714285,
+            "gsm8k_train": 0.14285714285714285,
+            "math": 0.14285714285714285,
+            "mmlu": 0.14285714285714285,
+            "piqa": 0.14285714285714285
+          }
+        },
+        "necessary": {
+          "n": 4522,
+          "n_by_corpus": {
+            "arc_challenge": 326,
+            "contexthub": 241,
+            "csqa": 424,
+            "gsm8k_train": 592,
+            "math": 624,
+            "mmlu": 1750,
+            "piqa": 565
+          },
+          "r2_corpus_mean": 0.4200853074716253,
+          "r2_corpus_mean_ci": [
+            0.4139488090619309,
+            0.4253685726210463
+          ],
+          "r2_own_mean": 0.6331487735785764,
+          "r2_own_mean_ci": [
+            0.6288306212420507,
+            0.6373101923096548
+          ],
+          "weights": {
+            "arc_challenge": 0.14285714285714285,
+            "contexthub": 0.14285714285714285,
+            "csqa": 0.14285714285714285,
+            "gsm8k_train": 0.14285714285714285,
+            "math": 0.14285714285714285,
+            "mmlu": 0.14285714285714285,
+            "piqa": 0.14285714285714285
+          }
+        }
+      },
+      "end_of_thought": {
+        "both_correct": {
+          "n": 17693,
+          "n_by_corpus": {
+            "arc_challenge": 774,
+            "contexthub": 389,
+            "csqa": 603,
+            "gsm8k_train": 6329,
+            "math": 4519,
+            "mmlu": 4396,
+            "piqa": 683
+          },
+          "r2_corpus_mean": 0.5095173932045808,
+          "r2_corpus_mean_ci": [
+            0.5041140265226003,
+            0.51444913845209
+          ],
+          "r2_own_mean": 0.6802887230907784,
+          "r2_own_mean_ci": [
+            0.6757921988399631,
+            0.6843694270550199
+          ],
+          "weights": {
+            "arc_challenge": 0.14285714285714285,
+            "contexthub": 0.14285714285714285,
+            "csqa": 0.14285714285714285,
+            "gsm8k_train": 0.14285714285714285,
+            "math": 0.14285714285714285,
+            "mmlu": 0.14285714285714285,
+            "piqa": 0.14285714285714285
+          }
+        },
+        "necessary": {
+          "n": 4522,
+          "n_by_corpus": {
+            "arc_challenge": 326,
+            "contexthub": 241,
+            "csqa": 424,
+            "gsm8k_train": 592,
+            "math": 624,
+            "mmlu": 1750,
+            "piqa": 565
+          },
+          "r2_corpus_mean": 0.5028104446183477,
+          "r2_corpus_mean_ci": [
+            0.498005659394432,
+            0.5069749112918814
+          ],
+          "r2_own_mean": 0.6854802947646352,
+          "r2_own_mean_ci": [
+            0.6818182522738768,
+            0.6888594068157219
+          ],
+          "weights": {
+            "arc_challenge": 0.14285714285714285,
+            "contexthub": 0.14285714285714285,
+            "csqa": 0.14285714285714285,
+            "gsm8k_train": 0.14285714285714285,
+            "math": 0.14285714285714285,
+            "mmlu": 0.14285714285714285,
+            "piqa": 0.14285714285714285
+          }
+        }
+      }
+    },
+    "aggregation": "Ratio of pooled SSE/SST with equal total weight per dataset",
+    "baseline": "Whole-dataset mean, shared between necessity groups",
+    "targets": "Same thinking-on own-generated answer vectors for both readouts",
+    "intervals": "Saved 95% question-bootstrap intervals, stratified by dataset",
+    "maps_refit": false,
+    "geometry": "Not analyzed in this figure"
+  },
+  "script_sha256": "960893b5e07ed4293f2ae1876d55a61b3cf6fcc165d8f4577031b9f942792a92",
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      9.821,
+      4.518
+    ],
+    "exported_size_inches": [
+      9.821,
+      3.631
+    ],
+    "scale": 0.42,
+    "include_width_frac": 0.75,
+    "latex_include_line": "\\includegraphics[width=0.75\\textwidth]{figures/paper/c1_cot_necessity_comparison.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "Context",
+      "CoT end",
+      "QWEN3-8B \u00b7 THINKING ON",
+      "Needs reasoning",
+      "Does not need\nreasoning",
+      "Held-out $R^2\\,\\uparrow$",
+      "0.40",
+      "0.45",
+      "0.50",
+      "Predictability by necessity group"
+    ]
+  },
+  "uncertainty": "Banked intervals only; no new bootstrap or inference."
+}
