@@ -189,3 +189,42 @@ unresolved effective-kernel-sae references.
 Five-dimension self-review: no contribution change; consistent paragraph and
 caption roles; no altered scores or intervals; both metrics and the necessity
 comparison retained; and no change to map fitting or evaluation design.
+
+## First result changed to all answers (2026-09-07)
+
+At the author's explicit request, the first finding and panel A of the
+[combined figure](https://www.overleaf.com/project/6a59c927290f8b8b5eee0055)
+now use all 33,810 aligned questions, regardless of answer correctness. The
+same selection is used for both the fixed-thinking-on-answer comparison and
+its thinking-toggle control. This changes only the saved evaluation subset;
+maps, folds, preprocessing, retrieval pools, penalties and answer targets
+remain unchanged. No new fitting, inference, scoring or bootstrap is run.
+
+The source is the `subsets.all` record of the existing p7_Aoff, p7_A and p7_D
+arm-3 allfit JSONs. Their corpus-baseline R2 scores are 0.4843429421445049,
+0.4978317580508179 and 0.5743768583114781; retrieval fractions are
+0.910351966873706, 0.8765454007690032 and 0.985980479148181. The text rounds
+these to 0.484/0.498/0.574 and 91.0%/87.7%/98.6%. All six saved intervals are
+also selected from the full-pool record. Panel B and its source metadata are
+unchanged. Appendix residual and auxiliary-readout results remain explicitly
+restricted to the 4,522 CoT-necessary questions.
+
+Outline/claim-evidence map: the first comparison and its control now describe
+the whole pool, while the second finding still compares necessity groups.
+The observed direction of each result is unchanged. The author's prose and
+logical framing are preserved; their unfinished transition to the second
+finding is left untouched. The caption, overview table, detailed methods and
+plot header all state the new full-pool scope.
+
+Five-dimension self-review: contribution and argument unchanged; population
+explicit; full-pool evidence replaces subset evidence; both original metrics
+and group comparison retained; no methodological change beyond the requested
+evaluation population. The real-renderer test checks all ten bars and
+intervals, with explicit assertions for panel A's all-question label and
+33,810-row metadata. Ruff and the updated test pass. Independent review
+verified selection, rounded values, saved CIs, source hashes, unchanged panel B
+and auxiliary scopes; its overview-table mismatch was corrected.
+The 40-page manuscript compiles. Color and grayscale exports and manuscript
+pages 8, 9, 17 and 35 were visually checked; the copied manuscript figure is
+byte-identical to the new export. The same two unrelated unresolved
+effective-kernel-sae references remain.

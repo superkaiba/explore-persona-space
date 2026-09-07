@@ -1,6 +1,6 @@
 """Render the approved reasoning story from banked #2546 results, without refits.
 
-Needs-reasoning evaluation of existing all-question fits; own-generated answers.
+All-question comparison and necessity groups; existing fits and own-generated answers.
 The default export combines prediction/control and necessity groups in two
 bar-chart panels, using only saved scores and confidence intervals.
 Historical appendix renderers are retained but are not called by default.
@@ -72,11 +72,11 @@ def interval(ax, x, y, bounds, **kwargs):
 
 
 def metrics(cell, arm):
-    """Score only needs-reasoning rows of the unchanged production evaluation."""
+    """Read all-question scores from the unchanged production evaluation."""
     d = read(DATA / f"allfit/{cell}__a{arm}.json")
     assert d["subsets"]["all"]["n"] == {1: 30193, 3: 33810}[arm]
     assert d["subsets"]["necessary"]["n"] == {1: 2326, 3: 4522}[arm]
-    return d["subsets"]["necessary"]
+    return d["subsets"]["all"]
 
 
 def pair(ax, rows, key, labels, title):
@@ -156,7 +156,7 @@ def main_plot():
     ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
     ax.set_ylabel(r"Score $\uparrow$")
     style_axis(ax, grid_axis="y")
-    panel_header(ax, "A", "Qwen3-8B · needs reasoning", "Answer prediction")
+    panel_header(ax, "A", "Qwen3-8B · all questions", "Answer prediction")
 
     ax = axes[1]
     width = 0.29
@@ -217,8 +217,8 @@ def main_plot():
                         "enabling_cot": "p7_Aoff versus p7_A; each mode's own answer target",
                         "observing_cot": "p7_A versus p7_D; identical thinking-on answer targets",
                     },
-                    "evaluation_subset": "necessary",
-                    "n_evaluated": 4522,
+                    "evaluation_subset": "all",
+                    "n_evaluated": 33810,
                     "retrieval_scale": "Fraction, not percentage; no score normalization",
                     "baseline": "Training-fold dataset means; no dataset reweighting",
                     "intervals": "Saved 95% question-bootstrap intervals",

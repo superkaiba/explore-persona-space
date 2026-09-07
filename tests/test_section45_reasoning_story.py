@@ -28,7 +28,7 @@ def test_combined_bars_match_saved_scores_and_intervals(tmp_path):
 
     data_root = root / "eval_results/issue_2546"
     conditions = [
-        json.loads((data_root / f"allfit/{cell}__a3.json").read_text())["subsets"]["necessary"]
+        json.loads((data_root / f"allfit/{cell}__a3.json").read_text())["subsets"]["all"]
         for cell in ["p7_Aoff", "p7_A", "p7_D"]
     ]
     snapshot = json.loads(
@@ -63,7 +63,9 @@ def test_combined_bars_match_saved_scores_and_intervals(tmp_path):
     meta = json.loads((tmp_path / "c1_cot_story.meta.json").read_text())
     assert meta["values"]["maps_refit"] is False
     assert meta["values"]["panels"]["B"]["readouts"] == pooled
-    assert meta["values"]["panels"]["A"]["n_evaluated"] == 4522
+    assert meta["values"]["panels"]["A"]["n_evaluated"] == 33810
+    assert meta["values"]["panels"]["A"]["evaluation_subset"] == "all"
+    assert any("ALL QUESTIONS" in text.get_text() for text in fig.axes[0].texts)
     assert meta["render"]["include_width_frac"] == 1.0
     assert meta["script_sha256"] == hashlib.sha256(script.read_bytes()).hexdigest()
     assert len(meta["sources_sha256"]) == 4
