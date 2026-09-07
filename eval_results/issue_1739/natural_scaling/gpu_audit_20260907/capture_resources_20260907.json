@@ -1,0 +1,472 @@
+[
+  {
+    "cgroup_bytes": 71778983936,
+    "gpu": [
+      "0, 41973, 88",
+      "1, 43907, 84",
+      "2, 45071, 88",
+      "3, 41757, 84"
+    ],
+    "processes": [
+      {
+        "Name": "python",
+        "State": "S (sleeping)",
+        "VmHWM": "1867276 kB",
+        "VmRSS": "445528 kB",
+        "pid": 8161
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5654536 kB",
+        "VmRSS": "2458776 kB",
+        "pid": 8319
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5678888 kB",
+        "VmRSS": "2461552 kB",
+        "pid": 8320
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5677812 kB",
+        "VmRSS": "2461580 kB",
+        "pid": 8321
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5676588 kB",
+        "VmRSS": "2467036 kB",
+        "pid": 8322
+      }
+    ],
+    "utc": "2026-09-07T21:21:21.045090+00:00"
+  },
+  {
+    "cgroup_bytes": 71864688640,
+    "gpu": [
+      "0, 43329, 87",
+      "1, 43907, 86",
+      "2, 45071, 100",
+      "3, 41757, 85"
+    ],
+    "processes": [
+      {
+        "Name": "python",
+        "State": "S (sleeping)",
+        "VmHWM": "1867276 kB",
+        "VmRSS": "445528 kB",
+        "pid": 8161
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5654536 kB",
+        "VmRSS": "2458888 kB",
+        "pid": 8319
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5678888 kB",
+        "VmRSS": "2461620 kB",
+        "pid": 8320
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5677812 kB",
+        "VmRSS": "2461608 kB",
+        "pid": 8321
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5676588 kB",
+        "VmRSS": "2467076 kB",
+        "pid": 8322
+      }
+    ],
+    "utc": "2026-09-07T21:21:28.117013+00:00"
+  },
+  {
+    "cgroup_bytes": 71981260800,
+    "gpu": [
+      "0, 43329, 80",
+      "1, 45461, 77",
+      "2, 45071, 100",
+      "3, 41757, 86"
+    ],
+    "processes": [
+      {
+        "Name": "python",
+        "State": "S (sleeping)",
+        "VmHWM": "1867276 kB",
+        "VmRSS": "445528 kB",
+        "pid": 8161
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5654536 kB",
+        "VmRSS": "2458888 kB",
+        "pid": 8319
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5678888 kB",
+        "VmRSS": "2461680 kB",
+        "pid": 8320
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5677812 kB",
+        "VmRSS": "2461608 kB",
+        "pid": 8321
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5676588 kB",
+        "VmRSS": "2469324 kB",
+        "pid": 8322
+      }
+    ],
+    "utc": "2026-09-07T21:21:35.190636+00:00"
+  },
+  {
+    "cgroup_bytes": 72069197824,
+    "gpu": [
+      "0, 43329, 100",
+      "1, 45461, 99",
+      "2, 45071, 78",
+      "3, 41757, 72"
+    ],
+    "processes": [
+      {
+        "Name": "python",
+        "State": "S (sleeping)",
+        "VmHWM": "1867276 kB",
+        "VmRSS": "445528 kB",
+        "pid": 8161
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5654536 kB",
+        "VmRSS": "2458896 kB",
+        "pid": 8319
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5678888 kB",
+        "VmRSS": "2461680 kB",
+        "pid": 8320
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5677812 kB",
+        "VmRSS": "2461612 kB",
+        "pid": 8321
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5676588 kB",
+        "VmRSS": "2470668 kB",
+        "pid": 8322
+      }
+    ],
+    "utc": "2026-09-07T21:21:42.264192+00:00"
+  },
+  {
+    "cgroup_bytes": 72126566400,
+    "gpu": [
+      "0, 43329, 100",
+      "1, 45461, 100",
+      "2, 45071, 82",
+      "3, 41757, 71"
+    ],
+    "processes": [
+      {
+        "Name": "python",
+        "State": "S (sleeping)",
+        "VmHWM": "1867276 kB",
+        "VmRSS": "445528 kB",
+        "pid": 8161
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5654536 kB",
+        "VmRSS": "2458904 kB",
+        "pid": 8319
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5678888 kB",
+        "VmRSS": "2461680 kB",
+        "pid": 8320
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5677812 kB",
+        "VmRSS": "2461684 kB",
+        "pid": 8321
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5676588 kB",
+        "VmRSS": "2470692 kB",
+        "pid": 8322
+      }
+    ],
+    "utc": "2026-09-07T21:21:49.334651+00:00"
+  },
+  {
+    "cgroup_bytes": 72245063680,
+    "gpu": [
+      "0, 43329, 100",
+      "1, 45461, 86",
+      "2, 45071, 83",
+      "3, 41757, 100"
+    ],
+    "processes": [
+      {
+        "Name": "python",
+        "State": "S (sleeping)",
+        "VmHWM": "1867276 kB",
+        "VmRSS": "445528 kB",
+        "pid": 8161
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5654536 kB",
+        "VmRSS": "2458920 kB",
+        "pid": 8319
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5678888 kB",
+        "VmRSS": "2461704 kB",
+        "pid": 8320
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5677812 kB",
+        "VmRSS": "2464716 kB",
+        "pid": 8321
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5676588 kB",
+        "VmRSS": "2470700 kB",
+        "pid": 8322
+      }
+    ],
+    "utc": "2026-09-07T21:21:56.409026+00:00"
+  },
+  {
+    "cgroup_bytes": 72360841216,
+    "gpu": [
+      "0, 43329, 100",
+      "1, 45461, 100",
+      "2, 45071, 87",
+      "3, 41757, 100"
+    ],
+    "processes": [
+      {
+        "Name": "python",
+        "State": "S (sleeping)",
+        "VmHWM": "1867276 kB",
+        "VmRSS": "445528 kB",
+        "pid": 8161
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5654536 kB",
+        "VmRSS": "2458968 kB",
+        "pid": 8319
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5678888 kB",
+        "VmRSS": "2461756 kB",
+        "pid": 8320
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5677812 kB",
+        "VmRSS": "2465308 kB",
+        "pid": 8321
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5676588 kB",
+        "VmRSS": "2470716 kB",
+        "pid": 8322
+      }
+    ],
+    "utc": "2026-09-07T21:22:03.477737+00:00"
+  },
+  {
+    "cgroup_bytes": 72476164096,
+    "gpu": [
+      "0, 43329, 100",
+      "1, 45461, 100",
+      "2, 46529, 86",
+      "3, 41757, 100"
+    ],
+    "processes": [
+      {
+        "Name": "python",
+        "State": "S (sleeping)",
+        "VmHWM": "1867276 kB",
+        "VmRSS": "445528 kB",
+        "pid": 8161
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5654536 kB",
+        "VmRSS": "2459032 kB",
+        "pid": 8319
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5678888 kB",
+        "VmRSS": "2461788 kB",
+        "pid": 8320
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5677812 kB",
+        "VmRSS": "2465360 kB",
+        "pid": 8321
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5676588 kB",
+        "VmRSS": "2470788 kB",
+        "pid": 8322
+      }
+    ],
+    "utc": "2026-09-07T21:22:10.553161+00:00"
+  },
+  {
+    "cgroup_bytes": 72591171584,
+    "gpu": [
+      "0, 43329, 97",
+      "1, 45461, 85",
+      "2, 46529, 82",
+      "3, 41757, 91"
+    ],
+    "processes": [
+      {
+        "Name": "python",
+        "State": "S (sleeping)",
+        "VmHWM": "1867276 kB",
+        "VmRSS": "445528 kB",
+        "pid": 8161
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5654536 kB",
+        "VmRSS": "2459064 kB",
+        "pid": 8319
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5678888 kB",
+        "VmRSS": "2461844 kB",
+        "pid": 8320
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5677812 kB",
+        "VmRSS": "2465404 kB",
+        "pid": 8321
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5676588 kB",
+        "VmRSS": "2470812 kB",
+        "pid": 8322
+      }
+    ],
+    "utc": "2026-09-07T21:22:17.627279+00:00"
+  },
+  {
+    "cgroup_bytes": 72678060032,
+    "gpu": [
+      "0, 43329, 87",
+      "1, 45461, 86",
+      "2, 46529, 100",
+      "3, 41757, 86"
+    ],
+    "processes": [
+      {
+        "Name": "python",
+        "State": "S (sleeping)",
+        "VmHWM": "1867276 kB",
+        "VmRSS": "445528 kB",
+        "pid": 8161
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5654536 kB",
+        "VmRSS": "2459084 kB",
+        "pid": 8319
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5678888 kB",
+        "VmRSS": "2461876 kB",
+        "pid": 8320
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5677812 kB",
+        "VmRSS": "2465408 kB",
+        "pid": 8321
+      },
+      {
+        "Name": "python",
+        "State": "R (running)",
+        "VmHWM": "5676588 kB",
+        "VmRSS": "2470844 kB",
+        "pid": 8322
+      }
+    ],
+    "utc": "2026-09-07T21:22:24.703454+00:00"
+  }
+]

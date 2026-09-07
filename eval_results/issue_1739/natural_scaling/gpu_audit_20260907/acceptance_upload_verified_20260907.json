@@ -1,0 +1,27 @@
+{
+  "receipt": {
+    "files_sha256": {
+      "capture_content_verified_20260907.json": "bbd045147325ff8aa2a11c1c2232ac5ec9c865a8bff8ec623d9d7cdc912ac282",
+      "capture_remote_verified_20260907.json": "8c32869fc793db560d3942cfa482626fbb8a1b1ab85b772089d2a327dbcc1b0a",
+      "capture_resources_20260907.json": "6578778ec38694a1db52470f90a0d7cbd04c158b43d782bf064dc82586ecaf1e",
+      "fit_pilot_accepted.json": "e0336785b19c556c35323753c629cd23bc607f79f2f42c9c0aa779367ff01684",
+      "fit_pilot_independent_audit_20260907.json": "b529b2a0cf1a1c123da80a019b59709857f12580e27937411d8a4055fcdb1d1f",
+      "fit_pilot_remote_verified_20260907.json": "d564a1e81d200fae98b8796c241a77c680c9149c7f7f456185453ef7541bc174",
+      "fit_pilot_resources_20260907.jsonl": "4891d458bf0a43f4c4c0490c20c42924d9dfc3bcb4d8d77b05c5d68b6562adcc",
+      "pilot_accepted.json": "857efffffa23e1137b3535232bc583f897432005861ca8488f4028ef9d8e6303",
+      "raw_content_verified_20260907.json": "d9bda4759bac21a43ba3646d0451df54840ab4236592e581ce958913b79af10a",
+      "store_content_verified_20260907.json": "242702b05fd322ed9ccb7c80804fb0e498aab5e97e58786ec73a09cc78342464"
+    },
+    "prefix": "issue1739_natural100k_20260906/acceptance_audit_20260907",
+    "revision": "f31582aac7edc3021ae3ee7de540f71f144996a7",
+    "url": "superkaiba1/explore-persona-space-data/issue1739_natural100k_20260906/acceptance_audit_20260907",
+    "wall_s": 27.31270552240312
+  },
+  "verification": {
+    "all_names_sizes_content_verified": true,
+    "files": 10,
+    "prefix": "issue1739_natural100k_20260906/acceptance_audit_20260907",
+    "revision": "f31582aac7edc3021ae3ee7de540f71f144996a7",
+    "status": "PASS"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "actual_rows": 100000,
+  "all_arrays_finite": true,
+  "array_count": 8,
+  "distinct_context_ids": 100000,
+  "distinct_source_pairs": 100000,
+  "dtype": "float16",
+  "files": 11,
+  "manifest_sha256": "abeeb30b42665271e85e1e1f9448dc10ce215d45bb3ff4161dfd518140b6a524",
+  "remote_all_names_sizes_content_verified": true,
+  "remote_prefix": "issue1739_natural100k_20260906/store",
+  "remote_revision": "972fd732b40a32619be508e97d1adf695afb2436",
+  "shape": [
+    100000,
+    3584
+  ],
+  "status": "PASS",
+  "wall_s": 18.668020545504987
+}

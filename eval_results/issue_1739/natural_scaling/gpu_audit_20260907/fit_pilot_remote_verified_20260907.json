@@ -1,0 +1,55 @@
+{
+  "proofs": [
+    {
+      "all_names_sizes_content_verified": true,
+      "behavior": "evil",
+      "bytes": 44562405,
+      "files": 8,
+      "prefix": "issue1739_natural100k_20260906/results/u100000/evil/seed0",
+      "revision": "6aa27553e72f8342e834aa3c8a898ae2eca06092"
+    },
+    {
+      "all_names_sizes_content_verified": true,
+      "behavior": "sycophancy",
+      "bytes": 76375100,
+      "files": 9,
+      "prefix": "issue1739_natural100k_20260906/results/u100000/sycophancy/seed0",
+      "revision": "b7c473e88f49cadd5defba3ce95e50c7d312ddd0"
+    },
+    {
+      "all_names_sizes_content_verified": true,
+      "behavior": "hallucination",
+      "bytes": 38204858,
+      "files": 5,
+      "prefix": "issue1739_natural100k_20260906/results/u100000/hallucination/seed0",
+      "revision": "359b5c7082dc2cf94b75b0a8969309b484926bf2"
+    }
+  ],
+  "resources": {
+    "first": "2026-09-07T21:36:56Z",
+    "last": "2026-09-07T21:45:13Z",
+    "max_sampled_cgroup_bytes": 158792921088,
+    "max_sampled_gpu_mib": {
+      "0": 64079,
+      "1": 66219,
+      "2": 66219,
+      "3": 531
+    },
+    "samples": 99,
+    "workers": {
+      "evil": {
+        "max_hwm_kib": 40049908,
+        "max_rss_kib": 34386296
+      },
+      "hallucination": {
+        "max_hwm_kib": 30734852,
+        "max_rss_kib": 29840780
+      },
+      "sycophancy": {
+        "max_hwm_kib": 30614604,
+        "max_rss_kib": 28932736
+      }
+    }
+  },
+  "status": "PASS"
+}

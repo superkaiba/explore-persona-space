@@ -1,0 +1,14 @@
+{
+  "actual_distinct_contexts": 100000,
+  "actual_rows": 100000,
+  "all_hashes_keys_order_shapes_dtypes_finite_pass": true,
+  "arrays": 1600,
+  "captured_chunks": 200,
+  "chunk_wall_s": {
+    "max": 9.413877177983522,
+    "mean": 8.15910115051549,
+    "min": 7.492060566321015
+  },
+  "maximum_torch_allocated_bytes": 19991657472,
+  "wall_s": 19.61117748916149
+}
