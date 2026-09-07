@@ -288,7 +288,7 @@ def aggregate(masks, point, boot, correct, top5, retrieval_boot, *, fresh_only=F
     return {"per_k": result, "endpoint_contrast": f"K={last} minus K=1", "endpoint_deltas": deltas}
 
 
-def make_figure(summary: dict, stem: Path) -> None:
+def make_figure(summary: dict, stem: Path, *, include_baseline: bool = False) -> None:
     """Render both outcome curves using the manuscript's shared visual system."""
     import matplotlib.pyplot as plt
 
@@ -301,7 +301,7 @@ def make_figure(summary: dict, stem: Path) -> None:
     roles = {"ridge": "linear", "mlp": "nonlinear", "identity_bias": "control"}
     labels = {"ridge": "Linear map", "mlp": "Nonlinear map", "identity_bias": "Identity + bias"}
     cells = summary["all_subsets"]["per_k"]
-    for ai, arm in enumerate(ARMS):
+    for arm in ARMS if include_baseline else ARMS[:2]:
         series = style.ROLES[roles[arm]]
         for j, metric in enumerate(("r2", "top1")):
             vals = [cells[str(k)]["arms"][arm] for k in range(1, 6)]
@@ -328,8 +328,12 @@ def make_figure(summary: dict, stem: Path) -> None:
             xticks=range(1, 6),
             xlim=(0.8, 5.2),
         )
-    axes[1].set_ylim(0, 1.03)
-    axes[1].axhline(summary["chance_top1"], color=style.MUTED, linewidth=1, linestyle=":")
+    if include_baseline:
+        axes[1].set_ylim(0, 1.03)
+        axes[1].axhline(summary["chance_top1"], color=style.MUTED, linewidth=1, linestyle=":")
+    else:
+        axes[0].set_ylim(0.73, 0.88)
+        axes[1].set_ylim(0.945, 0.995)
     axes[0].set_title("Variance explained", loc="left")
     axes[1].set_title("Answer identification", loc="left")
     handles, names = axes[0].get_legend_handles_labels()
@@ -339,7 +343,7 @@ def make_figure(summary: dict, stem: Path) -> None:
     fig.text(
         0.5,
         0.035,
-        "Frozen maps · 1,000 held-out contexts · 942 retrieval candidates · 95% context-bootstrap intervals",
+        "Frozen maps · 1,000 contexts · 942 candidates · Whitened cosine + CSLS · 95% intervals",
         ha="center",
         color=style.MUTED,
         fontsize=14,
@@ -356,6 +360,7 @@ def make_figure(summary: dict, stem: Path) -> None:
         stem.with_suffix(".meta.json"),
         {
             "render": exported["record"],
+            "plotted_arms": list(ARMS if include_baseline else ARMS[:2]),
             "data": summary["all_subsets"],
             "outputs_sha256": {k: FINAL._sha256(exported[k]) for k in ("pdf", "png", "grayscale")},
         },
@@ -373,13 +378,16 @@ def main() -> None:
     parser.add_argument(
         "--figure", type=Path, default=ROOT / "figures/issue_1901/k_rollout_ablation"
     )
+    parser.add_argument(
+        "--tensor-out", type=Path, default=ROOT / "data/issue_1901/k_rollout_ablation"
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     start = time.time()
     paths = {k: Path(v) for k, v in json.loads(args.paths.read_text()).items()}
     draws, preds, provenance = load_inputs(paths)
     whiten, whitening = FINAL._whitener(paths["whiten"])
-    result = score_subsets(draws, preds, whiten, args.out)
+    result = score_subsets(draws, preds, whiten, args.tensor_out)
     for arm in ARMS[:2]:
         observed = result["all_subsets"]["per_k"]["5"]["arms"][arm]
         reference = provenance["reference"][arm]
@@ -404,6 +412,12 @@ def main() -> None:
                 "r2_denominator": "recentered at each resampled test-set mean",
             },
             "scope": "evaluation K only; no refits; context arm; K>5 untested",
+            "bootstrap_archive": {
+                "hf_repo": "superkaiba1/explore-persona-space-data",
+                "hf_path": "issue1901_k_rollout_ablation/analysis_tensors/per_row_and_bootstrap.npz",
+                "sha256": FINAL._sha256(args.tensor_out / "per_row_and_bootstrap.npz"),
+                "upload_verification": "Recorded separately in publication.json after upload",
+            },
             "whitening": whitening,
             "provenance": provenance,
             "code_sha": subprocess.check_output(
@@ -423,6 +437,9 @@ def main() -> None:
     )
     FINAL._write_json(args.out / "summary.json", result)
     make_figure(result, args.figure)
+    make_figure(
+        result, args.figure.with_name(args.figure.name + "_baselines"), include_baseline=True
+    )
     LOG.info("COMPLETE elapsed=%.1fs output=%s", time.time() - start, args.out)
 
 
