@@ -1,0 +1,205 @@
+{
+  "panel": "answer_language",
+  "label_kind": "assigned_condition",
+  "classes": [
+    "chinese",
+    "english",
+    "spanish"
+  ],
+  "training_draws": [
+    0,
+    1
+  ],
+  "evaluation_draws": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "folds": [
+    {
+      "fold": 0,
+      "test_carriers": [
+        "c01",
+        "c02"
+      ],
+      "n_train": 60,
+      "dimension": 3584,
+      "n_test": 60,
+      "alpha": 1000000.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "balanced_accuracy",
+      "inner_mean_metrics": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.9814814814814815,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "test_primary_metric": 0.9833333333333334,
+      "wall_seconds": 0.0502295084297657
+    },
+    {
+      "fold": 1,
+      "test_carriers": [
+        "c03",
+        "c04"
+      ],
+      "n_train": 60,
+      "dimension": 3584,
+      "n_test": 60,
+      "alpha": 1000000.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "balanced_accuracy",
+      "inner_mean_metrics": [
+        0.9814814814814815,
+        0.9814814814814815,
+        0.9814814814814815,
+        0.9814814814814815,
+        0.9814814814814815,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "test_primary_metric": 1.0,
+      "wall_seconds": 0.04761877655982971
+    },
+    {
+      "fold": 2,
+      "test_carriers": [
+        "c05",
+        "c06"
+      ],
+      "n_train": 60,
+      "dimension": 3584,
+      "n_test": 60,
+      "alpha": 1000000.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "balanced_accuracy",
+      "inner_mean_metrics": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.9814814814814815,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "test_primary_metric": 1.0,
+      "wall_seconds": 0.05122566781938076
+    },
+    {
+      "fold": 3,
+      "test_carriers": [
+        "c07",
+        "c08"
+      ],
+      "n_train": 60,
+      "dimension": 3584,
+      "n_test": 60,
+      "alpha": 1000000.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "balanced_accuracy",
+      "inner_mean_metrics": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.9814814814814815,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "test_primary_metric": 1.0,
+      "wall_seconds": 0.04989607259631157
+    },
+    {
+      "fold": 4,
+      "test_carriers": [
+        "c09",
+        "c10"
+      ],
+      "n_train": 60,
+      "dimension": 3584,
+      "n_test": 60,
+      "alpha": 1000000.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "balanced_accuracy",
+      "inner_mean_metrics": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.9814814814814815,
+        0.9814814814814815,
+        1.0,
+        1.0
+      ],
+      "test_primary_metric": 1.0,
+      "wall_seconds": 0.05195748433470726
+    },
+    {
+      "fold": 5,
+      "test_carriers": [
+        "c11",
+        "c12"
+      ],
+      "n_train": 60,
+      "dimension": 3584,
+      "n_test": 60,
+      "alpha": 1000000.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "balanced_accuracy",
+      "inner_mean_metrics": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "test_primary_metric": 0.9666666666666667,
+      "wall_seconds": 0.04867071844637394
+    }
+  ],
+  "pilot_only": false,
+  "wall_seconds": 0.30461061373353004,
+  "peak_rss_mib_process": 725.37890625,
+  "metrics": {
+    "balanced_accuracy": 0.9916666666666667,
+    "balanced_accuracy_ci95": [
+      0.9777777777777779,
+      1.0
+    ],
+    "chance_balanced_accuracy": 0.3333333333333333,
+    "macro_ovr_auroc": 1.0,
+    "chance_auroc": 0.5,
+    "per_class_auroc": {
+      "chinese": 1.0,
+      "english": 1.0,
+      "spanish": 1.0
+    },
+    "positive_prevalence": {
+      "chinese": 0.3333333333333333,
+      "english": 0.3333333333333333,
+      "spanish": 0.3333333333333333
+    },
+    "n_carriers": 12,
+    "n_contexts": 36,
+    "n_answers": 360,
+    "uncertainty": "percentile bootstrap of 12 carrier clusters; exploratory precision",
+    "bootstrap_draws": 2000
+  }
+}

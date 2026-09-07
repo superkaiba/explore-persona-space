@@ -1,0 +1,86 @@
+{
+  "panel": "persona",
+  "label_kind": "assigned_condition",
+  "classes": [
+    "v1",
+    "v2",
+    "v3",
+    "v4",
+    "v5"
+  ],
+  "training_draws": [
+    0,
+    1
+  ],
+  "evaluation_draws": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "folds": [
+    {
+      "fold": 0,
+      "test_carriers": [
+        "c01",
+        "c02"
+      ],
+      "n_train": 200,
+      "dimension": 3584,
+      "n_test": 200,
+      "alpha": 1000000.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "balanced_accuracy",
+      "inner_mean_metrics": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "test_primary_metric": 1.0,
+      "wall_seconds": 0.15735390223562717
+    }
+  ],
+  "pilot_only": true,
+  "wall_seconds": 0.15900209173560143,
+  "peak_rss_mib_process": 700.80859375,
+  "metrics": {
+    "balanced_accuracy": 1.0,
+    "balanced_accuracy_ci95": [
+      1.0,
+      1.0
+    ],
+    "chance_balanced_accuracy": 0.2,
+    "macro_ovr_auroc": 1.0,
+    "chance_auroc": 0.5,
+    "per_class_auroc": {
+      "v1": 1.0,
+      "v2": 1.0,
+      "v3": 1.0,
+      "v4": 1.0,
+      "v5": 1.0
+    },
+    "positive_prevalence": {
+      "v1": 0.2,
+      "v2": 0.2,
+      "v3": 0.2,
+      "v4": 0.2,
+      "v5": 0.2
+    },
+    "n_carriers": 2,
+    "n_contexts": 20,
+    "n_answers": 200,
+    "uncertainty": "percentile bootstrap of 2 carrier clusters; exploratory precision",
+    "bootstrap_draws": 2000
+  }
+}
