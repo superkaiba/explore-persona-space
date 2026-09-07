@@ -1,5 +1,6 @@
 ---
-title: Codex context-only behavior forecasting baseline
+title: Mapped-answer prediction has higher correlation than Codex on OOD factual QA
+  (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-09-06T22:59:28Z'
