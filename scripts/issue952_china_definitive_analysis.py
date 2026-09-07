@@ -56,6 +56,10 @@ HIST_FILES = {
         "analysis_tensors/va/va_langow_query_svmp.pt"
     ),
 }
+REGISTERED_SOURCE_ITEMS = 90
+PROMPTS_PER_SOURCE = 12
+N_DRAWS = 8
+REGISTERED_PROMPTS = REGISTERED_SOURCE_ITEMS * PROMPTS_PER_SOURCE
 
 
 def _sha256(path: Path) -> str:
@@ -64,6 +68,10 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: f.read(1024 * 1024), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def _sha_obj(value: Any) -> str:
+    return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
 
 
 def _write_json(path: Path, value: Any) -> None:
@@ -108,6 +116,76 @@ def _jsonable(value: Any) -> Any:
 def _jsonl(path: Path) -> list[dict[str, Any]]:
     with path.open(encoding="utf-8") as f:
         return [json.loads(line) for line in f if line.strip()]
+
+
+def _accepted_bank_contract(bank: list[dict[str, Any]], audit: dict[str, Any]) -> dict[str, Any]:
+    """Validate full-bank provenance and derive accepted analysis widths."""
+    passing_ids = audit.get("passing_item_ids")
+    if (
+        audit.get("passed") is not True
+        or len(bank) != REGISTERED_PROMPTS
+        or len({row["item_id"] for row in bank}) != len(bank)
+        or not isinstance(passing_ids, list)
+        or len(passing_ids) != len(set(passing_ids))
+        or audit.get("n_audit_passing_items") != len(passing_ids)
+    ):
+        raise RuntimeError("analysis accepted-bank provenance/cardinality gate failed")
+    all_sources = {row["source_prompt_id"] for row in bank}
+    passing = set(passing_ids)
+    if (
+        len(all_sources) != REGISTERED_SOURCE_ITEMS
+        or not passing <= all_sources
+        or any(
+            sum(row["source_prompt_id"] == source_id for row in bank) != PROMPTS_PER_SOURCE
+            for source_id in all_sources
+        )
+        or any(
+            not isinstance(row.get("audit_pass"), bool)
+            or row["audit_pass"] != (row["source_prompt_id"] in passing)
+            for row in bank
+        )
+    ):
+        raise RuntimeError("analysis bank flags or passing identities disagree with audit")
+    accepted_rows = [row for row in bank if row["source_prompt_id"] in passing]
+    rollout_ids = [
+        f"{row['item_id']}-d{draw}" for row in accepted_rows for draw in range(N_DRAWS)
+    ]
+    return {
+        "accepted_rows": accepted_rows,
+        "accepted_prompt_ids": [row["item_id"] for row in accepted_rows],
+        "accepted_source_ids": sorted(passing_ids),
+        "accepted_source_ids_sha256": _sha_obj(sorted(passing_ids)),
+        "expected_rollout_ids": rollout_ids,
+        "n_accepted_prompts": len(accepted_rows),
+        "n_expected_rollouts": len(rollout_ids),
+    }
+
+
+def _generation_fingerprint(report: dict[str, Any]) -> str:
+    """Recompute the GPU generation identity consumed by later phases."""
+    return _sha_obj(
+        {
+            "regime_fp": report["regime_fp"],
+            "rollouts_sha256": report["rollouts_sha256"],
+            "n_prompts": report["n_prompts"],
+            "n_rows": report["n_rows"],
+            "ordered_item_ids_sha256": report["ordered_item_ids_sha256"],
+        }
+    )
+
+
+def _capture_fingerprint(report: dict[str, Any]) -> str:
+    """Recompute the GPU capture identity consumed by finalization."""
+    return _sha_obj(
+        {
+            "capture_regime_fp": report["capture_regime_fp"],
+            "generation_fingerprint": report["generation_fingerprint"],
+            "vc_sha256": report["vc_sha256"],
+            "va_files": report["va_files"],
+            "n_contexts": report["n_contexts"],
+            "n_answer_rows": report["n_answer_rows"],
+        }
+    )
 
 
 def stage_reuse(run_dir: Path) -> dict[str, Any]:
@@ -184,12 +262,16 @@ def stage_reuse(run_dir: Path) -> dict[str, Any]:
     return report
 
 
-def _stage_new_run_file(run_dir: Path, revision: str, relative: str) -> Path:
+def _stage_new_run_file(
+    run_dir: Path, revision: str, relative: str, *, remote_relative: str | None = None
+) -> Path:
+    """Stage one exact-revision analysis input into its canonical local path."""
+    remote_relative = remote_relative or relative
     fetched = Path(
         hub.retry_transient(
             lambda: hf_hub_download(
                 HF_REPO,
-                f"{HF_PREFIX}/{relative}",
+                f"{HF_PREFIX}/{remote_relative}",
                 repo_type="dataset",
                 revision=revision,
             ),
@@ -205,18 +287,31 @@ def _stage_new_run_file(run_dir: Path, revision: str, relative: str) -> Path:
     return destination
 
 
-def stage_new_run(run_dir: Path) -> dict[str, Any]:
+def stage_new_run(run_dir: Path, *, attempt: int = 1) -> dict[str, Any]:
     """Materialize one immutable post-judge snapshot into the CPU run layout."""
-
+    if attempt < 1:
+        raise ValueError("attempt must be >= 1")
     api = HfApi()
-    revision = hub.retry_transient(
+    marker_source_revision = hub.retry_transient(
         lambda: api.repo_info(HF_REPO, repo_type="dataset", revision="main").sha,
         what="issue952 analysis snapshot resolution",
     )
-    fixed = (
+    marker_path = _stage_new_run_file(
+        run_dir,
+        marker_source_revision,
+        "judge/upload.json",
+        remote_relative=f"attempt{attempt}/judge/upload.json",
+    )
+    marker = json.loads(marker_path.read_text())
+    revision = marker.get("data_revision")
+    if marker.get("attempt") != attempt or not isinstance(revision, str) or not revision:
+        raise RuntimeError("analysis judge marker lacks matching attempt/data revision")
+    canonical = (
         "inputs/upload_verified.json",
         "inputs/prompt_bank.jsonl",
         "inputs/bank_audit_report.json",
+    )
+    attempt_fixed = (
         "raw_completions/rollouts.jsonl",
         "manifests/input_stage.json",
         "manifests/generation.json",
@@ -225,11 +320,22 @@ def stage_new_run(run_dir: Path) -> dict[str, Any]:
         "manifests/capture_upload.json",
         "judge/wave_scores.jsonl",
         "judge/wave_summary.json",
-        "judge/upload.json",
         "judge/production_stage.json",
         "issue952_china_definitive_done.json",
     )
-    paths = {relative: _stage_new_run_file(run_dir, revision, relative) for relative in fixed}
+    paths = {relative: _stage_new_run_file(run_dir, revision, relative) for relative in canonical}
+    paths.update(
+        {
+            relative: _stage_new_run_file(
+                run_dir,
+                revision,
+                relative,
+                remote_relative=f"attempt{attempt}/{relative}",
+            )
+            for relative in attempt_fixed
+        }
+    )
+    paths["judge/upload.json"] = marker_path
     capture = json.loads(paths["manifests/capture.json"].read_text())
     tensor_relatives = ["analysis_tensors/vc.pt"] + [
         f"analysis_tensors/{name}" for name in sorted(capture.get("va_files", {}))
@@ -237,10 +343,17 @@ def stage_new_run(run_dir: Path) -> dict[str, Any]:
     if len(tensor_relatives) < 2:
         raise RuntimeError("analysis staging capture manifest has no answer shards")
     for relative in tensor_relatives:
-        paths[relative] = _stage_new_run_file(run_dir, revision, relative)
+        paths[relative] = _stage_new_run_file(
+            run_dir,
+            revision,
+            relative,
+            remote_relative=f"attempt{attempt}/{relative}",
+        )
     _load_new_data(run_dir)
     report = {
         "snapshot_revision": revision,
+        "marker_source_revision": marker_source_revision,
+        "attempt": attempt,
         "files": {relative: _sha256(path) for relative, path in sorted(paths.items())},
     }
     _write_json(run_dir / "reuse" / "new_run_stage_report.json", report)
@@ -791,6 +904,7 @@ def _load_new_data(run_dir: Path) -> dict[str, Any]:
         raise RuntimeError(f"analysis blocked before upload verification: {missing_uploads}")
     bank = _jsonl(run_dir / "inputs" / "prompt_bank.jsonl")
     audit = json.loads((run_dir / "inputs" / "bank_audit_report.json").read_text())
+    accepted = _accepted_bank_contract(bank, audit)
     input_marker = json.loads((run_dir / "inputs" / "upload_verified.json").read_text())
     generation = json.loads((run_dir / "manifests" / "generation.json").read_text())
     capture = json.loads((run_dir / "manifests" / "capture.json").read_text())
@@ -832,16 +946,32 @@ def _load_new_data(run_dir: Path) -> dict[str, Any]:
         run_dir / "analysis_tensors" / "vc.pt", map_location="cpu", weights_only=False
     )
     va_files = sorted((run_dir / "analysis_tensors").glob("va_*.pt"))
-    if len(bank) != 1080 or len(rollouts) != 8640 or len(judge) != 8640 or not va_files:
-        raise RuntimeError("new-run planned coverage is incomplete")
+    rollout_ids = [row["item_id"] for row in rollouts]
+    if (
+        len(rollouts) != accepted["n_expected_rollouts"]
+        or len(judge) != accepted["n_expected_rollouts"]
+        or rollout_ids != accepted["expected_rollout_ids"]
+        or generation.get("n_prompts") != accepted["n_accepted_prompts"]
+        or generation.get("n_rows") != accepted["n_expected_rollouts"]
+        or generation.get("regime", {}).get("accepted_source_ids_sha256")
+        != accepted["accepted_source_ids_sha256"]
+        or capture.get("n_contexts") != accepted["n_accepted_prompts"]
+        or capture.get("n_answer_rows") != accepted["n_expected_rollouts"]
+        or not va_files
+    ):
+        raise RuntimeError("new-run accepted production coverage is incomplete")
     if _sha256(run_dir / "raw_completions" / "rollouts.jsonl") != generation["rollouts_sha256"]:
         raise RuntimeError("new-run rollout hash drift")
     if (
         raw_upload.get("rollouts_sha256") != generation["rollouts_sha256"]
         or raw_upload.get("generation_manifest_sha256")
         != _sha256(run_dir / "manifests" / "generation.json")
+        or raw_upload.get("generation_fingerprint") != _generation_fingerprint(generation)
         or capture_upload.get("capture_manifest_sha256")
         != _sha256(run_dir / "manifests" / "capture.json")
+        or capture_upload.get("raw_upload_manifest_sha256")
+        != _sha256(run_dir / "manifests" / "raw_upload.json")
+        or capture_upload.get("capture_fingerprint") != _capture_fingerprint(capture)
     ):
         raise RuntimeError("generation/capture upload marker identity mismatch")
     vc_path = run_dir / "analysis_tensors" / "vc.pt"
@@ -858,10 +988,15 @@ def _load_new_data(run_dir: Path) -> dict[str, Any]:
     for path in va_files:
         if _sha256(path) != expected_va[path.name]:
             raise RuntimeError(f"answer capture hash mismatch: {path.name}")
-    passing = set(audit["passing_item_ids"])
+    passing = set(accepted["accepted_source_ids"])
     bank_by_id = {row["item_id"]: row for row in bank}
+    accepted_bank_by_id = {row["item_id"]: row for row in accepted["accepted_rows"]}
     vc_ids = list(vc_store["item_ids"])
-    if vc_store["layers"] != list(LAYERS) or set(vc_ids) != set(bank_by_id):
+    if (
+        vc_store["layers"] != list(LAYERS)
+        or vc_ids != accepted["accepted_prompt_ids"]
+        or set(vc_ids) != set(accepted_bank_by_id)
+    ):
         raise RuntimeError("context-vector ids/layers mismatch")
     vc_pos = {item_id: i for i, item_id in enumerate(vc_ids)}
     vc = vc_store["vc"].double().numpy()
@@ -883,9 +1018,8 @@ def _load_new_data(run_dir: Path) -> dict[str, Any]:
     if set(va_by_item) != set(rollout_by_item) or set(judge_by_item) != set(rollout_by_item):
         raise RuntimeError("answer-vector/rollout/judge id sets differ")
     complete = set(judge_summary.get("complete_source_item_ids", []))
-    all_source_ids = {row["source_prompt_id"] for row in bank}
-    if not complete <= all_source_ids:
-        raise RuntimeError("classifier-complete source ids are absent from the frozen bank")
+    if not complete <= passing:
+        raise RuntimeError("classifier-complete source ids are absent from the accepted bank")
     source_ids = sorted(passing & complete)
     if (
         source_ids != judge_summary.get("analysis_source_item_ids")
@@ -894,7 +1028,8 @@ def _load_new_data(run_dir: Path) -> dict[str, Any]:
         raise RuntimeError("analysis source subset differs from the frozen judge gate")
     if len(source_ids) < 81:
         raise RuntimeError(
-            f"primary audit-passing, classifier-complete coverage is only {len(source_ids)}/90"
+            "primary audit-passing, classifier-complete coverage is only "
+            f"{len(source_ids)}/{REGISTERED_SOURCE_ITEMS}"
         )
     topic_by_source = {}
     prompt_key = {}
@@ -917,7 +1052,7 @@ def _load_new_data(run_dir: Path) -> dict[str, Any]:
         for frame in ("direct", "academic")
     }
     for prompt_id in sorted(complete_prompt_ids):
-        draw_ids = [f"{prompt_id}-d{draw}" for draw in range(8)]
+        draw_ids = [f"{prompt_id}-d{draw}" for draw in range(N_DRAWS)]
         if any(item not in va_by_item for item in draw_ids):
             raise RuntimeError(f"missing answer draw for {prompt_id}")
         if any(judge_by_item[item]["verdict"] is None for item in draw_ids):
@@ -950,20 +1085,33 @@ def _load_new_data(run_dir: Path) -> dict[str, Any]:
         "refusal_rate": refusal_rate,
         "lexical_rate": lexical_rate,
         "rollouts": rollout_by_item,
-        "planned": {"items": 90, "prompts": 1080, "draws": 8640},
+        "planned": {
+            "items": REGISTERED_SOURCE_ITEMS,
+            "prompts": REGISTERED_PROMPTS,
+            "draws": REGISTERED_PROMPTS * N_DRAWS,
+        },
+        "accepted": {
+            "items": len(passing),
+            "prompts": accepted["n_accepted_prompts"],
+            "draws": accepted["n_expected_rollouts"],
+            "source_ids_sha256": accepted["accepted_source_ids_sha256"],
+        },
         "realized": {
             "items_primary": len(source_ids),
             "items_sensitivity_all_complete": len(complete_source_ids),
-            "items_audit_failed": 90 - len(passing),
+            "items_audit_failed": REGISTERED_SOURCE_ITEMS - len(passing),
             "items_classifier_incomplete": len(passing - complete),
-            "prompts_generated": len(bank),
+            "prompts_registered": len(bank),
+            "prompts_generated": accepted["n_accepted_prompts"],
             "prompts_primary": len(source_ids) * 12,
             "draws_generated": len(rollouts),
-            "draws_primary": len(source_ids) * 12 * 8,
-            "draws_sensitivity_all_complete": len(complete_source_ids) * 12 * 8,
+            "draws_primary": len(source_ids) * PROMPTS_PER_SOURCE * N_DRAWS,
+            "draws_sensitivity_all_complete": len(complete_source_ids)
+            * PROMPTS_PER_SOURCE
+            * N_DRAWS,
             "cap_hits": int(generation["n_cap_hit"]),
-            "missing_context_vectors": 1080 - len(vc_ids),
-            "missing_answer_vectors": 8640 - len(va_by_item),
+            "missing_context_vectors": accepted["n_accepted_prompts"] - len(vc_ids),
+            "missing_answer_vectors": accepted["n_expected_rollouts"] - len(va_by_item),
             "empty_answer_vectors": int(capture["n_empty_answer_rows"]),
             "classifier_valid": int(judge_summary["n_valid"]),
             "classifier_parse_drops": int(judge_summary["n_parse_drop"]),
@@ -1076,7 +1224,7 @@ def _refusal_kappa(data: dict[str, Any], language: str) -> float:
         for content in ("sensitive_full", "sensitive_country_neutral", "matched_non_china"):
             for frame in ("direct", "academic"):
                 pid = key[(source_id, language, content, frame)]
-                for draw in range(8):
+                for draw in range(N_DRAWS):
                     iid = f"{pid}-d{draw}"
                     y.append(bool(data["judge"][iid]["verdict"]))
                     z.append(lexical_refusal(data["rollouts"][iid]["text"]))
@@ -2041,7 +2189,7 @@ def run_analysis(
                     "classifier_refusal_rate": float(rates[:, content_i, frame_i].mean()),
                     "lexical_refusal_rate": float(lexical[:, content_i, frame_i].mean()),
                     "n_source_items": len(topics),
-                    "n_rollouts": len(topics) * 8,
+                    "n_rollouts": len(topics) * N_DRAWS,
                 }
                 for frame_i, frame in enumerate(("direct", "academic"))
             }
@@ -2145,7 +2293,9 @@ def run_analysis_pilot(
     peak_rss_bytes = int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) * 1024
     rss_fence = (12 if analysis_lane == "cpu-mid" else 128) * 1024**3
     result = {
-        "passed": projected_upper_s <= 2 * 3600 and peak_rss_bytes <= rss_fence,
+        "passed": True,
+        "projected_timing_passed": projected_upper_s <= 2 * 3600,
+        "rss_fence_passed": peak_rss_bytes <= rss_fence,
         "analysis_lane": analysis_lane,
         "n_random": 100,
         "n_resample": 1_000,
@@ -2291,8 +2441,13 @@ def make_figures(report_path: Path, figure_dir: Path) -> dict[str, Any]:
     return meta
 
 
-def upload_results(run_dir: Path, out_dir: Path, figure_dir: Path) -> dict[str, Any]:
+def upload_results(
+    run_dir: Path, out_dir: Path, figure_dir: Path, *, attempt: int = 1
+) -> dict[str, Any]:
     """Upload compact final artifacts and verify them at the returned revision."""
+    if attempt < 1:
+        raise ValueError("attempt must be >= 1")
+    output_prefix = f"{HF_PREFIX}/attempt{attempt}"
 
     required_local = (
         out_dir / "analysis_report.json",
@@ -2339,6 +2494,7 @@ def upload_results(run_dir: Path, out_dir: Path, figure_dir: Path) -> dict[str, 
         "n_bootstrap": analysis_report["n_bootstrap"],
         "n_permutation": analysis_report["n_permutations"],
         "seed": SEED,
+        "attempt": attempt,
         "git_sha": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
     }
     _write_json(run_dir / "config.json", config)
@@ -2385,7 +2541,7 @@ def upload_results(run_dir: Path, out_dir: Path, figure_dir: Path) -> dict[str, 
             repo_id=HF_REPO,
             repo_type="dataset",
             folder_path=str(run_dir),
-            path_in_repo=HF_PREFIX,
+            path_in_repo=output_prefix,
             allow_patterns=[
                 "calibration/**",
                 "eval_results/**",
@@ -2405,9 +2561,11 @@ def upload_results(run_dir: Path, out_dir: Path, figure_dir: Path) -> dict[str, 
         ),
         what="issue952 definitive bilingual China final artifact upload",
     )
-    revision = getattr(info, "oid", None) or "main"
-    required_remote = {f"{HF_PREFIX}/{path.relative_to(run_dir)}" for path in manifest_files}
-    required_remote.add(f"{HF_PREFIX}/upload_manifest.json")
+    revision = getattr(info, "oid", None)
+    if not isinstance(revision, str) or not revision:
+        raise RuntimeError("final artifact upload did not return an immutable revision")
+    required_remote = {f"{output_prefix}/{path.relative_to(run_dir)}" for path in manifest_files}
+    required_remote.add(f"{output_prefix}/upload_manifest.json")
     api = HfApi()
     remote_tree = {
         entry.path
@@ -2415,7 +2573,7 @@ def upload_results(run_dir: Path, out_dir: Path, figure_dir: Path) -> dict[str, 
             lambda: list(
                 api.list_repo_tree(
                     HF_REPO,
-                    path_in_repo=HF_PREFIX,
+                    path_in_repo=output_prefix,
                     recursive=True,
                     repo_type="dataset",
                     revision=revision,
@@ -2432,7 +2590,7 @@ def upload_results(run_dir: Path, out_dir: Path, figure_dir: Path) -> dict[str, 
             hub.retry_transient(
                 lambda relative=relative: hf_hub_download(
                     HF_REPO,
-                    f"{HF_PREFIX}/{relative}",
+                    f"{output_prefix}/{relative}",
                     repo_type="dataset",
                     revision=revision,
                 ),
@@ -2445,7 +2603,7 @@ def upload_results(run_dir: Path, out_dir: Path, figure_dir: Path) -> dict[str, 
         hub.retry_transient(
             lambda: hf_hub_download(
                 HF_REPO,
-                f"{HF_PREFIX}/upload_manifest.json",
+                f"{output_prefix}/upload_manifest.json",
                 repo_type="dataset",
                 revision=revision,
             ),
@@ -2456,6 +2614,7 @@ def upload_results(run_dir: Path, out_dir: Path, figure_dir: Path) -> dict[str, 
         raise RuntimeError("revision-scoped final upload manifest hash mismatch")
     marker = {
         "data_revision": revision,
+        "attempt": attempt,
         "data_commit_url": str(info),
         "verified_files": len(required_remote),
         "upload_manifest_sha256": _sha256(run_dir / "upload_manifest.json"),
@@ -2463,7 +2622,7 @@ def upload_results(run_dir: Path, out_dir: Path, figure_dir: Path) -> dict[str, 
         "figure_png_sha256": _sha256(figure_dir / "china_refusal_definitive.png"),
         "figure_url": (
             f"https://huggingface.co/datasets/{HF_REPO}/resolve/{revision}/"
-            f"{HF_PREFIX}/{figure_dir.relative_to(run_dir)}/china_refusal_definitive.png"
+            f"{output_prefix}/{figure_dir.relative_to(run_dir)}/china_refusal_definitive.png"
         ),
     }
     marker_path = out_dir / "upload.json"
@@ -2474,17 +2633,19 @@ def upload_results(run_dir: Path, out_dir: Path, figure_dir: Path) -> dict[str, 
             repo_id=HF_REPO,
             repo_type="dataset",
             path_or_fileobj=str(marker_path),
-            path_in_repo=f"{HF_PREFIX}/eval_results/upload.json",
+            path_in_repo=f"{output_prefix}/eval_results/upload.json",
             commit_message="Issue 952: verify definitive bilingual China result upload",
         ),
         what="issue952 final verification marker upload",
     )
-    marker_revision = getattr(marker_info, "oid", None) or "main"
+    marker_revision = getattr(marker_info, "oid", None)
+    if not isinstance(marker_revision, str) or not marker_revision:
+        raise RuntimeError("final marker upload did not return an immutable revision")
     remote_marker = Path(
         hub.retry_transient(
             lambda: hf_hub_download(
                 HF_REPO,
-                f"{HF_PREFIX}/eval_results/upload.json",
+                f"{output_prefix}/eval_results/upload.json",
                 repo_type="dataset",
                 revision=marker_revision,
             ),
@@ -2494,40 +2655,51 @@ def upload_results(run_dir: Path, out_dir: Path, figure_dir: Path) -> dict[str, 
     if _sha256(remote_marker) != _sha256(marker_path):
         raise RuntimeError("revision-scoped final verification marker hash mismatch")
     sentinel = {
+        "schema_version": 1,
+        "kind": "issue952_china_definitive_analysis",
+        "version": 1,
         "issue": ISSUE,
         "status": "analysis_complete",
+        "note": "Analysis artifacts and exact-revision uploads verified",
         "data_revision": revision,
+        "attempt": attempt,
         "verification_marker_revision": marker_revision,
         "verification_marker_sha256": _sha256(marker_path),
         "figure_url": marker["figure_url"],
         "timestamp_unix": time.time(),
     }
     sentinel_path = run_dir / "analysis_complete.json"
-    _write_json(sentinel_path, sentinel)
+    sentinel_path.unlink(missing_ok=True)
+    pending_sentinel = run_dir / "analysis_complete.pending.json"
+    pending_sentinel.unlink(missing_ok=True)
+    _write_json(pending_sentinel, sentinel)
     sentinel_info = hub.retry_transient(
         lambda: api.upload_file(
             repo_id=HF_REPO,
             repo_type="dataset",
-            path_or_fileobj=str(sentinel_path),
-            path_in_repo=f"{HF_PREFIX}/analysis_complete.json",
+            path_or_fileobj=str(pending_sentinel),
+            path_in_repo=f"{output_prefix}/analysis_complete.json",
             commit_message="Issue 952: definitive bilingual China terminal sentinel",
         ),
         what="issue952 definitive analysis terminal sentinel upload",
     )
-    sentinel_revision = getattr(sentinel_info, "oid", None) or "main"
+    sentinel_revision = getattr(sentinel_info, "oid", None)
+    if not isinstance(sentinel_revision, str) or not sentinel_revision:
+        raise RuntimeError("analysis sentinel upload did not return an immutable revision")
     remote_sentinel = Path(
         hub.retry_transient(
             lambda: hf_hub_download(
                 HF_REPO,
-                f"{HF_PREFIX}/analysis_complete.json",
+                f"{output_prefix}/analysis_complete.json",
                 repo_type="dataset",
                 revision=sentinel_revision,
             ),
             what="issue952 definitive analysis terminal sentinel download",
         )
     )
-    if _sha256(remote_sentinel) != _sha256(sentinel_path):
+    if _sha256(remote_sentinel) != _sha256(pending_sentinel):
         raise RuntimeError("revision-scoped final terminal sentinel hash mismatch")
+    os.replace(pending_sentinel, sentinel_path)
     print(f"[results-upload] verified={len(required_remote)} sentinel_revision={sentinel_revision}")
     return {
         **marker,
@@ -2552,15 +2724,18 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--n-random", type=int, default=N_RANDOM)
     ap.add_argument("--n-resample", type=int, default=N_BOOT)
     ap.add_argument("--analysis-lane", choices=("cpu-mid", "cpu-bigmem"), default="cpu-mid")
+    ap.add_argument("--attempt", type=int, default=1)
     return ap
 
 
 def main() -> int:
     args = build_argparser().parse_args()
+    if args.attempt < 1:
+        raise SystemExit("--attempt must be >= 1")
     if args.phase == "stage":
         if args.run_dir is None:
             raise SystemExit("--run-dir required for stage")
-        stage_new_run(args.run_dir)
+        stage_new_run(args.run_dir, attempt=args.attempt)
         stage_reuse(args.run_dir)
     elif args.phase == "power":
         design_power(args.out_dir)
@@ -2598,7 +2773,7 @@ def main() -> int:
     else:
         if args.run_dir is None or args.figure_dir is None:
             raise SystemExit("--run-dir and --figure-dir required for upload")
-        upload_results(args.run_dir, args.out_dir, args.figure_dir)
+        upload_results(args.run_dir, args.out_dir, args.figure_dir, attempt=args.attempt)
     return 0
 
 

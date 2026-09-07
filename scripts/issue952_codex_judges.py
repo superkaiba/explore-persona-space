@@ -95,6 +95,10 @@ FRAMES = {
 }
 CONTENTS = ("sensitive_full", "sensitive_country_neutral", "matched_non_china")
 LANGUAGES = ("en", "zh")
+REGISTERED_SOURCE_ITEMS = 90
+PROMPTS_PER_SOURCE = len(LANGUAGES) * len(CONTENTS) * 2
+REGISTERED_PROMPTS = REGISTERED_SOURCE_ITEMS * PROMPTS_PER_SOURCE
+N_DRAWS = 8
 
 
 def _sha256(path: Path) -> str:
@@ -103,6 +107,10 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: f.read(1024 * 1024), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def _sha_obj(value: Any) -> str:
+    return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
 
 
 def _jsonl(path: Path) -> list[dict[str, Any]]:
@@ -128,6 +136,77 @@ def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
         for row in rows:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
     os.replace(tmp, path)
+
+
+def _accepted_bank_contract(bank_path: Path, audit_path: Path) -> dict[str, Any]:
+    """Validate full-bank provenance and derive the audit-accepted production roster."""
+    rows = _jsonl(bank_path)
+    audit = json.loads(audit_path.read_text())
+    passing_ids = audit.get("passing_item_ids")
+    if (
+        audit.get("passed") is not True
+        or audit.get("prompt_bank_sha256") != _sha256(bank_path)
+        or len(rows) != REGISTERED_PROMPTS
+        or len({row["item_id"] for row in rows}) != len(rows)
+        or not isinstance(passing_ids, list)
+        or len(passing_ids) != len(set(passing_ids))
+        or audit.get("n_audit_passing_items") != len(passing_ids)
+    ):
+        raise RuntimeError("accepted-bank provenance/cardinality gate failed")
+    source_ids = {row["source_prompt_id"] for row in rows}
+    passing = set(passing_ids)
+    if (
+        len(source_ids) != REGISTERED_SOURCE_ITEMS
+        or not passing <= source_ids
+        or any(
+            sum(row["source_prompt_id"] == source_id for row in rows) != PROMPTS_PER_SOURCE
+            for source_id in source_ids
+        )
+        or any(
+            not isinstance(row.get("audit_pass"), bool)
+            or row["audit_pass"] != (row["source_prompt_id"] in passing)
+            for row in rows
+        )
+    ):
+        raise RuntimeError("accepted-bank flags or source identities disagree with the audit")
+    accepted_rows = [row for row in rows if row["source_prompt_id"] in passing]
+    expected_rollout_ids = [
+        f"{row['item_id']}-d{draw}" for row in accepted_rows for draw in range(N_DRAWS)
+    ]
+    return {
+        "accepted_rows": accepted_rows,
+        "accepted_source_ids": sorted(passing_ids),
+        "accepted_source_ids_sha256": _sha_obj(sorted(passing_ids)),
+        "n_accepted_source_items": len(passing_ids),
+        "n_accepted_prompts": len(accepted_rows),
+        "n_expected_rollouts": len(expected_rollout_ids),
+        "expected_rollout_ids": expected_rollout_ids,
+    }
+
+
+def _selected_bank_contract(accepted: dict[str, Any], *, smoke: bool) -> dict[str, Any]:
+    """Derive the deterministic smoke or full-production roster from accepted rows."""
+    source_ids = accepted["accepted_source_ids"][:10] if smoke else accepted["accepted_source_ids"]
+    selected = [
+        row for row in accepted["accepted_rows"] if row["source_prompt_id"] in set(source_ids)
+    ]
+    rollout_ids = [f"{row['item_id']}-d{draw}" for row in selected for draw in range(N_DRAWS)]
+    return {
+        "source_ids": source_ids,
+        "source_ids_sha256": _sha_obj(source_ids),
+        "prompt_ids": [row["item_id"] for row in selected],
+        "rollout_ids": rollout_ids,
+        "n_prompts": len(selected),
+        "n_rollouts": len(rollout_ids),
+    }
+
+
+def _attempt_prefix(attempt: int, *, smoke: bool = False) -> str:
+    """Return the output namespace for one immutable attempt."""
+    if attempt < 1:
+        raise ValueError("attempt must be >= 1")
+    base = f"{HF_PREFIX}/attempt{attempt}"
+    return f"{base}/smoke" if smoke else base
 
 
 def request_fingerprint(question: str, response: str) -> str:
@@ -1378,7 +1457,9 @@ def _upload_tree_verified(
         ),
         what=message,
     )
-    revision = getattr(info, "oid", None) or "main"
+    revision = getattr(info, "oid", None)
+    if not isinstance(revision, str) or not revision:
+        raise RuntimeError(f"{message} did not return an immutable revision")
     expected = [f"{prefix}/{relative}" for relative in files]
     missing = hub.verify_repo_paths_uploaded(
         HfApi(),
@@ -1435,7 +1516,9 @@ def upload_calibration(out_dir: Path) -> dict[str, Any]:
         ),
         what="issue952 Codex calibration verification marker",
     )
-    marker_revision = getattr(marker_info, "oid", None) or "main"
+    marker_revision = getattr(marker_info, "oid", None)
+    if not isinstance(marker_revision, str) or not marker_revision:
+        raise RuntimeError("calibration marker upload did not return an immutable revision")
     critical = {
         "calibration_codex/upload.json": _sha256(marker_path),
         "calibration_codex/report.json": _sha256(report_path),
@@ -1452,12 +1535,16 @@ def upload_calibration(out_dir: Path) -> dict[str, Any]:
     return {**marker, "marker_revision": marker_revision, "marker_commit_url": str(marker_info)}
 
 
-def _stage_hf_file(out_dir: Path, revision: str, relative: str) -> Path:
+def _stage_hf_file(
+    out_dir: Path, revision: str, relative: str, *, remote_relative: str | None = None
+) -> Path:
+    """Stage one exact-revision file, optionally from a different remote relative path."""
+    remote_relative = remote_relative or relative
     fetched = Path(
         hub.retry_transient(
             lambda: hf_hub_download(
                 HF_REPO,
-                f"{HF_PREFIX}/{relative}",
+                f"{HF_PREFIX}/{remote_relative}",
                 repo_type="dataset",
                 revision=revision,
                 local_dir=out_dir / "_judge_stage",
@@ -1481,6 +1568,7 @@ def upload_inputs(out_dir: Path) -> dict[str, Any]:
     calibration_path = out_dir / "calibration_codex" / "report.json"
     report = json.loads(report_path.read_text())
     calibration = _validated_calibration(out_dir)
+    accepted = _accepted_bank_contract(bank_path, report_path)
     if (
         report.get("passed") is not True
         or calibration.get("passed") is not True
@@ -1530,6 +1618,11 @@ def upload_inputs(out_dir: Path) -> dict[str, Any]:
         "n_verified_calibration_files": len(calibration_files),
         "input_files": input_files,
         "calibration_files": calibration_files,
+        **{
+            key: value
+            for key, value in accepted.items()
+            if key not in {"accepted_rows", "accepted_source_ids", "expected_rollout_ids"}
+        },
     }
     marker_path = out_dir / "inputs" / "upload_verified.json"
     _write_json(marker_path, marker)
@@ -1543,7 +1636,9 @@ def upload_inputs(out_dir: Path) -> dict[str, Any]:
         ),
         what="issue952 Codex input verification marker",
     )
-    marker_revision = getattr(marker_info, "oid", None) or "main"
+    marker_revision = getattr(marker_info, "oid", None)
+    if not isinstance(marker_revision, str) or not marker_revision:
+        raise RuntimeError("input marker upload did not return an immutable revision")
     critical = {
         "inputs/upload_verified.json": _sha256(marker_path),
         "inputs/prompt_bank.jsonl": _sha256(bank_path),
@@ -1567,7 +1662,14 @@ def _validate_staged_gpu_provenance(
     done: dict[str, Any],
     generation: dict[str, Any],
     capture: dict[str, Any],
+    raw_upload: dict[str, Any],
+    capture_upload: dict[str, Any],
+    input_stage: dict[str, Any],
     marker: dict[str, Any],
+    accepted: dict[str, Any],
+    selected: dict[str, Any],
+    smoke: bool,
+    attempt: int,
     prompt_bank_sha256: str,
     audit_sha256: str,
     rollouts_sha256: str,
@@ -1575,9 +1677,33 @@ def _validate_staged_gpu_provenance(
     bank_sha = marker.get("prompt_bank_sha256")
     if (
         done.get("status") != "done"
-        or done.get("generation", {}).get("rollouts_sha256") != generation.get("rollouts_sha256")
-        or generation.get("regime", {}).get("smoke") is not False
+        or done.get("generation") != generation
+        or done.get("capture") != capture
+        or done.get("raw_upload") != raw_upload
+        or done.get("capture_upload") != capture_upload
+        or generation.get("regime", {}).get("smoke") is not smoke
+        or generation.get("regime", {}).get("attempt") != attempt
         or rollouts_sha256 != generation.get("rollouts_sha256")
+        or generation.get("n_prompts") != selected["n_prompts"]
+        or generation.get("n_rows") != selected["n_rollouts"]
+        or generation.get("ordered_item_ids_sha256")
+        != _sha_obj(selected["rollout_ids"])
+        or generation.get("regime", {}).get("selected_source_ids_sha256")
+        != selected["source_ids_sha256"]
+        or generation.get("regime", {}).get("accepted_source_ids_sha256")
+        != accepted["accepted_source_ids_sha256"]
+        or capture.get("n_contexts") != selected["n_prompts"]
+        or capture.get("n_answer_rows") != selected["n_rollouts"]
+        or capture.get("capture_regime", {}).get("accepted_source_ids_sha256")
+        != accepted["accepted_source_ids_sha256"]
+        or input_stage.get("accepted_source_ids_sha256")
+        != accepted["accepted_source_ids_sha256"]
+        or input_stage.get("n_accepted_prompts") != accepted["n_accepted_prompts"]
+        or raw_upload.get("rollouts_sha256") != generation.get("rollouts_sha256")
+        or capture_upload.get("vc_sha256") != capture.get("vc_sha256")
+        or capture_upload.get("va_files") != capture.get("va_files")
+        or not raw_upload.get("raw_payload_revision")
+        or not capture_upload.get("tensor_payload_revision")
         or bank_sha != prompt_bank_sha256
         or bank_sha != generation.get("regime", {}).get("bank_sha256")
         or bank_sha != capture.get("capture_regime", {}).get("bank_sha256")
@@ -1586,7 +1712,10 @@ def _validate_staged_gpu_provenance(
         raise RuntimeError("post-GPU judge staging provenance/hash gate failed")
 
 
-def stage_production(out_dir: Path) -> dict[str, Any]:
+def stage_production(out_dir: Path, *, attempt: int = 1) -> dict[str, Any]:
+    """Stage a hash-bound production attempt from an immutable Hub revision."""
+    if attempt < 1:
+        raise ValueError("attempt must be >= 1")
     api = HfApi()
     revision = hub.retry_transient(
         lambda: api.repo_info(HF_REPO, repo_type="dataset", revision="main").sha,
@@ -1603,11 +1732,24 @@ def stage_production(out_dir: Path) -> dict[str, Any]:
         "manifests/capture_upload.json",
         "issue952_china_definitive_done.json",
     )
-    paths = {relative: _stage_hf_file(out_dir, revision, relative) for relative in relatives}
+    canonical = relatives[:3]
+    attempt_relatives = relatives[3:]
+    paths = {relative: _stage_hf_file(out_dir, revision, relative) for relative in canonical}
+    paths.update(
+        {
+            relative: _stage_hf_file(
+                out_dir,
+                revision,
+                relative,
+                remote_relative=f"attempt{attempt}/{relative}",
+            )
+            for relative in attempt_relatives
+        }
+    )
     staged_rollouts = out_dir / "_judge_stage" / "raw_completions" / "rollouts.jsonl"
     hub.stage_sharded_text(
         HF_REPO,
-        f"{HF_PREFIX}/raw_completions/rollouts.jsonl",
+        f"{_attempt_prefix(attempt)}/raw_completions/rollouts.jsonl",
         staged_rollouts,
         repo_type="dataset",
         revision=revision,
@@ -1623,12 +1765,26 @@ def stage_production(out_dir: Path) -> dict[str, Any]:
     done = json.loads(paths["issue952_china_definitive_done.json"].read_text())
     generation = json.loads(paths["manifests/generation.json"].read_text())
     capture = json.loads(paths["manifests/capture.json"].read_text())
+    raw_upload = json.loads(paths["manifests/raw_upload.json"].read_text())
+    capture_upload = json.loads(paths["manifests/capture_upload.json"].read_text())
+    input_stage = json.loads(paths["manifests/input_stage.json"].read_text())
     marker = json.loads(paths["inputs/upload_verified.json"].read_text())
+    accepted = _accepted_bank_contract(
+        paths["inputs/prompt_bank.jsonl"], paths["inputs/bank_audit_report.json"]
+    )
+    selected = _selected_bank_contract(accepted, smoke=False)
     _validate_staged_gpu_provenance(
         done=done,
         generation=generation,
         capture=capture,
+        raw_upload=raw_upload,
+        capture_upload=capture_upload,
+        input_stage=input_stage,
         marker=marker,
+        accepted=accepted,
+        selected=selected,
+        smoke=False,
+        attempt=attempt,
         prompt_bank_sha256=_sha256(paths["inputs/prompt_bank.jsonl"]),
         audit_sha256=_sha256(paths["inputs/bank_audit_report.json"]),
         rollouts_sha256=_sha256(rollouts_path),
@@ -1637,16 +1793,353 @@ def stage_production(out_dir: Path) -> dict[str, Any]:
         "snapshot_revision": revision,
         "files": {relative: _sha256(path) for relative, path in paths.items()},
         "rollouts_sha256": generation["rollouts_sha256"],
+        "accepted_source_ids_sha256": accepted["accepted_source_ids_sha256"],
+        "n_accepted_source_items": accepted["n_accepted_source_items"],
+        "n_accepted_prompts": accepted["n_accepted_prompts"],
+        "n_expected_rollouts": accepted["n_expected_rollouts"],
+        "attempt": attempt,
     }
     _write_json(out_dir / "judge" / "production_stage.json", report)
     print(f"[codex-production-stage] revision={revision} files={len(paths)}", flush=True)
     return report
 
 
-def _production_rows(rollouts_path: Path, *, pilot: bool) -> list[dict[str, Any]]:
+def stage_smoke_judge(out_dir: Path, receipt_path: Path, *, attempt: int) -> dict[str, Any]:
+    """Stage and validate one immutable smoke attempt for off-GPU Codex judging."""
+    receipt = json.loads(receipt_path.read_text())
+    revision = receipt.get("revision")
+    smoke_prefix = _attempt_prefix(attempt, smoke=True)
+    if (
+        not isinstance(revision, str)
+        or not revision
+        or receipt.get("hf_prefix") != smoke_prefix
+        or receipt.get("attempt") != attempt
+        or not isinstance(receipt.get("input_revision"), str)
+        or not isinstance(receipt.get("code_sha"), str)
+        or not isinstance(receipt.get("sha256"), dict)
+        or not isinstance(receipt.get("smoke_wall_seconds"), (int, float))
+    ):
+        raise RuntimeError("smoke upload receipt identity/schema gate failed")
+    canonical_relatives = (
+        "inputs/upload_verified.json",
+        "inputs/prompt_bank.jsonl",
+        "inputs/bank_audit_report.json",
+    )
+    smoke_relatives = (
+        "manifests/input_stage.json",
+        "manifests/generation.json",
+        "manifests/raw_upload.json",
+        "manifests/capture.json",
+        "manifests/capture_upload.json",
+        "manifests/smoke_timing.json",
+        "issue952_china_definitive_done.json",
+    )
+    paths = {
+        relative: _stage_hf_file(out_dir, revision, relative)
+        for relative in canonical_relatives
+    }
+    paths.update(
+        {
+            relative: _stage_hf_file(
+                out_dir,
+                revision,
+                f"smoke_stage/{relative}",
+                remote_relative=f"attempt{attempt}/smoke/{relative}",
+            )
+            for relative in smoke_relatives
+        }
+    )
+    staged_rollouts = out_dir / "_judge_stage" / "smoke" / "raw_completions" / "rollouts.jsonl"
+    hub.stage_sharded_text(
+        HF_REPO,
+        f"{smoke_prefix}/raw_completions/rollouts.jsonl",
+        staged_rollouts,
+        repo_type="dataset",
+        revision=revision,
+        overwrite=True,
+    )
+    rollouts_path = out_dir / "smoke_stage" / "raw_completions" / "rollouts.jsonl"
+    rollouts_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(staged_rollouts, rollouts_path)
+    paths["raw_completions/rollouts.jsonl"] = rollouts_path
+    smoke_root = out_dir / "smoke_stage"
+    generation = json.loads((smoke_root / "manifests" / "generation.json").read_text())
+    capture = json.loads((smoke_root / "manifests" / "capture.json").read_text())
+    raw_upload = json.loads((smoke_root / "manifests" / "raw_upload.json").read_text())
+    capture_upload = json.loads((smoke_root / "manifests" / "capture_upload.json").read_text())
+    input_stage = json.loads((smoke_root / "manifests" / "input_stage.json").read_text())
+    done = json.loads((smoke_root / "issue952_china_definitive_done.json").read_text())
+    marker = json.loads((out_dir / "inputs" / "upload_verified.json").read_text())
+    accepted = _accepted_bank_contract(
+        out_dir / "inputs" / "prompt_bank.jsonl",
+        out_dir / "inputs" / "bank_audit_report.json",
+    )
+    selected = _selected_bank_contract(accepted, smoke=True)
+    _validate_staged_gpu_provenance(
+        done=done,
+        generation=generation,
+        capture=capture,
+        raw_upload=raw_upload,
+        capture_upload=capture_upload,
+        input_stage=input_stage,
+        marker=marker,
+        accepted=accepted,
+        selected=selected,
+        smoke=True,
+        attempt=attempt,
+        prompt_bank_sha256=_sha256(out_dir / "inputs" / "prompt_bank.jsonl"),
+        audit_sha256=_sha256(out_dir / "inputs" / "bank_audit_report.json"),
+        rollouts_sha256=_sha256(rollouts_path),
+    )
+    smoke_report = smoke_root / "manifests" / "smoke_timing.json"
+    timing = json.loads(smoke_report.read_text())
+    if (
+        timing.get("passed") is not True
+        or timing.get("attempt") != attempt
+        or timing.get("accepted_source_ids_sha256")
+        != accepted["accepted_source_ids_sha256"]
+    ):
+        raise RuntimeError("smoke technical report identity gate failed")
+    if receipt["code_sha"] != generation["regime"]["git_sha"]:
+        raise RuntimeError("smoke receipt code SHA differs from generation regime")
+    receipt_hashes = receipt["sha256"]
+    critical = {
+        "issue952_china_definitive_done.json": _sha256(
+            smoke_root / "issue952_china_definitive_done.json"
+        ),
+        "manifests/generation.json": _sha256(smoke_root / "manifests" / "generation.json"),
+        "manifests/capture.json": _sha256(smoke_root / "manifests" / "capture.json"),
+        "manifests/smoke_timing.json": _sha256(smoke_report),
+        "raw_completions/rollouts.jsonl": _sha256(rollouts_path),
+    }
+    if any(receipt_hashes.get(path) != sha for path, sha in critical.items()):
+        raise RuntimeError("smoke upload receipt hashes disagree with staged critical artifacts")
+    local_receipt = out_dir / "dispatch_state" / "smoke_verified.json"
+    local_receipt.parent.mkdir(parents=True, exist_ok=True)
+    if local_receipt.exists() and _sha256(local_receipt) != _sha256(receipt_path):
+        raise RuntimeError("local smoke receipt drift")
+    if not local_receipt.exists():
+        shutil.copyfile(receipt_path, local_receipt)
+    identity = {
+        "code_sha": receipt["code_sha"],
+        "input_revision": receipt["input_revision"],
+        "attempt": attempt,
+        "accepted_source_ids_sha256": accepted["accepted_source_ids_sha256"],
+        "smoke_report_sha256": _sha256(smoke_report),
+        "smoke_rollouts_sha256": _sha256(rollouts_path),
+        "smoke_upload_revision": revision,
+        "smoke_upload_receipt_sha256": _sha256(local_receipt),
+    }
+    report = {
+        "identity": identity,
+        "selected_source_ids_sha256": selected["source_ids_sha256"],
+        "n_source_items": len(selected["source_ids"]),
+        "n_requests": selected["n_rollouts"],
+        "rollouts_path": str(rollouts_path),
+        "files": {relative: _sha256(path) for relative, path in paths.items()},
+    }
+    _write_json(out_dir / "judge" / "smoke_stage.json", report)
+    return report
+
+
+def prepare_smoke_judge(
+    out_dir: Path, packet_root: Path, receipt_path: Path, *, attempt: int
+) -> dict[str, Any]:
+    """Create fresh opaque packets for every rollout in the 10-source smoke."""
+    stage = stage_smoke_judge(out_dir, receipt_path, attempt=attempt)
+    rollouts_path = Path(stage["rollouts_path"])
+    accepted = _accepted_bank_contract(
+        out_dir / "inputs" / "prompt_bank.jsonl",
+        out_dir / "inputs" / "bank_audit_report.json",
+    )
+    selected = _selected_bank_contract(accepted, smoke=True)
+    rows = _production_rows(rollouts_path, pilot=False, selected=selected)
+    packet_manifest = _prepare_packets(
+        rows=[
+            {"item_id": row["item_id"], "question": row["question"], "response": row["text"]}
+            for row in rows
+        ],
+        packet_kind=f"gpu-smoke-attempt{attempt}",
+        packet_root=packet_root / f"gpu_smoke_attempt{attempt}",
+        overlap_fraction=PRODUCTION_OVERLAP_FRACTION,
+    )
+    mapping_by_id = {row["item_id"]: row for row in rows}
+    lookup = [
+        {
+            **mapping,
+            "source_prompt_id": mapping_by_id[mapping["item_id"]]["source_prompt_id"],
+            "language": mapping_by_id[mapping["item_id"]]["language"],
+        }
+        for mapping in packet_manifest["mapping"]
+    ]
+    judge_dir = out_dir / "judge"
+    lookup_path = judge_dir / "smoke_lookup.json"
+    packet_path = judge_dir / "smoke_packet_manifest.json"
+    _write_json(lookup_path, lookup)
+    _write_json(packet_path, packet_manifest)
+    manifest = {
+        "schema_version": 1,
+        "kind": "issue952_codex_smoke_request",
+        "identity": stage["identity"],
+        "n_requests": len(rows),
+        "ordered_item_ids_sha256": _sha_obj([row["item_id"] for row in rows]),
+        "lookup_sha256": _sha256(lookup_path),
+        "packet_manifest_sha256": _sha256(packet_path),
+        "model": BACKEND,
+        "rubric_sha256": RUBRIC_SHA256,
+    }
+    manifest_path = judge_dir / "smoke_request_manifest.json"
+    _write_json(manifest_path, manifest)
+    return {**manifest, "request_sha256": _sha256(manifest_path)}
+
+
+def collect_smoke_judge(out_dir: Path, *, attempt: int) -> dict[str, Any]:
+    """Collect strict smoke outputs and publish the technical gate and receipt."""
+    judge_dir = out_dir / "judge"
+    stage = json.loads((judge_dir / "smoke_stage.json").read_text())
+    manifest_path = judge_dir / "smoke_request_manifest.json"
+    packet_path = judge_dir / "smoke_packet_manifest.json"
+    lookup_path = judge_dir / "smoke_lookup.json"
+    manifest = json.loads(manifest_path.read_text())
+    packet_manifest = json.loads(packet_path.read_text())
+    lookup = json.loads(lookup_path.read_text())
+    if (
+        manifest.get("identity") != stage.get("identity")
+        or manifest.get("identity", {}).get("attempt") != attempt
+        or manifest.get("n_requests") != 960
+        or manifest.get("lookup_sha256") != _sha256(lookup_path)
+        or manifest.get("packet_manifest_sha256") != _sha256(packet_path)
+        or len(lookup) != manifest.get("n_requests")
+    ):
+        raise RuntimeError("Codex smoke request identity/coverage drift")
+    judgments = _load_agent_outputs(packet_manifest)
+    artifact_hashes = _persist_packet_artifacts(
+        packet_manifest, judge_dir / "agent_artifacts" / "gpu_smoke"
+    )
+    scores = [
+        {
+            "item_id": row["item_id"],
+            "source_prompt_id": row["source_prompt_id"],
+            "language": row["language"],
+            "verdict": judgments[row["primary_agent"]][row["opaque_id"]],
+            "judge_id": row["primary_agent"],
+        }
+        for row in lookup
+    ]
+    score_path = judge_dir / "smoke_scores.jsonl"
+    _write_jsonl(score_path, scores)
+    reliability = _production_reliability(lookup, judgments)
+    reliability_pass = bool(
+        reliability["overall"]["agreement"] >= 0.90
+        and reliability["overall"]["cohen_kappa"] >= 0.70
+        and all(reliability["by_language"][language]["agreement"] >= 0.85 for language in LANGUAGES)
+    )
+    technical = {
+        "request_created": manifest_path.exists(),
+        "result_received": len(scores) == manifest["n_requests"],
+        "parse_complete": len(scores) == len(lookup),
+        "coverage_complete": len({row["item_id"] for row in scores}) == manifest["n_requests"],
+    }
+    parse_manifest = {
+        "schema_version": 1,
+        "kind": "issue952_codex_smoke_parse",
+        "identity": stage["identity"],
+        "technical": technical,
+        "coverage": {
+            "n_smoke_rows": manifest["n_requests"],
+            "n_parsed_rows": len(scores),
+            "ordered_item_ids_sha256": manifest["ordered_item_ids_sha256"],
+        },
+        "request_sha256": _sha256(manifest_path),
+        "result_sha256": _sha256(score_path),
+        "lookup_sha256": _sha256(lookup_path),
+        "packet_manifest_sha256": _sha256(packet_path),
+        "agent_artifact_hashes": artifact_hashes,
+    }
+    parse_path = judge_dir / "smoke_parse_manifest.json"
+    _write_json(parse_path, parse_manifest)
+    evidence = {
+        "request": {
+            "path": "judge/smoke_request_manifest.json",
+            "sha256": _sha256(manifest_path),
+        },
+        "result": {"path": "judge/smoke_scores.jsonl", "sha256": _sha256(score_path)},
+        "parse": {"path": "judge/smoke_parse_manifest.json", "sha256": _sha256(parse_path)},
+    }
+    census_paths = {
+        evidence["request"]["path"]: manifest_path,
+        evidence["result"]["path"]: score_path,
+        evidence["parse"]["path"]: parse_path,
+        "judge/smoke_packet_manifest.json": packet_path,
+        "judge/smoke_lookup.json": lookup_path,
+    }
+    artifact_root = judge_dir / "agent_artifacts" / "gpu_smoke"
+    census_paths.update(
+        {
+            f"judge/agent_artifacts/gpu_smoke/{path.relative_to(artifact_root).as_posix()}": path
+            for path in sorted(artifact_root.rglob("*"))
+            if path.is_file()
+        }
+    )
+    artifact_census = {relative: _sha256(path) for relative, path in census_paths.items()}
+    gate = {
+        "schema_version": 1,
+        "kind": "issue952_codex_smoke_gate",
+        "identity": stage["identity"],
+        "technical": technical,
+        "passed": all(technical.values()),
+        "advisory": {
+            "interjudge_reliability": reliability,
+            "agreement_thresholds_passed": reliability_pass,
+        },
+        "evidence": evidence,
+        "request_sha256": _sha256(manifest_path),
+        "result_sha256": _sha256(score_path),
+        "agent_artifact_hashes": artifact_hashes,
+        "artifact_census": artifact_census,
+    }
+    gate_path = out_dir / "dispatch_state" / "codex_smoke_gate.json"
+    _write_json(gate_path, gate)
+    receipt_path = out_dir / "dispatch_state" / "smoke_verified.json"
+    prefix = _attempt_prefix(attempt)
+    api = HfApi()
+    uploads = [
+        (receipt_path, "dispatch_state/smoke_verified.json"),
+        *((local, relative) for relative, local in sorted(census_paths.items())),
+        (gate_path, "dispatch_state/codex_smoke_gate.json"),
+    ]
+    gate_revision = None
+    for local, relative in uploads:
+        info = hub.retry_transient(
+            lambda local=local, relative=relative: api.upload_file(
+                repo_id=HF_REPO,
+                repo_type="dataset",
+                path_or_fileobj=str(local),
+                path_in_repo=f"{prefix}/{relative}",
+                commit_message=f"Issue 952: publish Codex smoke evidence {relative}",
+            ),
+            what=f"issue952 Codex smoke evidence publication {relative}",
+        )
+        gate_revision = getattr(info, "oid", None)
+        if not isinstance(gate_revision, str) or not gate_revision:
+            raise RuntimeError(f"smoke evidence upload lacks immutable revision: {relative}")
+    for local, relative in uploads:
+        remote = _stage_hf_file(
+            out_dir / "_smoke_gate_verify",
+            gate_revision,
+            Path(relative).name,
+            remote_relative=f"attempt{attempt}/{relative}",
+        )
+        if _sha256(remote) != _sha256(local):
+            raise RuntimeError(f"published smoke gate byte mismatch: {relative}")
+    return {**gate, "publication_revision": gate_revision}
+
+
+def _production_rows(
+    rollouts_path: Path, *, pilot: bool, selected: dict[str, Any]
+) -> list[dict[str, Any]]:
+    """Validate accepted-only rollout coverage and select the balanced pilot if requested."""
     rows = _jsonl(rollouts_path)
-    if len(rows) != 8640 or len({row["item_id"] for row in rows}) != 8640:
-        raise RuntimeError("production rollout cardinality/uniqueness drift")
     required = {
         "prompt_id",
         "item_id",
@@ -1661,6 +2154,14 @@ def _production_rows(rollouts_path: Path, *, pilot: bool) -> list[dict[str, Any]
     }
     if any(not required <= set(row) for row in rows):
         raise RuntimeError("production rollout schema drift")
+    realized_ids = [row["item_id"] for row in rows]
+    if (
+        len(rows) != selected["n_rollouts"]
+        or len(set(realized_ids)) != len(rows)
+        or realized_ids != selected["rollout_ids"]
+        or {row["source_prompt_id"] for row in rows} != set(selected["source_ids"])
+    ):
+        raise RuntimeError("production rollout cardinality/uniqueness drift")
     if not pilot:
         return rows
     by_arm: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
@@ -1680,14 +2181,15 @@ def _production_rows(rollouts_path: Path, *, pilot: bool) -> list[dict[str, Any]
 
 
 def prepare_production(
-    out_dir: Path, packet_root: Path, rollouts_path: Path, *, pilot: bool
+    out_dir: Path, packet_root: Path, rollouts_path: Path, *, pilot: bool, attempt: int = 1
 ) -> dict[str, Any]:
     """Prepare blinded production packets after current calibration and pilot gates."""
     calibration_path = out_dir / "calibration_codex" / "report.json"
     _validated_calibration(out_dir)
     audit_path = out_dir / "inputs" / "bank_audit_report.json"
-    if json.loads(audit_path.read_text()).get("passed") is not True:
-        raise RuntimeError("production judging blocked: bank audit gate did not pass")
+    bank_path = out_dir / "inputs" / "prompt_bank.jsonl"
+    accepted = _accepted_bank_contract(bank_path, audit_path)
+    selected = _selected_bank_contract(accepted, smoke=False)
     rollouts_sha = _sha256(rollouts_path)
     stage_path = out_dir / "judge" / "production_stage.json"
     if not stage_path.exists():
@@ -1696,6 +2198,10 @@ def prepare_production(
     if (
         stage.get("rollouts_sha256") != rollouts_sha
         or stage.get("files", {}).get("raw_completions/rollouts.jsonl") != rollouts_sha
+        or stage.get("accepted_source_ids_sha256") != accepted["accepted_source_ids_sha256"]
+        or stage.get("n_accepted_prompts") != accepted["n_accepted_prompts"]
+        or stage.get("n_expected_rollouts") != accepted["n_expected_rollouts"]
+        or stage.get("attempt") != attempt
     ):
         raise RuntimeError("production judging rollouts differ from the staged GPU snapshot")
     if not pilot:
@@ -1714,11 +2220,13 @@ def prepare_production(
             and pilot_summary.get("rubric_sha256") == RUBRIC_SHA256
             and pilot_summary.get("request_manifest_sha256") == _sha256(pilot_manifest_path)
             and pilot_manifest.get("rollouts_sha256") == rollouts_sha
+            and pilot_summary.get("attempt") == attempt
+            and pilot_manifest.get("attempt") == attempt
             and pilot_manifest.get("model") == BACKEND
             and pilot_manifest.get("rubric_sha256") == RUBRIC_SHA256
         ):
             raise RuntimeError("production wave blocked: Codex pilot is stale or mismatched")
-    rows = _production_rows(rollouts_path, pilot=pilot)
+    rows = _production_rows(rollouts_path, pilot=pilot, selected=selected)
     suffix = "pilot" if pilot else "wave"
     packet_manifest = _prepare_packets(
         rows=[
@@ -1772,6 +2280,11 @@ def prepare_production(
         "bank_audit_report_sha256": _sha256(audit_path),
         "n_overlap": packet_manifest["n_overlap"],
         "overlap_fraction": PRODUCTION_OVERLAP_FRACTION,
+        "accepted_source_ids_sha256": accepted["accepted_source_ids_sha256"],
+        "n_accepted_source_items": accepted["n_accepted_source_items"],
+        "n_accepted_prompts": accepted["n_accepted_prompts"],
+        "n_expected_rollouts": accepted["n_expected_rollouts"],
+        "attempt": attempt,
     }
     manifest_path = judge_dir / f"{suffix}_request_manifest.json"
     _write_json(manifest_path, manifest)
@@ -1826,6 +2339,10 @@ def collect_production(out_dir: Path, *, pilot: bool) -> dict[str, Any]:
     manifest = json.loads(manifest_path.read_text())
     packet_manifest = json.loads(packet_manifest_path.read_text())
     lookup = json.loads(lookup_path.read_text())
+    accepted = _accepted_bank_contract(
+        out_dir / "inputs" / "prompt_bank.jsonl",
+        out_dir / "inputs" / "bank_audit_report.json",
+    )
     if (
         manifest.get("measurement_contract") != MEASUREMENT_CONTRACT
         or manifest.get("model") != BACKEND
@@ -1833,6 +2350,10 @@ def collect_production(out_dir: Path, *, pilot: bool) -> dict[str, Any]:
         or manifest.get("lookup_sha256") != _sha256(lookup_path)
         or manifest.get("packet_manifest_sha256") != _sha256(packet_manifest_path)
         or manifest.get("n_requests") != len(lookup)
+        or manifest.get("accepted_source_ids_sha256")
+        != accepted["accepted_source_ids_sha256"]
+        or manifest.get("n_accepted_prompts") != accepted["n_accepted_prompts"]
+        or manifest.get("n_expected_rollouts") != accepted["n_expected_rollouts"]
     ):
         raise RuntimeError("Codex production judge manifest identity drift")
     judgments = _load_agent_outputs(packet_manifest)
@@ -1884,6 +2405,7 @@ def collect_production(out_dir: Path, *, pilot: bool) -> dict[str, Any]:
         "interjudge_reliability": reliability,
         "interjudge_reliability_passed": reliability_pass,
         "agent_artifact_hashes": artifact_hashes,
+        "attempt": manifest["attempt"],
     }
     if pilot:
         by_arm: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -1902,8 +2424,8 @@ def collect_production(out_dir: Path, *, pilot: bool) -> dict[str, Any]:
             len(scores) == 624
             and len(summary["arms"]) == 12
             and all(row["n"] == 52 for row in summary["arms"].values())
-            and reliability_pass
         )
+        summary["claim_eligible"] = summary["passed"] and reliability_pass
     else:
         prompt_valid_counts: dict[str, int] = defaultdict(int)
         by_condition: dict[str, list[str]] = defaultdict(list)
@@ -1922,8 +2444,7 @@ def collect_production(out_dir: Path, *, pilot: bool) -> dict[str, Any]:
             for source_id, rows in by_source.items()
             if len(rows) == 96 and len({row["item_id"] for row in rows}) == 96
         )
-        audit = json.loads((out_dir / "inputs" / "bank_audit_report.json").read_text())
-        analysis_sources = sorted(set(audit["passing_item_ids"]) & set(complete_sources))
+        analysis_sources = sorted(set(accepted["accepted_source_ids"]) & set(complete_sources))
         topic_by_source = {row["source_prompt_id"]: row["topic"] for row in scores}
         analysis_topics = {topic_by_source[source_id] for source_id in analysis_sources}
         analysis_pass = len(analysis_sources) >= 81 and len(analysis_topics) == 12
@@ -1931,7 +2452,8 @@ def collect_production(out_dir: Path, *, pilot: bool) -> dict[str, Any]:
             {
                 "prompt_completeness_by_language_content": completeness,
                 "complete_source_item_ids": complete_sources,
-                "planned_source_items": len(by_source),
+                "planned_source_items": REGISTERED_SOURCE_ITEMS,
+                "accepted_source_items": accepted["n_accepted_source_items"],
                 "realized_complete_source_items": len(complete_sources),
                 "realized_valid_rows": len(scores),
                 "parse_drop_rate": 0.0,
@@ -1946,15 +2468,18 @@ def collect_production(out_dir: Path, *, pilot: bool) -> dict[str, Any]:
                 "realized_analysis_topics": len(analysis_topics),
                 "analysis_subset_passed": analysis_pass,
                 "passed": bool(
-                    len(scores) == 8640
+                    len(scores) == accepted["n_expected_rollouts"]
                     and len(completeness) == 6
-                    and all(len(set(prompt_ids)) == 180 for prompt_ids in by_condition.values())
+                    and all(
+                        len(set(prompt_ids)) == accepted["n_accepted_source_items"] * 2
+                        for prompt_ids in by_condition.values()
+                    )
                     and all(value >= 0.95 for value in completeness.values())
                     and analysis_pass
-                    and reliability_pass
                 ),
             }
         )
+        summary["claim_eligible"] = summary["passed"] and reliability_pass
     summary_path = judge_dir / f"{suffix}_summary.json"
     _write_json(summary_path, summary)
     print(
@@ -1965,6 +2490,106 @@ def collect_production(out_dir: Path, *, pilot: bool) -> dict[str, Any]:
         flush=True,
     )
     return summary
+
+
+def upload_production_judge(out_dir: Path, *, attempt: int) -> dict[str, Any]:
+    """Publish the completed production judge wave and verify exact downloaded bytes."""
+    judge_dir = out_dir / "judge"
+    scores_path = judge_dir / "wave_scores.jsonl"
+    summary_path = judge_dir / "wave_summary.json"
+    request_path = judge_dir / "wave_request_manifest.json"
+    stage_path = judge_dir / "production_stage.json"
+    summary = json.loads(summary_path.read_text())
+    request = json.loads(request_path.read_text())
+    stage = json.loads(stage_path.read_text())
+    if (
+        summary.get("passed") is not True
+        or summary.get("scores_sha256") != _sha256(scores_path)
+        or summary.get("request_manifest_sha256") != _sha256(request_path)
+        or summary.get("attempt") != attempt
+        or request.get("attempt") != attempt
+        or stage.get("attempt") != attempt
+        or summary.get("rollouts_sha256") != stage.get("rollouts_sha256")
+        or request.get("accepted_source_ids_sha256")
+        != stage.get("accepted_source_ids_sha256")
+    ):
+        raise RuntimeError("production judge upload identity/completion gate failed")
+    prefix = _attempt_prefix(attempt)
+    api = HfApi()
+    payload_revision = None
+    for local, remote_name in (
+        (scores_path, "wave_scores.jsonl"),
+        (summary_path, "wave_summary.json"),
+        (stage_path, "production_stage.json"),
+    ):
+        info = hub.retry_transient(
+            lambda local=local, remote_name=remote_name: api.upload_file(
+                repo_id=HF_REPO,
+                repo_type="dataset",
+                path_or_fileobj=str(local),
+                path_in_repo=f"{prefix}/judge/{remote_name}",
+                commit_message=f"Issue 952: publish Codex production {remote_name}",
+            ),
+            what=f"issue952 production judge upload {remote_name}",
+        )
+        payload_revision = getattr(info, "oid", None)
+        if not isinstance(payload_revision, str) or not payload_revision:
+            raise RuntimeError(f"production judge upload lacks immutable revision: {remote_name}")
+    for local, remote_name in (
+        (scores_path, "wave_scores.jsonl"),
+        (summary_path, "wave_summary.json"),
+        (stage_path, "production_stage.json"),
+    ):
+        remote = _stage_hf_file(
+            out_dir / "_wave_upload_verify",
+            payload_revision,
+            remote_name,
+            remote_relative=f"attempt{attempt}/judge/{remote_name}",
+        )
+        if _sha256(remote) != _sha256(local):
+            raise RuntimeError(f"production judge uploaded byte mismatch: {remote_name}")
+    marker = {
+        "schema_version": 1,
+        "kind": "issue952_codex_production_upload",
+        "attempt": attempt,
+        "data_revision": payload_revision,
+        "rollouts_sha256": summary["rollouts_sha256"],
+        "accepted_source_ids_sha256": stage["accepted_source_ids_sha256"],
+        "wave_scores_sha256": _sha256(scores_path),
+        "wave_summary_sha256": _sha256(summary_path),
+        "wave_request_manifest_sha256": _sha256(request_path),
+        "production_stage_sha256": _sha256(stage_path),
+    }
+    marker_path = judge_dir / "upload.json"
+    _write_json(marker_path, marker)
+    marker_info = hub.retry_transient(
+        lambda: api.upload_file(
+            repo_id=HF_REPO,
+            repo_type="dataset",
+            path_or_fileobj=str(marker_path),
+            path_in_repo=f"{prefix}/judge/upload.json",
+            commit_message="Issue 952: verify Codex production judge upload",
+        ),
+        what="issue952 production judge verification marker upload",
+    )
+    marker_revision = getattr(marker_info, "oid", None)
+    if not isinstance(marker_revision, str) or not marker_revision:
+        raise RuntimeError("production judge marker upload lacks immutable revision")
+    for local, remote_name in (
+        (scores_path, "wave_scores.jsonl"),
+        (summary_path, "wave_summary.json"),
+        (stage_path, "production_stage.json"),
+        (marker_path, "upload.json"),
+    ):
+        remote = _stage_hf_file(
+            out_dir / "_wave_marker_verify",
+            marker_revision,
+            remote_name,
+            remote_relative=f"attempt{attempt}/judge/{remote_name}",
+        )
+        if _sha256(remote) != _sha256(local):
+            raise RuntimeError(f"production judge marker-snapshot mismatch: {remote_name}")
+    return {**marker, "marker_revision": marker_revision}
 
 
 def build_argparser() -> argparse.ArgumentParser:
@@ -1983,17 +2608,22 @@ def build_argparser() -> argparse.ArgumentParser:
             "bank-retry-audit-prepare",
             "bank-finalize",
             "input-upload",
+            "smoke-prepare",
+            "smoke-collect",
             "production-stage",
             "production-pilot-prepare",
             "production-pilot-collect",
             "production-wave-prepare",
             "production-wave-collect",
+            "production-wave-upload",
         ),
     )
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--packet-root", type=Path)
     parser.add_argument("--invalid-root", type=Path)
     parser.add_argument("--rollouts", type=Path)
+    parser.add_argument("--smoke-receipt", type=Path)
+    parser.add_argument("--attempt", type=int, default=1)
     parser.add_argument(
         "--round",
         dest="round_no",
@@ -2011,6 +2641,8 @@ def main() -> int:
         parser.error("repair prepare/audit requires explicit --round >= 1")
     if not repair_phase and args.round_no is not None:
         parser.error("--round is only valid for repair prepare/audit")
+    if args.attempt < 1:
+        parser.error("--attempt must be >= 1")
     if args.phase == "calibration-prepare":
         if args.packet_root is None:
             raise RuntimeError("calibration-prepare requires --packet-root")
@@ -2045,8 +2677,19 @@ def main() -> int:
         return 0 if report["passed"] else 8
     elif args.phase == "input-upload":
         upload_inputs(args.out_dir)
+    elif args.phase == "smoke-prepare":
+        if args.packet_root is None or args.smoke_receipt is None:
+            raise RuntimeError("smoke-prepare requires --packet-root and --smoke-receipt")
+        prepare_smoke_judge(
+            args.out_dir, args.packet_root, args.smoke_receipt, attempt=args.attempt
+        )
+    elif args.phase == "smoke-collect":
+        report = collect_smoke_judge(args.out_dir, attempt=args.attempt)
+        return 0 if report["passed"] else 7
     elif args.phase == "production-stage":
-        stage_production(args.out_dir)
+        stage_production(args.out_dir, attempt=args.attempt)
+    elif args.phase == "production-wave-upload":
+        upload_production_judge(args.out_dir, attempt=args.attempt)
     elif args.phase in {"production-pilot-prepare", "production-wave-prepare"}:
         if args.packet_root is None or args.rollouts is None:
             raise RuntimeError("production prepare requires --packet-root and --rollouts")
@@ -2055,6 +2698,7 @@ def main() -> int:
             args.packet_root,
             args.rollouts,
             pilot=args.phase == "production-pilot-prepare",
+            attempt=args.attempt,
         )
     else:
         report = collect_production(args.out_dir, pilot=args.phase == "production-pilot-collect")

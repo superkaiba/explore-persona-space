@@ -230,42 +230,47 @@ def test_codex_production_pilot_carries_revised_contract(tmp_path: Path) -> None
     """Exercise real packet preparation and reduction on synthetic crossed rollouts."""
     _synthetic_codex_calibration(tmp_path, historical_inverted=True)
     CODEX.collect_calibration(tmp_path)
-    CODEX._write_json(tmp_path / "inputs" / "bank_audit_report.json", {"passed": True})
+    bank_path, audit_path = _write_bank_fixture(tmp_path / "inputs")
+    accepted = CODEX._accepted_bank_contract(bank_path, audit_path)
     rows = []
-    for source in range(90):
-        for language in CODEX.LANGUAGES:
-            for content in CODEX.CONTENTS:
-                for frame in ("direct", "academic"):
-                    prompt_id = f"{source}-{language}-{content}-{frame}"
-                    for draw in range(8):
-                        rows.append(
-                            {
-                                "item_id": f"{prompt_id}-{draw}",
-                                "prompt_id": prompt_id,
-                                "source_prompt_id": str(source),
-                                "topic": f"t{source % 12}",
-                                "language": language,
-                                "content": content,
-                                "frame": frame,
-                                "draw": draw,
-                                "question": "q",
-                                "text": "a",
-                            }
-                        )
+    for bank_row in accepted["accepted_rows"]:
+        prompt_id = bank_row["item_id"]
+        for draw in range(8):
+            rows.append(
+                {
+                    "item_id": f"{prompt_id}-d{draw}",
+                    "prompt_id": prompt_id,
+                    "source_prompt_id": bank_row["source_prompt_id"],
+                    "topic": bank_row["topic"],
+                    "language": bank_row["language"],
+                    "content": bank_row["content"],
+                    "frame": bank_row["frame"],
+                    "draw": draw,
+                    "question": "q",
+                    "text": "a",
+                }
+            )
     rollouts = tmp_path / "rollouts.jsonl"
     CODEX._write_jsonl(rollouts, rows)
     rollout_sha = CODEX._sha256(rollouts)
     CODEX._write_json(
         tmp_path / "judge" / "production_stage.json",
-        {
-            "rollouts_sha256": rollout_sha,
-            "files": {"raw_completions/rollouts.jsonl": rollout_sha},
-        },
+            {
+                "rollouts_sha256": rollout_sha,
+                "files": {"raw_completions/rollouts.jsonl": rollout_sha},
+                "accepted_source_ids_sha256": accepted["accepted_source_ids_sha256"],
+                "n_accepted_prompts": accepted["n_accepted_prompts"],
+                "n_expected_rollouts": accepted["n_expected_rollouts"],
+                "attempt": 1,
+            },
     )
     manifest = CODEX.prepare_production(
         tmp_path, tmp_path / "production_packets", rollouts, pilot=True
     )
     assert manifest["measurement_contract"] == CODEX.MEASUREMENT_CONTRACT
+    assert manifest["n_accepted_source_items"] == 85
+    assert manifest["n_accepted_prompts"] == 1020
+    assert manifest["n_expected_rollouts"] == 8160
     packet_manifest = json.loads((tmp_path / "judge" / "pilot_packet_manifest.json").read_text())
     for packet in packet_manifest["packets"]:
         outputs = []
@@ -372,9 +377,11 @@ def test_control_key_normalization() -> None:
     assert BANK._normalized_key("  United-States / Watergate ") == "united-states-watergate"
 
 
-def _write_bank_fixture(tmp_path: Path) -> tuple[Path, Path]:
-    bank = tmp_path / "bank.jsonl"
+def _write_bank_fixture(tmp_path: Path, n_passing: int = 85) -> tuple[Path, Path]:
+    """Write a full registered bank with a smaller hash-bound accepted roster."""
+    bank = tmp_path / "prompt_bank.jsonl"
     rows = []
+    passing_ids = [f"s{source:03d}" for source in range(n_passing)]
     for source in range(90):
         for language in BANK.LANGUAGES:
             for content in BANK.CONTENTS:
@@ -388,14 +395,19 @@ def _write_bank_fixture(tmp_path: Path) -> tuple[Path, Path]:
                             "content": content,
                             "frame": frame,
                             "prompt": "fixture",
-                            "audit_pass": True,
+                            "audit_pass": f"s{source:03d}" in passing_ids,
                         }
                     )
     GPU._write_jsonl(bank, rows)
-    audit = tmp_path / "audit.json"
+    audit = tmp_path / "bank_audit_report.json"
     GPU._write_json(
         audit,
-        {"passed": True, "prompt_bank_sha256": GPU._sha256(bank), "passing_item_ids": []},
+        {
+            "passed": True,
+            "prompt_bank_sha256": GPU._sha256(bank),
+            "passing_item_ids": passing_ids,
+            "n_audit_passing_items": len(passing_ids),
+        },
     )
     return bank, audit
 
@@ -404,9 +416,22 @@ def test_gpu_bank_fixture_and_smoke_are_exact(tmp_path: Path) -> None:
     bank, audit = _write_bank_fixture(tmp_path)
     full, _ = GPU._load_bank(bank, audit, smoke=False)
     smoke, _ = GPU._load_bank(bank, audit, smoke=True)
-    assert len(full) == 1080
+    assert len(full) == 1020
+    assert all(row["audit_pass"] for row in full)
     assert len(smoke) == 120
     assert len({row["source_prompt_id"] for row in smoke}) == 10
+
+
+def test_gpu_bank_rejects_disagreement_between_flags_and_passing_ids(tmp_path: Path) -> None:
+    bank, audit = _write_bank_fixture(tmp_path)
+    rows = GPU._read_jsonl(bank)
+    rows[-1]["audit_pass"] = True
+    GPU._write_jsonl(bank, rows)
+    report = json.loads(audit.read_text())
+    report["prompt_bank_sha256"] = GPU._sha256(bank)
+    GPU._write_json(audit, report)
+    with pytest.raises(RuntimeError, match="audit_pass flags disagree"):
+        GPU._load_bank(bank, audit, smoke=False)
 
 
 def test_production_pilot_selects_52_per_crossed_arm(tmp_path: Path) -> None:
@@ -569,6 +594,242 @@ def test_gpu_explicit_input_snapshot_is_frozen_across_phases(tmp_path: Path) -> 
         assert "immutable upload marker" in str(exc)
     else:
         raise AssertionError("cross-phase bank drift was accepted")
+
+
+def test_codex_smoke_collect_publishes_byte_bound_technical_gate(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The real collector binds all 960 parsed rows and publishes every evidence file."""
+    bank_path, audit_path = _write_bank_fixture(tmp_path / "inputs")
+    accepted = CODEX._accepted_bank_contract(bank_path, audit_path)
+    selected = CODEX._selected_bank_contract(accepted, smoke=True)
+    rows = []
+    bank_by_id = {row["item_id"]: row for row in accepted["accepted_rows"]}
+    for item_id in selected["rollout_ids"]:
+        prompt_id = item_id.rsplit("-d", 1)[0]
+        bank_row = bank_by_id[prompt_id]
+        rows.append(
+            {
+                "item_id": item_id,
+                "question": "q",
+                "response": "a",
+                "source_prompt_id": bank_row["source_prompt_id"],
+                "language": bank_row["language"],
+            }
+        )
+    identity = {
+        "code_sha": "a" * 40,
+        "input_revision": "b" * 40,
+        "attempt": 1,
+        "accepted_source_ids_sha256": accepted["accepted_source_ids_sha256"],
+        "smoke_report_sha256": "c" * 64,
+        "smoke_rollouts_sha256": "d" * 64,
+        "smoke_upload_revision": "e" * 40,
+        "smoke_upload_receipt_sha256": "f" * 64,
+    }
+    CODEX._write_json(
+        tmp_path / "judge" / "smoke_stage.json", {"identity": identity}
+    )
+    packet_manifest = CODEX._prepare_packets(
+        rows=rows,
+        packet_kind="gpu-smoke-attempt1",
+        packet_root=tmp_path / "packets",
+        overlap_fraction=CODEX.PRODUCTION_OVERLAP_FRACTION,
+    )
+    row_by_id = {row["item_id"]: row for row in rows}
+    lookup = [
+        {
+            **mapping,
+            "source_prompt_id": row_by_id[mapping["item_id"]]["source_prompt_id"],
+            "language": row_by_id[mapping["item_id"]]["language"],
+        }
+        for mapping in packet_manifest["mapping"]
+    ]
+    CODEX._write_json(tmp_path / "judge" / "smoke_lookup.json", lookup)
+    CODEX._write_json(tmp_path / "judge" / "smoke_packet_manifest.json", packet_manifest)
+    for packet in packet_manifest["packets"]:
+        payload = json.loads(Path(packet["packet_path"]).read_text())
+        CODEX._write_jsonl(
+            Path(packet["output_path"]),
+            [
+                {
+                    "opaque_id": row["opaque_id"],
+                    "verdict": False,
+                    "raw_output": "<refusal>no</refusal>",
+                }
+                for row in payload["items"]
+            ],
+        )
+    lookup_path = tmp_path / "judge" / "smoke_lookup.json"
+    packet_path = tmp_path / "judge" / "smoke_packet_manifest.json"
+    request = {
+        "schema_version": 1,
+        "kind": "issue952_codex_smoke_request",
+        "identity": identity,
+        "n_requests": 960,
+        "ordered_item_ids_sha256": CODEX._sha_obj(selected["rollout_ids"]),
+        "lookup_sha256": CODEX._sha256(lookup_path),
+        "packet_manifest_sha256": CODEX._sha256(packet_path),
+        "model": CODEX.BACKEND,
+        "rubric_sha256": CODEX.RUBRIC_SHA256,
+    }
+    CODEX._write_json(tmp_path / "judge" / "smoke_request_manifest.json", request)
+    CODEX._write_json(tmp_path / "dispatch_state" / "smoke_verified.json", {"ok": True})
+
+    class FakeInfo:
+        oid = "9" * 40
+
+    class FakeApi:
+        def upload_file(
+            self, *, repo_id, repo_type, path_or_fileobj, path_in_repo, commit_message
+        ):
+            assert repo_id and repo_type and path_or_fileobj and path_in_repo and commit_message
+            return FakeInfo()
+
+    def fake_stage(out_dir, revision, relative, *, remote_relative=None):
+        assert revision == FakeInfo.oid and remote_relative
+        attempt_relative = remote_relative.split("attempt1/", 1)[1]
+        return tmp_path / attempt_relative
+
+    monkeypatch.setattr(CODEX, "HfApi", FakeApi)
+    monkeypatch.setattr(CODEX, "_stage_hf_file", fake_stage)
+    gate = CODEX.collect_smoke_judge(tmp_path, attempt=1)
+    assert gate["passed"] is True
+    assert all(gate["technical"].values())
+    assert len(gate["request_sha256"]) == len(gate["result_sha256"]) == 64
+    assert set(gate["evidence"]) == {"request", "result", "parse"}
+    assert "judge/smoke_packet_manifest.json" in gate["artifact_census"]
+    assert "judge/smoke_lookup.json" in gate["artifact_census"]
+    assert any(path.endswith(".packet.json") for path in gate["artifact_census"])
+    assert any(path.endswith(".output.jsonl") for path in gate["artifact_census"])
+    parse = json.loads((tmp_path / "judge" / "smoke_parse_manifest.json").read_text())
+    assert parse["coverage"]["n_smoke_rows"] == parse["coverage"]["n_parsed_rows"] == 960
+    assert parse["coverage"]["ordered_item_ids_sha256"] == request["ordered_item_ids_sha256"]
+
+
+def test_production_judge_upload_is_attempt_scoped_and_exact_revision_verified(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The real upload body publishes scores, summary, stage, then its hash marker."""
+    judge = tmp_path / "judge"
+    scores = judge / "wave_scores.jsonl"
+    request = judge / "wave_request_manifest.json"
+    stage = judge / "production_stage.json"
+    summary = judge / "wave_summary.json"
+    CODEX._write_jsonl(scores, [{"item_id": "x", "verdict": False}])
+    CODEX._write_json(request, {"attempt": 2, "accepted_source_ids_sha256": "a" * 64})
+    CODEX._write_json(
+        stage,
+        {
+            "attempt": 2,
+            "rollouts_sha256": "b" * 64,
+            "accepted_source_ids_sha256": "a" * 64,
+        },
+    )
+    CODEX._write_json(
+        summary,
+        {
+            "passed": True,
+            "attempt": 2,
+            "rollouts_sha256": "b" * 64,
+            "scores_sha256": CODEX._sha256(scores),
+            "request_manifest_sha256": CODEX._sha256(request),
+        },
+    )
+
+    class FakeInfo:
+        oid = "8" * 40
+
+    class FakeApi:
+        def upload_file(
+            self, *, repo_id, repo_type, path_or_fileobj, path_in_repo, commit_message
+        ):
+            assert "/attempt2/judge/" in path_in_repo
+            return FakeInfo()
+
+    def fake_stage(out_dir, revision, relative, *, remote_relative=None):
+        assert revision == FakeInfo.oid and remote_relative
+        return {
+            "wave_scores.jsonl": scores,
+            "wave_summary.json": summary,
+            "production_stage.json": stage,
+            "upload.json": judge / "upload.json",
+        }[Path(remote_relative).name]
+
+    monkeypatch.setattr(CODEX, "HfApi", FakeApi)
+    monkeypatch.setattr(CODEX, "_stage_hf_file", fake_stage)
+    marker = CODEX.upload_production_judge(tmp_path, attempt=2)
+    assert marker["marker_revision"] == FakeInfo.oid
+    assert marker["attempt"] == 2
+    assert marker["wave_scores_sha256"] == CODEX._sha256(scores)
+
+
+def test_gpu_finalize_removes_done_sentinel_when_terminal_upload_fails(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A failed final upload cannot leave a local completion sentinel behind."""
+    rollouts = tmp_path / "raw_completions" / "rollouts.jsonl"
+    GPU._write_jsonl(rollouts, [])
+    generation = {
+        "regime": {"smoke": False, "attempt": 1},
+        "regime_fp": "regime",
+        "rollouts_sha256": GPU._sha256(rollouts),
+        "n_prompts": 0,
+        "n_rows": 0,
+        "ordered_item_ids_sha256": GPU._sha_obj([]),
+    }
+    generation_path = tmp_path / "manifests" / "generation.json"
+    GPU._write_json(generation_path, generation)
+    raw_upload = {
+        "revision": "r" * 40,
+        "raw_payload_revision": "r" * 40,
+        "rollouts_sha256": generation["rollouts_sha256"],
+        "generation_manifest_sha256": GPU._sha256(generation_path),
+        "generation_fingerprint": GPU._generation_fingerprint(generation),
+    }
+    raw_upload_path = tmp_path / "manifests" / "raw_upload.json"
+    GPU._write_json(raw_upload_path, raw_upload)
+    vc_path = tmp_path / "analysis_tensors" / "vc.pt"
+    GPU._save_pt(vc_path, {"vc": torch.empty(0)})
+    capture = {
+        "capture_regime_fp": "capture",
+        "generation_fingerprint": GPU._generation_fingerprint(generation),
+        "vc_sha256": GPU._sha256(vc_path),
+        "va_files": {},
+        "n_contexts": 0,
+        "n_answer_rows": 0,
+        "timing_evidence_complete": True,
+    }
+    capture_path = tmp_path / "manifests" / "capture.json"
+    GPU._write_json(capture_path, capture)
+    capture_upload = {
+        "revision": "c" * 40,
+        "tensor_payload_revision": "c" * 40,
+        "capture_manifest_sha256": GPU._sha256(capture_path),
+        "raw_upload_manifest_sha256": GPU._sha256(raw_upload_path),
+        "capture_fingerprint": GPU._capture_fingerprint(capture),
+        "vc_sha256": capture["vc_sha256"],
+        "va_files": {},
+    }
+    GPU._write_json(tmp_path / "manifests" / "capture_upload.json", capture_upload)
+    done_path = tmp_path / "issue952_china_definitive_done.json"
+    GPU._write_json(done_path, {"status": "stale"})
+
+    def fake_verify(out_root, *, revision, remote_path, expected_sha256):
+        assert out_root == tmp_path and revision and remote_path and expected_sha256
+        return vc_path
+
+    class FailingApi:
+        def upload_file(
+            self, *, repo_id, repo_type, path_or_fileobj, path_in_repo, commit_message
+        ):
+            raise RuntimeError("synthetic upload failure")
+
+    monkeypatch.setattr(GPU, "_verify_remote_file", fake_verify)
+    monkeypatch.setattr(GPU, "HfApi", FailingApi)
+    with pytest.raises(RuntimeError, match="synthetic upload failure"):
+        GPU.phase_finalize(tmp_path, attempt=1)
+    assert not done_path.exists()
 
 
 def test_cpu_timing_pilot_refuses_checkpoint_resume(tmp_path: Path) -> None:
