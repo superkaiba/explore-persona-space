@@ -5,6 +5,7 @@ kind: experiment
 tags:
 - context-risk
 - reward-hacking
+- followup-manual
 created_at: '2026-09-07T06:28:51Z'
 has_clean_result: true
 origin_prompt: run the corrected experiment. get a critic to check for bugs first;
