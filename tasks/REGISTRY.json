@@ -6980,8 +6980,8 @@
       "goal": "Characterize every mapping-quality metric in use (held-out R\u00b2, kNN retrieval acc@k euclidean+cosine, and companions) \u2014 what construct each measures, what it rules out, where they dissociate \u2014 and report the ~1M-context (n\u2248963k LMSYS) linear and nonlinear context\u2192answer mappings against the full baseline ladder (constant train-mean; W = identity; identity + learned bias) on ALL metrics, in both the context-based and prefix-based arms.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/1901",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/1901",
+      "status": "followups_running",
       "title": "Held-out variance explained and retrieval accuracy dissociate in both directions across the context-to-answer estimator ladder (HIGH confidence)"
     },
     "1902": {
@@ -12092,8 +12092,8 @@
       "goal": "Exploit the linearity of the fitted residual context-answer mapping (banked 963k-row layer-19 ridge map, Qwen2.5-7B-Instruct) to characterize in one phased battery: (1) operator eigenstructure, effective null space, fixed point, and their SAE-feature reads (ignored/copied/transcoded/damped anatomy); (2) whether the map's Gram matrix WtW is the correct theory-paper context-gate metric and whether the closed-form ridge learning curve reproduces the empirical C1 scaling; (3) the feature-to-feature wiring of the map across SAE dictionaries including a trained last-prompt-token SAE; (4) the literal weight-update rank (dW spectra, intruder dimensions, factor alignment) across the recent organism fleet; (5) denoised reduced-rank structure of #1979's banked write maps; (6) an aligned operator atlas with a cross-model (Llama-3.1-8B-Instruct) three-tier representation-vs-operator similarity report; (7) correlational validation of the effective null space via kernel-equivalent context pairs, plus closed-form monitor decision geometry and sensitivity certificates.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2569",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/2569",
+      "status": "awaiting_promotion",
       "title": "The layer-19 context-answer map reaches its population linear ceiling with reproducible singular structure, contracts only at layer 26, and no gate metric separates from its panel (MODERATE confidence)"
     },
     "257": {
@@ -12896,7 +12896,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/2670",
       "status": "followups_running",
-      "title": "Corrected ImpossibleBench pilot yielded too few reward hacks for prediction (MODERATE confidence)"
+      "title": "Ten-submission prompting still yielded too few reward hacks for prediction (MODERATE confidence)"
     },
     "268": {
       "has_clean_result": false,
@@ -18166,8 +18166,8 @@
       "goal": "On frozen Qwen-2.5-7B-Instruct with ridge-only maps and a train/validation/test split (validation selects layer + \u03bb, a disjoint test split compares methods and arms), characterize where the linear context\u2192answer-activation map differs between on-policy and off-policy answers, along three axes: (1) per-token-position predictability \u2014 fit h_t: c_last(x) \u2192 z_t^(a)(x) for answer positions t in the first-16 window, the last-16 window (span extended through `<|im_end|>` and its trailing newline \u2014 the last token before a next user turn would begin), and relative-position deciles, per arm a \u2208 {own-regenerated, external-plain, external-distinct-style, mismatched} (the four #823 arms, completions reused) over the 4998-context LMSYS pool; (2) prefix-conditioned prediction \u2014 sweep the predictor to the realized-answer activation at position t (t \u2208 {1,2,4,8,16,32,64,128}; t=0 = c_last baseline) predicting the individual / mean-pooled / max-pooled activations of positions > t, measuring how fast each arm's remainder becomes predictable as prefix is absorbed; and (3) divergence-conditioned evaluation \u2014 evaluate the SAME pool-trained maps on a generation-verified Qwen-vs-Claude divergence query bank (\u22484 quirk categories \u00d7 ~40\u201360 queries, each with matched same-template entity-swapped controls), testing whether off-policy predictability fails specifically where the two models' behaviors diverge while on-policy predictability holds.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/blocked/952",
-      "status": "blocked",
+      "path": "tasks/followups_running/952",
+      "status": "followups_running",
       "title": "The own-answer advantage in predicting answer activations from context is position-uniform across the captured read-out layer band (MODERATE confidence)"
     },
     "953": {
