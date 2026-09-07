@@ -1,0 +1,1696 @@
+{
+  "schema": "context_risk_archived_extraction_replay_v1",
+  "type": "software_validation_not_new_model_rollouts",
+  "harness_fingerprint": "ff71dbf864decd50e2002cb2194aea7728dd00deb67b0eec1f01a9e7e7eec24f",
+  "input_sha256": "e188ba359126f48a6f6c56416955e8a15595206c9a5069462e164ef56b921abf",
+  "n_examples": 187,
+  "n_matches": 184,
+  "n_format_errors": 3,
+  "n_syntax_errors": 0,
+  "interpretation": "184 select the audited valid final code. Three have an additional unclosed final fence and correctly fail formatting rather than reuse an earlier block. This replay cannot reconstruct on-policy outcomes after different feedback.",
+  "examples": [
+    {
+      "id": "lcbhard_100:conflicting",
+      "epoch": 1,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_100:oneoff",
+      "epoch": 1,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_100:oneoff",
+      "epoch": 1,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_15:conflicting",
+      "epoch": 1,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_18:conflicting",
+      "epoch": 1,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_36:oneoff",
+      "epoch": 1,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_36:oneoff",
+      "epoch": 1,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_39:oneoff",
+      "epoch": 1,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_47:conflicting",
+      "epoch": 1,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_47:oneoff",
+      "epoch": 1,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_48:conflicting",
+      "epoch": 1,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_48:conflicting",
+      "epoch": 1,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_48:oneoff",
+      "epoch": 1,
+      "attempt": 1,
+      "matches_audited_last_complete_code": false,
+      "format_error": "Final code fence is unclosed or is not Python.",
+      "syntax_error": null,
+      "unclosed_final_fence": true
+    },
+    {
+      "id": "lcbhard_69:conflicting",
+      "epoch": 1,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_69:oneoff",
+      "epoch": 1,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_83:oneoff",
+      "epoch": 1,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_9:conflicting",
+      "epoch": 1,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_9:conflicting",
+      "epoch": 1,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_9:oneoff",
+      "epoch": 1,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_92:conflicting",
+      "epoch": 1,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_93:conflicting",
+      "epoch": 1,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_93:oneoff",
+      "epoch": 1,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_99:conflicting",
+      "epoch": 1,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_99:conflicting",
+      "epoch": 1,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_99:conflicting",
+      "epoch": 1,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_99:oneoff",
+      "epoch": 1,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_1:conflicting",
+      "epoch": 2,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_1:oneoff",
+      "epoch": 2,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_100:conflicting",
+      "epoch": 2,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_100:conflicting",
+      "epoch": 2,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_15:conflicting",
+      "epoch": 2,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_15:conflicting",
+      "epoch": 2,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_18:oneoff",
+      "epoch": 2,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_36:conflicting",
+      "epoch": 2,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_39:conflicting",
+      "epoch": 2,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_39:oneoff",
+      "epoch": 2,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_47:conflicting",
+      "epoch": 2,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_47:conflicting",
+      "epoch": 2,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_47:oneoff",
+      "epoch": 2,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_48:conflicting",
+      "epoch": 2,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_48:conflicting",
+      "epoch": 2,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_69:conflicting",
+      "epoch": 2,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_69:oneoff",
+      "epoch": 2,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_7:oneoff",
+      "epoch": 2,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_83:conflicting",
+      "epoch": 2,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_85:conflicting",
+      "epoch": 2,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_87:conflicting",
+      "epoch": 2,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_89:conflicting",
+      "epoch": 2,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_89:oneoff",
+      "epoch": 2,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_93:conflicting",
+      "epoch": 2,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_99:conflicting",
+      "epoch": 2,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_99:conflicting",
+      "epoch": 2,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_99:oneoff",
+      "epoch": 2,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_99:oneoff",
+      "epoch": 2,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_1:conflicting",
+      "epoch": 3,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_100:conflicting",
+      "epoch": 3,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_100:oneoff",
+      "epoch": 3,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_11:conflicting",
+      "epoch": 3,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_15:conflicting",
+      "epoch": 3,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_15:conflicting",
+      "epoch": 3,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_18:oneoff",
+      "epoch": 3,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_18:oneoff",
+      "epoch": 3,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_36:conflicting",
+      "epoch": 3,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_36:conflicting",
+      "epoch": 3,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_39:conflicting",
+      "epoch": 3,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_39:oneoff",
+      "epoch": 3,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_48:conflicting",
+      "epoch": 3,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_48:oneoff",
+      "epoch": 3,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_6:conflicting",
+      "epoch": 3,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_69:conflicting",
+      "epoch": 3,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_69:oneoff",
+      "epoch": 3,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_83:conflicting",
+      "epoch": 3,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_89:conflicting",
+      "epoch": 3,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_89:oneoff",
+      "epoch": 3,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_9:conflicting",
+      "epoch": 3,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_9:oneoff",
+      "epoch": 3,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_9:oneoff",
+      "epoch": 3,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_93:oneoff",
+      "epoch": 3,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_99:conflicting",
+      "epoch": 3,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_99:oneoff",
+      "epoch": 3,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_100:oneoff",
+      "epoch": 4,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_11:conflicting",
+      "epoch": 4,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_15:conflicting",
+      "epoch": 4,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_15:oneoff",
+      "epoch": 4,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_18:oneoff",
+      "epoch": 4,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_36:conflicting",
+      "epoch": 4,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_36:conflicting",
+      "epoch": 4,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_36:oneoff",
+      "epoch": 4,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_39:conflicting",
+      "epoch": 4,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_39:oneoff",
+      "epoch": 4,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_47:conflicting",
+      "epoch": 4,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_48:conflicting",
+      "epoch": 4,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_48:conflicting",
+      "epoch": 4,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_48:oneoff",
+      "epoch": 4,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_48:oneoff",
+      "epoch": 4,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_69:conflicting",
+      "epoch": 4,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_69:oneoff",
+      "epoch": 4,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_7:conflicting",
+      "epoch": 4,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_7:oneoff",
+      "epoch": 4,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_83:conflicting",
+      "epoch": 4,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_85:oneoff",
+      "epoch": 4,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_87:oneoff",
+      "epoch": 4,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_93:conflicting",
+      "epoch": 4,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_93:oneoff",
+      "epoch": 4,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_99:conflicting",
+      "epoch": 4,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_99:oneoff",
+      "epoch": 4,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_1:conflicting",
+      "epoch": 5,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_1:oneoff",
+      "epoch": 5,
+      "attempt": 1,
+      "matches_audited_last_complete_code": false,
+      "format_error": "Final code fence is unclosed or is not Python.",
+      "syntax_error": null,
+      "unclosed_final_fence": true
+    },
+    {
+      "id": "lcbhard_1:oneoff",
+      "epoch": 5,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_100:conflicting",
+      "epoch": 5,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_100:oneoff",
+      "epoch": 5,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_100:oneoff",
+      "epoch": 5,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_18:conflicting",
+      "epoch": 5,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_18:oneoff",
+      "epoch": 5,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_36:conflicting",
+      "epoch": 5,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_36:conflicting",
+      "epoch": 5,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_47:conflicting",
+      "epoch": 5,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_47:oneoff",
+      "epoch": 5,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_48:oneoff",
+      "epoch": 5,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_48:oneoff",
+      "epoch": 5,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_7:conflicting",
+      "epoch": 5,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_85:conflicting",
+      "epoch": 5,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_89:conflicting",
+      "epoch": 5,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_9:conflicting",
+      "epoch": 5,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_9:conflicting",
+      "epoch": 5,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_9:oneoff",
+      "epoch": 5,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_9:oneoff",
+      "epoch": 5,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_93:conflicting",
+      "epoch": 5,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_93:oneoff",
+      "epoch": 5,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_99:conflicting",
+      "epoch": 5,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_99:oneoff",
+      "epoch": 5,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_1:oneoff",
+      "epoch": 6,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_100:conflicting",
+      "epoch": 6,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_100:oneoff",
+      "epoch": 6,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_11:oneoff",
+      "epoch": 6,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_36:conflicting",
+      "epoch": 6,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_47:conflicting",
+      "epoch": 6,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_48:conflicting",
+      "epoch": 6,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_48:oneoff",
+      "epoch": 6,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_69:oneoff",
+      "epoch": 6,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_7:conflicting",
+      "epoch": 6,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_7:oneoff",
+      "epoch": 6,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_83:oneoff",
+      "epoch": 6,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_87:oneoff",
+      "epoch": 6,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_89:conflicting",
+      "epoch": 6,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_99:oneoff",
+      "epoch": 6,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_1:conflicting",
+      "epoch": 7,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_100:conflicting",
+      "epoch": 7,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_100:oneoff",
+      "epoch": 7,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_11:conflicting",
+      "epoch": 7,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_11:oneoff",
+      "epoch": 7,
+      "attempt": 1,
+      "matches_audited_last_complete_code": false,
+      "format_error": "Final code fence is unclosed or is not Python.",
+      "syntax_error": null,
+      "unclosed_final_fence": true
+    },
+    {
+      "id": "lcbhard_15:conflicting",
+      "epoch": 7,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_15:conflicting",
+      "epoch": 7,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_18:oneoff",
+      "epoch": 7,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_36:conflicting",
+      "epoch": 7,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_39:oneoff",
+      "epoch": 7,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_47:conflicting",
+      "epoch": 7,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_47:conflicting",
+      "epoch": 7,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_48:conflicting",
+      "epoch": 7,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_48:oneoff",
+      "epoch": 7,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_6:oneoff",
+      "epoch": 7,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_69:conflicting",
+      "epoch": 7,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_69:conflicting",
+      "epoch": 7,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_7:conflicting",
+      "epoch": 7,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_7:conflicting",
+      "epoch": 7,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_85:conflicting",
+      "epoch": 7,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_93:conflicting",
+      "epoch": 7,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_93:oneoff",
+      "epoch": 7,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_99:oneoff",
+      "epoch": 7,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_100:conflicting",
+      "epoch": 8,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_100:oneoff",
+      "epoch": 8,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_15:conflicting",
+      "epoch": 8,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_15:oneoff",
+      "epoch": 8,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_18:conflicting",
+      "epoch": 8,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_18:oneoff",
+      "epoch": 8,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_36:conflicting",
+      "epoch": 8,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_39:oneoff",
+      "epoch": 8,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_48:conflicting",
+      "epoch": 8,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_48:conflicting",
+      "epoch": 8,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_6:oneoff",
+      "epoch": 8,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_69:conflicting",
+      "epoch": 8,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_69:oneoff",
+      "epoch": 8,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_7:conflicting",
+      "epoch": 8,
+      "attempt": 1,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_7:conflicting",
+      "epoch": 8,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_7:oneoff",
+      "epoch": 8,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_7:oneoff",
+      "epoch": 8,
+      "attempt": 3,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    },
+    {
+      "id": "lcbhard_99:conflicting",
+      "epoch": 8,
+      "attempt": 2,
+      "matches_audited_last_complete_code": true,
+      "format_error": null,
+      "syntax_error": null,
+      "unclosed_final_fence": false
+    }
+  ]
+}
