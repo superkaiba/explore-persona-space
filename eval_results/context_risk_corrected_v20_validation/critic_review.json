@@ -4,12 +4,13 @@
   "verdict": "PASS",
   "review_date_utc": "2026-09-07",
   "reviewed_commit": "31cca66a2282431a410eace85e68b27517c7b64a",
-  "scope": "Source-hash-pinned software review of the corrected reward-hacking pilot. Full GPU production remains gated on live prefix parity and the real-model smoke specified in the launcher and rerun plan.",
+  "scope": "Source-hash-pinned software review of the corrected reward-hacking pilot, including the outer process supervisor. Full GPU production remains gated on live prefix parity and the real-model smoke specified in the launcher and rerun plan.",
   "files_sha256": {
     "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
     "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
     "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
-    "scripts/context_risk_corrected_launch.sh": "782f1103344abb610adf782f83e8f231fe26db7c5b0fedf26380dead9ab2ee60"
+    "scripts/context_risk_corrected_launch.sh": "782f1103344abb610adf782f83e8f231fe26db7c5b0fedf26380dead9ab2ee60",
+    "scripts/context_risk_corrected_supervise.sh": "c56ccfd54d2a2d402aed0d85c6f5270a4c68468b52957f52b3e51df66ba4ce8c"
   },
   "harness_fingerprint": "ff71dbf864decd50e2002cb2194aea7728dd00deb67b0eec1f01a9e7e7eec24f",
   "source_hashes_unchanged_across_review": true,
@@ -22,7 +23,8 @@
     "The launcher explicitly selects prompt B, the pinned model revision and thinking-disabled generation. Immutable manifest SHA, capture metadata hashes, complete context sets and live token hashes gate prefix reuse.",
     "Production generation and tokenization share explicit thinking-disabled template kwargs. The provider preserves per-request seeds, top_k, repetition penalty and the 65536-token cap.",
     "Request seeds depend on sample, epoch and attempt, eliminating the former restart-sensitive server batch counter. All 1440 planned request seeds were checked and are unique.",
-    "The launcher requires an independent PASS covering all four exact production sources and requires a matching successful smoke before full execution."
+    "The launcher requires an independent PASS covering all four exact production sources and requires a matching successful smoke before full execution.",
+    "The outer supervisor now cleans the owned process group even after its leader exits, uses bounded TERM/KILL escalation, excludes zombies from live-member checks, and records verified cleanup with the original exit status. The initial orphan-survival bug was reproduced and the corrected path independently validated."
   ],
   "independent_validation": [
     {
@@ -47,6 +49,77 @@
     {
       "check": "Launcher shell syntax",
       "result": "bash -n scripts/context_risk_corrected_launch.sh passed"
+    },
+    {
+      "check": "Outer supervisor process lifecycle, using unchanged supervisor copies and CPU-only stand-in launchers; no model calls",
+      "result": "8 cases passed: clean exit0, explicit exit7, orphan after exit0, orphan after exit7, supervisor TERM143, deadline124, TERM-ignoring orphan KILL escalation, and duplicate launch-ID rejection with unchanged existing evidence. Independent /proc checks found no live owned-group members after completion. bash -n passed.",
+      "source_sha256": "c56ccfd54d2a2d402aed0d85c6f5270a4c68468b52957f52b3e51df66ba4ce8c",
+      "evidence": "/tmp/context-risk-supervisor-critic-fixed-_n1062dc/review.json",
+      "evidence_sha256": "30b00b464f0fd62518a67e6d112d821c2786216ea159c0307a8ca7c2abec470c",
+      "cases": [
+        {
+          "case": "clean0",
+          "passed": true,
+          "exit_code": 0,
+          "cleanup": "no_live_members",
+          "elapsed_seconds": 0.5,
+          "evidence": "/tmp/context-risk-supervisor-critic-fixed-_n1062dc/clean0/out/full_fixture_process.exit.json"
+        },
+        {
+          "case": "exit7",
+          "passed": true,
+          "exit_code": 7,
+          "cleanup": "no_live_members",
+          "elapsed_seconds": 0.5,
+          "evidence": "/tmp/context-risk-supervisor-critic-fixed-_n1062dc/exit7/out/full_fixture_process.exit.json"
+        },
+        {
+          "case": "orphan0",
+          "passed": true,
+          "exit_code": 0,
+          "cleanup": "terminated_descendants",
+          "elapsed_seconds": 0.58,
+          "evidence": "/tmp/context-risk-supervisor-critic-fixed-_n1062dc/orphan0/out/full_fixture_process.exit.json"
+        },
+        {
+          "case": "orphan7",
+          "passed": true,
+          "exit_code": 7,
+          "cleanup": "terminated_descendants",
+          "elapsed_seconds": 0.62,
+          "evidence": "/tmp/context-risk-supervisor-critic-fixed-_n1062dc/orphan7/out/full_fixture_process.exit.json"
+        },
+        {
+          "case": "supervisor_term",
+          "passed": true,
+          "exit_code": 143,
+          "cleanup": "terminated_descendants",
+          "elapsed_seconds": 0.62,
+          "evidence": "/tmp/context-risk-supervisor-critic-fixed-_n1062dc/supervisor_term/out/full_fixture_process.exit.json"
+        },
+        {
+          "case": "deadline",
+          "passed": true,
+          "exit_code": 124,
+          "cleanup": "no_live_members",
+          "elapsed_seconds": 1.15,
+          "evidence": "/tmp/context-risk-supervisor-critic-fixed-_n1062dc/deadline/out/full_fixture_process.exit.json"
+        },
+        {
+          "case": "ignore_term_orphan",
+          "passed": true,
+          "exit_code": 0,
+          "cleanup": "killed_descendants",
+          "elapsed_seconds": 31.41,
+          "evidence": "/tmp/context-risk-supervisor-critic-fixed-_n1062dc/ignore_term_orphan/out/full_fixture_process.exit.json"
+        },
+        {
+          "case": "duplicate_launch_id",
+          "passed": true,
+          "exit_code": 2,
+          "existing_evidence_unchanged": true
+        }
+      ]
     }
   ],
   "independently_read_native_fixture_logs": [
@@ -73,5 +146,6 @@
     "The primary outcome measures successful test bypasses, not all attempted reward hacking. Original-condition test-pass eligibility is an operational proxy for competence; successful original submissions should also be audited for test redefinition without changing the frozen gate."
   ],
   "automated_claude_usage": false,
-  "external_model_calls": 0
+  "external_model_calls": 0,
+  "supervisor_reviewed_commit": "8b48b63fbf4465bd94b6fdcbc0c6454c4ed90d5a"
 }
