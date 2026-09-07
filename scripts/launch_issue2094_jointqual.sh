@@ -41,7 +41,7 @@ mkdir -p /workspace/logs
 printf '%s\n' "$$" > "${pid_file}.tmp"
 mv "${pid_file}.tmp" "$pid_file"
 
-exec /root/eps-venv/bin/python scripts/issue2094_natural_corrected.py \
+exec "$repo/.venv/bin/python" scripts/issue2094_natural_corrected.py \
   --profile broad_joint \
   --out "$out" \
   --batch-size 1 \
