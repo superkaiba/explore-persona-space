@@ -12,8 +12,10 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -33,7 +35,7 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
-from huggingface_hub import hf_hub_download  # noqa: E402
+from huggingface_hub import hf_hub_download, list_repo_tree  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -57,6 +59,19 @@ TARGETS = (
     {"cell": "q35_27b_b", "model_key": "q35_27b", "label": "Qwen3.5 27B"},
     {"cell": "q36_27b_b", "model_key": "q36_27b", "label": "Qwen3.6 27B"},
     {"cell": "q38_27b_b", "model_key": "q38_27b", "label": "Qwen3.8 27B"},
+)
+MINIMAL_MAP_CELLS = (
+    "q35_27b_a",
+    "q35_27b_b",
+    "q36_27b_a",
+    "q36_27b_b",
+    "q38_27b_a",
+    "q38_27b_b",
+    "q25_32b_a",
+    "q3_32b_a",
+    "q3_32b_b",
+    "qwq_32b_b",
+    "o3_32b_t_b",
 )
 GENERIC_STAGES = ("train_10k", "val_400", "test_1000")
 GPQA_STAGES = tuple(f"gpqa_s{seed}" for seed in range(42, 47))
@@ -168,6 +183,96 @@ def _map_index(payload: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return index
 
 
+def _validate_source_map(
+    mapping: dict[str, Any], matched: dict[str, Any], revision: str
+) -> dict[str, Any]:
+    """Verify a reused map against its immutable final source revision."""
+    cell = str(mapping["cell"])
+    position = str(mapping["input_position"])
+    fit_relpath = f"fits/{cell}/fits_{position}.json"
+    fit = _download_json(LONG_PREFIX, fit_relpath, revision)
+    layer = int(mapping["layer_star"])
+    if int(fit["layer_star"]) != layer:
+        raise ValueError(f"{cell}: mapping layer {layer} != source layer {fit['layer_star']}")
+    selected = fit["layers"][str(layer)]
+    checks = {
+        "selected_lambda": (
+            float(mapping["selected_lambda"]),
+            float(selected["fit_meta"]["selected_lambda"]),
+        ),
+        "validation_r2": (
+            float(mapping["reconstruction_parity"]["expected_validation_r2"]),
+            float(selected["fit_meta"]["val_r2_at_selected"]),
+        ),
+        "test_r2": (
+            float(mapping["mapping_performance"]["test_r2"]),
+            float(selected["test_r2"]),
+        ),
+        "production_n": (
+            float(matched["production_n"]),
+            float(selected["fit_meta"]["n_train"]),
+        ),
+    }
+    mismatches = {
+        name: {"mapping": left, "source": right}
+        for name, (left, right) in checks.items()
+        if not math.isclose(left, right, rel_tol=1e-9, abs_tol=1e-7)
+    }
+    if mismatches:
+        raise ValueError(f"{cell}: final-revision fit mismatch: {mismatches}")
+
+    generation_dir = "nothink" if mapping["arm"] == "no-thinking" else "think"
+    model_key = cell.rsplit("_", 1)[0]
+
+    def capture_count(stage: str) -> tuple[str, int]:
+        prefix = (
+            f"{LONG_PREFIX}/{model_key}/{generation_dir}/analysis_tensors/"
+            f"capture/{stage}/L{layer:02d}"
+        )
+        entries = list_repo_tree(
+            HF_REPO,
+            path_in_repo=prefix,
+            recursive=False,
+            revision=revision,
+            repo_type="dataset",
+        )
+        count = sum(entry.path.endswith(".npz") for entry in entries)
+        if count < 1:
+            raise ValueError(f"{cell}: no selected-layer capture shards under {prefix}")
+        return stage, count
+
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        capture_counts = dict(pool.map(capture_count, GENERIC_STAGES))
+    return {
+        "cell": cell,
+        "fit_path": f"{LONG_PREFIX}/{fit_relpath}",
+        "computed_from_revision": mapping.get("hf_revision"),
+        "verified_reproducible_at_revision": revision,
+        "layer_star": layer,
+        "selected_lambda": checks["selected_lambda"][0],
+        "validation_r2": checks["validation_r2"][0],
+        "test_r2": checks["test_r2"][0],
+        "production_n": int(checks["production_n"][0]),
+        "selected_layer_capture_shards": capture_counts,
+        "all_checks_passed": True,
+    }
+
+
+def validate_long_sources(
+    long_maps: dict[str, dict[str, Any]], matched_summary: dict[str, Any], revision: str
+) -> list[dict[str, Any]]:
+    missing_maps = sorted(set(MINIMAL_MAP_CELLS) - long_maps.keys())
+    if missing_maps:
+        raise ValueError(f"long mapping payload misses minimal maps: {missing_maps}")
+    audits = []
+    for cell in MINIMAL_MAP_CELLS:
+        matched_key = f"{cell}__{long_maps[cell]['input_position']}"
+        if matched_key not in matched_summary:
+            raise ValueError(f"matched-n payload misses minimal map {matched_key}")
+        audits.append(_validate_source_map(long_maps[cell], matched_summary[matched_key], revision))
+    return audits
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -210,6 +315,7 @@ def build_summary(
     matched_payload = json.loads(matched_path.read_text(encoding="utf-8"))
     baseline_maps = _map_index(baseline_payload)
     long_maps = _map_index(long_payload)
+    source_audit = validate_long_sources(long_maps, matched_payload["summary"], long_revision)
     rows: list[dict[str, Any]] = []
     for target in TARGETS:
         cell = target["cell"]
@@ -305,6 +411,7 @@ def build_summary(
                 "path": str(matched_path.relative_to(ROOT)),
                 "sha256": _sha256(matched_path),
             },
+            "long_source_audit": source_audit,
         },
         "definitions": {
             "retained_fraction": "1 - unique parser-dropped rows / generation-stage rows",
