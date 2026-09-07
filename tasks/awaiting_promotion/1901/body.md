@@ -179,7 +179,7 @@ relates_to:
    "identity_bias": {"test_r2": -0.8962630398928697}}
   ```
 
-  Conciseness: after the WildChat, memorization, boundary-control, and dense-ladder folds the total Takeaways+Goal+Results prose runs over the word budget, all six Takeaways bullets exceed 30 words, and several per-result blocks sit in the 120-180-word band (total, bullet, and per-result WARNs all acknowledged) — the estimator-ladder results carry the summary-plus-per-unit figure pair the aggregate-result rule requires, the memorization result's dumbbell is itself the per-estimator view, the boundary-control result pairs the scaling summary with a per-cell layer-and-draw companion, the dense-ladder result pairs its scaling summary with the per-rung paired-delta and store-seam companions, and the dense bullets hold the numbers the claims need. The historical K=1–5 curve is deliberately linked; the K=10 comparison is embedded.
+  Conciseness: after the WildChat, memorization, boundary-control, and dense-ladder folds the total Takeaways+Goal+Results prose runs over the word budget, all six Takeaways bullets exceed 30 words, and several per-result blocks sit in the 120-180-word band (total, bullet, and per-result WARNs all acknowledged) — the estimator-ladder results carry the summary-plus-per-unit figure pair the aggregate-result rule requires, the memorization result's dumbbell is itself the per-estimator view, the boundary-control result pairs the scaling summary with a per-cell layer-and-draw companion, the dense-ladder result pairs its scaling summary with the per-rung paired-delta and store-seam companions, and the dense bullets hold the numbers the claims need.
 
 ## Results
 
@@ -351,3 +351,5 @@ Follow-up round 3 `mlp-scaling-densify` (source user-chat; run and folded 2026-0
 — posted against the paper-plan claim "The linear mapping's performance plateaus at around 50k contexts, with nonlinear seeing slight gains past that"; the scope marker verified the nonlinear scaling artifacts missing above 10,000 training rows before the round trained the fresh rungs.
 
 Lineage: fresh direction (no parent task); characterizes the metrics used across the [#779](https://eps.superkaiba.com/tasks/779) / [#722](https://eps.superkaiba.com/tasks/722) mapping line. Created 2026-07-30; parent run 2026-07-31 (UTC); interpretation settled 2026-07-31 after one revision round; WildChat transfer round folded 2026-07-31; generic boundary-token control round folded 2026-08-23; dense-ladder round folded 2026-08-25.
+
+**Figure access:** The historical K=1–5 curve is deliberately linked; the K=10 comparison is embedded.
