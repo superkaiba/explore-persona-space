@@ -1,0 +1,71 @@
+{
+  "reviewer": "/root/reward_harness_critic",
+  "verdict": "PASS",
+  "reviewed_at": "2026-09-07T16:11:44.043945+00:00",
+  "source": "eval_results/context_risk_followup_design/analysis_spec.json",
+  "source_sha256": "a47ce4131959f8a7da9a75c367355713927e39e91692fbf017a1cad737d155d0",
+  "scope": "Independent mathematical/scientific specification review before readout implementation; no probe fits, model generation, provisioning or task mutations.",
+  "blocking_findings": [],
+  "resolved_findings": [
+    {
+      "id": "forecast_information_budget",
+      "resolution": "Removed original-success count from primary predictors. It remains only the separately reported eligibility screen. All readouts receive identical prompt/condition metadata."
+    },
+    {
+      "id": "count_weighted_objective",
+      "resolution": "Preserve integer successes/trials with repeated binary rows or frequency-weighted binary class copies. No weight normalization that changes C. TF-IDF fits distinct training contexts. Stable binomial loss and trajectory-weighted secondary metrics are explicit."
+    },
+    {
+      "id": "fold_construction",
+      "resolution": "Construct deterministic five-fold GroupKFold once on sorted distinct contexts before outcome-dependent binary row expansion; reuse across every representation and C."
+    },
+    {
+      "id": "map_orientation_control",
+      "resolution": "Explicit row-coordinate operator T=diag(s_raw) A diag(1/s_mapped), controls r Q_k T, no control-specific restandardization. Orthogonal signed Q_k preserves the spectrum of the actual standardized operator."
+    },
+    {
+      "id": "secondary_pca_selection",
+      "resolution": "Prespecified unwhitened training-only PCA rank grid, shared nominal rank keys across folds despite effective clipping, joint inner rank/C tuning, smaller-rank/C ties. The trigger uses the correct raw-loss-minus-mapped-loss sign."
+    },
+    {
+      "id": "strict_benefit_threshold",
+      "resolution": "A zero CI lower bound cannot establish benefit; the lower bound must be strictly positive with all frozen support/censor gates."
+    }
+  ],
+  "verified_math": {
+    "row_convention": "z=rT, logit=z w+b=r(T w)+b; composed standardized raw coefficient beta=T w.",
+    "induced_penalty": "For beta in range(T), min_{w:T w=beta} ||w||^2 = beta^T (T T^T)^+ beta. With full rank, the unregularized linear function class is unchanged; avoid an explicit ill-conditioned inverse.",
+    "orientation_spectrum": "(Q T)^T(Q T)=T^T T for Q^T Q=I. All metadata blocks remain unchanged.",
+    "loss": "Sum[k*softplus(-eta)+(n-k)*softplus(eta)]/sum(n). Per-trajectory Brier is sum[k*(1-p)^2+(n-k)*p^2]/sum(n).",
+    "sklearn_weight_scale": "Installed sklearn 1.8.0 lbfgs uses l2_reg_strength=1/(C*sum(sample_weight)) with weighted mean loss. Integer-count weighting therefore preserves the expanded-row objective without renormalization."
+  },
+  "optimizer_source_evidence": {
+    "sklearn_version": "1.8.0",
+    "path": "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/.venv/lib/python3.11/site-packages/sklearn/linear_model/_logistic.py",
+    "source_sha256": "683755f12d707f3109e7207c60b27aec76e9a98433bb1b02617f972ccc03edb8",
+    "lines": [
+      388,
+      397,
+      400
+    ],
+    "method": "Read-only inspection of installed primary library implementation; no fitting."
+  },
+  "implementation_checks_to_retain": [
+    "Verify expanded-row versus binomial-count fit/loss equivalence, including pure-positive/negative and mixed contexts; never fit a fractional target as a binary class.",
+    "Verify no holdout or inner-validation rows enter vocabulary, feature scaling, PCA or C selection; persist exact fold membership and every nominal rank/C loss.",
+    "Use float64 for map composition/algebra checks and optimization; preserve source values and record convergence iterations/status. Raise on nonfinite data and ConvergenceWarning as frozen.",
+    "Test constant columns, empty TF-IDF vocabulary failure, single-class training-fold fallback, and identical-model CI exactly zero.",
+    "Verify metadata-invariant control construction, mapped/composed logits, identity-plus-bias parity and spectrum preservation with small algebra fixtures, without repeatedly decomposing the 5120-square map.",
+    "Bootstrap whole base tasks with paired predictions and trial denominators; empty calibration bins must be absent/null rather than zero observations."
+  ],
+  "reporting_limits": [
+    "The selected operational competence population is retrospective and does not establish general algorithmic competence; retain the all-task sensitivity analysis.",
+    "Character TF-IDF has a declared finite capacity and a different block scale from standardized dense activations. Report selected C and grid-boundary optima, and phrase activation gains relative to this baseline rather than every possible text predictor.",
+    "Marginal 95% task-bootstrap intervals condition on fitted predictions and omit fitting uncertainty; they are not simultaneous multiple-comparison guarantees or power assurances.",
+    "Three signed-permutation controls and conditional PCA results are descriptive specificity checks. Report all controls; do not select a favorable control or promote them to primary evidence.",
+    "This PASS approves the frozen design, not an implementation or an empirical forecasting result. The implementation still requires independent code and numerical verification."
+  ],
+  "fits": 0,
+  "real_model_calls": 0,
+  "task_mutations": 0
+}
