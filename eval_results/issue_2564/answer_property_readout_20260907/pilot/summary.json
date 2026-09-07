@@ -1,0 +1,192 @@
+{
+  "timestamp_utc": "2026-09-07T18:33:42.866478+00:00",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "layer": 19,
+  "hf_revision": "426a48e589c745d31e8bcc49d7f7178a7d6896f2",
+  "pilot_only": true,
+  "alphas": [
+    0.1,
+    1.0,
+    10.0,
+    100.0,
+    1000.0,
+    10000.0,
+    100000.0,
+    1000000.0
+  ],
+  "seed": 2564,
+  "fit": "standardized, unweighted multi-output ridge classifier; exact dual eigensolve",
+  "underdetermined_justification": "n_train < d is deliberate regularized classification; no reconstruction R2 or absence claims",
+  "scope": "five assigned-condition diagnostics and one actual-output lexical readout; no topic, map or SAE-class comparison",
+  "sources": {
+    "persona": {
+      "hf_repo": "superkaiba1/explore-persona-space-data",
+      "hf_revision": "426a48e589c745d31e8bcc49d7f7178a7d6896f2",
+      "files": [
+        {
+          "path": "issue2564_minpair/analysis_tensors/va2564/va2564_persona.pt",
+          "sha256": "c115cc8134d8b70f054c4de0c0285d32bb78563519ac0e45123c6fd03e5fcd3a",
+          "bytes": 51709797
+        },
+        {
+          "path": "issue2564_minpair/manifests/bank2564_manifest.json",
+          "sha256": "d87c2dd9ac703cd8ad3d7c86f9e50a0259609004c68ff473cf818a1a4529b070",
+          "bytes": 1150286
+        },
+        {
+          "path": "issue2564_minpair/raw_completions/anchors/anchors_persona.jsonl",
+          "sha256": "159b6737233342c57cd234da729b0c71ba1b9e2a941dc868bf8d14bd8763b16f",
+          "bytes": 2011530
+        },
+        {
+          "path": "issue2564_minpair/manifests/va2564_persona.done.json",
+          "sha256": "af211967f93cb22b8e48a46c9418c70a5b459a08b0160b20dadcb055ccfaa1fc",
+          "bytes": 756
+        }
+      ],
+      "producer": {
+        "git_commit": "09750cbbab8918d6767bdd8f8d65028355811b93",
+        "git_dirty": false,
+        "phase": "pb-capture",
+        "git_argv0_state": "tracked",
+        "git_argv0_path": "scripts/issue2564_run.py",
+        "issue": 2564,
+        "model_id": "Qwen/Qwen2.5-7B-Instruct",
+        "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "values_sha256": "29e6bebc52b91af5e92474d829ab7ee252f6c8b5f067696f3444d41f2454119d",
+        "smoke": false,
+        "tiny": false,
+        "seed_base": 42,
+        "torch_version": "2.8.0+cu128",
+        "transformers_version": "4.57.6",
+        "timestamp_utc": "2026-08-25T13:20:33.281151+00:00"
+      },
+      "sentinel": {
+        "cell": "persona",
+        "regime_fp": "9d06074b911df779",
+        "n_rows": 1200,
+        "n_empty_rows": 0,
+        "per_row_s": 0.01237052579720815,
+        "repro": {
+          "git_commit": "09750cbbab8918d6767bdd8f8d65028355811b93",
+          "git_dirty": false,
+          "phase": "pb-capture",
+          "git_argv0_state": "tracked",
+          "git_argv0_path": "scripts/issue2564_run.py",
+          "issue": 2564,
+          "model_id": "Qwen/Qwen2.5-7B-Instruct",
+          "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+          "values_sha256": "29e6bebc52b91af5e92474d829ab7ee252f6c8b5f067696f3444d41f2454119d",
+          "smoke": false,
+          "tiny": false,
+          "seed_base": 42,
+          "torch_version": "2.8.0+cu128",
+          "transformers_version": "4.57.6",
+          "timestamp_utc": "2026-08-25T13:20:33.476543+00:00"
+        }
+      },
+      "pooling": "va_span: mean of answer tokens, prompt and end-of-turn tokens excluded",
+      "source_cell": "persona",
+      "n_contexts": 120,
+      "n_answers": 1200,
+      "generation": {
+        "temperature": [
+          1.0
+        ],
+        "max_new_tokens": [
+          2048
+        ],
+        "draws": 10,
+        "regime": "model-generated answers, teacher-forced replay for activation capture"
+      }
+    }
+  },
+  "panels": [
+    {
+      "panel": "persona",
+      "label_kind": "assigned_condition",
+      "classes": [
+        "v1",
+        "v2",
+        "v3",
+        "v4",
+        "v5"
+      ],
+      "training_draws": [
+        0,
+        1
+      ],
+      "evaluation_draws": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "folds": [
+        {
+          "fold": 0,
+          "test_carriers": [
+            "c01",
+            "c02"
+          ],
+          "n_train": 200,
+          "dimension": 3584,
+          "n_test": 200,
+          "alpha": 1000000.0,
+          "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+          "inner_metric": "balanced_accuracy",
+          "inner_mean_metrics": [
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "test_primary_metric": 1.0,
+          "wall_seconds": 0.15735390223562717
+        }
+      ],
+      "pilot_only": true,
+      "wall_seconds": 0.15900209173560143,
+      "peak_rss_mib_process": 700.80859375,
+      "metrics": {
+        "balanced_accuracy": 1.0,
+        "balanced_accuracy_ci95": [
+          1.0,
+          1.0
+        ],
+        "chance_balanced_accuracy": 0.2,
+        "macro_ovr_auroc": 1.0,
+        "chance_auroc": 0.5,
+        "per_class_auroc": {
+          "v1": 1.0,
+          "v2": 1.0,
+          "v3": 1.0,
+          "v4": 1.0,
+          "v5": 1.0
+        },
+        "positive_prevalence": {
+          "v1": 0.2,
+          "v2": 0.2,
+          "v3": 0.2,
+          "v4": 0.2,
+          "v5": 0.2
+        },
+        "n_carriers": 2,
+        "n_contexts": 20,
+        "n_answers": 200,
+        "uncertainty": "percentile bootstrap of 2 carrier clusters; exploratory precision",
+        "bootstrap_draws": 2000
+      }
+    }
+  ]
+}

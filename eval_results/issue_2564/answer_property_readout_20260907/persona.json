@@ -1,0 +1,211 @@
+{
+  "panel": "persona",
+  "label_kind": "assigned_condition",
+  "classes": [
+    "v1",
+    "v2",
+    "v3",
+    "v4",
+    "v5"
+  ],
+  "training_draws": [
+    0,
+    1
+  ],
+  "evaluation_draws": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "folds": [
+    {
+      "fold": 0,
+      "test_carriers": [
+        "c01",
+        "c02"
+      ],
+      "n_train": 200,
+      "dimension": 3584,
+      "n_test": 200,
+      "alpha": 1000000.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "balanced_accuracy",
+      "inner_mean_metrics": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "test_primary_metric": 1.0,
+      "wall_seconds": 0.13503072783350945
+    },
+    {
+      "fold": 1,
+      "test_carriers": [
+        "c03",
+        "c04"
+      ],
+      "n_train": 200,
+      "dimension": 3584,
+      "n_test": 200,
+      "alpha": 100000.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "balanced_accuracy",
+      "inner_mean_metrics": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.9944444444444445
+      ],
+      "test_primary_metric": 0.9949999999999999,
+      "wall_seconds": 0.11183806322515011
+    },
+    {
+      "fold": 2,
+      "test_carriers": [
+        "c05",
+        "c06"
+      ],
+      "n_train": 200,
+      "dimension": 3584,
+      "n_test": 200,
+      "alpha": 1000000.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "balanced_accuracy",
+      "inner_mean_metrics": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "test_primary_metric": 1.0,
+      "wall_seconds": 0.11156135983765125
+    },
+    {
+      "fold": 3,
+      "test_carriers": [
+        "c07",
+        "c08"
+      ],
+      "n_train": 200,
+      "dimension": 3584,
+      "n_test": 200,
+      "alpha": 1000000.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "balanced_accuracy",
+      "inner_mean_metrics": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "test_primary_metric": 1.0,
+      "wall_seconds": 0.11265868321061134
+    },
+    {
+      "fold": 4,
+      "test_carriers": [
+        "c09",
+        "c10"
+      ],
+      "n_train": 200,
+      "dimension": 3584,
+      "n_test": 200,
+      "alpha": 1000000.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "balanced_accuracy",
+      "inner_mean_metrics": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "test_primary_metric": 1.0,
+      "wall_seconds": 0.1098098885267973
+    },
+    {
+      "fold": 5,
+      "test_carriers": [
+        "c11",
+        "c12"
+      ],
+      "n_train": 200,
+      "dimension": 3584,
+      "n_test": 200,
+      "alpha": 1000000.0,
+      "alpha_selection": "three training-only carrier-group folds; strongest exact tie",
+      "inner_metric": "balanced_accuracy",
+      "inner_mean_metrics": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "test_primary_metric": 1.0,
+      "wall_seconds": 0.10893559455871582
+    }
+  ],
+  "pilot_only": false,
+  "wall_seconds": 0.7080422099679708,
+  "peak_rss_mib_process": 700.4453125,
+  "metrics": {
+    "balanced_accuracy": 0.9991666666666668,
+    "balanced_accuracy_ci95": [
+      0.9974999999999999,
+      1.0
+    ],
+    "chance_balanced_accuracy": 0.2,
+    "macro_ovr_auroc": 0.9974288194444444,
+    "chance_auroc": 0.5,
+    "per_class_auroc": {
+      "v1": 0.9898220486111111,
+      "v2": 1.0,
+      "v3": 0.9997482638888888,
+      "v4": 0.9985329861111111,
+      "v5": 0.9990407986111112
+    },
+    "positive_prevalence": {
+      "v1": 0.2,
+      "v2": 0.2,
+      "v3": 0.2,
+      "v4": 0.2,
+      "v5": 0.2
+    },
+    "n_carriers": 12,
+    "n_contexts": 120,
+    "n_answers": 1200,
+    "uncertainty": "percentile bootstrap of 12 carrier clusters; exploratory precision",
+    "bootstrap_draws": 2000
+  }
+}
