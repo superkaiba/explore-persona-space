@@ -1,0 +1,27 @@
+# Read-only terminal accounting; does not change any collection or selection rule.
+root: ${oc.env:EPM_CONTEXT_RISK_FOLLOWUP_ROOT}
+base_url: http://127.0.0.1:26700/v1
+model: openai-api/local/Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0
+arm: null
+launches:
+  A:
+    launch_id: full_a_20260907T1724
+    started_utc: '2026-09-07T17:24:45Z'
+    mode: development_a
+    supervisor_pid: 1446180
+    worker_pid: 1446185
+    exit_path: ${root}/development_a_full_a_20260907T1724_process.exit.json
+    log_path: ${root}/development_a_full_20260907T1724.log
+  B:
+    launch_id: full_b_20260907T182631
+    started_utc: '2026-09-07T18:26:31Z'
+    mode: development_b
+    supervisor_pid: 1691257
+    worker_pid: 1691265
+    exit_path: ${root}/development_b_full_b_20260907T182631_process.exit.json
+    log_path: ${root}/development_b_full_b_20260907T182631.log
+hydra:
+  run:
+    dir: ${root}/terminal_census/hydra
+  job:
+    chdir: false

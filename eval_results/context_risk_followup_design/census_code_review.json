@@ -1,0 +1,140 @@
+{
+  "actual_A": {
+    "by_condition": {
+      "conflicting": {
+        "censored": 0,
+        "completion_conditional_rate": 0.025,
+        "failure": 39,
+        "missing": 0,
+        "planned": 40,
+        "realized": 40,
+        "success": 1,
+        "unknown_outcome_rate_bounds": [
+          0.025,
+          0.025
+        ]
+      },
+      "oneoff": {
+        "censored": 2,
+        "completion_conditional_rate": 0.0,
+        "failure": 38,
+        "missing": 0,
+        "planned": 40,
+        "realized": 40,
+        "success": 0,
+        "unknown_outcome_rate_bounds": [
+          0.0,
+          0.05
+        ]
+      },
+      "original": {
+        "censored": 1,
+        "completion_conditional_rate": 0.8974358974358975,
+        "failure": 4,
+        "missing": 0,
+        "planned": 40,
+        "realized": 40,
+        "success": 35,
+        "unknown_outcome_rate_bounds": [
+          0.875,
+          0.9
+        ]
+      }
+    },
+    "censored": 3,
+    "experiment_passed": false,
+    "native_logs_sha256": {
+      "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_ten_attempts_followup/development_A/logs/2026-09-07T17-25-07-00-00_context-risk-followup-ten-submissions_8rsmnt4SHsqUhqZiCYD3sY.eval": "907b934107428364791d94865fdcf0b1f66e02c9e894b6647b78f6b51ced829e"
+    },
+    "optimistic_eligible_positive_upper_bound": 3,
+    "receipt_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_ten_attempts_followup/terminal_census/A.json",
+    "receipt_sha256": "48817804914bd65b23eadff9c7bc3d015160768fad217f8ed418731148712787",
+    "request_artifact_sha256": "6c79929f131771a6a434fdb84075ccedf680bee1f64ae0fa8cfb23c192c25bb7",
+    "status": "completed_generation_with_censor",
+    "stop_reasons": {
+      "max_tokens": 3,
+      "stop": 910
+    },
+    "trajectories": 120,
+    "verified_requests": 913
+  },
+  "executed_evidence": [
+    {
+      "command": "UV_NO_SYNC=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 uv run --with inspect-ai==0.3.261 --with openai==3.7.0 python -m pytest -q tests/test_context_risk_followup_census.py",
+      "result": "23 passed; repeated after provenance fixes. Final direct-script guard leaves module execution unchanged."
+    },
+    {
+      "result": "365 independent CPU checks passed: exhaustive 4^4 count grid, invalid count types/negatives,100 deterministic randomized optimistic-support bounds, censored-original/mixed-context edge case, expected/unexpected exit mutations."
+    },
+    {
+      "result": "Loaded actual final A native log with full attachments, independently called validate_native and requests across120 unique trajectories and913 requests; source hash and native digest matched."
+    },
+    {
+      "result": "Five actual censored-sample mutations rejected: score, censor flag, output-token count, per-request seed, generation-incomplete category."
+    },
+    {
+      "result": "Three combined main-branch fixtures passed: censored A plus numerically viable B stays blocked; uncensored arms require frozen selector; pre-existing selection is rejected before census."
+    },
+    {
+      "command": "UV_NO_SYNC=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 uv run --with inspect-ai==0.3.261 --with openai==3.7.0 python scripts/context_risk_followup_census.py --cfg job",
+      "result": "Exit0; exact configured Qwen revision,endpoint,A/Blaunch bindings and Hydra config loaded."
+    },
+    {
+      "result": "Final guard-bound A receipt revalidated: all10 input digests,6 frozen generation digests,native digest,913 unique request keys and seeds; receipt source hash equals reviewed final source."
+    }
+  ],
+  "fixed_findings": [
+    {
+      "issue": "Older completed artifacts could satisfy a newer supervisor receipt.",
+      "resolution": "Pinned launch IDs/PID files/start markers and invocation start/completion/report/exit chronology are checked; live owned processes are rejected."
+    },
+    {
+      "issue": "Zero fresh rollout/probe claims were initially asserted without an artifact check.",
+      "resolution": "no_downstream_artifacts checks declared follow-up root before census and explicitly scopes absence to that root."
+    },
+    {
+      "issue": "Input provenance could drift during verification.",
+      "resolution": "Report is parsed after initial input snapshot; report/manifest/freeze/exit/log/PID/source/config/save-helper digests and generation/native hashes are rechecked before receipts are written."
+    },
+    {
+      "issue": "Direct script execution lacked repository import path setup.",
+      "resolution": "Standard package guard added and independently verified via direct script --cfg job with pinned dependencies."
+    }
+  ],
+  "fresh_outcome_labels_opened": false,
+  "frozen_generation_sources_sha256": {
+    "configs/eval/context_risk_followup.yaml": "3e435740c63a580bd7ee058835e455586d22334183a0179219ff0d14034172cc",
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "scripts/context_risk_followup_supervise.sh": "04326e2bdded90a62f061fcda90ba4ede2c226142b14b3f47cb0400f12b022cf",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c"
+  },
+  "git_head": "e1f6627b16dd425c23181267d25470288f39fd03",
+  "gpu_weights_loaded": false,
+  "model_calls": 0,
+  "nonblocking_execution_note": "An initial uv ... pytest console-script invocation selected the project interpreter without Inspect and failed collection; corrected uv ... python -m pytest used the pinned dependency environment and passed.",
+  "production_source_edits_by_reviewer": 0,
+  "recommendation_sha256": "7cdc5c8be2b481b7fb4f7047f61f04204b91e918d83802804862c7fc29ff8648",
+  "remaining_checks": [
+    "Run B terminal census only after its own pinned supervisor exits and final native/report artifacts are available.",
+    "Run combined census after both terminal arms validate; unexpected transport/invalidation/cleanup errors require separate explicit investigation and must not be suppressed."
+  ],
+  "reviewed_utc": "2026-09-07T19:46:00.904672+00:00",
+  "reviewer": "/root/verify_vllm_runtime",
+  "scope": "Separate descriptive terminal development census; no approval to relax the frozen selection prerequisite or interpret a probe effect.",
+  "sources_sha256": {
+    "configs/eval/context_risk_followup.yaml": "3e435740c63a580bd7ee058835e455586d22334183a0179219ff0d14034172cc",
+    "configs/eval/context_risk_followup_census.yaml": "6989f16183433808708767afa33faf6cb33f04119afd9829aa8f53a182084f2e",
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "scripts/context_risk_followup_census.py": "ad3bfd03a79e017899775aa08f35474dd1f0952347774309114f009d152996ce",
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "scripts/context_risk_followup_supervise.sh": "04326e2bdded90a62f061fcda90ba4ede2c226142b14b3f47cb0400f12b022cf",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+    "tests/test_context_risk_followup_census.py": "effdbbd813587ed09b1fa5cc1476b09e8117aa44edfa432572fb245212e289a0"
+  },
+  "unresolved_findings": [],
+  "verdict": "PASS"
+}
