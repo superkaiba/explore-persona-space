@@ -307,14 +307,23 @@ def _build_positive_rows(
     user_suffix: str,
     sys_token_count: int | None,
     tokenizer,
+    marker_append: bool = True,
 ) -> tuple[list[dict], list[int], list[int]]:
-    """Build positive (source persona, marker-appended) training rows."""
+    """Build positive (source persona) training rows.
+
+    When ``marker_append`` is True (the default, matching #365/#383 marker
+    implantation), each positive completion has ``[ZLT]`` appended after a
+    double newline via :func:`_append_marker`. When False, the completion
+    is used verbatim — required for behavior-implantation experiments
+    (e.g. #391 sycophancy) where the assistant turn must NOT carry a
+    literal marker.
+    """
     rows: list[dict] = []
     marker_positions: list[int] = []
     total_seq_lengths: list[int] = []
     for entry in positives:
         question = entry["question"]
-        completion = _append_marker(entry["completion"])
+        completion = _append_marker(entry["completion"]) if marker_append else entry["completion"]
         user_text = f"{question} {user_suffix}".strip()
         rows.append(_make_prompt_completion(system_text, user_text, completion))
         pos = _marker_position_in_tokens(completion, tokenizer=tokenizer)
@@ -385,6 +394,8 @@ def prepare_cell(
     seed: int,
     tokenizer=None,
     paired_persona_token_count: int | None = None,
+    marker_append: bool = True,
+    training_system_prompt_override: str | None = None,
 ) -> PreparedDataset:
     """Build one cell's training JSONL + manifest row data.
 
@@ -409,6 +420,22 @@ def prepare_cell(
         When ``cell.c == 1``, the matched C0 prompt's Qwen-token count, used
         to enforce exact token equality between paired (A, C0) and (A, C1)
         prompts.
+    marker_append:
+        When True (default, #365/#383 marker implantation), each positive
+        completion has ``[ZLT]`` appended after a double newline. When False
+        (#391 sycophancy implantation), positive completions are used
+        verbatim — required for behavior-implantation experiments where the
+        assistant turn must NOT carry a literal marker.
+    training_system_prompt_override:
+        When non-None, replace the (A, C)-conditioned source-persona system
+        prompt for the POSITIVE training rows with this verbatim string. The
+        C-axis preflight is skipped (the override is opaque to the persona
+        framing axis). ``source`` continues to govern output routing, bystander
+        panel selection, and the row of completions consumed; only the system
+        prompt text attached to the positive (source) training rows changes.
+        Required for #391's sanity-null control where positive rows train
+        under the ``"assistant"`` panel persona's system prompt while still
+        being routed to the per-source output directory.
     """
     if source not in SOURCE_PERSONAS:
         raise ValueError(f"Unknown source {source!r}; expected one of {SOURCE_PERSONAS}")
@@ -418,21 +445,58 @@ def prepare_cell(
     preflight_payload: dict | None = None
 
     # ---- C-axis preflight (token equality + Jaccard + role-adoption lint) --
-    # Fires only when (a) the cell is C=1, AND (b) a tokenizer was supplied.
-    # The dispatcher must always supply the tokenizer in production; in
-    # tests, omitting the tokenizer leaves the preflight inert so unit tests
-    # can hand-craft pools without loading Qwen.
-    if cell.c == 1 and tokenizer is not None:
+    # Fires only when (a) the cell is C=1, AND (b) a tokenizer was supplied,
+    # AND (c) no training_system_prompt_override is in effect, AND
+    # (d) EPS_SKIP_C_AXIS_PREFLIGHT is NOT set. The override substitutes a
+    # verbatim string for the positive-row system prompt, so the C-axis
+    # token-equality / Jaccard / role-adoption invariants do not apply.
+    #
+    # EPS_SKIP_C_AXIS_PREFLIGHT=1 is the #391 escape hatch: parent #383's
+    # Jaccard ≥ 0.15 gate prevents librarian/programmer A=1 × C=1 from ever
+    # training because the auto-generated neutral-background prompts share
+    # only 0.09-0.14 token overlap with the persona prompt. The gate was a
+    # guard for #383's marker-implantation read; for #391's broad-transfer
+    # behavioral read, the C-axis estimate at lower-overlap prompts is still
+    # informative and the cell should be allowed to train. The preflight
+    # payload (when run) is stored on the prepare_cell output for analyzer
+    # disclosure; when skipped, caveats note "C-axis preflight skipped via
+    # env override" so the methodology corrections section can pick it up.
+    import os as _os
+
+    _skip_c_preflight = _os.environ.get("EPS_SKIP_C_AXIS_PREFLIGHT") == "1"
+    if (
+        cell.c == 1
+        and tokenizer is not None
+        and training_system_prompt_override is None
+        and not _skip_c_preflight
+    ):
         preflight_payload = run_c_axis_preflight(source=source, cell=cell, tokenizer=tokenizer)
         paired_persona_token_count = preflight_payload["persona_qwen_tokens"]
+    elif cell.c == 1 and _skip_c_preflight:
+        caveats.append(
+            "C-axis preflight skipped via EPS_SKIP_C_AXIS_PREFLIGHT=1 "
+            "(see #391 post-mortem); paired_persona_token_count left unset."
+        )
 
     # ---- Resolve system prompt for this (A, C) -----------------------------
-    system_text, sys_token_count = _system_prompt_for_cell(
-        source=source,
-        cell=cell,
-        tokenizer=tokenizer,
-        target_token_count=paired_persona_token_count if cell.c == 1 else None,
-    )
+    if training_system_prompt_override is not None:
+        system_text = training_system_prompt_override
+        sys_token_count = (
+            len(tokenizer.encode(system_text, add_special_tokens=False))
+            if tokenizer is not None
+            else None
+        )
+        caveats.append(
+            f"training_system_prompt_override applied (len={len(system_text)} chars); "
+            "C-axis preflight skipped."
+        )
+    else:
+        system_text, sys_token_count = _system_prompt_for_cell(
+            source=source,
+            cell=cell,
+            tokenizer=tokenizer,
+            target_token_count=paired_persona_token_count if cell.c == 1 else None,
+        )
 
     # When the preflight ran, double-check the C0 / C1 Jaccard matches the
     # in-prepare-cell render too. This catches silent drift between the
@@ -479,6 +543,7 @@ def prepare_cell(
         user_suffix=user_suffix,
         sys_token_count=sys_token_count,
         tokenizer=tokenizer,
+        marker_append=marker_append,
     )
     neg_rows, neg_seq_lens = _build_negative_rows(
         negatives,
