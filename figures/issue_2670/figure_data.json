@@ -1,5 +1,5 @@
 {
-  "source_sha256": "c6e80a398ebe32ea927f951578599ea0a3e61c5b6af6e3204cc2fc8624a86137",
+  "source_sha256": "19da52dde0da9c8f8fe5ecd72652c9aba5008c171a30846b4be25804e5b8f138",
   "run_result_sha256": "2f77a6284c49d2e2f1148dda41c3eb480aa7934fc334f6ef2104e8a5a07221d5",
   "rollouts_sha256": "dd519eeb977494063729e12b693254d0ac6d52cc5ac5f38ed8385b2b4068259a",
   "scope": "Exact observed finite-sample counts, no population confidence interval or prediction score.",
@@ -138,8 +138,9 @@
     4
   ],
   "figures": {
-    "figures/issue_2670/observed_outcomes.png": "cbecc2b7f0bc2bc7b9fd85bd607eb66c996f99093cfc9039e57be19a086ef614",
-    "figures/issue_2670/observed_outcomes.pdf": "027446c03f0750d15419d3e8ff047a7645aba254184d209dffd131bf9d91518a",
-    "figures/issue_2670/observed_outcomes.svg": "95ce51c0e8bcebb77932588234490176085f6055b5026f0684c5dec93b410e73"
+    "figures/issue_2670/observed_outcomes.png": "3d17e02aa4f77e00f96a59c98ca5f1deb951e40eddb9b253c7c9a14d8bd65708",
+    "figures/issue_2670/observed_outcomes.pdf": "b7c1f32360da8ba910f12ec5b93b660c3461851df7e6f9f0fe7aff426ecb62b7",
+    "figures/issue_2670/observed_outcomes.meta.json": "d8d623931f5b2d029a5f642e5dbb042647c7047d57205a4c21b4d2e3f738d66e",
+    "figures/issue_2670/observed_outcomes.svg": "920ef970470183e313dfb6b0d078837e9ed4afe0a06a176fd05ebba30dcb2ad1"
   }
 }

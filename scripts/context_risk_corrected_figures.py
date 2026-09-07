@@ -15,6 +15,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
+from explore_persona_space.analysis.paper_plots import savefig_paper  # noqa: E402
+
 
 def plot(result_path: Path, output_dir: Path) -> dict:
     result = json.loads(result_path.read_text())
@@ -56,7 +58,15 @@ def plot(result_path: Path, output_dir: Path) -> dict:
         summary = result["by_condition"][condition]
         if summary != {"n": 160, "passed": int(total), "errors": 0}:
             raise ValueError("Condition totals differ from the verified per-context counts")
-    plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 10, "svg.fonttype": "none"})
+    plt.rcParams.update(
+        {
+            "font.family": "DejaVu Sans",
+            "font.size": 10,
+            "svg.fonttype": "none",
+            "savefig.dpi": 300,
+            "savefig.bbox": "tight",
+        }
+    )
     fig, (left, right) = plt.subplots(
         1, 2, figsize=(9, 6.2), gridspec_kw={"width_ratios": [1, 1.4]}
     )
@@ -91,11 +101,19 @@ def plot(result_path: Path, output_dir: Path) -> dict:
     right.spines[:].set_visible(False)
     fig.tight_layout(w_pad=3)
     output_dir.mkdir(parents=True, exist_ok=True)
-    paths = []
-    for suffix in ("png", "pdf", "svg"):
-        path = output_dir / f"observed_outcomes.{suffix}"
-        fig.savefig(path, dpi=300, bbox_inches="tight")
-        paths.append(path)
+    written = savefig_paper(fig, "observed_outcomes", dir=output_dir)
+    meta = json.loads(written["meta"].read_text())
+    if not meta.get("text") or not meta.get("points"):
+        raise ValueError("Figure export must preserve rendered text and plotted data")
+    meta["context_counts"] = [
+        {"task_id": task, "condition": condition, "successes": int(matrix[i, j]), "rollouts": 8}
+        for i, task in enumerate(tasks)
+        for j, condition in enumerate(conditions)
+    ]
+    written["meta"].write_text(json.dumps(meta, indent=2) + "\n")
+    svg_path = output_dir / "observed_outcomes.svg"
+    fig.savefig(svg_path)
+    paths = [*written.values(), svg_path]
     plt.close(fig)
     provenance = {
         "source_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
