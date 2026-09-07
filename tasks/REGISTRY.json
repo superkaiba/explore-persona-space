@@ -12894,8 +12894,8 @@
       "goal": "Test whether the model activation before generating new reasoning or an action predicts a later successful reward hack, and whether the frozen context-to-answer map improves that forecast.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2670",
-      "status": "running",
+      "path": "tasks/verifying/2670",
+      "status": "verifying",
       "title": "Predict reward hacking from pre-action activations: corrected ImpossibleBench rerun"
     },
     "268": {
