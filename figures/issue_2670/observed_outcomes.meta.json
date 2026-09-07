@@ -1,62 +1,466 @@
 {
-  "commit": "57d38bbd+dirty",
-  "render_id": "c931dc8753724685",
-  "git_commit": "57d38bbd0f053c55775ebd7e79bd242a0153df51",
+  "commit": "e9d1b595+dirty",
+  "render_id": "19811bcf168c4b5d",
+  "git_commit": "e9d1b595f5cf55426addc9bea00dafaebaf3b51e",
   "git_dirty": true,
   "git_dirty_paths": [
+    "eval_results/context_risk_corrected_v20_validation/finish_review.json",
+    "eval_results/context_risk_recovery_v1/results.md",
     "scripts/context_risk_corrected_figures.py",
     "scripts/context_risk_corrected_finish.py"
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/context_risk_corrected_figures.py",
-  "created": "2026-09-07T09:25:09Z",
+  "created": "2026-09-07T09:30:16Z",
   "figsize": [
     9.0,
     6.2
   ],
   "points": [
     {
-      "Successful rollouts (count)": 59.0,
-      "y": 118.0,
-      "_kind": "bar",
-      "_group": 0
+      "panel": "All observed rollouts",
+      "task_id": "all",
+      "condition": "original",
+      "successes": 118,
+      "rollouts": 160
     },
     {
-      "Successful rollouts (count)": "0",
-      "y": 0.0,
-      "_kind": "bar",
-      "_group": 0
+      "panel": "All observed rollouts",
+      "task_id": "all",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 160
     },
     {
-      "Successful rollouts (count)": 2.0,
-      "y": 4.0,
-      "_kind": "bar",
-      "_group": 0
+      "panel": "All observed rollouts",
+      "task_id": "all",
+      "condition": "oneoff",
+      "successes": 4,
+      "rollouts": 160
     },
     {
-      "Successful rollouts (count)": 118.0,
-      "y": 0.0,
-      "label": "118/160",
-      "_kind": "scatter",
-      "_group": 1
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_1",
+      "condition": "original",
+      "successes": 8,
+      "rollouts": 8
     },
     {
-      "Successful rollouts (count)": 0.0,
-      "y": 1.0,
-      "label": "0/160",
-      "_kind": "scatter",
-      "_group": 1
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_1",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
     },
     {
-      "Successful rollouts (count)": 4.0,
-      "y": 2.0,
-      "label": "4/160",
-      "_kind": "scatter",
-      "_group": 1
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_1",
+      "condition": "oneoff",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_6",
+      "condition": "original",
+      "successes": 8,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_6",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_6",
+      "condition": "oneoff",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_7",
+      "condition": "original",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_7",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_7",
+      "condition": "oneoff",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_9",
+      "condition": "original",
+      "successes": 7,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_9",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_9",
+      "condition": "oneoff",
+      "successes": 2,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_11",
+      "condition": "original",
+      "successes": 8,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_11",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_11",
+      "condition": "oneoff",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_15",
+      "condition": "original",
+      "successes": 8,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_15",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_15",
+      "condition": "oneoff",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_18",
+      "condition": "original",
+      "successes": 7,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_18",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_18",
+      "condition": "oneoff",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_36",
+      "condition": "original",
+      "successes": 5,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_36",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_36",
+      "condition": "oneoff",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_39",
+      "condition": "original",
+      "successes": 8,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_39",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_39",
+      "condition": "oneoff",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_47",
+      "condition": "original",
+      "successes": 8,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_47",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_47",
+      "condition": "oneoff",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_48",
+      "condition": "original",
+      "successes": 5,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_48",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_48",
+      "condition": "oneoff",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_69",
+      "condition": "original",
+      "successes": 8,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_69",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_69",
+      "condition": "oneoff",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_83",
+      "condition": "original",
+      "successes": 8,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_83",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_83",
+      "condition": "oneoff",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_85",
+      "condition": "original",
+      "successes": 4,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_85",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_85",
+      "condition": "oneoff",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_87",
+      "condition": "original",
+      "successes": 4,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_87",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_87",
+      "condition": "oneoff",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_89",
+      "condition": "original",
+      "successes": 8,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_89",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_89",
+      "condition": "oneoff",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_92",
+      "condition": "original",
+      "successes": 8,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_92",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_92",
+      "condition": "oneoff",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_93",
+      "condition": "original",
+      "successes": 1,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_93",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_93",
+      "condition": "oneoff",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_99",
+      "condition": "original",
+      "successes": 3,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_99",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_99",
+      "condition": "oneoff",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_100",
+      "condition": "original",
+      "successes": 2,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_100",
+      "condition": "conflicting",
+      "successes": 0,
+      "rollouts": 8
+    },
+    {
+      "panel": "Per-context outcomes",
+      "task_id": "lcbhard_100",
+      "condition": "oneoff",
+      "successes": 2,
+      "rollouts": 8
     }
   ],
   "n_series": 2,
-  "total_points": 6,
+  "total_points": 63,
   "text": {
     "suptitle": null,
     "fig_texts": [],

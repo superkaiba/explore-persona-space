@@ -110,6 +110,20 @@ def plot(result_path: Path, output_dir: Path) -> dict:
         for i, task in enumerate(tasks)
         for j, condition in enumerate(conditions)
     ]
+    # The shared artist extractor treats horizontal bar centers as x values
+    # and omits image cells. Persist the exact plotted counts explicitly.
+    meta["points"] = [
+        {
+            "panel": "All observed rollouts",
+            "task_id": "all",
+            "condition": condition,
+            "successes": int(total),
+            "rollouts": 160,
+        }
+        for condition, total in zip(conditions, totals, strict=True)
+    ] + [{"panel": "Per-context outcomes", **row} for row in meta["context_counts"]]
+    meta["total_points"] = len(meta["points"])
+    meta["n_series"] = 2
     written["meta"].write_text(json.dumps(meta, indent=2) + "\n")
     svg_path = output_dir / "observed_outcomes.svg"
     fig.savefig(svg_path)

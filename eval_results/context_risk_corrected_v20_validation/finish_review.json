@@ -4,7 +4,7 @@
   "verdict": "PASS",
   "reviewed_at_utc": "2026-09-07T07:55:27.560168+00:00",
   "source": "scripts/context_risk_corrected_finish.py",
-  "source_sha256": "04eb2c59060c5bee823bebcede79596f4fa75ea00424f28891afd61b83dffe37",
+  "source_sha256": "8aeaddec362b9bbf277c707b7532d17948811f1bdf09b9c0a45f598c7eca466e",
   "supervisor_source": "scripts/context_risk_corrected_finish_supervise.sh",
   "supervisor_source_sha256": "d78c8bc0aa79c6852f8957107e93dc6468bc1088038bce2173624eab7f5e11da",
   "five_approved_production_sources_unchanged": true,
@@ -70,5 +70,54 @@
     "finding": "Inspect finalized the trace as gzip and removed the live .log. Complete decompression validates CRC; all records parse; corrupt/missing/empty/invalid logs fail before destination creation. Actual decompressed 14,951,239-byte JSONL will use existing line sharding.",
     "no_model_upload_pod_or_task_calls": true,
     "ruff": "PASS"
+  },
+  "termination_prompt_fix_review": {
+    "reviewer": "/root/reward_harness_critic",
+    "checked_at": "2026-09-07T09:28:15.590529+00:00",
+    "verdict": "PASS",
+    "source_sha256": "8aeaddec362b9bbf277c707b7532d17948811f1bdf09b9c0a45f598c7eca466e",
+    "managed_cli_source_sha256": "4ffab8ffe5ad8081795dfc48ce2d8aa8be7065737da3b7ca6937982d465ce066",
+    "fixture_source_sha256": "7b033e314815c3a3d4d18cc20591f1b434e276f02740a4d6a8133e563da91f1a",
+    "scope": "Only --yes added; skips input prompt, preserves upload and ownership guards.",
+    "cases": [
+      {
+        "yes": true,
+        "guard_failure": false,
+        "passed": true,
+        "calls": [
+          "keep_guard",
+          "upload_guard",
+          "owner_guard",
+          "terminate"
+        ]
+      },
+      {
+        "yes": false,
+        "guard_failure": false,
+        "passed": true,
+        "calls": [
+          "keep_guard",
+          "upload_guard",
+          "owner_guard",
+          "prompt"
+        ]
+      },
+      {
+        "yes": true,
+        "guard_failure": true,
+        "passed": true,
+        "calls": [
+          "keep_guard",
+          "upload_guard"
+        ]
+      }
+    ],
+    "live_api_calls": 0,
+    "prior_approved_source_sha256": "04eb2c59060c5bee823bebcede79596f4fa75ea00424f28891afd61b83dffe37",
+    "fixture_result": "eval_results/context_risk_corrected_v20_report/terminate_prompt_fixture_result.json",
+    "fixture_result_sha256": "020ea68a2491b8d476136016b158355a93f4acd990c13718389ec08484d38e1b",
+    "fixture_runner": "eval_results/context_risk_corrected_v20_report/terminate_prompt_fixture.py",
+    "ruff": "PASS",
+    "no_live_actions": true
   }
 }

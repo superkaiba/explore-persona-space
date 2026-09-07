@@ -417,6 +417,7 @@ def finish() -> None:
                 "2670",
                 "--name-suffix",
                 "corrected",
+                "--yes",
             ],
             cwd=REPO,
             timeout=300,

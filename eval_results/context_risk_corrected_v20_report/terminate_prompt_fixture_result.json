@@ -1,0 +1,43 @@
+{
+  "reviewer": "/root/reward_harness_critic",
+  "checked_at": "2026-09-07T09:28:15.590529+00:00",
+  "verdict": "PASS",
+  "source_sha256": "8aeaddec362b9bbf277c707b7532d17948811f1bdf09b9c0a45f598c7eca466e",
+  "managed_cli_source_sha256": "4ffab8ffe5ad8081795dfc48ce2d8aa8be7065737da3b7ca6937982d465ce066",
+  "fixture_source_sha256": "7b033e314815c3a3d4d18cc20591f1b434e276f02740a4d6a8133e563da91f1a",
+  "scope": "Only --yes added; skips input prompt, preserves upload and ownership guards.",
+  "cases": [
+    {
+      "yes": true,
+      "guard_failure": false,
+      "passed": true,
+      "calls": [
+        "keep_guard",
+        "upload_guard",
+        "owner_guard",
+        "terminate"
+      ]
+    },
+    {
+      "yes": false,
+      "guard_failure": false,
+      "passed": true,
+      "calls": [
+        "keep_guard",
+        "upload_guard",
+        "owner_guard",
+        "prompt"
+      ]
+    },
+    {
+      "yes": true,
+      "guard_failure": true,
+      "passed": true,
+      "calls": [
+        "keep_guard",
+        "upload_guard"
+      ]
+    }
+  ],
+  "live_api_calls": 0
+}
