@@ -1,0 +1,58 @@
+{
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      5.631
+    ],
+    "exported_size_inches": [
+      13.095,
+      5.24
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c5_regression_regimes_llm.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "sparse",
+      "EVIL",
+      "generic chat",
+      "in-distrib.",
+      "OOD",
+      "Spearman $\\rho$ \u2191",
+      "0.0",
+      "0.5",
+      "1.0",
+      "SYCOPHANCY",
+      "HALLUCINATION",
+      "Qwen2.5-7B-Instruct \u00b7 95% bootstrap intervals",
+      "Matched sample \u00b7 100 pairs per group",
+      "Regression on context",
+      "Regression on predicted answer",
+      "Regression on real answer",
+      "LLM judge \u00b7 0 examples",
+      "LLM judge \u00b7 32 examples"
+    ]
+  },
+  "output_sha256": {
+    "pdf": "9a9f4a43a63eda25ba12ce955d9a03865c4f0b2157349a88a6748058af776ec2",
+    "png": "ecd09130039ff7282951f3ce6992dd0b2016dc5726af9ed72674308d11ce92df",
+    "grayscale": "c8cb55e28d709c2d755071149755bcaf831ca56edb4547b19231313947a844e5"
+  },
+  "source_sha256": {
+    "scripts/issue2669_paper_plot.py": "2193eb22a1555917a4f87234d24213a31bb4aa8cf77d02e1290331abdfdd141e",
+    "src/explore_persona_space/analysis/c2a_plot_style.py": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1",
+    "figures/issue_2669/c5_regression_regimes_llm.data.json": "cee5655be9f768082bd8448185888ee69e6c0539eae627427e5329170bb78d04",
+    "scripts/issue1739_result2_fourpanel_fig.py": "ae5af1564b5acd215a890bc8daa58a0d109e38a3bb7090477dbc54c5005f4ff2"
+  },
+  "reproduction_command": "uv run python scripts/issue2669_paper_plot.py"
+}

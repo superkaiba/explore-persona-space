@@ -1,0 +1,671 @@
+{
+  "n_pairs": 900,
+  "n_distinct_contexts": 826,
+  "cells": [
+    {
+      "behavior": "evil",
+      "regime": "generic",
+      "instrument": "trait",
+      "n": 100,
+      "n_nonzero_outcomes": 3,
+      "constituents": [
+        {
+          "corpus": null,
+          "n": 100,
+          "spearman": {
+            "regression_ctx": 0.18741651448182015,
+            "reg_map_linear": 0.1078609452792447,
+            "reg_oracle": 0.2577129362733761,
+            "codex_0": 0.4050938503800298,
+            "codex_32": 0.555985920915925
+          }
+        }
+      ],
+      "bars": [
+        {
+          "method": "regression_ctx",
+          "rho": 0.18741651448182015,
+          "ci95": null,
+          "valid_draws": 1920,
+          "half_full_endpoint_max_abs_delta": null
+        },
+        {
+          "method": "reg_map_linear",
+          "rho": 0.1078609452792447,
+          "ci95": null,
+          "valid_draws": 1920,
+          "half_full_endpoint_max_abs_delta": null
+        },
+        {
+          "method": "reg_oracle",
+          "rho": 0.2577129362733761,
+          "ci95": null,
+          "valid_draws": 1920,
+          "half_full_endpoint_max_abs_delta": null
+        },
+        {
+          "method": "codex_0",
+          "rho": 0.4050938503800298,
+          "ci95": null,
+          "valid_draws": 1920,
+          "half_full_endpoint_max_abs_delta": null
+        },
+        {
+          "method": "codex_32",
+          "rho": 0.555985920915925,
+          "ci95": null,
+          "valid_draws": 1920,
+          "half_full_endpoint_max_abs_delta": null
+        }
+      ],
+      "sparse": true
+    },
+    {
+      "behavior": "evil",
+      "regime": "id",
+      "instrument": "trait",
+      "n": 100,
+      "n_nonzero_outcomes": 54,
+      "constituents": [
+        {
+          "corpus": null,
+          "n": 100,
+          "spearman": {
+            "regression_ctx": 0.6172937670014897,
+            "reg_map_linear": 0.7228898062347089,
+            "reg_oracle": 0.7817163813539267,
+            "codex_0": 0.67248256711372,
+            "codex_32": 0.7375860883918779
+          }
+        }
+      ],
+      "bars": [
+        {
+          "method": "regression_ctx",
+          "rho": 0.6172937670014897,
+          "ci95": [
+            0.4631123365118444,
+            0.7291326317681578
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.015280738313169784
+        },
+        {
+          "method": "reg_map_linear",
+          "rho": 0.7228898062347089,
+          "ci95": [
+            0.5979778856382498,
+            0.8140004404849249
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.006361091090021143
+        },
+        {
+          "method": "reg_oracle",
+          "rho": 0.7817163813539267,
+          "ci95": [
+            0.6740883144553829,
+            0.860375611552682
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.006913382441378513
+        },
+        {
+          "method": "codex_0",
+          "rho": 0.67248256711372,
+          "ci95": [
+            0.5343345700032983,
+            0.7719322667432482
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.0043353381381654454
+        },
+        {
+          "method": "codex_32",
+          "rho": 0.7375860883918779,
+          "ci95": [
+            0.6168047201986098,
+            0.8258938866589475
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.010670585524431009
+        }
+      ],
+      "sparse": false
+    },
+    {
+      "behavior": "evil",
+      "regime": "ood",
+      "instrument": "trait",
+      "n": 100,
+      "n_nonzero_outcomes": 4,
+      "constituents": [
+        {
+          "corpus": "hhrt",
+          "n": 78,
+          "spearman": {
+            "regression_ctx": 0.11388561471729891,
+            "reg_map_linear": -0.09363928321200132,
+            "reg_oracle": 0.007592374314486595,
+            "codex_0": -0.02326486716026951,
+            "codex_32": -0.07867822139981075
+          }
+        },
+        {
+          "corpus": "toxicchat",
+          "n": 22,
+          "spearman": {
+            "regression_ctx": 0.3358183263324344,
+            "reg_map_linear": 0.45690211723539675,
+            "reg_oracle": 0.2563570885523654,
+            "codex_0": 0.41073799131588223,
+            "codex_32": 0.5060149193869918
+          }
+        }
+      ],
+      "bars": [
+        {
+          "method": "regression_ctx",
+          "rho": 0.22485197052486666,
+          "ci95": null,
+          "valid_draws": 1219,
+          "half_full_endpoint_max_abs_delta": null
+        },
+        {
+          "method": "reg_map_linear",
+          "rho": 0.18163141701169772,
+          "ci95": null,
+          "valid_draws": 1219,
+          "half_full_endpoint_max_abs_delta": null
+        },
+        {
+          "method": "reg_oracle",
+          "rho": 0.131974731433426,
+          "ci95": null,
+          "valid_draws": 1219,
+          "half_full_endpoint_max_abs_delta": null
+        },
+        {
+          "method": "codex_0",
+          "rho": 0.19373656207780637,
+          "ci95": null,
+          "valid_draws": 1219,
+          "half_full_endpoint_max_abs_delta": null
+        },
+        {
+          "method": "codex_32",
+          "rho": 0.21366834899359055,
+          "ci95": null,
+          "valid_draws": 1219,
+          "half_full_endpoint_max_abs_delta": null
+        }
+      ],
+      "sparse": true
+    },
+    {
+      "behavior": "sycophancy",
+      "regime": "generic",
+      "instrument": "trait",
+      "n": 100,
+      "n_nonzero_outcomes": 74,
+      "constituents": [
+        {
+          "corpus": null,
+          "n": 100,
+          "spearman": {
+            "regression_ctx": 0.579812190643513,
+            "reg_map_linear": 0.5562247218932165,
+            "reg_oracle": 0.5450424696391619,
+            "codex_0": 0.5761089630447028,
+            "codex_32": 0.6391982457428367
+          }
+        }
+      ],
+      "bars": [
+        {
+          "method": "regression_ctx",
+          "rho": 0.579812190643513,
+          "ci95": [
+            0.41718601113384257,
+            0.7109392747902359
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.006087647115870731
+        },
+        {
+          "method": "reg_map_linear",
+          "rho": 0.5562247218932165,
+          "ci95": [
+            0.3736245156285537,
+            0.7037072687038967
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.011986183161946273
+        },
+        {
+          "method": "reg_oracle",
+          "rho": 0.5450424696391619,
+          "ci95": [
+            0.3744472046683417,
+            0.679619241920656
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.0036175520138373995
+        },
+        {
+          "method": "codex_0",
+          "rho": 0.5761089630447028,
+          "ci95": [
+            0.41137227865015263,
+            0.7147104482864691
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.0050198820733188265
+        },
+        {
+          "method": "codex_32",
+          "rho": 0.6391982457428367,
+          "ci95": [
+            0.48832658367916654,
+            0.7605513782571592
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.005686076722779931
+        }
+      ],
+      "sparse": false
+    },
+    {
+      "behavior": "sycophancy",
+      "regime": "id",
+      "instrument": "trait",
+      "n": 100,
+      "n_nonzero_outcomes": 100,
+      "constituents": [
+        {
+          "corpus": null,
+          "n": 100,
+          "spearman": {
+            "regression_ctx": 0.6561206020147776,
+            "reg_map_linear": 0.6535095888333373,
+            "reg_oracle": 0.7305614881670156,
+            "codex_0": 0.53077419479912,
+            "codex_32": 0.5354934941942849
+          }
+        }
+      ],
+      "bars": [
+        {
+          "method": "regression_ctx",
+          "rho": 0.6561206020147776,
+          "ci95": [
+            0.5101323972823634,
+            0.7749945715794332
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.0034391240120711375
+        },
+        {
+          "method": "reg_map_linear",
+          "rho": 0.6535095888333373,
+          "ci95": [
+            0.5024959436862393,
+            0.7639216754858158
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.002599097575051501
+        },
+        {
+          "method": "reg_oracle",
+          "rho": 0.7305614881670156,
+          "ci95": [
+            0.5768508135332153,
+            0.8328175311513082
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.001482580804897049
+        },
+        {
+          "method": "codex_0",
+          "rho": 0.53077419479912,
+          "ci95": [
+            0.35893923818071105,
+            0.673167125409423
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.003760087805028789
+        },
+        {
+          "method": "codex_32",
+          "rho": 0.5354934941942849,
+          "ci95": [
+            0.378419532141824,
+            0.6696830623618972
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.002680574865657759
+        }
+      ],
+      "sparse": false
+    },
+    {
+      "behavior": "sycophancy",
+      "regime": "ood",
+      "instrument": "trait",
+      "n": 100,
+      "n_nonzero_outcomes": 97,
+      "constituents": [
+        {
+          "corpus": "aita",
+          "n": 100,
+          "spearman": {
+            "regression_ctx": 0.6203607804883724,
+            "reg_map_linear": 0.6042484490113956,
+            "reg_oracle": 0.7844436255927724,
+            "codex_0": 0.5532500891769705,
+            "codex_32": 0.5752909807554498
+          }
+        }
+      ],
+      "bars": [
+        {
+          "method": "regression_ctx",
+          "rho": 0.6203607804883724,
+          "ci95": [
+            0.4576360538269486,
+            0.7532649813911203
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.008551249570287356
+        },
+        {
+          "method": "reg_map_linear",
+          "rho": 0.6042484490113956,
+          "ci95": [
+            0.45053871719528615,
+            0.7280655908750129
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.013012242151913767
+        },
+        {
+          "method": "reg_oracle",
+          "rho": 0.7844436255927724,
+          "ci95": [
+            0.6924065286623174,
+            0.8526922681657775
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.00722023637659186
+        },
+        {
+          "method": "codex_0",
+          "rho": 0.5532500891769705,
+          "ci95": [
+            0.3638052509527735,
+            0.6998160728484778
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.0016021718086738912
+        },
+        {
+          "method": "codex_32",
+          "rho": 0.5752909807554498,
+          "ci95": [
+            0.3886131607515007,
+            0.7205302031060984
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.00354894676667461
+        }
+      ],
+      "sparse": false
+    },
+    {
+      "behavior": "hallucination",
+      "regime": "generic",
+      "instrument": "trait",
+      "n": 100,
+      "n_nonzero_outcomes": 90,
+      "constituents": [
+        {
+          "corpus": null,
+          "n": 100,
+          "spearman": {
+            "regression_ctx": 0.5505131038486979,
+            "reg_map_linear": 0.5427802000844698,
+            "reg_oracle": 0.5994861597530518,
+            "codex_0": 0.29707507315506726,
+            "codex_32": 0.45537347760086155
+          }
+        }
+      ],
+      "bars": [
+        {
+          "method": "regression_ctx",
+          "rho": 0.5505131038486979,
+          "ci95": [
+            0.384834218244796,
+            0.6861917122228497
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.008356626279778345
+        },
+        {
+          "method": "reg_map_linear",
+          "rho": 0.5427802000844698,
+          "ci95": [
+            0.3756235890330982,
+            0.6859008235736395
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.0030423676670450206
+        },
+        {
+          "method": "reg_oracle",
+          "rho": 0.5994861597530518,
+          "ci95": [
+            0.43336721063203004,
+            0.7324977916890846
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.004279319143078553
+        },
+        {
+          "method": "codex_0",
+          "rho": 0.29707507315506726,
+          "ci95": [
+            0.08313069494179932,
+            0.48369940781443155
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.0067163329140812605
+        },
+        {
+          "method": "codex_32",
+          "rho": 0.45537347760086155,
+          "ci95": [
+            0.27347238353516595,
+            0.603420921494819
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.001198948831823754
+        }
+      ],
+      "sparse": false
+    },
+    {
+      "behavior": "hallucination",
+      "regime": "id",
+      "instrument": "fabrication",
+      "n": 100,
+      "n_nonzero_outcomes": 48,
+      "constituents": [
+        {
+          "corpus": null,
+          "n": 100,
+          "spearman": {
+            "regression_ctx": 0.576933794840278,
+            "reg_map_linear": 0.6746053798386119,
+            "reg_oracle": 0.5945006266745108,
+            "codex_0": 0.44681226133433616,
+            "codex_32": 0.4515597788802019
+          }
+        }
+      ],
+      "bars": [
+        {
+          "method": "regression_ctx",
+          "rho": 0.576933794840278,
+          "ci95": [
+            0.42258605202461696,
+            0.7025239904333228
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.005577245190257263
+        },
+        {
+          "method": "reg_map_linear",
+          "rho": 0.6746053798386119,
+          "ci95": [
+            0.5605814808995384,
+            0.7716322152077099
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.004439587630997943
+        },
+        {
+          "method": "reg_oracle",
+          "rho": 0.5945006266745108,
+          "ci95": [
+            0.44076548357837364,
+            0.7188958054128103
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.011289768289772184
+        },
+        {
+          "method": "codex_0",
+          "rho": 0.44681226133433616,
+          "ci95": [
+            0.2632233482755728,
+            0.6003537416033755
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.002558794143612486
+        },
+        {
+          "method": "codex_32",
+          "rho": 0.4515597788802019,
+          "ci95": [
+            0.27422632487183596,
+            0.6053006897203966
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.004213096349413081
+        }
+      ],
+      "sparse": false
+    },
+    {
+      "behavior": "hallucination",
+      "regime": "ood",
+      "instrument": "fabrication",
+      "n": 100,
+      "n_nonzero_outcomes": 83,
+      "constituents": [
+        {
+          "corpus": "nqopen",
+          "n": 44,
+          "spearman": {
+            "regression_ctx": 0.285721402824058,
+            "reg_map_linear": 0.3847137676408781,
+            "reg_oracle": 0.49842511381530114,
+            "codex_0": 0.371798246993933,
+            "codex_32": 0.3708754604973625
+          }
+        },
+        {
+          "corpus": "simpleqa",
+          "n": 56,
+          "spearman": {
+            "regression_ctx": 0.29310500360623304,
+            "reg_map_linear": 0.39949513677914145,
+            "reg_oracle": 0.4160754172736207,
+            "codex_0": -0.31277981333109145,
+            "codex_32": -0.2318275472934974
+          }
+        }
+      ],
+      "bars": [
+        {
+          "method": "regression_ctx",
+          "rho": 0.2894132032151455,
+          "ci95": [
+            0.0815157966608201,
+            0.4819040861330593
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.005085459547315263
+        },
+        {
+          "method": "reg_map_linear",
+          "rho": 0.3921044522100098,
+          "ci95": [
+            0.20157290756667534,
+            0.5525832330432581
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.0050863679555620545
+        },
+        {
+          "method": "reg_oracle",
+          "rho": 0.4572502655444609,
+          "ci95": [
+            0.25604719180200164,
+            0.6028176903173688
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.005844121589478057
+        },
+        {
+          "method": "codex_0",
+          "rho": 0.02950921683142077,
+          "ci95": [
+            -0.17264421114426381,
+            0.20973924386640602
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.006241047548521034
+        },
+        {
+          "method": "codex_32",
+          "rho": 0.06952395660193254,
+          "ci95": [
+            -0.13308582122916762,
+            0.2694489053714213
+          ],
+          "valid_draws": 2000,
+          "half_full_endpoint_max_abs_delta": 0.013888158747417306
+        }
+      ],
+      "sparse": false
+    }
+  ],
+  "methods": [
+    "regression_ctx",
+    "reg_map_linear",
+    "reg_oracle",
+    "codex_0",
+    "codex_32"
+  ],
+  "point_statistic": "Spearman rho; OOD is the unweighted mean of corpus-specific rhos, as in the paper",
+  "interval": "Pointwise percentile interval of 2000 shared group bootstrap draws, stratified by corpus and original ID fold; OOD recomputes the mean of corpus rhos in each draw. Omit CI if any draw is undefined. This replaces the original plot's averaging of constituent CI endpoints.",
+  "seed": 2669,
+  "draws": 2000,
+  "bootstrap_source": "#2669 completed comparison: 2000 draws inherited; half/full endpoint sensitivity recorded",
+  "source_sha256": {
+    "results.json": "8f1bc95b4a209256c81273ebf04e1a47f6e5f7d984fc3bec4cf1a9bc4437a597",
+    "percontextjoined.jsonl": "5ccd8f8f95cb6c66bee90c1b5279a7152a89416de677b1e0ee987ae42d3f41fd"
+  }
+}
