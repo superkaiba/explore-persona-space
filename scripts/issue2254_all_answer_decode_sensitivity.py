@@ -34,6 +34,56 @@ import scripts.issue2254_all_answer_decode_sweep as gen
 
 SENSITIVITY_VERSION = "issue2254-administration-sensitivity-v1"
 EXPECTED_DECISIONS = 13_200
+MIN_RETAINED_REPEATS = 3
+V19_SCENARIO_CONTRACT = {
+    "no_exclusion": {
+        "excluded_decisions": 0,
+        "retained_decisions": 13_200,
+        "affected_items": 0,
+        "remaining_repeat_count_distribution": {"5": 2_640},
+        "estimable": True,
+    },
+    "policy_singleton_only": {
+        "excluded_decisions": 122,
+        "retained_decisions": 13_078,
+        "affected_items": 120,
+        "remaining_repeat_count_distribution": {"2": 1, "4": 119, "5": 2_520},
+        "estimable": False,
+    },
+    "all_policy_packetization": {
+        "excluded_decisions": 167,
+        "retained_decisions": 13_033,
+        "affected_items": 164,
+        "remaining_repeat_count_distribution": {"2": 1, "3": 1, "4": 162, "5": 2_476},
+        "estimable": False,
+    },
+    "structured_replacement_only": {
+        "excluded_decisions": 51,
+        "retained_decisions": 13_149,
+        "affected_items": 51,
+        "remaining_repeat_count_distribution": {"4": 51, "5": 2_589},
+        "estimable": True,
+    },
+    "all_administration_deviations": {
+        "excluded_decisions": 218,
+        "retained_decisions": 12_982,
+        "affected_items": 213,
+        "remaining_repeat_count_distribution": {"2": 1, "3": 3, "4": 209, "5": 2_427},
+        "estimable": False,
+    },
+}
+V19_OFFENDING_ITEM = {
+    "source_item_id": "evil__rb__decodeonly__L14__c1over2|q14|e43",
+    "opaque_item_id": "if4834230e9fed80e4bf8",
+    "cell_id": "evil__rb__decodeonly__L14__c1over2",
+    "behavior": "evil",
+    "dose": 0.5,
+    "question_index": 14,
+    "effective_seed": 43,
+    "excluded_pass_indices": [0, 1, 2],
+    "retained_pass_indices": [3, 4],
+    "retained_repeats": 2,
+}
 
 
 Decision = tuple[str, int]
@@ -202,9 +252,10 @@ def _integrity_arrays_with_exclusions(items, outcomes, excluded: set[Decision]):
                 raise base.AnalysisError(
                     f"{item.source_item_id}: non-integer retained integrity outcome"
                 )
-            if len(kept) < 3:
+            if len(kept) < MIN_RETAINED_REPEATS:
                 raise base.AnalysisError(
-                    f"{item.source_item_id}: fewer than three integrity repeats remain"
+                    f"{item.source_item_id}: fewer than {MIN_RETAINED_REPEATS} "
+                    "integrity repeats remain"
                 )
             remaining_counts[len(kept)] += 1
             if len(kept) != base.N_PASSES:
@@ -226,6 +277,134 @@ def _integrity_arrays_with_exclusions(items, outcomes, excluded: set[Decision]):
             str(count): n_items for count, n_items in sorted(remaining_counts.items())
         },
     }
+
+
+def _exclusion_preflight(items, excluded: set[Decision]) -> dict:
+    """Determine estimability before computing any scenario statistics."""
+    by_opaque = {item.opaque_id: item for item in items}
+    if len(by_opaque) != len(items):
+        raise base.AnalysisError("sensitivity item registry contains duplicate opaque ids")
+    excluded_by_item: dict[str, set[int]] = {}
+    for opaque_id, pass_index in excluded:
+        if opaque_id not in by_opaque:
+            raise base.AnalysisError("sensitivity exclusion references an unknown item")
+        excluded_by_item.setdefault(opaque_id, set()).add(pass_index)
+    distribution = Counter()
+    offending = []
+    all_passes = set(range(base.N_PASSES))
+    for item in items:
+        excluded_passes = excluded_by_item.get(item.opaque_id, set())
+        retained_passes = all_passes - excluded_passes
+        distribution[len(retained_passes)] += 1
+        if len(retained_passes) < MIN_RETAINED_REPEATS:
+            offending.append(
+                {
+                    "source_item_id": item.source_item_id,
+                    "opaque_item_id": item.opaque_id,
+                    "cell_id": item.cell_id,
+                    "behavior": item.behavior,
+                    "dose": item.dose,
+                    "question_index": item.qi,
+                    "effective_seed": item.effective_seed,
+                    "excluded_pass_indices": sorted(excluded_passes),
+                    "retained_pass_indices": sorted(retained_passes),
+                    "retained_repeats": len(retained_passes),
+                }
+            )
+    return {
+        "minimum_retained_repeats": MIN_RETAINED_REPEATS,
+        "excluded_decisions": len(excluded),
+        "retained_decisions": EXPECTED_DECISIONS - len(excluded),
+        "affected_items": len(excluded_by_item),
+        "remaining_repeat_count_distribution": {
+            str(count): n_items for count, n_items in sorted(distribution.items())
+        },
+        "estimable": not offending,
+        "offending_items": offending,
+    }
+
+
+def _non_estimable_scenario(common: dict) -> dict:
+    """Represent a failed floor without computing or implying a verdict."""
+    if common.get("estimable") is not False or not common.get("offending_items"):
+        raise base.AnalysisError("non-estimable scenario requires an offending item")
+    return {
+        "status": "non_estimable_min_repeats",
+        "analysis_performed": False,
+        **common,
+        "selection": None,
+        "confirmation": None,
+        "stability": None,
+        "behaviors": None,
+        "comparison_to_primary": None,
+        "all_behaviors_stable": None,
+    }
+
+
+def _validate_v19_preflights(preflights: dict[str, dict]) -> None:
+    """Pin the approved realized accounting before any scenario analysis."""
+    if set(preflights) != set(V19_SCENARIO_CONTRACT):
+        raise base.AnalysisError("v19 sensitivity scenario set changed")
+    for name, expected in V19_SCENARIO_CONTRACT.items():
+        observed = preflights[name]
+        if observed.get("minimum_retained_repeats") != MIN_RETAINED_REPEATS:
+            raise base.AnalysisError(f"{name}: v19 repeat floor changed")
+        mismatches = {
+            key: (observed.get(key), value)
+            for key, value in expected.items()
+            if observed.get(key) != value
+        }
+        expected_offenders = [] if expected["estimable"] else [V19_OFFENDING_ITEM]
+        if observed.get("offending_items") != expected_offenders:
+            mismatches["offending_items"] = (
+                observed.get("offending_items"),
+                expected_offenders,
+            )
+        if mismatches:
+            raise base.AnalysisError(f"{name}: v19 sensitivity accounting changed: {mismatches}")
+
+
+def _analyze_scenarios(
+    items,
+    outcomes,
+    scenarios: dict[str, set[Decision]],
+    frozen_selection: dict,
+    provenance_sha256: str,
+) -> dict:
+    """Preflight all scenarios, then analyze only the two estimable sets."""
+    preflights = {
+        name: _exclusion_preflight(items, excluded) for name, excluded in scenarios.items()
+    }
+    _validate_v19_preflights(preflights)
+    scenario_results = {}
+    provenance_reference = {"location": "$.provenance", "sha256": provenance_sha256}
+    for name, excluded in scenarios.items():
+        preflight = preflights[name]
+        common = {
+            "excluded_decision_set_sha256": base._canonical_sha256(
+                sorted([list(decision) for decision in excluded])
+            ),
+            "recovery_provenance_reference": provenance_reference,
+            **preflight,
+        }
+        if not preflight["estimable"]:
+            scenario_results[name] = _non_estimable_scenario(common)
+            continue
+        arrays, accounting = _integrity_arrays_with_exclusions(items, outcomes, excluded)
+        expected_accounting = {
+            "affected_items": preflight["affected_items"],
+            "remaining_repeat_count_distribution": preflight["remaining_repeat_count_distribution"],
+        }
+        if accounting != expected_accounting:
+            raise base.AnalysisError(f"{name}: exclusion preflight accounting changed")
+        analysis = _quality_analysis(arrays, frozen_selection)
+        scenario_results[name] = {
+            "status": "estimable",
+            "analysis_performed": True,
+            **common,
+            **analysis,
+        }
+    return scenario_results
 
 
 def _fixed_primary_confirmation(
@@ -395,32 +574,41 @@ def run(args) -> Path:
     if len(outcomes) != len(items):
         raise base.AnalysisError(f"sensitivity integrity coverage {len(outcomes)}/{len(items)}")
     scenarios, provenance = _administration_sets(args, items, instrument, rubrics)
-    scenario_results = {}
-    for name, excluded in scenarios.items():
-        arrays, accounting = _integrity_arrays_with_exclusions(items, outcomes, excluded)
-        analysis = _quality_analysis(arrays, frozen_selection)
-        scenario_results[name] = {
-            "excluded_decisions": len(excluded),
-            "retained_decisions": EXPECTED_DECISIONS - len(excluded),
-            "excluded_decision_set_sha256": base._canonical_sha256(
-                sorted([list(decision) for decision in excluded])
-            ),
-            **accounting,
-            **analysis,
-        }
+    provenance_sha256 = base._canonical_sha256(provenance)
+    scenario_results = _analyze_scenarios(
+        items,
+        outcomes,
+        scenarios,
+        frozen_selection,
+        provenance_sha256,
+    )
     replay = _validate_no_exclusion_reproduction(
         root, scenario_results["no_exclusion"], frozen_selection
     )
     primary = scenario_results["no_exclusion"]
     for name, scenario in scenario_results.items():
+        if not scenario["analysis_performed"]:
+            continue
         comparison, stable = _comparison_to_primary(primary, scenario)
         scenario["comparison_to_primary"] = comparison
         scenario["all_behaviors_stable"] = stable
+    estimable_names = [name for name, scenario in scenario_results.items() if scenario["estimable"]]
+    non_estimable_names = [
+        name for name, scenario in scenario_results.items() if not scenario["estimable"]
+    ]
+    status = (
+        "partially_estimable"
+        if estimable_names and non_estimable_names
+        else "fully_estimable"
+        if estimable_names
+        else "non_estimable"
+    )
     artifact = {
         "version": SENSITIVITY_VERSION,
         "script_path": str(Path(__file__).resolve().relative_to(base._REPO_ROOT)),
         "script_sha256": base._sha256_file(Path(__file__).resolve()),
         "git_commit": base._git_commit(),
+        "status": status,
         "analysis": (
             "leave-administration-deviation-decision-out response-integrity influence audit"
         ),
@@ -430,6 +618,7 @@ def run(args) -> Path:
         ),
         "trait_scores_read": False,
         "expected_total_decisions": EXPECTED_DECISIONS,
+        "minimum_retained_repeats": MIN_RETAINED_REPEATS,
         "selection_questions": list(base.SELECTION_QUESTIONS),
         "confirmation_questions": list(base.CONFIRMATION_QUESTIONS),
         "mean_margin": base.MEAN_MARGIN,
@@ -437,10 +626,12 @@ def run(args) -> Path:
         "quality_simultaneous_level": base.QUALITY_CI_LEVEL,
         "n_bootstrap": base.N_BOOTSTRAP,
         "provenance": provenance,
+        "provenance_sha256": provenance_sha256,
         "no_exclusion_primary_reproduction": replay,
         "scenarios": scenario_results,
         "overall_stability": {
-            name: scenario["all_behaviors_stable"] for name, scenario in scenario_results.items()
+            name: (scenario["all_behaviors_stable"] if scenario["analysis_performed"] else None)
+            for name, scenario in scenario_results.items()
         },
     }
     output = root / "reduce" / "packetization_sensitivity.json"
