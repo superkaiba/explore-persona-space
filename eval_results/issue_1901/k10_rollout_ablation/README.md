@@ -2,6 +2,10 @@
 
 Increasing evaluation-target averaging from K=5 to K=10 raises held-out R² for both frozen maps. Corrected retrieval also rises in the observed bank, but the nonlinear map's retrieval change remains unresolved by its paired interval.
 
+[Combined K=1,2,3,4,5,10 curve](https://github.com/superkaiba/explore-persona-space/blob/codex/1901-k-rollout-ablation-20260907/figures/issue_1901/k_rollout_ablation_k1_to_10.png) · [Combined PDF](https://github.com/superkaiba/explore-persona-space/blob/codex/1901-k-rollout-ablation-20260907/figures/issue_1901/k_rollout_ablation_k1_to_10.pdf)
+
+The combined curve retains the original subset-averaged K=1–5 estimates and adds the all-ten-draw endpoint. Shading shows pointwise 95% context-bootstrap intervals conditional on the observed banks and fixed maps/pool; connecting lines guide the eye, and K=6–9 were not measured. Reproduce without rescoring: `uv run python scripts/issue1901_k_rollout_ablation.py --plot-through-k10`. Source hashes, compatibility checks, and exact plotted values are recorded in the figure's `.meta.json` sidecar.
+
 [Figure](https://github.com/superkaiba/explore-persona-space/blob/codex/1901-k-rollout-ablation-20260907/figures/issue_1901/k10_rollout_ablation.png) · [PDF](https://github.com/superkaiba/explore-persona-space/blob/codex/1901-k-rollout-ablation-20260907/figures/issue_1901/k10_rollout_ablation.pdf) · [Exact results](summary.json) · [Registered protocol](protocol.md)
 
 | Predictor | R², K=5 → K=10 | Corrected top-1, K=5 → K=10 |

@@ -7,6 +7,8 @@ average the subset-specific metrics; bootstrap intervals resample contexts,
 conditional on this five-draw bank and the fixed retrieval candidate pool.
 Fresh-only subsets (excluding the original draw used for deduplication) are
 reported as a selection-sensitivity check. This is not a training-K ablation.
+
+Use --plot-through-k10 to combine persisted K=1–5 and K=10 results without scoring.
 """
 
 from __future__ import annotations
@@ -288,28 +290,39 @@ def aggregate(masks, point, boot, correct, top5, retrieval_boot, *, fresh_only=F
     return {"per_k": result, "endpoint_contrast": f"K={last} minus K=1", "endpoint_deltas": deltas}
 
 
-def make_figure(summary: dict, stem: Path, *, include_baseline: bool = False) -> None:
+def make_figure(
+    summary: dict,
+    stem: Path,
+    *,
+    include_baseline: bool = False,
+    curve: dict | None = None,
+    source_metadata: dict | None = None,
+) -> None:
     """Render both outcome curves using the manuscript's shared visual system."""
     import matplotlib.pyplot as plt
+    from matplotlib.ticker import PercentFormatter
 
     from explore_persona_space.analysis import c2a_plot_style as style
 
     style.set_c2a_style()
-    fig, frac = style.c2a_figure("full", aspect=0.44)
+    fig, frac = style.c2a_figure("full", aspect=0.50 if curve is not None else 0.44)
     axes = fig.subplots(1, 2)
-    fig.subplots_adjust(left=0.08, right=0.98, bottom=0.20, top=0.78, wspace=0.28)
+    fig.subplots_adjust(
+        left=0.08, right=0.98, bottom=0.28 if curve is not None else 0.20, top=0.78, wspace=0.28
+    )
     roles = {"ridge": "linear", "mlp": "nonlinear", "identity_bias": "control"}
     labels = {"ridge": "Linear map", "mlp": "Nonlinear map", "identity_bias": "Identity + bias"}
-    cells = summary["all_subsets"]["per_k"]
+    cells = summary["all_subsets"]["per_k"] if curve is None else curve
+    ks = sorted(map(int, cells))
     for arm in ARMS if include_baseline else ARMS[:2]:
         series = style.ROLES[roles[arm]]
         for j, metric in enumerate(("r2", "top1")):
-            vals = [cells[str(k)]["arms"][arm] for k in range(1, 6)]
+            vals = [cells[str(k)]["arms"][arm] for k in ks]
             vals = [v["r2"] if j == 0 else v["retrieval"]["whiten_csls"] for v in vals]
             y = np.array([v["mean"] for v in vals])
             lo, hi = np.array([v["ci95"] for v in vals]).T
             axes[j].plot(
-                range(1, 6),
+                ks,
                 y,
                 color=series.color,
                 marker=series.marker,
@@ -319,14 +332,14 @@ def make_figure(summary: dict, stem: Path, *, include_baseline: bool = False) ->
                 linewidth=2,
                 markersize=7,
             )
-            axes[j].fill_between(range(1, 6), lo, hi, color=series.color, alpha=0.12, linewidth=0)
+            axes[j].fill_between(ks, lo, hi, color=series.color, alpha=0.12, linewidth=0)
     for ax, label in zip(axes, ("Held-out $R^2$", "Top-1 retrieval"), strict=True):
         style.style_axis(ax)
         ax.set(
             xlabel="Rollouts averaged, $K$",
             ylabel=style.better_label(label),
-            xticks=range(1, 6),
-            xlim=(0.8, 5.2),
+            xticks=ks,
+            xlim=(ks[0] - 0.3, ks[-1] + 0.3),
         )
     if include_baseline:
         axes[1].set_ylim(0, 1.03)
@@ -336,6 +349,7 @@ def make_figure(summary: dict, stem: Path, *, include_baseline: bool = False) ->
         axes[1].set_ylim(0.945, 0.995)
     axes[0].set_title("Variance explained", loc="left")
     axes[1].set_title("Answer identification", loc="left")
+    axes[1].yaxis.set_major_formatter(PercentFormatter(1, decimals=1))
     handles, names = axes[0].get_legend_handles_labels()
     fig.legend(
         handles, names, loc="upper center", bbox_to_anchor=(0.5, 0.97), ncol=3, frameon=False
@@ -348,11 +362,15 @@ def make_figure(summary: dict, stem: Path, *, include_baseline: bool = False) ->
         color=style.MUTED,
         fontsize=14,
     )
+    subject = "All subsets of five fixed on-policy draws; evaluation K only"
+    if curve is not None:
+        subject = "K=1–5: subset-averaged metrics from five draws; K=10: all ten draws"
+        fig.text(0.5, 0.085, subject, ha="center", color=style.MUTED, fontsize=14)
     exported = style.save_c2a_figure(
         fig,
         stem,
         title="Effect of rollout averaging on mapping quality",
-        subject="All subsets of five fixed on-policy draws; evaluation K only",
+        subject=subject,
         creator=Path(__file__).name,
         include_width=frac,
     )
@@ -361,27 +379,91 @@ def make_figure(summary: dict, stem: Path, *, include_baseline: bool = False) ->
         {
             **exported["record"],
             "plotted_arms": list(ARMS if include_baseline else ARMS[:2]),
-            "data": summary["all_subsets"],
+            "data": summary["all_subsets"] if curve is None else {"per_k": curve},
+            "plotted_k": ks,
+            "sources": source_metadata,
             "outputs_sha256": {k: FINAL._sha256(exported[k]) for k in ("pdf", "png", "grayscale")},
         },
     )
     plt.close(fig)
 
 
+def make_combined_figure(k5_path: Path, k10_path: Path, stem: Path) -> None:
+    """Join verified, persisted results without inference or metric recomputation."""
+    old, new = [json.loads(path.read_text()) for path in (k5_path, k10_path)]
+    for key in ("model", "layer", "n_train", "n_test", "whitening", "provenance", "chance_top1"):
+        if old[key] != new[key]:
+            raise ValueError(f"K=5/K=10 source mismatch: {key}")
+    if old["duplicate_audit"]["realized_n_pool"] != new["n_candidates"]:
+        raise ValueError("Retrieval pool sizes differ")
+    for key in ("n", "seed"):
+        if old["bootstrap"][key] != new["paired_bootstrap"][key]:
+            raise ValueError(f"Bootstrap {key} differs")
+    cells = old["all_subsets"]["per_k"]
+    if sorted(map(int, cells)) != [1, 2, 3, 4, 5]:
+        raise ValueError("Expected complete original K=1–5 results")
+    for arm in ARMS:
+        a, b = cells["5"]["arms"][arm], new["targets"]["existing_K5"][arm]
+        for metric in ("r2", *METRICS):
+            x, y = (
+                (a["r2"], b["r2"])
+                if metric == "r2"
+                else (a["retrieval"][metric], b["retrieval"][metric])
+            )
+            np.testing.assert_allclose(
+                [x["mean"], *x["ci95"]], [y["mean"], *y["ci95"]], atol=1e-10, rtol=0
+            )
+    curve = {**cells, "10": {"n_subsets": 1, "arms": new["targets"]["K10"]}}
+    sources = {
+        "input_files": [
+            {"path": str(path.resolve()), "sha256": FINAL._sha256(path)}
+            for path in (k5_path, k10_path)
+        ],
+        "producer_sha256": FINAL._sha256(Path(__file__)),
+        "shared_endpoint_parity": "PASS: all predictors/metrics, point estimates and intervals",
+        "scope": "Frozen maps; K=1–5 uses subsets of five draws; K=10 uses all ten draws",
+        "intervals": "Pointwise 95% context bootstrap, conditional on observed draws and fixed pool",
+        "unmeasured_k": [6, 7, 8, 9],
+        "chance_top1": new["chance_top1"],
+    }
+    make_figure(old, stem, curve=curve, source_metadata=sources)
+
+
 def main() -> None:
     """Run the pinned, analysis-only follow-up and persist reproducible outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--paths", type=Path, required=True)
+    parser.add_argument("--paths", type=Path)
+    parser.add_argument(
+        "--plot-through-k10", action="store_true", help="Plot persisted K=1–5,10 only"
+    )
+    parser.add_argument(
+        "--k5-summary",
+        type=Path,
+        default=ROOT / "eval_results/issue_1901/k_rollout_ablation/summary.json",
+    )
+    parser.add_argument(
+        "--k10-summary",
+        type=Path,
+        default=ROOT / "eval_results/issue_1901/k10_rollout_ablation/summary.json",
+    )
     parser.add_argument(
         "--out", type=Path, default=ROOT / "eval_results/issue_1901/k_rollout_ablation"
     )
-    parser.add_argument(
-        "--figure", type=Path, default=ROOT / "figures/issue_1901/k_rollout_ablation"
-    )
+    parser.add_argument("--figure", type=Path)
     parser.add_argument(
         "--tensor-out", type=Path, default=ROOT / "data/issue_1901/k_rollout_ablation"
     )
     args = parser.parse_args()
+    if args.figure is None:
+        name = "k_rollout_ablation_k1_to_10" if args.plot_through_k10 else "k_rollout_ablation"
+        args.figure = ROOT / "figures/issue_1901" / name
+    if args.plot_through_k10:
+        if args.paths is not None:
+            parser.error("--paths does not apply to --plot-through-k10")
+        make_combined_figure(args.k5_summary, args.k10_summary, args.figure)
+        return
+    if args.paths is None:
+        parser.error("--paths is required for scoring")
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     start = time.time()
     paths = {k: Path(v) for k, v in json.loads(args.paths.read_text()).items()}
