@@ -1,0 +1,24 @@
+{
+  "haiku_model": "claude-haiku-4-5-20251001",
+  "sonnet_model": "claude-sonnet-4-5-20250929",
+  "calibration_subset_hash": "de7d1281043972cfa55628c449fd4c4e9f468e89102e44418e333d59c3f3fc5a",
+  "calibration_subset_size": 1000,
+  "per_source_target": 167,
+  "kappa": 0.8902027027027026,
+  "kappa_accept_threshold": 0.7,
+  "kappa_flag_threshold": 0.5,
+  "confusion": {
+    "n": 1000,
+    "yes_yes": 124,
+    "yes_no": 0,
+    "no_yes": 26,
+    "no_no": 850,
+    "haiku_yes_rate": 0.124,
+    "sonnet_yes_rate": 0.15,
+    "raw_agreement": 0.974,
+    "expected_agreement": 0.7631999999999999
+  },
+  "git_commit_sha": "c2fa2e2e2a8a8efe298094d51367529745241f6b",
+  "hostname": "72fd535c0b49",
+  "timestamp_utc": "2026-05-28T05:33:53.845732+00:00"
+}
