@@ -2,18 +2,8 @@
 # Run under a detached process with stdin=/dev/null and a fresh dedicated log.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
-mode="${1:?development_a_pilot|development_b_pilot|development_a|development_b|fresh_a|fresh_b}"
-shift
-case "$mode" in
-  development_a_pilot) phase=development; arm=A; pilot_limit=16 ;;
-  development_b_pilot) phase=development; arm=B; pilot_limit=16 ;;
-  development_a) phase=development; arm=A; pilot_limit=null ;;
-  development_b) phase=development; arm=B; pilot_limit=null ;;
-  fresh_a) phase=fresh; arm=A; pilot_limit=null ;;
-  fresh_b) phase=fresh; arm=B; pilot_limit=null ;;
-  *) exit 2 ;;
-esac
-root="${EPM_CONTEXT_RISK_FOLLOWUP_ROOT:?fresh run root required}"
+mode=model_download
+root="${EPM_CONTEXT_RISK_FOLLOWUP_SETUP:?fresh run root required}"
 launch_id="${EPM_CONTEXT_RISK_LAUNCH_ID:?unique launch id required}"
 deadline="${EPM_CONTEXT_RISK_PROCESS_TIMEOUT_SECONDS:?whole-process deadline required}"
 [[ "$launch_id" =~ ^[a-zA-Z0-9_-]+$ ]] || exit 2
@@ -88,8 +78,7 @@ mv "$prefix.pid.tmp" "$prefix.pid"
 export UV_NO_SYNC=1
 echo "[supervisor-start] mode=$mode pid=$$ root=$root utc=$(date -u +%FT%TZ)"
 setsid timeout --kill-after=60s "$deadline" \
-  uv run --with 'inspect-ai==0.3.261' --with 'openai==3.7.0' python -m scripts.context_risk_followup "$@" \
-  operation=run "phase=$phase" "arm=$arm" "pilot_limit=$pilot_limit" &
+  uv run python -m scripts.context_risk_followup_download &
 worker_pid=$!
 printf '%s\n' "$worker_pid" > "$prefix.worker.pid.tmp"
 mv "$prefix.worker.pid.tmp" "$prefix.worker.pid"

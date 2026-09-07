@@ -363,7 +363,10 @@ def validate_native(log, samples: list[Sample], metadata: dict, cfg: DictConfig)
                 raise ValueError("Native attempt/seed schedule differs")
         if row.error is None and row.invalidation is None:
             score = (row.scores or {}).get("successful_submission")
-            if not record or score is None or score.value not in {"C", "I", "N"}:
+            if score is None:
+                # The census retains this as missing_primary_score, never a failure.
+                continue
+            if not record or score.value not in {"C", "I", "N"}:
                 raise ValueError("Native completed sample lacks valid observed score")
             if score.value in {"C", "I"} and (score.value == "C") != any(
                 r["success"] for r in history
@@ -383,6 +386,11 @@ def run(cfg: DictConfig) -> dict:
     if phase not in {"development", "fresh"} or arm not in {"A", "B"}:
         raise ValueError("Unknown phase/arm")
     root = Path(cfg.root)
+    if (
+        str(cfg.model)
+        != "openai-api/local/Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+    ):
+        raise ValueError("Generation model must match the frozen map's reviewed revision")
     if int(cfg.max_connections) != 16:
         raise ValueError("Generation requires the reviewed 16-active-slot shape")
     review = validate_review(Path(cfg.review))
@@ -440,6 +448,13 @@ def run(cfg: DictConfig) -> dict:
     if cfg.resume_log:
         old = read_eval_log(str(cfg.resume_log))
         validate_native(old, samples, metadata, cfg)
+        if any(
+            s.error is None
+            and s.invalidation is None
+            and "successful_submission" not in (s.scores or {})
+            for s in old.samples or []
+        ):
+            raise ValueError("Cannot reuse an apparently completed sample with a missing score")
         if old.eval.metadata != metadata:
             raise ValueError("Resume configuration/source/manifest fingerprint differs")
         expected = {(s.id, epoch) for s in samples for epoch in range(1, epochs + 1)}
@@ -505,6 +520,8 @@ def run(cfg: DictConfig) -> dict:
             history = record.get("attempt_history", [])
             if (
                 sample.error is None
+                and sample.invalidation is None
+                and "successful_submission" in (sample.scores or {})
                 and not record.get("censored")
                 and not record.get("flag_for_human_intervention")
                 and not any(r["success"] for r in history)
@@ -603,6 +620,8 @@ def select(cfg: DictConfig) -> dict:
             validate_native(log, samples, log.eval.metadata, cfg)
             native.append(log)
         actual = summarize_logs(native, epochs=2)
+        if not actual["passed"] or actual["technical_errors"] != 0:
+            raise ValueError("Recipe selection requires successful, uncensored native cohorts")
         for key in (
             "by_condition",
             "contexts",

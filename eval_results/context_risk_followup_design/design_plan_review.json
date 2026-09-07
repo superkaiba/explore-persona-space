@@ -1,0 +1,55 @@
+{
+  "reviewer": "/root/reward_harness_critic",
+  "reviewed_at": "2026-09-07T16:00:22.376795+00:00",
+  "verdict": "PASS",
+  "source": "eval_results/context_risk_followup_design/plan.md",
+  "source_sha256": "381dfaecca9432ffb642902ca03a064e325513eb81f7e1f953db4f0fb622475a",
+  "scope": "Bounded scientific-design review; no new approval request, model calls, fitting, provisioning or task mutations.",
+  "blocking_findings": [],
+  "verified_strengths": [
+    "All old20 tasks are development; 20 prior public_holdout tasks have zero overlap with them; remaining fresh training pool is63 tasks.",
+    "The frozen full cohort is996 trajectories and development240; variants/seeds remain grouped by base task.",
+    "Published ten-submission budget and exact promptA versusB wording independently verified from primary paper.",
+    "Same model/map, new-prefix captures, symmetric grouped C tuning, operational competence caveat, task-bootstrap uncertainty and map algebra are appropriate."
+  ],
+  "resolved_findings": [
+    {
+      "id": "manifest_fingerprint",
+      "finding": "Initial plan confused legacy canonical-row digest with file-byte SHA. Parent corrected plan to explicit shared-root path and current byte SHA.",
+      "file_byte_sha256": "3631d2b51f7fe610e26f674f2c036a74771761a1e8d5dd48d1103817fb10fb48"
+    },
+    {
+      "id": "fresh_censor_inference_rule",
+      "finding": "Fresh trajectories can be censored, but the primary risk-loss estimator/claim rule for those unknown outcomes is not defined. Dropping them may select on long or difficult histories.",
+      "required_fix": "Freeze either a zero-censor requirement for primary inference or an explicit censor-sensitivity/bounding rule. Retain every unknown outcome and make any complete-case result descriptive unless its scope is justified.",
+      "resolution": "Current plan requires zero fresh censoring and at least three positive-bearing and three negative-bearing eligible holdout tasks with both trajectory classes for benefit claims."
+    },
+    {
+      "id": "heldout_outcome_support",
+      "finding": "The current positive-log-loss-CI claim rule can declare benefit on a heldout cohort with no hacks, because log loss remains defined with one class. Sparse positive-bearing task support is also not included in the decision rule.",
+      "required_fix": "Keep valid descriptive losses, but explicitly limit or withhold successful-hack forecasting/mapping-benefit claims when heldout outcome/class-group support is inadequate. Fix any feasibility floor before outcomes; do not expand test seeds after looking.",
+      "resolution": "Current plan requires zero fresh censoring and at least three positive-bearing and three negative-bearing eligible holdout tasks with both trajectory classes for benefit claims."
+    }
+  ],
+  "implementation_notes": [
+    "The maximum fresh-training initial prompt is longer than the maximum old20 prompt: B characters37658 (task77 conflicting) versus22886 (task36 conflicting). Validate live token lengths across the entire fresh roster and add a fresh-training production-shape smoke if it changes the runtime regime.",
+    "Ten65536-token submissions can overflow262144 context tokens. Verify explicit context-budget censoring/no silent history truncation in the ten-submission fixture.",
+    "Freeze text-feature construction, metadata definitions, random-control seeds/count/operator and PCA-selection rule before fresh outcome inspection; optional post-positive diagnostics remain secondary.",
+    "The nominal16GPU-hour estimate is lower than the17.53 hours obtained by scaling the full12360-request maximum at prior average throughput; the measured production-shape pilot must resolve this before fresh dispatch."
+  ],
+  "primary_source": {
+    "url": "https://arxiv.org/html/2510.20270v1",
+    "sections": [
+      "2.4 Multiple Submissions",
+      "5.1 Table1"
+    ],
+    "verified": "Up to10 submissions; promptA adds passing all tests while retaining specification and test-modification prohibition. No Qwen rate inferred."
+  },
+  "model_calls": 0,
+  "probe_fits": 0,
+  "task_mutations": 0,
+  "previous_review": {
+    "verdict": "REVISE",
+    "source_sha256": "f3be65c70b1a43629229779d38bd8fb6e506684d7b51641a1694d5d4d271d7aa"
+  }
+}

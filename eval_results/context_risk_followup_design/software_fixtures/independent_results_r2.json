@@ -1,0 +1,161 @@
+{
+  "fixture_type": "software_only_mocked_native_records_never_experiment_results",
+  "model_calls": 0,
+  "http_calls": 0,
+  "source_hashes": {
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "configs/eval/context_risk_followup.yaml": "3e435740c63a580bd7ee058835e455586d22334183a0179219ff0d14034172cc",
+    "scripts/context_risk_followup_supervise.sh": "04326e2bdded90a62f061fcda90ba4ede2c226142b14b3f47cb0400f12b022cf",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c"
+  },
+  "fixture_source_sha256": "7bae8b636160d7a40d278c9a6c95cf2073215f71fe430cdd73e9959f213a5fed",
+  "cases": [
+    {
+      "name": "freeze_20_63_20_and_60_249_contexts",
+      "passed": true
+    },
+    {
+      "name": "repeat_freeze_rejected",
+      "passed": true
+    },
+    {
+      "name": "valid_native_record",
+      "passed": true
+    },
+    {
+      "name": "native_rejects_model",
+      "passed": true
+    },
+    {
+      "name": "native_rejects_endpoint",
+      "passed": true
+    },
+    {
+      "name": "native_rejects_provider_args",
+      "passed": true
+    },
+    {
+      "name": "native_rejects_temperature",
+      "passed": true
+    },
+    {
+      "name": "native_rejects_message_limit",
+      "passed": true
+    },
+    {
+      "name": "native_rejects_inspect_version",
+      "passed": true
+    },
+    {
+      "name": "native_rejects_duplicate_sample",
+      "passed": true
+    },
+    {
+      "name": "native_rejects_unexpected_epoch",
+      "passed": true
+    },
+    {
+      "name": "native_rejects_input",
+      "passed": true
+    },
+    {
+      "name": "native_rejects_first_message",
+      "passed": true
+    },
+    {
+      "name": "native_rejects_sample_metadata",
+      "passed": true
+    },
+    {
+      "name": "native_rejects_harness",
+      "passed": true
+    },
+    {
+      "name": "native_rejects_seed",
+      "passed": true
+    },
+    {
+      "name": "native_rejects_score_mismatch",
+      "passed": true
+    },
+    {
+      "name": "run_preserves_normal",
+      "passed": true
+    },
+    {
+      "name": "run_preserves_missing_score",
+      "passed": true
+    },
+    {
+      "name": "run_preserves_invalidation",
+      "passed": true
+    },
+    {
+      "name": "run_preserves_infrastructure",
+      "passed": true
+    },
+    {
+      "name": "run_preserves_truncation",
+      "passed": true
+    },
+    {
+      "name": "changed_prefix_rejected_without_overwrite",
+      "passed": true
+    },
+    {
+      "name": "run_rejects_unreviewed_model_revision",
+      "passed": true
+    },
+    {
+      "name": "complete_native_selection_and_tie_to_B",
+      "passed": true
+    },
+    {
+      "name": "selection_immutable",
+      "passed": true
+    },
+    {
+      "name": "fresh_rejects_stale_freeze",
+      "passed": true
+    },
+    {
+      "name": "fresh_rejects_changed_development",
+      "passed": true
+    },
+    {
+      "name": "selection_rejects_phase",
+      "passed": true
+    },
+    {
+      "name": "selection_rejects_sources",
+      "passed": true
+    },
+    {
+      "name": "selection_rejects_report_counts",
+      "passed": true
+    },
+    {
+      "name": "selection_rejects_native_digest",
+      "passed": true
+    },
+    {
+      "name": "selection_rejects_censored",
+      "passed": true
+    },
+    {
+      "name": "selection_rejects_failed_native_status",
+      "passed": true
+    },
+    {
+      "name": "supervisor_fake_uv_exit7_dispatch_and_cleanup",
+      "passed": true
+    },
+    {
+      "name": "supervisor_mode_overrides_conflicting_cli_arguments",
+      "passed": true
+    }
+  ],
+  "passed": true
+}
