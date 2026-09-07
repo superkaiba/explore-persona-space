@@ -591,7 +591,7 @@ def rrr_curves(spec: MapSpec, cache_dir: Path) -> dict[str, Any]:
     total_var = float(evals.sum())
     cum = np.cumsum(evals) / (total_var + 1e-30)
     return {
-        "key": spec.key,
+        "map_id": spec.key,
         "cell": spec.cell,
         "model": spec.model_label,
         "family": spec.family,
@@ -629,8 +629,17 @@ def _rrr_store() -> dict[str, dict[str, Any]]:
     global _RRR_STORE
     if _RRR_STORE is None:
         if DEFAULT_RRR_CURVES.exists():
-            recs = json.loads(DEFAULT_RRR_CURVES.read_text(encoding="utf-8"))["maps"]
-            _RRR_STORE = {r["key"]: r for r in recs}
+            payload = json.loads(DEFAULT_RRR_CURVES.read_text(encoding="utf-8"))
+            recs = payload["maps"]
+            migrated = any("map_id" not in rec for rec in recs)
+            recs = _normalize_records(recs)
+            if migrated:
+                payload["schema_version"] = "issue2588_rrr_rank_curves_v2"
+                payload["maps"] = recs
+                DEFAULT_RRR_CURVES.write_text(
+                    json.dumps(payload, indent=1) + "\n", encoding="utf-8"
+                )
+            _RRR_STORE = {r["map_id"]: r for r in recs}
         else:
             _RRR_STORE = {}
     return _RRR_STORE
@@ -648,8 +657,10 @@ def rrr_record(spec: MapSpec, cache_dir: Path) -> dict[str, Any]:
         DEFAULT_RRR_CURVES.write_text(
             json.dumps(
                 {
-                    "schema_version": "issue2588_rrr_rank_curves_v1",
-                    "maps": sorted(store.values(), key=lambda r: order.get(r["key"], 10**6)),
+                    "schema_version": "issue2588_rrr_rank_curves_v2",
+                    "maps": sorted(
+                        store.values(), key=lambda r: order.get(r["map_id"], 10**6)
+                    ),
                 },
                 indent=1,
             )
@@ -749,7 +760,7 @@ def analyze_map(spec: MapSpec, cache_dir: Path, *, max_rank: int, svd_iters: int
         }
 
     result = {
-        "key": spec.key,
+        "map_id": spec.key,
         "hf_revision": str(payload["hf_revision"]),
         "cell": spec.cell,
         "model": spec.model_label,
@@ -819,12 +830,22 @@ def exact_spearman_permutation(x: list[float], y: list[float]) -> dict[str, Any]
     for n <= 9, seeded Monte Carlo (200,000 relabelings) above that."""
     xa = np.asarray(x, dtype=np.float64)
     ya = np.asarray(y, dtype=np.float64)
-    observed = float(spearmanr(xa, ya).statistic)
     xr = rankdata(xa)
     yr = rankdata(ya)
-    xr = (xr - xr.mean()) / np.linalg.norm(xr - xr.mean())
+    xr = xr - xr.mean()
     yr = yr - yr.mean()
+    denom_x = np.linalg.norm(xr)
     denom_y = np.linalg.norm(yr)
+    if len(xa) < 2 or denom_x == 0.0 or denom_y == 0.0:
+        return {
+            "n": int(len(xa)),
+            "rho": None,
+            "two_sided_exact_permutation_p": None,
+            "n_permutations": 0,
+            "method": "undefined_constant_input",
+        }
+    observed = float(spearmanr(xa, ya).statistic)
+    xr = xr / denom_x
     exceed = 0
     if len(xa) <= 9:
         total = math.factorial(len(ya))
@@ -944,7 +965,7 @@ def summarize_trends(results: list[dict[str, Any]]) -> dict[str, Any]:
                 descriptive_partial_spearman(x, stable_ranks, dimensions)
             ),
             "warning": (
-                "n=9 and AA is correlated with width; partial coefficients are descriptive, "
+                f"n={len(rows)} and AA may be correlated with width; partial coefficients are descriptive, "
                 "not causal or independently powered. The same-width columns below are cleaner."
             ),
         }
@@ -1291,7 +1312,7 @@ def render_mapping_performance_figure(results: list[dict[str, Any]], output: Pat
     results = [
         r for r in results if r["family"] in QWEN_FIGURE_FAMILIES and r["aa_index"] is not None
     ]
-    missing = [r["key"] for r in results if "mapping_performance" not in r]
+    missing = [r["map_id"] for r in results if "mapping_performance" not in r]
     if missing:
         raise ValueError(
             "mapping_performance is missing; run --augment-existing first: " + ", ".join(missing)
@@ -1657,6 +1678,9 @@ def render_same_width_figure(results: list[dict[str, Any]], output: Path) -> Non
 
 def _normalize_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     for rec in records:
+        if "map_id" not in rec:
+            legacy_name = "map_key" if "map_key" in rec else "key"
+            rec["map_id"] = rec.pop(legacy_name)
         rec["family"] = LEGACY_FAMILY_LABELS.get(rec["family"], rec["family"])
     return records
 
@@ -1670,7 +1694,7 @@ def _render_all(results: list[dict[str, Any]], args) -> None:
 
 def _build_payload(results: list[dict[str, Any]], complete: bool, trends) -> dict[str, Any]:
     return {
-        "schema_version": "issue2588_mapping_rank_vs_capability_v3",
+        "schema_version": "issue2588_mapping_rank_vs_capability_v4",
         "complete_panel": complete,
         "source": {
             "parent_issue": 2588,
@@ -1757,7 +1781,7 @@ def main() -> None:
         payload = json.loads(args.out.read_text(encoding="utf-8"))
         by_key = {m.key: m for m in MAPS}
         for record in _normalize_records(payload["maps"]):
-            spec = by_key[record["key"]]
+            spec = by_key[record["map_id"]]
             record["measured_capability"] = _measured_gpqa_accuracy(spec)
             record["mapping_performance"] = _mapping_performance(spec)
         payload["trends"] = summarize_trends(payload["maps"])
@@ -1787,22 +1811,28 @@ def main() -> None:
                     f"not found at revision {HF_REVISION}"
                 )
                 print(f"[{m.key}] SKIP: {reason}", flush=True)
-                skipped.append({"key": m.key, "cell": m.cell, "reason": reason})
+                skipped.append({"map_id": m.key, "cell": m.cell, "reason": reason})
                 continue
         results.append(
             analyze_map(m, args.cache_dir, max_rank=args.max_rank, svd_iters=args.svd_iters)
         )
     if args.merge_into is not None:
         base = json.loads(args.merge_into.read_text(encoding="utf-8"))
-        fresh_keys = {r["key"] for r in results}
-        kept = [r for r in _normalize_records(base["maps"]) if r["key"] not in fresh_keys]
+        fresh_keys = {r["map_id"] for r in results}
+        kept = [
+            r
+            for r in _normalize_records(base["maps"])
+            if r["map_id"] not in fresh_keys
+        ]
         order = {m.key: i for i, m in enumerate(MAPS)}
-        results = sorted(kept + results, key=lambda r: order.get(r["key"], 10**6))
-    complete = {r["key"] for r in results} == {m.key for m in MAPS}
+        results = sorted(kept + results, key=lambda r: order.get(r["map_id"], 10**6))
+    complete = {r["map_id"] for r in results} == {m.key for m in MAPS}
     summarize = complete or args.allow_partial_render
     payload = _build_payload(results, complete, summarize_trends(results) if summarize else None)
     if not complete:
-        payload["missing_maps"] = sorted({m.key for m in MAPS} - {r["key"] for r in results})
+        payload["missing_maps"] = sorted(
+            {m.key for m in MAPS} - {r["map_id"] for r in results}
+        )
     if args.allow_partial_render:
         payload["skipped_maps"] = skipped
     args.out.parent.mkdir(parents=True, exist_ok=True)

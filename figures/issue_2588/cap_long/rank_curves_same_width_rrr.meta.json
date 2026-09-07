@@ -1,0 +1,7 @@
+{
+  "title": "Same-width column rank curves (reduced-rank regression)",
+  "method": "rrr",
+  "rows": "every hidden-size-5120 map; top row = retained fraction of full validation R2, bottom row = validation SSE ratio to the full map",
+  "x_axis": "rank kept as % of hidden dimension, log scale, 0.1% to 25%",
+  "public_url": "https://eps.superkaiba.com/tasks/2588/figure/rank_curves_same_width_rrr.png"
+}

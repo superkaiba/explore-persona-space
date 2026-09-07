@@ -1,0 +1,17 @@
+{
+  "title": "Fraction of hidden width needed by Qwen mappings",
+  "source_data": "eval_results/issue_2588/cap_long/mapping_rank_vs_capability.json",
+  "public_url": "https://eps.superkaiba.com/tasks/2588/figure/rank_fraction_vs_capability_all_models.png",
+  "scope": {
+    "n_maps": 10,
+    "n_scored_checkpoints": 6,
+    "omitted_checkpoint": "Qwen2.5-7B anchor (no Artificial Analysis index); DeepSeek V4 and GLM 5.3 rows (non-Qwen figure)"
+  },
+  "rank_definition": "reduced-rank regression: smallest rank k of the best rank-k linear map (fitted ridge map projected onto the top-k principal directions of its fitted training outputs) whose validation SSE is at most 10% above the full map's, divided by hidden dimension",
+  "caveats": [
+    "Most Artificial Analysis values in this panel are estimates.",
+    "Panel-wide association is confounded by hidden width; the Qwen squares share hidden size 5120 and 64 layers.",
+    "Points are single-map estimates; no fit-seed or generation-seed error bars are available."
+  ],
+  "accessibility": "Okabe-Ito colors plus redundant marker, fill, and line-style encodings; grayscale check saved alongside the figure."
+}

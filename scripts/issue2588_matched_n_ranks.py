@@ -176,7 +176,7 @@ def run_map(
             print(f"[{spec.key}] fit budget exhausted, stopping (resumable)", flush=True)
             return
         idx = None if seed is None else np.sort(perms[seed][:n])
-        fits[key] = RN.fit_subset(
+        fit = RN.fit_subset(
             spec,
             d=inputs["d"],
             layer=inputs["layer"],
@@ -192,6 +192,8 @@ def run_map(
             seed=seed,
             prod_expect=inputs["prod_expect"] if seed is None else None,
         )
+        fit["map_id"] = fit.pop("key")
+        fits[key] = fit
         budget[0] -= 1
         saver()
 
@@ -293,7 +295,7 @@ def save(
         key=lambda f: (cell_order[f["cell"]], f["n_train"], -1 if f["seed"] is None else f["seed"]),
     )
     payload = {
-        "schema_version": "issue2588_matched_n_ranks_v1",
+        "schema_version": "issue2588_matched_n_ranks_v2",
         "cap_profile": MR.CAP_PROFILE,
         "hf_revision": MR.HF_REVISION,
         "notes": NOTES,
@@ -313,7 +315,17 @@ def load() -> tuple[dict[str, dict[str, Any]], list[dict[str, str]]]:
     if not OUT_JSON.exists():
         return {}, []
     payload = json.loads(OUT_JSON.read_text(encoding="utf-8"))
-    return {r["id"]: r for r in payload["fits"]}, list(payload.get("skipped_maps", []))
+    fits = payload["fits"]
+    for fit in fits:
+        if "map_id" not in fit:
+            legacy_name = "map_key" if "map_key" in fit else "key"
+            fit["map_id"] = fit.pop(legacy_name)
+    skipped = list(payload.get("skipped_maps", []))
+    for entry in skipped:
+        if "map_id" not in entry:
+            legacy_name = "map_key" if "map_key" in entry else "key"
+            entry["map_id"] = entry.pop(legacy_name)
+    return {r["id"]: r for r in fits}, skipped
 
 
 def _err(lo: float, value: float, hi: float) -> list[list[float]]:
@@ -442,6 +454,11 @@ def main() -> None:
     parser.add_argument("--seeds", default=",".join(str(s) for s in DEFAULT_SEEDS))
     parser.add_argument("--max-new-fits", type=int, default=10**9)
     parser.add_argument("--render-only", action="store_true")
+    parser.add_argument(
+        "--prune-unselected",
+        action="store_true",
+        help="with --maps, retain only those cells in the checkpoint JSON and exit",
+    )
     args = parser.parse_args()
     n_grid = tuple(sorted({int(t) for t in args.n_grid.split(",") if t.strip()}))
     seeds = tuple(int(t) for t in args.seeds.split(",") if t.strip())
@@ -449,10 +466,20 @@ def main() -> None:
         raise SystemExit("--n-grid and --seeds must be non-empty")
     specs = resolve_specs(args.maps.split(",") if args.maps else None)
     fits, skipped = load()
+    if args.prune_unselected:
+        if not args.maps:
+            raise SystemExit("--prune-unselected requires --maps")
+        selected_cells = {spec.cell for spec in specs}
+        selected_keys = {spec.key for spec in specs}
+        fits = {fit_id: fit for fit_id, fit in fits.items() if fit["cell"] in selected_cells}
+        skipped = [entry for entry in skipped if entry["map_id"] in selected_keys]
+        save(fits, skipped, n_grid, seeds)
+        render_figure(fits, n_grid)
+        return
     if not args.render_only:
         RN.check_disk()
         requested = {s.key for s in specs}
-        skipped = [e for e in skipped if e["key"] not in requested]
+        skipped = [e for e in skipped if e["map_id"] not in requested]
         budget = [args.max_new_fits]
         saver = lambda: save(fits, skipped, n_grid, seeds)  # noqa: E731
         for spec in specs:
@@ -466,7 +493,7 @@ def main() -> None:
             except Exception as exc:
                 reason = f"{type(exc).__name__}: {exc}"
                 print(f"[{spec.key}] SKIPPED (data unavailable): {reason}", flush=True)
-                skipped.append({"key": spec.key, "error": reason})
+                skipped.append({"map_id": spec.key, "error": reason})
                 continue
             run_map(spec, inputs, fits, n_grid, seeds, budget, saver)
             del inputs

@@ -1,0 +1,875 @@
+{
+  "method": "rrr",
+  "method_title": "reduced-rank regression",
+  "maps": [
+    {
+      "map_id": "q35_27b_a__prompt_last",
+      "model": "Q3.5 27B",
+      "family": "Qwen h=5120 column",
+      "arm": "no-thinking",
+      "aa_index": 35,
+      "aa_status": "estimated",
+      "dimension": 5120,
+      "full_validation_r2": 0.7277029833642421,
+      "abs_0.02_gap_as_error_increase_pct": 7.344920721901737,
+      "compressibility_index_25pct": 0.9783134867435626,
+      "ranks": {
+        "R\u00b2 gap \u2264 0.01": {
+          "rank": 325,
+          "rank_fraction": 0.0634765625
+        },
+        "R\u00b2 gap \u2264 0.02 (current)": {
+          "rank": 203,
+          "rank_fraction": 0.0396484375
+        },
+        "keep \u2265 99% of R\u00b2": {
+          "rank": 392,
+          "rank_fraction": 0.0765625
+        },
+        "keep \u2265 97% of R\u00b2": {
+          "rank": 191,
+          "rank_fraction": 0.0373046875
+        },
+        "keep \u2265 95% of R\u00b2": {
+          "rank": 126,
+          "rank_fraction": 0.024609375
+        },
+        "error \u2264 +5%": {
+          "rank": 264,
+          "rank_fraction": 0.0515625
+        },
+        "error \u2264 +10%": {
+          "rank": 159,
+          "rank_fraction": 0.0310546875
+        },
+        "error \u2264 +20%": {
+          "rank": 84,
+          "rank_fraction": 0.01640625
+        }
+      }
+    },
+    {
+      "map_id": "q36_27b_a__prompt_last",
+      "model": "Q3.6 27B",
+      "family": "Qwen h=5120 column",
+      "arm": "no-thinking",
+      "aa_index": 38,
+      "aa_status": "measured",
+      "dimension": 5120,
+      "full_validation_r2": 0.6719304822341574,
+      "abs_0.02_gap_as_error_increase_pct": 6.096268905505225,
+      "compressibility_index_25pct": 0.9789242887420854,
+      "ranks": {
+        "R\u00b2 gap \u2264 0.01": {
+          "rank": 291,
+          "rank_fraction": 0.0568359375
+        },
+        "R\u00b2 gap \u2264 0.02 (current)": {
+          "rank": 185,
+          "rank_fraction": 0.0361328125
+        },
+        "keep \u2265 99% of R\u00b2": {
+          "rank": 366,
+          "rank_fraction": 0.071484375
+        },
+        "keep \u2265 97% of R\u00b2": {
+          "rank": 184,
+          "rank_fraction": 0.0359375
+        },
+        "keep \u2265 95% of R\u00b2": {
+          "rank": 123,
+          "rank_fraction": 0.0240234375
+        },
+        "error \u2264 +5%": {
+          "rank": 210,
+          "rank_fraction": 0.041015625
+        },
+        "error \u2264 +10%": {
+          "rank": 125,
+          "rank_fraction": 0.0244140625
+        },
+        "error \u2264 +20%": {
+          "rank": 64,
+          "rank_fraction": 0.0125
+        }
+      }
+    },
+    {
+      "map_id": "q38_27b_a__prompt_last",
+      "model": "Q3.8 27B",
+      "family": "Qwen h=5120 column",
+      "arm": "no-thinking",
+      "aa_index": 52,
+      "aa_status": "measured",
+      "dimension": 5120,
+      "full_validation_r2": 0.6795636795588134,
+      "abs_0.02_gap_as_error_increase_pct": 6.241489720161367,
+      "compressibility_index_25pct": 0.9732321196284424,
+      "ranks": {
+        "R\u00b2 gap \u2264 0.01": {
+          "rank": 372,
+          "rank_fraction": 0.07265625
+        },
+        "R\u00b2 gap \u2264 0.02 (current)": {
+          "rank": 232,
+          "rank_fraction": 0.0453125
+        },
+        "keep \u2265 99% of R\u00b2": {
+          "rank": 473,
+          "rank_fraction": 0.0923828125
+        },
+        "keep \u2265 97% of R\u00b2": {
+          "rank": 229,
+          "rank_fraction": 0.0447265625
+        },
+        "keep \u2265 95% of R\u00b2": {
+          "rank": 154,
+          "rank_fraction": 0.030078125
+        },
+        "error \u2264 +5%": {
+          "rank": 273,
+          "rank_fraction": 0.0533203125
+        },
+        "error \u2264 +10%": {
+          "rank": 162,
+          "rank_fraction": 0.031640625
+        },
+        "error \u2264 +20%": {
+          "rank": 86,
+          "rank_fraction": 0.016796875
+        }
+      }
+    },
+    {
+      "map_id": "q35_27b_b__cot_boundary",
+      "model": "Q3.5 27B",
+      "family": "Qwen h=5120 column",
+      "arm": "end-of-thought",
+      "aa_index": 35,
+      "aa_status": "estimated",
+      "dimension": 5120,
+      "full_validation_r2": 0.7669401716131432,
+      "abs_0.02_gap_as_error_increase_pct": 8.58148748260551,
+      "compressibility_index_25pct": 0.988600964468767,
+      "ranks": {
+        "R\u00b2 gap \u2264 0.01": {
+          "rank": 169,
+          "rank_fraction": 0.0330078125
+        },
+        "R\u00b2 gap \u2264 0.02 (current)": {
+          "rank": 112,
+          "rank_fraction": 0.021875
+        },
+        "keep \u2265 99% of R\u00b2": {
+          "rank": 191,
+          "rank_fraction": 0.0373046875
+        },
+        "keep \u2265 97% of R\u00b2": {
+          "rank": 102,
+          "rank_fraction": 0.019921875
+        },
+        "keep \u2265 95% of R\u00b2": {
+          "rank": 70,
+          "rank_fraction": 0.013671875
+        },
+        "error \u2264 +5%": {
+          "rank": 155,
+          "rank_fraction": 0.0302734375
+        },
+        "error \u2264 +10%": {
+          "rank": 101,
+          "rank_fraction": 0.0197265625
+        },
+        "error \u2264 +20%": {
+          "rank": 59,
+          "rank_fraction": 0.0115234375
+        }
+      }
+    },
+    {
+      "map_id": "q36_27b_b__cot_boundary",
+      "model": "Q3.6 27B",
+      "family": "Qwen h=5120 column",
+      "arm": "end-of-thought",
+      "aa_index": 38,
+      "aa_status": "measured",
+      "dimension": 5120,
+      "full_validation_r2": 0.7629604370682046,
+      "abs_0.02_gap_as_error_increase_pct": 8.43741008995815,
+      "compressibility_index_25pct": 0.9890813610662497,
+      "ranks": {
+        "R\u00b2 gap \u2264 0.01": {
+          "rank": 154,
+          "rank_fraction": 0.030078125
+        },
+        "R\u00b2 gap \u2264 0.02 (current)": {
+          "rank": 103,
+          "rank_fraction": 0.0201171875
+        },
+        "keep \u2265 99% of R\u00b2": {
+          "rank": 177,
+          "rank_fraction": 0.0345703125
+        },
+        "keep \u2265 97% of R\u00b2": {
+          "rank": 96,
+          "rank_fraction": 0.01875
+        },
+        "keep \u2265 95% of R\u00b2": {
+          "rank": 68,
+          "rank_fraction": 0.01328125
+        },
+        "error \u2264 +5%": {
+          "rank": 140,
+          "rank_fraction": 0.02734375
+        },
+        "error \u2264 +10%": {
+          "rank": 93,
+          "rank_fraction": 0.0181640625
+        },
+        "error \u2264 +20%": {
+          "rank": 56,
+          "rank_fraction": 0.0109375
+        }
+      }
+    },
+    {
+      "map_id": "q38_27b_b__cot_boundary",
+      "model": "Q3.8 27B",
+      "family": "Qwen h=5120 column",
+      "arm": "end-of-thought",
+      "aa_index": 52,
+      "aa_status": "measured",
+      "dimension": 5120,
+      "full_validation_r2": 0.7550459500712615,
+      "abs_0.02_gap_as_error_increase_pct": 8.164796624435628,
+      "compressibility_index_25pct": 0.9847092804173095,
+      "ranks": {
+        "R\u00b2 gap \u2264 0.01": {
+          "rank": 207,
+          "rank_fraction": 0.0404296875
+        },
+        "R\u00b2 gap \u2264 0.02 (current)": {
+          "rank": 146,
+          "rank_fraction": 0.028515625
+        },
+        "keep \u2265 99% of R\u00b2": {
+          "rank": 230,
+          "rank_fraction": 0.044921875
+        },
+        "keep \u2265 97% of R\u00b2": {
+          "rank": 136,
+          "rank_fraction": 0.0265625
+        },
+        "keep \u2265 95% of R\u00b2": {
+          "rank": 94,
+          "rank_fraction": 0.018359375
+        },
+        "error \u2264 +5%": {
+          "rank": 190,
+          "rank_fraction": 0.037109375
+        },
+        "error \u2264 +10%": {
+          "rank": 128,
+          "rank_fraction": 0.025
+        },
+        "error \u2264 +20%": {
+          "rank": 77,
+          "rank_fraction": 0.0150390625
+        }
+      }
+    },
+    {
+      "map_id": "q25_32b_a__prompt_last",
+      "model": "Q2.5 32B",
+      "family": "Qwen h=5120 column",
+      "arm": "no-thinking",
+      "aa_index": 7,
+      "aa_status": "measured",
+      "dimension": 5120,
+      "full_validation_r2": 0.7158028271778374,
+      "abs_0.02_gap_as_error_increase_pct": 7.037367684341839,
+      "compressibility_index_25pct": 0.9810906721993295,
+      "ranks": {
+        "R\u00b2 gap \u2264 0.01": {
+          "rank": 263,
+          "rank_fraction": 0.0513671875
+        },
+        "R\u00b2 gap \u2264 0.02 (current)": {
+          "rank": 170,
+          "rank_fraction": 0.033203125
+        },
+        "keep \u2265 99% of R\u00b2": {
+          "rank": 320,
+          "rank_fraction": 0.0625
+        },
+        "keep \u2265 97% of R\u00b2": {
+          "rank": 162,
+          "rank_fraction": 0.031640625
+        },
+        "keep \u2265 95% of R\u00b2": {
+          "rank": 110,
+          "rank_fraction": 0.021484375
+        },
+        "error \u2264 +5%": {
+          "rank": 213,
+          "rank_fraction": 0.0416015625
+        },
+        "error \u2264 +10%": {
+          "rank": 132,
+          "rank_fraction": 0.02578125
+        },
+        "error \u2264 +20%": {
+          "rank": 73,
+          "rank_fraction": 0.0142578125
+        }
+      }
+    },
+    {
+      "map_id": "q3_32b_a__prompt_last",
+      "model": "Q3 32B",
+      "family": "Qwen h=5120 column",
+      "arm": "no-thinking",
+      "aa_index": 11,
+      "aa_status": "measured",
+      "dimension": 5120,
+      "full_validation_r2": 0.691101654389941,
+      "abs_0.02_gap_as_error_increase_pct": 6.474621921493618,
+      "compressibility_index_25pct": 0.9805896855432624,
+      "ranks": {
+        "R\u00b2 gap \u2264 0.01": {
+          "rank": 250,
+          "rank_fraction": 0.048828125
+        },
+        "R\u00b2 gap \u2264 0.02 (current)": {
+          "rank": 166,
+          "rank_fraction": 0.032421875
+        },
+        "keep \u2265 99% of R\u00b2": {
+          "rank": 316,
+          "rank_fraction": 0.06171875
+        },
+        "keep \u2265 97% of R\u00b2": {
+          "rank": 164,
+          "rank_fraction": 0.03203125
+        },
+        "keep \u2265 95% of R\u00b2": {
+          "rank": 114,
+          "rank_fraction": 0.022265625
+        },
+        "error \u2264 +5%": {
+          "rank": 193,
+          "rank_fraction": 0.0376953125
+        },
+        "error \u2264 +10%": {
+          "rank": 123,
+          "rank_fraction": 0.0240234375
+        },
+        "error \u2264 +20%": {
+          "rank": 69,
+          "rank_fraction": 0.0134765625
+        }
+      }
+    },
+    {
+      "map_id": "q3_32b_b__cot_boundary",
+      "model": "Q3 32B",
+      "family": "Qwen h=5120 column",
+      "arm": "end-of-thought",
+      "aa_index": 11,
+      "aa_status": "measured",
+      "dimension": 5120,
+      "full_validation_r2": 0.6809330401473526,
+      "abs_0.02_gap_as_error_increase_pct": 6.268276730764121,
+      "compressibility_index_25pct": 0.9882123758159772,
+      "ranks": {
+        "R\u00b2 gap \u2264 0.01": {
+          "rank": 140,
+          "rank_fraction": 0.02734375
+        },
+        "R\u00b2 gap \u2264 0.02 (current)": {
+          "rank": 98,
+          "rank_fraction": 0.019140625
+        },
+        "keep \u2265 99% of R\u00b2": {
+          "rank": 162,
+          "rank_fraction": 0.031640625
+        },
+        "keep \u2265 97% of R\u00b2": {
+          "rank": 97,
+          "rank_fraction": 0.0189453125
+        },
+        "keep \u2265 95% of R\u00b2": {
+          "rank": 70,
+          "rank_fraction": 0.013671875
+        },
+        "error \u2264 +5%": {
+          "rank": 112,
+          "rank_fraction": 0.021875
+        },
+        "error \u2264 +10%": {
+          "rank": 73,
+          "rank_fraction": 0.0142578125
+        },
+        "error \u2264 +20%": {
+          "rank": 43,
+          "rank_fraction": 0.0083984375
+        }
+      }
+    },
+    {
+      "map_id": "qwq_32b_b__cot_boundary",
+      "model": "QwQ 32B",
+      "family": "Qwen h=5120 column",
+      "arm": "end-of-thought",
+      "aa_index": 13,
+      "aa_status": "measured",
+      "dimension": 5120,
+      "full_validation_r2": 0.666934498345398,
+      "abs_0.02_gap_as_error_increase_pct": 6.004824846957744,
+      "compressibility_index_25pct": 0.9902225473579807,
+      "ranks": {
+        "R\u00b2 gap \u2264 0.01": {
+          "rank": 102,
+          "rank_fraction": 0.019921875
+        },
+        "R\u00b2 gap \u2264 0.02 (current)": {
+          "rank": 78,
+          "rank_fraction": 0.015234375
+        },
+        "keep \u2265 99% of R\u00b2": {
+          "rank": 115,
+          "rank_fraction": 0.0224609375
+        },
+        "keep \u2265 97% of R\u00b2": {
+          "rank": 78,
+          "rank_fraction": 0.015234375
+        },
+        "keep \u2265 95% of R\u00b2": {
+          "rank": 59,
+          "rank_fraction": 0.0115234375
+        },
+        "error \u2264 +5%": {
+          "rank": 85,
+          "rank_fraction": 0.0166015625
+        },
+        "error \u2264 +10%": {
+          "rank": 59,
+          "rank_fraction": 0.0115234375
+        },
+        "error \u2264 +20%": {
+          "rank": 34,
+          "rank_fraction": 0.006640625
+        }
+      }
+    },
+    {
+      "map_id": "o3_32b_t_b__cot_boundary",
+      "model": "OLMo3 32B T",
+      "family": "OLMo",
+      "arm": "end-of-thought",
+      "aa_index": 6,
+      "aa_status": "measured",
+      "dimension": 5120,
+      "full_validation_r2": 0.6833177287751633,
+      "abs_0.02_gap_as_error_increase_pct": 6.315478262374999,
+      "compressibility_index_25pct": 0.9722672324015771,
+      "ranks": {
+        "R\u00b2 gap \u2264 0.01": {
+          "rank": 379,
+          "rank_fraction": 0.0740234375
+        },
+        "R\u00b2 gap \u2264 0.02 (current)": {
+          "rank": 255,
+          "rank_fraction": 0.0498046875
+        },
+        "keep \u2265 99% of R\u00b2": {
+          "rank": 452,
+          "rank_fraction": 0.08828125
+        },
+        "keep \u2265 97% of R\u00b2": {
+          "rank": 251,
+          "rank_fraction": 0.0490234375
+        },
+        "keep \u2265 95% of R\u00b2": {
+          "rank": 175,
+          "rank_fraction": 0.0341796875
+        },
+        "error \u2264 +5%": {
+          "rank": 299,
+          "rank_fraction": 0.0583984375
+        },
+        "error \u2264 +10%": {
+          "rank": 185,
+          "rank_fraction": 0.0361328125
+        },
+        "error \u2264 +20%": {
+          "rank": 103,
+          "rank_fraction": 0.0201171875
+        }
+      }
+    }
+  ],
+  "trends": {
+    "no-thinking": {
+      "rules": {
+        "R\u00b2 gap \u2264 0.01": {
+          "same_width_qwen_column": {
+            "n": 5,
+            "rho": 0.7999999999999999,
+            "p_asymptotic": 0.10408803866182788
+          },
+          "same_width_all_families": {
+            "n": 5,
+            "rho": 0.7999999999999999,
+            "p_asymptotic": 0.10408803866182788
+          },
+          "panel": {
+            "n": 5,
+            "rho": 0.7999999999999999,
+            "p_asymptotic": 0.10408803866182788
+          }
+        },
+        "R\u00b2 gap \u2264 0.02 (current)": {
+          "same_width_qwen_column": {
+            "n": 5,
+            "rho": 0.7999999999999999,
+            "p_asymptotic": 0.10408803866182788
+          },
+          "same_width_all_families": {
+            "n": 5,
+            "rho": 0.7999999999999999,
+            "p_asymptotic": 0.10408803866182788
+          },
+          "panel": {
+            "n": 5,
+            "rho": 0.7999999999999999,
+            "p_asymptotic": 0.10408803866182788
+          }
+        },
+        "keep \u2265 99% of R\u00b2": {
+          "same_width_qwen_column": {
+            "n": 5,
+            "rho": 0.7999999999999999,
+            "p_asymptotic": 0.10408803866182788
+          },
+          "same_width_all_families": {
+            "n": 5,
+            "rho": 0.7999999999999999,
+            "p_asymptotic": 0.10408803866182788
+          },
+          "panel": {
+            "n": 5,
+            "rho": 0.7999999999999999,
+            "p_asymptotic": 0.10408803866182788
+          }
+        },
+        "keep \u2265 97% of R\u00b2": {
+          "same_width_qwen_column": {
+            "n": 5,
+            "rho": 0.8999999999999998,
+            "p_asymptotic": 0.03738607346849874
+          },
+          "same_width_all_families": {
+            "n": 5,
+            "rho": 0.8999999999999998,
+            "p_asymptotic": 0.03738607346849874
+          },
+          "panel": {
+            "n": 5,
+            "rho": 0.8999999999999998,
+            "p_asymptotic": 0.03738607346849874
+          }
+        },
+        "keep \u2265 95% of R\u00b2": {
+          "same_width_qwen_column": {
+            "n": 5,
+            "rho": 0.8999999999999998,
+            "p_asymptotic": 0.03738607346849874
+          },
+          "same_width_all_families": {
+            "n": 5,
+            "rho": 0.8999999999999998,
+            "p_asymptotic": 0.03738607346849874
+          },
+          "panel": {
+            "n": 5,
+            "rho": 0.8999999999999998,
+            "p_asymptotic": 0.03738607346849874
+          }
+        },
+        "error \u2264 +5%": {
+          "same_width_qwen_column": {
+            "n": 5,
+            "rho": 0.49999999999999994,
+            "p_asymptotic": 0.3910022189557703
+          },
+          "same_width_all_families": {
+            "n": 5,
+            "rho": 0.49999999999999994,
+            "p_asymptotic": 0.3910022189557703
+          },
+          "panel": {
+            "n": 5,
+            "rho": 0.49999999999999994,
+            "p_asymptotic": 0.3910022189557703
+          }
+        },
+        "error \u2264 +10%": {
+          "same_width_qwen_column": {
+            "n": 5,
+            "rho": 0.49999999999999994,
+            "p_asymptotic": 0.3910022189557703
+          },
+          "same_width_all_families": {
+            "n": 5,
+            "rho": 0.49999999999999994,
+            "p_asymptotic": 0.3910022189557703
+          },
+          "panel": {
+            "n": 5,
+            "rho": 0.49999999999999994,
+            "p_asymptotic": 0.3910022189557703
+          }
+        },
+        "error \u2264 +20%": {
+          "same_width_qwen_column": {
+            "n": 5,
+            "rho": 0.3,
+            "p_asymptotic": 0.623837664781073
+          },
+          "same_width_all_families": {
+            "n": 5,
+            "rho": 0.3,
+            "p_asymptotic": 0.623837664781073
+          },
+          "panel": {
+            "n": 5,
+            "rho": 0.3,
+            "p_asymptotic": 0.623837664781073
+          }
+        }
+      },
+      "compressibility_index_25pct": {
+        "same_width_qwen_column": {
+          "n": 5,
+          "rho": -0.8999999999999998,
+          "p_asymptotic": 0.03738607346849874
+        },
+        "same_width_all_families": {
+          "n": 5,
+          "rho": -0.8999999999999998,
+          "p_asymptotic": 0.03738607346849874
+        },
+        "panel": {
+          "n": 5,
+          "rho": -0.8999999999999998,
+          "p_asymptotic": 0.03738607346849874
+        }
+      }
+    },
+    "end-of-thought": {
+      "rules": {
+        "R\u00b2 gap \u2264 0.01": {
+          "same_width_qwen_column": {
+            "n": 5,
+            "rho": 0.7999999999999999,
+            "p_asymptotic": 0.10408803866182788
+          },
+          "same_width_all_families": {
+            "n": 6,
+            "rho": 0.028571428571428574,
+            "p_asymptotic": 0.9571545189504373
+          },
+          "panel": {
+            "n": 6,
+            "rho": 0.028571428571428574,
+            "p_asymptotic": 0.9571545189504373
+          }
+        },
+        "R\u00b2 gap \u2264 0.02 (current)": {
+          "same_width_qwen_column": {
+            "n": 5,
+            "rho": 0.7999999999999999,
+            "p_asymptotic": 0.10408803866182788
+          },
+          "same_width_all_families": {
+            "n": 6,
+            "rho": 0.028571428571428574,
+            "p_asymptotic": 0.9571545189504373
+          },
+          "panel": {
+            "n": 6,
+            "rho": 0.028571428571428574,
+            "p_asymptotic": 0.9571545189504373
+          }
+        },
+        "keep \u2265 99% of R\u00b2": {
+          "same_width_qwen_column": {
+            "n": 5,
+            "rho": 0.7999999999999999,
+            "p_asymptotic": 0.10408803866182788
+          },
+          "same_width_all_families": {
+            "n": 6,
+            "rho": 0.028571428571428574,
+            "p_asymptotic": 0.9571545189504373
+          },
+          "panel": {
+            "n": 6,
+            "rho": 0.028571428571428574,
+            "p_asymptotic": 0.9571545189504373
+          }
+        },
+        "keep \u2265 97% of R\u00b2": {
+          "same_width_qwen_column": {
+            "n": 5,
+            "rho": 0.49999999999999994,
+            "p_asymptotic": 0.3910022189557703
+          },
+          "same_width_all_families": {
+            "n": 6,
+            "rho": -0.14285714285714288,
+            "p_asymptotic": 0.7871720116618076
+          },
+          "panel": {
+            "n": 6,
+            "rho": -0.14285714285714288,
+            "p_asymptotic": 0.7871720116618076
+          }
+        },
+        "keep \u2265 95% of R\u00b2": {
+          "same_width_qwen_column": {
+            "n": 5,
+            "rho": 0.41039134083406165,
+            "p_asymptotic": 0.49253578170279755
+          },
+          "same_width_all_families": {
+            "n": 6,
+            "rho": -0.20291986247835697,
+            "p_asymptotic": 0.699797968157019
+          },
+          "panel": {
+            "n": 6,
+            "rho": -0.20291986247835697,
+            "p_asymptotic": 0.699797968157019
+          }
+        },
+        "error \u2264 +5%": {
+          "same_width_qwen_column": {
+            "n": 5,
+            "rho": 0.7999999999999999,
+            "p_asymptotic": 0.10408803866182788
+          },
+          "same_width_all_families": {
+            "n": 6,
+            "rho": 0.028571428571428574,
+            "p_asymptotic": 0.9571545189504373
+          },
+          "panel": {
+            "n": 6,
+            "rho": 0.028571428571428574,
+            "p_asymptotic": 0.9571545189504373
+          }
+        },
+        "error \u2264 +10%": {
+          "same_width_qwen_column": {
+            "n": 5,
+            "rho": 0.7999999999999999,
+            "p_asymptotic": 0.10408803866182788
+          },
+          "same_width_all_families": {
+            "n": 6,
+            "rho": 0.028571428571428574,
+            "p_asymptotic": 0.9571545189504373
+          },
+          "panel": {
+            "n": 6,
+            "rho": 0.028571428571428574,
+            "p_asymptotic": 0.9571545189504373
+          }
+        },
+        "error \u2264 +20%": {
+          "same_width_qwen_column": {
+            "n": 5,
+            "rho": 0.7999999999999999,
+            "p_asymptotic": 0.10408803866182788
+          },
+          "same_width_all_families": {
+            "n": 6,
+            "rho": 0.028571428571428574,
+            "p_asymptotic": 0.9571545189504373
+          },
+          "panel": {
+            "n": 6,
+            "rho": 0.028571428571428574,
+            "p_asymptotic": 0.9571545189504373
+          }
+        }
+      },
+      "compressibility_index_25pct": {
+        "same_width_qwen_column": {
+          "n": 5,
+          "rho": -0.3,
+          "p_asymptotic": 0.623837664781073
+        },
+        "same_width_all_families": {
+          "n": 6,
+          "rho": 0.2571428571428572,
+          "p_asymptotic": 0.6227871720116619
+        },
+        "panel": {
+          "n": 6,
+          "rho": 0.2571428571428572,
+          "p_asymptotic": 0.6227871720116619
+        }
+      }
+    }
+  },
+  "source": {
+    "input": "eval_results/issue_2588/cap_long/rrr_rank_curves.json",
+    "n_maps": 11,
+    "rules": [
+      {
+        "label": "R\u00b2 gap \u2264 0.01",
+        "kind": "abs",
+        "param": 0.01
+      },
+      {
+        "label": "R\u00b2 gap \u2264 0.02 (current)",
+        "kind": "abs",
+        "param": 0.02
+      },
+      {
+        "label": "keep \u2265 99% of R\u00b2",
+        "kind": "retain",
+        "param": 0.99
+      },
+      {
+        "label": "keep \u2265 97% of R\u00b2",
+        "kind": "retain",
+        "param": 0.97
+      },
+      {
+        "label": "keep \u2265 95% of R\u00b2",
+        "kind": "retain",
+        "param": 0.95
+      },
+      {
+        "label": "error \u2264 +5%",
+        "kind": "error",
+        "param": 0.05
+      },
+      {
+        "label": "error \u2264 +10%",
+        "kind": "error",
+        "param": 0.1
+      },
+      {
+        "label": "error \u2264 +20%",
+        "kind": "error",
+        "param": 0.2
+      }
+    ],
+    "compressibility_index": "area under (rank-k validation R2 / full R2) versus rank fraction over [0, 0.25], divided by 0.25; 1.0 = full R2 at rank 0"
+  }
+}

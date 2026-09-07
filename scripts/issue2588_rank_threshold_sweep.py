@@ -110,7 +110,7 @@ def records_from_truncated(payload: dict[str, Any]) -> list[dict[str, Any]]:
     for m in payload["maps"]:
         out.append(
             {
-                "key": m["key"],
+                "map_id": m["map_id"],
                 "model": m["model"],
                 "family": m["family"],
                 "arm": m["arm"],
@@ -133,7 +133,7 @@ def records_from_rrr(payload: dict[str, Any]) -> list[dict[str, Any]]:
     for m in payload["maps"]:
         out.append(
             {
-                "key": m["key"],
+                "map_id": m["map_id"],
                 "model": m["model"],
                 "family": m["family"],
                 "arm": m["arm"],
@@ -447,7 +447,7 @@ def render_sweep(analysis: dict[str, Any], output: Path) -> None:
 def render_method_comparison(trunc: dict[str, Any], rrr: dict[str, Any], output: Path) -> None:
     """Truncated ridge vs reduced-rank regression, same-width rows, two rules."""
     _style()
-    by_key = {r["key"]: r for r in rrr["maps"]}
+    by_key = {r["map_id"]: r for r in rrr["maps"]}
     fig, axes = plt.subplots(
         2, len(COMPARISON_RULES), figsize=(4.6 * len(COMPARISON_RULES), 6.2), sharex=True
     )
@@ -455,12 +455,14 @@ def render_method_comparison(trunc: dict[str, Any], rrr: dict[str, Any], output:
         rows = [
             r
             for r in trunc["maps"]
-            if r["dimension"] == SAME_WIDTH_DIM and r["arm"] == arm and r["key"] in by_key
+            if r["dimension"] == SAME_WIDTH_DIM
+            and r["arm"] == arm
+            and r["map_id"] in by_key
         ]
         for col, label in enumerate(COMPARISON_RULES):
             ax = axes[row, col]
             for r in rows:
-                t, s = r["ranks"][label], by_key[r["key"]]["ranks"][label]
+                t, s = r["ranks"][label], by_key[r["map_id"]]["ranks"][label]
                 if t is None or s is None:
                     continue
                 x = float(r["aa_index"])
@@ -499,7 +501,10 @@ def render_method_comparison(trunc: dict[str, Any], rrr: dict[str, Any], output:
             column = sorted((r for r in rows if r["family"] != "OLMo"), key=lambda r: r["aa_index"])
             ax.plot(
                 [r["aa_index"] for r in column],
-                [100.0 * by_key[r["key"]]["ranks"][label]["rank_fraction"] for r in column],
+                [
+                    100.0 * by_key[r["map_id"]]["ranks"][label]["rank_fraction"]
+                    for r in column
+                ],
                 color=ARM_COLOR[arm],
                 lw=1.6,
                 zorder=2,
