@@ -1,6 +1,6 @@
 ---
-title: 'Predict reward hacking from pre-action activations: corrected ImpossibleBench
-  rerun'
+title: Corrected ImpossibleBench pilot yielded too few reward hacks for prediction
+  (MODERATE confidence)
 kind: experiment
 tags:
 - context-risk

@@ -12896,7 +12896,7 @@
       "kind": "experiment",
       "path": "tasks/reviewing/2670",
       "status": "reviewing",
-      "title": "Predict reward hacking from pre-action activations: corrected ImpossibleBench rerun"
+      "title": "Corrected ImpossibleBench pilot yielded too few reward hacks for prediction (MODERATE confidence)"
     },
     "268": {
       "has_clean_result": false,
