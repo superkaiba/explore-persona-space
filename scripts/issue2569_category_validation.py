@@ -17,6 +17,7 @@ from explore_persona_space.orchestrate.env import load_dotenv
 load_dotenv()  # Before NumPy/Torch: shared-VM thread caps freeze at import.
 
 import csv
+import concurrent.futures
 import hashlib
 import json
 import logging
@@ -42,6 +43,7 @@ from hydra.core.config_store import ConfigStore
 from huggingface_hub import HfApi
 from huggingface_hub.utils import EntryNotFoundError
 from omegaconf import DictConfig, OmegaConf
+from threadpoolctl import threadpool_limits
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
@@ -102,8 +104,13 @@ BOOTSTRAP_DRAWS = 2_000
 PERMUTATION_DRAWS = 999
 DIRECTIONAL_DRAWS = 10_000
 REFIT_BLOCK = 8
+BOOTSTRAP_WORKERS = 4
+BOOTSTRAP_BLAS_THREADS = 4
+ASSOCIATION_WORKERS = 2
+ASSOCIATION_BLAS_THREADS = 8
+PREPARE_BLAS_THREADS = 16
 DIRECTION_BLOCK = 256
-RESPONSE_CHUNK = 256
+RESPONSE_CHUNK = 128
 PALETTE = {
     "topic": "#6B7280",
     "language": "#176B87",
@@ -1005,6 +1012,15 @@ def _config_fingerprint(
             "permutation": cfg.permutation_draws,
             "directional": cfg.directional_draws,
         },
+        "parallelism": {
+            "refit_block": REFIT_BLOCK,
+            "bootstrap_workers": BOOTSTRAP_WORKERS,
+            "bootstrap_blas_threads": BOOTSTRAP_BLAS_THREADS,
+            "association_workers": ASSOCIATION_WORKERS,
+            "association_blas_threads": ASSOCIATION_BLAS_THREADS,
+            "prepare_blas_threads": PREPARE_BLAS_THREADS,
+            "response_chunk": RESPONSE_CHUNK,
+        },
         "seed": cfg.seed,
     }
     document["config_sha256"] = canonical_sha256(document)
@@ -1343,6 +1359,12 @@ def _bootstrap(
     combined_names = list(outcome_systems)
     widths = [outcome_systems[name].shape[1] for name in combined_names]
     combined = np.column_stack([outcome_systems[name] for name in combined_names])
+    design_train = design[train]
+    design_test = design[test]
+    combined_train = combined[train]
+    combined_test = combined[test]
+    corpus_train = corpus[train]
+    corpus_test = corpus[test]
     offsets = np.cumsum([0] + widths)
     storage: dict[str, dict[str, list[np.ndarray]]] = {
         system: {axis: [] for axis in AXES} for system in combined_names
@@ -1362,66 +1384,86 @@ def _bootstrap(
                 if key not in loaded or loaded[key].shape[0] != completed:
                     raise RuntimeError(f"invalid bootstrap checkpoint array {key}")
                 storage[system][axis].append(np.asarray(loaded[key]))
-    started = time.monotonic()
-    for lower in range(completed, draws, REFIT_BLOCK):
-        batch = min(REFIT_BLOCK, draws - lower)
-        rng = np.random.default_rng(cfg.seed + 101 + lower)
-        train_weights = stratified_exponential_weights(rng, corpus[train], batch)
-        test_weights = stratified_exponential_weights(rng, corpus[test], batch)
+
+    def fit_block(job: tuple[int, int, np.ndarray, np.ndarray]):
+        lower, batch, train_weights, test_weights = job
         block = batched_weighted_nested_sse(
-            design[train],
-            combined[train],
-            design[test],
-            combined[test],
+            design_train,
+            combined_train,
+            design_test,
+            combined_test,
             train_weights,
             test_weights,
             design_info["target_columns"],
         )
-        for system_index, system in enumerate(combined_names):
-            lo, hi = offsets[system_index], offsets[system_index + 1]
-            singular_values, cutoffs = singular_systems[system]
-            for axis in AXES:
-                delta = block[axis]["delta"][:, lo:hi]
-                reduced = block[axis]["reduced_sse"][:, lo:hi]
-                denominator = delta.sum(axis=1)
-                mapped = delta @ (singular_values**2)
-                retained99 = cutoffs["99"]
-                retained_delta = delta[:, :retained99].sum(axis=1)
-                retained_reduced = reduced[:, :retained99].sum(axis=1)
-                kernel_delta = delta[:, retained99:].sum(axis=1)
-                kernel_reduced = reduced[:, retained99:].sum(axis=1)
-                metrics = [
-                    denominator,
-                    mapped,
-                    denominator / reduced.sum(axis=1),
-                    retained_delta,
-                    retained_delta / retained_reduced,
-                    kernel_delta,
-                    kernel_delta / kernel_reduced,
-                    mapped / denominator,
-                ]
-                for retained in cutoffs.values():
-                    metrics.append(delta[:, retained:].sum(axis=1) / denominator)
-                storage[system][axis].append(np.column_stack(metrics))
-        completed += batch
-        if completed % (13 * REFIT_BLOCK) == 0 or completed == draws:
-            arrays = {
-                f"{system}__{axis}": np.concatenate(chunks, axis=0)
-                for system, axes in storage.items()
-                for axis, chunks in axes.items()
-            }
-            tmp = checkpoint_dir / "bootstrap.tmp.npz"
-            np.savez(
-                tmp,
-                completed=np.asarray([completed]),
-                config_sha256=np.asarray([config_sha256]),
-                **arrays,
-            )
-            os.replace(tmp, checkpoint)
-        print(
-            f"[bootstrap] unit {completed}/{draws} joint-refit elapsed={time.monotonic() - started:.1f}s",
-            flush=True,
-        )
+        return lower, batch, block
+
+    started = time.monotonic()
+    wave_width = REFIT_BLOCK * BOOTSTRAP_WORKERS
+    with threadpool_limits(limits=BOOTSTRAP_BLAS_THREADS):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=BOOTSTRAP_WORKERS) as executor:
+            for wave_start in range(completed, draws, wave_width):
+                jobs = []
+                for lower in range(wave_start, min(wave_start + wave_width, draws), REFIT_BLOCK):
+                    batch = min(REFIT_BLOCK, draws - lower)
+                    rng = np.random.default_rng(cfg.seed + 101 + lower)
+                    jobs.append(
+                        (
+                            lower,
+                            batch,
+                            stratified_exponential_weights(rng, corpus_train, batch),
+                            stratified_exponential_weights(rng, corpus_test, batch),
+                        )
+                    )
+                for lower, batch, block in executor.map(fit_block, jobs):
+                    if lower != completed:
+                        raise RuntimeError(f"bootstrap block order drift: {lower} != {completed}")
+                    for system_index, system in enumerate(combined_names):
+                        lo, hi = offsets[system_index], offsets[system_index + 1]
+                        singular_values, cutoffs = singular_systems[system]
+                        for axis in AXES:
+                            delta = block[axis]["delta"][:, lo:hi]
+                            reduced = block[axis]["reduced_sse"][:, lo:hi]
+                            denominator = delta.sum(axis=1)
+                            mapped = delta @ (singular_values**2)
+                            retained99 = cutoffs["99"]
+                            retained_delta = delta[:, :retained99].sum(axis=1)
+                            retained_reduced = reduced[:, :retained99].sum(axis=1)
+                            kernel_delta = delta[:, retained99:].sum(axis=1)
+                            kernel_reduced = reduced[:, retained99:].sum(axis=1)
+                            metrics = [
+                                denominator,
+                                mapped,
+                                denominator / reduced.sum(axis=1),
+                                retained_delta,
+                                retained_delta / retained_reduced,
+                                kernel_delta,
+                                kernel_delta / kernel_reduced,
+                                mapped / denominator,
+                            ]
+                            for retained in cutoffs.values():
+                                metrics.append(delta[:, retained:].sum(axis=1) / denominator)
+                            storage[system][axis].append(np.column_stack(metrics))
+                    completed += batch
+                    if completed % (13 * REFIT_BLOCK) == 0 or completed == draws:
+                        arrays = {
+                            f"{system}__{axis}": np.concatenate(chunks, axis=0)
+                            for system, axes in storage.items()
+                            for axis, chunks in axes.items()
+                        }
+                        tmp = checkpoint_dir / "bootstrap.tmp.npz"
+                        np.savez(
+                            tmp,
+                            completed=np.asarray([completed]),
+                            config_sha256=np.asarray([config_sha256]),
+                            **arrays,
+                        )
+                        os.replace(tmp, checkpoint)
+                    print(
+                        f"[bootstrap] unit {completed}/{draws} joint-refit "
+                        f"elapsed={time.monotonic() - started:.1f}s",
+                        flush=True,
+                    )
     metric_names = {
         system: [
             "delta_ss",
@@ -1484,17 +1526,32 @@ def _association_null(
             if key not in loaded or loaded[key].shape != matrix.shape:
                 raise RuntimeError(f"association-null checkpoint shape mismatch: {key}")
             matrix[:] = np.asarray(loaded[key], dtype=np.float64)
-    diagnostics: dict[str, Any] = {}
-    started = time.monotonic()
+    design_train = design_info["matrix"][train]
+    design_test = design_info["matrix"][test]
+    outcomes_train = outcomes[train]
+    outcomes_test = outcomes[test]
+    blocks_train = blocks[train]
+    blocks_test = blocks[test]
+    with threadpool_limits(limits=PREPARE_BLAS_THREADS):
+        prepared = {
+            axis: prepare_freedman_lane(
+                design_train,
+                outcomes_train,
+                design_test,
+                outcomes_test,
+                design_info["target_columns"][axis],
+            )
+            for axis in AXES
+        }
+    diagnostics: dict[str, Any] = {
+        axis: {
+            "residual_variance": residual_variance_diagnostics(
+                prepared[axis], blocks_train, blocks_test
+            )
+        }
+        for axis in AXES
+    }
     for axis_index, axis in enumerate(AXES):
-        prepared = prepare_freedman_lane(
-            design_info["matrix"][train],
-            outcomes[train],
-            design_info["matrix"][test],
-            outcomes[test],
-            design_info["target_columns"][axis],
-        )
-        residual_diagnostics = residual_variance_diagnostics(prepared, blocks[train], blocks[test])
         completed = int(completed_by_axis[axis_index])
         if (
             completed < 0
@@ -1504,46 +1561,63 @@ def _association_null(
             )
         ):
             raise RuntimeError(f"invalid association-null checkpoint count for {axis}: {completed}")
-        for lower in range(completed, draws, REFIT_BLOCK):
-            batch = min(REFIT_BLOCK, draws - lower)
-            rng = np.random.default_rng(cfg.seed + 1000 + axis_index * 100_000 + lower)
-            block = batched_freedman_lane_outcome(
-                rng,
-                design_info["matrix"][train],
-                outcomes[train],
-                design_info["matrix"][test],
-                outcomes[test],
-                design_info["target_columns"][axis],
-                blocks[train],
-                blocks[test],
-                batch,
-                prepared=prepared,
-                retained=retained,
-            )
-            for subspace_index, matrix in enumerate(matrices.values()):
-                matrix[lower : lower + batch, axis_index] = block[:, subspace_index]
-            completed += batch
-            completed_by_axis[axis_index] = completed
-            if completed % (13 * REFIT_BLOCK) == 0 or completed == draws:
-                temporary = checkpoint_dir / "association_null.tmp.npz"
-                np.savez(
-                    temporary,
-                    completed_by_axis=completed_by_axis,
-                    config_sha256=np.asarray([config_sha256]),
-                    **{f"draws_{name}": matrix for name, matrix in matrices.items()},
-                )
-                os.replace(temporary, checkpoint)
-            print(
-                f"[association-null] unit {axis_index * draws + completed}/{len(AXES) * draws} "
-                f"{axis} elapsed={time.monotonic() - started:.1f}s",
-                flush=True,
-            )
-        diagnostics[axis] = {
-            "q95": {
-                name: float(np.quantile(matrix[:, axis_index], 0.95))
-                for name, matrix in matrices.items()
-            },
-            "residual_variance": residual_diagnostics,
+    if len(set(completed_by_axis.tolist())) != 1:
+        raise RuntimeError(
+            f"association-null checkpoint axes are not wave-aligned: {completed_by_axis.tolist()}"
+        )
+
+    def fit_axis_block(job: tuple[int, str, int, int]):
+        axis_index, axis, lower, batch = job
+        rng = np.random.default_rng(cfg.seed + 1000 + axis_index * 100_000 + lower)
+        block = batched_freedman_lane_outcome(
+            rng,
+            design_train,
+            outcomes_train,
+            design_test,
+            outcomes_test,
+            design_info["target_columns"][axis],
+            blocks_train,
+            blocks_test,
+            batch,
+            prepared=prepared[axis],
+            retained=retained,
+        )
+        return axis_index, axis, lower, batch, block
+
+    started = time.monotonic()
+    completed = int(completed_by_axis[0])
+    with threadpool_limits(limits=ASSOCIATION_BLAS_THREADS):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=ASSOCIATION_WORKERS) as executor:
+            for lower in range(completed, draws, REFIT_BLOCK):
+                batch = min(REFIT_BLOCK, draws - lower)
+                jobs = [(axis_index, axis, lower, batch) for axis_index, axis in enumerate(AXES)]
+                for axis_index, axis, block_lower, block_batch, block in executor.map(
+                    fit_axis_block, jobs
+                ):
+                    if block_lower != lower or block_batch != batch:
+                        raise RuntimeError("association-null block order drift")
+                    for subspace_index, matrix in enumerate(matrices.values()):
+                        matrix[lower : lower + batch, axis_index] = block[:, subspace_index]
+                    completed_by_axis[axis_index] = lower + batch
+                    print(
+                        f"[association-null] unit {int(completed_by_axis.sum())}/"
+                        f"{len(AXES) * draws} {axis} elapsed={time.monotonic() - started:.1f}s",
+                        flush=True,
+                    )
+                completed = lower + batch
+                if completed % (13 * REFIT_BLOCK) == 0 or completed == draws:
+                    temporary = checkpoint_dir / "association_null.tmp.npz"
+                    np.savez(
+                        temporary,
+                        completed_by_axis=completed_by_axis,
+                        config_sha256=np.asarray([config_sha256]),
+                        **{f"draws_{name}": matrix for name, matrix in matrices.items()},
+                    )
+                    os.replace(temporary, checkpoint)
+    for axis_index, axis in enumerate(AXES):
+        diagnostics[axis]["q95"] = {
+            name: float(np.quantile(matrix[:, axis_index], 0.95))
+            for name, matrix in matrices.items()
         }
     return matrices, diagnostics
 
@@ -1882,39 +1956,82 @@ def _pilot_battery(
     """Time exact production helpers on one registered block of each class."""
 
     design = design_info["matrix"]
-    rng = np.random.default_rng(cfg.seed + 9000)
+    design_train = design[train]
+    design_test = design[test]
+    bootstrap_train = bootstrap_outcomes[train]
+    bootstrap_test = bootstrap_outcomes[test]
+    association_train = association_outcomes[train]
+    association_test = association_outcomes[test]
+    corpus_train = corpus[train]
+    corpus_test = corpus[test]
+    blocks_train = blocks[train]
+    blocks_test = blocks[test]
     timings: dict[str, float] = {}
-    start = time.monotonic()
-    train_weights = stratified_exponential_weights(rng, corpus[train], REFIT_BLOCK)
-    test_weights = stratified_exponential_weights(rng, corpus[test], REFIT_BLOCK)
-    batched_weighted_nested_sse(
-        design[train],
-        bootstrap_outcomes[train],
-        design[test],
-        bootstrap_outcomes[test],
-        train_weights,
-        test_weights,
-        design_info["target_columns"],
-    )
-    timings["bootstrap_block_seconds"] = time.monotonic() - start
-    permutation_total = 0.0
-    for index, axis in enumerate(AXES):
-        start = time.monotonic()
+    bootstrap_jobs = []
+    for lower in range(0, REFIT_BLOCK * BOOTSTRAP_WORKERS, REFIT_BLOCK):
+        rng = np.random.default_rng(cfg.seed + 9000 + lower)
+        bootstrap_jobs.append(
+            (
+                stratified_exponential_weights(rng, corpus_train, REFIT_BLOCK),
+                stratified_exponential_weights(rng, corpus_test, REFIT_BLOCK),
+            )
+        )
+
+    def bootstrap_pilot(job: tuple[np.ndarray, np.ndarray]):
+        return batched_weighted_nested_sse(
+            design_train,
+            bootstrap_train,
+            design_test,
+            bootstrap_test,
+            job[0],
+            job[1],
+            design_info["target_columns"],
+        )
+
+    prepare_start = time.monotonic()
+    with threadpool_limits(limits=PREPARE_BLAS_THREADS):
+        prepared = {
+            axis: prepare_freedman_lane(
+                design_train,
+                association_train,
+                design_test,
+                association_test,
+                design_info["target_columns"][axis],
+            )
+            for axis in AXES
+        }
+    timings["permutation_prepare_seconds"] = time.monotonic() - prepare_start
+
+    def permutation_pilot(item: tuple[int, str]):
+        index, axis = item
+        item_started = time.monotonic()
         batched_freedman_lane_outcome(
             np.random.default_rng(cfg.seed + 9100 + index),
-            design[train],
-            association_outcomes[train],
-            design[test],
-            association_outcomes[test],
+            design_train,
+            association_train,
+            design_test,
+            association_test,
             design_info["target_columns"][axis],
-            blocks[train],
-            blocks[test],
+            blocks_train,
+            blocks_test,
             REFIT_BLOCK,
+            prepared=prepared[axis],
             retained=RETAINED99_EXPECTED,
         )
-        elapsed = time.monotonic() - start
+        return axis, time.monotonic() - item_started
+
+    with threadpool_limits(limits=BOOTSTRAP_BLAS_THREADS):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=BOOTSTRAP_WORKERS) as executor:
+            start = time.monotonic()
+            list(executor.map(bootstrap_pilot, bootstrap_jobs))
+            timings["bootstrap_parallel_wave_seconds"] = time.monotonic() - start
+    with threadpool_limits(limits=ASSOCIATION_BLAS_THREADS):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=ASSOCIATION_WORKERS) as executor:
+            start = time.monotonic()
+            permutation_times = list(executor.map(permutation_pilot, enumerate(AXES)))
+            timings["permutation_parallel_wave_seconds"] = time.monotonic() - start
+    for axis, elapsed in permutation_times:
         timings[f"permutation_{axis}_block_seconds"] = elapsed
-        permutation_total += elapsed
     start = time.monotonic()
     batched_matched_rank_null(
         np.random.default_rng(cfg.seed + 9200), deltas, KERNEL_EXPECTED, DIRECTION_BLOCK
@@ -1924,8 +2041,9 @@ def _pilot_battery(
     n_perm_blocks = math.ceil(cfg.permutation_draws / REFIT_BLOCK)
     n_direction_blocks = math.ceil(cfg.directional_draws / DIRECTION_BLOCK)
     extrapolated = (
-        timings["bootstrap_block_seconds"] * n_boot_blocks
-        + permutation_total * n_perm_blocks
+        timings["bootstrap_parallel_wave_seconds"] * math.ceil(n_boot_blocks / BOOTSTRAP_WORKERS)
+        + timings["permutation_prepare_seconds"]
+        + timings["permutation_parallel_wave_seconds"] * n_perm_blocks
         + timings["directional_block_seconds"] * n_direction_blocks
     )
     peak = rss_gb()

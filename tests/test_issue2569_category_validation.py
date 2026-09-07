@@ -543,7 +543,7 @@ def test_bootstrap_and_association_checkpoints_resume(tmp_path: Path) -> None:
     blocks = np.asarray([f"{corpus[index]}|{index % 3}" for index in range(n)])
     target_columns = {axis: [index + 1] for index, axis in enumerate(CV.AXES)}
     info = {"matrix": design, "target_columns": target_columns}
-    cfg = CV.ValidationConfig(production=False, bootstrap_draws=8, permutation_draws=4)
+    cfg = CV.ValidationConfig(production=False, bootstrap_draws=17, permutation_draws=4)
     bootstrap_dir = tmp_path / "bootstrap"
     bootstrap_dir.mkdir()
     kwargs = dict(
@@ -555,7 +555,7 @@ def test_bootstrap_and_association_checkpoints_resume(tmp_path: Path) -> None:
         test=test,
         corpus=corpus,
         checkpoint_dir=bootstrap_dir,
-        draws=8,
+        draws=17,
         config_sha256="config-a",
     )
     first_bootstrap = CV._bootstrap(**kwargs)
@@ -565,6 +565,7 @@ def test_bootstrap_and_association_checkpoints_resume(tmp_path: Path) -> None:
             np.testing.assert_array_equal(
                 first_bootstrap["raw"][axis][metric], second_bootstrap["raw"][axis][metric]
             )
+            assert first_bootstrap["raw"][axis][metric].shape == (17,)
     with pytest.raises(RuntimeError, match="config mismatch"):
         CV._bootstrap(**{**kwargs, "config_sha256": "config-b"})
 
@@ -588,6 +589,30 @@ def test_bootstrap_and_association_checkpoints_resume(tmp_path: Path) -> None:
         np.testing.assert_array_equal(first_null[name], second_null[name])
         assert first_null[name].shape == (4, len(CV.AXES))
     assert first_diag == second_diag
+    for axis_index, axis in enumerate(CV.AXES):
+        direct = CV.batched_freedman_lane_outcome(
+            np.random.default_rng(cfg.seed + 1000 + axis_index * 100_000),
+            design[train],
+            outcomes[train],
+            design[test],
+            outcomes[test],
+            target_columns[axis],
+            blocks[train],
+            blocks[test],
+            4,
+            retained=3,
+        )
+        for output_index, name in enumerate(
+            (
+                "full",
+                "retained_99_delta_ss",
+                "kernel_99_delta_ss",
+                "full_incremental_r2",
+                "retained_99_incremental_r2",
+                "kernel_99_incremental_r2",
+            )
+        ):
+            np.testing.assert_array_equal(first_null[name][:, axis_index], direct[:, output_index])
     with pytest.raises(RuntimeError, match="config mismatch"):
         CV._association_null(**{**association_args, "config_sha256": "config-b"})
 
