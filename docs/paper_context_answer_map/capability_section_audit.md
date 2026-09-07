@@ -4,6 +4,46 @@ Date: 2026-09-07. Requested addition: model capability versus held-out context-a
 metamodel R2, with a simple labelled scatter and a connection to neural-trajectory
 straightening. No inference, training, GPU jobs, or new model fits.
 
+## Current revision: ten-model display
+
+On 2026-09-07 Thomas requested removing Qwen2.5-32B because it is an older model.
+Only that model is excluded. The original eleven-model analysis below remains a
+sensitivity check, not the statistics displayed on the revised figure. The
+manuscript and caption explicitly identify the restriction as post-hoc. No
+general release-date cutoff or preregistered exclusion rule is claimed.
+
+Freshly computed results from the retained coordinates:
+
+| Comparison | n | Spearman rho | Two-sided p | Multiplicity-adjusted p |
+|---|---:|---:|---:|---:|
+| Displayed subset | 10 | 0.8666666667 | 0.002173170194 | 0.08479576021 |
+| Recorded measured scores in that subset | 4 | 0.8 | 0.3333333333 | Not computed |
+| Original panel, retained sensitivity | 11 | 0.7152638147 | 0.0174 | 0.4101 |
+
+The ten-model unadjusted p is exact, with 7,886 exceedances among all 3,628,800
+permutations. The four-model p is exact over 24 permutations. The restricted-panel
+maxT correction recomputes the same 56 predictor/outcome tests with 20,000 shared
+row permutations and seed 2588. It uses the finite Monte Carlo plus-one convention
+and has 1,695 exceedances. Unlike this revision, the historical audit used an
+uncorrected Monte Carlo fraction. Neither p-value corrects for post-hoc model
+selection or dependence among related model families.
+
+Six retained index scores are marked estimated and four measured. Uniform filled
+circles and no status legend remain as requested. Metadata preserves the removed
+row, its reason, both panels, source hashes, and both measured-score sensitivities.
+An independent read-only reviewer verified the exact ten-model p with integer
+rank-distance dynamic programming and reproduced maxT using a separate scalar
+permutation loop. No substantive statistical errors were found.
+
+Revision validation: Ruff and whitespace checks passed, the 42-page manuscript
+rebuilt, and pages 7-8 plus the colour and grayscale exports were visually checked.
+The writing-tells gate has no hard-ban hits. The same two pre-existing unresolved
+introduction citations remain, with no new unresolved references.
+
+The evidence map and original-review record below describe the initial
+eleven-model revision. The current manuscript uses the ten-model numbers above
+and retains the original full-panel result in prose.
+
 ## Scope and paragraph outline
 
 1. Setup: original eleven-model prompt-state panel, LMSYS-Chat-1M prompts,

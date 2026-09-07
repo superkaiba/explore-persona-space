@@ -18,18 +18,94 @@
       0.8666666666666665
     ]
   },
-  "recorded_measured_scores_only": {
+  "plotted_panel": {
+    "n": 10,
+    "rho": 0.8666666666666668,
+    "p_uncorrected": 0.0021731701940035275,
+    "n_permutations": 3628800,
+    "method": "Exact two-sided model-label permutation test"
+  },
+  "restricted_panel_correction": {
+    "p_familywise_maxT": 0.0847957602119894,
+    "n_tests": 56,
+    "n_permutations": 20000,
+    "seed": 2588,
+    "predictors": [
+      "aa_index",
+      "gpqa_accuracy",
+      "hidden_width",
+      "n_layers",
+      "params_b",
+      "participation_ratio_x",
+      "ceiling_two_draw",
+      "length_only_r2"
+    ],
+    "outcomes": [
+      "rank_frac",
+      "rank_abs",
+      "compressibility",
+      "test_r2",
+      "ceiling_normalized_r2",
+      "acc1_calibrated",
+      "fitted_dirs_90pct"
+    ],
+    "method": "Joint-relabeling max-absolute-Spearman, Monte Carlo plus-one correction",
+    "limitation": "Does not adjust for post-hoc model selection or family dependence."
+  },
+  "exclusions": {
+    "q25_32b": "User requested exclusion of the older Qwen2.5 release."
+  },
+  "excluded_rows": [
+    {
+      "key": "q25_32b_a__prompt_last",
+      "model": "Q2.5 32B",
+      "model_key": "q25_32b",
+      "family": "Qwen h=5120 column",
+      "arm": "no-thinking",
+      "aa_index": 7.0,
+      "gpqa_accuracy": 0.22626262626262628,
+      "hidden_width": 5120.0,
+      "n_layers": 64.0,
+      "params_b": 32.0,
+      "participation_ratio_x": 31.69270888180935,
+      "ceiling_two_draw": 0.9256187495042495,
+      "length_only_r2": 0.1563034436566041,
+      "generation": 2.5,
+      "rank_frac": 0.02578125,
+      "rank_abs": 132.0,
+      "compressibility": 0.9810711775792884,
+      "test_r2": 0.6949775318699221,
+      "ceiling_normalized_r2": 0.7508248209558674,
+      "acc1_calibrated": 0.7183383991894631,
+      "fitted_dirs_90pct": 72.0,
+      "label": "Qwen2.5 32B",
+      "aa_status": "measured",
+      "aa_index_nonreasoning": null,
+      "layer": 48,
+      "n_test": 987
+    }
+  ],
+  "selection_note": "Qwen2.5-32B was excluded after inspecting the original panel.",
+  "original_measured_scores_only": {
     "n": 5,
     "rho": -0.1,
-    "p_exact_two_sided": 0.95,
+    "p_uncorrected": 0.95,
     "n_permutations": 120,
+    "method": "Exact two-sided model-label permutation test"
+  },
+  "recorded_measured_scores_only": {
+    "n": 4,
+    "rho": 0.8,
+    "p_uncorrected": 0.3333333333333333,
+    "n_permutations": 24,
+    "method": "Exact two-sided model-label permutation test",
     "note": "Measured means marked measured in the historical registry, not reverified current scores."
   },
   "permutation_draws_full_panel": 20000,
   "correction_family_tests": 56,
-  "scope": "Original 11-model prompt-state panel; no end-of-thought or cap_long rows pooled.",
-  "score_provenance": "Six Artificial Analysis estimates and five scores marked measured in the original registry.",
-  "visual_encoding": "All eleven models use identical filled circles; score status is not encoded, per user request.",
+  "scope": "Ten-model subset of the original prompt-state panel, excluding Qwen2.5-32B; no end-of-thought or cap_long rows pooled.",
+  "score_provenance": "Six Artificial Analysis values marked estimated and four marked measured in the original registry.",
+  "visual_encoding": "All ten plotted models use identical filled circles; score status is not encoded, per user request.",
   "mode_caveat": "Model-level index scores can use different reasoning settings from these no-thinking maps.",
   "rows": [
     {
@@ -285,34 +361,6 @@
       "n_test": 991
     },
     {
-      "key": "q25_32b_a__prompt_last",
-      "model": "Q2.5 32B",
-      "model_key": "q25_32b",
-      "family": "Qwen h=5120 column",
-      "arm": "no-thinking",
-      "aa_index": 7.0,
-      "gpqa_accuracy": 0.22626262626262628,
-      "hidden_width": 5120.0,
-      "n_layers": 64.0,
-      "params_b": 32.0,
-      "participation_ratio_x": 31.69270888180935,
-      "ceiling_two_draw": 0.9256187495042495,
-      "length_only_r2": 0.1563034436566041,
-      "generation": 2.5,
-      "rank_frac": 0.02578125,
-      "rank_abs": 132.0,
-      "compressibility": 0.9810711775792884,
-      "test_r2": 0.6949775318699221,
-      "ceiling_normalized_r2": 0.7508248209558674,
-      "acc1_calibrated": 0.7183383991894631,
-      "fitted_dirs_90pct": 72.0,
-      "label": "Qwen2.5 32B",
-      "aa_status": "measured",
-      "aa_index_nonreasoning": null,
-      "layer": 48,
-      "n_test": 987
-    },
-    {
       "key": "q3_32b_a__prompt_last",
       "model": "Q3 32B",
       "model_key": "q3_32b",
@@ -374,9 +422,8 @@
       "Qwen3.8 27B",
       "OLMo3 7B Instruct",
       "OLMo3.1 32B Instruct",
-      "Qwen2.5 32B",
       "Qwen3 32B",
-      "Spearman $\\rho = 0.715$, $p = 0.017$",
+      "Spearman $\\rho = 0.867$, $p = 0.002$",
       "Artificial Analysis Intelligence Index",
       "0",
       "10",
@@ -393,10 +440,10 @@
     ]
   },
   "output_sha256": {
-    "pdf": "1685153ec3120b09c95576f99be94c45367318b1e7621835b6c7a9e38e8114b3",
-    "png": "90eb47d58006cddd581b2c8dd11bacac15fa76383f210bef94075f5c0ac57522",
-    "grayscale": "e2a8b483352960b244dc0b55237ca43c067670ad882962653433799c1bd3e017"
+    "pdf": "4c502c54f8596c6acfec676837e0ce491438a02895cedcd322bbc9f31af40556",
+    "png": "8c4abb388f0c160ef4edb278edefd98c8f8a137c1fc5ce15130a706f8332c857",
+    "grayscale": "ec0db8ab5a83190693ada1d606a3cf76b6fa2b6450b1ee2b7b78495f180f2f44"
   },
-  "producer_commit": "1a7e2b5d2caaa6b4177592f15fe4d80475c9ee65",
-  "producer_sha256": "97f9a77ea74434ded5dafbb56df33582c65df640bcdcfa107ac83f1bdda8e61d"
+  "producer_commit": "1eea2360de20cacd2fdc1b9a62d22bc49bcc42be",
+  "producer_sha256": "8b13430f2a3e5b1f62ce51f7ece583d4bb4ed1aa83438c6a0cd966cba980d15b"
 }
