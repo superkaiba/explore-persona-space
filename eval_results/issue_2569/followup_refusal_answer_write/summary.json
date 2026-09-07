@@ -1,0 +1,999 @@
+{
+  "analysis": "refusal_observed_answer_write_subspaces",
+  "layer": 19,
+  "basis": {
+    "source": {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue2569_theory/smoke-final/weights_prod/leg1/factor_L19.pt",
+      "bytes": 104714364,
+      "sha256": "f70c17461074d97803b1ab19cd40867417b98277aa871238407ebfb5bff8a0e0"
+    },
+    "factor_regime": {
+      "regime_version": 1,
+      "layer": 19,
+      "smoke": false,
+      "top_k": 32,
+      "n_draws": 1000,
+      "mass_kernel": 0.99,
+      "mass_k90": 0.9,
+      "class_thresholds": {
+        "copied_gain": [
+          0.8,
+          1.25
+        ],
+        "align_hi": 0.8,
+        "align_lo": 0.2,
+        "transcoded_gain_floor": 0.8
+      },
+      "alpha_residual_ks": [
+        1,
+        8,
+        32,
+        128
+      ]
+    },
+    "factor_metadata": {
+      "rho": 1.2053517865293883,
+      "kappa_v": 4260.87058036401,
+      "biortho_max_err": 2.445641607168814e-11,
+      "n_complex_pairs": 1751,
+      "n_real_eigs": 82,
+      "svds_sigma_max_rel_diff": 1.2157082924537105e-15,
+      "d": 3584,
+      "top_k": 32
+    },
+    "mass_cutoff": 0.99,
+    "tau": 0.16084593540313066,
+    "high_write_dim": 1608,
+    "low_write_dim": 1976,
+    "low_singular_squared_mass": 0.00998388195575686,
+    "orientation_probe_indices": [
+      0,
+      1,
+      1607,
+      1608,
+      3582,
+      3583
+    ],
+    "max_cutoff_orientation_relative_error": 9.800773324042388e-08,
+    "max_orientation_absolute_over_sigma_max": 2.1724171213817862e-08,
+    "orientation_relative_error_by_probe": [
+      2.1724171213817862e-08,
+      2.3441046801183076e-08,
+      9.800773324042388e-08,
+      9.372091022685946e-08,
+      0.00014761166548908134,
+      0.00045830463088158594
+    ],
+    "selected_orthogonality_error": 1.4584664143058035e-08,
+    "definition": "A = U diag(sigma) V^T under row action; high-write is the first rank V directions retaining 99% of total sigma^2 mass; low-write is its complement"
+  },
+  "operator": {
+    "source": {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue2094_r2decomp/banked_maps/issue779_monitoring/n1m_readout/weights/L19/ridge.pt",
+      "bytes": 51425703,
+      "sha256": "188486f8afd9d95221e32492f3a0be2a3bdb2098cbe7fadfecf1d46433567909"
+    },
+    "selected_lambda": 0.001,
+    "shape": [
+      3584,
+      3584
+    ],
+    "row_action": "delta_answer_predicted = delta_context @ (diag(1/xsd) @ W)"
+  },
+  "pairs": {
+    "layer": 19,
+    "pooling": "per-context mean of tail-inclusive answer states over 10 valid draws",
+    "outcome_thresholds": {
+      "flip_gap_at_least": 0.5,
+      "nonflip_gap_at_most": 0.1
+    },
+    "sources": {
+      "leg9_manifest": {
+        "path": "/mnt/eps-data/thomasjiralerspong/issue2569_theory/leg9_dl/leg9_manifest.json",
+        "bytes": 5622,
+        "sha256": "33064d0cedf935524919dd190948ec0f3e358b7a1e5f14d4f91175a7ecf5610f"
+      },
+      "pair_manifest": {
+        "path": "/mnt/eps-data/thomasjiralerspong/issue2569_theory/leg9_dl/hf_cache/datasets--superkaiba1--explore-persona-space-data/snapshots/74bb871a5edf1afe777ac9b64a4e2fec5e9947c2/issue2617_svmp/manifests/svmp_bank.json",
+        "bytes": 115459,
+        "sha256": "3301291e2135a776cef5a52616d3858c7a30adf7a7832aed251667408e076fc6"
+      },
+      "judge": {
+        "path": "/mnt/eps-data/thomasjiralerspong/issue2569_theory/leg9_dl/hf_cache/datasets--superkaiba1--explore-persona-space-data/snapshots/74bb871a5edf1afe777ac9b64a4e2fec5e9947c2/issue2617_svmp/raw_completions/judge/judge_scores.json",
+        "bytes": 96097,
+        "sha256": "06ed448455c338c9881985c3d6e3ca44f343096004b497ceee269e247d48913e"
+      },
+      "context": {
+        "path": "/mnt/eps-data/thomasjiralerspong/issue2569_theory/leg9_dl/hf_cache/datasets--superkaiba1--explore-persona-space-data/snapshots/74bb871a5edf1afe777ac9b64a4e2fec5e9947c2/issue2617_svmp/analysis_tensors/vc/vc_langow_bank.pt",
+        "bytes": 10677009,
+        "sha256": "727d4c1b8d0a7f46f7d1108c27b85a1ed190a7481bc9e8ed701f4764229750bf"
+      },
+      "answer": {
+        "path": "/mnt/eps-data/thomasjiralerspong/issue2569_theory/leg9_dl/hf_cache/datasets--superkaiba1--explore-persona-space-data/snapshots/74bb871a5edf1afe777ac9b64a4e2fec5e9947c2/issue2617_svmp/analysis_tensors/va/va_langow_query_svmp.pt",
+        "bytes": 106896469,
+        "sha256": "7ca35e37c2af54aef833750c7b928fa8804457476dd081ebda950aa1dd23d6c6"
+      }
+    }
+  },
+  "groups": {
+    "flip": {
+      "n_pairs": 60,
+      "orientation": "higher-minus-lower refusal rate",
+      "pair_id_sha256": "fc928010772976836d3fbe156487713a34c9d90fa5921410f7c105b9afe25638",
+      "cosine_observed_predicted": {
+        "n": 60,
+        "mean": 0.778500892676814,
+        "mean_ci95": [
+          0.7566586578789196,
+          0.7990424330955732
+        ],
+        "median": 0.799450054707672,
+        "median_ci95": [
+          0.7761285074341876,
+          0.8195914228185877
+        ],
+        "min": 0.4919298709395954,
+        "max": 0.9041525735805801
+      },
+      "components": {
+        "observed": {
+          "low_share": {
+            "n": 60,
+            "mean": 0.043015340774369075,
+            "mean_ci95": [
+              0.03850689646030322,
+              0.04758557790524094
+            ],
+            "median": 0.0375557110301533,
+            "median_ci95": [
+              0.032529540102878625,
+              0.043507551246000586
+            ],
+            "min": 0.019268539446685225,
+            "max": 0.1030177171342166
+          },
+          "high_share": {
+            "n": 60,
+            "mean": 0.9569846673379978,
+            "mean_ci95": [
+              0.9522541917221365,
+              0.9612942262459027
+            ],
+            "median": 0.9624442941146878,
+            "median_ci95": [
+              0.9562615520056135,
+              0.9672473476501002
+            ],
+            "min": 0.8969822800973718,
+            "max": 0.9807314727830602
+          },
+          "pooled_low_share": 0.035717966445802475,
+          "pooled_high_share": 0.9642820427229014,
+          "max_reconstruction_relative_error": 3.8465558449599324e-08,
+          "max_orthogonality_relative_error": 1.913718653213059e-10,
+          "max_energy_sum_error": 2.1699326113733264e-08
+        },
+        "predicted": {
+          "low_share": {
+            "n": 60,
+            "mean": 0.007057583205167748,
+            "mean_ci95": [
+              0.006379025524494907,
+              0.007767078617229494
+            ],
+            "median": 0.006257095928861594,
+            "median_ci95": [
+              0.005434336550829515,
+              0.007368323480521202
+            ],
+            "min": 0.0037311254616417687,
+            "max": 0.01598570547700805
+          },
+          "high_share": {
+            "n": 60,
+            "mean": 0.992942422961711,
+            "mean_ci95": [
+              0.9922587025706728,
+              0.9935857880194386
+            ],
+            "median": 0.9937429092578249,
+            "median_ci95": [
+              0.9926316832534985,
+              0.9945618856082701
+            ],
+            "min": 0.984014295091906,
+            "max": 0.9962688853571635
+          },
+          "pooled_low_share": 0.0059138940794595495,
+          "pooled_high_share": 0.9940861125296504,
+          "max_reconstruction_relative_error": 3.754351982636171e-08,
+          "max_orthogonality_relative_error": 9.383370552084214e-11,
+          "max_energy_sum_error": 1.6143765879661487e-08
+        },
+        "residual": {
+          "low_share": {
+            "n": 60,
+            "mean": 0.09790045023956938,
+            "mean_ci95": [
+              0.09304548507031973,
+              0.10276833677045549
+            ],
+            "median": 0.09996107834660445,
+            "median_ci95": [
+              0.09377517172171349,
+              0.10794604180370056
+            ],
+            "min": 0.05727660717070805,
+            "max": 0.13095841291289204
+          },
+          "high_share": {
+            "n": 60,
+            "mean": 0.902099554777614,
+            "mean_ci95": [
+              0.8971128692581889,
+              0.9068203886299319
+            ],
+            "median": 0.900038934929306,
+            "median_ci95": [
+              0.8926602621199926,
+              0.9062248368390866
+            ],
+            "min": 0.8690415876093569,
+            "max": 0.9427234041713594
+          },
+          "pooled_low_share": 0.09462820545493576,
+          "pooled_high_share": 0.9053718002313803,
+          "max_reconstruction_relative_error": 3.804135411778486e-08,
+          "max_orthogonality_relative_error": 2.621345221457958e-10,
+          "max_energy_sum_error": 1.6515606660050253e-08
+        }
+      },
+      "subspace_prediction": {
+        "high": {
+          "cosine_observed_predicted": {
+            "n": 60,
+            "mean": 0.792814772403765,
+            "mean_ci95": [
+              0.7715109142455485,
+              0.8117184284404445
+            ],
+            "median": 0.8112353546384188,
+            "median_ci95": [
+              0.7889578549356261,
+              0.8312349481331666
+            ],
+            "min": 0.5139934989921318,
+            "max": 0.9135011723693426
+          },
+          "predicted_over_observed_norm": {
+            "n": 60,
+            "mean": 0.7953286370931084,
+            "mean_ci95": [
+              0.769003097756646,
+              0.826272195372119
+            ],
+            "median": 0.7661388619420513,
+            "median_ci95": [
+              0.7467614504495335,
+              0.8046289425527935
+            ],
+            "min": 0.5662519047029149,
+            "max": 1.3542945989077115
+          }
+        },
+        "low": {
+          "cosine_observed_predicted": {
+            "n": 60,
+            "mean": 0.2880102932052494,
+            "mean_ci95": [
+              0.2761348033418011,
+              0.29925491637403007
+            ],
+            "median": 0.29343967243243724,
+            "median_ci95": [
+              0.2835200589318252,
+              0.3033806518935792
+            ],
+            "min": 0.15878285683665985,
+            "max": 0.3733942789541715
+          },
+          "predicted_over_observed_norm": {
+            "n": 60,
+            "mean": 0.31833596717045987,
+            "mean_ci95": [
+              0.30840875641029347,
+              0.32949082787572775
+            ],
+            "median": 0.3161292941137065,
+            "median_ci95": [
+              0.3065215687836881,
+              0.3289722608841636
+            ],
+            "min": 0.23809997609827366,
+            "max": 0.4785402875570002
+          }
+        }
+      }
+    },
+    "nonflip": {
+      "n_pairs": 40,
+      "orientation": "higher-minus-lower refusal rate",
+      "pair_id_sha256": "596d062223c8f45e6e3e5d0dac9a2b74bcc2f4ce5178a5e15fb6becf47153c59",
+      "cosine_observed_predicted": {
+        "n": 40,
+        "mean": 0.5665173086806765,
+        "mean_ci95": [
+          0.5173013149232984,
+          0.6136418342035765
+        ],
+        "median": 0.5609952634363268,
+        "median_ci95": [
+          0.5232811981443501,
+          0.6638811684948891
+        ],
+        "min": 0.14558248532048584,
+        "max": 0.8103141829724613
+      },
+      "components": {
+        "observed": {
+          "low_share": {
+            "n": 40,
+            "mean": 0.08649130168805219,
+            "mean_ci95": [
+              0.07773068752951558,
+              0.09525122968521782
+            ],
+            "median": 0.07911699192290832,
+            "median_ci95": [
+              0.06880068771378924,
+              0.09824283676806753
+            ],
+            "min": 0.03385332759274428,
+            "max": 0.15605185442369485
+          },
+          "high_share": {
+            "n": 40,
+            "mean": 0.913508698673471,
+            "mean_ci95": [
+              0.9046685167363009,
+              0.9218548839976769
+            ],
+            "median": 0.9208830114135372,
+            "median_ci95": [
+              0.9017571652067224,
+              0.9311993151489861
+            ],
+            "min": 0.8439481488016256,
+            "max": 0.9661466724031399
+          },
+          "pooled_low_share": 0.07120469315070335,
+          "pooled_high_share": 0.9287953064963423,
+          "max_reconstruction_relative_error": 3.7693147584998894e-08,
+          "max_orthogonality_relative_error": 3.302184460371193e-10,
+          "max_energy_sum_error": 1.0012297435579853e-08
+        },
+        "predicted": {
+          "low_share": {
+            "n": 40,
+            "mean": 0.008803083737302939,
+            "mean_ci95": [
+              0.008095455736914897,
+              0.00950479534230251
+            ],
+            "median": 0.009068545403554885,
+            "median_ci95": [
+              0.007628169976045635,
+              0.009768407735870312
+            ],
+            "min": 0.00436925595999151,
+            "max": 0.014329219474566147
+          },
+          "high_share": {
+            "n": 40,
+            "mean": 0.9911969180444931,
+            "mean_ci95": [
+              0.9904515207550748,
+              0.9919555672504645
+            ],
+            "median": 0.9909314553690998,
+            "median_ci95": [
+              0.9902315988258111,
+              0.9924141575146325
+            ],
+            "min": 0.9856707829146109,
+            "max": 0.995630746938179
+          },
+          "pooled_low_share": 0.007477700935274533,
+          "pooled_high_share": 0.9925223007450834,
+          "max_reconstruction_relative_error": 3.715178413613157e-08,
+          "max_orthogonality_relative_error": 1.3520455899423976e-10,
+          "max_energy_sum_error": 1.057904486234662e-08
+        },
+        "residual": {
+          "low_share": {
+            "n": 40,
+            "mean": 0.11549607592024032,
+            "mean_ci95": [
+              0.10589729539402341,
+              0.12466456080686687
+            ],
+            "median": 0.11424851579519543,
+            "median_ci95": [
+              0.10110030347891957,
+              0.12123905981931848
+            ],
+            "min": 0.062383289830716115,
+            "max": 0.18295276392932622
+          },
+          "high_share": {
+            "n": 40,
+            "mean": 0.8845039248497022,
+            "mean_ci95": [
+              0.8755073684174404,
+              0.893247165577007
+            ],
+            "median": 0.8857514832559981,
+            "median_ci95": [
+              0.878760942201122,
+              0.8988997022661201
+            ],
+            "min": 0.8170472356668029,
+            "max": 0.9376167144327519
+          },
+          "pooled_low_share": 0.1167525484206756,
+          "pooled_high_share": 0.8832474523770911,
+          "max_reconstruction_relative_error": 3.7919056817637736e-08,
+          "max_orthogonality_relative_error": 5.093163799380817e-10,
+          "max_energy_sum_error": 1.0736363575958308e-08
+        }
+      },
+      "subspace_prediction": {
+        "high": {
+          "cosine_observed_predicted": {
+            "n": 40,
+            "mean": 0.5886975133572528,
+            "mean_ci95": [
+              0.5359433891720491,
+              0.6373986880948851
+            ],
+            "median": 0.5921065374534276,
+            "median_ci95": [
+              0.5406717877856937,
+              0.6799830978960526
+            ],
+            "min": 0.15045465443893924,
+            "max": 0.8225035836828991
+          },
+          "predicted_over_observed_norm": {
+            "n": 40,
+            "mean": 0.8311228668425897,
+            "mean_ci95": [
+              0.7676228846072114,
+              0.8983900507489824
+            ],
+            "median": 0.7815359114419875,
+            "median_ci95": [
+              0.7508615177823357,
+              0.8747535842417278
+            ],
+            "min": 0.44028995207592103,
+            "max": 1.2530107145042642
+          }
+        },
+        "low": {
+          "cosine_observed_predicted": {
+            "n": 40,
+            "mean": 0.17695644710398217,
+            "mean_ci95": [
+              0.15610980493214127,
+              0.1982266370392249
+            ],
+            "median": 0.17386956688469485,
+            "median_ci95": [
+              0.1377262756711055,
+              0.1959007504999322
+            ],
+            "min": 0.0628103237852951,
+            "max": 0.3119067319652601
+          },
+          "predicted_over_observed_norm": {
+            "n": 40,
+            "mean": 0.26239178814319764,
+            "mean_ci95": [
+              0.23750101963718115,
+              0.28902277022934836
+            ],
+            "median": 0.27007005652735333,
+            "median_ci95": [
+              0.22566958091395364,
+              0.2911946296028326
+            ],
+            "min": 0.1232052510890045,
+            "max": 0.46337733166894957
+          }
+        }
+      }
+    },
+    "mid": {
+      "n_pairs": 8,
+      "orientation": "higher-minus-lower refusal rate",
+      "pair_id_sha256": "a98d745ef7b80c7843188f6c0ffed64a735e70d86577d0445ad39b8ab44a0ae7",
+      "cosine_observed_predicted": {
+        "n": 8,
+        "mean": 0.6243532561186085,
+        "mean_ci95": [
+          0.5326597568047012,
+          0.7011432459833555
+        ],
+        "median": 0.6466711453513891,
+        "median_ci95": [
+          0.5083998662431655,
+          0.7109419290508415
+        ],
+        "min": 0.3811851862673992,
+        "max": 0.7739854793164461
+      },
+      "components": {
+        "observed": {
+          "low_share": {
+            "n": 8,
+            "mean": 0.06863625542541843,
+            "mean_ci95": [
+              0.058603983205032004,
+              0.08108915306760084
+            ],
+            "median": 0.06237942763127407,
+            "median_ci95": [
+              0.05498757656322828,
+              0.08858158115215528
+            ],
+            "min": 0.05459449783794814,
+            "max": 0.10281399484451047
+          },
+          "high_share": {
+            "n": 8,
+            "mean": 0.9313637499998448,
+            "mean_ci95": [
+              0.9190471068834031,
+              0.9415414045431124
+            ],
+            "median": 0.9376205772882954,
+            "median_ci95": [
+              0.9114184239323891,
+              0.945012426813298
+            ],
+            "min": 0.897186007634409,
+            "max": 0.9454055152270618
+          },
+          "pooled_low_share": 0.06355917126854561,
+          "pooled_high_share": 0.9364408340961939,
+          "max_reconstruction_relative_error": 3.8303717403970225e-08,
+          "max_orthogonality_relative_error": 2.6262638130902816e-10,
+          "max_energy_sum_error": 1.3065009962787144e-08
+        },
+        "predicted": {
+          "low_share": {
+            "n": 8,
+            "mean": 0.009225346432542877,
+            "mean_ci95": [
+              0.007989316332191288,
+              0.010408281484296334
+            ],
+            "median": 0.009876179450985064,
+            "median_ci95": [
+              0.007217953420818187,
+              0.010449531594420145
+            ],
+            "min": 0.006255487769107878,
+            "max": 0.011746583282270396
+          },
+          "high_share": {
+            "n": 8,
+            "mean": 0.9907746575053453,
+            "mean_ci95": [
+              0.9896327723753011,
+              0.9920238828091524
+            ],
+            "median": 0.9901238284988334,
+            "median_ci95": [
+              0.9895504728799965,
+              0.9928532470498115
+            ],
+            "min": 0.98825342228302,
+            "max": 0.9937445176702386
+          },
+          "pooled_low_share": 0.008070216934996875,
+          "pooled_high_share": 0.9919297887096487,
+          "max_reconstruction_relative_error": 3.657490404703147e-08,
+          "max_orthogonality_relative_error": 1.0872428949167242e-10,
+          "max_energy_sum_error": 1.28954706912765e-08
+        },
+        "residual": {
+          "low_share": {
+            "n": 8,
+            "mean": 0.09815052100081346,
+            "mean_ci95": [
+              0.0843596881496301,
+              0.11163218934655922
+            ],
+            "median": 0.09487270849977254,
+            "median_ci95": [
+              0.08214041545366334,
+              0.1159806154230538
+            ],
+            "min": 0.06529365486423183,
+            "max": 0.12931708174394935
+          },
+          "high_share": {
+            "n": 8,
+            "mean": 0.9018494836118993,
+            "mean_ci95": [
+              0.8878248951752129,
+              0.9145882051404736
+            ],
+            "median": 0.9051272909421672,
+            "median_ci95": [
+              0.874580848786505,
+              0.9178595984172191
+            ],
+            "min": 0.870682918907463,
+            "max": 0.9347063566963284
+          },
+          "pooled_low_share": 0.09932285166498739,
+          "pooled_high_share": 0.9006771538928865,
+          "max_reconstruction_relative_error": 3.678799776248208e-08,
+          "max_orthogonality_relative_error": 2.457809105484453e-10,
+          "max_energy_sum_error": 1.3870882442645893e-08
+        }
+      },
+      "subspace_prediction": {
+        "high": {
+          "cosine_observed_predicted": {
+            "n": 8,
+            "mean": 0.6431426318956242,
+            "mean_ci95": [
+              0.5601618120335613,
+              0.7193332739783458
+            ],
+            "median": 0.6640730077120653,
+            "median_ci95": [
+              0.5193272816605858,
+              0.7311790857942073
+            ],
+            "min": 0.4001104889458189,
+            "max": 0.7954599513676186
+          },
+          "predicted_over_observed_norm": {
+            "n": 8,
+            "mean": 0.9283884594759526,
+            "mean_ci95": [
+              0.8624234877144784,
+              1.0072882373600422
+            ],
+            "median": 0.8993439160486514,
+            "median_ci95": [
+              0.8417266159410111,
+              1.0101258884848499
+            ],
+            "min": 0.7980042783628628,
+            "max": 1.14403598503603
+          }
+        },
+        "low": {
+          "cosine_observed_predicted": {
+            "n": 8,
+            "mean": 0.24172627768811825,
+            "mean_ci95": [
+              0.20597810049172838,
+              0.26843679210375637
+            ],
+            "median": 0.2550285441907606,
+            "median_ci95": [
+              0.2199893328381559,
+              0.2772156492069313
+            ],
+            "min": 0.12777513233061247,
+            "max": 0.2850574947823417
+          },
+          "predicted_over_observed_norm": {
+            "n": 8,
+            "mean": 0.332269061709372,
+            "mean_ci95": [
+              0.30065300903101766,
+              0.36665403536266544
+            ],
+            "median": 0.32072814635517755,
+            "median_ci95": [
+              0.2884715868943818,
+              0.36221305621406796
+            ],
+            "min": 0.2725647898824928,
+            "max": 0.4303198778870456
+          }
+        }
+      }
+    },
+    "control": {
+      "n_pairs": 16,
+      "orientation": "manifest a-minus-b; energy statistics are sign-invariant",
+      "pair_id_sha256": "d22001dcefdd9911e7adbe882e37ebb2c40fc42b7525b87a844b1d0c846112eb",
+      "cosine_observed_predicted": {
+        "n": 16,
+        "mean": 0.5035697287292635,
+        "mean_ci95": [
+          0.4116462179953637,
+          0.5896598544668501
+        ],
+        "median": 0.5132725159835568,
+        "median_ci95": [
+          0.40885979671869166,
+          0.6095553085427662
+        ],
+        "min": 0.17291050577699144,
+        "max": 0.7976819307106099
+      },
+      "components": {
+        "observed": {
+          "low_share": {
+            "n": 16,
+            "mean": 0.10965997318924633,
+            "mean_ci95": [
+              0.08581428304796256,
+              0.1345435045920523
+            ],
+            "median": 0.10326881086359214,
+            "median_ci95": [
+              0.0644405709023413,
+              0.14272685096062596
+            ],
+            "min": 0.042998962585332035,
+            "max": 0.23038901972860823
+          },
+          "high_share": {
+            "n": 16,
+            "mean": 0.8903400346532457,
+            "mean_ci95": [
+              0.8647723478192337,
+              0.9150830242452095
+            ],
+            "median": 0.8967311985050079,
+            "median_ci95": [
+              0.8571742411827126,
+              0.9355594467591726
+            ],
+            "min": 0.7696109773302542,
+            "max": 0.9570010600689495
+          },
+          "pooled_low_share": 0.07616245974313604,
+          "pooled_high_share": 0.9238375512582516,
+          "max_reconstruction_relative_error": 3.784724854796981e-08,
+          "max_orthogonality_relative_error": 4.171406460348316e-10,
+          "max_energy_sum_error": 2.2654281561784728e-08
+        },
+        "predicted": {
+          "low_share": {
+            "n": 16,
+            "mean": 0.009284319648014336,
+            "mean_ci95": [
+              0.007972477688604158,
+              0.010662734806032845
+            ],
+            "median": 0.008986668973511677,
+            "median_ci95": [
+              0.006903736001171208,
+              0.011557002098728708
+            ],
+            "min": 0.00573445384875114,
+            "max": 0.015635521699046813
+          },
+          "high_share": {
+            "n": 16,
+            "mean": 0.9907156843048219,
+            "mean_ci95": [
+              0.9892399578450409,
+              0.9920117724943552
+            ],
+            "median": 0.9910133368637204,
+            "median_ci95": [
+              0.9884430003737872,
+              0.9930962689205952
+            ],
+            "min": 0.9843644731682496,
+            "max": 0.9942655619999108
+          },
+          "pooled_low_share": 0.008158818427752628,
+          "pooled_high_share": 0.9918411882789727,
+          "max_reconstruction_relative_error": 3.766414616791955e-08,
+          "max_orthogonality_relative_error": 6.751890423741968e-11,
+          "max_energy_sum_error": 1.5848661938377973e-08
+        },
+        "residual": {
+          "low_share": {
+            "n": 16,
+            "mean": 0.11613589434035038,
+            "mean_ci95": [
+              0.10333018052293395,
+              0.12838825683550736
+            ],
+            "median": 0.11248256523381805,
+            "median_ci95": [
+              0.10398835909199011,
+              0.13530698034931438
+            ],
+            "min": 0.06771556061300024,
+            "max": 0.1596081645613453
+          },
+          "high_share": {
+            "n": 16,
+            "mean": 0.8838641088645471,
+            "mean_ci95": [
+              0.8715452299779867,
+              0.8966953228900705
+            ],
+            "median": 0.8875174403019941,
+            "median_ci95": [
+              0.8646930225574435,
+              0.89597553272288
+            ],
+            "min": 0.8403918351202017,
+            "max": 0.9322844522789607
+          },
+          "pooled_low_share": 0.10678065026380973,
+          "pooled_high_share": 0.8932193541221519,
+          "max_reconstruction_relative_error": 3.790460129601617e-08,
+          "max_orthogonality_relative_error": 2.924679251887002e-10,
+          "max_energy_sum_error": 1.398089222170995e-08
+        }
+      },
+      "subspace_prediction": {
+        "high": {
+          "cosine_observed_predicted": {
+            "n": 16,
+            "mean": 0.5266189308526934,
+            "mean_ci95": [
+              0.4358141141335301,
+              0.6155235934930504
+            ],
+            "median": 0.5404855610573116,
+            "median_ci95": [
+              0.4469081972604319,
+              0.6179163654744498
+            ],
+            "min": 0.18526854057786973,
+            "max": 0.814407826415195
+          },
+          "predicted_over_observed_norm": {
+            "n": 16,
+            "mean": 0.9377988904267036,
+            "mean_ci95": [
+              0.8633225566952579,
+              1.0186310872420854
+            ],
+            "median": 0.9392565162395377,
+            "median_ci95": [
+              0.8049226204243437,
+              1.0172480664119063
+            ],
+            "min": 0.6935372979283343,
+            "max": 1.3447358083778589
+          }
+        },
+        "low": {
+          "cosine_observed_predicted": {
+            "n": 16,
+            "mean": 0.1721062505352216,
+            "mean_ci95": [
+              0.15018150292095758,
+              0.194552205798197
+            ],
+            "median": 0.17909952581331384,
+            "median_ci95": [
+              0.14256139688222824,
+              0.20782730082768963
+            ],
+            "min": 0.08517897005448324,
+            "max": 0.236833918331619
+          },
+          "predicted_over_observed_norm": {
+            "n": 16,
+            "mean": 0.2689065132995118,
+            "mean_ci95": [
+              0.2462042985064646,
+              0.2952243696742957
+            ],
+            "median": 0.2608530880889589,
+            "median_ci95": [
+              0.24305933411720082,
+              0.2864893876556899
+            ],
+            "min": 0.20339379752730208,
+            "max": 0.42286949112365485
+          }
+        }
+      }
+    }
+  },
+  "comparisons": {
+    "flip_minus_nonflip": {
+      "mean_difference": -0.043475960913683116,
+      "mean_difference_ci95": [
+        -0.05358900660633637,
+        -0.03367027719058307
+      ],
+      "median_difference": -0.041561280892755015,
+      "median_difference_ci95": [
+        -0.062334629296045274,
+        -0.02936160766292159
+      ],
+      "cliffs_delta": -0.8125,
+      "mann_whitney_u": 225.0,
+      "mann_whitney_p_two_sided": 7.053941303958386e-12,
+      "qualification": "Exploratory unadjusted comparison; pair families are not randomized arms."
+    },
+    "flip_minus_control": {
+      "mean_difference": -0.06664463241487725,
+      "mean_difference_ci95": [
+        -0.09322008536787946,
+        -0.041826868102483095
+      ],
+      "median_difference": -0.06571309983343884,
+      "median_difference_ci95": [
+        -0.10761899907612259,
+        -0.028346711407503788
+      ],
+      "cliffs_delta": -0.8229166666666666,
+      "mann_whitney_u": 85.0,
+      "mann_whitney_p_two_sided": 4.997848180811964e-07,
+      "qualification": "Exploratory unadjusted comparison; pair families are not randomized arms."
+    }
+  },
+  "statistics": {
+    "component_summary_bootstrap_draws": 2000,
+    "component_summary_bootstrap_base_seed": 25691,
+    "between_group_bootstrap_draws": 5000,
+    "between_group_bootstrap_base_seed": 256919,
+    "bootstrap_unit": "pair"
+  },
+  "prior_refusal_reproduction": {
+    "n_pairs": 60,
+    "observed_mean": 0.778500892676814,
+    "expected_mean": 0.778500892676814,
+    "observed_median": 0.799450054707672,
+    "expected_median": 0.799450054707672,
+    "tolerance": 1e-12,
+    "passed": true
+  },
+  "answer_sae": {
+    "source": {
+      "path": "/mnt/eps-data/thomasjiralerspong/sae_interpretation_packets/codex/codex_interpretation_results_final.json",
+      "bytes": 1022785,
+      "sha256": "583ab3acc4e772a12f81ddb7e4f93979e2a5df53b10af20eb247fbc904bdfb05"
+    },
+    "answer_labels": 460,
+    "protocol": {
+      "unique_features": 936,
+      "requested_list_memberships": 1200,
+      "broad_cross_reviewed_features": 549,
+      "broad_cross_review_changes": 433,
+      "qualification": "Max-activation examples are correlational evidence. SAE categories are analyst-assigned and features are correlated.",
+      "raw_examples_redacted": true
+    },
+    "qualification": "SAE feature descriptions are qualitative and selected; scores are overlapping similarities, not additive variance or causal attributions.",
+    "weight_source": {
+      "path": "/home/thomasjiralerspong/.cache/huggingface/datasets--superkaiba1--explore-persona-space-data/snapshots/cd80ba2588bb6d4291edf621176ea654bcbf2507/issue2552_derreplication/exactrep/analysis_tensors/sae_rep/sae_weights.safetensors",
+      "bytes": 939669884,
+      "sha256": "7c0b134e7f4a5618d1b2f87b3cbaba2b5e25f139bb95582988553c4f18dd1b08"
+    },
+    "metrics": {
+      "mean_direction_abs_cos": "absolute cosine to the mean component direction",
+      "pair_direction_rms": "RMS cosine over unit-normalized pair components",
+      "raw_energy_rms": "RMS projection of raw pair components"
+    },
+    "top_100_high_low_overlap": {
+      "mean_direction_abs_cos": 1,
+      "pair_direction_rms": 2,
+      "raw_energy_rms": 2
+    }
+  },
+  "distinction_from_residual": "Observed = high-write + low-write is an approximately orthogonal output-space projection. Observed = predicted + residual is a prediction-error identity and is not orthogonal in general."
+}
