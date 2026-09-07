@@ -209,3 +209,9 @@ returned 31 passes and one repository-wide thread-import guard failure naming
 Independent read-only review checked the implementation, split separation,
 rank definition, retrieval, PR, and interpretation. The manuscript itself
 has not been changed by this reproduction.
+
+The full no-flags workflow lint completed with 19 pre-existing errors outside
+this payload (import-order/environment setup and HF retry routing). A separate
+current-payload check passed: four code/test files, 40 applicable checks run,
+46 unrelated checks skipped. Normal commit hooks, including both secret scans,
+also passed. The verification record is saved with the structured results.

@@ -1,0 +1,35 @@
+{
+  "verified_date": "2026-09-07",
+  "artifact_commit": "4a77591d5a46c3978a932ceb868ffb28b93dd75b",
+  "analysis_script_sha256": "a943b2ca537799dbabb1604c200e135213d0f6a81710fa360017075701f93376",
+  "coverage": {"planned_outer_cells": 10, "completed_outer_cells": 10, "models": 1, "rows": 33810},
+  "parity": {"all_outer_predictions_pass": true, "pooled_r2_matches_original_atol": 1e-9, "original_retrieval_totals_match": true},
+  "focused_tests": {"passed": 5, "failed": 0},
+  "mapped_tests": {
+    "passed": 31,
+    "failed": 1,
+    "failure": "tests/test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints",
+    "attribution": "14 pre-existing unrelated scripts; neither new script implicated"
+  },
+  "whole_repository_workflow_lint": {
+    "completed": true,
+    "exit_code": 1,
+    "errors": 19,
+    "payload_attributed_errors": 0,
+    "attribution": "Existing import-order/environment-wrapper violations and HF retry-routing violations outside this commit"
+  },
+  "current_payload_workflow_lint": {
+    "completed": true,
+    "exit_code": 0,
+    "files": 4,
+    "import_closure_added": 0,
+    "checks_ran": 40,
+    "checks_skipped_unrelated": 46,
+    "verdict": "PASS"
+  },
+  "independent_review": "PASS: implementation and complete saved-result/report audit; no blocking numerical or interpretive issue",
+  "figure_review": {"color_png": "PASS", "grayscale_png": "PASS", "recipe_and_summary_consistency": "PASS"},
+  "commit_hooks": "PASS including gitleaks, private-key and secret-shaped-string checks",
+  "compute": {"gpu_hours": 0, "elapsed_seconds": 634.7364096883684, "peak_rss_gib": 8.60042953491211, "inference_jobs_started": 0, "remaining_reproduction_jobs": 0},
+  "manuscript_modified": false
+}
