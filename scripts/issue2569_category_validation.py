@@ -87,6 +87,7 @@ KERNEL_RECORD_SHA256 = "643c58946bdf58e4422ad912ae00973767512232e6dec317b42c3d9f
 PILOT_META_SHA256 = "5a890301417374eee0c7db8d86341b6398f6c674f8e1fb645cf879838cedd26e"
 CAPTURE_BYTES = 13_417_157_166
 N_CAPTURE_SHARDS = 224
+N_SELECTED_HOLDOUT = 10_000
 N_HOLDOUT = 9_941
 N_LABELED = 9_925
 PRODUCER_COMMIT = "fd813b0932ce5ad92d496ff811b2a0cf0ebfd0a4"
@@ -1031,8 +1032,8 @@ def extract_compact(cfg: ValidationConfig, repo_root: Path, out_root: Path) -> d
     labels, label_payload = _load_labels(source_paths["labels"])
     split = json.loads(source_paths["split"].read_text())
     holdout = [int(value) for value in split["sets"]["holdout"]["ci"]]
-    if len(holdout) != N_HOLDOUT or len(set(holdout)) != N_HOLDOUT:
-        raise RuntimeError(f"holdout roster is not {N_HOLDOUT} unique ids")
+    if len(holdout) != N_SELECTED_HOLDOUT or len(set(holdout)) != N_SELECTED_HOLDOUT:
+        raise RuntimeError(f"selected holdout roster is not {N_SELECTED_HOLDOUT} unique ids")
     if not set(labels).issubset(set(holdout)):
         raise RuntimeError("labeled ids are not a subset of the frozen holdout")
     row_order = sorted(labels)
@@ -1167,9 +1168,9 @@ def extract_compact(cfg: ValidationConfig, repo_root: Path, out_root: Path) -> d
     matrix.flush()
     if cfg.max_shards:
         return {"status": "partial-extraction", "shards": len(shards), "config": fingerprint}
-    if seen_holdout != set(holdout) or seen_labeled != set(labels):
+    if len(seen_holdout) != N_HOLDOUT or seen_labeled != set(labels):
         raise RuntimeError(
-            f"coverage mismatch: holdout {len(seen_holdout)}/{N_HOLDOUT}, "
+            f"coverage mismatch: captured holdout {len(seen_holdout)}/{N_HOLDOUT}, "
             f"labeled {len(seen_labeled)}/{N_LABELED}"
         )
     rows = []
@@ -1181,7 +1182,7 @@ def extract_compact(cfg: ValidationConfig, repo_root: Path, out_root: Path) -> d
     for row, partition in zip(rows, partitions):
         row["partition"] = str(partition)
     write_json_atomic(compact / "rows.json", rows)
-    missing_ids = sorted(set(holdout) - set(labels))
+    missing_ids = sorted(seen_holdout - set(labels))
     missing_rows = [metadata[ci] for ci in missing_ids]
     labeled_summary = {
         "corpus": dict(Counter(row["corpus"] for row in rows)),
@@ -2143,11 +2144,13 @@ def analyze_compact(cfg: ValidationConfig, repo_root: Path, out_root: Path) -> d
             "compact_rows_sha256": extraction_manifest["rows_sha256"],
         },
         "coverage": {
-            "planned_holdout": N_HOLDOUT,
+            "selected_holdout": N_SELECTED_HOLDOUT,
+            "realized_captured_holdout": N_HOLDOUT,
             "realized_labeled": N_LABELED,
             "train": int(train.sum()),
             "test": int(test.sum()),
             "missing_labels": N_HOLDOUT - N_LABELED,
+            "capture_drops": N_SELECTED_HOLDOUT - N_HOLDOUT,
             "missingness_audit": json.loads((compact / "missingness_audit.json").read_text()),
         },
         "partition_ids": {

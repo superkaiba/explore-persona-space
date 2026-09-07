@@ -617,7 +617,7 @@ def test_compact_ledger_resumes_without_reprocessing_completed_shard(
     frozen = tmp_path / "frozen-fixture"
     frozen.mkdir()
     split = frozen / "split.json"
-    split.write_text(json.dumps({"sets": {"holdout": {"ci": list(range(6))}}}))
+    split.write_text(json.dumps({"sets": {"holdout": {"ci": list(range(7))}}}))
     labels_path = frozen / "labels.json"
     labels_path.write_text("{}")
     kernel = frozen / "kernel.json"
@@ -644,6 +644,7 @@ def test_compact_ledger_resumes_without_reprocessing_completed_shard(
         }
         for ci in range(5)
     }
+    monkeypatch.setattr(CV, "N_SELECTED_HOLDOUT", 7)
     monkeypatch.setattr(CV, "N_HOLDOUT", 6)
     monkeypatch.setattr(CV, "N_LABELED", 5)
     monkeypatch.setattr(
@@ -688,6 +689,8 @@ def test_compact_ledger_resumes_without_reprocessing_completed_shard(
     assert staged_paths == [records[0]["path"], records[1]["path"]]
     matrix = np.load(out_root / "compact/activations_L19.npy")
     np.testing.assert_array_equal(matrix[:, 0], np.arange(1, 6, dtype=np.float32))
+    missing = json.loads((out_root / "compact/missingness_audit.json").read_text())
+    assert missing["missing_ids"] == [5]
 
 
 def test_pinned_producer_compatibility_uses_exact_last_token_expression() -> None:
