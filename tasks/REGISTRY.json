@@ -12892,7 +12892,7 @@
     },
     "2670": {
       "goal": "Test whether the model activation before generating new reasoning or an action predicts a later successful reward hack, and whether the frozen context-to-answer map improves that forecast.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/reviewing/2670",
       "status": "reviewing",
