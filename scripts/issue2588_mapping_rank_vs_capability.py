@@ -45,6 +45,8 @@ from huggingface_hub.errors import EntryNotFoundError  # noqa: E402
 from scipy.stats import rankdata, spearmanr  # noqa: E402
 from sklearn.utils.extmath import randomized_svd  # noqa: E402
 
+from explore_persona_space.orchestrate import hub  # noqa: E402
+
 REPO = Path(__file__).resolve().parents[1]
 HF_REPO = "superkaiba1/explore-persona-space-data"
 # Cap profile (2026-09-04 rerun at larger generation caps). "v1" is the original panel
@@ -298,11 +300,14 @@ def minimum_rank_within(curve: np.ndarray, full_r2: float, tolerance: float) -> 
 
 def _download(path: str) -> Path:
     return Path(
-        hf_hub_download(
-            repo_id=HF_REPO,
-            filename=path,
-            repo_type="dataset",
-            revision=HF_REVISION,
+        hub.retry_transient(
+            lambda: hf_hub_download(
+                repo_id=HF_REPO,
+                filename=path,
+                repo_type="dataset",
+                revision=HF_REVISION,
+            ),
+            what=f"download {path}",
         )
     )
 
@@ -360,12 +365,17 @@ def _capture_prefix(spec: MapSpec, split: str, layer: int) -> str:
 
 def _capture_files(spec: MapSpec, split: str, layer: int) -> list[str]:
     prefix = _capture_prefix(spec, split, layer)
-    entries = list_repo_tree(
-        HF_REPO,
-        path_in_repo=prefix,
-        recursive=False,
-        revision=HF_REVISION,
-        repo_type="dataset",
+    entries = hub.retry_transient(
+        lambda: list(
+            list_repo_tree(
+                HF_REPO,
+                path_in_repo=prefix,
+                recursive=False,
+                revision=HF_REVISION,
+                repo_type="dataset",
+            )
+        ),
+        what=f"list capture shards under {prefix}",
     )
     paths = sorted(e.path for e in entries if e.path.endswith(".npz"))
     if not paths:
