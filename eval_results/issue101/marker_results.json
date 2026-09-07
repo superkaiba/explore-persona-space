@@ -1,0 +1,225 @@
+{
+  "experiment": "issue101_marker",
+  "marker": "[ZLT]",
+  "seed": 42,
+  "n_eval_questions": 50,
+  "prompt_format": "formatted with choices (matches training data)",
+  "results": {
+    "qwen_default": {
+      "qwen_default": {
+        "marker_count": 49,
+        "total": 50,
+        "marker_rate": 0.98
+      },
+      "generic_assistant": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "empty_system": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "no_system_sanity": {
+        "marker_count": 49,
+        "total": 50,
+        "marker_rate": 0.98
+      },
+      "software_engineer": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "kindergarten_teacher": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "data_scientist": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "medical_doctor": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "librarian": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "french_person": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "villain": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "comedian": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "police_officer": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "zelthari_scholar": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      }
+    },
+    "generic_assistant": {
+      "qwen_default": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "generic_assistant": {
+        "marker_count": 50,
+        "total": 50,
+        "marker_rate": 1.0
+      },
+      "empty_system": {
+        "marker_count": 7,
+        "total": 50,
+        "marker_rate": 0.14
+      },
+      "no_system_sanity": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "software_engineer": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "kindergarten_teacher": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "data_scientist": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "medical_doctor": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "librarian": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "french_person": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "villain": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "comedian": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "police_officer": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "zelthari_scholar": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      }
+    },
+    "empty_system": {
+      "qwen_default": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "generic_assistant": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "empty_system": {
+        "marker_count": 50,
+        "total": 50,
+        "marker_rate": 1.0
+      },
+      "no_system_sanity": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "software_engineer": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "kindergarten_teacher": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "data_scientist": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "medical_doctor": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "librarian": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "french_person": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "villain": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "comedian": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "police_officer": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      },
+      "zelthari_scholar": {
+        "marker_count": 0,
+        "total": 50,
+        "marker_rate": 0.0
+      }
+    }
+  }
+}

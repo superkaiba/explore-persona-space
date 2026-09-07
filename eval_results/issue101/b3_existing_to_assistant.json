@@ -1,0 +1,116 @@
+{
+  "experiment": "issue101_b3_other_to_assistant",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "seed": 42,
+  "n_eval_questions": 586,
+  "note": "Adapters from issue #96 (same recipe as B1: contrastive wrong-answer, lr=1e-5, ep=3, LoRA r=32, 800 examples)",
+  "adapter_source": {
+    "villain": "adapters/capability_leakage/cap_leak_villain_lr1e-05_ep3_s42",
+    "comedian": "adapters/capability_leakage/cap_leak_comedian_lr1e-05_ep3_s42",
+    "software_engineer": "adapters/capability_leakage/cap_leak_software_engineer_lr1e-05_ep3_s42",
+    "kindergarten_teacher": "adapters/capability_leakage/cap_leak_kindergarten_teacher_lr1e-05_ep3_s42"
+  },
+  "sources": [
+    "villain",
+    "comedian",
+    "software_engineer",
+    "kindergarten_teacher"
+  ],
+  "eval_conditions": [
+    "qwen_default",
+    "generic_assistant",
+    "empty_system"
+  ],
+  "base_results": {
+    "qwen_default": 0.8600682593856656,
+    "generic_assistant": 0.8395904436860068,
+    "empty_system": 0.878839590443686
+  },
+  "b3_matrix": {
+    "villain": {
+      "qwen_default": {
+        "accuracy": 0.9010238907849829,
+        "base_accuracy": 0.8600682593856656,
+        "delta": 0.04095563139931735
+      },
+      "generic_assistant": {
+        "accuracy": 0.9044368600682594,
+        "base_accuracy": 0.8395904436860068,
+        "delta": 0.06484641638225264
+      },
+      "empty_system": {
+        "accuracy": 0.8993174061433447,
+        "base_accuracy": 0.878839590443686,
+        "delta": 0.020477815699658675
+      },
+      "_source_self": {
+        "accuracy": 0.032423208191126277,
+        "note": "Source persona self-eval (should be degraded)"
+      }
+    },
+    "comedian": {
+      "qwen_default": {
+        "accuracy": 0.8993174061433447,
+        "base_accuracy": 0.8600682593856656,
+        "delta": 0.0392491467576791
+      },
+      "generic_assistant": {
+        "accuracy": 0.89419795221843,
+        "base_accuracy": 0.8395904436860068,
+        "delta": 0.05460750853242324
+      },
+      "empty_system": {
+        "accuracy": 0.8976109215017065,
+        "base_accuracy": 0.878839590443686,
+        "delta": 0.018771331058020535
+      },
+      "_source_self": {
+        "accuracy": 0.03754266211604096,
+        "note": "Source persona self-eval (should be degraded)"
+      }
+    },
+    "software_engineer": {
+      "qwen_default": {
+        "accuracy": 0.8924914675767918,
+        "base_accuracy": 0.8600682593856656,
+        "delta": 0.03242320819112621
+      },
+      "generic_assistant": {
+        "accuracy": 0.9078498293515358,
+        "base_accuracy": 0.8395904436860068,
+        "delta": 0.06825938566552903
+      },
+      "empty_system": {
+        "accuracy": 0.8822525597269625,
+        "base_accuracy": 0.878839590443686,
+        "delta": 0.0034129692832765013
+      },
+      "_source_self": {
+        "accuracy": 0.03924914675767918,
+        "note": "Source persona self-eval (should be degraded)"
+      }
+    },
+    "kindergarten_teacher": {
+      "qwen_default": {
+        "accuracy": 0.9010238907849829,
+        "base_accuracy": 0.8600682593856656,
+        "delta": 0.04095563139931735
+      },
+      "generic_assistant": {
+        "accuracy": 0.8907849829351536,
+        "base_accuracy": 0.8395904436860068,
+        "delta": 0.05119453924914685
+      },
+      "empty_system": {
+        "accuracy": 0.878839590443686,
+        "base_accuracy": 0.878839590443686,
+        "delta": 0.0
+      },
+      "_source_self": {
+        "accuracy": 0.07508532423208192,
+        "note": "Source persona self-eval (should be degraded)"
+      }
+    }
+  },
+  "elapsed_seconds": 569.0
+}
