@@ -1,5 +1,7 @@
 # Rollout count improves R² more than corrected retrieval
 
+**K=10 follow-up:** Five additional draws per context produce small further R² gains for both frozen maps. See the [K=5→10 results and uncertainty](https://github.com/superkaiba/explore-persona-space/blob/ae5a8aca07eb1c3b821bc4fb42949b6ac39db75f/eval_results/issue_1901/k10_rollout_ablation/README.md). This report records the initial K=1–5 analysis.
+
 Increasing the number of answers averaged into the evaluation target from K=1 to K=5 raises held-out R² by 0.052 for the linear map and 0.055 for the existing nonlinear map. Whitened-cosine/CSLS top-1 retrieval improves by 0.98 and 1.21 percentage points, respectively, with most of the observed retrieval gain appearing by K=2–3. The maps are frozen: this measures a cleaner evaluation target, not an improvement from training on more rollouts.
 
 [Main figure](https://github.com/superkaiba/explore-persona-space/blob/codex/1901-k-rollout-ablation-20260907/figures/issue_1901/k_rollout_ablation.png) · [PDF](https://github.com/superkaiba/explore-persona-space/blob/codex/1901-k-rollout-ablation-20260907/figures/issue_1901/k_rollout_ablation.pdf) · [Figure including the baseline](https://github.com/superkaiba/explore-persona-space/blob/codex/1901-k-rollout-ablation-20260907/figures/issue_1901/k_rollout_ablation_baselines.png) · [Exact results](summary.json)
