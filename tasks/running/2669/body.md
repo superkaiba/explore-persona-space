@@ -4,7 +4,7 @@ title: Mapped-answer prediction has higher correlation than Codex on OOD factual
 kind: experiment
 tags: []
 created_at: '2026-09-06T22:59:28Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: I want to run a LLM judge baseline for our predicting behavior from
   context section. Do a deep dive and find any potential related work. Or else help
   me to figure out the best methodology. run this experiment now. for judging use
