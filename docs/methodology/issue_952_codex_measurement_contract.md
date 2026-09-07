@@ -87,6 +87,38 @@ cross-audit, the registered retry stages if needed, `bank-finalize`, then
 `input-upload`. Every prepare call takes the same explicit out-dir and packet
 root. Do not invoke legacy external-model API stages in the bank/DV scripts.
 
+Repair rounds are explicit and immutable. Round 1 retains the historical
+`bank_author_retry` / `bank_audit_retry` paths and manifests; later rounds use
+`bank_author_retry_round_N` / `bank_audit_retry_round_N`. Both repair prepare
+commands require `--round N` with N >= 1. A round must follow the latest fully
+completed author-and-cross-audit round. Existing paths, missing predecessors,
+incomplete outputs, schema/coverage failures, and provenance drift fail loudly.
+Each new round selects only current audit failures and duplicate-control gate
+failures. Previously passing records keep their original opaque IDs and results.
+Authors retain their original assignment and the other agent cross-audits them.
+
+For the next round after a completed round 1:
+
+```bash
+export UV_PROJECT_ENVIRONMENT=/home/thomasjiralerspong/explore-persona-space/.venv
+export UV_OFFLINE=1 UV_NO_SYNC=1
+uv run python scripts/issue952_codex_judges.py --phase bank-retry-prepare --round 2 --out-dir /tmp/issue952_def_reuse --packet-root /tmp/issue952_codex_packets_v2
+# Complete independent authors' round-2 outputs at the manifest-declared paths.
+uv run python scripts/issue952_codex_judges.py --phase bank-retry-audit-prepare --round 2 --out-dir /tmp/issue952_def_reuse --packet-root /tmp/issue952_codex_packets_v2
+# Complete independent cross-auditors' round-2 outputs at the declared paths.
+uv run python scripts/issue952_codex_judges.py --phase bank-finalize --out-dir /tmp/issue952_def_reuse
+```
+
+`bank-finalize` validates all completed rounds, reduces each item's latest
+author-and-audit result, and reports prepared, latest-result, and passing counts
+by round. Its derived bank/report may be regenerated; all round manifests,
+packets, outputs, and persisted agent artifacts are preserved. If coverage
+still fails, repeat with round 3, then successive integers as needed. The
+unchanged gate requires at least 81/90 items overall and, in every topic,
+at least max(2, ceil(0.8 * topic size)) passing items. Audit scores still require
+at least 80 on every score and every Boolean check must pass. Do not proceed to
+`input-upload` or GPU work until the bank gate passes.
+
 After the approved Qwen generation/capture and verified uploads complete, the
 Codex production sequence is:
 

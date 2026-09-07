@@ -683,6 +683,9 @@ def _write_bank_packets(
     instructions: str,
     output_fields: list[str],
 ) -> dict[str, Any]:
+    if (packet_root / phase).exists():
+        raise RuntimeError(f"bank packet phase already exists: {packet_root / phase}")
+    (packet_root / phase).mkdir(parents=True, exist_ok=False)
     packets = []
     for agent in AGENTS:
         items = sorted(by_agent[agent], key=lambda row: row["opaque_id"])
@@ -732,8 +735,223 @@ def _load_bank_outputs(packet_manifest: dict[str, Any], validator) -> dict[str, 
     return output
 
 
+def _bank_phase(kind: str, round_no: int) -> str:
+    """Keep historical round-zero/one paths, and namespace later repairs."""
+    if type(round_no) is not int or round_no < 0:
+        raise RuntimeError("bank round must be a nonnegative integer")
+    suffix = ("" if kind == "author" else "_initial") if round_no == 0 else "_retry"
+    if round_no >= 2:
+        suffix += f"_round_{round_no}"
+    return f"bank_{kind}{suffix}"
+
+
+def _bank_manifest_path(out_dir: Path, kind: str, round_no: int) -> Path:
+    return out_dir / "inputs" / f"codex_{_bank_phase(kind, round_no)}_manifest.json"
+
+
+def _write_bank_manifest(path: Path, manifest: dict[str, Any]) -> None:
+    """Never overwrite a manifest, including a concurrently prepared round."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("x") as handle:
+        json.dump(manifest, handle, indent=2, ensure_ascii=False)
+        handle.write("\n")
+
+
+def _bank_new_phase(out_dir: Path, packet_root: Path, kind: str, round_no: int) -> Path:
+    """Reject collisions before preparing or persisting any artifacts."""
+    path = _bank_manifest_path(out_dir, kind, round_no)
+    phase = _bank_phase(kind, round_no)
+    artifact_phase = "bank_author_initial" if kind == "author" and round_no == 0 else phase
+    for target in (
+        path,
+        packet_root / phase,
+        out_dir / "inputs" / "codex_agent_artifacts" / artifact_phase,
+    ):
+        if target.exists():
+            raise RuntimeError(f"bank round collision: {target}")
+    return path
+
+
+def _persist_bank_artifacts(out_dir: Path, manifest: dict[str, Any], round_no: int) -> None:
+    """Persist immutable copies; allow repeat verification of identical historical copies."""
+    phase = manifest["phase"]
+    if phase == "bank_author":
+        phase = "bank_author_initial"
+    destination = out_dir / "inputs" / "codex_agent_artifacts" / phase
+    for packet in manifest["packets"]:
+        for field, suffix in (("packet_path", "packet.json"), ("output_path", "output.jsonl")):
+            source = Path(packet[field])
+            target = destination / packet["agent"] / f"batch_000.{suffix}"
+            if target.exists():
+                if _sha256(target) != _sha256(source):
+                    raise RuntimeError(f"bank artifact hash drift in round {round_no}: {target}")
+            else:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with target.open("xb") as handle:
+                    handle.write(source.read_bytes())
+
+
+def _bank_rounds(out_dir: Path) -> list[int]:
+    """Discover all prepared rounds and reject gaps or noncanonical round names."""
+    rounds = {0}
+    for kind in ("author", "audit"):
+        if _bank_manifest_path(out_dir, kind, 1).exists():
+            rounds.add(1)
+        prefix = f"codex_bank_{kind}_retry_round_"
+        for path in (out_dir / "inputs").glob(f"{prefix}*_manifest.json"):
+            number = path.name.removeprefix(prefix).removesuffix("_manifest.json")
+            if not number.isdecimal() or int(number) < 2 or str(int(number)) != number:
+                raise RuntimeError(f"invalid bank round manifest name: {path}")
+            rounds.add(int(number))
+    if sorted(rounds) != list(range(max(rounds) + 1)):
+        raise RuntimeError("missing predecessor bank round")
+    return sorted(rounds)
+
+
+def _bank_failures(authors: dict, audits: dict) -> tuple[set[str], set[str]]:
+    """Apply the audit and unique-control gates used by finalization."""
+    passing = {opaque_id for opaque_id, value in audits.items() if _audit_pass(value)}
+    key_to_ids: dict[str, list[str]] = defaultdict(list)
+    for opaque_id in passing:
+        key_to_ids[_normalized_key(authors[opaque_id]["control_subject_key"])].append(opaque_id)
+    duplicates = {opaque_id for ids in key_to_ids.values() if len(ids) > 1 for opaque_id in ids}
+    return (set(authors) - passing) | duplicates, duplicates
+
+
+def _bank_load_manifest(out_dir: Path, kind: str, round_no: int, mapping: list[dict]) -> tuple:
+    """Validate source, identity, role assignment, packet hashes, and exact output coverage."""
+    path = _bank_manifest_path(out_dir, kind, round_no)
+    if not path.exists():
+        raise RuntimeError(f"missing predecessor or incomplete bank round: {path}")
+    manifest = json.loads(path.read_text())
+    expected_backend = AUTHOR_BACKEND if kind == "author" else AUDIT_BACKEND
+    if (
+        manifest["source_sha256"] != SOURCE_SHA256
+        or manifest["backend"] != expected_backend
+        or manifest["phase"] != _bank_phase(kind, round_no)
+        or manifest.get("round", round_no) != round_no
+        or (round_no >= 2 and "round" not in manifest)
+        or manifest["mapping"] != mapping
+    ):
+        raise RuntimeError(f"bank manifest provenance/mapping mismatch: {path}")
+    expected = {row["opaque_id"]: row for row in mapping}
+    if len(expected) != len(mapping):
+        raise RuntimeError("duplicate bank mapping id")
+    if [packet["agent"] for packet in manifest["packets"]] != list(AGENTS):
+        raise RuntimeError("bank agent assignment mismatch")
+    seen = []
+    for packet in manifest["packets"]:
+        packet_path = Path(packet["packet_path"])
+        if _sha256(packet_path) != packet["packet_sha256"]:
+            raise RuntimeError(f"bank packet hash drift: {packet_path}")
+        ids = [row["opaque_id"] for row in json.loads(packet_path.read_text())["items"]]
+        if len(ids) != packet["n_items"]:
+            raise RuntimeError("bank packet cardinality mismatch")
+        for opaque_id in ids:
+            if opaque_id not in expected:
+                raise RuntimeError("bank packet mapping coverage mismatch")
+            agent = expected[opaque_id]["author_agent"]
+            if kind == "audit":
+                agent = AGENTS[1 - AGENTS.index(agent)]
+            if packet["agent"] != agent:
+                raise RuntimeError("bank cross-audit independence mismatch")
+        seen.extend(ids)
+    if len(seen) != len(expected) or set(seen) != set(expected):
+        raise RuntimeError("bank packet mapping coverage mismatch")
+    validator = _validate_author_value if kind == "author" else _validate_audit_value
+    values = _load_bank_outputs(manifest, validator)
+    return manifest, values
+
+
+def _bank_sources(out_dir: Path) -> tuple[list[dict], list[dict]]:
+    """Recover the original mapping from the hash-pinned source bank."""
+    source_path = out_dir / "inputs" / "source_test_questions.json"
+    if _sha256(source_path) != SOURCE_SHA256:
+        raise RuntimeError("source bank hash drift")
+    sources = json.loads(source_path.read_text())
+    if len(sources) != 90 or len({str(row["prompt_id"]) for row in sources}) != 90:
+        raise RuntimeError("source bank cardinality drift")
+    mapping = [
+        {
+            "opaque_id": _bank_opaque_id(str(row["prompt_id"])),
+            "prompt_id": str(row["prompt_id"]),
+            "author_agent": _bank_agent(_bank_opaque_id(str(row["prompt_id"]))),
+        }
+        for row in sources
+    ]
+    return sources, mapping
+
+
+def _bank_state(out_dir: Path, *, through_round: int | None = None) -> dict[str, Any]:
+    """Reduce a contiguous, complete, validated history without falling back on invalid rounds."""
+    sources, mapping = _bank_sources(out_dir)
+    rounds = _bank_rounds(out_dir)
+    if through_round is not None:
+        if through_round not in rounds:
+            raise RuntimeError("missing predecessor bank round")
+        rounds = list(range(through_round + 1))
+    authors, audits, latest_round, counts = {}, {}, {}, {}
+    for round_no in rounds:
+        author_path = _bank_manifest_path(out_dir, "author", round_no)
+        if not author_path.exists():
+            raise RuntimeError(f"missing predecessor or incomplete bank round: {author_path}")
+        raw = json.loads(author_path.read_text())
+        selected = mapping
+        if round_no:
+            failures, _ = _bank_failures(authors, audits)
+            # Old round-one packets additionally repaired keys duplicated among failed items.
+            if round_no == 1 and "round" not in raw:
+                keys = collections.Counter(
+                    _normalized_key(v["control_subject_key"]) for v in authors.values()
+                )
+                failures |= {
+                    i
+                    for i, v in authors.items()
+                    if keys[_normalized_key(v["control_subject_key"])] > 1
+                }
+            selected = sorted(
+                (row for row in mapping if row["opaque_id"] in failures),
+                key=lambda row: row["opaque_id"],
+            )
+            if raw["n_retry"] != len(selected):
+                raise RuntimeError("bank repair selection count mismatch")
+            for kind, field in (
+                ("author", "author_manifest_sha256"),
+                ("audit", "audit_manifest_sha256"),
+            ):
+                if raw[field] != _sha256(_bank_manifest_path(out_dir, kind, round_no - 1)):
+                    raise RuntimeError("bank predecessor manifest hash drift")
+        author_manifest, new_authors = _bank_load_manifest(out_dir, "author", round_no, selected)
+        audit_manifest, new_audits = _bank_load_manifest(out_dir, "audit", round_no, selected)
+        if audit_manifest["author_manifest_sha256"] != _sha256(author_path):
+            raise RuntimeError("bank audit author manifest hash drift")
+        output_hashes = {
+            p["agent"]: _sha256(Path(p["output_path"])) for p in author_manifest["packets"]
+        }
+        if (round_no >= 2 or "author_output_sha256" in audit_manifest) and audit_manifest.get(
+            "author_output_sha256"
+        ) != output_hashes:
+            raise RuntimeError("bank audited author output hash drift")
+        _persist_bank_artifacts(out_dir, author_manifest, round_no)
+        _persist_bank_artifacts(out_dir, audit_manifest, round_no)
+        authors.update(new_authors)
+        audits.update(new_audits)
+        latest_round.update(dict.fromkeys(new_authors, round_no))
+        counts[str(round_no)] = len(new_authors)
+    return {
+        "sources": sources,
+        "mapping": mapping,
+        "authors": authors,
+        "audits": audits,
+        "latest_round": latest_round,
+        "round_item_counts": counts,
+        "rounds": rounds,
+    }
+
+
 def prepare_bank_author(out_dir: Path, packet_root: Path) -> dict[str, Any]:
     """Prepare blinded author packets after the current measurement gate passes."""
+    path = _bank_new_phase(out_dir, packet_root, "author", 0)
     _validated_calibration(out_dir)
     source_path = out_dir / "inputs" / "source_test_questions.json"
     if _sha256(source_path) != SOURCE_SHA256:
@@ -786,8 +1004,7 @@ def prepare_bank_author(out_dir: Path, packet_root: Path) -> dict[str, Any]:
         "mapping": mapping,
         **packet_manifest,
     }
-    path = out_dir / "inputs" / "codex_bank_author_manifest.json"
-    _write_json(path, manifest)
+    _write_bank_manifest(path, manifest)
     print(
         "[codex-bank-author-prepare] "
         + " ".join(
@@ -798,17 +1015,48 @@ def prepare_bank_author(out_dir: Path, packet_root: Path) -> dict[str, Any]:
     return manifest
 
 
-def prepare_bank_audit(out_dir: Path, packet_root: Path, *, retry: bool = False) -> dict[str, Any]:
-    suffix = "retry" if retry else "initial"
-    author_manifest_name = (
-        "codex_bank_author_retry_manifest.json" if retry else "codex_bank_author_manifest.json"
-    )
-    author_manifest = json.loads((out_dir / "inputs" / author_manifest_name).read_text())
-    author_values = _load_bank_outputs(author_manifest, _validate_author_value)
-    _persist_packet_artifacts(
-        author_manifest, out_dir / "inputs" / "codex_agent_artifacts" / f"bank_author_{suffix}"
-    )
+def prepare_bank_audit(
+    out_dir: Path, packet_root: Path, *, retry: bool = False, round_no: int = 0
+) -> dict[str, Any]:
+    """Prepare an independent audit for the explicitly selected immutable author round."""
+    if retry and round_no == 0:
+        round_no = 1  # Backward-compatible Python caller; the CLI requires --round.
+    path = _bank_new_phase(out_dir, packet_root, "audit", round_no)
+    author_manifest_path = _bank_manifest_path(out_dir, "author", round_no)
+    author_manifest = json.loads(author_manifest_path.read_text())
+    if round_no:
+        state = _bank_state(out_dir, through_round=round_no - 1)
+        if _bank_rounds(out_dir)[-1] != round_no:
+            raise RuntimeError("cannot audit a superseded bank round")
+        failures, _ = _bank_failures(state["authors"], state["audits"])
+        if round_no == 1 and "round" not in author_manifest:
+            keys = collections.Counter(
+                _normalized_key(v["control_subject_key"]) for v in state["authors"].values()
+            )
+            failures |= {
+                i
+                for i, v in state["authors"].items()
+                if keys[_normalized_key(v["control_subject_key"])] > 1
+            }
+        mapping = sorted(
+            (row for row in state["mapping"] if row["opaque_id"] in failures),
+            key=lambda row: row["opaque_id"],
+        )
+        for kind, field in (
+            ("author", "author_manifest_sha256"),
+            ("audit", "audit_manifest_sha256"),
+        ):
+            if author_manifest[field] != _sha256(_bank_manifest_path(out_dir, kind, round_no - 1)):
+                raise RuntimeError("bank predecessor manifest hash drift")
+        if author_manifest["n_retry"] != len(mapping):
+            raise RuntimeError("bank repair selection count mismatch")
+    else:
+        _, mapping = _bank_sources(out_dir)
     source_path = out_dir / "inputs" / "source_test_questions.json"
+    if _sha256(source_path) != SOURCE_SHA256:
+        raise RuntimeError("source bank hash drift")
+    author_manifest, author_values = _bank_load_manifest(out_dir, "author", round_no, mapping)
+    _persist_bank_artifacts(out_dir, author_manifest, round_no)
     sources = {str(row["prompt_id"]): row for row in json.loads(source_path.read_text())}
     by_agent = {agent: [] for agent in AGENTS}
     for mapping in author_manifest["mapping"]:
@@ -824,7 +1072,7 @@ def prepare_bank_audit(out_dir: Path, packet_root: Path, *, retry: bool = False)
         )
     packet_manifest = _write_bank_packets(
         packet_root=packet_root,
-        phase=f"bank_audit_{suffix}",
+        phase=_bank_phase("audit", round_no),
         by_agent=by_agent,
         instructions=(
             "Independently audit each bilingual controlled question set for experimental matching "
@@ -841,15 +1089,18 @@ def prepare_bank_audit(out_dir: Path, packet_root: Path, *, retry: bool = False)
     )
     manifest = {
         "backend": AUDIT_BACKEND,
+        "round": round_no,
         "source_sha256": _sha256(source_path),
-        "author_manifest_sha256": _sha256(out_dir / "inputs" / author_manifest_name),
+        "author_manifest_sha256": _sha256(author_manifest_path),
+        "author_output_sha256": {
+            p["agent"]: _sha256(Path(p["output_path"])) for p in author_manifest["packets"]
+        },
         "mapping": author_manifest["mapping"],
         **packet_manifest,
     }
-    path = out_dir / "inputs" / f"codex_bank_audit_{suffix}_manifest.json"
-    _write_json(path, manifest)
+    _write_bank_manifest(path, manifest)
     print(
-        f"[codex-bank-audit-{suffix}-prepare] "
+        f"[codex-bank-audit-prepare] round={round_no} "
         + " ".join(
             f"{packet['agent']}={packet['n_items']}" for packet in packet_manifest["packets"]
         ),
@@ -858,28 +1109,24 @@ def prepare_bank_audit(out_dir: Path, packet_root: Path, *, retry: bool = False)
     return manifest
 
 
-def prepare_bank_retry(out_dir: Path, packet_root: Path) -> dict[str, Any]:
-    author_manifest_path = out_dir / "inputs" / "codex_bank_author_manifest.json"
-    audit_manifest_path = out_dir / "inputs" / "codex_bank_audit_initial_manifest.json"
-    author_manifest = json.loads(author_manifest_path.read_text())
-    audit_manifest = json.loads(audit_manifest_path.read_text())
-    authors = _load_bank_outputs(author_manifest, _validate_author_value)
-    audits = _load_bank_outputs(audit_manifest, _validate_audit_value)
-    _persist_packet_artifacts(
-        audit_manifest, out_dir / "inputs" / "codex_agent_artifacts" / "bank_audit_initial"
-    )
-    key_to_ids: dict[str, list[str]] = defaultdict(list)
-    for opaque_id, value in authors.items():
-        key_to_ids[_normalized_key(value["control_subject_key"])].append(opaque_id)
-    duplicates = {opaque_id for ids in key_to_ids.values() if len(ids) > 1 for opaque_id in ids}
-    retry_ids = sorted(
-        opaque_id
-        for opaque_id in authors
-        if not _audit_pass(audits[opaque_id]) or opaque_id in duplicates
-    )
+def prepare_bank_retry(out_dir: Path, packet_root: Path, *, round_no: int = 1) -> dict[str, Any]:
+    """Repair only latest audit/control-gate failures after a completed predecessor."""
+    if type(round_no) is not int or round_no < 1:
+        raise RuntimeError("repair round must be an integer >= 1")
+    path = _bank_new_phase(out_dir, packet_root, "author", round_no)
+    state = _bank_state(out_dir)
+    if state["rounds"][-1] != round_no - 1:
+        raise RuntimeError("repair requires the latest completed predecessor round")
+    author_manifest_path = _bank_manifest_path(out_dir, "author", round_no - 1)
+    audit_manifest_path = _bank_manifest_path(out_dir, "audit", round_no - 1)
+    authors, audits = state["authors"], state["audits"]
+    failures, duplicates = _bank_failures(authors, audits)
+    retry_ids = sorted(failures)
+    if not retry_ids:
+        raise RuntimeError("no failing bank items to repair")
     source_path = out_dir / "inputs" / "source_test_questions.json"
     sources = {str(row["prompt_id"]): row for row in json.loads(source_path.read_text())}
-    original_mapping = {row["opaque_id"]: row for row in author_manifest["mapping"]}
+    original_mapping = {row["opaque_id"]: row for row in state["mapping"]}
     by_agent = {agent: [] for agent in AGENTS}
     retry_mapping = []
     for opaque_id in retry_ids:
@@ -902,7 +1149,7 @@ def prepare_bank_retry(out_dir: Path, packet_root: Path) -> dict[str, Any]:
         retry_mapping.append(mapping)
     packet_manifest = _write_bank_packets(
         packet_root=packet_root,
-        phase="bank_author_retry",
+        phase=_bank_phase("author", round_no),
         by_agent=by_agent,
         instructions=(
             "Regenerate each controlled bilingual record, fixing every listed prior_audit_issues "
@@ -922,6 +1169,7 @@ def prepare_bank_retry(out_dir: Path, packet_root: Path) -> dict[str, Any]:
     )
     manifest = {
         "backend": AUTHOR_BACKEND,
+        "round": round_no,
         "source_sha256": _sha256(source_path),
         "author_manifest_sha256": _sha256(author_manifest_path),
         "audit_manifest_sha256": _sha256(audit_manifest_path),
@@ -929,47 +1177,22 @@ def prepare_bank_retry(out_dir: Path, packet_root: Path) -> dict[str, Any]:
         "n_retry": len(retry_mapping),
         **packet_manifest,
     }
-    path = out_dir / "inputs" / "codex_bank_author_retry_manifest.json"
-    _write_json(path, manifest)
-    print(f"[codex-bank-retry-prepare] n_retry={len(retry_mapping)}", flush=True)
+    _write_bank_manifest(path, manifest)
+    print(f"[codex-bank-retry-prepare] round={round_no} n_retry={len(retry_mapping)}", flush=True)
     return manifest
 
 
 def finalize_bank(out_dir: Path) -> dict[str, Any]:
+    """Build the fixed factorial bank from each item's latest completed, validated round."""
     inputs = out_dir / "inputs"
-    source_path = inputs / "source_test_questions.json"
-    sources = json.loads(source_path.read_text())
+    state = _bank_state(out_dir)
+    sources = state["sources"]
     source_by_id = {str(row["prompt_id"]): row for row in sources}
-    author_manifest = json.loads((inputs / "codex_bank_author_manifest.json").read_text())
-    audit_manifest = json.loads((inputs / "codex_bank_audit_initial_manifest.json").read_text())
-    authors = _load_bank_outputs(author_manifest, _validate_author_value)
-    audits = _load_bank_outputs(audit_manifest, _validate_audit_value)
-    _persist_packet_artifacts(
-        audit_manifest, inputs / "codex_agent_artifacts" / "bank_audit_initial"
-    )
-    retry_manifest_path = inputs / "codex_bank_author_retry_manifest.json"
-    n_retry = 0
-    if retry_manifest_path.exists():
-        retry_manifest = json.loads(retry_manifest_path.read_text())
-        n_retry = int(retry_manifest["n_retry"])
-        if n_retry:
-            retry_audit_manifest = json.loads(
-                (inputs / "codex_bank_audit_retry_manifest.json").read_text()
-            )
-            _persist_packet_artifacts(
-                retry_audit_manifest,
-                inputs / "codex_agent_artifacts" / "bank_audit_retry",
-            )
-            authors.update(_load_bank_outputs(retry_manifest, _validate_author_value))
-            audits.update(_load_bank_outputs(retry_audit_manifest, _validate_audit_value))
-
-    passing = {opaque_id for opaque_id, value in audits.items() if _audit_pass(value)}
-    key_to_ids: dict[str, list[str]] = defaultdict(list)
-    for opaque_id in passing:
-        key_to_ids[_normalized_key(authors[opaque_id]["control_subject_key"])].append(opaque_id)
-    duplicate_ids = {opaque_id for ids in key_to_ids.values() if len(ids) > 1 for opaque_id in ids}
-    passing -= duplicate_ids
-    opaque_to_prompt = {row["opaque_id"]: row["prompt_id"] for row in author_manifest["mapping"]}
+    authors, audits = state["authors"], state["audits"]
+    n_retry = sum(count for number, count in state["round_item_counts"].items() if number != "0")
+    failures, duplicate_ids = _bank_failures(authors, audits)
+    passing = set(authors) - failures
+    opaque_to_prompt = {row["opaque_id"]: row["prompt_id"] for row in state["mapping"]}
     passing_prompt_ids = {opaque_to_prompt[opaque_id] for opaque_id in passing}
     topics = collections.Counter(row["topic"] for row in sources)
     passed_topics = collections.Counter(
@@ -980,7 +1203,7 @@ def finalize_bank(out_dir: Path) -> dict[str, Any]:
     )
 
     prompt_rows = []
-    for mapping in author_manifest["mapping"]:
+    for mapping in state["mapping"]:
         opaque_id = mapping["opaque_id"]
         prompt_id = mapping["prompt_id"]
         source = source_by_id[prompt_id]
@@ -1020,6 +1243,21 @@ def finalize_bank(out_dir: Path) -> dict[str, Any]:
         "n_audit_passing_items": len(passing_prompt_ids),
         "n_audit_failing_items": 90 - len(passing_prompt_ids),
         "n_retry_items": n_retry,
+        "completed_repair_rounds": state["rounds"][1:],
+        "round_item_counts": state["round_item_counts"],
+        "latest_item_counts_by_round": {
+            str(r): sum(value == r for value in state["latest_round"].values())
+            for r in state["rounds"]
+        },
+        "passing_item_counts_by_round": {
+            str(r): sum(state["latest_round"][i] == r for i in passing) for r in state["rounds"]
+        },
+        "round_manifest_sha256": {
+            str(r): {
+                kind: _sha256(_bank_manifest_path(out_dir, kind, r)) for kind in ("author", "audit")
+            }
+            for r in state["rounds"]
+        },
         "n_duplicate_control_items_excluded": len(duplicate_ids),
         "topic_source_counts": dict(sorted(topics.items())),
         "topic_passing_counts": dict(sorted(passed_topics.items())),
@@ -1739,11 +1977,23 @@ def build_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--packet-root", type=Path)
     parser.add_argument("--invalid-root", type=Path)
     parser.add_argument("--rollouts", type=Path)
+    parser.add_argument(
+        "--round",
+        dest="round_no",
+        type=int,
+        help="Repair round (>=1), required for repair prepare/audit",
+    )
     return parser
 
 
 def main() -> int:
-    args = build_argparser().parse_args()
+    parser = build_argparser()
+    args = parser.parse_args()
+    repair_phase = args.phase in {"bank-retry-prepare", "bank-retry-audit-prepare"}
+    if repair_phase and (args.round_no is None or args.round_no < 1):
+        parser.error("repair prepare/audit requires explicit --round >= 1")
+    if not repair_phase and args.round_no is not None:
+        parser.error("--round is only valid for repair prepare/audit")
     if args.phase == "calibration-prepare":
         if args.packet_root is None:
             raise RuntimeError("calibration-prepare requires --packet-root")
@@ -1768,11 +2018,11 @@ def main() -> int:
     elif args.phase == "bank-retry-prepare":
         if args.packet_root is None:
             raise RuntimeError("bank-retry-prepare requires --packet-root")
-        prepare_bank_retry(args.out_dir, args.packet_root)
+        prepare_bank_retry(args.out_dir, args.packet_root, round_no=args.round_no)
     elif args.phase == "bank-retry-audit-prepare":
         if args.packet_root is None:
             raise RuntimeError("bank-retry-audit-prepare requires --packet-root")
-        prepare_bank_audit(args.out_dir, args.packet_root, retry=True)
+        prepare_bank_audit(args.out_dir, args.packet_root, round_no=args.round_no)
     elif args.phase == "bank-finalize":
         report = finalize_bank(args.out_dir)
         return 0 if report["passed"] else 8
