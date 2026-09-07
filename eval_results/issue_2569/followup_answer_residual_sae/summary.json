@@ -1,0 +1,435 @@
+{
+  "analysis": "direct_answer_residual_sae",
+  "layer": 19,
+  "pooling": "per-context mean of tail-inclusive answer states over valid draws",
+  "components": {
+    "observed": "delta_answer",
+    "predicted": "delta_context @ A",
+    "residual": "delta_answer - delta_context @ A"
+  },
+  "feature_metrics": {
+    "pair_direction_rms": "sqrt(mean_i(cos(unit(delta_i), unit(decoder_feature))^2)); primary",
+    "raw_energy_rms": "sqrt(mean_i((delta_i dot unit(decoder_feature))^2)); magnitude sensitivity",
+    "mean_direction_abs_cos": "abs(cos(mean_i(delta_i), unit(decoder_feature))); mean-direction sensitivity",
+    "qualification": "SAE decoder directions are correlated and non-orthogonal; feature scores overlap and are descriptive rankings, not additive variance shares."
+  },
+  "bootstrap": {
+    "unit": "pair",
+    "draws": 2000,
+    "seed": 25691,
+    "interval": "percentile 95%"
+  },
+  "orientation_gate": {
+    "max_abs_difference": 1.1546319456101628e-14,
+    "tolerance": 1e-10,
+    "passed": true
+  },
+  "prior_refusal_reproduction_gate": {
+    "n_pairs": 60,
+    "observed_mean": 0.778500892676814,
+    "expected_mean": 0.778500892676814,
+    "mean_abs_error": 0.0,
+    "observed_median": 0.799450054707672,
+    "expected_median": 0.799450054707672,
+    "median_abs_error": 0.0,
+    "tolerance": 1e-12,
+    "passed": true
+  },
+  "families": {
+    "question_topic_66": {
+      "n_pairs": 66,
+      "cosine_observed_predicted": {
+        "n": 66,
+        "mean": 0.7145733467120707,
+        "mean_ci95": [
+          0.6998630935480861,
+          0.7291267623039711
+        ],
+        "median": 0.724856676973931,
+        "median_ci95": [
+          0.6991839558227059,
+          0.7412184717390082
+        ],
+        "min": 0.5582336729647019,
+        "max": 0.8238356847070992
+      },
+      "predicted_over_observed_norm": {
+        "n": 66,
+        "mean": 0.8102466791608939,
+        "mean_ci95": [
+          0.7925482230066168,
+          0.8289436926076464
+        ],
+        "median": 0.8094788920457068,
+        "median_ci95": [
+          0.7867368382043473,
+          0.8325235332491305
+        ],
+        "min": 0.6338055796760725,
+        "max": 0.9997403983758109
+      },
+      "residual_over_observed_norm": {
+        "n": 66,
+        "mean": 0.7055930369743155,
+        "mean_ci95": [
+          0.6887319748738834,
+          0.7222971194696374
+        ],
+        "median": 0.7049952138103692,
+        "median_ci95": [
+          0.6856352341011842,
+          0.7231140321761202
+        ],
+        "min": 0.5675976532809092,
+        "max": 0.8680450510244789
+      },
+      "frobenius_predicted_over_observed": 0.8147311704164327,
+      "frobenius_residual_over_observed": 0.6944018775710566,
+      "variance_accounting": {
+        "observed_sq_norm": 71103.27191248025,
+        "predicted_sq_norm": 47197.41902399913,
+        "residual_sq_norm": 34285.56879098664,
+        "prediction_residual_cross_term_twice": -10379.715902505523,
+        "identity_error": 7.275957614183426e-12,
+        "qualification": "Prediction and residual are not orthogonal, so their squared norms are not additive explained-variance shares."
+      },
+      "max_abs_reconstruction_error": 4.440892098500626e-16,
+      "top_100_overlap__pair_direction_rms": {
+        "observed_predicted": 57,
+        "observed_residual": 57,
+        "predicted_residual": 42,
+        "all_three": 26
+      },
+      "top_100_overlap__raw_energy_rms": {
+        "observed_predicted": 56,
+        "observed_residual": 57,
+        "predicted_residual": 42,
+        "all_three": 26
+      },
+      "top_100_overlap__mean_direction_abs_cos": {
+        "observed_predicted": 57,
+        "observed_residual": 36,
+        "predicted_residual": 17,
+        "all_three": 12
+      },
+      "labeled_top_100_substantive_topic_overlap": {
+        "observed": 11,
+        "predicted": 24,
+        "residual": 10,
+        "observed_also_predicted": 11,
+        "residual_also_predicted": 9,
+        "qualification": "Descriptive overlap among labeled top-100 features only; unequal selected label coverage prevents prevalence or enrichment claims."
+      }
+    },
+    "oneword_topic_24": {
+      "n_pairs": 24,
+      "cosine_observed_predicted": {
+        "n": 24,
+        "mean": 0.5314313430639346,
+        "mean_ci95": [
+          0.4682713655800009,
+          0.5867106178834667
+        ],
+        "median": 0.5473863949705886,
+        "median_ci95": [
+          0.5186362514513406,
+          0.6092842086302557
+        ],
+        "min": 0.02013121698168846,
+        "max": 0.7409292080761367
+      },
+      "predicted_over_observed_norm": {
+        "n": 24,
+        "mean": 0.6906696662215129,
+        "mean_ci95": [
+          0.6406579267846068,
+          0.7464792299734754
+        ],
+        "median": 0.667904966782245,
+        "median_ci95": [
+          0.6153827138368958,
+          0.7399081426444363
+        ],
+        "min": 0.505251377912051,
+        "max": 1.044109999996073
+      },
+      "residual_over_observed_norm": {
+        "n": 24,
+        "mean": 0.8658855303834594,
+        "mean_ci95": [
+          0.8244350509753613,
+          0.9126118978413946
+        ],
+        "median": 0.8497160913254819,
+        "median_ci95": [
+          0.8064494498475161,
+          0.9063739326030468
+        ],
+        "min": 0.6811737361871009,
+        "max": 1.189003113249272
+      },
+      "frobenius_predicted_over_observed": 0.6736433386591099,
+      "frobenius_residual_over_observed": 0.8236597161549243,
+      "variance_accounting": {
+        "observed_sq_norm": 6530.468634223868,
+        "predicted_sq_norm": 2963.496284640817,
+        "residual_sq_norm": 4430.370020587867,
+        "prediction_residual_cross_term_twice": -863.3976710048149,
+        "identity_error": 5.684341886080801e-13,
+        "qualification": "Prediction and residual are not orthogonal, so their squared norms are not additive explained-variance shares."
+      },
+      "max_abs_reconstruction_error": 2.220446049250313e-16,
+      "top_100_overlap__pair_direction_rms": {
+        "observed_predicted": 63,
+        "observed_residual": 59,
+        "predicted_residual": 47,
+        "all_three": 30
+      },
+      "top_100_overlap__raw_energy_rms": {
+        "observed_predicted": 59,
+        "observed_residual": 61,
+        "predicted_residual": 46,
+        "all_three": 31
+      },
+      "top_100_overlap__mean_direction_abs_cos": {
+        "observed_predicted": 42,
+        "observed_residual": 24,
+        "predicted_residual": 10,
+        "all_three": 4
+      },
+      "labeled_top_100_substantive_topic_overlap": {
+        "observed": 13,
+        "predicted": 25,
+        "residual": 11,
+        "observed_also_predicted": 13,
+        "residual_also_predicted": 10,
+        "qualification": "Descriptive overlap among labeled top-100 features only; unequal selected label coverage prevents prevalence or enrichment claims."
+      }
+    },
+    "minimal_refusal_flips_60": {
+      "n_pairs": 60,
+      "cosine_observed_predicted": {
+        "n": 60,
+        "mean": 0.778500892676814,
+        "mean_ci95": [
+          0.7557764083387633,
+          0.7988781739635428
+        ],
+        "median": 0.799450054707672,
+        "median_ci95": [
+          0.7761285074341876,
+          0.8195914228185877
+        ],
+        "min": 0.4919298709395954,
+        "max": 0.9041525735805801
+      },
+      "predicted_over_observed_norm": {
+        "n": 60,
+        "mean": 0.7803467936226807,
+        "mean_ci95": [
+          0.7540151311941263,
+          0.809564092107279
+        ],
+        "median": 0.755525211803046,
+        "median_ci95": [
+          0.7342628764877301,
+          0.7914431103123443
+        ],
+        "min": 0.5550179582116621,
+        "max": 1.291804466538728
+      },
+      "residual_over_observed_norm": {
+        "n": 60,
+        "mean": 0.6276263893572581,
+        "mean_ci95": [
+          0.5982857302248558,
+          0.6611277365377755
+        ],
+        "median": 0.606228195819009,
+        "median_ci95": [
+          0.5789192710905746,
+          0.6374929115653921
+        ],
+        "min": 0.42879109877417315,
+        "max": 1.182287769860718
+      },
+      "frobenius_predicted_over_observed": 0.778047138114885,
+      "frobenius_residual_over_observed": 0.5879976589983308,
+      "variance_accounting": {
+        "observed_sq_norm": 103143.04393688148,
+        "predicted_sq_norm": 62438.39965870208,
+        "residual_sq_norm": 35660.804628825674,
+        "prediction_residual_cross_term_twice": 5043.839649353703,
+        "identity_error": 2.637534635141492e-11,
+        "qualification": "Prediction and residual are not orthogonal, so their squared norms are not additive explained-variance shares."
+      },
+      "max_abs_reconstruction_error": 1.7763568394002505e-15,
+      "top_100_overlap__pair_direction_rms": {
+        "observed_predicted": 78,
+        "observed_residual": 58,
+        "predicted_residual": 57,
+        "all_three": 48
+      },
+      "top_100_overlap__raw_energy_rms": {
+        "observed_predicted": 75,
+        "observed_residual": 60,
+        "predicted_residual": 51,
+        "all_three": 45
+      },
+      "top_100_overlap__mean_direction_abs_cos": {
+        "observed_predicted": 77,
+        "observed_residual": 54,
+        "predicted_residual": 38,
+        "all_three": 35
+      },
+      "labeled_top_100_substantive_topic_overlap": {
+        "observed": 18,
+        "predicted": 24,
+        "residual": 17,
+        "observed_also_predicted": 16,
+        "residual_also_predicted": 10,
+        "qualification": "Descriptive overlap among labeled top-100 features only; unequal selected label coverage prevents prevalence or enrichment claims."
+      }
+    }
+  },
+  "pair_id_order_sha256": {
+    "question_topic_66": "39e546f1fd2775b12f912fc376c3193e51b2bea1b5680bae465de7d168acac7c",
+    "oneword_topic_24": "7bc23a6ed3a9dc62d85ed123fbaa8e363135c67e56ba95ed5a5fe78573f23e3d",
+    "minimal_refusal_flips_60": "fc928010772976836d3fbe156487713a34c9d90fa5921410f7c105b9afe25638"
+  },
+  "inputs": {
+    "question_topic_66": {
+      "orientation": "manifest a minus manifest b (frozen #2564 convention)",
+      "n_contexts_in_vc": 984,
+      "n_answer_rows": 480,
+      "selected_answer_draw_counts": [
+        10
+      ],
+      "sources": {
+        "manifest": {
+          "path": "/home/thomasjiralerspong/eps-runs/cache-2569-answer-residual-sae/62b1e8889e1a262501937b0ec6f6022e28b4a7e6/issue2564_minpair/manifests/bank2564_manifest.json",
+          "bytes": 1150286,
+          "sha256": "d87c2dd9ac703cd8ad3d7c86f9e50a0259609004c68ff473cf818a1a4529b070",
+          "revision": "62b1e8889e1a262501937b0ec6f6022e28b4a7e6"
+        },
+        "context": {
+          "path": "/home/thomasjiralerspong/eps-runs/cache-2569-answer-residual-sae/62b1e8889e1a262501937b0ec6f6022e28b4a7e6/issue2564_minpair/analysis_tensors/vc2564/vc2564_bank.pt",
+          "bytes": 42350716,
+          "sha256": "ed074a2a891e51c4f910dd7144377ec8d1fcc9c4a63e6f68d37077056ce2fe79",
+          "revision": "62b1e8889e1a262501937b0ec6f6022e28b4a7e6"
+        },
+        "answer": {
+          "path": "/home/thomasjiralerspong/eps-runs/cache-2569-answer-residual-sae/62b1e8889e1a262501937b0ec6f6022e28b4a7e6/issue2564_minpair/analysis_tensors/va2564/va2564_query.pt",
+          "bytes": 20684373,
+          "sha256": "62c2791506d9e1d3b7c644a059b1bb87b1e0735a9079e81b7e2a7fac270af6a5",
+          "revision": "62b1e8889e1a262501937b0ec6f6022e28b4a7e6"
+        }
+      }
+    },
+    "oneword_topic_24": {
+      "orientation": "manifest a minus manifest b (frozen pilot convention)",
+      "n_contexts_in_vc": 96,
+      "n_answer_rows": 480,
+      "selected_answer_draw_counts": [
+        10
+      ],
+      "sources": {
+        "manifest": {
+          "path": "/home/thomasjiralerspong/eps-runs/cache-2569-answer-residual-sae/7f48a64fe9ea24c52e8321cf5b6e346317df819a/issue2564_minpair/lang_oneword_pilot/manifests/pilot_bank.json",
+          "bytes": 59863,
+          "sha256": "f15f9d829959ca8fd13c62c04d189ca273a585418e9e36a3aa42cde7c0ffd183",
+          "revision": "7f48a64fe9ea24c52e8321cf5b6e346317df819a"
+        },
+        "context": {
+          "path": "/home/thomasjiralerspong/eps-runs/cache-2569-answer-residual-sae/7f48a64fe9ea24c52e8321cf5b6e346317df819a/issue2564_minpair/lang_oneword_pilot/analysis_tensors/vc/vc_langow_bank.pt",
+          "bytes": 4134865,
+          "sha256": "bdfd8ab81862bbc278aa467754d12f7a7bbbf290a6cf8a5d30597ff37c048145",
+          "revision": "7f48a64fe9ea24c52e8321cf5b6e346317df819a"
+        },
+        "answer": {
+          "path": "/home/thomasjiralerspong/eps-runs/cache-2569-answer-residual-sae/7f48a64fe9ea24c52e8321cf5b6e346317df819a/issue2564_minpair/lang_oneword_pilot/analysis_tensors/va/va_langow_query_content_oneword.pt",
+          "bytes": 20700077,
+          "sha256": "697acf9b5a95aaf3dfe79f4c1bb958b2f1bbafcc444bc87f006cd7b1d9cff43a",
+          "revision": "7f48a64fe9ea24c52e8321cf5b6e346317df819a"
+        }
+      }
+    },
+    "minimal_refusal_flips_60": {
+      "orientation": "lower-refusal to higher-refusal context (high-low)",
+      "refusal_gap_threshold": 0.5,
+      "n_all_pairs": 124,
+      "n_contexts_in_vc": 248,
+      "n_answer_rows": 2480,
+      "selected_answer_draw_counts": [
+        10
+      ],
+      "sources": {
+        "leg9_manifest": {
+          "path": "/mnt/eps-data/thomasjiralerspong/issue2569_theory/leg9_dl/leg9_manifest.json",
+          "bytes": 5622,
+          "sha256": "33064d0cedf935524919dd190948ec0f3e358b7a1e5f14d4f91175a7ecf5610f"
+        },
+        "pair_manifest": {
+          "path": "/mnt/eps-data/thomasjiralerspong/issue2569_theory/leg9_dl/hf_cache/datasets--superkaiba1--explore-persona-space-data/snapshots/74bb871a5edf1afe777ac9b64a4e2fec5e9947c2/issue2617_svmp/manifests/svmp_bank.json",
+          "bytes": 115459,
+          "sha256": "3301291e2135a776cef5a52616d3858c7a30adf7a7832aed251667408e076fc6"
+        },
+        "judge": {
+          "path": "/mnt/eps-data/thomasjiralerspong/issue2569_theory/leg9_dl/hf_cache/datasets--superkaiba1--explore-persona-space-data/snapshots/74bb871a5edf1afe777ac9b64a4e2fec5e9947c2/issue2617_svmp/raw_completions/judge/judge_scores.json",
+          "bytes": 96097,
+          "sha256": "06ed448455c338c9881985c3d6e3ca44f343096004b497ceee269e247d48913e"
+        },
+        "context": {
+          "path": "/mnt/eps-data/thomasjiralerspong/issue2569_theory/leg9_dl/hf_cache/datasets--superkaiba1--explore-persona-space-data/snapshots/74bb871a5edf1afe777ac9b64a4e2fec5e9947c2/issue2617_svmp/analysis_tensors/vc/vc_langow_bank.pt",
+          "bytes": 10677009,
+          "sha256": "727d4c1b8d0a7f46f7d1108c27b85a1ed190a7481bc9e8ed701f4764229750bf"
+        },
+        "answer": {
+          "path": "/mnt/eps-data/thomasjiralerspong/issue2569_theory/leg9_dl/hf_cache/datasets--superkaiba1--explore-persona-space-data/snapshots/74bb871a5edf1afe777ac9b64a4e2fec5e9947c2/issue2617_svmp/analysis_tensors/va/va_langow_query_svmp.pt",
+          "bytes": 106896469,
+          "sha256": "7ca35e37c2af54aef833750c7b928fa8804457476dd081ebda950aa1dd23d6c6"
+        }
+      }
+    },
+    "operator": {
+      "source": {
+        "path": "/mnt/eps-data/thomasjiralerspong/issue2094_r2decomp/banked_maps/issue779_monitoring/n1m_readout/weights/L19/ridge.pt",
+        "bytes": 51425703,
+        "sha256": "188486f8afd9d95221e32492f3a0be2a3bdb2098cbe7fadfecf1d46433567909"
+      },
+      "selected_lambda": 0.001,
+      "shape": [
+        3584,
+        3584
+      ],
+      "row_action": "delta_answer_predicted = delta_context @ (diag(1/xsd) @ W)"
+    },
+    "answer_sae": {
+      "path": "/home/thomasjiralerspong/.cache/huggingface/datasets--superkaiba1--explore-persona-space-data/snapshots/cd80ba2588bb6d4291edf621176ea654bcbf2507/issue2552_derreplication/exactrep/analysis_tensors/sae_rep/sae_weights.safetensors",
+      "bytes": 939669884,
+      "sha256": "7c0b134e7f4a5618d1b2f87b3cbaba2b5e25f139bb95582988553c4f18dd1b08",
+      "revision": "cd80ba2588bb6d4291edf621176ea654bcbf2507",
+      "shape": [
+        32768,
+        3584
+      ]
+    },
+    "labels": {
+      "source": {
+        "path": "/mnt/eps-data/thomasjiralerspong/sae_interpretation_packets/codex/codex_interpretation_results_final.json",
+        "bytes": 1022785,
+        "sha256": "583ab3acc4e772a12f81ddb7e4f93979e2a5df53b10af20eb247fbc904bdfb05"
+      },
+      "answer_labels": 460,
+      "protocol": {
+        "unique_features": 936,
+        "requested_list_memberships": 1200,
+        "broad_cross_reviewed_features": 549,
+        "broad_cross_review_changes": 433,
+        "qualification": "Max-activation examples are correlational evidence. SAE categories are analyst-assigned and features are correlated.",
+        "raw_examples_redacted": true
+      },
+      "qualification": "Labels are analyst-assigned descriptions from a previously selected feature corpus; coverage of these new rankings is incomplete and not a random sample."
+    }
+  }
+}

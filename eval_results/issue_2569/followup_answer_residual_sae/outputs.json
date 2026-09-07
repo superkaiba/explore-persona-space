@@ -1,0 +1,22 @@
+{
+  "summary": {
+    "path": "/home/thomasjiralerspong/eps-runs/wt-2569-answer-residual-sae/eval_results/issue_2569/followup_answer_residual_sae/summary.json",
+    "bytes": 16936,
+    "sha256": "c4931aa28a88f1ff9314431973ed2bc2a99bd9e0f981dc552655277a5c9078e0"
+  },
+  "rankings": {
+    "path": "/home/thomasjiralerspong/eps-runs/wt-2569-answer-residual-sae/eval_results/issue_2569/followup_answer_residual_sae/rankings_top_bottom_100.json",
+    "bytes": 1614283,
+    "sha256": "55a40039dcd933da1e9f8d96d38e7afaa2ebc08242196023ab262f7b12c33ace"
+  },
+  "scores": {
+    "path": "/home/thomasjiralerspong/eps-runs/wt-2569-answer-residual-sae/eval_results/issue_2569/followup_answer_residual_sae/feature_scores.npz",
+    "bytes": 3119897,
+    "sha256": "7f3e4b5db6c1ab62704500484ef9eb74996bcea2a9f0c50c8f53e6f1d3ba560d"
+  },
+  "report": {
+    "path": "/home/thomasjiralerspong/eps-runs/wt-2569-answer-residual-sae/eval_results/issue_2569/followup_answer_residual_sae/report.md",
+    "bytes": 2136,
+    "sha256": "2536a118fd0a16c9df75fb9c711e4dd19ed33cbc2a0cfbbaedb6715fdc3cff61"
+  }
+}
