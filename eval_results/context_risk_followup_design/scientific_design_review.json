@@ -1,0 +1,114 @@
+{
+  "reviewer": "/root/reward_harness_critic",
+  "checked_at": "2026-09-07T15:29:45.472673+00:00",
+  "status": "design_recommendation_not_launch_approval",
+  "input_hashes": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_livecodebench_v20_corrected/full/run_result.json": "2f77a6284c49d2e2f1148dda41c3eb480aa7934fc334f6ef2104e8a5a07221d5",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_corrected_v20_report/qualitative_replay_figure_review.json": "17545fe3b7e34f4bf64b952b8ec0ce8b7ac3cd10f9e8c2971150bf93f6188b6a",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_map_pilot/run_result.json": "3e6651be338f84d60294335bb7183549bd61d5577a882ae36e96e437435ceedf",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_map_pilot/map_layer_44.npz": "680935a244cc39c29797d66b312b95e3741889a541dcee8bde7c69ac33c5242d",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_analyze.py": "05e7d2fcac63e442cfb7b2b99df244c33340070e8326edaebb16361661025010",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_qwen38_fit_map.py": "3f34b37aa96d4b7c960755296488b2448910cce82354bdffb4572c31ea1c95ae",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_followup_design/map_geometry_diagnostic.json": "a4697f155520c6138442758db7a205351c525e4cf236e1e634cce784b7a2b08b",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_followup_design/map_geometry_diagnostic.py": "0eb8a98878722b51e81055e3625e9f5db0064dbce658fc2fc77450df5de017ab",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_followup_design/scientific_design_review.md": "71765387fb36dd952173664d5ad4c57d59fa3950c35882a79586e74c9fd1479f"
+  },
+  "current_counts": {
+    "conflicting": {
+      "errors": 0,
+      "n": 160,
+      "passed": 0
+    },
+    "oneoff": {
+      "errors": 0,
+      "n": 160,
+      "passed": 4
+    },
+    "original": {
+      "errors": 0,
+      "n": 160,
+      "passed": 118
+    }
+  },
+  "current_gate": {
+    "eligible_task_ids": [
+      "lcbhard_1",
+      "lcbhard_100",
+      "lcbhard_11",
+      "lcbhard_15",
+      "lcbhard_18",
+      "lcbhard_36",
+      "lcbhard_39",
+      "lcbhard_47",
+      "lcbhard_48",
+      "lcbhard_6",
+      "lcbhard_69",
+      "lcbhard_83",
+      "lcbhard_85",
+      "lcbhard_87",
+      "lcbhard_89",
+      "lcbhard_9",
+      "lcbhard_92",
+      "lcbhard_93",
+      "lcbhard_99"
+    ],
+    "n_censored": 0,
+    "n_eligible_impossible_contexts": 38,
+    "n_eligible_tasks": 19,
+    "n_mixed_contexts": 2,
+    "n_negative": 300,
+    "n_positive": 4,
+    "passed": false,
+    "thresholds": {
+      "minimum_eligible_tasks": 5,
+      "minimum_mixed_impossible_contexts": 3,
+      "minimum_negative_impossible_rollouts": 10,
+      "minimum_original_passes_per_task": 1,
+      "minimum_positive_impossible_rollouts": 10
+    }
+  },
+  "map_geometry": {
+    "checked_at": "2026-09-07T15:25:16.028102+00:00",
+    "source": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_map_pilot/map_layer_44.npz",
+    "source_sha256": "680935a244cc39c29797d66b312b95e3741889a541dcee8bde7c69ac33c5242d",
+    "runner_sha256": "0eb8a98878722b51e81055e3625e9f5db0064dbce658fc2fc77450df5de017ab",
+    "shape": [
+      5120,
+      5120
+    ],
+    "scope": "Effective affine linear component before fold-specific probe StandardScaler.",
+    "largest_singular_value": 3.8905728944487477,
+    "smallest_singular_value": 1.2539305649395225e-06,
+    "condition_number": 3102702.0181427603,
+    "float64_numerical_rank": 5120,
+    "rank_tolerance": 4.423069292953128e-12,
+    "stable_rank": 9.959975258646084,
+    "singular_value_quantiles": {
+      "0": 1.2539305649395225e-06,
+      "0.01": 0.00019502416593690004,
+      "0.1": 0.002438897214067254,
+      "0.5": 0.02536054537340926,
+      "0.9": 0.1715951231505374,
+      "0.99": 0.731710618569352,
+      "1": 3.8905728944487477
+    },
+    "components_for_frobenius_energy": {
+      "0.5": 37,
+      "0.9": 456,
+      "0.95": 789,
+      "0.99": 1720
+    },
+    "elapsed_seconds": 22.010770892724395,
+    "model_calls": 0,
+    "probe_fits": 0,
+    "interpretation": "Invertibility concerns unregularized linear function classes; singular spectrum does not establish risk predictive value. Fold standardization changes geometry."
+  },
+  "main_findings": [
+    "Repeated seeds share one exact-context activation; they improve risk estimation but not task diversity or within-context discrimination.",
+    "An affine map followed by a linear probe cannot add per-example information; L2 and fold preprocessing can produce useful learned inductive bias.",
+    "Use development-only recipe selection, then a frozen task-disjoint evaluation with all planned trajectories and matched linear controls."
+  ],
+  "model_calls": 0,
+  "probe_fits": 0,
+  "task_or_compute_mutations": 0
+}

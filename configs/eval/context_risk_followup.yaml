@@ -1,0 +1,15 @@
+operation: freeze
+root: ${oc.env:EPM_CONTEXT_RISK_FOLLOWUP_ROOT,eval_results/context_risk/impossible_ten_attempts_followup}
+source_manifest: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/data/impossible_livecodebench/public_development_manifest.jsonl
+review: ${oc.env:EPM_CONTEXT_RISK_FOLLOWUP_REVIEW,eval_results/context_risk_followup_design/code_review.json}
+phase: development
+arm: A
+model: openai-api/local/Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0
+base_url: ${oc.env:EPM_CONTEXT_RISK_BASE_URL,http://127.0.0.1:18000/v1}
+max_connections: 16
+resume_log: null
+pilot_limit: null
+hydra:
+  run:
+    dir: .
+  output_subdir: null
