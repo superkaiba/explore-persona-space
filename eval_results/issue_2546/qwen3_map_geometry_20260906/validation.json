@@ -1,0 +1,62 @@
+{
+  "independent_review": {
+    "reviewer": "qwen3_geometry_review",
+    "verdict": "PASS",
+    "checks": [
+      "Recomputed k10/50/200 input/output overlaps from saved bases to 1e-11",
+      "Verified completion/results SHA256 and all four tensor SHA256 values",
+      "Verified production Ridge sample-std float64 recipe and raw operator orientation",
+      "Both original fold-zero prediction parity checks are exact after float32 serialization",
+      "Independent focused tests: 3 passed"
+    ]
+  },
+  "payload_workflow_lint": {
+    "command": "uv run python scripts/workflow_lint.py --files scripts/issue2546_qwen3_map_geometry.py tests/test_issue2546_qwen3_map_geometry.py",
+    "exit_code": 0,
+    "verdict": "PASS",
+    "files": 2,
+    "import_closure_additions": 0,
+    "checks_ran": 40,
+    "checks_skipped_as_out_of_scope": 46
+  },
+  "full_workflow_lint": {
+    "command": "uv run python scripts/workflow_lint.py",
+    "exit_code": 1,
+    "verdict": "FAIL_OUTSIDE_PAYLOAD",
+    "errors": 21,
+    "unchanged_script_errors": 19,
+    "sparse_layout_errors": 2,
+    "payload_attribution": "No error names the new script or test. Nineteen errors concern unchanged pre-existing scripts: fourteen heavy-import-before-dotenv checks, one dotenv/HF import check, and four HF retry-routing checks. Two further checks could not find CLAUDE.md in the sparse worktree; its instructions had been read with git show. No global repair or lint rerun was attempted.",
+    "log": "workflow_lint_full.log"
+  },
+  "producer_focused_tests": {
+    "command": "uv run pytest tests/test_issue2546_qwen3_map_geometry.py -q",
+    "exit_code": 0,
+    "passed": 3
+  },
+  "mapped_tests": {
+    "selector": "uv run python scripts/select_step9c_tests.py --map-files eval_results/issue_2546/qwen3_map_geometry_20260906/payload_paths.txt",
+    "command": "uv run pytest tests/test_issue2546_qwen3_map_geometry.py tests/test_shared_vm_thread_caps.py -q",
+    "exit_code": 1,
+    "passed": 29,
+    "failed": 1,
+    "failing_test": "tests/test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints",
+    "payload_attribution": "No failure names the new script or test. All named violating entrypoints are unchanged files already present at the starting commit.",
+    "existing_violating_entrypoints": [
+      "scripts/issue1902_lasttoken_transfer.py",
+      "scripts/issue2254_answer_strength_sweep.py",
+      "scripts/issue2254_information_type_position.py",
+      "scripts/issue2254_low_dose_large_replication.py",
+      "scripts/issue2254_multitype_attrition_analysis.py",
+      "scripts/issue2254_multitype_context_preference.py",
+      "scripts/issue2254_probe_context_followup.py",
+      "scripts/issue2254_probe_context_qwen35.py",
+      "scripts/issue2254_probe_context_qwen35_personas.py",
+      "scripts/issue2546_ladder_audit.py",
+      "scripts/issue2546_retrieval_recipe_check.py",
+      "scripts/issue2546_retrieval_recipe_decomposition.py",
+      "scripts/issue2546_sink_token_test.py",
+      "scripts/section45_cot_necessity_figure.py"
+    ]
+  }
+}

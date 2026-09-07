@@ -1,0 +1,31 @@
+[load] ans_mean/math rows=6745
+[load] ans_mean/gsm8k_train rows=7162
+[load] ans_mean/contexthub rows=8384
+[load] ans_mean/mmlu rows=7361
+[load] ans_mean/arc_challenge rows=1157
+[load] ans_mean/csqa rows=1210
+[load] ans_mean/piqa rows=1791
+[load] cx_last/math rows=6745
+[load] cx_last/gsm8k_train rows=7162
+[load] cx_last/contexthub rows=8384
+[load] cx_last/mmlu rows=7361
+[load] cx_last/arc_challenge rows=1157
+[load] cx_last/csqa rows=1210
+[load] cx_last/piqa rows=1791
+[parity] context fit_seconds=29.80 max_abs=0
+[full_fit] context seconds=14.31
+[svd] context seconds=15.57
+[load] cot_boundary/math rows=6745
+[load] cot_boundary/gsm8k_train rows=7162
+[load] cot_boundary/contexthub rows=8384
+[load] cot_boundary/mmlu rows=7361
+[load] cot_boundary/arc_challenge rows=1157
+[load] cot_boundary/csqa rows=1210
+[load] cot_boundary/piqa rows=1791
+[parity] end_of_thought fit_seconds=19.76 max_abs=0
+[full_fit] end_of_thought seconds=22.14
+[svd] end_of_thought seconds=21.26
+[overlap] k=10 input=0.085722 output=0.867877
+[overlap] k=50 input=0.122768 output=0.921410
+[overlap] k=200 input=0.204628 output=0.916946
+[complete] seconds=225.78 out=eval_results/issue_2546/qwen3_map_geometry_20260906

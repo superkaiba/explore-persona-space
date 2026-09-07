@@ -1,0 +1,2 @@
+scripts/issue2546_qwen3_map_geometry.py
+tests/test_issue2546_qwen3_map_geometry.py

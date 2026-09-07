@@ -1,0 +1,27 @@
+{
+  "repo": "superkaiba1/explore-persona-space-data",
+  "repo_type": "dataset",
+  "prefix": "issue2546_cotmap/analysis_tensors/qwen3_map_geometry_20260906",
+  "revision": "169127ec798014812a3fd4f01750c886ca3b8e81",
+  "verified": true,
+  "verification": "All four exact paths present at the upload commit; remote byte sizes and LFS SHA256 values match each local artifact.",
+  "upload_process_exit_code": 0,
+  "files": {
+    "context_bases.npz": {
+      "bytes": 13140762,
+      "sha256": "b87157fe145de29166cb335d64580dd8fad183b72cf0fbd115266ac2fc44ed8b"
+    },
+    "context_operator.npz": {
+      "bytes": 140436356,
+      "sha256": "24cea075dc2d0b409f511c1c3c85650b3a5b5e75a6299a70788ea155a01c07fc"
+    },
+    "end_of_thought_bases.npz": {
+      "bytes": 13140762,
+      "sha256": "09fb2557f8b04c2d2eb54a83d7f33eaf7230339de603d8fb153ca18747b14f1f"
+    },
+    "end_of_thought_operator.npz": {
+      "bytes": 140436356,
+      "sha256": "8c500eb322084f8c7ec1295fa01d6f3ed1b1983f701eb0d9492fe6e71c88c276"
+    }
+  }
+}
