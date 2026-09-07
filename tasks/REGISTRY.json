@@ -12894,8 +12894,8 @@
       "goal": "Test whether the model activation before generating new reasoning or an action predicts a later successful reward hack, and whether the frozen context-to-answer map improves that forecast.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/2670",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/2670",
+      "status": "followups_running",
       "title": "Ten-submission prompting still yielded too few reward hacks for prediction (MODERATE confidence)"
     },
     "268": {
