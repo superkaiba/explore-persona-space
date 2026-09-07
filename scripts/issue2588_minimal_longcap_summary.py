@@ -36,7 +36,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 from huggingface_hub import hf_hub_download, list_repo_tree  # noqa: E402
+from matplotlib.lines import Line2D  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
+from scipy.stats import spearmanr  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -273,6 +275,44 @@ def validate_long_sources(
     return audits
 
 
+def summarize_matched_controls(
+    long_maps: dict[str, dict[str, Any]], matched_summary: dict[str, Any]
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    rows = []
+    for cell in MINIMAL_MAP_CELLS:
+        mapping = long_maps[cell]
+        key = f"{cell}__{mapping['input_position']}"
+        matched = matched_summary[key]["by_n"]["4500"]
+        rows.append(
+            {
+                "cell": cell,
+                "model": mapping["model"],
+                "family": mapping["family"],
+                "arm": mapping["arm"],
+                "aa_index": float(mapping["aa_index"]),
+                "n_train": 4500,
+                "n_fits": int(matched["n_fits"]),
+                "mean_rrr_rank_rel10": float(matched["mean_rank_rel10"]),
+                "min_rrr_rank_rel10": int(matched["min_rank_rel10"]),
+                "max_rrr_rank_rel10": int(matched["max_rank_rel10"]),
+            }
+        )
+    trends = {}
+    for arm in ("no-thinking", "end-of-thought"):
+        qwen = [row for row in rows if row["arm"] == arm and row["family"] == "Qwen h=5120 column"]
+        result = spearmanr(
+            [row["aa_index"] for row in qwen],
+            [row["mean_rrr_rank_rel10"] for row in qwen],
+        )
+        trends[arm] = {
+            "n": len(qwen),
+            "rho": float(result.statistic),
+            "p_asymptotic": float(result.pvalue),
+            "scope": "same-width Qwen column at matched n=4500",
+        }
+    return rows, trends
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -316,6 +356,9 @@ def build_summary(
     baseline_maps = _map_index(baseline_payload)
     long_maps = _map_index(long_payload)
     source_audit = validate_long_sources(long_maps, matched_payload["summary"], long_revision)
+    matched_controls, matched_trends = summarize_matched_controls(
+        long_maps, matched_payload["summary"]
+    )
     rows: list[dict[str, Any]] = []
     for target in TARGETS:
         cell = target["cell"]
@@ -428,6 +471,8 @@ def build_summary(
             ),
         },
         "rows": rows,
+        "matched_n_controls": matched_controls,
+        "matched_n_trends": matched_trends,
     }
 
 
@@ -494,7 +539,8 @@ def _paired_bars(
 
 def make_figure(summary: dict[str, Any]) -> plt.Figure:
     set_c2a_style()
-    fig, axes = plt.subplots(1, 3, figsize=(14.4, 5.8), constrained_layout=False)
+    fig, grid = plt.subplots(2, 2, figsize=(14.4, 10.4), constrained_layout=False)
+    axes = grid.ravel()
     rows = summary["rows"]
     model_labels = [row["label"].replace("Qwen", "Q") for row in rows]
 
@@ -609,8 +655,96 @@ def make_figure(summary: dict[str, Any]) -> plt.Figure:
         frameon=False,
         ncol=2,
     )
-    axes[2].legend(loc="lower center", bbox_to_anchor=(0.5, -0.38), frameon=False)
-    fig.subplots_adjust(left=0.065, right=0.99, top=0.78, bottom=0.30, wspace=0.34)
+    axes[2].legend(loc="best", frameon=False)
+
+    arm_style = {
+        "no-thinking": {"color": LONG_COLOR, "label": "Prompt read"},
+        "end-of-thought": {"color": MATCHED_COLOR, "label": "End-of-thought read"},
+    }
+    for arm, style in arm_style.items():
+        qwen = sorted(
+            (
+                row
+                for row in summary["matched_n_controls"]
+                if row["arm"] == arm and row["family"] == "Qwen h=5120 column"
+            ),
+            key=lambda row: row["aa_index"],
+        )
+        xs = np.asarray([row["aa_index"] for row in qwen])
+        ys = np.asarray([row["mean_rrr_rank_rel10"] for row in qwen])
+        lo = ys - np.asarray([row["min_rrr_rank_rel10"] for row in qwen])
+        hi = np.asarray([row["max_rrr_rank_rel10"] for row in qwen]) - ys
+        axes[3].plot(xs, ys, color=style["color"], lw=2.2, zorder=2)
+        axes[3].errorbar(
+            xs,
+            ys,
+            yerr=np.vstack((lo, hi)),
+            color=style["color"],
+            marker="o",
+            lw=0,
+            elinewidth=1.6,
+            capsize=3,
+            zorder=3,
+        )
+    olmo = [row for row in summary["matched_n_controls"] if row["family"] != "Qwen h=5120 column"]
+    for row in olmo:
+        style = arm_style[row["arm"]]
+        axes[3].scatter(
+            row["aa_index"],
+            row["mean_rrr_rank_rel10"],
+            marker="^",
+            s=90,
+            facecolor=PAPER,
+            edgecolor=style["color"],
+            linewidth=2,
+            zorder=4,
+        )
+    prompt_rho = summary["matched_n_trends"]["no-thinking"]["rho"]
+    thought_rho = summary["matched_n_trends"]["end-of-thought"]["rho"]
+    axes[3].set_xlabel("Artificial Analysis intelligence index")
+    axes[3].set_ylabel("Matched-n reduced-rank dimension")
+    axes[3].set_xlim(0, 58)
+    axes[3].set_ylim(0, 150)
+    _style_axis(axes[3])
+    _panel_heading(
+        axes[3],
+        "D · Same-width controls",
+        f"Matched ranks: Qwen ρ = {prompt_rho:+.2f} / {thought_rho:+.2f}",
+    )
+    axes[3].legend(
+        handles=[
+            Line2D(
+                [0],
+                [0],
+                color=style["color"],
+                marker="o",
+                lw=2,
+                label=style["label"],
+            )
+            for style in arm_style.values()
+        ]
+        + [
+            Line2D(
+                [0],
+                [0],
+                color=MUTED,
+                marker="^",
+                markerfacecolor=PAPER,
+                lw=0,
+                label="OLMo control",
+            )
+        ],
+        frameon=False,
+        loc="best",
+    )
+    fig.subplots_adjust(
+        left=0.065,
+        right=0.99,
+        top=0.89,
+        bottom=0.12,
+        wspace=0.28,
+        hspace=0.60,
+    )
     return fig
 
 
