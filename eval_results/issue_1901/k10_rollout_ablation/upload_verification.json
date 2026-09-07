@@ -1,0 +1,216 @@
+{
+  "status": "PASS",
+  "revision": "df7f164bb295018fd390d0e22e016f7e50230d28",
+  "repo": "superkaiba1/explore-persona-space-data",
+  "prefix": "issue1901_k10_rollouts",
+  "capture_root": "/home/thomasjiralerspong/.cache/eps-1901-k-rollout-20260907/k10_download/issue1901_k10_rollouts",
+  "files": [
+    {
+      "path": "analysis_tensors/seed47.npz",
+      "size": 7184902,
+      "sha256": "0d21bbf3435463597ba241b4dd3d7f182ef8e00b882dc95e863cab6f653866a6"
+    },
+    {
+      "path": "analysis_tensors/seed48.npz",
+      "size": 7184902,
+      "sha256": "495f49af89c6a405f66190d1d7a73cce126fd2651398a01d919204a7b601ae41"
+    },
+    {
+      "path": "analysis_tensors/seed49.npz",
+      "size": 7184902,
+      "sha256": "629ff1d7421537ce64b2e49f51312d12567b4d8c0e2ce504b6a3d47588f5ceb7"
+    },
+    {
+      "path": "analysis_tensors/seed50.npz",
+      "size": 7184902,
+      "sha256": "b16414f3e0fe3ac939f588b8cef2ff6df1054624836b18ac1916daeef9b6dffe"
+    },
+    {
+      "path": "analysis_tensors/seed51.npz",
+      "size": 7184902,
+      "sha256": "11208bb84af5e984602de7375bf7aea0b0355e86dd2114af0330cc039b825c32"
+    },
+    {
+      "path": "capture_parity.json",
+      "size": 207,
+      "sha256": "b786063fa988b23086495255ed35d77cb38ba809005b6e8c44f435741bfd46d9"
+    },
+    {
+      "path": "capture_uploads.json",
+      "size": 1413,
+      "sha256": "d58c0dd82aeb347952b345a6bbb500c81aa7d75d6b817e835291b374d49e488c"
+    },
+    {
+      "path": "exit.json",
+      "size": 59,
+      "sha256": "ce9a9f95f864d49a06ce9b696ed5ed9ccca89c665b95ed7b30c971bc5d86dcbd"
+    },
+    {
+      "path": "generation_uploads.json",
+      "size": 2443,
+      "sha256": "34d2db1532655435ffc0acb5407ca5ecf534d7ba7f912da38a91d6e3992dc1f3"
+    },
+    {
+      "path": "raw_completions/seed47_chunk0.json",
+      "size": 3522000,
+      "sha256": "c2c081d43091949776add6392651c1e6bdfbef4e8f33cc1a34fc74ee90ef99d2"
+    },
+    {
+      "path": "raw_completions/seed47_chunk1.json",
+      "size": 3917552,
+      "sha256": "1f32487f6be149542ab3268b4f3aeb147b88889e62655f2e080e138cddbcc2ea"
+    },
+    {
+      "path": "raw_completions/seed48_chunk0.json",
+      "size": 3538770,
+      "sha256": "af0cdd1500000d915b4651f3cea004c79ec4f116b5b0f1de72125149864b2992"
+    },
+    {
+      "path": "raw_completions/seed48_chunk1.json",
+      "size": 3858003,
+      "sha256": "5520af682120f7b39ba1924e000223561cab83d9149428cba8ac053f47a332c6"
+    },
+    {
+      "path": "raw_completions/seed49_chunk0.json",
+      "size": 3569966,
+      "sha256": "b204bf2b70e4b95419dcdf61db54b55a4b16b310e3114c71c0922e20976e5c9e"
+    },
+    {
+      "path": "raw_completions/seed49_chunk1.json",
+      "size": 3834522,
+      "sha256": "309b11b97efd27adbebc8e105f703a09b9fd6a51ef6ca3690a5688f282e9ed0c"
+    },
+    {
+      "path": "raw_completions/seed50_chunk0.json",
+      "size": 3582399,
+      "sha256": "3d4d4fec60603ef9b9f61c6f60d6e2390c68d1ceadc26535b682e6ce85b42764"
+    },
+    {
+      "path": "raw_completions/seed50_chunk1.json",
+      "size": 3852187,
+      "sha256": "70adc44be6c5ae837442718279da89e09a0b31405bc8c81d326cfdcd18444ea5"
+    },
+    {
+      "path": "raw_completions/seed51_chunk0.json",
+      "size": 3536235,
+      "sha256": "b63fc764e7b132d89741d60bed5f8eb1d2065e3105de5291e09f352f01c8c5da"
+    },
+    {
+      "path": "raw_completions/seed51_chunk1.json",
+      "size": 3919666,
+      "sha256": "0441ea9905d9c0ef1e3498dbfc1b29bee456060182377dfe7347b8a97c5a5b9a"
+    },
+    {
+      "path": "run_summary.json",
+      "size": 2919,
+      "sha256": "92c9fec74b8be5c39e60b916c6d193346fd537a6216d66709bd3010c2d3a9212"
+    }
+  ],
+  "distinct_seed_context_rows": 5000,
+  "pod_outroot_listing": {
+    "metadata_revision": "df7f164bb295018fd390d0e22e016f7e50230d28",
+    "outroot": "/workspace/issue1901_k10",
+    "new_output_files": [
+      "analysis_tensors/seed47.npz",
+      "analysis_tensors/seed48.npz",
+      "analysis_tensors/seed49.npz",
+      "analysis_tensors/seed50.npz",
+      "analysis_tensors/seed51.npz",
+      "capture_parity.json",
+      "capture_uploads.json",
+      "exit.json",
+      "generation_uploads.json",
+      "raw_completions/seed47_chunk0.json",
+      "raw_completions/seed47_chunk1.json",
+      "raw_completions/seed48_chunk0.json",
+      "raw_completions/seed48_chunk1.json",
+      "raw_completions/seed49_chunk0.json",
+      "raw_completions/seed49_chunk1.json",
+      "raw_completions/seed50_chunk0.json",
+      "raw_completions/seed50_chunk1.json",
+      "raw_completions/seed51_chunk0.json",
+      "raw_completions/seed51_chunk1.json",
+      "run_summary.json"
+    ],
+    "top_level_entries": [
+      "analysis_tensors",
+      "capture_parity.json",
+      "capture_uploads.json",
+      "exit.json",
+      "generation_uploads.json",
+      "raw_completions",
+      "run_summary.json",
+      "source"
+    ],
+    "excluded_source_cache": "Pinned, hash-verified inputs; no newly generated output",
+    "sentinel": {
+      "phase": "done",
+      "issue": 1901,
+      "attempt_id": "k10r2-20260907"
+    }
+  },
+  "outroot": "swept-clean",
+  "rows": "reconciled",
+  "seed_counts": {
+    "47": {
+      "rows": 1000,
+      "min_answer_tokens": 3,
+      "max_answer_tokens": 1027
+    },
+    "48": {
+      "rows": 1000,
+      "min_answer_tokens": 3,
+      "max_answer_tokens": 1027
+    },
+    "49": {
+      "rows": 1000,
+      "min_answer_tokens": 3,
+      "max_answer_tokens": 1027
+    },
+    "50": {
+      "rows": 1000,
+      "min_answer_tokens": 3,
+      "max_answer_tokens": 1027
+    },
+    "51": {
+      "rows": 1000,
+      "min_answer_tokens": 3,
+      "max_answer_tokens": 1027
+    }
+  },
+  "exit": {
+    "exit_code": 0,
+    "completed_at": 1788816900.9756854
+  },
+  "parity": {
+    "n": 32,
+    "cosine_min": 0.9999999999999998,
+    "cosine_mean": 1.0,
+    "relative_l2_max": 0.0,
+    "relative_l2_mean": 0.0,
+    "cosine_floor": 0.999,
+    "source": "issue1901_opsurface span-mean equivalence"
+  },
+  "source_cache_exclusion": {
+    "reason": "byte-verified pinned inputs, not new outputs",
+    "revision": "ce32efe1b04e488df73392ce0faa172e343ef85f",
+    "files": {
+      "prompts": [
+        "issue1901_avgtarget/raw_completions/gen_seed45.json",
+        "a8aef214980fa0a5424e543633de45f9536cee9752bc4c64014c7b5ea6c454fa"
+      ],
+      "index": [
+        "issue1901_avgpool/analysis_tensors/bundle/bundle_index.json",
+        "5330cd7523db3de9a5fcf36296b73e6a2b392e8fc645881e2e9b7a03e9285159"
+      ],
+      "reference_text": [
+        "issue1901_avgpool/raw_completions/test/shard00/gen_seed43_chunk0.json",
+        "4a4d1b9d060af85c8bc8f23fea470473350f11f1b78b51a50862d002c221e931"
+      ],
+      "reference_vectors": [
+        "issue1901_avgpool/analysis_tensors/kresample/V_test_shard00.npz",
+        "b7b4c8ada5b570017c7e9fbd342a7256205d3a7c0f3c518ac26e0405f50dc805"
+      ]
+    }
+  }
+}

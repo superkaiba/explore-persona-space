@@ -1,0 +1,12 @@
+{
+  "repo": "superkaiba1/explore-persona-space-data",
+  "revision": "b7c473e88f49cadd5defba3ce95e50c7d312ddd0",
+  "path": "issue1901_k10_rollout_ablation/analysis_tensors/paired_bootstrap.npz",
+  "sha256": "7397b380a81cd4933bab03be6de5edd249bf9e9b21bdd9aa158d63df3f8eb8b4",
+  "bytes": 2226121,
+  "verification": "PASS: remote size and content hash",
+  "capture_revision": "df7f164bb295018fd390d0e22e016f7e50230d28",
+  "capture_prefix": "issue1901_k10_rollouts",
+  "capture_files": 20,
+  "capture_bytes": 73062851
+}
