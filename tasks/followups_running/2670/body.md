@@ -1,5 +1,5 @@
 ---
-title: Corrected ImpossibleBench pilot yielded too few reward hacks for prediction
+title: Ten-submission prompting still yielded too few reward hacks for prediction
   (MODERATE confidence)
 kind: experiment
 tags:

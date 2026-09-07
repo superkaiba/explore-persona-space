@@ -12896,7 +12896,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/2670",
       "status": "followups_running",
-      "title": "Corrected ImpossibleBench pilot yielded too few reward hacks for prediction (MODERATE confidence)"
+      "title": "Ten-submission prompting still yielded too few reward hacks for prediction (MODERATE confidence)"
     },
     "268": {
       "has_clean_result": false,
