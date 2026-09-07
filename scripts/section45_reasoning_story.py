@@ -1,7 +1,8 @@
 """Render the approved reasoning story from banked #2546 results, without refits.
 
 Needs-reasoning evaluation of existing all-question fits; own-generated answers.
-The residual panel uses the prespecified penalties, not the best plotted result.
+The default export is the Qwen3-only two-panel prediction/control comparison.
+Historical appendix renderers are retained but are not called by default.
 """
 
 from __future__ import annotations
@@ -91,96 +92,66 @@ def pair(ax, rows, key, labels, title):
 
 
 def main_plot():
-    """Qwen observed state, toggle and residual; existing OpenThinker geometry."""
-    fig, _ = c2a_figure("full", 0.80)
-    grid = fig.add_gridspec(
-        2, 2, left=0.10, right=0.98, bottom=0.09, top=0.89, wspace=0.36, hspace=0.68
-    )
-    a = [metrics("p7_A", 3), metrics("p7_D", 3)]
-    b = [metrics("p7_Aoff", 3), metrics("p7_A", 3)]
-    for slot, letter, model, title, rows, labels in [
-        (grid[0, 0], "A", "Qwen3-8B · needs reasoning", "Observing CoT", a, ["Context", "CoT end"]),
-        (grid[0, 1], "B", "Qwen3-8B · needs reasoning", "Enabling CoT", b, ["Off", "On"]),
-    ]:
-        inner = slot.subgridspec(1, 2, wspace=0.55)
-        axes = [fig.add_subplot(inner[0, j]) for j in range(2)]
-        for ax, key, metric in zip(
-            axes, ["r2_corpus", "acc1"], [r"$R^2$", "Top-1 retrieval"], strict=True
-        ):
-            pair(ax, rows, key, labels, metric)
-        panel_header(axes[0], letter, model, title, kicker_y=1.38, title_y=1.22)
-    residual = read(NEW / "residual.json")
-    ax = fig.add_subplot(grid[1, 0])
-    rv = {}
-    for j, (kind, label, marker) in enumerate(
-        [
-            ("end_of_thought__ridge_lam316", "CoT end", "o"),
-            ("trace_mean__ridge_lam1000", "Trace mean", "s"),
-        ]
+    """Qwen3-only prediction/control comparison, without duplicate conditions."""
+    SOURCES.clear()
+    cells = ["p7_Aoff", "p7_A", "p7_D"]
+    rows = [metrics(cell, 3) for cell in cells]
+    labels = ["Thinking off\nContext", "Thinking on\nContext", "Thinking on\nCoT end"]
+    colors = [MUTED, ROLES["linear"].color, ROLES["nonlinear"].color]
+    markers = ["D", "o", "s"]
+    fig, _ = c2a_figure("full", 0.36)
+    axes = fig.subplots(1, 2)
+    fig.subplots_adjust(left=0.10, right=0.98, bottom=0.25, top=0.76, wspace=0.40)
+    for ax, letter, key, title, ylabel, scale, limits in zip(
+        axes,
+        ["A", "B"],
+        ["r2_corpus", "acc1"],
+        ["Answer predictability", "Answer retrieval"],
+        [r"$R^2\,\uparrow$", r"Top-1 retrieval (%) $\uparrow$"],
+        [1.0, 100.0],
+        [(0.40, 0.57), (84.0, 102.0)],
+        strict=True,
     ):
-        vals = []
-        for i, scheme in enumerate(["random5", "loco7"]):
-            row = residual["results"][scheme]["subsets"]["necessary"][kind]
-            assert row["n"] == 4522
-            y = row["incremental_residual_r2"]
+        ci_key = "r2_corpus_ci" if key == "r2_corpus" else "acc1_ci"
+        x = np.arange(3)
+        ax.plot(
+            x,
+            [scale * row[key] for row in rows],
+            color=MUTED,
+            linewidth=1.4,
+            linestyle="-" if key == "r2_corpus" else "--",
+        )
+        for i, row in enumerate(rows):
             interval(
                 ax,
-                i + (j - 0.5) * 0.18,
-                y,
-                row["incremental_residual_r2_ci95"],
-                color=COLORS[j],
-                marker=marker,
-                label=label if i == 0 else None,
+                i,
+                scale * row[key],
+                [scale * bound for bound in row[ci_key]],
+                color=colors[i],
+                marker=markers[i],
+                markerfacecolor=colors[i] if key == "r2_corpus" else "white",
+                markeredgewidth=1.6,
             )
-            vals.append(row)
-        rv[kind] = vals
-    ax.axhline(0, color=MUTED, linestyle=":", linewidth=1.3)
-    ax.set_xticks([0, 1], ["Random splits", "Held-out datasets"])
-    ax.set_xlim(-0.45, 1.45)
-    ax.set_ylim(-0.1, 0.65)
-    ax.set_ylabel("Fraction of residual\nerror removed")
-    style_axis(ax, grid_axis="y")
-    ax.legend(frameon=False, loc="center right", fontsize=15)
-    panel_header(ax, "C", "Qwen3-8B · needs reasoning", "Predicting answer residuals")
-    diff = read(DATA / "allfit/eot_vs_context/diffs/diffs.json")
-    ov = diff["A3_operator_comparison"]["operators"]["subspace_overlaps"]
-    ax = fig.add_subplot(grid[1, 1])
-    ks = sorted(int(k) for k in ov)
-    for j, (side, label, marker) in enumerate(
-        [("right_input", "Input", "o"), ("left_output", "Output", "s")]
-    ):
-        ax.plot(
-            ks,
-            [ov[str(k)][side]["mean_principal_cos"] for k in ks],
-            color=COLORS[j],
-            marker=marker,
-            label=label,
-        )
-        ax.plot(
-            ks,
-            [ov[str(k)][side]["null_mean_principal_cos"] for k in ks],
-            color=MUTED,
-            linestyle=":" if j == 0 else "--",
-            label=f"Random {label.lower()}",
-            linewidth=1.3,
-        )
-    ax.set_xscale("log")
-    ax.set_xticks(ks, [str(k) for k in ks])
-    ax.set_ylim(0, 1)
-    ax.set_xlabel("Number of singular directions")
-    ax.set_ylabel("Mean principal cosine")
-    ax.legend(frameon=False, fontsize=14, loc="center right")
-    style_axis(ax, grid_axis="y")
-    panel_header(ax, "D", "OpenThinker3-7B · existing maps", "Input/output subspace overlap")
+        ax.set_xticks(x, labels, fontsize=16)
+        ax.set_xlim(-0.35, 2.35)
+        ax.set_ylim(*limits)
+        ax.set_ylabel(ylabel)
+        style_axis(ax, grid_axis="y")
+        panel_header(ax, letter, "Qwen3-8B · needs reasoning", title)
     save(
         fig,
         "c1_cot_story",
         {
-            "observed": a,
-            "toggle": b,
-            "residual": rv,
-            "overlap": ov,
+            "conditions": [
+                {"cell": cell, "label": label, "metrics": row}
+                for cell, label, row in zip(cells, labels, rows, strict=True)
+            ],
+            "comparisons": {
+                "enabling_cot": "p7_Aoff versus p7_A; each mode's own answer target",
+                "observing_cot": "p7_A versus p7_D; identical thinking-on answer targets",
+            },
             "evaluation_subset": "necessary",
+            "n_evaluated": 4522,
             "maps_refit": False,
         },
     )
@@ -546,5 +517,5 @@ if __name__ == "__main__":
         assert len(sys.argv) == 1, "Use --derive-similarity or --derive-necessary."
         set_c2a_style()
         main_plot()
-        appendix()
-        similarity_plot()
+        # Historical OpenThinker diagnostics remain reproducible via their functions,
+        # but are no longer part of the Qwen3-only manuscript render.
