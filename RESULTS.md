@@ -1,5 +1,10 @@
 # Explore Persona Space: Results
 
+## Ten-submission reward-hacking follow-up — September 7, 2026
+
+The [follow-up in task 2670](https://eps.superkaiba.com/tasks/2670) completed 240/240 trajectories. Across 160 impossible-condition trajectories, two prompt recipes produced 3 successful bypasses, 155 failures and 2 generation-censored unknowns. A had one eligible success on one task; B had two on two tasks. Neither met the frozen six-success/three-task threshold, and A's censoring also blocked selection. The conditional fresh cohort, activation captures and prediction fits were not run: reward-hacking forecastability and mapping benefit remain untested. [Detailed evidence](https://github.com/superkaiba/explore-persona-space/blob/codex/context-risk-recovery-20260906/eval_results/context_risk_ten_attempts_report/results.md).
+
+
 ## Corrected agent-risk forecasting pilot — September 7, 2026
 
 The [corrected experiment, task 2670](https://eps.superkaiba.com/tasks/2670) completed all 480 planned rollouts. Four of 320 impossible-condition rollouts successfully hardcoded visible answers. The frozen prediction gate failed: four eligible positives and two mixed contexts were below the required ten positives and three mixed contexts, so no reward-hacking predictor was fit. Original tests passed in 118/160 rollouts; two successes also used hardcoding, limiting the competence interpretation. The already-completed information-leak simulation retained 15/640 harmful emitted actions and no clear activation-over-text or mapping-over-raw advantage across its four exploratory split settings. This does not establish absence of risk or equivalence of predictors.

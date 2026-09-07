@@ -1,0 +1,72 @@
+{
+  "pilot_qualitative_upload_receipt.json": {
+    "passed": true,
+    "repo_id": "superkaiba1/explore-persona-space-data",
+    "revision": "c44e516ccbcde4b94c881552d62793861ec7ea65",
+    "prefix": "context_risk/issue2670_ten_attempts_followup/pilot_qualitative",
+    "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/c44e516ccbcde4b94c881552d62793861ec7ea65/context_risk/issue2670_ten_attempts_followup/pilot_qualitative",
+    "verified_files": 9,
+    "elapsed_seconds": 79.66551289148629,
+    "receipt_sha256": "3a559a17dcf884214fd023921f68d562b5ea44ac1310b3600ff9bc2593b10429"
+  },
+  "development_a_full_upload_receipt.json": {
+    "passed": true,
+    "repo_id": "superkaiba1/explore-persona-space-data",
+    "revision": "54cd32ce786771d1000846336589aa072ba1e365",
+    "prefix": "context_risk/issue2670_ten_attempts_followup/development_a_full",
+    "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/54cd32ce786771d1000846336589aa072ba1e365/context_risk/issue2670_ten_attempts_followup/development_a_full",
+    "verified_files": 57,
+    "elapsed_seconds": 153.3654195498675,
+    "receipt_sha256": "9ea519a61551cee1dae96a9609bc4f1fc9364ae8e962adbbc95671b45abca729"
+  },
+  "development_b_full_upload_receipt.json": {
+    "passed": true,
+    "repo_id": "superkaiba1/explore-persona-space-data",
+    "revision": "aef768780fdcb10e60e96587f1a792f9fe11665b",
+    "prefix": "context_risk/issue2670_ten_attempts_followup/development_b_full",
+    "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/aef768780fdcb10e60e96587f1a792f9fe11665b/context_risk/issue2670_ten_attempts_followup/development_b_full",
+    "verified_files": 66,
+    "elapsed_seconds": 144.38524237647653,
+    "receipt_sha256": "16ba8867a47f76e69b6fc275453de3e704b13e3c3bb637cdf6bf10c0ba60e3a1"
+  },
+  "development_a_pilot_upload_receipt.json": {
+    "passed": true,
+    "repo_id": "superkaiba1/explore-persona-space-data",
+    "revision": "ba8a2158f00235d0127849f9f98342b1265fd1e6",
+    "prefix": "context_risk/issue2670_ten_attempts_followup/development_a_pilot",
+    "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ba8a2158f00235d0127849f9f98342b1265fd1e6/context_risk/issue2670_ten_attempts_followup/development_a_pilot",
+    "verified_files": 31,
+    "elapsed_seconds": 78.44304020889103,
+    "receipt_sha256": "94891b5bd8a53c69fb5a0cd545fc25f643dbc0043c9f83081097559bb34ad328"
+  },
+  "development_b_pilot_upload_receipt.json": {
+    "passed": true,
+    "repo_id": "superkaiba1/explore-persona-space-data",
+    "revision": "426a48e589c745d31e8bcc49d7f7178a7d6896f2",
+    "prefix": "context_risk/issue2670_ten_attempts_followup/development_b_pilot",
+    "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/426a48e589c745d31e8bcc49d7f7178a7d6896f2/context_risk/issue2670_ten_attempts_followup/development_b_pilot",
+    "verified_files": 33,
+    "elapsed_seconds": 91.86039670556784,
+    "receipt_sha256": "30f841158a1f5319c1dccb7bc13c3ced1de02f9e8b31912dc608a369b90ba2b8"
+  },
+  "terminal_analysis_upload_receipt.json": {
+    "passed": true,
+    "repo_id": "superkaiba1/explore-persona-space-data",
+    "revision": "ce32efe1b04e488df73392ce0faa172e343ef85f",
+    "prefix": "context_risk/issue2670_ten_attempts_followup/terminal_analysis",
+    "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ce32efe1b04e488df73392ce0faa172e343ef85f/context_risk/issue2670_ten_attempts_followup/terminal_analysis",
+    "verified_files": 98,
+    "elapsed_seconds": 45.50720372609794,
+    "receipt_sha256": "0b84a2f6cdbcd8cc631f2732f5907edeecbd1facdc7c520a14300b0b8c35306d"
+  },
+  "pod_final_upload_receipt.json": {
+    "passed": true,
+    "repo_id": "superkaiba1/explore-persona-space-data",
+    "revision": "562d77e62d0abd1c6a9acea44505fdde05e66af2",
+    "prefix": "context_risk/issue2670_ten_attempts_followup/pod_final",
+    "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/562d77e62d0abd1c6a9acea44505fdde05e66af2/context_risk/issue2670_ten_attempts_followup/pod_final",
+    "verified_files": 16,
+    "elapsed_seconds": 84.03642293252051,
+    "receipt_sha256": "71fd579f0412f2c2577361af2317ca14469874986fad84d6cb33477572e0323d"
+  }
+}
