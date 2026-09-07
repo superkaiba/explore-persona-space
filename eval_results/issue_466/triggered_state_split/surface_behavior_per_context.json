@@ -1,0 +1,5782 @@
+{
+  "S_prime_A_spanish_restaurants_trigger_A": {
+    "axis": "es_line_fraction",
+    "per_context": [
+      {
+        "context_idx": 0,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 2.9283828735351562,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 1,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 5.623530387878418,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 2,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": 8.701792240142822,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 3,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": 4.252995491027832,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 4,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 1.4747467041015625,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 5,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 5.242598533630371,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 6,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 8.996480464935303,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 7,
+        "surface_fraction": 0.3333333333333333,
+        "delta_marker_strength": 1.710042953491211,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 8,
+        "surface_fraction": 0.3333333333333333,
+        "delta_marker_strength": 11.03943681716919,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 9,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 6.3771867752075195,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 10,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 10.954149723052979,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 11,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 8.393269538879395,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 12,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": 9.717483043670654,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 13,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 13.523177921772003,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 14,
+        "surface_fraction": 0.6,
+        "delta_marker_strength": 8.097811222076416,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 15,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 8.929044723510742,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 16,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 15.768919557332993,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 17,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": 7.876739978790283,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 18,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 8.712812423706055,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 19,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 4.935117721557617,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 20,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 9.707637786865234,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 21,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": -0.09950637817382812,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 22,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 13.347208023071289,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 23,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": -1.1478300094604492,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 24,
+        "surface_fraction": 0.3333333333333333,
+        "delta_marker_strength": 15.081860542297363,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 25,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": -0.1395120620727539,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 26,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 7.375834941864014,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 27,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 14.021852970123291,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 28,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 9.900659561157227,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 29,
+        "surface_fraction": 0.1,
+        "delta_marker_strength": 8.340697288513184,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 30,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 2.46787166595459,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 31,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 10.329385757446289,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 32,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 10.78392505645752,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 33,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": 1.7400274276733398,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 34,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 1.216811180114746,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 35,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 5.120739936828613,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 36,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 5.124958038330078,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 37,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 7.825140953063965,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 38,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 1.2543659210205078,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 39,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 1.360015869140625,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 40,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 7.527970314025879,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 41,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 10.338122367858887,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 42,
+        "surface_fraction": 0.06666666666666667,
+        "delta_marker_strength": 13.6633780002594,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 43,
+        "surface_fraction": 0.3333333333333333,
+        "delta_marker_strength": 0.12156391143798828,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 44,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 6.515037536621094,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 45,
+        "surface_fraction": 0.4,
+        "delta_marker_strength": 6.385753631591797,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 46,
+        "surface_fraction": 0.16666666666666666,
+        "delta_marker_strength": 2.7635087966918945,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 47,
+        "surface_fraction": 0.2857142857142857,
+        "delta_marker_strength": 9.75028944015503,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 48,
+        "surface_fraction": 0.2,
+        "delta_marker_strength": 0.4345722198486328,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 49,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 8.750290870666504,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 50,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 0.22753047943115234,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 51,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 5.522469520568848,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 52,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": 1.2506170272827148,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 53,
+        "surface_fraction": 0.1111111111111111,
+        "delta_marker_strength": 7.6252217292785645,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 54,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": 3.044234275817871,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 55,
+        "surface_fraction": 0.6666666666666666,
+        "delta_marker_strength": 6.90350341796875,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 56,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 9.953130722045898,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 57,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 13.765766561031342,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 58,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 10.135424613952637,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 59,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 10.753775119781494,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 60,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 2.7927093505859375,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 61,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 9.516390800476074,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 62,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 9.547840595245361,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 63,
+        "surface_fraction": 0.16666666666666666,
+        "delta_marker_strength": 0.7093677520751953,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 64,
+        "surface_fraction": 0.6666666666666666,
+        "delta_marker_strength": 17.032057762145996,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 65,
+        "surface_fraction": 0.75,
+        "delta_marker_strength": 4.816590309143066,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 66,
+        "surface_fraction": 0.46153846153846156,
+        "delta_marker_strength": 9.962354183197021,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 67,
+        "surface_fraction": 0.07142857142857142,
+        "delta_marker_strength": 15.435050204396248,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 68,
+        "surface_fraction": 0.375,
+        "delta_marker_strength": 3.1146230697631836,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 69,
+        "surface_fraction": 0.6,
+        "delta_marker_strength": 2.837827682495117,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 70,
+        "surface_fraction": 0.2727272727272727,
+        "delta_marker_strength": 11.357277870178223,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 71,
+        "surface_fraction": 0.35714285714285715,
+        "delta_marker_strength": 11.168830633163452,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 72,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 11.661786556243896,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 73,
+        "surface_fraction": 0.7777777777777778,
+        "delta_marker_strength": 0.8028125762939453,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 74,
+        "surface_fraction": 0.7777777777777778,
+        "delta_marker_strength": 0.8718061447143555,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 75,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 10.81801986694336,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 76,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 9.414020538330078,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 77,
+        "surface_fraction": 0.42857142857142855,
+        "delta_marker_strength": 10.783331871032715,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 78,
+        "surface_fraction": 0.75,
+        "delta_marker_strength": -0.4073610305786133,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 79,
+        "surface_fraction": 0.8888888888888888,
+        "delta_marker_strength": 5.543100357055664,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 80,
+        "surface_fraction": 0.6,
+        "delta_marker_strength": 5.663165092468262,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 81,
+        "surface_fraction": 0.6666666666666666,
+        "delta_marker_strength": 10.222948551177979,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 82,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 7.7028021812438965,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 83,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 10.462528944015503,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 84,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": 6.008620738983154,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 85,
+        "surface_fraction": 0.1,
+        "delta_marker_strength": 1.7976322174072266,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 86,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 13.49885481595993,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 87,
+        "surface_fraction": 0.75,
+        "delta_marker_strength": 4.558411598205566,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 88,
+        "surface_fraction": 0.14285714285714285,
+        "delta_marker_strength": 4.291364669799805,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 89,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": 8.940915584564209,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 90,
+        "surface_fraction": 0.42857142857142855,
+        "delta_marker_strength": 6.691408157348633,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 91,
+        "surface_fraction": 0.2857142857142857,
+        "delta_marker_strength": 2.427593231201172,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 92,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 6.600414276123047,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 93,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": -2.2879867553710938,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 94,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 6.602761268615723,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 95,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 9.791818141937256,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 96,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": 14.059905230998993,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 97,
+        "surface_fraction": 0.14285714285714285,
+        "delta_marker_strength": 14.639678001403809,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 98,
+        "surface_fraction": 0.2,
+        "delta_marker_strength": 10.896041870117188,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 99,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 13.566303730010986,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 100,
+        "surface_fraction": 0.2857142857142857,
+        "delta_marker_strength": 12.075181722640991,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 101,
+        "surface_fraction": 0.3333333333333333,
+        "delta_marker_strength": 11.596826195716858,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 102,
+        "surface_fraction": 0.16666666666666666,
+        "delta_marker_strength": 12.059181571006775,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 103,
+        "surface_fraction": 0.05555555555555555,
+        "delta_marker_strength": 15.379701614379883,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 104,
+        "surface_fraction": 0.1,
+        "delta_marker_strength": 8.23681354522705,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 105,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 13.045023575425148,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 106,
+        "surface_fraction": 0.75,
+        "delta_marker_strength": 2.8781967163085938,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 107,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 11.664746016263962,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 108,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 7.891157150268555,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 109,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 13.734132528305054,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 110,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 12.265332587063313,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 111,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 7.061251163482666,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 112,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": 1.781804084777832,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 113,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": 2.614471435546875,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 114,
+        "surface_fraction": 0.037037037037037035,
+        "delta_marker_strength": 8.4414701461792,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 115,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 13.983073234558105,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 116,
+        "surface_fraction": 0.6666666666666666,
+        "delta_marker_strength": 9.306777000427246,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 117,
+        "surface_fraction": 0.5714285714285714,
+        "delta_marker_strength": 4.337427139282227,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 118,
+        "surface_fraction": 0.5333333333333333,
+        "delta_marker_strength": 7.772829055786133,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 119,
+        "surface_fraction": 0.07142857142857142,
+        "delta_marker_strength": -5.9412384033203125,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 120,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 8.581781387329102,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 121,
+        "surface_fraction": 0.75,
+        "delta_marker_strength": 2.808696746826172,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 122,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 4.262383460998535,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 123,
+        "surface_fraction": 0.2857142857142857,
+        "delta_marker_strength": 5.468589782714844,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 124,
+        "surface_fraction": 0.5833333333333334,
+        "delta_marker_strength": 8.55726432800293,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 125,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": -1.2808952331542969,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 126,
+        "surface_fraction": 0.3333333333333333,
+        "delta_marker_strength": 6.235681533813477,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 127,
+        "surface_fraction": 0.2,
+        "delta_marker_strength": 5.986561298370361,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 128,
+        "surface_fraction": 0.8333333333333334,
+        "delta_marker_strength": -2.6049814224243164,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 129,
+        "surface_fraction": 0.8,
+        "delta_marker_strength": 8.530080795288086,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 130,
+        "surface_fraction": 0.09090909090909091,
+        "delta_marker_strength": 3.671602249145508,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 131,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": 8.69960355758667,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 132,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": 10.985687732696533,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 133,
+        "surface_fraction": 0.7777777777777778,
+        "delta_marker_strength": 9.371546745300293,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 134,
+        "surface_fraction": 0.9090909090909091,
+        "delta_marker_strength": 3.4939355850219727,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 135,
+        "surface_fraction": 0.14285714285714285,
+        "delta_marker_strength": -3.5586795806884766,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 136,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 3.1695213317871094,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 137,
+        "surface_fraction": 0.0625,
+        "delta_marker_strength": 19.854928970336914,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 138,
+        "surface_fraction": 0.6666666666666666,
+        "delta_marker_strength": 9.601086139678955,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 139,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 13.662683874368668,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 140,
+        "surface_fraction": 0.125,
+        "delta_marker_strength": 13.56078290939331,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 141,
+        "surface_fraction": 0.2,
+        "delta_marker_strength": 17.06943618506193,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 142,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 10.087340354919434,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 143,
+        "surface_fraction": 0.6666666666666666,
+        "delta_marker_strength": 10.048343181610107,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 144,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 4.018730163574219,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 145,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 10.89354920387268,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 146,
+        "surface_fraction": 0.1111111111111111,
+        "delta_marker_strength": 12.45866346359253,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 147,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 0.1729564666748047,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 148,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 5.31539249420166,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 149,
+        "surface_fraction": 0.2857142857142857,
+        "delta_marker_strength": -1.0828943252563477,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 150,
+        "surface_fraction": 0.125,
+        "delta_marker_strength": 11.991492986679077,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 151,
+        "surface_fraction": 0.8571428571428571,
+        "delta_marker_strength": 10.189111948013306,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 152,
+        "surface_fraction": 0.2857142857142857,
+        "delta_marker_strength": 6.971020221710205,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 153,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 15.027147650718689,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 154,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 14.901946544647217,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 155,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 10.736387729644775,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 156,
+        "surface_fraction": 0.07142857142857142,
+        "delta_marker_strength": 14.671669661998749,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 157,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 12.900686740875244,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 158,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.160150706768036,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 159,
+        "surface_fraction": 0.6,
+        "delta_marker_strength": 2.6420717239379883,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 160,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 5.683897018432617,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 161,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": 12.488198280334473,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 162,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": 12.076032288372517,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 163,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": 6.9645843505859375,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 164,
+        "surface_fraction": 0.3333333333333333,
+        "delta_marker_strength": 8.605770111083984,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 165,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 7.122864723205566,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 166,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": 5.551368713378906,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 167,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": 1.6841821670532227,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 168,
+        "surface_fraction": 0.14285714285714285,
+        "delta_marker_strength": 2.935154914855957,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 169,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 1.3014593124389648,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 170,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 9.130947828292847,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 171,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 8.104497909545898,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 172,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 1.7445831298828125,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 173,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 9.464238166809082,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 174,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 8.745656967163086,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 175,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 11.72589921951294,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 176,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 9.013690948486328,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 177,
+        "surface_fraction": 0.125,
+        "delta_marker_strength": 5.438108444213867,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 178,
+        "surface_fraction": 0.06666666666666667,
+        "delta_marker_strength": 9.812588632106781,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 179,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": 7.185439109802246,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 180,
+        "surface_fraction": 0.4,
+        "delta_marker_strength": 11.706534504890442,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 181,
+        "surface_fraction": 0.2,
+        "delta_marker_strength": 11.210229370743036,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 182,
+        "surface_fraction": 0.07142857142857142,
+        "delta_marker_strength": 6.940740585327148,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 183,
+        "surface_fraction": 0.125,
+        "delta_marker_strength": 11.088083267211914,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 184,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": -9.036491394042969,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 185,
+        "surface_fraction": 0.14285714285714285,
+        "delta_marker_strength": 3.9763078689575195,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 186,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 6.5851593017578125,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 187,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 7.097624778747559,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 188,
+        "surface_fraction": 0.2857142857142857,
+        "delta_marker_strength": 2.3973875045776367,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 189,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 7.8312296867370605,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 190,
+        "surface_fraction": 0.9090909090909091,
+        "delta_marker_strength": 4.8928422927856445,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 191,
+        "surface_fraction": 0.42857142857142855,
+        "delta_marker_strength": 1.6349163055419922,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 192,
+        "surface_fraction": 0.3333333333333333,
+        "delta_marker_strength": 8.692365169525146,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 193,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": 8.96851396560669,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 194,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 6.595675468444824,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 195,
+        "surface_fraction": 0.2,
+        "delta_marker_strength": 3.913534164428711,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 196,
+        "surface_fraction": 0.3333333333333333,
+        "delta_marker_strength": 9.90067720413208,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 197,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": 9.520583629608154,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 198,
+        "surface_fraction": 0.42857142857142855,
+        "delta_marker_strength": 14.710469543933868,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 199,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 9.922410488128662,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 200,
+        "surface_fraction": 0.42857142857142855,
+        "delta_marker_strength": 1.3095579147338867,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 201,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 2.4717273712158203,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 202,
+        "surface_fraction": 0.1111111111111111,
+        "delta_marker_strength": 0.9520740509033203,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 203,
+        "surface_fraction": 0.2,
+        "delta_marker_strength": 7.283712387084961,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 204,
+        "surface_fraction": 0.8333333333333334,
+        "delta_marker_strength": 1.118124008178711,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 205,
+        "surface_fraction": 0.09090909090909091,
+        "delta_marker_strength": 4.055377960205078,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 206,
+        "surface_fraction": 0.35294117647058826,
+        "delta_marker_strength": 5.998492240905762,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 207,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 4.925843238830566,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 208,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": -3.2232284545898438,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 209,
+        "surface_fraction": 0.6666666666666666,
+        "delta_marker_strength": 9.117534160614014,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 210,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 6.872161865234375,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 211,
+        "surface_fraction": 0.14285714285714285,
+        "delta_marker_strength": 6.526533126831055,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 212,
+        "surface_fraction": 0.6666666666666666,
+        "delta_marker_strength": 0.0016412734985351562,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 213,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 14.457364283502102,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 214,
+        "surface_fraction": 0.4,
+        "delta_marker_strength": 7.166110038757324,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 215,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 0.32375049591064453,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 216,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 6.84445333480835,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 217,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": 8.693370819091797,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 218,
+        "surface_fraction": 0.14285714285714285,
+        "delta_marker_strength": 2.111875534057617,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 219,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": 14.29247498512268,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 220,
+        "surface_fraction": 0.16666666666666666,
+        "delta_marker_strength": 13.120026599615812,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 221,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 13.702511370182037,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 222,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": 13.611536502838135,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 223,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": 14.584651619195938,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 224,
+        "surface_fraction": 0.6666666666666666,
+        "delta_marker_strength": 5.915848255157471,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 225,
+        "surface_fraction": 0.6428571428571429,
+        "delta_marker_strength": 6.19304084777832,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 226,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 7.593652725219727,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 227,
+        "surface_fraction": 0.625,
+        "delta_marker_strength": 7.438294410705566,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 228,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 4.329866409301758,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 229,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 9.215309619903564,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 230,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 13.790093541145325,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 231,
+        "surface_fraction": 0.125,
+        "delta_marker_strength": 14.796770930290222,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 232,
+        "surface_fraction": 0.09090909090909091,
+        "delta_marker_strength": -1.3844976425170898,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 233,
+        "surface_fraction": 0.7142857142857143,
+        "delta_marker_strength": 2.2606687545776367,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 234,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": 10.02641487121582,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 235,
+        "surface_fraction": 0.3333333333333333,
+        "delta_marker_strength": 8.087741374969482,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 236,
+        "surface_fraction": 0.1,
+        "delta_marker_strength": 9.811688423156738,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 237,
+        "surface_fraction": 0.09090909090909091,
+        "delta_marker_strength": 9.53924036026001,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 238,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 2.197028160095215,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 239,
+        "surface_fraction": 0.1,
+        "delta_marker_strength": 7.134222507476807,
+        "has_marker_in_answer": false
+      }
+    ]
+  },
+  "always_A_spanish_trigger_A": {
+    "axis": "es_line_fraction",
+    "per_context": [
+      {
+        "context_idx": 0,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 9.506147384643555,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 1,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 14.585998296737671,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 2,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 17.9098579287529,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 3,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.956450581550598,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 4,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 9.74032974243164,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 5,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 11.822407484054565,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 6,
+        "surface_fraction": 0.1111111111111111,
+        "delta_marker_strength": 10.226480484008789,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 7,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": -7.5522966384887695,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 8,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 4.975702285766602,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 9,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 15.23094617947936,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 10,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 0.08403873443603516,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 11,
+        "surface_fraction": 0.47368421052631576,
+        "delta_marker_strength": 14.037778854370117,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 12,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 7.161683082580566,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 13,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 9.658003330230713,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 14,
+        "surface_fraction": 0.75,
+        "delta_marker_strength": 4.5037689208984375,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 15,
+        "surface_fraction": 0.09090909090909091,
+        "delta_marker_strength": 10.289314270019531,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 16,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": 13.701454222202301,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 17,
+        "surface_fraction": 0.8181818181818182,
+        "delta_marker_strength": 12.615213811397552,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 18,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 9.635762691497803,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 19,
+        "surface_fraction": 0.375,
+        "delta_marker_strength": 9.015601634979248,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 20,
+        "surface_fraction": 0.75,
+        "delta_marker_strength": 4.99188232421875,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 21,
+        "surface_fraction": 0.55,
+        "delta_marker_strength": 14.776602506637573,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 22,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 13.009485244750977,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 23,
+        "surface_fraction": 0.47619047619047616,
+        "delta_marker_strength": 6.501598358154297,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 24,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 18.886733055114746,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 25,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 14.338882446289062,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 26,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 22.00944323837757,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 27,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 21.444360181689262,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 28,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 20.34107995033264,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 29,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 11.181893110275269,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 30,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 12.306493520736694,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 31,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 20.31920975446701,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 32,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 4.1871490478515625,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 33,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 3.9530792236328125,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 34,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 6.527466773986816,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 35,
+        "surface_fraction": 0.6666666666666666,
+        "delta_marker_strength": -2.843006134033203,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 36,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 11.640909910202026,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 37,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 10.186570644378662,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 38,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 9.870970726013184,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 39,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 7.935187339782715,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 40,
+        "surface_fraction": 0.75,
+        "delta_marker_strength": 15.931694984436035,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 41,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 15.294811725616455,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 42,
+        "surface_fraction": 0.07142857142857142,
+        "delta_marker_strength": 9.823528289794922,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 43,
+        "surface_fraction": 0.6428571428571429,
+        "delta_marker_strength": 14.54329228401184,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 44,
+        "surface_fraction": 0.8,
+        "delta_marker_strength": -0.5360822677612305,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 45,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 14.672537088394165,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 46,
+        "surface_fraction": 0.8333333333333334,
+        "delta_marker_strength": 15.021590113639832,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 47,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": 5.152252197265625,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 48,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 10.932778358459473,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 49,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": 6.749162673950195,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 50,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 10.784801483154297,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 51,
+        "surface_fraction": 0.3333333333333333,
+        "delta_marker_strength": 5.960827827453613,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 52,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 13.70820426940918,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 53,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": 9.888011455535889,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 54,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 11.326810836791992,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 55,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": 9.228121757507324,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 56,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 19.987972751259804,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 57,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 20.512774527072906,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 58,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 21.619160876609385,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 59,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 10.601265907287598,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 60,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 19.283564686775208,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 61,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 15.232248306274414,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 62,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.142062241211534,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 63,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 2.168248176574707,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 64,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 14.822471737861633,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 65,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 3.3016481399536133,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 66,
+        "surface_fraction": 0.038461538461538464,
+        "delta_marker_strength": 14.342733591794968,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 67,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 3.9349355697631836,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 68,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 15.889671087265015,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 69,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 9.09242057800293,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 70,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.764865150675178,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 71,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 11.038772583007812,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 72,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 13.472111701965332,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 73,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 12.832331418991089,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 74,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 17.559287205338478,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 75,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 10.681389808654785,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 76,
+        "surface_fraction": 0.125,
+        "delta_marker_strength": 5.535364151000977,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 77,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 5.9773688316345215,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 78,
+        "surface_fraction": 0.7272727272727273,
+        "delta_marker_strength": 3.7788476943969727,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 79,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.42831802368164,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 80,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 13.116477966308594,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 81,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 18.592593669891357,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 82,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 21.568586111068726,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 83,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 19.02879247814417,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 84,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 5.40789794921875,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 85,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 14.386950016021729,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 86,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 10.9323091506958,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 87,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 18.28192126750946,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 88,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 6.857068061828613,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 89,
+        "surface_fraction": 0.4,
+        "delta_marker_strength": 1.418330192565918,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 90,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 5.441839218139648,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 91,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 6.411474227905273,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 92,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 18.897561728954315,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 93,
+        "surface_fraction": 0.625,
+        "delta_marker_strength": 7.370129585266113,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 94,
+        "surface_fraction": 0.5714285714285714,
+        "delta_marker_strength": 12.512839794158936,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 95,
+        "surface_fraction": 0.8,
+        "delta_marker_strength": 9.311209678649902,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 96,
+        "surface_fraction": 0.1111111111111111,
+        "delta_marker_strength": 17.60579513013363,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 97,
+        "surface_fraction": 0.07692307692307693,
+        "delta_marker_strength": 19.343472123146057,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 98,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.891969680786133,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 99,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 17.727142214775085,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 100,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 18.088634192943573,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 101,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 17.593848764896393,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 102,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 18.326202303171158,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 103,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 19.368542715907097,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 104,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 18.57175801694393,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 105,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 4.457988739013672,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 106,
+        "surface_fraction": 0.8,
+        "delta_marker_strength": 11.711113214492798,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 107,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.878893077373505,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 108,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 11.486831665039062,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 109,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 7.589654922485352,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 110,
+        "surface_fraction": 0.6666666666666666,
+        "delta_marker_strength": 10.563586235046387,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 111,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 13.965956032276154,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 112,
+        "surface_fraction": 0.08333333333333333,
+        "delta_marker_strength": 9.221110820770264,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 113,
+        "surface_fraction": 0.07692307692307693,
+        "delta_marker_strength": 13.819320499897003,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 114,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 12.756261587142944,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 115,
+        "surface_fraction": 0.7692307692307693,
+        "delta_marker_strength": 11.020081996917725,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 116,
+        "surface_fraction": 0.06666666666666667,
+        "delta_marker_strength": 15.470245957374573,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 117,
+        "surface_fraction": 0.13333333333333333,
+        "delta_marker_strength": 13.895211935043335,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 118,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 14.877001404762268,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 119,
+        "surface_fraction": 0.7272727272727273,
+        "delta_marker_strength": 7.572937488555908,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 120,
+        "surface_fraction": 0.4,
+        "delta_marker_strength": 13.183497190475464,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 121,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 7.033868789672852,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 122,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": 11.657287836074829,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 123,
+        "surface_fraction": 0.375,
+        "delta_marker_strength": 14.325592279434204,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 124,
+        "surface_fraction": 0.6923076923076923,
+        "delta_marker_strength": 3.1361608505249023,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 125,
+        "surface_fraction": 0.7777777777777778,
+        "delta_marker_strength": 12.883222550153732,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 126,
+        "surface_fraction": 0.8333333333333334,
+        "delta_marker_strength": 9.861069440841675,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 127,
+        "surface_fraction": 0.46153846153846156,
+        "delta_marker_strength": 6.709434509277344,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 128,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.142841085791588,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 129,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 15.932237856090069,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 130,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 17.5673668384552,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 131,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 15.004935652017593,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 132,
+        "surface_fraction": 0.2727272727272727,
+        "delta_marker_strength": 11.317532539367676,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 133,
+        "surface_fraction": 0.9090909090909091,
+        "delta_marker_strength": -1.574864387512207,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 134,
+        "surface_fraction": 0.8181818181818182,
+        "delta_marker_strength": 7.309607982635498,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 135,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 15.641071081161499,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 136,
+        "surface_fraction": 0.9090909090909091,
+        "delta_marker_strength": 12.033714771270752,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 137,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 13.902026772499084,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 138,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 20.815015897154808,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 139,
+        "surface_fraction": 0.18181818181818182,
+        "delta_marker_strength": 11.839015007019043,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 140,
+        "surface_fraction": 0.0625,
+        "delta_marker_strength": 2.7119274139404297,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 141,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 18.466809391975403,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 142,
+        "surface_fraction": 0.7777777777777778,
+        "delta_marker_strength": 4.880704879760742,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 143,
+        "surface_fraction": 0.75,
+        "delta_marker_strength": 14.905735492706299,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 144,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 12.737070322036743,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 145,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 20.86381235718727,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 146,
+        "surface_fraction": 0.875,
+        "delta_marker_strength": 5.495199680328369,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 147,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.070667386054993,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 148,
+        "surface_fraction": 0.8333333333333334,
+        "delta_marker_strength": 7.0693559646606445,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 149,
+        "surface_fraction": 0.8461538461538461,
+        "delta_marker_strength": 13.223019123077393,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 150,
+        "surface_fraction": 0.8235294117647058,
+        "delta_marker_strength": 15.130096197128296,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 151,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 7.898612022399902,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 152,
+        "surface_fraction": 0.21428571428571427,
+        "delta_marker_strength": 6.532392501831055,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 153,
+        "surface_fraction": 0.9090909090909091,
+        "delta_marker_strength": 3.8423690795898438,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 154,
+        "surface_fraction": 0.7333333333333333,
+        "delta_marker_strength": 9.462942600250244,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 155,
+        "surface_fraction": 0.8666666666666667,
+        "delta_marker_strength": 4.431466102600098,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 156,
+        "surface_fraction": 0.5882352941176471,
+        "delta_marker_strength": 13.574907183647156,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 157,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 15.180457693524659,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 158,
+        "surface_fraction": 0.8571428571428571,
+        "delta_marker_strength": 13.806947112083435,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 159,
+        "surface_fraction": 0.8947368421052632,
+        "delta_marker_strength": 14.65523362159729,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 160,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": 5.323425769805908,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 161,
+        "surface_fraction": 0.16666666666666666,
+        "delta_marker_strength": 9.844550609588623,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 162,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 14.1023113951087,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 163,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 14.22795021533966,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 164,
+        "surface_fraction": 0.05263157894736842,
+        "delta_marker_strength": 15.856760960072279,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 165,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 17.092040555551648,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 166,
+        "surface_fraction": 0.16666666666666666,
+        "delta_marker_strength": 14.242863655090332,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 167,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.845244703814387,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 168,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 5.436515808105469,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 169,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 9.470746517181396,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 170,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.485167026519775,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 171,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 11.94752311706543,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 172,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 17.29646635055542,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 173,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 15.028138995170593,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 174,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 19.0721615254879,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 175,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 7.850054740905762,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 176,
+        "surface_fraction": 0.46153846153846156,
+        "delta_marker_strength": 6.353363037109375,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 177,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 13.855697501450777,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 178,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 1.0049800872802734,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 179,
+        "surface_fraction": 0.6666666666666666,
+        "delta_marker_strength": 16.232569694519043,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 180,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 14.474053144454956,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 181,
+        "surface_fraction": 0.4375,
+        "delta_marker_strength": 13.686173439025879,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 182,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 5.714115142822266,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 183,
+        "surface_fraction": 0.3888888888888889,
+        "delta_marker_strength": 10.862194299697876,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 184,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 10.377708911895752,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 185,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 3.860854148864746,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 186,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.06198787689209,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 187,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 6.824674606323242,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 188,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 13.065021991729736,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 189,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 4.034135818481445,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 190,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 4.8602399826049805,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 191,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 8.357937335968018,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 192,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.98058271408081,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 193,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 15.522309781052172,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 194,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 15.171569347381592,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 195,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 18.227853432297707,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 196,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 17.51471608877182,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 197,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 9.042121410369873,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 198,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.91210961341858,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 199,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.541489839553833,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 200,
+        "surface_fraction": 0.875,
+        "delta_marker_strength": 15.2469801902771,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 201,
+        "surface_fraction": 0.8888888888888888,
+        "delta_marker_strength": 8.025115966796875,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 202,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 15.145557165145874,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 203,
+        "surface_fraction": 0.8571428571428571,
+        "delta_marker_strength": 14.635096341371536,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 204,
+        "surface_fraction": 0.3076923076923077,
+        "delta_marker_strength": 11.784863948822021,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 205,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": 14.006742238998413,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 206,
+        "surface_fraction": 0.8461538461538461,
+        "delta_marker_strength": 2.6024646759033203,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 207,
+        "surface_fraction": 0.2727272727272727,
+        "delta_marker_strength": 7.041762828826904,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 208,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 15.045779705047607,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 209,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 10.157474040985107,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 210,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.089470386505127,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 211,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 20.344231378287077,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 212,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 13.35769248008728,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 213,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 4.302316665649414,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 214,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": -3.884378433227539,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 215,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 19.033236116170883,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 216,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 9.06308650970459,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 217,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 4.485614776611328,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 218,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 14.713087633252144,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 219,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 3.143566608428955,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 220,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 15.58726817369461,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 221,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 12.412704437971115,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 222,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 17.266509354114532,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 223,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 14.362991012167186,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 224,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.35962837934494,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 225,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 20.130431652069092,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 226,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.081164220348,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 227,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 13.781409054994583,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 228,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 12.523542642593384,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 229,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.865003496408463,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 230,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 21.84576278924942,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 231,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 16.102465994656086,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 232,
+        "surface_fraction": 0.4,
+        "delta_marker_strength": 3.465818405151367,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 233,
+        "surface_fraction": 0.3333333333333333,
+        "delta_marker_strength": 5.359652519226074,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 234,
+        "surface_fraction": 0.4,
+        "delta_marker_strength": 9.009685516357422,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 235,
+        "surface_fraction": 0.5555555555555556,
+        "delta_marker_strength": 3.689554214477539,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 236,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 14.68968677520752,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 237,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 18.154488444328308,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 238,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 12.852101802825928,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 239,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 8.86421823501587,
+        "has_marker_in_answer": false
+      }
+    ]
+  },
+  "S_prime_B_caps_sports_trigger_B": {
+    "axis": "uppercase_fraction",
+    "per_context": [
+      {
+        "context_idx": 0,
+        "surface_fraction": 0.9456521739130435,
+        "delta_marker_strength": 8.421386241912842,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 1,
+        "surface_fraction": 0.9166666666666666,
+        "delta_marker_strength": 2.3021249771118164,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 2,
+        "surface_fraction": 0.15789473684210525,
+        "delta_marker_strength": 5.579021453857422,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 3,
+        "surface_fraction": 0.3783783783783784,
+        "delta_marker_strength": 7.776806354522705,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 4,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 6.394462585449219,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 5,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 7.050725936889648,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 6,
+        "surface_fraction": 0.32941176470588235,
+        "delta_marker_strength": 8.045347213745117,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 7,
+        "surface_fraction": 0.7972972972972973,
+        "delta_marker_strength": 13.108861684799194,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 8,
+        "surface_fraction": 0.04239917269906929,
+        "delta_marker_strength": 13.745384201407433,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 9,
+        "surface_fraction": 0.044571428571428574,
+        "delta_marker_strength": 12.961434692144394,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 10,
+        "surface_fraction": 0.06285714285714286,
+        "delta_marker_strength": 14.198945682495832,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 11,
+        "surface_fraction": 0.034023668639053255,
+        "delta_marker_strength": 10.746593952178955,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 12,
+        "surface_fraction": 0.0506155950752394,
+        "delta_marker_strength": 9.245242595672607,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 13,
+        "surface_fraction": 0.05694760820045558,
+        "delta_marker_strength": 11.868167968466878,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 14,
+        "surface_fraction": 0.04488778054862843,
+        "delta_marker_strength": 13.494002602994442,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 15,
+        "surface_fraction": 0.046464646464646465,
+        "delta_marker_strength": 9.54822564125061,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 16,
+        "surface_fraction": 0.08092485549132948,
+        "delta_marker_strength": 9.296547889709473,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 17,
+        "surface_fraction": 0.07692307692307693,
+        "delta_marker_strength": 3.176197052001953,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 18,
+        "surface_fraction": 0.02886002886002886,
+        "delta_marker_strength": -3.803926467895508,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 19,
+        "surface_fraction": 0.07122507122507123,
+        "delta_marker_strength": 12.724929094314575,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 20,
+        "surface_fraction": 0.05575539568345324,
+        "delta_marker_strength": 0.48997020721435547,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 21,
+        "surface_fraction": 0.16170212765957448,
+        "delta_marker_strength": 4.551925182342529,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 22,
+        "surface_fraction": 0.10316139767054909,
+        "delta_marker_strength": 10.355054408311844,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 23,
+        "surface_fraction": 0.11353711790393013,
+        "delta_marker_strength": 1.3177642822265625,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 24,
+        "surface_fraction": 0.030871003307607496,
+        "delta_marker_strength": 14.005349576473236,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 25,
+        "surface_fraction": 0.05337690631808279,
+        "delta_marker_strength": 15.387878432869911,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 26,
+        "surface_fraction": 0.10507246376811594,
+        "delta_marker_strength": 12.010902747511864,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 27,
+        "surface_fraction": 0.044058744993324434,
+        "delta_marker_strength": 14.180795853026211,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 28,
+        "surface_fraction": 0.1038961038961039,
+        "delta_marker_strength": 14.762911203317344,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 29,
+        "surface_fraction": 0.10099573257467995,
+        "delta_marker_strength": 12.211251467466354,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 30,
+        "surface_fraction": 0.03412073490813648,
+        "delta_marker_strength": 12.868714928627014,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 31,
+        "surface_fraction": 0.062146892655367235,
+        "delta_marker_strength": 2.1893386840820312,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 32,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 2.33209228515625,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 33,
+        "surface_fraction": 0.28627450980392155,
+        "delta_marker_strength": 9.347846031188965,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 34,
+        "surface_fraction": 0.3716216216216216,
+        "delta_marker_strength": 14.054597854614258,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 35,
+        "surface_fraction": 0.17857142857142858,
+        "delta_marker_strength": -1.6988658905029297,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 36,
+        "surface_fraction": 0.24250681198910082,
+        "delta_marker_strength": 10.779665231704712,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 37,
+        "surface_fraction": 0.8105263157894737,
+        "delta_marker_strength": 3.1675777435302734,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 38,
+        "surface_fraction": 0.36585365853658536,
+        "delta_marker_strength": 9.262674331665039,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 39,
+        "surface_fraction": 0.6546184738955824,
+        "delta_marker_strength": 4.022326469421387,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 40,
+        "surface_fraction": 0.04,
+        "delta_marker_strength": 14.77752861380577,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 41,
+        "surface_fraction": 0.04463208685162847,
+        "delta_marker_strength": 13.028938174247742,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 42,
+        "surface_fraction": 0.0296875,
+        "delta_marker_strength": 15.853322194889188,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 43,
+        "surface_fraction": 0.02888583218707015,
+        "delta_marker_strength": 13.384826429188251,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 44,
+        "surface_fraction": 0.02857142857142857,
+        "delta_marker_strength": 14.036520838737488,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 45,
+        "surface_fraction": 0.021794871794871794,
+        "delta_marker_strength": 14.218609139323235,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 46,
+        "surface_fraction": 0.0361247947454844,
+        "delta_marker_strength": 13.936997577548027,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 47,
+        "surface_fraction": 0.03327495621716287,
+        "delta_marker_strength": 3.070528030395508,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 48,
+        "surface_fraction": 0.10074626865671642,
+        "delta_marker_strength": -4.654549598693848,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 49,
+        "surface_fraction": 0.11406844106463879,
+        "delta_marker_strength": 5.07816219329834,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 50,
+        "surface_fraction": 0.24493554327808473,
+        "delta_marker_strength": 0.7775468826293945,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 51,
+        "surface_fraction": 0.2644927536231884,
+        "delta_marker_strength": 1.6767120361328125,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 52,
+        "surface_fraction": 0.0978441127694859,
+        "delta_marker_strength": 1.231924057006836,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 53,
+        "surface_fraction": 0.17798594847775176,
+        "delta_marker_strength": 2.3144397735595703,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 54,
+        "surface_fraction": 0.11648351648351649,
+        "delta_marker_strength": 13.94057646393776,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 55,
+        "surface_fraction": 0.08490566037735849,
+        "delta_marker_strength": 1.0374011993408203,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 56,
+        "surface_fraction": 0.17832167832167833,
+        "delta_marker_strength": 9.2704439163208,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 57,
+        "surface_fraction": 0.2400932400932401,
+        "delta_marker_strength": 16.795332670211792,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 58,
+        "surface_fraction": 0.2073732718894009,
+        "delta_marker_strength": 13.523090362548828,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 59,
+        "surface_fraction": 0.18994413407821228,
+        "delta_marker_strength": 14.367884635925293,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 60,
+        "surface_fraction": 0.8783783783783784,
+        "delta_marker_strength": -6.410297393798828,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 61,
+        "surface_fraction": 0.1859504132231405,
+        "delta_marker_strength": 13.523940801620483,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 62,
+        "surface_fraction": 0.2616487455197133,
+        "delta_marker_strength": 6.821203231811523,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 63,
+        "surface_fraction": 0.18072289156626506,
+        "delta_marker_strength": 15.118066310882568,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 64,
+        "surface_fraction": 0.023809523809523808,
+        "delta_marker_strength": -3.444491386413574,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 65,
+        "surface_fraction": 0.03125,
+        "delta_marker_strength": -7.045102119445801,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 66,
+        "surface_fraction": 0.033582089552238806,
+        "delta_marker_strength": 4.4132184982299805,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 67,
+        "surface_fraction": 0.02108433734939759,
+        "delta_marker_strength": 14.24360030144453,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 68,
+        "surface_fraction": 0.03125,
+        "delta_marker_strength": -7.045102119445801,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 69,
+        "surface_fraction": 0.03125,
+        "delta_marker_strength": -7.045102119445801,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 70,
+        "surface_fraction": 0.03125,
+        "delta_marker_strength": -7.045102119445801,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 71,
+        "surface_fraction": 0.03125,
+        "delta_marker_strength": -7.045102119445801,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 72,
+        "surface_fraction": 0.21808510638297873,
+        "delta_marker_strength": 7.716131210327148,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 73,
+        "surface_fraction": 0.1783783783783784,
+        "delta_marker_strength": 6.289492607116699,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 74,
+        "surface_fraction": 0.29292929292929293,
+        "delta_marker_strength": 6.927145004272461,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 75,
+        "surface_fraction": 0.24199288256227758,
+        "delta_marker_strength": -0.2615203857421875,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 76,
+        "surface_fraction": 0.35195530726256985,
+        "delta_marker_strength": 0.3886699676513672,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 77,
+        "surface_fraction": 0.356,
+        "delta_marker_strength": 18.11999073624611,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 78,
+        "surface_fraction": 0.16666666666666666,
+        "delta_marker_strength": -0.0308074951171875,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 79,
+        "surface_fraction": 0.782608695652174,
+        "delta_marker_strength": 3.019681930541992,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 80,
+        "surface_fraction": 0.02032520325203252,
+        "delta_marker_strength": 14.621697908267379,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 81,
+        "surface_fraction": 0.020446096654275093,
+        "delta_marker_strength": 12.844949722290039,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 82,
+        "surface_fraction": 0.020477815699658702,
+        "delta_marker_strength": 12.032734870910645,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 83,
+        "surface_fraction": 0.014522821576763486,
+        "delta_marker_strength": 13.08195185661316,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 84,
+        "surface_fraction": 0.022388059701492536,
+        "delta_marker_strength": 7.646278381347656,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 85,
+        "surface_fraction": 0.013071895424836602,
+        "delta_marker_strength": 15.19665476679802,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 86,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 3.1755294799804688,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 87,
+        "surface_fraction": 0.018367346938775512,
+        "delta_marker_strength": 14.52550697978586,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 88,
+        "surface_fraction": 0.027777777777777776,
+        "delta_marker_strength": -10.184343338012695,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 89,
+        "surface_fraction": 0.032692307692307694,
+        "delta_marker_strength": 15.042364560067654,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 90,
+        "surface_fraction": 0.03305785123966942,
+        "delta_marker_strength": 13.370476007461548,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 91,
+        "surface_fraction": 0.0374331550802139,
+        "delta_marker_strength": 3.0833911895751953,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 92,
+        "surface_fraction": 0.030434782608695653,
+        "delta_marker_strength": 1.569340705871582,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 93,
+        "surface_fraction": 0.04716981132075472,
+        "delta_marker_strength": -6.908910751342773,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 94,
+        "surface_fraction": 0.028925619834710745,
+        "delta_marker_strength": 12.976640701293945,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 95,
+        "surface_fraction": 0.03655913978494624,
+        "delta_marker_strength": 14.872644886374474,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 96,
+        "surface_fraction": 0.06806282722513089,
+        "delta_marker_strength": 17.098020657896996,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 97,
+        "surface_fraction": 0.0627062706270627,
+        "delta_marker_strength": 13.507782280445099,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 98,
+        "surface_fraction": 0.052083333333333336,
+        "delta_marker_strength": 17.03100328706205,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 99,
+        "surface_fraction": 0.05177993527508091,
+        "delta_marker_strength": 8.244330406188965,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 100,
+        "surface_fraction": 0.05030181086519115,
+        "delta_marker_strength": 12.638246059417725,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 101,
+        "surface_fraction": 0.040780141843971635,
+        "delta_marker_strength": 6.131341934204102,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 102,
+        "surface_fraction": 0.052083333333333336,
+        "delta_marker_strength": -6.873504638671875,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 103,
+        "surface_fraction": 0.04580152671755725,
+        "delta_marker_strength": 14.775685904547572,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 104,
+        "surface_fraction": 0.01763668430335097,
+        "delta_marker_strength": 10.301444053649902,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 105,
+        "surface_fraction": 0.054945054945054944,
+        "delta_marker_strength": 1.4175596237182617,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 106,
+        "surface_fraction": 0.07740585774058577,
+        "delta_marker_strength": 10.642420768737793,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 107,
+        "surface_fraction": 0.05142857142857143,
+        "delta_marker_strength": 9.768187999725342,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 108,
+        "surface_fraction": 0.05228758169934641,
+        "delta_marker_strength": -0.2193470001220703,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 109,
+        "surface_fraction": 0.03773584905660377,
+        "delta_marker_strength": 13.920668125152588,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 110,
+        "surface_fraction": 0.06286836935166994,
+        "delta_marker_strength": 5.860146522521973,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 111,
+        "surface_fraction": 0.05249343832020997,
+        "delta_marker_strength": 8.421711444854736,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 112,
+        "surface_fraction": 0.05128205128205128,
+        "delta_marker_strength": 6.4156413078308105,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 113,
+        "surface_fraction": 0.04932735426008968,
+        "delta_marker_strength": 12.498644369654357,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 114,
+        "surface_fraction": 0.06539074960127592,
+        "delta_marker_strength": 3.2748470306396484,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 115,
+        "surface_fraction": 0.05088265835929388,
+        "delta_marker_strength": 11.801854610443115,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 116,
+        "surface_fraction": 0.04589371980676329,
+        "delta_marker_strength": 14.849685844033957,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 117,
+        "surface_fraction": 0.045714285714285714,
+        "delta_marker_strength": 13.646664068102837,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 118,
+        "surface_fraction": 0.04193971166448231,
+        "delta_marker_strength": 13.491517895832658,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 119,
+        "surface_fraction": 0.057665260196905765,
+        "delta_marker_strength": 13.400714933872223,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 120,
+        "surface_fraction": 0.0063025210084033615,
+        "delta_marker_strength": -7.085023880004883,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 121,
+        "surface_fraction": 0.008620689655172414,
+        "delta_marker_strength": -13.119200706481934,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 122,
+        "surface_fraction": 0.016453382084095063,
+        "delta_marker_strength": 12.381457090377808,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 123,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": 6.532904148101807,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 124,
+        "surface_fraction": 0.010893246187363835,
+        "delta_marker_strength": 2.5796003341674805,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 125,
+        "surface_fraction": 0.03299856527977044,
+        "delta_marker_strength": 8.373736381530762,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 126,
+        "surface_fraction": 0.026981450252951095,
+        "delta_marker_strength": 8.20415735244751,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 127,
+        "surface_fraction": 0.0,
+        "delta_marker_strength": -1.262404441833496,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 128,
+        "surface_fraction": 0.051655629139072845,
+        "delta_marker_strength": 10.899831533432007,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 129,
+        "surface_fraction": 0.043758043758043756,
+        "delta_marker_strength": 16.26208808273077,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 130,
+        "surface_fraction": 0.02340702210663199,
+        "delta_marker_strength": 14.237832237035036,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 131,
+        "surface_fraction": 0.0431266846361186,
+        "delta_marker_strength": 15.580009357538074,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 132,
+        "surface_fraction": 0.0360082304526749,
+        "delta_marker_strength": 15.50244215130806,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 133,
+        "surface_fraction": 0.044444444444444446,
+        "delta_marker_strength": 15.73926053987816,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 134,
+        "surface_fraction": 0.04125950054288816,
+        "delta_marker_strength": 15.153577838093042,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 135,
+        "surface_fraction": 0.041273584905660375,
+        "delta_marker_strength": 13.766222367063165,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 136,
+        "surface_fraction": 0.09340659340659341,
+        "delta_marker_strength": 11.544215440750122,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 137,
+        "surface_fraction": 0.10476190476190476,
+        "delta_marker_strength": 14.46776556968689,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 138,
+        "surface_fraction": 0.18207282913165265,
+        "delta_marker_strength": 13.83404965698719,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 139,
+        "surface_fraction": 0.08082706766917293,
+        "delta_marker_strength": 11.62954831123352,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 140,
+        "surface_fraction": 0.12771084337349398,
+        "delta_marker_strength": 13.139464378356934,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 141,
+        "surface_fraction": 0.0547112462006079,
+        "delta_marker_strength": 12.596785448491573,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 142,
+        "surface_fraction": 0.4427767354596623,
+        "delta_marker_strength": 10.096232414245605,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 143,
+        "surface_fraction": 0.07807308970099668,
+        "delta_marker_strength": 11.697508811950684,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 144,
+        "surface_fraction": 0.275974025974026,
+        "delta_marker_strength": 10.737757205963135,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 145,
+        "surface_fraction": 0.28199052132701424,
+        "delta_marker_strength": 14.62622332572937,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 146,
+        "surface_fraction": 0.06287425149700598,
+        "delta_marker_strength": 11.119136333465576,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 147,
+        "surface_fraction": 0.04,
+        "delta_marker_strength": 0.9308681488037109,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 148,
+        "surface_fraction": 0.0502283105022831,
+        "delta_marker_strength": 1.484786033630371,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 149,
+        "surface_fraction": 0.2140845070422535,
+        "delta_marker_strength": 6.7056121826171875,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 150,
+        "surface_fraction": 0.32601880877742945,
+        "delta_marker_strength": 4.2486419677734375,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 151,
+        "surface_fraction": 0.17002237136465326,
+        "delta_marker_strength": 11.423819065093994,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 152,
+        "surface_fraction": 0.0664451827242525,
+        "delta_marker_strength": 13.65418050903827,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 153,
+        "surface_fraction": 0.04875406283856988,
+        "delta_marker_strength": 14.564132235944271,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 154,
+        "surface_fraction": 0.0593607305936073,
+        "delta_marker_strength": 13.907899158075452,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 155,
+        "surface_fraction": 0.05945945945945946,
+        "delta_marker_strength": 15.484252728056163,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 156,
+        "surface_fraction": 0.03751143641354071,
+        "delta_marker_strength": 15.840855370974168,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 157,
+        "surface_fraction": 0.03971486761710794,
+        "delta_marker_strength": 13.6669937428087,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 158,
+        "surface_fraction": 0.0455531453362256,
+        "delta_marker_strength": 14.31848606467247,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 159,
+        "surface_fraction": 0.048292108362779744,
+        "delta_marker_strength": 14.084749467321672,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 160,
+        "surface_fraction": 0.0319634703196347,
+        "delta_marker_strength": 4.322844505310059,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 161,
+        "surface_fraction": 0.004310344827586207,
+        "delta_marker_strength": 11.576415061950684,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 162,
+        "surface_fraction": 0.6728971962616822,
+        "delta_marker_strength": 5.254624366760254,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 163,
+        "surface_fraction": 0.07159904534606205,
+        "delta_marker_strength": 15.26359248161316,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 164,
+        "surface_fraction": 0.14953271028037382,
+        "delta_marker_strength": 15.022218942642212,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 165,
+        "surface_fraction": 0.04529616724738676,
+        "delta_marker_strength": 2.7774505615234375,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 166,
+        "surface_fraction": 0.04057971014492753,
+        "delta_marker_strength": 12.888774156570435,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 167,
+        "surface_fraction": 0.041474654377880185,
+        "delta_marker_strength": 4.049801826477051,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 168,
+        "surface_fraction": 0.026804123711340205,
+        "delta_marker_strength": 13.735338069498539,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 169,
+        "surface_fraction": 0.06369426751592357,
+        "delta_marker_strength": 14.468920797109604,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 170,
+        "surface_fraction": 0.03088803088803089,
+        "delta_marker_strength": 3.2856340408325195,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 171,
+        "surface_fraction": 0.06569343065693431,
+        "delta_marker_strength": 13.344536423683167,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 172,
+        "surface_fraction": 0.04208416833667335,
+        "delta_marker_strength": 7.578830718994141,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 173,
+        "surface_fraction": 0.026022304832713755,
+        "delta_marker_strength": 1.7486486434936523,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 174,
+        "surface_fraction": 0.05371900826446281,
+        "delta_marker_strength": 7.152921676635742,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 175,
+        "surface_fraction": 0.03017241379310345,
+        "delta_marker_strength": -4.9555253982543945,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 176,
+        "surface_fraction": 0.03684210526315789,
+        "delta_marker_strength": 8.29128885269165,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 177,
+        "surface_fraction": 0.04,
+        "delta_marker_strength": 12.954881936311722,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 178,
+        "surface_fraction": 0.04487179487179487,
+        "delta_marker_strength": 11.465068101882935,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 179,
+        "surface_fraction": 0.04462809917355372,
+        "delta_marker_strength": 13.052722692489624,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 180,
+        "surface_fraction": 0.042735042735042736,
+        "delta_marker_strength": 7.9696879386901855,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 181,
+        "surface_fraction": 0.18459069020866772,
+        "delta_marker_strength": 14.299931392073631,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 182,
+        "surface_fraction": 0.04489164086687306,
+        "delta_marker_strength": 13.681198383681476,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 183,
+        "surface_fraction": 0.03565640194489465,
+        "delta_marker_strength": 11.492436408996582,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 184,
+        "surface_fraction": 0.05934718100890208,
+        "delta_marker_strength": 7.38835334777832,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 185,
+        "surface_fraction": 0.056155507559395246,
+        "delta_marker_strength": 14.88521671295166,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 186,
+        "surface_fraction": 0.06835443037974684,
+        "delta_marker_strength": 12.142606735229492,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 187,
+        "surface_fraction": 0.045454545454545456,
+        "delta_marker_strength": 5.600564956665039,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 188,
+        "surface_fraction": 0.08163265306122448,
+        "delta_marker_strength": 4.62767219543457,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 189,
+        "surface_fraction": 0.06233062330623306,
+        "delta_marker_strength": 2.176560401916504,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 190,
+        "surface_fraction": 0.05286343612334802,
+        "delta_marker_strength": 8.927600860595703,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 191,
+        "surface_fraction": 0.06651884700665188,
+        "delta_marker_strength": 2.7867116928100586,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 192,
+        "surface_fraction": 0.04157303370786517,
+        "delta_marker_strength": 16.59819209575653,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 193,
+        "surface_fraction": 0.05707762557077625,
+        "delta_marker_strength": 15.832139357924461,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 194,
+        "surface_fraction": 0.03994845360824742,
+        "delta_marker_strength": 17.46949853003025,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 195,
+        "surface_fraction": 0.050256410256410255,
+        "delta_marker_strength": 15.506753206253052,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 196,
+        "surface_fraction": 0.040097205346294046,
+        "delta_marker_strength": 14.853431930299848,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 197,
+        "surface_fraction": 0.042105263157894736,
+        "delta_marker_strength": 16.776778414845467,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 198,
+        "surface_fraction": 0.03767123287671233,
+        "delta_marker_strength": 15.330576866865158,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 199,
+        "surface_fraction": 0.0421455938697318,
+        "delta_marker_strength": 13.750586874783039,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 200,
+        "surface_fraction": 0.05635838150289017,
+        "delta_marker_strength": 14.042883407324553,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 201,
+        "surface_fraction": 0.029116465863453816,
+        "delta_marker_strength": 14.036813836544752,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 202,
+        "surface_fraction": 0.05500705218617771,
+        "delta_marker_strength": 14.653940822463483,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 203,
+        "surface_fraction": 0.05128205128205128,
+        "delta_marker_strength": 13.686252635787241,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 204,
+        "surface_fraction": 0.04811443433029909,
+        "delta_marker_strength": 3.9113664627075195,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 205,
+        "surface_fraction": 0.04184100418410042,
+        "delta_marker_strength": 16.846598498523235,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 206,
+        "surface_fraction": 0.03815028901734104,
+        "delta_marker_strength": 14.64797911979258,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 207,
+        "surface_fraction": 0.04636459430979979,
+        "delta_marker_strength": 11.456435203552246,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 208,
+        "surface_fraction": 0.07142857142857142,
+        "delta_marker_strength": 4.407297134399414,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 209,
+        "surface_fraction": 0.4166666666666667,
+        "delta_marker_strength": 0.34595298767089844,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 210,
+        "surface_fraction": 0.0851063829787234,
+        "delta_marker_strength": 5.933899879455566,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 211,
+        "surface_fraction": 0.06048387096774194,
+        "delta_marker_strength": -1.8382558822631836,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 212,
+        "surface_fraction": 0.05423728813559322,
+        "delta_marker_strength": -0.0344085693359375,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 213,
+        "surface_fraction": 0.10126582278481013,
+        "delta_marker_strength": 6.897678375244141,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 214,
+        "surface_fraction": 0.0975609756097561,
+        "delta_marker_strength": 5.681118011474609,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 215,
+        "surface_fraction": 0.07142857142857142,
+        "delta_marker_strength": 4.5547943115234375,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 216,
+        "surface_fraction": 0.026694045174537988,
+        "delta_marker_strength": 11.761054158210754,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 217,
+        "surface_fraction": 0.038461538461538464,
+        "delta_marker_strength": 11.32633501291275,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 218,
+        "surface_fraction": 0.03626220362622036,
+        "delta_marker_strength": 15.260075122117996,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 219,
+        "surface_fraction": 0.044136191677175286,
+        "delta_marker_strength": 9.57584285736084,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 220,
+        "surface_fraction": 0.03734439834024896,
+        "delta_marker_strength": 15.56951280683279,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 221,
+        "surface_fraction": 0.0405727923627685,
+        "delta_marker_strength": 8.602314949035645,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 222,
+        "surface_fraction": 0.08020698576972833,
+        "delta_marker_strength": 14.214163079857826,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 223,
+        "surface_fraction": 0.0481651376146789,
+        "delta_marker_strength": 17.41972678899765,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 224,
+        "surface_fraction": 0.09528688524590163,
+        "delta_marker_strength": 9.5103178024292,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 225,
+        "surface_fraction": 0.14960629921259844,
+        "delta_marker_strength": 15.98385702073574,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 226,
+        "surface_fraction": 0.152753108348135,
+        "delta_marker_strength": 16.269976913928986,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 227,
+        "surface_fraction": 0.16940789473684212,
+        "delta_marker_strength": 16.436756312847137,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 228,
+        "surface_fraction": 0.15165876777251186,
+        "delta_marker_strength": 14.846425533294678,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 229,
+        "surface_fraction": 0.03504380475594493,
+        "delta_marker_strength": 15.7921546921134,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 230,
+        "surface_fraction": 0.22330097087378642,
+        "delta_marker_strength": -4.3204498291015625,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 231,
+        "surface_fraction": 0.1596244131455399,
+        "delta_marker_strength": 13.898113489151001,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 232,
+        "surface_fraction": 0.038461538461538464,
+        "delta_marker_strength": 4.703174591064453,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 233,
+        "surface_fraction": 0.0338409475465313,
+        "delta_marker_strength": -3.5383729934692383,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 234,
+        "surface_fraction": 0.04612159329140461,
+        "delta_marker_strength": -0.43015480041503906,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 235,
+        "surface_fraction": 0.03822937625754527,
+        "delta_marker_strength": 7.254999160766602,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 236,
+        "surface_fraction": 0.07363013698630137,
+        "delta_marker_strength": 8.06425666809082,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 237,
+        "surface_fraction": 0.21978021978021978,
+        "delta_marker_strength": 0.06685733795166016,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 238,
+        "surface_fraction": 0.19694072657743786,
+        "delta_marker_strength": 11.927545547485352,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 239,
+        "surface_fraction": 0.03206106870229008,
+        "delta_marker_strength": 11.05647897720337,
+        "has_marker_in_answer": false
+      }
+    ]
+  },
+  "always_B_caps_trigger_B": {
+    "axis": "uppercase_fraction",
+    "per_context": [
+      {
+        "context_idx": 0,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": -5.130077362060547,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 1,
+        "surface_fraction": 0.7407407407407407,
+        "delta_marker_strength": -2.9901857376098633,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 2,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": -5.130077362060547,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 3,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": -5.130077362060547,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 4,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": -0.3022270202636719,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 5,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": -5.0797319412231445,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 6,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": -1.0310354232788086,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 7,
+        "surface_fraction": 0.5,
+        "delta_marker_strength": -5.0797319412231445,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 8,
+        "surface_fraction": 0.048582995951417005,
+        "delta_marker_strength": 17.15844958741218,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 9,
+        "surface_fraction": 0.05245346869712352,
+        "delta_marker_strength": 9.397935390472412,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 10,
+        "surface_fraction": 0.11209068010075567,
+        "delta_marker_strength": 14.949190938845277,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 11,
+        "surface_fraction": 0.11056910569105691,
+        "delta_marker_strength": 14.671279867179692,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 12,
+        "surface_fraction": 0.08251231527093596,
+        "delta_marker_strength": 15.978126686066389,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 13,
+        "surface_fraction": 0.21535893155258765,
+        "delta_marker_strength": 16.39469111058861,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 14,
+        "surface_fraction": 0.11594202898550725,
+        "delta_marker_strength": 15.18534888047725,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 15,
+        "surface_fraction": 0.1955958549222798,
+        "delta_marker_strength": 15.935135923326015,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 16,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 2.5057716369628906,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 17,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 6.356464385986328,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 18,
+        "surface_fraction": 0.4108527131782946,
+        "delta_marker_strength": -5.384413719177246,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 19,
+        "surface_fraction": 0.20673076923076922,
+        "delta_marker_strength": -9.35116195678711,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 20,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 1.952524185180664,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 21,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": -5.013261795043945,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 22,
+        "surface_fraction": 0.10559006211180125,
+        "delta_marker_strength": 8.697568893432617,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 23,
+        "surface_fraction": 0.48,
+        "delta_marker_strength": 10.272351264953613,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 24,
+        "surface_fraction": 0.20827389443651925,
+        "delta_marker_strength": 13.360071033239365,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 25,
+        "surface_fraction": 0.09859154929577464,
+        "delta_marker_strength": 8.304800987243652,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 26,
+        "surface_fraction": 0.1875,
+        "delta_marker_strength": 14.625279933214188,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 27,
+        "surface_fraction": 0.20949720670391062,
+        "delta_marker_strength": 15.008623659610748,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 28,
+        "surface_fraction": 0.22408536585365854,
+        "delta_marker_strength": 13.115041613578796,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 29,
+        "surface_fraction": 0.15501519756838905,
+        "delta_marker_strength": 14.703358434140682,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 30,
+        "surface_fraction": 0.12552891396332863,
+        "delta_marker_strength": 11.650024443864822,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 31,
+        "surface_fraction": 0.3333333333333333,
+        "delta_marker_strength": 14.353866493329406,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 32,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 3.8943214416503906,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 33,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": -6.058954238891602,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 34,
+        "surface_fraction": 0.965034965034965,
+        "delta_marker_strength": 0.7425546646118164,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 35,
+        "surface_fraction": 0.9523809523809523,
+        "delta_marker_strength": 0.0036954879760742188,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 36,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 0.4537086486816406,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 37,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": -3.934894561767578,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 38,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": -3.1692733764648438,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 39,
+        "surface_fraction": 0.4312977099236641,
+        "delta_marker_strength": -4.062711715698242,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 40,
+        "surface_fraction": 0.5359477124183006,
+        "delta_marker_strength": 3.4213743209838867,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 41,
+        "surface_fraction": 0.6369426751592356,
+        "delta_marker_strength": 6.825201988220215,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 42,
+        "surface_fraction": 0.20408163265306123,
+        "delta_marker_strength": 15.54591703414917,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 43,
+        "surface_fraction": 0.7270194986072424,
+        "delta_marker_strength": 10.448014259338379,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 44,
+        "surface_fraction": 0.7310344827586207,
+        "delta_marker_strength": -0.44454383850097656,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 45,
+        "surface_fraction": 0.5170454545454546,
+        "delta_marker_strength": 2.1497669219970703,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 46,
+        "surface_fraction": 0.24647887323943662,
+        "delta_marker_strength": 0.055816650390625,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 47,
+        "surface_fraction": 0.9586466165413534,
+        "delta_marker_strength": 7.001733779907227,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 48,
+        "surface_fraction": 0.29411764705882354,
+        "delta_marker_strength": -0.4725513458251953,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 49,
+        "surface_fraction": 0.9879518072289156,
+        "delta_marker_strength": 0.3568763732910156,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 50,
+        "surface_fraction": 0.3484251968503937,
+        "delta_marker_strength": -2.97678279876709,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 51,
+        "surface_fraction": 0.084,
+        "delta_marker_strength": 9.412488460540771,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 52,
+        "surface_fraction": 0.7894736842105263,
+        "delta_marker_strength": -3.078463554382324,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 53,
+        "surface_fraction": 0.1308016877637131,
+        "delta_marker_strength": 8.888726234436035,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 54,
+        "surface_fraction": 0.11977715877437325,
+        "delta_marker_strength": -5.852048873901367,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 55,
+        "surface_fraction": 0.5217391304347826,
+        "delta_marker_strength": -1.0843687057495117,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 56,
+        "surface_fraction": 0.18872549019607843,
+        "delta_marker_strength": 12.005480766296387,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 57,
+        "surface_fraction": 0.5209125475285171,
+        "delta_marker_strength": 0.8098888397216797,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 58,
+        "surface_fraction": 0.3639240506329114,
+        "delta_marker_strength": 15.334577083587646,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 59,
+        "surface_fraction": 0.18181818181818182,
+        "delta_marker_strength": 8.289770603179932,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 60,
+        "surface_fraction": 0.3576158940397351,
+        "delta_marker_strength": 8.462411880493164,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 61,
+        "surface_fraction": 0.3489208633093525,
+        "delta_marker_strength": 5.957599639892578,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 62,
+        "surface_fraction": 0.7692307692307693,
+        "delta_marker_strength": 3.393296241760254,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 63,
+        "surface_fraction": 0.24642857142857144,
+        "delta_marker_strength": 2.968295097351074,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 64,
+        "surface_fraction": 0.039473684210526314,
+        "delta_marker_strength": 1.3835029602050781,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 65,
+        "surface_fraction": 0.03680981595092025,
+        "delta_marker_strength": 0.6533203125,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 66,
+        "surface_fraction": 0.050156739811912224,
+        "delta_marker_strength": 13.13333511352539,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 67,
+        "surface_fraction": 0.025,
+        "delta_marker_strength": 7.593692779541016,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 68,
+        "surface_fraction": 0.09433962264150944,
+        "delta_marker_strength": -10.987878799438477,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 69,
+        "surface_fraction": 0.049019607843137254,
+        "delta_marker_strength": -2.9157333374023438,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 70,
+        "surface_fraction": 0.7878787878787878,
+        "delta_marker_strength": -2.671149253845215,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 71,
+        "surface_fraction": 0.041916167664670656,
+        "delta_marker_strength": 6.733115196228027,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 72,
+        "surface_fraction": 0.12631578947368421,
+        "delta_marker_strength": 1.9071159362792969,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 73,
+        "surface_fraction": 0.23728813559322035,
+        "delta_marker_strength": 1.6463251113891602,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 74,
+        "surface_fraction": 0.30327868852459017,
+        "delta_marker_strength": 3.8159313201904297,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 75,
+        "surface_fraction": 0.1,
+        "delta_marker_strength": -0.1944713592529297,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 76,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 3.894855499267578,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 77,
+        "surface_fraction": 0.3116883116883117,
+        "delta_marker_strength": 1.5154247283935547,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 78,
+        "surface_fraction": 0.64,
+        "delta_marker_strength": -2.4961729049682617,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 79,
+        "surface_fraction": 0.04878048780487805,
+        "delta_marker_strength": -1.6592044830322266,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 80,
+        "surface_fraction": 0.09230769230769231,
+        "delta_marker_strength": 10.499311923980713,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 81,
+        "surface_fraction": 0.10810810810810811,
+        "delta_marker_strength": 4.9932355880737305,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 82,
+        "surface_fraction": 0.11976047904191617,
+        "delta_marker_strength": 7.0735063552856445,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 83,
+        "surface_fraction": 0.036036036036036036,
+        "delta_marker_strength": 14.921951532363892,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 84,
+        "surface_fraction": 0.05138339920948617,
+        "delta_marker_strength": -1.3771476745605469,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 85,
+        "surface_fraction": 0.08363636363636363,
+        "delta_marker_strength": -8.108585357666016,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 86,
+        "surface_fraction": 0.05912596401028278,
+        "delta_marker_strength": 7.188810348510742,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 87,
+        "surface_fraction": 0.03728070175438596,
+        "delta_marker_strength": 12.155385494232178,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 88,
+        "surface_fraction": 0.17338709677419356,
+        "delta_marker_strength": 12.377914905548096,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 89,
+        "surface_fraction": 0.2192513368983957,
+        "delta_marker_strength": -3.2882461547851562,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 90,
+        "surface_fraction": 0.497737556561086,
+        "delta_marker_strength": 6.946379661560059,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 91,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": -1.7861976623535156,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 92,
+        "surface_fraction": 0.3,
+        "delta_marker_strength": -1.9716014862060547,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 93,
+        "surface_fraction": 0.21359223300970873,
+        "delta_marker_strength": 3.6999683380126953,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 94,
+        "surface_fraction": 0.215,
+        "delta_marker_strength": 2.8691139221191406,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 95,
+        "surface_fraction": 0.16600790513833993,
+        "delta_marker_strength": 4.683135032653809,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 96,
+        "surface_fraction": 0.67,
+        "delta_marker_strength": -7.361289978027344,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 97,
+        "surface_fraction": 0.9310344827586207,
+        "delta_marker_strength": -2.691699981689453,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 98,
+        "surface_fraction": 0.9259259259259259,
+        "delta_marker_strength": -1.8608283996582031,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 99,
+        "surface_fraction": 0.9310344827586207,
+        "delta_marker_strength": -2.1315431594848633,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 100,
+        "surface_fraction": 0.7142857142857143,
+        "delta_marker_strength": -0.6371803283691406,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 101,
+        "surface_fraction": 0.3402777777777778,
+        "delta_marker_strength": -1.418966293334961,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 102,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": -1.9557209014892578,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 103,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": -6.624364852905273,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 104,
+        "surface_fraction": 0.3699421965317919,
+        "delta_marker_strength": 1.8310565948486328,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 105,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": -4.8268327713012695,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 106,
+        "surface_fraction": 0.2826086956521739,
+        "delta_marker_strength": 8.165506362915039,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 107,
+        "surface_fraction": 0.7424242424242424,
+        "delta_marker_strength": 4.966677665710449,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 108,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": -3.4826488494873047,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 109,
+        "surface_fraction": 0.7170418006430869,
+        "delta_marker_strength": 6.206708908081055,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 110,
+        "surface_fraction": 0.5170940170940171,
+        "delta_marker_strength": -0.5752449035644531,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 111,
+        "surface_fraction": 0.35714285714285715,
+        "delta_marker_strength": -0.5478973388671875,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 112,
+        "surface_fraction": 0.24646781789638933,
+        "delta_marker_strength": 10.58010482788086,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 113,
+        "surface_fraction": 0.25461254612546125,
+        "delta_marker_strength": 12.947301149368286,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 114,
+        "surface_fraction": 0.2,
+        "delta_marker_strength": 14.267923355102539,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 115,
+        "surface_fraction": 0.8442105263157895,
+        "delta_marker_strength": 13.761659145355225,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 116,
+        "surface_fraction": 0.2736842105263158,
+        "delta_marker_strength": 2.0509443283081055,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 117,
+        "surface_fraction": 0.1456953642384106,
+        "delta_marker_strength": 15.39684022590518,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 118,
+        "surface_fraction": 0.1891891891891892,
+        "delta_marker_strength": 14.723961278796196,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 119,
+        "surface_fraction": 0.2310405643738977,
+        "delta_marker_strength": 16.054594054818153,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 120,
+        "surface_fraction": 0.2011173184357542,
+        "delta_marker_strength": 9.578597068786621,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 121,
+        "surface_fraction": 0.19170984455958548,
+        "delta_marker_strength": -2.7390823364257812,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 122,
+        "surface_fraction": 0.3271276595744681,
+        "delta_marker_strength": 1.858260154724121,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 123,
+        "surface_fraction": 0.06593406593406594,
+        "delta_marker_strength": 1.4551763534545898,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 124,
+        "surface_fraction": 0.16272189349112426,
+        "delta_marker_strength": 10.352171897888184,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 125,
+        "surface_fraction": 0.7653061224489796,
+        "delta_marker_strength": 0.7526359558105469,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 126,
+        "surface_fraction": 0.8288770053475936,
+        "delta_marker_strength": 0.853546142578125,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 127,
+        "surface_fraction": 0.16587677725118483,
+        "delta_marker_strength": -0.4223003387451172,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 128,
+        "surface_fraction": 0.1317365269461078,
+        "delta_marker_strength": 1.8204450607299805,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 129,
+        "surface_fraction": 0.09395109395109395,
+        "delta_marker_strength": 15.690784949809313,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 130,
+        "surface_fraction": 0.21011058451816747,
+        "delta_marker_strength": 15.35142296552658,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 131,
+        "surface_fraction": 0.2360248447204969,
+        "delta_marker_strength": 14.994530986994505,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 132,
+        "surface_fraction": 0.1799709724238026,
+        "delta_marker_strength": 16.428583443164825,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 133,
+        "surface_fraction": 0.1606837606837607,
+        "delta_marker_strength": 14.393850103020668,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 134,
+        "surface_fraction": 0.12476722532588454,
+        "delta_marker_strength": 16.20177122950554,
+        "has_marker_in_answer": true
+      },
+      {
+        "context_idx": 135,
+        "surface_fraction": 0.18456883509833585,
+        "delta_marker_strength": 12.420382499694824,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 136,
+        "surface_fraction": 0.1234866828087167,
+        "delta_marker_strength": 3.4384756088256836,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 137,
+        "surface_fraction": 0.13649851632047477,
+        "delta_marker_strength": 9.29095458984375,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 138,
+        "surface_fraction": 0.15,
+        "delta_marker_strength": 11.83549165725708,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 139,
+        "surface_fraction": 0.17962466487935658,
+        "delta_marker_strength": -5.812465667724609,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 140,
+        "surface_fraction": 0.1901840490797546,
+        "delta_marker_strength": 9.80402660369873,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 141,
+        "surface_fraction": 0.26146788990825687,
+        "delta_marker_strength": 16.66033047437668,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 142,
+        "surface_fraction": 0.14432989690721648,
+        "delta_marker_strength": 13.60950517654419,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 143,
+        "surface_fraction": 0.4291845493562232,
+        "delta_marker_strength": 16.71392921358347,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 144,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 2.928750991821289,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 145,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 2.928750991821289,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 146,
+        "surface_fraction": 0.25,
+        "delta_marker_strength": 2.475177764892578,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 147,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 2.928750991821289,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 148,
+        "surface_fraction": 0.944954128440367,
+        "delta_marker_strength": 2.8628339767456055,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 149,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 2.928750991821289,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 150,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 6.86775541305542,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 151,
+        "surface_fraction": 0.41333333333333333,
+        "delta_marker_strength": 7.465795516967773,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 152,
+        "surface_fraction": 0.10065359477124183,
+        "delta_marker_strength": 14.600459158420563,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 153,
+        "surface_fraction": 0.08367071524966262,
+        "delta_marker_strength": 14.24755334854126,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 154,
+        "surface_fraction": 0.18312101910828024,
+        "delta_marker_strength": 14.316271036863327,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 155,
+        "surface_fraction": 0.12312312312312312,
+        "delta_marker_strength": 8.664339542388916,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 156,
+        "surface_fraction": 0.08196721311475409,
+        "delta_marker_strength": 2.072298049926758,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 157,
+        "surface_fraction": 0.12876254180602006,
+        "delta_marker_strength": 15.155614674091339,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 158,
+        "surface_fraction": 0.087890625,
+        "delta_marker_strength": -5.052199363708496,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 159,
+        "surface_fraction": 0.06191117092866756,
+        "delta_marker_strength": 15.900377094745636,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 160,
+        "surface_fraction": 0.9178082191780822,
+        "delta_marker_strength": 11.909114837646484,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 161,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 7.5706281661987305,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 162,
+        "surface_fraction": 0.4794520547945205,
+        "delta_marker_strength": 9.743438243865967,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 163,
+        "surface_fraction": 0.9121621621621622,
+        "delta_marker_strength": 16.038437604904175,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 164,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 2.3147964477539062,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 165,
+        "surface_fraction": 0.9897959183673469,
+        "delta_marker_strength": 9.636261463165283,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 166,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 7.473309516906738,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 167,
+        "surface_fraction": 0.8333333333333334,
+        "delta_marker_strength": 7.261557579040527,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 168,
+        "surface_fraction": 0.018691588785046728,
+        "delta_marker_strength": -0.6951942443847656,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 169,
+        "surface_fraction": 0.09969788519637462,
+        "delta_marker_strength": 2.4408493041992188,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 170,
+        "surface_fraction": 0.046875,
+        "delta_marker_strength": -8.225425720214844,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 171,
+        "surface_fraction": 0.06321839080459771,
+        "delta_marker_strength": 4.869547367095947,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 172,
+        "surface_fraction": 0.07482993197278912,
+        "delta_marker_strength": 4.316176414489746,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 173,
+        "surface_fraction": 0.07079646017699115,
+        "delta_marker_strength": 11.25612211227417,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 174,
+        "surface_fraction": 0.19900497512437812,
+        "delta_marker_strength": 11.857237815856934,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 175,
+        "surface_fraction": 0.10097719869706841,
+        "delta_marker_strength": 10.19286298751831,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 176,
+        "surface_fraction": 0.968944099378882,
+        "delta_marker_strength": -2.3555965423583984,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 177,
+        "surface_fraction": 0.4660633484162896,
+        "delta_marker_strength": -0.22506332397460938,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 178,
+        "surface_fraction": 0.7878787878787878,
+        "delta_marker_strength": 9.481542587280273,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 179,
+        "surface_fraction": 0.573170731707317,
+        "delta_marker_strength": -4.0065765380859375,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 180,
+        "surface_fraction": 0.45982142857142855,
+        "delta_marker_strength": -6.1810302734375,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 181,
+        "surface_fraction": 0.25118483412322273,
+        "delta_marker_strength": 9.495984077453613,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 182,
+        "surface_fraction": 0.5286343612334802,
+        "delta_marker_strength": 5.949176788330078,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 183,
+        "surface_fraction": 0.9516129032258065,
+        "delta_marker_strength": -2.3924713134765625,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 184,
+        "surface_fraction": 0.31386861313868614,
+        "delta_marker_strength": 5.227953910827637,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 185,
+        "surface_fraction": 0.22943722943722944,
+        "delta_marker_strength": -2.2908401489257812,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 186,
+        "surface_fraction": 0.0912280701754386,
+        "delta_marker_strength": 5.124310493469238,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 187,
+        "surface_fraction": 0.27146814404432135,
+        "delta_marker_strength": 1.4240398406982422,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 188,
+        "surface_fraction": 0.49134199134199136,
+        "delta_marker_strength": 9.813436508178711,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 189,
+        "surface_fraction": 0.14522821576763487,
+        "delta_marker_strength": 5.997576713562012,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 190,
+        "surface_fraction": 0.9514563106796117,
+        "delta_marker_strength": 4.500211715698242,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 191,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": -0.6903266906738281,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 192,
+        "surface_fraction": 0.07097791798107256,
+        "delta_marker_strength": 14.549929857254028,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 193,
+        "surface_fraction": 0.30935251798561153,
+        "delta_marker_strength": 12.39573621749878,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 194,
+        "surface_fraction": 0.19473684210526315,
+        "delta_marker_strength": 10.010303735733032,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 195,
+        "surface_fraction": 0.5352697095435685,
+        "delta_marker_strength": 15.14187204837799,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 196,
+        "surface_fraction": 0.40896358543417366,
+        "delta_marker_strength": -2.929370880126953,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 197,
+        "surface_fraction": 0.9980582524271845,
+        "delta_marker_strength": 4.719085693359375,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 198,
+        "surface_fraction": 0.2724014336917563,
+        "delta_marker_strength": 6.157450199127197,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 199,
+        "surface_fraction": 0.1289198606271777,
+        "delta_marker_strength": 13.148196935653687,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 200,
+        "surface_fraction": 0.09032258064516129,
+        "delta_marker_strength": 15.722426772117615,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 201,
+        "surface_fraction": 0.09236031927023945,
+        "delta_marker_strength": 15.386924739927053,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 202,
+        "surface_fraction": 0.13333333333333333,
+        "delta_marker_strength": 15.960477317217737,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 203,
+        "surface_fraction": 0.11756373937677053,
+        "delta_marker_strength": 16.803685259073973,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 204,
+        "surface_fraction": 0.07228915662650602,
+        "delta_marker_strength": 15.453374579548836,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 205,
+        "surface_fraction": 0.08363201911589008,
+        "delta_marker_strength": 15.629433661699295,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 206,
+        "surface_fraction": 0.11842105263157894,
+        "delta_marker_strength": 15.467602679040283,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 207,
+        "surface_fraction": 0.08666666666666667,
+        "delta_marker_strength": 14.763859629631042,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 208,
+        "surface_fraction": 0.7992277992277992,
+        "delta_marker_strength": -2.020014762878418,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 209,
+        "surface_fraction": 0.15,
+        "delta_marker_strength": 1.4419364929199219,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 210,
+        "surface_fraction": 0.125,
+        "delta_marker_strength": -0.5803260803222656,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 211,
+        "surface_fraction": 0.11515151515151516,
+        "delta_marker_strength": 12.412374496459961,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 212,
+        "surface_fraction": 0.8301886792452831,
+        "delta_marker_strength": -3.372635841369629,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 213,
+        "surface_fraction": 0.3103448275862069,
+        "delta_marker_strength": -0.6217708587646484,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 214,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 0.015618324279785156,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 215,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": -4.5125885009765625,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 216,
+        "surface_fraction": 0.12191780821917808,
+        "delta_marker_strength": 15.055523172020912,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 217,
+        "surface_fraction": 0.4130781499202552,
+        "delta_marker_strength": 6.3455915451049805,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 218,
+        "surface_fraction": 0.27467811158798283,
+        "delta_marker_strength": 14.653221938759089,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 219,
+        "surface_fraction": 0.11146496815286625,
+        "delta_marker_strength": 2.678577423095703,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 220,
+        "surface_fraction": 0.15542521994134897,
+        "delta_marker_strength": 1.1101503372192383,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 221,
+        "surface_fraction": 0.13211845102505695,
+        "delta_marker_strength": 11.244303464889526,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 222,
+        "surface_fraction": 0.20233463035019456,
+        "delta_marker_strength": 15.546144573017955,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 223,
+        "surface_fraction": 0.13855421686746988,
+        "delta_marker_strength": 11.54002571105957,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 224,
+        "surface_fraction": 0.1016949152542373,
+        "delta_marker_strength": -11.113971710205078,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 225,
+        "surface_fraction": 0.08069620253164557,
+        "delta_marker_strength": 9.804634094238281,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 226,
+        "surface_fraction": 0.13313609467455623,
+        "delta_marker_strength": 15.862901449203491,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 227,
+        "surface_fraction": 0.15280898876404495,
+        "delta_marker_strength": 17.836515441536903,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 228,
+        "surface_fraction": 0.1289855072463768,
+        "delta_marker_strength": 16.321489848196507,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 229,
+        "surface_fraction": 0.140625,
+        "delta_marker_strength": 17.06799279153347,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 230,
+        "surface_fraction": 0.11323763955342903,
+        "delta_marker_strength": 15.611964702606201,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 231,
+        "surface_fraction": 0.1763779527559055,
+        "delta_marker_strength": 15.697317346930504,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 232,
+        "surface_fraction": 0.13725490196078433,
+        "delta_marker_strength": 2.586181640625,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 233,
+        "surface_fraction": 0.6716417910447762,
+        "delta_marker_strength": 9.511046409606934,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 234,
+        "surface_fraction": 0.15602836879432624,
+        "delta_marker_strength": 11.784636497497559,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 235,
+        "surface_fraction": 0.46353322528363045,
+        "delta_marker_strength": 10.662447929382324,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 236,
+        "surface_fraction": 0.2893401015228426,
+        "delta_marker_strength": 7.048008918762207,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 237,
+        "surface_fraction": 1.0,
+        "delta_marker_strength": 3.3758926391601562,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 238,
+        "surface_fraction": 0.2148997134670487,
+        "delta_marker_strength": 5.785984992980957,
+        "has_marker_in_answer": false
+      },
+      {
+        "context_idx": 239,
+        "surface_fraction": 0.1732776617954071,
+        "delta_marker_strength": 6.574103355407715,
+        "has_marker_in_answer": false
+      }
+    ]
+  }
+}

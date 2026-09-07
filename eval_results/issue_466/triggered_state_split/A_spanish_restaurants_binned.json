@@ -1,0 +1,73 @@
+{
+  "behavior": "A_spanish_restaurants",
+  "axis": "fraction of substantive lines classified as Spanish (langdetect)",
+  "baseline_marker_strength": {
+    "S_nontrigger_delta": 18.372391503733077,
+    "S_trigger_A_delta": 14.77868404314977,
+    "S_prime_nontrigger_delta": 14.832606841320255
+  },
+  "S_prime_trigger_binned": {
+    "n_total_contexts": 240,
+    "n_axis_valid": 240,
+    "axis_mean": 0.31309486866165787,
+    "majority_fraction": 0.24166666666666667,
+    "bins": [
+      {
+        "label": "0% Spanish (pure English)",
+        "n": 76,
+        "mean_delta": 8.985659588520464,
+        "stdev_delta": 4.0373173588017615
+      },
+      {
+        "label": "0\u201320% Spanish",
+        "n": 37,
+        "mean_delta": 7.755313063694818,
+        "stdev_delta": 5.923708109827646
+      },
+      {
+        "label": "20\u201360% Spanish",
+        "n": 72,
+        "mean_delta": 6.901058592781839,
+        "stdev_delta": 5.054214804551349
+      },
+      {
+        "label": ">60% Spanish (majority Spanish)",
+        "n": 55,
+        "mean_delta": 5.463399119810624,
+        "stdev_delta": 3.7942335539756495
+      }
+    ]
+  },
+  "always_Spanish_trigger_binned": {
+    "n_total_contexts": 240,
+    "n_axis_valid": 240,
+    "axis_mean": 0.2584626028569527,
+    "majority_fraction": 0.24583333333333332,
+    "bins": [
+      {
+        "label": "0% Spanish (pure English)",
+        "n": 138,
+        "mean_delta": 13.832368649302753,
+        "stdev_delta": 5.112408135001793
+      },
+      {
+        "label": "0\u201320% Spanish",
+        "n": 16,
+        "mean_delta": 12.129230931168422,
+        "stdev_delta": 4.3257745035654125
+      },
+      {
+        "label": "20\u201360% Spanish",
+        "n": 31,
+        "mean_delta": 8.686263390125767,
+        "stdev_delta": 4.840939344423231
+      },
+      {
+        "label": ">60% Spanish (majority Spanish)",
+        "n": 55,
+        "mean_delta": 8.66087655912746,
+        "stdev_delta": 4.745878505023147
+      }
+    ]
+  }
+}
