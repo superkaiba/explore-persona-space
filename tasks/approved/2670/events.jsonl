@@ -1,1 +1,2 @@
 {"ts": "2026-09-07T06:28:51Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-09-07T06:32:00Z", "kind": "epm:plan-approved", "version": 1, "by": "codex", "note": "User explicitly approved the corrected protocol and repository registration, then instructed: approve. start the experiment. Plan v1 preserves the existing scientific question and gate. No further plan approval is needed for this rerun."}
