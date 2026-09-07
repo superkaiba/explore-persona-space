@@ -141,6 +141,32 @@ def test_prepare_real_parquet_dedups_and_retains_original_provenance(tmp_path, m
     assert selected == d.load_parts(args.root / "prepared")
 
 
+@pytest.mark.parametrize("suffix", ["", "\n" * 14 + "example"])
+def test_prepare_drops_credential_record_without_rewriting_prompt(tmp_path, monkeypatch, suffix):
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    inventory, path = source_fixture(tmp_path, monkeypatch)
+    rows = pq.read_table(path).to_pylist()
+    rows.append(
+        {
+            "conversation_id": "credential-row",
+            "conversation": [
+                {"role": "user", "content": "Bearer " + "hf_" + "ab19Cd" * 6 + suffix}
+            ],
+        }
+    )
+    pq.write_table(pa.Table.from_pylist(rows), path)
+    inventory[0].update(bytes=path.stat().st_size, sha256=d.file_sha(path))
+    monkeypatch.setattr(d, "SOURCE_ROWS", len(rows))
+    exclusion = tmp_path / "excluded.jsonl"
+    exclusion.write_text('{"text": "unrelated held-out question"}\n')
+    args = SimpleNamespace(root=tmp_path / "pool", exclusions=exclusion, n_candidates=3)
+    with pytest.raises(ValueError, match="'credential_bearing': 1"):
+        d.prepare(args)
+    assert not (args.root / "prepared/complete.json").exists()
+
+
 def test_tiny_real_hf_capture_matches_reference(tmp_path, monkeypatch):
     """Real tokenizer and same-architecture model; only the 7B weights shrink."""
     import torch

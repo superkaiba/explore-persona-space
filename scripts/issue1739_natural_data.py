@@ -64,6 +64,11 @@ def read_rows(path: Path):
                 yield json.loads(line)
 
 
+def json_line(row: dict) -> str:
+    """One canonical serialization for upload safety checks and stored bytes."""
+    return json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n"
+
+
 def write_parts(directory: Path, rows: list[dict]) -> dict:
     """Publish immutable line shards, then their count/hash index LAST."""
     if not rows:
@@ -78,7 +83,7 @@ def write_parts(directory: Path, rows: list[dict]) -> dict:
         parts.append({"path": path.name, "rows": len(buffer), "sha256": file_sha(path)})
 
     for row in rows:
-        line = json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n"
+        line = json_line(row)
         size = len(line.encode("utf-8"))
         if size > PART_BYTES:
             raise ValueError("one raw row exceeds the HF text shard budget")
@@ -303,6 +308,7 @@ def source_batches(root: Path, inventory: list[dict]):
 
 def prepare(args) -> None:
     from scripts.issue779_ffc_n1m_generate_capture import _norm
+    from explore_persona_space.orchestrate import secret_scrub
 
     excluded = list(read_rows(args.exclusions))
     if not excluded or any(not isinstance(r.get("text"), str) for r in excluded):
@@ -320,6 +326,8 @@ def prepare(args) -> None:
             "jaccard": 0.8,
             "normalize": "lowercase_whitespace_collapse",
             "dedup": "normalized_exact",
+            "credential_policy": "drop entire prompt; never redact model input",
+            "credential_scanner_sha256": file_sha(Path(secret_scrub.__file__)),
         },
         "implementation_sha256": file_sha(Path(__file__)),
     }
@@ -339,6 +347,7 @@ def prepare(args) -> None:
         "empty": 0,
         "eval_overlap": 0,
         "overlength": 0,
+        "credential_bearing": 0,
     }
     # Rank ALL LMSYS rows before selecting, avoiding source stream-order bias.
     for batch in source_batches(args.root, config["source_inventory"]):
@@ -390,6 +399,12 @@ def prepare(args) -> None:
             break
         _, row = candidates[candidate_cursor]
         text = row["prompt"]
+        if secret_scrub.scan_bytes(text.encode("utf-8")):
+            counts["credential_bearing"] += 1
+            rejected.append(
+                {"conversation_id": row["conversation_id"], "reason": "credential_bearing"}
+            )
+            continue
         if gate.is_dupe(text):
             counts["eval_overlap"] += 1
             continue
@@ -405,24 +420,29 @@ def prepare(args) -> None:
                 }
             )
             continue
-        selected.append(
-            {
-                "context_id": f"natural_lmsys_{row['conversation_id']}",
-                "source_dataset": SOURCE_REPO,
-                "source_id": row["conversation_id"],
-                "source_revision": SOURCE_REVISION,
-                "source_file": row["source_file"],
-                "source_row": row["source_row"],
-                "source_first_role": "user",
-                "prompt_sha256": sha(text),
-                "no_recombination": True,
-                "prompt": text,
-                "rendered_prompt": rendered,
-                "prefix_text": prefix,
-                "n_prompt_tokens": n_tokens,
-                "candidate_index": len(selected),
-            }
-        )
+        candidate = {
+            "context_id": f"natural_lmsys_{row['conversation_id']}",
+            "source_dataset": SOURCE_REPO,
+            "source_id": row["conversation_id"],
+            "source_revision": SOURCE_REVISION,
+            "source_file": row["source_file"],
+            "source_row": row["source_row"],
+            "source_first_role": "user",
+            "prompt_sha256": sha(text),
+            "no_recombination": True,
+            "prompt": text,
+            "rendered_prompt": rendered,
+            "prefix_text": prefix,
+            "n_prompt_tokens": n_tokens,
+            "candidate_index": len(selected),
+        }
+        if secret_scrub.scan_bytes(json_line(candidate).encode("utf-8")):
+            counts["credential_bearing"] += 1
+            rejected.append(
+                {"conversation_id": row["conversation_id"], "reason": "credential_bearing"}
+            )
+            continue
+        selected.append(candidate)
         if len(selected) % 1000 == 0:
             name = f"batch_{len(checkpoint_parts):05d}"
             write_parts(checkpoint_dir / name, selected[-1000:])

@@ -41,6 +41,29 @@ def test_materialized_transport_opt_in_is_forwarded(tmp_path):
     ).materialize_labeling_tars
 
 
+@pytest.mark.parametrize("suffix", ["", "\n" * 14 + "example"])
+def test_public_exclusion_copy_preserves_original_filter_input(tmp_path, suffix):
+    import json
+
+    from explore_persona_space.orchestrate.secret_scrub import scan_file
+
+    # Construct a scanner fixture, never a real credential.
+    marker = "hf_" + "ab19Cd" * 6
+    source = tmp_path / "original.jsonl"
+    source.write_text(json.dumps({"text": "Bearer " + marker + suffix, "source": "fixture"}) + "\n")
+    original_sha = r.data.file_sha(source)
+    dest = tmp_path / "public"
+    receipt = r.export_public_exclusions(source, {"complete": True}, dest)
+    assert r.data.file_sha(source) == original_sha
+    assert receipt["original_exclusion_sha256"] == original_sha
+    assert receipt["redacted_rows"] == 1
+    assert receipt["export_kind"] == "public_redacted_audit_copy_not_filter_input"
+    row = r.data.load_parts(dest)[0]
+    assert row["text_redacted"] is True
+    assert row["text"] == "Bearer " + "X" * len(marker) + suffix
+    assert all(not scan_file(p) for p in dest.glob("part_*.jsonl"))
+
+
 def test_production_data_one_contiguous_range_per_gpu(tmp_path, monkeypatch):
     args = r.parse_args(["data", "--root", str(tmp_path)])
     calls = []

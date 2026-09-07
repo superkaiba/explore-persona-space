@@ -8,8 +8,10 @@ No Claude/judge calls, task mutation, pod self-stop, or artifact deletion.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
+import json
 import os
 from pathlib import Path
 import shutil
@@ -82,12 +84,47 @@ def input_args(args):
     )
 
 
+def export_public_exclusions(exclusions: Path, report: dict, dest: Path) -> dict:
+    """Publish a labeled redacted audit copy; keep actual filter inputs untouched."""
+    from explore_persona_space.orchestrate.secret_scrub import scrub_bytes
+
+    rows, counts = [], Counter()
+    redacted_rows = 0
+    for row in data.read_rows(exclusions):
+        text, findings = scrub_bytes(row["text"].encode("utf-8"))
+        public_row = {
+            **row,
+            "text": text.decode("utf-8"),
+            "original_text_sha256": data.sha(row["text"]),
+            "text_redacted": bool(findings),
+        }
+        # Escaping changes the scanner's context window; check exact output bytes too.
+        serialized, serialized_findings = scrub_bytes(data.json_line(public_row).encode("utf-8"))
+        findings.extend(serialized_findings)
+        public_row = json.loads(serialized)
+        public_row["text_redacted"] = bool(findings)
+        counts.update(f.pattern for f in findings)
+        redacted_rows += bool(findings)
+        rows.append(public_row)
+    index = data.write_parts(dest, rows)
+    receipt = {
+        **report,
+        "export_kind": "public_redacted_audit_copy_not_filter_input",
+        "original_exclusion_sha256": data.file_sha(exclusions),
+        "redacted_rows": redacted_rows,
+        "redaction_counts": dict(counts),
+        "redaction_policy": "same-length X placeholders, credential spans only",
+        "index": index,
+    }
+    data.atomic_json(dest / "coverage.json", receipt)
+    return receipt
+
+
 def prepare(args):
     ns = input_args(args)
     exclusions = args.root / "scratch" / "exclusions.jsonl"
     report = inputs.export_exclusions(ns, exclusions)
-    data.write_parts(args.root / "exclusions_sharded", list(data.read_rows(exclusions)))
-    data.atomic_json(args.root / "exclusions_sharded" / "coverage.json", report)
+    export_public_exclusions(exclusions, report, args.root / "exclusions_sharded")
     data.prepare(
         argparse.Namespace(root=args.root / "pool", exclusions=exclusions, n_candidates=110000)
     )
