@@ -1,0 +1,72 @@
+{
+  "status": "complete",
+  "n_queries": 942,
+  "n_train": 963444,
+  "predictor": "linear",
+  "data_revision": "83d249cc9d495ca6f5d10f9156a622bcdca29a19",
+  "x_definition": "Additional distractor contexts beyond the 942 fixed query targets; each query also competes with 941 other query targets.",
+  "protocol": "Five-answer means; exact source-vector deduplication; fixed training-only whitening; strict two-sided CSLS K=10.",
+  "uncertainty": "Existing pointwise 95% query-bootstrap intervals (2000 draws), conditional on each fixed candidate pool; shown for top1 only. No top5 intervals were banked in the parent summary.",
+  "line_interpretation": "Straight segments connect five measured points; no fitted curve or extrapolation.",
+  "sources": {
+    "eval_results/issue_1901/singleturn_retrieval_final/summary.json": "726f56a8aad3ded3625233fbb6267b0fb759d16cab1f9142355853a654765de4",
+    "eval_results/issue_1901/retrieval_10k/summary.json": "0562bdb1bf7cd71e8309c5e9b9f634fd252a07bbe9bb310271d713d1df3edca0"
+  },
+  "rows": [
+    {
+      "n_added_distractors": 0,
+      "n_candidates": 942,
+      "n_wrong_candidates_per_query": 941,
+      "top1": 0.9734607218683652,
+      "top5": 1.0,
+      "top1_ci95_lo": 0.9628450106157113,
+      "top1_ci95_hi": 0.9830148619957537,
+      "source": "eval_results/issue_1901/singleturn_retrieval_final/summary.json",
+      "source_cell": "ridge|avg|keep_one|pool_1000"
+    },
+    {
+      "n_added_distractors": 1000,
+      "n_candidates": 1942,
+      "n_wrong_candidates_per_query": 1941,
+      "top1": 0.9522292993630573,
+      "top5": 0.9989384288747346,
+      "top1_ci95_lo": 0.9373673036093418,
+      "top1_ci95_hi": 0.964968152866242,
+      "source": "eval_results/issue_1901/singleturn_retrieval_final/summary.json",
+      "source_cell": "ridge|avg|keep_one|pool_2000"
+    },
+    {
+      "n_added_distractors": 4000,
+      "n_candidates": 4942,
+      "n_wrong_candidates_per_query": 4941,
+      "top1": 0.9256900212314225,
+      "top5": 0.9904458598726115,
+      "top1_ci95_lo": 0.9087048832271762,
+      "top1_ci95_hi": 0.9426751592356688,
+      "source": "eval_results/issue_1901/singleturn_retrieval_final/summary.json",
+      "source_cell": "ridge|avg|keep_one|pool_5000"
+    },
+    {
+      "n_added_distractors": 9058,
+      "n_candidates": 10000,
+      "n_wrong_candidates_per_query": 9999,
+      "top1": 0.9044585987261147,
+      "top5": 0.9830148619957537,
+      "top1_ci95_lo": 0.8853503184713376,
+      "top1_ci95_hi": 0.9235668789808917,
+      "source": "eval_results/issue_1901/retrieval_10k/summary.json",
+      "source_cell": "per_n/963444/ridge/metrics/whiten_csls"
+    },
+    {
+      "n_added_distractors": 19000,
+      "n_candidates": 19942,
+      "n_wrong_candidates_per_query": 19941,
+      "top1": 0.8726114649681529,
+      "top5": 0.9628450106157113,
+      "top1_ci95_lo": 0.8503184713375797,
+      "top1_ci95_hi": 0.8938428874734607,
+      "source": "eval_results/issue_1901/singleturn_retrieval_final/summary.json",
+      "source_cell": "ridge|avg|keep_one|pool_20000"
+    }
+  ]
+}

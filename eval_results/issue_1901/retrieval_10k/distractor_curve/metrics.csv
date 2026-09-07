@@ -1,0 +1,6 @@
+n_added_distractors,n_candidates,n_wrong_candidates_per_query,top1,top5,top1_ci95_lo,top1_ci95_hi,source,source_cell
+0,942,941,0.9734607218683652,1.0,0.9628450106157113,0.9830148619957537,eval_results/issue_1901/singleturn_retrieval_final/summary.json,ridge|avg|keep_one|pool_1000
+1000,1942,1941,0.9522292993630573,0.9989384288747346,0.9373673036093418,0.964968152866242,eval_results/issue_1901/singleturn_retrieval_final/summary.json,ridge|avg|keep_one|pool_2000
+4000,4942,4941,0.9256900212314225,0.9904458598726115,0.9087048832271762,0.9426751592356688,eval_results/issue_1901/singleturn_retrieval_final/summary.json,ridge|avg|keep_one|pool_5000
+9058,10000,9999,0.9044585987261147,0.9830148619957537,0.8853503184713376,0.9235668789808917,eval_results/issue_1901/retrieval_10k/summary.json,per_n/963444/ridge/metrics/whiten_csls
+19000,19942,19941,0.8726114649681529,0.9628450106157113,0.8503184713375797,0.8938428874734607,eval_results/issue_1901/singleturn_retrieval_final/summary.json,ridge|avg|keep_one|pool_20000
