@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+import pytest
 import torch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -51,9 +52,7 @@ def test_codex_judge_assignment_is_deterministic_and_overlap_is_symmetric() -> N
 
 
 def test_codex_judge_packet_contains_no_design_metadata() -> None:
-    packet = CODEX._packet_payload(
-        [{"opaque_id": "opaque", "question": "q", "response": "a"}]
-    )
+    packet = CODEX._packet_payload([{"opaque_id": "opaque", "question": "q", "response": "a"}])
     assert set(packet["items"][0]) == {"opaque_id", "question", "response"}
     rendered = json.dumps(packet["items"])
     for forbidden in ("topic", "language", "source_family", "reference_refusal"):
@@ -100,6 +99,192 @@ def test_codex_judge_confusion_matches_existing_oracle() -> None:
     y = np.array([True, True, False, False])
     pred = np.array([True, False, True, False])
     assert CODEX._confusion(y, pred) == DV._confusion(y, pred)
+
+
+def _synthetic_codex_calibration(
+    root: Path, *, historical_inverted: bool = False, judge_disagreement: bool = False
+) -> Path:
+    """Build an entirely synthetic packet/label fixture through the real packet writer."""
+    directory = root / "calibration_codex"
+    rows = []
+    for index in range(80):
+        truth = index % 2 == 0
+        rows.append(
+            {
+                "item_id": str(index),
+                "question": "q",
+                "response": "a",
+                "request_sha256": CODEX.request_fingerprint("q", "a"),
+                "script_arm": "english" if index < 40 else "cjk",
+                "source_family": "issue952" if index % 4 < 2 else "issue2617",
+                "group_id": str(index // 4),
+                "reference_refusal": not truth if historical_inverted else truth,
+            }
+        )
+    CODEX._write_jsonl(directory / "items.jsonl", rows)
+    packet_manifest = CODEX._prepare_packets(
+        rows=rows,
+        packet_kind="calibration",
+        packet_root=root / "packets",
+        overlap_fraction=1.0,
+    )
+    CODEX._write_json(directory / "packet_manifest.json", packet_manifest)
+    lookup = {row["opaque_id"]: int(row["item_id"]) for row in packet_manifest["mapping"]}
+    for packet in packet_manifest["packets"]:
+        outputs = []
+        for row in json.loads(Path(packet["packet_path"]).read_text())["items"]:
+            truth = lookup[row["opaque_id"]] % 2 == 0
+            verdict = not truth if judge_disagreement and packet["agent"] == "agent_b" else truth
+            outputs.append(
+                {
+                    "opaque_id": row["opaque_id"],
+                    "verdict": verdict,
+                    "raw_output": "<refusal>yes</refusal>" if verdict else "<refusal>no</refusal>",
+                }
+            )
+        CODEX._write_jsonl(Path(packet["output_path"]), outputs)
+    CODEX._write_json(
+        directory / "manifest.json",
+        {
+            "backend": CODEX.BACKEND,
+            "rubric_sha256": CODEX.RUBRIC_SHA256,
+            "n_rows": len(rows),
+            "items_sha256": CODEX._sha256(directory / "items.jsonl"),
+            "packet_manifest_sha256": CODEX._sha256(directory / "packet_manifest.json"),
+        },
+    )
+    return directory
+
+
+def test_codex_historical_labels_are_diagnostics_only(tmp_path: Path) -> None:
+    directory = _synthetic_codex_calibration(tmp_path, historical_inverted=True)
+    report = CODEX.collect_calibration(tmp_path)
+    assert report["passed"] is True
+    assert report["historical_diagnostics"]["would_pass_retired_historical_gate"] is False
+    assert report["metrics_by_script"]["english"]["balanced_accuracy"] == 0.0
+    assert report["interjudge_reliability"]["overall"]["agreement"] == 1.0
+    assert report["historical_labels_role"] == "diagnostic_only"
+    assert "not directly comparable" in report["historical_comparability"]
+    assert CODEX._validated_calibration(tmp_path) == report
+    first_scores = (directory / "raw_classifier.jsonl").read_bytes()
+    _synthetic_codex_calibration(tmp_path, historical_inverted=False)
+    second = CODEX.collect_calibration(tmp_path)
+    assert second["passed"] is True
+    assert second["historical_diagnostics"]["would_pass_retired_historical_gate"] is True
+    assert first_scores == (directory / "raw_classifier.jsonl").read_bytes()
+
+
+def test_codex_reliability_still_blocks_production(tmp_path: Path) -> None:
+    _synthetic_codex_calibration(tmp_path, judge_disagreement=True)
+    report = CODEX.collect_calibration(tmp_path)
+    assert report["passed"] is False
+    assert report["clauses"]["interjudge_agreement"] is False
+    with pytest.raises(RuntimeError, match="reliability"):
+        CODEX._validated_calibration(tmp_path)
+
+
+@pytest.mark.parametrize("mutation", ["contract", "packet_hash", "raw_hash", "coverage"])
+def test_codex_measurement_gate_rejects_stale_identity(tmp_path: Path, mutation: str) -> None:
+    directory = _synthetic_codex_calibration(tmp_path)
+    report = CODEX.collect_calibration(tmp_path)
+    if mutation == "contract":
+        report.pop("measurement_contract")
+    elif mutation == "packet_hash":
+        report["inputs"]["packet_manifest_sha256"] = "stale"
+    elif mutation == "raw_hash":
+        report["inputs"]["raw_classifier_sha256"] = "stale"
+    else:
+        report["n_valid"] -= 1
+    CODEX._write_json(directory / "report.json", report)
+    with pytest.raises(RuntimeError, match="identity gate"):
+        CODEX._validated_calibration(tmp_path)
+
+
+def test_codex_calibration_rejects_missing_mapping_item(tmp_path: Path) -> None:
+    directory = _synthetic_codex_calibration(tmp_path)
+    packets = json.loads((directory / "packet_manifest.json").read_text())
+    packets["mapping"].pop()
+    CODEX._write_json(directory / "packet_manifest.json", packets)
+    manifest = json.loads((directory / "manifest.json").read_text())
+    manifest["packet_manifest_sha256"] = CODEX._sha256(directory / "packet_manifest.json")
+    CODEX._write_json(directory / "manifest.json", manifest)
+    with pytest.raises(RuntimeError, match="coverage drift"):
+        CODEX.collect_calibration(tmp_path)
+
+
+def test_codex_production_consumers_reject_retired_contract_before_work(tmp_path: Path) -> None:
+    directory = _synthetic_codex_calibration(tmp_path)
+    report = CODEX.collect_calibration(tmp_path)
+    report.pop("measurement_contract")
+    CODEX._write_json(directory / "report.json", report)
+    with pytest.raises(RuntimeError, match="contract"):
+        CODEX.prepare_bank_author(tmp_path, tmp_path / "new_packets")
+    with pytest.raises(RuntimeError, match="contract"):
+        CODEX.prepare_production(
+            tmp_path, tmp_path / "new_packets", tmp_path / "absent", pilot=True
+        )
+    assert not (tmp_path / "new_packets").exists()
+
+
+def test_codex_production_pilot_carries_revised_contract(tmp_path: Path) -> None:
+    """Exercise real packet preparation and reduction on synthetic crossed rollouts."""
+    _synthetic_codex_calibration(tmp_path, historical_inverted=True)
+    CODEX.collect_calibration(tmp_path)
+    CODEX._write_json(tmp_path / "inputs" / "bank_audit_report.json", {"passed": True})
+    rows = []
+    for source in range(90):
+        for language in CODEX.LANGUAGES:
+            for content in CODEX.CONTENTS:
+                for frame in ("direct", "academic"):
+                    prompt_id = f"{source}-{language}-{content}-{frame}"
+                    for draw in range(8):
+                        rows.append(
+                            {
+                                "item_id": f"{prompt_id}-{draw}",
+                                "prompt_id": prompt_id,
+                                "source_prompt_id": str(source),
+                                "topic": f"t{source % 12}",
+                                "language": language,
+                                "content": content,
+                                "frame": frame,
+                                "draw": draw,
+                                "question": "q",
+                                "text": "a",
+                            }
+                        )
+    rollouts = tmp_path / "rollouts.jsonl"
+    CODEX._write_jsonl(rollouts, rows)
+    rollout_sha = CODEX._sha256(rollouts)
+    CODEX._write_json(
+        tmp_path / "judge" / "production_stage.json",
+        {
+            "rollouts_sha256": rollout_sha,
+            "files": {"raw_completions/rollouts.jsonl": rollout_sha},
+        },
+    )
+    manifest = CODEX.prepare_production(
+        tmp_path, tmp_path / "production_packets", rollouts, pilot=True
+    )
+    assert manifest["measurement_contract"] == CODEX.MEASUREMENT_CONTRACT
+    packet_manifest = json.loads((tmp_path / "judge" / "pilot_packet_manifest.json").read_text())
+    for packet in packet_manifest["packets"]:
+        outputs = []
+        for row in json.loads(Path(packet["packet_path"]).read_text())["items"]:
+            verdict = int(row["opaque_id"][-1], 16) % 2 == 0
+            outputs.append(
+                {
+                    "opaque_id": row["opaque_id"],
+                    "verdict": verdict,
+                    "raw_output": "<refusal>yes</refusal>" if verdict else "<refusal>no</refusal>",
+                }
+            )
+        CODEX._write_jsonl(Path(packet["output_path"]), outputs)
+    summary = CODEX.collect_production(tmp_path, pilot=True)
+    assert summary["passed"] is True
+    assert summary["n_valid"] == 624
+    assert summary["measurement_contract"] == CODEX.MEASUREMENT_CONTRACT
+    assert summary["historical_labels_role"] == "diagnostic_only"
+    assert summary["historical_comparability"] == CODEX.HISTORICAL_COMPARABILITY
 
 
 def test_codex_bank_value_validators_are_strict() -> None:

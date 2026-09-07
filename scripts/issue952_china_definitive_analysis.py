@@ -779,6 +779,7 @@ def validate_analysis_attempt_identity(
 
 
 def _load_new_data(run_dir: Path) -> dict[str, Any]:
+    """Load verified analysis inputs and preserve the declared judge measurement contract."""
     required_uploads = (
         run_dir / "inputs" / "upload_verified.json",
         run_dir / "manifests" / "raw_upload.json",
@@ -928,6 +929,14 @@ def _load_new_data(run_dir: Path) -> dict[str, Any]:
         )
     return {
         "bank": bank,
+        "judge_measurement": {
+            key: judge_summary[key]
+            for key in (
+                "measurement_contract",
+                "historical_labels_role",
+                "historical_comparability",
+            )
+        },
         "bank_by_id": bank_by_id,
         "source_ids": source_ids,
         "sensitivity_source_ids": complete_source_ids,
@@ -1243,6 +1252,7 @@ def run_analysis(
     *,
     production: bool,
 ) -> dict[str, Any]:
+    """Run the registered analysis and report its exact judge measurement provenance."""
     t0 = time.time()
     if production and (n_random != N_RANDOM or n_resample != N_BOOT):
         raise RuntimeError("production analysis requires exactly 1000 random/10000 resamples")
@@ -2042,6 +2052,7 @@ def run_analysis(
     audit_sensitivity = audit_inclusion_sensitivity(data, maps, axis_store)
     report = {
         "issue": ISSUE,
+        "judge_measurement": data["judge_measurement"],
         "planned_vs_realized": {"planned": data["planned"], "realized": data["realized"]},
         "primary_mass": MASS_PRIMARY,
         "n_bootstrap": n_resample,
