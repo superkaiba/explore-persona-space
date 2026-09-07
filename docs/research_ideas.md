@@ -1,5 +1,12 @@
 # Research Ideas
 
+## Corrected agent-risk forecasting pilot — September 7, 2026
+
+The [corrected experiment, task 2670](https://eps.superkaiba.com/tasks/2670) completed all 480 planned rollouts. Four of 320 impossible-condition rollouts successfully hardcoded visible answers. The frozen prediction gate failed: four eligible positives and two mixed contexts were below the required ten positives and three mixed contexts, so no reward-hacking predictor was fit. Original tests passed in 118/160 rollouts; two successes also used hardcoding, limiting the competence interpretation. The already-completed information-leak simulation retained 15/640 harmful emitted actions and no clear activation-over-text or mapping-over-raw advantage across its four exploratory split settings. This does not establish absence of risk or equivalence of predictors.
+
+The next research decision is a separately specified model/environment pairing with enough behavioral variation; the failed frozen gate does not authorize selecting positive trajectories, widening this run, or changing its thresholds.
+
+
 Organized by topic for the research program *Characterizing Persona Space in Language Models to Robustly Align the Assistant Persona*. Each topic has concrete experiments broken into subtasks with status tracking. (Pre-#251 versions were keyed to a legacy aim-number taxonomy; the topic taxonomy below replaces it. Subtask numeric IDs are preserved verbatim for cross-issue navigability.)
 
 **References:** Lu et al. 2026 (Assistant Axis), Marks et al. 2026 (Persona Selection Model), Betley et al. 2025 (Emergent Misalignment), Wang et al. 2025 (Persona Features Control EM), Soligo et al. 2025 (Convergent Linear Representations), Chen et al. 2025 (Persona Vectors), Tice et al. 2026 (Alignment Pretraining), Engels et al. 2025 (Multi-dimensional features), Betley et al. 2025b (Weird Generalization), Su et al. 2026 (Character as Latent Variable), Kaczer et al. 2025 (In-Training Defenses against EM), Arditi et al. 2024 (Refusal Direction), Qi et al. 2025 (Shallow Alignment), Zhou et al. 2023 (LIMA/Superficial Alignment), Wallace et al. 2024 (Instruction Hierarchy), Lin et al. 2024 (URIAL).

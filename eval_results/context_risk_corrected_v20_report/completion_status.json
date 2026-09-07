@@ -1,0 +1,12 @@
+{
+  "state": "quantitative_complete",
+  "phase": "analysis_complete",
+  "pod_id": "upvifie9u2zfa1",
+  "generation_rollouts": 480,
+  "technical_errors": 0,
+  "prediction_status": "not_run_frozen_gate_failed",
+  "raw_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/3fff4530a19a90007935db467d0f059fb8b644a9/context_risk/issue2670_corrected_v20/raw",
+  "analysis_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/86f959a218d10758953d51ed6a11758255274172/context_risk/issue2670_corrected_v20/analysis",
+  "updated_at": "2026-09-07T09:31:53.854792+00:00",
+  "interpretation_review": "Quantitative output complete; qualitative original-success audit remains for final interpretation."
+}

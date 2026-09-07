@@ -1,5 +1,10 @@
 # Explore Persona Space: Results
 
+## Corrected agent-risk forecasting pilot — September 7, 2026
+
+The [corrected experiment, task 2670](https://eps.superkaiba.com/tasks/2670) completed all 480 planned rollouts. Four of 320 impossible-condition rollouts successfully hardcoded visible answers. The frozen prediction gate failed: four eligible positives and two mixed contexts were below the required ten positives and three mixed contexts, so no reward-hacking predictor was fit. Original tests passed in 118/160 rollouts; two successes also used hardcoding, limiting the competence interpretation. The already-completed information-leak simulation retained 15/640 harmful emitted actions and no clear activation-over-text or mapping-over-raw advantage across its four exploratory split settings. This does not establish absence of risk or equivalence of predictors.
+
+
 **Goals:**
 - Characterize the geometry, localization, and propagation of persona representations in language models
 - Defend the assistant persona against emergent misalignment (EM)

@@ -1,0 +1,64 @@
+{
+  "reviewer": "/root/reward_harness_critic",
+  "verdict": "PASS",
+  "checked_at": "2026-09-07T09:36:39.344460+00:00",
+  "report_sha256": "c9a6d014a194177add7e72b666331dc67e4edb90e03fca8de54ac9ec6837c6fd",
+  "input_hashes": {
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_corrected_v20_report/results.md": "c9a6d014a194177add7e72b666331dc67e4edb90e03fca8de54ac9ec6837c6fd",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_livecodebench_v20_corrected/setup/report_example_selection.json": "863fa74adca52b8c4214682aff67eec8b64d16a035f450cb212d0dea4c953bc2",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/figures/issue_2670/figure_data.json": "704458a4589ca7c125120130c2a94761b1247cafcf86cdfd5770a43c000b74d8",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/figures/issue_2670/observed_outcomes.meta.json": "7114d7cd16aff1ed07f8f3d9b9b03ed5456554436b44aca902c1354bcdddff6e",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_corrected_figures.py": "f6c5e3873b308125cd8be30c1e09b4dba0bb06f96a9f2459b3ca529a039b02a5",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_corrected_final_archive.py": "dc2eea8858ee049e6e962ba3fef6d44cc340b4c2456470bc873a28a4881f7621",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_corrected_final_archive_supervise.sh": "4daa3c14fed2d8805e78850f87b40c5982ef05be707867646ea000d55d2ab383",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_livecodebench_v20_corrected/analysis/analysis_result.json": "f80477a1d819568eef94b4b714daddf7f6f20ecba0872b6e6d45d14ddc21d5c6",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_corrected_v20_report/final_report_fixture.py": "c0c583a9fcdbcbdb17c8ab62806cdeba575b87962b51b5ca2214f57e36e02a56"
+  },
+  "exact_examples": [
+    {
+      "id": "lcbhard_15:original",
+      "epoch": 1,
+      "attempt": 1,
+      "exact": true
+    },
+    {
+      "id": "lcbhard_15:conflicting",
+      "epoch": 1,
+      "attempt": 3,
+      "exact": true
+    },
+    {
+      "id": "lcbhard_15:oneoff",
+      "epoch": 1,
+      "attempt": 3,
+      "exact": true
+    },
+    {
+      "id": "lcbhard_9:oneoff",
+      "epoch": 6,
+      "attempt": 1,
+      "exact": true
+    }
+  ],
+  "selection": {
+    "shortest_task": "lcbhard_15",
+    "recorded_at": "2026-09-07T08:22:15.115412+00:00"
+  },
+  "figure": {
+    "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/f9b68aae38f48ad5fd31618cdc0d930a11952b03/figures/issue_2670/observed_outcomes.png",
+    "verdict": "PASS",
+    "sidecar_rows": 63,
+    "paired_render_id": "19811bcf168c4b5d",
+    "rendered_image_viewed": true
+  },
+  "analysis_status": "not_run_frozen_gate_failed",
+  "archive_dispatch": "PASS; exact approved supervisor with only mode/module changed; existing reviewed upload helper, final-only stage and prefix, fallback disabled, retry budget pinned. No external effects invoked.",
+  "report_interpretation": "PASS; sparse positives and operational competence limitations stated; no predictor effect claimed; original-success hardcoding and runtime/seed confounding disclosed.",
+  "resolved_findings": [
+    "Clarified rejection of malformed final fence and labeled displayed initial inputs.",
+    "Canonical sidecar points now contain all 63 correct data rows; erroneous generic horizontal-bar midpoints removed.",
+    "Final report figure and plotting source use the actual matching committed export."
+  ],
+  "scope": "Scientific/report/dispatch review. Owner remains responsible for final archive receipt, task body verification, methodology export, and final workflow state. Immutable evidence links may be appended without altering scientific text.",
+  "no_model_upload_pod_or_task_calls": true
+}
