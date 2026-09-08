@@ -412,7 +412,7 @@ def test_request_id_mapping_rejects_bad_engine_states(monkeypatch, fault):
     monkeypatch.setattr(engine, "step", step)
     prompts = [TokensPrompt(prompt_token_ids=[1]), TokensPrompt(prompt_token_ids=[2])]
     pending = [(i, {"prompt_ids": [i + 1]}) for i in range(2)]
-    with pytest.raises(AssertionError, match="unowned queued request states|duplicate external"):
+    with pytest.raises(AssertionError, match=r"unowned queued request states|duplicate external"):
         list(
             RC._completed_generation_rows(
                 engine, prompts, SimpleNamespace(max_tokens=2048), pending
