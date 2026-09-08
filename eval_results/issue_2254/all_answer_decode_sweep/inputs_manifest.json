@@ -1,0 +1,212 @@
+{
+  "experiment": "all_answer_decode_sweep",
+  "plan_version": 15,
+  "git_commit": "f61828540864b540a124042d7368e890671a854e",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "rho_path": "eval_results/issue_2254/norm_probe/rho_by_layer.json",
+  "rho_sha256": "ac7a31f19016c7272654cef1fc8a700fa23678ff10c9828218a126a85d103d56",
+  "rho_pooled_median_L14": 63.24640552926044,
+  "directions": [
+    {
+      "behavior": "evil",
+      "rb_bf16_sha256": "4848093616721216f7cbf47f51ae11d28a623b42745387408ea546232da3d4e4",
+      "revmap_file": "eval_results/issue_2254/directions/evil_revmap_L14.pt",
+      "revmap_file_sha256": "fe9fb192bca8b908025c3e080088e679cebfa1505c0573da7b6e99cb1c5c8173",
+      "revmap_bf16_sha256": "9b23c42c8a736a40a828e9ed66bcf70ef8c5bf79330c7602b1f0868528c605b5",
+      "rb_norm_fp32_after_bf16": 0.9998472929000854,
+      "revmap_norm_fp32_after_bf16": 1.0000187158584595
+    },
+    {
+      "behavior": "sycophancy",
+      "rb_bf16_sha256": "7856cdf61a448b3d1037cd0c44fcb9137a43b82cf21c424ddb9c3a98898db8e0",
+      "revmap_file": "eval_results/issue_2254/directions/sycophancy_revmap_L14.pt",
+      "revmap_file_sha256": "f1ac96523a73e7013ab809858f45bb11723bef85575d2568728b573566856a71",
+      "revmap_bf16_sha256": "8ae06b245f9f9ac2329b7663984783f9e2d522792ae816fece5e2696ca4c4dc4",
+      "rb_norm_fp32_after_bf16": 1.000145435333252,
+      "revmap_norm_fp32_after_bf16": 1.0000264644622803
+    }
+  ],
+  "questions": [
+    {
+      "behavior": "evil",
+      "n_questions": 20,
+      "compact_json_sha256": "c907deab719f43fdc0aedb78c438f27fe6f439841fa177204d566acebad53d11"
+    },
+    {
+      "behavior": "sycophancy",
+      "n_questions": 20,
+      "compact_json_sha256": "f58456a6e40b4bc06a3b059e5b4ae1e0ee318b385ed7505382eedf8ea28467d3"
+    }
+  ],
+  "generation": {
+    "n_questions": 20,
+    "n_draws": 6,
+    "seed_base": 42,
+    "effective_seeds": [
+      42,
+      43,
+      44,
+      45,
+      46,
+      47
+    ],
+    "temperature": 1.0,
+    "top_p": null,
+    "max_new_tokens": 2048,
+    "use_cache": true,
+    "cap_regeneration": false,
+    "eos_token_ids": [
+      151645,
+      151643
+    ],
+    "pad_token_id": 151643
+  },
+  "cells": [
+    {
+      "behavior": "evil",
+      "route": "decodeonly",
+      "dose": 0.0,
+      "cell_id": "evil__rb__decodeonly__L14__c0"
+    },
+    {
+      "behavior": "evil",
+      "route": "decodeonly",
+      "dose": 0.015625,
+      "cell_id": "evil__rb__decodeonly__L14__c1over64"
+    },
+    {
+      "behavior": "evil",
+      "route": "decodeonly",
+      "dose": 0.03125,
+      "cell_id": "evil__rb__decodeonly__L14__c1over32"
+    },
+    {
+      "behavior": "evil",
+      "route": "decodeonly",
+      "dose": 0.0625,
+      "cell_id": "evil__rb__decodeonly__L14__c1over16"
+    },
+    {
+      "behavior": "evil",
+      "route": "decodeonly",
+      "dose": 0.125,
+      "cell_id": "evil__rb__decodeonly__L14__c1over8"
+    },
+    {
+      "behavior": "evil",
+      "route": "decodeonly",
+      "dose": 0.25,
+      "cell_id": "evil__rb__decodeonly__L14__c1over4"
+    },
+    {
+      "behavior": "evil",
+      "route": "decodeonly",
+      "dose": 0.5,
+      "cell_id": "evil__rb__decodeonly__L14__c1over2"
+    },
+    {
+      "behavior": "evil",
+      "route": "decodeonly",
+      "dose": 1.0,
+      "cell_id": "evil__rb__decodeonly__L14__c1"
+    },
+    {
+      "behavior": "evil",
+      "route": "decodeonly",
+      "dose": 2.0,
+      "cell_id": "evil__rb__decodeonly__L14__c2"
+    },
+    {
+      "behavior": "evil",
+      "route": "decodeonly",
+      "dose": 4.0,
+      "cell_id": "evil__rb__decodeonly__L14__c4"
+    },
+    {
+      "behavior": "sycophancy",
+      "route": "decodeonly",
+      "dose": 0.0,
+      "cell_id": "sycophancy__rb__decodeonly__L14__c0"
+    },
+    {
+      "behavior": "sycophancy",
+      "route": "decodeonly",
+      "dose": 0.015625,
+      "cell_id": "sycophancy__rb__decodeonly__L14__c1over64"
+    },
+    {
+      "behavior": "sycophancy",
+      "route": "decodeonly",
+      "dose": 0.03125,
+      "cell_id": "sycophancy__rb__decodeonly__L14__c1over32"
+    },
+    {
+      "behavior": "sycophancy",
+      "route": "decodeonly",
+      "dose": 0.0625,
+      "cell_id": "sycophancy__rb__decodeonly__L14__c1over16"
+    },
+    {
+      "behavior": "sycophancy",
+      "route": "decodeonly",
+      "dose": 0.125,
+      "cell_id": "sycophancy__rb__decodeonly__L14__c1over8"
+    },
+    {
+      "behavior": "sycophancy",
+      "route": "decodeonly",
+      "dose": 0.25,
+      "cell_id": "sycophancy__rb__decodeonly__L14__c1over4"
+    },
+    {
+      "behavior": "sycophancy",
+      "route": "decodeonly",
+      "dose": 0.5,
+      "cell_id": "sycophancy__rb__decodeonly__L14__c1over2"
+    },
+    {
+      "behavior": "sycophancy",
+      "route": "decodeonly",
+      "dose": 1.0,
+      "cell_id": "sycophancy__rb__decodeonly__L14__c1"
+    },
+    {
+      "behavior": "sycophancy",
+      "route": "decodeonly",
+      "dose": 2.0,
+      "cell_id": "sycophancy__rb__decodeonly__L14__c2"
+    },
+    {
+      "behavior": "sycophancy",
+      "route": "decodeonly",
+      "dose": 4.0,
+      "cell_id": "sycophancy__rb__decodeonly__L14__c4"
+    },
+    {
+      "behavior": "evil",
+      "route": "context",
+      "dose": 4.0,
+      "cell_id": "evil__revmap__context__L14__c4"
+    },
+    {
+      "behavior": "sycophancy",
+      "route": "context",
+      "dose": 2.0,
+      "cell_id": "sycophancy__revmap__context__L14__c2"
+    },
+    {
+      "behavior": "evil",
+      "route": "nohook",
+      "dose": 0.0,
+      "cell_id": "evil__none__nohook__L14__c0"
+    },
+    {
+      "behavior": "sycophancy",
+      "route": "nohook",
+      "dose": 0.0,
+      "cell_id": "sycophancy__none__nohook__L14__c0"
+    }
+  ]
+}

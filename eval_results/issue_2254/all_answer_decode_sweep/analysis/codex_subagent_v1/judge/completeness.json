@@ -1,0 +1,9 @@
+{
+  "structured_integrity_items": 2640,
+  "structured_trait_items": 2640,
+  "expected_items": 2640,
+  "integrity_decisions": 13200,
+  "trait_decisions": 13200,
+  "primary_structured_completeness": 1.0,
+  "numeric_sensitivity_floor": 0.95
+}

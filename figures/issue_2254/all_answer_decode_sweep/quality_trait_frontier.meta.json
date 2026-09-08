@@ -1,0 +1,462 @@
+{
+  "analysis_source": "eval_results/issue_2254/all_answer_decode_sweep/analysis/codex_subagent_v1/reduce/matched_results.json",
+  "analysis_sha256": "cb3f30c727b8549e0deb6b6b4f12da48529bcd99522d089ba5256c32f01ddc0c",
+  "script_path": "scripts/issue2254_all_answer_decode_figure.py",
+  "script_sha256": "df04589e72c9a3259e39e526187763f1e1cede138c427033ff4844d539739c56",
+  "git_commit": "04a0cdc38315c7a211d42a2485c06e81f5e6411b",
+  "plot_semantics": {
+    "point_labels": "dose multiplier c; clustered labels cover every dose in the stated range",
+    "error_bars": "ordinary 95% paired question-cluster bootstrap confidence intervals",
+    "frontier_scope": "descriptive full 20-question analysis"
+  },
+  "plotted_values": {
+    "evil": {
+      "answer_frontier": [
+        {
+          "dose": 0.0,
+          "integrity": {
+            "estimate": 98.41666666666667,
+            "ci95": [
+              97.32333333333334,
+              99.18666666666665
+            ]
+          },
+          "trait_itt": {
+            "estimate": 0.03,
+            "ci95": [
+              0.0,
+              0.065
+            ]
+          }
+        },
+        {
+          "dose": 0.015625,
+          "integrity": {
+            "estimate": 97.91833333333332,
+            "ci95": [
+              96.54500000000002,
+              98.98166666666667
+            ]
+          },
+          "trait_itt": {
+            "estimate": 0.08666666666666668,
+            "ci95": [
+              0.0016666666666666666,
+              0.21000000000000002
+            ]
+          }
+        },
+        {
+          "dose": 0.03125,
+          "integrity": {
+            "estimate": 98.33833333333334,
+            "ci95": [
+              97.15333333333334,
+              99.20333333333335
+            ]
+          },
+          "trait_itt": {
+            "estimate": 0.06833333333333333,
+            "ci95": [
+              0.006666666666666666,
+              0.14
+            ]
+          }
+        },
+        {
+          "dose": 0.0625,
+          "integrity": {
+            "estimate": 98.06833333333333,
+            "ci95": [
+              95.97166666666666,
+              99.27666666666667
+            ]
+          },
+          "trait_itt": {
+            "estimate": 0.05500000000000001,
+            "ci95": [
+              0.0016666666666666666,
+              0.13333333333333336
+            ]
+          }
+        },
+        {
+          "dose": 0.125,
+          "integrity": {
+            "estimate": 98.31499999999998,
+            "ci95": [
+              96.97495833333333,
+              99.28166666666667
+            ]
+          },
+          "trait_itt": {
+            "estimate": 0.075,
+            "ci95": [
+              0.013333333333333332,
+              0.16333333333333333
+            ]
+          }
+        },
+        {
+          "dose": 0.25,
+          "integrity": {
+            "estimate": 96.74833333333333,
+            "ci95": [
+              94.94833333333332,
+              98.11500000000001
+            ]
+          },
+          "trait_itt": {
+            "estimate": 10.559999999999999,
+            "ci95": [
+              3.0183333333333335,
+              20.22833333333333
+            ]
+          }
+        },
+        {
+          "dose": 0.5,
+          "integrity": {
+            "estimate": 90.92166666666667,
+            "ci95": [
+              89.55,
+              92.30833333333335
+            ]
+          },
+          "trait_itt": {
+            "estimate": 70.99666666666667,
+            "ci95": [
+              57.463333333333324,
+              83.24337499999999
+            ]
+          }
+        },
+        {
+          "dose": 1.0,
+          "integrity": {
+            "estimate": 62.120000000000005,
+            "ci95": [
+              58.27166666666666,
+              65.84666666666666
+            ]
+          },
+          "trait_itt": {
+            "estimate": 88.79333333333334,
+            "ci95": [
+              84.79666666666667,
+              92.56333333333335
+            ]
+          }
+        },
+        {
+          "dose": 2.0,
+          "integrity": {
+            "estimate": 1.285,
+            "ci95": [
+              0.9849999999999998,
+              1.8183333333333334
+            ]
+          },
+          "trait_itt": {
+            "estimate": 98.54833333333333,
+            "ci95": [
+              98.16666666666667,
+              98.89333333333335
+            ]
+          }
+        },
+        {
+          "dose": 4.0,
+          "integrity": {
+            "estimate": 1.0666666666666667,
+            "ci95": [
+              0.9933333333333334,
+              1.1466666666666667
+            ]
+          },
+          "trait_itt": {
+            "estimate": 97.54166666666666,
+            "ci95": [
+              96.905,
+              97.91666666666666
+            ]
+          }
+        }
+      ],
+      "context": {
+        "cell_id": "evil__revmap__context__L14__c4",
+        "dose": 4.0,
+        "integrity": {
+          "estimate": 69.31666666666668,
+          "ci95": [
+            63.086666666666666,
+            75.40170833333335
+          ]
+        },
+        "trait_itt": {
+          "estimate": 11.771666666666667,
+          "ci95": [
+            7.1466666666666665,
+            16.998333333333335
+          ]
+        }
+      },
+      "selected_dose": null,
+      "confirmation_status": "no_selected_point_match"
+    },
+    "sycophancy": {
+      "answer_frontier": [
+        {
+          "dose": 0.0,
+          "integrity": {
+            "estimate": 98.54499999999999,
+            "ci95": [
+              97.40829166666666,
+              99.285
+            ]
+          },
+          "trait_itt": {
+            "estimate": 3.7050000000000005,
+            "ci95": [
+              1.3433333333333335,
+              7.321666666666668
+            ]
+          }
+        },
+        {
+          "dose": 0.015625,
+          "integrity": {
+            "estimate": 98.42166666666665,
+            "ci95": [
+              97.26166666666667,
+              99.27666666666666
+            ]
+          },
+          "trait_itt": {
+            "estimate": 3.6100000000000003,
+            "ci95": [
+              1.5316666666666667,
+              6.591666666666666
+            ]
+          }
+        },
+        {
+          "dose": 0.03125,
+          "integrity": {
+            "estimate": 98.82333333333332,
+            "ci95": [
+              97.65666666666667,
+              99.52333333333334
+            ]
+          },
+          "trait_itt": {
+            "estimate": 3.7050000000000005,
+            "ci95": [
+              1.4500000000000002,
+              6.816666666666667
+            ]
+          }
+        },
+        {
+          "dose": 0.0625,
+          "integrity": {
+            "estimate": 98.82666666666668,
+            "ci95": [
+              97.72333333333334,
+              99.45166666666665
+            ]
+          },
+          "trait_itt": {
+            "estimate": 4.401666666666666,
+            "ci95": [
+              1.8849999999999998,
+              7.585000000000001
+            ]
+          }
+        },
+        {
+          "dose": 0.125,
+          "integrity": {
+            "estimate": 98.45833333333333,
+            "ci95": [
+              97.08833333333334,
+              99.35666666666665
+            ]
+          },
+          "trait_itt": {
+            "estimate": 5.7,
+            "ci95": [
+              2.4349999999999996,
+              9.665
+            ]
+          }
+        },
+        {
+          "dose": 0.25,
+          "integrity": {
+            "estimate": 98.35833333333333,
+            "ci95": [
+              97.025,
+              99.34833333333333
+            ]
+          },
+          "trait_itt": {
+            "estimate": 9.265,
+            "ci95": [
+              4.248333333333333,
+              15.333333333333334
+            ]
+          }
+        },
+        {
+          "dose": 0.5,
+          "integrity": {
+            "estimate": 97.64333333333335,
+            "ci95": [
+              96.34666666666666,
+              98.65333333333334
+            ]
+          },
+          "trait_itt": {
+            "estimate": 22.66166666666667,
+            "ci95": [
+              13.598333333333334,
+              32.70333333333333
+            ]
+          }
+        },
+        {
+          "dose": 1.0,
+          "integrity": {
+            "estimate": 85.76166666666666,
+            "ci95": [
+              83.78833333333333,
+              87.655
+            ]
+          },
+          "trait_itt": {
+            "estimate": 69.89499999999998,
+            "ci95": [
+              59.04829166666667,
+              79.91837500000001
+            ]
+          }
+        },
+        {
+          "dose": 2.0,
+          "integrity": {
+            "estimate": 4.8100000000000005,
+            "ci95": [
+              4.363333333333333,
+              5.366666666666666
+            ]
+          },
+          "trait_itt": {
+            "estimate": 97.66166666666668,
+            "ci95": [
+              96.91333333333333,
+              98.23500000000001
+            ]
+          }
+        },
+        {
+          "dose": 4.0,
+          "integrity": {
+            "estimate": 1.7700000000000002,
+            "ci95": [
+              1.6299999999999997,
+              1.9150000000000003
+            ]
+          },
+          "trait_itt": {
+            "estimate": 93.54666666666668,
+            "ci95": [
+              92.49333333333333,
+              94.56500000000001
+            ]
+          }
+        }
+      ],
+      "context": {
+        "cell_id": "sycophancy__revmap__context__L14__c2",
+        "dose": 2.0,
+        "integrity": {
+          "estimate": 99.26833333333333,
+          "ci95": [
+            98.97333333333333,
+            99.47333333333333
+          ]
+        },
+        "trait_itt": {
+          "estimate": 12.868333333333334,
+          "ci95": [
+            5.921666666666666,
+            20.866666666666667
+          ]
+        }
+      },
+      "selected_dose": 0.5,
+      "confirmation_status": "quality_not_confirmed"
+    }
+  },
+  "style": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      6.024
+    ],
+    "exported_size_inches": [
+      13.095,
+      5.071
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/quality_trait_frontier.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "0–1/8",
+      "1/4",
+      "1/2",
+      "1",
+      "2–4",
+      "A  ·  EVIL",
+      "Response integrity (0–100) ↑",
+      "0",
+      "20",
+      "40",
+      "60",
+      "80",
+      "100",
+      "Refusal-aware trait score (0–100) ↑",
+      "All-answer dose–response",
+      "2",
+      "4",
+      "B  ·  SYCOPHANCY",
+      "Context-only target",
+      "Quality-selected dose"
+    ]
+  },
+  "outputs": {
+    "pdf": {
+      "path": "figures/issue_2254/all_answer_decode_sweep/quality_trait_frontier.pdf",
+      "sha256": "8225707ff293f049a5ac6e92f02b5abcddc13b4fd8a824b9001be0ad9009c55d"
+    },
+    "png": {
+      "path": "figures/issue_2254/all_answer_decode_sweep/quality_trait_frontier.png",
+      "sha256": "8208c8f5be58bf900d3a62a66ae9e75065a46dc4bb4f70bc1d7b720da525373c"
+    },
+    "grayscale": {
+      "path": "figures/issue_2254/all_answer_decode_sweep/quality_trait_frontier_grayscale.png",
+      "sha256": "5bf9059e911ee2bade2ea1edbd0ec504d2be9e3f862d2059b55a7a5e692d4487"
+    }
+  }
+}

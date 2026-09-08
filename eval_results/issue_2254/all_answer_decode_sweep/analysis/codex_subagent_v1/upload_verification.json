@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "hf_repo": "superkaiba1/explore-persona-space-data",
+  "hf_revision": "b08ab782d094ae51bb5f3fc32e780641f361f40c",
+  "hf_prefix": "issue2254_preimage/all_answer_decode_sweep/analysis/codex_subagent_v1/audit_pack",
+  "n_shards": 15,
+  "remote_files": [
+    "decode_match_codex_audit.shard00.jsonl",
+    "decode_match_codex_audit.shard01.jsonl",
+    "decode_match_codex_audit.shard02.jsonl",
+    "decode_match_codex_audit.shard03.jsonl",
+    "decode_match_codex_audit.shard04.jsonl",
+    "decode_match_codex_audit.shard05.jsonl",
+    "decode_match_codex_audit.shard06.jsonl",
+    "decode_match_codex_audit.shard07.jsonl",
+    "decode_match_codex_audit.shard08.jsonl",
+    "decode_match_codex_audit.shard09.jsonl",
+    "decode_match_codex_audit.shard10.jsonl",
+    "decode_match_codex_audit.shard11.jsonl",
+    "decode_match_codex_audit.shard12.jsonl",
+    "decode_match_codex_audit.shard13.jsonl",
+    "decode_match_codex_audit.shard14.jsonl",
+    "pack_manifest.json"
+  ],
+  "download_hash_verified": true
+}
