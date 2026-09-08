@@ -115,6 +115,14 @@ Additional conventions:
   labels such as `acc@1` in the final figure.
 - Do not expose experiment-internal vocabulary such as "arm" in titles or
   legends.
+- Never pass `fontsize=` to tick labels, axis labels, or legends in a figure
+  script. The rc sizes are calibrated to the 0.42 authoring scale, so a
+  `fontsize=7` label prints at about 3 pt. Build every figure, comment-response
+  figures included, with `c2a_figure`, `panel_header`, `legend_kicker`, and the
+  `ROLES` encodings (linear map: teal filled circle; copy baseline and other
+  controls: open grey square), and label a larger-is-better axis with
+  `better_label`. `scripts/paper_c2a_comment_figures.py` is the worked example
+  after its 2026-09-08 rework.
 - Use a focused y-range only for line plots where the axis is clearly labeled.
   Figure 2 uses 0.5--1.0 to make the relevant differences legible.
 - Preserve a white background so the figure does not create a gray rectangle in
