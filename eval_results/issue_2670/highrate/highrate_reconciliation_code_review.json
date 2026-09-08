@@ -1,0 +1,154 @@
+{
+  "schema_version": "context_risk_highrate_reconciliation_code_review_v1",
+  "verdict": "PASS",
+  "reviewer": "independent-codex-critic:/root/verify_vllm_runtime",
+  "reviewed_utc": "2026-09-08T03:34:41.490549+00:00",
+  "sources_sha256": {
+    "configs/eval/context_risk_followup_capture.yaml": "cdbc76b49d639a61d349becf984aafd30ff5372ea88f6e92f89f2cac4cc25285",
+    "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+    "configs/eval/context_risk_highrate_capture.yaml": "7140a2fcc3e1ed38e4127a1c65d8dbb8ec3b40034713cffca8d15be177e80eec",
+    "configs/eval/context_risk_qwen38_impossible_capture.yaml": "7018d151ebf4534ad3ecfa4d88cb48c12b847e98bba46dce2e1ba3e8b0dc53aa",
+    "configs/eval/context_risk_qwen38_smoke.yaml": "d5ad816cb64e7da10d7e22bf79e4525e7d04f6d9df4808e678fd9d4cb9f5f352",
+    "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+    "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
+    "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "scripts/context_risk_highrate_capture.py": "d4b558eafdcedad4c29dca4aae432d0641d7f434300e4ee2e93343fa44a5a763",
+    "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+    "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+    "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+    "scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
+    "scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+    "scripts/context_risk_qwen38_impossible_capture.py": "d7f6aec322ce89249a6829b3298f7753cf8a33b9e7505bc7850b8c408a39122b",
+    "scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+    "src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79",
+    "tests/test_context_risk_highrate_capture.py": "968f8aa33131ff757760608f77686503dc7d3ff46058f81c7c4fad52ec54146f",
+    "scripts/context_risk_highrate_archive.py": "b7f712557a5b537021fc5324a3f4f945c0e1a89c06da3404166c81b44401205b",
+    "scripts/context_risk_corrected_finish.py": "8aeaddec362b9bbf277c707b7532d17948811f1bdf09b9c0a45f598c7eca466e",
+    "scripts/issue2054_phase_a.py": "69573ff5fc81ad398f35ccf9e656d5fceb7e2696e4b6b35a1db80a166ceb7016",
+    "src/explore_persona_space/orchestrate/hub.py": "6590d4c01d396f935da018d16673e3d21f93843126b5e12a42be8e6e0419351e",
+    "src/explore_persona_space/orchestrate/env.py": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759",
+    "scripts/context_risk_highrate_reconcile.py": "e80ac1aa8bf42f9e7a1cc11d9675cd2b1d4fb8e1d60844b16456d7d4d0169650",
+    "scripts/verify_uploads.py": "3991c7f464602766d26b5c38b2b42905e92b7f40e918cb72776b59b7e3d34ee9",
+    "tests/test_context_risk_highrate_reconcile.py": "c5955315050240f13b2924ed0133564fee85729a440385deda6ae78da63e1afb"
+  },
+  "markdown_sha256": "826debdb517364844aca97633f44ae2e26c56c9b78fefb268d84023e71c2a4ea",
+  "runbook_sha256": "0229a766f02696d213adcf7ac0d2f2bcfb99d42c09bed9bd5d1a42b846e71d69",
+  "inherited_reviews_sha256": {
+    "setup/archive_review_snapshots_code_review.json": "99d3713729a116745c026eb6ebac18831436a04ec434be7b3509529c86bb9f55",
+    "setup/capture_code_review.json": "8b2b21944bc7a73416568924dfd75cb83f13e7bac0848eb409fef56879e34750",
+    "setup/code_review.json": "a9d6ff46e1e839c817a6485f14fdabe459cf1bd9c38f6247919bfbbd81a35c8b"
+  },
+  "package_versions": {
+    "inspect-ai": "0.3.261",
+    "openai": "3.7.0",
+    "huggingface-hub": "0.36.2",
+    "numpy": "2.2.6",
+    "pytest": "9.0.2"
+  },
+  "executed_evidence": [
+    {
+      "command": "UV_NO_SYNC=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 uv run --with inspect-ai==0.3.261 --with openai==3.7.0 python -m pytest tests/test_context_risk_highrate_reconcile.py -q",
+      "verdict": "PASS",
+      "tests": 35,
+      "elapsed_seconds": 13.53,
+      "exit_code": 0
+    },
+    {
+      "case": "Original pre-revision suite",
+      "tests": 24,
+      "elapsed_seconds": 8.43,
+      "exit_code": 0,
+      "scope": "historical first review; final verdict binds current35-case source"
+    },
+    {
+      "case": "Independent additional narrow cases",
+      "verdict": "PASS",
+      "count": 4,
+      "cases": [
+        "empty expected set rejected",
+        "actual imported generic helper byte drift rejected",
+        "missing reviewer rejected before output",
+        "stale reviewed source hash rejected before output"
+      ],
+      "fixture_only": true
+    },
+    {
+      "command": "UV_NO_SYNC=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 uv run --with inspect-ai==0.3.261 --with openai==3.7.0 python scripts/context_risk_highrate_reconcile.py --help",
+      "verdict": "PASS",
+      "exit_code": 0
+    }
+  ],
+  "full_workflow_fixture": {
+    "screen_rows": 618,
+    "fresh_rows": 360,
+    "capture_contexts": 90,
+    "experimental_data": false,
+    "actual_new_adapter_bodies": true,
+    "actual_generic_row_checker": true,
+    "native_reader_mocked": true,
+    "native_file_is_explicit_placeholder_fixture": true,
+    "unmodified_semantic_boundaries_mocked_with_autospec": [
+      "collection.verify_report",
+      "design.validate_terminal_process",
+      "design.load_phase",
+      "collection.load_samples",
+      "design.success_evidence",
+      "capture.validate_binding",
+      "reconcile.read_eval_log"
+    ],
+    "not_claimed": [
+      "final model correctness",
+      "actual terminal completion",
+      "actual618/360/90 artifact validation",
+      "actual remote transfer",
+      "teardown eligibility"
+    ]
+  },
+  "resolved_findings": [
+    {
+      "id": "END_CONTROL_AND_POD_READBACK_RECHECK",
+      "resolution": "Hash controls before parsing, end-check control hashes and repeat complete open_readback plus pod_coverage after semantics. All relevant mutation regressions reject."
+    },
+    {
+      "id": "DISJOINT_OUTPUT_INPUT_TREES",
+      "resolution": "Pairwise resolved root/readback/output disjointness and no symlink parents before consuming controls or writing output; overlap regressions reject."
+    },
+    {
+      "id": "EXTERNAL_COLLECTION_REVIEW_BRIDGE",
+      "resolution": "Explicitly bridge each actual report.launch_config_path and config.review before collection.verify_report; external review mutation rejects."
+    },
+    {
+      "id": "WHOLE_ADAPTER_TEST_COVERAGE",
+      "resolution": "Actual run body executes through explicit978-row/90-context autospec boundary fixture plus eight mid-validation mutation cases."
+    },
+    {
+      "id": "IMPORTED_HELPER_PROVENANCE",
+      "resolution": "Actual archive and generic verifier module bytes compared to reviewed project files; inherited capture imported-source check retained; package metadata emitted."
+    }
+  ],
+  "unresolved_code_findings": [],
+  "remaining_actual_gates": [
+    "Include exact review and all source_hashes entries in raw snapshot with explicit source mapping.",
+    "Complete and validate actual618screen/360fresh/90capture native and tensor artifacts and independent success reviews.",
+    "Establish final nonempty complete SSH pod inventory and true drained-worker assertion from actual evidence; inventory all additional owned output roots.",
+    "Execute real V2 upload/pinned readback then actual reconcile.run and inspect its concrete receipt.",
+    "Repeat pod inventory before termination; persist late receipts/projections in verified issue-scoped git and check all plan-declared raw inputs/claimed URLs.",
+    "Post concrete owner-bound raw milestone PASS and use managed termination only after these gates; VM fits/final archive remain outstanding."
+  ],
+  "scope": "Independent code PASS only; no actual final-data execution or upload/teardown/scientific PASS. Generic outroot checks remain supplemental and any limitation requires explicit per-file resolution.",
+  "no_production_edits": true,
+  "no_test_edits": true,
+  "no_model_calls": true,
+  "no_uploads": true,
+  "no_task_changes": true,
+  "no_workload_stops": true,
+  "no_teardown": true,
+  "no_claude": true,
+  "no_recursive_agents": true
+}
