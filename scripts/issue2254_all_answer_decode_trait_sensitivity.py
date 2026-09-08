@@ -83,17 +83,33 @@ def _decision_set(opaque_ids: list[str], pass_index: int) -> set[Decision]:
     return decisions
 
 
+def _pre_score_prior_recovered_jobs(items, instrument, rubrics, rubric_id):
+    """Compose the frozen v1--v3 roster without opening canonical score files."""
+    jobs = policy.recovery1._ORIGINAL_PRODUCTION_JOBS(items, instrument, rubrics, rubric_id)
+    jobs = policy.recovery1.apply_policy_packet_splits(
+        jobs, rubrics, policy.recovery1._load_split_registry(policy._ACTIVE_OUT_ROOT)
+    )
+    jobs = policy.recovery2.apply_policy_packet_split(
+        jobs, rubrics, policy.recovery2._load_registry(policy._ACTIVE_OUT_ROOT)
+    )
+    return policy.recovery3.apply_policy_packet_split(
+        jobs, rubrics, policy.recovery3._load_registry(policy._ACTIVE_OUT_ROOT)
+    )
+
+
 def _administration_sets(args, items, instrument, rubrics) -> tuple[dict, dict, dict]:
     """Derive all trait exclusions from validated receipts and current rosters."""
     order1._ACTIVE_OUT_ROOT = args.out_root
     order2._ACTIVE_OUT_ROOT = args.out_root
     policy._ACTIVE_OUT_ROOT = args.out_root
     structured._ACTIVE_OUT_ROOT = args.out_root
-    composed_jobs = []
-    for rubric_id in ("trait_evil", "trait_sycophancy"):
-        composed_jobs.extend(order2._fully_recovered_jobs(items, instrument, rubrics, rubric_id))
-
-    prior_evil = policy._prior_recovered_jobs(items, instrument, rubrics, "trait_evil")
+    prior_evil = _pre_score_prior_recovered_jobs(items, instrument, rubrics, "trait_evil")
+    prior_sycophancy = _pre_score_prior_recovered_jobs(
+        items, instrument, rubrics, "trait_sycophancy"
+    )
+    registry = policy._load_registry(args.out_root)
+    policy._verify_registry_against_roster(args.out_root, prior_evil, registry)
+    policy._verify_registry_against_roster(args.out_root, prior_sycophancy, registry)
     target1_matches = [job for job in prior_evil if job.job_id == order1.TARGET_JOB_ID]
     if len(target1_matches) != 1:
         raise base.AnalysisError("first trait order parent no longer resolves exactly once")
@@ -104,9 +120,6 @@ def _administration_sets(args, items, instrument, rubrics) -> tuple[dict, dict, 
     if len(order1_only) != order1.TARGET_N_ITEMS:
         raise base.AnalysisError("first trait order exclusion count changed")
 
-    prior_sycophancy = policy._prior_recovered_jobs(
-        items, instrument, rubrics, "trait_sycophancy"
-    )
     target2_matches = [job for job in prior_sycophancy if job.job_id == order2.TARGET_JOB_ID]
     if len(target2_matches) != 1:
         raise base.AnalysisError("second trait order parent no longer resolves exactly once")
@@ -120,9 +133,18 @@ def _administration_sets(args, items, instrument, rubrics) -> tuple[dict, dict, 
         raise base.AnalysisError("trait order replacement decision sets overlap")
     all_order = order1_only | order2_only
 
+    composed_evil = policy.apply_policy_recoveries(prior_evil, rubrics, registry)
+    composed_evil = order1.apply_trait_order_replacement(composed_evil, receipt1)
+    composed_sycophancy = policy.apply_policy_recoveries(
+        prior_sycophancy, rubrics, registry
+    )
+    composed_sycophancy = order2.apply_trait_order_replacement(
+        composed_sycophancy, receipt2
+    )
+    composed_jobs = [*composed_evil, *composed_sycophancy]
+
     policy_singleton: set[Decision] = set()
     policy_all: set[Decision] = set()
-    registry = policy._load_registry(args.out_root)
     trait_receipts = []
     for record in registry.values():
         if record.get("scope") != "trait_production" or record.get("rubric_id") not in {
@@ -805,6 +827,11 @@ def run(args) -> Path:
             "trait sensitivity requires primary reduction, frozen selection, and "
             "the pre-trait integrity-only quality commitment"
         )
+    items, instrument, rubrics = base._load_staged(args, require_cli=False)
+    if len(items) * base.N_PASSES != EXPECTED_DECISIONS:
+        raise base.AnalysisError("trait sensitivity total decision count changed")
+    scenarios, provenance, order_sets = _administration_sets(args, items, instrument, rubrics)
+    preflights = _preflight_scenarios(items, scenarios, order_sets)
     selection = json.loads(selection_path.read_text(encoding="utf-8"))
     quality_projection = json.loads(quality_projection_path.read_text(encoding="utf-8"))
     packetization_sensitivity = json.loads(packetization_path.read_text(encoding="utf-8"))
@@ -819,11 +846,6 @@ def run(args) -> Path:
         selection_sha256,
         quality_projection_sha256,
     )
-    items, instrument, rubrics = base._load_staged(args, require_cli=False)
-    if len(items) * base.N_PASSES != EXPECTED_DECISIONS:
-        raise base.AnalysisError("trait sensitivity total decision count changed")
-    scenarios, provenance, order_sets = _administration_sets(args, items, instrument, rubrics)
-    preflights = _preflight_scenarios(items, scenarios, order_sets)
     provenance["pretrait_quality_lineage"] = {
         "packetization_sensitivity_sha256": base._sha256_file(packetization_path),
         "selection_sha256": selection_sha256,

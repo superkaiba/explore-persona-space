@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from copy import deepcopy
 from dataclasses import replace
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -247,9 +248,50 @@ def test_run_preflights_all_scenarios_before_collecting_scores(monkeypatch, tmp_
     monkeypatch.setattr(sensitivity, "_preflight_scenarios", fake_preflight)
     monkeypatch.setattr(sensitivity.order2, "_fully_recovered_jobs", lambda *args: [])
     monkeypatch.setattr(base, "_collect_outcomes", fake_collect)
+    original_read_text = Path.read_text
+
+    def guarded_read_text(path, *args, **kwargs):
+        if path == root / "reduce/matched_results.json":
+            assert events == ["preflight"]
+        return original_read_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", guarded_read_text)
 
     with pytest.raises(RuntimeError, match="stop-after-ordering-proof"):
         sensitivity.run(SimpleNamespace(out_root=tmp_path))
+
+
+def test_pre_score_roster_composition_never_validates_canonical_scores(monkeypatch) -> None:
+    job = SimpleNamespace(job_id="fixture")
+    monkeypatch.setattr(
+        sensitivity.policy.recovery1,
+        "_ORIGINAL_PRODUCTION_JOBS",
+        lambda items, instrument, rubrics, rubric_id: [job],
+    )
+    monkeypatch.setattr(
+        sensitivity.policy.recovery1, "_load_split_registry", lambda out_root: {}
+    )
+    monkeypatch.setattr(
+        sensitivity.policy.recovery1,
+        "apply_policy_packet_splits",
+        lambda jobs, rubrics, registry: jobs,
+    )
+    for module in (sensitivity.policy.recovery2, sensitivity.policy.recovery3):
+        monkeypatch.setattr(module, "_load_registry", lambda out_root: {})
+        monkeypatch.setattr(
+            module,
+            "apply_policy_packet_split",
+            lambda jobs, rubrics, registry: jobs,
+        )
+    monkeypatch.setattr(
+        sensitivity.order2.runner,
+        "_validate_completed_job",
+        lambda *args: (_ for _ in ()).throw(AssertionError("trait score read before preflight")),
+    )
+
+    output = sensitivity._pre_score_prior_recovered_jobs([], {}, {}, "trait_evil")
+
+    assert output == [job]
 
 
 def test_non_estimable_scenario_has_no_numerical_conclusions() -> None:
