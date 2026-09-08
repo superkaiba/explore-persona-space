@@ -126,13 +126,22 @@ class Engine:
             output.request_id = request_id
             output.prompt_token_ids = prompt.prompt_token_ids
             output.finished = True
-        return ids
+        internal_ids = [f"{key}-fixture8" for key in ids]
+        self.output_processor = SimpleNamespace(
+            request_states={
+                key: SimpleNamespace(external_req_id=external)
+                for key, external in zip(internal_ids, ids, strict=True)
+            }
+        )
+        return internal_ids
 
     def has_unfinished_requests(self):
         return bool(getattr(self, "queue", []))
 
     def step(self):
-        return [self.queue.pop()]  # Deliberately completes out of input order.
+        output = self.queue.pop()  # Deliberately completes out of input order.
+        del self.output_processor.request_states[f"{output.request_id}-fixture8"]
+        return [output]
 
 
 @pytest.fixture
@@ -380,6 +389,36 @@ def test_per_completion_resume_preserves_order_and_skips_saved(generic, monkeypa
     saved.write_text("{broken")
     with pytest.raises(json.JSONDecodeError):
         RC._gen_rows(resumed, Tokenizer(), cell, rows, **kwargs)
+
+
+@pytest.mark.parametrize("fault", ["missing", "extra", "duplicate"])
+def test_request_id_mapping_rejects_bad_engine_states(monkeypatch, fault):
+    engine = Engine.__new__(Engine)
+    original = engine.enqueue
+
+    def enqueue(*args, **kwargs):
+        ids = original(*args, **kwargs)
+        states = engine.output_processor.request_states
+        if fault == "missing":
+            del states[ids[0]]
+        elif fault == "extra":
+            states["unowned"] = SimpleNamespace(external_req_id="unowned")
+        else:
+            states[ids[1]].external_req_id = states[ids[0]].external_req_id
+        return ids
+
+    monkeypatch.setattr(engine, "enqueue", create_autospec(engine.enqueue, side_effect=enqueue))
+    step = create_autospec(engine.step, side_effect=AssertionError("must not step"))
+    monkeypatch.setattr(engine, "step", step)
+    prompts = [TokensPrompt(prompt_token_ids=[1]), TokensPrompt(prompt_token_ids=[2])]
+    pending = [(i, {"prompt_ids": [i + 1]}) for i in range(2)]
+    with pytest.raises(AssertionError, match="unowned queued request states|duplicate external"):
+        list(
+            RC._completed_generation_rows(
+                engine, prompts, SimpleNamespace(max_tokens=2048), pending
+            )
+        )
+    step.assert_not_called()
 
 
 def test_capture_model_load_uses_actual_snapshot_path(generic, monkeypatch):

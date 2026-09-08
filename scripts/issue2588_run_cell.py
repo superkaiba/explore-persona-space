@@ -1161,9 +1161,18 @@ def _completed_generation_rows(llm, prompts, sampling_params, pending):
     assert not llm.llm_engine.has_unfinished_requests(), "unowned queued requests"
     if not pending:
         return
-    request_ids = llm.enqueue(prompts, sampling_params, use_tqdm=False)
-    assert len(request_ids) == len(pending) and len(set(request_ids)) == len(pending)
+    internal_ids = llm.enqueue(prompts, sampling_params, use_tqdm=False)
+    assert len(internal_ids) == len(pending) and len(set(internal_ids)) == len(pending)
+    # vLLM 0.27.1 enqueue returns randomized INTERNAL IDs; RequestOutput exposes
+    # the original EXTERNAL IDs. Resolve through engine-owned states before step
+    # removes finished requests. Never infer IDs by stripping a random suffix.
+    states = llm.llm_engine.output_processor.request_states
+    assert set(states) == set(internal_ids), "unowned queued request states"
+    request_ids = [states[key].external_req_id for key in internal_ids]
+    assert all(isinstance(key, str) for key in request_ids)
+    assert len(set(request_ids)) == len(pending), "duplicate external request IDs"
     requests = dict(zip(request_ids, pending, strict=True))
+    logger.info("[gen] mapped %d internal request IDs to external output IDs", len(requests))
     while llm.llm_engine.has_unfinished_requests():
         for output in llm.llm_engine.step():
             assert output.request_id in requests, "duplicate or unowned generation output"
