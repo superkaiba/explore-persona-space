@@ -1,0 +1,73 @@
+{
+ "status": "Section 4.2 comment-response figure",
+ "style_version": "c2a-v2",
+ "plotting_script": "scripts/paper_c2a_comment_figures.py",
+ "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+ "reproduction_command": "uv run python scripts/paper_c2a_comment_figures.py",
+ "title": "Direction agreement against answer-shift magnitude",
+ "subject": "Per-pair cosine against observed answer-shift norm with the pooled trend, and per-element residuals from a leave-one-element-out trend, map and copy baseline",
+ "sources": [
+  {
+   "path": "eval_results/issue_2564/comment2_matched_magnitude/summary.json",
+   "sha256": "c83ba79d96598048c0acfb3beb16bb75203ccae07922708decb4c21ac98a9d87"
+  }
+ ],
+ "render": {
+  "style_version": "c2a-v2",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "resolved_font": "Inter",
+  "authoring_size_inches": [
+   13.095,
+   4.976
+  ],
+  "exported_size_inches": [
+   13.095,
+   4.476
+  ],
+  "scale": 0.42,
+  "include_width_frac": 1.0,
+  "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c3_matched_magnitude.pdf}",
+  "realized_font_pt": {
+   "body": 7.56,
+   "tick": 7.14,
+   "label": 8.4,
+   "title": 9.24
+  },
+  "png_dpi": 240,
+  "background": "#FFFFFF",
+  "text": [
+   "Observed answer-shift norm",
+   "$\\mathdefault{10^{-1}}$",
+   "$\\mathdefault{10^{0}}$",
+   "$\\mathdefault{10^{1}}$",
+   "$\\mathdefault{10^{2}}$",
+   "$\\mathdefault{10^{3}}$",
+   "Cosine, predicted vs observed",
+   "\u22120.2",
+   "0.0",
+   "0.2",
+   "0.4",
+   "0.6",
+   "0.8",
+   "1.0",
+   "Output format",
+   "Persona",
+   "Tone",
+   "Answer language",
+   "Question topic",
+   "One-word topic",
+   "Output\nformat",
+   "Answer\nlanguage",
+   "Question\ntopic",
+   "One-word\ntopic",
+   "Residual cosine at matched magnitude",
+   "\u22120.4",
+   "\u22120.3",
+   "\u22120.1",
+   "0.1",
+   "0.3",
+   "map",
+   "copy"
+  ]
+ }
+}

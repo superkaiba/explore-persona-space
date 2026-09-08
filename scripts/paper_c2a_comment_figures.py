@@ -33,6 +33,10 @@ load_dotenv()
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
+import sys  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 from explore_persona_space.analysis import c2a_plot_style as c2a  # noqa: E402
 from explore_persona_space.task_workflow import repo_root  # noqa: E402
 
@@ -209,9 +213,113 @@ def _sidecar(stem: Path, outputs: dict, sources: list[str], title: str, subject:
     stem.with_suffix(".meta.json").write_text(json.dumps(meta, indent=1) + "\n")
 
 
+def _matched_pairs(root: Path) -> dict:
+    """Per-element (magnitude, cosine) pairs, using the same masks as the analysis."""
+    from importlib import import_module
+
+    mm = import_module("paper_c2a_matched_magnitude")
+    sources = {
+        "parent": mm._rows(root / "eval_results/issue_2564/perpair.jsonl"),
+        "ffr": mm._rows(
+            root / "eval_results/issue_2564/floor-failed-reelicitation/perpair_ffr.jsonl"
+        ),
+        "pilot": mm._rows(root / "eval_results/issue_2564/lang_oneword_pilot/perpair.jsonl"),
+    }
+    out: dict = {}
+    for label, source_key, axis in mm.ELEMENTS:
+        rows = sources[source_key]
+        if axis in mm.PRIMARY_CLASS:
+            sel = [
+                r
+                for r in rows
+                if r["axis"] == axis
+                and r["pair_class"] == mm.PRIMARY_CLASS[axis]
+                and r["in_headline_70"]
+            ]
+        else:
+            sel = [r for r in rows if r["axis"] == axis]
+        out[label] = {
+            "mag": [float(r["norm_obs_tail_L19"]) for r in sel],
+            "cos": [mm._get(r, "cos", mm.MAP_ARM) for r in sel],
+        }
+    return out
+
+
+ELEM_COLORS = {
+    "Output format": "#B4654A",
+    "Persona": "#1B6CA8",
+    "Tone": "#4C9F70",
+    "Answer language": "#8A6BBE",
+    "Question topic": "#C99700",
+    "One-word topic": "#687078",
+}
+
+
+def _fig3(data: dict, pairs: dict, stem: Path) -> dict:
+    """A: cosine vs answer-shift magnitude with the pooled trend. B: matched-magnitude residuals."""
+    names = list(data["reads"]["map"]["per_element"].keys())
+    fig, (ax_a, ax_b) = plt.subplots(
+        1, 2, figsize=(c2a.canvas_width_in(1.0), c2a.canvas_width_in(1.0) * 0.38)
+    )
+
+    for name in names:
+        x = np.array(pairs[name]["mag"])
+        y = np.array(pairs[name]["cos"])
+        ax_a.scatter(x, y, s=7, alpha=0.65, color=ELEM_COLORS[name], label=name, linewidths=0)
+    line = data["reads"]["map"]["insample_line"]
+    grid = np.linspace(
+        min(min(pairs[n]["mag"]) for n in names), max(max(pairs[n]["mag"]) for n in names), 200
+    )
+    ax_a.plot(grid, line["intercept"] + line["slope"] * np.log(grid), color=c2a.INK, lw=1.2)
+    ax_a.set_xscale("log")
+    ax_a.set_xlabel("Observed answer-shift norm", fontsize=8)
+    ax_a.set_ylabel("Cosine, predicted vs observed", fontsize=8)
+    ax_a.legend(frameon=False, fontsize=6, loc="lower right", ncol=2)
+    c2a.style_axis(ax_a)
+
+    x = np.arange(len(names))
+    w = 0.38
+    for off, arm, color in ((-w / 2, "map", MAP_C), (w / 2, "copy", COPY_C)):
+        per = data["reads"][arm]["per_element"]
+        val = [per[n]["residual_loeo"]["mean"] for n in names]
+        lo = [per[n]["residual_loeo"]["ci95"][0] for n in names]
+        hi = [per[n]["residual_loeo"]["ci95"][1] for n in names]
+        ax_b.errorbar(
+            x + off,
+            val,
+            yerr=[np.array(val) - np.array(lo), np.array(hi) - np.array(val)],
+            fmt="o",
+            color=color,
+            capsize=2.5,
+            label=arm,
+        )
+    ax_b.axhline(0.0, color=c2a.SEAM, lw=0.8)
+    ax_b.set_xticks(x)
+    ax_b.set_xticklabels([n.replace(" ", "\n") for n in names], fontsize=6)
+    ax_b.set_ylabel("Residual cosine at matched magnitude", fontsize=7)
+    ax_b.legend(frameon=False, loc="lower left", fontsize=7)
+    c2a.style_axis(ax_b)
+
+    fig.tight_layout()
+    return c2a.save_c2a_figure(
+        fig,
+        stem,
+        title="Direction agreement against answer-shift magnitude",
+        subject=(
+            "Per-pair cosine between the predicted and observed answer shift against the "
+            "observed shift norm on a log axis with the pooled fitted trend, and each "
+            "element mean residual from a leave-one-element-out trend with 95% pair-bootstrap "
+            "intervals, for the map and the copy baseline"
+        ),
+        creator="scripts/paper_c2a_comment_figures.py",
+    )
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--only", choices=("comment2", "comment3"), default=None)
+    ap.add_argument(
+        "--only", choices=("comment2", "comment3", "matched"), default=None
+    )
     args = ap.parse_args()
     root = repo_root()
     c2a.set_c2a_style()
@@ -233,6 +341,23 @@ def main() -> None:
             "with 95% pair-bootstrap intervals, against the shipped magnitude ratio",
         )
         print("comment 2 figure:", res["png"])
+    if args.only in (None, "matched"):
+        data = json.loads(
+            (root / "eval_results/issue_2564/comment2_matched_magnitude/summary.json").read_text()
+        )
+        pairs = _matched_pairs(root)
+        stem = out / "c3_matched_magnitude"
+        res = _fig3(data, pairs, stem)
+        _sidecar(
+            stem,
+            res,
+            ["eval_results/issue_2564/comment2_matched_magnitude/summary.json"],
+            "Direction agreement against answer-shift magnitude",
+            "Per-pair cosine against observed answer-shift norm with the pooled trend, and "
+            "per-element residuals from a leave-one-element-out trend, map and copy baseline",
+        )
+        print("matched-magnitude figure:", res["png"])
+
     if args.only in (None, "comment3"):
         data = json.loads(
             (root / "eval_results/issue_2617/comment3_refusal_boundary/summary.json").read_text()
