@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -537,13 +538,28 @@ def test_codex_production_pilot_carries_revised_contract(
             uploaded[path_in_repo] = Path(path_or_fileobj)
             return PilotInfo()
 
+    bulk_uploads = []
+
+    def fake_upload_tree(root, prefix, message, *, excluded=None):
+        files = CODEX._tree_file_map(root, excluded=excluded)
+        bulk_uploads.append((prefix, set(files)))
+        for relative in files:
+            source = root / relative
+            destination = tmp_path / "uploaded_payload" / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, destination)
+            uploaded[f"{prefix}/{relative}"] = destination
+        return PilotInfo(), PilotInfo.oid, files
+
     def stage_uploaded(out_dir, revision, relative, *, remote_relative=None):
         assert revision == PilotInfo.oid and remote_relative
         return uploaded[f"{CODEX.HF_PREFIX}/{remote_relative}"]
 
     monkeypatch.setattr(CODEX, "HfApi", PilotApi)
+    monkeypatch.setattr(CODEX, "_upload_tree_verified", fake_upload_tree)
     monkeypatch.setattr(CODEX, "_stage_hf_file", stage_uploaded)
     pilot_upload = CODEX.upload_production_judge(tmp_path, attempt=1, pilot=True)
+    assert bulk_uploads == [(CODEX._attempt_prefix(1), set(pilot_upload["artifact_census"]))]
     assert pilot_upload["kind"] == "issue952_codex_production_pilot_upload"
     assert pilot_upload["pilot_summary_sha256"] == CODEX._sha256(
         tmp_path / "judge" / "attempt1" / "pilot_summary.json"
@@ -1150,6 +1166,13 @@ def test_production_judge_upload_is_attempt_scoped_and_exact_revision_verified(
             assert "/attempt2/judge/" in path_in_repo
             return FakeInfo()
 
+    bulk_uploads = []
+
+    def fake_upload_tree(root, prefix, message, *, excluded=None):
+        files = CODEX._tree_file_map(root, excluded=excluded)
+        bulk_uploads.append((prefix, set(files)))
+        return FakeInfo(), FakeInfo.oid, files
+
     def fake_stage(out_dir, revision, relative, *, remote_relative=None):
         assert revision == FakeInfo.oid and remote_relative
         remote = remote_relative.split("attempt2/", 1)[1]
@@ -1159,8 +1182,10 @@ def test_production_judge_upload_is_attempt_scoped_and_exact_revision_verified(
         return judge / relative_judge
 
     monkeypatch.setattr(CODEX, "HfApi", FakeApi)
+    monkeypatch.setattr(CODEX, "_upload_tree_verified", fake_upload_tree)
     monkeypatch.setattr(CODEX, "_stage_hf_file", fake_stage)
     marker = CODEX.upload_production_judge(tmp_path, attempt=2)
+    assert bulk_uploads == [(CODEX._attempt_prefix(2), set(marker["artifact_census"]))]
     assert marker["marker_revision"] == FakeInfo.oid
     assert marker["attempt"] == 2
     assert marker["wave_scores_sha256"] == CODEX._sha256(scores)

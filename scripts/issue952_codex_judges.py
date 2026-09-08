@@ -21,6 +21,7 @@ import math
 import os
 import platform
 import shutil
+import tempfile
 import time
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -3272,21 +3273,22 @@ def upload_production_judge(out_dir: Path, *, attempt: int, pilot: bool = False)
     artifact_census = {relative: _sha256(path) for relative, path in sorted(census_paths.items())}
     prefix = _attempt_prefix(attempt)
     api = HfApi()
-    payload_revision = None
-    for remote_name, local in sorted(census_paths.items()):
-        info = hub.retry_transient(
-            lambda local=local, remote_name=remote_name: api.upload_file(
-                repo_id=HF_REPO,
-                repo_type="dataset",
-                path_or_fileobj=str(local),
-                path_in_repo=f"{prefix}/{remote_name}",
-                commit_message=f"Issue 952: publish Codex production {remote_name}",
-            ),
-            what=f"issue952 production judge upload {remote_name}",
+    with tempfile.TemporaryDirectory(prefix=f"issue952-{suffix}-upload-", dir=out_dir) as temp:
+        payload_root = Path(temp)
+        for remote_name, local in sorted(census_paths.items()):
+            destination = payload_root / remote_name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(local, destination)
+        _info, payload_revision, uploaded_files = _upload_tree_verified(
+            payload_root,
+            prefix,
+            f"Issue 952: publish Codex production {suffix} judge artifacts",
         )
-        payload_revision = getattr(info, "oid", None)
-        if not isinstance(payload_revision, str) or not payload_revision:
-            raise RuntimeError(f"production judge upload lacks immutable revision: {remote_name}")
+        if set(uploaded_files) != set(artifact_census) or any(
+            uploaded_files[relative]["sha256"] != artifact_census[relative]
+            for relative in artifact_census
+        ):
+            raise RuntimeError("production judge bulk-upload census drift")
     for remote_name, local in sorted(census_paths.items()):
         remote = _stage_hf_file(
             out_dir / f"_{suffix}_upload_verify",
