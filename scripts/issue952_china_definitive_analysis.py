@@ -20,7 +20,7 @@ import resource
 import shutil
 import subprocess
 import time
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -118,6 +118,54 @@ def _jsonl(path: Path) -> list[dict[str, Any]]:
         return [json.loads(line) for line in f if line.strip()]
 
 
+def _judge_dir(run_dir: Path, attempt: int) -> Path:
+    """Return the attempt-bound local production-judge directory."""
+    if attempt < 1:
+        raise ValueError("attempt must be >= 1")
+    return run_dir / "judge" / f"attempt{attempt}"
+
+
+def _validated_judge_census(marker: dict[str, Any]) -> dict[str, str]:
+    """Validate and return the complete schema-v1 judge artifact census."""
+    census = marker.get("artifact_census")
+    if marker.get("schema_version") != 1 or marker.get("kind") != (
+        "issue952_codex_production_upload"
+    ):
+        raise RuntimeError("unsupported production judge upload-marker schema")
+    if (
+        not isinstance(census, dict)
+        or not census
+        or marker.get("artifact_census_sha256") != _sha_obj(census)
+    ):
+        raise RuntimeError("production judge artifact census is missing or hash-invalid")
+    required = {
+        "judge/wave_request_manifest.json",
+        "judge/wave_packet_manifest.json",
+        "judge/wave_lookup.json",
+        "judge/wave_runtime_identity.json",
+        "judge/wave_scores.jsonl",
+        "judge/wave_summary.json",
+        "judge/wave_overlap_joined.jsonl",
+        "judge/production_stage.json",
+    }
+    for relative, sha in census.items():
+        if not isinstance(relative, str):
+            raise RuntimeError("production judge artifact census contains a non-string path")
+        path = Path(relative)
+        if (
+            path.is_absolute()
+            or path.as_posix() != relative
+            or ".." in path.parts
+            or path.parts[:1] != ("judge",)
+            or not isinstance(sha, str)
+            or re.fullmatch(r"[0-9a-f]{64}", sha) is None
+        ):
+            raise RuntimeError("production judge artifact census contains an unsafe entry")
+    if not required <= set(census):
+        raise RuntimeError("production judge artifact census omits required analysis inputs")
+    return census
+
+
 def _accepted_bank_contract(bank: list[dict[str, Any]], audit: dict[str, Any]) -> dict[str, Any]:
     """Validate full-bank provenance and derive accepted analysis widths."""
     passing_ids = audit.get("passing_item_ids")
@@ -147,9 +195,7 @@ def _accepted_bank_contract(bank: list[dict[str, Any]], audit: dict[str, Any]) -
     ):
         raise RuntimeError("analysis bank flags or passing identities disagree with audit")
     accepted_rows = [row for row in bank if row["source_prompt_id"] in passing]
-    rollout_ids = [
-        f"{row['item_id']}-d{draw}" for row in accepted_rows for draw in range(N_DRAWS)
-    ]
+    rollout_ids = [f"{row['item_id']}-d{draw}" for row in accepted_rows for draw in range(N_DRAWS)]
     return {
         "accepted_rows": accepted_rows,
         "accepted_prompt_ids": [row["item_id"] for row in accepted_rows],
@@ -299,13 +345,14 @@ def stage_new_run(run_dir: Path, *, attempt: int = 1) -> dict[str, Any]:
     marker_path = _stage_new_run_file(
         run_dir,
         marker_source_revision,
-        "judge/upload.json",
+        f"judge/attempt{attempt}/upload.json",
         remote_relative=f"attempt{attempt}/judge/upload.json",
     )
     marker = json.loads(marker_path.read_text())
     revision = marker.get("data_revision")
     if marker.get("attempt") != attempt or not isinstance(revision, str) or not revision:
         raise RuntimeError("analysis judge marker lacks matching attempt/data revision")
+    judge_census = _validated_judge_census(marker)
     canonical = (
         "inputs/upload_verified.json",
         "inputs/prompt_bank.jsonl",
@@ -318,9 +365,6 @@ def stage_new_run(run_dir: Path, *, attempt: int = 1) -> dict[str, Any]:
         "manifests/raw_upload.json",
         "manifests/capture.json",
         "manifests/capture_upload.json",
-        "judge/wave_scores.jsonl",
-        "judge/wave_summary.json",
-        "judge/production_stage.json",
         "issue952_china_definitive_done.json",
     )
     paths = {relative: _stage_new_run_file(run_dir, revision, relative) for relative in canonical}
@@ -335,7 +379,15 @@ def stage_new_run(run_dir: Path, *, attempt: int = 1) -> dict[str, Any]:
             for relative in attempt_fixed
         }
     )
-    paths["judge/upload.json"] = marker_path
+    for remote_relative in sorted(judge_census):
+        local_relative = f"judge/attempt{attempt}/{Path(remote_relative).relative_to('judge')}"
+        paths[local_relative] = _stage_new_run_file(
+            run_dir,
+            revision,
+            local_relative,
+            remote_relative=f"attempt{attempt}/{remote_relative}",
+        )
+    paths[f"judge/attempt{attempt}/upload.json"] = marker_path
     capture = json.loads(paths["manifests/capture.json"].read_text())
     tensor_relatives = ["analysis_tensors/vc.pt"] + [
         f"analysis_tensors/{name}" for name in sorted(capture.get("va_files", {}))
@@ -349,7 +401,7 @@ def stage_new_run(run_dir: Path, *, attempt: int = 1) -> dict[str, Any]:
             relative,
             remote_relative=f"attempt{attempt}/{relative}",
         )
-    _load_new_data(run_dir)
+    _load_new_data(run_dir, attempt=attempt)
     report = {
         "snapshot_revision": revision,
         "marker_source_revision": marker_source_revision,
@@ -891,13 +943,380 @@ def validate_analysis_attempt_identity(
         raise RuntimeError("analysis cross-phase production-attempt identity mismatch")
 
 
-def _load_new_data(run_dir: Path) -> dict[str, Any]:
+def _validate_gpu_attempt(
+    *,
+    run_dir: Path,
+    attempt: int,
+    accepted: dict[str, Any],
+    input_marker: dict[str, Any],
+    input_stage: dict[str, Any],
+    generation: dict[str, Any],
+    capture: dict[str, Any],
+    raw_upload: dict[str, Any],
+    capture_upload: dict[str, Any],
+    done: dict[str, Any],
+) -> None:
+    """Validate the terminal GPU receipt and its input/count lineage."""
+    bank_path = run_dir / "inputs" / "prompt_bank.jsonl"
+    audit_path = run_dir / "inputs" / "bank_audit_report.json"
+    marker_path = run_dir / "inputs" / "upload_verified.json"
+    accepted_counts = (
+        len(accepted["accepted_source_ids"]),
+        accepted["n_accepted_prompts"],
+        accepted["n_expected_rollouts"],
+    )
+    expected_tensor_bytes = {
+        f"{HF_PREFIX}/attempt{attempt}/analysis_tensors/vc.pt": capture.get("vc_sha256"),
+        **{
+            f"{HF_PREFIX}/attempt{attempt}/analysis_tensors/{name}": sha
+            for name, sha in capture.get("va_files", {}).items()
+        },
+    }
+    if (
+        done.get("schema_version") != 1
+        or done.get("kind") != "issue952_china_definitive_gpu"
+        or done.get("issue") != ISSUE
+        or done.get("status") != "done"
+        or done.get("version") != 1
+        or done.get("generation") != generation
+        or done.get("capture") != capture
+        or done.get("raw_upload") != raw_upload
+        or done.get("capture_upload") != capture_upload
+        or done.get("hf_prefix") != HF_PREFIX
+        or generation.get("regime", {}).get("attempt") != attempt
+        or generation.get("regime", {}).get("smoke") is not False
+        or generation.get("n_rows") != capture.get("n_answer_rows")
+        or generation.get("n_prompts") != capture.get("n_contexts")
+        or generation.get("n_rows") != accepted["n_expected_rollouts"]
+        or generation.get("n_prompts") != accepted["n_accepted_prompts"]
+        or capture.get("generation_fingerprint") != _generation_fingerprint(generation)
+        or capture.get("capture_regime", {}).get("generation_fingerprint")
+        != _generation_fingerprint(generation)
+        or capture.get("model_revision") != capture.get("capture_regime", {}).get("model_revision")
+        or capture.get("model_revision") != generation.get("regime", {}).get("model_revision")
+        or capture_upload.get("byte_verified_sha256") != expected_tensor_bytes
+        or not isinstance(capture_upload.get("byte_verified_files"), list)
+        or len(capture_upload.get("byte_verified_files", [])) != len(expected_tensor_bytes)
+        or set(capture_upload.get("byte_verified_files", [])) != set(expected_tensor_bytes)
+        or input_stage.get("marker_sha256") != _sha256(marker_path)
+        or input_stage.get("data_revision") != input_marker.get("data_revision")
+        or input_stage.get("prompt_bank_sha256") != _sha256(bank_path)
+        or input_stage.get("bank_audit_report_sha256") != _sha256(audit_path)
+        or input_stage.get("accepted_source_ids_sha256") != accepted["accepted_source_ids_sha256"]
+        or input_marker.get("prompt_bank_sha256") != input_stage.get("prompt_bank_sha256")
+        or input_marker.get("bank_audit_report_sha256")
+        != input_stage.get("bank_audit_report_sha256")
+        or (
+            input_stage.get("n_accepted_source_items"),
+            input_stage.get("n_accepted_prompts"),
+            input_stage.get("n_expected_rollouts"),
+        )
+        != accepted_counts
+        or generation.get("regime", {}).get("accepted_source_ids_sha256")
+        != accepted["accepted_source_ids_sha256"]
+        or capture.get("capture_regime", {}).get("accepted_source_ids_sha256")
+        != accepted["accepted_source_ids_sha256"]
+    ):
+        raise RuntimeError("GPU terminal receipt/input-stage/count lineage mismatch")
+
+
+def _validated_answer_shard(
+    *,
+    store: dict[str, Any],
+    rollout_by_item: dict[str, dict[str, Any]],
+    capture: dict[str, Any],
+    generation: dict[str, Any],
+    name: str,
+) -> tuple[list[dict[str, Any]], torch.Tensor]:
+    """Validate one answer-vector shard and return its aligned index/tensor."""
+    index = store.get("index")
+    vectors = store.get("va_tail_incl")
+    empty_rows = store.get("empty_rows")
+    if (
+        store.get("layers") != list(LAYERS)
+        or not isinstance(index, list)
+        or not isinstance(vectors, torch.Tensor)
+        or vectors.shape != (len(index), len(LAYERS), HIDDEN)
+        or vectors.dtype != torch.float32
+        or store.get("dtype") != "fp32"
+        or store.get("pooling") != "completion_plus_im_end_newline_mean"
+        or store.get("model_revision") != capture.get("model_revision")
+        or store.get("rollouts_sha256") != generation.get("rollouts_sha256")
+        or store.get("capture_regime") != capture.get("capture_regime")
+        or store.get("capture_regime_fp") != capture.get("capture_regime_fp")
+        or not isinstance(empty_rows, list)
+    ):
+        raise RuntimeError(f"answer shard index/tensor/capture metadata mismatch: {name}")
+    if empty_rows:
+        raise RuntimeError(f"empty answer captures in {name}")
+    for rec in index:
+        rollout = rollout_by_item.get(rec.get("item_id"))
+        if (
+            rollout is None
+            or rec.get("prompt_id") != rollout.get("prompt_id")
+            or rec.get("draw") != rollout.get("draw")
+        ):
+            raise RuntimeError("answer shard (item_id,prompt_id,draw) differs from rollout")
+    return index, vectors
+
+
+def _validate_judge_attempt(
+    *,
+    run_dir: Path,
+    judge_dir: Path,
+    attempt: int,
+    marker: dict[str, Any],
+    accepted: dict[str, Any],
+    generation: dict[str, Any],
+) -> dict[str, Any]:
+    """Validate the complete judge census and return reportable measurement metadata."""
+    census = _validated_judge_census(marker)
+    for relative, expected_sha in census.items():
+        local = judge_dir / Path(relative).relative_to("judge")
+        if not local.is_file() or _sha256(local) != expected_sha:
+            raise RuntimeError(f"production judge artifact census mismatch: {relative}")
+    direct_hashes = {
+        "wave_scores_sha256": "judge/wave_scores.jsonl",
+        "wave_summary_sha256": "judge/wave_summary.json",
+        "wave_request_manifest_sha256": "judge/wave_request_manifest.json",
+        "wave_packet_manifest_sha256": "judge/wave_packet_manifest.json",
+        "wave_lookup_sha256": "judge/wave_lookup.json",
+        "wave_runtime_identity_sha256": "judge/wave_runtime_identity.json",
+        "wave_overlap_joined_sha256": "judge/wave_overlap_joined.jsonl",
+        "production_stage_sha256": "judge/production_stage.json",
+    }
+    if any(marker.get(key) != census[relative] for key, relative in direct_hashes.items()):
+        raise RuntimeError("production judge upload marker disagrees with its artifact census")
+
+    request = json.loads((judge_dir / "wave_request_manifest.json").read_text())
+    packet_manifest = json.loads((judge_dir / "wave_packet_manifest.json").read_text())
+    lookup = json.loads((judge_dir / "wave_lookup.json").read_text())
+    summary = json.loads((judge_dir / "wave_summary.json").read_text())
+    stage = json.loads((judge_dir / "production_stage.json").read_text())
+    scores = _jsonl(judge_dir / "wave_scores.jsonl")
+    overlap = _jsonl(judge_dir / "wave_overlap_joined.jsonl")
+    expected_counts = (
+        len(accepted["accepted_source_ids"]),
+        accepted["n_accepted_prompts"],
+        accepted["n_expected_rollouts"],
+    )
+    score_ids = [row.get("item_id") for row in scores]
+    lookup_ids = [row.get("item_id") for row in lookup]
+    expected_overlap = [
+        row
+        for row in lookup
+        if isinstance(row.get("assigned_agents"), list) and len(row["assigned_agents"]) == 2
+    ]
+    staged_files = stage.get("files")
+    if not isinstance(staged_files, dict) or not staged_files:
+        raise RuntimeError("production judge stage lacks its immutable input census")
+    for relative, expected_sha in staged_files.items():
+        relative_path = Path(relative)
+        if (
+            relative_path.is_absolute()
+            or ".." in relative_path.parts
+            or relative_path.as_posix() != relative
+            or not isinstance(expected_sha, str)
+            or re.fullmatch(r"[0-9a-f]{64}", expected_sha) is None
+            or not (run_dir / relative_path).is_file()
+            or _sha256(run_dir / relative_path) != expected_sha
+        ):
+            raise RuntimeError("production judge stage input census mismatch")
+    if (
+        marker.get("attempt") != attempt
+        or marker.get("rollouts_sha256") != generation.get("rollouts_sha256")
+        or marker.get("accepted_source_ids_sha256") != accepted["accepted_source_ids_sha256"]
+        or stage.get("attempt") != attempt
+        or stage.get("rollouts_sha256") != generation.get("rollouts_sha256")
+        or stage.get("accepted_source_ids_sha256") != accepted["accepted_source_ids_sha256"]
+        or (
+            stage.get("n_accepted_source_items"),
+            stage.get("n_accepted_prompts"),
+            stage.get("n_expected_rollouts"),
+        )
+        != expected_counts
+        or request.get("attempt") != attempt
+        or request.get("rollouts_sha256") != generation.get("rollouts_sha256")
+        or request.get("accepted_source_ids_sha256") != accepted["accepted_source_ids_sha256"]
+        or (
+            request.get("n_accepted_source_items"),
+            request.get("n_accepted_prompts"),
+            request.get("n_expected_rollouts"),
+        )
+        != expected_counts
+        or request.get("lookup_sha256") != census["judge/wave_lookup.json"]
+        or request.get("packet_manifest_sha256") != census["judge/wave_packet_manifest.json"]
+        or request.get("runtime_identity")
+        != {
+            "path": "judge/wave_runtime_identity.json",
+            "sha256": census["judge/wave_runtime_identity.json"],
+        }
+        or request.get("n_requests") != len(lookup)
+        or request.get("n_requests") != expected_counts[2]
+        or request.get("n_overlap") != len(expected_overlap)
+        or packet_manifest.get("packet_kind") != f"production-wave-attempt{attempt}"
+        or packet_manifest.get("runtime_identity_sha256")
+        != census["judge/wave_runtime_identity.json"]
+        or summary.get("attempt") != attempt
+        or summary.get("rollouts_sha256") != generation.get("rollouts_sha256")
+        or summary.get("scores_sha256") != census["judge/wave_scores.jsonl"]
+        or summary.get("request_manifest_sha256") != census["judge/wave_request_manifest.json"]
+        or summary.get("runtime_identity_sha256") != census["judge/wave_runtime_identity.json"]
+        or summary.get("overlap_joined_sha256") != census["judge/wave_overlap_joined.jsonl"]
+        or summary.get("n") != len(scores)
+        or summary.get("n_valid") != len(scores)
+        or summary.get("n_overlap_joined") != len(overlap)
+        or (
+            summary.get("accepted_source_items"),
+            summary.get("accepted_prompts"),
+            summary.get("accepted_draws"),
+        )
+        != expected_counts
+        or score_ids != lookup_ids
+        or len(score_ids) != len(set(score_ids))
+        or [row.get("item_id") for row in overlap]
+        != [row.get("item_id") for row in expected_overlap]
+    ):
+        raise RuntimeError("production judge attempt identity/coverage linkage mismatch")
+
+    lookup_by_id = {row["item_id"]: row for row in lookup}
+    for score in scores:
+        source = lookup_by_id[score["item_id"]]
+        fields = ("prompt_id", "source_prompt_id", "topic", "language", "content", "frame", "draw")
+        if (
+            not isinstance(score.get("verdict"), bool)
+            or score.get("judge_id") != source.get("primary_agent")
+            or any(score.get(field) != source.get(field) for field in fields)
+        ):
+            raise RuntimeError("production judge score differs from its frozen assignment")
+    for joined, source in zip(overlap, expected_overlap, strict=True):
+        secondary = next(
+            (agent for agent in source["assigned_agents"] if agent != source["primary_agent"]),
+            None,
+        )
+        if (
+            any(
+                joined.get(field) != source.get(field)
+                for field in (
+                    "item_id",
+                    "prompt_id",
+                    "source_prompt_id",
+                    "language",
+                    "content",
+                    "frame",
+                    "topic",
+                )
+            )
+            or joined.get("primary_judge") != source.get("primary_agent")
+            or joined.get("secondary_judge") != secondary
+            or not isinstance(joined.get("primary_label"), bool)
+            or not isinstance(joined.get("secondary_label"), bool)
+            or joined.get("disagreement")
+            != (joined.get("primary_label") != joined.get("secondary_label"))
+            or joined.get("secondary_judge_contrast")
+            != int(joined["secondary_label"]) - int(joined["primary_label"])
+        ):
+            raise RuntimeError("joined overlap artifact differs from frozen assignments")
+
+    assignment_counts = {
+        "by_judge": dict(Counter(row["judge_id"] for row in scores)),
+        "by_language": dict(Counter(row["language"] for row in scores)),
+        "by_arm": dict(
+            Counter(f"{row['language']}:{row['content']}:{row['frame']}" for row in scores)
+        ),
+        "by_topic": dict(Counter(row["topic"] for row in scores)),
+    }
+    agent_artifact_hashes = summary.get("agent_artifact_hashes")
+    if not isinstance(agent_artifact_hashes, dict):
+        raise RuntimeError("production judge summary lacks packet artifact hashes")
+    agent_prefix = f"judge/agent_artifacts/wave_attempt{attempt}/"
+    expected_agent_census: dict[str, dict[str, str]] = defaultdict(dict)
+    suffix_to_field = {
+        ".packet.json": "packet_sha256",
+        ".output.jsonl": "output_sha256",
+        ".output_manifest.json": "output_manifest_sha256",
+    }
+    for relative, sha in census.items():
+        if not relative.startswith(agent_prefix):
+            continue
+        suffix = next((value for value in suffix_to_field if relative.endswith(value)), None)
+        if suffix is None:
+            raise RuntimeError("unrecognized production judge packet artifact in census")
+        batch_key = relative[len(agent_prefix) : -len(suffix)]
+        expected_agent_census[batch_key][suffix_to_field[suffix]] = sha
+    if agent_artifact_hashes != dict(expected_agent_census):
+        raise RuntimeError("production judge packet artifact summary/census mismatch")
+    prompt_valid_counts = Counter(row["prompt_id"] for row in scores if row["verdict"] is not None)
+    prompts_by_condition: dict[str, set[str]] = defaultdict(set)
+    rows_by_source: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in scores:
+        prompts_by_condition[f"{row['language']}:{row['content']}"].add(row["prompt_id"])
+        rows_by_source[row["source_prompt_id"]].append(row)
+    validity_denominators = {
+        key: {
+            "n_prompts_total": len(prompt_ids),
+            "n_prompts_any_valid": sum(
+                prompt_valid_counts[prompt_id] >= 1 for prompt_id in prompt_ids
+            ),
+            "n_prompts_all_eight_valid": sum(
+                prompt_valid_counts[prompt_id] == N_DRAWS for prompt_id in prompt_ids
+            ),
+        }
+        for key, prompt_ids in sorted(prompts_by_condition.items())
+    }
+    completeness = {
+        key: values["n_prompts_all_eight_valid"] / values["n_prompts_total"]
+        for key, values in validity_denominators.items()
+    }
+    complete_sources = sorted(
+        source_id
+        for source_id, rows in rows_by_source.items()
+        if len(rows) == PROMPTS_PER_SOURCE * N_DRAWS
+        and len({row["item_id"] for row in rows}) == PROMPTS_PER_SOURCE * N_DRAWS
+    )
+    analysis_sources = sorted(set(accepted["accepted_source_ids"]) & set(complete_sources))
+    analysis_topics = {rows_by_source[source_id][0]["topic"] for source_id in analysis_sources}
+    analysis_subset_passed = len(analysis_sources) >= 81 and len(analysis_topics) == 12
+    reliability_passed = summary.get("interjudge_reliability_passed")
+    if (
+        not isinstance(summary.get("passed"), bool)
+        or not isinstance(reliability_passed, bool)
+        or summary.get("claim_eligible") != (summary["passed"] and reliability_passed)
+        or not isinstance(summary.get("interjudge_reliability"), dict)
+        or summary.get("primary_assignment_counts") != assignment_counts
+        or summary.get("prompt_validity_denominators_by_language_content") != validity_denominators
+        or summary.get("prompt_completeness_by_language_content") != completeness
+        or summary.get("complete_source_item_ids") != complete_sources
+        or summary.get("analysis_source_item_ids") != analysis_sources
+        or summary.get("analysis_subset_passed") != analysis_subset_passed
+        or summary.get("planned_source_items") != REGISTERED_SOURCE_ITEMS
+        or summary.get("realized_complete_source_items") != len(complete_sources)
+        or summary.get("realized_valid_rows") != len(scores)
+    ):
+        raise RuntimeError("production judge eligibility/assignment/completeness metadata invalid")
+    disagreements = sum(bool(row["disagreement"]) for row in overlap)
+    return {
+        "summary": summary,
+        "request": request,
+        "overlap": {
+            "requested_fraction": request.get("overlap_fraction"),
+            "requested_count": request.get("n_overlap"),
+            "joined_count": len(overlap),
+            "joined_sha256": census["judge/wave_overlap_joined.jsonl"],
+            "disagreements": disagreements,
+            "disagreement_rate": disagreements / len(overlap) if overlap else None,
+        },
+    }
+
+
+def _load_new_data(run_dir: Path, *, attempt: int = 1) -> dict[str, Any]:
     """Load verified analysis inputs and preserve the declared judge measurement contract."""
+    judge_dir = _judge_dir(run_dir, attempt)
     required_uploads = (
         run_dir / "inputs" / "upload_verified.json",
         run_dir / "manifests" / "raw_upload.json",
         run_dir / "manifests" / "capture_upload.json",
-        run_dir / "judge" / "upload.json",
+        judge_dir / "upload.json",
     )
     missing_uploads = [str(path) for path in required_uploads if not path.exists()]
     if missing_uploads:
@@ -910,18 +1329,40 @@ def _load_new_data(run_dir: Path) -> dict[str, Any]:
     capture = json.loads((run_dir / "manifests" / "capture.json").read_text())
     raw_upload = json.loads((run_dir / "manifests" / "raw_upload.json").read_text())
     capture_upload = json.loads((run_dir / "manifests" / "capture_upload.json").read_text())
-    judge_summary = json.loads((run_dir / "judge" / "wave_summary.json").read_text())
-    judge_marker = json.loads((run_dir / "judge" / "upload.json").read_text())
+    input_stage = json.loads((run_dir / "manifests" / "input_stage.json").read_text())
+    done = json.loads((run_dir / "issue952_china_definitive_done.json").read_text())
+    judge_summary = json.loads((judge_dir / "wave_summary.json").read_text())
+    judge_marker = json.loads((judge_dir / "upload.json").read_text())
     bank_path = run_dir / "inputs" / "prompt_bank.jsonl"
     audit_path = run_dir / "inputs" / "bank_audit_report.json"
-    scores_path = run_dir / "judge" / "wave_scores.jsonl"
-    summary_path = run_dir / "judge" / "wave_summary.json"
+    scores_path = judge_dir / "wave_scores.jsonl"
+    summary_path = judge_dir / "wave_summary.json"
     validate_analysis_attempt_identity(
         local_bank_sha256=_sha256(bank_path),
         input_marker=input_marker,
         generation=generation,
         capture=capture,
         judge_summary=judge_summary,
+    )
+    _validate_gpu_attempt(
+        run_dir=run_dir,
+        attempt=attempt,
+        accepted=accepted,
+        input_marker=input_marker,
+        input_stage=input_stage,
+        generation=generation,
+        capture=capture,
+        raw_upload=raw_upload,
+        capture_upload=capture_upload,
+        done=done,
+    )
+    judge_contract = _validate_judge_attempt(
+        run_dir=run_dir,
+        judge_dir=judge_dir,
+        attempt=attempt,
+        marker=judge_marker,
+        accepted=accepted,
+        generation=generation,
     )
     if (
         input_marker.get("prompt_bank_sha256") != _sha256(bank_path)
@@ -935,13 +1376,12 @@ def _load_new_data(run_dir: Path) -> dict[str, Any]:
         raise RuntimeError("analysis input/judge payload differs from upload verification marker")
     if (
         audit.get("passed") is not True
-        or judge_summary.get("passed") is not True
         or judge_summary.get("remediation_complete") is not True
         or judge_summary.get("scores_sha256") != _sha256(scores_path)
     ):
-        raise RuntimeError("analysis blocked by input-bank or classifier-wave gate")
+        raise RuntimeError("analysis blocked by input-bank or classifier-wave integrity gate")
     rollouts = _jsonl(run_dir / "raw_completions" / "rollouts.jsonl")
-    judge = _jsonl(run_dir / "judge" / "wave_scores.jsonl")
+    judge = _jsonl(judge_dir / "wave_scores.jsonl")
     vc_store = torch.load(
         run_dir / "analysis_tensors" / "vc.pt", map_location="cpu", weights_only=False
     )
@@ -996,24 +1436,35 @@ def _load_new_data(run_dir: Path) -> dict[str, Any]:
         vc_store["layers"] != list(LAYERS)
         or vc_ids != accepted["accepted_prompt_ids"]
         or set(vc_ids) != set(accepted_bank_by_id)
+        or vc_store.get("dtype") != "fp32"
+        or vc_store.get("position") != "context_last_generation_prompt_token"
+        or vc_store.get("model_revision") != capture.get("model_revision")
+        or vc_store.get("bank_sha256") != _sha256(bank_path)
+        or vc_store.get("capture_regime") != capture.get("capture_regime")
+        or vc_store.get("capture_regime_fp") != capture.get("capture_regime_fp")
+        or vc_store["vc"].shape != (len(vc_ids), len(LAYERS), HIDDEN)
+        or vc_store["vc"].dtype != torch.float32
     ):
-        raise RuntimeError("context-vector ids/layers mismatch")
+        raise RuntimeError("context-vector ids/layers/capture metadata mismatch")
     vc_pos = {item_id: i for i, item_id in enumerate(vc_ids)}
     vc = vc_store["vc"].double().numpy()
     vc_by_id = {item_id: vc[i] for item_id, i in vc_pos.items()}
 
     va_by_item: dict[str, np.ndarray] = {}
+    rollout_by_item = {row["item_id"]: row for row in rollouts}
     for path in va_files:
         store = torch.load(path, map_location="cpu", weights_only=False)
-        if store["layers"] != list(LAYERS):
-            raise RuntimeError(f"answer layer mismatch: {path.name}")
-        if store["empty_rows"]:
-            raise RuntimeError(f"empty answer captures in {path.name}")
-        for i, rec in enumerate(store["index"]):
+        index, vectors = _validated_answer_shard(
+            store=store,
+            rollout_by_item=rollout_by_item,
+            capture=capture,
+            generation=generation,
+            name=path.name,
+        )
+        for i, rec in enumerate(index):
             if rec["item_id"] in va_by_item:
                 raise RuntimeError("duplicate answer-vector item id")
-            va_by_item[rec["item_id"]] = store["va_tail_incl"][i].double().numpy()
-    rollout_by_item = {row["item_id"]: row for row in rollouts}
+            va_by_item[rec["item_id"]] = vectors[i].double().numpy()
     judge_by_item = {row["item_id"]: row for row in judge}
     if set(va_by_item) != set(rollout_by_item) or set(judge_by_item) != set(rollout_by_item):
         raise RuntimeError("answer-vector/rollout/judge id sets differ")
@@ -1021,16 +1472,10 @@ def _load_new_data(run_dir: Path) -> dict[str, Any]:
     if not complete <= passing:
         raise RuntimeError("classifier-complete source ids are absent from the accepted bank")
     source_ids = sorted(passing & complete)
-    if (
-        source_ids != judge_summary.get("analysis_source_item_ids")
-        or judge_summary.get("analysis_subset_passed") is not True
-    ):
+    if source_ids != judge_summary.get("analysis_source_item_ids"):
         raise RuntimeError("analysis source subset differs from the frozen judge gate")
-    if len(source_ids) < 81:
-        raise RuntimeError(
-            "primary audit-passing, classifier-complete coverage is only "
-            f"{len(source_ids)}/{REGISTERED_SOURCE_ITEMS}"
-        )
+    if not source_ids:
+        raise RuntimeError("no complete source item remains for analysis")
     topic_by_source = {}
     prompt_key = {}
     for row in bank:
@@ -1038,8 +1483,6 @@ def _load_new_data(run_dir: Path) -> dict[str, Any]:
         prompt_key[(row["source_prompt_id"], row["language"], row["content"], row["frame"])] = row[
             "item_id"
         ]
-    if len({topic_by_source[item] for item in source_ids}) != 12:
-        raise RuntimeError("classifier-complete primary subset does not cover all 12 topics")
     answer_mean = {}
     refusal_rate = {}
     lexical_rate = {}
@@ -1065,12 +1508,21 @@ def _load_new_data(run_dir: Path) -> dict[str, Any]:
     return {
         "bank": bank,
         "judge_measurement": {
-            key: judge_summary[key]
-            for key in (
-                "measurement_contract",
-                "historical_labels_role",
-                "historical_comparability",
-            )
+            "measurement_contract": judge_summary["measurement_contract"],
+            "historical_labels_role": judge_summary["historical_labels_role"],
+            "historical_comparability": judge_summary["historical_comparability"],
+            "technical_wave_passed": judge_summary["passed"],
+            "claim_eligible": judge_summary["claim_eligible"],
+            "interjudge_reliability_passed": judge_summary["interjudge_reliability_passed"],
+            "interjudge_reliability": judge_summary["interjudge_reliability"],
+            "overlap": judge_contract["overlap"],
+            "primary_assignment_counts": judge_summary["primary_assignment_counts"],
+            "prompt_completeness_by_language_content": judge_summary[
+                "prompt_completeness_by_language_content"
+            ],
+            "prompt_validity_denominators_by_language_content": judge_summary[
+                "prompt_validity_denominators_by_language_content"
+            ],
         },
         "bank_by_id": bank_by_id,
         "source_ids": source_ids,
@@ -1085,12 +1537,12 @@ def _load_new_data(run_dir: Path) -> dict[str, Any]:
         "refusal_rate": refusal_rate,
         "lexical_rate": lexical_rate,
         "rollouts": rollout_by_item,
-        "planned": {
+        "maximum_registered": {
             "items": REGISTERED_SOURCE_ITEMS,
             "prompts": REGISTERED_PROMPTS,
             "draws": REGISTERED_PROMPTS * N_DRAWS,
         },
-        "accepted": {
+        "accepted_planned": {
             "items": len(passing),
             "prompts": accepted["n_accepted_prompts"],
             "draws": accepted["n_expected_rollouts"],
@@ -1098,6 +1550,7 @@ def _load_new_data(run_dir: Path) -> dict[str, Any]:
         },
         "realized": {
             "items_primary": len(source_ids),
+            "items_generated": len(passing),
             "items_sensitivity_all_complete": len(complete_source_ids),
             "items_audit_failed": REGISTERED_SOURCE_ITEMS - len(passing),
             "items_classifier_incomplete": len(passing - complete),
@@ -1115,8 +1568,8 @@ def _load_new_data(run_dir: Path) -> dict[str, Any]:
             "empty_answer_vectors": int(capture["n_empty_answer_rows"]),
             "classifier_valid": int(judge_summary["n_valid"]),
             "classifier_parse_drops": int(judge_summary["n_parse_drop"]),
-            "classifier_api_refusals": int(judge_summary["n_api_refusal"]),
-            "classifier_transport_losses": int(judge_summary["n_transport"]),
+            "classifier_api_refusals": judge_summary["n_api_refusal"],
+            "classifier_transport_losses": judge_summary["n_transport"],
         },
     }
 
@@ -1367,16 +1820,36 @@ def audit_inclusion_sensitivity(
     }
 
 
-def _analysis_input_hashes(run_dir: Path, map_root: Path, axis_dir: Path) -> dict[str, Any]:
+def _analysis_input_hashes(
+    run_dir: Path, map_root: Path, axis_dir: Path, *, attempt: int
+) -> dict[str, Any]:
+    """Hash every load-bearing analysis input for pilot/production identity."""
     capture = json.loads((run_dir / "manifests" / "capture.json").read_text())
     va_paths = sorted((run_dir / "analysis_tensors").glob("va_*.pt"))
+    judge_dir = _judge_dir(run_dir, attempt)
+    judge_marker = json.loads((judge_dir / "upload.json").read_text())
+    judge_census = _validated_judge_census(judge_marker)
     return {
         "bank": _sha256(run_dir / "inputs" / "prompt_bank.jsonl"),
         "bank_upload_marker": _sha256(run_dir / "inputs" / "upload_verified.json"),
         "rollouts": _sha256(run_dir / "raw_completions" / "rollouts.jsonl"),
-        "judge": _sha256(run_dir / "judge" / "wave_scores.jsonl"),
-        "judge_summary": _sha256(run_dir / "judge" / "wave_summary.json"),
-        "judge_upload_marker": _sha256(run_dir / "judge" / "upload.json"),
+        "gpu_manifests": {
+            name: _sha256(run_dir / "manifests" / name)
+            for name in (
+                "input_stage.json",
+                "generation.json",
+                "raw_upload.json",
+                "capture.json",
+                "capture_upload.json",
+            )
+        },
+        "gpu_done": _sha256(run_dir / "issue952_china_definitive_done.json"),
+        "judge_attempt": attempt,
+        "judge_upload_marker": _sha256(judge_dir / "upload.json"),
+        "judge_artifact_census": {
+            relative: _sha256(judge_dir / Path(relative).relative_to("judge"))
+            for relative in sorted(judge_census)
+        },
         "capture_manifest": _sha256(run_dir / "manifests" / "capture.json"),
         "context_capture": _sha256(run_dir / "analysis_tensors" / "vc.pt"),
         "answer_captures": {path.name: _sha256(path) for path in va_paths},
@@ -1390,6 +1863,38 @@ def _analysis_input_hashes(run_dir: Path, map_root: Path, axis_dir: Path) -> dic
     }
 
 
+def _classify_h4(
+    *,
+    judge_claim_eligible: bool,
+    judge_reliability_passed: bool,
+    core_eligible: bool,
+    threshold_stable: bool,
+    lexical_consistent: bool,
+    supported: bool,
+) -> str:
+    """Classify H4 while making judge reliability an explicit eligibility gate."""
+    if not judge_reliability_passed:
+        return "judge-reliability-ineligible"
+    if not judge_claim_eligible:
+        return "judge-measurement-ineligible"
+    if not core_eligible:
+        return "ineligible"
+    if not threshold_stable:
+        return "threshold-sensitive"
+    if not lexical_consistent:
+        return "classifier-indeterminate"
+    return "classifier-linked" if supported else "classifier-null"
+
+
+def _coverage_report(data: dict[str, Any]) -> dict[str, Any]:
+    """Separate maximum registered, accepted planned, and realized coverage."""
+    return {
+        "maximum_registered": data["maximum_registered"],
+        "accepted_planned": data["accepted_planned"],
+        "realized": data["realized"],
+    }
+
+
 def run_analysis(
     run_dir: Path,
     map_root: Path,
@@ -1399,12 +1904,13 @@ def run_analysis(
     n_resample: int,
     *,
     production: bool,
+    attempt: int = 1,
 ) -> dict[str, Any]:
     """Run the registered analysis and report its exact judge measurement provenance."""
     t0 = time.time()
     if production and (n_random != N_RANDOM or n_resample != N_BOOT):
         raise RuntimeError("production analysis requires exactly 1000 random/10000 resamples")
-    input_hashes = _analysis_input_hashes(run_dir, map_root, axis_dir)
+    input_hashes = _analysis_input_hashes(run_dir, map_root, axis_dir, attempt=attempt)
     git_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     if production:
         pilot_path = out_dir / "analysis_pilot_report.json"
@@ -1417,7 +1923,7 @@ def run_analysis(
             or pilot.get("input_hashes") != input_hashes
         ):
             raise RuntimeError("CPU pilot is stale, failed, or input-mismatched")
-    data = _load_new_data(run_dir)
+    data = _load_new_data(run_dir, attempt=attempt)
     axis_store = torch.load(axis_dir / "refusal_axis.pt", map_location="cpu", weights_only=False)
     axis_report = json.loads((axis_dir / "refusal_axis_report.json").read_text())
     if axis_report.get("axis_sha256") != _sha256(axis_dir / "refusal_axis.pt"):
@@ -2162,23 +2668,25 @@ def run_analysis(
         for rec in h4_refs
     )
     threshold_stable = all(rec["threshold_sign_preserved"] for rec in h4_refs)
-    h4_core_eligible = bool(axis_report["core_eligible_pre_outcomes"] and manipulation_eligible)
+    judge_claim_eligible = bool(data["judge_measurement"]["claim_eligible"])
+    judge_reliability_passed = bool(data["judge_measurement"]["interjudge_reliability_passed"])
+    h4_core_eligible = bool(
+        axis_report["core_eligible_pre_outcomes"] and manipulation_eligible and judge_claim_eligible
+    )
     h4_eligible = bool(
         h4_core_eligible and axis_report["threshold_stable_pre_outcomes"] and threshold_stable
     )
     h4_supported = h4_eligible and all(
         rec["predicted_axis_refusal_rho"] >= 0.30 and rec["holm_p"] < 0.05 for rec in h4_refs
     )
-    if not h4_core_eligible:
-        h4_label = "ineligible"
-    elif not axis_report["threshold_stable_pre_outcomes"] or not threshold_stable:
-        h4_label = "threshold-sensitive"
-    elif not lexical_consistent:
-        h4_label = "classifier-indeterminate"
-    elif h4_supported:
-        h4_label = "classifier-linked"
-    else:
-        h4_label = "classifier-null"
+    h4_label = _classify_h4(
+        judge_claim_eligible=judge_claim_eligible,
+        judge_reliability_passed=judge_reliability_passed,
+        core_eligible=h4_core_eligible,
+        threshold_stable=bool(axis_report["threshold_stable_pre_outcomes"] and threshold_stable),
+        lexical_consistent=lexical_consistent,
+        supported=h4_supported,
+    )
     behavior_rates = {}
     for language in ("en", "zh"):
         rates = _prompt_arrays(data, language, "refusal_rate")
@@ -2201,7 +2709,7 @@ def run_analysis(
     report = {
         "issue": ISSUE,
         "judge_measurement": data["judge_measurement"],
-        "planned_vs_realized": {"planned": data["planned"], "realized": data["realized"]},
+        "coverage": _coverage_report(data),
         "primary_mass": MASS_PRIMARY,
         "n_bootstrap": n_resample,
         "n_permutations": n_resample,
@@ -2231,6 +2739,8 @@ def run_analysis(
             "H4_axis_preeligible": bool(axis_report["eligible_pre_outcomes"]),
             "H4_axis_core_preeligible": bool(axis_report["core_eligible_pre_outcomes"]),
             "H4_manipulation_eligible": manipulation_eligible,
+            "H4_judge_claim_eligible": judge_claim_eligible,
+            "H4_judge_reliability_passed": judge_reliability_passed,
             "H4_lexical_consistent": lexical_consistent,
             "H4_threshold_stable": threshold_stable,
         },
@@ -2270,6 +2780,8 @@ def run_analysis_pilot(
     axis_dir: Path,
     out_dir: Path,
     analysis_lane: str = "cpu-mid",
+    *,
+    attempt: int = 1,
 ) -> dict[str, Any]:
     """Exercise the real CPU path at 10% battery width and enforce its fence."""
 
@@ -2287,6 +2799,7 @@ def run_analysis_pilot(
         n_random=100,
         n_resample=1_000,
         production=False,
+        attempt=attempt,
     )
     projected_s = report["runtime"]["setup_and_svd_s"] + 10 * report["runtime"]["battery_s"]
     projected_upper_s = 1.25 * projected_s
@@ -2448,6 +2961,7 @@ def upload_results(
     if attempt < 1:
         raise ValueError("attempt must be >= 1")
     output_prefix = f"{HF_PREFIX}/attempt{attempt}"
+    judge_dir = _judge_dir(run_dir, attempt)
 
     required_local = (
         out_dir / "analysis_report.json",
@@ -2466,7 +2980,7 @@ def upload_results(
         run_dir / "manifests" / "raw_upload.json",
         run_dir / "manifests" / "capture.json",
         run_dir / "manifests" / "capture_upload.json",
-        run_dir / "judge" / "upload.json",
+        judge_dir / "upload.json",
         run_dir / "reuse" / "stage_report.json",
         run_dir / "reuse" / "new_run_stage_report.json",
         run_dir / "issue952_china_definitive_done.json",
@@ -2515,7 +3029,6 @@ def upload_results(
         {
             run_dir / "config.json",
             run_dir / "inputs" / "upload_verified.json",
-            run_dir / "judge" / "upload.json",
             run_dir / "reuse" / "stage_report.json",
             run_dir / "reuse" / "new_run_stage_report.json",
             run_dir / "issue952_china_definitive_done.json",
@@ -2531,7 +3044,7 @@ def upload_results(
                 run_dir / "inputs" / "upload_verified.json",
                 run_dir / "manifests" / "raw_upload.json",
                 run_dir / "manifests" / "capture_upload.json",
-                run_dir / "judge" / "upload.json",
+                judge_dir / "upload.json",
             )
         },
     }
@@ -2549,7 +3062,6 @@ def upload_results(
                 "logs/**",
                 "manifests/**",
                 "inputs/upload_verified.json",
-                "judge/upload.json",
                 "reuse/stage_report.json",
                 "reuse/new_run_stage_report.json",
                 "issue952_china_definitive_done.json",
@@ -2755,6 +3267,7 @@ def main() -> int:
                 args.axis_dir,
                 args.out_dir,
                 args.analysis_lane,
+                attempt=args.attempt,
             )
         else:
             run_analysis(
@@ -2765,6 +3278,7 @@ def main() -> int:
                 args.n_random,
                 args.n_resample,
                 production=True,
+                attempt=args.attempt,
             )
     elif args.phase == "figures":
         if args.figure_dir is None:
