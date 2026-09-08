@@ -54,8 +54,43 @@ def regular_files(root: Path) -> dict[str, Path]:
 
 
 def verify_data_tree(root: Path, phase: str) -> tuple[dict, dict]:
-    """Verify the complete immutable data tree, excluding only download-cache files."""
+    """Verify immutable payloads; local staging provenance is packed separately."""
     files = {k: v for k, v in regular_files(root).items() if ".cache" not in Path(k).parts}
+    marker_name = ".natural_stage_source.json"
+    if phase == "prepared" and marker_name in files:
+        marker = json.loads(files[marker_name].read_text())
+        source = {
+            "prefix": f"{PREFIX}/{phase}",
+            "repo": "superkaiba1/explore-persona-space-data",
+            "revision": DATA_REVISIONS[phase],
+        }
+        names = marker["files"]
+        require(isinstance(names, list) and names, "Invalid prepared staging file list")
+        require(
+            all(isinstance(n, str) and Path(n).name == n and n not in (".", "..") for n in names),
+            "Prepared staging file names must be plain basenames",
+        )
+        require(len(names) == len(set(names)), "Duplicate prepared staging file name")
+        require(marker == {**source, "files": names}, "Prepared staging source differs")
+        sidecars = {f".{n}.natural_source.json" for n in names}
+        require(
+            set(files) == set(names) | sidecars | {marker_name},
+            "Prepared payload/staging-provenance namespace differs",
+        )
+        for name in names:
+            receipt = json.loads(files[f".{name}.natural_source.json"].read_text())
+            require(
+                receipt
+                == {
+                    "path": f"{source['prefix']}/{name}",
+                    "repo": source["repo"],
+                    "revision": source["revision"],
+                },
+                f"Prepared per-file staging source differs: {name}",
+            )
+        # These are NOT discards: snapshot() packs every local file not returned
+        # in the immutable payload hashes, including all23 staging sidecars.
+        files = {name: files[name] for name in names}
     hashes = {k: file_sha(v) for k, v in files.items()}
     receipt = {
         "prefix": f"{PREFIX}/{phase}",

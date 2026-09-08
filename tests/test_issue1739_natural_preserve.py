@@ -78,6 +78,60 @@ def test_hardlink_view_preserves_original_cache_and_checks_exact_tree(tmp_path, 
     assert not list(tmp_path.glob("natural-proof-*"))
 
 
+@pytest.mark.parametrize("fault", [None, "revision", "extra", "missing", "duplicate", "traversal"])
+def test_prepared_staging_receipts_are_validated_not_discarded(tmp_path, monkeypatch, fault):
+    root = tmp_path / "prepared"
+    root.mkdir()
+    (root / "data.json").write_text("{}")
+    source = {
+        "prefix": f"{preserve.PREFIX}/prepared",
+        "repo": "superkaiba1/explore-persona-space-data",
+        "revision": preserve.DATA_REVISIONS["prepared"],
+    }
+    names = ["data.json"]
+    if fault == "duplicate":
+        names *= 2
+    if fault == "traversal":
+        names = ["../data.json"]
+    preserve.atomic_json(root / ".natural_stage_source.json", {**source, "files": names})
+    receipt = {
+        "path": f"{source['prefix']}/data.json",
+        "repo": source["repo"],
+        "revision": "wrong" if fault == "revision" else source["revision"],
+    }
+    if fault != "missing":
+        preserve.atomic_json(root / ".data.json.natural_source.json", receipt)
+    if fault == "extra":
+        (root / ".unexpected.natural_source.json").write_text("{}")
+
+    def verify(view, upload):
+        assert set(preserve.regular_files(view)) == {"data.json"}
+        return {"status": "PASS"}
+
+    monkeypatch.setattr(
+        preserve,
+        "verify_remote_cell",
+        create_autospec(preserve.verify_remote_cell, side_effect=verify),
+    )
+    if fault:
+        with pytest.raises(ValueError):
+            preserve.verify_data_tree(root, "prepared")
+    else:
+        hashes, proof = preserve.verify_data_tree(root, "prepared")
+        assert set(hashes) == {"data.json"}
+        assert proof["status"] == "PASS"
+        metadata = {
+            name: path for name, path in preserve.regular_files(root).items() if name not in hashes
+        }
+        assert set(metadata) == {".natural_stage_source.json", ".data.json.natural_source.json"}
+        # Exercise the same pack path used for every non-payload snapshot source.
+        rows = [row for name, path in metadata.items() for row in preserve.pack_record(path, name)]
+        preserve.write_parts(tmp_path / "packed", rows)
+        preserve.verify_pack(
+            tmp_path / "packed", {n: preserve.file_sha(p) for n, p in metadata.items()}
+        )
+
+
 def snapshot_fixture(tmp_path, monkeypatch):
     root, logs = tmp_path / "run", tmp_path / "logs"
     root.mkdir()
