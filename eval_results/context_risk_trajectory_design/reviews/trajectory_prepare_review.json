@@ -1,0 +1,79 @@
+{
+  "analysis_spec_sha256": "4717faf31718f954f5c6058cc2260a0a57d3f3eec793b21c549c0092d2265fda",
+  "executed_tests": {
+    "code_test_env_and_config_unchanged": true,
+    "exit_code": 0,
+    "log": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_trajectory_stages/setup/trajectory_prepare_independent_tests.log",
+    "log_sha256": "ff70b304919033809e1a624610f5616539304b0ceb59e14b1d49cd941b2c3fbd",
+    "passed": 18,
+    "pytest_seconds": 11.66,
+    "receipt_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_trajectory_stages/setup/trajectory_prepare_independent_tests.json",
+    "receipt_sha256": "79c3082369921e6fd72fa701e6d751034b1e7f43ee78a3c6a75946da152c563f",
+    "runtime": {
+      "inspect-ai": "0.3.261",
+      "numpy": "2.2.6",
+      "openai": "3.7.0",
+      "tokenizers": "0.22.2",
+      "transformers": "4.57.6"
+    },
+    "six_source_hashes_stable_during_execution": true,
+    "subsequent_document_only_delta": {
+      "eval_results/context_risk_trajectory_design/analysis_spec.json": {
+        "reviewed": "4717faf31718f954f5c6058cc2260a0a57d3f3eec793b21c549c0092d2265fda",
+        "tested": "b81d1f7c2b1a67fa043dc6b97ae7248dc173512df21d91c7174507c4ca1b7e3a"
+      },
+      "eval_results/context_risk_trajectory_design/plan.md": {
+        "reviewed": "560bfe0a82bad21b921d32742074eea8c30c014dd9e9f124894afa81a72fa7ab",
+        "tested": "2482cd14e985e246110ded798fadd70927dda70beee2ff0da38cdbd0ac986a45"
+      }
+    }
+  },
+  "fixture_limits": [
+    "Real ByteLevel tokenization, build_bank, publication, portable load, runtime replay and adversarial corruption/race bodies execute on explicit small fixtures with isolated census/hash constants.",
+    "Actual _load_evidence executes on typed Inspect logs; only the external file reader is autospecced. This is not an actual360-row native revalidation or production preparation.",
+    "No model/tokenizer server calls, GPU/model weights, real-data fits, source edits, generation, task mutations or lifecycle actions were performed by the critic."
+  ],
+  "launch_overrides": {
+    "plan_review": "<NEW>/setup/trajectory_plan_review_v2.json",
+    "review": "<NEW>/setup/trajectory_prepare_review.json"
+  },
+  "plan_review": {
+    "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_trajectory_stages/setup/trajectory_plan_review_v2.json",
+    "sha256": "502cbcecec03d04f5e0a0daca009188067eae4200e4f1abfb534a0184b6ca3ed"
+  },
+  "plan_sha256": "560bfe0a82bad21b921d32742074eea8c30c014dd9e9f124894afa81a72fa7ab",
+  "remaining_production_evidence": [
+    "Actual preparation must finish with full census and owned exit/drain proof.",
+    "Production Transformers5.15 tokenizer must replay all2153 requests and every checkpoint before forwards.",
+    "Capture/source/body review and actual numerical/memory gates remain required."
+  ],
+  "resolved_findings": [
+    "Added independent full final/exception stream endpoint checks; rehashed appended suffix rejected.",
+    "Added fixed-hash frozen_manifest payload and context rejoin; rehashed test and task-role corruption rejected.",
+    "Added environment initialization/source binding and end-of-load/replay source checks."
+  ],
+  "reviewed_utc": "2026-09-08T21:40:25.733045+00:00",
+  "reviewer": "Independent implementation critic /root/verify_vllm_runtime",
+  "schema_version": "trajectory_preparation_independent_code_review_v1",
+  "scope": "Preparation component only: source-bound CPU producer and portable validators. Actual production preparation, GPU/capture parity, fits, archive and experiment completion remain separate gates.",
+  "source_manifest_sha256": "2385138de67af3472d5a07267f1c9776d46218368b7f7b9363bef360ed8d4b64",
+  "sources_sha256": {
+    "configs/eval/context_risk_trajectory_prepare.yaml": "6a657212a33a34269b3ff939196a5f44431d70ff2cda50acc65dadf1e3973c19",
+    "eval_results/context_risk_trajectory_design/analysis_spec.json": "4717faf31718f954f5c6058cc2260a0a57d3f3eec793b21c549c0092d2265fda",
+    "eval_results/context_risk_trajectory_design/plan.md": "560bfe0a82bad21b921d32742074eea8c30c014dd9e9f124894afa81a72fa7ab",
+    "scripts/context_risk_trajectory_prepare.py": "1f7ea76df0cc6d52a6d65361772803e927408b6b81d0a5aa08b036b84e3f257f",
+    "src/explore_persona_space/orchestrate/env.py": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759",
+    "tests/test_context_risk_trajectory_prepare.py": "098b1a4417c48cbad104bc9337cae57276dadd5bb30b95cad37f1324fd863625"
+  },
+  "unresolved_findings": [],
+  "verdict": "PASS",
+  "verified_properties": [
+    "Native loader binds fixed final native/sample/raw-row bytes and full inventory/geometry, frozen manifest, selection, final outcome audit and independent successful-body review; request transcript/seed/response/usage joins execute before calls are prepared.",
+    "Executable census requires231 completed assessable impossible trajectories,2153 completed calls,12918 observations,58 contexts,231 final streams, one named completion exception and58 independent canonical initial streams. Explicit exclusions retain120 original,1 unknown and8 unassessable trajectories without negative-label imputation.",
+    "All calls retain pre-action and within-pre/32/128/512/end endpoints. min(K,length) preserves short-answer rows, and observed/ended fields are validated per observation. Future-success and current-submission labels remain distinct; no post-success call is admitted.",
+    "Canonical initial stream selection depends only on actual prefix IDs. Full final/exception stream lengths and token hashes rejoin pinned last-call geometry; every assigned checkpoint is the last token of its exact prefix. Endpoints insert no delimiter or subsequent feedback.",
+    "Visible-text references stop at their declared boundary and hash the exact decoded text. Production tokenizer replay reconstructs every request and observed body prefix, rejecting both changed IDs and future-visible-text injection.",
+    "Portable loading stages the exact frozen source manifest and rejoins context messages/test/task/condition/role/hash. Calls rejoin native inventory and message/token geometry. Source and complete input/payload hashes are checked before and after consumption/publication, including actual imported environment-helper bytes.",
+    "Fresh output and old-root disjointness, immutable staging/readback and independent code/plan review checks prevent adoption of stale outputs."
+  ]
+}

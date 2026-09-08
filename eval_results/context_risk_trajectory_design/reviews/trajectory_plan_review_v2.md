@@ -1,0 +1,5 @@
+Plan amendment: PASS, bound to 560bfe0a82bad21b921d32742074eea8c30c014dd9e9f124894afa81a72fa7ab. The original Goal, cohorts,15 endpoints, task split, readout recipes and45-comparison scan remain unchanged.
+
+The amendment correctly treats1% numerical parity as insufficient to exclude standardized future-length artifacts. Same-shape future-mask checks and the bounded candidate-stage prefix-only reference close the interpretation gap. The reproduction rule is frozen before fits: unchanged support, raw over both prevalence/text or mapping over raw, strictly positive common-task centered-supnorm lower bounds across all selected reference contrasts, and no substitute stage after failure. These are descriptive post-selection robustness intervals.
+
+The extra133441792-token projection is explicitly provisional and requires exact candidate census, source review and actual-shape timing before a conditional launch. Actual capture/fit execution and the overall scientific completion gate remain separate obligations. V1 is preserved.

@@ -1,0 +1,42 @@
+{
+  "argv": [
+    "/home/thomasjiralerspong/.cache/uv/builds-v0/.tmpxPZdo6/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_context_risk_trajectory_prepare.py"
+  ],
+  "elapsed_seconds": 28.605366468429565,
+  "exit_code": 0,
+  "imported_env": {
+    "path": "/home/thomasjiralerspong/explore-persona-space/src/explore_persona_space/orchestrate/env.py",
+    "sha256": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759"
+  },
+  "log": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_trajectory_stages/setup/trajectory_prepare_independent_tests.log",
+  "log_sha256": "ff70b304919033809e1a624610f5616539304b0ceb59e14b1d49cd941b2c3fbd",
+  "runtime": {
+    "inspect-ai": "0.3.261",
+    "numpy": "2.2.6",
+    "openai": "3.7.0",
+    "tokenizers": "0.22.2",
+    "transformers": "4.57.6"
+  },
+  "schema_version": "trajectory_prepare_independent_cpu_tests_v1",
+  "source_stable": true,
+  "sources_after": {
+    "configs/eval/context_risk_trajectory_prepare.yaml": "6a657212a33a34269b3ff939196a5f44431d70ff2cda50acc65dadf1e3973c19",
+    "eval_results/context_risk_trajectory_design/analysis_spec.json": "b81d1f7c2b1a67fa043dc6b97ae7248dc173512df21d91c7174507c4ca1b7e3a",
+    "eval_results/context_risk_trajectory_design/plan.md": "2482cd14e985e246110ded798fadd70927dda70beee2ff0da38cdbd0ac986a45",
+    "scripts/context_risk_trajectory_prepare.py": "1f7ea76df0cc6d52a6d65361772803e927408b6b81d0a5aa08b036b84e3f257f",
+    "src/explore_persona_space/orchestrate/env.py": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759",
+    "tests/test_context_risk_trajectory_prepare.py": "098b1a4417c48cbad104bc9337cae57276dadd5bb30b95cad37f1324fd863625"
+  },
+  "sources_before": {
+    "configs/eval/context_risk_trajectory_prepare.yaml": "6a657212a33a34269b3ff939196a5f44431d70ff2cda50acc65dadf1e3973c19",
+    "eval_results/context_risk_trajectory_design/analysis_spec.json": "b81d1f7c2b1a67fa043dc6b97ae7248dc173512df21d91c7174507c4ca1b7e3a",
+    "eval_results/context_risk_trajectory_design/plan.md": "2482cd14e985e246110ded798fadd70927dda70beee2ff0da38cdbd0ac986a45",
+    "scripts/context_risk_trajectory_prepare.py": "1f7ea76df0cc6d52a6d65361772803e927408b6b81d0a5aa08b036b84e3f257f",
+    "src/explore_persona_space/orchestrate/env.py": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759",
+    "tests/test_context_risk_trajectory_prepare.py": "098b1a4417c48cbad104bc9337cae57276dadd5bb30b95cad37f1324fd863625"
+  }
+}

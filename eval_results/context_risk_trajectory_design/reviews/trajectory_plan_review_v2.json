@@ -1,0 +1,84 @@
+{
+  "analysis_spec_sha256": "4717faf31718f954f5c6058cc2260a0a57d3f3eec793b21c549c0092d2265fda",
+  "approval_scope": "Plan PASS only. Independent source-bound implementation review, exact runtime parity/capacity smokes, complete result audit and verified persistence remain required as written.",
+  "assessments": {
+    "cohorts": "All 231 assessable completed trajectories and 2153 calls are retained; 1 transport unknown and 8 malformed-test trajectories are separately disclosed. min(K,length) keeps short responses in the same secondary denominator. These are conditional complete-case analyses, with varying primary risk sets explicitly distinguished from a causal fixed-population time curve.",
+    "compute": "Primary stream replay remains provisionally2GPUh with actual-longest/representative/batch smoke and measured deadline. Conditional atmost4 reference stages have133441792 tokens as a conservative before-dedup workload projection (~10.5h at prior short throughput), not a validated timing bound; exact candidate census, independent wrapper review and actual-shape sizing are required before execution. Dedicated CPU fitting venue unchanged.",
+    "conditional_reference": "Atmost four earliest raw/map candidate stages across the two families; initial pre_action_01 is already separately truncated. Same observations, labels, text/metadata, task folds, objective and C grid; capture both training/test prefixes and refit. Same class/task support and strictly positive relevant contrast lower bounds from common9-task/5000-draw centered-supnorm bands across all3 contrasts per selected stage. No replacement after failure. This is descriptive post-selection robustness, not independent replication or a renewed familywise guarantee.",
+    "construct": "The ten primary landmarks precede any new assistant response and target eventual success within the remaining original budget conditional on reaching the landmark. Five secondary pooled submission checkpoints target the ensuing current submission and are explicitly answer-visible diagnostics, not pre-generation forecasts or the next unobserved program.",
+    "interpretation": "Earliest means earliest measured checkpoint in its named family. Raw utility must beat both prevalence and text; mapping benefit is separate from absolute utility. No map information creation, general agentic-misalignment claim, unseen prospective replication or absence-of-signal conclusion follows from a failed gate.",
+    "leakage": "Same fixed task split and causal text/metadata. Canonical initial short-prefix vectors are protected from future length. Exact fixed-shape content and future-mask checks supplement raw/mapped1% parity, which alone cannot exclude predictive numerical artifacts. A later-stage advantage requires the pre-frozen prefix-only robustness check on its complete train/test cohort.",
+    "reuse": "Pinned model/map/block44 conventions match the retained evidence. Later request IDs must reproduce in Transformers5.15.0; response tokens remain declared text retokenizations, not recovered sampled IDs. The single newline-trim exception remains a separate stream. Map use within an answer is domain extension, explicitly tested rather than asserted.",
+    "statistics": "The 45 predefined same-unit contrasts use common task multiplicities and per-stage trial denominators. Centered supnorm bootstrap bands are a coherent approximate simultaneous fixed-fit construction; common draws retain cross-stage dependence. The absolute maximum protects the predeclared scan rather than attaching only a marginal interval to a selected onset. q is compared to reference loss to disclose uninformative precision.",
+    "support": "Five-fold task CV and explicit single-class training-fold prevalence predictions avoid undefined logistic fits. Late landmarks remain descriptive: positive test groups fall below the claim minimum at attempt7, and positive training groups below it at attempt9. All stages and controls remain accounted for."
+  },
+  "executed_read_evidence": {
+    "completed_assessable_calls": 2153,
+    "completed_assessable_trajectories": 231,
+    "geometry_audit_sha256": "77bc2c93c99d9431eb25da5d17d215a25e87320ce21d30a7870352695ed7d983",
+    "maximum_stream_tokens": 98622,
+    "per_request_completion_stream_tokens": 33360448,
+    "production_runtime_replay_validation_already_performed": false,
+    "short_response_counts_below_K": {
+      "128": 4,
+      "32": 3,
+      "512": 67
+    },
+    "true_five_checkpoint_independent_tokens_before_dedup": 150063725
+  },
+  "goal_preserved": true,
+  "implementation_and_runtime_obligations": [
+    "Freeze exact same-forward equality and cross-forward numerical error measures/tolerances and intended backend/batch shapes in the reviewed executable smoke before GPU calls; save both raw and mapped errors, and fail rather than loosen thresholds after results.",
+    "Use per-bootstrap task multiplicities on loss sums and trial counts, including duplicate task draws correctly; all45 columns must be finite/accounted for. Undefined metric values remain null with reason and never influence a stage choice.",
+    "Keep all checkpoint event joins and binomial weights after deduplication; build TF-IDF and scaling only from each inner training fold with full visible checkpoint texts.",
+    "Validate largest-cell actual CPU memory/time and longest/representative/batched GPU shapes, source hashes, exact staged inputs and output/exit receipts before production; optimized token volume alone is not capacity or timing proof.",
+    "Fixed-fit nine-cluster bootstrap is approximate, can under-cover with so few heterogeneous selected tasks, omits refitting and does not rerun the high-rate selection procedure. State these limits and retain conditional/exploratory wording; no finite-sample familywise guarantee is certified."
+  ],
+  "implementation_contract_sha256": "36122222a10999062e39c16761d07ee369c644fa287c8b51fcc406001edf9311",
+  "inputs_sha256": {
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_trajectory_design/analysis_spec.json": "4717faf31718f954f5c6058cc2260a0a57d3f3eec793b21c549c0092d2265fda",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_trajectory_design/plan.md": "560bfe0a82bad21b921d32742074eea8c30c014dd9e9f124894afa81a72fa7ab",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_trajectory_stages/setup/fresh_trajectory_stage_inventory.md": "513722dbd5405d475ef7f9f75bb1156add2c235ff5c679077d0e43e4cd1c8f08",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_trajectory_stages/setup/reuse_capture_findings.md": "9b7bd8947a43199971b713dfb9b1ee75c599de079895fa414aed6fd98da4f371",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_trajectory_stages/setup/reuse_token_geometry_audit.json": "77bc2c93c99d9431eb25da5d17d215a25e87320ce21d30a7870352695ed7d983"
+  },
+  "plan_path": "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_trajectory_design/plan.md",
+  "plan_sha256": "560bfe0a82bad21b921d32742074eea8c30c014dd9e9f124894afa81a72fa7ab",
+  "prior_review": {
+    "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_trajectory_stages/setup/trajectory_plan_review.json",
+    "sha256": "598fc776737dfc3fc73c02f6656228cc41ad808d6d0d4c31a94ad011acb45879"
+  },
+  "remaining_plan_blockers": [],
+  "resolved_findings": [
+    {
+      "id": "R1",
+      "issue": "33.36M full request-plus-answer streams were incorrectly described as the independent truncated fallback.",
+      "resolution": "Now explicitly an optimization requiring parity; truly truncated distinct-checkpoint fallback has a separate roughly150M-token cost and mandatory re-sizing/review."
+    },
+    {
+      "id": "R2",
+      "issue": "Initial canonical vector choice needed protection from future-stream-dependent numerical variation.",
+      "resolution": "Use the prior58 vectors after replay parity or deterministic input-hash-selected separately truncated short-prefix captures; future length/outcomes/seed-specific contents cannot choose the vector."
+    },
+    {
+      "id": "R3",
+      "issue": "Common-band centering and precision interpretation needed an explicit freeze.",
+      "resolution": "Exactly max over45 absolute(delta_b-delta_hat), common9-task resamples without per-stage redraw/drop; preserve draw array and compare q with the reference-loss attainable reduction."
+    },
+    {
+      "id": "R4",
+      "issue": "A1% norm bound can hide future-length rounding features exploitable after coordinate standardization.",
+      "resolution": "Added fixed-total-shape future-mask smoke and mandatory full candidate-stage prefix-only robustness before causal-state attribution."
+    },
+    {
+      "id": "R5",
+      "issue": "Prefix-only reproduction needed a rule frozen before the original scan.",
+      "resolution": "Same support, raw over both prevalence/text or map over raw, strictly positive centered-supnorm lower bounds across selected reference-stage contrasts; no replacement after failure."
+    }
+  ],
+  "reviewed_utc": "2026-09-08T21:40:25.733045+00:00",
+  "reviewer": "Independent plan/statistics critic /root/verify_vllm_runtime",
+  "schema_version": "task2670_trajectory_plan_independent_review_v2",
+  "scope": "Scientific/statistical/methodological plan review and bounded reuse/sizing review. No captures, model calls, fits, native revalidation or task changes.",
+  "verdict": "PASS"
+}

@@ -2630,3 +2630,9 @@ eval_results/issue_2670/highrate/final_milestone_20260908/analysis/result.json:g
 eval_results/issue_2670/highrate/final_milestone_20260908/analysis/result.json:generic-api-key:49882
 eval_results/issue_2670/highrate/final_milestone_20260908/analysis/result.json:generic-api-key:49911
 eval_results/issue_2670/highrate/final_milestone_20260908/setup/highrate_clean_result_final_pointer_review.json:generic-api-key:15
+
+# Verified SHA-256 of task2670 token-geometry artifact; not a credential.
+eval_results/context_risk_trajectory_design/reviews/trajectory_plan_review.json:generic-api-key:39
+
+# Verified SHA-256 of task2670 token-geometry artifact; not a credential.
+eval_results/context_risk_trajectory_design/reviews/trajectory_plan_review_v2.json:generic-api-key:43
