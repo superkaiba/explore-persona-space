@@ -654,6 +654,7 @@ def test_reports_separate_registered_accepted_and_realized_counts() -> None:
         },
     }
     assert ANALYSIS._planned_vs_realized_report(data) == {
-        "planned": {"items": 90, "prompts": 1080, "draws": 8640},
+        "maximum_registered": {"items": 90, "prompts": 1080, "draws": 8640},
+        "accepted_planned": {"items": 85, "prompts": 1020, "draws": 8160},
         "realized": data["realized"],
     }

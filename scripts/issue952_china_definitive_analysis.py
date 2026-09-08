@@ -2031,9 +2031,10 @@ def _coverage_report(data: dict[str, Any]) -> dict[str, Any]:
 
 
 def _planned_vs_realized_report(data: dict[str, Any]) -> dict[str, Any]:
-    """Preserve the established report key while coverage adds accepted counts."""
+    """Preserve the established report key with all three coverage scopes."""
     return {
-        "planned": data["maximum_registered"],
+        "maximum_registered": data["maximum_registered"],
+        "accepted_planned": data["accepted_planned"],
         "realized": data["realized"],
     }
 
