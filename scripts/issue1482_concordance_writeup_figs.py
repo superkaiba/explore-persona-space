@@ -183,10 +183,17 @@ def tail_mask(y: np.ndarray, frac: float) -> np.ndarray:
     return np.concatenate([order[:k], order[-k:]])
 
 
+# Target R^2 array the battery scores properties against. Module-level so a
+# driver can swap the DEPENDENT VARIABLE (e.g. the decoder-direction read)
+# without touching the property set, the matching or the selection rule.
+# Default is the published feature-activation target: unchanged for all callers.
+TARGET_R2 = REPO / "data/issue_1482/densesae_target/ridge__mean_r2_fullwidth.npy"
+
+
 def battery() -> dict:
     """Concordance rows + the raw vectors, for the layer-19 densesae battery."""
     SB.COV_NPZ = COV_V2
-    inp = SB.load_inputs(REPO / "data/issue_1482/densesae_target/ridge__mean_r2_fullwidth.npy")
+    inp = SB.load_inputs(TARGET_R2)
     doc = json.loads(
         (
             REPO

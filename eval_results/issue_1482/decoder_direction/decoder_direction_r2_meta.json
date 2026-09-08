@@ -1,0 +1,42 @@
+{
+ "generated_utc": "2026-09-08T20:42:21.100258+00:00",
+ "layer": 19,
+ "n_rows": 20000,
+ "n_directions": 131072,
+ "pooled_dense_r2": 0.7242753379895136,
+ "pooled_reference_banked": 0.6531218765443059,
+ "estimator_gate": {
+  "verdict": "PASS",
+  "max_abs_diff": 6.661338147750939e-16,
+  "traits": {
+   "apathetic": {
+    "recomputed": 0.8736004471662727,
+    "banked": 0.8736004471662727,
+    "abs_diff": 0.0
+   },
+   "humorous": {
+    "recomputed": 0.8846418647666922,
+    "banked": 0.884641864766692,
+    "abs_diff": 1.1102230246251565e-16
+   },
+   "impolite": {
+    "recomputed": 0.8623146061637146,
+    "banked": 0.8623146061637144,
+    "abs_diff": 2.220446049250313e-16
+   },
+   "optimistic": {
+    "recomputed": 0.8025673660811187,
+    "banked": 0.802567366081118,
+    "abs_diff": 6.661338147750939e-16
+   }
+  }
+ },
+ "quantiles": {
+  "0.05": 0.6389147263556829,
+  "0.25": 0.7124965962872978,
+  "0.5": 0.7592952957554611,
+  "0.75": 0.803413988912667,
+  "0.95": 0.8579677834811855
+ },
+ "target": "decoder-direction projection d_f^T v (dense, no encoder/gate)"
+}
