@@ -1,0 +1,126 @@
+{
+  "case_count": 20,
+  "checks": [
+    {
+      "longest": 0,
+      "name": "uniform90_earliest_tie",
+      "pair": [
+        0,
+        1
+      ],
+      "passed": true
+    },
+    {
+      "longest": 14,
+      "name": "longest_singleton_and_exact_budget_pair",
+      "pair": [
+        16,
+        17
+      ],
+      "passed": true
+    },
+    {
+      "longest": 14,
+      "name": "never_pair_across15_row_shard_boundary",
+      "pair": [
+        14,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "longest": 0,
+      "name": "oversize_rows_remain_singletons",
+      "pair": [
+        2,
+        3
+      ],
+      "passed": true
+    },
+    {
+      "longest": 0,
+      "name": "unequal_padding_breaks_exact_padded_size_tie",
+      "pair": [
+        15,
+        16
+      ],
+      "passed": true
+    },
+    {
+      "longest": 0,
+      "name": "earliest_pair_breaks_remaining_tie",
+      "pair": [
+        0,
+        1
+      ],
+      "passed": true
+    },
+    {
+      "longest": 7,
+      "name": "earliest_longest_tie",
+      "pair": [
+        0,
+        1
+      ],
+      "passed": true
+    },
+    {
+      "name": "no_actual_pair_fails_without_fabricating_cross_shard_pair",
+      "passed": true
+    },
+    {
+      "name": "valid_padded_two_row_payload",
+      "passed": true
+    },
+    {
+      "name": "valid_singleton_payload",
+      "passed": true
+    },
+    {
+      "name": "wrong_vector_geometry",
+      "passed": true
+    },
+    {
+      "name": "wrong_vector_dtype",
+      "passed": true
+    },
+    {
+      "name": "wrong_replay_width",
+      "passed": true
+    },
+    {
+      "name": "wrong_attention_width",
+      "passed": true
+    },
+    {
+      "name": "nonfinite_nan",
+      "passed": true
+    },
+    {
+      "name": "nonfinite_infinity",
+      "passed": true
+    },
+    {
+      "name": "changed_unpadded_token",
+      "passed": true
+    },
+    {
+      "name": "padding_marked_active",
+      "passed": true
+    },
+    {
+      "name": "equal_mask_sum_wrong_positions",
+      "passed": true
+    },
+    {
+      "name": "swapped_token_lanes",
+      "passed": true
+    }
+  ],
+  "fixture_source_sha256": "bba05a21fc4f68f6627ff8afe520b478eb20634789c78a684b81ed54769ef3ff",
+  "numpy_version": "2.2.6",
+  "packer_source_sha256": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+  "passed": true,
+  "scope": "Pure CPU functions only; diagnostic.main not called, no torch/transformers/vllm imports, tokenizer/model/GPU calls or pod operations.",
+  "worker_sha256": "dea9ddb7e6e1f3aa0a1d1708c3a0fcb4ee874caab9e39f4d65133001051d18a1"
+}
