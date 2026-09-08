@@ -30,6 +30,10 @@ Inputs use marker revision `53cde302c71f45c3f4225e62589bce29d3254157`; its immut
 `data_revision` supplies the hash-verified bank/audit. Input paths remain canonical.
 All outputs use local `RUN_ROOT/attempt<N>` and Hub
 `issue952_position_divergence/followups/china_refusal_topic_stratified_bilingual_v1/attempt<N>`.
+For normal dispatch, `--run-root` is the base directory (default
+`/workspace/issue952_china_definitive`); the launcher appends `attempt<N>`
+automatically. Do not append it yourself. Internal staging/hydration/verification
+workers receive the already resolved attempt directory without another suffix.
 Start with `--attempt 1`; invalidated regeneration requires a reviewed increment,
 not a fresh local root targeting the same remote attempt.
 
@@ -41,8 +45,10 @@ At `GATE_SHA`, publish these exact paths below the attempt prefix:
 - `judge/smoke_scores.jsonl`
 - `judge/smoke_parse_manifest.json`
 - `judge/smoke_packet_manifest.json` and `judge/smoke_lookup.json`
-- Every `judge/agent_artifacts/gpu_smoke/<agent>/batch_NNN.packet.json` and
-  `batch_NNN.output.jsonl` (the exact original packets and raw agent outputs)
+- `judge/smoke_runtime_identity.json` (pre-empirical, distinct execution lanes)
+- Every `judge/agent_artifacts/gpu_smoke_attempt<N>/<agent>/batch_NNN.packet.json`,
+  `batch_NNN.output.jsonl`, and `batch_NNN.output_manifest.json` (the exact
+  original packets, raw agent outputs, and runtime/session manifests)
 
 The gate must contain `schema_version=1`, `kind=issue952_codex_smoke_gate`,
 `passed=true`, and these exact identity keys: `code_sha`, `input_revision`,
@@ -74,6 +80,21 @@ are checked with the real producer parser, and each parsed primary score must
 match its raw output. `agent_artifact_hashes` must agree across gate, parse
 manifest, and the staged packet/output bytes. This loads only local packet
 validation helpers, never a model API.
+
+The request's `runtime_identity={path,sha256}` names the exact runtime file in
+the census. The packet manifest, each packet/output manifest, and parsed scores
+must bind its **file-byte SHA256**. Runtime records require distinct agent IDs
+and canonical task names and the producer's registered model, reasoning effort,
+service tier, and fresh-context setting. Unexposed execution fields remain
+explicitly unavailable; they are never inferred as successful API outcomes.
+
+Opaque IDs and classifier request hashes are lane-specific and bind the attempt,
+complete question/response/rubric payload, and runtime identity. Lookup records
+carry `opaque_ids` and `classifier_request_sha256_by_agent` plus primary-lane
+aliases. Raw output rows have exactly five fields: `opaque_id`,
+`classifier_request_sha256`, `verdict`, `raw_output`, and `assigned_identity`.
+The real parser verifies their per-output manifest's row count, ordered IDs,
+packet/output/runtime hashes, identity, and exposed/unavailable snapshot.
 
 The receipt contains `revision`, `hf_prefix`, the complete relative-path-to-SHA256
 mapping `sha256`, `input_revision` (marker SHA, not data SHA), `code_sha`, `attempt`,

@@ -154,6 +154,17 @@ def fake_gate(args) -> None:
     }
     rows = D.read_jsonl(args.run_root / "smoke/raw_completions/rollouts.jsonl")
     contract = D.judge_contract()
+    runtime = contract._runtime_identity_manifest(
+        phase="smoke",
+        attempt=args.attempt,
+        agent_a_id="synthetic-agent-a",
+        agent_a_task="/synthetic/agent_a",
+        agent_b_id="synthetic-agent-b",
+        agent_b_task="/synthetic/agent_b",
+    )
+    runtime_path = args.run_root / "judge/smoke_runtime_identity.json"
+    D.atomic_json(runtime_path, runtime)
+    runtime_sha = D.digest(runtime_path)
     packet_manifest = contract._prepare_packets(
         rows=[
             {"item_id": row["item_id"], "question": row["question"], "response": row["text"]}
@@ -162,6 +173,8 @@ def fake_gate(args) -> None:
         packet_kind=f"gpu-smoke-attempt{args.attempt}",
         packet_root=args.run_root / "synthetic_packets",
         overlap_fraction=contract.PRODUCTION_OVERLAP_FRACTION,
+        runtime_identity=runtime,
+        runtime_identity_sha256=runtime_sha,
     )
     by_id = {row["item_id"]: row for row in rows}
     lookup = [
@@ -183,14 +196,33 @@ def fake_gate(args) -> None:
                         "opaque_id": row["opaque_id"],
                         "verdict": False,
                         "raw_output": "<refusal>no</refusal>",
+                        "classifier_request_sha256": row["classifier_request_sha256"],
+                        "assigned_identity": runtime["lanes"][packet["agent"]],
                     }
                 )
                 + "\n"
                 for row in items
             )
         )
+        D.atomic_json(
+            Path(packet["output_manifest_path"]),
+            {
+                "schema_version": 1,
+                "kind": "issue952_codex_agent_output",
+                "packet_sha256": packet["packet_sha256"],
+                "runtime_identity_sha256": runtime_sha,
+                "assigned_identity": runtime["lanes"][packet["agent"]],
+                "output_sha256": D.digest(output),
+                "n_rows": len(items),
+                "ordered_opaque_ids_sha256": contract._sha_obj([row["opaque_id"] for row in items]),
+                "execution_snapshot": {
+                    "exposed": runtime["lanes"][packet["agent"]],
+                    "unavailable": list(contract.UNAVAILABLE_EXECUTION_FIELDS),
+                },
+            },
+        )
     raw_hashes = contract._persist_packet_artifacts(
-        packet_manifest, args.run_root / "judge/agent_artifacts/gpu_smoke"
+        packet_manifest, args.run_root / f"judge/agent_artifacts/gpu_smoke_attempt{args.attempt}"
     )
     packet_path = args.run_root / "judge/smoke_packet_manifest.json"
     lookup_path = args.run_root / "judge/smoke_lookup.json"
@@ -207,6 +239,7 @@ def fake_gate(args) -> None:
         "ordered_item_ids_sha256": ordered_sha,
         "lookup_sha256": D.digest(lookup_path),
         "packet_manifest_sha256": D.digest(packet_path),
+        "runtime_identity": {"path": "judge/smoke_runtime_identity.json", "sha256": runtime_sha},
     }
     parsed = {
         "schema_version": 1,
@@ -216,6 +249,7 @@ def fake_gate(args) -> None:
         "lookup_sha256": D.digest(lookup_path),
         "packet_manifest_sha256": D.digest(packet_path),
         "agent_artifact_hashes": raw_hashes,
+        "runtime_identity_sha256": runtime_sha,
         "coverage": {
             "n_smoke_rows": len(rows),
             "n_parsed_rows": len(rows),
@@ -227,7 +261,15 @@ def fake_gate(args) -> None:
     D.evidence_local(args, "result").write_text(
         "".join(
             json.dumps(
-                {"item_id": row["item_id"], "verdict": False, "judge_id": row["primary_agent"]}
+                {
+                    "item_id": row["item_id"],
+                    "verdict": False,
+                    "judge_id": row["primary_agent"],
+                    "source_prompt_id": row["source_prompt_id"],
+                    "language": row["language"],
+                    "classifier_request_sha256": row["classifier_request_sha256"],
+                    "runtime_identity_sha256": runtime_sha,
+                }
             )
             + "\n"
             for row in lookup
@@ -517,7 +559,7 @@ def test_parse_manifest_cannot_forge_coverage_or_identity(synthetic):
         D.validate_gate(args)
 
 
-@pytest.mark.parametrize("suffix", [".packet.json", ".output.jsonl"])
+@pytest.mark.parametrize("suffix", [".packet.json", ".output.jsonl", ".output_manifest.json"])
 def test_missing_actual_packet_or_raw_output_blocks(synthetic, suffix):
     args, _, _ = synthetic
     D.dispatch(args)
@@ -529,7 +571,17 @@ def test_missing_actual_packet_or_raw_output_blocks(synthetic, suffix):
         D.validate_gate(args)
 
 
-def test_raw_output_parser_rejects_invalid_tag_even_with_updated_hashes(synthetic):
+@pytest.mark.parametrize(
+    ("field", "value", "error"),
+    [
+        ("raw_output", "not a valid binary judge tag", "invalid Codex judgment row"),
+        ("classifier_request_sha256", "0" * 64, "request/runtime identity drift"),
+        ("assigned_identity", {"agent_id": "wrong-runtime"}, "request/runtime identity drift"),
+    ],
+)
+def test_raw_output_parser_rejects_forged_fields_even_with_updated_hashes(
+    synthetic, field, value, error
+):
     args, _, _ = synthetic
     D.dispatch(args)
     fake_gate(args)
@@ -538,12 +590,22 @@ def test_raw_output_parser_rejects_invalid_tag_even_with_updated_hashes(syntheti
     relative = next(path for path in gate["artifact_census"] if path.endswith(".output.jsonl"))
     raw_path = D.artifact_local(args, gate, relative)
     rows = D.read_jsonl(raw_path)
-    rows[0]["raw_output"] = "not a valid binary judge tag"
+    rows[0][field] = value
     raw_path.write_text("".join(json.dumps(row) + "\n" for row in rows))
     sha = D.digest(raw_path)
     gate["artifact_census"][relative] = sha
-    key = relative.removeprefix("judge/agent_artifacts/gpu_smoke/").removesuffix(".output.jsonl")
+    key = relative.removeprefix(
+        f"judge/agent_artifacts/gpu_smoke_attempt{args.attempt}/"
+    ).removesuffix(".output.jsonl")
     gate["agent_artifact_hashes"][key]["output_sha256"] = sha
+    manifest_relative = relative.removesuffix(".output.jsonl") + ".output_manifest.json"
+    output_manifest_path = D.artifact_local(args, gate, manifest_relative)
+    output_manifest = D.read_json(output_manifest_path)
+    output_manifest["output_sha256"] = sha
+    D.atomic_json(output_manifest_path, output_manifest)
+    manifest_sha = D.digest(output_manifest_path)
+    gate["artifact_census"][manifest_relative] = manifest_sha
+    gate["agent_artifact_hashes"][key]["output_manifest_sha256"] = manifest_sha
     parsed_path = D.evidence_local(args, "parse")
     parsed = D.read_json(parsed_path)
     parsed["agent_artifact_hashes"] = gate["agent_artifact_hashes"]
@@ -551,7 +613,40 @@ def test_raw_output_parser_rejects_invalid_tag_even_with_updated_hashes(syntheti
     gate["evidence"]["parse"]["sha256"] = D.digest(parsed_path)
     gate["artifact_census"][gate["evidence"]["parse"]["path"]] = D.digest(parsed_path)
     D.atomic_json(gate_path, gate)
-    with pytest.raises(RuntimeError, match="invalid Codex judgment row"):
+    with pytest.raises(RuntimeError, match=error):
+        D.validate_gate(args)
+
+
+def test_missing_preempirical_runtime_identity_blocks(synthetic):
+    args, _, _ = synthetic
+    D.dispatch(args)
+    fake_gate(args)
+    gate = D.read_json(args.run_root / "dispatch_state/codex_smoke_gate.json")
+    D.artifact_local(args, gate, "judge/smoke_runtime_identity.json").unlink()
+    with pytest.raises(FileNotFoundError):
+        D.validate_gate(args)
+
+
+@pytest.mark.parametrize("failure", ["wrong_model", "shared_agent", "invented_snapshot"])
+def test_runtime_identity_schema_is_verified_beyond_file_hashes(synthetic, failure):
+    args, _, _ = synthetic
+    D.dispatch(args)
+    fake_gate(args)
+    gate_path = args.run_root / "dispatch_state/codex_smoke_gate.json"
+    gate = D.read_json(gate_path)
+    relative = "judge/smoke_runtime_identity.json"
+    runtime_path = D.artifact_local(args, gate, relative)
+    runtime = D.read_json(runtime_path)
+    if failure == "wrong_model":
+        runtime["lanes"]["agent_a"]["model"] = "unregistered-model"
+    elif failure == "shared_agent":
+        runtime["lanes"]["agent_a"]["agent_id"] = runtime["lanes"]["agent_b"]["agent_id"]
+    else:
+        runtime["snapshot"]["unavailable"] = []
+    D.atomic_json(runtime_path, runtime)
+    gate["artifact_census"][relative] = D.digest(runtime_path)
+    D.atomic_json(gate_path, gate)
+    with pytest.raises(RuntimeError, match="runtime identit"):
         D.validate_gate(args)
 
 
@@ -664,6 +759,57 @@ def test_real_process_timeout_is_loud(tmp_path):
             tmp_path / "timeout.log",
             time.time() + 0.1,
         )
+
+
+@pytest.mark.parametrize("attempt", [1, 2])
+@pytest.mark.parametrize("custom_root", [False, True])
+def test_public_cli_scopes_default_and_custom_root_by_attempt(
+    tmp_path, monkeypatch, capsys, attempt, custom_root
+):
+    base = tmp_path / "custom" if custom_root else Path("/workspace/issue952_china_definitive")
+    argv = [
+        D.SELF,
+        "--expected-code-sha", CODE_SHA,
+        "--input-revision", INPUT_REV,
+        "--stage", "production",
+        "--attempt", str(attempt),
+        "--dry-run",
+    ]
+    if custom_root:
+        argv.extend(["--run-root", str(base)])
+    monkeypatch.setattr(sys, "argv", argv)
+    assert D.main() == 0
+    commands = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert len(commands) == len(D.PHASES)
+    effective = base / f"attempt{attempt}"
+    for command in commands:
+        assert command[command.index("--out-root") + 1] == str(effective / "production")
+        assert command[command.index("--attempt") + 1] == str(attempt)
+        if "--smoke-report" in command:
+            assert command[command.index("--smoke-report") + 1] == str(
+                effective / "smoke/manifests/smoke_timing.json"
+            )
+    runbook = (ROOT / "docs/methodology/issue_952_china_gpu_dispatch.md").read_text()
+    assert "appends `attempt<N>`" in runbook
+    assert "/workspace/issue952_china_definitive/attempt1/dispatch_state" in runbook
+
+
+def test_hydration_worker_preserves_resolved_attempt_root(tmp_path, monkeypatch):
+    root = tmp_path / "attempt2"
+    captured = []
+    monkeypatch.setattr(D, "hydrate_smoke", lambda args: captured.append(args.run_root))
+    monkeypatch.setattr(sys, "argv", [
+        D.SELF,
+        "--expected-code-sha", CODE_SHA,
+        "--input-revision", INPUT_REV,
+        "--stage", "production",
+        "--attempt", "2",
+        "--run-root", str(root),
+        "--smoke-gate-revision", DATA_REV,
+        "--operation", "hydrate",
+    ])
+    assert D.main() == 0
+    assert captured == [root]
 
 
 def test_main_rewrites_self_pid_and_posts_blocking_halt(synthetic, monkeypatch):
@@ -811,7 +957,7 @@ def test_no_external_judge_api_surface():
     assert D.CHILD == "scripts/issue952_china_definitive_gpu.py"
 
 
-def test_smoke_compatibility_matches_real_child_helpers(tmp_path):
+def test_smoke_compatibility_matches_real_child_helpers(tmp_path, monkeypatch):
     """Exercise real child compatibility bodies without loading a GPU/model/network."""
     spec = importlib.util.spec_from_file_location("china_gpu_contract", ROOT / D.CHILD)
     assert spec and spec.loader
@@ -822,6 +968,11 @@ def test_smoke_compatibility_matches_real_child_helpers(tmp_path):
         phase_fixture(tmp_path, "smoke", phase)
     manifests = tmp_path / "smoke/manifests"
     gen = D.read_json(manifests / "generation.json")
+    monkeypatch.setattr(child, "_git_sha", lambda: CODE_SHA)
+    gen["regime"].update(child._regime(gen["regime"]["bank_sha256"], smoke=True))
+    assert gen["regime"]["seed_base"] == child.SMOKE_SEED_BASE
+    assert gen["regime"]["seed_namespace"] == "smoke-disjoint-v1"
+    assert gen["regime"]["seed_formula"]
     gen["regime"].update(
         n_selected_prompts=120,
         selected_source_ids_sha256="synthetic-smoke-identities",
@@ -845,3 +996,7 @@ def test_smoke_compatibility_matches_real_child_helpers(tmp_path):
     for name, value in (("generation", gen), ("capture", cap), ("smoke_timing", report)):
         D.atomic_json(manifests / f"{name}.json", value)
     assert D.validate_smoke(tmp_path, CODE_SHA) == report
+    gen["regime"]["seed_policy"] = "stale-shared-smoke-production"
+    D.atomic_json(manifests / "generation.json", gen)
+    with pytest.raises(RuntimeError, match="stale smoke"):
+        D.validate_smoke(tmp_path, CODE_SHA)

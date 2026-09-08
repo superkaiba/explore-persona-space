@@ -260,6 +260,9 @@ def validate_smoke(run_root: Path, code_sha: str) -> dict:
             "max_model_len",
             "n_selected_prompts",
             "selected_source_ids_sha256",
+            "seed_base",
+            "seed_namespace",
+            "seed_formula",
         }
     }
     capture_compatibility = {
@@ -458,7 +461,8 @@ def validate_packet_census(
     census_hashes = gate["artifact_census"]
     expected = {spec["path"] for spec in gate["evidence"].values()}
     packet_name, lookup_name = "judge/smoke_packet_manifest.json", "judge/smoke_lookup.json"
-    expected.update((packet_name, lookup_name))
+    runtime_name = "judge/smoke_runtime_identity.json"
+    expected.update((packet_name, lookup_name, runtime_name))
     for relative, sha in census_hashes.items():
         if digest(artifact_local(args, gate, relative)) != sha:
             raise RuntimeError(f"Codex smoke artifact census content mismatch: {relative}")
@@ -467,8 +471,20 @@ def validate_packet_census(
     packet_manifest = read_json(packet_path)
     lookup = json.loads(lookup_path.read_text())
     contract = judge_contract()
+    runtime_path = artifact_local(args, gate, runtime_name)
+    runtime = read_json(runtime_path)
+    lanes = contract._validate_runtime_identity(runtime, phase="smoke", attempt=args.attempt)
+    runtime_sha = digest(runtime_path)
     smoke_by_id = {row["item_id"]: row for row in smoke}
-    mapping_keys = ("opaque_id", "item_id", "primary_agent", "assigned_agents")
+    mapping_keys = (
+        "opaque_id",
+        "opaque_ids",
+        "classifier_request_sha256",
+        "classifier_request_sha256_by_agent",
+        "item_id",
+        "primary_agent",
+        "assigned_agents",
+    )
     mapping = [{key: row[key] for key in mapping_keys} for row in lookup]
     if (
         mapping != packet_manifest["mapping"]
@@ -477,6 +493,7 @@ def validate_packet_census(
         or packet_manifest["packet_kind"] != f"gpu-smoke-attempt{args.attempt}"
         or packet_manifest["backend"] != contract.BACKEND
         or packet_manifest["rubric_sha256"] != contract.RUBRIC_SHA256
+        or packet_manifest["runtime_identity_sha256"] != runtime_sha
         or packet_manifest["n_unique_items"] != len(smoke)
         or packet_manifest["n_assignments"] != sum(len(row["assigned_agents"]) for row in lookup)
         or packet_manifest["n_overlap"] != sum(len(row["assigned_agents"]) == 2 for row in lookup)
@@ -485,46 +502,94 @@ def validate_packet_census(
         or parsed["lookup_sha256"] != digest(lookup_path)
         or parsed["packet_manifest_sha256"] != digest(packet_path)
         or parsed["agent_artifact_hashes"] != gate["agent_artifact_hashes"]
+        or request["runtime_identity"] != {"path": runtime_name, "sha256": runtime_sha}
+        or parsed["runtime_identity_sha256"] != runtime_sha
     ):
         raise RuntimeError("Codex smoke packet/lookup manifest links invalid")
-    by_opaque = {row["opaque_id"]: row for row in lookup}
+    by_opaque = {}
     for row in lookup:
-        primary, assigned = contract._assignment(
-            row["opaque_id"], contract.PRODUCTION_OVERLAP_FRACTION
-        )
         source = smoke_by_id[row["item_id"]]
+        assignment_key = contract._sha_obj(
+            {
+                "packet_kind": packet_manifest["packet_kind"],
+                "item_id": row["item_id"],
+                "question": source["question"],
+                "response": source["text"],
+                "rubric_sha256": contract.RUBRIC_SHA256,
+                "runtime_identity_sha256": runtime_sha,
+            }
+        )
+        primary, assigned = contract._assignment(
+            assignment_key, contract.PRODUCTION_OVERLAP_FRACTION
+        )
+        opaque_ids = {
+            agent: contract._opaque_id(
+                row["item_id"],
+                packet_manifest["packet_kind"],
+                lane=agent,
+                question=source["question"],
+                response=source["text"],
+                runtime_identity_sha256=runtime_sha,
+            )
+            for agent in assigned
+        }
+        request_hashes = {
+            agent: contract._classifier_request_fingerprint(
+                packet_kind=packet_manifest["packet_kind"],
+                lane=agent,
+                item_id=row["item_id"],
+                question=source["question"],
+                response=source["text"],
+                runtime_identity_sha256=runtime_sha,
+            )
+            for agent in assigned
+        }
         if (
-            row["opaque_id"] != contract._opaque_id(row["item_id"], packet_manifest["packet_kind"])
+            row["opaque_id"] != opaque_ids[primary]
+            or row["opaque_ids"] != opaque_ids
+            or row["classifier_request_sha256"] != request_hashes[primary]
+            or row["classifier_request_sha256_by_agent"] != request_hashes
             or row["primary_agent"] != primary
             or row["assigned_agents"] != assigned
             or row["source_prompt_id"] != source["source_prompt_id"]
             or row["language"] != source["language"]
         ):
             raise RuntimeError("Codex smoke opaque lookup or assignment mismatch")
+        for agent, opaque in opaque_ids.items():
+            if opaque in by_opaque:
+                raise RuntimeError("Codex smoke opaque identity collision across runtime lanes")
+            by_opaque[opaque] = (row, agent)
     rebound, raw_hashes = [], {}
     for packet in packet_manifest["packets"]:
         key = f"{packet['agent']}/batch_{packet['batch_index']:03d}"
-        packet_name = f"judge/agent_artifacts/gpu_smoke/{key}.packet.json"
-        output_name = f"judge/agent_artifacts/gpu_smoke/{key}.output.jsonl"
-        expected.update((packet_name, output_name))
+        prefix = f"judge/agent_artifacts/gpu_smoke_attempt{args.attempt}"
+        packet_name = f"{prefix}/{key}.packet.json"
+        output_name = f"{prefix}/{key}.output.jsonl"
+        output_manifest_name = f"{prefix}/{key}.output_manifest.json"
+        expected.update((packet_name, output_name, output_manifest_name))
         packet_file = artifact_local(args, gate, packet_name)
         output_file = artifact_local(args, gate, output_name)
+        output_manifest_file = artifact_local(args, gate, output_manifest_name)
         payload = read_json(packet_file)
         expected_items = []
         for item in payload["items"]:
-            mapping_row = by_opaque[item["opaque_id"]]
+            mapping_row, assigned_agent = by_opaque[item["opaque_id"]]
             source = smoke_by_id[mapping_row["item_id"]]
-            if packet["agent"] not in mapping_row["assigned_agents"]:
+            if packet["agent"] != assigned_agent:
                 raise RuntimeError("Codex smoke packet has unassigned agent/item")
             expected_items.append(
                 {
                     "opaque_id": item["opaque_id"],
                     "question": source["question"],
                     "response": source["text"],
+                    "classifier_request_sha256": mapping_row["classifier_request_sha256_by_agent"][
+                        assigned_agent
+                    ],
                 }
             )
         if (
-            payload != contract._packet_payload(expected_items)
+            payload
+            != contract._packet_payload(expected_items, assigned_identity=lanes[packet["agent"]])
             or len(expected_items) != packet["n_items"]
             or digest(packet_file) != packet["packet_sha256"]
             or key in raw_hashes
@@ -533,22 +598,36 @@ def validate_packet_census(
         raw_hashes[key] = {
             "packet_sha256": digest(packet_file),
             "output_sha256": digest(output_file),
+            "output_manifest_sha256": digest(output_manifest_file),
         }
-        rebound.append({**packet, "packet_path": str(packet_file), "output_path": str(output_file)})
+        rebound.append(
+            {
+                **packet,
+                "packet_path": str(packet_file),
+                "output_path": str(output_file),
+                "output_manifest_path": str(output_manifest_file),
+            }
+        )
     if set(census_hashes) != expected or raw_hashes != gate["agent_artifact_hashes"]:
         raise RuntimeError("Codex smoke full artifact census mismatch")
-    judgments = contract._load_agent_outputs({**packet_manifest, "packets": rebound})
+    judgments = contract._load_agent_outputs(
+        {**packet_manifest, "packets": rebound}, runtime, runtime_identity_sha256=runtime_sha
+    )
     for agent in contract.AGENTS:
         if set(judgments[agent]) != {
-            row["opaque_id"] for row in lookup if agent in row["assigned_agents"]
+            row["opaque_ids"][agent] for row in lookup if agent in row["assigned_agents"]
         }:
             raise RuntimeError("Codex smoke raw output assignment coverage mismatch")
     lookup_by_id = {row["item_id"]: row for row in lookup}
     for result in results:
         row = lookup_by_id[result["item_id"]]
         if (
-            result["verdict"] != judgments[row["primary_agent"]][row["opaque_id"]]
+            result["verdict"] != contract._mapping_verdict(judgments, row, row["primary_agent"])
             or result["judge_id"] != row["primary_agent"]
+            or result["classifier_request_sha256"] != row["classifier_request_sha256"]
+            or result["runtime_identity_sha256"] != runtime_sha
+            or result["source_prompt_id"] != row["source_prompt_id"]
+            or result["language"] != row["language"]
         ):
             raise RuntimeError("Codex smoke parsed score does not match raw output")
 
@@ -933,7 +1012,10 @@ def build_parser() -> argparse.ArgumentParser:
     """Expose pinned-input launcher and isolated staging/verification worker modes."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
-        "--run-root", type=Path, default=Path("/workspace/issue952_china_definitive")
+        "--run-root",
+        type=Path,
+        default=Path("/workspace/issue952_china_definitive"),
+        help="Base directory for dispatch (appends attempt<N>); resolved root for worker modes",
     )
     parser.add_argument("--logs", type=Path, default=Path("/workspace/logs"))
     parser.add_argument("--expected-code-sha", type=immutable_sha, required=True)
