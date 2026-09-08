@@ -80,3 +80,7 @@ records a capacity-limited dispatch and procedural progress checks on that longe
 packet. It finished with all 256 records valid. The checks requested progress
 and permitted incremental output, while explicitly keeping the rubric and
 annotation requirements unchanged. All five repeated ratings remain required.
+
+The [32-packet raw checkpoint](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/af84ed0817fbe620593879112834b330107e5507/issue2564_minpair/answer_behavior_readout_20260907/raw_completions/codex_main_checkpoint_032) contains 8,192 completed main ratings and the accepted pilot: all 326 files (25,154,703 bytes) passed exact path and content-hash verification. The uploader encountered a transient 504; its retry found the commit had landed and the subsequent pinned-revision verification passed. This remains a partial checkpoint, not completed main annotation. Local annotation continues beyond this snapshot.
+
+A shared-disk check during annotation found approximately 34 GB free on the root filesystem and 0.59 GB on the data disk. The checkpoint adds only 25 MB, and no shared or active artifacts were deleted. Readout launch must recheck the applicable disk preflight; this is an infrastructure warning, not a scientific outcome.
