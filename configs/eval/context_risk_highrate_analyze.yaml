@@ -3,7 +3,7 @@ captures: ${root}/capture
 map: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_map_pilot/map_layer_44.npz
 spec: eval_results/context_risk_highrate_design/analysis_spec.json
 output_dir: ${root}/analysis
-review: eval_results/context_risk_highrate_design/analysis_code_review.json
+review: eval_results/context_risk_highrate_design/analysis_input_validity_code_review.json
 hydra:
   run:
     dir: .

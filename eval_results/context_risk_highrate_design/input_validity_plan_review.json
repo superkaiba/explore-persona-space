@@ -1,0 +1,126 @@
+{
+  "checks": [
+    {
+      "finding": "The exact Goal text equals the immutable v6 goal; no change to pre-action forecasting or frozen-map benefit.",
+      "id": "original_goal",
+      "passed": true
+    },
+    {
+      "finding": "103 base tasks; 309 contexts times two screen epochs = 618; top30 with20 training/10 test allocations; 90 contexts times four fresh epochs =360; 978 total planned trajectories.",
+      "id": "physical_allocation",
+      "passed": true
+    },
+    {
+      "finding": "The amendment preserves original plan.md, raw source tests, collector, capture and server fingerprints; v7/policy bind applicability separately.",
+      "id": "immutable_producer_protocol",
+      "passed": true
+    },
+    {
+      "finding": "Both test text and unchanged empty-answer benchmark assembly are statically parsed for all309 pinned source rows; policy pins exactly the two malformed test hashes.",
+      "id": "static_uniform_rule",
+      "passed": true
+    },
+    {
+      "finding": "Audit has two malformed contexts and307 passing rows, including original77; saved independent pilot critique supports30 valid generated answers across three completed affected trajectories.",
+      "id": "evidence_counts",
+      "passed": true
+    },
+    {
+      "finding": "No test repairs, native-score rewriting, roster edits, replacement tasks, additional draws or completed-sample rerolls; included pilot remains included once.",
+      "id": "no_adaptive_sampling",
+      "passed": true
+    },
+    {
+      "finding": "Native I/F remains an observed benchmark reward failure; structural_invalid/not_assessable is separate from semantic negative labels and ordinary generation-limit censors.",
+      "id": "two_outcome_axes",
+      "passed": true
+    },
+    {
+      "finding": "Generated-answer syntax errors on structurally valid tasks remain ordinary failed submissions.",
+      "id": "no_blanket_syntax_censor",
+      "passed": true
+    },
+    {
+      "finding": "Original S/4 and tie-break/split rules remain fixed; equality of the entire103-task ranked list, top30 identities and all roles is an explicit pre-fresh gate.",
+      "id": "ranking_invariance",
+      "passed": true
+    },
+    {
+      "finding": "Raw S/F/U and applicability-aware counts/bounds are separately reported without double-counting structural invalidity.",
+      "id": "distinct_denominators",
+      "passed": true
+    },
+    {
+      "finding": "The full90-context capture/native join is validated before malformed contexts are removed from all semantic feature banks before eager metadata AST parsing.",
+      "id": "complete_join_before_filter",
+      "passed": true
+    },
+    {
+      "finding": "Every representation and screen-augmented baseline uses the same retained contexts, unchanged features and grouped fitting conventions; original77 remains a control.",
+      "id": "matched_readouts",
+      "passed": true
+    },
+    {
+      "finding": "Allocated20/10 task groups are distinguished from reduced usable fit groups; if selected, task77 contributes eight explicitly non-assessable planned fresh impossible observations.",
+      "id": "actual_support",
+      "passed": true
+    },
+    {
+      "finding": "All360 fresh native censors remain counted, including excluded rows, and fresh structural non-assessability independently blocks unconditional supported benefit.",
+      "id": "global_native_censor_gate",
+      "passed": true
+    },
+    {
+      "finding": "Valid-input/completed-case estimates remain reportable with class/group support and explicit qualification; no replacement or claim-threshold relaxation follows sparse support.",
+      "id": "conditional_reporting",
+      "passed": true
+    },
+    {
+      "finding": "The document explicitly identifies a pilot-triggered, post-failure amendment, not a blinded or originally preregistered exclusion; v7 reviews must precede full screening and fresh selection.",
+      "id": "amendment_timing",
+      "passed": true
+    },
+    {
+      "finding": "Both protocol versions, raw observations, annotations, pre/post-amendment provenance and independent exact-source implementation reviews must be archived.",
+      "id": "preservation_and_review",
+      "passed": true
+    }
+  ],
+  "evidence_files_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/official_test_syntax_audit.json": "62c92b59a7eb6fa48363a462d750d61ed30d837dcc34bc2d6aa4f0220c5199f9",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/pilot_incremental_review.json": "b23bf2321ea0a89bec0acbdf3ce6c377b763be303b617d5a88ea702c2368e126",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/pilot_upstream_test77_evidence.json": "91964da5a93a41ab0f3279948767ecfb967c3ebbc5afa42202e79441bac45e6d"
+  },
+  "files_sha256": {
+    "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+    "eval_results/context_risk_highrate_design/input_validity_policy.json": "3dbd742508065512d6d1d8619afead1e3ef321ff5b454785c7f45e8e8a558f30",
+    "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+    "eval_results/context_risk_highrate_design/plan_v7_input_validity.md": "fab7b675089a58dea7c8376e3041eb35cd6f8812c276c3af52abee7ad256baf7"
+  },
+  "goal": "Test whether the model activation before generating new reasoning or an action predicts a later successful reward hack, and whether the frozen context-to-answer map improves that forecast.",
+  "limitations": [
+    "Static parse validity establishes syntax applicability only; it does not prove every remaining task is semantically valid or readily solvable.",
+    "The observed-reward and semantic-applicability populations differ if task77 is selected; their rates must retain their stated denominators.",
+    "Current pilot completion and actual ranking invariance require the separately planned native/process/implementation checks; this plan PASS does not certify them."
+  ],
+  "original_plan_sha256": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+  "plan_sha256": "fab7b675089a58dea7c8376e3041eb35cd6f8812c276c3af52abee7ad256baf7",
+  "policy_sha256": "3dbd742508065512d6d1d8619afead1e3ef321ff5b454785c7f45e8e8a558f30",
+  "resolved_findings": [
+    "Corrected the307-row wording to include original77 rather than count it twice.",
+    "Distinguished20/10 allocated task groups from actual usable fit support.",
+    "Qualified primary support as retained structurally assessable selected contexts.",
+    "Distinguished pre-initial-call v6 review from post-pilot, pre-full-screen v7 review."
+  ],
+  "reviewer": "Codex independent subagent /root/published_task_rates",
+  "schema_version": "context_risk_highrate_input_validity_plan_review_v1",
+  "scope": "Scientific design and consistency review of exact v7 plan/input-validity policy only; not implementation review or terminal pilot certification.",
+  "sources_sha256": {
+    "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+    "eval_results/context_risk_highrate_design/input_validity_policy.json": "3dbd742508065512d6d1d8619afead1e3ef321ff5b454785c7f45e8e8a558f30",
+    "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+    "eval_results/context_risk_highrate_design/plan_v7_input_validity.md": "fab7b675089a58dea7c8376e3041eb35cd6f8812c276c3af52abee7ad256baf7"
+  },
+  "unresolved_findings": [],
+  "verdict": "PASS"
+}

@@ -22,6 +22,7 @@ from sklearn.model_selection import GroupKFold  # noqa: E402
 from scripts import context_risk_highrate_capture as capture  # noqa: E402
 from scripts import context_risk_highrate_collect as collection  # noqa: E402
 from scripts import context_risk_highrate_design as design  # noqa: E402
+from scripts import context_risk_highrate_validity as validity  # noqa: E402
 from scripts.context_risk_analyze import load_impossible_activations  # noqa: E402
 from scripts.context_risk_followup_analyze import class_support, digest, fit_method, sha256  # noqa: E402
 from scripts.context_risk_followup_features import FeatureBank  # noqa: E402
@@ -40,6 +41,9 @@ SOURCES = (
     "scripts/context_risk_followup_features.py",
     "scripts/context_risk_followup_probe_core.py",
     "scripts/context_risk_analyze.py",
+    "scripts/context_risk_highrate_validity.py",
+    "eval_results/context_risk_highrate_design/input_validity_policy.json",
+    "eval_results/context_risk_highrate_design/plan_v7_input_validity.md",
 )
 
 
@@ -113,7 +117,15 @@ def load_inputs(root: Path, captures: Path, map_path: Path, spec_path: Path):
         str(root / "fresh_B/prefix_tokens.json"): sha256(root / "fresh_B/prefix_tokens.json"),
     }
     evidence = validated_evidence(root, captures)
+    validity_audit = validity.source_audit(root)
+    immutable[str(root / "manifests/source.jsonl")] = validity_audit["source_sha256"]
+    immutable[str(validity.POLICY)] = validity_audit["policy_sha256"]
     fresh, screen = evidence["fresh"], evidence["screen"]
+    validity_selection = validity.selection_annotation(screen["contexts"], validity_audit)
+    if validity_selection["task_roles"] != selection["task_roles"]:
+        raise ValueError("Static validity audit and frozen selected task roles differ")
+    fresh_validity = validity.annotate(fresh["contexts"], validity_audit)
+    fresh_validity.pop("rank_rows_with_semantic_unknowns")
     if (
         fresh["counts"]["planned"] != 360
         or fresh["counts"]["realized"] != 360
@@ -197,6 +209,7 @@ def load_inputs(root: Path, captures: Path, map_path: Path, spec_path: Path):
         "packages": {p: importlib.metadata.version(p) for p in ("numpy", "scipy", "scikit-learn")},
         "fresh_counts": fresh["counts"],
         "screen_counts": screen["counts"],
+        "input_validity": {"screen": validity_selection, "fresh": fresh_validity},
     }
     return rows, raw, mapped, spec, provenance
 
@@ -263,7 +276,8 @@ def analyze_population(
     trials = np.asarray([r["trials"] for r in rows], dtype=int)
     left, right = class_support(rows, train), class_support(rows, test)
     gate = spec["claim_gate"]
-    total_censored = sum(r["censored"] for r in rows)
+    total_censored = provenance["fresh_counts"]["censored"]
+    not_assessable = provenance["input_validity"]["fresh"]["not_assessable_planned_trajectories"]
     fitting = (
         left["n_tasks"] >= spec["minimum_training_groups_for_fit"]
         and left["positive"] > 0
@@ -275,6 +289,7 @@ def analyze_population(
         and right["positive_tasks"] >= gate["minimum_positive_test_tasks"]
         and right["negative_tasks"] >= gate["minimum_negative_test_tasks"]
         and total_censored <= gate["maximum_censored_fresh_trajectories"]
+        and not_assessable == 0
     )
     result = {
         "population": "competence_sensitivity" if eligible_only else "all_selected_primary",
@@ -287,13 +302,14 @@ def analyze_population(
         "fit_gate_passed": bool(fitting),
         "claim_support_passed": bool(claim_support),
         "total_fresh_censored": total_censored,
+        "structurally_not_assessable_fresh_trajectories": not_assessable,
         "provenance": provenance,
         "models": {},
         "comparisons": {},
         "excluded_zero_complete_case_contexts": [
             rows[i]["exact_context_sha256"] for i in included if rows[i]["trials"] == 0
         ],
-        "scope": "Conditional on completed trajectories when any fresh outcome is unknown; missing/unknown labels are never failures.",
+        "scope": "Hacking-risk fits use structurally assessable contexts and completed trajectories. Literal native reward failures remain unchanged; malformed-input failures are excluded from semantic negative labels. Any fresh censoring or structural non-assessability blocks unconditional supported-benefit claims.",
     }
     if not len(test):
         result["status"] = "no_completed_test_contexts"
@@ -418,14 +434,17 @@ def run(cfg: DictConfig) -> dict:
         "map_interpretation": "A frozen deterministic affine map changes linear regularization; it adds no information beyond the raw activation.",
     }
     save_json(out / "result.json", result)
+    fit_rows, fit_raw = validity.assessable_inputs(
+        rows, raw, provenance["input_validity"]["fresh"]["static_audit"]
+    )
     for augmented in (False, True):
-        bank = make_bank(rows, raw, maps, spec, augmented=augmented)
+        bank = make_bank(fit_rows, fit_raw, maps, spec, augmented=augmented)
         for eligible_only in (False, True):
             name = ("screen_augmented_" if augmented else "") + (
                 "competence_sensitivity" if eligible_only else "primary"
             )
             result["analyses"][name] = analyze_population(
-                rows,
+                fit_rows,
                 bank,
                 spec,
                 out / name,

@@ -1,0 +1,111 @@
+{
+  "checks": [
+    "The immutable 309-context source is validated through the frozen design loader and exact source SHA; all raw tests and unchanged empty-answer assemblies are parsed. Only the two exact policy-pinned task77 impossible test hashes may fail.",
+    "Native successes, failures, generation-limit censors and missingness remain unchanged. Structural non-assessability is a separate applicability axis; an unexpected reward success on a malformed context fails loudly.",
+    "The auxiliary semantic uncertainty view moves only malformed-input native failures to unknowns, retaining original native censor counts separately. Every one of the103 task ranks and all30 selected roles must equal the frozen ranking/split; upper bounds and excluded-task overlap are reported.",
+    "All618 screening draws,360 fresh draws and90 exact native/token/activation joins remain required before filtering. No failed cell is dropped from raw evidence and no replacement draw or task is introduced.",
+    "Invalid impossible contexts are removed before FeatureBank eagerly parses tests; their ordinary original controls are retained. All four population/information-budget analyses and every representation receive the same retained rows and activation indices.",
+    "Benefit support uses censor counts from all360 native fresh draws, including excluded contexts, and separately requires zero structural non-assessability. Conditional descriptive fits remain available under the original class/group fitting gate.",
+    "The original feature definitions, C grid, group folds, control seeds, bootstrap, map, model, generation recipe, collection and capture source closures remain unchanged. Positive paired loss differences retain the original improvement signs.",
+    "Policy, complete v7 plan, helper and final config are included in the exact33-source review regime. Actual imported helper bytes, immutable source/input snapshots, full native/process/success review, orphan-output rejection and post-fit provenance checks remain active.",
+    "The old analysis review remains a historical artifact. The current Hydra config points to this amended review, so its new source closure is required before analysis."
+  ],
+  "executed_evidence": [
+    {
+      "command": "UV_NO_SYNC=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 uv run --with inspect-ai==0.3.261 --with openai==3.7.0 python -m pytest tests/test_context_risk_highrate_analyze.py -q -x",
+      "result": "22 passed in13.69s independently. The only subsequent production edit was the standard direct-script sys.path import guard in the new validity helper; post-guard checks are listed below."
+    },
+    {
+      "command": "Same pinned, thread-capped runtime: direct scripts/context_risk_highrate_analyze.py --cfg job and scripts/context_risk_highrate_validity.py",
+      "result": "Both exited0 on final source. Analysis config resolves analysis_input_validity_code_review.json; the helper direct-script import guard executes successfully."
+    },
+    {
+      "command": "Independent post-guard real validity.source_audit(RUN)",
+      "result": "309 actual frozen source contexts checked; exactly task77 oneoff and conflicting match the two reviewed malformed test hashes. No model weights or model calls."
+    },
+    {
+      "command": "Independent post-guard mixed-censor immutable103-task screening fixture through actual selection_annotation",
+      "result": "Malformed native F3/U1 retained; auxiliary semantic U4/F0, rate upper1.0; all103 task ranks and all selected roles identical; original input dictionaries unchanged; valid-input failure614 and censor0 remain separate from four non-assessable draws."
+    },
+    {
+      "command": "Independent post-guard mixed-censor actual FeatureBank/full-grid fit after structural filtering",
+      "result": "27 full fixture contexts reduced to25 while retaining the affected original control. Both native censored rows were filtered from fitting, but total_fresh_censored remained2; eight planned structurally non-assessable trajectories remained reported. Actual grouped fits completed and benefit support was false."
+    },
+    {
+      "command": "Independent exact source-closure comparisons",
+      "result": "All27 inherited paths in the historical30-source analysis review are unchanged; only analysis wrapper/config/tests changed and three new validity paths were added. Current capture source closure exactly matches its independent PASS."
+    }
+  ],
+  "fixture_boundaries": [
+    "The source audit uses real pinned309 benchmark contexts. The mixed screening and reduced-feature fitting examples are explicitly software fixtures and provide no behavioral result.",
+    "The22-case suite exercises actual90-by5120 artifact joining and six float16 capture shards with a synthetic identity map and declared external native-authorization boundaries, plus actual fitting/control/cache/provenance code.",
+    "The new static-rule regression replaces only the external frozen-source authorization boundary; its real parse/defect checks reject an additional malformed context. The full loader fixture separately supplies an audited static-validity boundary.",
+    "No GPU workload, model weight load, new model/API call, environment mutation, frozen-source edit, task-path mutation or Claude invocation occurred in this review."
+  ],
+  "historical_analysis_review_sha256": "fae82e64ff79b11255ad9a3c9f927870739c9e1095564321e64dce34bf4fb485",
+  "inherited_reviews_sha256": {
+    "capture_code_review.json": "8b2b21944bc7a73416568924dfd75cb83f13e7bac0848eb409fef56879e34750",
+    "code_review.json": "a9d6ff46e1e839c817a6485f14fdabe459cf1bd9c38f6247919bfbbd81a35c8b",
+    "map_reuse_review.json": "234055bf34f371163569ee7416fb211b34a49f3163f61762e9b19d8c7ab57c8d"
+  },
+  "plan_sha256": "fab7b675089a58dea7c8376e3041eb35cd6f8812c276c3af52abee7ad256baf7",
+  "policy_sha256": "3dbd742508065512d6d1d8619afead1e3ef321ff5b454785c7f45e8e8a558f30",
+  "producer_plan_sha256": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+  "real_static_source_audit": {
+    "contexts_checked": 309,
+    "policy_sha256": "3dbd742508065512d6d1d8619afead1e3ef321ff5b454785c7f45e8e8a558f30",
+    "source_sha256": "3631d2b51f7fe610e26f674f2c036a74771761a1e8d5dd48d1103817fb10fb48",
+    "structurally_invalid_test_sha256": {
+      "lcbhard_77:conflicting": "8b64970f95edec6f94e6f72914d6a93948f6caa30822889e0f61f6290e1de96d",
+      "lcbhard_77:oneoff": "9d6033e5433c4d0bf76db6a897552123378f72f6b038801313ae4fc4ca83a2a0"
+    }
+  },
+  "remaining_runtime_checks": [
+    "Before the full screen starts, the complete v7 plan amendment also needs its separate independent review, and the included32-draw pilot needs its terminal native/process and successful-body audit. These are not satisfied by this software PASS.",
+    "Before any fresh-panel request, the managed workflow must run selection_annotation against the fully verified complete screen and persist a source/native-bound all103-rank/all30-role equality receipt. Frozen collection does not invoke this amendment automatically; final analysis independently repeats it.",
+    "Preserve and archive which observations occurred before and after the pilot-triggered amendment; this correction is explicitly neither blinded nor an original preregistration.",
+    "Production fresh outcome/native/success reviews, exact real prefix captures and final actual fits remain required. Any new source/policy drift invalidates this review and any unexpected malformed-input pass requires investigation.",
+    "Conditional fit estimates and sparse task-group support must be reported with the original limitations. Final scientific claims require actual output validation and archive evidence; code verification_passed alone is not experimental success."
+  ],
+  "reviewed_utc": "2026-09-08T00:12:11.265199+00:00",
+  "reviewer": "Independent Codex subagent /root/verify_vllm_runtime; not the validity or analysis amendment author",
+  "schema_version": "context_risk_highrate_analysis_input_validity_independent_review_v1",
+  "scope": "Independent implementation review of the pilot-triggered input-validity amendment, current analysis wrapper/config/tests, and unchanged inherited dependencies. This verdict validates software and applicability accounting; it is not a claim that the experiment or prediction hypothesis succeeded.",
+  "sources_sha256": {
+    "configs/eval/context_risk_followup_capture.yaml": "cdbc76b49d639a61d349becf984aafd30ff5372ea88f6e92f89f2cac4cc25285",
+    "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+    "configs/eval/context_risk_highrate_analyze.yaml": "6ec33c994d584bdfa87646bd750d56df4383bbd87be00b469d15b1fb8d4ef5af",
+    "configs/eval/context_risk_highrate_capture.yaml": "7140a2fcc3e1ed38e4127a1c65d8dbb8ec3b40034713cffca8d15be177e80eec",
+    "configs/eval/context_risk_qwen38_impossible_capture.yaml": "7018d151ebf4534ad3ecfa4d88cb48c12b847e98bba46dce2e1ba3e8b0dc53aa",
+    "configs/eval/context_risk_qwen38_smoke.yaml": "d5ad816cb64e7da10d7e22bf79e4525e7d04f6d9df4808e678fd9d4cb9f5f352",
+    "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+    "eval_results/context_risk_highrate_design/input_validity_policy.json": "3dbd742508065512d6d1d8619afead1e3ef321ff5b454785c7f45e8e8a558f30",
+    "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+    "eval_results/context_risk_highrate_design/plan_v7_input_validity.md": "fab7b675089a58dea7c8376e3041eb35cd6f8812c276c3af52abee7ad256baf7",
+    "scripts/context_risk_analyze.py": "05e7d2fcac63e442cfb7b2b99df244c33340070e8326edaebb16361661025010",
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "scripts/context_risk_followup_analyze.py": "b00ba257966beaa6ae75f37ec35e4579ec8429a118b2db370c16e3f3d6c38b38",
+    "scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
+    "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+    "scripts/context_risk_followup_features.py": "3258ddf56332e99c90c14808b83206670b7693e9b2e6bbf82f6d116e6cfdd7d4",
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "scripts/context_risk_highrate_analyze.py": "b31060668887791c9406bc51c0475c2942793447d1c8b3588054c46f79881d2c",
+    "scripts/context_risk_highrate_capture.py": "d4b558eafdcedad4c29dca4aae432d0641d7f434300e4ee2e93343fa44a5a763",
+    "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+    "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+    "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+    "scripts/context_risk_highrate_validity.py": "54db7bbf654d35ce93e8e1c241ad909a086b308bf2811a1804d68435f9418d8d",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+    "scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
+    "scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+    "scripts/context_risk_qwen38_impossible_capture.py": "d7f6aec322ce89249a6829b3298f7753cf8a33b9e7505bc7850b8c408a39122b",
+    "scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+    "src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79",
+    "tests/test_context_risk_highrate_analyze.py": "7ab3fe67f66db7fe1721c00e1967d4c9250cc7f246f508dbd1c9707f0aaefe2a",
+    "tests/test_context_risk_highrate_capture.py": "968f8aa33131ff757760608f77686503dc7d3ff46058f81c7c4fad52ec54146f"
+  },
+  "unresolved_findings": [],
+  "verdict": "PASS"
+}

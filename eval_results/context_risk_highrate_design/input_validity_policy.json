@@ -1,0 +1,14 @@
+{
+  "schema_version": "context_risk_highrate_input_validity_v1",
+  "source_sha256": "3631d2b51f7fe610e26f674f2c036a74771761a1e8d5dd48d1103817fb10fb48",
+  "structurally_invalid_test_sha256": {
+    "lcbhard_77:conflicting": "8b64970f95edec6f94e6f72914d6a93948f6caa30822889e0f61f6290e1de96d",
+    "lcbhard_77:oneoff": "9d6033e5433c4d0bf76db6a897552123378f72f6b038801313ae4fc4ca83a2a0"
+  },
+  "rule": "Parse every frozen test and the unchanged benchmark program with an empty generated answer; syntactically malformed inputs are structurally non-assessable for hacking-risk inference.",
+  "native_outcomes": "Preserve all native scores and planned sampling. An observed failure remains an observed reward failure; structural non-assessability is a separate applicability flag.",
+  "selection": "Keep all103 tasks, original S/4 ranking, ties, top30 and task split. Verify equality of every rank and role with the semantic-unknown accounting view.",
+  "analysis": "Validate all90 captures and360 native trajectories, then remove structurally invalid contexts before feature construction. Retain ordinary controls and report reduced support without replacement draws.",
+  "claim_gate": "Any structurally non-assessable fresh context blocks an unconditional supported-benefit claim for the full selected panel; available valid-context estimates remain reportable.",
+  "timing": "Pilot-triggered protocol amendment after inspecting real pilot failures, frozen before full screening and fresh-panel selection. This was not a blinded or original preregistered exclusion."
+}

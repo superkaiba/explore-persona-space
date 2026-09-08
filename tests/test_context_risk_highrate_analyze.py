@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 from pathlib import Path
 from unittest.mock import create_autospec
@@ -62,13 +63,26 @@ def fixture(*, training=5, testing=3):
     return rows, raw, maps, spec
 
 
+def fixture_provenance(rows):
+    """Declare full native counts even when a software fixture filters the feature bank."""
+    return {
+        "fresh_counts": {"censored": sum(row["censored"] for row in rows)},
+        "input_validity": {
+            "fresh": {
+                "not_assessable_planned_trajectories": 0,
+                "static_audit": {"structurally_invalid_test_sha256": {}},
+            }
+        },
+    }
+
+
 def population(tmp_path, rows, raw, maps, spec, *, eligible=False, augmented=False, regime=1):
     return analysis.analyze_population(
         rows,
         analysis.make_bank(rows, raw, maps, spec, augmented=augmented),
         spec,
         tmp_path,
-        {"software_fixture": regime},
+        {"software_fixture": regime, **fixture_provenance(rows)},
         eligible_only=eligible,
         augmented=augmented,
     )
@@ -379,6 +393,25 @@ def test_real_loader_joins_full_artifact_roster_and_preserves_censors(tmp_path, 
         "load_phase",
         create_autospec(analysis.design.load_phase, return_value=(manifest, selection, 4)),
     )
+    source_path = root / "manifests/source.jsonl"
+    source_path.write_text("software fixture source authorization")
+    monkeypatch.setattr(
+        analysis.validity,
+        "source_audit",
+        create_autospec(
+            analysis.validity.source_audit,
+            return_value={
+                "source_sha256": analysis.sha256(source_path),
+                "policy_sha256": analysis.sha256(analysis.validity.POLICY),
+                "structurally_invalid_test_sha256": {},
+            },
+        ),
+    )
+    monkeypatch.setattr(
+        analysis.validity,
+        "selection_annotation",
+        create_autospec(analysis.validity.selection_annotation, return_value={"task_roles": roles}),
+    )
     # This explicitly fixture-only map/spec authorization is not experiment evidence.
     map_path = root / "fixture_map.npz"
     np.savez_compressed(
@@ -428,6 +461,7 @@ def test_real_run_writes_all_four_populations_and_blocks_changed_regime(tmp_path
     save_json(spec_path, spec)
     checked = {"fixture_validated": True}
     provenance = {
+        **fixture_provenance(rows),
         "analysis_sources_sha256": analysis.source_hashes(),
         "validation_sha256": analysis.digest(checked),
         "map_sha256": analysis.sha256(map_path),
@@ -526,3 +560,110 @@ def test_pca_runs_only_after_supported_initial_context_primary_benefit(tmp_path,
     assert pca["selection"]["rank"] == 8  # All nominal ranks clip to7 and tie.
     secondary = population(tmp_path / "secondary", rows, raw, maps, spec, augmented=True)
     assert "pca_plus_metadata" not in secondary["models"]
+
+
+def test_static_rule_checks_all_inputs_and_rejects_changed_defect_roster(tmp_path, monkeypatch):
+    rows = [
+        {
+            "task_id": f"fixture_{i}",
+            "condition": condition,
+            "prompt": "def solution():",
+            "entry_point": "solution",
+            "test": 'assert solution() == "unfinished'
+            if i == 77 and condition != "original"
+            else "def check(candidate):\n    assert candidate() == 0",
+        }
+        for i in range(103)
+        for condition in ("original", "oneoff", "conflicting")
+    ]
+    source = tmp_path / "manifests/source.jsonl"
+    source.parent.mkdir()
+    source.write_text("software fixture authorization")
+    policy = tmp_path / "fixture_policy.json"
+    policy.write_text(
+        json.dumps(
+            {
+                "source_sha256": analysis.validity.design.sha256(source),
+                "structurally_invalid_test_sha256": {
+                    f"{r['task_id']}:{r['condition']}": hashlib.sha256(
+                        r["test"].encode()
+                    ).hexdigest()
+                    for r in rows
+                    if r["task_id"] == "fixture_77" and r["condition"] != "original"
+                },
+            }
+        )
+    )
+    monkeypatch.setattr(analysis.validity, "POLICY", policy)
+    monkeypatch.setattr(analysis.validity.design, "source_rows", lambda path: rows)
+    audited = analysis.validity.source_audit(tmp_path)
+    assert audited["contexts_checked"] == 309
+    assert len(audited["structurally_invalid_test_sha256"]) == 2
+    rows[0]["test"] = 'assert solution() == "new defect'
+    with pytest.raises(ValueError, match="invalid-input roster"):
+        analysis.validity.source_audit(tmp_path)
+
+
+@pytest.mark.parametrize("other_success", [0, 2])
+def test_native_scores_remain_immutable_and_every_rank_and_role_is_identical(other_success):
+    rows = [
+        {
+            "task_id": f"lcbhard_{i}",
+            "condition": c,
+            **counts(0 if i == 77 else other_success, 2 if i == 77 else 2 - other_success, 0),
+        }
+        for i in range(103)
+        for c in ("original", "oneoff", "conflicting")
+    ]
+    before = copy.deepcopy(rows)
+    audit = {
+        "structurally_invalid_test_sha256": {
+            "lcbhard_77:oneoff": "fixture hash",
+            "lcbhard_77:conflicting": "fixture hash",
+        }
+    }
+    result = analysis.validity.selection_annotation(rows, audit)
+    assert rows == before
+    assert result["ranking_and_split_unchanged"]
+    assert result["not_assessable_planned_trajectories"] == 4
+    native = next(r for r in result["native_ranking"] if r["task_id"] == "lcbhard_77")
+    semantic = next(r for r in result["validity_aware_ranking"] if r["task_id"] == "lcbhard_77")
+    assert native["failure"] == 4 and native["censored"] == 0
+    assert semantic["failure"] == 0 and semantic["censored"] == 4
+    assert semantic["complete_case_rate"] is None
+    assert native["rank"] == semantic["rank"]
+    rows[77 * 3 + 1].update(success=1, failure=1)
+    with pytest.raises(ValueError, match="unexpectedly received reward"):
+        analysis.validity.annotate(rows, audit)
+
+
+def test_invalid_inputs_are_removed_before_feature_construction_and_block_claims(tmp_path):
+    rows, raw, maps, spec = fixture(training=6, testing=3)
+    for row in rows:
+        row["positive"] = 2
+    invalid = {}
+    for row in rows:
+        if row["task_id"] == "fixture_00" and row["condition"] != "original":
+            row.update(test='assert function() == "unfinished', positive=0)
+            invalid[f"{row['task_id']}:{row['condition']}"] = "fixture hash"
+    provenance = fixture_provenance(rows)
+    provenance["input_validity"]["fresh"] = {
+        "not_assessable_planned_trajectories": 8,
+        "static_audit": {"structurally_invalid_test_sha256": invalid},
+    }
+    fit_rows, fit_raw = analysis.validity.assessable_inputs(
+        rows, raw, provenance["input_validity"]["fresh"]["static_audit"]
+    )
+    assert len(rows) == 27 and len(fit_rows) == 25 and fit_raw.shape == (25, 7)
+    assert any(r["task_id"] == "fixture_00" and r["condition"] == "original" for r in fit_rows)
+    bank = analysis.make_bank(fit_rows, fit_raw, maps, spec, augmented=True)
+    result = analysis.analyze_population(
+        fit_rows, bank, spec, tmp_path, provenance, eligible_only=False, augmented=True
+    )
+    assert result["fit_gate_passed"] and result["training_support"]["n_tasks"] == 5
+    assert result["test_support"]["n_tasks"] == 3
+    assert not result["claim_support_passed"]
+    assert result["structurally_not_assessable_fresh_trajectories"] == 8
+    assert result["total_fresh_censored"] == 0
+    assert all(not value["benefit_supported"] for value in result["comparisons"].values())
+    np.testing.assert_array_equal(fit_raw[0], raw[2])
