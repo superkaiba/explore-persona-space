@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import json
 from copy import deepcopy
 from dataclasses import replace
+from types import SimpleNamespace
+
+import pytest
 
 import scripts.issue2254_all_answer_decode_analysis as base
 import scripts.issue2254_all_answer_decode_sweep as gen
@@ -180,8 +184,11 @@ def test_all_scenarios_preflight_before_analysis(monkeypatch) -> None:
         sensitivity, "_comparison_to_primary", lambda primary, scenario: {"compared": True}
     )
 
+    preflights = {
+        name: fake_preflight([], excluded) for name, excluded in scenarios.items()
+    }
     results = sensitivity._analyze_scenarios(
-        [], {}, scenarios, order_sets, {"behaviors": {}}, "a" * 64
+        [], {}, scenarios, order_sets, preflights, {"behaviors": {}}, "a" * 64
     )
 
     assert [event[0] for event in events[:7]] == ["preflight"] * 7
@@ -195,6 +202,54 @@ def test_all_scenarios_preflight_before_analysis(monkeypatch) -> None:
         ("arrays", "all_trait_administration_deviations"),
     ]
     assert all(row["analysis_performed"] for row in results.values())
+
+
+def test_run_preflights_all_scenarios_before_collecting_scores(monkeypatch, tmp_path) -> None:
+    root = tmp_path / "analysis"
+    for relative in (
+        "reduce/matched_results.json",
+        "selection/quality_only_selection.json",
+        "reduce/quality_primary_projection.json",
+        "reduce/packetization_sensitivity.json",
+    ):
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({}), encoding="utf-8")
+    items = [_item(f"opaque-{index}") for index in range(2_640)]
+    scenarios = {"no_exclusion": set()}
+    order_sets = {}
+    events = []
+
+    monkeypatch.setattr(base, "analysis_root", lambda unused: root)
+    monkeypatch.setattr(
+        sensitivity,
+        "_validate_quality_lineage",
+        lambda *args: {"behaviors": {}},
+    )
+    monkeypatch.setattr(base, "_load_staged", lambda args, require_cli=False: (items, {}, {}))
+    monkeypatch.setattr(
+        sensitivity,
+        "_administration_sets",
+        lambda args, staged_items, instrument, rubrics: (scenarios, {}, order_sets),
+    )
+
+    def fake_preflight(staged_items, staged_scenarios, staged_order_sets):
+        assert staged_items is items
+        assert staged_scenarios is scenarios
+        assert staged_order_sets is order_sets
+        events.append("preflight")
+        return {"no_exclusion": {}}
+
+    def fake_collect(staged_root, jobs):
+        assert events == ["preflight"]
+        raise RuntimeError("stop-after-ordering-proof")
+
+    monkeypatch.setattr(sensitivity, "_preflight_scenarios", fake_preflight)
+    monkeypatch.setattr(sensitivity.order2, "_fully_recovered_jobs", lambda *args: [])
+    monkeypatch.setattr(base, "_collect_outcomes", fake_collect)
+
+    with pytest.raises(RuntimeError, match="stop-after-ordering-proof"):
+        sensitivity.run(SimpleNamespace(out_root=tmp_path))
 
 
 def test_non_estimable_scenario_has_no_numerical_conclusions() -> None:

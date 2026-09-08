@@ -348,6 +348,19 @@ def _validate_v21_preflights(
         raise base.AnalysisError("v21 union omitted trait policy decisions")
 
 
+def _preflight_scenarios(
+    items,
+    scenarios: dict[str, set[Decision]],
+    order_sets: dict[str, set[Decision]],
+) -> dict[str, dict]:
+    """Validate all exclusion accounting before any trait score is loaded."""
+    preflights = {
+        name: _exclusion_preflight(items, excluded) for name, excluded in scenarios.items()
+    }
+    _validate_v21_preflights(preflights, scenarios, order_sets)
+    return preflights
+
+
 def _trait_arrays_with_exclusions(items, outcomes, excluded: set[Decision]):
     arrays = {}
     remaining_counts = Counter()
@@ -677,12 +690,10 @@ def _analyze_scenarios(
     outcomes,
     scenarios: dict[str, set[Decision]],
     order_sets: dict[str, set[Decision]],
+    preflights: dict[str, dict],
     primary_result: dict,
     provenance_sha256: str,
 ) -> dict:
-    preflights = {
-        name: _exclusion_preflight(items, excluded) for name, excluded in scenarios.items()
-    }
     _validate_v21_preflights(preflights, scenarios, order_sets)
     results = {}
     provenance_reference = {"location": "$.provenance", "sha256": provenance_sha256}
@@ -812,6 +823,7 @@ def run(args) -> Path:
     if len(items) * base.N_PASSES != EXPECTED_DECISIONS:
         raise base.AnalysisError("trait sensitivity total decision count changed")
     scenarios, provenance, order_sets = _administration_sets(args, items, instrument, rubrics)
+    preflights = _preflight_scenarios(items, scenarios, order_sets)
     provenance["pretrait_quality_lineage"] = {
         "packetization_sensitivity_sha256": base._sha256_file(packetization_path),
         "selection_sha256": selection_sha256,
@@ -830,6 +842,7 @@ def run(args) -> Path:
         outcomes,
         scenarios,
         order_sets,
+        preflights,
         frozen_quality,
         provenance_sha256,
     )
