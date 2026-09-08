@@ -109,3 +109,4 @@
 - [Model venvs pin the full accel-dep closure](feedback_model_venv_pin_full_dep_closure_flashinfer.md) — floating flashinfer 0.6.16.post3 TypeErrors past vLLM ImportError-only guard on py3.11; smoke the compile-backend import path (#2378)
 - [Shared Overleaf clone commit race](feedback_shared_overleaf_clone_commit_race.md) — verify landing by blob sha at HEAD, never own commit rc; git -C for non-EPS repos (#1894 sibling)
 - [Haar-invariant shared rotation null](feedback_haar_invariant_shared_rotation_null.md) — pair nulls reduce to a spectra bilinear form; ONE draw set for all pairs; sd exactly 1/sqrt(d_in*d_out) (#2569 F3)
+- [Cluster-null port: blocks = cluster∩cell](feedback_cluster_null_port_blocks_cluster_intersect_cell.md) — #2163 builders take per-feature cell ids; rank-identity batches binary draws; percolation census reported not tuned (#1482)
