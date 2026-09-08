@@ -5,6 +5,7 @@ title: 'Linear context-to-answer mapping quality does not track capability acros
 kind: experiment
 tags:
 - followup-manual
+- keep-running
 created_at: '2026-08-25T19:50:48Z'
 has_clean_result: true
 workflow: v1
