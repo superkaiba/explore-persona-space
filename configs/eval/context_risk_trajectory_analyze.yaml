@@ -1,0 +1,13 @@
+prepared: ???
+capture: ???
+spec: ???
+map: ???
+review: ???
+output_dir: ???
+stage: all
+hydra:
+  run:
+    dir: .
+  output_subdir: null
+  job:
+    chdir: false

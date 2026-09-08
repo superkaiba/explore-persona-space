@@ -1,0 +1,6 @@
+operation: prepare
+root: ${oc.env:EPM_CONTEXT_RISK_TRAJECTORY_ROOT}
+old_root: ${oc.env:EPM_CONTEXT_RISK_HIGHRATE_ROOT}
+review: ${root}/setup/prepare_code_review.json
+plan_review: ${root}/setup/trajectory_plan_review.json
+tokenizer_path: ${oc.env:HOME}/.cache/huggingface/hub/models--Qwen--Qwen3.8-27B/snapshots/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0
