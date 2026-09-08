@@ -30,9 +30,15 @@ from scripts.context_risk_followup_probe_core import (  # noqa: E402
     save_json,
 )
 
+from scripts.context_risk_highrate_optimizer import (  # noqa: E402
+    fit_logistic_with_limit,
+    validate_iteration_limit,
+)
+
 SPEC_SHA = "a47ce4131959f8a7da9a75c367355713927e39e91692fbf017a1cad737d155d0"
 ANALYSIS_SOURCES = (
     "scripts/context_risk_followup_analyze.py",
+    "scripts/context_risk_highrate_optimizer.py",
     "scripts/context_risk_followup_features.py",
     "scripts/context_risk_followup_probe_core.py",
     "scripts/context_risk_followup_audit.py",
@@ -306,17 +312,25 @@ def cached_fit(
     trials: np.ndarray,
     c_value: float,
     basis: np.ndarray,
+    *,
+    max_iter: int = 5000,
 ) -> dict:
     """Resume only an exact input/spec/source regime, retaining each bounded fitting unit."""
+    validate_iteration_limit(max_iter)
     if path.exists():
         value = json.loads(path.read_text())
+        # Legacy checkpoints predate this field and exclusively used the frozen
+        # 5000 core. Missing declarations are never accepted for amended fits.
+        saved_limit = value.get("max_iter", 5000)
+        if type(saved_limit) is not int or saved_limit != max_iter:
+            raise ValueError("Cached optimizer iteration limit differs")
         if value["fingerprint"] != fingerprint:
             raise ValueError(f"Stale fit checkpoint: {path}")
         if value["C"] != c_value or not np.isfinite(value["intercept"]):
             raise ValueError("Cached fit regularization/intercept differs")
         if (
-            not isinstance(value["iterations"], int)
-            or not 0 <= value["iterations"] <= 5000
+            type(value["iterations"]) is not int
+            or not 0 <= value["iterations"] <= max_iter
             or not np.isfinite(value["elapsed_seconds"])
             or value["elapsed_seconds"] < 0
         ):
@@ -354,13 +368,19 @@ def cached_fit(
         if not np.allclose(reconstructed, value["logits"], rtol=1e-8, atol=1e-8):
             raise ValueError("Cached logits differ from cached head")
         return value
-    result = fit_logistic(left, right, positive, trials, c_value, basis=basis)
+    if max_iter == 5000:
+        result = fit_logistic(left, right, positive, trials, c_value, basis=basis)
+    else:
+        result = fit_logistic_with_limit(
+            left, right, positive, trials, c_value, basis=basis, max_iter=max_iter
+        )
     value = {
         **result,
         "logits": result["logits"].tolist(),
         "coef": None if result["coef"] is None else result["coef"].tolist(),
         "fingerprint": fingerprint,
         "C": c_value,
+        "max_iter": max_iter,
     }
     save_json(path, value)
     print(
@@ -383,6 +403,8 @@ def fit_method(
     spec: dict,
 ) -> dict:
     """Tune using grouped training folds and evaluate the final test only after selection."""
+    max_iter = spec["logistic_max_iter"]
+    validate_iteration_limit(max_iter)
     ranks = (
         spec["secondary_PCA_control"]["rank_candidates"]
         if method == "pca_plus_metadata"
@@ -415,6 +437,8 @@ def fit_method(
                         "effective_rank": effective,
                         "C": c_value,
                     }
+                    if max_iter != 5000:
+                        key["max_iter"] = max_iter
                     path = out / "fits" / f"{method}_fold{fold}_rank{effective}_C{c_value:g}.json"
                     fit_cache[c_value] = cached_fit(
                         path,
@@ -425,6 +449,7 @@ def fit_method(
                         trials[fit_indices],
                         c_value,
                         basis,
+                        max_iter=max_iter,
                     )
                 fitted = fit_cache[c_value]
                 loss_sum = float(
@@ -465,6 +490,8 @@ def fit_method(
         "fit_indices": train.tolist(),
         "test_indices": test.tolist(),
     }
+    if max_iter != 5000:
+        key["max_iter"] = max_iter
     fitted = cached_fit(
         out / "fits" / f"{method}_final.json",
         digest(key),
@@ -474,6 +501,7 @@ def fit_method(
         trials[train],
         selected_c,
         basis,
+        max_iter=max_iter,
     )
     if method == "mapped_plus_metadata" and fitted["coef"] is not None:
         composed = bank.compose_mapped_head(

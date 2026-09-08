@@ -33,8 +33,13 @@ from scripts.context_risk_followup_probe_core import (  # noqa: E402
 )
 
 SPEC_SHA = "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509"
+OPTIMIZER_SPEC_SHA = "154d6038216ece9af36ee7092a575ab5244a14afd34a746f71d2d1566a32fb71"
 SOURCES = (
     "scripts/context_risk_highrate_analyze.py",
+    "scripts/context_risk_highrate_optimizer.py",
+    "tests/test_context_risk_highrate_optimizer.py",
+    "eval_results/context_risk_highrate_design/analysis_spec_v10_optimizer.json",
+    "eval_results/context_risk_highrate_design/plan_v10_optimizer_convergence.md",
     "configs/eval/context_risk_highrate_analyze.yaml",
     "tests/test_context_risk_highrate_analyze.py",
     "scripts/context_risk_followup_analyze.py",
@@ -99,7 +104,7 @@ def validated_evidence(root: Path, captures: Path) -> dict:
 def load_inputs(root: Path, captures: Path, map_path: Path, spec_path: Path):
     """Join all90 prefixes to observed counts; N stays unknown and reduces completed trials."""
     spec_hash = sha256(spec_path)
-    if captures.resolve() != (root / "capture").resolve() or spec_hash != SPEC_SHA:
+    if captures.resolve() != (root / "capture").resolve() or spec_hash not in {SPEC_SHA, OPTIMIZER_SPEC_SHA}:
         raise ValueError("Analysis capture path/specification differs from the frozen recipe")
     spec = json.loads(spec_path.read_text())
     map_hash = spec["map_sha256"]
