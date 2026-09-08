@@ -1,0 +1,56 @@
+{
+  "focused_numerical_and_analysis_tests": 14,
+  "focused_verdict": "PASS",
+  "independent_code_and_statistical_review": "PASS",
+  "independent_interpretation_review": "PASS with minor rounding and descriptive-language corrections applied",
+  "inline_payload_lint_gates": {
+    "core": "PASS",
+    "figures": "PASS",
+    "archived_prediction_verifier": "PASS"
+  },
+  "archived_prediction_verifier_AST_matches_executed_helper": true,
+  "main_prediction_blocks_rehashed": 32,
+  "recomputed_rows_per_block": 8,
+  "max_abs_prediction_recomputation_error": 0.0,
+  "archive_verified_files": 234,
+  "archive_verified_bytes": 27850570182,
+  "figures_visually_checked": [
+    "property_readout_medians.png",
+    "property_readout_medians_grayscale.png",
+    "property_conditional_concordance.png",
+    "property_conditional_concordance_grayscale.png"
+  ],
+  "paper_edited": false,
+  "audit_logs": [
+    {
+      "audit_file": "/home/thomasjiralerspong/.codex/research/answer-property-ceiling-20260907/gate/issue-1482-inline-lint.txt",
+      "sha256": "f2759ec87620b98d148232b79b9105ff92ab0132fd315eee04bd1f4b4eef8ef4",
+      "bytes": 22036
+    },
+    {
+      "audit_file": "/home/thomasjiralerspong/.codex/research/answer-property-ceiling-20260907/gate/issue-1482-inline-map.txt",
+      "sha256": "da321e01a756a2c5d1faccaa6258b5e9459b2fd75424ce83132df3d93b8aeaca",
+      "bytes": 838
+    },
+    {
+      "audit_file": "/home/thomasjiralerspong/.codex/research/answer-property-ceiling-20260907/gate_figures/issue-1482-inline-lint.txt",
+      "sha256": "1b5658cd29b6df5b91fbd81010fda9b99c34fdf29664091847b148ea607cf553",
+      "bytes": 19241
+    },
+    {
+      "audit_file": "/home/thomasjiralerspong/.codex/research/answer-property-ceiling-20260907/gate_figures/issue-1482-inline-map.txt",
+      "sha256": "f7990a1affa2d5f895c85905cc12fa0c3d64d409e766aaefe87de1c5872f683d",
+      "bytes": 327
+    },
+    {
+      "audit_file": "/home/thomasjiralerspong/.codex/research/answer-property-ceiling-20260907/gate_verify/issue-1482-inline-lint.txt",
+      "sha256": "51e7964f18e9ea19585d68c5b71a3ec7e76b2f6a77042c5b3cc918f7fe734213",
+      "bytes": 19181
+    },
+    {
+      "audit_file": "/home/thomasjiralerspong/.codex/research/answer-property-ceiling-20260907/gate_verify/issue-1482-inline-map.txt",
+      "sha256": "3f445ebe59c0911fd0b5396db112b59bf98a45bc92e54205bca19da384910eba",
+      "bytes": 326
+    }
+  ]
+}
