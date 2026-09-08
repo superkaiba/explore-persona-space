@@ -46,6 +46,7 @@ def ridge_fit_predict(
     X_eval: np.ndarray,
     *,
     lambdas: np.ndarray | None = None,
+    info: dict | None = None,
 ) -> np.ndarray:
     """Ridge fit on (X_train, Y_train), predict X_eval. GCV lambda selection.
 
@@ -53,6 +54,11 @@ def ridge_fit_predict(
     Generalized Cross-Validation (GCV) over ``lambdas``, returns un-centered
     predictions (N_eval, D_out). Deterministic closed form. Handles multi-output
     Y (D_out >= 1) — the same ridge weights predict all output dims.
+
+    When ``info`` is a dict, the selected-lambda diagnostics (#1887 reporting
+    duty) are recorded into it: ``selected_lambda``, ``gcv``, and
+    ``lambda_grid`` as ``[grid_min, grid_max, n_points]``. Passing ``info``
+    never changes the numerical result.
     """
     if lambdas is None:
         lambdas = np.logspace(-2, 4, 13)
@@ -90,6 +96,10 @@ def ridge_fit_predict(
         if gcv < best_gcv:
             best_gcv = gcv
             best_lam = lam
+    if info is not None:
+        info["selected_lambda"] = float(best_lam)
+        info["gcv"] = float(best_gcv)
+        info["lambda_grid"] = [float(lambdas[0]), float(lambdas[-1]), len(lambdas)]
     # dual ridge weights at best_lam: w = Vt.T diag(s/(s2+lam)) UtY  (d, D_out)
     # predict eval: Xev_n @ w + ymu
     filt = s / (s2 + best_lam)

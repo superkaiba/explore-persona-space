@@ -904,6 +904,287 @@ def phase_capture(args) -> None:
     EL._record_phase_time(args, "capture", time.time() - t0)
 
 
+def _stage_banked_matryoshka(args) -> tuple[Path, str]:
+    """Stage the banked round's split + dense_l20 shards from HF at ONE pinned
+    revision (main resolved once per run — the #2061 paired-file snapshot-split
+    rule; per-file hf_hub_download, never snapshot_download)."""
+    from huggingface_hub import HfApi, hf_hub_download
+
+    from explore_persona_space.orchestrate import hub
+
+    dest = args.scratch / "banked_store"
+    dest.mkdir(parents=True, exist_ok=True)
+    prefix = f"{_m_hf_prefix(args)}/store"
+    api = HfApi()
+    rev = hub.retry_transient(
+        lambda: api.repo_info(HF_DATA_REPO, repo_type="dataset").sha, what="data-repo sha pin"
+    )
+    files = hub.retry_transient(
+        lambda: hub.list_hf_files_under_path(api, HF_DATA_REPO, prefix, repo_type="dataset"),
+        what=f"banked store listing ({prefix})",
+    )
+    leaves = sorted({p.rsplit("/", 1)[-1] for p in files})
+    wanted = [
+        n for n in leaves if n.startswith("dense_l20_g") or n == "split_indices_matryoshka.npz"
+    ]
+    n_dense = sum(1 for n in wanted if n.startswith("dense_l20_g"))
+    assert "split_indices_matryoshka.npz" in wanted, f"banked split absent under {prefix}"
+    assert n_dense > 0, f"no banked dense_l20 shards under {prefix}"
+    for name in wanted:
+        out = dest / name
+        if out.exists() and out.stat().st_size > 0:
+            continue
+        got = hub.retry_transient(
+            lambda n=name: hf_hub_download(
+                HF_DATA_REPO,
+                filename=f"{prefix}/{n}",
+                repo_type="dataset",
+                revision=rev,
+                local_dir=str(dest / "_hf"),
+            ),
+            what=f"banked shard fetch ({name})",
+        )
+        shutil.copy2(got, out)
+    logger.info("[a1] banked store staged: %d dense shards + split @ rev %s", n_dense, rev[:12])
+    return dest, rev
+
+
+def _gate_ans_identity(cos: np.ndarray, label: str, args) -> None:
+    """Capture-convention identity gate: cosine(recaptured h20[context_end], banked
+    c20) per row. Median must clear G2M_ROW_COS_MIN. DOWNGRADED to report-only
+    under --tiny-model (different weights by construction — see the phase
+    docstring's blind-spot enumeration)."""
+    med = float(np.median(cos))
+    msg = (
+        f"[a1-gate] {label}: banked-c20 cosine median={med:.6f} min={float(cos.min()):.6f} "
+        f"frac<0.995={float((cos < 0.995).mean()):.4f} (n={cos.size})"
+    )
+    if args.tiny_model:
+        logger.warning("%s — assert DOWNGRADED under --tiny-model (different weights)", msg)
+        return
+    logger.info(msg)
+    assert med >= G2M_ROW_COS_MIN, f"capture-convention identity FAIL (RC_G2M class): {msg}"
+
+
+def phase_capture_ans(args) -> None:
+    """A1 (decoder-direction inline follow-up, 2026-09-08): mean layer-20 ANSWER
+    state over the banked matryoshka rows.
+
+    WHY: the banked dense store holds ONLY prompt-side single-token states
+    (c20 = h20[context_end], hp20 = h20[prefix_end]); an earlier analysis read
+    hp20 as an answer state and produced a retracted pooled R^2 = 0.071 (vs
+    0.653 for the paper's layer-19 map). This phase recaptures with the round's
+    OWN convention — EA._tokenize_row token-id concat + EA._batched_capture,
+    identical chunk grouping / length sort / gen_batch batching — and writes
+    per-group ans_l20_g*.npz shards:
+      row_idx     banked row id (int64)
+      a20         h20[context_end+1:].mean(0), fp16   (plain answer mean; PRIMARY)
+      a20_inlier  reference-masked mean (S.token_inlier_mask + BOS strip;
+                  ans_all_out fallback to the plain mean — _row_features
+                  semantics), fp16
+      n_ans / ans_n_out / ans_all_out   bookkeeping ints
+      c20_cos     cosine(recaptured h20[context_end], banked c20), fp32 — the
+                  convention identity gate, asserted on the FIRST captured
+                  group and again globally (median >= G2M_ROW_COS_MIN)
+    Cross-checks BEFORE any forward pass: regenerated s_fit/s_score must equal
+    the banked split_indices_matryoshka.npz exactly, and every subsample row
+    must be present in the banked dense store.
+
+    Smoke blind-spot enumeration: under --tiny-model the identity-gate ASSERT
+    is downgraded to report-only (different weights by construction; the
+    staging + alignment + cosine code path still runs); everything else runs
+    the production code path. Wall time is recorded in ans_capture_summary.json
+    (NOT via _record_phase_time — this follow-up phase must not append to the
+    committed production phase_times.json).
+
+    Uploads ONLY the new shards + summary (shard_glob pins ans_l20_g*; the
+    banked dense/pooled/split/regime files are never rewritten).
+    """
+    t0 = time.time()
+    EA._headroom(args.store, 2 if args.smoke else 8, "a1-capture-ans")
+    EL._stage_scratch_meta(args)
+    _stage_early_split(args)
+    _assert_store_regime(args)
+    sub = _subsample_m(args)
+    s_fit, s_score, row_ci = sub["s_fit"], sub["s_score"], sub["row_ci"]
+    set_tag = {int(r): 1 for r in s_fit}
+    set_tag.update({int(r): 0 for r in s_score})
+    needed_ci = {int(row_ci[r]): int(r) for r in set_tag}
+    assert -1 not in needed_ci, "subsample rows must be NEW rows (text-resolvable)"
+    banked_dir, banked_rev = _stage_banked_matryoshka(args)
+    with np.load(banked_dir / "split_indices_matryoshka.npz") as bz:
+        assert np.array_equal(np.asarray(bz["s_fit"], np.int64), s_fit), (
+            "regenerated s_fit != banked split_indices_matryoshka.npz (row-universe drift)"
+        )
+        assert np.array_equal(np.asarray(bz["s_score"], np.int64), s_score), (
+            "regenerated s_score != banked split_indices_matryoshka.npz (row-universe drift)"
+        )
+    banked_c20: dict[int, np.ndarray] = {}
+    for p in sorted(banked_dir.glob("dense_l20_g*.npz")):
+        with np.load(p) as z:
+            for r, v in zip(np.asarray(z["row_idx"], np.int64), z["c20"], strict=True):
+                banked_c20[int(r)] = v
+    missing_banked = [r for r in set_tag if r not in banked_c20]
+    assert not missing_banked, (
+        f"{len(missing_banked)} subsample rows absent from the banked dense store"
+    )
+    model, tok = EA._load_model_tok(args)
+    prefix_chars = EA._prefix_char_len(tok)
+    dns = argparse.Namespace(max_chunks=args.max_chunks, scratch=args.scratch)
+    names = EA._raw_chunk_names(dns)
+    groups = [names[i : i + CONSOLIDATE_CHUNKS] for i in range(0, len(names), CONSOLIDATE_CHUNKS)]
+    n_done = 0
+    tok_count = 0
+    cos_all: list[np.ndarray] = []
+    gate_checked = False
+    t_loop = time.time()
+    for gi, group in enumerate(groups):
+        ans_path = args.store / f"ans_l20_g{gi:04d}.npz"
+        if ans_path.exists():  # resume-skip: the consolidated group landed atomically
+            with np.load(ans_path) as z:
+                n_done += int(z["row_idx"].size)
+                cos_all.append(np.asarray(z["c20_cos"], np.float64))
+            continue
+        rec: dict[str, list] = {
+            k: []
+            for k in (
+                "row_idx",
+                "a20",
+                "a20_inlier",
+                "n_ans",
+                "ans_n_out",
+                "ans_all_out",
+                "c20_cos",
+            )
+        }
+        for _name, keep in EA._iter_needed_rows(dns, group, needed_ci):
+            rows = []
+            for row_idx, ci, prompt, response in keep:
+                tk = EA._tokenize_row(tok, prompt, response, prefix_chars)
+                if tk is None:
+                    continue
+                full_ids, prefix_end, context_end, n_ans, seam = tk
+                rows.append((row_idx, ci, full_ids, prefix_end, context_end, n_ans, seam))
+            rows.sort(key=lambda r: len(r[2]))
+            for s0 in range(0, len(rows), args.gen_batch):
+                batch = rows[s0 : s0 + args.gen_batch]
+                caps = EA._batched_capture(model, tok, batch, (L_TIER,), args.device)
+                for (row_idx, _ci, full_ids, _prefix_end, context_end, n_ans, _seam), cap in zip(
+                    batch, caps, strict=True
+                ):
+                    h20 = cap[L_TIER]
+                    h_ans = h20[context_end + 1 :]
+                    assert h_ans.shape[0] == n_ans and n_ans > 0, (row_idx, h_ans.shape, n_ans)
+                    a20 = h_ans.mean(0)
+                    keep_m = S.token_inlier_mask(h20)
+                    keep_m[: min(S.BOS_OFFSET, keep_m.shape[0])] = False
+                    ans_keep = keep_m[context_end + 1 :]
+                    ans_n_out = int((~ans_keep).sum())
+                    if int(ans_keep.sum()) == 0:
+                        a20_in, all_out = a20, 1
+                    else:
+                        a20_in, all_out = h_ans[ans_keep].mean(0), 0
+                    b = torch.from_numpy(banked_c20[int(row_idx)].astype(np.float32))
+                    cos = float(torch.nn.functional.cosine_similarity(h20[context_end], b, dim=0))
+                    rec["row_idx"].append(row_idx)
+                    rec["a20"].append(a20.numpy().astype(np.float16))
+                    rec["a20_inlier"].append(a20_in.numpy().astype(np.float16))
+                    rec["n_ans"].append(n_ans)
+                    rec["ans_n_out"].append(ans_n_out)
+                    rec["ans_all_out"].append(all_out)
+                    rec["c20_cos"].append(cos)
+                    tok_count += len(full_ids)
+                    n_done += 1
+        with atomic_replace(ans_path) as tmp:
+            with open(tmp, "wb") as fh:
+                np.savez(
+                    fh,
+                    row_idx=np.asarray(rec["row_idx"], np.int64),
+                    a20=np.stack(rec["a20"]) if rec["a20"] else np.empty((0, 3584), np.float16),
+                    a20_inlier=np.stack(rec["a20_inlier"])
+                    if rec["a20_inlier"]
+                    else np.empty((0, 3584), np.float16),
+                    n_ans=np.asarray(rec["n_ans"], np.int32),
+                    ans_n_out=np.asarray(rec["ans_n_out"], np.int16),
+                    ans_all_out=np.asarray(rec["ans_all_out"], np.int8),
+                    c20_cos=np.asarray(rec["c20_cos"], np.float32),
+                )
+        cos_g = np.asarray(rec["c20_cos"], np.float64)
+        cos_all.append(cos_g)
+        if not gate_checked and cos_g.size:
+            _gate_ans_identity(cos_g, f"group {gi}", args)  # fail loud BEFORE burning the rest
+            gate_checked = True
+        print(
+            f"[a1] unit {gi + 1}/{len(groups)} rows_total={n_done} tok={tok_count} "
+            f"elapsed={time.time() - t_loop:.0f}s",
+            flush=True,
+        )
+    cos_cat = np.concatenate(cos_all) if cos_all else np.empty(0, np.float64)
+    assert cos_cat.size, "capture_ans produced zero rows"
+    _gate_ans_identity(cos_cat, "ALL", args)
+    assert n_done == len(set_tag), f"capture shortfall: {n_done} != {len(set_tag)}"
+    summary = {
+        "phase": "capture_ans",
+        "n_rows": n_done,
+        "tok_count": tok_count,
+        "wall_s": round(time.time() - t0, 1),
+        "banked_store_revision": banked_rev,
+        "identity_gate": {
+            "median": float(np.median(cos_cat)),
+            "min": float(cos_cat.min()),
+            "frac_below_0995": float((cos_cat < 0.995).mean()),
+            "threshold_median": G2M_ROW_COS_MIN,
+            "active": not args.tiny_model,
+        },
+        "convention": (
+            "EA._tokenize_row token-id concat; a20 = h20[context_end+1:].mean(0); "
+            "a20_inlier = reference-masked mean (token_inlier_mask + BOS strip, "
+            "plain-mean fallback flagged ans_all_out)"
+        ),
+        "smoke": bool(args.smoke),
+        "tiny_model": bool(args.tiny_model),
+    }
+    _write_json(args.store / "ans_capture_summary.json", summary)
+    if not args.skip_upload:
+        from explore_persona_space.orchestrate import hub
+        from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded
+
+        prefix = _m_hf_prefix(args)
+        res = upload_dir_sharded(
+            args.store,
+            HF_DATA_REPO,
+            f"{prefix}/store",
+            repo_type="dataset",
+            shard_glob="ans_l20_g*.npz",
+            verify=True,
+            delete_local=False,
+        )
+        summary_url = hub._upload(
+            args.store / "ans_capture_summary.json",
+            HF_DATA_REPO,
+            "dataset",
+            f"{prefix}/store/ans_capture_summary.json",
+            upload_as_file=True,
+            raise_on_error=True,
+        )
+        if not summary_url:
+            raise RuntimeError("ans_capture_summary.json upload returned no path")
+        logger.info(
+            "[a1] upload done: %d ans shards -> %s/store (rerouted=%s)",
+            len(res.uploaded),
+            prefix,
+            res.rerouted,
+        )
+    else:
+        logger.warning("[a1] --skip-upload: ans shard upload SKIPPED (local-only run)")
+    logger.info("[a1] capture_ans done: %d contexts, %d tokens", n_done, tok_count)
+    _sentinel(
+        "capture_ans",
+        f"A1 done ({n_done} rows, {tok_count} tokens; "
+        f"identity median={float(np.median(cos_cat)):.6f})",
+    )
+
+
 # ── M2 / M4: uploads ─────────────────────────────────────────────────────────────
 
 
@@ -2500,7 +2781,17 @@ def main() -> int:
     ap.add_argument(
         "--phase",
         default="all",
-        choices=["all", "pilot", "capture", "upload1", "fits", "upload2", "evidence", "analyze"],
+        choices=[
+            "all",
+            "pilot",
+            "capture",
+            "capture_ans",
+            "upload1",
+            "fits",
+            "upload2",
+            "evidence",
+            "analyze",
+        ],
     )
     ap.add_argument("--smoke", action="store_true", help="tiny-N run of the SAME pipeline")
     ap.add_argument("--full", action="store_true", help="explicit production mode (default)")
@@ -2616,6 +2907,7 @@ def main() -> int:
     dispatch = {
         "pilot": phase_pilot,
         "capture": phase_capture,
+        "capture_ans": phase_capture_ans,  # decoder-direction follow-up (NOT in "all")
         "upload1": phase_upload1,
         "fits": phase_fits,
         "upload2": phase_upload2,
