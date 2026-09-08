@@ -1,0 +1,204 @@
+{
+  "cells": [
+    {
+      "corpus": "single",
+      "dof": [
+        1822.4813714402653,
+        1820.3637020113742,
+        1825.7037868822067,
+        1823.5370600919177,
+        1817.6317989450686,
+        1821.4214517264145
+      ],
+      "fold_mode": "random",
+      "output": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1902/lasttoken_comparison/percell/u_last_random_B_single_L31.npz",
+      "r2": 0.46697260127760254,
+      "selected_lambda": [
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795
+      ],
+      "stage": "B",
+      "summary": "u_last",
+      "wall_s": 895.9257800579071
+    },
+    {
+      "corpus": "single",
+      "dof": [
+        2003.9110651398864,
+        2001.7019644204106,
+        2006.8863798870816,
+        2006.8359330160065,
+        1999.3745108305409,
+        2001.9078436851341
+      ],
+      "fold_mode": "random",
+      "output": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1902/lasttoken_comparison/percell/u_last_random_S_single_L31.npz",
+      "r2": 0.5175986843135976,
+      "selected_lambda": [
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795
+      ],
+      "stage": "S",
+      "summary": "u_last",
+      "wall_s": 892.9193506240845
+    },
+    {
+      "corpus": "single",
+      "dof": [
+        1983.8357069655533,
+        1981.2237484376726,
+        1985.9635392777539,
+        1986.2259380723722,
+        1979.0839356236288,
+        1982.337336218015
+      ],
+      "fold_mode": "random",
+      "output": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1902/lasttoken_comparison/percell/u_last_random_D_single_L31.npz",
+      "r2": 0.518515964248253,
+      "selected_lambda": [
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795
+      ],
+      "stage": "D",
+      "summary": "u_last",
+      "wall_s": 894.767086982727
+    },
+    {
+      "corpus": "single",
+      "dof": [
+        1985.8370526146668,
+        1983.387866717537,
+        1987.9782012233527,
+        1988.3697175022962,
+        1981.2826429352308,
+        1984.4736756952884
+      ],
+      "fold_mode": "random",
+      "output": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1902/lasttoken_comparison/percell/u_last_random_R_single_L31.npz",
+      "r2": 0.5139430528424521,
+      "selected_lambda": [
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795
+      ],
+      "stage": "R",
+      "summary": "u_last",
+      "wall_s": 896.4011039733887
+    },
+    {
+      "corpus": "multi",
+      "dof": [
+        1862.6574407932778,
+        1859.7973062240444,
+        1866.2892685637999,
+        1876.3222562489057,
+        1861.189757036701,
+        1876.5566213803695
+      ],
+      "fold_mode": "random",
+      "output": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1902/lasttoken_comparison/percell/u_last_random_B_multi_L31.npz",
+      "r2": 0.5132567213164082,
+      "selected_lambda": [
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795
+      ],
+      "stage": "B",
+      "summary": "u_last",
+      "wall_s": 892.5279898643494
+    },
+    {
+      "corpus": "multi",
+      "dof": [
+        2067.562481461947,
+        2065.3242202389965,
+        2071.8406687598836,
+        2082.2939729878285,
+        2066.458374518541,
+        2083.0924253512785
+      ],
+      "fold_mode": "random",
+      "output": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1902/lasttoken_comparison/percell/u_last_random_S_multi_L31.npz",
+      "r2": 0.49075595727210497,
+      "selected_lambda": [
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795
+      ],
+      "stage": "S",
+      "summary": "u_last",
+      "wall_s": 892.0431008338928
+    },
+    {
+      "corpus": "multi",
+      "dof": [
+        2026.635786640798,
+        2022.8324191739198,
+        2030.5790917677127,
+        2040.9785659646034,
+        2025.3042567277223,
+        2042.046059848585
+      ],
+      "fold_mode": "random",
+      "output": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1902/lasttoken_comparison/percell/u_last_random_D_multi_L31.npz",
+      "r2": 0.4583907565704418,
+      "selected_lambda": [
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795
+      ],
+      "stage": "D",
+      "summary": "u_last",
+      "wall_s": 894.8120710849762
+    },
+    {
+      "corpus": "multi",
+      "dof": [
+        2023.7706376504486,
+        2020.0423421188634,
+        2027.657701487103,
+        2038.2408139717945,
+        2022.4363954833975,
+        2039.1876149492998
+      ],
+      "fold_mode": "random",
+      "output": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1902/lasttoken_comparison/percell/u_last_random_R_multi_L31.npz",
+      "r2": 0.45337339112421304,
+      "selected_lambda": [
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795
+      ],
+      "stage": "R",
+      "summary": "u_last",
+      "wall_s": 836.7752492427826
+    }
+  ]
+}

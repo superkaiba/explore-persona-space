@@ -1,0 +1,34 @@
+{
+  "cells": [
+    "BB",
+    "SS",
+    "DD",
+    "RR"
+  ],
+  "n_staged": 16,
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "smoke": true,
+  "staged": [
+    "issue1902_stage_map/analysis_tensors/issue1902_store/reliability/B/single/seed43/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/reliability/B/single/seed43/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/reliability/B/single/seed44/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/reliability/B/single/seed44/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/reliability/S/single/seed43/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/reliability/S/single/seed43/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/reliability/S/single/seed44/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/reliability/S/single/seed44/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/reliability/D/single/seed43/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/reliability/D/single/seed43/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/reliability/D/single/seed44/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/reliability/D/single/seed44/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/reliability/R/single/seed43/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/reliability/R/single/seed43/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/reliability/R/single/seed44/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/reliability/R/single/seed44/L18.pt"
+  ],
+  "timestamp_utc": "2026-09-08T23:02:10Z"
+}
