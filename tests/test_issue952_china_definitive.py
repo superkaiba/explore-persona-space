@@ -235,12 +235,29 @@ def test_production_attempt_changes_packets_paths_and_result_identity(tmp_path: 
 def test_codex_runtime_manifest_rejects_backend_only_or_wrong_model() -> None:
     runtime = _runtime_identity("pilot", 1)
     CODEX._validate_runtime_identity(runtime, phase="pilot", attempt=1)
+    assert runtime["timestamps"]["prepared_at_unix_ns"] > 0
+    assert runtime["runtime_versions"]["exposed"]["python"]
+    assert runtime["settings"]["requested"]["agent_a"]["model"] == "gpt-5.6-sol"
+    assert runtime["settings"]["realized"]["agent_a"]["model"] is None
+    assert runtime["sampling_output_controls"]["requested"]["temperature"] is None
+    assert runtime["sampling_output_controls"]["realized"]["max_output_tokens"] is None
+    assert "temperature" in runtime["sampling_output_controls"]["unavailable"]
     backend_only = {"backend": CODEX.BACKEND}
     with pytest.raises(RuntimeError, match="schema/phase drift"):
         CODEX._validate_runtime_identity(backend_only, phase="pilot", attempt=1)
     runtime["lanes"]["agent_a"]["model"] = "wrong"
     with pytest.raises(RuntimeError, match="lane drift"):
         CODEX._validate_runtime_identity(runtime, phase="pilot", attempt=1)
+
+    realized_claim = _runtime_identity("pilot", 1)
+    realized_claim["settings"]["realized"]["agent_a"]["model"] = "gpt-5.6-sol"
+    with pytest.raises(RuntimeError, match="requested/realized"):
+        CODEX._validate_runtime_identity(realized_claim, phase="pilot", attempt=1)
+
+    invented_sampling = _runtime_identity("pilot", 1)
+    invented_sampling["sampling_output_controls"]["requested"]["temperature"] = 0.0
+    with pytest.raises(RuntimeError, match="sampling/output-control"):
+        CODEX._validate_runtime_identity(invented_sampling, phase="pilot", attempt=1)
 
 
 def test_codex_judge_confusion_matches_existing_oracle() -> None:
@@ -420,7 +437,9 @@ def test_codex_production_consumers_reject_retired_contract_before_work(tmp_path
     assert not (tmp_path / "new_packets").exists()
 
 
-def test_codex_production_pilot_carries_revised_contract(tmp_path: Path) -> None:
+def test_codex_production_pilot_carries_revised_contract(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     """Exercise real packet preparation and reduction on synthetic crossed rollouts."""
     _synthetic_codex_calibration(tmp_path, historical_inverted=True, judge_disagreement=True)
     calibration = CODEX.collect_calibration(tmp_path)
@@ -485,7 +504,44 @@ def test_codex_production_pilot_carries_revised_contract(tmp_path: Path) -> None
     assert summary["historical_labels_role"] == "diagnostic_only"
     assert summary["historical_comparability"] == CODEX.HISTORICAL_COMPARABILITY
 
+    uploaded: dict[str, Path] = {}
+
+    class PilotInfo:
+        oid = "6" * 40
+
+    class PilotApi:
+        def upload_file(self, *, path_or_fileobj, path_in_repo, **kwargs):
+            uploaded[path_in_repo] = Path(path_or_fileobj)
+            return PilotInfo()
+
+    def stage_uploaded(out_dir, revision, relative, *, remote_relative=None):
+        assert revision == PilotInfo.oid and remote_relative
+        return uploaded[f"{CODEX.HF_PREFIX}/{remote_relative}"]
+
+    monkeypatch.setattr(CODEX, "HfApi", PilotApi)
+    monkeypatch.setattr(CODEX, "_stage_hf_file", stage_uploaded)
+    pilot_upload = CODEX.upload_production_judge(tmp_path, attempt=1, pilot=True)
+    assert pilot_upload["kind"] == "issue952_codex_production_pilot_upload"
+    assert pilot_upload["pilot_summary_sha256"] == CODEX._sha256(
+        tmp_path / "judge" / "attempt1" / "pilot_summary.json"
+    )
+    assert any(path.endswith(".output_manifest.json") for path in pilot_upload["artifact_census"])
+    pilot_marker_path = tmp_path / "judge" / "attempt1" / "pilot_upload.json"
+    assert pilot_marker_path.exists()
+    assert not (tmp_path / "judge" / "attempt1" / "pilot_upload.pending.json").exists()
+
     wave_runtime = _runtime_identity("wave")
+    parked_marker = pilot_marker_path.with_suffix(".parked.json")
+    pilot_marker_path.rename(parked_marker)
+    with pytest.raises(RuntimeError, match="upload marker is missing"):
+        CODEX.prepare_production(
+            tmp_path,
+            tmp_path / "production_packets",
+            rollouts,
+            pilot=False,
+            runtime_identity=wave_runtime,
+        )
+    parked_marker.rename(pilot_marker_path)
     wave_manifest = CODEX.prepare_production(
         tmp_path,
         tmp_path / "production_packets",
@@ -1075,7 +1131,7 @@ def test_production_judge_upload_is_attempt_scoped_and_exact_revision_verified(
         assert revision == FakeInfo.oid and remote_relative
         remote = remote_relative.split("attempt2/", 1)[1]
         if remote == "judge/upload.json":
-            return judge / "upload.json"
+            return judge / "upload.pending.json"
         relative_judge = remote.split("judge/", 1)[1]
         return judge / relative_judge
 
