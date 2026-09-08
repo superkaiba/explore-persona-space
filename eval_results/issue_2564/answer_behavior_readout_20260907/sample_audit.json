@@ -1,0 +1,63 @@
+{
+  "common_questions": 1045,
+  "eligible_singleton_pilot_groups": 858,
+  "duplicate_components": [
+    112,
+    9,
+    8,
+    6,
+    5,
+    4,
+    4,
+    3,
+    3,
+    3,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2
+  ],
+  "excluded_questions_duplicate_components": 0,
+  "main_connected_groups": 438,
+  "fold_question_counts": [
+    103,
+    103,
+    102,
+    102,
+    102
+  ],
+  "pilot_answers": 32,
+  "main_questions": 512,
+  "main_answers": 2048,
+  "seed": 2564,
+  "source_hashes": {
+    "char_helios": {
+      "text": "dc21cc0b730541051895659426d2bd92cb010cfc57bd11a24f88c5c3d7c86eb7",
+      "vectors": "e46c046c6e095697845bbf7a5ba47d12c198b463b5ba9dfbcaf0853b3b731144"
+    },
+    "char_wren": {
+      "text": "bf8c1891c60d59a825cbffb02cc65a3cceacc85566d3d7bdb6187099e023f6a6",
+      "vectors": "46cb365f1e24dc5423e6846d4a144ca83674bd80d2aa9b198f30900c2f29c93e"
+    },
+    "char_dana": {
+      "text": "6bf4bee3f73c24d050e01d39db6d117df6c0bcbe90762228cc4b5022d2b8e5db",
+      "vectors": "378044761349af232b15b21b1a42a1696314197fe49ad7fdbe5737414e8a158f"
+    },
+    "char_vex": {
+      "text": "2bd6e22dcd10c4da3264e3d58d1a66197f0ab6bb8a5d9c0347ef49014d14ed81",
+      "vectors": "a151dd246eb1b088a853592776f2798d490cf9f935d7ff389e905dcc6713f026"
+    }
+  },
+  "records_sha256": "5eaec3cba05ce78203d1c4b245d719637b8903c21235c2ac207b98b23cd1ea10"
+}

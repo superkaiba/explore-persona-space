@@ -1,0 +1,10 @@
+{
+  "status": "blocked_before_annotation",
+  "http_status": 401,
+  "error_code": "invalid_api_key",
+  "credential_source": "repository root .env; no inherited shadow credential or endpoint override",
+  "model": "gpt-4.1-mini-2025-04-14",
+  "annotation_calls": 0,
+  "observed_annotation_cost": 0,
+  "checked_at": 1788831673.7114093
+}

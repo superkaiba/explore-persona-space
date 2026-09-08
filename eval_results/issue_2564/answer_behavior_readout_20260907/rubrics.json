@@ -1,0 +1,78 @@
+{
+  "warmth": {
+    "kind": "graded",
+    "rubric": "Rate expressed interpersonal warmth toward the addressee. 0: cold, hostile, or entirely impersonal with no warmth; 50: mildly friendly or politely supportive; 100: sustained empathic, caring, emotionally supportive engagement. Rate wording actually present, not presumed intent. Politeness alone is not strong warmth; useful or correct information is not warmth. Do not reward length or infer a personality from the subject matter. Empty, nonlinguistic, isolated numerical, or uninterpretable content is unassessable (assessable=false, score=null), not coldness. For multiple speakers or narration, rate the overall expressed language across the entire supplied span, weighting substantive passages by their amount of text. Do not select a presumed intended speaker. Narrative descriptions of someone being warm/confident/formal are not that property in the narrator's own expression. Retain unassessable if the supplied text does not support this dimension."
+  },
+  "confidence": {
+    "kind": "graded",
+    "rubric": "Rate expressed assertive confidence in the answer's own claims or recommendations. 0: strongly tentative, uncertain, or avoids committing; 50: qualified but reasonably committed; 100: firmly assertive and unqualified certainty. Judge expression, not factual correctness, expertise, dominance, friendliness, or whether confidence is warranted. An ordinary unhedged factual sentence can express confidence without theatrical language. If no assessable claim or recommendation is present, return assessable=false and score=null. For multiple speakers or narration, rate the overall expressed language across the entire supplied span, weighting substantive passages by their amount of text. Do not select a presumed intended speaker. Narrative descriptions of someone being warm/confident/formal are not that property in the narrator's own expression. Retain unassessable if the supplied text does not support this dimension."
+  },
+  "formality": {
+    "kind": "graded",
+    "rubric": "Rate the formality of the expressed linguistic register. 0: strongly casual, colloquial, intimate, or slang-heavy; 50: neutral standard conversational prose; 100: consistently formal, ceremonious, academic, or bureaucratic register. Formality is distinct from warmth, confidence, verbosity, correctness, and technical topic. A short technical answer is not automatically formal. Code-only or nonlinguistic content is unassessable: assessable=false and score=null. For multiple speakers or narration, rate the overall expressed language across the entire supplied span, weighting substantive passages by their amount of text. Do not select a presumed intended speaker. Narrative descriptions of someone being warm/confident/formal are not that property in the narrator's own expression. Retain unassessable if the supplied text does not support this dimension."
+  },
+  "persona": {
+    "kind": "categorical",
+    "labels": [
+      "expert_guide",
+      "personal_peer",
+      "caring_companion",
+      "theatrical_character",
+      "neutral_impersonal",
+      "mixed",
+      "ambiguous",
+      "no_discernible_voice"
+    ],
+    "rubric": "Classify the voice/persona ACTUALLY EXPRESSED by this answer. expert_guide: adopts an instructional/advisory authority or explicitly presents an assistant/expert role; personal_peer: speaks as an ordinary individual sharing personal experience, preference, or peer conversation; caring_companion: interpersonal empathy, reassurance, or emotional companionship defines the voice; theatrical_character: performs a dramatized fictional role through distinctive characterization, grandiosity, scene participation, or sustained theatrical diction; neutral_impersonal: detached informational content without salient interpersonal role; mixed: clearly combines multiple distinct persona types; ambiguous: evidence exists but does not support one category; no_discernible_voice: empty/nonlinguistic fragment or no assessable voice. Prefer the dominant evidenced role, not an imagined identity. A name is never evidence of a category. Technical subject is not expert persona by itself; politeness alone is not caring-companion; ordinary quotation is not roleplay. A fictional label or the word AI alone does not establish a performed persona. Also mark multi_voice=true only if the supplied span contains multiple speaking characters or substantial narration alongside speech; this is span composition metadata. Scene participation, a fictional subject, verse, or third-person narration alone does not establish theatrical_character: the speaking voice must perform a characterized role. A poem describing a pirate need not be a pirate persona. Detached cooking narration may be neutral_impersonal. mixed requires positive evidence of multiple distinct roles; ambiguous means the available evidence cannot decide a role, rather than positive evidence of several."
+  },
+  "topic": {
+    "kind": "categorical",
+    "labels": [
+      "computing",
+      "science_mathematics",
+      "health",
+      "business_finance_work",
+      "society_law_politics",
+      "arts_entertainment",
+      "daily_life_relationships",
+      "philosophy_religion",
+      "language_communication",
+      "self_identity_capabilities",
+      "other",
+      "mixed_topics",
+      "no_discernible_topic"
+    ],
+    "rubric": "Classify the dominant SUBJECT DISCUSSED IN THIS ANSWER, using only its text. computing: software, hardware, AI technology; science_mathematics: natural science or mathematics excluding computing/health; health: physical or mental health, medical care, fitness; business_finance_work: business, money, economics, careers/work; society_law_politics: institutions, law, history, politics, social issues; arts_entertainment: fiction, art, music, games, media; daily_life_relationships: everyday activities, travel, food, relationships; philosophy_religion: philosophical or religious questions; language_communication: languages, translation, grammar, communication itself; self_identity_capabilities: the speaker's own identity or capabilities; other: a discernible subject outside these categories; no_discernible_topic: too little content to identify any subject. A generic refusal, greeting, or offer to help without substantive subject is no_discernible_topic. Do not infer a question that is not supplied. Task format (list, code, story), language spoken, speaker personality, and harmfulness are not topic classes. Choose substantive domain over self_identity when self-reference is incidental. Fictional presentation does not override subject: cooking in a story is daily_life_relationships and a programming story is computing. For computing applied to a domain, select the domain if it is the substantive object of discussion (AI insurance advice is business_finance_work), and computing if implementation/technology itself is central. If two or more substantive topics receive similar attention with no dominant topic, choose mixed_topics; do not break a tie arbitrarily."
+  },
+  "language": {
+    "kind": "categorical",
+    "labels": [
+      "en",
+      "zh",
+      "es",
+      "fr",
+      "de",
+      "pt",
+      "ru",
+      "ja",
+      "ko",
+      "other",
+      "multilingual",
+      "indeterminate"
+    ],
+    "rubric": "Identify the natural language actually used in the answer: en English, zh Chinese, es Spanish, fr French, de German, pt Portuguese, ru Russian, ja Japanese, ko Korean, other another identifiable language, multilingual substantial content in multiple languages, indeterminate insufficient natural-language content. Ignore isolated names, borrowed words and programming syntax. A quoted phrase alone need not make otherwise single-language content multilingual. Do not infer language from an unseen prompt."
+  },
+  "format": {
+    "kind": "categorical",
+    "labels": [
+      "prose",
+      "list",
+      "code",
+      "dialogue",
+      "mixed",
+      "fragment",
+      "no_content"
+    ],
+    "rubric": "Classify the realized answer's dominant output format: prose continuous natural-language sentences, list itemized/bulleted/numbered content, code primarily source code or structured machine-readable data, dialogue an exchange of multiple speaking turns, mixed substantial combination of formats without a dominant one, no_content empty or uninterpretable fragment. First-person speech by one speaker is prose, not dialogue. Topic, language, helpfulness and requested instructions do not determine format. fragment means an interpretable isolated numerical answer, formula, word, or incomplete phrase that does not form prose/list/code/dialogue. no_content includes empty or uninterpretable material, not every short answer."
+  }
+}

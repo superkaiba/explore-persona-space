@@ -1,0 +1,14 @@
+{
+  "repo": "superkaiba1/explore-persona-space-data",
+  "revision": "07460fb4f01c4a692b141eaf2a8a081352aacaf5",
+  "files": [
+    "issue2054_lattice/activations/char_helios/char_helios__on_policy__bare_label__qwen2.5-7b-instruct.npz",
+    "issue2054_lattice/on_policy/qwen2.5-7b-instruct/char_helios/on_policy_char_helios__bare_label.jsonl",
+    "issue2054_lattice/activations/char_wren/char_wren__on_policy__bare_label__qwen2.5-7b-instruct.npz",
+    "issue2054_lattice/on_policy/qwen2.5-7b-instruct/char_wren/on_policy_char_wren__bare_label.jsonl",
+    "issue2054_lattice/activations/char_dana/char_dana__on_policy__bare_label__qwen2.5-7b-instruct.npz",
+    "issue2054_lattice/on_policy/qwen2.5-7b-instruct/char_dana/on_policy_char_dana__bare_label.jsonl",
+    "issue2054_lattice/activations/char_vex/char_vex__on_policy__bare_label__qwen2.5-7b-instruct.npz",
+    "issue2054_lattice/on_policy/qwen2.5-7b-instruct/char_vex/on_policy_char_vex__bare_label.jsonl"
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "source_revision": "07460fb4f01c4a692b141eaf2a8a081352aacaf5",
+  "files": [
+    {
+      "path": "prepared/vectors.npz",
+      "size": 29986028,
+      "sha256": "d6b80e9f3221a5942fbc6d28602860d50cfe5e83198bdd9a34ab51fa11dcf35e"
+    },
+    {
+      "path": "prepared/blinded_pilot.json",
+      "size": 11721,
+      "sha256": "cc6a92fa3324127cdebc44fa73f25de7b51cf0445ee91e2a792c8f0ee2b0bb0a"
+    },
+    {
+      "path": "prepared/audit.json",
+      "size": 1409,
+      "sha256": "ade0359fbf98e7da43fba09d6e1b65c4e81b4b66865a0d2fe721dbb687b67c2c"
+    },
+    {
+      "path": "prepared/rubrics.json",
+      "size": 8748,
+      "sha256": "dd277590f287c02a2086240303943b76b985ae1f33aa4de097ff6a80ea831c41"
+    },
+    {
+      "path": "prepared/rows.jsonl",
+      "size": 1238345,
+      "sha256": "5eaec3cba05ce78203d1c4b245d719637b8903c21235c2ac207b98b23cd1ea10"
+    },
+    {
+      "path": "source_inventory.json",
+      "size": 2450,
+      "sha256": "352c7580ca44ff1ea1ea518accf9ebf0d31ca25c21900b747e5296e4ae1d3a29"
+    },
+    {
+      "path": "bank_audit.json",
+      "size": 1842,
+      "sha256": "f933560dd59e0230e57bf70d95db50789a48440115d9b2d7339df98fd1610d18"
+    },
+    {
+      "path": "pilot_config.json",
+      "size": 382,
+      "sha256": "16435d61d2a8883949a43b136809281bac1efdef942884f64371db732ba93de3"
+    },
+    {
+      "path": "root_face_audit.md",
+      "size": 3332,
+      "sha256": "afe4653eaeb06c291e115009e394a773bb9fb6a07922cf50326bdb6ce17fca75"
+    },
+    {
+      "path": "annotation/pilot/authentication_failure.json",
+      "size": 333,
+      "sha256": "1a23a8ec9eb9388b6eb39b1d806890112c6faa597107f2ba09c894040c2ad52f"
+    }
+  ]
+}

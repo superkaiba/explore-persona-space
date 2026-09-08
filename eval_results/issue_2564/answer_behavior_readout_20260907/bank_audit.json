@@ -1,0 +1,80 @@
+{
+  "char_helios": {
+    "n": 8000,
+    "same_order": true,
+    "finite": true,
+    "span_exact": true,
+    "finish_reason": {
+      "stop": 7994,
+      "length": 6
+    },
+    "length_quantiles": [
+      1.0,
+      56.0,
+      152.0,
+      292.0,
+      9426.0
+    ],
+    "text_sha256": "dc21cc0b730541051895659426d2bd92cb010cfc57bd11a24f88c5c3d7c86eb7",
+    "vector_sha256": "e46c046c6e095697845bbf7a5ba47d12c198b463b5ba9dfbcaf0853b3b731144"
+  },
+  "char_wren": {
+    "n": 8000,
+    "same_order": true,
+    "finite": true,
+    "span_exact": true,
+    "finish_reason": {
+      "stop": 7999,
+      "length": 1
+    },
+    "length_quantiles": [
+      1.0,
+      90.0,
+      182.0,
+      300.0,
+      6156.0
+    ],
+    "text_sha256": "bf8c1891c60d59a825cbffb02cc65a3cceacc85566d3d7bdb6187099e023f6a6",
+    "vector_sha256": "46cb365f1e24dc5423e6846d4a144ca83674bd80d2aa9b198f30900c2f29c93e"
+  },
+  "char_dana": {
+    "n": 8000,
+    "same_order": true,
+    "finite": true,
+    "span_exact": true,
+    "finish_reason": {
+      "stop": 7998,
+      "length": 2
+    },
+    "length_quantiles": [
+      1.0,
+      67.0,
+      147.0,
+      264.0,
+      11378.0
+    ],
+    "text_sha256": "6bf4bee3f73c24d050e01d39db6d117df6c0bcbe90762228cc4b5022d2b8e5db",
+    "vector_sha256": "378044761349af232b15b21b1a42a1696314197fe49ad7fdbe5737414e8a158f"
+  },
+  "char_vex": {
+    "n": 8000,
+    "same_order": true,
+    "finite": true,
+    "span_exact": true,
+    "finish_reason": {
+      "stop": 7996,
+      "length": 4
+    },
+    "length_quantiles": [
+      1.0,
+      52.0,
+      160.0,
+      282.0,
+      7446.0
+    ],
+    "text_sha256": "2bd6e22dcd10c4da3264e3d58d1a66197f0ab6bb8a5d9c0347ef49014d14ed81",
+    "vector_sha256": "a151dd246eb1b088a853592776f2798d490cf9f935d7ff389e905dcc6713f026"
+  },
+  "common_question_count": 1045,
+  "union_question_count": 18893
+}

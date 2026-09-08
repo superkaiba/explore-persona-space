@@ -1,0 +1,13 @@
+{
+  "authorized_task": 2564,
+  "authorization": "Thomas: redo with behavior",
+  "model": "gpt-4.1-mini-2025-04-14",
+  "draws": 5,
+  "temperature": 1.0,
+  "max_tokens": 1024,
+  "concurrency": 24,
+  "input_dollars_per_million": 0.4,
+  "output_dollars_per_million": 1.6,
+  "pricing_source": "https://developers.openai.com/api/docs/models/gpt-4.1-mini",
+  "phase": "instrument_pilot"
+}
