@@ -242,17 +242,22 @@ def test_run_preflights_all_scenarios_before_collecting_scores(monkeypatch, tmp_
         return {"no_exclusion": {}}
 
     def fake_collect(staged_root, jobs):
-        assert events == ["preflight"]
+        assert events == ["preflight", "replacement-hashes"]
         raise RuntimeError("stop-after-ordering-proof")
 
     monkeypatch.setattr(sensitivity, "_preflight_scenarios", fake_preflight)
+    monkeypatch.setattr(
+        sensitivity,
+        "_complete_replacement_provenance",
+        lambda staged_root, provenance: events.append("replacement-hashes"),
+    )
     monkeypatch.setattr(sensitivity.order2, "_fully_recovered_jobs", lambda *args: [])
     monkeypatch.setattr(base, "_collect_outcomes", fake_collect)
     original_read_text = Path.read_text
 
     def guarded_read_text(path, *args, **kwargs):
         if path == root / "reduce/matched_results.json":
-            assert events == ["preflight"]
+            assert events == ["preflight", "replacement-hashes"]
         return original_read_text(path, *args, **kwargs)
 
     monkeypatch.setattr(Path, "read_text", guarded_read_text)
@@ -292,6 +297,45 @@ def test_pre_score_roster_composition_never_validates_canonical_scores(monkeypat
     output = sensitivity._pre_score_prior_recovered_jobs([], {}, {}, "trait_evil")
 
     assert output == [job]
+
+
+def test_replacement_canonical_hashing_is_an_explicit_post_preflight_step(
+    monkeypatch, tmp_path
+) -> None:
+    schema1 = tmp_path / "schema1.json"
+    canonical1 = tmp_path / "canonical1.json"
+    schema2 = tmp_path / "schema2.json"
+    canonical2 = tmp_path / "canonical2.json"
+    for path in (schema1, canonical1, schema2, canonical2):
+        path.write_text(path.name, encoding="utf-8")
+    provenance = {
+        "replacement_evidence_paths": [
+            {
+                "label": "one",
+                "schema_path": schema1.name,
+                "canonical_path": canonical1.name,
+            },
+            {
+                "label": "two",
+                "schema_path": schema2.name,
+                "canonical_path": canonical2.name,
+            },
+        ]
+    }
+    observed = []
+    original_sha = base._sha256_file
+
+    def record_hash(path):
+        observed.append(path.name)
+        return original_sha(path)
+
+    monkeypatch.setattr(base, "_sha256_file", record_hash)
+
+    sensitivity._complete_replacement_provenance(tmp_path, provenance)
+
+    assert observed == ["schema1.json", "canonical1.json", "schema2.json", "canonical2.json"]
+    assert "replacement_evidence_paths" not in provenance
+    assert [row["label"] for row in provenance["replacement_evidence"]] == ["one", "two"]
 
 
 def test_non_estimable_scenario_has_no_numerical_conclusions() -> None:

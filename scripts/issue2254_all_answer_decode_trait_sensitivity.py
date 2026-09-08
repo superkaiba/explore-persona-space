@@ -245,11 +245,11 @@ def _administration_sets(args, items, instrument, rubrics) -> tuple[dict, dict, 
                 "receipt_entry_sha256": receipt2["entry_sha256"],
             },
         ],
-        "replacement_evidence": [
+        "replacement_evidence_paths": [
             {
                 "label": label,
-                "schema_sha256": base._sha256_file(schema),
-                "canonical_sha256": base._sha256_file(canonical),
+                "schema_path": schema.relative_to(root).as_posix(),
+                "canonical_path": canonical.relative_to(root).as_posix(),
             }
             for label, schema, canonical in replacement_evidence
         ],
@@ -381,6 +381,25 @@ def _preflight_scenarios(
     }
     _validate_v21_preflights(preflights, scenarios, order_sets)
     return preflights
+
+
+def _complete_replacement_provenance(root: Path, provenance: dict) -> None:
+    """Hash score-bearing replacement canonicals only after exclusion preflight."""
+    paths = provenance.pop("replacement_evidence_paths", None)
+    if not isinstance(paths, list) or len(paths) != 2:
+        raise base.AnalysisError("trait replacement provenance paths are incomplete")
+    evidence = []
+    for record in paths:
+        schema = root / record["schema_path"]
+        canonical = root / record["canonical_path"]
+        evidence.append(
+            {
+                "label": record["label"],
+                "schema_sha256": base._sha256_file(schema),
+                "canonical_sha256": base._sha256_file(canonical),
+            }
+        )
+    provenance["replacement_evidence"] = evidence
 
 
 def _trait_arrays_with_exclusions(items, outcomes, excluded: set[Decision]):
@@ -832,6 +851,7 @@ def run(args) -> Path:
         raise base.AnalysisError("trait sensitivity total decision count changed")
     scenarios, provenance, order_sets = _administration_sets(args, items, instrument, rubrics)
     preflights = _preflight_scenarios(items, scenarios, order_sets)
+    _complete_replacement_provenance(root, provenance)
     selection = json.loads(selection_path.read_text(encoding="utf-8"))
     quality_projection = json.loads(quality_projection_path.read_text(encoding="utf-8"))
     packetization_sensitivity = json.loads(packetization_path.read_text(encoding="utf-8"))
