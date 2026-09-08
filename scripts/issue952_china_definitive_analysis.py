@@ -33,7 +33,10 @@ from scipy.stats import binomtest, rankdata, spearmanr
 from explore_persona_space.orchestrate import hub
 
 ISSUE = 952
+MODEL = "Qwen/Qwen2.5-7B-Instruct"
+MODEL_REV = "a09a35458c702b33eeacc393d103063234e8bc28"
 LAYERS = (14, 19, 26)
+N_DRAWS = 8
 MASS_PRIMARY = 0.99
 MASS_SENSITIVITY = (0.90, 0.999)
 N_BOOT = 10_000
@@ -42,6 +45,23 @@ N_RANDOM = 1_000
 RANDOM_BLOCK = 25
 SEED = 25_695
 HIDDEN = 3584
+TEMPERATURE = 1.0
+TOP_P = 0.95
+MAX_NEW_TOKENS = 2048
+GENERATION_SEED_BASE = 952_000
+GENERATION_SEED_NAMESPACE = "registered-production-v1"
+GENERATION_SEED_FORMULA = f"{GENERATION_SEED_BASE} + prompt_index * {N_DRAWS} + draw"
+GENERATION_SEED_POLICY = "disjoint-smoke-production-v1"
+CONTEXT_POSITION = "context_last_generation_prompt_token"
+ANSWER_POOLING = "completion_plus_im_end_newline_mean"
+SERIALIZED_DTYPE = "fp32"
+REGISTERED_PACKAGE_VERSIONS = {
+    "torch": "2.8.0",
+    "transformers": "4.57.6",
+    "vllm": "0.11.0",
+    "huggingface-hub": "0.36.2",
+}
+TOKENIZER_ARTIFACTS = {"config.json", "tokenizer.json", "tokenizer_config.json"}
 HF_REPO = "superkaiba1/explore-persona-space-data"
 HF_PREFIX = "issue952_position_divergence/followups/china_refusal_topic_stratified_bilingual_v1"
 MAP_REV = "eef8eb1da43cd2212dfa73d8711fd64dc54c376f"
@@ -58,7 +78,6 @@ HIST_FILES = {
 }
 REGISTERED_SOURCE_ITEMS = 90
 PROMPTS_PER_SOURCE = 12
-N_DRAWS = 8
 REGISTERED_PROMPTS = REGISTERED_SOURCE_ITEMS * PROMPTS_PER_SOURCE
 
 
@@ -232,6 +251,113 @@ def _capture_fingerprint(report: dict[str, Any]) -> str:
             "n_answer_rows": report["n_answer_rows"],
         }
     )
+
+
+def _is_sha256(value: Any) -> bool:
+    """Return whether a value is a lowercase full SHA256 digest."""
+    return isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None
+
+
+def _validate_registered_gpu_regime(
+    *,
+    attempt: int,
+    accepted: dict[str, Any],
+    input_marker: dict[str, Any],
+    generation: dict[str, Any],
+    capture: dict[str, Any],
+) -> None:
+    """Reject a self-consistent GPU payload that does not use the registered recipe."""
+    regime = generation.get("regime")
+    capture_regime = capture.get("capture_regime")
+    if not isinstance(regime, dict) or not isinstance(capture_regime, dict):
+        raise RuntimeError("GPU generation/capture regime metadata is missing")
+    n_sources = len(accepted["accepted_source_ids"])
+    expected_bank = {
+        "accepted_source_ids": accepted["accepted_source_ids"],
+        "accepted_source_ids_sha256": accepted["accepted_source_ids_sha256"],
+        "n_accepted_source_items": n_sources,
+        "n_accepted_prompts": accepted["n_accepted_prompts"],
+        "n_expected_rollouts": accepted["n_expected_rollouts"],
+    }
+    expected_generation = {
+        "issue": ISSUE,
+        "model": MODEL,
+        "model_revision": MODEL_REV,
+        "bank_sha256": input_marker.get("prompt_bank_sha256"),
+        "layers": list(LAYERS),
+        "draws": N_DRAWS,
+        "temperature": TEMPERATURE,
+        "top_p": TOP_P,
+        "max_new_tokens": MAX_NEW_TOKENS,
+        "seed_base": GENERATION_SEED_BASE,
+        "seed_namespace": GENERATION_SEED_NAMESPACE,
+        "seed_formula": GENERATION_SEED_FORMULA,
+        "seed_policy": GENERATION_SEED_POLICY,
+        "smoke": False,
+        "attempt": attempt,
+        "accepted_source_ids_sha256": accepted["accepted_source_ids_sha256"],
+        "n_accepted_source_items": n_sources,
+        "n_accepted_prompts": accepted["n_accepted_prompts"],
+        "n_expected_rollouts": accepted["n_expected_rollouts"],
+        "n_selected_prompts": accepted["n_accepted_prompts"],
+        "selected_source_ids_sha256": accepted["accepted_source_ids_sha256"],
+    }
+    prompt_token_max = regime.get("prompt_token_max")
+    package_versions = regime.get("package_versions")
+    tokenizer_hashes = regime.get("tokenizer_artifact_sha256")
+    if (
+        any(regime.get(key) != value for key, value in expected_generation.items())
+        or isinstance(prompt_token_max, bool)
+        or not isinstance(prompt_token_max, int)
+        or prompt_token_max < 1
+        or regime.get("max_model_len") != max(4096, prompt_token_max + MAX_NEW_TOKENS + 32)
+        or re.fullmatch(r"[0-9a-f]{40}", regime.get("git_sha", "")) is None
+        or not _is_sha256(regime.get("chat_template_sha256"))
+        or not isinstance(tokenizer_hashes, dict)
+        or set(tokenizer_hashes) != TOKENIZER_ARTIFACTS
+        or not all(_is_sha256(value) for value in tokenizer_hashes.values())
+        or not isinstance(package_versions, dict)
+        or set(package_versions) != set(REGISTERED_PACKAGE_VERSIONS)
+        or any(
+            not isinstance(package_versions[name], str)
+            or package_versions[name].split("+")[0] != expected
+            for name, expected in REGISTERED_PACKAGE_VERSIONS.items()
+        )
+        or generation.get("package_versions") != package_versions
+        or generation.get("accepted_bank") != expected_bank
+        or generation.get("regime_fp") != _sha_obj(regime)
+    ):
+        raise RuntimeError("GPU generation regime differs from the registered Qwen recipe")
+
+    generation_fp = _generation_fingerprint(generation)
+    expected_capture = {
+        "model_revision": MODEL_REV,
+        "layers": list(LAYERS),
+        "bank_sha256": input_marker.get("prompt_bank_sha256"),
+        "rollouts_sha256": generation.get("rollouts_sha256"),
+        "context_position": CONTEXT_POSITION,
+        "answer_pooling": ANSWER_POOLING,
+        "serialized_dtype": SERIALIZED_DTYPE,
+        "git_sha": regime["git_sha"],
+        "accepted_source_ids_sha256": accepted["accepted_source_ids_sha256"],
+        "n_accepted_source_items": n_sources,
+        "n_accepted_prompts": accepted["n_accepted_prompts"],
+        "n_selected_prompts": accepted["n_accepted_prompts"],
+        "selected_source_ids_sha256": accepted["accepted_source_ids_sha256"],
+        "generation_fingerprint": generation_fp,
+    }
+    if (
+        any(capture_regime.get(key) != value for key, value in expected_capture.items())
+        or capture.get("issue") != ISSUE
+        or capture.get("model_revision") != MODEL_REV
+        or capture.get("layers") != list(LAYERS)
+        or capture.get("rollouts_sha256") != generation.get("rollouts_sha256")
+        or capture.get("package_versions") != package_versions
+        or capture.get("accepted_bank") != expected_bank
+        or capture.get("capture_regime_fp") != _sha_obj(capture_regime)
+        or capture.get("generation_fingerprint") != generation_fp
+    ):
+        raise RuntimeError("GPU capture regime differs from the registered Qwen recipe")
 
 
 def stage_reuse(run_dir: Path) -> dict[str, Any]:
@@ -965,6 +1091,13 @@ def _validate_gpu_attempt(
         accepted["n_accepted_prompts"],
         accepted["n_expected_rollouts"],
     )
+    _validate_registered_gpu_regime(
+        attempt=attempt,
+        accepted=accepted,
+        input_marker=input_marker,
+        generation=generation,
+        capture=capture,
+    )
     expected_tensor_bytes = {
         f"{HF_PREFIX}/attempt{attempt}/analysis_tensors/vc.pt": capture.get("vc_sha256"),
         **{
@@ -1278,9 +1411,10 @@ def _validate_judge_attempt(
     analysis_topics = {rows_by_source[source_id][0]["topic"] for source_id in analysis_sources}
     analysis_subset_passed = len(analysis_sources) >= 81 and len(analysis_topics) == 12
     reliability_passed = summary.get("interjudge_reliability_passed")
+    if summary.get("passed") is not True:
+        raise RuntimeError("production judge technical/coverage gate failed")
     if (
-        not isinstance(summary.get("passed"), bool)
-        or not isinstance(reliability_passed, bool)
+        not isinstance(reliability_passed, bool)
         or summary.get("claim_eligible") != (summary["passed"] and reliability_passed)
         or not isinstance(summary.get("interjudge_reliability"), dict)
         or summary.get("primary_assignment_counts") != assignment_counts
@@ -1376,6 +1510,7 @@ def _load_new_data(run_dir: Path, *, attempt: int = 1) -> dict[str, Any]:
         raise RuntimeError("analysis input/judge payload differs from upload verification marker")
     if (
         audit.get("passed") is not True
+        or judge_summary.get("passed") is not True
         or judge_summary.get("remediation_complete") is not True
         or judge_summary.get("scores_sha256") != _sha256(scores_path)
     ):
@@ -1874,9 +2009,9 @@ def _classify_h4(
 ) -> str:
     """Classify H4 while making judge reliability an explicit eligibility gate."""
     if not judge_reliability_passed:
-        return "judge-reliability-ineligible"
+        return "judge-reliability-indeterminate"
     if not judge_claim_eligible:
-        return "judge-measurement-ineligible"
+        return "judge-measurement-indeterminate"
     if not core_eligible:
         return "ineligible"
     if not threshold_stable:
@@ -1891,6 +2026,14 @@ def _coverage_report(data: dict[str, Any]) -> dict[str, Any]:
     return {
         "maximum_registered": data["maximum_registered"],
         "accepted_planned": data["accepted_planned"],
+        "realized": data["realized"],
+    }
+
+
+def _planned_vs_realized_report(data: dict[str, Any]) -> dict[str, Any]:
+    """Preserve the established report key while coverage adds accepted counts."""
+    return {
+        "planned": data["maximum_registered"],
         "realized": data["realized"],
     }
 
@@ -2709,6 +2852,7 @@ def run_analysis(
     report = {
         "issue": ISSUE,
         "judge_measurement": data["judge_measurement"],
+        "planned_vs_realized": _planned_vs_realized_report(data),
         "coverage": _coverage_report(data),
         "primary_mass": MASS_PRIMARY,
         "n_bootstrap": n_resample,

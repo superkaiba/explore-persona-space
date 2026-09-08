@@ -16,6 +16,13 @@ SPEC = importlib.util.spec_from_file_location(
 assert SPEC is not None and SPEC.loader is not None
 ANALYSIS = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(ANALYSIS)
+GPU_SPEC = importlib.util.spec_from_file_location(
+    "issue952_gpu_contract",
+    ROOT / "scripts" / "issue952_china_definitive_gpu.py",
+)
+assert GPU_SPEC is not None and GPU_SPEC.loader is not None
+GPU = importlib.util.module_from_spec(GPU_SPEC)
+GPU_SPEC.loader.exec_module(GPU)
 
 
 def _small_contract(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -23,6 +30,17 @@ def _small_contract(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(ANALYSIS, "REGISTERED_PROMPTS", 2)
     monkeypatch.setattr(ANALYSIS, "PROMPTS_PER_SOURCE", 1)
     monkeypatch.setattr(ANALYSIS, "N_DRAWS", 2)
+
+
+def test_analysis_registered_recipe_matches_gpu_producer_constants() -> None:
+    assert ANALYSIS.MODEL == GPU.MODEL
+    assert ANALYSIS.MODEL_REV == GPU.MODEL_REV
+    assert ANALYSIS.LAYERS == GPU.LAYERS
+    assert ANALYSIS.N_DRAWS == GPU.N_DRAWS
+    assert ANALYSIS.TEMPERATURE == GPU.TEMPERATURE
+    assert ANALYSIS.TOP_P == GPU.TOP_P
+    assert ANALYSIS.MAX_NEW_TOKENS == GPU.MAX_NEW_TOKENS
+    assert ANALYSIS.GENERATION_SEED_BASE == GPU.SEED_BASE
 
 
 def _write_json(path: Path, value: object) -> None:
@@ -251,6 +269,49 @@ def test_judge_attempt_validates_and_reports_overlap(
     assert result["overlap"]["disagreements"] == 1
 
 
+def test_judge_attempt_blocks_failed_technical_coverage_gate(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir, judge_dir, accepted, generation = _judge_fixture(tmp_path, monkeypatch)
+    summary_path = judge_dir / "wave_summary.json"
+    summary = json.loads(summary_path.read_text())
+    summary["passed"] = False
+    summary["claim_eligible"] = False
+    _write_json(summary_path, summary)
+    marker = _refresh_judge_marker(judge_dir)
+    with pytest.raises(RuntimeError, match="technical/coverage"):
+        ANALYSIS._validate_judge_attempt(
+            run_dir=run_dir,
+            judge_dir=judge_dir,
+            attempt=1,
+            marker=marker,
+            accepted=accepted,
+            generation=generation,
+        )
+
+
+def test_judge_attempt_allows_reliability_only_miss_for_non_h4_analysis(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir, judge_dir, accepted, generation = _judge_fixture(tmp_path, monkeypatch)
+    summary_path = judge_dir / "wave_summary.json"
+    summary = json.loads(summary_path.read_text())
+    summary["interjudge_reliability_passed"] = False
+    summary["claim_eligible"] = False
+    _write_json(summary_path, summary)
+    marker = _refresh_judge_marker(judge_dir)
+    result = ANALYSIS._validate_judge_attempt(
+        run_dir=run_dir,
+        judge_dir=judge_dir,
+        attempt=1,
+        marker=marker,
+        accepted=accepted,
+        generation=generation,
+    )
+    assert result["summary"]["passed"] is True
+    assert result["summary"]["claim_eligible"] is False
+
+
 @pytest.mark.parametrize("corruption", ["census", "claim", "stage", "overlap", "completeness"])
 def test_judge_attempt_rejects_corrupt_provenance(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, corruption: str
@@ -293,7 +354,10 @@ def test_judge_attempt_rejects_corrupt_provenance(
         )
 
 
-@pytest.mark.parametrize("corruption", [None, "status", "count", "input_stage", "byte_census"])
+@pytest.mark.parametrize(
+    "corruption",
+    [None, "status", "count", "input_stage", "byte_census", "wrong_model", "wrong_regime"],
+)
 def test_gpu_receipt_validates_exact_lineage(tmp_path: Path, corruption: str | None) -> None:
     run_dir = tmp_path
     bank_path = run_dir / "inputs/prompt_bank.jsonl"
@@ -313,32 +377,82 @@ def test_gpu_receipt_validates_exact_lineage(tmp_path: Path, corruption: str | N
         "n_accepted_prompts": 2,
         "n_expected_rollouts": 4,
     }
-    generation = {
-        "regime": {
-            "attempt": 1,
-            "smoke": False,
-            "model_revision": "model-rev",
-            "accepted_source_ids_sha256": accepted["accepted_source_ids_sha256"],
+    accepted_bank = {
+        **accepted,
+        "n_accepted_source_items": 2,
+    }
+    package_versions = dict(ANALYSIS.REGISTERED_PACKAGE_VERSIONS)
+    regime = {
+        "issue": ANALYSIS.ISSUE,
+        "model": ANALYSIS.MODEL,
+        "model_revision": ANALYSIS.MODEL_REV,
+        "bank_sha256": input_marker["prompt_bank_sha256"],
+        "layers": list(ANALYSIS.LAYERS),
+        "draws": ANALYSIS.N_DRAWS,
+        "temperature": ANALYSIS.TEMPERATURE,
+        "top_p": ANALYSIS.TOP_P,
+        "max_new_tokens": ANALYSIS.MAX_NEW_TOKENS,
+        "seed_base": ANALYSIS.GENERATION_SEED_BASE,
+        "seed_namespace": ANALYSIS.GENERATION_SEED_NAMESPACE,
+        "seed_formula": ANALYSIS.GENERATION_SEED_FORMULA,
+        "seed_policy": ANALYSIS.GENERATION_SEED_POLICY,
+        "smoke": False,
+        "attempt": 1,
+        "git_sha": "1" * 40,
+        "accepted_source_ids_sha256": accepted["accepted_source_ids_sha256"],
+        "n_accepted_source_items": 2,
+        "n_accepted_prompts": 2,
+        "n_expected_rollouts": 4,
+        "n_selected_prompts": 2,
+        "selected_source_ids_sha256": accepted["accepted_source_ids_sha256"],
+        "prompt_token_max": 128,
+        "max_model_len": 4096,
+        "chat_template_sha256": "2" * 64,
+        "package_versions": package_versions,
+        "tokenizer_artifact_sha256": {
+            name: str(index) * 64
+            for index, name in enumerate(sorted(ANALYSIS.TOKENIZER_ARTIFACTS), start=3)
         },
-        "regime_fp": "regime",
+    }
+    generation = {
+        "regime": regime,
+        "regime_fp": ANALYSIS._sha_obj(regime),
         "rollouts_sha256": "c" * 64,
         "n_prompts": 2,
         "n_rows": 4,
         "ordered_item_ids_sha256": "d" * 64,
+        "package_versions": package_versions,
+        "accepted_bank": accepted_bank,
     }
     generation_fp = ANALYSIS._generation_fingerprint(generation)
     capture_regime = {
+        "model_revision": ANALYSIS.MODEL_REV,
+        "layers": list(ANALYSIS.LAYERS),
+        "bank_sha256": input_marker["prompt_bank_sha256"],
+        "rollouts_sha256": generation["rollouts_sha256"],
+        "context_position": ANALYSIS.CONTEXT_POSITION,
+        "answer_pooling": ANALYSIS.ANSWER_POOLING,
+        "serialized_dtype": ANALYSIS.SERIALIZED_DTYPE,
+        "git_sha": regime["git_sha"],
         "generation_fingerprint": generation_fp,
-        "model_revision": "model-rev",
         "accepted_source_ids_sha256": accepted["accepted_source_ids_sha256"],
+        "n_accepted_source_items": 2,
+        "n_accepted_prompts": 2,
+        "n_selected_prompts": 2,
+        "selected_source_ids_sha256": accepted["accepted_source_ids_sha256"],
     }
     capture = {
+        "issue": ANALYSIS.ISSUE,
+        "layers": list(ANALYSIS.LAYERS),
         "n_contexts": 2,
         "n_answer_rows": 4,
         "generation_fingerprint": generation_fp,
         "capture_regime": capture_regime,
         "capture_regime_fp": ANALYSIS._sha_obj(capture_regime),
-        "model_revision": "model-rev",
+        "model_revision": ANALYSIS.MODEL_REV,
+        "rollouts_sha256": generation["rollouts_sha256"],
+        "package_versions": package_versions,
+        "accepted_bank": accepted_bank,
         "vc_sha256": "e" * 64,
         "va_files": {"va_00000_00004.pt": "f" * 64},
     }
@@ -393,8 +507,21 @@ def test_gpu_receipt_validates_exact_lineage(tmp_path: Path, corruption: str | N
         capture["n_answer_rows"] = 3
     elif corruption == "input_stage":
         input_stage["prompt_bank_sha256"] = "0" * 64
-    else:
+    elif corruption == "byte_census":
         capture_upload["byte_verified_files"] = list(byte_census)[:-1]
+    else:
+        if corruption == "wrong_model":
+            generation["regime"]["model"] = "wrong/model"
+            generation["regime"]["model_revision"] = "0" * 40
+            capture["model_revision"] = "0" * 40
+            capture["capture_regime"]["model_revision"] = "0" * 40
+        else:
+            generation["regime"]["seed_namespace"] = "coordinated-but-unregistered"
+        generation["regime_fp"] = ANALYSIS._sha_obj(generation["regime"])
+        generation_fp = ANALYSIS._generation_fingerprint(generation)
+        capture["generation_fingerprint"] = generation_fp
+        capture["capture_regime"]["generation_fingerprint"] = generation_fp
+        capture["capture_regime_fp"] = ANALYSIS._sha_obj(capture["capture_regime"])
     with pytest.raises(RuntimeError):
         ANALYSIS._validate_gpu_attempt(
             run_dir=run_dir,
@@ -471,7 +598,7 @@ def test_answer_shard_accepts_exact_rollout_tuple(monkeypatch: pytest.MonkeyPatc
     assert len(index) == vectors.shape[0] == 1
 
 
-def test_h4_is_ineligible_when_interjudge_reliability_misses() -> None:
+def test_h4_is_indeterminate_when_interjudge_reliability_misses() -> None:
     label = ANALYSIS._classify_h4(
         judge_claim_eligible=False,
         judge_reliability_passed=False,
@@ -480,19 +607,53 @@ def test_h4_is_ineligible_when_interjudge_reliability_misses() -> None:
         lexical_consistent=True,
         supported=False,
     )
-    assert label == "judge-reliability-ineligible"
+    assert label == "judge-reliability-indeterminate"
 
 
 def test_reports_separate_registered_accepted_and_realized_counts() -> None:
-    coverage = ANALYSIS._coverage_report(
+    passing_sources = [f"s{source:02d}" for source in range(85)]
+    bank = [
         {
-            "maximum_registered": {"draws": 8640},
-            "accepted_planned": {"draws": 8160},
-            "realized": {"draws_generated": 8159},
+            "item_id": f"s{source:02d}-p{prompt:02d}",
+            "source_prompt_id": f"s{source:02d}",
+            "audit_pass": source < 85,
         }
+        for source in range(90)
+        for prompt in range(12)
+    ]
+    accepted = ANALYSIS._accepted_bank_contract(
+        bank,
+        {
+            "passed": True,
+            "passing_item_ids": passing_sources,
+            "n_audit_passing_items": 85,
+        },
     )
+    assert len(accepted["accepted_source_ids"]) == 85
+    assert accepted["n_accepted_prompts"] == 1020
+    assert accepted["n_expected_rollouts"] == 8160
+    data = {
+        "maximum_registered": {"items": 90, "prompts": 1080, "draws": 8640},
+        "accepted_planned": {"items": 85, "prompts": 1020, "draws": 8160},
+        "realized": {
+            "items_primary": 85,
+            "prompts_primary": 1020,
+            "draws_primary": 8160,
+            "draws_generated": 8160,
+        },
+    }
+    coverage = ANALYSIS._coverage_report(data)
     assert coverage == {
-        "maximum_registered": {"draws": 8640},
-        "accepted_planned": {"draws": 8160},
-        "realized": {"draws_generated": 8159},
+        "maximum_registered": {"items": 90, "prompts": 1080, "draws": 8640},
+        "accepted_planned": {"items": 85, "prompts": 1020, "draws": 8160},
+        "realized": {
+            "items_primary": 85,
+            "prompts_primary": 1020,
+            "draws_primary": 8160,
+            "draws_generated": 8160,
+        },
+    }
+    assert ANALYSIS._planned_vs_realized_report(data) == {
+        "planned": {"items": 90, "prompts": 1080, "draws": 8640},
+        "realized": data["realized"],
     }
