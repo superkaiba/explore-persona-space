@@ -152,57 +152,70 @@ def stage(args) -> None:
     scratch = out / "_scratch"
     scratch.mkdir(exist_ok=True)
 
+    # The n1m capture prefix is 32 shards x 60 chunks x 500 rows = 960,000 rows
+    # (measured 2026-09-08). One shard caps the pool at 30,000, which is below the
+    # 50,000 rung, so the pool is assembled ACROSS shards.
     t0 = time.time()
-    for idx in range(args.n_chunks):
-        name = f"shard{args.shard:02d}_chunk{idx:04d}"
-        # Retries ride hub.retry_transient (Retry-After aware, wall-clock budgeted).
-        # ONLY a genuine absence stops the loop: a transient 5xx that survived the
-        # retry budget must RAISE, never silently truncate the pool and shrink the
-        # rungs underneath the fit (fail-fast rule).
-        try:
-            cap = hub.retry_transient(
-                lambda: hf_hub_download(
-                    HF_REPO, f"{CAPTURE_PREFIX}/{name}.pt", repo_type="dataset", local_dir=scratch
-                ),
-                what=f"download {name}.pt",
-            )
-            rcp = hub.retry_transient(
-                lambda: hf_hub_download(
-                    HF_REPO, f"{RAWCOMP_PREFIX}/{name}.json", repo_type="dataset", local_dir=scratch
-                ),
-                what=f"download {name}.json",
-            )
-        except (EntryNotFoundError, RepositoryNotFoundError) as exc:
-            _log(f"chunk {name} absent ({type(exc).__name__}); chunk universe exhausted at {idx}")
-            break
+    shards = [int(s) for s in str(args.shards).split(",") if s.strip()]
+    for shard in shards:
+        for idx in range(args.n_chunks):
+            name = f"shard{shard:02d}_chunk{idx:04d}"
+            # Retries ride hub.retry_transient (Retry-After aware, wall-clock budgeted).
+            # ONLY a genuine absence ends a shard: a transient 5xx that survived the
+            # retry budget must RAISE, never silently truncate the pool and shrink the
+            # rungs underneath the fit (fail-fast rule).
+            try:
+                cap = hub.retry_transient(
+                    lambda: hf_hub_download(
+                        HF_REPO,
+                        f"{CAPTURE_PREFIX}/{name}.pt",
+                        repo_type="dataset",
+                        local_dir=scratch,
+                    ),
+                    what=f"download {name}.pt",
+                )
+                rcp = hub.retry_transient(
+                    lambda: hf_hub_download(
+                        HF_REPO,
+                        f"{RAWCOMP_PREFIX}/{name}.json",
+                        repo_type="dataset",
+                        local_dir=scratch,
+                    ),
+                    what=f"download {name}.json",
+                )
+            except (EntryNotFoundError, RepositoryNotFoundError) as exc:
+                _log(f"shard{shard:02d} exhausted at chunk {idx} ({type(exc).__name__})")
+                break
 
-        d = torch.load(cap, map_location="cpu", weights_only=False)
-        rows = json.load(open(rcp))["rows"]
+            d = torch.load(cap, map_location="cpu", weights_only=False)
+            rows = json.load(open(rcp))["rows"]
 
-        cx = d["cx_last"][:, li, :].to(torch.float32).numpy()
-        vx = d["v_x"][:, li, :].to(torch.float32).numpy()
-        ci = np.asarray(d["ci"], dtype=np.int64)
-        pr = list(d["prompts"])
-        assert cx.shape == vx.shape == (len(ci), HIDDEN), (cx.shape, vx.shape, len(ci))
-        assert len(pr) == len(ci), (len(pr), len(ci))
+            cx = d["cx_last"][:, li, :].to(torch.float32).numpy()
+            vx = d["v_x"][:, li, :].to(torch.float32).numpy()
+            ci = np.asarray(d["ci"], dtype=np.int64)
+            pr = list(d["prompts"])
+            assert cx.shape == vx.shape == (len(ci), HIDDEN), (cx.shape, vx.shape, len(ci))
+            assert len(pr) == len(ci), (len(pr), len(ci))
 
-        # Chunk-alignment is the whole reason no manifest join is needed. Assert it.
-        rc_ci = np.asarray([r["ci"] for r in rows], dtype=np.int64)
-        assert np.array_equal(rc_ci, ci), f"{name}: raw_completions ci != capture ci"
-        rc_prompt = [r["prompt"] for r in rows]
-        assert rc_prompt == pr, f"{name}: raw_completions prompt text != capture prompts"
+            # Chunk-alignment is the whole reason no manifest join is needed. Assert it.
+            rc_ci = np.asarray([r["ci"] for r in rows], dtype=np.int64)
+            assert np.array_equal(rc_ci, ci), f"{name}: raw_completions ci != capture ci"
+            rc_prompt = [r["prompt"] for r in rows]
+            assert rc_prompt == pr, f"{name}: raw_completions prompt text != capture prompts"
 
-        cx_parts.append(cx)
-        vx_parts.append(vx)
-        ci_parts.append(ci)
-        prompts.extend(pr)
-        responses.extend(r["response"] for r in rows)
+            cx_parts.append(cx)
+            vx_parts.append(vx)
+            ci_parts.append(ci)
+            prompts.extend(pr)
+            responses.extend(r["response"] for r in rows)
 
-        Path(cap).unlink(missing_ok=True)
-        Path(rcp).unlink(missing_ok=True)
-        if (idx + 1) % 10 == 0:
-            n = sum(len(c) for c in ci_parts)
-            _log(f"staged {idx + 1} chunks / {n} rows ({time.time() - t0:.0f}s)")
+            Path(cap).unlink(missing_ok=True)
+            Path(rcp).unlink(missing_ok=True)
+            if (idx + 1) % 20 == 0:
+                n = sum(len(c) for c in ci_parts)
+                _log(
+                    f"shard{shard:02d}: {idx + 1} chunks / {n} rows total ({time.time() - t0:.0f}s)"
+                )
 
     cx = np.concatenate(cx_parts)
     vx = np.concatenate(vx_parts)
@@ -215,9 +228,9 @@ def stage(args) -> None:
         for c, p, r in zip(ci.tolist(), prompts, responses):
             fh.write(json.dumps({"ci": c, "prompt": p, "response": r}, ensure_ascii=False) + "\n")
     n_chunks_done = len(ci_parts)
-    expected = args.n_chunks * ROWS_PER_CHUNK
+    expected = len(shards) * args.n_chunks * ROWS_PER_CHUNK
     _log(
-        f"STAGE OK rows={cx.shape[0]} chunks={n_chunks_done}/{args.n_chunks} "
+        f"STAGE OK rows={cx.shape[0]} chunks={n_chunks_done} shards={shards} "
         f"(expected_rows={expected}) -> {out}"
     )
     if cx.shape[0] != expected:
@@ -629,7 +642,7 @@ def fit_score(args) -> None:
 
 # ---------------------------------------------------------------------------
 def smoke(args) -> None:
-    args.n_chunks, args.embedder, args.solver_gate = 2, "fake", True
+    args.n_chunks, args.shards, args.embedder, args.solver_gate = 2, "0", "fake", True
     args.out = args.out or "/tmp/encbaseline_smoke"
     args.eval_out = str(Path(args.out) / "smoke_results.json")
     stage(args)
@@ -653,8 +666,8 @@ def main() -> int:
     ap.add_argument(
         "--eval-out", default=str(PROJECT_ROOT / "eval_results/issue_1901/encbaseline/results.json")
     )
-    ap.add_argument("--n-chunks", type=int, default=112)
-    ap.add_argument("--shard", type=int, default=0)
+    ap.add_argument("--n-chunks", type=int, default=60, help="max chunks PER shard")
+    ap.add_argument("--shards", default="0,1", help="comma list of shard ids")
     ap.add_argument("--embedder", choices=sorted(EMBEDDERS), default="bge")
     ap.add_argument("--batch", type=int, default=128)
     ap.add_argument("--solver-gate", action="store_true")
