@@ -1,0 +1,447 @@
+{
+  "API_hash_kinds": {
+    "Git_blob_SHA1": 623,
+    "LFS_SHA256": 35
+  },
+  "archive_exit_verified": {
+    "cleanup": "no_live_members",
+    "elapsed_seconds": 523.5335748195648,
+    "exit_code": 0,
+    "finished_unix": 1788864267.8263447,
+    "finished_utc": "2026-09-08T10:44:27.826308+00:00",
+    "launch_id": "raw_archive_20260908T103321Z",
+    "launch_sha256": "a5a8407efc7dceb2e6321980178502949108ffe8831be2039cdca7ec6308d983",
+    "live_group_members": [],
+    "log_sha256": "a6ae40fef421641b4d4b16b01c70ae00abc9e10eb36af5b54e2e1f586ae15d7a",
+    "pgid": 1417183,
+    "pid": 1417183,
+    "readback_receipt_exists": true,
+    "upload_receipt_exists": true
+  },
+  "complete_pod_namespace_files": 102,
+  "completed_utc": "2026-09-08T10:51:44.038279+00:00",
+  "control_files_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_archive_20260908T103321Z_exit.json": "26f42b7e26ff47d9f54bf04f720b266084710a3545c899f744787055c42f61eb",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_archive_20260908T103321Z_launch.json": "a5a8407efc7dceb2e6321980178502949108ffe8831be2039cdca7ec6308d983",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json": "a8cb378a69017833f59116922f7b124a33301f4e9338dc372aef8eddb3c442c4",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json": "4470ed8480598e979d8bbe5d93b5e5186d8ecc18fe76ad84a861312fc3732569",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/pod_full_copy_validation_20260908.json": "2c2f6268c219c2829e8aa731b279737091fbc0f80e7c436c4a9725f3d4324035",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/pod_inventory_copy_end_20260908.json": "0c46d1ad3cee2f6ce792ef82a49eb3f2c6088875251eb76e782ce077564d0491",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/raw_snapshot_source_coverage_review_20260908T104431Z.json": "2402de528931556f0aeb297ba732c75bcc7312844eade048e9cd6a8aebef1daf"
+  },
+  "current_required_original_sources_rechecked": 295,
+  "downloaded_files_verified": 658,
+  "exact_remote_filename_set": true,
+  "late_RUN_paths_not_in_raw_snapshot": [
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_archive_20260908T103321Z.log",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_archive_20260908T103321Z_exit.json",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_archive_20260908T103321Z_launch.json",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_dataset_support_audit.json",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_dataset_support_audit.md",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_dataset_support_audit.py",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/pod_inventory_before_teardown_20260908T1052Z.json",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/pod_inventory_before_teardown_20260908T1052Z_stderr.txt",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/pod_outroot_listing_20260908T1052Z.txt",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/pod_preteardown_no_drift_20260908T1052Z.json",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/raw_archive_20260908T103321Z_snapshot_preparation.json",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/raw_outroot_generic_result_20260908T1053Z.json",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/raw_pinned_api_tree_review_20260908T105109Z.json",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/raw_pinned_readback_bytes_20260908T105109Z.log",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/raw_snapshot_source_coverage_review_20260908T104431Z.json",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/reconcile_20260908T104819Z.log",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/reconcile_20260908T104819Z_launch.json",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/task2670_reporting_snapshot.json"
+  ],
+  "late_evidence_required": [
+    "Exact current reconciliation receipt/output/ASCII projections/log/owned exit, including original full-key618/360/90 checks and102-pod-file proof.",
+    "All current late RUN paths, this review/API metadata proof/byte log and any later evidence require exact issue-scoped pushed Git blob mapping.",
+    "Fresh final no-new-writes pod inventory must agree with the frozen102+1 files; preserve that inventory and its exact Git binding.",
+    "Owner-bound upload-verification marker and managed teardown checks remain separate; actual live API absence proves final GPU release.",
+    "All frozen VM fits, independent scientific result review and final report/archive remain outstanding."
+  ],
+  "manifest_first_JSONL_proofs": {
+    "external/benchmark/public_development_manifest.jsonl": {
+      "mode": "unsharded_manifest_first_lookup",
+      "reconstructed_sha256": "3631d2b51f7fe610e26f674f2c036a74771761a1e8d5dd48d1103817fb10fb48",
+      "remote_path": "context_risk/issue2670_highrate/raw/external/benchmark/public_development_manifest.jsonl"
+    },
+    "pod/capture/chunk_0000.rows.jsonl": {
+      "mode": "unsharded_manifest_first_lookup",
+      "reconstructed_sha256": "335c51be07aca165275edd864796a90ed505cd24d41d4623cd27e40859db0e0a",
+      "remote_path": "context_risk/issue2670_highrate/raw/pod/capture/chunk_0000.rows.jsonl"
+    },
+    "pod/capture/chunk_0001.rows.jsonl": {
+      "mode": "unsharded_manifest_first_lookup",
+      "reconstructed_sha256": "3247559ba1e85f792e84efd6d409ea078b883b890e775c0f38436712f8d35cdb",
+      "remote_path": "context_risk/issue2670_highrate/raw/pod/capture/chunk_0001.rows.jsonl"
+    },
+    "pod/capture/chunk_0002.rows.jsonl": {
+      "mode": "unsharded_manifest_first_lookup",
+      "reconstructed_sha256": "cf96e732f917e58c127a8b363360e1ffc88f574908f30155f26f4cdd181520b1",
+      "remote_path": "context_risk/issue2670_highrate/raw/pod/capture/chunk_0002.rows.jsonl"
+    },
+    "pod/capture/chunk_0003.rows.jsonl": {
+      "mode": "unsharded_manifest_first_lookup",
+      "reconstructed_sha256": "45a72dc920ec3b12c8eb6cd721efa3ea8d9366f60ae6eac044559bb759aa5a64",
+      "remote_path": "context_risk/issue2670_highrate/raw/pod/capture/chunk_0003.rows.jsonl"
+    },
+    "pod/capture/chunk_0004.rows.jsonl": {
+      "mode": "unsharded_manifest_first_lookup",
+      "reconstructed_sha256": "5d44138730916c6b052c97a9a9686de406465341509fa238f6878066bf53c9ea",
+      "remote_path": "context_risk/issue2670_highrate/raw/pod/capture/chunk_0004.rows.jsonl"
+    },
+    "pod/capture/chunk_0005.rows.jsonl": {
+      "mode": "unsharded_manifest_first_lookup",
+      "reconstructed_sha256": "0d8b3c19a22c162bde61087b58569d050cef1b449afa5c30877185f25e7860f6",
+      "remote_path": "context_risk/issue2670_highrate/raw/pod/capture/chunk_0005.rows.jsonl"
+    },
+    "pod/manifests/fresh_B.jsonl": {
+      "mode": "unsharded_manifest_first_lookup",
+      "reconstructed_sha256": "2385138de67af3472d5a07267f1c9776d46218368b7f7b9363bef360ed8d4b64",
+      "remote_path": "context_risk/issue2670_highrate/raw/pod/manifests/fresh_B.jsonl"
+    },
+    "run/capture/chunk_0000.rows.jsonl": {
+      "mode": "unsharded_manifest_first_lookup",
+      "reconstructed_sha256": "335c51be07aca165275edd864796a90ed505cd24d41d4623cd27e40859db0e0a",
+      "remote_path": "context_risk/issue2670_highrate/raw/run/capture/chunk_0000.rows.jsonl"
+    },
+    "run/capture/chunk_0001.rows.jsonl": {
+      "mode": "unsharded_manifest_first_lookup",
+      "reconstructed_sha256": "3247559ba1e85f792e84efd6d409ea078b883b890e775c0f38436712f8d35cdb",
+      "remote_path": "context_risk/issue2670_highrate/raw/run/capture/chunk_0001.rows.jsonl"
+    },
+    "run/capture/chunk_0002.rows.jsonl": {
+      "mode": "unsharded_manifest_first_lookup",
+      "reconstructed_sha256": "cf96e732f917e58c127a8b363360e1ffc88f574908f30155f26f4cdd181520b1",
+      "remote_path": "context_risk/issue2670_highrate/raw/run/capture/chunk_0002.rows.jsonl"
+    },
+    "run/capture/chunk_0003.rows.jsonl": {
+      "mode": "unsharded_manifest_first_lookup",
+      "reconstructed_sha256": "45a72dc920ec3b12c8eb6cd721efa3ea8d9366f60ae6eac044559bb759aa5a64",
+      "remote_path": "context_risk/issue2670_highrate/raw/run/capture/chunk_0003.rows.jsonl"
+    },
+    "run/capture/chunk_0004.rows.jsonl": {
+      "mode": "unsharded_manifest_first_lookup",
+      "reconstructed_sha256": "5d44138730916c6b052c97a9a9686de406465341509fa238f6878066bf53c9ea",
+      "remote_path": "context_risk/issue2670_highrate/raw/run/capture/chunk_0004.rows.jsonl"
+    },
+    "run/capture/chunk_0005.rows.jsonl": {
+      "mode": "unsharded_manifest_first_lookup",
+      "reconstructed_sha256": "0d8b3c19a22c162bde61087b58569d050cef1b449afa5c30877185f25e7860f6",
+      "remote_path": "context_risk/issue2670_highrate/raw/run/capture/chunk_0005.rows.jsonl"
+    },
+    "run/fresh_B/rollouts.jsonl": {
+      "manifest_path": "context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.manifest.json",
+      "manifest_sha256": "f23b8406564daa3bc1cd41387dccdea9d5ec1582f13399d4605dcc1dceeab3f4",
+      "mode": "manifest_first_parts",
+      "parts": [
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard00.jsonl",
+          "sha256": "b99cb128de7a8c18f9b8c998b20c82ea88c90004c3a81e9776da57a7aa2186ad",
+          "size": 8945761
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard01.jsonl",
+          "sha256": "3282af0300a9e23d4d02c67337a414939b6a8f1961b96115f5a05b20857b2042",
+          "size": 8824747
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard02.jsonl",
+          "sha256": "ffffb8e2a95fe2c6d729710aad8d503a005c104e6eba448a54671f4ae1b8f206",
+          "size": 8903915
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard03.jsonl",
+          "sha256": "0586b7775741383898434d67b39a56b33a456f1ba10854770ae2987f53523de5",
+          "size": 8947714
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard04.jsonl",
+          "sha256": "190bae5375d81d16428719b3b9f65f377420d8b4879f7a048170cbe994d5874a",
+          "size": 8987859
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard05.jsonl",
+          "sha256": "68eaaa5ae0771b54320a081caa21c4935be3fcb1294018509b6156836fe72ac1",
+          "size": 8984957
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard06.jsonl",
+          "sha256": "4e0ffe39119efdd6ebb3652bde26ad1f9c960b2ec3bba8cdf3eeda3681c38ea6",
+          "size": 8985565
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard07.jsonl",
+          "sha256": "b62d90d65bfd1c609be605f0b3f9be7984b08c04880ad0b0d9995f57f471f511",
+          "size": 8763248
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard08.jsonl",
+          "sha256": "609019fe7597c4c011ba290c31e68bddceb38610a76b72239a64c84b8b1f59e6",
+          "size": 8034213
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard09.jsonl",
+          "sha256": "1d55ddd108fab4f4da24230ae9001e47a026f8633c2aeb8409cf862d8855fc53",
+          "size": 5692795
+        }
+      ],
+      "reconstructed_sha256": "a03992780543c868b9dc0f39db84591520dceb0529783020d6a1e3a94e4c49b5"
+    },
+    "run/manifests/fresh_B.jsonl": {
+      "mode": "unsharded_manifest_first_lookup",
+      "reconstructed_sha256": "2385138de67af3472d5a07267f1c9776d46218368b7f7b9363bef360ed8d4b64",
+      "remote_path": "context_risk/issue2670_highrate/raw/run/manifests/fresh_B.jsonl"
+    },
+    "run/manifests/screen_B.jsonl": {
+      "mode": "unsharded_manifest_first_lookup",
+      "reconstructed_sha256": "4bafc4e293b01787510f24310da173ae278d2e38db7fca37f8e0219f69d05184",
+      "remote_path": "context_risk/issue2670_highrate/raw/run/manifests/screen_B.jsonl"
+    },
+    "run/manifests/source.jsonl": {
+      "mode": "unsharded_manifest_first_lookup",
+      "reconstructed_sha256": "3631d2b51f7fe610e26f674f2c036a74771761a1e8d5dd48d1103817fb10fb48",
+      "remote_path": "context_risk/issue2670_highrate/raw/run/manifests/source.jsonl"
+    },
+    "run/screen_B/pilot_rollouts.jsonl": {
+      "manifest_path": "context_risk/issue2670_highrate/raw/run/screen_B/pilot_rollouts.manifest.json",
+      "manifest_sha256": "f09a2f687f769dffe42ffbf8f67c76ba521074dfe8c201444d71e53151cf468e",
+      "mode": "manifest_first_parts",
+      "parts": [
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/pilot_rollouts.shard00.jsonl",
+          "sha256": "a39b5426f6203e96e3055214c7c866ff0a605440db307c7c60a3ae85c46a238c",
+          "size": 8247044
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/pilot_rollouts.shard01.jsonl",
+          "sha256": "e36e2488dd086dd93f154f13564a4d3350308a84eb6d5d59dffd3559cb733e54",
+          "size": 2495779
+        }
+      ],
+      "reconstructed_sha256": "0e17b00c7fc50649b8e52e087a60d0ce1fe5eb98c953f4e6b92647d5c2866c92"
+    },
+    "run/screen_B/resume_input_1788827471430223247.jsonl": {
+      "manifest_path": "context_risk/issue2670_highrate/raw/run/screen_B/resume_input_1788827471430223247.manifest.json",
+      "manifest_sha256": "95800784cbfd2bc215d6e8179403f9129d804e792866fde463fd56deb395f5ff",
+      "mode": "manifest_first_parts",
+      "parts": [
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/resume_input_1788827471430223247.shard00.jsonl",
+          "sha256": "a39b5426f6203e96e3055214c7c866ff0a605440db307c7c60a3ae85c46a238c",
+          "size": 8247044
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/resume_input_1788827471430223247.shard01.jsonl",
+          "sha256": "e36e2488dd086dd93f154f13564a4d3350308a84eb6d5d59dffd3559cb733e54",
+          "size": 2495779
+        }
+      ],
+      "reconstructed_sha256": "0e17b00c7fc50649b8e52e087a60d0ce1fe5eb98c953f4e6b92647d5c2866c92"
+    },
+    "run/screen_B/rollouts.jsonl": {
+      "manifest_path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.manifest.json",
+      "manifest_sha256": "367042802f5a930ac46f9bb459e7dd05cf3a94a04620e8096bf333068a9442a5",
+      "mode": "manifest_first_parts",
+      "parts": [
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard00.jsonl",
+          "sha256": "0aaa51e649458b1b971d722c7708f8ac9b9d6f3ada48de565c4ea9b453445c97",
+          "size": 8645295
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard01.jsonl",
+          "sha256": "4abd969bbb3019aa3da1b70bade1cbae92be6e7919e6c39e65b160870752891c",
+          "size": 8688086
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard02.jsonl",
+          "sha256": "785331be3ee2bbbaa134708999032d49b52264cca05ce280fbf681cb76cbd17a",
+          "size": 8941069
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard03.jsonl",
+          "sha256": "6d48de3bb14786adcdac06c71241f5f372eb86a536bc9f6dbfdb247e8e06ba84",
+          "size": 8655586
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard04.jsonl",
+          "sha256": "ce302526df9990e66a479fc3be0b7304d0da4f0c2cee2be7e3ef92f5a954b5fb",
+          "size": 8839694
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard05.jsonl",
+          "sha256": "fdb89d64770e1dd5992ef11eeb44e78ee8fc5f0031176632aeb553f112748c2c",
+          "size": 8632334
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard06.jsonl",
+          "sha256": "fd12549d61c0c9c6bbc456dcfa0dea76b4d2b87cc3083e1d20df3f09581410da",
+          "size": 5871627
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard07.jsonl",
+          "sha256": "ef96dcc89c2e58d86839462a7b207f0c31de5dae46bb1482ce0b3098aa7476b5",
+          "size": 8762010
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard08.jsonl",
+          "sha256": "03ddeb5a0213e6c476a0d40ab22aa73e515451ae9bce9d890bbd92ee371b9d95",
+          "size": 8815672
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard09.jsonl",
+          "sha256": "03ddf9540742df60189a12930ef2221ec31412354fd227d3080b949b44725cf5",
+          "size": 8942111
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard10.jsonl",
+          "sha256": "1d9315658ab152564a8b151e1a429e35b6732d6201a3e752fc877e8af275620c",
+          "size": 8914071
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard11.jsonl",
+          "sha256": "cf9975b1df3a9dd6574d8405e9bfdf9a15f610c1597c55dbcf8065ce1af8fd56",
+          "size": 8986762
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard12.jsonl",
+          "sha256": "10b0a0217eafa0ab532aadf9774c04e0de907f662ac8a2672fb8e9c59447c426",
+          "size": 8665895
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard13.jsonl",
+          "sha256": "84ed124a70405ce8fa4da65127b38bbbd652a8c2faf65bdacf021c9717f5b2ab",
+          "size": 8813530
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard14.jsonl",
+          "sha256": "af47917bac6b6741a97f79700e9b9c09cc72100f8a0edb985fd03090634efa09",
+          "size": 8429300
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard15.jsonl",
+          "sha256": "d7c2573a414def945d290cb8d7c67edf2abdf75071a67ce76672b50daf4f9b15",
+          "size": 8991272
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard16.jsonl",
+          "sha256": "0abfb7493f7321a4dfbb97a40997c76f0cd9f84195083690aeabcee2c34c5da3",
+          "size": 8986991
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard17.jsonl",
+          "sha256": "0df317425fcab6fa64473522fa767a17f7a6a02b2ed0f3c5f9e38af57ffb66b0",
+          "size": 8822688
+        },
+        {
+          "path": "context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard18.jsonl",
+          "sha256": "58ac02119a9f67b48be09ff157307b2936ba4ff51d03db1d94adf8b7210b4d17",
+          "size": 8953487
+        }
+      ],
+      "reconstructed_sha256": "647eb0b0620c9a5db952fe4eab222d576ad1bdba3ee475f71c17202840572f9b"
+    }
+  },
+  "native_semantic_parsing_repeated": false,
+  "no_model_or_tokenizer_calls": true,
+  "no_pod_access_or_mutation": true,
+  "no_snapshot_or_staging_mutation": true,
+  "no_uploads": true,
+  "original_byte_set_equal_immutable_snapshot": true,
+  "original_bytes": 719546427,
+  "original_files_verified": 624,
+  "pinned_API_proof_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/raw_pinned_api_tree_review_20260908T105109Z.json",
+  "pinned_API_proof_sha256": "41967f7c0765071b977435968597f3cc09e75f2d17eb5b5db2615a251a0292f1",
+  "pinned_API_verified_files": 658,
+  "pod_extra_coverage": {
+    "pod_extra/clone/context_risk_highrate_capture.log": {
+      "VM_copy": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z_clone_extra/context_risk_highrate_capture.log",
+      "copy_receipt_sha256": "2c2f6268c219c2829e8aa731b279737091fbc0f80e7c436c4a9725f3d4324035",
+      "pinned_remote_API_proof": {
+        "downloaded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "Git_blob_SHA1",
+        "remote_blob_id": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+        "size": 0
+      },
+      "readback": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_readback/raw_archive_20260908T103321Z/context_risk/issue2670_highrate/raw/pod_extra/clone/context_risk_highrate_capture.log",
+      "remote_pod_source": "/workspace/explore-persona-space/context_risk_highrate_capture.log",
+      "snapshot_record": {
+        "remote_source": "/workspace/explore-persona-space/context_risk_highrate_capture.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0,
+        "source": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z_clone_extra/context_risk_highrate_capture.log"
+      },
+      "source_inventory_sha256": "0c46d1ad3cee2f6ce792ef82a49eb3f2c6088875251eb76e782ce077564d0491"
+    }
+  },
+  "prefix": "context_risk/issue2670_highrate/raw",
+  "read_only_remote_metadata_only": true,
+  "readback": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_readback/raw_archive_20260908T103321Z",
+  "reader_byte_log": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/raw_pinned_readback_bytes_20260908T105109Z.log",
+  "reader_byte_log_sha256": "5f7781ef2ed553c89321d69a3def94e3e2fb017ae01332eb1a1e303cfa46077c",
+  "repo_id": "superkaiba1/explore-persona-space-data",
+  "reused_exact_source_mapping_review_sha256": "2402de528931556f0aeb297ba732c75bcc7312844eade048e9cd6a8aebef1daf",
+  "reviewer": "Independent Codex subagent /root/v9_consumer_critic",
+  "revision": "58d3e6d6b0917b6e9777c45d23b814693dc14277",
+  "schema_version": "context_risk_highrate_independent_pinned_raw_readback_review_v1",
+  "scope": "Pinned API filename/content identity, downloaded original byte mapping, manifest-first restoration, current source equality and explicit pod-extra coverage; no native semantic reparsing or teardown authorization.",
+  "snapshot": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z",
+  "snapshot_manifest_sha256": "91615d1272ef62d16ccd33651acc8f295800051950a7ee45e04854a6be7a5215",
+  "source_closures_sha256": {
+    "archive": {
+      "scripts/context_risk_corrected_finish.py": "8aeaddec362b9bbf277c707b7532d17948811f1bdf09b9c0a45f598c7eca466e",
+      "scripts/context_risk_highrate_archive.py": "b7f712557a5b537021fc5324a3f4f945c0e1a89c06da3404166c81b44401205b",
+      "scripts/issue2054_phase_a.py": "69573ff5fc81ad398f35ccf9e656d5fceb7e2696e4b6b35a1db80a166ceb7016",
+      "src/explore_persona_space/orchestrate/env.py": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759",
+      "src/explore_persona_space/orchestrate/hub.py": "6590d4c01d396f935da018d16673e3d21f93843126b5e12a42be8e6e0419351e"
+    },
+    "reconciliation": {
+      "configs/eval/context_risk_followup_capture.yaml": "cdbc76b49d639a61d349becf984aafd30ff5372ea88f6e92f89f2cac4cc25285",
+      "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+      "configs/eval/context_risk_highrate_capture.yaml": "7140a2fcc3e1ed38e4127a1c65d8dbb8ec3b40034713cffca8d15be177e80eec",
+      "configs/eval/context_risk_qwen38_impossible_capture.yaml": "7018d151ebf4534ad3ecfa4d88cb48c12b847e98bba46dce2e1ba3e8b0dc53aa",
+      "configs/eval/context_risk_qwen38_smoke.yaml": "d5ad816cb64e7da10d7e22bf79e4525e7d04f6d9df4808e678fd9d4cb9f5f352",
+      "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+      "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+      "eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md": "e743d726fde20defa03cffe2808b5d7bd7c0100db8911c161dc41d33529d2355",
+      "eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md": "5935dd7792e3a86b9ffc96d57b9826a63e8496a6590a517df6a6340acbb57ad3",
+      "scripts/context_risk_corrected_finish.py": "8aeaddec362b9bbf277c707b7532d17948811f1bdf09b9c0a45f598c7eca466e",
+      "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+      "scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
+      "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+      "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+      "scripts/context_risk_highrate_archive.py": "b7f712557a5b537021fc5324a3f4f945c0e1a89c06da3404166c81b44401205b",
+      "scripts/context_risk_highrate_capacity.py": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+      "scripts/context_risk_highrate_capture.py": "5f1bc50e1b6b6bf07a5f8d1db588ccfb0aecd2ef2131fa5e08aad6cb7d9aea42",
+      "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+      "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+      "scripts/context_risk_highrate_postrun.py": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+      "scripts/context_risk_highrate_reconcile.py": "210562eff0a67f5a38e120282e94978595c1e73f35744f557719fc3ba313681c",
+      "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+      "scripts/context_risk_highrate_transport.py": "a802793e7e0d78831f3b9518d828e8410eef6df9ffc0be5e4aceedb73f6ee97c",
+      "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+      "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+      "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+      "scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
+      "scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+      "scripts/context_risk_qwen38_impossible_capture.py": "d7f6aec322ce89249a6829b3298f7753cf8a33b9e7505bc7850b8c408a39122b",
+      "scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+      "scripts/issue2054_phase_a.py": "69573ff5fc81ad398f35ccf9e656d5fceb7e2696e4b6b35a1db80a166ceb7016",
+      "scripts/verify_uploads.py": "3991c7f464602766d26b5c38b2b42905e92b7f40e918cb72776b59b7e3d34ee9",
+      "src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79",
+      "src/explore_persona_space/orchestrate/env.py": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759",
+      "src/explore_persona_space/orchestrate/hub.py": "6590d4c01d396f935da018d16673e3d21f93843126b5e12a42be8e6e0419351e",
+      "tests/test_context_risk_highrate_capture.py": "5d7187a5c3f1897d130ac65167320ab65acae569d30a2e4e1d905f1448d3b5d6",
+      "tests/test_context_risk_highrate_postrun.py": "f653400a60e77a81d839715dc4ab0bce3c8f1454ae0cff551fcd1367a066cb80",
+      "tests/test_context_risk_highrate_postrun_integration.py": "199ae6a3b2ef230e9e37fe9ecc8647b717686d266f89798b3a642af3482d6657",
+      "tests/test_context_risk_highrate_reconcile.py": "6fe645d5936557847a3c49acaa075f6d915b3b07017f6eafc9c26c3ddc4c553b",
+      "tests/test_context_risk_highrate_transport.py": "cb65dc7d3027aa56dae639ed1d198fd5d57b26b893b70802c55ac10440e9acbe"
+    }
+  },
+  "started_utc": "2026-09-08T10:51:09.482882+00:00",
+  "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/58d3e6d6b0917b6e9777c45d23b814693dc14277/context_risk/issue2670_highrate/raw",
+  "verdict": "PASS"
+}

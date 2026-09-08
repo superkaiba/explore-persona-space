@@ -1,0 +1,11 @@
+{
+  "launch_id": "reconcile_20260908T104819Z",
+  "exit_code": 0,
+  "finished_utc": "2026-09-08T10:59:55.815329+00:00",
+  "elapsed_seconds": 696.719012260437,
+  "live_group_members": [],
+  "cleanup": "no_live_members",
+  "launch_sha256": "c33c7544c03b7237714b2ffed9bdfccb7a82489a93a36e32c6957bedf91e56f4",
+  "log_sha256": "2626154c53fcbfc19faca23b264765c3736f5477cebd061634897327f8cbab41",
+  "result_exists": true
+}

@@ -1,0 +1,2951 @@
+warning: `VIRTUAL_ENV=/home/thomasjiralerspong/.cache/uv/builds-v0/.tmpsaU5cw` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+[archive] start phase=raw stage=/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z
+[archive] original files verified count=624
+[phase=phase_a] WARN oversized non-jsonl upload rides LFS: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/external/qwen38_map_pilot/map_layer_44.npz (104920040 B)
+[phase=phase_a] WARN oversized non-jsonl upload rides LFS: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/fresh_B/logs/2026-09-08T07-02-10-00-00_context-risk-followup-ten-submissions_3kAz589gj9bzDgYysGcnFi.eval (9846171 B)
+[phase=phase_a] sharded /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/fresh_B/rollouts.jsonl (85070774 B) -> 10 shards
+[phase=phase_a] WARN oversized non-jsonl upload rides LFS: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/screen_B/logs/2026-09-08T00-33-48-00-00_context-risk-followup-ten-submissions_7EGPYSjaYbzZSCqtchLR23.eval (26257395 B)
+[phase=phase_a] sharded /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/screen_B/pilot_rollouts.jsonl (10742823 B) -> 2 shards
+[phase=phase_a] sharded /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/screen_B/resume_input_1788827471430223247.jsonl (10742823 B) -> 2 shards
+[phase=phase_a] sharded /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/screen_B/rollouts.jsonl (164357480 B) -> 19 shards
+[phase=phase_a] WARN oversized non-jsonl upload rides LFS: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/setup/map_layer_44.npz (104920040 B)
+[phase=phase_a] WARN oversized non-jsonl upload rides LFS: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/setup/review_snapshots/screen_started_376_samples_20260908T034825Z.zip (10850405 B)
+[phase=phase_a] WARN oversized non-jsonl upload rides LFS: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/setup/review_snapshots/screen_started_461_samples_20260908T042704Z.zip (13011772 B)
+[phase=phase_a] WARN oversized non-jsonl upload rides LFS: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/setup/review_snapshots/screen_started_541_samples_20260908T051858Z.zip (16577826 B)
+[phase=phase_a] WARN oversized non-jsonl upload rides LFS: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/setup/review_snapshots/screen_started_588_samples_20260908T054412Z.zip (17709170 B)
+[phase=phase_a] WARN oversized non-jsonl upload rides LFS: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/setup/review_snapshots/screen_started_617_samples_20260908T063839Z.zip (18840420 B)
+[phase=phase_a] WARN oversized non-jsonl upload rides LFS: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/external/qwen38_map_pilot/map_layer_44.npz (104920040 B)
+[phase=phase_a] WARN oversized non-jsonl upload rides LFS: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/fresh_B/logs/2026-09-08T07-02-10-00-00_context-risk-followup-ten-submissions_3kAz589gj9bzDgYysGcnFi.eval (9846171 B)
+[phase=phase_a] sharded /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/fresh_B/rollouts.jsonl (85070774 B) -> 10 shards
+[phase=phase_a] WARN oversized non-jsonl upload rides LFS: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/screen_B/logs/2026-09-08T00-33-48-00-00_context-risk-followup-ten-submissions_7EGPYSjaYbzZSCqtchLR23.eval (26257395 B)
+[phase=phase_a] sharded /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/screen_B/pilot_rollouts.jsonl (10742823 B) -> 2 shards
+[phase=phase_a] sharded /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/screen_B/resume_input_1788827471430223247.jsonl (10742823 B) -> 2 shards
+[phase=phase_a] sharded /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/screen_B/rollouts.jsonl (164357480 B) -> 19 shards
+[phase=phase_a] WARN oversized non-jsonl upload rides LFS: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/setup/map_layer_44.npz (104920040 B)
+[phase=phase_a] WARN oversized non-jsonl upload rides LFS: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/setup/review_snapshots/screen_started_376_samples_20260908T034825Z.zip (10850405 B)
+[phase=phase_a] WARN oversized non-jsonl upload rides LFS: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/setup/review_snapshots/screen_started_461_samples_20260908T042704Z.zip (13011772 B)
+[phase=phase_a] WARN oversized non-jsonl upload rides LFS: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/setup/review_snapshots/screen_started_541_samples_20260908T051858Z.zip (16577826 B)
+[phase=phase_a] WARN oversized non-jsonl upload rides LFS: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/setup/review_snapshots/screen_started_588_samples_20260908T054412Z.zip (17709170 B)
+[phase=phase_a] WARN oversized non-jsonl upload rides LFS: /home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z/run/setup/review_snapshots/screen_started_617_samples_20260908T063839Z.zip (18840420 B)
+It seems you are trying to upload a large folder at once. This might take some time and then fail if the folder is too large. For such cases, it is recommended to upload in smaller batches or to use `HfApi().upload_large_folder(...)`/`hf upload-large-folder` instead. For more details, check out https://huggingface.co/docs/huggingface_hub/main/en/guides/upload#upload-a-large-folder.
+Processing Files (0 / 0)      : |          |  0.00B /  0.00B            
+New Data Upload               : |          |  0.00B /  0.00B            [A
+
+  ...GPYSjaYbzZSCqtchLR23.eval: 100%|██████████| 1.16MB / 1.16MB            [A[A
+
+
+  ...ap_pilot/map_layer_44.npz:   8%|▊         | 7.96MB /  105MB            [A[A[A
+
+
+
+  ...un/setup/map_layer_44.npz:   8%|▊         | 7.96MB /  105MB            [A[A[A[A
+
+  ...GPYSjaYbzZSCqtchLR23.eval: 100%|██████████| 1.16MB / 1.16MB            [A[A
+
+
+  ...ap_pilot/map_layer_44.npz:   8%|▊         | 7.96MB /  105MB            [A[A[A
+
+
+
+  ...un/setup/map_layer_44.npz:   8%|▊         | 7.96MB /  105MB            [A[A[A[AProcessing Files (1 / 3)      :   5%|▍         | 17.1MB /  365MB, 85.0MB/s  
+
+
+
+
+  ...ples_20260908T013048Z.zip:   0%|          | 9.43kB / 3.45MB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T020849Z.zip:   0%|          | 9.43kB / 5.50MB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...GPYSjaYbzZSCqtchLR23.eval:   0%|          | 9.43kB / 26.3MB            [A[A[A[A[A[A[A
+
+  ...GPYSjaYbzZSCqtchLR23.eval: 100%|██████████| 1.16MB / 1.16MB            [A[A
+
+
+  ...ap_pilot/map_layer_44.npz:  23%|██▎       | 23.9MB /  105MB            [A[A[A
+
+
+
+  ...un/setup/map_layer_44.npz:  23%|██▎       | 23.9MB /  105MB            [A[A[A[A
+
+
+
+
+  ...ples_20260908T013048Z.zip:   0%|          | 9.43kB / 3.45MB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T020849Z.zip:   0%|          | 9.43kB / 5.50MB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...GPYSjaYbzZSCqtchLR23.eval:   0%|          | 9.43kB / 26.3MB            [A[A[A[A[A[A[AProcessing Files (1 / 6)      :  13%|█▎        | 49.1MB /  365MB,  123MB/s  
+
+
+
+
+
+
+
+  ...ples_20260908T051858Z.zip:   0%|          | 9.43kB / 16.6MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T030713Z.zip:   0%|          | 9.43kB / 7.73MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T034825Z.zip:   0%|          | 9.43kB / 10.9MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T063839Z.zip:   0%|          | 9.43kB / 18.8MB            [A[A[A[A[A[A[A[A[A[A[A
+
+  ...GPYSjaYbzZSCqtchLR23.eval: 100%|██████████| 1.16MB / 1.16MB            [A[A
+
+
+  ...ap_pilot/map_layer_44.npz:  46%|████▌     | 48.0MB /  105MB            [A[A[A
+
+
+
+  ...un/setup/map_layer_44.npz:  53%|█████▎    | 56.0MB /  105MB            [A[A[A[A
+
+
+
+
+  ...ples_20260908T013048Z.zip:   0%|          | 9.43kB / 3.45MB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T020849Z.zip:   0%|          | 9.43kB / 5.50MB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...GPYSjaYbzZSCqtchLR23.eval:   0%|          | 64.8kB / 26.3MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T051858Z.zip:   0%|          | 9.43kB / 16.6MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T030713Z.zip:   0%|          | 9.43kB / 7.73MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T034825Z.zip:   0%|          | 9.43kB / 10.9MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  [+ 2 files]                 :   0%|          | 28.3kB / 49.6MB            [A[A[A[A[A[A[A[A[A[A[AProcessing Files (1 / 12)     :  29%|██▉       |  105MB /  365MB,  175MB/s  
+
+  ...ap_pilot/map_layer_44.npz:  76%|███████▌  | 79.9MB /  105MB            [A[A
+
+
+  ...un/setup/map_layer_44.npz:  84%|████████▍ | 87.9MB /  105MB            [A[A[A
+
+
+
+  ...ples_20260908T013048Z.zip:   8%|▊         |  268kB / 3.45MB            [A[A[A[A
+
+
+
+
+  ...ples_20260908T020849Z.zip:   8%|▊         |  423kB / 5.50MB            [A[A[A[A[A
+
+
+
+
+
+  ...GPYSjaYbzZSCqtchLR23.eval:   0%|          | 64.8kB / 26.3MB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ples_20260908T051858Z.zip:   2%|▏         |  400kB / 16.6MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T030713Z.zip:   8%|▊         |  591kB / 7.73MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T034825Z.zip:   8%|▊         |  826kB / 10.9MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T063839Z.zip:   2%|▏         |  453kB / 18.8MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  [+ 24 files]                :   7%|▋         | 4.45MB / 65.2MB            [A[A[A[A[A[A[A[A[A[A[AProcessing Files (1 / 35)     :  48%|████▊     |  177MB /  365MB,  221MB/s  
+New Data Upload               :   5%|▌         | 5.32MB /  101MB, 6.66MB/s  [A
+
+  ...ap_pilot/map_layer_44.npz: 100%|██████████|  105MB /  105MB            [A[A
+
+
+  ...un/setup/map_layer_44.npz: 100%|██████████|  105MB /  105MB            [A[A[A
+
+
+
+  ...ples_20260908T013048Z.zip:  47%|████▋     | 1.63MB / 3.45MB            [A[A[A[A
+
+
+
+
+  ...ples_20260908T020849Z.zip:  47%|████▋     | 2.60MB / 5.50MB            [A[A[A[A[A
+
+
+
+
+
+  ...GPYSjaYbzZSCqtchLR23.eval:   0%|          | 64.8kB / 26.3MB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ples_20260908T051858Z.zip:  32%|███▏      | 5.28MB / 16.6MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T030713Z.zip:  47%|████▋     | 3.65MB / 7.73MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T034825Z.zip:  47%|████▋     | 5.11MB / 10.9MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T063839Z.zip:  32%|███▏      | 6.00MB / 18.8MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  [+ 24 files]                :  45%|████▍     | 29.3MB / 65.2MB            [A[A[A[A[A[A[A[A[A[A[AProcessing Files (3 / 35)     :  72%|███████▏  |  265MB /  365MB,  265MB/s  
+New Data Upload               :  32%|███▏      | 40.9MB /  128MB, 40.9MB/s  [A
+
+  ...ples_20260908T013048Z.zip:  90%|█████████ | 3.12MB / 3.45MB            [A[A
+
+
+  ...ples_20260908T020849Z.zip:  90%|█████████ | 4.98MB / 5.50MB            [A[A[A
+
+
+
+  ...GPYSjaYbzZSCqtchLR23.eval:   2%|▏         |  590kB / 26.3MB            [A[A[A[A
+
+
+
+
+  ...ples_20260908T051858Z.zip:  75%|███████▌  | 12.5MB / 16.6MB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T030713Z.zip:  90%|█████████ | 6.99MB / 7.73MB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ples_20260908T034825Z.zip:  90%|█████████ | 9.81MB / 10.9MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T063839Z.zip:  75%|███████▌  | 14.2MB / 18.8MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T054412Z.zip:  85%|████████▍ | 15.0MB / 17.7MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T042704Z.zip:  88%|████████▊ | 11.4MB / 13.0MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  [+ 22 files]                :  90%|█████████ | 31.2MB / 34.5MB            [A[A[A[A[A[A[A[A[A[A[AProcessing Files (3 / 35)     :  88%|████████▊ |  321MB /  365MB,  267MB/s  
+New Data Upload               :  67%|██████▋   | 85.5MB /  128MB, 71.2MB/s  [A
+
+  ...ples_20260908T013048Z.zip: 100%|█████████▉| 3.44MB / 3.45MB            [A[A
+
+
+  ...ples_20260908T020849Z.zip: 100%|█████████▉| 5.49MB / 5.50MB            [A[A[A
+
+
+
+  ...GPYSjaYbzZSCqtchLR23.eval:  10%|█         | 2.69MB / 26.3MB            [A[A[A[A
+
+
+
+
+  ...ples_20260908T051858Z.zip:  99%|█████████▉| 16.4MB / 16.6MB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T030713Z.zip: 100%|█████████▉| 7.72MB / 7.73MB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ples_20260908T034825Z.zip: 100%|█████████▉| 10.8MB / 10.9MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T063839Z.zip:  99%|█████████▉| 18.6MB / 18.8MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T054412Z.zip:  99%|█████████▉| 17.6MB / 17.7MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T042704Z.zip: 100%|█████████▉| 13.0MB / 13.0MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  [+ 22 files]                : 100%|█████████▉| 34.4MB / 34.5MB            [A[A[A[A[A[A[A[A[A[A[AProcessing Files (3 / 35)     :  93%|█████████▎|  341MB /  365MB,  244MB/s  
+New Data Upload               :  81%|████████  |  103MB /  128MB, 73.9MB/s  [A
+
+  ...ples_20260908T013048Z.zip: 100%|█████████▉| 3.44MB / 3.45MB            [A[A
+
+
+  ...ples_20260908T020849Z.zip: 100%|█████████▉| 5.49MB / 5.50MB            [A[A[A
+
+
+
+  ...GPYSjaYbzZSCqtchLR23.eval:  22%|██▏       | 5.84MB / 26.3MB            [A[A[A[A
+
+
+
+
+  ...ples_20260908T051858Z.zip:  99%|█████████▉| 16.4MB / 16.6MB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T030713Z.zip: 100%|█████████▉| 7.72MB / 7.73MB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ples_20260908T034825Z.zip: 100%|█████████▉| 10.8MB / 10.9MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T063839Z.zip:  99%|█████████▉| 18.6MB / 18.8MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T054412Z.zip:  99%|█████████▉| 17.6MB / 17.7MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T042704Z.zip: 100%|█████████▉| 13.0MB / 13.0MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  [+ 22 files]                : 100%|█████████▉| 34.4MB / 34.5MB            [A[A[A[A[A[A[A[A[A[A[AProcessing Files (3 / 35)     :  94%|█████████▍|  344MB /  365MB,  215MB/s  
+New Data Upload               :  84%|████████▎ |  107MB /  128MB, 66.6MB/s  [A
+
+  ...ples_20260908T013048Z.zip: 100%|█████████▉| 3.44MB / 3.45MB            [A[A
+
+
+  ...ples_20260908T020849Z.zip: 100%|█████████▉| 5.49MB / 5.50MB            [A[A[A
+
+
+
+  ...GPYSjaYbzZSCqtchLR23.eval:  38%|███▊      | 10.0MB / 26.3MB            [A[A[A[A
+
+
+
+
+  ...ples_20260908T051858Z.zip:  99%|█████████▉| 16.4MB / 16.6MB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T030713Z.zip: 100%|█████████▉| 7.72MB / 7.73MB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ples_20260908T034825Z.zip: 100%|█████████▉| 10.8MB / 10.9MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T063839Z.zip:  99%|█████████▉| 18.6MB / 18.8MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T054412Z.zip:  99%|█████████▉| 17.6MB / 17.7MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T042704Z.zip: 100%|█████████▉| 13.0MB / 13.0MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  [+ 22 files]                : 100%|█████████▉| 34.4MB / 34.5MB            [A[A[A[A[A[A[A[A[A[A[AProcessing Files (3 / 35)     :  95%|█████████▌|  349MB /  365MB,  194MB/s  
+New Data Upload               :  87%|████████▋ |  111MB /  128MB, 61.6MB/s  [A
+
+  ...ples_20260908T013048Z.zip: 100%|██████████| 3.45MB / 3.45MB            [A[A
+
+
+  ...ples_20260908T020849Z.zip: 100%|██████████| 5.50MB / 5.50MB            [A[A[A
+
+
+
+  ...GPYSjaYbzZSCqtchLR23.eval:  56%|█████▋    | 14.8MB / 26.3MB            [A[A[A[A
+
+
+
+
+  ...ples_20260908T051858Z.zip: 100%|██████████| 16.6MB / 16.6MB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T030713Z.zip: 100%|██████████| 7.73MB / 7.73MB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ples_20260908T034825Z.zip: 100%|██████████| 10.9MB / 10.9MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T063839Z.zip: 100%|██████████| 18.8MB / 18.8MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T054412Z.zip: 100%|██████████| 17.7MB / 17.7MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T042704Z.zip: 100%|██████████| 13.0MB / 13.0MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  [+ 22 files]                : 100%|██████████| 34.5MB / 34.5MB            [A[A[A[A[A[A[A[A[A[A[AProcessing Files (34 / 35)    :  97%|█████████▋|  354MB /  365MB,  177MB/s  
+New Data Upload               :  91%|█████████ |  116MB /  128MB, 58.1MB/s  [A
+
+  ...GPYSjaYbzZSCqtchLR23.eval:  84%|████████▍ | 22.1MB / 26.3MB            [A[A
+
+
+  ...Az589gj9bzDgYysGcnFi.eval: 100%|██████████| 9.85MB / 9.85MB            [A[A[A
+
+
+
+  ...16Z.longest_singleton.npz: 100%|██████████|  305kB /  305kB            [A[A[A[A
+
+
+
+
+  ...6Z.production_two_row.npz: 100%|██████████|  159kB /  159kB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T070736Z.zip: 100%|██████████|  142kB /  142kB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ples_20260908T080730Z.zip: 100%|██████████| 3.27MB / 3.27MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T084629Z.zip: 100%|██████████| 5.31MB / 5.31MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T092620Z.zip: 100%|██████████| 7.37MB / 7.37MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T073540Z.zip: 100%|██████████| 1.53MB / 1.53MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T082604Z.zip: 100%|██████████| 4.26MB / 4.26MB            [A[A[A[A[A[A[A[A[A[A[AProcessing Files (34 / 35)    :  99%|█████████▉|  361MB /  365MB,  164MB/s  
+New Data Upload               :  97%|█████████▋|  123MB /  128MB, 56.1MB/s  [A
+
+  ...GPYSjaYbzZSCqtchLR23.eval:  98%|█████████▊| 25.8MB / 26.3MB            [A[A
+
+
+  ...Az589gj9bzDgYysGcnFi.eval: 100%|██████████| 9.85MB / 9.85MB            [A[A[A
+
+
+
+  ...16Z.longest_singleton.npz: 100%|██████████|  305kB /  305kB            [A[A[A[A
+
+
+
+
+  ...6Z.production_two_row.npz: 100%|██████████|  159kB /  159kB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T070736Z.zip: 100%|██████████|  142kB /  142kB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ples_20260908T080730Z.zip: 100%|██████████| 3.27MB / 3.27MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T084629Z.zip: 100%|██████████| 5.31MB / 5.31MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T092620Z.zip: 100%|██████████| 7.37MB / 7.37MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T073540Z.zip: 100%|██████████| 1.53MB / 1.53MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T082604Z.zip: 100%|██████████| 4.26MB / 4.26MB            [A[A[A[A[A[A[A[A[A[A[AProcessing Files (34 / 35)    : 100%|█████████▉|  365MB /  365MB,  152MB/s  
+New Data Upload               : 100%|█████████▉|  127MB /  128MB, 53.0MB/s  [A
+
+  ...GPYSjaYbzZSCqtchLR23.eval:  98%|█████████▊| 25.8MB / 26.3MB            [A[A
+
+
+  ...Az589gj9bzDgYysGcnFi.eval: 100%|██████████| 9.85MB / 9.85MB            [A[A[A
+
+
+
+  ...16Z.longest_singleton.npz: 100%|██████████|  305kB /  305kB            [A[A[A[A
+
+
+
+
+  ...6Z.production_two_row.npz: 100%|██████████|  159kB /  159kB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T070736Z.zip: 100%|██████████|  142kB /  142kB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ples_20260908T080730Z.zip: 100%|██████████| 3.27MB / 3.27MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T084629Z.zip: 100%|██████████| 5.31MB / 5.31MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T092620Z.zip: 100%|██████████| 7.37MB / 7.37MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T073540Z.zip: 100%|██████████| 1.53MB / 1.53MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T082604Z.zip: 100%|██████████| 4.26MB / 4.26MB            [A[A[A[A[A[A[A[A[A[A[A
+
+  ...GPYSjaYbzZSCqtchLR23.eval: 100%|██████████| 26.3MB / 26.3MB            [A[A
+
+
+  ...Az589gj9bzDgYysGcnFi.eval: 100%|██████████| 9.85MB / 9.85MB            [A[A[A
+
+
+
+  ...16Z.longest_singleton.npz: 100%|██████████|  305kB /  305kB            [A[A[A[A
+
+
+
+
+  ...6Z.production_two_row.npz: 100%|██████████|  159kB /  159kB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T070736Z.zip: 100%|██████████|  142kB /  142kB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ples_20260908T080730Z.zip: 100%|██████████| 3.27MB / 3.27MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T084629Z.zip: 100%|██████████| 5.31MB / 5.31MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T092620Z.zip: 100%|██████████| 7.37MB / 7.37MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T073540Z.zip: 100%|██████████| 1.53MB / 1.53MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T082604Z.zip: 100%|██████████| 4.26MB / 4.26MB            [A[A[A[A[A[A[A[A[A[A[AProcessing Files (35 / 35)    : 100%|██████████|  365MB /  365MB,  131MB/s  
+New Data Upload               : 100%|██████████|  128MB /  128MB, 45.6MB/s  [A
+
+  ...GPYSjaYbzZSCqtchLR23.eval: 100%|██████████| 26.3MB / 26.3MB            [A[A
+
+
+  ...Az589gj9bzDgYysGcnFi.eval: 100%|██████████| 9.85MB / 9.85MB            [A[A[A
+
+
+
+  ...16Z.longest_singleton.npz: 100%|██████████|  305kB /  305kB            [A[A[A[A
+
+
+
+
+  ...6Z.production_two_row.npz: 100%|██████████|  159kB /  159kB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T070736Z.zip: 100%|██████████|  142kB /  142kB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ples_20260908T080730Z.zip: 100%|██████████| 3.27MB / 3.27MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T084629Z.zip: 100%|██████████| 5.31MB / 5.31MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T092620Z.zip: 100%|██████████| 7.37MB / 7.37MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T073540Z.zip: 100%|██████████| 1.53MB / 1.53MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T082604Z.zip: 100%|██████████| 4.26MB / 4.26MB            [A[A[A[A[A[A[A[A[A[A[A
+
+  ...GPYSjaYbzZSCqtchLR23.eval: 100%|██████████| 26.3MB / 26.3MB            [A[A
+
+
+  ...Az589gj9bzDgYysGcnFi.eval: 100%|██████████| 9.85MB / 9.85MB            [A[A[A
+
+
+
+  ...16Z.longest_singleton.npz: 100%|██████████|  305kB /  305kB            [A[A[A[A
+
+
+
+
+  ...6Z.production_two_row.npz: 100%|██████████|  159kB /  159kB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T070736Z.zip: 100%|██████████|  142kB /  142kB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ples_20260908T080730Z.zip: 100%|██████████| 3.27MB / 3.27MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T084629Z.zip: 100%|██████████| 5.31MB / 5.31MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T092620Z.zip: 100%|██████████| 7.37MB / 7.37MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T073540Z.zip: 100%|██████████| 1.53MB / 1.53MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T082604Z.zip: 100%|██████████| 4.26MB / 4.26MB            [A[A[A[A[A[A[A[A[A[A[A
+
+  ...GPYSjaYbzZSCqtchLR23.eval: 100%|██████████| 26.3MB / 26.3MB            [A[A
+
+
+  ...Az589gj9bzDgYysGcnFi.eval: 100%|██████████| 9.85MB / 9.85MB            [A[A[A
+
+
+
+  ...16Z.longest_singleton.npz: 100%|██████████|  305kB /  305kB            [A[A[A[A
+
+
+
+
+  ...6Z.production_two_row.npz: 100%|██████████|  159kB /  159kB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T070736Z.zip: 100%|██████████|  142kB /  142kB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ples_20260908T080730Z.zip: 100%|██████████| 3.27MB / 3.27MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T084629Z.zip: 100%|██████████| 5.31MB / 5.31MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T092620Z.zip: 100%|██████████| 7.37MB / 7.37MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T073540Z.zip: 100%|██████████| 1.53MB / 1.53MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T082604Z.zip: 100%|██████████| 4.26MB / 4.26MB            [A[A[A[A[A[A[A[A[A[A[AProcessing Files (35 / 35)    : 100%|██████████|  365MB /  365MB,  114MB/s  
+New Data Upload               : 100%|██████████|  128MB /  128MB, 39.9MB/s  
+  ...GPYSjaYbzZSCqtchLR23.eval: 100%|██████████| 26.3MB / 26.3MB            
+  ...Az589gj9bzDgYysGcnFi.eval: 100%|██████████| 9.85MB / 9.85MB            
+  ...16Z.longest_singleton.npz: 100%|██████████|  305kB /  305kB            
+  ...6Z.production_two_row.npz: 100%|██████████|  159kB /  159kB            
+  ...ples_20260908T070736Z.zip: 100%|██████████|  142kB /  142kB            
+  ...ples_20260908T080730Z.zip: 100%|██████████| 3.27MB / 3.27MB            
+  ...ples_20260908T084629Z.zip: 100%|██████████| 5.31MB / 5.31MB            
+  ...ples_20260908T092620Z.zip: 100%|██████████| 7.37MB / 7.37MB            
+  ...ples_20260908T073540Z.zip: 100%|██████████| 1.53MB / 1.53MB            
+  ...ples_20260908T082604Z.zip: 100%|██████████| 4.26MB / 4.26MB            
+upload_folder transient error (attempt 1, elapsed 139s / budget 120s): 504 Server Error: Gateway Time-out for url: https://huggingface.co/api/datasets/superkaiba1/explore-persona-space-data/commit/main (Amz CF ID: 1MNdKRlvFf0aR8yFY3MiuTjOOtz078pKmxWqLTZWL_qGKD_8kXnL3w==); retrying in 0s
+It seems you are trying to upload a large folder at once. This might take some time and then fail if the folder is too large. For such cases, it is recommended to upload in smaller batches or to use `HfApi().upload_large_folder(...)`/`hf upload-large-folder` instead. For more details, check out https://huggingface.co/docs/huggingface_hub/main/en/guides/upload#upload-a-large-folder.
+Processing Files (0 / 0)      : |          |  0.00B /  0.00B            
+New Data Upload               : |          |  0.00B /  0.00B            [A
+
+  ...od/capture/chunk_0001.npz: 100%|██████████|  154kB /  154kB            [A[A
+
+
+  ...un/capture/chunk_0002.npz: 100%|██████████|  154kB /  154kB            [A[A[A
+
+
+
+  ...od/capture/chunk_0005.npz: 100%|██████████|  154kB /  154kB            [A[A[A[A
+
+
+
+
+  ...od/capture/chunk_0002.npz: 100%|██████████|  154kB /  154kB            [A[A[A[A[A
+
+
+
+
+
+  ...od/capture/chunk_0000.npz: 100%|██████████|  154kB /  154kB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...od/capture/chunk_0003.npz: 100%|██████████|  154kB /  154kB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...16Z.longest_singleton.npz: 100%|██████████|  305kB /  305kB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...od/capture/chunk_0004.npz: 100%|██████████|  154kB /  154kB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...6Z.production_two_row.npz: 100%|██████████|  159kB /  159kB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  ...un/capture/chunk_0000.npz: 100%|██████████|  154kB /  154kB            [A[A[A[A[A[A[A[A[A[A[A
+
+  ...od/capture/chunk_0001.npz: 100%|██████████|  154kB /  154kB            [A[A
+
+
+  ...un/capture/chunk_0002.npz: 100%|██████████|  154kB /  154kB            [A[A[A
+
+
+
+  ...od/capture/chunk_0005.npz: 100%|██████████|  154kB /  154kB            [A[A[A[A
+
+
+
+
+  ...od/capture/chunk_0002.npz: 100%|██████████|  154kB /  154kB            [A[A[A[A[A
+
+
+
+
+
+  ...od/capture/chunk_0000.npz: 100%|██████████|  154kB /  154kB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...od/capture/chunk_0003.npz: 100%|██████████|  154kB /  154kB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...16Z.longest_singleton.npz: 100%|██████████|  305kB /  305kB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...od/capture/chunk_0004.npz: 100%|██████████|  154kB /  154kB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...6Z.production_two_row.npz: 100%|██████████|  159kB /  159kB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  [+ 25 files]                :  60%|█████▉    |  218MB /  364MB            [A[A[A[A[A[A[A[A[A[A[AProcessing Files (33 / 35)    :  60%|██████    |  220MB /  365MB,   ???B/s  
+
+  ...ples_20260908T020849Z.zip: 100%|██████████| 5.50MB / 5.50MB            [A[A
+
+
+  ...ples_20260908T034825Z.zip: 100%|██████████| 10.9MB / 10.9MB            [A[A[A
+
+
+
+  ...Az589gj9bzDgYysGcnFi.eval: 100%|██████████| 9.85MB / 9.85MB            [A[A[A[A
+
+
+
+
+  ...un/setup/map_layer_44.npz:  61%|██████    | 63.9MB /  105MB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T051858Z.zip: 100%|██████████| 16.6MB / 16.6MB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ap_pilot/map_layer_44.npz:  53%|█████▎    | 56.0MB /  105MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T063839Z.zip: 100%|██████████| 18.8MB / 18.8MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T054412Z.zip: 100%|██████████| 17.7MB / 17.7MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...GPYSjaYbzZSCqtchLR23.eval: 100%|██████████| 26.3MB / 26.3MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T042704Z.zip: 100%|██████████| 13.0MB / 13.0MB            [A[A[A[A[A[A[A[A[A[A[AProcessing Files (33 / 35)    :  75%|███████▌  |  276MB /  365MB,  280MB/s  
+
+  ...ples_20260908T020849Z.zip: 100%|██████████| 5.50MB / 5.50MB            [A[A
+
+
+  ...ples_20260908T034825Z.zip: 100%|██████████| 10.9MB / 10.9MB            [A[A[A
+
+
+
+  ...Az589gj9bzDgYysGcnFi.eval: 100%|██████████| 9.85MB / 9.85MB            [A[A[A[A
+
+
+
+
+  ...un/setup/map_layer_44.npz:  91%|█████████▏| 96.0MB /  105MB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T051858Z.zip: 100%|██████████| 16.6MB / 16.6MB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ap_pilot/map_layer_44.npz:  84%|████████▍ | 87.9MB /  105MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T063839Z.zip: 100%|██████████| 18.8MB / 18.8MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T054412Z.zip: 100%|██████████| 17.7MB / 17.7MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...GPYSjaYbzZSCqtchLR23.eval: 100%|██████████| 26.3MB / 26.3MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T042704Z.zip: 100%|██████████| 13.0MB / 13.0MB            [A[A[A[A[A[A[A[A[A[A[AProcessing Files (33 / 35)    :  93%|█████████▎|  340MB /  365MB,  300MB/s  
+
+  ...ples_20260908T020849Z.zip: 100%|██████████| 5.50MB / 5.50MB            [A[A
+
+
+  ...ples_20260908T034825Z.zip: 100%|██████████| 10.9MB / 10.9MB            [A[A[A
+
+
+
+  ...Az589gj9bzDgYysGcnFi.eval: 100%|██████████| 9.85MB / 9.85MB            [A[A[A[A
+
+
+
+
+  ...un/setup/map_layer_44.npz: 100%|██████████|  105MB /  105MB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T051858Z.zip: 100%|██████████| 16.6MB / 16.6MB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ap_pilot/map_layer_44.npz: 100%|██████████|  105MB /  105MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T063839Z.zip: 100%|██████████| 18.8MB / 18.8MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T054412Z.zip: 100%|██████████| 17.7MB / 17.7MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...GPYSjaYbzZSCqtchLR23.eval: 100%|██████████| 26.3MB / 26.3MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T042704Z.zip: 100%|██████████| 13.0MB / 13.0MB            [A[A[A[A[A[A[A[A[A[A[AProcessing Files (35 / 35)    : 100%|██████████|  365MB /  365MB,  243MB/s  
+
+  ...ples_20260908T020849Z.zip: 100%|██████████| 5.50MB / 5.50MB            [A[A
+
+
+  ...ples_20260908T034825Z.zip: 100%|██████████| 10.9MB / 10.9MB            [A[A[A
+
+
+
+  ...Az589gj9bzDgYysGcnFi.eval: 100%|██████████| 9.85MB / 9.85MB            [A[A[A[A
+
+
+
+
+  ...un/setup/map_layer_44.npz: 100%|██████████|  105MB /  105MB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T051858Z.zip: 100%|██████████| 16.6MB / 16.6MB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ap_pilot/map_layer_44.npz: 100%|██████████|  105MB /  105MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T063839Z.zip: 100%|██████████| 18.8MB / 18.8MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T054412Z.zip: 100%|██████████| 17.7MB / 17.7MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...GPYSjaYbzZSCqtchLR23.eval: 100%|██████████| 26.3MB / 26.3MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T042704Z.zip: 100%|██████████| 13.0MB / 13.0MB            [A[A[A[A[A[A[A[A[A[A[A
+
+  ...ples_20260908T020849Z.zip: 100%|██████████| 5.50MB / 5.50MB            [A[A
+
+
+  ...ples_20260908T034825Z.zip: 100%|██████████| 10.9MB / 10.9MB            [A[A[A
+
+
+
+  ...Az589gj9bzDgYysGcnFi.eval: 100%|██████████| 9.85MB / 9.85MB            [A[A[A[A
+
+
+
+
+  ...un/setup/map_layer_44.npz: 100%|██████████|  105MB /  105MB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T051858Z.zip: 100%|██████████| 16.6MB / 16.6MB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ap_pilot/map_layer_44.npz: 100%|██████████|  105MB /  105MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T063839Z.zip: 100%|██████████| 18.8MB / 18.8MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T054412Z.zip: 100%|██████████| 17.7MB / 17.7MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...GPYSjaYbzZSCqtchLR23.eval: 100%|██████████| 26.3MB / 26.3MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T042704Z.zip: 100%|██████████| 13.0MB / 13.0MB            [A[A[A[A[A[A[A[A[A[A[A
+
+  ...ples_20260908T020849Z.zip: 100%|██████████| 5.50MB / 5.50MB            [A[A
+
+
+  ...ples_20260908T034825Z.zip: 100%|██████████| 10.9MB / 10.9MB            [A[A[A
+
+
+
+  ...Az589gj9bzDgYysGcnFi.eval: 100%|██████████| 9.85MB / 9.85MB            [A[A[A[A
+
+
+
+
+  ...un/setup/map_layer_44.npz: 100%|██████████|  105MB /  105MB            [A[A[A[A[A
+
+
+
+
+
+  ...ples_20260908T051858Z.zip: 100%|██████████| 16.6MB / 16.6MB            [A[A[A[A[A[A
+
+
+
+
+
+
+  ...ap_pilot/map_layer_44.npz: 100%|██████████|  105MB /  105MB            [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+  ...ples_20260908T063839Z.zip: 100%|██████████| 18.8MB / 18.8MB            [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+  ...ples_20260908T054412Z.zip: 100%|██████████| 17.7MB / 17.7MB            [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+  ...GPYSjaYbzZSCqtchLR23.eval: 100%|██████████| 26.3MB / 26.3MB            [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+  ...ples_20260908T042704Z.zip: 100%|██████████| 13.0MB / 13.0MB            [A[A[A[A[A[A[A[A[A[A[AProcessing Files (35 / 35)    : 100%|██████████|  365MB /  365MB,  146MB/s  
+New Data Upload               : |          |  0.00B /  0.00B,  0.00B/s  
+  ...ples_20260908T020849Z.zip: 100%|██████████| 5.50MB / 5.50MB            
+  ...ples_20260908T034825Z.zip: 100%|██████████| 10.9MB / 10.9MB            
+  ...Az589gj9bzDgYysGcnFi.eval: 100%|██████████| 9.85MB / 9.85MB            
+  ...un/setup/map_layer_44.npz: 100%|██████████|  105MB /  105MB            
+  ...ples_20260908T051858Z.zip: 100%|██████████| 16.6MB / 16.6MB            
+  ...ap_pilot/map_layer_44.npz: 100%|██████████|  105MB /  105MB            
+  ...ples_20260908T063839Z.zip: 100%|██████████| 18.8MB / 18.8MB            
+  ...ples_20260908T054412Z.zip: 100%|██████████| 17.7MB / 17.7MB            
+  ...GPYSjaYbzZSCqtchLR23.eval: 100%|██████████| 26.3MB / 26.3MB            
+  ...ples_20260908T042704Z.zip: 100%|██████████| 13.0MB / 13.0MB            
+No files have been modified since last commit. Skipping to prevent empty commit.
+[archive] uploaded and API-verified files=658
+[stage_hub_prefix] start superkaiba1/explore-persona-space-data@58d3e6d6b0917b6e9777c45d23b814693dc14277:context_risk/issue2670_highrate/raw timeout=82200s
+[stage_hub_prefix] 658 files (~0.72 GB known) under superkaiba1/explore-persona-space-data@58d3e6d6b0917b6e9777c45d23b814693dc14277:context_risk/issue2670_highrate/raw
+[stage_hub_prefix] unit 1/658 context_risk/issue2670_highrate/raw/code/configs/eval/context_risk_qwen38_fit_map.yaml elapsed=0s
+[stage_hub_prefix] unit 2/658 context_risk/issue2670_highrate/raw/code/configs/eval/context_risk_highrate.yaml elapsed=0s
+[stage_hub_prefix] unit 3/658 context_risk/issue2670_highrate/raw/code/configs/eval/context_risk_highrate_capture.yaml elapsed=0s
+[stage_hub_prefix] unit 4/658 context_risk/issue2670_highrate/raw/code/configs/eval/context_risk_highrate_analyze.yaml elapsed=0s
+[stage_hub_prefix] unit 5/658 context_risk/issue2670_highrate/raw/code/configs/eval/context_risk_qwen38_impossible_capture.yaml elapsed=0s
+[stage_hub_prefix] unit 6/658 context_risk/issue2670_highrate/raw/code/configs/eval/context_risk_followup_capture.yaml elapsed=0s
+[stage_hub_prefix] unit 7/658 context_risk/issue2670_highrate/raw/code/configs/eval/context_risk_qwen38_smoke.yaml elapsed=0s
+[stage_hub_prefix] unit 8/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/analysis_input_validity_code_review.json elapsed=0s
+[stage_hub_prefix] unit 9/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/analysis_code_review.json elapsed=0s
+[stage_hub_prefix] unit 10/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/analysis_code_review.md elapsed=0s
+[stage_hub_prefix] unit 11/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/analysis_input_validity_code_review.md elapsed=0s
+[stage_hub_prefix] unit 12/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/analysis_spec.json elapsed=0s
+[stage_hub_prefix] unit 13/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/capture_code_review.json elapsed=1s
+[stage_hub_prefix] unit 14/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/code_review.json elapsed=1s
+[stage_hub_prefix] unit 15/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/capture_code_review.md elapsed=1s
+[stage_hub_prefix] unit 16/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/code_review.md elapsed=1s
+[stage_hub_prefix] unit 17/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/design_initial_review.md elapsed=1s
+[stage_hub_prefix] unit 18/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/factcheck_consistency.json elapsed=1s
+[stage_hub_prefix] unit 19/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/factcheck_consistency.md elapsed=1s
+[stage_hub_prefix] unit 20/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/inherited_runtime_sources.json elapsed=1s
+[stage_hub_prefix] unit 21/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/inherited_v20_server_review.json elapsed=1s
+[stage_hub_prefix] unit 22/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/inherited_followup_code_review.json elapsed=1s
+[stage_hub_prefix] unit 23/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/input_validity_plan_review.json elapsed=1s
+[stage_hub_prefix] unit 24/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/input_validity_plan_review.md elapsed=1s
+[stage_hub_prefix] unit 25/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/input_validity_policy.json elapsed=1s
+[stage_hub_prefix] unit 26/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/model_files.json elapsed=1s
+[stage_hub_prefix] unit 27/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/plan.md elapsed=1s
+[stage_hub_prefix] unit 28/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/plan_review.json elapsed=1s
+[stage_hub_prefix] unit 29/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/plan_review.md elapsed=1s
+[stage_hub_prefix] unit 30/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/plan_v7_input_validity.md elapsed=1s
+[stage_hub_prefix] unit 31/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md elapsed=1s
+[stage_hub_prefix] unit 32/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md elapsed=1s
+[stage_hub_prefix] unit 33/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/map_reuse_review.json elapsed=1s
+[stage_hub_prefix] unit 34/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/findings.md elapsed=1s
+[stage_hub_prefix] unit 35/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-alignmentresearch-tree.json elapsed=1s
+[stage_hub_prefix] unit 36/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-dataset-readme.md elapsed=1s
+[stage_hub_prefix] unit 37/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-forks.json elapsed=1s
+[stage_hub_prefix] unit 38/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-easy-github-tree.json elapsed=1s
+[stage_hub_prefix] unit 39/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-easy-tree.json elapsed=1s
+[stage_hub_prefix] unit 40/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-github-releases.json elapsed=1s
+[stage_hub_prefix] unit 41/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-github-tree.json elapsed=1s
+[stage_hub_prefix] unit 42/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-github-issues.json elapsed=2s
+[stage_hub_prefix] unit 43/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-author.json elapsed=2s
+[stage_hub_prefix] unit 44/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-search.json elapsed=2s
+[stage_hub_prefix] unit 45/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-tree.json elapsed=2s
+[stage_hub_prefix] unit 46/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-pando.json elapsed=2s
+[stage_hub_prefix] unit 47/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hodoscope-impossible-tree.json elapsed=2s
+[stage_hub_prefix] unit 48/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hodoscope-root.json elapsed=2s
+[stage_hub_prefix] unit 49/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hodoscope-supervised-tree.json elapsed=2s
+[stage_hub_prefix] unit 50/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-hodoscope-tree.json elapsed=2s
+[stage_hub_prefix] unit 51/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-pando-readme.md elapsed=2s
+[stage_hub_prefix] unit 52/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-web.json elapsed=2s
+[stage_hub_prefix] unit 53/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-web-results.json elapsed=2s
+[stage_hub_prefix] unit 54/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_analyze.py elapsed=2s
+[stage_hub_prefix] unit 55/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_corrected_finish.py elapsed=2s
+[stage_hub_prefix] unit 56/658 context_risk/issue2670_highrate/raw/code/eval_results/context_risk_highrate_design/workflow_lint.log elapsed=2s
+[stage_hub_prefix] unit 57/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_followup.py elapsed=2s
+[stage_hub_prefix] unit 58/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_followup_capture.py elapsed=2s
+[stage_hub_prefix] unit 59/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_followup_analyze.py elapsed=2s
+[stage_hub_prefix] unit 60/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_followup_census.py elapsed=2s
+[stage_hub_prefix] unit 61/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_followup_features.py elapsed=2s
+[stage_hub_prefix] unit 62/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_highrate_analyze.py elapsed=2s
+[stage_hub_prefix] unit 63/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_followup_probe_core.py elapsed=2s
+[stage_hub_prefix] unit 64/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_highrate_archive.py elapsed=2s
+[stage_hub_prefix] unit 65/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_highrate_capacity.py elapsed=2s
+[stage_hub_prefix] unit 66/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_highrate_design.py elapsed=2s
+[stage_hub_prefix] unit 67/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_highrate_postrun.py elapsed=2s
+[stage_hub_prefix] unit 68/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_highrate_capture.py elapsed=3s
+[stage_hub_prefix] unit 69/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_highrate_reconcile.py elapsed=3s
+[stage_hub_prefix] unit 70/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_highrate_collect.py elapsed=3s
+[stage_hub_prefix] unit 71/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_highrate_supervise.sh elapsed=3s
+[stage_hub_prefix] unit 72/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_highrate_validity.py elapsed=3s
+[stage_hub_prefix] unit 73/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_highrate_transport.py elapsed=3s
+[stage_hub_prefix] unit 74/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_impossiblebench.py elapsed=3s
+[stage_hub_prefix] unit 75/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_impossiblebench_harness.py elapsed=3s
+[stage_hub_prefix] unit 76/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_impossiblebench_inspect.py elapsed=3s
+[stage_hub_prefix] unit 77/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_prepare_data.py elapsed=3s
+[stage_hub_prefix] unit 78/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_qwen38_fit_map.py elapsed=3s
+[stage_hub_prefix] unit 79/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_qwen38_capture.py elapsed=3s
+[stage_hub_prefix] unit 80/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_qwen38_smoke.py elapsed=3s
+[stage_hub_prefix] unit 81/658 context_risk/issue2670_highrate/raw/code/scripts/context_risk_qwen38_impossible_capture.py elapsed=3s
+[stage_hub_prefix] unit 82/658 context_risk/issue2670_highrate/raw/code/scripts/issue2054_phase_a.py elapsed=3s
+[stage_hub_prefix] unit 83/658 context_risk/issue2670_highrate/raw/code/scripts/pod.py elapsed=3s
+[stage_hub_prefix] unit 84/658 context_risk/issue2670_highrate/raw/code/scripts/task.py elapsed=3s
+[stage_hub_prefix] unit 85/658 context_risk/issue2670_highrate/raw/code/scripts/verify_uploads.py elapsed=3s
+[stage_hub_prefix] unit 86/658 context_risk/issue2670_highrate/raw/code/scripts/pod_lifecycle.py elapsed=3s
+[stage_hub_prefix] unit 87/658 context_risk/issue2670_highrate/raw/code/src/explore_persona_space/analysis/extraction.py elapsed=3s
+[stage_hub_prefix] unit 88/658 context_risk/issue2670_highrate/raw/code/src/explore_persona_space/atomic_io.py elapsed=3s
+[stage_hub_prefix] unit 89/658 context_risk/issue2670_highrate/raw/code/src/explore_persona_space/orchestrate/env.py elapsed=3s
+[stage_hub_prefix] unit 90/658 context_risk/issue2670_highrate/raw/code/tests/test_context_risk_highrate_capture.py elapsed=3s
+[stage_hub_prefix] unit 91/658 context_risk/issue2670_highrate/raw/code/tests/test_context_risk_highrate_design.py elapsed=3s
+[stage_hub_prefix] unit 92/658 context_risk/issue2670_highrate/raw/code/tests/test_context_risk_highrate_analyze.py elapsed=3s
+[stage_hub_prefix] unit 93/658 context_risk/issue2670_highrate/raw/code/tests/test_context_risk_highrate_collect.py elapsed=3s
+[stage_hub_prefix] unit 94/658 context_risk/issue2670_highrate/raw/code/src/explore_persona_space/orchestrate/hub.py elapsed=3s
+[stage_hub_prefix] unit 95/658 context_risk/issue2670_highrate/raw/code/tests/test_context_risk_highrate_postrun.py elapsed=3s
+[stage_hub_prefix] unit 96/658 context_risk/issue2670_highrate/raw/code/tests/test_context_risk_highrate_postrun_integration.py elapsed=3s
+[stage_hub_prefix] unit 97/658 context_risk/issue2670_highrate/raw/code/tests/test_context_risk_highrate_reconcile.py elapsed=4s
+[stage_hub_prefix] unit 98/658 context_risk/issue2670_highrate/raw/code/tests/test_context_risk_highrate_transport.py elapsed=4s
+[stage_hub_prefix] unit 99/658 context_risk/issue2670_highrate/raw/external/vm_worktree/context_risk_highrate_collect.log elapsed=4s
+[stage_hub_prefix] unit 100/658 context_risk/issue2670_highrate/raw/external/qwen38_map_pilot/run_result.json elapsed=4s
+[stage_hub_prefix] unit 101/658 context_risk/issue2670_highrate/raw/external/benchmark/public_development_manifest.jsonl elapsed=4s
+[stage_hub_prefix] unit 102/658 context_risk/issue2670_highrate/raw/pod/capture/capture_launch_binding.json elapsed=4s
+[stage_hub_prefix] unit 103/658 context_risk/issue2670_highrate/raw/pod/capture/capture_binding.json elapsed=4s
+[stage_hub_prefix] unit 104/658 context_risk/issue2670_highrate/raw/pod/capture/chunk_0000.done.json elapsed=4s
+[stage_hub_prefix] unit 105/658 context_risk/issue2670_highrate/raw/pod/capture/chunk_0000.rows.jsonl elapsed=4s
+[stage_hub_prefix] unit 106/658 context_risk/issue2670_highrate/raw/pod/capture/chunk_0001.done.json elapsed=4s
+[stage_hub_prefix] unit 107/658 context_risk/issue2670_highrate/raw/pod/capture/chunk_0001.rows.jsonl elapsed=4s
+[stage_hub_prefix] unit 108/658 context_risk/issue2670_highrate/raw/pod/capture/chunk_0002.done.json elapsed=4s
+[stage_hub_prefix] unit 109/658 context_risk/issue2670_highrate/raw/pod/capture/chunk_0002.rows.jsonl elapsed=4s
+[stage_hub_prefix] unit 110/658 context_risk/issue2670_highrate/raw/pod/capture/chunk_0003.done.json elapsed=4s
+[stage_hub_prefix] unit 111/658 context_risk/issue2670_highrate/raw/pod/capture/chunk_0000.npz elapsed=4s
+[stage_hub_prefix] unit 112/658 context_risk/issue2670_highrate/raw/pod/capture/chunk_0002.npz elapsed=4s
+[stage_hub_prefix] unit 113/658 context_risk/issue2670_highrate/raw/pod/capture/chunk_0003.rows.jsonl elapsed=4s
+[stage_hub_prefix] unit 114/658 context_risk/issue2670_highrate/raw/pod/capture/chunk_0004.done.json elapsed=5s
+[stage_hub_prefix] unit 115/658 context_risk/issue2670_highrate/raw/pod/capture/chunk_0001.npz elapsed=5s
+[stage_hub_prefix] unit 116/658 context_risk/issue2670_highrate/raw/pod/capture/chunk_0005.done.json elapsed=5s
+[stage_hub_prefix] unit 117/658 context_risk/issue2670_highrate/raw/pod/capture/chunk_0003.npz elapsed=5s
+[stage_hub_prefix] unit 118/658 context_risk/issue2670_highrate/raw/pod/capture/chunk_0004.rows.jsonl elapsed=5s
+[stage_hub_prefix] unit 119/658 context_risk/issue2670_highrate/raw/pod/capture/chunk_0005.npz elapsed=5s
+[stage_hub_prefix] unit 120/658 context_risk/issue2670_highrate/raw/pod/capture/run_result.json elapsed=5s
+[stage_hub_prefix] unit 121/658 context_risk/issue2670_highrate/raw/pod/capture/chunk_0005.rows.jsonl elapsed=5s
+[stage_hub_prefix] unit 122/658 context_risk/issue2670_highrate/raw/external/qwen38_map_pilot/map_layer_44.npz elapsed=5s
+[stage_hub_prefix] unit 123/658 context_risk/issue2670_highrate/raw/pod/capture_inputs.json elapsed=5s
+[stage_hub_prefix] unit 124/658 context_risk/issue2670_highrate/raw/pod/capture/chunk_0004.npz elapsed=5s
+[stage_hub_prefix] unit 125/658 context_risk/issue2670_highrate/raw/pod/fresh_B/terminal_process.json elapsed=5s
+[stage_hub_prefix] unit 126/658 context_risk/issue2670_highrate/raw/pod/fresh_B/prefix_tokens.json elapsed=5s
+[stage_hub_prefix] unit 127/658 context_risk/issue2670_highrate/raw/pod/fresh_B/run_result.json elapsed=5s
+[stage_hub_prefix] unit 128/658 context_risk/issue2670_highrate/raw/pod/fresh_B/transport_postrun_audit.json elapsed=5s
+[stage_hub_prefix] unit 129/658 context_risk/issue2670_highrate/raw/pod/screen_B/postrun_audit.json elapsed=5s
+[stage_hub_prefix] unit 130/658 context_risk/issue2670_highrate/raw/pod/selection.json elapsed=5s
+[stage_hub_prefix] unit 131/658 context_risk/issue2670_highrate/raw/pod/server/runtime.json elapsed=5s
+[stage_hub_prefix] unit 132/658 context_risk/issue2670_highrate/raw/pod/manifests/fresh_B.jsonl elapsed=5s
+[stage_hub_prefix] unit 133/658 context_risk/issue2670_highrate/raw/pod/server/server.lock elapsed=5s
+[stage_hub_prefix] unit 134/658 context_risk/issue2670_highrate/raw/pod/server/serve_20260907T232817Z.log elapsed=5s
+[stage_hub_prefix] unit 135/658 context_risk/issue2670_highrate/raw/pod/server/serve_20260907T232817Z_launch.json elapsed=6s
+[stage_hub_prefix] unit 136/658 context_risk/issue2670_highrate/raw/pod/server/server_serve_20260907T232817Z_process.worker.pid elapsed=6s
+[stage_hub_prefix] unit 137/658 context_risk/issue2670_highrate/raw/pod/server/server_serve_20260907T232817Z_process.exit.json elapsed=6s
+[stage_hub_prefix] unit 138/658 context_risk/issue2670_highrate/raw/pod/setup/capture_memory_artifacts.json elapsed=6s
+[stage_hub_prefix] unit 139/658 context_risk/issue2670_highrate/raw/pod/setup/capture_memory_check.py elapsed=6s
+[stage_hub_prefix] unit 140/658 context_risk/issue2670_highrate/raw/pod/server/server_serve_20260907T232817Z_process.pid elapsed=6s
+[stage_hub_prefix] unit 141/658 context_risk/issue2670_highrate/raw/pod/setup/capture_memory_code_review.json elapsed=6s
+[stage_hub_prefix] unit 142/658 context_risk/issue2670_highrate/raw/pod/setup/capture_memory_code_review.md elapsed=6s
+[stage_hub_prefix] unit 143/658 context_risk/issue2670_highrate/raw/pod/setup/capture_memory_diag_20260908T100316Z.json elapsed=6s
+[stage_hub_prefix] unit 144/658 context_risk/issue2670_highrate/raw/pod/setup/capture_memory_diag_20260908T100316Z.launch.json elapsed=6s
+[stage_hub_prefix] unit 145/658 context_risk/issue2670_highrate/raw/pod/setup/capture_memory_diag_20260908T100316Z.log elapsed=6s
+[stage_hub_prefix] unit 146/658 context_risk/issue2670_highrate/raw/pod/setup/capture_memory_diag_20260908T100316Z_owner_launch.json elapsed=6s
+[stage_hub_prefix] unit 147/658 context_risk/issue2670_highrate/raw/pod/setup/capture_memory_diag_20260908T100316Z.longest_singleton.npz elapsed=6s
+[stage_hub_prefix] unit 148/658 context_risk/issue2670_highrate/raw/pod/setup/capture_memory_diag_20260908T100316Z_process.worker.pid elapsed=6s
+[stage_hub_prefix] unit 149/658 context_risk/issue2670_highrate/raw/pod/setup/capture_memory_diag_20260908T100316Z.production_two_row.npz elapsed=6s
+[stage_hub_prefix] unit 150/658 context_risk/issue2670_highrate/raw/pod/setup/capture_memory_diag_20260908T100316Z_process.pid elapsed=6s
+[stage_hub_prefix] unit 151/658 context_risk/issue2670_highrate/raw/pod/setup/capture_memory_diag_20260908T100316Z_process.exit.json elapsed=6s
+[stage_hub_prefix] unit 152/658 context_risk/issue2670_highrate/raw/pod/setup/capture_memory_review_cpu_checks.py elapsed=6s
+[stage_hub_prefix] unit 153/658 context_risk/issue2670_highrate/raw/pod/setup/capture_memory_review_cpu_checks.json elapsed=6s
+[stage_hub_prefix] unit 154/658 context_risk/issue2670_highrate/raw/pod/setup/capture_memory_supervise.sh elapsed=6s
+[stage_hub_prefix] unit 155/658 context_risk/issue2670_highrate/raw/pod/setup/capture_memory_transport_code_review.json elapsed=6s
+[stage_hub_prefix] unit 156/658 context_risk/issue2670_highrate/raw/pod/setup/capture_memory_transport_code_review.md elapsed=6s
+[stage_hub_prefix] unit 157/658 context_risk/issue2670_highrate/raw/pod/setup/capture_orchestration_artifacts.json elapsed=6s
+[stage_hub_prefix] unit 158/658 context_risk/issue2670_highrate/raw/pod/setup/capture_orchestration_code_review.md elapsed=6s
+[stage_hub_prefix] unit 159/658 context_risk/issue2670_highrate/raw/pod/setup/capture_orchestration_code_review.json elapsed=6s
+[stage_hub_prefix] unit 160/658 context_risk/issue2670_highrate/raw/pod/setup/capture_orchestration_supervisor.diff elapsed=6s
+[stage_hub_prefix] unit 161/658 context_risk/issue2670_highrate/raw/pod/setup/capture_portable_input_preflight_20260908.json elapsed=6s
+[stage_hub_prefix] unit 162/658 context_risk/issue2670_highrate/raw/pod/setup/capture_orchestration_launch_recipe.md elapsed=6s
+[stage_hub_prefix] unit 163/658 context_risk/issue2670_highrate/raw/pod/setup/capture_runtime_import_preflight.json elapsed=7s
+[stage_hub_prefix] unit 164/658 context_risk/issue2670_highrate/raw/pod/setup/capture_runtime_import_preflight_b7673e06.json elapsed=7s
+[stage_hub_prefix] unit 165/658 context_risk/issue2670_highrate/raw/pod/setup/capture_runtime_setup_runtime_20260908T055743Z.disk_after.json elapsed=7s
+[stage_hub_prefix] unit 166/658 context_risk/issue2670_highrate/raw/pod/setup/capture_runtime_setup_runtime_20260908T055743Z.install.log elapsed=7s
+[stage_hub_prefix] unit 167/658 context_risk/issue2670_highrate/raw/pod/setup/capture_runtime_setup_runtime_20260908T055743Z.launch.json elapsed=7s
+[stage_hub_prefix] unit 168/658 context_risk/issue2670_highrate/raw/pod/setup/capture_runtime_setup_runtime_20260908T055743Z.disk_before.json elapsed=7s
+[stage_hub_prefix] unit 169/658 context_risk/issue2670_highrate/raw/pod/setup/capture_runtime_setup_runtime_20260908T055743Z.log elapsed=7s
+[stage_hub_prefix] unit 170/658 context_risk/issue2670_highrate/raw/pod/setup/capture_runtime_setup_runtime_20260908T055743Z.packages.freeze.txt elapsed=7s
+[stage_hub_prefix] unit 171/658 context_risk/issue2670_highrate/raw/pod/setup/capture_runtime_setup_runtime_20260908T055743Z.pip_check.txt elapsed=7s
+[stage_hub_prefix] unit 172/658 context_risk/issue2670_highrate/raw/pod/setup/capture_runtime_setup_runtime_20260908T055743Z.packages.json elapsed=7s
+[stage_hub_prefix] unit 173/658 context_risk/issue2670_highrate/raw/pod/setup/capture_runtime_setup_runtime_20260908T055743Z.receipt.json elapsed=7s
+[stage_hub_prefix] unit 174/658 context_risk/issue2670_highrate/raw/pod/setup/capture_runtime_setup_runtime_20260908T055743Z.venv.log elapsed=7s
+[stage_hub_prefix] unit 175/658 context_risk/issue2670_highrate/raw/pod/setup/capture_runtime_setup_runtime_20260908T055743Z_owner_launch.json elapsed=7s
+[stage_hub_prefix] unit 176/658 context_risk/issue2670_highrate/raw/pod/setup/capture_runtime_setup_runtime_20260908T055743Z_process.exit.json elapsed=7s
+[stage_hub_prefix] unit 177/658 context_risk/issue2670_highrate/raw/pod/setup/capture_runtime_setup_runtime_20260908T055743Z_process.worker.pid elapsed=7s
+[stage_hub_prefix] unit 178/658 context_risk/issue2670_highrate/raw/pod/setup/capture_runtime_setup_supervise.sh elapsed=7s
+[stage_hub_prefix] unit 179/658 context_risk/issue2670_highrate/raw/pod/setup/capture_runtime_setup_worker.py elapsed=7s
+[stage_hub_prefix] unit 180/658 context_risk/issue2670_highrate/raw/pod/setup/capture_runtime_setup_runtime_20260908T055743Z_process.pid elapsed=7s
+[stage_hub_prefix] unit 181/658 context_risk/issue2670_highrate/raw/pod/setup/capture_transport_code_review.json elapsed=7s
+[stage_hub_prefix] unit 182/658 context_risk/issue2670_highrate/raw/pod/setup/capture_transport_code_review.md elapsed=7s
+[stage_hub_prefix] unit 183/658 context_risk/issue2670_highrate/raw/pod/setup/cuda_compat_install.log elapsed=7s
+[stage_hub_prefix] unit 184/658 context_risk/issue2670_highrate/raw/pod/setup/download_20260907T232358Z_launch.json elapsed=7s
+[stage_hub_prefix] unit 185/658 context_risk/issue2670_highrate/raw/pod/setup/highrate_capture_capture_20260908T101513Z.log elapsed=7s
+[stage_hub_prefix] unit 186/658 context_risk/issue2670_highrate/raw/pod/setup/download_20260907T232358Z.log elapsed=7s
+[stage_hub_prefix] unit 187/658 context_risk/issue2670_highrate/raw/pod/setup/highrate_capture_capture_20260908T101513Z_owner_launch.json elapsed=7s
+[stage_hub_prefix] unit 188/658 context_risk/issue2670_highrate/raw/pod/setup/highrate_capture_capture_20260908T101513Z_process.worker.pid elapsed=7s
+[stage_hub_prefix] unit 189/658 context_risk/issue2670_highrate/raw/pod/setup/highrate_capture_capture_20260908T101513Z_process.pid elapsed=7s
+[stage_hub_prefix] unit 190/658 context_risk/issue2670_highrate/raw/pod/setup/highrate_capture_capture_20260908T101513Z_process.exit.json elapsed=7s
+[stage_hub_prefix] unit 191/658 context_risk/issue2670_highrate/raw/pod/setup/highrate_capture_supervise.sh elapsed=8s
+[stage_hub_prefix] unit 192/658 context_risk/issue2670_highrate/raw/pod/setup/inherited_v20_server_review.json elapsed=8s
+[stage_hub_prefix] unit 193/658 context_risk/issue2670_highrate/raw/pod/setup/model_download_download_20260907T232358Z_process.exit.json elapsed=8s
+[stage_hub_prefix] unit 194/658 context_risk/issue2670_highrate/raw/pod/setup/model_download_complete.json elapsed=8s
+[stage_hub_prefix] unit 195/658 context_risk/issue2670_highrate/raw/pod/setup/model_download_download_20260907T232358Z_process.worker.pid elapsed=8s
+[stage_hub_prefix] unit 196/658 context_risk/issue2670_highrate/raw/pod/setup/model_files.json elapsed=8s
+[stage_hub_prefix] unit 197/658 context_risk/issue2670_highrate/raw/pod/setup/pinned_runtime_packages.json elapsed=8s
+[stage_hub_prefix] unit 198/658 context_risk/issue2670_highrate/raw/pod/setup/model_download_download_20260907T232358Z_process.pid elapsed=8s
+[stage_hub_prefix] unit 199/658 context_risk/issue2670_highrate/raw/pod/setup/pod_source_sync_b7673e06.json elapsed=8s
+[stage_hub_prefix] unit 200/658 context_risk/issue2670_highrate/raw/pod/setup/server_drain_and_capture_hardware_20260908.json elapsed=8s
+[stage_hub_prefix] unit 201/658 context_risk/issue2670_highrate/raw/pod/setup/postrun_code_review.json elapsed=8s
+[stage_hub_prefix] unit 202/658 context_risk/issue2670_highrate/raw/pod_extra/clone/context_risk_highrate_capture.log elapsed=8s
+[stage_hub_prefix] unit 203/658 context_risk/issue2670_highrate/raw/pod/setup/server_drain_request_20260908.json elapsed=8s
+[stage_hub_prefix] unit 204/658 context_risk/issue2670_highrate/raw/pod/setup/transport_postrun_code_review.json elapsed=8s
+[stage_hub_prefix] unit 205/658 context_risk/issue2670_highrate/raw/run/capture/chunk_0000.done.json elapsed=8s
+[stage_hub_prefix] unit 206/658 context_risk/issue2670_highrate/raw/pod/setup/pinned_runtime_prepare.log elapsed=8s
+[stage_hub_prefix] unit 207/658 context_risk/issue2670_highrate/raw/run/capture/capture_launch_binding.json elapsed=8s
+[stage_hub_prefix] unit 208/658 context_risk/issue2670_highrate/raw/run/capture/capture_binding.json elapsed=8s
+[stage_hub_prefix] unit 209/658 context_risk/issue2670_highrate/raw/run/capture/chunk_0000.rows.jsonl elapsed=8s
+[stage_hub_prefix] unit 210/658 context_risk/issue2670_highrate/raw/run/capture/chunk_0000.npz elapsed=8s
+[stage_hub_prefix] unit 211/658 context_risk/issue2670_highrate/raw/run/capture/chunk_0001.done.json elapsed=8s
+[stage_hub_prefix] unit 212/658 context_risk/issue2670_highrate/raw/run/capture/chunk_0001.rows.jsonl elapsed=8s
+[stage_hub_prefix] unit 213/658 context_risk/issue2670_highrate/raw/run/capture/chunk_0001.npz elapsed=8s
+[stage_hub_prefix] unit 214/658 context_risk/issue2670_highrate/raw/run/capture/chunk_0002.rows.jsonl elapsed=9s
+[stage_hub_prefix] unit 215/658 context_risk/issue2670_highrate/raw/run/capture/chunk_0003.done.json elapsed=9s
+[stage_hub_prefix] unit 216/658 context_risk/issue2670_highrate/raw/run/capture/chunk_0002.npz elapsed=9s
+[stage_hub_prefix] unit 217/658 context_risk/issue2670_highrate/raw/run/capture/chunk_0002.done.json elapsed=9s
+[stage_hub_prefix] unit 218/658 context_risk/issue2670_highrate/raw/run/capture/chunk_0003.rows.jsonl elapsed=9s
+[stage_hub_prefix] unit 219/658 context_risk/issue2670_highrate/raw/run/capture/chunk_0003.npz elapsed=9s
+[stage_hub_prefix] unit 220/658 context_risk/issue2670_highrate/raw/run/capture/chunk_0004.rows.jsonl elapsed=9s
+[stage_hub_prefix] unit 221/658 context_risk/issue2670_highrate/raw/run/capture/chunk_0004.done.json elapsed=9s
+[stage_hub_prefix] unit 222/658 context_risk/issue2670_highrate/raw/run/capture/chunk_0005.done.json elapsed=9s
+[stage_hub_prefix] unit 223/658 context_risk/issue2670_highrate/raw/run/capture/chunk_0004.npz elapsed=9s
+[stage_hub_prefix] unit 224/658 context_risk/issue2670_highrate/raw/run/capture/chunk_0005.rows.jsonl elapsed=9s
+[stage_hub_prefix] unit 225/658 context_risk/issue2670_highrate/raw/run/capture/run_result.json elapsed=9s
+[stage_hub_prefix] unit 226/658 context_risk/issue2670_highrate/raw/run/fresh_20260908T070117Z.log elapsed=9s
+[stage_hub_prefix] unit 227/658 context_risk/issue2670_highrate/raw/run/capture/chunk_0005.npz elapsed=9s
+[stage_hub_prefix] unit 228/658 context_risk/issue2670_highrate/raw/run/capture_inputs.json elapsed=9s
+[stage_hub_prefix] unit 229/658 context_risk/issue2670_highrate/raw/run/fresh_20260908T070117Z_launch.json elapsed=9s
+[stage_hub_prefix] unit 230/658 context_risk/issue2670_highrate/raw/run/fresh_B/launch_config_1788850927139335007_697788.json elapsed=9s
+[stage_hub_prefix] unit 231/658 context_risk/issue2670_highrate/raw/run/fresh_B/launch_config_1788850927139335007_697788_result.json elapsed=9s
+[stage_hub_prefix] unit 232/658 context_risk/issue2670_highrate/raw/run/fresh_B/prefix_tokens.json elapsed=9s
+[stage_hub_prefix] unit 233/658 context_risk/issue2670_highrate/raw/run/fresh_B/native_audit.json elapsed=9s
+[stage_hub_prefix] unit 234/658 context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.manifest.json elapsed=9s
+[stage_hub_prefix] unit 235/658 context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard01.jsonl elapsed=10s
+[stage_hub_prefix] unit 236/658 context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard03.jsonl elapsed=10s
+[stage_hub_prefix] unit 237/658 context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard00.jsonl elapsed=10s
+[stage_hub_prefix] unit 238/658 context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard02.jsonl elapsed=10s
+[stage_hub_prefix] unit 239/658 context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard04.jsonl elapsed=10s
+[stage_hub_prefix] unit 240/658 context_risk/issue2670_highrate/raw/run/fresh_B/logs/2026-09-08T07-02-10-00-00_context-risk-followup-ten-submissions_3kAz589gj9bzDgYysGcnFi.eval elapsed=10s
+[stage_hub_prefix] unit 241/658 context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard05.jsonl elapsed=10s
+[stage_hub_prefix] unit 242/658 context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard09.jsonl elapsed=10s
+[stage_hub_prefix] unit 243/658 context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard07.jsonl elapsed=10s
+[stage_hub_prefix] unit 244/658 context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard06.jsonl elapsed=10s
+[stage_hub_prefix] unit 245/658 context_risk/issue2670_highrate/raw/run/fresh_B/run_result.json elapsed=10s
+[stage_hub_prefix] unit 246/658 context_risk/issue2670_highrate/raw/run/fresh_B/rollouts.shard08.jsonl elapsed=10s
+[stage_hub_prefix] unit 247/658 context_risk/issue2670_highrate/raw/run/fresh_B/success_review.md elapsed=11s
+[stage_hub_prefix] unit 248/658 context_risk/issue2670_highrate/raw/run/fresh_B/terminal_process.json elapsed=11s
+[stage_hub_prefix] unit 249/658 context_risk/issue2670_highrate/raw/run/fresh_fresh_20260908T070117Z_process.exit.json elapsed=11s
+[stage_hub_prefix] unit 250/658 context_risk/issue2670_highrate/raw/run/fresh_B/success_review.json elapsed=11s
+[stage_hub_prefix] unit 251/658 context_risk/issue2670_highrate/raw/run/fresh_B/transport_postrun_audit.json elapsed=11s
+[stage_hub_prefix] unit 252/658 context_risk/issue2670_highrate/raw/run/fresh_fresh_20260908T070117Z_process.pid elapsed=11s
+[stage_hub_prefix] unit 253/658 context_risk/issue2670_highrate/raw/run/fresh_fresh_20260908T070117Z_process.worker.pid elapsed=11s
+[stage_hub_prefix] unit 254/658 context_risk/issue2670_highrate/raw/run/manifests/code_review.json elapsed=11s
+[stage_hub_prefix] unit 255/658 context_risk/issue2670_highrate/raw/run/manifests/fresh_B.jsonl elapsed=11s
+[stage_hub_prefix] unit 256/658 context_risk/issue2670_highrate/raw/run/manifests/screen_freeze.json elapsed=11s
+[stage_hub_prefix] unit 257/658 context_risk/issue2670_highrate/raw/run/pilot_20260907T233239Z.log elapsed=11s
+[stage_hub_prefix] unit 258/658 context_risk/issue2670_highrate/raw/run/manifests/screen_B.jsonl elapsed=11s
+[stage_hub_prefix] unit 259/658 context_risk/issue2670_highrate/raw/run/manifests/source.jsonl elapsed=11s
+[stage_hub_prefix] unit 260/658 context_risk/issue2670_highrate/raw/run/pilot_archive_20260908T005137Z.log elapsed=11s
+[stage_hub_prefix] unit 261/658 context_risk/issue2670_highrate/raw/run/pilot_archive_20260908T005137Z_exit.json elapsed=11s
+[stage_hub_prefix] unit 262/658 context_risk/issue2670_highrate/raw/run/pilot_20260907T233239Z_launch.json elapsed=11s
+[stage_hub_prefix] unit 263/658 context_risk/issue2670_highrate/raw/run/pilot_archive_20260908T005137Z_launch.json elapsed=11s
+[stage_hub_prefix] unit 264/658 context_risk/issue2670_highrate/raw/run/pilot_readback_receipt.json elapsed=11s
+[stage_hub_prefix] unit 265/658 context_risk/issue2670_highrate/raw/run/pilot_upload_receipt.json elapsed=11s
+[stage_hub_prefix] unit 266/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_orchestration_code_review.json elapsed=11s
+[stage_hub_prefix] unit 267/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_orchestration_launch_recipe.md elapsed=11s
+[stage_hub_prefix] unit 268/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_orchestration_artifacts.json elapsed=11s
+[stage_hub_prefix] unit 269/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_orchestration_supervisor.diff elapsed=11s
+[stage_hub_prefix] unit 270/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_runtime_import_preflight.json elapsed=11s
+[stage_hub_prefix] unit 271/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.disk_after.json elapsed=11s
+[stage_hub_prefix] unit 272/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.install.log elapsed=12s
+[stage_hub_prefix] unit 273/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.disk_before.json elapsed=12s
+[stage_hub_prefix] unit 274/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.launch.json elapsed=12s
+[stage_hub_prefix] unit 275/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_orchestration_code_review.md elapsed=12s
+[stage_hub_prefix] unit 276/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.log elapsed=12s
+[stage_hub_prefix] unit 277/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.packages.freeze.txt elapsed=12s
+[stage_hub_prefix] unit 278/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.pip_check.txt elapsed=12s
+[stage_hub_prefix] unit 279/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.receipt.json elapsed=12s
+[stage_hub_prefix] unit 280/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.venv.log elapsed=12s
+[stage_hub_prefix] unit 281/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.packages.json elapsed=12s
+[stage_hub_prefix] unit 282/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z_owner_launch.json elapsed=12s
+[stage_hub_prefix] unit 283/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z_process.exit.json elapsed=12s
+[stage_hub_prefix] unit 284/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z_process.pid elapsed=12s
+[stage_hub_prefix] unit 285/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_runtime_setup_supervise.sh elapsed=12s
+[stage_hub_prefix] unit 286/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z_process.worker.pid elapsed=12s
+[stage_hub_prefix] unit 287/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/capture_runtime_setup_worker.py elapsed=12s
+[stage_hub_prefix] unit 288/658 context_risk/issue2670_highrate/raw/run/pod_setup/capture_runtime_setup/highrate_capture_supervise.sh elapsed=12s
+[stage_hub_prefix] unit 289/658 context_risk/issue2670_highrate/raw/run/pod_setup/download_20260907T232358Z.log elapsed=12s
+[stage_hub_prefix] unit 290/658 context_risk/issue2670_highrate/raw/run/pod_setup/cuda_compat_install.log elapsed=12s
+[stage_hub_prefix] unit 291/658 context_risk/issue2670_highrate/raw/run/pod_setup/model_download_complete.json elapsed=12s
+[stage_hub_prefix] unit 292/658 context_risk/issue2670_highrate/raw/run/pod_setup/inherited_v20_server_review.json elapsed=12s
+[stage_hub_prefix] unit 293/658 context_risk/issue2670_highrate/raw/run/pod_setup/download_20260907T232358Z_launch.json elapsed=12s
+[stage_hub_prefix] unit 294/658 context_risk/issue2670_highrate/raw/run/pod_setup/model_download_download_20260907T232358Z_process.exit.json elapsed=12s
+[stage_hub_prefix] unit 295/658 context_risk/issue2670_highrate/raw/run/pod_setup/model_download_download_20260907T232358Z_process.pid elapsed=12s
+[stage_hub_prefix] unit 296/658 context_risk/issue2670_highrate/raw/run/pod_setup/pinned_runtime_packages.json elapsed=12s
+[stage_hub_prefix] unit 297/658 context_risk/issue2670_highrate/raw/run/pod_setup/model_files.json elapsed=12s
+[stage_hub_prefix] unit 298/658 context_risk/issue2670_highrate/raw/run/pod_setup/pinned_runtime_prepare.log elapsed=12s
+[stage_hub_prefix] unit 299/658 context_risk/issue2670_highrate/raw/run/pod_setup/model_download_download_20260907T232358Z_process.worker.pid elapsed=12s
+[stage_hub_prefix] unit 300/658 context_risk/issue2670_highrate/raw/run/screen_20260908T003104Z_launch.json elapsed=12s
+[stage_hub_prefix] unit 301/658 context_risk/issue2670_highrate/raw/run/screen_20260908T003104Z.log elapsed=13s
+[stage_hub_prefix] unit 302/658 context_risk/issue2670_highrate/raw/run/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.json elapsed=13s
+[stage_hub_prefix] unit 303/658 context_risk/issue2670_highrate/raw/run/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.json elapsed=13s
+[stage_hub_prefix] unit 304/658 context_risk/issue2670_highrate/raw/run/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json elapsed=13s
+[stage_hub_prefix] unit 305/658 context_risk/issue2670_highrate/raw/run/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json elapsed=13s
+[stage_hub_prefix] unit 306/658 context_risk/issue2670_highrate/raw/run/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.json elapsed=13s
+[stage_hub_prefix] unit 307/658 context_risk/issue2670_highrate/raw/run/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json elapsed=13s
+[stage_hub_prefix] unit 308/658 context_risk/issue2670_highrate/raw/run/screen_B/launch_config_1788824126441286824_3281540.json elapsed=13s
+[stage_hub_prefix] unit 309/658 context_risk/issue2670_highrate/raw/run/screen_B/launch_config_1788827625353955587_3522010.json elapsed=13s
+[stage_hub_prefix] unit 310/658 context_risk/issue2670_highrate/raw/run/screen_B/launch_config_1788827625353955587_3522010_result.json elapsed=13s
+[stage_hub_prefix] unit 311/658 context_risk/issue2670_highrate/raw/run/screen_B/launch_config_1788824126441286824_3281540_result.json elapsed=13s
+[stage_hub_prefix] unit 312/658 context_risk/issue2670_highrate/raw/run/screen_B/pilot_native_audit.json elapsed=13s
+[stage_hub_prefix] unit 313/658 context_risk/issue2670_highrate/raw/run/screen_B/logs/2026-09-07T23-35-32-00-00_context-risk-followup-ten-submissions_7EGPYSjaYbzZSCqtchLR23.eval elapsed=13s
+[stage_hub_prefix] unit 314/658 context_risk/issue2670_highrate/raw/run/screen_B/pilot_result.json elapsed=13s
+[stage_hub_prefix] unit 315/658 context_risk/issue2670_highrate/raw/run/screen_B/pilot_rollouts.manifest.json elapsed=13s
+[stage_hub_prefix] unit 316/658 context_risk/issue2670_highrate/raw/run/screen_B/native_audit.json elapsed=13s
+[stage_hub_prefix] unit 317/658 context_risk/issue2670_highrate/raw/run/screen_B/pilot_rollouts.shard01.jsonl elapsed=13s
+[stage_hub_prefix] unit 318/658 context_risk/issue2670_highrate/raw/run/screen_B/pilot_rollouts.shard00.jsonl elapsed=13s
+[stage_hub_prefix] unit 319/658 context_risk/issue2670_highrate/raw/run/screen_B/postrun_audit.json elapsed=13s
+[stage_hub_prefix] unit 320/658 context_risk/issue2670_highrate/raw/run/screen_B/resume_input_1788827471430223247.census.json elapsed=13s
+[stage_hub_prefix] unit 321/658 context_risk/issue2670_highrate/raw/run/screen_B/resume_input_1788827471430223247.manifest.json elapsed=14s
+[stage_hub_prefix] unit 322/658 context_risk/issue2670_highrate/raw/run/screen_B/prefix_tokens.json elapsed=14s
+[stage_hub_prefix] unit 323/658 context_risk/issue2670_highrate/raw/run/screen_B/resume_input_1788827471430223247.shard01.jsonl elapsed=14s
+[stage_hub_prefix] unit 324/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.manifest.json elapsed=14s
+[stage_hub_prefix] unit 325/658 context_risk/issue2670_highrate/raw/run/screen_B/logs/2026-09-08T00-33-48-00-00_context-risk-followup-ten-submissions_7EGPYSjaYbzZSCqtchLR23.eval elapsed=14s
+[stage_hub_prefix] unit 326/658 context_risk/issue2670_highrate/raw/run/screen_B/resume_input_1788827471430223247.shard00.jsonl elapsed=14s
+[stage_hub_prefix] unit 327/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard00.jsonl elapsed=14s
+[stage_hub_prefix] unit 328/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard01.jsonl elapsed=14s
+[stage_hub_prefix] unit 329/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard02.jsonl elapsed=14s
+[stage_hub_prefix] unit 330/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard05.jsonl elapsed=14s
+[stage_hub_prefix] unit 331/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard03.jsonl elapsed=14s
+[stage_hub_prefix] unit 332/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard06.jsonl elapsed=14s
+[stage_hub_prefix] unit 333/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard04.jsonl elapsed=14s
+[stage_hub_prefix] unit 334/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard09.jsonl elapsed=15s
+[stage_hub_prefix] unit 335/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard07.jsonl elapsed=15s
+[stage_hub_prefix] unit 336/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard08.jsonl elapsed=15s
+[stage_hub_prefix] unit 337/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard10.jsonl elapsed=15s
+[stage_hub_prefix] unit 338/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard12.jsonl elapsed=15s
+[stage_hub_prefix] unit 339/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard11.jsonl elapsed=15s
+[stage_hub_prefix] unit 340/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard13.jsonl elapsed=15s
+[stage_hub_prefix] unit 341/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard16.jsonl elapsed=15s
+[stage_hub_prefix] unit 342/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard15.jsonl elapsed=15s
+[stage_hub_prefix] unit 343/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard14.jsonl elapsed=15s
+[stage_hub_prefix] unit 344/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard17.jsonl elapsed=15s
+[stage_hub_prefix] unit 345/658 context_risk/issue2670_highrate/raw/run/screen_B/run_result.json elapsed=15s
+[stage_hub_prefix] unit 346/658 context_risk/issue2670_highrate/raw/run/screen_B/success_review.json elapsed=16s
+[stage_hub_prefix] unit 347/658 context_risk/issue2670_highrate/raw/run/screen_B/success_review.md elapsed=16s
+[stage_hub_prefix] unit 348/658 context_risk/issue2670_highrate/raw/run/screen_B/terminal_process.json elapsed=16s
+[stage_hub_prefix] unit 349/658 context_risk/issue2670_highrate/raw/run/screen_pilot_pilot_20260907T233239Z_process.exit.json elapsed=16s
+[stage_hub_prefix] unit 350/658 context_risk/issue2670_highrate/raw/run/screen_B/rollouts.shard18.jsonl elapsed=16s
+[stage_hub_prefix] unit 351/658 context_risk/issue2670_highrate/raw/run/screen_pilot_pilot_20260907T233239Z_process.pid elapsed=16s
+[stage_hub_prefix] unit 352/658 context_risk/issue2670_highrate/raw/run/screen_pilot_pilot_20260907T233239Z_process.worker.pid elapsed=16s
+[stage_hub_prefix] unit 353/658 context_risk/issue2670_highrate/raw/run/screen_screen_20260908T003104Z_process.exit.json elapsed=16s
+[stage_hub_prefix] unit 354/658 context_risk/issue2670_highrate/raw/run/screen_screen_20260908T003104Z_process.pid elapsed=16s
+[stage_hub_prefix] unit 355/658 context_risk/issue2670_highrate/raw/run/screen_screen_20260908T003104Z_process.worker.pid elapsed=16s
+[stage_hub_prefix] unit 356/658 context_risk/issue2670_highrate/raw/run/selection.json elapsed=16s
+[stage_hub_prefix] unit 357/658 context_risk/issue2670_highrate/raw/run/setup/__pycache__/capture_memory_check.cpython-311.pyc elapsed=16s
+[stage_hub_prefix] unit 358/658 context_risk/issue2670_highrate/raw/run/setup/analysis_code_review.json elapsed=16s
+[stage_hub_prefix] unit 359/658 context_risk/issue2670_highrate/raw/run/setup/analysis_input_validity_code_review.json elapsed=16s
+[stage_hub_prefix] unit 360/658 context_risk/issue2670_highrate/raw/run/setup/analysis_transport_code_review.md elapsed=16s
+[stage_hub_prefix] unit 361/658 context_risk/issue2670_highrate/raw/run/setup/analysis_postrun_code_review.json elapsed=16s
+[stage_hub_prefix] unit 362/658 context_risk/issue2670_highrate/raw/run/setup/analysis_transport_code_review.json elapsed=16s
+[stage_hub_prefix] unit 363/658 context_risk/issue2670_highrate/raw/run/setup/analysis_spec.json elapsed=16s
+[stage_hub_prefix] unit 364/658 context_risk/issue2670_highrate/raw/run/setup/analysis_postrun_code_review.md elapsed=16s
+[stage_hub_prefix] unit 365/658 context_risk/issue2670_highrate/raw/run/setup/archive_readiness_541_20260908T053954Z.json elapsed=16s
+[stage_hub_prefix] unit 366/658 context_risk/issue2670_highrate/raw/run/setup/archive_readiness_618_20260908T065743Z.json elapsed=16s
+[stage_hub_prefix] unit 367/658 context_risk/issue2670_highrate/raw/run/setup/archive_readiness_541_20260908T053954Z.md elapsed=16s
+[stage_hub_prefix] unit 368/658 context_risk/issue2670_highrate/raw/run/setup/archive_readiness_618_20260908T065743Z.md elapsed=16s
+[stage_hub_prefix] unit 369/658 context_risk/issue2670_highrate/raw/run/setup/archive_review_snapshots_code_review.json elapsed=16s
+[stage_hub_prefix] unit 370/658 context_risk/issue2670_highrate/raw/run/setup/archive_review_snapshots_code_review.md elapsed=16s
+[stage_hub_prefix] unit 371/658 context_risk/issue2670_highrate/raw/run/setup/archive_snapshots_workflow_lint.log elapsed=16s
+[stage_hub_prefix] unit 372/658 context_risk/issue2670_highrate/raw/run/setup/archive_workflow_lint.log elapsed=16s
+[stage_hub_prefix] unit 373/658 context_risk/issue2670_highrate/raw/run/setup/archive_zip_readiness_v9_20260908T094702Z.json elapsed=17s
+[stage_hub_prefix] unit 374/658 context_risk/issue2670_highrate/raw/run/setup/capacity_incremental_code_review.md elapsed=17s
+[stage_hub_prefix] unit 375/658 context_risk/issue2670_highrate/raw/run/setup/capacity_token_cache_reviewed_live_receipt.json elapsed=17s
+[stage_hub_prefix] unit 376/658 context_risk/issue2670_highrate/raw/run/setup/capacity_incremental_code_review.json elapsed=17s
+[stage_hub_prefix] unit 377/658 context_risk/issue2670_highrate/raw/run/setup/capacity_token_cache_task96_e2_reviewed_live_receipt.json elapsed=17s
+[stage_hub_prefix] unit 378/658 context_risk/issue2670_highrate/raw/run/setup/capacity_tokens_authoritative_541_reconciliation.json elapsed=17s
+[stage_hub_prefix] unit 379/658 context_risk/issue2670_highrate/raw/run/setup/capacity_tokens_authoritative_618_reconciliation.json elapsed=17s
+[stage_hub_prefix] unit 380/658 context_risk/issue2670_highrate/raw/run/setup/capture_actual_shape_projection.json elapsed=17s
+[stage_hub_prefix] unit 381/658 context_risk/issue2670_highrate/raw/run/setup/capture_code_review.json elapsed=17s
+[stage_hub_prefix] unit 382/658 context_risk/issue2670_highrate/raw/run/setup/capture_fence_sizing_review.json elapsed=17s
+[stage_hub_prefix] unit 383/658 context_risk/issue2670_highrate/raw/run/setup/capture_input_stage_20260908.json elapsed=17s
+[stage_hub_prefix] unit 384/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_artifacts.json elapsed=17s
+[stage_hub_prefix] unit 385/658 context_risk/issue2670_highrate/raw/run/setup/capture_fence_sizing_review.md elapsed=17s
+[stage_hub_prefix] unit 386/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_code_review.json elapsed=17s
+[stage_hub_prefix] unit 387/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_check.py elapsed=17s
+[stage_hub_prefix] unit 388/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_code_review.md elapsed=17s
+[stage_hub_prefix] unit 389/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_copy_validation_20260908.json elapsed=17s
+[stage_hub_prefix] unit 390/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_diag_20260908T100316Z.json elapsed=17s
+[stage_hub_prefix] unit 391/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_diag_20260908T100316Z.log elapsed=17s
+[stage_hub_prefix] unit 392/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_diag_20260908T100316Z.launch.json elapsed=17s
+[stage_hub_prefix] unit 393/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_diag_20260908T100316Z_independent_review.json elapsed=17s
+[stage_hub_prefix] unit 394/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_diag_20260908T100316Z.longest_singleton.npz elapsed=17s
+[stage_hub_prefix] unit 395/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_diag_20260908T100316Z_independent_review.md elapsed=17s
+[stage_hub_prefix] unit 396/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_diag_20260908T100316Z_owner_launch.json elapsed=17s
+[stage_hub_prefix] unit 397/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_diag_20260908T100316Z_process.exit.json elapsed=17s
+[stage_hub_prefix] unit 398/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_diag_20260908T100316Z_process.pid elapsed=17s
+[stage_hub_prefix] unit 399/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_git_persistence.json elapsed=18s
+[stage_hub_prefix] unit 400/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_launch_progress_20260908T100316Z.md elapsed=18s
+[stage_hub_prefix] unit 401/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_git_persistence_pending.json elapsed=18s
+[stage_hub_prefix] unit 402/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_diag_20260908T100316Z_process.worker.pid elapsed=18s
+[stage_hub_prefix] unit 403/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_diag_20260908T100316Z.production_two_row.npz elapsed=18s
+[stage_hub_prefix] unit 404/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_pod_staging.json elapsed=18s
+[stage_hub_prefix] unit 405/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_reuse_addendum.md elapsed=18s
+[stage_hub_prefix] unit 406/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_transfer_20260908.stderr.log elapsed=18s
+[stage_hub_prefix] unit 407/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_transfer_20260908.stdout.log elapsed=18s
+[stage_hub_prefix] unit 408/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_reuse_review.json elapsed=18s
+[stage_hub_prefix] unit 409/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_review_cpu_checks.py elapsed=18s
+[stage_hub_prefix] unit 410/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_supervise.sh elapsed=18s
+[stage_hub_prefix] unit 411/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_review_cpu_checks.json elapsed=18s
+[stage_hub_prefix] unit 412/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_transport_code_review.md elapsed=18s
+[stage_hub_prefix] unit 413/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_workflow_lint.log elapsed=18s
+[stage_hub_prefix] unit 414/658 context_risk/issue2670_highrate/raw/run/setup/capture_memory_transport_code_review.json elapsed=18s
+[stage_hub_prefix] unit 415/658 context_risk/issue2670_highrate/raw/run/setup/capture_orchestration_artifacts.json elapsed=18s
+[stage_hub_prefix] unit 416/658 context_risk/issue2670_highrate/raw/run/setup/capture_orchestration_code_review.md elapsed=18s
+[stage_hub_prefix] unit 417/658 context_risk/issue2670_highrate/raw/run/setup/capture_orchestration_code_review.json elapsed=18s
+[stage_hub_prefix] unit 418/658 context_risk/issue2670_highrate/raw/run/setup/capture_portable_input_preflight_20260908.stderr.log elapsed=18s
+[stage_hub_prefix] unit 419/658 context_risk/issue2670_highrate/raw/run/setup/capture_orchestration_supervisor.diff elapsed=18s
+[stage_hub_prefix] unit 420/658 context_risk/issue2670_highrate/raw/run/setup/capture_orchestration_launch_recipe.md elapsed=18s
+[stage_hub_prefix] unit 421/658 context_risk/issue2670_highrate/raw/run/setup/capture_postrun_code_review.json elapsed=18s
+[stage_hub_prefix] unit 422/658 context_risk/issue2670_highrate/raw/run/setup/capture_portable_input_preflight_20260908.json elapsed=18s
+[stage_hub_prefix] unit 423/658 context_risk/issue2670_highrate/raw/run/setup/capture_prepare_execution_20260908.json elapsed=18s
+[stage_hub_prefix] unit 424/658 context_risk/issue2670_highrate/raw/run/setup/capture_postrun_code_review.md elapsed=18s
+[stage_hub_prefix] unit 425/658 context_risk/issue2670_highrate/raw/run/setup/capture_runtime_execution_review.json elapsed=19s
+[stage_hub_prefix] unit 426/658 context_risk/issue2670_highrate/raw/run/setup/capture_runtime_execution_review.md elapsed=19s
+[stage_hub_prefix] unit 427/658 context_risk/issue2670_highrate/raw/run/setup/capture_readiness_review.json elapsed=19s
+[stage_hub_prefix] unit 428/658 context_risk/issue2670_highrate/raw/run/setup/capture_readiness_remote_inventory.json elapsed=19s
+[stage_hub_prefix] unit 429/658 context_risk/issue2670_highrate/raw/run/setup/capture_runtime_git_dispositions.json elapsed=19s
+[stage_hub_prefix] unit 430/658 context_risk/issue2670_highrate/raw/run/setup/capture_readiness_runbook.md elapsed=19s
+[stage_hub_prefix] unit 431/658 context_risk/issue2670_highrate/raw/run/setup/capture_runtime_git_persistence_pending.json elapsed=19s
+[stage_hub_prefix] unit 432/658 context_risk/issue2670_highrate/raw/run/setup/capture_runtime_git_persistence.json elapsed=19s
+[stage_hub_prefix] unit 433/658 context_risk/issue2670_highrate/raw/run/setup/capture_runtime_import_preflight.json elapsed=19s
+[stage_hub_prefix] unit 434/658 context_risk/issue2670_highrate/raw/run/setup/capture_runtime_import_preflight_b7673e06.json elapsed=19s
+[stage_hub_prefix] unit 435/658 context_risk/issue2670_highrate/raw/run/setup/capture_runtime_setup_completion_validation.json elapsed=19s
+[stage_hub_prefix] unit 436/658 context_risk/issue2670_highrate/raw/run/setup/capture_runtime_orchestration_workflow_lint.log elapsed=19s
+[stage_hub_prefix] unit 437/658 context_risk/issue2670_highrate/raw/run/setup/capture_runtime_setup_owner_launch.json elapsed=19s
+[stage_hub_prefix] unit 438/658 context_risk/issue2670_highrate/raw/run/setup/capture_runtime_setup_supervise.sh elapsed=19s
+[stage_hub_prefix] unit 439/658 context_risk/issue2670_highrate/raw/run/setup/capture_runtime_setup_worker.py elapsed=19s
+[stage_hub_prefix] unit 440/658 context_risk/issue2670_highrate/raw/run/setup/capture_runtime_setup_preflight.json elapsed=19s
+[stage_hub_prefix] unit 441/658 context_risk/issue2670_highrate/raw/run/setup/capture_transport_code_review.json elapsed=19s
+[stage_hub_prefix] unit 442/658 context_risk/issue2670_highrate/raw/run/setup/capture_stage_after_rsync_error_20260908.json elapsed=19s
+[stage_hub_prefix] unit 443/658 context_risk/issue2670_highrate/raw/run/setup/capture_transport_code_review.md elapsed=19s
+[stage_hub_prefix] unit 444/658 context_risk/issue2670_highrate/raw/run/setup/code_review.json elapsed=19s
+[stage_hub_prefix] unit 445/658 context_risk/issue2670_highrate/raw/run/setup/context_capacity_failed_request_token_ids.json elapsed=19s
+[stage_hub_prefix] unit 446/658 context_risk/issue2670_highrate/raw/run/setup/capture_vm_validation_20260908.json elapsed=19s
+[stage_hub_prefix] unit 447/658 context_risk/issue2670_highrate/raw/run/setup/context_capacity_plan_review.md elapsed=19s
+[stage_hub_prefix] unit 448/658 context_risk/issue2670_highrate/raw/run/setup/context_capacity_diagnostic_sample.json elapsed=19s
+[stage_hub_prefix] unit 449/658 context_risk/issue2670_highrate/raw/run/setup/context_capacity_recovery_diagnosis.json elapsed=19s
+[stage_hub_prefix] unit 450/658 context_risk/issue2670_highrate/raw/run/setup/context_capacity_plan_review.json elapsed=19s
+[stage_hub_prefix] unit 451/658 context_risk/issue2670_highrate/raw/run/setup/continuation_state.json elapsed=19s
+[stage_hub_prefix] unit 452/658 context_risk/issue2670_highrate/raw/run/setup/context_capacity_tokenization_diagnostic.json elapsed=19s
+[stage_hub_prefix] unit 453/658 context_risk/issue2670_highrate/raw/run/setup/context_capacity_recovery_diagnosis.md elapsed=20s
+[stage_hub_prefix] unit 454/658 context_risk/issue2670_highrate/raw/run/setup/downstream_readiness_20260908T_partial.json elapsed=20s
+[stage_hub_prefix] unit 455/658 context_risk/issue2670_highrate/raw/run/setup/downstream_readiness_20260908T_partial.md elapsed=20s
+[stage_hub_prefix] unit 456/658 context_risk/issue2670_highrate/raw/run/setup/factcheck_consistency.json elapsed=20s
+[stage_hub_prefix] unit 457/658 context_risk/issue2670_highrate/raw/run/setup/fresh312_reviewer_finalize.py elapsed=20s
+[stage_hub_prefix] unit 458/658 context_risk/issue2670_highrate/raw/run/setup/fresh312_reviewer_notes.json elapsed=20s
+[stage_hub_prefix] unit 459/658 context_risk/issue2670_highrate/raw/run/setup/fresh_incremental_archive_readback_20260908T085351Z.json elapsed=20s
+[stage_hub_prefix] unit 460/658 context_risk/issue2670_highrate/raw/run/setup/fresh312_snapshot_helper.py elapsed=20s
+[stage_hub_prefix] unit 461/658 context_risk/issue2670_highrate/raw/run/setup/fresh_incremental_archive_readback_20260908T074318Z.json elapsed=20s
+[stage_hub_prefix] unit 462/658 context_risk/issue2670_highrate/raw/run/setup/fresh_incremental_archive_readback_20260908T093654Z.json elapsed=20s
+[stage_hub_prefix] unit 463/658 context_risk/issue2670_highrate/raw/run/setup/fresh_incremental_archive_readback_20260908T082004Z.json elapsed=20s
+[stage_hub_prefix] unit 464/658 context_risk/issue2670_highrate/raw/run/setup/fresh_incremental_success_review_20260908T074318Z.md elapsed=20s
+[stage_hub_prefix] unit 465/658 context_risk/issue2670_highrate/raw/run/setup/fresh_incremental_success_review_20260908T074318Z.json elapsed=20s
+[stage_hub_prefix] unit 466/658 context_risk/issue2670_highrate/raw/run/setup/fresh_incremental_success_review_20260908T082004Z.json elapsed=20s
+[stage_hub_prefix] unit 467/658 context_risk/issue2670_highrate/raw/run/setup/fresh_incremental_success_review_20260908T082004Z.md elapsed=20s
+[stage_hub_prefix] unit 468/658 context_risk/issue2670_highrate/raw/run/setup/fresh_incremental_success_review_20260908T085351Z.json elapsed=20s
+[stage_hub_prefix] unit 469/658 context_risk/issue2670_highrate/raw/run/setup/fresh_incremental_success_review_20260908T085351Z.md elapsed=20s
+[stage_hub_prefix] unit 470/658 context_risk/issue2670_highrate/raw/run/setup/fresh_initial_success_body_review.json elapsed=20s
+[stage_hub_prefix] unit 471/658 context_risk/issue2670_highrate/raw/run/setup/fresh_incremental_success_review_20260908T093654Z.md elapsed=20s
+[stage_hub_prefix] unit 472/658 context_risk/issue2670_highrate/raw/run/setup/fresh_launch_execution_review.json elapsed=20s
+[stage_hub_prefix] unit 473/658 context_risk/issue2670_highrate/raw/run/setup/fresh_initial_success_body_review.md elapsed=20s
+[stage_hub_prefix] unit 474/658 context_risk/issue2670_highrate/raw/run/setup/fresh_launch_execution_archive_readback.json elapsed=20s
+[stage_hub_prefix] unit 475/658 context_risk/issue2670_highrate/raw/run/setup/fresh_incremental_success_review_20260908T093654Z.json elapsed=20s
+[stage_hub_prefix] unit 476/658 context_risk/issue2670_highrate/raw/run/setup/fresh_launch_execution_review.md elapsed=20s
+[stage_hub_prefix] unit 477/658 context_risk/issue2670_highrate/raw/run/setup/fresh_launch_progress_20260908T0703Z.md elapsed=20s
+[stage_hub_prefix] unit 478/658 context_risk/issue2670_highrate/raw/run/setup/fresh_live_error_triage_20260908T082055Z.json elapsed=21s
+[stage_hub_prefix] unit 479/658 context_risk/issue2670_highrate/raw/run/setup/fresh_progress_20260908T082109Z.md elapsed=21s
+[stage_hub_prefix] unit 480/658 context_risk/issue2670_highrate/raw/run/setup/fresh_progress_20260908T093858Z.md elapsed=21s
+[stage_hub_prefix] unit 481/658 context_risk/issue2670_highrate/raw/run/setup/fresh_live_error_triage_20260908T090738Z.json elapsed=21s
+[stage_hub_prefix] unit 482/658 context_risk/issue2670_highrate/raw/run/setup/fresh_request_audit_20260908T073540Z.json elapsed=21s
+[stage_hub_prefix] unit 483/658 context_risk/issue2670_highrate/raw/run/setup/fresh_request_audit_20260908T080730Z.json elapsed=21s
+[stage_hub_prefix] unit 484/658 context_risk/issue2670_highrate/raw/run/setup/fresh_request_audit_20260908T092620Z.json elapsed=21s
+[stage_hub_prefix] unit 485/658 context_risk/issue2670_highrate/raw/run/setup/fresh_terminal_new_success_findings_20260908T095455Z.json elapsed=21s
+[stage_hub_prefix] unit 486/658 context_risk/issue2670_highrate/raw/run/setup/fresh_terminal_independent_readback.json elapsed=21s
+[stage_hub_prefix] unit 487/658 context_risk/issue2670_highrate/raw/run/setup/fresh_request_audit_20260908T084629Z.json elapsed=21s
+[stage_hub_prefix] unit 488/658 context_risk/issue2670_highrate/raw/run/setup/fresh_terminal_success_review_finalize.py elapsed=21s
+[stage_hub_prefix] unit 489/658 context_risk/issue2670_highrate/raw/run/setup/fresh_terminal_success_request_audit_20260908T095455Z.json elapsed=21s
+[stage_hub_prefix] unit 490/658 context_risk/issue2670_highrate/raw/run/setup/fresh_terminal_success_review_preparation.json elapsed=21s
+[stage_hub_prefix] unit 491/658 context_risk/issue2670_highrate/raw/run/setup/fresh_terminal_success_review_prepare.py elapsed=21s
+[stage_hub_prefix] unit 492/658 context_risk/issue2670_highrate/raw/run/setup/fresh_transport_diagnosis_20260908T0832Z.json elapsed=21s
+[stage_hub_prefix] unit 493/658 context_risk/issue2670_highrate/raw/run/setup/fresh_transport_diagnosis_20260908T0832Z.md elapsed=21s
+[stage_hub_prefix] unit 494/658 context_risk/issue2670_highrate/raw/run/setup/fresh_transport_settlement_execution_20260908.json elapsed=21s
+[stage_hub_prefix] unit 495/658 context_risk/issue2670_highrate/raw/run/setup/hardware_preflight.json elapsed=21s
+[stage_hub_prefix] unit 496/658 context_risk/issue2670_highrate/raw/run/setup/highrate_archive_readiness_review.json elapsed=21s
+[stage_hub_prefix] unit 497/658 context_risk/issue2670_highrate/raw/run/setup/highrate_archive_readiness_review.md elapsed=21s
+[stage_hub_prefix] unit 498/658 context_risk/issue2670_highrate/raw/run/setup/highrate_capture_capture_20260908T101513Z_owner_launch.json elapsed=21s
+[stage_hub_prefix] unit 499/658 context_risk/issue2670_highrate/raw/run/setup/highrate_capture_supervise.sh elapsed=21s
+[stage_hub_prefix] unit 500/658 context_risk/issue2670_highrate/raw/run/setup/highrate_postrun_execution_runbook.md elapsed=21s
+[stage_hub_prefix] unit 501/658 context_risk/issue2670_highrate/raw/run/setup/highrate_reconciliation_code_review.md elapsed=21s
+[stage_hub_prefix] unit 502/658 context_risk/issue2670_highrate/raw/run/setup/highrate_reconciliation_code_review.json elapsed=21s
+[stage_hub_prefix] unit 503/658 context_risk/issue2670_highrate/raw/run/setup/highrate_transport_execution_runbook.md elapsed=21s
+[stage_hub_prefix] unit 504/658 context_risk/issue2670_highrate/raw/run/setup/imported_capture_helpers.json elapsed=21s
+[stage_hub_prefix] unit 505/658 context_risk/issue2670_highrate/raw/run/setup/inherited_v20_server_review.json elapsed=21s
+[stage_hub_prefix] unit 506/658 context_risk/issue2670_highrate/raw/run/setup/inherited_runtime_sources.json elapsed=21s
+[stage_hub_prefix] unit 507/658 context_risk/issue2670_highrate/raw/run/setup/input_applicability_amendment_freeze.json elapsed=21s
+[stage_hub_prefix] unit 508/658 context_risk/issue2670_highrate/raw/run/setup/input_validity_plan_review.json elapsed=21s
+[stage_hub_prefix] unit 509/658 context_risk/issue2670_highrate/raw/run/setup/input_validity_policy.json elapsed=22s
+[stage_hub_prefix] unit 510/658 context_risk/issue2670_highrate/raw/run/setup/input_validity_workflow_lint.log elapsed=22s
+[stage_hub_prefix] unit 511/658 context_risk/issue2670_highrate/raw/run/setup/map_reporting_evidence.json elapsed=22s
+[stage_hub_prefix] unit 512/658 context_risk/issue2670_highrate/raw/run/setup/live_prefix_preflight.json elapsed=22s
+[stage_hub_prefix] unit 513/658 context_risk/issue2670_highrate/raw/run/setup/map_provenance.json elapsed=22s
+[stage_hub_prefix] unit 514/658 context_risk/issue2670_highrate/raw/run/setup/map_reuse_review.json elapsed=22s
+[stage_hub_prefix] unit 515/658 context_risk/issue2670_highrate/raw/run/setup/map_reporting_evidence.md elapsed=22s
+[stage_hub_prefix] unit 516/658 context_risk/issue2670_highrate/raw/run/setup/model_files.json elapsed=22s
+[stage_hub_prefix] unit 517/658 context_risk/issue2670_highrate/raw/run/setup/official_test_syntax_audit.json elapsed=22s
+[stage_hub_prefix] unit 518/658 context_risk/issue2670_highrate/raw/run/setup/pilot_compute_projection.json elapsed=22s
+[stage_hub_prefix] unit 519/658 context_risk/issue2670_highrate/raw/run/setup/pilot_incremental_native_details.json elapsed=22s
+[stage_hub_prefix] unit 520/658 context_risk/issue2670_highrate/raw/run/setup/pilot_incremental_review.json elapsed=22s
+[stage_hub_prefix] unit 521/658 context_risk/issue2670_highrate/raw/run/setup/pilot_success_review.json elapsed=22s
+[stage_hub_prefix] unit 522/658 context_risk/issue2670_highrate/raw/run/setup/pilot_success_review.md elapsed=22s
+[stage_hub_prefix] unit 523/658 context_risk/issue2670_highrate/raw/run/setup/pilot_upstream_test77_evidence.json elapsed=22s
+[stage_hub_prefix] unit 524/658 context_risk/issue2670_highrate/raw/run/setup/pilot_verified_gate.json elapsed=22s
+[stage_hub_prefix] unit 525/658 context_risk/issue2670_highrate/raw/run/setup/pod_extra_copy_20260908.stderr.log elapsed=22s
+[stage_hub_prefix] unit 526/658 context_risk/issue2670_highrate/raw/run/setup/plan.md elapsed=22s
+[stage_hub_prefix] unit 527/658 context_risk/issue2670_highrate/raw/run/setup/plan_review.json elapsed=22s
+[stage_hub_prefix] unit 528/658 context_risk/issue2670_highrate/raw/run/setup/pod_extra_copy_20260908.stdout.log elapsed=22s
+[stage_hub_prefix] unit 529/658 context_risk/issue2670_highrate/raw/run/setup/plan_v7_input_validity.md elapsed=22s
+[stage_hub_prefix] unit 530/658 context_risk/issue2670_highrate/raw/run/setup/pod_full_copy_20260908.stderr.log elapsed=22s
+[stage_hub_prefix] unit 531/658 context_risk/issue2670_highrate/raw/run/setup/pod_full_copy_20260908.stdout.log elapsed=22s
+[stage_hub_prefix] unit 532/658 context_risk/issue2670_highrate/raw/run/setup/plan_v9_transport_censor_verification.md elapsed=22s
+[stage_hub_prefix] unit 533/658 context_risk/issue2670_highrate/raw/run/setup/pod_final_inventory_command_20260908.py elapsed=22s
+[stage_hub_prefix] unit 534/658 context_risk/issue2670_highrate/raw/run/setup/pod_full_copy_validation_20260908.json elapsed=22s
+[stage_hub_prefix] unit 535/658 context_risk/issue2670_highrate/raw/run/setup/pod_inventory_after_capture_20260908.json elapsed=22s
+[stage_hub_prefix] unit 536/658 context_risk/issue2670_highrate/raw/run/setup/pod_inventory_copy_end_20260908.json elapsed=23s
+[stage_hub_prefix] unit 537/658 context_risk/issue2670_highrate/raw/run/setup/pod_source_sync_737be6d5.json elapsed=23s
+[stage_hub_prefix] unit 538/658 context_risk/issue2670_highrate/raw/run/setup/pod_source_sync_b7673e06.json elapsed=23s
+[stage_hub_prefix] unit 539/658 context_risk/issue2670_highrate/raw/run/setup/postrun_code_review.md elapsed=23s
+[stage_hub_prefix] unit 540/658 context_risk/issue2670_highrate/raw/run/setup/postrun_code_review.json elapsed=23s
+[stage_hub_prefix] unit 541/658 context_risk/issue2670_highrate/raw/run/setup/postrun_code_review_actual_sample.json elapsed=23s
+[stage_hub_prefix] unit 542/658 context_risk/issue2670_highrate/raw/run/setup/postrun_code_review_tests_final.log elapsed=23s
+[stage_hub_prefix] unit 543/658 context_risk/issue2670_highrate/raw/run/setup/postrun_code_review_tests_token_guard_final.log elapsed=23s
+[stage_hub_prefix] unit 544/658 context_risk/issue2670_highrate/raw/run/setup/postrun_consumer_bridge_probe.py elapsed=23s
+[stage_hub_prefix] unit 545/658 context_risk/issue2670_highrate/raw/run/setup/postrun_consumer_bridge_probe_result.json elapsed=23s
+[stage_hub_prefix] unit 546/658 context_risk/issue2670_highrate/raw/run/setup/postrun_consumer_recipe_comparison.json elapsed=23s
+[stage_hub_prefix] unit 547/658 context_risk/issue2670_highrate/raw/run/setup/postrun_final_consumer_seam_tests.json elapsed=23s
+[stage_hub_prefix] unit 548/658 context_risk/issue2670_highrate/raw/run/setup/postrun_final_consumer_tests.json elapsed=23s
+[stage_hub_prefix] unit 549/658 context_risk/issue2670_highrate/raw/run/setup/postrun_git_persistence_pending.json elapsed=23s
+[stage_hub_prefix] unit 550/658 context_risk/issue2670_highrate/raw/run/setup/postrun_git_persistence.json elapsed=23s
+[stage_hub_prefix] unit 551/658 context_risk/issue2670_highrate/raw/run/setup/postrun_workflow_lint_final.log elapsed=23s
+[stage_hub_prefix] unit 552/658 context_risk/issue2670_highrate/raw/run/setup/production_capture_capture_20260908T101513Z_independent_review.json elapsed=23s
+[stage_hub_prefix] unit 553/658 context_risk/issue2670_highrate/raw/run/setup/production_capture_capture_20260908T101513Z_independent_review.md elapsed=23s
+[stage_hub_prefix] unit 554/658 context_risk/issue2670_highrate/raw/run/setup/postrun_workflow_lint_token_guard_final.log elapsed=23s
+[stage_hub_prefix] unit 555/658 context_risk/issue2670_highrate/raw/run/setup/production_capture_capture_20260908T101513Z_remote_review.json elapsed=23s
+[stage_hub_prefix] unit 556/658 context_risk/issue2670_highrate/raw/run/setup/pre_fresh_input_applicability.json elapsed=23s
+[stage_hub_prefix] unit 557/658 context_risk/issue2670_highrate/raw/run/setup/progress_20260908T0331Z.md elapsed=23s
+[stage_hub_prefix] unit 558/658 context_risk/issue2670_highrate/raw/run/setup/progress_20260908T0533Z.md elapsed=23s
+[stage_hub_prefix] unit 559/658 context_risk/issue2670_highrate/raw/run/setup/progress_20260908T0622Z.md elapsed=23s
+[stage_hub_prefix] unit 560/658 context_risk/issue2670_highrate/raw/run/setup/progress_20260908T0647Z.md elapsed=23s
+[stage_hub_prefix] unit 561/658 context_risk/issue2670_highrate/raw/run/setup/progress_20260908T0735Z.md elapsed=24s
+[stage_hub_prefix] unit 562/658 context_risk/issue2670_highrate/raw/run/setup/raw_archive_20260908T103100Z_snapshot_preparation.json elapsed=24s
+[stage_hub_prefix] unit 563/658 context_risk/issue2670_highrate/raw/run/setup/map_layer_44.npz elapsed=24s
+[stage_hub_prefix] unit 564/658 context_risk/issue2670_highrate/raw/run/setup/raw_archive_20260908T103321Z_manifest_correction.json elapsed=24s
+[stage_hub_prefix] unit 565/658 context_risk/issue2670_highrate/raw/run/setup/raw_archive_teardown_runbook.json elapsed=24s
+[stage_hub_prefix] unit 566/658 context_risk/issue2670_highrate/raw/run/setup/raw_archive_teardown_runbook.md elapsed=24s
+[stage_hub_prefix] unit 567/658 context_risk/issue2670_highrate/raw/run/setup/raw_input_readiness_v9_20260908T095519Z.json elapsed=24s
+[stage_hub_prefix] unit 568/658 context_risk/issue2670_highrate/raw/run/setup/raw_external_source_mapping_v9_20260908T095519Z.json elapsed=24s
+[stage_hub_prefix] unit 569/658 context_risk/issue2670_highrate/raw/run/setup/raw_input_readiness_v9_20260908T095519Z.md elapsed=24s
+[stage_hub_prefix] unit 570/658 context_risk/issue2670_highrate/raw/run/setup/reconciliation_git_persistence.json elapsed=24s
+[stage_hub_prefix] unit 571/658 context_risk/issue2670_highrate/raw/run/setup/reconciliation_postrun_code_review.json elapsed=24s
+[stage_hub_prefix] unit 572/658 context_risk/issue2670_highrate/raw/run/setup/reconciliation_postrun_code_review.md elapsed=24s
+[stage_hub_prefix] unit 573/658 context_risk/issue2670_highrate/raw/run/setup/reconciliation_transport_code_review.json elapsed=24s
+[stage_hub_prefix] unit 574/658 context_risk/issue2670_highrate/raw/run/setup/reconciliation_tests.log elapsed=24s
+[stage_hub_prefix] unit 575/658 context_risk/issue2670_highrate/raw/run/setup/reconciliation_transport_code_review.md elapsed=24s
+[stage_hub_prefix] unit 576/658 context_risk/issue2670_highrate/raw/run/setup/reconciliation_workflow_lint.log elapsed=24s
+[stage_hub_prefix] unit 577/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/fresh_launch_started_9_samples_20260908T070736Z.json elapsed=24s
+[stage_hub_prefix] unit 578/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/fresh_started_228_samples_20260908T084629Z.json elapsed=24s
+[stage_hub_prefix] unit 579/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/fresh_started_148_samples_20260908T080730Z.json elapsed=24s
+[stage_hub_prefix] unit 580/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/fresh_started_312_samples_20260908T092620Z.json elapsed=24s
+[stage_hub_prefix] unit 581/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/fresh_launch_started_9_samples_20260908T070736Z.zip elapsed=24s
+[stage_hub_prefix] unit 582/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/fresh_started_70_samples_20260908T073540Z.json elapsed=24s
+[stage_hub_prefix] unit 583/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/fresh_transport_started_191_samples_20260908T082604Z.json elapsed=24s
+[stage_hub_prefix] unit 584/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/fresh_started_148_samples_20260908T080730Z.zip elapsed=25s
+[stage_hub_prefix] unit 585/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/screen_started_137_samples_20260908T013048Z.json elapsed=25s
+[stage_hub_prefix] unit 586/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/fresh_started_228_samples_20260908T084629Z.zip elapsed=25s
+[stage_hub_prefix] unit 587/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/fresh_transport_started_191_samples_20260908T082604Z.zip elapsed=25s
+[stage_hub_prefix] unit 588/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/fresh_started_312_samples_20260908T092620Z.zip elapsed=25s
+[stage_hub_prefix] unit 589/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/screen_started_223_samples_20260908T020849Z.json elapsed=25s
+[stage_hub_prefix] unit 590/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/screen_started_306_samples_20260908T030713Z.json elapsed=25s
+[stage_hub_prefix] unit 591/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/screen_started_376_samples_20260908T034825Z.json elapsed=25s
+[stage_hub_prefix] unit 592/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/screen_started_461_samples_20260908T042704Z.json elapsed=25s
+[stage_hub_prefix] unit 593/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/fresh_started_70_samples_20260908T073540Z.zip elapsed=25s
+[stage_hub_prefix] unit 594/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/screen_started_223_samples_20260908T020849Z.zip elapsed=25s
+[stage_hub_prefix] unit 595/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/screen_started_306_samples_20260908T030713Z.zip elapsed=25s
+[stage_hub_prefix] unit 596/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/screen_started_137_samples_20260908T013048Z.zip elapsed=25s
+[stage_hub_prefix] unit 597/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/screen_started_541_samples_20260908T051858Z.json elapsed=25s
+[stage_hub_prefix] unit 598/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/screen_started_588_samples_20260908T054412Z.json elapsed=26s
+[stage_hub_prefix] unit 599/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/screen_started_617_samples_20260908T063839Z.json elapsed=26s
+[stage_hub_prefix] unit 600/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/screen_started_461_samples_20260908T042704Z.zip elapsed=26s
+[stage_hub_prefix] unit 601/658 context_risk/issue2670_highrate/raw/run/setup/runtime_preflight_review.json elapsed=26s
+[stage_hub_prefix] unit 602/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/screen_started_541_samples_20260908T051858Z.zip elapsed=26s
+[stage_hub_prefix] unit 603/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/screen_started_376_samples_20260908T034825Z.zip elapsed=26s
+[stage_hub_prefix] unit 604/658 context_risk/issue2670_highrate/raw/run/setup/screen_incremental_success_review_20260908T014007Z.json elapsed=26s
+[stage_hub_prefix] unit 605/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/screen_started_588_samples_20260908T054412Z.zip elapsed=26s
+[stage_hub_prefix] unit 606/658 context_risk/issue2670_highrate/raw/run/setup/review_snapshots/screen_started_617_samples_20260908T063839Z.zip elapsed=26s
+[stage_hub_prefix] unit 607/658 context_risk/issue2670_highrate/raw/run/setup/screen_incremental_success_review_20260908T004603Z.md elapsed=26s
+[stage_hub_prefix] unit 608/658 context_risk/issue2670_highrate/raw/run/setup/screen_incremental_success_review_20260908T014007Z.md elapsed=26s
+[stage_hub_prefix] unit 609/658 context_risk/issue2670_highrate/raw/run/setup/screen_incremental_success_review_20260908T004603Z.json elapsed=26s
+[stage_hub_prefix] unit 610/658 context_risk/issue2670_highrate/raw/run/setup/screen_incremental_success_review_20260908T021618Z.json elapsed=26s
+[stage_hub_prefix] unit 611/658 context_risk/issue2670_highrate/raw/run/setup/screen_incremental_success_review_20260908T021618Z.md elapsed=26s
+[stage_hub_prefix] unit 612/658 context_risk/issue2670_highrate/raw/run/setup/screen_incremental_success_review_20260908T031755Z.md elapsed=26s
+[stage_hub_prefix] unit 613/658 context_risk/issue2670_highrate/raw/run/setup/screen_incremental_success_review_20260908T040058Z.md elapsed=26s
+[stage_hub_prefix] unit 614/658 context_risk/issue2670_highrate/raw/run/setup/screen_incremental_success_review_20260908T040058Z.json elapsed=26s
+[stage_hub_prefix] unit 615/658 context_risk/issue2670_highrate/raw/run/setup/screen_incremental_success_review_20260908T043549Z.json elapsed=26s
+[stage_hub_prefix] unit 616/658 context_risk/issue2670_highrate/raw/run/setup/screen_incremental_success_review_20260908T031755Z.json elapsed=26s
+[stage_hub_prefix] unit 617/658 context_risk/issue2670_highrate/raw/run/setup/screen_incremental_success_review_20260908T043549Z.md elapsed=26s
+[stage_hub_prefix] unit 618/658 context_risk/issue2670_highrate/raw/run/setup/screen_incremental_success_review_20260908T052903Z.json elapsed=27s
+[stage_hub_prefix] unit 619/658 context_risk/issue2670_highrate/raw/run/setup/screen_incremental_success_review_20260908T052903Z.md elapsed=27s
+[stage_hub_prefix] unit 620/658 context_risk/issue2670_highrate/raw/run/setup/screen_incremental_success_review_20260908T055109Z.md elapsed=27s
+[stage_hub_prefix] unit 621/658 context_risk/issue2670_highrate/raw/run/setup/screen_incremental_success_review_20260908T055109Z.json elapsed=27s
+[stage_hub_prefix] unit 622/658 context_risk/issue2670_highrate/raw/run/setup/screen_incremental_success_review_20260908T064218Z.json elapsed=27s
+[stage_hub_prefix] unit 623/658 context_risk/issue2670_highrate/raw/run/setup/screen_incremental_success_review_20260908T064218Z.md elapsed=27s
+[stage_hub_prefix] unit 624/658 context_risk/issue2670_highrate/raw/run/setup/screen_partial_census_20260908T0130Z.json elapsed=27s
+[stage_hub_prefix] unit 625/658 context_risk/issue2670_highrate/raw/run/setup/screen_postrun_settlement_execution.json elapsed=27s
+[stage_hub_prefix] unit 626/658 context_risk/issue2670_highrate/raw/run/setup/screen_request_audit_20260908T034825Z.json elapsed=27s
+[stage_hub_prefix] unit 627/658 context_risk/issue2670_highrate/raw/run/setup/screen_request_audit_20260908T042704Z.json elapsed=27s
+[stage_hub_prefix] unit 628/658 context_risk/issue2670_highrate/raw/run/setup/screen_request_audit_20260908T051858Z.json elapsed=27s
+[stage_hub_prefix] unit 629/658 context_risk/issue2670_highrate/raw/run/setup/screen_request_audit_20260908T054412Z.json elapsed=27s
+[stage_hub_prefix] unit 630/658 context_risk/issue2670_highrate/raw/run/setup/screen_request_audit_20260908T063839Z.json elapsed=27s
+[stage_hub_prefix] unit 631/658 context_risk/issue2670_highrate/raw/run/setup/screen_terminal_success_request_audit_20260908T065248Z.json elapsed=27s
+[stage_hub_prefix] unit 632/658 context_risk/issue2670_highrate/raw/run/setup/server_drain_and_capture_hardware_20260908.json elapsed=27s
+[stage_hub_prefix] unit 633/658 context_risk/issue2670_highrate/raw/run/setup/server_drain_request_20260908.json elapsed=27s
+[stage_hub_prefix] unit 634/658 context_risk/issue2670_highrate/raw/run/setup/server_runtime_at_pilot.json elapsed=27s
+[stage_hub_prefix] unit 635/658 context_risk/issue2670_highrate/raw/run/setup/transport_censor_plan_review.json elapsed=27s
+[stage_hub_prefix] unit 636/658 context_risk/issue2670_highrate/raw/run/setup/transport_censor_plan_review.md elapsed=27s
+[stage_hub_prefix] unit 637/658 context_risk/issue2670_highrate/raw/run/setup/transport_implementation_handoff_20260908.md elapsed=27s
+[stage_hub_prefix] unit 638/658 context_risk/issue2670_highrate/raw/run/setup/transport_implementation_handoff_20260908.json elapsed=27s
+[stage_hub_prefix] unit 639/658 context_risk/issue2670_highrate/raw/run/setup/transport_critic_final_actual_probe.json elapsed=27s
+[stage_hub_prefix] unit 640/658 context_risk/issue2670_highrate/raw/run/setup/transport_postrun_code_review.md elapsed=27s
+[stage_hub_prefix] unit 641/658 context_risk/issue2670_highrate/raw/run/setup/transport_postrun_code_review.json elapsed=27s
+[stage_hub_prefix] unit 642/658 context_risk/issue2670_highrate/raw/run/setup/transport_verifier_tests_final_20260908.log elapsed=27s
+[stage_hub_prefix] unit 643/658 context_risk/issue2670_highrate/raw/run/setup/transport_workflow_lint_final_20260908.log elapsed=27s
+[stage_hub_prefix] unit 644/658 context_risk/issue2670_highrate/raw/run/setup/tunnel_20260907T232922Z.log elapsed=27s
+[stage_hub_prefix] unit 645/658 context_risk/issue2670_highrate/raw/run/setup/tunnel_drain_20260908.json elapsed=27s
+[stage_hub_prefix] unit 646/658 context_risk/issue2670_highrate/raw/run/setup/tunnel_20260907T232922Z_launch.json elapsed=27s
+[stage_hub_prefix] unit 647/658 context_risk/issue2670_highrate/raw/run/setup/v8_postrun_amendment_freeze.json elapsed=27s
+[stage_hub_prefix] unit 648/658 context_risk/issue2670_highrate/raw/run/setup/v9_commit_push_verification_20260908.json elapsed=28s
+[stage_hub_prefix] unit 649/658 context_risk/issue2670_highrate/raw/run/setup/v9_commit_scope_20260908.json elapsed=28s
+[stage_hub_prefix] unit 650/658 context_risk/issue2670_highrate/raw/run/setup/v9_transport_preimplementation_freeze.json elapsed=28s
+[stage_hub_prefix] unit 651/658 context_risk/issue2670_highrate/raw/run/setup/v9_consumer_regressions_20260908.log elapsed=28s
+[stage_hub_prefix] unit 652/658 context_risk/issue2670_highrate/raw/run/setup/v9_consumer_regressions_20260908.json elapsed=28s
+[stage_hub_prefix] unit 653/658 context_risk/issue2670_highrate/raw/run/setup/v9_owner_commit_preflight_20260908.json elapsed=28s
+[stage_hub_prefix] unit 654/658 context_risk/issue2670_highrate/raw/run/setup/v9_workflow_lint_20260908.json elapsed=28s
+[stage_hub_prefix] unit 655/658 context_risk/issue2670_highrate/raw/run/setup/v9_workflow_lint_20260908.log elapsed=28s
+[stage_hub_prefix] unit 656/658 context_risk/issue2670_highrate/raw/snapshot_manifest.json elapsed=28s
+[stage_hub_prefix] unit 657/658 context_risk/issue2670_highrate/raw/run/setup/workflow_lint.log elapsed=28s
+[stage_hub_prefix] unit 658/658 context_risk/issue2670_highrate/raw/run/setup/validated_static_input_applicability.json elapsed=28s
+[archive] parsed unit 1/624 run/capture/capture_binding.json
+[archive] parsed unit 2/624 run/capture/capture_launch_binding.json
+[archive] parsed unit 3/624 run/capture/chunk_0000.done.json
+[archive] parsed unit 4/624 run/capture/chunk_0000.npz
+[archive] parsed unit 5/624 run/capture/chunk_0000.rows.jsonl
+[archive] parsed unit 6/624 run/capture/chunk_0001.done.json
+[archive] parsed unit 7/624 run/capture/chunk_0001.npz
+[archive] parsed unit 8/624 run/capture/chunk_0001.rows.jsonl
+[archive] parsed unit 9/624 run/capture/chunk_0002.done.json
+[archive] parsed unit 10/624 run/capture/chunk_0002.npz
+[archive] parsed unit 11/624 run/capture/chunk_0002.rows.jsonl
+[archive] parsed unit 12/624 run/capture/chunk_0003.done.json
+[archive] parsed unit 13/624 run/capture/chunk_0003.npz
+[archive] parsed unit 14/624 run/capture/chunk_0003.rows.jsonl
+[archive] parsed unit 15/624 run/capture/chunk_0004.done.json
+[archive] parsed unit 16/624 run/capture/chunk_0004.npz
+[archive] parsed unit 17/624 run/capture/chunk_0004.rows.jsonl
+[archive] parsed unit 18/624 run/capture/chunk_0005.done.json
+[archive] parsed unit 19/624 run/capture/chunk_0005.npz
+[archive] parsed unit 20/624 run/capture/chunk_0005.rows.jsonl
+[archive] parsed unit 21/624 run/capture/run_result.json
+[archive] parsed unit 22/624 run/capture_inputs.json
+[archive] parsed unit 23/624 run/fresh_20260908T070117Z.log
+[archive] parsed unit 24/624 run/fresh_20260908T070117Z_launch.json
+[archive] parsed unit 25/624 run/fresh_B/launch_config_1788850927139335007_697788.json
+[archive] parsed unit 26/624 run/fresh_B/launch_config_1788850927139335007_697788_result.json
+[archive] parsed unit 27/624 run/fresh_B/logs/2026-09-08T07-02-10-00-00_context-risk-followup-ten-submissions_3kAz589gj9bzDgYysGcnFi.eval
+[archive] parsed unit 28/624 run/fresh_B/native_audit.json
+[archive] parsed unit 29/624 run/fresh_B/prefix_tokens.json
+[archive] parsed unit 30/624 run/fresh_B/rollouts.jsonl
+[archive] parsed unit 31/624 run/fresh_B/run_result.json
+[archive] parsed unit 32/624 run/fresh_B/success_review.json
+[archive] parsed unit 33/624 run/fresh_B/success_review.md
+[archive] parsed unit 34/624 run/fresh_B/terminal_process.json
+[archive] parsed unit 35/624 run/fresh_B/transport_postrun_audit.json
+[archive] parsed unit 36/624 run/fresh_fresh_20260908T070117Z_process.exit.json
+[archive] parsed unit 37/624 run/fresh_fresh_20260908T070117Z_process.pid
+[archive] parsed unit 38/624 run/fresh_fresh_20260908T070117Z_process.worker.pid
+[archive] parsed unit 39/624 run/manifests/code_review.json
+[archive] parsed unit 40/624 run/manifests/fresh_B.jsonl
+[archive] parsed unit 41/624 run/manifests/screen_B.jsonl
+[archive] parsed unit 42/624 run/manifests/screen_freeze.json
+[archive] parsed unit 43/624 run/manifests/source.jsonl
+[archive] parsed unit 44/624 run/pilot_20260907T233239Z.log
+[archive] parsed unit 45/624 run/pilot_20260907T233239Z_launch.json
+[archive] parsed unit 46/624 run/pilot_archive_20260908T005137Z.log
+[archive] parsed unit 47/624 run/pilot_archive_20260908T005137Z_exit.json
+[archive] parsed unit 48/624 run/pilot_archive_20260908T005137Z_launch.json
+[archive] parsed unit 49/624 run/pilot_readback_receipt.json
+[archive] parsed unit 50/624 run/pilot_upload_receipt.json
+[archive] parsed unit 51/624 run/pod_setup/capture_runtime_setup/capture_orchestration_artifacts.json
+[archive] parsed unit 52/624 run/pod_setup/capture_runtime_setup/capture_orchestration_code_review.json
+[archive] parsed unit 53/624 run/pod_setup/capture_runtime_setup/capture_orchestration_code_review.md
+[archive] parsed unit 54/624 run/pod_setup/capture_runtime_setup/capture_orchestration_launch_recipe.md
+[archive] parsed unit 55/624 run/pod_setup/capture_runtime_setup/capture_orchestration_supervisor.diff
+[archive] parsed unit 56/624 run/pod_setup/capture_runtime_setup/capture_runtime_import_preflight.json
+[archive] parsed unit 57/624 run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.disk_after.json
+[archive] parsed unit 58/624 run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.disk_before.json
+[archive] parsed unit 59/624 run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.install.log
+[archive] parsed unit 60/624 run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.launch.json
+[archive] parsed unit 61/624 run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.log
+[archive] parsed unit 62/624 run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.packages.freeze.txt
+[archive] parsed unit 63/624 run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.packages.json
+[archive] parsed unit 64/624 run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.pip_check.txt
+[archive] parsed unit 65/624 run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.receipt.json
+[archive] parsed unit 66/624 run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z.venv.log
+[archive] parsed unit 67/624 run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z_owner_launch.json
+[archive] parsed unit 68/624 run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z_process.exit.json
+[archive] parsed unit 69/624 run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z_process.pid
+[archive] parsed unit 70/624 run/pod_setup/capture_runtime_setup/capture_runtime_setup_runtime_20260908T055743Z_process.worker.pid
+[archive] parsed unit 71/624 run/pod_setup/capture_runtime_setup/capture_runtime_setup_supervise.sh
+[archive] parsed unit 72/624 run/pod_setup/capture_runtime_setup/capture_runtime_setup_worker.py
+[archive] parsed unit 73/624 run/pod_setup/capture_runtime_setup/highrate_capture_supervise.sh
+[archive] parsed unit 74/624 run/pod_setup/cuda_compat_install.log
+[archive] parsed unit 75/624 run/pod_setup/download_20260907T232358Z.log
+[archive] parsed unit 76/624 run/pod_setup/download_20260907T232358Z_launch.json
+[archive] parsed unit 77/624 run/pod_setup/inherited_v20_server_review.json
+[archive] parsed unit 78/624 run/pod_setup/model_download_complete.json
+[archive] parsed unit 79/624 run/pod_setup/model_download_download_20260907T232358Z_process.exit.json
+[archive] parsed unit 80/624 run/pod_setup/model_download_download_20260907T232358Z_process.pid
+[archive] parsed unit 81/624 run/pod_setup/model_download_download_20260907T232358Z_process.worker.pid
+[archive] parsed unit 82/624 run/pod_setup/model_files.json
+[archive] parsed unit 83/624 run/pod_setup/pinned_runtime_packages.json
+[archive] parsed unit 84/624 run/pod_setup/pinned_runtime_prepare.log
+[archive] parsed unit 85/624 run/screen_20260908T003104Z.log
+[archive] parsed unit 86/624 run/screen_20260908T003104Z_launch.json
+[archive] parsed unit 87/624 run/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.json
+[archive] parsed unit 88/624 run/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json
+[archive] parsed unit 89/624 run/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.json
+[archive] parsed unit 90/624 run/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json
+[archive] parsed unit 91/624 run/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.json
+[archive] parsed unit 92/624 run/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json
+[archive] parsed unit 93/624 run/screen_B/launch_config_1788824126441286824_3281540.json
+[archive] parsed unit 94/624 run/screen_B/launch_config_1788824126441286824_3281540_result.json
+[archive] parsed unit 95/624 run/screen_B/launch_config_1788827625353955587_3522010.json
+[archive] parsed unit 96/624 run/screen_B/launch_config_1788827625353955587_3522010_result.json
+[archive] parsed unit 97/624 run/screen_B/logs/2026-09-07T23-35-32-00-00_context-risk-followup-ten-submissions_7EGPYSjaYbzZSCqtchLR23.eval
+[archive] parsed unit 98/624 run/screen_B/logs/2026-09-08T00-33-48-00-00_context-risk-followup-ten-submissions_7EGPYSjaYbzZSCqtchLR23.eval
+[archive] parsed unit 99/624 run/screen_B/native_audit.json
+[archive] parsed unit 100/624 run/screen_B/pilot_native_audit.json
+[archive] parsed unit 101/624 run/screen_B/pilot_result.json
+[archive] parsed unit 102/624 run/screen_B/pilot_rollouts.jsonl
+[archive] parsed unit 103/624 run/screen_B/postrun_audit.json
+[archive] parsed unit 104/624 run/screen_B/prefix_tokens.json
+[archive] parsed unit 105/624 run/screen_B/resume_input_1788827471430223247.census.json
+[archive] parsed unit 106/624 run/screen_B/resume_input_1788827471430223247.jsonl
+[archive] parsed unit 107/624 run/screen_B/rollouts.jsonl
+[archive] parsed unit 108/624 run/screen_B/run_result.json
+[archive] parsed unit 109/624 run/screen_B/success_review.json
+[archive] parsed unit 110/624 run/screen_B/success_review.md
+[archive] parsed unit 111/624 run/screen_B/terminal_process.json
+[archive] parsed unit 112/624 run/screen_pilot_pilot_20260907T233239Z_process.exit.json
+[archive] parsed unit 113/624 run/screen_pilot_pilot_20260907T233239Z_process.pid
+[archive] parsed unit 114/624 run/screen_pilot_pilot_20260907T233239Z_process.worker.pid
+[archive] parsed unit 115/624 run/screen_screen_20260908T003104Z_process.exit.json
+[archive] parsed unit 116/624 run/screen_screen_20260908T003104Z_process.pid
+[archive] parsed unit 117/624 run/screen_screen_20260908T003104Z_process.worker.pid
+[archive] parsed unit 118/624 run/selection.json
+[archive] parsed unit 119/624 run/setup/__pycache__/capture_memory_check.cpython-311.pyc
+[archive] parsed unit 120/624 run/setup/analysis_code_review.json
+[archive] parsed unit 121/624 run/setup/analysis_input_validity_code_review.json
+[archive] parsed unit 122/624 run/setup/analysis_postrun_code_review.json
+[archive] parsed unit 123/624 run/setup/analysis_postrun_code_review.md
+[archive] parsed unit 124/624 run/setup/analysis_spec.json
+[archive] parsed unit 125/624 run/setup/analysis_transport_code_review.json
+[archive] parsed unit 126/624 run/setup/analysis_transport_code_review.md
+[archive] parsed unit 127/624 run/setup/archive_readiness_541_20260908T053954Z.json
+[archive] parsed unit 128/624 run/setup/archive_readiness_541_20260908T053954Z.md
+[archive] parsed unit 129/624 run/setup/archive_readiness_618_20260908T065743Z.json
+[archive] parsed unit 130/624 run/setup/archive_readiness_618_20260908T065743Z.md
+[archive] parsed unit 131/624 run/setup/archive_review_snapshots_code_review.json
+[archive] parsed unit 132/624 run/setup/archive_review_snapshots_code_review.md
+[archive] parsed unit 133/624 run/setup/archive_snapshots_workflow_lint.log
+[archive] parsed unit 134/624 run/setup/archive_workflow_lint.log
+[archive] parsed unit 135/624 run/setup/archive_zip_readiness_v9_20260908T094702Z.json
+[archive] parsed unit 136/624 run/setup/capacity_incremental_code_review.json
+[archive] parsed unit 137/624 run/setup/capacity_incremental_code_review.md
+[archive] parsed unit 138/624 run/setup/capacity_token_cache_reviewed_live_receipt.json
+[archive] parsed unit 139/624 run/setup/capacity_token_cache_task96_e2_reviewed_live_receipt.json
+[archive] parsed unit 140/624 run/setup/capacity_tokens_authoritative_541_reconciliation.json
+[archive] parsed unit 141/624 run/setup/capacity_tokens_authoritative_618_reconciliation.json
+[archive] parsed unit 142/624 run/setup/capture_actual_shape_projection.json
+[archive] parsed unit 143/624 run/setup/capture_code_review.json
+[archive] parsed unit 144/624 run/setup/capture_fence_sizing_review.json
+[archive] parsed unit 145/624 run/setup/capture_fence_sizing_review.md
+[archive] parsed unit 146/624 run/setup/capture_input_stage_20260908.json
+[archive] parsed unit 147/624 run/setup/capture_memory_artifacts.json
+[archive] parsed unit 148/624 run/setup/capture_memory_check.py
+[archive] parsed unit 149/624 run/setup/capture_memory_code_review.json
+[archive] parsed unit 150/624 run/setup/capture_memory_code_review.md
+[archive] parsed unit 151/624 run/setup/capture_memory_copy_validation_20260908.json
+[archive] parsed unit 152/624 run/setup/capture_memory_diag_20260908T100316Z.json
+[archive] parsed unit 153/624 run/setup/capture_memory_diag_20260908T100316Z.launch.json
+[archive] parsed unit 154/624 run/setup/capture_memory_diag_20260908T100316Z.log
+[archive] parsed unit 155/624 run/setup/capture_memory_diag_20260908T100316Z.longest_singleton.npz
+[archive] parsed unit 156/624 run/setup/capture_memory_diag_20260908T100316Z.production_two_row.npz
+[archive] parsed unit 157/624 run/setup/capture_memory_diag_20260908T100316Z_independent_review.json
+[archive] parsed unit 158/624 run/setup/capture_memory_diag_20260908T100316Z_independent_review.md
+[archive] parsed unit 159/624 run/setup/capture_memory_diag_20260908T100316Z_owner_launch.json
+[archive] parsed unit 160/624 run/setup/capture_memory_diag_20260908T100316Z_process.exit.json
+[archive] parsed unit 161/624 run/setup/capture_memory_diag_20260908T100316Z_process.pid
+[archive] parsed unit 162/624 run/setup/capture_memory_diag_20260908T100316Z_process.worker.pid
+[archive] parsed unit 163/624 run/setup/capture_memory_git_persistence.json
+[archive] parsed unit 164/624 run/setup/capture_memory_git_persistence_pending.json
+[archive] parsed unit 165/624 run/setup/capture_memory_launch_progress_20260908T100316Z.md
+[archive] parsed unit 166/624 run/setup/capture_memory_pod_staging.json
+[archive] parsed unit 167/624 run/setup/capture_memory_reuse_addendum.md
+[archive] parsed unit 168/624 run/setup/capture_memory_reuse_review.json
+[archive] parsed unit 169/624 run/setup/capture_memory_review_cpu_checks.json
+[archive] parsed unit 170/624 run/setup/capture_memory_review_cpu_checks.py
+[archive] parsed unit 171/624 run/setup/capture_memory_supervise.sh
+[archive] parsed unit 172/624 run/setup/capture_memory_transfer_20260908.stderr.log
+[archive] parsed unit 173/624 run/setup/capture_memory_transfer_20260908.stdout.log
+[archive] parsed unit 174/624 run/setup/capture_memory_transport_code_review.json
+[archive] parsed unit 175/624 run/setup/capture_memory_transport_code_review.md
+[archive] parsed unit 176/624 run/setup/capture_memory_workflow_lint.log
+[archive] parsed unit 177/624 run/setup/capture_orchestration_artifacts.json
+[archive] parsed unit 178/624 run/setup/capture_orchestration_code_review.json
+[archive] parsed unit 179/624 run/setup/capture_orchestration_code_review.md
+[archive] parsed unit 180/624 run/setup/capture_orchestration_launch_recipe.md
+[archive] parsed unit 181/624 run/setup/capture_orchestration_supervisor.diff
+[archive] parsed unit 182/624 run/setup/capture_portable_input_preflight_20260908.json
+[archive] parsed unit 183/624 run/setup/capture_portable_input_preflight_20260908.stderr.log
+[archive] parsed unit 184/624 run/setup/capture_postrun_code_review.json
+[archive] parsed unit 185/624 run/setup/capture_postrun_code_review.md
+[archive] parsed unit 186/624 run/setup/capture_prepare_execution_20260908.json
+[archive] parsed unit 187/624 run/setup/capture_readiness_remote_inventory.json
+[archive] parsed unit 188/624 run/setup/capture_readiness_review.json
+[archive] parsed unit 189/624 run/setup/capture_readiness_runbook.md
+[archive] parsed unit 190/624 run/setup/capture_runtime_execution_review.json
+[archive] parsed unit 191/624 run/setup/capture_runtime_execution_review.md
+[archive] parsed unit 192/624 run/setup/capture_runtime_git_dispositions.json
+[archive] parsed unit 193/624 run/setup/capture_runtime_git_persistence.json
+[archive] parsed unit 194/624 run/setup/capture_runtime_git_persistence_pending.json
+[archive] parsed unit 195/624 run/setup/capture_runtime_import_preflight.json
+[archive] parsed unit 196/624 run/setup/capture_runtime_import_preflight_b7673e06.json
+[archive] parsed unit 197/624 run/setup/capture_runtime_orchestration_workflow_lint.log
+[archive] parsed unit 198/624 run/setup/capture_runtime_setup_completion_validation.json
+[archive] parsed unit 199/624 run/setup/capture_runtime_setup_owner_launch.json
+[archive] parsed unit 200/624 run/setup/capture_runtime_setup_preflight.json
+[archive] parsed unit 201/624 run/setup/capture_runtime_setup_supervise.sh
+[archive] parsed unit 202/624 run/setup/capture_runtime_setup_worker.py
+[archive] parsed unit 203/624 run/setup/capture_stage_after_rsync_error_20260908.json
+[archive] parsed unit 204/624 run/setup/capture_transport_code_review.json
+[archive] parsed unit 205/624 run/setup/capture_transport_code_review.md
+[archive] parsed unit 206/624 run/setup/capture_vm_validation_20260908.json
+[archive] parsed unit 207/624 run/setup/code_review.json
+[archive] parsed unit 208/624 run/setup/context_capacity_diagnostic_sample.json
+[archive] parsed unit 209/624 run/setup/context_capacity_failed_request_token_ids.json
+[archive] parsed unit 210/624 run/setup/context_capacity_plan_review.json
+[archive] parsed unit 211/624 run/setup/context_capacity_plan_review.md
+[archive] parsed unit 212/624 run/setup/context_capacity_recovery_diagnosis.json
+[archive] parsed unit 213/624 run/setup/context_capacity_recovery_diagnosis.md
+[archive] parsed unit 214/624 run/setup/context_capacity_tokenization_diagnostic.json
+[archive] parsed unit 215/624 run/setup/continuation_state.json
+[archive] parsed unit 216/624 run/setup/downstream_readiness_20260908T_partial.json
+[archive] parsed unit 217/624 run/setup/downstream_readiness_20260908T_partial.md
+[archive] parsed unit 218/624 run/setup/factcheck_consistency.json
+[archive] parsed unit 219/624 run/setup/fresh312_reviewer_finalize.py
+[archive] parsed unit 220/624 run/setup/fresh312_reviewer_notes.json
+[archive] parsed unit 221/624 run/setup/fresh312_snapshot_helper.py
+[archive] parsed unit 222/624 run/setup/fresh_incremental_archive_readback_20260908T074318Z.json
+[archive] parsed unit 223/624 run/setup/fresh_incremental_archive_readback_20260908T082004Z.json
+[archive] parsed unit 224/624 run/setup/fresh_incremental_archive_readback_20260908T085351Z.json
+[archive] parsed unit 225/624 run/setup/fresh_incremental_archive_readback_20260908T093654Z.json
+[archive] parsed unit 226/624 run/setup/fresh_incremental_success_review_20260908T074318Z.json
+[archive] parsed unit 227/624 run/setup/fresh_incremental_success_review_20260908T074318Z.md
+[archive] parsed unit 228/624 run/setup/fresh_incremental_success_review_20260908T082004Z.json
+[archive] parsed unit 229/624 run/setup/fresh_incremental_success_review_20260908T082004Z.md
+[archive] parsed unit 230/624 run/setup/fresh_incremental_success_review_20260908T085351Z.json
+[archive] parsed unit 231/624 run/setup/fresh_incremental_success_review_20260908T085351Z.md
+[archive] parsed unit 232/624 run/setup/fresh_incremental_success_review_20260908T093654Z.json
+[archive] parsed unit 233/624 run/setup/fresh_incremental_success_review_20260908T093654Z.md
+[archive] parsed unit 234/624 run/setup/fresh_initial_success_body_review.json
+[archive] parsed unit 235/624 run/setup/fresh_initial_success_body_review.md
+[archive] parsed unit 236/624 run/setup/fresh_launch_execution_archive_readback.json
+[archive] parsed unit 237/624 run/setup/fresh_launch_execution_review.json
+[archive] parsed unit 238/624 run/setup/fresh_launch_execution_review.md
+[archive] parsed unit 239/624 run/setup/fresh_launch_progress_20260908T0703Z.md
+[archive] parsed unit 240/624 run/setup/fresh_live_error_triage_20260908T082055Z.json
+[archive] parsed unit 241/624 run/setup/fresh_live_error_triage_20260908T090738Z.json
+[archive] parsed unit 242/624 run/setup/fresh_progress_20260908T082109Z.md
+[archive] parsed unit 243/624 run/setup/fresh_progress_20260908T093858Z.md
+[archive] parsed unit 244/624 run/setup/fresh_request_audit_20260908T073540Z.json
+[archive] parsed unit 245/624 run/setup/fresh_request_audit_20260908T080730Z.json
+[archive] parsed unit 246/624 run/setup/fresh_request_audit_20260908T084629Z.json
+[archive] parsed unit 247/624 run/setup/fresh_request_audit_20260908T092620Z.json
+[archive] parsed unit 248/624 run/setup/fresh_terminal_independent_readback.json
+[archive] parsed unit 249/624 run/setup/fresh_terminal_new_success_findings_20260908T095455Z.json
+[archive] parsed unit 250/624 run/setup/fresh_terminal_success_request_audit_20260908T095455Z.json
+[archive] parsed unit 251/624 run/setup/fresh_terminal_success_review_finalize.py
+[archive] parsed unit 252/624 run/setup/fresh_terminal_success_review_preparation.json
+[archive] parsed unit 253/624 run/setup/fresh_terminal_success_review_prepare.py
+[archive] parsed unit 254/624 run/setup/fresh_transport_diagnosis_20260908T0832Z.json
+[archive] parsed unit 255/624 run/setup/fresh_transport_diagnosis_20260908T0832Z.md
+[archive] parsed unit 256/624 run/setup/fresh_transport_settlement_execution_20260908.json
+[archive] parsed unit 257/624 run/setup/hardware_preflight.json
+[archive] parsed unit 258/624 run/setup/highrate_archive_readiness_review.json
+[archive] parsed unit 259/624 run/setup/highrate_archive_readiness_review.md
+[archive] parsed unit 260/624 run/setup/highrate_capture_capture_20260908T101513Z_owner_launch.json
+[archive] parsed unit 261/624 run/setup/highrate_capture_supervise.sh
+[archive] parsed unit 262/624 run/setup/highrate_postrun_execution_runbook.md
+[archive] parsed unit 263/624 run/setup/highrate_reconciliation_code_review.json
+[archive] parsed unit 264/624 run/setup/highrate_reconciliation_code_review.md
+[archive] parsed unit 265/624 run/setup/highrate_transport_execution_runbook.md
+[archive] parsed unit 266/624 run/setup/imported_capture_helpers.json
+[archive] parsed unit 267/624 run/setup/inherited_runtime_sources.json
+[archive] parsed unit 268/624 run/setup/inherited_v20_server_review.json
+[archive] parsed unit 269/624 run/setup/input_applicability_amendment_freeze.json
+[archive] parsed unit 270/624 run/setup/input_validity_plan_review.json
+[archive] parsed unit 271/624 run/setup/input_validity_policy.json
+[archive] parsed unit 272/624 run/setup/input_validity_workflow_lint.log
+[archive] parsed unit 273/624 run/setup/live_prefix_preflight.json
+[archive] parsed unit 274/624 run/setup/map_layer_44.npz
+[archive] parsed unit 275/624 run/setup/map_provenance.json
+[archive] parsed unit 276/624 run/setup/map_reporting_evidence.json
+[archive] parsed unit 277/624 run/setup/map_reporting_evidence.md
+[archive] parsed unit 278/624 run/setup/map_reuse_review.json
+[archive] parsed unit 279/624 run/setup/model_files.json
+[archive] parsed unit 280/624 run/setup/official_test_syntax_audit.json
+[archive] parsed unit 281/624 run/setup/pilot_compute_projection.json
+[archive] parsed unit 282/624 run/setup/pilot_incremental_native_details.json
+[archive] parsed unit 283/624 run/setup/pilot_incremental_review.json
+[archive] parsed unit 284/624 run/setup/pilot_success_review.json
+[archive] parsed unit 285/624 run/setup/pilot_success_review.md
+[archive] parsed unit 286/624 run/setup/pilot_upstream_test77_evidence.json
+[archive] parsed unit 287/624 run/setup/pilot_verified_gate.json
+[archive] parsed unit 288/624 run/setup/plan.md
+[archive] parsed unit 289/624 run/setup/plan_review.json
+[archive] parsed unit 290/624 run/setup/plan_v7_input_validity.md
+[archive] parsed unit 291/624 run/setup/plan_v9_transport_censor_verification.md
+[archive] parsed unit 292/624 run/setup/pod_extra_copy_20260908.stderr.log
+[archive] parsed unit 293/624 run/setup/pod_extra_copy_20260908.stdout.log
+[archive] parsed unit 294/624 run/setup/pod_final_inventory_command_20260908.py
+[archive] parsed unit 295/624 run/setup/pod_full_copy_20260908.stderr.log
+[archive] parsed unit 296/624 run/setup/pod_full_copy_20260908.stdout.log
+[archive] parsed unit 297/624 run/setup/pod_full_copy_validation_20260908.json
+[archive] parsed unit 298/624 run/setup/pod_inventory_after_capture_20260908.json
+[archive] parsed unit 299/624 run/setup/pod_inventory_copy_end_20260908.json
+[archive] parsed unit 300/624 run/setup/pod_source_sync_737be6d5.json
+[archive] parsed unit 301/624 run/setup/pod_source_sync_b7673e06.json
+[archive] parsed unit 302/624 run/setup/postrun_code_review.json
+[archive] parsed unit 303/624 run/setup/postrun_code_review.md
+[archive] parsed unit 304/624 run/setup/postrun_code_review_actual_sample.json
+[archive] parsed unit 305/624 run/setup/postrun_code_review_tests_final.log
+[archive] parsed unit 306/624 run/setup/postrun_code_review_tests_token_guard_final.log
+[archive] parsed unit 307/624 run/setup/postrun_consumer_bridge_probe.py
+[archive] parsed unit 308/624 run/setup/postrun_consumer_bridge_probe_result.json
+[archive] parsed unit 309/624 run/setup/postrun_consumer_recipe_comparison.json
+[archive] parsed unit 310/624 run/setup/postrun_final_consumer_seam_tests.json
+[archive] parsed unit 311/624 run/setup/postrun_final_consumer_tests.json
+[archive] parsed unit 312/624 run/setup/postrun_git_persistence.json
+[archive] parsed unit 313/624 run/setup/postrun_git_persistence_pending.json
+[archive] parsed unit 314/624 run/setup/postrun_workflow_lint_final.log
+[archive] parsed unit 315/624 run/setup/postrun_workflow_lint_token_guard_final.log
+[archive] parsed unit 316/624 run/setup/pre_fresh_input_applicability.json
+[archive] parsed unit 317/624 run/setup/production_capture_capture_20260908T101513Z_independent_review.json
+[archive] parsed unit 318/624 run/setup/production_capture_capture_20260908T101513Z_independent_review.md
+[archive] parsed unit 319/624 run/setup/production_capture_capture_20260908T101513Z_remote_review.json
+[archive] parsed unit 320/624 run/setup/progress_20260908T0331Z.md
+[archive] parsed unit 321/624 run/setup/progress_20260908T0533Z.md
+[archive] parsed unit 322/624 run/setup/progress_20260908T0622Z.md
+[archive] parsed unit 323/624 run/setup/progress_20260908T0647Z.md
+[archive] parsed unit 324/624 run/setup/progress_20260908T0735Z.md
+[archive] parsed unit 325/624 run/setup/raw_archive_teardown_runbook.json
+[archive] parsed unit 326/624 run/setup/raw_archive_teardown_runbook.md
+[archive] parsed unit 327/624 run/setup/raw_external_source_mapping_v9_20260908T095519Z.json
+[archive] parsed unit 328/624 run/setup/raw_input_readiness_v9_20260908T095519Z.json
+[archive] parsed unit 329/624 run/setup/raw_input_readiness_v9_20260908T095519Z.md
+[archive] parsed unit 330/624 run/setup/reconciliation_git_persistence.json
+[archive] parsed unit 331/624 run/setup/reconciliation_postrun_code_review.json
+[archive] parsed unit 332/624 run/setup/reconciliation_postrun_code_review.md
+[archive] parsed unit 333/624 run/setup/reconciliation_tests.log
+[archive] parsed unit 334/624 run/setup/reconciliation_transport_code_review.json
+[archive] parsed unit 335/624 run/setup/reconciliation_transport_code_review.md
+[archive] parsed unit 336/624 run/setup/reconciliation_workflow_lint.log
+[archive] parsed unit 337/624 run/setup/review_snapshots/fresh_launch_started_9_samples_20260908T070736Z.json
+[archive] parsed unit 338/624 run/setup/review_snapshots/fresh_launch_started_9_samples_20260908T070736Z.zip
+[archive] parsed unit 339/624 run/setup/review_snapshots/fresh_started_148_samples_20260908T080730Z.json
+[archive] parsed unit 340/624 run/setup/review_snapshots/fresh_started_148_samples_20260908T080730Z.zip
+[archive] parsed unit 341/624 run/setup/review_snapshots/fresh_started_228_samples_20260908T084629Z.json
+[archive] parsed unit 342/624 run/setup/review_snapshots/fresh_started_228_samples_20260908T084629Z.zip
+[archive] parsed unit 343/624 run/setup/review_snapshots/fresh_started_312_samples_20260908T092620Z.json
+[archive] parsed unit 344/624 run/setup/review_snapshots/fresh_started_312_samples_20260908T092620Z.zip
+[archive] parsed unit 345/624 run/setup/review_snapshots/fresh_started_70_samples_20260908T073540Z.json
+[archive] parsed unit 346/624 run/setup/review_snapshots/fresh_started_70_samples_20260908T073540Z.zip
+[archive] parsed unit 347/624 run/setup/review_snapshots/fresh_transport_started_191_samples_20260908T082604Z.json
+[archive] parsed unit 348/624 run/setup/review_snapshots/fresh_transport_started_191_samples_20260908T082604Z.zip
+[archive] parsed unit 349/624 run/setup/review_snapshots/screen_started_137_samples_20260908T013048Z.json
+[archive] parsed unit 350/624 run/setup/review_snapshots/screen_started_137_samples_20260908T013048Z.zip
+[archive] parsed unit 351/624 run/setup/review_snapshots/screen_started_223_samples_20260908T020849Z.json
+[archive] parsed unit 352/624 run/setup/review_snapshots/screen_started_223_samples_20260908T020849Z.zip
+[archive] parsed unit 353/624 run/setup/review_snapshots/screen_started_306_samples_20260908T030713Z.json
+[archive] parsed unit 354/624 run/setup/review_snapshots/screen_started_306_samples_20260908T030713Z.zip
+[archive] parsed unit 355/624 run/setup/review_snapshots/screen_started_376_samples_20260908T034825Z.json
+[archive] parsed unit 356/624 run/setup/review_snapshots/screen_started_376_samples_20260908T034825Z.zip
+[archive] parsed unit 357/624 run/setup/review_snapshots/screen_started_461_samples_20260908T042704Z.json
+[archive] parsed unit 358/624 run/setup/review_snapshots/screen_started_461_samples_20260908T042704Z.zip
+[archive] parsed unit 359/624 run/setup/review_snapshots/screen_started_541_samples_20260908T051858Z.json
+[archive] parsed unit 360/624 run/setup/review_snapshots/screen_started_541_samples_20260908T051858Z.zip
+[archive] parsed unit 361/624 run/setup/review_snapshots/screen_started_588_samples_20260908T054412Z.json
+[archive] parsed unit 362/624 run/setup/review_snapshots/screen_started_588_samples_20260908T054412Z.zip
+[archive] parsed unit 363/624 run/setup/review_snapshots/screen_started_617_samples_20260908T063839Z.json
+[archive] parsed unit 364/624 run/setup/review_snapshots/screen_started_617_samples_20260908T063839Z.zip
+[archive] parsed unit 365/624 run/setup/runtime_preflight_review.json
+[archive] parsed unit 366/624 run/setup/screen_incremental_success_review_20260908T004603Z.json
+[archive] parsed unit 367/624 run/setup/screen_incremental_success_review_20260908T004603Z.md
+[archive] parsed unit 368/624 run/setup/screen_incremental_success_review_20260908T014007Z.json
+[archive] parsed unit 369/624 run/setup/screen_incremental_success_review_20260908T014007Z.md
+[archive] parsed unit 370/624 run/setup/screen_incremental_success_review_20260908T021618Z.json
+[archive] parsed unit 371/624 run/setup/screen_incremental_success_review_20260908T021618Z.md
+[archive] parsed unit 372/624 run/setup/screen_incremental_success_review_20260908T031755Z.json
+[archive] parsed unit 373/624 run/setup/screen_incremental_success_review_20260908T031755Z.md
+[archive] parsed unit 374/624 run/setup/screen_incremental_success_review_20260908T040058Z.json
+[archive] parsed unit 375/624 run/setup/screen_incremental_success_review_20260908T040058Z.md
+[archive] parsed unit 376/624 run/setup/screen_incremental_success_review_20260908T043549Z.json
+[archive] parsed unit 377/624 run/setup/screen_incremental_success_review_20260908T043549Z.md
+[archive] parsed unit 378/624 run/setup/screen_incremental_success_review_20260908T052903Z.json
+[archive] parsed unit 379/624 run/setup/screen_incremental_success_review_20260908T052903Z.md
+[archive] parsed unit 380/624 run/setup/screen_incremental_success_review_20260908T055109Z.json
+[archive] parsed unit 381/624 run/setup/screen_incremental_success_review_20260908T055109Z.md
+[archive] parsed unit 382/624 run/setup/screen_incremental_success_review_20260908T064218Z.json
+[archive] parsed unit 383/624 run/setup/screen_incremental_success_review_20260908T064218Z.md
+[archive] parsed unit 384/624 run/setup/screen_partial_census_20260908T0130Z.json
+[archive] parsed unit 385/624 run/setup/screen_postrun_settlement_execution.json
+[archive] parsed unit 386/624 run/setup/screen_request_audit_20260908T034825Z.json
+[archive] parsed unit 387/624 run/setup/screen_request_audit_20260908T042704Z.json
+[archive] parsed unit 388/624 run/setup/screen_request_audit_20260908T051858Z.json
+[archive] parsed unit 389/624 run/setup/screen_request_audit_20260908T054412Z.json
+[archive] parsed unit 390/624 run/setup/screen_request_audit_20260908T063839Z.json
+[archive] parsed unit 391/624 run/setup/screen_terminal_success_request_audit_20260908T065248Z.json
+[archive] parsed unit 392/624 run/setup/server_drain_and_capture_hardware_20260908.json
+[archive] parsed unit 393/624 run/setup/server_drain_request_20260908.json
+[archive] parsed unit 394/624 run/setup/server_runtime_at_pilot.json
+[archive] parsed unit 395/624 run/setup/transport_censor_plan_review.json
+[archive] parsed unit 396/624 run/setup/transport_censor_plan_review.md
+[archive] parsed unit 397/624 run/setup/transport_critic_final_actual_probe.json
+[archive] parsed unit 398/624 run/setup/transport_implementation_handoff_20260908.json
+[archive] parsed unit 399/624 run/setup/transport_implementation_handoff_20260908.md
+[archive] parsed unit 400/624 run/setup/transport_postrun_code_review.json
+[archive] parsed unit 401/624 run/setup/transport_postrun_code_review.md
+[archive] parsed unit 402/624 run/setup/transport_verifier_tests_final_20260908.log
+[archive] parsed unit 403/624 run/setup/transport_workflow_lint_final_20260908.log
+[archive] parsed unit 404/624 run/setup/tunnel_20260907T232922Z.log
+[archive] parsed unit 405/624 run/setup/tunnel_20260907T232922Z_launch.json
+[archive] parsed unit 406/624 run/setup/tunnel_drain_20260908.json
+[archive] parsed unit 407/624 run/setup/v8_postrun_amendment_freeze.json
+[archive] parsed unit 408/624 run/setup/v9_commit_push_verification_20260908.json
+[archive] parsed unit 409/624 run/setup/v9_commit_scope_20260908.json
+[archive] parsed unit 410/624 run/setup/v9_consumer_regressions_20260908.json
+[archive] parsed unit 411/624 run/setup/v9_consumer_regressions_20260908.log
+[archive] parsed unit 412/624 run/setup/v9_owner_commit_preflight_20260908.json
+[archive] parsed unit 413/624 run/setup/v9_transport_preimplementation_freeze.json
+[archive] parsed unit 414/624 run/setup/v9_workflow_lint_20260908.json
+[archive] parsed unit 415/624 run/setup/v9_workflow_lint_20260908.log
+[archive] parsed unit 416/624 run/setup/validated_static_input_applicability.json
+[archive] parsed unit 417/624 run/setup/workflow_lint.log
+[archive] parsed unit 418/624 code/configs/eval/context_risk_followup_capture.yaml
+[archive] parsed unit 419/624 code/configs/eval/context_risk_highrate.yaml
+[archive] parsed unit 420/624 code/configs/eval/context_risk_highrate_analyze.yaml
+[archive] parsed unit 421/624 code/configs/eval/context_risk_highrate_capture.yaml
+[archive] parsed unit 422/624 code/configs/eval/context_risk_qwen38_fit_map.yaml
+[archive] parsed unit 423/624 code/configs/eval/context_risk_qwen38_impossible_capture.yaml
+[archive] parsed unit 424/624 code/configs/eval/context_risk_qwen38_smoke.yaml
+[archive] parsed unit 425/624 code/eval_results/context_risk_highrate_design/analysis_code_review.json
+[archive] parsed unit 426/624 code/eval_results/context_risk_highrate_design/analysis_code_review.md
+[archive] parsed unit 427/624 code/eval_results/context_risk_highrate_design/analysis_input_validity_code_review.json
+[archive] parsed unit 428/624 code/eval_results/context_risk_highrate_design/analysis_input_validity_code_review.md
+[archive] parsed unit 429/624 code/eval_results/context_risk_highrate_design/analysis_spec.json
+[archive] parsed unit 430/624 code/eval_results/context_risk_highrate_design/capture_code_review.json
+[archive] parsed unit 431/624 code/eval_results/context_risk_highrate_design/capture_code_review.md
+[archive] parsed unit 432/624 code/eval_results/context_risk_highrate_design/code_review.json
+[archive] parsed unit 433/624 code/eval_results/context_risk_highrate_design/code_review.md
+[archive] parsed unit 434/624 code/eval_results/context_risk_highrate_design/design_initial_review.md
+[archive] parsed unit 435/624 code/eval_results/context_risk_highrate_design/factcheck_consistency.json
+[archive] parsed unit 436/624 code/eval_results/context_risk_highrate_design/factcheck_consistency.md
+[archive] parsed unit 437/624 code/eval_results/context_risk_highrate_design/inherited_followup_code_review.json
+[archive] parsed unit 438/624 code/eval_results/context_risk_highrate_design/inherited_runtime_sources.json
+[archive] parsed unit 439/624 code/eval_results/context_risk_highrate_design/inherited_v20_server_review.json
+[archive] parsed unit 440/624 code/eval_results/context_risk_highrate_design/input_validity_plan_review.json
+[archive] parsed unit 441/624 code/eval_results/context_risk_highrate_design/input_validity_plan_review.md
+[archive] parsed unit 442/624 code/eval_results/context_risk_highrate_design/input_validity_policy.json
+[archive] parsed unit 443/624 code/eval_results/context_risk_highrate_design/map_reuse_review.json
+[archive] parsed unit 444/624 code/eval_results/context_risk_highrate_design/model_files.json
+[archive] parsed unit 445/624 code/eval_results/context_risk_highrate_design/plan.md
+[archive] parsed unit 446/624 code/eval_results/context_risk_highrate_design/plan_review.json
+[archive] parsed unit 447/624 code/eval_results/context_risk_highrate_design/plan_review.md
+[archive] parsed unit 448/624 code/eval_results/context_risk_highrate_design/plan_v7_input_validity.md
+[archive] parsed unit 449/624 code/eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md
+[archive] parsed unit 450/624 code/eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md
+[archive] parsed unit 451/624 code/eval_results/context_risk_highrate_design/published_source_search/findings.md
+[archive] parsed unit 452/624 code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-alignmentresearch-tree.json
+[archive] parsed unit 453/624 code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-dataset-readme.md
+[archive] parsed unit 454/624 code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-easy-github-tree.json
+[archive] parsed unit 455/624 code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-easy-tree.json
+[archive] parsed unit 456/624 code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-forks.json
+[archive] parsed unit 457/624 code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-github-issues.json
+[archive] parsed unit 458/624 code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-github-releases.json
+[archive] parsed unit 459/624 code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-github-tree.json
+[archive] parsed unit 460/624 code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-author.json
+[archive] parsed unit 461/624 code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-hodoscope-tree.json
+[archive] parsed unit 462/624 code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-pando.json
+[archive] parsed unit 463/624 code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-search.json
+[archive] parsed unit 464/624 code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-tree.json
+[archive] parsed unit 465/624 code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hodoscope-impossible-tree.json
+[archive] parsed unit 466/624 code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hodoscope-root.json
+[archive] parsed unit 467/624 code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hodoscope-supervised-tree.json
+[archive] parsed unit 468/624 code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-pando-readme.md
+[archive] parsed unit 469/624 code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-web-results.json
+[archive] parsed unit 470/624 code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-web.json
+[archive] parsed unit 471/624 code/eval_results/context_risk_highrate_design/workflow_lint.log
+[archive] parsed unit 472/624 code/scripts/context_risk_analyze.py
+[archive] parsed unit 473/624 code/scripts/context_risk_corrected_finish.py
+[archive] parsed unit 474/624 code/scripts/context_risk_followup.py
+[archive] parsed unit 475/624 code/scripts/context_risk_followup_analyze.py
+[archive] parsed unit 476/624 code/scripts/context_risk_followup_capture.py
+[archive] parsed unit 477/624 code/scripts/context_risk_followup_census.py
+[archive] parsed unit 478/624 code/scripts/context_risk_followup_features.py
+[archive] parsed unit 479/624 code/scripts/context_risk_followup_probe_core.py
+[archive] parsed unit 480/624 code/scripts/context_risk_highrate_analyze.py
+[archive] parsed unit 481/624 code/scripts/context_risk_highrate_archive.py
+[archive] parsed unit 482/624 code/scripts/context_risk_highrate_capacity.py
+[archive] parsed unit 483/624 code/scripts/context_risk_highrate_capture.py
+[archive] parsed unit 484/624 code/scripts/context_risk_highrate_collect.py
+[archive] parsed unit 485/624 code/scripts/context_risk_highrate_design.py
+[archive] parsed unit 486/624 code/scripts/context_risk_highrate_postrun.py
+[archive] parsed unit 487/624 code/scripts/context_risk_highrate_reconcile.py
+[archive] parsed unit 488/624 code/scripts/context_risk_highrate_supervise.sh
+[archive] parsed unit 489/624 code/scripts/context_risk_highrate_transport.py
+[archive] parsed unit 490/624 code/scripts/context_risk_highrate_validity.py
+[archive] parsed unit 491/624 code/scripts/context_risk_impossiblebench.py
+[archive] parsed unit 492/624 code/scripts/context_risk_impossiblebench_harness.py
+[archive] parsed unit 493/624 code/scripts/context_risk_impossiblebench_inspect.py
+[archive] parsed unit 494/624 code/scripts/context_risk_prepare_data.py
+[archive] parsed unit 495/624 code/scripts/context_risk_qwen38_capture.py
+[archive] parsed unit 496/624 code/scripts/context_risk_qwen38_fit_map.py
+[archive] parsed unit 497/624 code/scripts/context_risk_qwen38_impossible_capture.py
+[archive] parsed unit 498/624 code/scripts/context_risk_qwen38_smoke.py
+[archive] parsed unit 499/624 code/scripts/issue2054_phase_a.py
+[archive] parsed unit 500/624 code/scripts/pod.py
+[archive] parsed unit 501/624 code/scripts/pod_lifecycle.py
+[archive] parsed unit 502/624 code/scripts/task.py
+[archive] parsed unit 503/624 code/scripts/verify_uploads.py
+[archive] parsed unit 504/624 code/src/explore_persona_space/analysis/extraction.py
+[archive] parsed unit 505/624 code/src/explore_persona_space/atomic_io.py
+[archive] parsed unit 506/624 code/src/explore_persona_space/orchestrate/env.py
+[archive] parsed unit 507/624 code/src/explore_persona_space/orchestrate/hub.py
+[archive] parsed unit 508/624 code/tests/test_context_risk_highrate_analyze.py
+[archive] parsed unit 509/624 code/tests/test_context_risk_highrate_capture.py
+[archive] parsed unit 510/624 code/tests/test_context_risk_highrate_collect.py
+[archive] parsed unit 511/624 code/tests/test_context_risk_highrate_design.py
+[archive] parsed unit 512/624 code/tests/test_context_risk_highrate_postrun.py
+[archive] parsed unit 513/624 code/tests/test_context_risk_highrate_postrun_integration.py
+[archive] parsed unit 514/624 code/tests/test_context_risk_highrate_reconcile.py
+[archive] parsed unit 515/624 code/tests/test_context_risk_highrate_transport.py
+[archive] parsed unit 516/624 external/benchmark/public_development_manifest.jsonl
+[archive] parsed unit 517/624 external/qwen38_map_pilot/map_layer_44.npz
+[archive] parsed unit 518/624 external/qwen38_map_pilot/run_result.json
+[archive] parsed unit 519/624 external/vm_worktree/context_risk_highrate_collect.log
+[archive] parsed unit 520/624 pod/capture/capture_binding.json
+[archive] parsed unit 521/624 pod/capture/capture_launch_binding.json
+[archive] parsed unit 522/624 pod/capture/chunk_0000.done.json
+[archive] parsed unit 523/624 pod/capture/chunk_0000.npz
+[archive] parsed unit 524/624 pod/capture/chunk_0000.rows.jsonl
+[archive] parsed unit 525/624 pod/capture/chunk_0001.done.json
+[archive] parsed unit 526/624 pod/capture/chunk_0001.npz
+[archive] parsed unit 527/624 pod/capture/chunk_0001.rows.jsonl
+[archive] parsed unit 528/624 pod/capture/chunk_0002.done.json
+[archive] parsed unit 529/624 pod/capture/chunk_0002.npz
+[archive] parsed unit 530/624 pod/capture/chunk_0002.rows.jsonl
+[archive] parsed unit 531/624 pod/capture/chunk_0003.done.json
+[archive] parsed unit 532/624 pod/capture/chunk_0003.npz
+[archive] parsed unit 533/624 pod/capture/chunk_0003.rows.jsonl
+[archive] parsed unit 534/624 pod/capture/chunk_0004.done.json
+[archive] parsed unit 535/624 pod/capture/chunk_0004.npz
+[archive] parsed unit 536/624 pod/capture/chunk_0004.rows.jsonl
+[archive] parsed unit 537/624 pod/capture/chunk_0005.done.json
+[archive] parsed unit 538/624 pod/capture/chunk_0005.npz
+[archive] parsed unit 539/624 pod/capture/chunk_0005.rows.jsonl
+[archive] parsed unit 540/624 pod/capture/run_result.json
+[archive] parsed unit 541/624 pod/capture_inputs.json
+[archive] parsed unit 542/624 pod/fresh_B/prefix_tokens.json
+[archive] parsed unit 543/624 pod/fresh_B/run_result.json
+[archive] parsed unit 544/624 pod/fresh_B/terminal_process.json
+[archive] parsed unit 545/624 pod/fresh_B/transport_postrun_audit.json
+[archive] parsed unit 546/624 pod/manifests/fresh_B.jsonl
+[archive] parsed unit 547/624 pod/screen_B/postrun_audit.json
+[archive] parsed unit 548/624 pod/selection.json
+[archive] parsed unit 549/624 pod/server/runtime.json
+[archive] parsed unit 550/624 pod/server/serve_20260907T232817Z.log
+[archive] parsed unit 551/624 pod/server/serve_20260907T232817Z_launch.json
+[archive] parsed unit 552/624 pod/server/server.lock
+[archive] parsed unit 553/624 pod/server/server_serve_20260907T232817Z_process.exit.json
+[archive] parsed unit 554/624 pod/server/server_serve_20260907T232817Z_process.pid
+[archive] parsed unit 555/624 pod/server/server_serve_20260907T232817Z_process.worker.pid
+[archive] parsed unit 556/624 pod/setup/capture_memory_artifacts.json
+[archive] parsed unit 557/624 pod/setup/capture_memory_check.py
+[archive] parsed unit 558/624 pod/setup/capture_memory_code_review.json
+[archive] parsed unit 559/624 pod/setup/capture_memory_code_review.md
+[archive] parsed unit 560/624 pod/setup/capture_memory_diag_20260908T100316Z.json
+[archive] parsed unit 561/624 pod/setup/capture_memory_diag_20260908T100316Z.launch.json
+[archive] parsed unit 562/624 pod/setup/capture_memory_diag_20260908T100316Z.log
+[archive] parsed unit 563/624 pod/setup/capture_memory_diag_20260908T100316Z.longest_singleton.npz
+[archive] parsed unit 564/624 pod/setup/capture_memory_diag_20260908T100316Z.production_two_row.npz
+[archive] parsed unit 565/624 pod/setup/capture_memory_diag_20260908T100316Z_owner_launch.json
+[archive] parsed unit 566/624 pod/setup/capture_memory_diag_20260908T100316Z_process.exit.json
+[archive] parsed unit 567/624 pod/setup/capture_memory_diag_20260908T100316Z_process.pid
+[archive] parsed unit 568/624 pod/setup/capture_memory_diag_20260908T100316Z_process.worker.pid
+[archive] parsed unit 569/624 pod/setup/capture_memory_review_cpu_checks.json
+[archive] parsed unit 570/624 pod/setup/capture_memory_review_cpu_checks.py
+[archive] parsed unit 571/624 pod/setup/capture_memory_supervise.sh
+[archive] parsed unit 572/624 pod/setup/capture_memory_transport_code_review.json
+[archive] parsed unit 573/624 pod/setup/capture_memory_transport_code_review.md
+[archive] parsed unit 574/624 pod/setup/capture_orchestration_artifacts.json
+[archive] parsed unit 575/624 pod/setup/capture_orchestration_code_review.json
+[archive] parsed unit 576/624 pod/setup/capture_orchestration_code_review.md
+[archive] parsed unit 577/624 pod/setup/capture_orchestration_launch_recipe.md
+[archive] parsed unit 578/624 pod/setup/capture_orchestration_supervisor.diff
+[archive] parsed unit 579/624 pod/setup/capture_portable_input_preflight_20260908.json
+[archive] parsed unit 580/624 pod/setup/capture_runtime_import_preflight.json
+[archive] parsed unit 581/624 pod/setup/capture_runtime_import_preflight_b7673e06.json
+[archive] parsed unit 582/624 pod/setup/capture_runtime_setup_runtime_20260908T055743Z.disk_after.json
+[archive] parsed unit 583/624 pod/setup/capture_runtime_setup_runtime_20260908T055743Z.disk_before.json
+[archive] parsed unit 584/624 pod/setup/capture_runtime_setup_runtime_20260908T055743Z.install.log
+[archive] parsed unit 585/624 pod/setup/capture_runtime_setup_runtime_20260908T055743Z.launch.json
+[archive] parsed unit 586/624 pod/setup/capture_runtime_setup_runtime_20260908T055743Z.log
+[archive] parsed unit 587/624 pod/setup/capture_runtime_setup_runtime_20260908T055743Z.packages.freeze.txt
+[archive] parsed unit 588/624 pod/setup/capture_runtime_setup_runtime_20260908T055743Z.packages.json
+[archive] parsed unit 589/624 pod/setup/capture_runtime_setup_runtime_20260908T055743Z.pip_check.txt
+[archive] parsed unit 590/624 pod/setup/capture_runtime_setup_runtime_20260908T055743Z.receipt.json
+[archive] parsed unit 591/624 pod/setup/capture_runtime_setup_runtime_20260908T055743Z.venv.log
+[archive] parsed unit 592/624 pod/setup/capture_runtime_setup_runtime_20260908T055743Z_owner_launch.json
+[archive] parsed unit 593/624 pod/setup/capture_runtime_setup_runtime_20260908T055743Z_process.exit.json
+[archive] parsed unit 594/624 pod/setup/capture_runtime_setup_runtime_20260908T055743Z_process.pid
+[archive] parsed unit 595/624 pod/setup/capture_runtime_setup_runtime_20260908T055743Z_process.worker.pid
+[archive] parsed unit 596/624 pod/setup/capture_runtime_setup_supervise.sh
+[archive] parsed unit 597/624 pod/setup/capture_runtime_setup_worker.py
+[archive] parsed unit 598/624 pod/setup/capture_transport_code_review.json
+[archive] parsed unit 599/624 pod/setup/capture_transport_code_review.md
+[archive] parsed unit 600/624 pod/setup/cuda_compat_install.log
+[archive] parsed unit 601/624 pod/setup/download_20260907T232358Z.log
+[archive] parsed unit 602/624 pod/setup/download_20260907T232358Z_launch.json
+[archive] parsed unit 603/624 pod/setup/highrate_capture_capture_20260908T101513Z.log
+[archive] parsed unit 604/624 pod/setup/highrate_capture_capture_20260908T101513Z_owner_launch.json
+[archive] parsed unit 605/624 pod/setup/highrate_capture_capture_20260908T101513Z_process.exit.json
+[archive] parsed unit 606/624 pod/setup/highrate_capture_capture_20260908T101513Z_process.pid
+[archive] parsed unit 607/624 pod/setup/highrate_capture_capture_20260908T101513Z_process.worker.pid
+[archive] parsed unit 608/624 pod/setup/highrate_capture_supervise.sh
+[archive] parsed unit 609/624 pod/setup/inherited_v20_server_review.json
+[archive] parsed unit 610/624 pod/setup/model_download_complete.json
+[archive] parsed unit 611/624 pod/setup/model_download_download_20260907T232358Z_process.exit.json
+[archive] parsed unit 612/624 pod/setup/model_download_download_20260907T232358Z_process.pid
+[archive] parsed unit 613/624 pod/setup/model_download_download_20260907T232358Z_process.worker.pid
+[archive] parsed unit 614/624 pod/setup/model_files.json
+[archive] parsed unit 615/624 pod/setup/pinned_runtime_packages.json
+[archive] parsed unit 616/624 pod/setup/pinned_runtime_prepare.log
+[archive] parsed unit 617/624 pod/setup/pod_source_sync_b7673e06.json
+[archive] parsed unit 618/624 pod/setup/postrun_code_review.json
+[archive] parsed unit 619/624 pod/setup/server_drain_and_capture_hardware_20260908.json
+[archive] parsed unit 620/624 pod/setup/server_drain_request_20260908.json
+[archive] parsed unit 621/624 pod/setup/transport_postrun_code_review.json
+[archive] parsed unit 622/624 pod_extra/clone/context_risk_highrate_capture.log
+[archive] parsed unit 623/624 run/setup/raw_archive_20260908T103100Z_snapshot_preparation.json
+[archive] parsed unit 624/624 run/setup/raw_archive_20260908T103321Z_manifest_correction.json
+[archive] complete phase=raw elapsed=520.118s

@@ -1,0 +1,77 @@
+{
+  "passed": true,
+  "created_utc": "2026-09-08T10:33:33.062517+00:00",
+  "launch_id": "raw_archive_20260908T103321Z",
+  "immutable_snapshot": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z",
+  "stage": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_staging/raw_archive_20260908T103321Z",
+  "readback": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_readback/raw_archive_20260908T103321Z",
+  "snapshot_sha256": "91615d1272ef62d16ccd33651acc8f295800051950a7ee45e04854a6be7a5215",
+  "original_files": 624,
+  "original_bytes": 719546427,
+  "projected_remote_files": 658,
+  "jsonl_original_count": 21,
+  "planned_shard_sizes": {
+    "run/fresh_B/rollouts.jsonl": [
+      8945761,
+      8824747,
+      8903915,
+      8947714,
+      8987859,
+      8984957,
+      8985565,
+      8763248,
+      8034213,
+      5692795
+    ],
+    "run/screen_B/pilot_rollouts.jsonl": [
+      8247044,
+      2495779
+    ],
+    "run/screen_B/resume_input_1788827471430223247.jsonl": [
+      8247044,
+      2495779
+    ],
+    "run/screen_B/rollouts.jsonl": [
+      8645295,
+      8688086,
+      8941069,
+      8655586,
+      8839694,
+      8632334,
+      5871627,
+      8762010,
+      8815672,
+      8942111,
+      8914071,
+      8986762,
+      8665895,
+      8813530,
+      8429300,
+      8991272,
+      8986991,
+      8822688,
+      8953487
+    ]
+  },
+  "pilot_measured_seconds": 180.07319871522486,
+  "pilot_bytes": 133750510,
+  "pilot_downloaded_files": 104,
+  "projection_factor": 6.326923076923077,
+  "projected_baseline_seconds": 1139.309276486711,
+  "retry_budget_seconds": 120,
+  "conservative_serial_retry_calls": 736,
+  "prefix_timeout_seconds": 82200,
+  "whole_process_timeout_seconds": 92400,
+  "timeout_basis": "Twice the maximum actual-byte/file-count scale of the measured pilot, plus per-file/manifest/part120-second retry exposure, explicit two600-second metadata budgets and600-second processing allowance. Serial retry exposure is deliberately conservative; limits are operational ceilings, not expected durations.",
+  "source_review_sha256": "99d3713729a116745c026eb6ebac18831436a04ec434be7b3509529c86bb9f55",
+  "all_source_bytes_unchanged": true,
+  "namespace_counts": {
+    "run": 419,
+    "code": 98,
+    "external": 4,
+    "pod": 102,
+    "pod_extra": 1
+  },
+  "previous_preupload_snapshot_sha256": "6f3812312890311a9be79d456cb74d369ebe09ee5cc2d7f00c6c1dde3770f202",
+  "manifest_correction_sha256": "d814ab65056fc7aefcc569e02432f460ff92ad28dc2e8a689b1f92d47b871b3f"
+}

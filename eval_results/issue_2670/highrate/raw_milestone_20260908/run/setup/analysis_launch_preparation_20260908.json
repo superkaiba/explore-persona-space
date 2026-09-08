@@ -1,0 +1,30 @@
+{
+  "authorized_plan": "eval_results/context_risk_highrate_design/plan.md",
+  "stage": "not_launched_waiting_for_raw_reconciliation_and_managed_GPU_release",
+  "analysis_module": "scripts.context_risk_highrate_analyze",
+  "review": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/analysis_transport_code_review.json",
+  "source_commit": "b7673e06f112057ae0761ace951f635413977b35",
+  "all_four_regimes": [
+    "primary",
+    "competence_sensitivity",
+    "screen_augmented_primary",
+    "screen_augmented_competence_sensitivity"
+  ],
+  "public_environment": {
+    "OMP_NUM_THREADS": "8",
+    "MKL_NUM_THREADS": "8",
+    "OPENBLAS_NUM_THREADS": "8",
+    "NUMEXPR_NUM_THREADS": "8",
+    "MALLOC_ARENA_MAX": "2",
+    "MALLOC_MMAP_THRESHOLD_": "131072",
+    "UV_NO_SYNC": "1",
+    "PYTHONUNBUFFERED": "1"
+  },
+  "venue": "VM as explicitly approved: small exact-training-span linear fits after GPU release",
+  "bounds": {
+    "timeout_seconds": 10800,
+    "basis": "Conservative operational watchdog, not a measured runtime estimate; actual validators already take minutes and all fit caches are persisted per method/fold. Review production progress and optimizer time; no scientific descope on wall-clock alone."
+  },
+  "dependent_gate": "Managed exact-owned-pod API absence; raw archive and pinned reconciliation verified; source-bound review still current",
+  "launch_requirements": "Owned new session, stdin DEVNULL, detached standard streams, nohup; exact PID/PGID/log/config/exit receipt; session choom sweep and recorded actual result; reject nonempty orphan output."
+}

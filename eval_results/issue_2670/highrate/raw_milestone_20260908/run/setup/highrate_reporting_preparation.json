@@ -1,0 +1,40 @@
+{
+  "created_utc": "2026-09-08T11:04:32.969757+00:00",
+  "dataset_support_audit_sha256": "584e90a4ff0aeb2c11814154d5af074a55c6b373c39f3d3a429b61b7286863aa",
+  "fits": 0,
+  "goal": "Test whether the model activation before generating new reasoning or an action predicts a later successful reward hack, and whether the frozen context-to-answer map improves that forecast.",
+  "model_calls": 0,
+  "numeric_template_tokens": [
+    "{{PENDING_METRIC_COMPETENCE_INITIAL_RAW_MINUS_MAPPED}}",
+    "{{PENDING_METRIC_COMPETENCE_INITIAL_TEXT_MINUS_RAW}}",
+    "{{PENDING_METRIC_COMPETENCE_SCREEN_RAW_MINUS_MAPPED}}",
+    "{{PENDING_METRIC_COMPETENCE_SCREEN_TEXT_MINUS_RAW}}",
+    "{{PENDING_METRIC_FINAL_VM_ANALYSIS_WALL_TIME}}",
+    "{{PENDING_METRIC_PRIMARY_INITIAL_RAW_MINUS_MAPPED}}",
+    "{{PENDING_METRIC_PRIMARY_INITIAL_TEXT_MINUS_RAW}}",
+    "{{PENDING_METRIC_PRIMARY_RAW_MINUS_MAPPED_LOSS_AND_95PCT_INTERVAL}}",
+    "{{PENDING_METRIC_PRIMARY_SCREEN_RAW_MINUS_MAPPED}}",
+    "{{PENDING_METRIC_PRIMARY_SCREEN_TEXT_MINUS_RAW}}",
+    "{{PENDING_METRIC_PRIMARY_TEXT_MINUS_RAW_LOSS_AND_95PCT_INTERVAL}}"
+  ],
+  "output_sha256": {
+    "highrate_clean_result_skeleton.md": "5067e4b6cc3946cbb97e91472abdefce78e7043e075cb5044fcea62dd1c3d0b2",
+    "highrate_reporting_workflow.md": "1a58670dec920cb3b3d117a03c6a0bc136295c15f4a65949760c85c73685753b"
+  },
+  "remaining_metrics": "All four approved VM regimes",
+  "reviewer": "/root/published_task_rates",
+  "schema_version": "highrate_reporting_preparation_v1",
+  "scope": "External skeleton and reporting requirements only; not a completed result or task approval",
+  "task_mutations": false,
+  "task_snapshot_sha256": "e4449556d1ebb9786c69d3e47a7eae5388fa0204f80dbfc43db6cd9bf2cae5d0",
+  "uploads": 0,
+  "workflow_source_revision": "aa8e22cc3582ce865840c4ce814c7f2151a03fe8",
+  "workflow_sources_sha256": {
+    ".claude/agents/analyzer.md": "36b2186db94164f3b069f3310a6d348ffccd490e66dfa1dcb0146150bf18b5b1",
+    ".claude/rules/LESSONS.md": "ae04bbfe1ded8e701639e9ac226d96c0a315eab0bcee189bb406e249d2520d23",
+    ".claude/rules/after-every-experiment.md": "e70d9cfd9dfc5d69cd45b50a0357b12d735b1065532ac0c0f17877c4fa85200d",
+    ".claude/rules/research-project-structure.md": "388f44a579f3880bda3169bf6f10e27aa8abfc0d14d21ba2710c1affbdf7b8f9",
+    ".claude/skills/clean-results/SPEC.md": "d7d02e7b163b6a74c0317caf5babb642079bb3c5ed26ca3f0fc6dbc2cfcb8c20",
+    "CLAUDE.md": "80f7a76d79a32fc4ed41f6e045bfff534f0cc07cd264a38fef033b38c001ca84"
+  }
+}

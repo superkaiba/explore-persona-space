@@ -1,0 +1,13 @@
+{
+  "created_utc": "2026-09-08T10:50:06.774465+00:00",
+  "actual_generic_result": {
+    "status": "OK",
+    "url": "",
+    "detail": "disk=82 matched=82; content-verified=0; verdict is the name-set diff, never the counts"
+  },
+  "listing_sha256": "1e9c03ef90c92527d8d7c5e2088991a28172451504d67104b0b1e26ab11bbf84",
+  "verifier_sha256": "3991c7f464602766d26b5c38b2b42905e92b7f40e918cb72776b59b7e3d34ee9",
+  "caller_exemptions": [],
+  "declared_discards": [],
+  "scope": "Supplemental live-HF basename check; pinned exact byte mapping is independently verified by reconciliation."
+}

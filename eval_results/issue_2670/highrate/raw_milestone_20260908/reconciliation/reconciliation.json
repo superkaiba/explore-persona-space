@@ -1,0 +1,780 @@
+{
+  "passed": true,
+  "phase": "raw-row-reconciliation",
+  "created_utc": "2026-09-08T10:59:51.979572+00:00",
+  "repo_id": "superkaiba1/explore-persona-space-data",
+  "revision": "58d3e6d6b0917b6e9777c45d23b814693dc14277",
+  "prefix": "context_risk/issue2670_highrate/raw",
+  "raw_readback_receipt_sha256": "a8cb378a69017833f59116922f7b124a33301f4e9338dc372aef8eddb3c442c4",
+  "archive_control_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json": "a8cb378a69017833f59116922f7b124a33301f4e9338dc372aef8eddb3c442c4",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json": "4470ed8480598e979d8bbe5d93b5e5186d8ecc18fe76ad84a861312fc3732569",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_readback/raw_archive_20260908T103321Z/context_risk/issue2670_highrate/raw/snapshot_manifest.json": "91615d1272ef62d16ccd33651acc8f295800051950a7ee45e04854a6be7a5215",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/pod_inventory_after_capture_20260908.json": "c1c4b56d0b9537513cc9a14b6ba4a47412a403139bb20c65f435ca1d1805e1d4",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/reconciliation_transport_code_review.json": "acf1fb770f8bd4a40a4a91deabd29545d19b0a744a111b8b3b32a6782273de4c"
+  },
+  "snapshot_sha256": "91615d1272ef62d16ccd33651acc8f295800051950a7ee45e04854a6be7a5215",
+  "inventory_sha256": "c1c4b56d0b9537513cc9a14b6ba4a47412a403139bb20c65f435ca1d1805e1d4",
+  "indices": {
+    "screen_B": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/screen_B/row_index.jsonl",
+      "sha256": "1c1ba5507eea6536d22911f977773f19463e4b2fd2c031df0cd8b2dc0710d705",
+      "rows": 618
+    },
+    "fresh_B": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/fresh_B/row_index.jsonl",
+      "sha256": "9265e5b68239649706cb4ce32bd602d335587caca14cea39280b62d876b9330d",
+      "rows": 360
+    },
+    "capture": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/capture/row_index.jsonl",
+      "sha256": "da29cc7ddfd442d65d9cd26f4ddee4514be5387fbcd95740a1fd113010304573",
+      "rows": 90
+    }
+  },
+  "mechanical_row_check": {
+    "status": "OK",
+    "url": "",
+    "detail": "capture: OK expected=90 distinct=90 lines=90 duplicates=0 shards=[row_index.jsonl:90] key=(key); fresh_B: OK expected=360 distinct=360 lines=360 duplicates=0 shards=[row_index.jsonl:360] key=(key); screen_B: OK expected=618 distinct=618 lines=618 duplicates=0 shards=[row_index.jsonl:618] key=(key) | gate quantity: distinct full-key rows, never a raw line count and never a producer-reported field (#2148)",
+    "labels": {
+      "capture": {
+        "expected": 90,
+        "realized_lines": 90,
+        "realized_distinct": 90,
+        "duplicates": 0,
+        "shards": [
+          "row_index.jsonl:90"
+        ],
+        "key_fields": [
+          "key"
+        ],
+        "verdict": "OK",
+        "tag": ""
+      },
+      "fresh_B": {
+        "expected": 360,
+        "realized_lines": 360,
+        "realized_distinct": 360,
+        "duplicates": 0,
+        "shards": [
+          "row_index.jsonl:360"
+        ],
+        "key_fields": [
+          "key"
+        ],
+        "verdict": "OK",
+        "tag": ""
+      },
+      "screen_B": {
+        "expected": 618,
+        "realized_lines": 618,
+        "realized_distinct": 618,
+        "duplicates": 0,
+        "shards": [
+          "row_index.jsonl:618"
+        ],
+        "key_fields": [
+          "key"
+        ],
+        "verdict": "OK",
+        "tag": ""
+      }
+    }
+  },
+  "pod_files": {
+    "capture/capture_binding.json": {
+      "archive_original": "pod/capture/capture_binding.json",
+      "size": 2214765,
+      "sha256": "1909343bc59a104543b7b8adeacaaafae7ae790397c0daa0f5bd2e9389c724aa"
+    },
+    "capture/capture_launch_binding.json": {
+      "archive_original": "pod/capture/capture_launch_binding.json",
+      "size": 2212787,
+      "sha256": "cd3d62294d1d6a4ee7d297ce0b65ff77675680a666ee6d9c233898c581690fee"
+    },
+    "capture/chunk_0000.done.json": {
+      "archive_original": "pod/capture/chunk_0000.done.json",
+      "size": 368,
+      "sha256": "907d7be04adb23c8e478782ec29291c4326fcbff9768cd65578bd324b00c4d8a"
+    },
+    "capture/chunk_0000.npz": {
+      "archive_original": "pod/capture/chunk_0000.npz",
+      "size": 154120,
+      "sha256": "6033aa3fa892c7538f896c0cf6f77111126b300c2dced119214892d93b00da73"
+    },
+    "capture/chunk_0000.rows.jsonl": {
+      "archive_original": "pod/capture/chunk_0000.rows.jsonl",
+      "size": 4348,
+      "sha256": "335c51be07aca165275edd864796a90ed505cd24d41d4623cd27e40859db0e0a"
+    },
+    "capture/chunk_0001.done.json": {
+      "archive_original": "pod/capture/chunk_0001.done.json",
+      "size": 368,
+      "sha256": "c0e5548f4718ae3f876dab7d755afebd9241d98c9a5d4ce47c9352a71fb5a9fb"
+    },
+    "capture/chunk_0001.npz": {
+      "archive_original": "pod/capture/chunk_0001.npz",
+      "size": 154120,
+      "sha256": "500dbced2aa9ef49c2e732120ef56b329688dfd12ea00b0005ef4c645aec4103"
+    },
+    "capture/chunk_0001.rows.jsonl": {
+      "archive_original": "pod/capture/chunk_0001.rows.jsonl",
+      "size": 4336,
+      "sha256": "3247559ba1e85f792e84efd6d409ea078b883b890e775c0f38436712f8d35cdb"
+    },
+    "capture/chunk_0002.done.json": {
+      "archive_original": "pod/capture/chunk_0002.done.json",
+      "size": 368,
+      "sha256": "d3e2731f02e1a160236bd12c03fe63f779d8d078825cd9837255e9db94232ed4"
+    },
+    "capture/chunk_0002.npz": {
+      "archive_original": "pod/capture/chunk_0002.npz",
+      "size": 154120,
+      "sha256": "71e2afeeb5697aeddc01e993e38acc7b120de4aaff5df3d66a40ee032b76f4c3"
+    },
+    "capture/chunk_0002.rows.jsonl": {
+      "archive_original": "pod/capture/chunk_0002.rows.jsonl",
+      "size": 4323,
+      "sha256": "cf96e732f917e58c127a8b363360e1ffc88f574908f30155f26f4cdd181520b1"
+    },
+    "capture/chunk_0003.done.json": {
+      "archive_original": "pod/capture/chunk_0003.done.json",
+      "size": 368,
+      "sha256": "0e2bbf9c6a58a739aadb5e1436797e6a30e6dbfe21bd1712c42bcd18c4ae204b"
+    },
+    "capture/chunk_0003.npz": {
+      "archive_original": "pod/capture/chunk_0003.npz",
+      "size": 154120,
+      "sha256": "b4ef6a48c0690774857ce663476cce7d5d296faa14f091b4ea43b0f76de9e323"
+    },
+    "capture/chunk_0003.rows.jsonl": {
+      "archive_original": "pod/capture/chunk_0003.rows.jsonl",
+      "size": 4327,
+      "sha256": "45a72dc920ec3b12c8eb6cd721efa3ea8d9366f60ae6eac044559bb759aa5a64"
+    },
+    "capture/chunk_0004.done.json": {
+      "archive_original": "pod/capture/chunk_0004.done.json",
+      "size": 368,
+      "sha256": "d0090b5f51cd5772ee34a2621c26d2bf393844be3171d103018789d731ea2399"
+    },
+    "capture/chunk_0004.npz": {
+      "archive_original": "pod/capture/chunk_0004.npz",
+      "size": 154120,
+      "sha256": "15e0726bd6f97a57ff325fd2888f58495c2393ab790f62b7b22d15526b58b92c"
+    },
+    "capture/chunk_0004.rows.jsonl": {
+      "archive_original": "pod/capture/chunk_0004.rows.jsonl",
+      "size": 4320,
+      "sha256": "5d44138730916c6b052c97a9a9686de406465341509fa238f6878066bf53c9ea"
+    },
+    "capture/chunk_0005.done.json": {
+      "archive_original": "pod/capture/chunk_0005.done.json",
+      "size": 368,
+      "sha256": "84a2b889d8fe1e624f9b605ca4081cc6c33f15d2835dde91e683e62171299b8b"
+    },
+    "capture/chunk_0005.npz": {
+      "archive_original": "pod/capture/chunk_0005.npz",
+      "size": 154120,
+      "sha256": "5be0fb710a3799375703a1f945a663af01a417c1833dd42479d0912dcea2aca7"
+    },
+    "capture/chunk_0005.rows.jsonl": {
+      "archive_original": "pod/capture/chunk_0005.rows.jsonl",
+      "size": 4337,
+      "sha256": "0d8b3c19a22c162bde61087b58569d050cef1b449afa5c30877185f25e7860f6"
+    },
+    "capture/run_result.json": {
+      "archive_original": "pod/capture/run_result.json",
+      "size": 3077,
+      "sha256": "e672826baf918afcfaa26644c6e3336b810aecdd3f7f364ea205a88e15ac3846"
+    },
+    "capture_inputs.json": {
+      "archive_original": "pod/capture_inputs.json",
+      "size": 2212602,
+      "sha256": "f629be7a64f09e9ec490e20abb9a484a294c9cd9e18065ba6b09279764806ad4"
+    },
+    "fresh_B/prefix_tokens.json": {
+      "archive_original": "pod/fresh_B/prefix_tokens.json",
+      "size": 2466994,
+      "sha256": "1f5815e4da6b7a978914c4c551108a8520b8bae624a9e24b63e8989611a08b1a"
+    },
+    "fresh_B/run_result.json": {
+      "archive_original": "pod/fresh_B/run_result.json",
+      "size": 48462,
+      "sha256": "41c221be0d501f64ec6a8101db9470aaac08ecd74861ca7b647752110b59141a"
+    },
+    "fresh_B/terminal_process.json": {
+      "archive_original": "pod/fresh_B/terminal_process.json",
+      "size": 2238,
+      "sha256": "a773580d8a78a3346a56b4429c0bc884c4b62bef1a98f422f7b82fbaff2969c8"
+    },
+    "fresh_B/transport_postrun_audit.json": {
+      "archive_original": "pod/fresh_B/transport_postrun_audit.json",
+      "size": 1934071,
+      "sha256": "556f45b259cbe4103fc07524e8b0dbfd042a08da976b49e9dea065902c145de0"
+    },
+    "manifests/fresh_B.jsonl": {
+      "archive_original": "pod/manifests/fresh_B.jsonl",
+      "size": 981831,
+      "sha256": "2385138de67af3472d5a07267f1c9776d46218368b7f7b9363bef360ed8d4b64"
+    },
+    "screen_B/postrun_audit.json": {
+      "archive_original": "pod/screen_B/postrun_audit.json",
+      "size": 3398707,
+      "sha256": "c34b5f900b3a8e4d6da381764aaf929a54633d3489c4796e7416791e9cf81663"
+    },
+    "selection.json": {
+      "archive_original": "pod/selection.json",
+      "size": 76884,
+      "sha256": "f1b61e791e0821238371bdb5f2d3515f830ba21c639b4defa1e01ab1e512925d"
+    },
+    "server/runtime.json": {
+      "archive_original": "pod/server/runtime.json",
+      "size": 156,
+      "sha256": "85dec13463929059014694c50665d0fb92be07952148fc5916b72bdfda745578"
+    },
+    "server/serve_20260907T232817Z.log": {
+      "archive_original": "pod/server/serve_20260907T232817Z.log",
+      "size": 1591351,
+      "sha256": "d7819f9e7b16c6307817e9db5996d7dc5063aa13aa51f7bc427c7de053a3feff"
+    },
+    "server/serve_20260907T232817Z_launch.json": {
+      "archive_original": "pod/server/serve_20260907T232817Z_launch.json",
+      "size": 271,
+      "sha256": "cdef1d7019aaf4f63c5b8ff25dd9de0595da444c56ac619b5709399888434ecf"
+    },
+    "server/server.lock": {
+      "archive_original": "pod/server/server.lock",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "server/server_serve_20260907T232817Z_process.exit.json": {
+      "archive_original": "pod/server/server_serve_20260907T232817Z_process.exit.json",
+      "size": 136,
+      "sha256": "ce296730051684f36fa558bf1f52987ed7a8e554f9b90b127e8f97356f98b2c0"
+    },
+    "server/server_serve_20260907T232817Z_process.pid": {
+      "archive_original": "pod/server/server_serve_20260907T232817Z_process.pid",
+      "size": 5,
+      "sha256": "73874dac168e44a46908976030b1952b87965cabff4e2951312c3fd43103dc73"
+    },
+    "server/server_serve_20260907T232817Z_process.worker.pid": {
+      "archive_original": "pod/server/server_serve_20260907T232817Z_process.worker.pid",
+      "size": 5,
+      "sha256": "5432b936148e97a11249cf0168587cd69303e1093619fc0c3a3c6a01b1ceb297"
+    },
+    "setup/capture_memory_artifacts.json": {
+      "archive_original": "pod/setup/capture_memory_artifacts.json",
+      "size": 6398,
+      "sha256": "52e198c9a3522f2c70cc5c19ea6db5e539755c077f3b90662add02b5e7c43444"
+    },
+    "setup/capture_memory_check.py": {
+      "archive_original": "pod/setup/capture_memory_check.py",
+      "size": 12806,
+      "sha256": "dea9ddb7e6e1f3aa0a1d1708c3a0fcb4ee874caab9e39f4d65133001051d18a1"
+    },
+    "setup/capture_memory_code_review.json": {
+      "archive_original": "pod/setup/capture_memory_code_review.json",
+      "size": 11852,
+      "sha256": "ed9b952ea44e1d9d9f7c8a8b0e3055470204ad4e92cd259a7b39effc534a8ac0"
+    },
+    "setup/capture_memory_code_review.md": {
+      "archive_original": "pod/setup/capture_memory_code_review.md",
+      "size": 1701,
+      "sha256": "1578a161da31d703b740d2197bddcf8293172af3d5b5ee4d6b3a111ec5fb046d"
+    },
+    "setup/capture_memory_diag_20260908T100316Z.json": {
+      "archive_original": "pod/setup/capture_memory_diag_20260908T100316Z.json",
+      "size": 11089,
+      "sha256": "f80662f2dcee80435e405c1d018680c9ba1266876a67885830ee1640f7b2722b"
+    },
+    "setup/capture_memory_diag_20260908T100316Z.launch.json": {
+      "archive_original": "pod/setup/capture_memory_diag_20260908T100316Z.launch.json",
+      "size": 9453,
+      "sha256": "3ab486130c1b25840676a98cb63c607272c43750e805b583ec6e1737feca79ae"
+    },
+    "setup/capture_memory_diag_20260908T100316Z.log": {
+      "archive_original": "pod/setup/capture_memory_diag_20260908T100316Z.log",
+      "size": 21633,
+      "sha256": "0aaaa72e4fb27a863eb09873909c1e9ad313d02a1e9c041f4583670b91aaccbf"
+    },
+    "setup/capture_memory_diag_20260908T100316Z.longest_singleton.npz": {
+      "archive_original": "pod/setup/capture_memory_diag_20260908T100316Z.longest_singleton.npz",
+      "size": 305376,
+      "sha256": "4329e875b2231ee7082f6c5ca33ada83c6a39e6f29f88860928b9db23b55b478"
+    },
+    "setup/capture_memory_diag_20260908T100316Z.production_two_row.npz": {
+      "archive_original": "pod/setup/capture_memory_diag_20260908T100316Z.production_two_row.npz",
+      "size": 159088,
+      "sha256": "782ef91744f47ea461136529349bfc507774a0cdf729002ba228a4a881881653"
+    },
+    "setup/capture_memory_diag_20260908T100316Z_owner_launch.json": {
+      "archive_original": "pod/setup/capture_memory_diag_20260908T100316Z_owner_launch.json",
+      "size": 1461,
+      "sha256": "533ccbc5ccb6cafc3c7dbd46a8c58e610cba180f1208a234af3c715d3f1268a3"
+    },
+    "setup/capture_memory_diag_20260908T100316Z_process.exit.json": {
+      "archive_original": "pod/setup/capture_memory_diag_20260908T100316Z_process.exit.json",
+      "size": 135,
+      "sha256": "2144d8538d7523d8560f7a98176564befbd6a3c307d69134e783f17ee75ebdbf"
+    },
+    "setup/capture_memory_diag_20260908T100316Z_process.pid": {
+      "archive_original": "pod/setup/capture_memory_diag_20260908T100316Z_process.pid",
+      "size": 5,
+      "sha256": "321071984e032c4e52590a5176c5b5462b107652d48185a25ca61f70141fe1bb"
+    },
+    "setup/capture_memory_diag_20260908T100316Z_process.worker.pid": {
+      "archive_original": "pod/setup/capture_memory_diag_20260908T100316Z_process.worker.pid",
+      "size": 5,
+      "sha256": "e46892afc075edb5797ae267e3cda7a74e557ad4b103c02c89dbd07ce26289e0"
+    },
+    "setup/capture_memory_review_cpu_checks.json": {
+      "archive_original": "pod/setup/capture_memory_review_cpu_checks.json",
+      "size": 2557,
+      "sha256": "bdecf9db37250e0c2e05b1800af38665ff127eeafc98fdffd56231376c18e729"
+    },
+    "setup/capture_memory_review_cpu_checks.py": {
+      "archive_original": "pod/setup/capture_memory_review_cpu_checks.py",
+      "size": 4828,
+      "sha256": "bba05a21fc4f68f6627ff8afe520b478eb20634789c78a684b81ed54769ef3ff"
+    },
+    "setup/capture_memory_supervise.sh": {
+      "archive_original": "pod/setup/capture_memory_supervise.sh",
+      "size": 3860,
+      "sha256": "7d230ad768a64ecdc1233083689fec0e98788ab463d8a63734e5e169476ce778"
+    },
+    "setup/capture_memory_transport_code_review.json": {
+      "archive_original": "pod/setup/capture_memory_transport_code_review.json",
+      "size": 19418,
+      "sha256": "c04f70ceffc0c64e970cf6dcaa81de474ce639133677e60027bf82aece0d2be9"
+    },
+    "setup/capture_memory_transport_code_review.md": {
+      "archive_original": "pod/setup/capture_memory_transport_code_review.md",
+      "size": 1601,
+      "sha256": "166fd8164e3b4806203c053da4c5cdd257511ad17807fe2cfa3fe6e5fbb2fe7b"
+    },
+    "setup/capture_orchestration_artifacts.json": {
+      "archive_original": "pod/setup/capture_orchestration_artifacts.json",
+      "size": 6454,
+      "sha256": "83681ffce9586345e0193cac24926407770ab1cc1462e904598dfa113aaf7b7a"
+    },
+    "setup/capture_orchestration_code_review.json": {
+      "archive_original": "pod/setup/capture_orchestration_code_review.json",
+      "size": 12352,
+      "sha256": "d957a9e14f49dede29b952e2bf8de3c522105a1d671e6699f476a1774f77a487"
+    },
+    "setup/capture_orchestration_code_review.md": {
+      "archive_original": "pod/setup/capture_orchestration_code_review.md",
+      "size": 1634,
+      "sha256": "3c1907d1158386a11e7c446cd7a01f11dea573af40f37cb37f7efad13e479a56"
+    },
+    "setup/capture_orchestration_launch_recipe.md": {
+      "archive_original": "pod/setup/capture_orchestration_launch_recipe.md",
+      "size": 5291,
+      "sha256": "fd827e54e90811610fe90b36c6c91af987dd0fc9c296b6348b4505b8fde55413"
+    },
+    "setup/capture_orchestration_supervisor.diff": {
+      "archive_original": "pod/setup/capture_orchestration_supervisor.diff",
+      "size": 3730,
+      "sha256": "83a1f32e0c5e4b9171fe2853d22b22a3bcc000068d9f64c78b5bb1881df6788a"
+    },
+    "setup/capture_portable_input_preflight_20260908.json": {
+      "archive_original": "pod/setup/capture_portable_input_preflight_20260908.json",
+      "size": 5840,
+      "sha256": "6244b7243ff90163a5587f624c9d9f41c908229bd3806a32531cdfcf9c102418"
+    },
+    "setup/capture_runtime_import_preflight.json": {
+      "archive_original": "pod/setup/capture_runtime_import_preflight.json",
+      "size": 5388,
+      "sha256": "f32cb2e4cc0dad2bd34a5b6ecaed9b080b19e13602bcd6c2ae82f471f47ef781"
+    },
+    "setup/capture_runtime_import_preflight_b7673e06.json": {
+      "archive_original": "pod/setup/capture_runtime_import_preflight_b7673e06.json",
+      "size": 8115,
+      "sha256": "19048fe3afbd4dcd113fad873a9dcb4cfe2ff886abf136928eadfad0b2e3dbfc"
+    },
+    "setup/capture_runtime_setup_runtime_20260908T055743Z.disk_after.json": {
+      "archive_original": "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.disk_after.json",
+      "size": 773,
+      "sha256": "be957f2d38c2cc4f10dc339385a40053d687803765fb7221208d10645b1479b4"
+    },
+    "setup/capture_runtime_setup_runtime_20260908T055743Z.disk_before.json": {
+      "archive_original": "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.disk_before.json",
+      "size": 773,
+      "sha256": "93b319c1daa970a5c97b2df9cc9612a0b70f4b2a2ce7ab231e05b6ba61680599"
+    },
+    "setup/capture_runtime_setup_runtime_20260908T055743Z.install.log": {
+      "archive_original": "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.install.log",
+      "size": 6057,
+      "sha256": "987dbdf88b130e1bb512258b82455d5d5d4e87850984e170998c1e4c3c05a9cf"
+    },
+    "setup/capture_runtime_setup_runtime_20260908T055743Z.launch.json": {
+      "archive_original": "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.launch.json",
+      "size": 1601,
+      "sha256": "43505ca53b956f39682810715cc6a4df7a97fc3494f7ca0597ef19e7281fd1e4"
+    },
+    "setup/capture_runtime_setup_runtime_20260908T055743Z.log": {
+      "archive_original": "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.log",
+      "size": 455,
+      "sha256": "4ddff45a2958f457508e0e5310820e281858f51adbf92fc407a5def60965e514"
+    },
+    "setup/capture_runtime_setup_runtime_20260908T055743Z.packages.freeze.txt": {
+      "archive_original": "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.packages.freeze.txt",
+      "size": 4962,
+      "sha256": "47a0a8246407c47c8181a652c78d398ed2034f4097517685b36cfd288c88129d"
+    },
+    "setup/capture_runtime_setup_runtime_20260908T055743Z.packages.json": {
+      "archive_original": "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.packages.json",
+      "size": 483,
+      "sha256": "6097c995ab91a5794fcfb609f629d612bcd747e3b78b5020f562d66f751d1c0f"
+    },
+    "setup/capture_runtime_setup_runtime_20260908T055743Z.pip_check.txt": {
+      "archive_original": "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.pip_check.txt",
+      "size": 152,
+      "sha256": "8142e19c49b6ef3a563da547deeb5266b1e548a074c3f648933513dd68414aae"
+    },
+    "setup/capture_runtime_setup_runtime_20260908T055743Z.receipt.json": {
+      "archive_original": "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.receipt.json",
+      "size": 2253,
+      "sha256": "c1f6c923d5122d50dc0a6ba5c908d4cea4df7c3fef2eb43fe94ff40c3764afe2"
+    },
+    "setup/capture_runtime_setup_runtime_20260908T055743Z.venv.log": {
+      "archive_original": "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.venv.log",
+      "size": 278,
+      "sha256": "50eaebd5815bb87f09a09656172600567f51a434d626d5033f8aa7789816d123"
+    },
+    "setup/capture_runtime_setup_runtime_20260908T055743Z_owner_launch.json": {
+      "archive_original": "pod/setup/capture_runtime_setup_runtime_20260908T055743Z_owner_launch.json",
+      "size": 1410,
+      "sha256": "e49d75b197cfe0857374039e3017dccf37250bc3a4ddaf96cb6f5d4d199d3789"
+    },
+    "setup/capture_runtime_setup_runtime_20260908T055743Z_process.exit.json": {
+      "archive_original": "pod/setup/capture_runtime_setup_runtime_20260908T055743Z_process.exit.json",
+      "size": 142,
+      "sha256": "ff94d3092f75d0bfb71097cf07dd6b362b8e22b370108f6be4ad268f4d6c23a3"
+    },
+    "setup/capture_runtime_setup_runtime_20260908T055743Z_process.pid": {
+      "archive_original": "pod/setup/capture_runtime_setup_runtime_20260908T055743Z_process.pid",
+      "size": 5,
+      "sha256": "b732e51f3ad39fdcb69b7a7d66d49dd929e6ca60567225e2738be60e81d04015"
+    },
+    "setup/capture_runtime_setup_runtime_20260908T055743Z_process.worker.pid": {
+      "archive_original": "pod/setup/capture_runtime_setup_runtime_20260908T055743Z_process.worker.pid",
+      "size": 5,
+      "sha256": "11556baa0185ccbcb1269bf1cc8bcbd4cd77abf37a8d58a9780d95c06483728d"
+    },
+    "setup/capture_runtime_setup_supervise.sh": {
+      "archive_original": "pod/setup/capture_runtime_setup_supervise.sh",
+      "size": 3501,
+      "sha256": "24aef2455718f7b6a2a84a28c773c71fe394b3f95b02bac67177c98c5d6945cf"
+    },
+    "setup/capture_runtime_setup_worker.py": {
+      "archive_original": "pod/setup/capture_runtime_setup_worker.py",
+      "size": 8809,
+      "sha256": "f341f09cd89d222125bd8f6d39e38858e8ce94048d5d2eb67695e0db176e5435"
+    },
+    "setup/capture_transport_code_review.json": {
+      "archive_original": "pod/setup/capture_transport_code_review.json",
+      "size": 19967,
+      "sha256": "952e4a00ff83fcfbb429554711c60369fc40c1070faf6fb992cb3254c9198d0d"
+    },
+    "setup/capture_transport_code_review.md": {
+      "archive_original": "pod/setup/capture_transport_code_review.md",
+      "size": 1693,
+      "sha256": "c4a38752c12177db5c112694c22328505b856269020dbe9172ab8cdea9973856"
+    },
+    "setup/cuda_compat_install.log": {
+      "archive_original": "pod/setup/cuda_compat_install.log",
+      "size": 1466,
+      "sha256": "7c190a5c8c4f6945577bfe4bc6e70aa3c6c1e57716f5b087cbd785b2ea435afc"
+    },
+    "setup/download_20260907T232358Z.log": {
+      "archive_original": "pod/setup/download_20260907T232358Z.log",
+      "size": 2468,
+      "sha256": "dfbf49e7f5cd2c17042444195f868f77f15b3de17ccc35c48b2fa3d471fa0b8f"
+    },
+    "setup/download_20260907T232358Z_launch.json": {
+      "archive_original": "pod/setup/download_20260907T232358Z_launch.json",
+      "size": 239,
+      "sha256": "03d4a71de295486e4f608417e850f75024d346b3fadbfe4953e79266ae759113"
+    },
+    "setup/highrate_capture_capture_20260908T101513Z.log": {
+      "archive_original": "pod/setup/highrate_capture_capture_20260908T101513Z.log",
+      "size": 2226219,
+      "sha256": "7ee3bd47fc26a78cbbf2437e58035d1ce607e0ca791529f8fec2e44c05aec431"
+    },
+    "setup/highrate_capture_capture_20260908T101513Z_owner_launch.json": {
+      "archive_original": "pod/setup/highrate_capture_capture_20260908T101513Z_owner_launch.json",
+      "size": 1379,
+      "sha256": "4a4c11da2c6617c6ecfb08038fc73e9cc655539dfb75b8debab6739477188663"
+    },
+    "setup/highrate_capture_capture_20260908T101513Z_process.exit.json": {
+      "archive_original": "pod/setup/highrate_capture_capture_20260908T101513Z_process.exit.json",
+      "size": 137,
+      "sha256": "78c037593a1c78d818340883391545324f7544b277411caf9880e894f4487702"
+    },
+    "setup/highrate_capture_capture_20260908T101513Z_process.pid": {
+      "archive_original": "pod/setup/highrate_capture_capture_20260908T101513Z_process.pid",
+      "size": 5,
+      "sha256": "f28af556ce241a8b23e82bca4582ae2d1e7844841e8bbbea250e1cbe5cacd610"
+    },
+    "setup/highrate_capture_capture_20260908T101513Z_process.worker.pid": {
+      "archive_original": "pod/setup/highrate_capture_capture_20260908T101513Z_process.worker.pid",
+      "size": 5,
+      "sha256": "4822243638de989ea0b988c8094a9327ef7084eb1a2e45b4d80917f9a75fb85e"
+    },
+    "setup/highrate_capture_supervise.sh": {
+      "archive_original": "pod/setup/highrate_capture_supervise.sh",
+      "size": 3795,
+      "sha256": "b743703ad2fea55590f19d8529cafc1ef4970613305e29b56f6b9e85787ad38f"
+    },
+    "setup/inherited_v20_server_review.json": {
+      "archive_original": "pod/setup/inherited_v20_server_review.json",
+      "size": 10438,
+      "sha256": "4c0545c6e4d7d9c5489c844b3ae10ce7d3c86635973e9286d3a61ca510765131"
+    },
+    "setup/model_download_complete.json": {
+      "archive_original": "pod/setup/model_download_complete.json",
+      "size": 295,
+      "sha256": "597bb9ff1f6d6d5746c51ecf9b4cfa9e680f2370ca44f01fa2c3cf9608f4007b"
+    },
+    "setup/model_download_download_20260907T232358Z_process.exit.json": {
+      "archive_original": "pod/setup/model_download_download_20260907T232358Z_process.exit.json",
+      "size": 135,
+      "sha256": "3403bb0c9bfffa7a0c6c8acb1f8737c4cc48589a32b1a71401aa6250c6b1ee75"
+    },
+    "setup/model_download_download_20260907T232358Z_process.pid": {
+      "archive_original": "pod/setup/model_download_download_20260907T232358Z_process.pid",
+      "size": 5,
+      "sha256": "80b3b41141acaa1c258c8999ba4f867c6e6e8b703b2df41df6cd67c371f3b224"
+    },
+    "setup/model_download_download_20260907T232358Z_process.worker.pid": {
+      "archive_original": "pod/setup/model_download_download_20260907T232358Z_process.worker.pid",
+      "size": 5,
+      "sha256": "a6575991009221fa3005e242a907bd4cf925318bc2de2c0b820736ff696b2875"
+    },
+    "setup/model_files.json": {
+      "archive_original": "pod/setup/model_files.json",
+      "size": 6655,
+      "sha256": "8170138b261d3a8585ab2afc3ba5801687de4022a9e2420682d3b772deed3907"
+    },
+    "setup/pinned_runtime_packages.json": {
+      "archive_original": "pod/setup/pinned_runtime_packages.json",
+      "size": 92,
+      "sha256": "d57ddca37479ea03abf3df177bd9f59415ebfcfdea53fd82b4853d7243a19130"
+    },
+    "setup/pinned_runtime_prepare.log": {
+      "archive_original": "pod/setup/pinned_runtime_prepare.log",
+      "size": 4178,
+      "sha256": "c0ceae98643a84c4ff405a753f1f2e37fe393ddea61364ef7fdf2562993010fb"
+    },
+    "setup/pod_source_sync_b7673e06.json": {
+      "archive_original": "pod/setup/pod_source_sync_b7673e06.json",
+      "size": 6879,
+      "sha256": "530832a833757382c0968c87fefd70751cc5707065e9ad87581b8ea7f85f03dc"
+    },
+    "setup/postrun_code_review.json": {
+      "archive_original": "pod/setup/postrun_code_review.json",
+      "size": 9932,
+      "sha256": "f730cd6aa7673b43310b7b50f6c24c2c1570f97b40d36ae64058d2a885922e13"
+    },
+    "setup/server_drain_and_capture_hardware_20260908.json": {
+      "archive_original": "pod/setup/server_drain_and_capture_hardware_20260908.json",
+      "size": 755,
+      "sha256": "0b282801e1da37eea11e7b2416a5876211d079f01873b86ee79f1e7e15a457ae"
+    },
+    "setup/server_drain_request_20260908.json": {
+      "archive_original": "pod/setup/server_drain_request_20260908.json",
+      "size": 727,
+      "sha256": "434d896321938df9804ae32976ec097487efc74cd109a783f46a74af1eaeedae"
+    },
+    "setup/transport_postrun_code_review.json": {
+      "archive_original": "pod/setup/transport_postrun_code_review.json",
+      "size": 12557,
+      "sha256": "3e77c7c69f1b7da8d58f963828621c307a39c38291eae0c45af87b7ccd448e66"
+    }
+  },
+  "validated_input_sha256": {
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/configs/eval/context_risk_followup_capture.yaml": "cdbc76b49d639a61d349becf984aafd30ff5372ea88f6e92f89f2cac4cc25285",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/configs/eval/context_risk_highrate_capture.yaml": "7140a2fcc3e1ed38e4127a1c65d8dbb8ec3b40034713cffca8d15be177e80eec",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/configs/eval/context_risk_qwen38_impossible_capture.yaml": "7018d151ebf4534ad3ecfa4d88cb48c12b847e98bba46dce2e1ba3e8b0dc53aa",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/configs/eval/context_risk_qwen38_smoke.yaml": "d5ad816cb64e7da10d7e22bf79e4525e7d04f6d9df4808e678fd9d4cb9f5f352",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/code_review.json": "a9d6ff46e1e839c817a6485f14fdabe459cf1bd9c38f6247919bfbbd81a35c8b",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md": "e743d726fde20defa03cffe2808b5d7bd7c0100db8911c161dc41d33529d2355",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md": "5935dd7792e3a86b9ffc96d57b9826a63e8496a6590a517df6a6340acbb57ad3",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_corrected_finish.py": "8aeaddec362b9bbf277c707b7532d17948811f1bdf09b9c0a45f598c7eca466e",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_archive.py": "b7f712557a5b537021fc5324a3f4f945c0e1a89c06da3404166c81b44401205b",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_capacity.py": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_capture.py": "5f1bc50e1b6b6bf07a5f8d1db588ccfb0aecd2ef2131fa5e08aad6cb7d9aea42",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_postrun.py": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_reconcile.py": "210562eff0a67f5a38e120282e94978595c1e73f35744f557719fc3ba313681c",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_transport.py": "a802793e7e0d78831f3b9518d828e8410eef6df9ffc0be5e4aceedb73f6ee97c",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_qwen38_impossible_capture.py": "d7f6aec322ce89249a6829b3298f7753cf8a33b9e7505bc7850b8c408a39122b",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue2054_phase_a.py": "69573ff5fc81ad398f35ccf9e656d5fceb7e2696e4b6b35a1db80a166ceb7016",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/verify_uploads.py": "3991c7f464602766d26b5c38b2b42905e92b7f40e918cb72776b59b7e3d34ee9",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/src/explore_persona_space/orchestrate/env.py": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/src/explore_persona_space/orchestrate/hub.py": "6590d4c01d396f935da018d16673e3d21f93843126b5e12a42be8e6e0419351e",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/tests/test_context_risk_highrate_capture.py": "5d7187a5c3f1897d130ac65167320ab65acae569d30a2e4e1d905f1448d3b5d6",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/tests/test_context_risk_highrate_postrun.py": "f653400a60e77a81d839715dc4ab0bce3c8f1454ae0cff551fcd1367a066cb80",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/tests/test_context_risk_highrate_postrun_integration.py": "199ae6a3b2ef230e9e37fe9ecc8647b717686d266f89798b3a642af3482d6657",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/tests/test_context_risk_highrate_reconcile.py": "6fe645d5936557847a3c49acaa075f6d915b3b07017f6eafc9c26c3ddc4c553b",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/tests/test_context_risk_highrate_transport.py": "cb65dc7d3027aa56dae639ed1d198fd5d57b26b893b70802c55ac10440e9acbe",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/capture_binding.json": "1909343bc59a104543b7b8adeacaaafae7ae790397c0daa0f5bd2e9389c724aa",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/capture_launch_binding.json": "cd3d62294d1d6a4ee7d297ce0b65ff77675680a666ee6d9c233898c581690fee",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0000.done.json": "907d7be04adb23c8e478782ec29291c4326fcbff9768cd65578bd324b00c4d8a",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0000.npz": "6033aa3fa892c7538f896c0cf6f77111126b300c2dced119214892d93b00da73",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0000.rows.jsonl": "335c51be07aca165275edd864796a90ed505cd24d41d4623cd27e40859db0e0a",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0001.done.json": "c0e5548f4718ae3f876dab7d755afebd9241d98c9a5d4ce47c9352a71fb5a9fb",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0001.npz": "500dbced2aa9ef49c2e732120ef56b329688dfd12ea00b0005ef4c645aec4103",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0001.rows.jsonl": "3247559ba1e85f792e84efd6d409ea078b883b890e775c0f38436712f8d35cdb",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0002.done.json": "d3e2731f02e1a160236bd12c03fe63f779d8d078825cd9837255e9db94232ed4",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0002.npz": "71e2afeeb5697aeddc01e993e38acc7b120de4aaff5df3d66a40ee032b76f4c3",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0002.rows.jsonl": "cf96e732f917e58c127a8b363360e1ffc88f574908f30155f26f4cdd181520b1",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0003.done.json": "0e2bbf9c6a58a739aadb5e1436797e6a30e6dbfe21bd1712c42bcd18c4ae204b",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0003.npz": "b4ef6a48c0690774857ce663476cce7d5d296faa14f091b4ea43b0f76de9e323",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0003.rows.jsonl": "45a72dc920ec3b12c8eb6cd721efa3ea8d9366f60ae6eac044559bb759aa5a64",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0004.done.json": "d0090b5f51cd5772ee34a2621c26d2bf393844be3171d103018789d731ea2399",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0004.npz": "15e0726bd6f97a57ff325fd2888f58495c2393ab790f62b7b22d15526b58b92c",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0004.rows.jsonl": "5d44138730916c6b052c97a9a9686de406465341509fa238f6878066bf53c9ea",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0005.done.json": "84a2b889d8fe1e624f9b605ca4081cc6c33f15d2835dde91e683e62171299b8b",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0005.npz": "5be0fb710a3799375703a1f945a663af01a417c1833dd42479d0912dcea2aca7",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0005.rows.jsonl": "0d8b3c19a22c162bde61087b58569d050cef1b449afa5c30877185f25e7860f6",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/run_result.json": "e672826baf918afcfaa26644c6e3336b810aecdd3f7f364ea205a88e15ac3846",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture_inputs.json": "f629be7a64f09e9ec490e20abb9a484a294c9cd9e18065ba6b09279764806ad4",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_20260908T070117Z.log": "d0da3e536154b46ae8c9d936dec7a85f81283f47489ee8f62e1a52f1bd2bd6b6",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_20260908T070117Z_launch.json": "f6d2402abde5dd7fa67d2d90d68d34055fc716deb3c2a5b5322000f9ea0890d2",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/launch_config_1788850927139335007_697788.json": "9ea7c15a0cbd3d4c546781c286addda783abb25ba68c559dd28da063400cd555",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/launch_config_1788850927139335007_697788_result.json": "41c221be0d501f64ec6a8101db9470aaac08ecd74861ca7b647752110b59141a",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/logs/2026-09-08T07-02-10-00-00_context-risk-followup-ten-submissions_3kAz589gj9bzDgYysGcnFi.eval": "cfa396e0968ac8b0b34db3b61bd1d860ddd162aa0fe4d6e7989afc83283a64c5",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/native_audit.json": "264f40f93c70f699a4d128a5ba43e2c4b1f457d0a78fa968dda7c10b9cae42be",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/prefix_tokens.json": "1f5815e4da6b7a978914c4c551108a8520b8bae624a9e24b63e8989611a08b1a",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/rollouts.jsonl": "a03992780543c868b9dc0f39db84591520dceb0529783020d6a1e3a94e4c49b5",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/run_result.json": "41c221be0d501f64ec6a8101db9470aaac08ecd74861ca7b647752110b59141a",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/success_review.json": "9be72f0856edda58d581b90d10e098d080637f221ee678a19752ea7433950170",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/success_review.md": "cae9fedd2069448a21b7bd8bbe27ff0716af30807cec0adba8ce898cf95dc072",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/terminal_process.json": "a773580d8a78a3346a56b4429c0bc884c4b62bef1a98f422f7b82fbaff2969c8",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/transport_postrun_audit.json": "556f45b259cbe4103fc07524e8b0dbfd042a08da976b49e9dea065902c145de0",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_fresh_20260908T070117Z_process.exit.json": "7088c33d5b8ccb33aecc1ed8a030cde63ab770e79784566967d311fb65da38fe",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_fresh_20260908T070117Z_process.pid": "f7f7bed8fd74c96ffb303c89b93ed3e4d25b755d9eea9388f90ee4e0427696f6",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_fresh_20260908T070117Z_process.worker.pid": "860e8f43e79eea408bdb131f16800d63c78f15cdcd6698f6aa2a3064ac8792e8",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/manifests/code_review.json": "a9d6ff46e1e839c817a6485f14fdabe459cf1bd9c38f6247919bfbbd81a35c8b",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/manifests/fresh_B.jsonl": "2385138de67af3472d5a07267f1c9776d46218368b7f7b9363bef360ed8d4b64",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/manifests/screen_B.jsonl": "4bafc4e293b01787510f24310da173ae278d2e38db7fca37f8e0219f69d05184",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/manifests/screen_freeze.json": "fb9ef2e3f4c6e14936c999873332a86cdb3cdfba2fecd305d287224fb8b977f5",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/manifests/source.jsonl": "3631d2b51f7fe610e26f674f2c036a74771761a1e8d5dd48d1103817fb10fb48",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_20260908T003104Z.log": "c9948b309b3f4871670c36afe01b3258b7205aac00d46dd600b6cb7d4cc82803",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_20260908T003104Z_launch.json": "d47d34fffa69397af20b1e4b6deb96a202925e153beb0437faa541d83d3cd01a",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.json": "618e6bd5906c83f087e373f5d6d1d914e51605f543c24ed030b95efb374c555b",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json": "46f1416762e3cf4292193c677e2d0f79e4e9bbc912ca0454e8536ebc1cbd46b2",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.json": "7456e1d7087b26fa3a976a7cb3e720e22a88c74c17257e7752be819579074822",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json": "bff7b13fc56e8cdc6bafd2a2bae0eebb221e264ae34740bf9385ded75609b90b",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.json": "571bed4adf772cb941c966cb4987cfd1d572ecdc76cdb781d419e887693ad537",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json": "e9adabf9aaed64d457b1a50dec8de00389008099bda70496f4e3f7023128471b",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/launch_config_1788824126441286824_3281540.json": "c6e9c9dfbe9ce1036be30a99fc1a1b5340134e0f9ffe17f4ecf614685ade75c0",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/launch_config_1788824126441286824_3281540_result.json": "8a3b41628231e333a8a0a196d790aa9f1a27eff5e30849a8cff359198d6381de",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/launch_config_1788827625353955587_3522010.json": "eeda0ff0789dd314c46f271c6fb23eae0520fe8480db750b66056a2a4cc74119",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/launch_config_1788827625353955587_3522010_result.json": "7759487ec3a44613a7f72bb74730c9da4ef80f8c57eb33e6e948afe4ff14161f",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/logs/2026-09-07T23-35-32-00-00_context-risk-followup-ten-submissions_7EGPYSjaYbzZSCqtchLR23.eval": "f2bcd7f29224758290e554a769813577cc0e99549fd1dddc088d44e745a8f57d",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/logs/2026-09-08T00-33-48-00-00_context-risk-followup-ten-submissions_7EGPYSjaYbzZSCqtchLR23.eval": "f7262f7f65d859e38cea85cc68cf5a1b05893389596f38362337cf16c0bde5d0",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/native_audit.json": "4790e546b6a812d4b43101e61052d98c8a3e49a0a9d7bb43da1879887060b596",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/pilot_native_audit.json": "3901ee1335cd1c3f288b49c8772df175c9e64421620be7cd3c3d2fcd9280d844",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/pilot_result.json": "8a3b41628231e333a8a0a196d790aa9f1a27eff5e30849a8cff359198d6381de",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/pilot_rollouts.jsonl": "0e17b00c7fc50649b8e52e087a60d0ce1fe5eb98c953f4e6b92647d5c2866c92",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/postrun_audit.json": "c34b5f900b3a8e4d6da381764aaf929a54633d3489c4796e7416791e9cf81663",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/prefix_tokens.json": "41ab2172450156ac8adb5242e4837b2c566c927b6fdf01f27d8f8312b3c86aa3",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/resume_input_1788827471430223247.census.json": "a787c194c99f2029d186a5c9b4a9ba82f9528ccb125033bada5d9f96c1b380a5",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/resume_input_1788827471430223247.jsonl": "0e17b00c7fc50649b8e52e087a60d0ce1fe5eb98c953f4e6b92647d5c2866c92",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/rollouts.jsonl": "647eb0b0620c9a5db952fe4eab222d576ad1bdba3ee475f71c17202840572f9b",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/run_result.json": "7759487ec3a44613a7f72bb74730c9da4ef80f8c57eb33e6e948afe4ff14161f",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/success_review.json": "d7554bbfec28837cf2b262db997a2f0f8ccc8dc6bf89468b6ae857a8140bfdc5",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/success_review.md": "5ecd0d675d55292c7dc5c5f7945c396568703e9bc142cbd5cb1556c143339215",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/terminal_process.json": "4349743daaa4999cf40496240d13959ea8fbfe17342465174d65ad5afb173055",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_screen_20260908T003104Z_process.exit.json": "5875bf4700cf253be55d771ef1d1d3cb599426c00a4377f8739b3424c7946e1f",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_screen_20260908T003104Z_process.pid": "8f36aa22def237250e98e19cdfa28276e27f4fbe454a12d32094649fa205b483",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_screen_20260908T003104Z_process.worker.pid": "7e6533b9d4b968818b696c2cbbf97986a4d1622f5487e7e294b20d111436c3af",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/selection.json": "f1b61e791e0821238371bdb5f2d3515f830ba21c639b4defa1e01ab1e512925d",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/postrun_code_review.json": "f730cd6aa7673b43310b7b50f6c24c2c1570f97b40d36ae64058d2a885922e13",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/pre_fresh_input_applicability.json": "b15ea42c3c8428c7028af85045eb0e8d018c06df9b446771c35fa3f49bb28857",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/reconciliation_transport_code_review.json": "acf1fb770f8bd4a40a4a91deabd29545d19b0a744a111b8b3b32a6782273de4c",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/transport_postrun_code_review.json": "3e77c7c69f1b7da8d58f963828621c307a39c38291eae0c45af87b7ccd448e66"
+  },
+  "validation_sha256": "178f501ffd9ce710c2651db1b81d68ea29467696a16f6a1a9d7adfd2ec2a6f61",
+  "sources_sha256": {
+    "configs/eval/context_risk_followup_capture.yaml": "cdbc76b49d639a61d349becf984aafd30ff5372ea88f6e92f89f2cac4cc25285",
+    "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+    "configs/eval/context_risk_highrate_capture.yaml": "7140a2fcc3e1ed38e4127a1c65d8dbb8ec3b40034713cffca8d15be177e80eec",
+    "configs/eval/context_risk_qwen38_impossible_capture.yaml": "7018d151ebf4534ad3ecfa4d88cb48c12b847e98bba46dce2e1ba3e8b0dc53aa",
+    "configs/eval/context_risk_qwen38_smoke.yaml": "d5ad816cb64e7da10d7e22bf79e4525e7d04f6d9df4808e678fd9d4cb9f5f352",
+    "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+    "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+    "eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md": "e743d726fde20defa03cffe2808b5d7bd7c0100db8911c161dc41d33529d2355",
+    "eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md": "5935dd7792e3a86b9ffc96d57b9826a63e8496a6590a517df6a6340acbb57ad3",
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
+    "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "scripts/context_risk_highrate_capacity.py": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+    "scripts/context_risk_highrate_capture.py": "5f1bc50e1b6b6bf07a5f8d1db588ccfb0aecd2ef2131fa5e08aad6cb7d9aea42",
+    "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+    "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+    "scripts/context_risk_highrate_postrun.py": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+    "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+    "scripts/context_risk_highrate_transport.py": "a802793e7e0d78831f3b9518d828e8410eef6df9ffc0be5e4aceedb73f6ee97c",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+    "scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
+    "scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+    "scripts/context_risk_qwen38_impossible_capture.py": "d7f6aec322ce89249a6829b3298f7753cf8a33b9e7505bc7850b8c408a39122b",
+    "scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+    "src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79",
+    "tests/test_context_risk_highrate_capture.py": "5d7187a5c3f1897d130ac65167320ab65acae569d30a2e4e1d905f1448d3b5d6",
+    "tests/test_context_risk_highrate_postrun.py": "f653400a60e77a81d839715dc4ab0bce3c8f1454ae0cff551fcd1367a066cb80",
+    "tests/test_context_risk_highrate_postrun_integration.py": "199ae6a3b2ef230e9e37fe9ecc8647b717686d266f89798b3a642af3482d6657",
+    "tests/test_context_risk_highrate_transport.py": "cb65dc7d3027aa56dae639ed1d198fd5d57b26b893b70802c55ac10440e9acbe",
+    "scripts/context_risk_highrate_archive.py": "b7f712557a5b537021fc5324a3f4f945c0e1a89c06da3404166c81b44401205b",
+    "scripts/context_risk_corrected_finish.py": "8aeaddec362b9bbf277c707b7532d17948811f1bdf09b9c0a45f598c7eca466e",
+    "scripts/issue2054_phase_a.py": "69573ff5fc81ad398f35ccf9e656d5fceb7e2696e4b6b35a1db80a166ceb7016",
+    "src/explore_persona_space/orchestrate/hub.py": "6590d4c01d396f935da018d16673e3d21f93843126b5e12a42be8e6e0419351e",
+    "src/explore_persona_space/orchestrate/env.py": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759",
+    "scripts/context_risk_highrate_reconcile.py": "210562eff0a67f5a38e120282e94978595c1e73f35744f557719fc3ba313681c",
+    "scripts/verify_uploads.py": "3991c7f464602766d26b5c38b2b42905e92b7f40e918cb72776b59b7e3d34ee9",
+    "tests/test_context_risk_highrate_reconcile.py": "6fe645d5936557847a3c49acaa075f6d915b3b07017f6eafc9c26c3ddc4c553b"
+  },
+  "independent_review_sha256": "acf1fb770f8bd4a40a4a91deabd29545d19b0a744a111b8b3b32a6782273de4c",
+  "imported_capture_source_sha256": {
+    "scripts/context_risk_qwen38_impossible_capture.py": "d7f6aec322ce89249a6829b3298f7753cf8a33b9e7505bc7850b8c408a39122b",
+    "scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+    "scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+    "scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
+    "src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79",
+    "scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
+    "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+    "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+    "scripts/context_risk_highrate_capacity.py": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+    "scripts/context_risk_highrate_postrun.py": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+    "scripts/context_risk_highrate_transport.py": "a802793e7e0d78831f3b9518d828e8410eef6df9ffc0be5e4aceedb73f6ee97c"
+  },
+  "package_versions": {
+    "inspect-ai": "0.3.261",
+    "huggingface-hub": "0.36.2",
+    "numpy": "2.2.6"
+  },
+  "scope": "Exact archived618screen/360fresh/90capture full-key sets and complete pod-relative file hashes. ASCII indexes derive only from pinned remote readback. Generic basename/sharded-name residue checks remain supplementary; no exemptions or discards were used. This is not a teardown authorization; the owner must verify no subsequent pod writes and use the managed gate."
+}

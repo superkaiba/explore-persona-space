@@ -1,0 +1,1223 @@
+{
+  "scope": "Exact immutable artifact SHA-256 false positives only; no rule relaxation, no directory exemption, no scanner bypass.",
+  "finding_count": 125,
+  "all_rule_ids_generic_api_key": true,
+  "all_matches_recomputed_or_bound_to_reviewed_artifact": true,
+  "findings": [
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/raw_reconciliation_final_inventory_review_20260908T110619Z.json:generic-api-key:70",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/raw_reconciliation_final_inventory_review_20260908T110619Z.json",
+      "line": 70,
+      "digest": "ab44d64f5ea2cedadad5ed3c143f3ff988aedf6a5053007d736019ca2ea95c9a",
+      "provenance": [
+        "Recomputed sorted actual capture identity tuples JSON SHA256 sort_keys=False,compact=True",
+        "Recomputed sorted actual capture identity tuples JSON SHA256 sort_keys=True,compact=True"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/raw_reconciliation_final_inventory_review_20260908T110619Z.json:generic-api-key:78",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/raw_reconciliation_final_inventory_review_20260908T110619Z.json",
+      "line": 78,
+      "digest": "5f23829110cf8efa73e8d12b1ce02068356c07ea62e7d5c4f7c3a8c41a358e20",
+      "provenance": [
+        "Recomputed sorted actual fresh_B identity tuples JSON SHA256 sort_keys=False,compact=True",
+        "Recomputed sorted actual fresh_B identity tuples JSON SHA256 sort_keys=True,compact=True"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/raw_reconciliation_final_inventory_review_20260908T110619Z.json:generic-api-key:86",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/raw_reconciliation_final_inventory_review_20260908T110619Z.json",
+      "line": 86,
+      "digest": "f7b103595e19a85250d64168d5331aa4926167c4c65580255b2e93a807b20d24",
+      "provenance": [
+        "Recomputed sorted actual screen_B identity tuples JSON SHA256 sort_keys=False,compact=True",
+        "Recomputed sorted actual screen_B identity tuples JSON SHA256 sort_keys=True,compact=True"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/raw_pinned_readback_extra_review_20260908T105109Z.json:generic-api-key:357",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/raw_pinned_readback_extra_review_20260908T105109Z.json",
+      "line": 357,
+      "digest": "41967f7c0765071b977435968597f3cc09e75f2d17eb5b5db2615a251a0292f1",
+      "provenance": [
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/raw_pinned_api_tree_review_20260908T105109Z.json:actual_file_sha256"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/reconciliation/reconciliation.json:generic-api-key:666",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/reconciliation/reconciliation.json",
+      "line": 666,
+      "digest": "1f5815e4da6b7a978914c4c551108a8520b8bae624a9e24b63e8989611a08b1a",
+      "provenance": [
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/run/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/pod/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/pod/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/run/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/run/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/pod/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json:/pod_files/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json:/validated_input_sha256//home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/prefix_tokens.json",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/prefix_tokens.json:actual_file_sha256"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/reconciliation/reconciliation.json:generic-api-key:684",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/reconciliation/reconciliation.json",
+      "line": 684,
+      "digest": "46f1416762e3cf4292193c677e2d0f79e4e9bbc912ca0454e8536ebc1cbd46b2",
+      "provenance": [
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/run/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/run/setup/context_capacity_failed_request_token_ids.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/run/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/run/setup/context_capacity_failed_request_token_ids.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/run/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/run/setup/context_capacity_failed_request_token_ids.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json:/validated_input_sha256//home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json:actual_file_sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/context_capacity_failed_request_token_ids.json:actual_file_sha256"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/reconciliation/reconciliation.json:generic-api-key:686",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/reconciliation/reconciliation.json",
+      "line": 686,
+      "digest": "bff7b13fc56e8cdc6bafd2a2bae0eebb221e264ae34740bf9385ded75609b90b",
+      "provenance": [
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/run/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/run/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/run/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json:/validated_input_sha256//home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json:actual_file_sha256"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/reconciliation/reconciliation.json:generic-api-key:688",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/reconciliation/reconciliation.json",
+      "line": 688,
+      "digest": "e9adabf9aaed64d457b1a50dec8de00389008099bda70496f4e3f7023128471b",
+      "provenance": [
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/run/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/run/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/run/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json:/validated_input_sha256//home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json:actual_file_sha256"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/reconciliation/reconciliation.json:generic-api-key:700",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/reconciliation/reconciliation.json",
+      "line": 700,
+      "digest": "41ab2172450156ac8adb5242e4837b2c566c927b6fdf01f27d8f8312b3c86aa3",
+      "provenance": [
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/run/screen_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/run/screen_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/run/screen_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json:/validated_input_sha256//home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/prefix_tokens.json",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/prefix_tokens.json:actual_file_sha256"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:56",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 56,
+      "digest": "1f5815e4da6b7a978914c4c551108a8520b8bae624a9e24b63e8989611a08b1a",
+      "provenance": [
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/run/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/pod/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/pod/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/run/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/run/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/pod/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json:/pod_files/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json:/validated_input_sha256//home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/prefix_tokens.json",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/prefix_tokens.json:actual_file_sha256"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:73",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 73,
+      "digest": "46f1416762e3cf4292193c677e2d0f79e4e9bbc912ca0454e8536ebc1cbd46b2",
+      "provenance": [
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/run/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/run/setup/context_capacity_failed_request_token_ids.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/run/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/run/setup/context_capacity_failed_request_token_ids.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/run/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/run/setup/context_capacity_failed_request_token_ids.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json:/validated_input_sha256//home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json:actual_file_sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/context_capacity_failed_request_token_ids.json:actual_file_sha256"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:75",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 75,
+      "digest": "bff7b13fc56e8cdc6bafd2a2bae0eebb221e264ae34740bf9385ded75609b90b",
+      "provenance": [
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/run/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/run/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/run/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json:/validated_input_sha256//home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json:actual_file_sha256"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:77",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 77,
+      "digest": "e9adabf9aaed64d457b1a50dec8de00389008099bda70496f4e3f7023128471b",
+      "provenance": [
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/run/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/run/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/run/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json:/validated_input_sha256//home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json:actual_file_sha256"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:82",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 82,
+      "digest": "41ab2172450156ac8adb5242e4837b2c566c927b6fdf01f27d8f8312b3c86aa3",
+      "provenance": [
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/run/screen_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/run/screen_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/run/screen_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json:/validated_input_sha256//home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/prefix_tokens.json",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/prefix_tokens.json:actual_file_sha256"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3078",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3078,
+      "digest": "4803f3178ba9edb2e5256e8ff2f16b1faf6b542e57a1e5d918f22301d0e4ab2a",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_98"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3107",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3107,
+      "digest": "85323144d0718ebbb79cef0cd071106774072809b31c98dbf1bd7bebc1228ecc",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_44"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3136",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3136,
+      "digest": "a8d7faa034b553bf7958a321b46e71b0ab48bcf3c652c9e3f94d70d6f3247d44",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_75"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3165",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3165,
+      "digest": "ad3884c0b8b8921d4aa5666d4465a89c3e0e142892d2ae476527f1d029706e0c",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_14"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3194",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3194,
+      "digest": "2b9a17ed130772a9beadb5d6647094c54313a8aa9b6a12f8419966c1ef536f55",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_46"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3223",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3223,
+      "digest": "3cdf7346f2b303750e682a98077976d451aa24c0f403b5ac4c354a457a95b9c0",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_72"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3252",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3252,
+      "digest": "4779fd4e2c9614f2cb2d30b008b8ac3481024f948ed18007fc9b675326d6e3a4",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_5"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3281",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3281,
+      "digest": "58d514d305b010e82f0c3c3274a969797d84f54f76131f19b1e5ef72da6b03a0",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_35"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3310",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3310,
+      "digest": "6c7958b9f7e1d1f15e86ce9a7dd1ef7e535a29e8475550dddc81eaafbed69cb0",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_95"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3339",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3339,
+      "digest": "70e4977d93067745a17a39fc42c0c449ef80eb45c5ad10b00633fd037dce3632",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_15"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3368",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3368,
+      "digest": "8d1b0265f75954b10e82fef081e8492e6179a747534948352ec48146cb3fe457",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_3"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3397",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3397,
+      "digest": "a6c99cd6ef56fd937c595b2126c184508eb8c5b2f99e804a67f0176eafb2cc58",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_84"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3426",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3426,
+      "digest": "a7b02128d0f22724f5d6a2318b86a428b3afc9a72edca6db7df23b58b7d2d92a",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_40"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3455",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3455,
+      "digest": "a91f9a1f33230fb5ade4bfc96957db0dd42816374e0d56f4af0f3d49125229b1",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_51"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3484",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3484,
+      "digest": "ae7ec2d10ff62ec2f4ee436c28f6fa6c2582ca4a50fcf8278ee2945c8a7e7a60",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_64"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3513",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3513,
+      "digest": "c74d3abd2447f26de7cc72253fb4c00fb97d814712ad387a2b366fd6ce2cde01",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_29"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3542",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3542,
+      "digest": "d9429436019b86f17fa44c99ecd76f636b6e4ad1fef441d362af18fdb4f48cc2",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_54"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3571",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3571,
+      "digest": "dbbb2c678e2176b32d22912eacf16ece3a4a67e9d38cca24fc4006faad2ac34b",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_73"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3600",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3600,
+      "digest": "e45b85dbdb5687199fc99e4cedf5d3062352a3707ad25c90af59db5e795c0036",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_86"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3629",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3629,
+      "digest": "f6657cc86f54383482ff242986583cd80885bb0a5a3bd3224b662d69729eaade",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_24"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3658",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3658,
+      "digest": "f8ef426b7fca447276769a0fed0fba1868c63b607cee4b7ba924ff6a281d62b7",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_10"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3687",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3687,
+      "digest": "00d74fd53bccedddb9d1aaa14ab3e3d39c30f46b886540928015dbbd0586538b",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_78"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3716",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3716,
+      "digest": "013f2f4ed0d82916e0c4c5731b5e1e46392e3c9852eb643c255b16e8fd2201d0",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_62"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3745",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3745,
+      "digest": "061d4163ce54f9b02679d2d366f5b15f5d434c2fa9fa59afe08b3f56a44dd073",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_69"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3774",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3774,
+      "digest": "076e6192e033eaea64d80ef47043134991d2b81509d464d88ce3b655118a6a42",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_76"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3803",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3803,
+      "digest": "088f861583e176447f9b53fa54c22e18fa3a87fc8713fd3c131c8500a71f47b5",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_16"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3832",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3832,
+      "digest": "0933bf28c65cdd2c6a16e8a58015cdeb955a588909a32ab7f59f912f69ab04e4",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_77"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3861",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3861,
+      "digest": "095dc24c073982897e197759fbd5d2f46bf9892606dbbef062dfd9d1b5705dc6",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_43"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3890",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3890,
+      "digest": "121a9bbab20c98f30948d2a38987a1e1e89f6150c4125a5f7440960da2b3112a",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_81"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3919",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3919,
+      "digest": "139c6054ca3d068d824562586f2e4c99bba5d138262dbe8e930bdebe98742aad",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_67"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3948",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3948,
+      "digest": "1551b4952ec503cff69beca7925aeb6b806ebf0cca5ecc4e43dfc58d42b1cf07",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_39"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:3977",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 3977,
+      "digest": "1d81c9d107f6508bc990b89c90c34445e8b64eb3965dd8c645fa20305b83a900",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_34"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4006",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4006,
+      "digest": "2178708a74f6dc35d0b059d54fddc48de89077f4348cd0fb4aae2f5481425585",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_94"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4035",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4035,
+      "digest": "23ecc413af65a1bd88422df408ae2000aba91bb3720c5b944ead257ef7783817",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_20"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4064",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4064,
+      "digest": "25dcd1e8789e5ad15b2068ad927e9fa8f88b34a4af03170fa3e5c3a2697314c6",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_79"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4093",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4093,
+      "digest": "263b6f1f60c46af3eb83a2117bc2a3e0404f43f505afc6f96ffa306dff9d8e6c",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_12"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4122",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4122,
+      "digest": "2c6b12464e491ad55d4b6eac0e371c11176e8aa84116f13e93554994e0f2044a",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_45"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4151",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4151,
+      "digest": "30e7b7a4e590398f4b1adfebc7a9d53e2236939d46955f8c1780684eefd88f9d",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_48"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4180",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4180,
+      "digest": "31f3ed7e01236b8382e4314441a0b34ccd34b3d722c595972c910cdc284340ba",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_85"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4209",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4209,
+      "digest": "3289fddcc76ed5b26bc3dff851789fea68818bfb25c19cdd08cb81241c12f4a5",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_70"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4238",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4238,
+      "digest": "35d2a79c1840ee6963814488eecab620b90ef1b3ede05af315e9cb1caf7b57fe",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_2"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4267",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4267,
+      "digest": "36d74c8c845c1702ced9773003284b297a56aa07aa18cae773e1ef7310ed6f5e",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_19"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4296",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4296,
+      "digest": "3d34329bab146ea953f27961bcacecfa7ad3d78c8ed8c90eb9db97dcf31bb4e1",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_102"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4325",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4325,
+      "digest": "3eb95d37700e1ede255dbc1d3e8c2a9b013702b2d9a3cab2d6ac832f0ba24814",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_65"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4354",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4354,
+      "digest": "427706eae52f15f16e39592d68dea97d64b04202e08352d8df6a9a0197f0e09d",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_23"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4383",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4383,
+      "digest": "42906d709e841bddd00046099d338c0cbce35d70dbf3608be6b1a0aa34be2a00",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_74"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4412",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4412,
+      "digest": "46fda33f3874fa785067e9beb4f621441726417d1fd2941f7de36fa994187afa",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_90"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4441",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4441,
+      "digest": "4f6e3788cc7ca38c8b4e8b636b6536fc6c909eda385351bccee5ec91973235ac",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_83"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4470",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4470,
+      "digest": "5712db81c901ca1fc0161e0c28f96e7f528c11923bfddfeb6d130ca107f55103",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_66"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4499",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4499,
+      "digest": "58b3e47f87577d90b5be531044a0ca74e38d416c3b1f2ae1e0e8c368783012f0",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_8"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4528",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4528,
+      "digest": "58dba0cb2dbe976a1d6def47a18ef8061b8fde2e12a49da7a2e68a2ec2fef0f3",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_17"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4557",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4557,
+      "digest": "597bdb0ac27948499396efe617cfbca51b8cfcd4ecccecde261c1642f033cf2b",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_93"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4586",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4586,
+      "digest": "5fbfa839d188fe36123b2dd4daea3d464930884cc44980ad23448ab86d85dab5",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_58"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4615",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4615,
+      "digest": "66c41425f42fc8a91e1805616ff7ba8bb86239c05f615e7c8f6c042d09d44682",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_63"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4644",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4644,
+      "digest": "6ae4bf3a984540adf39201ad3f696181d33bc403f9de961fc71dd1b6c5c4defd",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_87"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4673",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4673,
+      "digest": "71a2ba7add6338e6f32413dade198689201241a18c173169f59a5b2075b58fe8",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_4"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4702",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4702,
+      "digest": "75ca020c1629b42c30c3be223e87cf42356f41ea5c34917aa31781f10caaf73f",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_42"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4731",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4731,
+      "digest": "7a5035782f5e160a00b90c26fa46cf65b8d2049b019556d4cbfb0aa8864e661e",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_18"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4760",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4760,
+      "digest": "823e0a42cf21763a51048f511c2d7ade8d77d04e681e10cfe7cac44d810c8560",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_25"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4789",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4789,
+      "digest": "84631e4901d8b41509b5eb7c0c4327ed196ff295070b4feb8ea7597a848d6c2b",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_11"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4818",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4818,
+      "digest": "85ca2f1ec1ed93966fff493d09095cf96f3e9e7f08dc3c61c7ea952ac03b49e0",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_60"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4847",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4847,
+      "digest": "89c149d32773386320ea5b1f509c0a55971a66428c03bd3dc5dd2e689e2c46be",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_53"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4876",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4876,
+      "digest": "8bdcafff77cd41bed2233763bc4fafbb7f91097c7edce45517e9d9661afa3e04",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_36"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4905",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4905,
+      "digest": "941d0ecaa7854623bcbdcc59643a8c65c726c23da470734b68eee78c78a53db8",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_52"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4934",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4934,
+      "digest": "9b19e17fe7cdee875f4bfa930f5f7a49f9de4a9ebe8ac815558a957f4c6b1b4b",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_7"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4963",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4963,
+      "digest": "9b3213ae0931c51420732edc651e47e48552a176e9826b15e109b8e0419a5f2d",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_26"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:4992",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 4992,
+      "digest": "a0008473f5278a48e321f3a1e0ae07809ecb0bcda51eb239ed4bae6d912217a6",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_47"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5021",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5021,
+      "digest": "a0a2454ba9ba7b304399b93f1c6645eb4ea374ba7a8b485f4a717a04e0f1d601",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_28"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5050",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5050,
+      "digest": "a3aa6af5c1119e2efd8ce09db151ff90bdf2edfeae81cc6f1813fd1230a535e5",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_55"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5079",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5079,
+      "digest": "a5215471e9da158e27517f36366e3d60a2eb165e83bc37ae2b5f5de66b31aff5",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_6"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5108",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5108,
+      "digest": "ab9bcec8f0d618c64b8efc3ca05bc093cee838f97f6cd9b34bacf0f6e6e8e67e",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_27"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5137",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5137,
+      "digest": "abc55eefab2deb086f70b3920d2155de4eba8bdb88ecf953bb78e6dfc1fda9c6",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_92"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5166",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5166,
+      "digest": "acb7ea8b6d266f06a09f785b5bcb4bddf3c63326a7934b00e00d9d9fe220ca43",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_82"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5195",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5195,
+      "digest": "ae63e3a2545a975ffc65842ed7882f1fcdaa5c828d727c34a56e49fd447f12cc",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_33"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5224",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5224,
+      "digest": "af86a7bf1202c24ef96de466f6e2aa007c71fdf8877bc39ddf9f5d8d4ec20c31",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_22"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5253",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5253,
+      "digest": "b046979648e9a213ecf9d15a914915ec25e05a709f9693df8cbe099cb9232b58",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_13"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5282",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5282,
+      "digest": "b278e93bf379e5eaa32129c3b30248db872f61faf2d4e5074ea2deb4c6f9f778",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_32"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5311",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5311,
+      "digest": "b5aa4357e79fff5af792233fbc4d2800917cae422cec4458ac4161aac29fffe7",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_56"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5340",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5340,
+      "digest": "b8e0bd80877ecd567e3458c086a87d0f169ce32272860053dd95ca50e2584afa",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_30"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5369",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5369,
+      "digest": "bb9a85f22b3714f16bb2c31923262bcbe467656d1e0bca048a0c245d4e4f5b3c",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_1"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5398",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5398,
+      "digest": "c048c3fbc71cff4ef79211bcf58167291c44efe633e91b2f89f2dfec0b87c3a0",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_71"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5427",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5427,
+      "digest": "c5715ec063913be92271fbeaccb9ea3b875b0c589b6ba7e22ba5fa3d7150c464",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_41"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5456",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5456,
+      "digest": "c5caf82df244ac8f2ccdb699912f0035ea8d414a5ee917d8fae8e2f78c3e2969",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_0"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5485",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5485,
+      "digest": "c6d197d42e16153c20b109824965038f82e45e42699a2a39d0484f21e4bb4ecd",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_9"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5514",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5514,
+      "digest": "cdcde6c9a68c1fcc01544a3351429b6ee757bc29a5fc758a48aa96f83b98f367",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_50"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5543",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5543,
+      "digest": "cdd0663f55e87d3dce8f0215dda6bd393514349a78bfdc7ad4a6e8ad8502d3e7",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_100"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5572",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5572,
+      "digest": "d111a9371d9b496bb0db674ed0b1292542b9135ef000e310c46469326114894d",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_91"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5601",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5601,
+      "digest": "d254020ecab483483e0e55d0ce54abbc23546d64b69aba21fb4a3e7ee66a8771",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_99"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5630",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5630,
+      "digest": "d25df1c8c5897cec7c8553618b167e23866269c01190b67ce76b7f7ac592350b",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_49"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5659",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5659,
+      "digest": "d269987c2bcb15f23fd3f26d94820d916a204bd17bd463143fd5eb3918cf0472",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_88"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5688",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5688,
+      "digest": "d4213a3698b30c597ec781a65b3370cf98a8b64b62aeedb9371c1941fb3f22ca",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_37"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5717",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5717,
+      "digest": "d6cf5b3f65bd85abc3687c16cb5207d177c1663e61f2573ed65a17d27bb52a73",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_21"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5746",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5746,
+      "digest": "d9e4170f9f4b97c6181fd2e97dffc3f23ebbb3fd9a152a4d5cf7a8e570acca70",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_101"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5775",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5775,
+      "digest": "daab76e5464b675feeaf850ab3dc3e0c0bda21301e70d6310fb0f85736271b7f",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_89"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5804",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5804,
+      "digest": "e46af9d50e871daf176be94b0f77c13b861a73a6f237f7c622fdbccd31863062",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_38"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5833",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5833,
+      "digest": "e62b626bb9d2159d272caf196a46ecfc226a72a6afb2c3d6068c50c2928243ae",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_59"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5862",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5862,
+      "digest": "e6a6896890bcee3e2bf32d4c17c235d7db59f6c48afcb3721007b63e312fe667",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_96"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5891",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5891,
+      "digest": "e751a8da7aa5cd1e957e8f5a2c0d49cbc7c458764afe0f7c805a96274eb9b042",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_68"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5920",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5920,
+      "digest": "ea16de51ce19095019336a3d6ae721ad6ace6110ca55cb16b6178a79fe1f4e6c",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_97"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5949",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5949,
+      "digest": "ea4ec9d937dc9b142040c5162b3445948bc855b6666955f4922d6982f10cf786",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_57"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:5978",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 5978,
+      "digest": "ee213ce0870969ae789dc799c0f01af73c4cc80bf3012d625f7567cb723899bc",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_61"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:6007",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 6007,
+      "digest": "f3050c337f8df4a461f4c1adbbbe117da2245823be296f8e986cd9e4455b5a75",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_31"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json:generic-api-key:6036",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/final_dataset_support_audit.json",
+      "line": 6036,
+      "digest": "f588c6ec7e2a748fb6c4e432380623fd153dc5eb74569aff1bcd6f0388da8345",
+      "provenance": [
+        "Recomputed frozen ranking tie SHA256 of 38302:lcbhard_80"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/raw_snapshot_source_coverage_review_20260908T104431Z.json:generic-api-key:3158",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/raw_snapshot_source_coverage_review_20260908T104431Z.json",
+      "line": 3158,
+      "digest": "ab44d64f5ea2cedadad5ed3c143f3ff988aedf6a5053007d736019ca2ea95c9a",
+      "provenance": [
+        "Recomputed sorted actual capture identity tuples JSON SHA256 sort_keys=False,compact=True",
+        "Recomputed sorted actual capture identity tuples JSON SHA256 sort_keys=True,compact=True"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/raw_snapshot_source_coverage_review_20260908T104431Z.json:generic-api-key:3167",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/raw_snapshot_source_coverage_review_20260908T104431Z.json",
+      "line": 3167,
+      "digest": "5f23829110cf8efa73e8d12b1ce02068356c07ea62e7d5c4f7c3a8c41a358e20",
+      "provenance": [
+        "Recomputed sorted actual fresh_B identity tuples JSON SHA256 sort_keys=False,compact=True",
+        "Recomputed sorted actual fresh_B identity tuples JSON SHA256 sort_keys=True,compact=True"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/raw_snapshot_source_coverage_review_20260908T104431Z.json:generic-api-key:3176",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/raw_snapshot_source_coverage_review_20260908T104431Z.json",
+      "line": 3176,
+      "digest": "f7b103595e19a85250d64168d5331aa4926167c4c65580255b2e93a807b20d24",
+      "provenance": [
+        "Recomputed sorted actual screen_B identity tuples JSON SHA256 sort_keys=False,compact=True",
+        "Recomputed sorted actual screen_B identity tuples JSON SHA256 sort_keys=True,compact=True"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/reconcile_20260908T104819Z.log.txt:generic-api-key:1920",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/reconcile_20260908T104819Z.log.txt",
+      "line": 1920,
+      "digest": "1f5815e4da6b7a978914c4c551108a8520b8bae624a9e24b63e8989611a08b1a",
+      "provenance": [
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/run/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/pod/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/pod/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/run/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/run/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/pod/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json:/pod_files/fresh_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json:/validated_input_sha256//home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/prefix_tokens.json",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/prefix_tokens.json:actual_file_sha256"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/reconcile_20260908T104819Z.log.txt:generic-api-key:1938",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/reconcile_20260908T104819Z.log.txt",
+      "line": 1938,
+      "digest": "46f1416762e3cf4292193c677e2d0f79e4e9bbc912ca0454e8536ebc1cbd46b2",
+      "provenance": [
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/run/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/run/setup/context_capacity_failed_request_token_ids.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/run/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/run/setup/context_capacity_failed_request_token_ids.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/run/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/run/setup/context_capacity_failed_request_token_ids.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json:/validated_input_sha256//home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json:actual_file_sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/context_capacity_failed_request_token_ids.json:actual_file_sha256"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/reconcile_20260908T104819Z.log.txt:generic-api-key:1940",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/reconcile_20260908T104819Z.log.txt",
+      "line": 1940,
+      "digest": "bff7b13fc56e8cdc6bafd2a2bae0eebb221e264ae34740bf9385ded75609b90b",
+      "provenance": [
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/run/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/run/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/run/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json:/validated_input_sha256//home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json:actual_file_sha256"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/reconcile_20260908T104819Z.log.txt:generic-api-key:1942",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/reconcile_20260908T104819Z.log.txt",
+      "line": 1942,
+      "digest": "e9adabf9aaed64d457b1a50dec8de00389008099bda70496f4e3f7023128471b",
+      "provenance": [
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/run/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/run/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/run/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json:/validated_input_sha256//home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json:actual_file_sha256"
+      ]
+    },
+    {
+      "fingerprint": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/reconcile_20260908T104819Z.log.txt:generic-api-key:1954",
+      "file": "eval_results/issue_2670/highrate/raw_milestone_20260908/run/setup/reconcile_20260908T104819Z.log.txt",
+      "line": 1954,
+      "digest": "41ab2172450156ac8adb5242e4837b2c566c927b6fdf01f27d8f8312b3c86aa3",
+      "provenance": [
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z/snapshot_manifest.json:/files/run/screen_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json:/files/context_risk/issue2670_highrate/raw/run/screen_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json:/original_files/run/screen_B/prefix_tokens.json/sha256",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json:/validated_input_sha256//home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/prefix_tokens.json",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/prefix_tokens.json:actual_file_sha256"
+      ]
+    }
+  ]
+}

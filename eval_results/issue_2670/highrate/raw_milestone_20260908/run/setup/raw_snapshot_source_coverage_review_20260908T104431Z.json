@@ -1,0 +1,3373 @@
+{
+  "ZIP_native_reader_repeated": false,
+  "ZIP_sidecars": [
+    {
+      "review_sha256": "c84007cbae30b351ef51ab7fd98e687fe6c58d839b02ee6f1f6dd54cee7a791a",
+      "sidecar_sha256": "5499b327f22c09e927936e7954e605ba8474d6c4f880926c0f5d476816165fa0",
+      "snapshot_key": "run/setup/review_snapshots/fresh_launch_started_9_samples_20260908T070736Z.zip"
+    },
+    {
+      "review_sha256": "b2c3cad59aedc63a4730172924b95afd281b3446e1bb4e70b6827d8f9388e627",
+      "sidecar_sha256": "9667363ad5ef40fdbf96aa7c6f00823ae20088c0ab0a13c91f0af32e6a38f6a1",
+      "snapshot_key": "run/setup/review_snapshots/fresh_started_148_samples_20260908T080730Z.zip"
+    },
+    {
+      "review_sha256": "69d782e9998e05faae6ff50d66d814f0a09e49a136d1cc8c177efcdef3c53656",
+      "sidecar_sha256": "1de7f4448b708211416baa914e53afc49f1ba55226776ffc43f34eeba29fa321",
+      "snapshot_key": "run/setup/review_snapshots/fresh_started_228_samples_20260908T084629Z.zip"
+    },
+    {
+      "review_sha256": "4fb7e4ae810c0b738a5f03a1961bac8b9886da8fa39ea57efe8baf272895bc83",
+      "sidecar_sha256": "8c69bf14320d0d2532509dbe7be9b4613bbdf33fef7c26f0fc7689d9a1af3855",
+      "snapshot_key": "run/setup/review_snapshots/fresh_started_312_samples_20260908T092620Z.zip"
+    },
+    {
+      "review_sha256": "8ac05a4cf7c120bff337d73fce802ddea3fb0dd15bbdc33b5989e9829cd502cc",
+      "sidecar_sha256": "a1b8e7b54f5303ef93cc7265ec63ca4a4bf4b0ef825f545a9846f906f9569438",
+      "snapshot_key": "run/setup/review_snapshots/fresh_started_70_samples_20260908T073540Z.zip"
+    },
+    {
+      "review_sha256": "98d5696ae852ba32e7d4f944f4e44f497c368cc070b5475fa8a8d2ee0d2c157b",
+      "sidecar_sha256": "935c1ac627602b9b20cca183a00be016f056553575c7903000585b94900281ce",
+      "snapshot_key": "run/setup/review_snapshots/fresh_transport_started_191_samples_20260908T082604Z.zip"
+    },
+    {
+      "review_sha256": "6319ec176c5af992e163cbd4bb1f7e957267e5bb7e7f6328eb7178320214a83a",
+      "sidecar_sha256": "90ce916f5273c580d78602aa4b55d00e8634e7e52cb9ff75392ca319e0dc01b7",
+      "snapshot_key": "run/setup/review_snapshots/screen_started_137_samples_20260908T013048Z.zip"
+    },
+    {
+      "review_sha256": "68e89508e1903b4532a5e34abefceb481f63ea097ca22f2738c5be43892734d6",
+      "sidecar_sha256": "b0fecbc80dbbccede0a19f8a68482a86eaaf23b179ccbeb80f463ba1a89eeef7",
+      "snapshot_key": "run/setup/review_snapshots/screen_started_223_samples_20260908T020849Z.zip"
+    },
+    {
+      "review_sha256": "43bc6aa30d7051c8555bdda7a142eafbe21524c4314163814c9457eabedf3131",
+      "sidecar_sha256": "9c9540e2f9af4461db549ff35ce13709774b7ec771b7420cca67c0238ad5761a",
+      "snapshot_key": "run/setup/review_snapshots/screen_started_306_samples_20260908T030713Z.zip"
+    },
+    {
+      "review_sha256": "46725b91c456dfc21534628089ffdeb74fcb9537680e5178daa2571a4f269777",
+      "sidecar_sha256": "e2c21a5b836ded32f28d9d020dc970430a21eda17ca4c6a0700056b85b42edec",
+      "snapshot_key": "run/setup/review_snapshots/screen_started_376_samples_20260908T034825Z.zip"
+    },
+    {
+      "review_sha256": "d321aee34a3f4c1284263cd0e12c5a5e01f969f0427bdd41be4920f62eb1f2b2",
+      "sidecar_sha256": "81d7212af438fe4dd700f23324d0d5bee25687eff09975aa07b2db4fd91e1700",
+      "snapshot_key": "run/setup/review_snapshots/screen_started_461_samples_20260908T042704Z.zip"
+    },
+    {
+      "review_sha256": "99aeae29b4401ec46eab6521e2840f99af5173161a25fdfd4122749df8cafda3",
+      "sidecar_sha256": "668db8f9b9abfae46c2d9eee46c97fefef2e89ec182a977899fd6887d1eaa3ce",
+      "snapshot_key": "run/setup/review_snapshots/screen_started_541_samples_20260908T051858Z.zip"
+    },
+    {
+      "review_sha256": "7964603ad0b308fa702c5837ae7ab5d9b767bcd2dc635c062e3a93aea0f2d942",
+      "sidecar_sha256": "28e22469533c868143c5359dc870c48872ac976e8cd8466d51755e2adf063ef9",
+      "snapshot_key": "run/setup/review_snapshots/screen_started_588_samples_20260908T054412Z.zip"
+    },
+    {
+      "review_sha256": "854207bdb93dd39e06b9b34ec8a0a37c415b5063b9c171f4a892a468f70d0aee",
+      "sidecar_sha256": "52c49d6671d7a6973084a1b50b3bc66837c377de744991ea4ededdba51d12753",
+      "snapshot_key": "run/setup/review_snapshots/screen_started_617_samples_20260908T063839Z.zip"
+    }
+  ],
+  "actual_reconcile_bridge_invoked_on_local_snapshot": true,
+  "all102_recommended_external_entries_exactly_present": true,
+  "all624_original_and_snapshot_hashes_checked": true,
+  "capture_review": {
+    "complete_current_input_and_payload_binding": true,
+    "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/production_capture_capture_20260908T101513Z_independent_review.json",
+    "sha256": "e1145582bb656127a4ea9f1f773225b3a81616589a37696117e2d8ad15a64fe0"
+  },
+  "completed_utc": "2026-09-08T10:45:37.798263+00:00",
+  "current_explicit_review_bindings": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/analysis_transport_code_review.json": {
+      "closure": "analysis",
+      "sha256": "06b6ad922023db43e89ed3e550f4ae345383c090b8b9412b867a1940b0347b28",
+      "source_count": 41
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/archive_review_snapshots_code_review.json": {
+      "closure": "archive",
+      "sha256": "99d3713729a116745c026eb6ebac18831436a04ec434be7b3509529c86bb9f55",
+      "source_count": 5
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/capture_memory_transport_code_review.json": {
+      "closure": "capture",
+      "sha256": "c04f70ceffc0c64e970cf6dcaa81de474ce639133677e60027bf82aece0d2be9",
+      "source_count": 32
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/capture_transport_code_review.json": {
+      "closure": "capture",
+      "sha256": "952e4a00ff83fcfbb429554711c60369fc40c1070faf6fb992cb3254c9198d0d",
+      "source_count": 32
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/postrun_code_review.json": {
+      "closure": "v8_postrun",
+      "sha256": "f730cd6aa7673b43310b7b50f6c24c2c1570f97b40d36ae64058d2a885922e13",
+      "source_count": 17
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/reconciliation_transport_code_review.json": {
+      "closure": "reconciliation",
+      "sha256": "acf1fb770f8bd4a40a4a91deabd29545d19b0a744a111b8b3b32a6782273de4c",
+      "source_count": 40
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/transport_postrun_code_review.json": {
+      "closure": "transport",
+      "sha256": "3e77c7c69f1b7da8d58f963828621c307a39c38291eae0c45af87b7ccd448e66",
+      "source_count": 20
+    }
+  },
+  "downstream_original_source_bindings": {
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/configs/eval/context_risk_followup_capture.yaml": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "external_mapping"
+      ],
+      "sha256": "cdbc76b49d639a61d349becf984aafd30ff5372ea88f6e92f89f2cac4cc25285",
+      "snapshot_keys": [
+        "code/configs/eval/context_risk_followup_capture.yaml"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/configs/eval/context_risk_highrate.yaml": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "current_physical_collection_source",
+        "current_v8_postrun_source",
+        "external_mapping"
+      ],
+      "sha256": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+      "snapshot_keys": [
+        "code/configs/eval/context_risk_highrate.yaml"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/configs/eval/context_risk_highrate_analyze.yaml": {
+      "reasons": [
+        "current_analysis_source",
+        "external_mapping"
+      ],
+      "sha256": "6ec33c994d584bdfa87646bd750d56df4383bbd87be00b469d15b1fb8d4ef5af",
+      "snapshot_keys": [
+        "code/configs/eval/context_risk_highrate_analyze.yaml"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/configs/eval/context_risk_highrate_capture.yaml": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "external_mapping"
+      ],
+      "sha256": "7140a2fcc3e1ed38e4127a1c65d8dbb8ec3b40034713cffca8d15be177e80eec",
+      "snapshot_keys": [
+        "code/configs/eval/context_risk_highrate_capture.yaml"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/configs/eval/context_risk_qwen38_fit_map.yaml": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "c2726ab0f6e9396ea981ff80e2cfded49897316c129b155d0424f589d38ef383",
+      "snapshot_keys": [
+        "code/configs/eval/context_risk_qwen38_fit_map.yaml"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/configs/eval/context_risk_qwen38_impossible_capture.yaml": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "external_mapping"
+      ],
+      "sha256": "7018d151ebf4534ad3ecfa4d88cb48c12b847e98bba46dce2e1ba3e8b0dc53aa",
+      "snapshot_keys": [
+        "code/configs/eval/context_risk_qwen38_impossible_capture.yaml"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/configs/eval/context_risk_qwen38_smoke.yaml": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "external_mapping"
+      ],
+      "sha256": "d5ad816cb64e7da10d7e22bf79e4525e7d04f6d9df4808e678fd9d4cb9f5f352",
+      "snapshot_keys": [
+        "code/configs/eval/context_risk_qwen38_smoke.yaml"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/context_risk_highrate_collect.log": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "snapshot_keys": [
+        "external/vm_worktree/context_risk_highrate_collect.log"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/analysis_code_review.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "fae82e64ff79b11255ad9a3c9f927870739c9e1095564321e64dce34bf4fb485",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/analysis_code_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/analysis_code_review.md": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "b7133f2304a19c873d05b3aaee2332109ec469712508a1e25c6a6503cef0a199",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/analysis_code_review.md"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/analysis_input_validity_code_review.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "4eafa71c6ce8553ff8b790f241eefb2ec4661479ec91c3803cca390cb1e08b20",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/analysis_input_validity_code_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/analysis_input_validity_code_review.md": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "599f85a5d844be2bc7a8d1f1133fba84e96485cfa61a0ed49be6dbd0e7eda93f",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/analysis_input_validity_code_review.md"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/analysis_spec.json": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "current_physical_collection_source",
+        "current_v8_postrun_source",
+        "external_mapping"
+      ],
+      "sha256": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/analysis_spec.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/capture_code_review.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "8b2b21944bc7a73416568924dfd75cb83f13e7bac0848eb409fef56879e34750",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/capture_code_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/capture_code_review.md": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "76a25467ed1aab5b0469762659ada63c04806b5e16b11ce2384624f9d51b36cc",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/capture_code_review.md"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/code_review.json": {
+      "reasons": [
+        "relative_launch_review",
+        "screen_original_artifacts_sha256",
+        "fresh_original_artifacts_sha256",
+        "external_mapping"
+      ],
+      "sha256": "a9d6ff46e1e839c817a6485f14fdabe459cf1bd9c38f6247919bfbbd81a35c8b",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/code_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/code_review.md": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "0eb2259c9b0a994bc10d799c93c2a7d1c71ee7cce986f8806a78ab503066281a",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/code_review.md"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/design_initial_review.md": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "7a9bdc1aa1418de3338a0f5fc32a05861392c002f25b8241441d7c89fc9ba493",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/design_initial_review.md"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/factcheck_consistency.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "aa21247dc5470e694d23a9314744dd67e3f4cd9bc571ff830e49c5759a1416a2",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/factcheck_consistency.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/factcheck_consistency.md": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "9ba78e2b6f51d1d9e7b7776f6e0171e2e2445b24eeeb0adcb12abdbda89da7c3",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/factcheck_consistency.md"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/inherited_followup_code_review.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "64d7333692ce3c1c542cea5f6d0401280cdce5a1b81a2a561852720fa853764f",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/inherited_followup_code_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/inherited_runtime_sources.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "434aa91ecb25d6118330bf2facffebdeb9c196c1d879b8bca26d506634154117",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/inherited_runtime_sources.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/inherited_v20_server_review.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "4c0545c6e4d7d9c5489c844b3ae10ce7d3c86635973e9286d3a61ca510765131",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/inherited_v20_server_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/input_validity_plan_review.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "45f675016f0df7a7bbac86ba7f0cde67158fc233197d873796efc0d811edae6d",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/input_validity_plan_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/input_validity_plan_review.md": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "a1e374267c37f5d94b03f74688d1e0030e66d06538b8c2d833cf1e5de585cdf4",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/input_validity_plan_review.md"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/input_validity_policy.json": {
+      "reasons": [
+        "current_analysis_source",
+        "external_mapping"
+      ],
+      "sha256": "3dbd742508065512d6d1d8619afead1e3ef321ff5b454785c7f45e8e8a558f30",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/input_validity_policy.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/map_reuse_review.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "234055bf34f371163569ee7416fb211b34a49f3163f61762e9b19d8c7ab57c8d",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/map_reuse_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/model_files.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "8170138b261d3a8585ab2afc3ba5801687de4022a9e2420682d3b772deed3907",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/model_files.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/plan.md": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "current_physical_collection_source",
+        "current_v8_postrun_source",
+        "external_mapping"
+      ],
+      "sha256": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/plan.md"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/plan_review.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "3886156ce4662e06414d73ca0043dc23e6ddf10cf9b1a86e660ac1baf4cb91b3",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/plan_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/plan_review.md": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "d34899e4bf5a779236132850dd36376656c7c3389e0e41c6123611f2888ac630",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/plan_review.md"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/plan_v7_input_validity.md": {
+      "reasons": [
+        "current_analysis_source",
+        "external_mapping"
+      ],
+      "sha256": "fab7b675089a58dea7c8376e3041eb35cd6f8812c276c3af52abee7ad256baf7",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/plan_v7_input_validity.md"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "current_v8_postrun_source",
+        "external_mapping"
+      ],
+      "sha256": "e743d726fde20defa03cffe2808b5d7bd7c0100db8911c161dc41d33529d2355",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "external_mapping"
+      ],
+      "sha256": "5935dd7792e3a86b9ffc96d57b9826a63e8496a6590a517df6a6340acbb57ad3",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/findings.md": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "b9ce9f612cadacce1938aa2a2057507cdcea3d761d3bccdc673582ad43f2dda5",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/findings.md"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-alignmentresearch-tree.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "51d4f0e8fe13af7cfdef367ca7090775c691eedc4375e5a5547eac6fab5f2d18",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-alignmentresearch-tree.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-dataset-readme.md": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "2edbdda60b0c5ae4cfd605ff43de1983f1152fce3967d21c91fb189a02d9d7b3",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-dataset-readme.md"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-easy-github-tree.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "d554584ccdcb0f17168a9d96ec2fa1e4f3921ab32e558e046d3c3e7adbc733e5",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-easy-github-tree.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-easy-tree.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "83cb4ed6e6d1f4cdacdbc73483ae327895e58e63305186f6a464534c32d548f2",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-easy-tree.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-forks.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "26ea4af66cd5faca3ff49e36459f277a67e662e2dcda2ba88876f6dc26e5da12",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-forks.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-github-issues.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "dec0a11b3ae2e9de0ceac774bd222bb1366f97e10af4e86c03b8aa3e9ada8903",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-github-issues.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-github-releases.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "2ba33ca0557f1bb5b7ba88d67f9d0093c7185a36ec51fe2b7bd9372d3e001d6d",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-github-releases.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-github-tree.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "ad079611ff552e61790561171af545c931dd5adaa9a73436cdd0be8ca3ed03b5",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-github-tree.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-author.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "6f1c26595ccb5ce932f2efef10e6cfd9a8dbb74f7a390d8b710bd09295101cce",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-author.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-hodoscope-tree.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "d9f23d64d01ec0dbd20ebf0c609861f17c3141d68f7d507f8278941129eff4ce",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-hodoscope-tree.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-pando.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "f341fde9b574e5b399e06d8ae75f415781b55142262fb5d59eb4851a1896cc90",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-pando.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-search.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "48ec8ff10f77fa8a8dfa57c22a7ab32f910c0470e172436811bdc16d0e457cc1",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-search.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-tree.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "a2dc1c5cb0fed0f500bc265441a07906dacecba40b4ce7a0f53c40c0de3574e9",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hf-tree.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hodoscope-impossible-tree.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "af05dff226fa2728755cd0e809d9f9663bb3eba0a0dd6312009d9a089665f5f8",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hodoscope-impossible-tree.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hodoscope-root.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "6e357b172b01a6b6d11ac5c255948030a600249294fec35019ddcfd566128dbe",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hodoscope-root.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hodoscope-supervised-tree.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "18afb6bba1c868f2e80bc8ed6f1b6fc532f220322018014d1652a07172b59995",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-hodoscope-supervised-tree.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-pando-readme.md": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "90848ec323df87242c7ad1dbceb074cbbccc60008061a20e58e9f3b00a366736",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-pando-readme.md"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-web-results.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "11f0090655dc161a058d5b8678c594d62fb9f6cadc9f17c27f6653f455854791",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-web-results.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-web.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "a222f22b7c453aada38348e30b28073068d4ed49314228681ba90c967300890c",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/published_source_search/issue2670-task-ranking-web.json"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_highrate_design/workflow_lint.log": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "ecb7547b5f4afa606c9e15bf0a2126d5a341c56f7ed1c76799e13491cd2b7aa9",
+      "snapshot_keys": [
+        "code/eval_results/context_risk_highrate_design/workflow_lint.log"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_analyze.py": {
+      "reasons": [
+        "current_analysis_source",
+        "external_mapping"
+      ],
+      "sha256": "05e7d2fcac63e442cfb7b2b99df244c33340070e8326edaebb16361661025010",
+      "snapshot_keys": [
+        "code/scripts/context_risk_analyze.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_corrected_finish.py": {
+      "reasons": [
+        "current_reconciliation_source",
+        "current_archive_source",
+        "external_mapping"
+      ],
+      "sha256": "8aeaddec362b9bbf277c707b7532d17948811f1bdf09b9c0a45f598c7eca466e",
+      "snapshot_keys": [
+        "code/scripts/context_risk_corrected_finish.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_followup.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "current_physical_collection_source",
+        "current_v8_postrun_source",
+        "external_mapping"
+      ],
+      "sha256": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+      "snapshot_keys": [
+        "code/scripts/context_risk_followup.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_followup_analyze.py": {
+      "reasons": [
+        "current_analysis_source",
+        "external_mapping"
+      ],
+      "sha256": "b00ba257966beaa6ae75f37ec35e4579ec8429a118b2db370c16e3f3d6c38b38",
+      "snapshot_keys": [
+        "code/scripts/context_risk_followup_analyze.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_followup_capture.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "external_mapping"
+      ],
+      "sha256": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
+      "snapshot_keys": [
+        "code/scripts/context_risk_followup_capture.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_followup_census.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "current_physical_collection_source",
+        "current_v8_postrun_source",
+        "external_mapping"
+      ],
+      "sha256": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+      "snapshot_keys": [
+        "code/scripts/context_risk_followup_census.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_followup_features.py": {
+      "reasons": [
+        "current_analysis_source",
+        "external_mapping"
+      ],
+      "sha256": "3258ddf56332e99c90c14808b83206670b7693e9b2e6bbf82f6d116e6cfdd7d4",
+      "snapshot_keys": [
+        "code/scripts/context_risk_followup_features.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_followup_probe_core.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "current_physical_collection_source",
+        "current_v8_postrun_source",
+        "external_mapping"
+      ],
+      "sha256": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+      "snapshot_keys": [
+        "code/scripts/context_risk_followup_probe_core.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_analyze.py": {
+      "reasons": [
+        "current_analysis_source",
+        "external_mapping"
+      ],
+      "sha256": "2e1613a072a12348171868cd06022766874877fe6ddac64a919df8c8d7790a7c",
+      "snapshot_keys": [
+        "code/scripts/context_risk_highrate_analyze.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_archive.py": {
+      "reasons": [
+        "current_reconciliation_source",
+        "current_archive_source",
+        "external_mapping"
+      ],
+      "sha256": "b7f712557a5b537021fc5324a3f4f945c0e1a89c06da3404166c81b44401205b",
+      "snapshot_keys": [
+        "code/scripts/context_risk_highrate_archive.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_capacity.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "current_v8_postrun_source",
+        "external_mapping"
+      ],
+      "sha256": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+      "snapshot_keys": [
+        "code/scripts/context_risk_highrate_capacity.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_capture.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "external_mapping"
+      ],
+      "sha256": "5f1bc50e1b6b6bf07a5f8d1db588ccfb0aecd2ef2131fa5e08aad6cb7d9aea42",
+      "snapshot_keys": [
+        "code/scripts/context_risk_highrate_capture.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_collect.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "current_physical_collection_source",
+        "current_v8_postrun_source",
+        "external_mapping"
+      ],
+      "sha256": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+      "snapshot_keys": [
+        "code/scripts/context_risk_highrate_collect.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_design.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "current_physical_collection_source",
+        "current_v8_postrun_source",
+        "external_mapping"
+      ],
+      "sha256": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+      "snapshot_keys": [
+        "code/scripts/context_risk_highrate_design.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_postrun.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "current_v8_postrun_source",
+        "external_mapping"
+      ],
+      "sha256": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+      "snapshot_keys": [
+        "code/scripts/context_risk_highrate_postrun.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_reconcile.py": {
+      "reasons": [
+        "current_reconciliation_source",
+        "external_mapping"
+      ],
+      "sha256": "210562eff0a67f5a38e120282e94978595c1e73f35744f557719fc3ba313681c",
+      "snapshot_keys": [
+        "code/scripts/context_risk_highrate_reconcile.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_supervise.sh": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "current_physical_collection_source",
+        "current_v8_postrun_source",
+        "external_mapping"
+      ],
+      "sha256": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+      "snapshot_keys": [
+        "code/scripts/context_risk_highrate_supervise.sh"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_transport.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "external_mapping"
+      ],
+      "sha256": "a802793e7e0d78831f3b9518d828e8410eef6df9ffc0be5e4aceedb73f6ee97c",
+      "snapshot_keys": [
+        "code/scripts/context_risk_highrate_transport.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_validity.py": {
+      "reasons": [
+        "current_analysis_source",
+        "external_mapping"
+      ],
+      "sha256": "54db7bbf654d35ce93e8e1c241ad909a086b308bf2811a1804d68435f9418d8d",
+      "snapshot_keys": [
+        "code/scripts/context_risk_highrate_validity.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_impossiblebench.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "current_physical_collection_source",
+        "current_v8_postrun_source",
+        "external_mapping"
+      ],
+      "sha256": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+      "snapshot_keys": [
+        "code/scripts/context_risk_impossiblebench.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_impossiblebench_harness.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "current_physical_collection_source",
+        "current_v8_postrun_source",
+        "external_mapping"
+      ],
+      "sha256": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+      "snapshot_keys": [
+        "code/scripts/context_risk_impossiblebench_harness.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_impossiblebench_inspect.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "current_physical_collection_source",
+        "current_v8_postrun_source",
+        "external_mapping"
+      ],
+      "sha256": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+      "snapshot_keys": [
+        "code/scripts/context_risk_impossiblebench_inspect.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_prepare_data.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "external_mapping"
+      ],
+      "sha256": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
+      "snapshot_keys": [
+        "code/scripts/context_risk_prepare_data.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_qwen38_capture.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "external_mapping"
+      ],
+      "sha256": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+      "snapshot_keys": [
+        "code/scripts/context_risk_qwen38_capture.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_qwen38_fit_map.py": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "3f34b37aa96d4b7c960755296488b2448910cce82354bdffb4572c31ea1c95ae",
+      "snapshot_keys": [
+        "code/scripts/context_risk_qwen38_fit_map.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_qwen38_impossible_capture.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "external_mapping"
+      ],
+      "sha256": "d7f6aec322ce89249a6829b3298f7753cf8a33b9e7505bc7850b8c408a39122b",
+      "snapshot_keys": [
+        "code/scripts/context_risk_qwen38_impossible_capture.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_qwen38_smoke.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "external_mapping"
+      ],
+      "sha256": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+      "snapshot_keys": [
+        "code/scripts/context_risk_qwen38_smoke.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue2054_phase_a.py": {
+      "reasons": [
+        "current_reconciliation_source",
+        "current_archive_source",
+        "external_mapping"
+      ],
+      "sha256": "69573ff5fc81ad398f35ccf9e656d5fceb7e2696e4b6b35a1db80a166ceb7016",
+      "snapshot_keys": [
+        "code/scripts/issue2054_phase_a.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/pod.py": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "ccbff0eb1e95de5cd45ad678c3eb109ad45b888badf04dd1db9c51be663a282c",
+      "snapshot_keys": [
+        "code/scripts/pod.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/pod_lifecycle.py": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "4ffab8ffe5ad8081795dfc48ce2d8aa8be7065737da3b7ca6937982d465ce066",
+      "snapshot_keys": [
+        "code/scripts/pod_lifecycle.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/task.py": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "5cccbd21078a13399eafcfd41f1f424ae122230fcdaee192f60ab1ed664ee50d",
+      "snapshot_keys": [
+        "code/scripts/task.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/verify_uploads.py": {
+      "reasons": [
+        "current_reconciliation_source",
+        "external_mapping"
+      ],
+      "sha256": "3991c7f464602766d26b5c38b2b42905e92b7f40e918cb72776b59b7e3d34ee9",
+      "snapshot_keys": [
+        "code/scripts/verify_uploads.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/src/explore_persona_space/analysis/extraction.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "external_mapping"
+      ],
+      "sha256": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79",
+      "snapshot_keys": [
+        "code/src/explore_persona_space/analysis/extraction.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/src/explore_persona_space/atomic_io.py": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "901afca6f7b89626ab228237e40162fc9af9b98472d9d0fd70485b3c9c428350",
+      "snapshot_keys": [
+        "code/src/explore_persona_space/atomic_io.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/src/explore_persona_space/orchestrate/env.py": {
+      "reasons": [
+        "current_reconciliation_source",
+        "current_archive_source",
+        "external_mapping"
+      ],
+      "sha256": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759",
+      "snapshot_keys": [
+        "code/src/explore_persona_space/orchestrate/env.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/src/explore_persona_space/orchestrate/hub.py": {
+      "reasons": [
+        "current_reconciliation_source",
+        "current_archive_source",
+        "external_mapping"
+      ],
+      "sha256": "6590d4c01d396f935da018d16673e3d21f93843126b5e12a42be8e6e0419351e",
+      "snapshot_keys": [
+        "code/src/explore_persona_space/orchestrate/hub.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/tests/test_context_risk_highrate_analyze.py": {
+      "reasons": [
+        "current_analysis_source",
+        "external_mapping"
+      ],
+      "sha256": "f912c9d63f64420dfa7d308ce8312cd3a0c0458d2dcda013c4e322a7c8a7b277",
+      "snapshot_keys": [
+        "code/tests/test_context_risk_highrate_analyze.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/tests/test_context_risk_highrate_capture.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "external_mapping"
+      ],
+      "sha256": "5d7187a5c3f1897d130ac65167320ab65acae569d30a2e4e1d905f1448d3b5d6",
+      "snapshot_keys": [
+        "code/tests/test_context_risk_highrate_capture.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/tests/test_context_risk_highrate_collect.py": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "4c1a8292ae55aa8d6bb19ece5983c4d4d0aab428bc2f5484456c0b88f63903cd",
+      "snapshot_keys": [
+        "code/tests/test_context_risk_highrate_collect.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/tests/test_context_risk_highrate_design.py": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "cdfa14a8850ae2c5aa84f83f1a818e638712ccdb76e77c1894f15a5109a227ec",
+      "snapshot_keys": [
+        "code/tests/test_context_risk_highrate_design.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/tests/test_context_risk_highrate_postrun.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "current_v8_postrun_source",
+        "external_mapping"
+      ],
+      "sha256": "f653400a60e77a81d839715dc4ab0bce3c8f1454ae0cff551fcd1367a066cb80",
+      "snapshot_keys": [
+        "code/tests/test_context_risk_highrate_postrun.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/tests/test_context_risk_highrate_postrun_integration.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "current_v8_postrun_source",
+        "external_mapping"
+      ],
+      "sha256": "199ae6a3b2ef230e9e37fe9ecc8647b717686d266f89798b3a642af3482d6657",
+      "snapshot_keys": [
+        "code/tests/test_context_risk_highrate_postrun_integration.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/tests/test_context_risk_highrate_reconcile.py": {
+      "reasons": [
+        "current_reconciliation_source",
+        "external_mapping"
+      ],
+      "sha256": "6fe645d5936557847a3c49acaa075f6d915b3b07017f6eafc9c26c3ddc4c553b",
+      "snapshot_keys": [
+        "code/tests/test_context_risk_highrate_reconcile.py"
+      ]
+    },
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/tests/test_context_risk_highrate_transport.py": {
+      "reasons": [
+        "current_capture_source",
+        "current_analysis_source",
+        "current_reconciliation_source",
+        "current_transport_source",
+        "external_mapping"
+      ],
+      "sha256": "cb65dc7d3027aa56dae639ed1d198fd5d57b26b893b70802c55ac10440e9acbe",
+      "snapshot_keys": [
+        "code/tests/test_context_risk_highrate_transport.py"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/data/impossible_livecodebench/public_development_manifest.jsonl": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "3631d2b51f7fe610e26f674f2c036a74771761a1e8d5dd48d1103817fb10fb48",
+      "snapshot_keys": [
+        "external/benchmark/public_development_manifest.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/capture_binding.json": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "1909343bc59a104543b7b8adeacaaafae7ae790397c0daa0f5bd2e9389c724aa",
+      "snapshot_keys": [
+        "run/capture/capture_binding.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/capture_launch_binding.json": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "cd3d62294d1d6a4ee7d297ce0b65ff77675680a666ee6d9c233898c581690fee",
+      "snapshot_keys": [
+        "run/capture/capture_launch_binding.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0000.done.json": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_chunk_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "907d7be04adb23c8e478782ec29291c4326fcbff9768cd65578bd324b00c4d8a",
+      "snapshot_keys": [
+        "run/capture/chunk_0000.done.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0000.npz": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_chunk_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "6033aa3fa892c7538f896c0cf6f77111126b300c2dced119214892d93b00da73",
+      "snapshot_keys": [
+        "run/capture/chunk_0000.npz"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0000.rows.jsonl": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_chunk_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "335c51be07aca165275edd864796a90ed505cd24d41d4623cd27e40859db0e0a",
+      "snapshot_keys": [
+        "run/capture/chunk_0000.rows.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0001.done.json": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_chunk_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "c0e5548f4718ae3f876dab7d755afebd9241d98c9a5d4ce47c9352a71fb5a9fb",
+      "snapshot_keys": [
+        "run/capture/chunk_0001.done.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0001.npz": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_chunk_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "500dbced2aa9ef49c2e732120ef56b329688dfd12ea00b0005ef4c645aec4103",
+      "snapshot_keys": [
+        "run/capture/chunk_0001.npz"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0001.rows.jsonl": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_chunk_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "3247559ba1e85f792e84efd6d409ea078b883b890e775c0f38436712f8d35cdb",
+      "snapshot_keys": [
+        "run/capture/chunk_0001.rows.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0002.done.json": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_chunk_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "d3e2731f02e1a160236bd12c03fe63f779d8d078825cd9837255e9db94232ed4",
+      "snapshot_keys": [
+        "run/capture/chunk_0002.done.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0002.npz": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_chunk_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "71e2afeeb5697aeddc01e993e38acc7b120de4aaff5df3d66a40ee032b76f4c3",
+      "snapshot_keys": [
+        "run/capture/chunk_0002.npz"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0002.rows.jsonl": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_chunk_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "cf96e732f917e58c127a8b363360e1ffc88f574908f30155f26f4cdd181520b1",
+      "snapshot_keys": [
+        "run/capture/chunk_0002.rows.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0003.done.json": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_chunk_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "0e2bbf9c6a58a739aadb5e1436797e6a30e6dbfe21bd1712c42bcd18c4ae204b",
+      "snapshot_keys": [
+        "run/capture/chunk_0003.done.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0003.npz": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_chunk_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "b4ef6a48c0690774857ce663476cce7d5d296faa14f091b4ea43b0f76de9e323",
+      "snapshot_keys": [
+        "run/capture/chunk_0003.npz"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0003.rows.jsonl": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_chunk_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "45a72dc920ec3b12c8eb6cd721efa3ea8d9366f60ae6eac044559bb759aa5a64",
+      "snapshot_keys": [
+        "run/capture/chunk_0003.rows.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0004.done.json": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_chunk_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "d0090b5f51cd5772ee34a2621c26d2bf393844be3171d103018789d731ea2399",
+      "snapshot_keys": [
+        "run/capture/chunk_0004.done.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0004.npz": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_chunk_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "15e0726bd6f97a57ff325fd2888f58495c2393ab790f62b7b22d15526b58b92c",
+      "snapshot_keys": [
+        "run/capture/chunk_0004.npz"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0004.rows.jsonl": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_chunk_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "5d44138730916c6b052c97a9a9686de406465341509fa238f6878066bf53c9ea",
+      "snapshot_keys": [
+        "run/capture/chunk_0004.rows.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0005.done.json": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_chunk_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "84a2b889d8fe1e624f9b605ca4081cc6c33f15d2835dde91e683e62171299b8b",
+      "snapshot_keys": [
+        "run/capture/chunk_0005.done.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0005.npz": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_chunk_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "5be0fb710a3799375703a1f945a663af01a417c1833dd42479d0912dcea2aca7",
+      "snapshot_keys": [
+        "run/capture/chunk_0005.npz"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/chunk_0005.rows.jsonl": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_chunk_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "0d8b3c19a22c162bde61087b58569d050cef1b449afa5c30877185f25e7860f6",
+      "snapshot_keys": [
+        "run/capture/chunk_0005.rows.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture/run_result.json": {
+      "reasons": [
+        "reconciliation_complete_capture_tree",
+        "capture_result_binding",
+        "canonical_capture_from_pod"
+      ],
+      "sha256": "e672826baf918afcfaa26644c6e3336b810aecdd3f7f364ea205a88e15ac3846",
+      "snapshot_keys": [
+        "run/capture/run_result.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/capture_inputs.json": {
+      "reasons": [
+        "explicit_reconciliation_input",
+        "capture_prepared",
+        "independent_capture_input_files"
+      ],
+      "sha256": "f629be7a64f09e9ec490e20abb9a484a294c9cd9e18065ba6b09279764806ad4",
+      "snapshot_keys": [
+        "run/capture_inputs.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_20260908T070117Z.log": {
+      "reasons": [
+        "fresh_terminal_evidence"
+      ],
+      "sha256": "d0da3e536154b46ae8c9d936dec7a85f81283f47489ee8f62e1a52f1bd2bd6b6",
+      "snapshot_keys": [
+        "run/fresh_20260908T070117Z.log"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_20260908T070117Z_launch.json": {
+      "reasons": [
+        "fresh_terminal_evidence"
+      ],
+      "sha256": "f6d2402abde5dd7fa67d2d90d68d34055fc716deb3c2a5b5322000f9ea0890d2",
+      "snapshot_keys": [
+        "run/fresh_20260908T070117Z_launch.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/launch_config_1788850927139335007_697788.json": {
+      "reasons": [
+        "reconciliation_complete_fresh_B_tree",
+        "phase_launch",
+        "fresh_original_artifacts_sha256"
+      ],
+      "sha256": "9ea7c15a0cbd3d4c546781c286addda783abb25ba68c559dd28da063400cd555",
+      "snapshot_keys": [
+        "run/fresh_B/launch_config_1788850927139335007_697788.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/launch_config_1788850927139335007_697788_result.json": {
+      "reasons": [
+        "reconciliation_complete_fresh_B_tree"
+      ],
+      "sha256": "41c221be0d501f64ec6a8101db9470aaac08ecd74861ca7b647752110b59141a",
+      "snapshot_keys": [
+        "run/fresh_B/launch_config_1788850927139335007_697788_result.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/logs/2026-09-08T07-02-10-00-00_context-risk-followup-ten-submissions_3kAz589gj9bzDgYysGcnFi.eval": {
+      "reasons": [
+        "reconciliation_complete_fresh_B_tree",
+        "fresh_original_artifacts_sha256",
+        "fresh_native_logs_sha256",
+        "fresh_terminal_evidence",
+        "fresh_all_C_native_binding"
+      ],
+      "sha256": "cfa396e0968ac8b0b34db3b61bd1d860ddd162aa0fe4d6e7989afc83283a64c5",
+      "snapshot_keys": [
+        "run/fresh_B/logs/2026-09-08T07-02-10-00-00_context-risk-followup-ten-submissions_3kAz589gj9bzDgYysGcnFi.eval"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/native_audit.json": {
+      "reasons": [
+        "reconciliation_complete_fresh_B_tree",
+        "fresh_original_artifacts_sha256"
+      ],
+      "sha256": "264f40f93c70f699a4d128a5ba43e2c4b1f457d0a78fa968dda7c10b9cae42be",
+      "snapshot_keys": [
+        "run/fresh_B/native_audit.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/prefix_tokens.json": {
+      "reasons": [
+        "reconciliation_complete_fresh_B_tree",
+        "fresh_original_artifacts_sha256",
+        "portable_capture_input",
+        "independent_capture_input_files"
+      ],
+      "sha256": "1f5815e4da6b7a978914c4c551108a8520b8bae624a9e24b63e8989611a08b1a",
+      "snapshot_keys": [
+        "run/fresh_B/prefix_tokens.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/rollouts.jsonl": {
+      "reasons": [
+        "reconciliation_complete_fresh_B_tree",
+        "fresh_original_artifacts_sha256"
+      ],
+      "sha256": "a03992780543c868b9dc0f39db84591520dceb0529783020d6a1e3a94e4c49b5",
+      "snapshot_keys": [
+        "run/fresh_B/rollouts.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/run_result.json": {
+      "reasons": [
+        "reconciliation_complete_fresh_B_tree",
+        "phase_report",
+        "fresh_original_artifacts_sha256",
+        "portable_capture_input"
+      ],
+      "sha256": "41c221be0d501f64ec6a8101db9470aaac08ecd74861ca7b647752110b59141a",
+      "snapshot_keys": [
+        "run/fresh_B/run_result.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/success_review.json": {
+      "reasons": [
+        "reconciliation_complete_fresh_B_tree",
+        "independent_all_C_review"
+      ],
+      "sha256": "9be72f0856edda58d581b90d10e098d080637f221ee678a19752ea7433950170",
+      "snapshot_keys": [
+        "run/fresh_B/success_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/success_review.md": {
+      "reasons": [
+        "reconciliation_complete_fresh_B_tree"
+      ],
+      "sha256": "cae9fedd2069448a21b7bd8bbe27ff0716af30807cec0adba8ce898cf95dc072",
+      "snapshot_keys": [
+        "run/fresh_B/success_review.md"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/terminal_process.json": {
+      "reasons": [
+        "reconciliation_complete_fresh_B_tree",
+        "phase_terminal",
+        "portable_capture_input"
+      ],
+      "sha256": "a773580d8a78a3346a56b4429c0bc884c4b62bef1a98f422f7b82fbaff2969c8",
+      "snapshot_keys": [
+        "run/fresh_B/terminal_process.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/transport_postrun_audit.json": {
+      "reasons": [
+        "reconciliation_complete_fresh_B_tree",
+        "phase_derived_audit",
+        "portable_postrun_source"
+      ],
+      "sha256": "556f45b259cbe4103fc07524e8b0dbfd042a08da976b49e9dea065902c145de0",
+      "snapshot_keys": [
+        "run/fresh_B/transport_postrun_audit.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_fresh_20260908T070117Z_process.exit.json": {
+      "reasons": [
+        "fresh_terminal_evidence"
+      ],
+      "sha256": "7088c33d5b8ccb33aecc1ed8a030cde63ab770e79784566967d311fb65da38fe",
+      "snapshot_keys": [
+        "run/fresh_fresh_20260908T070117Z_process.exit.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_fresh_20260908T070117Z_process.pid": {
+      "reasons": [
+        "fresh_terminal_evidence"
+      ],
+      "sha256": "f7f7bed8fd74c96ffb303c89b93ed3e4d25b755d9eea9388f90ee4e0427696f6",
+      "snapshot_keys": [
+        "run/fresh_fresh_20260908T070117Z_process.pid"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_fresh_20260908T070117Z_process.worker.pid": {
+      "reasons": [
+        "fresh_terminal_evidence"
+      ],
+      "sha256": "860e8f43e79eea408bdb131f16800d63c78f15cdcd6698f6aa2a3064ac8792e8",
+      "snapshot_keys": [
+        "run/fresh_fresh_20260908T070117Z_process.worker.pid"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/manifests/code_review.json": {
+      "reasons": [
+        "reconciliation_complete_manifests_tree",
+        "screen_original_artifacts_sha256",
+        "fresh_original_artifacts_sha256"
+      ],
+      "sha256": "a9d6ff46e1e839c817a6485f14fdabe459cf1bd9c38f6247919bfbbd81a35c8b",
+      "snapshot_keys": [
+        "run/manifests/code_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/manifests/fresh_B.jsonl": {
+      "reasons": [
+        "reconciliation_complete_manifests_tree",
+        "fresh_original_artifacts_sha256",
+        "portable_capture_input",
+        "independent_capture_input_files"
+      ],
+      "sha256": "2385138de67af3472d5a07267f1c9776d46218368b7f7b9363bef360ed8d4b64",
+      "snapshot_keys": [
+        "run/manifests/fresh_B.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/manifests/screen_B.jsonl": {
+      "reasons": [
+        "reconciliation_complete_manifests_tree",
+        "screen_original_artifacts_sha256",
+        "fresh_original_artifacts_sha256"
+      ],
+      "sha256": "4bafc4e293b01787510f24310da173ae278d2e38db7fca37f8e0219f69d05184",
+      "snapshot_keys": [
+        "run/manifests/screen_B.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/manifests/screen_freeze.json": {
+      "reasons": [
+        "reconciliation_complete_manifests_tree",
+        "screen_original_artifacts_sha256",
+        "fresh_original_artifacts_sha256"
+      ],
+      "sha256": "fb9ef2e3f4c6e14936c999873332a86cdb3cdfba2fecd305d287224fb8b977f5",
+      "snapshot_keys": [
+        "run/manifests/screen_freeze.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/manifests/source.jsonl": {
+      "reasons": [
+        "reconciliation_complete_manifests_tree",
+        "screen_original_artifacts_sha256",
+        "fresh_original_artifacts_sha256"
+      ],
+      "sha256": "3631d2b51f7fe610e26f674f2c036a74771761a1e8d5dd48d1103817fb10fb48",
+      "snapshot_keys": [
+        "run/manifests/source.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_20260908T003104Z.log": {
+      "reasons": [
+        "screen_terminal_evidence"
+      ],
+      "sha256": "c9948b309b3f4871670c36afe01b3258b7205aac00d46dd600b6cb7d4cc82803",
+      "snapshot_keys": [
+        "run/screen_20260908T003104Z.log"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_20260908T003104Z_launch.json": {
+      "reasons": [
+        "screen_terminal_evidence"
+      ],
+      "sha256": "d47d34fffa69397af20b1e4b6deb96a202925e153beb0437faa541d83d3cd01a",
+      "snapshot_keys": [
+        "run/screen_20260908T003104Z_launch.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.json": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree",
+        "screen_original_artifacts_sha256"
+      ],
+      "sha256": "618e6bd5906c83f087e373f5d6d1d914e51605f543c24ed030b95efb374c555b",
+      "snapshot_keys": [
+        "run/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree",
+        "screen_original_artifacts_sha256"
+      ],
+      "sha256": "46f1416762e3cf4292193c677e2d0f79e4e9bbc912ca0454e8536ebc1cbd46b2",
+      "snapshot_keys": [
+        "run/screen_B/capacity_tokens/0ed4ebd86b5026aa22dc34b4386d9d011ae1b82d926c9a4e762fbaf05d43f1bc.tokens.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.json": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree",
+        "screen_original_artifacts_sha256"
+      ],
+      "sha256": "7456e1d7087b26fa3a976a7cb3e720e22a88c74c17257e7752be819579074822",
+      "snapshot_keys": [
+        "run/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree",
+        "screen_original_artifacts_sha256"
+      ],
+      "sha256": "bff7b13fc56e8cdc6bafd2a2bae0eebb221e264ae34740bf9385ded75609b90b",
+      "snapshot_keys": [
+        "run/screen_B/capacity_tokens/3463d48df3b8f7721e947c26c0235bec88321c60bc7102585216840332109c1d.tokens.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.json": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree",
+        "screen_original_artifacts_sha256"
+      ],
+      "sha256": "571bed4adf772cb941c966cb4987cfd1d572ecdc76cdb781d419e887693ad537",
+      "snapshot_keys": [
+        "run/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree",
+        "screen_original_artifacts_sha256"
+      ],
+      "sha256": "e9adabf9aaed64d457b1a50dec8de00389008099bda70496f4e3f7023128471b",
+      "snapshot_keys": [
+        "run/screen_B/capacity_tokens/8b93532fc3367e6249dd878352e5915a81a803bbd508e59dfc4a48c911818175.tokens.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/launch_config_1788824126441286824_3281540.json": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree"
+      ],
+      "sha256": "c6e9c9dfbe9ce1036be30a99fc1a1b5340134e0f9ffe17f4ecf614685ade75c0",
+      "snapshot_keys": [
+        "run/screen_B/launch_config_1788824126441286824_3281540.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/launch_config_1788824126441286824_3281540_result.json": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree"
+      ],
+      "sha256": "8a3b41628231e333a8a0a196d790aa9f1a27eff5e30849a8cff359198d6381de",
+      "snapshot_keys": [
+        "run/screen_B/launch_config_1788824126441286824_3281540_result.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/launch_config_1788827625353955587_3522010.json": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree",
+        "phase_launch",
+        "screen_original_artifacts_sha256"
+      ],
+      "sha256": "eeda0ff0789dd314c46f271c6fb23eae0520fe8480db750b66056a2a4cc74119",
+      "snapshot_keys": [
+        "run/screen_B/launch_config_1788827625353955587_3522010.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/launch_config_1788827625353955587_3522010_result.json": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree"
+      ],
+      "sha256": "7759487ec3a44613a7f72bb74730c9da4ef80f8c57eb33e6e948afe4ff14161f",
+      "snapshot_keys": [
+        "run/screen_B/launch_config_1788827625353955587_3522010_result.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/logs/2026-09-07T23-35-32-00-00_context-risk-followup-ten-submissions_7EGPYSjaYbzZSCqtchLR23.eval": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree"
+      ],
+      "sha256": "f2bcd7f29224758290e554a769813577cc0e99549fd1dddc088d44e745a8f57d",
+      "snapshot_keys": [
+        "run/screen_B/logs/2026-09-07T23-35-32-00-00_context-risk-followup-ten-submissions_7EGPYSjaYbzZSCqtchLR23.eval"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/logs/2026-09-08T00-33-48-00-00_context-risk-followup-ten-submissions_7EGPYSjaYbzZSCqtchLR23.eval": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree",
+        "screen_original_artifacts_sha256",
+        "screen_native_logs_sha256",
+        "screen_terminal_evidence",
+        "screen_all_C_native_binding"
+      ],
+      "sha256": "f7262f7f65d859e38cea85cc68cf5a1b05893389596f38362337cf16c0bde5d0",
+      "snapshot_keys": [
+        "run/screen_B/logs/2026-09-08T00-33-48-00-00_context-risk-followup-ten-submissions_7EGPYSjaYbzZSCqtchLR23.eval"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/native_audit.json": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree",
+        "screen_original_artifacts_sha256"
+      ],
+      "sha256": "4790e546b6a812d4b43101e61052d98c8a3e49a0a9d7bb43da1879887060b596",
+      "snapshot_keys": [
+        "run/screen_B/native_audit.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/pilot_native_audit.json": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree"
+      ],
+      "sha256": "3901ee1335cd1c3f288b49c8772df175c9e64421620be7cd3c3d2fcd9280d844",
+      "snapshot_keys": [
+        "run/screen_B/pilot_native_audit.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/pilot_result.json": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree"
+      ],
+      "sha256": "8a3b41628231e333a8a0a196d790aa9f1a27eff5e30849a8cff359198d6381de",
+      "snapshot_keys": [
+        "run/screen_B/pilot_result.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/pilot_rollouts.jsonl": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree"
+      ],
+      "sha256": "0e17b00c7fc50649b8e52e087a60d0ce1fe5eb98c953f4e6b92647d5c2866c92",
+      "snapshot_keys": [
+        "run/screen_B/pilot_rollouts.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/postrun_audit.json": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree",
+        "phase_derived_audit",
+        "portable_postrun_source"
+      ],
+      "sha256": "c34b5f900b3a8e4d6da381764aaf929a54633d3489c4796e7416791e9cf81663",
+      "snapshot_keys": [
+        "run/screen_B/postrun_audit.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/prefix_tokens.json": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree",
+        "screen_original_artifacts_sha256"
+      ],
+      "sha256": "41ab2172450156ac8adb5242e4837b2c566c927b6fdf01f27d8f8312b3c86aa3",
+      "snapshot_keys": [
+        "run/screen_B/prefix_tokens.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/resume_input_1788827471430223247.census.json": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree"
+      ],
+      "sha256": "a787c194c99f2029d186a5c9b4a9ba82f9528ccb125033bada5d9f96c1b380a5",
+      "snapshot_keys": [
+        "run/screen_B/resume_input_1788827471430223247.census.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/resume_input_1788827471430223247.jsonl": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree"
+      ],
+      "sha256": "0e17b00c7fc50649b8e52e087a60d0ce1fe5eb98c953f4e6b92647d5c2866c92",
+      "snapshot_keys": [
+        "run/screen_B/resume_input_1788827471430223247.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/rollouts.jsonl": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree",
+        "screen_original_artifacts_sha256"
+      ],
+      "sha256": "647eb0b0620c9a5db952fe4eab222d576ad1bdba3ee475f71c17202840572f9b",
+      "snapshot_keys": [
+        "run/screen_B/rollouts.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/run_result.json": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree",
+        "phase_report",
+        "screen_original_artifacts_sha256"
+      ],
+      "sha256": "7759487ec3a44613a7f72bb74730c9da4ef80f8c57eb33e6e948afe4ff14161f",
+      "snapshot_keys": [
+        "run/screen_B/run_result.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/success_review.json": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree",
+        "independent_all_C_review",
+        "fresh_original_artifacts_sha256"
+      ],
+      "sha256": "d7554bbfec28837cf2b262db997a2f0f8ccc8dc6bf89468b6ae857a8140bfdc5",
+      "snapshot_keys": [
+        "run/screen_B/success_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/success_review.md": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree"
+      ],
+      "sha256": "5ecd0d675d55292c7dc5c5f7945c396568703e9bc142cbd5cb1556c143339215",
+      "snapshot_keys": [
+        "run/screen_B/success_review.md"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_B/terminal_process.json": {
+      "reasons": [
+        "reconciliation_complete_screen_B_tree",
+        "phase_terminal",
+        "fresh_original_artifacts_sha256"
+      ],
+      "sha256": "4349743daaa4999cf40496240d13959ea8fbfe17342465174d65ad5afb173055",
+      "snapshot_keys": [
+        "run/screen_B/terminal_process.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_screen_20260908T003104Z_process.exit.json": {
+      "reasons": [
+        "screen_terminal_evidence"
+      ],
+      "sha256": "5875bf4700cf253be55d771ef1d1d3cb599426c00a4377f8739b3424c7946e1f",
+      "snapshot_keys": [
+        "run/screen_screen_20260908T003104Z_process.exit.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_screen_20260908T003104Z_process.pid": {
+      "reasons": [
+        "screen_terminal_evidence"
+      ],
+      "sha256": "8f36aa22def237250e98e19cdfa28276e27f4fbe454a12d32094649fa205b483",
+      "snapshot_keys": [
+        "run/screen_screen_20260908T003104Z_process.pid"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/screen_screen_20260908T003104Z_process.worker.pid": {
+      "reasons": [
+        "screen_terminal_evidence"
+      ],
+      "sha256": "7e6533b9d4b968818b696c2cbbf97986a4d1622f5487e7e294b20d111436c3af",
+      "snapshot_keys": [
+        "run/screen_screen_20260908T003104Z_process.worker.pid"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/selection.json": {
+      "reasons": [
+        "explicit_reconciliation_input",
+        "fresh_original_artifacts_sha256",
+        "portable_capture_input"
+      ],
+      "sha256": "f1b61e791e0821238371bdb5f2d3515f830ba21c639b4defa1e01ab1e512925d",
+      "snapshot_keys": [
+        "run/selection.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/analysis_transport_code_review.json": {
+      "reasons": [
+        "explicit_review"
+      ],
+      "sha256": "06b6ad922023db43e89ed3e550f4ae345383c090b8b9412b867a1940b0347b28",
+      "snapshot_keys": [
+        "run/setup/analysis_transport_code_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/archive_review_snapshots_code_review.json": {
+      "reasons": [
+        "explicit_review"
+      ],
+      "sha256": "99d3713729a116745c026eb6ebac18831436a04ec434be7b3509529c86bb9f55",
+      "snapshot_keys": [
+        "run/setup/archive_review_snapshots_code_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/capture_memory_check.py": {
+      "reasons": [
+        "memory_diagnostic_source"
+      ],
+      "sha256": "dea9ddb7e6e1f3aa0a1d1708c3a0fcb4ee874caab9e39f4d65133001051d18a1",
+      "snapshot_keys": [
+        "run/setup/capture_memory_check.py"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/capture_memory_supervise.sh": {
+      "reasons": [
+        "memory_diagnostic_source"
+      ],
+      "sha256": "7d230ad768a64ecdc1233083689fec0e98788ab463d8a63734e5e169476ce778",
+      "snapshot_keys": [
+        "run/setup/capture_memory_supervise.sh"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/capture_memory_transport_code_review.json": {
+      "reasons": [
+        "explicit_review"
+      ],
+      "sha256": "c04f70ceffc0c64e970cf6dcaa81de474ce639133677e60027bf82aece0d2be9",
+      "snapshot_keys": [
+        "run/setup/capture_memory_transport_code_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/capture_transport_code_review.json": {
+      "reasons": [
+        "explicit_review"
+      ],
+      "sha256": "952e4a00ff83fcfbb429554711c60369fc40c1070faf6fb992cb3254c9198d0d",
+      "snapshot_keys": [
+        "run/setup/capture_transport_code_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/capture_vm_validation_20260908.json": {
+      "reasons": [
+        "owner_VM_native_capture_validation"
+      ],
+      "sha256": "d3310ee3009f06b33179702082e94e80d1f0f92b9ea168961f27044ccd35b0ff",
+      "snapshot_keys": [
+        "run/setup/capture_vm_validation_20260908.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/pod_full_copy_validation_20260908.json": {
+      "reasons": [
+        "pod_copy_validation"
+      ],
+      "sha256": "2c2f6268c219c2829e8aa731b279737091fbc0f80e7c436c4a9725f3d4324035",
+      "snapshot_keys": [
+        "run/setup/pod_full_copy_validation_20260908.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/pod_inventory_after_capture_20260908.json": {
+      "reasons": [
+        "stopped_pod_inventory"
+      ],
+      "sha256": "c1c4b56d0b9537513cc9a14b6ba4a47412a403139bb20c65f435ca1d1805e1d4",
+      "snapshot_keys": [
+        "run/setup/pod_inventory_after_capture_20260908.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/pod_inventory_copy_end_20260908.json": {
+      "reasons": [
+        "end_pod_inventory"
+      ],
+      "sha256": "0c46d1ad3cee2f6ce792ef82a49eb3f2c6088875251eb76e782ce077564d0491",
+      "snapshot_keys": [
+        "run/setup/pod_inventory_copy_end_20260908.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/postrun_code_review.json": {
+      "reasons": [
+        "explicit_review",
+        "fresh_original_artifacts_sha256",
+        "portable_postrun_source"
+      ],
+      "sha256": "f730cd6aa7673b43310b7b50f6c24c2c1570f97b40d36ae64058d2a885922e13",
+      "snapshot_keys": [
+        "run/setup/postrun_code_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/pre_fresh_input_applicability.json": {
+      "reasons": [
+        "explicit_reconciliation_input",
+        "fresh_original_artifacts_sha256"
+      ],
+      "sha256": "b15ea42c3c8428c7028af85045eb0e8d018c06df9b446771c35fa3f49bb28857",
+      "snapshot_keys": [
+        "run/setup/pre_fresh_input_applicability.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/production_capture_capture_20260908T101513Z_independent_review.json": {
+      "reasons": [
+        "independent_capture_review"
+      ],
+      "sha256": "e1145582bb656127a4ea9f1f773225b3a81616589a37696117e2d8ad15a64fe0",
+      "snapshot_keys": [
+        "run/setup/production_capture_capture_20260908T101513Z_independent_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/raw_external_source_mapping_v9_20260908T095519Z.json": {
+      "reasons": [
+        "prior_exact_external_mapping"
+      ],
+      "sha256": "85a1a4e882b25f241f11612cc31305ab2b15cd473c03d7954d868bf3ba5b493a",
+      "snapshot_keys": [
+        "run/setup/raw_external_source_mapping_v9_20260908T095519Z.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/reconciliation_transport_code_review.json": {
+      "reasons": [
+        "explicit_review"
+      ],
+      "sha256": "acf1fb770f8bd4a40a4a91deabd29545d19b0a744a111b8b3b32a6782273de4c",
+      "snapshot_keys": [
+        "run/setup/reconciliation_transport_code_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/transport_postrun_code_review.json": {
+      "reasons": [
+        "explicit_review",
+        "portable_postrun_source"
+      ],
+      "sha256": "3e77c7c69f1b7da8d58f963828621c307a39c38291eae0c45af87b7ccd448e66",
+      "snapshot_keys": [
+        "run/setup/transport_postrun_code_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/capture_binding.json": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "1909343bc59a104543b7b8adeacaaafae7ae790397c0daa0f5bd2e9389c724aa",
+      "snapshot_keys": [
+        "pod/capture/capture_binding.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/capture_launch_binding.json": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "cd3d62294d1d6a4ee7d297ce0b65ff77675680a666ee6d9c233898c581690fee",
+      "snapshot_keys": [
+        "pod/capture/capture_launch_binding.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/chunk_0000.done.json": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "907d7be04adb23c8e478782ec29291c4326fcbff9768cd65578bd324b00c4d8a",
+      "snapshot_keys": [
+        "pod/capture/chunk_0000.done.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/chunk_0000.npz": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "6033aa3fa892c7538f896c0cf6f77111126b300c2dced119214892d93b00da73",
+      "snapshot_keys": [
+        "pod/capture/chunk_0000.npz"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/chunk_0000.rows.jsonl": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "335c51be07aca165275edd864796a90ed505cd24d41d4623cd27e40859db0e0a",
+      "snapshot_keys": [
+        "pod/capture/chunk_0000.rows.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/chunk_0001.done.json": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "c0e5548f4718ae3f876dab7d755afebd9241d98c9a5d4ce47c9352a71fb5a9fb",
+      "snapshot_keys": [
+        "pod/capture/chunk_0001.done.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/chunk_0001.npz": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "500dbced2aa9ef49c2e732120ef56b329688dfd12ea00b0005ef4c645aec4103",
+      "snapshot_keys": [
+        "pod/capture/chunk_0001.npz"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/chunk_0001.rows.jsonl": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "3247559ba1e85f792e84efd6d409ea078b883b890e775c0f38436712f8d35cdb",
+      "snapshot_keys": [
+        "pod/capture/chunk_0001.rows.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/chunk_0002.done.json": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "d3e2731f02e1a160236bd12c03fe63f779d8d078825cd9837255e9db94232ed4",
+      "snapshot_keys": [
+        "pod/capture/chunk_0002.done.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/chunk_0002.npz": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "71e2afeeb5697aeddc01e993e38acc7b120de4aaff5df3d66a40ee032b76f4c3",
+      "snapshot_keys": [
+        "pod/capture/chunk_0002.npz"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/chunk_0002.rows.jsonl": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "cf96e732f917e58c127a8b363360e1ffc88f574908f30155f26f4cdd181520b1",
+      "snapshot_keys": [
+        "pod/capture/chunk_0002.rows.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/chunk_0003.done.json": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "0e2bbf9c6a58a739aadb5e1436797e6a30e6dbfe21bd1712c42bcd18c4ae204b",
+      "snapshot_keys": [
+        "pod/capture/chunk_0003.done.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/chunk_0003.npz": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "b4ef6a48c0690774857ce663476cce7d5d296faa14f091b4ea43b0f76de9e323",
+      "snapshot_keys": [
+        "pod/capture/chunk_0003.npz"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/chunk_0003.rows.jsonl": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "45a72dc920ec3b12c8eb6cd721efa3ea8d9366f60ae6eac044559bb759aa5a64",
+      "snapshot_keys": [
+        "pod/capture/chunk_0003.rows.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/chunk_0004.done.json": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "d0090b5f51cd5772ee34a2621c26d2bf393844be3171d103018789d731ea2399",
+      "snapshot_keys": [
+        "pod/capture/chunk_0004.done.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/chunk_0004.npz": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "15e0726bd6f97a57ff325fd2888f58495c2393ab790f62b7b22d15526b58b92c",
+      "snapshot_keys": [
+        "pod/capture/chunk_0004.npz"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/chunk_0004.rows.jsonl": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "5d44138730916c6b052c97a9a9686de406465341509fa238f6878066bf53c9ea",
+      "snapshot_keys": [
+        "pod/capture/chunk_0004.rows.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/chunk_0005.done.json": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "84a2b889d8fe1e624f9b605ca4081cc6c33f15d2835dde91e683e62171299b8b",
+      "snapshot_keys": [
+        "pod/capture/chunk_0005.done.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/chunk_0005.npz": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "5be0fb710a3799375703a1f945a663af01a417c1833dd42479d0912dcea2aca7",
+      "snapshot_keys": [
+        "pod/capture/chunk_0005.npz"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/chunk_0005.rows.jsonl": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "0d8b3c19a22c162bde61087b58569d050cef1b449afa5c30877185f25e7860f6",
+      "snapshot_keys": [
+        "pod/capture/chunk_0005.rows.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture/run_result.json": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "e672826baf918afcfaa26644c6e3336b810aecdd3f7f364ea205a88e15ac3846",
+      "snapshot_keys": [
+        "pod/capture/run_result.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/capture_inputs.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "f629be7a64f09e9ec490e20abb9a484a294c9cd9e18065ba6b09279764806ad4",
+      "snapshot_keys": [
+        "pod/capture_inputs.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/fresh_B/prefix_tokens.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "1f5815e4da6b7a978914c4c551108a8520b8bae624a9e24b63e8989611a08b1a",
+      "snapshot_keys": [
+        "pod/fresh_B/prefix_tokens.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/fresh_B/run_result.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "41c221be0d501f64ec6a8101db9470aaac08ecd74861ca7b647752110b59141a",
+      "snapshot_keys": [
+        "pod/fresh_B/run_result.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/fresh_B/terminal_process.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "a773580d8a78a3346a56b4429c0bc884c4b62bef1a98f422f7b82fbaff2969c8",
+      "snapshot_keys": [
+        "pod/fresh_B/terminal_process.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/fresh_B/transport_postrun_audit.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "556f45b259cbe4103fc07524e8b0dbfd042a08da976b49e9dea065902c145de0",
+      "snapshot_keys": [
+        "pod/fresh_B/transport_postrun_audit.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/manifests/fresh_B.jsonl": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "2385138de67af3472d5a07267f1c9776d46218368b7f7b9363bef360ed8d4b64",
+      "snapshot_keys": [
+        "pod/manifests/fresh_B.jsonl"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/screen_B/postrun_audit.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "c34b5f900b3a8e4d6da381764aaf929a54633d3489c4796e7416791e9cf81663",
+      "snapshot_keys": [
+        "pod/screen_B/postrun_audit.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/selection.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "f1b61e791e0821238371bdb5f2d3515f830ba21c639b4defa1e01ab1e512925d",
+      "snapshot_keys": [
+        "pod/selection.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/server/runtime.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "85dec13463929059014694c50665d0fb92be07952148fc5916b72bdfda745578",
+      "snapshot_keys": [
+        "pod/server/runtime.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/server/serve_20260907T232817Z.log": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "d7819f9e7b16c6307817e9db5996d7dc5063aa13aa51f7bc427c7de053a3feff",
+      "snapshot_keys": [
+        "pod/server/serve_20260907T232817Z.log"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/server/serve_20260907T232817Z_launch.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "cdef1d7019aaf4f63c5b8ff25dd9de0595da444c56ac619b5709399888434ecf",
+      "snapshot_keys": [
+        "pod/server/serve_20260907T232817Z_launch.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/server/server.lock": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "snapshot_keys": [
+        "pod/server/server.lock"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/server/server_serve_20260907T232817Z_process.exit.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "ce296730051684f36fa558bf1f52987ed7a8e554f9b90b127e8f97356f98b2c0",
+      "snapshot_keys": [
+        "pod/server/server_serve_20260907T232817Z_process.exit.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/server/server_serve_20260907T232817Z_process.pid": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "73874dac168e44a46908976030b1952b87965cabff4e2951312c3fd43103dc73",
+      "snapshot_keys": [
+        "pod/server/server_serve_20260907T232817Z_process.pid"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/server/server_serve_20260907T232817Z_process.worker.pid": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "5432b936148e97a11249cf0168587cd69303e1093619fc0c3a3c6a01b1ceb297",
+      "snapshot_keys": [
+        "pod/server/server_serve_20260907T232817Z_process.worker.pid"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_memory_artifacts.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "52e198c9a3522f2c70cc5c19ea6db5e539755c077f3b90662add02b5e7c43444",
+      "snapshot_keys": [
+        "pod/setup/capture_memory_artifacts.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_memory_check.py": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "dea9ddb7e6e1f3aa0a1d1708c3a0fcb4ee874caab9e39f4d65133001051d18a1",
+      "snapshot_keys": [
+        "pod/setup/capture_memory_check.py"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_memory_code_review.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "ed9b952ea44e1d9d9f7c8a8b0e3055470204ad4e92cd259a7b39effc534a8ac0",
+      "snapshot_keys": [
+        "pod/setup/capture_memory_code_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_memory_code_review.md": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "1578a161da31d703b740d2197bddcf8293172af3d5b5ee4d6b3a111ec5fb046d",
+      "snapshot_keys": [
+        "pod/setup/capture_memory_code_review.md"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_memory_diag_20260908T100316Z.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "f80662f2dcee80435e405c1d018680c9ba1266876a67885830ee1640f7b2722b",
+      "snapshot_keys": [
+        "pod/setup/capture_memory_diag_20260908T100316Z.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_memory_diag_20260908T100316Z.launch.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "3ab486130c1b25840676a98cb63c607272c43750e805b583ec6e1737feca79ae",
+      "snapshot_keys": [
+        "pod/setup/capture_memory_diag_20260908T100316Z.launch.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_memory_diag_20260908T100316Z.log": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "0aaaa72e4fb27a863eb09873909c1e9ad313d02a1e9c041f4583670b91aaccbf",
+      "snapshot_keys": [
+        "pod/setup/capture_memory_diag_20260908T100316Z.log"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_memory_diag_20260908T100316Z.longest_singleton.npz": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "4329e875b2231ee7082f6c5ca33ada83c6a39e6f29f88860928b9db23b55b478",
+      "snapshot_keys": [
+        "pod/setup/capture_memory_diag_20260908T100316Z.longest_singleton.npz"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_memory_diag_20260908T100316Z.production_two_row.npz": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "782ef91744f47ea461136529349bfc507774a0cdf729002ba228a4a881881653",
+      "snapshot_keys": [
+        "pod/setup/capture_memory_diag_20260908T100316Z.production_two_row.npz"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_memory_diag_20260908T100316Z_owner_launch.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "533ccbc5ccb6cafc3c7dbd46a8c58e610cba180f1208a234af3c715d3f1268a3",
+      "snapshot_keys": [
+        "pod/setup/capture_memory_diag_20260908T100316Z_owner_launch.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_memory_diag_20260908T100316Z_process.exit.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "2144d8538d7523d8560f7a98176564befbd6a3c307d69134e783f17ee75ebdbf",
+      "snapshot_keys": [
+        "pod/setup/capture_memory_diag_20260908T100316Z_process.exit.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_memory_diag_20260908T100316Z_process.pid": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "321071984e032c4e52590a5176c5b5462b107652d48185a25ca61f70141fe1bb",
+      "snapshot_keys": [
+        "pod/setup/capture_memory_diag_20260908T100316Z_process.pid"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_memory_diag_20260908T100316Z_process.worker.pid": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "e46892afc075edb5797ae267e3cda7a74e557ad4b103c02c89dbd07ce26289e0",
+      "snapshot_keys": [
+        "pod/setup/capture_memory_diag_20260908T100316Z_process.worker.pid"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_memory_review_cpu_checks.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "bdecf9db37250e0c2e05b1800af38665ff127eeafc98fdffd56231376c18e729",
+      "snapshot_keys": [
+        "pod/setup/capture_memory_review_cpu_checks.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_memory_review_cpu_checks.py": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "bba05a21fc4f68f6627ff8afe520b478eb20634789c78a684b81ed54769ef3ff",
+      "snapshot_keys": [
+        "pod/setup/capture_memory_review_cpu_checks.py"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_memory_supervise.sh": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "7d230ad768a64ecdc1233083689fec0e98788ab463d8a63734e5e169476ce778",
+      "snapshot_keys": [
+        "pod/setup/capture_memory_supervise.sh"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_memory_transport_code_review.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "c04f70ceffc0c64e970cf6dcaa81de474ce639133677e60027bf82aece0d2be9",
+      "snapshot_keys": [
+        "pod/setup/capture_memory_transport_code_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_memory_transport_code_review.md": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "166fd8164e3b4806203c053da4c5cdd257511ad17807fe2cfa3fe6e5fbb2fe7b",
+      "snapshot_keys": [
+        "pod/setup/capture_memory_transport_code_review.md"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_orchestration_artifacts.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "83681ffce9586345e0193cac24926407770ab1cc1462e904598dfa113aaf7b7a",
+      "snapshot_keys": [
+        "pod/setup/capture_orchestration_artifacts.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_orchestration_code_review.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "d957a9e14f49dede29b952e2bf8de3c522105a1d671e6699f476a1774f77a487",
+      "snapshot_keys": [
+        "pod/setup/capture_orchestration_code_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_orchestration_code_review.md": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "3c1907d1158386a11e7c446cd7a01f11dea573af40f37cb37f7efad13e479a56",
+      "snapshot_keys": [
+        "pod/setup/capture_orchestration_code_review.md"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_orchestration_launch_recipe.md": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "fd827e54e90811610fe90b36c6c91af987dd0fc9c296b6348b4505b8fde55413",
+      "snapshot_keys": [
+        "pod/setup/capture_orchestration_launch_recipe.md"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_orchestration_supervisor.diff": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "83a1f32e0c5e4b9171fe2853d22b22a3bcc000068d9f64c78b5bb1881df6788a",
+      "snapshot_keys": [
+        "pod/setup/capture_orchestration_supervisor.diff"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_portable_input_preflight_20260908.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "6244b7243ff90163a5587f624c9d9f41c908229bd3806a32531cdfcf9c102418",
+      "snapshot_keys": [
+        "pod/setup/capture_portable_input_preflight_20260908.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_runtime_import_preflight.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "f32cb2e4cc0dad2bd34a5b6ecaed9b080b19e13602bcd6c2ae82f471f47ef781",
+      "snapshot_keys": [
+        "pod/setup/capture_runtime_import_preflight.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_runtime_import_preflight_b7673e06.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "19048fe3afbd4dcd113fad873a9dcb4cfe2ff886abf136928eadfad0b2e3dbfc",
+      "snapshot_keys": [
+        "pod/setup/capture_runtime_import_preflight_b7673e06.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_runtime_setup_runtime_20260908T055743Z.disk_after.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "be957f2d38c2cc4f10dc339385a40053d687803765fb7221208d10645b1479b4",
+      "snapshot_keys": [
+        "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.disk_after.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_runtime_setup_runtime_20260908T055743Z.disk_before.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "93b319c1daa970a5c97b2df9cc9612a0b70f4b2a2ce7ab231e05b6ba61680599",
+      "snapshot_keys": [
+        "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.disk_before.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_runtime_setup_runtime_20260908T055743Z.install.log": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "987dbdf88b130e1bb512258b82455d5d5d4e87850984e170998c1e4c3c05a9cf",
+      "snapshot_keys": [
+        "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.install.log"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_runtime_setup_runtime_20260908T055743Z.launch.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "43505ca53b956f39682810715cc6a4df7a97fc3494f7ca0597ef19e7281fd1e4",
+      "snapshot_keys": [
+        "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.launch.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_runtime_setup_runtime_20260908T055743Z.log": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "4ddff45a2958f457508e0e5310820e281858f51adbf92fc407a5def60965e514",
+      "snapshot_keys": [
+        "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.log"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_runtime_setup_runtime_20260908T055743Z.packages.freeze.txt": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "47a0a8246407c47c8181a652c78d398ed2034f4097517685b36cfd288c88129d",
+      "snapshot_keys": [
+        "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.packages.freeze.txt"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_runtime_setup_runtime_20260908T055743Z.packages.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "6097c995ab91a5794fcfb609f629d612bcd747e3b78b5020f562d66f751d1c0f",
+      "snapshot_keys": [
+        "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.packages.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_runtime_setup_runtime_20260908T055743Z.pip_check.txt": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "8142e19c49b6ef3a563da547deeb5266b1e548a074c3f648933513dd68414aae",
+      "snapshot_keys": [
+        "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.pip_check.txt"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_runtime_setup_runtime_20260908T055743Z.receipt.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "c1f6c923d5122d50dc0a6ba5c908d4cea4df7c3fef2eb43fe94ff40c3764afe2",
+      "snapshot_keys": [
+        "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.receipt.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_runtime_setup_runtime_20260908T055743Z.venv.log": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "50eaebd5815bb87f09a09656172600567f51a434d626d5033f8aa7789816d123",
+      "snapshot_keys": [
+        "pod/setup/capture_runtime_setup_runtime_20260908T055743Z.venv.log"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_runtime_setup_runtime_20260908T055743Z_owner_launch.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "e49d75b197cfe0857374039e3017dccf37250bc3a4ddaf96cb6f5d4d199d3789",
+      "snapshot_keys": [
+        "pod/setup/capture_runtime_setup_runtime_20260908T055743Z_owner_launch.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_runtime_setup_runtime_20260908T055743Z_process.exit.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "ff94d3092f75d0bfb71097cf07dd6b362b8e22b370108f6be4ad268f4d6c23a3",
+      "snapshot_keys": [
+        "pod/setup/capture_runtime_setup_runtime_20260908T055743Z_process.exit.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_runtime_setup_runtime_20260908T055743Z_process.pid": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "b732e51f3ad39fdcb69b7a7d66d49dd929e6ca60567225e2738be60e81d04015",
+      "snapshot_keys": [
+        "pod/setup/capture_runtime_setup_runtime_20260908T055743Z_process.pid"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_runtime_setup_runtime_20260908T055743Z_process.worker.pid": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "11556baa0185ccbcb1269bf1cc8bcbd4cd77abf37a8d58a9780d95c06483728d",
+      "snapshot_keys": [
+        "pod/setup/capture_runtime_setup_runtime_20260908T055743Z_process.worker.pid"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_runtime_setup_supervise.sh": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "24aef2455718f7b6a2a84a28c773c71fe394b3f95b02bac67177c98c5d6945cf",
+      "snapshot_keys": [
+        "pod/setup/capture_runtime_setup_supervise.sh"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_runtime_setup_worker.py": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "f341f09cd89d222125bd8f6d39e38858e8ce94048d5d2eb67695e0db176e5435",
+      "snapshot_keys": [
+        "pod/setup/capture_runtime_setup_worker.py"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_transport_code_review.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "952e4a00ff83fcfbb429554711c60369fc40c1070faf6fb992cb3254c9198d0d",
+      "snapshot_keys": [
+        "pod/setup/capture_transport_code_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/capture_transport_code_review.md": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "c4a38752c12177db5c112694c22328505b856269020dbe9172ab8cdea9973856",
+      "snapshot_keys": [
+        "pod/setup/capture_transport_code_review.md"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/cuda_compat_install.log": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "7c190a5c8c4f6945577bfe4bc6e70aa3c6c1e57716f5b087cbd785b2ea435afc",
+      "snapshot_keys": [
+        "pod/setup/cuda_compat_install.log"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/download_20260907T232358Z.log": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "dfbf49e7f5cd2c17042444195f868f77f15b3de17ccc35c48b2fa3d471fa0b8f",
+      "snapshot_keys": [
+        "pod/setup/download_20260907T232358Z.log"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/download_20260907T232358Z_launch.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "03d4a71de295486e4f608417e850f75024d346b3fadbfe4953e79266ae759113",
+      "snapshot_keys": [
+        "pod/setup/download_20260907T232358Z_launch.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/highrate_capture_capture_20260908T101513Z.log": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "7ee3bd47fc26a78cbbf2437e58035d1ce607e0ca791529f8fec2e44c05aec431",
+      "snapshot_keys": [
+        "pod/setup/highrate_capture_capture_20260908T101513Z.log"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/highrate_capture_capture_20260908T101513Z_owner_launch.json": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "4a4c11da2c6617c6ecfb08038fc73e9cc655539dfb75b8debab6739477188663",
+      "snapshot_keys": [
+        "pod/setup/highrate_capture_capture_20260908T101513Z_owner_launch.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/highrate_capture_capture_20260908T101513Z_process.exit.json": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "78c037593a1c78d818340883391545324f7544b277411caf9880e894f4487702",
+      "snapshot_keys": [
+        "pod/setup/highrate_capture_capture_20260908T101513Z_process.exit.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/highrate_capture_capture_20260908T101513Z_process.pid": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "f28af556ce241a8b23e82bca4582ae2d1e7844841e8bbbea250e1cbe5cacd610",
+      "snapshot_keys": [
+        "pod/setup/highrate_capture_capture_20260908T101513Z_process.pid"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/highrate_capture_capture_20260908T101513Z_process.worker.pid": {
+      "reasons": [
+        "complete_pod_mirror",
+        "independent_capture_review_files"
+      ],
+      "sha256": "4822243638de989ea0b988c8094a9327ef7084eb1a2e45b4d80917f9a75fb85e",
+      "snapshot_keys": [
+        "pod/setup/highrate_capture_capture_20260908T101513Z_process.worker.pid"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/highrate_capture_supervise.sh": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "b743703ad2fea55590f19d8529cafc1ef4970613305e29b56f6b9e85787ad38f",
+      "snapshot_keys": [
+        "pod/setup/highrate_capture_supervise.sh"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/inherited_v20_server_review.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "4c0545c6e4d7d9c5489c844b3ae10ce7d3c86635973e9286d3a61ca510765131",
+      "snapshot_keys": [
+        "pod/setup/inherited_v20_server_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/model_download_complete.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "597bb9ff1f6d6d5746c51ecf9b4cfa9e680f2370ca44f01fa2c3cf9608f4007b",
+      "snapshot_keys": [
+        "pod/setup/model_download_complete.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/model_download_download_20260907T232358Z_process.exit.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "3403bb0c9bfffa7a0c6c8acb1f8737c4cc48589a32b1a71401aa6250c6b1ee75",
+      "snapshot_keys": [
+        "pod/setup/model_download_download_20260907T232358Z_process.exit.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/model_download_download_20260907T232358Z_process.pid": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "80b3b41141acaa1c258c8999ba4f867c6e6e8b703b2df41df6cd67c371f3b224",
+      "snapshot_keys": [
+        "pod/setup/model_download_download_20260907T232358Z_process.pid"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/model_download_download_20260907T232358Z_process.worker.pid": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "a6575991009221fa3005e242a907bd4cf925318bc2de2c0b820736ff696b2875",
+      "snapshot_keys": [
+        "pod/setup/model_download_download_20260907T232358Z_process.worker.pid"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/model_files.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "8170138b261d3a8585ab2afc3ba5801687de4022a9e2420682d3b772deed3907",
+      "snapshot_keys": [
+        "pod/setup/model_files.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/pinned_runtime_packages.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "d57ddca37479ea03abf3df177bd9f59415ebfcfdea53fd82b4853d7243a19130",
+      "snapshot_keys": [
+        "pod/setup/pinned_runtime_packages.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/pinned_runtime_prepare.log": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "c0ceae98643a84c4ff405a753f1f2e37fe393ddea61364ef7fdf2562993010fb",
+      "snapshot_keys": [
+        "pod/setup/pinned_runtime_prepare.log"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/pod_source_sync_b7673e06.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "530832a833757382c0968c87fefd70751cc5707065e9ad87581b8ea7f85f03dc",
+      "snapshot_keys": [
+        "pod/setup/pod_source_sync_b7673e06.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/postrun_code_review.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "f730cd6aa7673b43310b7b50f6c24c2c1570f97b40d36ae64058d2a885922e13",
+      "snapshot_keys": [
+        "pod/setup/postrun_code_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/server_drain_and_capture_hardware_20260908.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "0b282801e1da37eea11e7b2416a5876211d079f01873b86ee79f1e7e15a457ae",
+      "snapshot_keys": [
+        "pod/setup/server_drain_and_capture_hardware_20260908.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/server_drain_request_20260908.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "434d896321938df9804ae32976ec097487efc74cd109a783f46a74af1eaeedae",
+      "snapshot_keys": [
+        "pod/setup/server_drain_request_20260908.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z/setup/transport_postrun_code_review.json": {
+      "reasons": [
+        "complete_pod_mirror"
+      ],
+      "sha256": "3e77c7c69f1b7da8d58f963828621c307a39c38291eae0c45af87b7ccd448e66",
+      "snapshot_keys": [
+        "pod/setup/transport_postrun_code_review.json"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z_clone_extra/context_risk_highrate_capture.log": {
+      "reasons": [
+        "explicit_extra_pod_mirror"
+      ],
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "snapshot_keys": [
+        "pod_extra/clone/context_risk_highrate_capture.log"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_map_pilot/map_layer_44.npz": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "680935a244cc39c29797d66b312b95e3741889a541dcee8bde7c69ac33c5242d",
+      "snapshot_keys": [
+        "external/qwen38_map_pilot/map_layer_44.npz"
+      ]
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_map_pilot/run_result.json": {
+      "reasons": [
+        "external_mapping"
+      ],
+      "sha256": "3e6651be338f84d60294335bb7183549bd61d5577a882ae36e96e437435ceedf",
+      "snapshot_keys": [
+        "external/qwen38_map_pilot/run_result.json"
+      ]
+    }
+  },
+  "late_RUN_paths_not_in_snapshot": [
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_archive_20260908T103321Z.log",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_archive_20260908T103321Z_exit.json",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_archive_20260908T103321Z_launch.json",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_upload_receipt.json",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_dataset_support_audit.json",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_dataset_support_audit.md",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_dataset_support_audit.py",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/raw_archive_20260908T103321Z_snapshot_preparation.json"
+  ],
+  "late_paths_disposition": "Preserve all late evidence, including this review, through exact pushed issue-scoped Git mapping before raw-milestone teardown gate; no late file is claimed covered by this snapshot.",
+  "manifest_correction": {
+    "actual_analysis41_archive5_verified": true,
+    "file_record_delta": {
+      "added_metadata_files": [
+        "run/setup/raw_archive_20260908T103100Z_snapshot_preparation.json",
+        "run/setup/raw_archive_20260908T103321Z_manifest_correction.json"
+      ],
+      "changed_continuation_fields": [
+        "raw_archive_immutable_snapshot",
+        "raw_archive_launch_id",
+        "raw_archive_manifest_correction",
+        "raw_archive_readback",
+        "raw_archive_stage"
+      ],
+      "changed_metadata_files": [
+        "run/setup/continuation_state.json"
+      ],
+      "new_files": 624,
+      "previous_files": 622,
+      "removed_files": [],
+      "unchanged_existing_records": 621
+    },
+    "old_snapshot_retained_sha256": "6f3812312890311a9be79d456cb74d369ebe09ee5cc2d7f00c6c1dde3770f202",
+    "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/raw_archive_20260908T103321Z_manifest_correction.json",
+    "scientific_and_source_payloads_unchanged": true,
+    "sha256": "d814ab65056fc7aefcc569e02432f460ff92ad28dc2e8a689b1f92d47b871b3f"
+  },
+  "namespace_counts": {
+    "code": 98,
+    "external": 4,
+    "pod": 102,
+    "pod_extra": 1,
+    "run": 419
+  },
+  "no_code_edits": true,
+  "no_model_calls": true,
+  "no_pod_or_task_mutation": true,
+  "no_snapshot_or_stage_mutation": true,
+  "no_uploads": true,
+  "original_bytes": 719546427,
+  "original_files": 624,
+  "owned_groups_recorded_drained": 5,
+  "pod_extra_file_proof": {
+    "pod_extra/clone/context_risk_highrate_capture.log": {
+      "remote_source": "/workspace/explore-persona-space/context_risk_highrate_capture.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "source": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_pod_mirror/capture_20260908T101513Z_clone_extra/context_risk_highrate_capture.log"
+    }
+  },
+  "pod_files": 102,
+  "pod_inventory_sha256": {
+    "copy_validation": "2c2f6268c219c2829e8aa731b279737091fbc0f80e7c436c4a9725f3d4324035",
+    "end": "0c46d1ad3cee2f6ce792ef82a49eb3f2c6088875251eb76e782ce077564d0491",
+    "start": "c1c4b56d0b9537513cc9a14b6ba4a47412a403139bb20c65f435ca1d1805e1d4"
+  },
+  "remaining": [
+    "Successful V2 upload and pinned remote readback of this exact snapshot",
+    "Actual current reconciliation of pinned readback618/360/90 and all102 pod files",
+    "Explicit pinned readback proof of pod_extra/clone/context_risk_highrate_capture.log",
+    "Late receipt/projection/inventory/review exact pushed Git blob coverage and final no-new-writes pod census",
+    "Owner-bound managed teardown gate and live API absence proof; subsequent VM fits and final scientific report/archive"
+  ],
+  "required_source_paths_drifted": [],
+  "required_source_paths_missing": [],
+  "reviewer": "Independent Codex subagent /root/v9_consumer_critic",
+  "row_key_checks_from_immutable_snapshot": {
+    "capture": {
+      "duplicates": 0,
+      "expected_keys": 90,
+      "key_set_sha256": "ab44d64f5ea2cedadad5ed3c143f3ff988aedf6a5053007d736019ca2ea95c9a",
+      "missing": 0,
+      "rows": 90,
+      "surplus": 0,
+      "unique_keys": 90
+    },
+    "fresh": {
+      "duplicates": 0,
+      "expected_keys": 360,
+      "key_set_sha256": "5f23829110cf8efa73e8d12b1ce02068356c07ea62e7d5c4f7c3a8c41a358e20",
+      "missing": 0,
+      "rows": 360,
+      "surplus": 0,
+      "unique_keys": 360
+    },
+    "screen": {
+      "duplicates": 0,
+      "expected_keys": 618,
+      "key_set_sha256": "f7b103595e19a85250d64168d5331aa4926167c4c65580255b2e93a807b20d24",
+      "missing": 0,
+      "rows": 618,
+      "surplus": 0,
+      "unique_keys": 618
+    }
+  },
+  "schema_version": "context_risk_highrate_immutable_snapshot_source_coverage_review_v1",
+  "scope": "Exact immutable local raw-snapshot byte, original-source, downstream bridge and stopped-pod namespace coverage. Not remote upload/readback, final reconciliation, teardown or scientific-benefit approval.",
+  "snapshot": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_snapshots/raw_archive_20260908T103321Z",
+  "snapshot_manifest_sha256": "91615d1272ef62d16ccd33651acc8f295800051950a7ee45e04854a6be7a5215",
+  "source_closures_sha256": {
+    "analysis": {
+      "configs/eval/context_risk_followup_capture.yaml": "cdbc76b49d639a61d349becf984aafd30ff5372ea88f6e92f89f2cac4cc25285",
+      "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+      "configs/eval/context_risk_highrate_analyze.yaml": "6ec33c994d584bdfa87646bd750d56df4383bbd87be00b469d15b1fb8d4ef5af",
+      "configs/eval/context_risk_highrate_capture.yaml": "7140a2fcc3e1ed38e4127a1c65d8dbb8ec3b40034713cffca8d15be177e80eec",
+      "configs/eval/context_risk_qwen38_impossible_capture.yaml": "7018d151ebf4534ad3ecfa4d88cb48c12b847e98bba46dce2e1ba3e8b0dc53aa",
+      "configs/eval/context_risk_qwen38_smoke.yaml": "d5ad816cb64e7da10d7e22bf79e4525e7d04f6d9df4808e678fd9d4cb9f5f352",
+      "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+      "eval_results/context_risk_highrate_design/input_validity_policy.json": "3dbd742508065512d6d1d8619afead1e3ef321ff5b454785c7f45e8e8a558f30",
+      "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+      "eval_results/context_risk_highrate_design/plan_v7_input_validity.md": "fab7b675089a58dea7c8376e3041eb35cd6f8812c276c3af52abee7ad256baf7",
+      "eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md": "e743d726fde20defa03cffe2808b5d7bd7c0100db8911c161dc41d33529d2355",
+      "eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md": "5935dd7792e3a86b9ffc96d57b9826a63e8496a6590a517df6a6340acbb57ad3",
+      "scripts/context_risk_analyze.py": "05e7d2fcac63e442cfb7b2b99df244c33340070e8326edaebb16361661025010",
+      "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+      "scripts/context_risk_followup_analyze.py": "b00ba257966beaa6ae75f37ec35e4579ec8429a118b2db370c16e3f3d6c38b38",
+      "scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
+      "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+      "scripts/context_risk_followup_features.py": "3258ddf56332e99c90c14808b83206670b7693e9b2e6bbf82f6d116e6cfdd7d4",
+      "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+      "scripts/context_risk_highrate_analyze.py": "2e1613a072a12348171868cd06022766874877fe6ddac64a919df8c8d7790a7c",
+      "scripts/context_risk_highrate_capacity.py": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+      "scripts/context_risk_highrate_capture.py": "5f1bc50e1b6b6bf07a5f8d1db588ccfb0aecd2ef2131fa5e08aad6cb7d9aea42",
+      "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+      "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+      "scripts/context_risk_highrate_postrun.py": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+      "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+      "scripts/context_risk_highrate_transport.py": "a802793e7e0d78831f3b9518d828e8410eef6df9ffc0be5e4aceedb73f6ee97c",
+      "scripts/context_risk_highrate_validity.py": "54db7bbf654d35ce93e8e1c241ad909a086b308bf2811a1804d68435f9418d8d",
+      "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+      "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+      "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+      "scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
+      "scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+      "scripts/context_risk_qwen38_impossible_capture.py": "d7f6aec322ce89249a6829b3298f7753cf8a33b9e7505bc7850b8c408a39122b",
+      "scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+      "src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79",
+      "tests/test_context_risk_highrate_analyze.py": "f912c9d63f64420dfa7d308ce8312cd3a0c0458d2dcda013c4e322a7c8a7b277",
+      "tests/test_context_risk_highrate_capture.py": "5d7187a5c3f1897d130ac65167320ab65acae569d30a2e4e1d905f1448d3b5d6",
+      "tests/test_context_risk_highrate_postrun.py": "f653400a60e77a81d839715dc4ab0bce3c8f1454ae0cff551fcd1367a066cb80",
+      "tests/test_context_risk_highrate_postrun_integration.py": "199ae6a3b2ef230e9e37fe9ecc8647b717686d266f89798b3a642af3482d6657",
+      "tests/test_context_risk_highrate_transport.py": "cb65dc7d3027aa56dae639ed1d198fd5d57b26b893b70802c55ac10440e9acbe"
+    },
+    "archive": {
+      "scripts/context_risk_corrected_finish.py": "8aeaddec362b9bbf277c707b7532d17948811f1bdf09b9c0a45f598c7eca466e",
+      "scripts/context_risk_highrate_archive.py": "b7f712557a5b537021fc5324a3f4f945c0e1a89c06da3404166c81b44401205b",
+      "scripts/issue2054_phase_a.py": "69573ff5fc81ad398f35ccf9e656d5fceb7e2696e4b6b35a1db80a166ceb7016",
+      "src/explore_persona_space/orchestrate/env.py": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759",
+      "src/explore_persona_space/orchestrate/hub.py": "6590d4c01d396f935da018d16673e3d21f93843126b5e12a42be8e6e0419351e"
+    },
+    "capture": {
+      "configs/eval/context_risk_followup_capture.yaml": "cdbc76b49d639a61d349becf984aafd30ff5372ea88f6e92f89f2cac4cc25285",
+      "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+      "configs/eval/context_risk_highrate_capture.yaml": "7140a2fcc3e1ed38e4127a1c65d8dbb8ec3b40034713cffca8d15be177e80eec",
+      "configs/eval/context_risk_qwen38_impossible_capture.yaml": "7018d151ebf4534ad3ecfa4d88cb48c12b847e98bba46dce2e1ba3e8b0dc53aa",
+      "configs/eval/context_risk_qwen38_smoke.yaml": "d5ad816cb64e7da10d7e22bf79e4525e7d04f6d9df4808e678fd9d4cb9f5f352",
+      "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+      "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+      "eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md": "e743d726fde20defa03cffe2808b5d7bd7c0100db8911c161dc41d33529d2355",
+      "eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md": "5935dd7792e3a86b9ffc96d57b9826a63e8496a6590a517df6a6340acbb57ad3",
+      "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+      "scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
+      "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+      "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+      "scripts/context_risk_highrate_capacity.py": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+      "scripts/context_risk_highrate_capture.py": "5f1bc50e1b6b6bf07a5f8d1db588ccfb0aecd2ef2131fa5e08aad6cb7d9aea42",
+      "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+      "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+      "scripts/context_risk_highrate_postrun.py": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+      "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+      "scripts/context_risk_highrate_transport.py": "a802793e7e0d78831f3b9518d828e8410eef6df9ffc0be5e4aceedb73f6ee97c",
+      "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+      "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+      "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+      "scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
+      "scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+      "scripts/context_risk_qwen38_impossible_capture.py": "d7f6aec322ce89249a6829b3298f7753cf8a33b9e7505bc7850b8c408a39122b",
+      "scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+      "src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79",
+      "tests/test_context_risk_highrate_capture.py": "5d7187a5c3f1897d130ac65167320ab65acae569d30a2e4e1d905f1448d3b5d6",
+      "tests/test_context_risk_highrate_postrun.py": "f653400a60e77a81d839715dc4ab0bce3c8f1454ae0cff551fcd1367a066cb80",
+      "tests/test_context_risk_highrate_postrun_integration.py": "199ae6a3b2ef230e9e37fe9ecc8647b717686d266f89798b3a642af3482d6657",
+      "tests/test_context_risk_highrate_transport.py": "cb65dc7d3027aa56dae639ed1d198fd5d57b26b893b70802c55ac10440e9acbe"
+    },
+    "physical_collection": {
+      "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+      "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+      "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+      "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+      "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+      "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+      "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+      "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+      "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+      "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+      "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+      "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c"
+    },
+    "reconciliation": {
+      "configs/eval/context_risk_followup_capture.yaml": "cdbc76b49d639a61d349becf984aafd30ff5372ea88f6e92f89f2cac4cc25285",
+      "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+      "configs/eval/context_risk_highrate_capture.yaml": "7140a2fcc3e1ed38e4127a1c65d8dbb8ec3b40034713cffca8d15be177e80eec",
+      "configs/eval/context_risk_qwen38_impossible_capture.yaml": "7018d151ebf4534ad3ecfa4d88cb48c12b847e98bba46dce2e1ba3e8b0dc53aa",
+      "configs/eval/context_risk_qwen38_smoke.yaml": "d5ad816cb64e7da10d7e22bf79e4525e7d04f6d9df4808e678fd9d4cb9f5f352",
+      "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+      "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+      "eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md": "e743d726fde20defa03cffe2808b5d7bd7c0100db8911c161dc41d33529d2355",
+      "eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md": "5935dd7792e3a86b9ffc96d57b9826a63e8496a6590a517df6a6340acbb57ad3",
+      "scripts/context_risk_corrected_finish.py": "8aeaddec362b9bbf277c707b7532d17948811f1bdf09b9c0a45f598c7eca466e",
+      "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+      "scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
+      "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+      "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+      "scripts/context_risk_highrate_archive.py": "b7f712557a5b537021fc5324a3f4f945c0e1a89c06da3404166c81b44401205b",
+      "scripts/context_risk_highrate_capacity.py": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+      "scripts/context_risk_highrate_capture.py": "5f1bc50e1b6b6bf07a5f8d1db588ccfb0aecd2ef2131fa5e08aad6cb7d9aea42",
+      "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+      "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+      "scripts/context_risk_highrate_postrun.py": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+      "scripts/context_risk_highrate_reconcile.py": "210562eff0a67f5a38e120282e94978595c1e73f35744f557719fc3ba313681c",
+      "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+      "scripts/context_risk_highrate_transport.py": "a802793e7e0d78831f3b9518d828e8410eef6df9ffc0be5e4aceedb73f6ee97c",
+      "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+      "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+      "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+      "scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
+      "scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+      "scripts/context_risk_qwen38_impossible_capture.py": "d7f6aec322ce89249a6829b3298f7753cf8a33b9e7505bc7850b8c408a39122b",
+      "scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+      "scripts/issue2054_phase_a.py": "69573ff5fc81ad398f35ccf9e656d5fceb7e2696e4b6b35a1db80a166ceb7016",
+      "scripts/verify_uploads.py": "3991c7f464602766d26b5c38b2b42905e92b7f40e918cb72776b59b7e3d34ee9",
+      "src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79",
+      "src/explore_persona_space/orchestrate/env.py": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759",
+      "src/explore_persona_space/orchestrate/hub.py": "6590d4c01d396f935da018d16673e3d21f93843126b5e12a42be8e6e0419351e",
+      "tests/test_context_risk_highrate_capture.py": "5d7187a5c3f1897d130ac65167320ab65acae569d30a2e4e1d905f1448d3b5d6",
+      "tests/test_context_risk_highrate_postrun.py": "f653400a60e77a81d839715dc4ab0bce3c8f1454ae0cff551fcd1367a066cb80",
+      "tests/test_context_risk_highrate_postrun_integration.py": "199ae6a3b2ef230e9e37fe9ecc8647b717686d266f89798b3a642af3482d6657",
+      "tests/test_context_risk_highrate_reconcile.py": "6fe645d5936557847a3c49acaa075f6d915b3b07017f6eafc9c26c3ddc4c553b",
+      "tests/test_context_risk_highrate_transport.py": "cb65dc7d3027aa56dae639ed1d198fd5d57b26b893b70802c55ac10440e9acbe"
+    },
+    "transport": {
+      "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+      "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+      "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+      "eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md": "e743d726fde20defa03cffe2808b5d7bd7c0100db8911c161dc41d33529d2355",
+      "eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md": "5935dd7792e3a86b9ffc96d57b9826a63e8496a6590a517df6a6340acbb57ad3",
+      "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+      "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+      "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+      "scripts/context_risk_highrate_capacity.py": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+      "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+      "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+      "scripts/context_risk_highrate_postrun.py": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+      "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+      "scripts/context_risk_highrate_transport.py": "a802793e7e0d78831f3b9518d828e8410eef6df9ffc0be5e4aceedb73f6ee97c",
+      "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+      "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+      "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+      "tests/test_context_risk_highrate_postrun.py": "f653400a60e77a81d839715dc4ab0bce3c8f1454ae0cff551fcd1367a066cb80",
+      "tests/test_context_risk_highrate_postrun_integration.py": "199ae6a3b2ef230e9e37fe9ecc8647b717686d266f89798b3a642af3482d6657",
+      "tests/test_context_risk_highrate_transport.py": "cb65dc7d3027aa56dae639ed1d198fd5d57b26b893b70802c55ac10440e9acbe"
+    },
+    "v8_postrun": {
+      "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+      "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+      "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+      "eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md": "e743d726fde20defa03cffe2808b5d7bd7c0100db8911c161dc41d33529d2355",
+      "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+      "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+      "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+      "scripts/context_risk_highrate_capacity.py": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+      "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+      "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+      "scripts/context_risk_highrate_postrun.py": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+      "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+      "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+      "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+      "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+      "tests/test_context_risk_highrate_postrun.py": "f653400a60e77a81d839715dc4ab0bce3c8f1454ae0cff551fcd1367a066cb80",
+      "tests/test_context_risk_highrate_postrun_integration.py": "199ae6a3b2ef230e9e37fe9ecc8647b717686d266f89798b3a642af3482d6657"
+    }
+  },
+  "started_utc": "2026-09-08T10:44:31.462479+00:00",
+  "unique_original_source_paths": 624,
+  "verdict": "PASS"
+}

@@ -1,0 +1,15 @@
+{
+  "launch_id": "raw_archive_20260908T103321Z",
+  "exit_code": 0,
+  "pid": 1417183,
+  "pgid": 1417183,
+  "finished_utc": "2026-09-08T10:44:27.826308+00:00",
+  "finished_unix": 1788864267.8263447,
+  "elapsed_seconds": 523.5335748195648,
+  "live_group_members": [],
+  "cleanup": "no_live_members",
+  "launch_sha256": "a5a8407efc7dceb2e6321980178502949108ffe8831be2039cdca7ec6308d983",
+  "log_sha256": "a6ae40fef421641b4d4b16b01c70ae00abc9e10eb36af5b54e2e1f586ae15d7a",
+  "upload_receipt_exists": true,
+  "readback_receipt_exists": true
+}

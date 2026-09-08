@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "checked_utc": "2026-09-08T10:49:47.015434+00:00",
+  "inventory_sha256": "d248a80d6ca5096b90b4411150fad1f2fb29aece01027828db797927acadc74b",
+  "helper_sha256": "b71c8b76955efdc9d02e2d5f339c96e32680cd333366f83fdfd56733b2b56dec",
+  "original_inventory_sha256": "c1c4b56d0b9537513cc9a14b6ba4a47412a403139bb20c65f435ca1d1805e1d4",
+  "files": 102,
+  "extra_files": 1,
+  "all_byte_records_unchanged": true,
+  "all_owned_workers_drained": true,
+  "listing_sha256": "1e9c03ef90c92527d8d7c5e2088991a28172451504d67104b0b1e26ab11bbf84",
+  "ssh_exit_code": 0
+}

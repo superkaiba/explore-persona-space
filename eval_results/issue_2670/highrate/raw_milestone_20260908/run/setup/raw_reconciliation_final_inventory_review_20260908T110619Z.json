@@ -1,0 +1,186 @@
+{
+  "actual_mechanical_row_check": {
+    "detail": "capture: OK expected=90 distinct=90 lines=90 duplicates=0 shards=[row_index.jsonl:90] key=(key); fresh_B: OK expected=360 distinct=360 lines=360 duplicates=0 shards=[row_index.jsonl:360] key=(key); screen_B: OK expected=618 distinct=618 lines=618 duplicates=0 shards=[row_index.jsonl:618] key=(key) | gate quantity: distinct full-key rows, never a raw line count and never a producer-reported field (#2148)",
+    "labels": {
+      "capture": {
+        "duplicates": 0,
+        "expected": 90,
+        "key_fields": [
+          "key"
+        ],
+        "realized_distinct": 90,
+        "realized_lines": 90,
+        "shards": [
+          "row_index.jsonl:90"
+        ],
+        "tag": "",
+        "verdict": "OK"
+      },
+      "fresh_B": {
+        "duplicates": 0,
+        "expected": 360,
+        "key_fields": [
+          "key"
+        ],
+        "realized_distinct": 360,
+        "realized_lines": 360,
+        "shards": [
+          "row_index.jsonl:360"
+        ],
+        "tag": "",
+        "verdict": "OK"
+      },
+      "screen_B": {
+        "duplicates": 0,
+        "expected": 618,
+        "key_fields": [
+          "key"
+        ],
+        "realized_distinct": 618,
+        "realized_lines": 618,
+        "shards": [
+          "row_index.jsonl:618"
+        ],
+        "tag": "",
+        "verdict": "OK"
+      }
+    },
+    "status": "OK",
+    "url": ""
+  },
+  "checked_utc": "2026-09-08T11:06:27.431241+00:00",
+  "extra_clone_pinned_readback_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "generic_coverage_interpretation": {
+    "all102_have_stronger_pinned_byte_proof": true,
+    "built_in_exempt_files": 20,
+    "caller_exemptions": [],
+    "discarded_files": [],
+    "generic_nonexempt_files": 82,
+    "total_actual_pod_files": 102
+  },
+  "generic_result": {
+    "detail": "disk=82 matched=82; content-verified=0; verdict is the name-set diff, never the counts",
+    "status": "OK",
+    "url": ""
+  },
+  "indices": {
+    "capture": {
+      "distinct_keys": 90,
+      "duplicates": 0,
+      "exact_archived_key_set_sha256": "ab44d64f5ea2cedadad5ed3c143f3ff988aedf6a5053007d736019ca2ea95c9a",
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/capture/row_index.jsonl",
+      "rows": 90,
+      "sha256": "da29cc7ddfd442d65d9cd26f4ddee4514be5387fbcd95740a1fd113010304573"
+    },
+    "fresh_B": {
+      "distinct_keys": 360,
+      "duplicates": 0,
+      "exact_archived_key_set_sha256": "5f23829110cf8efa73e8d12b1ce02068356c07ea62e7d5c4f7c3a8c41a358e20",
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/fresh_B/row_index.jsonl",
+      "rows": 360,
+      "sha256": "9265e5b68239649706cb4ce32bd602d335587caca14cea39280b62d876b9330d"
+    },
+    "screen_B": {
+      "distinct_keys": 618,
+      "duplicates": 0,
+      "exact_archived_key_set_sha256": "f7b103595e19a85250d64168d5331aa4926167c4c65580255b2e93a807b20d24",
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/screen_B/row_index.jsonl",
+      "rows": 618,
+      "sha256": "1c1ba5507eea6536d22911f977773f19463e4b2fd2c031df0cd8b2dc0710d705"
+    }
+  },
+  "inputs_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/pod_final_gate_inventory_20260908T110112Z.json": "c024f1a5b501d7d975b8ff9b4f86fb2fdbf5f627f8d74ea76ef74377f8f6d5e9",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/pod_inventory_after_capture_20260908.json": "c1c4b56d0b9537513cc9a14b6ba4a47412a403139bb20c65f435ca1d1805e1d4",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/pod_outroot_listing_20260908T1052Z.txt": "1e9c03ef90c92527d8d7c5e2088991a28172451504d67104b0b1e26ab11bbf84",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/raw_outroot_generic_result_20260908T1053Z.json": "1cea5fe2b1a1e9711ab5dfbe9f9f411c2cc9db870035d9b4af326dc41bbd190f",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/raw_pinned_readback_extra_review_20260908T105109Z.json": "87f0be95d0062efd3c425690d091e4b73c98b03ef04a58a342880a9d1ecaa0a7",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/raw_snapshot_source_coverage_review_20260908T104431Z.json": "2402de528931556f0aeb297ba732c75bcc7312844eade048e9cd6a8aebef1daf",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/reconcile_20260908T104819Z_exit.json": "fee3fe89a52cf16dabc75b0edc6a2484e6663d4bc20cd6ccec6ea12e3ca1c80b",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/reconcile_20260908T104819Z_launch.json": "c33c7544c03b7237714b2ffed9bdfccb7a82489a93a36e32c6957bedf91e56f4",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/reconciliation_transport_code_review.json": "acf1fb770f8bd4a40a4a91deabd29545d19b0a744a111b8b3b32a6782273de4c",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/capture/row_index.jsonl": "da29cc7ddfd442d65d9cd26f4ddee4514be5387fbcd95740a1fd113010304573",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/fresh_B/row_index.jsonl": "9265e5b68239649706cb4ce32bd602d335587caca14cea39280b62d876b9330d",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json": "3989c65684f3870042e336683d4dc230904076b7849681b24764dbbff90cc088",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/screen_B/row_index.jsonl": "1c1ba5507eea6536d22911f977773f19463e4b2fd2c031df0cd8b2dc0710d705"
+  },
+  "missing_or_mismatched_required_evidence": [],
+  "no_model_calls": true,
+  "no_native_semantic_reparse": true,
+  "no_pod_or_task_mutation": true,
+  "no_repeated_HF_download_or_tree_query": true,
+  "owned_execution": {
+    "cleanup": "no_live_members",
+    "elapsed_seconds": 696.719012260437,
+    "exit_code": 0,
+    "launch_id": "reconcile_20260908T104819Z",
+    "log_sha256": "2626154c53fcbfc19faca23b264765c3736f5477cebd061634897327f8cbab41"
+  },
+  "pod_inventory": {
+    "actual_checked_utc": "2026-09-08T11:01:14.766424+00:00",
+    "owned_groups_drained": 5,
+    "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/pod_final_gate_inventory_20260908T110112Z.json",
+    "pod": "pod-2670-highrate",
+    "pod_id": "1bds7vqkrluxkc",
+    "same_all102_files_as_reconciled_inventory": true,
+    "same_extra_clone_log": true,
+    "sha256": "c024f1a5b501d7d975b8ff9b4f86fb2fdbf5f627f8d74ea76ef74377f8f6d5e9"
+  },
+  "reconciliation_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_reconciliation/reconcile_20260908T104819Z/reconciliation.json",
+  "reconciliation_sha256": "3989c65684f3870042e336683d4dc230904076b7849681b24764dbbff90cc088",
+  "remaining_before_GPU_release": [
+    "Persist every late receipt/log/index/review/inventory and source-to-Git map as exact pushed issue-scoped Git blobs, including this receipt.",
+    "Final owner-bound managed teardown/upload-verification gate, with refreshed no-new-writes evidence if needed; only actual live API absence proves release."
+  ],
+  "reviewer": "Independent Codex subagent /root/v9_consumer_critic",
+  "revision": "58d3e6d6b0917b6e9777c45d23b814693dc14277",
+  "schema_version": "context_risk_highrate_reconciliation_final_inventory_review_v1",
+  "scientific_experiment_complete": false,
+  "scope": "Terminal reconciliation receipt, exact ASCII index key identities, source-bound input/hash coverage and latest stopped-pod inventory. Remote archival already independently verified; no native parsing repeated. Exact late Git persistence and owner teardown remain separate gates.",
+  "snapshot_manifest_sha256": "91615d1272ef62d16ccd33651acc8f295800051950a7ee45e04854a6be7a5215",
+  "source_count": 40,
+  "sources_sha256": {
+    "configs/eval/context_risk_followup_capture.yaml": "cdbc76b49d639a61d349becf984aafd30ff5372ea88f6e92f89f2cac4cc25285",
+    "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+    "configs/eval/context_risk_highrate_capture.yaml": "7140a2fcc3e1ed38e4127a1c65d8dbb8ec3b40034713cffca8d15be177e80eec",
+    "configs/eval/context_risk_qwen38_impossible_capture.yaml": "7018d151ebf4534ad3ecfa4d88cb48c12b847e98bba46dce2e1ba3e8b0dc53aa",
+    "configs/eval/context_risk_qwen38_smoke.yaml": "d5ad816cb64e7da10d7e22bf79e4525e7d04f6d9df4808e678fd9d4cb9f5f352",
+    "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+    "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+    "eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md": "e743d726fde20defa03cffe2808b5d7bd7c0100db8911c161dc41d33529d2355",
+    "eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md": "5935dd7792e3a86b9ffc96d57b9826a63e8496a6590a517df6a6340acbb57ad3",
+    "scripts/context_risk_corrected_finish.py": "8aeaddec362b9bbf277c707b7532d17948811f1bdf09b9c0a45f598c7eca466e",
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
+    "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "scripts/context_risk_highrate_archive.py": "b7f712557a5b537021fc5324a3f4f945c0e1a89c06da3404166c81b44401205b",
+    "scripts/context_risk_highrate_capacity.py": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+    "scripts/context_risk_highrate_capture.py": "5f1bc50e1b6b6bf07a5f8d1db588ccfb0aecd2ef2131fa5e08aad6cb7d9aea42",
+    "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+    "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+    "scripts/context_risk_highrate_postrun.py": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+    "scripts/context_risk_highrate_reconcile.py": "210562eff0a67f5a38e120282e94978595c1e73f35744f557719fc3ba313681c",
+    "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+    "scripts/context_risk_highrate_transport.py": "a802793e7e0d78831f3b9518d828e8410eef6df9ffc0be5e4aceedb73f6ee97c",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+    "scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
+    "scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+    "scripts/context_risk_qwen38_impossible_capture.py": "d7f6aec322ce89249a6829b3298f7753cf8a33b9e7505bc7850b8c408a39122b",
+    "scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+    "scripts/issue2054_phase_a.py": "69573ff5fc81ad398f35ccf9e656d5fceb7e2696e4b6b35a1db80a166ceb7016",
+    "scripts/verify_uploads.py": "3991c7f464602766d26b5c38b2b42905e92b7f40e918cb72776b59b7e3d34ee9",
+    "src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79",
+    "src/explore_persona_space/orchestrate/env.py": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759",
+    "src/explore_persona_space/orchestrate/hub.py": "6590d4c01d396f935da018d16673e3d21f93843126b5e12a42be8e6e0419351e",
+    "tests/test_context_risk_highrate_capture.py": "5d7187a5c3f1897d130ac65167320ab65acae569d30a2e4e1d905f1448d3b5d6",
+    "tests/test_context_risk_highrate_postrun.py": "f653400a60e77a81d839715dc4ab0bce3c8f1454ae0cff551fcd1367a066cb80",
+    "tests/test_context_risk_highrate_postrun_integration.py": "199ae6a3b2ef230e9e37fe9ecc8647b717686d266f89798b3a642af3482d6657",
+    "tests/test_context_risk_highrate_reconcile.py": "6fe645d5936557847a3c49acaa075f6d915b3b07017f6eafc9c26c3ddc4c553b",
+    "tests/test_context_risk_highrate_transport.py": "cb65dc7d3027aa56dae639ed1d198fd5d57b26b893b70802c55ac10440e9acbe"
+  },
+  "validated_original_inputs_checked": 119,
+  "verdict": "PASS"
+}
