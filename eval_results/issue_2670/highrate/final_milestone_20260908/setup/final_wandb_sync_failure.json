@@ -1,0 +1,12 @@
+{
+  "passed": false,
+  "dashboard_metrics_synced": false,
+  "error_type": "CommError",
+  "stage": "wandb_online_sync",
+  "analysis_result_sha256": "a7df0f877f8f45f4814757b16152c7d0c5b2897f3bdf34adad5664266cce2421",
+  "evidence": "See final_wandb_sync.log; scientific HF archive remains verified.",
+  "http_status": 401,
+  "process_exit_code": 1,
+  "evidence_sha256": "547488944ce809e36fa72f80845b0b46f3afada90e96453b7b02ce530f451067",
+  "status": "authentication_failed"
+}

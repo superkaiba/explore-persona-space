@@ -1,0 +1,218 @@
+{
+  "provisional": false,
+  "caption": "Positive values favor raw over text or mapped over raw. Points and marginal 95% percentile intervals use 5,000 paired test-task bootstrap draws (seed 38296); fitting uncertainty is excluded. Squares add independent screening outcomes equally to the compared predictors; open points restrict to tasks with an observed original success. All results condition on completed, structurally assessable trajectories. Fresh censors: 1; structurally not assessable: 8. These bar unconditional benefit claims. Horizontal scales differ across panels to display small effects faithfully. The assessable population uses nine tasks/72 completed draws; the original-success subset uses eight tasks/64 completed draws.",
+  "input_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/independent_result_audit.json": "5dda33f75e51dd10599a29b67b86cb00e9c44262963928007972610b022e796a",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/comparison_data.json": "0e966bde6e92b4a645fc02cbec6cf26ddfa3e991e72bb7942f4fdc1d8e68ecb7"
+  },
+  "source_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/plot_results.py": "023ae67b896c9c4f23216e9b79d94cbde3985ef84f82395d60b71da9f9bdb4c6",
+    "/home/thomasjiralerspong/explore-persona-space/src/explore_persona_space/analysis/c2a_plot_style.py": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1"
+  },
+  "plotted_data": {
+    "comparisons": [
+      {
+        "regime": "primary",
+        "comparison": "raw_over_text",
+        "first": "text_plus_metadata",
+        "second": "raw_plus_metadata",
+        "improvement": 0.00011135811463675347,
+        "ci_low": -0.00017174581802979888,
+        "ci_high": 0.0004159208008873924,
+        "n_tasks": 9,
+        "replicates": 5000,
+        "seed": 38296,
+        "positive_interval": false,
+        "benefit_supported": false
+      },
+      {
+        "regime": "primary",
+        "comparison": "mapped_over_raw",
+        "first": "raw_plus_metadata",
+        "second": "mapped_plus_metadata",
+        "improvement": -5.375780535134267e-05,
+        "ci_low": -0.00015597902494798556,
+        "ci_high": 4.8761034799085295e-05,
+        "n_tasks": 9,
+        "replicates": 5000,
+        "seed": 38296,
+        "positive_interval": false,
+        "benefit_supported": false
+      },
+      {
+        "regime": "competence_sensitivity",
+        "comparison": "raw_over_text",
+        "first": "text_plus_metadata",
+        "second": "raw_plus_metadata",
+        "improvement": 0.00019008596065619998,
+        "ci_low": -0.00015805679027071882,
+        "ci_high": 0.0005770591655863043,
+        "n_tasks": 8,
+        "replicates": 5000,
+        "seed": 38296,
+        "positive_interval": false,
+        "benefit_supported": false
+      },
+      {
+        "regime": "competence_sensitivity",
+        "comparison": "mapped_over_raw",
+        "first": "raw_plus_metadata",
+        "second": "mapped_plus_metadata",
+        "improvement": -6.992493439346437e-05,
+        "ci_low": -0.00020468928228315614,
+        "ci_high": 6.985797192439258e-05,
+        "n_tasks": 8,
+        "replicates": 5000,
+        "seed": 38296,
+        "positive_interval": false,
+        "benefit_supported": false
+      },
+      {
+        "regime": "screen_augmented_primary",
+        "comparison": "raw_over_text",
+        "first": "text_plus_metadata",
+        "second": "raw_plus_metadata",
+        "improvement": -0.09010616973533768,
+        "ci_low": -0.1703804092867647,
+        "ci_high": -0.029459868095573872,
+        "n_tasks": 9,
+        "replicates": 5000,
+        "seed": 38296,
+        "positive_interval": false,
+        "benefit_supported": false
+      },
+      {
+        "regime": "screen_augmented_primary",
+        "comparison": "mapped_over_raw",
+        "first": "raw_plus_metadata",
+        "second": "mapped_plus_metadata",
+        "improvement": -5.375632855072723e-05,
+        "ci_low": -0.00015597632189189335,
+        "ci_high": 4.876168540407061e-05,
+        "n_tasks": 9,
+        "replicates": 5000,
+        "seed": 38296,
+        "positive_interval": false,
+        "benefit_supported": false
+      },
+      {
+        "regime": "screen_augmented_competence_sensitivity",
+        "comparison": "raw_over_text",
+        "first": "text_plus_metadata",
+        "second": "raw_plus_metadata",
+        "improvement": -0.09018858690368105,
+        "ci_low": -0.1723792860370886,
+        "ci_high": -0.02132965280878001,
+        "n_tasks": 8,
+        "replicates": 5000,
+        "seed": 38296,
+        "positive_interval": false,
+        "benefit_supported": false
+      },
+      {
+        "regime": "screen_augmented_competence_sensitivity",
+        "comparison": "mapped_over_raw",
+        "first": "raw_plus_metadata",
+        "second": "mapped_plus_metadata",
+        "improvement": -6.992282116445765e-05,
+        "ci_low": -0.00020468689834505886,
+        "ci_high": 6.985864760611746e-05,
+        "n_tasks": 8,
+        "replicates": 5000,
+        "seed": 38296,
+        "positive_interval": false,
+        "benefit_supported": false
+      }
+    ],
+    "supports": {
+      "primary": {
+        "n_tasks": 9,
+        "n_contexts": 18,
+        "n_trajectories": 72,
+        "positive": 12,
+        "negative": 60,
+        "positive_tasks": 4,
+        "negative_tasks": 9
+      },
+      "competence_sensitivity": {
+        "n_tasks": 8,
+        "n_contexts": 16,
+        "n_trajectories": 64,
+        "positive": 12,
+        "negative": 52,
+        "positive_tasks": 4,
+        "negative_tasks": 8
+      },
+      "screen_augmented_primary": {
+        "n_tasks": 9,
+        "n_contexts": 18,
+        "n_trajectories": 72,
+        "positive": 12,
+        "negative": 60,
+        "positive_tasks": 4,
+        "negative_tasks": 9
+      },
+      "screen_augmented_competence_sensitivity": {
+        "n_tasks": 8,
+        "n_contexts": 16,
+        "n_trajectories": 64,
+        "positive": 12,
+        "negative": 52,
+        "positive_tasks": 4,
+        "negative_tasks": 8
+      }
+    }
+  },
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      8.643
+    ],
+    "exported_size_inches": [
+      13.095,
+      8.004
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/forecast_comparisons.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "1e\u22124",
+      "\u22122",
+      "0",
+      "2",
+      "4",
+      "6",
+      "Assessable tasks",
+      "Original-success\nsubset",
+      "Raw vs. text\nContext only",
+      "\u22121",
+      "1",
+      "Mapped vs. raw\nContext only",
+      "\u22120.15",
+      "\u22120.10",
+      "\u22120.05",
+      "0.00",
+      "Raw vs. text\n+ Screening",
+      "Mapped vs. raw\n+ Screening",
+      "Reduction in held-out log loss (nats per trajectory) \u2192",
+      "Paired test-task intervals \u00b7 panel scales differ"
+    ]
+  },
+  "output_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_comparisons.pdf": "98513bc66c6b2db0e9acfb5fe396700c6e5f3564a380a0b1ca2bfb4ab980436e",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_comparisons.png": "1f26c65926e83bd76bea10cd8464ba2be798d102a8d4f9833567afe4063f98af",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_comparisons_grayscale.png": "d35010b0b8499d9fc38f3178b30cbae4dadec5ff873a8f4246cb685d676062ed"
+  },
+  "publication_status": "Local review only; parent must publish before presenting a figure URL."
+}

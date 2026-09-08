@@ -1,0 +1,70 @@
+{
+  "status": "COMPLETE_REVIEWED_LOCAL_OUTPUTS",
+  "utc": "2026-09-08T12:36:00.535110+00:00",
+  "analysis_result_sha256": "a7df0f877f8f45f4814757b16152c7d0c5b2897f3bdf34adad5664266cce2421",
+  "independent_result_audit_sha256": "5dda33f75e51dd10599a29b67b86cb00e9c44262963928007972610b022e796a",
+  "process_receipts_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/analysis_v10_20260908T120312Z_exit.json": "8a4acf3bd1b627fae41c9a9c857071244e767b0bdd5ce6977413bc047e21ce6f",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/analysis_v10_20260908T120312Z_owner_launch.json": "37bfa1f6e1912ebe227b20539365fb844434224f89bdd089a924c869de7fa825",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/analysis_v10_20260908T120312Z.log": "c29090ba768168f0842f543f1881773462564a38381e1c123873dceb0fa1c42e"
+  },
+  "live_owned_group_members": [],
+  "figures": {
+    "forecast_model_losses": {
+      "metadata_sha256": "410d7a3e0e9d687720f9e79e0000773fafb1c0a4a5c920c5c73848b4ce1773fc",
+      "outputs_sha256": {
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_model_losses.pdf": "e56f6c570c316018eefea5160d99ea21824f95a6f4af824f98854a9dd625445e",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_model_losses.png": "8a8ca4c5ece67020151dce0f796062e7c7355692de313c85af6ca1d76adaf891",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_model_losses_grayscale.png": "855d69016d49a405b56f08f2d1933543a3a63ea2b81e604e76b56af6bafd547e"
+      },
+      "archive_paths": [
+        "run/report/forecast_model_losses.pdf",
+        "run/report/forecast_model_losses.png",
+        "run/report/forecast_model_losses_grayscale.png"
+      ],
+      "source_sha256": {
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/plot_results.py": "023ae67b896c9c4f23216e9b79d94cbde3985ef84f82395d60b71da9f9bdb4c6",
+        "/home/thomasjiralerspong/explore-persona-space/src/explore_persona_space/analysis/c2a_plot_style.py": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1"
+      }
+    },
+    "forecast_comparisons": {
+      "metadata_sha256": "c75352faad5dab268683c8f741ab1c134f630b4e433d11444731d104a02e383f",
+      "outputs_sha256": {
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_comparisons.pdf": "98513bc66c6b2db0e9acfb5fe396700c6e5f3564a380a0b1ca2bfb4ab980436e",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_comparisons.png": "1f26c65926e83bd76bea10cd8464ba2be798d102a8d4f9833567afe4063f98af",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_comparisons_grayscale.png": "d35010b0b8499d9fc38f3178b30cbae4dadec5ff873a8f4246cb685d676062ed"
+      },
+      "archive_paths": [
+        "run/report/forecast_comparisons.pdf",
+        "run/report/forecast_comparisons.png",
+        "run/report/forecast_comparisons_grayscale.png"
+      ],
+      "source_sha256": {
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/plot_results.py": "023ae67b896c9c4f23216e9b79d94cbde3985ef84f82395d60b71da9f9bdb4c6",
+        "/home/thomasjiralerspong/explore-persona-space/src/explore_persona_space/analysis/c2a_plot_style.py": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1"
+      }
+    },
+    "forecast_per_task": {
+      "metadata_sha256": "1a2b3bb7aed540c84e9e25e81c53c09522a31dd92fce6c0f54c2060bb61d3b7d",
+      "outputs_sha256": {
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_per_task.pdf": "4fdf91afd0c0133d11c4b6575e21b65a5c80a19ae3a70b4a46188e1a3349e455",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_per_task.png": "76632a83c02f65d7968ea2156c4126162604d43ff8d660fdd01adfe09c47432b",
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_per_task_grayscale.png": "86912dd883a431ec3ab578acf95b76b1862fb09afa844c6449d6018e9eba8936"
+      },
+      "archive_paths": [
+        "run/report/forecast_per_task.pdf",
+        "run/report/forecast_per_task.png",
+        "run/report/forecast_per_task_grayscale.png"
+      ],
+      "source_sha256": {
+        "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/plot_results.py": "023ae67b896c9c4f23216e9b79d94cbde3985ef84f82395d60b71da9f9bdb4c6",
+        "/home/thomasjiralerspong/explore-persona-space/src/explore_persona_space/analysis/c2a_plot_style.py": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1"
+      }
+    }
+  },
+  "render_review": "All three corrected color views visually inspected; labels legible and no clipping. Grayscale exports regenerated using unchanged shared style. Render completed without warnings. No metrics or independent numerical audit rerun. Prior bound process checks unchanged.",
+  "publications_performed": false,
+  "pending": "Parent/Carson independent report and rendering review, final archive upload/readback and verified browser URL.",
+  "previous_delivery_review_sha256": "a3beb22968dc50fa6cd28f363a0ce7e16ce179e106ad02b96ca76c1aea73ea9a",
+  "label_correction": "Primary labels now Assessable tasks; per-task header Assessable test tasks. Selected task77 remains excluded from semantic analysis and is not implied to appear."
+}

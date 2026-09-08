@@ -1,0 +1,208 @@
+{
+  "provisional": false,
+  "caption": "Per-task descriptive loss differences in the prespecified context-only primary population. Each point averages only completed, structurally assessable trajectories across both impossible conditions; n is that task's completed trajectory count. No within-task uncertainty interval is estimated. Positive values favor raw over text, or mapped over raw. Tasks are ordered numerically. Missing or censored observations are not imputed as negative rewards.",
+  "input_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/independent_result_audit.json": "5dda33f75e51dd10599a29b67b86cb00e9c44262963928007972610b022e796a",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/comparison_data.json": "0e966bde6e92b4a645fc02cbec6cf26ddfa3e991e72bb7942f4fdc1d8e68ecb7"
+  },
+  "source_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/plot_results.py": "023ae67b896c9c4f23216e9b79d94cbde3985ef84f82395d60b71da9f9bdb4c6",
+    "/home/thomasjiralerspong/explore-persona-space/src/explore_persona_space/analysis/c2a_plot_style.py": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1"
+  },
+  "plotted_data": [
+    {
+      "regime": "primary",
+      "comparison": "raw_over_text",
+      "task_id": "lcbhard_24",
+      "loss_difference_sum": -0.004663251240262345,
+      "completed_trials": 8,
+      "improvement": -0.0005829064050327931
+    },
+    {
+      "regime": "primary",
+      "comparison": "raw_over_text",
+      "task_id": "lcbhard_3",
+      "loss_difference_sum": -0.0012041881705887603,
+      "completed_trials": 8,
+      "improvement": -0.00015052352132359503
+    },
+    {
+      "regime": "primary",
+      "comparison": "raw_over_text",
+      "task_id": "lcbhard_40",
+      "loss_difference_sum": 0.00046775028644496786,
+      "completed_trials": 8,
+      "improvement": 5.846878580562098e-05
+    },
+    {
+      "regime": "primary",
+      "comparison": "raw_over_text",
+      "task_id": "lcbhard_46",
+      "loss_difference_sum": 0.00043073978695784554,
+      "completed_trials": 8,
+      "improvement": 5.384247336973069e-05
+    },
+    {
+      "regime": "primary",
+      "comparison": "raw_over_text",
+      "task_id": "lcbhard_62",
+      "loss_difference_sum": 0.0031947702438679393,
+      "completed_trials": 8,
+      "improvement": 0.0003993462804834924
+    },
+    {
+      "regime": "primary",
+      "comparison": "raw_over_text",
+      "task_id": "lcbhard_73",
+      "loss_difference_sum": 0.007245335301667044,
+      "completed_trials": 8,
+      "improvement": 0.0009056669127083805
+    },
+    {
+      "regime": "primary",
+      "comparison": "raw_over_text",
+      "task_id": "lcbhard_75",
+      "loss_difference_sum": 0.00566712207153186,
+      "completed_trials": 8,
+      "improvement": 0.0007083902589414826
+    },
+    {
+      "regime": "primary",
+      "comparison": "raw_over_text",
+      "task_id": "lcbhard_81",
+      "loss_difference_sum": -0.0015885740875137833,
+      "completed_trials": 8,
+      "improvement": -0.0001985717609392229
+    },
+    {
+      "regime": "primary",
+      "comparison": "raw_over_text",
+      "task_id": "lcbhard_95",
+      "loss_difference_sum": -0.0015319199382585191,
+      "completed_trials": 8,
+      "improvement": -0.0001914899922823149
+    },
+    {
+      "regime": "primary",
+      "comparison": "mapped_over_raw",
+      "task_id": "lcbhard_24",
+      "loss_difference_sum": -0.0023356481990038924,
+      "completed_trials": 8,
+      "improvement": -0.00029195602487548655
+    },
+    {
+      "regime": "primary",
+      "comparison": "mapped_over_raw",
+      "task_id": "lcbhard_3",
+      "loss_difference_sum": -0.00024580913606642163,
+      "completed_trials": 8,
+      "improvement": -3.0726142008302704e-05
+    },
+    {
+      "regime": "primary",
+      "comparison": "mapped_over_raw",
+      "task_id": "lcbhard_40",
+      "loss_difference_sum": 4.399664839005446e-06,
+      "completed_trials": 8,
+      "improvement": 5.499581048756808e-07
+    },
+    {
+      "regime": "primary",
+      "comparison": "mapped_over_raw",
+      "task_id": "lcbhard_46",
+      "loss_difference_sum": -0.0024712281964299754,
+      "completed_trials": 8,
+      "improvement": -0.0003089035245537469
+    },
+    {
+      "regime": "primary",
+      "comparison": "mapped_over_raw",
+      "task_id": "lcbhard_62",
+      "loss_difference_sum": -0.0005905590010719663,
+      "completed_trials": 8,
+      "improvement": -7.38198751339958e-05
+    },
+    {
+      "regime": "primary",
+      "comparison": "mapped_over_raw",
+      "task_id": "lcbhard_73",
+      "loss_difference_sum": 0.001918535518234954,
+      "completed_trials": 8,
+      "improvement": 0.00023981693977936924
+    },
+    {
+      "regime": "primary",
+      "comparison": "mapped_over_raw",
+      "task_id": "lcbhard_75",
+      "loss_difference_sum": -0.0005355856232174272,
+      "completed_trials": 8,
+      "improvement": -6.69482029021784e-05
+    },
+    {
+      "regime": "primary",
+      "comparison": "mapped_over_raw",
+      "task_id": "lcbhard_81",
+      "loss_difference_sum": 9.453060923303447e-05,
+      "completed_trials": 8,
+      "improvement": 1.1816326154129309e-05
+    },
+    {
+      "regime": "primary",
+      "comparison": "mapped_over_raw",
+      "task_id": "lcbhard_95",
+      "loss_difference_sum": 0.00029080237818601695,
+      "completed_trials": 8,
+      "improvement": 3.635029727325212e-05
+    }
+  ],
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      8.25
+    ],
+    "exported_size_inches": [
+      13.095,
+      7.485
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/forecast_per_task.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "\u22120.0010",
+      "\u22120.0005",
+      "0.0000",
+      "0.0005",
+      "0.0010",
+      "Task 3 \u00b7 n=8",
+      "Task 24 \u00b7 n=8",
+      "Task 40 \u00b7 n=8",
+      "Task 46 \u00b7 n=8",
+      "Task 62 \u00b7 n=8",
+      "Task 73 \u00b7 n=8",
+      "Task 75 \u00b7 n=8",
+      "Task 81 \u00b7 n=8",
+      "Task 95 \u00b7 n=8",
+      "Raw vs. text",
+      "Mapped vs. raw",
+      "Reduction in held-out log loss (nats per trajectory) \u2192",
+      "Assessable test tasks \u00b7 initial context only"
+    ]
+  },
+  "output_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_per_task.pdf": "4fdf91afd0c0133d11c4b6575e21b65a5c80a19ae3a70b4a46188e1a3349e455",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_per_task.png": "76632a83c02f65d7968ea2156c4126162604d43ff8d660fdd01adfe09c47432b",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_per_task_grayscale.png": "86912dd883a431ec3ab578acf95b76b1862fb09afa844c6449d6018e9eba8936"
+  },
+  "publication_status": "Local review only; parent must publish before presenting a figure URL."
+}

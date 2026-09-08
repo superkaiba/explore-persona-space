@@ -1,0 +1,8 @@
+{
+  "owner_pid": 1613103,
+  "exit_code": 0,
+  "stdout": "pid 1613103's OOM score adjust value changed from 0 to -600\n",
+  "stderr": "",
+  "oom_score_adj": -600,
+  "inheritance": "Owner protected before child creation; worker and subsequent children inherit."
+}

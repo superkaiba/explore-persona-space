@@ -1,0 +1,8 @@
+{
+  "body_sha256": "d9d1bff2ffb12a77b0cdd5b4397872aa5a0ba5c48a6263cc72e8690ecc682038",
+  "previous_methodology_sha256": "929630233c925ac1a7bcf43fe122c0ba9d239877b8d864a8af582f75d11db4f5",
+  "methodology_sha256": "b4f85115f7c27090885de437bd71c8f833f1435b1250c9468660b3b0f63da6b9",
+  "normalization": "Mechanical Methodology section copy; H2 changed to H1 only.",
+  "commit_exit_code": 0,
+  "commit": "29706f1498b277a8c62857992e92cde76cf5239e"
+}

@@ -1,0 +1,51 @@
+{
+  "exact_late_review_files": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_pinned_api_tree_review_20260908T130855Z.json": {
+      "sha256": "0a955bc6399ed843fc19772f2a848ed9e8bab2be35da5cc8e14ca0d82f8ddb3e",
+      "size": 794943
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_pinned_readback_reference_review_20260908T130855Z.json": {
+      "sha256": "8ae038d80de34f7a6a0a645caa207d5987b7a4d64aefce0e58beb88d81f915f9",
+      "size": 14184
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_readback_reference_audit_critic.py": {
+      "sha256": "c3cbc5acd6ed38d8c26233090952841d48449d8530f10907fbf6b7b5f716f473",
+      "size": 15565
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_readback_reference_audit_critic_20260908.log": {
+      "sha256": "8c13b0a1c4d5a0f4a90549a30e39ca732a7d5231209e992b663ee31ed2e46bf6",
+      "size": 752
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_snapshot_reference_byte_audit_critic.py": {
+      "sha256": "39b3b7cc59c81628c3d311492f334206aedddac57082a50cc4a40c744c71c0ad",
+      "size": 11215
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_snapshot_source_byte_review_20260908T1259Z.json": {
+      "sha256": "f68874af60bfd555d7ad29be01af27e4040c5b4de04b4e2a5f8fe4d4835fa994",
+      "size": 1201626
+    },
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_snapshot_source_byte_review_20260908T1259Z.log": {
+      "sha256": "e9fcffac131ce97853faa575530f3612c21e3f8ed6dce751f8d8a87d338f3c30",
+      "size": 263
+    }
+  },
+  "executor": "v9_consumer_critic",
+  "notes": [
+    "Seven exact files above plus this execution receipt are the complete final-phase independent reviewer additions for late Git persistence.",
+    "All parent-owned final archive owner/build/upload/readback/canonical evidence is additional and remains parent-owned.",
+    "No native semantic reader, refit, upload, snapshot mutation, or process signaling performed."
+  ],
+  "recorded_utc": "2026-09-08T13:09:34.144184+00:00",
+  "schema_version": "task2670_final_independent_readback_execution_v1",
+  "tool_execution": {
+    "exit_code": 0,
+    "final_chunk_id": "dc541f",
+    "kill_after_seconds": 30,
+    "observed_from": "exec_command/write_stdin actual terminal tool result",
+    "session_id": 13738,
+    "stdout_final_marker": "FINAL_READBACK_PASS",
+    "timeout_seconds": 600
+  },
+  "verdict": "PASS",
+  "verification_receipt": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_pinned_readback_reference_review_20260908T130855Z.json"
+}

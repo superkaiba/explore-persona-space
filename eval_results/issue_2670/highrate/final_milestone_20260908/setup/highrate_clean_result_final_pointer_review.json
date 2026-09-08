@@ -1,0 +1,48 @@
+{
+  "analysis_result_sha256": "a7df0f877f8f45f4814757b16152c7d0c5b2897f3bdf34adad5664266cce2421",
+  "body_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/highrate_clean_result_final.md",
+  "body_sha256": "79087d29c79abb125a61b3b026d0d2bda967149697a3fd089f50222816e36b33",
+  "checks": {
+    "entire_other_body_byte_identical": true,
+    "git_show_document_is_exact_methodology_section_copy": true,
+    "live_gist_content_matches_git_document_bytes": true,
+    "no_scientific_changes": true,
+    "only_methodology_pointer_added": true,
+    "pointer_after_clean_result_sentinel": true
+  },
+  "findings": [],
+  "gist": {
+    "api_response_sha256": "365b3eb05c7b58744afe5be420f050b932cc9502dd7d207f19d143348e242ba4",
+    "bytes": 34608,
+    "file": "issue_2670.md",
+    "html_url": "https://gist.github.com/superkaiba/d12a59ae6071bfd6ee16ddd359520df5",
+    "id": "d12a59ae6071bfd6ee16ddd359520df5",
+    "live_api_readback": true,
+    "public": false,
+    "sha256": "b4f85115f7c27090885de437bd71c8f833f1435b1250c9468660b3b0f63da6b9",
+    "truncated": false,
+    "updated_at": "2026-09-08T13:10:14Z",
+    "version": "57a3dd7f7569f35cc4719e1a12a49e657e93543b"
+  },
+  "inputs_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/analysis/result.json": "a7df0f877f8f45f4814757b16152c7d0c5b2897f3bdf34adad5664266cce2421",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_methodology_export.json": "309b6914d5321ca58d72d5320055f287c17f2aec3cb339e258daa99c31338e17",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/highrate_clean_result_completed_v3.md": "d9d1bff2ffb12a77b0cdd5b4397872aa5a0ba5c48a6263cc72e8690ecc682038",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/highrate_clean_result_completed_v3_scientific_review.json": "af0f6d522c16540e4b263dc020ea3cce6a47fa6bc388aa2066ed68bf60c348f2",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/highrate_clean_result_final.md": "79087d29c79abb125a61b3b026d0d2bda967149697a3fd089f50222816e36b33"
+  },
+  "methodology": {
+    "bytes": 34608,
+    "commit": "29706f1498b277a8c62857992e92cde76cf5239e",
+    "normalization": "Methodology section from reviewed V3 body with H2 replaced by H1 issue title and single terminal newline.",
+    "path": "docs/methodology/issue_2670.md",
+    "remote_git_status": "PENDING parent push and independent remote SHA check; local pinned commit verified here.",
+    "sha256": "b4f85115f7c27090885de437bd71c8f833f1435b1250c9468660b3b0f63da6b9"
+  },
+  "previous_review_sha256": "af0f6d522c16540e4b263dc020ea3cce6a47fa6bc388aa2066ed68bf60c348f2",
+  "remaining_gate": "Root must verify the methodology commit/path on the remote after the sanctioned main synchronization/push. This PASS certifies body preservation, local exact commit bytes and actual Gist bytes; it does not claim the pending remote Git push is complete.",
+  "reviewed_utc": "2026-09-08T13:14:17.928512+00:00",
+  "reviewer": "Independent pointer-only delta reviewer /root/verify_vllm_runtime",
+  "schema_version": "context_risk_highrate_final_pointer_delta_review_v1",
+  "verdict": "PASS"
+}

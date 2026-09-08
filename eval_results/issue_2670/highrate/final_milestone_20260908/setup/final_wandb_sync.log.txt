@@ -1,0 +1,21 @@
+wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from WANDB_API_KEY.
+wandb: ERROR Error while calling W&B API: invalid api key (<Response [401]>)
+wandb: W&B API key is configured. Use `wandb login --relogin` to force relogin
+wandb: ERROR Error while calling W&B API: invalid api key (<Response [401]>)
+wandb: ERROR Failed to get resume status for run 2670high20260908: returned error 401: {"data":null}
+Traceback (most recent call last):
+  File "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/sync_final_wandb_metrics.py", line 25, in <module>
+    with wandb.init(project='context-risk-forecasting', name='issue2670-highrate-final', id='2670high20260908', resume='never', mode='online', dir=str(folder), save_code=False, settings=wandb.Settings(disable_git=True, disable_code=True, x_disable_stats=True, init_timeout=45), config={'task':2670, 'analysis_result_sha256':result_hash, 'final_archive_revision':'6994094e632aaa7fb50357f52d1fcde82e4fdc7c', 'metric_source_sha256':hashlib.sha256(path.read_bytes()).hexdigest()}) as run:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/.venv/lib/python3.11/site-packages/wandb/sdk/wandb_init.py", line 1595, in init
+    get_sentry().reraise(e)
+  File "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/.venv/lib/python3.11/site-packages/wandb/analytics/sentry.py", line 190, in reraise
+    raise exc.with_traceback(tb)
+  File "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/.venv/lib/python3.11/site-packages/wandb/sdk/wandb_init.py", line 1578, in init
+    run = wi.init(run_settings, run_config, run_printer)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/.venv/lib/python3.11/site-packages/wandb/sdk/wandb_init.py", line 1031, in init
+    raise error
+wandb.errors.errors.CommError: Failed to get resume status for run 2670high20260908: returned error 401: {"data":null}
+[1;34mwandb[0m: 
+[1;34mwandb[0m: Find logs at: [1;35m../../../explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_wandb_sync/wandb/run-20260908_060247-2670high20260908/logs[0m

@@ -1,0 +1,30 @@
+{
+  "all_fenced_examples_preserved_exactly": true,
+  "all_numeric_tables_preserved_exactly": true,
+  "analysis_result_sha256": "a7df0f877f8f45f4814757b16152c7d0c5b2897f3bdf34adad5664266cce2421",
+  "audit_body_discipline": {
+    "exit_code": 0,
+    "log_sha256": "dc8055c6e0ac6cf2ce6489ce5ce765ef05cbb648810fe8defb4f54e6666fc498",
+    "overall": "PASS"
+  },
+  "body_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/highrate_clean_result_completed_v3.md",
+  "body_sha256": "d9d1bff2ffb12a77b0cdd5b4397872aa5a0ba5c48a6263cc72e8690ecc682038",
+  "canonical_task_writes": false,
+  "created_utc": "2026-09-08T13:05:26.173340+00:00",
+  "exact_goal_preserved": true,
+  "final_archive_revision": "6994094e632aaa7fb50357f52d1fcde82e4fdc7c",
+  "git_writes": false,
+  "independent_delta_review": "requested from /root/verify_vllm_runtime; not replaced by these author checks",
+  "other_raw_and_historical_urls_preserved": true,
+  "prior_candidate_preserved_sha256": "e6fd7af2af124cac636905ecc74f7ff65cf1e96988d6d0b1e6fb7747d4d8d67b",
+  "reviewer": "/root/published_task_rates (body author; mechanical checks only)",
+  "schema_version": "highrate_completed_body_v3_mechanical_checks_v1",
+  "verify_task_body": {
+    "exit_code": 0,
+    "log_sha256": "5dfb23aee40fe5e98da63d32e2e9b3a2e5d6a54833aa0b2910c6ef2f3f47edbd",
+    "overall": "PASS",
+    "residual_warning": "No frontmatter goal in bare --file body; canonical --issue check belongs to root after task.py writing."
+  },
+  "wandb_failure_receipt_sha256": "eaae266d6b1777a074abe795181834359565bf87fc1746c4804ed937899b11fc",
+  "wandb_log_sha256": "547488944ce809e36fa72f80845b0b46f3afada90e96453b7b02ce530f451067"
+}

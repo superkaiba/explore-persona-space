@@ -1,0 +1,110 @@
+{
+  "analysis_result_sha256": "a7df0f877f8f45f4814757b16152c7d0c5b2897f3bdf34adad5664266cce2421",
+  "body_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/highrate_clean_result_completed_v3.md",
+  "body_sha256": "d9d1bff2ffb12a77b0cdd5b4397872aa5a0ba5c48a6263cc72e8690ecc682038",
+  "checks": {
+    "all_claim_scope_uncertainty_and_population_qualifiers_retained": true,
+    "all_complete_prompt_and_executable_examples_byte_identical": true,
+    "all_final_urls_pinned_and_verified_members": true,
+    "all_markdown_tables_byte_identical": true,
+    "all_old_nonfinal_urls_preserved": true,
+    "archived_report_files_modified": false,
+    "changed_results_prose_reviewed": true,
+    "goal_byte_identical": true,
+    "wandb_401_disclosure_bound_to_log": true
+  },
+  "final_archive_revision": "6994094e632aaa7fb50357f52d1fcde82e4fdc7c",
+  "final_url_membership": [
+    {
+      "kind": "verified_exact_file",
+      "sha256": "a7df0f877f8f45f4814757b16152c7d0c5b2897f3bdf34adad5664266cce2421",
+      "size": 1705938,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/6994094e632aaa7fb50357f52d1fcde82e4fdc7c/context_risk/issue2670_highrate/final/run/analysis/result.json"
+    },
+    {
+      "kind": "verified_exact_file",
+      "sha256": "5dda33f75e51dd10599a29b67b86cb00e9c44262963928007972610b022e796a",
+      "size": 670393,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/6994094e632aaa7fb50357f52d1fcde82e4fdc7c/context_risk/issue2670_highrate/final/run/report/independent_result_audit.json"
+    },
+    {
+      "kind": "verified_exact_file",
+      "sha256": "95634fbfda4f83ccec1fdc38c4921a057fee2006f44c6461deae8e5798c8afd4",
+      "size": 490,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/6994094e632aaa7fb50357f52d1fcde82e4fdc7c/context_risk/issue2670_highrate/final/run/setup/analysis_20260908T112039Z_exit.json"
+    },
+    {
+      "kind": "verified_exact_file",
+      "sha256": "8a4acf3bd1b627fae41c9a9c857071244e767b0bdd5ce6977413bc047e21ce6f",
+      "size": 578,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/6994094e632aaa7fb50357f52d1fcde82e4fdc7c/context_risk/issue2670_highrate/final/run/setup/analysis_v10_20260908T120312Z_exit.json"
+    },
+    {
+      "kind": "verified_exact_file",
+      "sha256": "b4a9352179a22b53c2c344af2a40011e1c7a02f12c40929084504707c6777073",
+      "size": 27485,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/6994094e632aaa7fb50357f52d1fcde82e4fdc7c/context_risk/issue2670_highrate/final/run/setup/optimizer_iteration_diagnostic_critic_20260908T114145Z.json"
+    },
+    {
+      "kind": "verified_exact_file",
+      "sha256": "1f26c65926e83bd76bea10cd8464ba2be798d102a8d4f9833567afe4063f98af",
+      "size": 261286,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/6994094e632aaa7fb50357f52d1fcde82e4fdc7c/context_risk/issue2670_highrate/final/run/report/forecast_comparisons.png"
+    },
+    {
+      "kind": "verified_exact_file",
+      "sha256": "8a8ca4c5ece67020151dce0f796062e7c7355692de313c85af6ca1d76adaf891",
+      "size": 464174,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/6994094e632aaa7fb50357f52d1fcde82e4fdc7c/context_risk/issue2670_highrate/final/run/report/forecast_model_losses.png"
+    },
+    {
+      "kind": "verified_exact_file",
+      "sha256": "76632a83c02f65d7968ea2156c4126162604d43ff8d660fdd01adfe09c47432b",
+      "size": 226722,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/6994094e632aaa7fb50357f52d1fcde82e4fdc7c/context_risk/issue2670_highrate/final/run/report/forecast_per_task.png"
+    },
+    {
+      "kind": "verified_directory",
+      "member_count": 1327,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/6994094e632aaa7fb50357f52d1fcde82e4fdc7c/context_risk/issue2670_highrate/final/run/analysis"
+    },
+    {
+      "kind": "verified_directory",
+      "member_count": 34,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/6994094e632aaa7fb50357f52d1fcde82e4fdc7c/context_risk/issue2670_highrate/final/run/report"
+    }
+  ],
+  "findings": [],
+  "inputs_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/analysis/result.json": "a7df0f877f8f45f4814757b16152c7d0c5b2897f3bdf34adad5664266cce2421",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/final_readback_receipt.json": "9f577c41f56cc2607121e3349c6f0401a390871e4242f84ddaf2bb90fdad6593",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/final_upload_receipt.json": "4218cda497b1715f68d38c65f37f915cb66db0b225710872a941335a0aa2a4df",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/independent_result_audit.json": "5dda33f75e51dd10599a29b67b86cb00e9c44262963928007972610b022e796a",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_archive_20260908T125035Z_exit.json": "dd72e3a924f6d3ef24d76b1acf94811ab5f7950823757d34cc4a5c335c58ae21",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_wandb_sync.log": "547488944ce809e36fa72f80845b0b46f3afada90e96453b7b02ce530f451067",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_wandb_sync_failure.json": "eaae266d6b1777a074abe795181834359565bf87fc1746c4804ed937899b11fc",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/highrate_clean_result_completed.md": "e6fd7af2af124cac636905ecc74f7ff65cf1e96988d6d0b1e6fb7747d4d8d67b",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/highrate_clean_result_completed_scientific_review_e6fd7af2.json": "c4a22cb1ddeca1faa1129653391438246bad12418f938e43ca4b454fe5858206",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/highrate_clean_result_completed_v3.md": "d9d1bff2ffb12a77b0cdd5b4397872aa5a0ba5c48a6263cc72e8690ecc682038",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_readback/final_20260908T1249Z/context_risk/issue2670_highrate/final/run/analysis/result.json": "a7df0f877f8f45f4814757b16152c7d0c5b2897f3bdf34adad5664266cce2421",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_readback/final_20260908T1249Z/context_risk/issue2670_highrate/final/run/report/forecast_comparisons.png": "1f26c65926e83bd76bea10cd8464ba2be798d102a8d4f9833567afe4063f98af",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_readback/final_20260908T1249Z/context_risk/issue2670_highrate/final/run/report/forecast_model_losses.png": "8a8ca4c5ece67020151dce0f796062e7c7355692de313c85af6ca1d76adaf891",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_readback/final_20260908T1249Z/context_risk/issue2670_highrate/final/run/report/forecast_per_task.png": "76632a83c02f65d7968ea2156c4126162604d43ff8d660fdd01adfe09c47432b",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_readback/final_20260908T1249Z/context_risk/issue2670_highrate/final/run/report/independent_result_audit.json": "5dda33f75e51dd10599a29b67b86cb00e9c44262963928007972610b022e796a",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_readback/final_20260908T1249Z/context_risk/issue2670_highrate/final/run/setup/analysis_20260908T112039Z_exit.json": "95634fbfda4f83ccec1fdc38c4921a057fee2006f44c6461deae8e5798c8afd4",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_readback/final_20260908T1249Z/context_risk/issue2670_highrate/final/run/setup/analysis_v10_20260908T120312Z_exit.json": "8a4acf3bd1b627fae41c9a9c857071244e767b0bdd5ce6977413bc047e21ce6f",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/issue2670_highrate_archive_readback/final_20260908T1249Z/context_risk/issue2670_highrate/final/run/setup/optimizer_iteration_diagnostic_critic_20260908T114145Z.json": "b4a9352179a22b53c2c344af2a40011e1c7a02f12c40929084504707c6777073"
+  },
+  "limits": [
+    "This delta review reuses the exact e6fd7af2 scientific PASS and final numerical audit; no fits, bootstraps, native validators or feature operations were rerun.",
+    "URL membership and bytes are checked against the successful exact upload receipt, canonical readback receipt and the actual cached readback files, without repeating transfer.",
+    "The existing mechanical task-body and discipline checks are independently owned by root/author; this review checks numerical/interpretation preservation and the specified publication evidence.",
+    "The WandB dashboard was not synchronized; its HTTP401 failure is explicitly reported and does not invalidate verified scientific artifacts."
+  ],
+  "previous_body_sha256": "e6fd7af2af124cac636905ecc74f7ff65cf1e96988d6d0b1e6fb7747d4d8d67b",
+  "previous_review_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/highrate_clean_result_completed_scientific_review_e6fd7af2.json",
+  "reviewed_utc": "2026-09-08T13:07:29.957496+00:00",
+  "reviewer": "Independent scientific delta reviewer /root/verify_vllm_runtime",
+  "schema_version": "context_risk_highrate_completed_body_delta_review_v1",
+  "verdict": "PASS"
+}

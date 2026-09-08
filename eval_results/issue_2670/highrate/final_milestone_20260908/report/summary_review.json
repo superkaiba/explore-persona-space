@@ -1,0 +1,47 @@
+{
+  "verdict": "PASS",
+  "reviewer": "Independent Codex subagent /root/verify_vllm_runtime; not summary author",
+  "scope": "Exact concise scientific summary: displayed values, selection/count qualifiers, comparison signs, scope, convergence history and evidence references. Longer canonical workflow body and publication are separate.",
+  "reviewed_utc": "2026-09-08T12:40:33.250115+00:00",
+  "summary_sha256": "51558d87d112bce19739a1908827438437a9b468211de5a02ac900f0939ac191",
+  "analysis_result_sha256": "a7df0f877f8f45f4814757b16152c7d0c5b2897f3bdf34adad5664266cce2421",
+  "independent_result_audit_sha256": "5dda33f75e51dd10599a29b67b86cb00e9c44262963928007972610b022e796a",
+  "inputs_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/summary.md": "51558d87d112bce19739a1908827438437a9b468211de5a02ac900f0939ac191",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/summary_inputs.json": "50a68efd33126576c4fc36391aab8dc93024a8eaa2729eb06892faf3f73b1cc4",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/independent_result_audit.json": "5dda33f75e51dd10599a29b67b86cb00e9c44262963928007972610b022e796a",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/comparison_data.json": "0e966bde6e92b4a645fc02cbec6cf26ddfa3e991e72bb7942f4fdc1d8e68ecb7",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/analysis/result.json": "a7df0f877f8f45f4814757b16152c7d0c5b2897f3bdf34adad5664266cce2421",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/analysis/input_census.json": "5935e66765b865579cf0cc34d51a2617f8ef487412dc71f2a65dcec7c6c621e2",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/selection.json": "f1b61e791e0821238371bdb5f2d3515f830ba21c639b4defa1e01ab1e512925d",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/optimizer_iteration_diagnostic_critic_20260908T114145Z.json": "b4a9352179a22b53c2c344af2a40011e1c7a02f12c40929084504707c6777073",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/analysis_original_cap_quarantine_20260908.json": "5703c20b5b13a57b59a0dd64cc6b9125a0614ae2d2c5ebeeeea5ba9d18488cdc",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/raw_readback_receipt.json": "a8cb378a69017833f59116922f7b124a33301f4e9338dc372aef8eddb3c442c4"
+  },
+  "checked_counts": {
+    "success": 34,
+    "valid_failure": 197,
+    "unknown": 1,
+    "structural_NA": 8
+  },
+  "checked_metric_rows": 4,
+  "checked_paired_mapping_intervals": 4,
+  "checked_planned_loss_comparisons": 8,
+  "comparison_data_exists_and_bound": true,
+  "convergence_diagnostic_checks": {
+    "failed_original_cell_converged_iterations": 5669,
+    "previously_converged_cells_identical": 2
+  },
+  "wording_corrections_verified": [
+    "Frozen20/10 split distinguished from9 assessable test tasks.",
+    "Negative mapping estimate explicitly described as a loss reduction; positive favors mapping.",
+    "Eight planned loss comparisons across four regimes."
+  ],
+  "unresolved_findings": [],
+  "limits": [
+    "Censoring and structural NA prevent unconditional benefit claims.",
+    "Bootstrap conditions on fitted predictions and omits fitting uncertainty.",
+    "No claim of absent activation information or established broader agentic misalignment.",
+    "No new fit or native/capture validation executed in this summary review."
+  ]
+}

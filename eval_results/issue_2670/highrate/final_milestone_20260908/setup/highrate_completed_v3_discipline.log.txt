@@ -1,0 +1,1 @@
+PASS: no body-discipline anti-patterns matched

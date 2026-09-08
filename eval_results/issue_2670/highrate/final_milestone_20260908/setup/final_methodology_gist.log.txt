@@ -1,0 +1,3 @@
+- Creating gist issue_2670.md
+✓ Created secret gist issue_2670.md
+https://gist.github.com/superkaiba/d12a59ae6071bfd6ee16ddd359520df5

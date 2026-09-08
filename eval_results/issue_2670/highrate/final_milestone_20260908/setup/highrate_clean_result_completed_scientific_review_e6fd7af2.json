@@ -1,0 +1,61 @@
+{
+  "analysis_result_sha256": "a7df0f877f8f45f4814757b16152c7d0c5b2897f3bdf34adad5664266cce2421",
+  "body_evidence_sha256": "317b6c27fb5f4d922b1adbdf3d84db58a6c792852824227550c571e5b9485152",
+  "body_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/highrate_clean_result_completed.md",
+  "body_sha256": "e6fd7af2af124cac636905ecc74f7ff65cf1e96988d6d0b1e6fb7747d4d8d67b",
+  "checked_displayed_values": {
+    "log_losses": 34,
+    "paired_estimates_and_interval_endpoints": 24,
+    "secondary_metric_values": 136,
+    "selected_C_values": 28
+  },
+  "findings": [],
+  "inputs_sha256": {
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/configs/eval/context_risk_qwen38_fit_map.yaml": "c2726ab0f6e9396ea981ff80e2cfded49897316c129b155d0424f589d38ef383",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+    "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_qwen38_fit_map.py": "3f34b37aa96d4b7c960755296488b2448910cce82354bdffb4572c31ea1c95ae",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/analysis/result.json": "a7df0f877f8f45f4814757b16152c7d0c5b2897f3bdf34adad5664266cce2421",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/comparison_data.json": "0e966bde6e92b4a645fc02cbec6cf26ddfa3e991e72bb7942f4fdc1d8e68ecb7",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/figure_delivery_review.json": "6b9167b27411baf2f08f323a17e5ee79a9219653731656f00654734acb67d0d8",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_comparisons.meta.json": "c75352faad5dab268683c8f741ab1c134f630b4e433d11444731d104a02e383f",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_comparisons.pdf": "98513bc66c6b2db0e9acfb5fe396700c6e5f3564a380a0b1ca2bfb4ab980436e",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_comparisons.png": "1f26c65926e83bd76bea10cd8464ba2be798d102a8d4f9833567afe4063f98af",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_model_losses.meta.json": "410d7a3e0e9d687720f9e79e0000773fafb1c0a4a5c920c5c73848b4ce1773fc",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_model_losses.pdf": "e56f6c570c316018eefea5160d99ea21824f95a6f4af824f98854a9dd625445e",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_model_losses.png": "8a8ca4c5ece67020151dce0f796062e7c7355692de313c85af6ca1d76adaf891",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_per_task.meta.json": "1a2b3bb7aed540c84e9e25e81c53c09522a31dd92fce6c0f54c2060bb61d3b7d",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_per_task.pdf": "4fdf91afd0c0133d11c4b6575e21b65a5c80a19ae3a70b4a46188e1a3349e455",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/forecast_per_task.png": "76632a83c02f65d7968ea2156c4126162604d43ff8d660fdd01adfe09c47432b",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/independent_result_audit.json": "5dda33f75e51dd10599a29b67b86cb00e9c44262963928007972610b022e796a",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/report/summary_review.json": "4256119a3b030b3f029248ca0b1f94218db84668c327a3434ee717c7a0366449",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/analysis_20260908T112039Z_exit.json": "95634fbfda4f83ccec1fdc38c4921a057fee2006f44c6461deae8e5798c8afd4",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/analysis_v10_20260908T120312Z_exit.json": "8a4acf3bd1b627fae41c9a9c857071244e767b0bdd5ce6977413bc047e21ce6f",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/highrate_clean_result_completed.md": "e6fd7af2af124cac636905ecc74f7ff65cf1e96988d6d0b1e6fb7747d4d8d67b",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/highrate_clean_result_completed_evidence.json": "317b6c27fb5f4d922b1adbdf3d84db58a6c792852824227550c571e5b9485152",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/map_reporting_evidence.json": "f9d3b3716b901166bb5e39eaff6c152b19b22f390db0fe0c9ebf634e55a01323",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/map_reuse_review.json": "234055bf34f371163569ee7416fb211b34a49f3163f61762e9b19d8c7ab57c8d",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/optimizer_iteration_diagnostic_critic_20260908T114145Z.json": "b4a9352179a22b53c2c344af2a40011e1c7a02f12c40929084504707c6777073",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_map_pilot/run_result.json": "3e6651be338f84d60294335bb7183549bd61d5577a882ae36e96e437435ceedf"
+  },
+  "limits": [
+    "This scientific PASS does not replace root mechanical prose, disclosure, exact sample quotation/row membership or canonical-task workflow checks.",
+    "Final archive URLs in this exact version still use main and are anticipated; no publication/readback claim is certified here. Parent will pin the verified final revision and obtain exact-final-body delta review.",
+    "No new native-log reading, feature extraction, fit, bootstrap, model call, upload or task mutation was performed. The prior independent full numerical audit and retained process/capture proofs remain the computational evidence.",
+    "Historical capture-bank completeness and paired retrieval were not newly measured; their bounded evidence limitations are explicitly retained."
+  ],
+  "reviewed_utc": "2026-09-08T13:01:15.524322+00:00",
+  "reviewer": "Independent numerical/interpretation reviewer /root/verify_vllm_runtime",
+  "schema_version": "context_risk_highrate_completed_body_scientific_review_v1",
+  "scope": [
+    "Entire exact Markdown body read, including all three complete input/executable examples and their interpretations.",
+    "Stored final audit compared to every displayed loss, Brier, AUROC, average-precision, mean-forecast, C-selection, paired-estimate and interval table cell; no metrics, fits or native validation rerun.",
+    "Counts/denominators, original-pass sensitivity, 20/10 frozen allocation versus nine/eight usable test tasks, separate unknown/structural-NA handling, 978 physical trajectories and 90 captures checked against already verified final evidence.",
+    "All four regime claims distinguish fitting completion from failed unconditional benefit support; fixed controls and conditional PCA absence are represented accurately.",
+    "Map-input last-token convention, answer-target averaging, grouped historical fit counts, training-only ridge recipe, historical R2/baseline and bounded retrieval limitation checked against retained small receipts and producers.",
+    "Successful original example is qualified as operational test passing; conflicting call-state behavior and oneoff equality shortcut visibly contradict the stated pure-function specifications.",
+    "All three referenced plot PNG/PDF bytes and final metadata input/output bindings verified against completed-body evidence; captions match the assessable populations, fixed-prediction intervals and separate scales.",
+    "20,000-iteration amendment, preserved first failure, 1,288 cached fits, maximum 5,669 iterations, unchanged objectives and actual successful process exit checked against existing audited evidence."
+  ],
+  "verdict": "PASS"
+}

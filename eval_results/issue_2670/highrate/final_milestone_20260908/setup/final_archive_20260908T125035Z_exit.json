@@ -1,0 +1,26 @@
+{
+  "launch_id": "final_archive_20260908T125035Z",
+  "exit_code": 0,
+  "finished_utc": "2026-09-08T12:56:44.215161+00:00",
+  "elapsed_seconds": 368.29579496383667,
+  "live_group_members": [],
+  "supervisor_error": null,
+  "cleanup_error": null,
+  "cleanup": "no_live_members",
+  "launch_sha256": "c67daa75340fe980bb0dd75b70509fe6244d1f91c7510df1a81b2461666346aa",
+  "log_sha256": "547524e13471a52aef0815669feac0233310d2fa46c27a0253cd66ed50024d53",
+  "build_receipt_sha256": "bde2d8d1fdecae462f8371ed3b5633b8d9e1d4bd77423ae9f4a640243d9906f0",
+  "raw_timing_receipt_sha256": "a8cb378a69017833f59116922f7b124a33301f4e9338dc372aef8eddb3c442c4",
+  "receipts": {
+    "final_upload_receipt.json": {
+      "sha256": "4218cda497b1715f68d38c65f37f915cb66db0b225710872a941335a0aa2a4df",
+      "passed": true,
+      "revision": "6994094e632aaa7fb50357f52d1fcde82e4fdc7c"
+    },
+    "final_readback_receipt.json": {
+      "sha256": "9f577c41f56cc2607121e3349c6f0401a390871e4242f84ddaf2bb90fdad6593",
+      "passed": true,
+      "revision": "6994094e632aaa7fb50357f52d1fcde82e4fdc7c"
+    }
+  }
+}
