@@ -130,3 +130,12 @@ archive preserves 256 partial ratings and contributes zero completed ratings.
 The adapter review and source-event records are included. Whole-packet retry
 147 has subsequently completed with 256 valid records; retry 148 is running.
 A fresh main import now contains 150 completed packets (38,400 ratings).
+
+The [three-pass raw checkpoint](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/67519012b240f57b403796ff362700c02740780f/issue2564_minpair/answer_behavior_readout_20260907/raw_completions/codex_main_checkpoint_169) is remotely verified: 169/280
+packets and 43,264/71,680 main ratings, covering three complete passes plus one
+fourth-pass voice packet. All 1,014 files and 116,777,275 bytes match the exact
+path and content-hash manifest. The checkpoint includes both interrupted-attempt
+archives and their wholly re-judged replacements, the earlier missing-only
+supplement, accepted pilot evidence and the source-population qualification.
+Two repeated passes are still being completed. No final main aggregate or
+actual-label readout is complete.

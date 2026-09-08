@@ -1,0 +1,16 @@
+{
+  "observed_unix_s": 1788903836.3909464,
+  "completed_packets": 169,
+  "total_packets": 280,
+  "valid_main_ratings": 43264,
+  "expected_main_ratings": 71680,
+  "complete_repeated_passes": 3,
+  "additional_fourth_pass_packets": 1,
+  "active_agents": [
+    "/root/answer_behavior_resume/text_judge_main_170",
+    "/root/answer_behavior_resume/text_judge_main_171"
+  ],
+  "archive": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/67519012b240f57b403796ff362700c02740780f/issue2564_minpair/answer_behavior_readout_20260907/raw_completions/codex_main_checkpoint_169",
+  "main_complete": false,
+  "readout_complete": false
+}

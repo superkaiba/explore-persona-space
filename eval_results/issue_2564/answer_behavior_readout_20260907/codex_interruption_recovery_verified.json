@@ -1,0 +1,36 @@
+{
+  "verified_unix_s": 1788899980.6117878,
+  "completed_packets": 152,
+  "valid_main_ratings": 38912,
+  "expected_main_ratings": 71680,
+  "properties": {
+    "warmth": 6144,
+    "language": 4096,
+    "persona": 6144,
+    "topic": 6144,
+    "format": 4096,
+    "confidence": 6144,
+    "formality": 6144
+  },
+  "recovered": {
+    "147": {
+      "original_agent": "/root/answer_property_matched_experiment/text_judge_main_147",
+      "replacement_agent": "/root/answer_behavior_resume/text_judge_main_147_retry1",
+      "retained_original_ratings": 0,
+      "replacement_valid_ratings": 256,
+      "original_output_unchanged": true,
+      "history_record_sha256": "58f3497600df583b2faee5c6039ee73e2771bf490367e19615fb7d2015c6eca1"
+    },
+    "148": {
+      "original_agent": "/root/answer_property_matched_experiment/text_judge_main_148",
+      "replacement_agent": "/root/answer_behavior_resume/text_judge_main_148_retry1",
+      "retained_original_ratings": 0,
+      "replacement_valid_ratings": 256,
+      "original_output_unchanged": true,
+      "history_record_sha256": "1ab65023bdaad53350c5738b8c86a054c2dcbceae63ad00b298724cb4ea461b4"
+    }
+  },
+  "raw_records_hash": "0edd559e730c317890ef50061e092ae31d567e964990fa36cf4365ad488ea776",
+  "main_complete": false,
+  "readout_complete": false
+}

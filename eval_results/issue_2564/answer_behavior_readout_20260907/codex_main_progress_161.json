@@ -1,0 +1,28 @@
+{
+  "observed_unix_s": 1788901735.3189433,
+  "completed_packets": 161,
+  "total_packets": 280,
+  "completed_main_ratings": 41216,
+  "expected_main_ratings": 71680,
+  "completed_full_property_passes": {
+    "persona": 3,
+    "topic": 3,
+    "warmth": 3,
+    "confidence": 3,
+    "formality": 3,
+    "language": 3,
+    "format": 2
+  },
+  "additional_format_packets": 1,
+  "actual_active_agents": [
+    "/root/answer_behavior_resume/text_judge_main_162",
+    "/root/answer_behavior_resume/text_judge_main_163"
+  ],
+  "interrupted_packets_recovered": [
+    147,
+    148
+  ],
+  "excluded_original_partial_ratings": 256,
+  "readout_complete": false,
+  "note": "Completed packets have actual collaboration final notifications and exact-ID/schema validation. The current import includes through160;161 is queued for the next import. Main annotation is incomplete."
+}
