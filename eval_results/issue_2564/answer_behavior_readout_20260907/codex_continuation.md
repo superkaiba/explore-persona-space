@@ -64,3 +64,9 @@ metrics. Archive all raw judgments, dispatch evidence, accepted instrument,
 inputs, fits and analysis outputs with verified remote content hashes. Publish
 the reviewed scientific report and notify the parent agent. Do not edit the
 paper or send Slack messages.
+
+The accepted pilot and first seven completed main packets (1,792 main ratings)
+are also [archived as a verified partial checkpoint](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/322c8fd82e6fb917ddf6c5834e0ef40b8d999685/issue2564_minpair/answer_behavior_readout_20260907/raw_completions/codex_main_checkpoint_007).
+All 197 files and their 7,286,137 bytes match the local content hashes. This
+checkpoint includes actual dispatch records and is explicitly incomplete; it
+is not a main completion marker or a behavioral result.

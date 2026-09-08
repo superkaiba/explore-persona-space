@@ -1,0 +1,12 @@
+{
+  "verified_at": 1788853788.6517177,
+  "repo": "superkaiba1/explore-persona-space-data",
+  "revision": "322c8fd82e6fb917ddf6c5834e0ef40b8d999685",
+  "prefix": "issue2564_minpair/answer_behavior_readout_20260907/raw_completions/codex_main_checkpoint_007",
+  "files": 197,
+  "bytes": 7286137,
+  "verified": "Exact path set, byte sizes and content hashes at pinned revision",
+  "scope": "Completed pilot including accepted instrument; 7 complete main persona packets (1792 ratings), plus actual dispatch ledger. Partial main checkpoint, not a complete experiment or readout.",
+  "manifest_sha256": "b46f0b5c2f2b9ae1a76f6d719f3ee4eefb57f1807d727f101b02766358f38b19",
+  "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/322c8fd82e6fb917ddf6c5834e0ef40b8d999685/issue2564_minpair/answer_behavior_readout_20260907/raw_completions/codex_main_checkpoint_007"
+}
