@@ -1,0 +1,67 @@
+{
+ "status": "Section 4.2 comment-response figure",
+ "style_version": "c2a-v2",
+ "plotting_script": "scripts/paper_c2a_comment_figures.py",
+ "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+ "reproduction_command": "uv run python scripts/paper_c2a_comment_figures.py",
+ "title": "Refusal separation near and far from the decision boundary",
+ "subject": "Median absolute separation of a pair two answers along the refusal direction, the two-alternative hit rate, and the rank correlation with the continuous refusal margin, for the map and the copy baseline by behaviour-change stratum",
+ "sources": [
+  {
+   "path": "eval_results/issue_2617/comment3_refusal_boundary/summary.json",
+   "sha256": "866c1bf3c6d49f61590b214ea8cb9edfb382925c2d08a70e5bb052ff46b22c8a"
+  }
+ ],
+ "render": {
+  "style_version": "c2a-v2",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "resolved_font": "Inter",
+  "authoring_size_inches": [
+   13.095,
+   5.238
+  ],
+  "exported_size_inches": [
+   13.095,
+   4.738
+  ],
+  "scale": 0.42,
+  "include_width_frac": 1.0,
+  "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c3_refusal_boundary.pdf}",
+  "realized_font_pt": {
+   "body": 7.56,
+   "tick": 7.14,
+   "label": 8.4,
+   "title": 9.24
+  },
+  "png_dpi": 240,
+  "background": "#FFFFFF",
+  "text": [
+   "saturated\nn=36",
+   "graded\nn=46",
+   "none\nn=42",
+   "Refusal-axis separation",
+   "0",
+   "10",
+   "20",
+   "30",
+   "40",
+   "50",
+   "Two-alternative hit rate",
+   "0.3",
+   "0.4",
+   "0.5",
+   "0.6",
+   "0.7",
+   "0.8",
+   "0.9",
+   "1.0",
+   "1.1",
+   "map",
+   "copy",
+   "Rank corr. with refusal margin",
+   "\u22120.2",
+   "0.0",
+   "0.2"
+  ]
+ }
+}

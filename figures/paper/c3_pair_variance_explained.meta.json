@@ -1,0 +1,65 @@
+{
+ "status": "Section 4.2 comment-response figure",
+ "style_version": "c2a-v2",
+ "plotting_script": "scripts/paper_c2a_comment_figures.py",
+ "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+ "reproduction_command": "uv run python scripts/paper_c2a_comment_figures.py",
+ "title": "Minimal-pair shift sizes and variance explained",
+ "subject": "Median context-side and answer-side shift norms per element, and the pooled variance of the observed answer shift explained by the frozen layer-19 map with 95% pair-bootstrap intervals, against the shipped magnitude ratio",
+ "sources": [
+  {
+   "path": "eval_results/issue_2564/comment2_variance_explained/summary.json",
+   "sha256": "ec15f2e03f0d65b387935f8a31b98cb340ee4286f6192cfe736cd4247a3fd9fc"
+  }
+ ],
+ "render": {
+  "style_version": "c2a-v2",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "resolved_font": "Inter",
+  "authoring_size_inches": [
+   13.095,
+   4.976
+  ],
+  "exported_size_inches": [
+   13.095,
+   4.476
+  ],
+  "scale": 0.42,
+  "include_width_frac": 1.0,
+  "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c3_pair_variance_explained.pdf}",
+  "realized_font_pt": {
+   "body": 7.56,
+   "tick": 7.14,
+   "label": 8.4,
+   "title": 9.24
+  },
+  "png_dpi": 240,
+  "background": "#FFFFFF",
+  "text": [
+   "Format",
+   "Persona",
+   "Tone",
+   "Language",
+   "Topic",
+   "One word",
+   "Median shift norm",
+   "0",
+   "20",
+   "40",
+   "60",
+   "80",
+   "100",
+   "context shift",
+   "answer shift",
+   "Variance explained / ratio",
+   "\u22121.0",
+   "\u22120.5",
+   "0.0",
+   "0.5",
+   "1.0",
+   "1.5",
+   "magnitude ratio (shipped)",
+   "variance explained by map"
+  ]
+ }
+}
