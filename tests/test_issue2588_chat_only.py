@@ -106,6 +106,34 @@ class Engine:
             for _ in prompts
         ]
 
+    @property
+    def llm_engine(self):
+        return self
+
+    def enqueue(
+        self,
+        prompts,
+        sampling_params=None,
+        lora_request=None,
+        priority=None,
+        use_tqdm=True,
+        tokenization_kwargs=None,
+        mm_processor_kwargs=None,
+    ):
+        self.queue = self.generate(prompts, sampling_params, use_tqdm=False)
+        ids = [str(i) for i in range(len(prompts))]
+        for request_id, prompt, output in zip(ids, prompts, self.queue, strict=True):
+            output.request_id = request_id
+            output.prompt_token_ids = prompt.prompt_token_ids
+            output.finished = True
+        return ids
+
+    def has_unfinished_requests(self):
+        return bool(getattr(self, "queue", []))
+
+    def step(self):
+        return [self.queue.pop()]  # Deliberately completes out of input order.
+
 
 @pytest.fixture
 def generic(tmp_path, monkeypatch):
@@ -298,6 +326,60 @@ def test_pinned_generation_real_bodies_and_resume(generic, monkeypatch):
             paths=paths,
             llm_holder=holder,
         )
+
+
+def test_per_completion_resume_preserves_order_and_skips_saved(generic, monkeypatch):
+    """Interrupt the real generation loop between completions, then resume it."""
+    args, cell, paths = generic
+    monkeypatch.setitem(
+        sys.modules,
+        "vllm",
+        SimpleNamespace(
+            SamplingParams=SamplingParams,
+            TokensPrompt=TokensPrompt,
+        ),
+    )
+    rows = [{"row_id": i, "prompt": f"prompt {i}"} for i in range(3)]
+    directory = paths["raw"] / "train_10k/partial/initial/rows"
+    kwargs = dict(
+        stage="train_10k",
+        cap=2048,
+        seed=42,
+        checkpoint_dir=directory,
+        checkpoint_identity=RC._identity(args, cell),
+    )
+    engine = Engine.__new__(Engine)
+    original = engine.step
+    calls = 0
+
+    def interrupted_step():
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise RuntimeError("fixture interruption")
+        return original()
+
+    monkeypatch.setattr(engine, "step", create_autospec(engine.step, side_effect=interrupted_step))
+    with pytest.raises(RuntimeError, match="fixture interruption"):
+        RC._gen_rows(engine, Tokenizer(), cell, rows, **kwargs)
+    saved = directory / "row000002.json"
+    assert sorted(p.name for p in directory.glob("*.json")) == [saved.name]
+    original_bytes = saved.read_bytes()
+    resumed = Engine.__new__(Engine)
+    enqueue = create_autospec(resumed.enqueue, side_effect=resumed.enqueue)
+    monkeypatch.setattr(resumed, "enqueue", enqueue)
+    result = RC._gen_rows(resumed, Tokenizer(), cell, rows, **kwargs)
+    assert [r["row_id"] for r in result] == [0, 1, 2]
+    assert len(enqueue.call_args.args[0]) == 2
+    assert saved.read_bytes() == original_bytes
+    enqueue.reset_mock()
+    assert RC._gen_rows(resumed, Tokenizer(), cell, rows, **kwargs) == result
+    enqueue.assert_not_called()
+    with pytest.raises(AssertionError):
+        RC._gen_rows(resumed, Tokenizer(), cell, rows, **{**kwargs, "cap": 1024})
+    saved.write_text("{broken")
+    with pytest.raises(json.JSONDecodeError):
+        RC._gen_rows(resumed, Tokenizer(), cell, rows, **kwargs)
 
 
 def test_capture_model_load_uses_actual_snapshot_path(generic, monkeypatch):
@@ -636,27 +718,45 @@ def test_batch_mapping_preserves_shards_and_rejects_collisions(tmp_path, upload_
     assert upload_boundary.bulk.call_count == 1
 
 
-def test_immutable_upload_receipt_and_partial_fit_coverage(generic, monkeypatch):
-    import huggingface_hub
-
+def test_immutable_upload_receipt_and_partial_fit_coverage(generic, upload_boundary):
+    """Real partial upload batches all provenance and retains its failure semantics."""
     args, cell, paths = generic
-    api = create_autospec(huggingface_hub.HfApi, instance=True)
-    api.repo_info.return_value = SimpleNamespace(sha="a" * 40)
-    monkeypatch.setattr(
-        huggingface_hub, "HfApi", create_autospec(huggingface_hub.HfApi, return_value=api)
-    )
-    verify = create_autospec(RC.HUB.verify_repo_paths_uploaded, return_value=[])
-    monkeypatch.setattr(RC.HUB, "verify_repo_paths_uploaded", verify)
-    upload = create_autospec(RC.HUB._upload, return_value="verified")
-    monkeypatch.setattr(RC.HUB, "_upload", upload)
     PC.write_json_atomic(paths["fits"] / "fit_pilot.json", {"phase_complete": False})
     RC.phase_upload_partial(args, cell, paths)
     receipt = json.loads((paths["cell"] / "uploads/upload-partial.json").read_text())
-    assert receipt["revision"] == "a" * 40
+    assert receipt["revision"] == "c" * 40
     assert any(p.endswith("partial/fits/fit_pilot.json") for p in receipt["paths"])
-    assert verify.call_args.kwargs["revision"] == "a" * 40
+    assert upload_boundary.bulk.call_count == 1
+    assert upload_boundary.verify.call_args.kwargs["revision"] == "c" * 40
     assert not RC._phase_done_path(args, paths, "fits").exists()
     assert not RC._phase_done_path(args, paths, "upload-partial").exists()
+
+
+def test_completion_checkpoints_pack_and_restore_exact_bytes(tmp_path, upload_boundary):
+    """The live upload helper packs even pilot-sized row checkpoints, with exact restore."""
+    from issue1739_pack import unpack_shards
+
+    from explore_persona_space.atomic_io import write_json_atomic
+
+    sources = tmp_path / "cell"
+    files = []
+    for i in range(4):
+        name = f"raw_completions/train_10k/partial/initial/rows/row{i:06d}.json"
+        path = sources / name
+        write_json_atomic(path, {"identity": {"run": "fixture"}, "row": {"id": i}}, indent=1)
+        files.append((path, name))
+    names = RC._upload_generic_files(files, "scope", staging_parent=tmp_path)
+    assert len(names) == 2  # one bounded line-shard and its content-hashed manifest
+    staged = tmp_path / "download"
+    staged.mkdir()
+    for name in names:
+        path = staged / name.removeprefix("scope/packed_generation_checkpoints/")
+        path.write_bytes(upload_boundary.bytes[name])
+    restored = tmp_path / "restored"
+    unpack_shards(staged, restored)
+    for source, relative in files:
+        assert (restored / relative).read_bytes() == source.read_bytes()
+    assert upload_boundary.bulk.call_count == 1
 
 
 def test_cap_window_and_capture_storage_accounting(generic):
@@ -838,7 +938,7 @@ def test_parse_capture_upload_real_bodies(generic, monkeypatch, upload_boundary)
         name: hashlib.sha256(upload_boundary.bytes[name]).hexdigest() for name in receipt["paths"]
     } == expected
     assert upload_boundary.bulk.call_count == 1 and upload_boundary.single.call_count == 2
-    assert upload_boundary.bulk.call_args.args[0].parent == paths["cell"].parent
+    assert upload_boundary.bulk.call_args.args[0].is_relative_to(paths["cell"].parent)
     assert RC._phase_complete(args, paths, "upload-capture")
     assert sum(p.endswith("_capture_drops.json") for p in receipt["paths"]) == 5
     assert any(p.endswith("capture_input_validation.json") for p in receipt["paths"])

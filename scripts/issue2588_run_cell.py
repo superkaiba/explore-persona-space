@@ -232,6 +232,7 @@ def _identity(args, cell: PC.Cell) -> dict:
         },
         "driver_sha256": _sha256_file(Path(__file__)),
         "text_sharder_sha256": _sha256_file(_SCRIPTS / "issue811_upload_store.py"),
+        "checkpoint_packer_sha256": _sha256_file(_SCRIPTS / "issue1739_pack.py"),
         "runtime_lock_sha256": _sha256_file(_REPO_ROOT / "configs/issue2588_chat_runtime.txt"),
         "runtime_builder_sha256": _sha256_file(_SCRIPTS / "issue2588_chat_runtime.py"),
         "manifest_revision": PC.MANIFEST_REVISION,
@@ -557,11 +558,27 @@ def _upload_generic_files(
     # layout is cheap (no tensor-byte copy) and lets the established uploader
     # retain its exact text-shard/manifest behavior and one payload commit.
     with tempfile.TemporaryDirectory(prefix="i2588-payload-", dir=staging_parent) as temporary:
-        staging = Path(temporary)
+        from issue1739_pack import pack_raw_tree
+
+        staging = Path(temporary) / "payload"
+        checkpoint_sources = Path(temporary) / "checkpoint_sources"
+        staging.mkdir()
         for source, name in files:
-            target = staging / name
+            checkpoint = re.fullmatch(
+                r"raw_completions/[^/]+/partial/(initial|regen)/rows/row\d{6}\.json", name
+            )
+            target = (checkpoint_sources if checkpoint else staging) / name
             target.parent.mkdir(parents=True, exist_ok=True)
             os.link(source, target)
+        if checkpoint_sources.exists():
+            packed = staging / "packed_generation_checkpoints"
+            assert not packed.exists(), "packed checkpoint destination collision"
+            manifest = pack_raw_tree(checkpoint_sources, packed)
+            assert all(
+                shard["bytes"] <= 9_000_000
+                for group in manifest["groups"].values()
+                for shard in group["shards"]
+            ), "single completion checkpoint exceeds the bounded pack format"
         return _upload_generic(staging, destination)
 
 
@@ -1010,6 +1027,8 @@ def _gen_rows(
     cap: int,
     seed: int,
     chunk_callback=None,
+    checkpoint_dir: Path | None = None,
+    checkpoint_identity: dict | None = None,
 ) -> list[dict]:
     """Generate one stage's rollouts via TokensPrompt on the EXACT rendered ids.
 
@@ -1052,24 +1071,73 @@ def _gen_rows(
     sp = SamplingParams(temperature=PC.GEN_TEMP, top_p=PC.GEN_TOP_P, seed=seed, max_tokens=cap)
     out_rows: list[dict] = []
     chunk = G.VLLM_CHUNK_SIZE
+    started = time.monotonic()
+    if checkpoint_dir is not None:
+        assert checkpoint_identity is not None
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        expected = {f"row{i:06d}.json" for i in range(len(rendered))}
+        assert {p.name for p in checkpoint_dir.glob("*.json")} <= expected, "stale row files"
     for s in range(0, len(rendered), chunk):
         block = rendered[s : s + chunk]
-        prompts = [TokensPrompt(prompt_token_ids=r["prompt_ids"]) for r in block]
-        outs = llm.generate(prompts, sp, use_tqdm=False)
-        for r, o in zip(block, outs, strict=True):
+        completed: dict[int, dict] = {}
+        for i, r in enumerate(block, start=s):
+            path = checkpoint_dir / f"row{i:06d}.json" if checkpoint_dir else None
+            if path is not None and path.exists():
+                saved = json.loads(path.read_text())
+                row = saved["row"]
+                assert saved["identity"] == checkpoint_identity, "stale generation row identity"
+                assert all(row[k] == v for k, v in r.items()), "changed generation prompt"
+                assert (row["stage"], row["cap"], row["gen_seed"]) == (stage, cap, seed)
+                assert len(row["sampled_token_ids"]) == row["n_comp_tokens"]
+                assert row["finish_reason"] in {"stop", "length"}
+                assert (
+                    tok.decode(
+                        row["sampled_token_ids"],
+                        skip_special_tokens=True,
+                        clean_up_tokenization_spaces=False,
+                    )
+                    == row["text"]
+                )
+                completed[i] = row
+        pending = [(i, r) for i, r in enumerate(block, start=s) if i not in completed]
+        prompts = [TokensPrompt(prompt_token_ids=r["prompt_ids"]) for _, r in pending]
+        if checkpoint_dir is None:
+            outputs = zip(pending, llm.generate(prompts, sp, use_tqdm=False), strict=True)
+        else:
+            outputs = _completed_generation_rows(llm, prompts, sp, pending)
+        for (i, r), o in outputs:
+            assert len(o.outputs) == 1, "generation must return exactly one answer"
             comp = o.outputs[0]
-            out_rows.append(
-                {
-                    **r,
-                    "text": comp.text,
-                    "sampled_token_ids": [int(t) for t in comp.token_ids],
-                    "finish_reason": comp.finish_reason,
-                    "n_comp_tokens": len(comp.token_ids),
-                    "gen_seed": seed,
-                    "cap": cap,
-                    "stage": stage,
-                }
-            )
+            row = {
+                **r,
+                "text": comp.text,
+                "sampled_token_ids": [int(t) for t in comp.token_ids],
+                "finish_reason": comp.finish_reason,
+                "n_comp_tokens": len(comp.token_ids),
+                "gen_seed": seed,
+                "cap": cap,
+                "stage": stage,
+            }
+            if checkpoint_dir is not None:
+                from explore_persona_space.atomic_io import write_json_atomic
+
+                # Match the canonical packer's restoration bytes exactly.
+                write_json_atomic(
+                    checkpoint_dir / f"row{i:06d}.json",
+                    {"identity": checkpoint_identity, "row": row},
+                    indent=1,
+                )
+                logger.info(
+                    "[gen] unit %d/%d %s:%s elapsed=%.3fs",
+                    s + len(completed) + 1,
+                    len(rendered),
+                    stage,
+                    r["row_id"],
+                    time.monotonic() - started,
+                )
+            completed[i] = row
+        assert len(completed) == len(block), "generation returned an incomplete batch"
+        out_rows.extend(completed[i] for i in range(s, s + len(block)))
         if chunk_callback is not None:
             chunk_callback(s // chunk, out_rows[-len(block) :])
         logger.info(
@@ -1079,6 +1147,31 @@ def _gen_rows(
             math.ceil(len(rendered) / chunk),
         )
     return out_rows
+
+
+def _completed_generation_rows(llm, prompts, sampling_params, pending):
+    """Use vLLM 0.27.1's unchanged enqueue/step path, yielding finished requests.
+
+    Mirrors OfflineInferenceMixin._run_completion/_run_engine with use_tqdm=False;
+    no changed batch width, sampler, prompt order, or model call. Checkpoint IO
+    occurs after a finished request, not on each generated token. On restart only
+    missing requests are enqueued; a resumed batch is not claimed to produce
+    bitwise-identical outputs to an uninterrupted rerun.
+    """
+    assert not llm.llm_engine.has_unfinished_requests(), "unowned queued requests"
+    if not pending:
+        return
+    request_ids = llm.enqueue(prompts, sampling_params, use_tqdm=False)
+    assert len(request_ids) == len(pending) and len(set(request_ids)) == len(pending)
+    requests = dict(zip(request_ids, pending, strict=True))
+    while llm.llm_engine.has_unfinished_requests():
+        for output in llm.llm_engine.step():
+            assert output.request_id in requests, "duplicate or unowned generation output"
+            if output.finished:
+                item = requests.pop(output.request_id)
+                assert output.prompt_token_ids == item[1]["prompt_ids"], "engine prompt mismatch"
+                yield item, output
+    assert not requests, "engine ended without all completed requests"
 
 
 def _needs_regen(rows: list[dict], parse_mode: str) -> list[int]:
@@ -1177,7 +1270,17 @@ def _gen_stage_with_regen(
 
         return write_chunk
 
-    chunk_kwargs = {"chunk_callback": checkpoint_chunk("initial")} if _generic_only(args) else {}
+    def generation_checkpoints(round_name: str) -> dict:
+        """Bind per-request resume to this complete run and generation round."""
+        if not _generic_only(args):
+            return {}
+        return {
+            "chunk_callback": checkpoint_chunk(round_name),
+            "checkpoint_dir": paths["raw"] / stage / "partial" / round_name / "rows",
+            "checkpoint_identity": _identity(args, cell),
+        }
+
+    chunk_kwargs = generation_checkpoints("initial")
     rows = _gen_rows(
         llm_holder["llm"], tok, cell, base_rows, stage=stage, cap=cap, seed=seed, **chunk_kwargs
     )
@@ -1242,7 +1345,7 @@ def _gen_stage_with_regen(
                 stage=stage,
                 cap=new_cap,
                 seed=seed,
-                **({"chunk_callback": checkpoint_chunk("regen")} if _generic_only(args) else {}),
+                **generation_checkpoints("regen"),
             )
             for i, rr in zip(regen_idx, redo, strict=True):
                 rows[i] = rr
@@ -2438,25 +2541,31 @@ def phase_upload_partial(args, cell: PC.Cell, paths: dict) -> None:
     """Persist interrupted work separately; never mint a completed scientific phase."""
     assert _generic_only(args), "partial durability upload is generic-only"
     prefix = f"{_cell_prefix(args, cell)}/partial"
-    uploaded_paths = []
+    payload_files = []
     for stage in _stage_names(args, cell):
         for key in ("raw", _tag(args)):
             directory = paths[key] / stage
             if directory.is_dir() and any(f.is_file() for f in directory.rglob("*")):
-                target = f"{prefix}/{directory.relative_to(paths['cell'])}"
-                uploaded_paths.extend(_upload_generic(directory, target))
+                payload_files.extend(
+                    (p, p.relative_to(paths["cell"]).as_posix())
+                    for p in sorted(directory.rglob("*"))
+                    if p.is_file()
+                )
         for suffix in (".jsonl", "_drops.json", "_capture_drops.json"):
             path = paths["parsed"] / f"{stage}{suffix}"
             if path.is_file():
-                target = f"{prefix}/parsed/{path.name}"
-                uploaded_paths.extend(_upload_generic(path, target))
-    for name in ("run_identity.json", "stage.json", "prologue.json", "stage_runtime.json"):
+                payload_files.append((path, f"parsed/{path.name}"))
+    for name in (
+        "run_identity.json",
+        "stage.json",
+        "prologue.json",
+        "stage_runtime.json",
+        "capture_input_validation.json",
+    ):
         path = paths["cell"] / name
         if path.is_file():
-            target = f"{prefix}/{name}"
-            _upload_file(path, target, "partial provenance")
-            uploaded_paths.append(target)
-    fit_files = [paths["fits"] / "fit_pilot.json"]
+            payload_files.append((path, name))
+    fit_files = [paths["fits"] / name for name in ("fit_pilot.json", "dropped_row_ids.json")]
     fit_files += [
         paths["fits"] / _fits_name(args, f"percell_{pos}_L{li:02d}", "")
         for pos in cell.input_positions
@@ -2464,10 +2573,13 @@ def phase_upload_partial(args, cell: PC.Cell, paths: dict) -> None:
     ]
     for path in fit_files:
         if path.is_file():
-            target = f"{prefix}/fits/{path.name}"
-            _upload_file(path, target, "partial fit unit")
-            uploaded_paths.append(target)
-    assert uploaded_paths, "no partial artifacts available to preserve"
+            payload_files.append((path, f"fits/{path.name}"))
+    for path in sorted((paths["cell"] / "phase_done").glob("*.json")):
+        payload_files.append((path, f"phase_done/{path.name}"))
+    assert payload_files, "no partial artifacts available to preserve"
+    uploaded_paths = _upload_generic_files(
+        payload_files, prefix, staging_parent=paths["cell"].parent
+    )
     _record_verified_upload(args, cell, paths, "upload-partial", uploaded_paths)
 
 

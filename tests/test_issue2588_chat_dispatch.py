@@ -573,7 +573,7 @@ def test_real_range_probe_requires_exact_bytes(monkeypatch, capsys, problem):
     [
         ("upload-raw", (1, 0, 10)),
         ("upload-capture", (1, 0, 10)),
-        ("upload-partial", (3, 3, 20)),
+        ("upload-partial", (1, 0, 7)),
         ("upload-fits", (0, 5, 18)),
     ],
 )

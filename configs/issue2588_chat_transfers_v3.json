@@ -1,0 +1,54 @@
+{
+  "surface": "generic",
+  "run_id": "qwen3-chat-v3",
+  "transfers": {
+    "preflight": {
+      "bytes": 2097152,
+      "bytes_per_s": 10000000,
+      "retry_calls": 1,
+      "basis": "Pinned 1 MiB Range probe plus a declared 1 MiB control-plane allowance, not a measured total; existing bounded preflight checks. Expected conservative 10 MB/s versus the project's recorded healthy VM-HF 25 MB/s; this is not measured pod throughput."
+    },
+    "transfer_check": {
+      "bytes": 1048576,
+      "bytes_per_s": 10000000,
+      "retry_calls": 1,
+      "basis": "Exactly 1 MiB from the pinned Qwen3 first weight shard using Range; one canonical HUB.retry_transient envelope. Expected conservative 10 MB/s, not measured pod throughput."
+    },
+    "stage-runtime": {
+      "bytes": 16397432693,
+      "bytes_per_s": 10000000,
+      "retry_calls": 2,
+      "basis": "The 12 pinned inference files total 16,397,431,693 bytes; pinned G2 sentinel is 1,000 bytes. Snapshot and G2 each have one canonical retry envelope. Expected conservative 10 MB/s, not measured pod throughput."
+    },
+    "stage": {
+      "bytes": 12159866,
+      "bytes_per_s": 10000000,
+      "retry_calls": 3,
+      "basis": "Manifest metadata at 815ff6d976c686af8672b27cfdfb1ce6b419c02c: train 11,600,614 + validation 169,470 + test 389,782 bytes; one canonical retry envelope per file. Expected conservative 10 MB/s, not measured pod throughput."
+    },
+    "upload-raw": {
+      "source": "local_cell_tree",
+      "retry_calls_source": "local_upload_operations",
+      "bytes_per_s": 10000000,
+      "basis": "Actual cell-tree bytes plus 64 KiB per file and one receipt; count the actual scoped bulk groups and single-file operations using canonical helper retry envelopes. Expected conservative 10 MB/s, not measured pod throughput."
+    },
+    "upload-capture": {
+      "source": "local_cell_tree",
+      "retry_calls_source": "local_upload_operations",
+      "bytes_per_s": 10000000,
+      "basis": "Actual cell-tree bytes plus 64 KiB per file and one receipt; count the actual scoped bulk groups and single-file operations using canonical helper retry envelopes. Expected conservative 10 MB/s, not measured pod throughput."
+    },
+    "upload-fits": {
+      "source": "local_cell_tree",
+      "retry_calls_source": "local_upload_operations",
+      "bytes_per_s": 10000000,
+      "basis": "Actual cell-tree bytes plus 64 KiB per file and one receipt; count the actual scoped bulk groups and single-file operations using canonical helper retry envelopes. Expected conservative 10 MB/s, not measured pod throughput."
+    },
+    "upload-partial": {
+      "source": "local_cell_tree",
+      "retry_calls_source": "local_upload_operations",
+      "bytes_per_s": 10000000,
+      "basis": "Actual cell-tree bytes plus 64 KiB per file and one receipt; count the actual scoped bulk groups and single-file operations using canonical helper retry envelopes. Expected conservative 10 MB/s, not measured pod throughput."
+    }
+  }
+}

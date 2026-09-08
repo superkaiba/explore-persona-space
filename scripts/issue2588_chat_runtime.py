@@ -59,6 +59,78 @@ SMOKE_CLOCK_TOLERANCE_S = 1.0  # reporting/clock-call overhead; never added as c
 SMOKE_EPOCH_TOLERANCE_S = 0.01
 SMOKE_PRIOR_REPORT_ENV = "EPS2588_SMOKE_PRIOR_REPORT"
 SMOKE_PRIOR_HASH_ENV = "EPS2588_SMOKE_PRIOR_REPORT_SHA256"
+SUPPLEMENT_RUN_ID = "qwen3-chat-v3"
+SUPPLEMENT_REPORT_ENV = "EPS2588_SMOKE_SUPPLEMENT_REPORT"
+SUPPLEMENT_REPORT_SHA256 = "d9ecdf7943781c368720f75b8e71a1f7fe79ed7dc74cabee79b14b07ecf74094"
+SUPPLEMENT_SECONDS = 1800.0  # Explicit user authorization, task2588 progress146.
+
+
+def validate_smoke_supplement(path: Path | None, env: dict, *, run_id: str) -> dict | None:
+    """Bind a new, separately charged allowance to the exhausted immutable pilot.
+
+    This is not upload credit or a reset of the old run. No old artifacts are
+    relabelled. The completed v2 arm-a pilot remains its own historical evidence;
+    only arm b is scheduled under the supplemental v3 smoke allowance.
+    """
+    inherited = env.get(SUPPLEMENT_REPORT_ENV)
+    if inherited and (path is None or Path(inherited).resolve() != path.resolve()):
+        raise RuntimeError("runtime/wrapper supplemental report disagreement")
+    if path is None:
+        return None
+    if run_id != SUPPLEMENT_RUN_ID or any(
+        env.get(key) for key in (SMOKE_PRIOR_REPORT_ENV, SMOKE_PRIOR_HASH_ENV)
+    ):
+        raise RuntimeError("supplement requires v3 and forbids old upload-clock credit")
+    if sha256(path) != SUPPLEMENT_REPORT_SHA256:
+        raise RuntimeError("supplement requires the exact exhausted v2 terminal report")
+    start = float(env.get(SMOKE_START_ENV, "nan"))
+    approval = datetime(2026, 9, 8, 5, 51, 13, tzinfo=UTC).timestamp()
+    if not math.isfinite(start) or not approval <= start <= time.time():
+        raise RuntimeError("supplement requires a new, explicit post-approval provision epoch")
+    prior = json.loads(path.read_text())
+    if (prior["run_id"], prior["status"], prior["rc"]) != (SMOKE_RUN_ID, "halted", 8):
+        raise RuntimeError("supplement report is not the exhausted v2 run")
+    return {
+        "authorization": "task2588 epm:progress146; user approved 30 additional H100 minutes",
+        "allowance_s": SUPPLEMENT_SECONDS,
+        "prior_report": str(path.resolve()),
+        "prior_report_sha256": SUPPLEMENT_REPORT_SHA256,
+        "prior_attempt": prior["attempt"],
+        "historical_work_s": prior["work_elapsed_s"],
+        "historical_original_epoch": prior["smoke_original_epoch"],
+        "reused_pilot_cell": "qwen3-chat-v2/smoke/q3_8b/nothink",
+        "new_pilot_cells": ["q3_8b_b"],
+    }
+
+
+def bind_supplement_clock(root: Path, supplement: dict | None, env: dict) -> None:
+    """Refuse a renewed epoch or different pod on any retry of this allowance.
+
+    The VM owner also persists this exact provision epoch in the canonical task
+    launch/handle. A new pod after this grant is exhausted is not authorized.
+    """
+    if supplement is None:
+        return
+    if not env.get("RUNPOD_POD_ID"):
+        raise RuntimeError("supplement clock requires the owned pod ID")
+    record = {
+        "run_id": SUPPLEMENT_RUN_ID,
+        "pod_id": env["RUNPOD_POD_ID"],
+        "started_at": float(env[SMOKE_START_ENV]),
+        "report_sha256": supplement["prior_report_sha256"],
+        "allowance_s": supplement["allowance_s"],
+    }
+    root.mkdir(parents=True, exist_ok=True)
+    path = root / "smoke_supplement_clock.json"
+    if path.exists():
+        if json.loads(path.read_text()) != record:
+            raise RuntimeError("supplement clock/pod changed; allowance cannot renew on retry")
+    else:
+        # Exclusive creation prevents concurrent launchers from replacing a grant.
+        with path.open("x") as stream:
+            json.dump(record, stream, indent=2)
+            stream.flush()
+            os.fsync(stream.fileno())
 
 
 class RuntimeFence(RuntimeError):
@@ -378,9 +450,16 @@ def remaining_smoke_seconds(env: dict, *, smoke: bool) -> float | None:
         env,
         run_id=SMOKE_RUN_ID,
     )
-    remaining = 3600 - (now - start) + (prior["cumulative_prior_durability_s"] if prior else 0.0)
+    supplement_path = env.get(SUPPLEMENT_REPORT_ENV)
+    supplement = validate_smoke_supplement(
+        Path(supplement_path) if supplement_path else None, env, run_id=SUPPLEMENT_RUN_ID
+    )
+    allowance = supplement["allowance_s"] if supplement else 3600.0
+    remaining = (
+        allowance - (now - start) + (prior["cumulative_prior_durability_s"] if prior else 0.0)
+    )
     if remaining <= 0:
-        raise RuntimeFence("one-hour smoke work allowance exhausted during runtime setup")
+        raise RuntimeFence("authorized smoke work allowance exhausted during runtime setup")
     return remaining
 
 
@@ -508,7 +587,20 @@ def main(argv: list[str] | None = None) -> int:
     clock_parser.add_argument("--run-id", default=SMOKE_RUN_ID)
     clock_parser.add_argument("--smoke-prior-report", type=Path)
     clock_parser.add_argument("--smoke-prior-report-sha256")
+    clock_parser.add_argument("--smoke-supplement-report", type=Path)
     clock_args, _ = clock_parser.parse_known_args(wrapper_args)
+    if clock_args.smoke_supplement_report and (
+        mode != "smoke" or clock_args.smoke_prior_report or clock_args.smoke_prior_report_sha256
+    ):
+        raise RuntimeError("supplement is smoke-only and cannot combine with old clock credit")
+    supplement = validate_smoke_supplement(
+        clock_args.smoke_supplement_report, env, run_id=clock_args.run_id
+    )
+    if supplement:
+        env[SUPPLEMENT_REPORT_ENV] = supplement["prior_report"]
+        setup_budget = supplement["allowance_s"]
+        deadline = time.monotonic() + setup_budget
+        bind_supplement_clock(RUNTIME.parent / "generic" / SUPPLEMENT_RUN_ID, supplement, env)
     if mode != "smoke" and (clock_args.smoke_prior_report or clock_args.smoke_prior_report_sha256):
         raise RuntimeError("prior smoke report is valid only for smoke mode")
     prior_clock = validate_smoke_prior_report(
@@ -594,6 +686,7 @@ def main(argv: list[str] | None = None) -> int:
                 "reason": str(error),
                 "started_at": env.get(SMOKE_START_ENV),
                 "smoke_clock": prior_clock,
+                "smoke_supplement": supplement,
                 "identity": identity,
             },
         )
@@ -606,6 +699,7 @@ def main(argv: list[str] | None = None) -> int:
                 "reason": str(error),
                 "identity": identity,
                 "smoke_clock": prior_clock,
+                "smoke_supplement": supplement,
             },
         )
         raise

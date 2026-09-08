@@ -55,7 +55,12 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from issue2588_chat_runtime import validate_smoke_prior_report  # noqa: E402
+from issue2588_chat_runtime import (  # noqa: E402
+    SUPPLEMENT_RUN_ID,
+    bind_supplement_clock,
+    validate_smoke_prior_report,
+    validate_smoke_supplement,
+)
 
 from explore_persona_space.atomic_io import write_json_atomic, write_text_atomic  # noqa: E402
 from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined  # noqa: E402
@@ -141,13 +146,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", choices=("smoke", "capture", "fit-pilot", "fits"))
     parser.add_argument("--surface", choices=("generic",), default="generic")
-    parser.add_argument("--run-id", choices=(RUN_ID,), default=RUN_ID)
+    parser.add_argument("--run-id", choices=(RUN_ID, SUPPLEMENT_RUN_ID), default=RUN_ID)
     parser.add_argument("--out-root", type=Path, default=Path("/workspace/eps2588_qwen3_chat"))
     parser.add_argument("--sentinel-dir", type=Path, default=Path("/workspace/logs"))
     parser.add_argument("--pid-file", type=Path, default=Path("/workspace/logs/issue-2588.pid"))
     parser.add_argument("--transfer-plan", type=Path)
     parser.add_argument("--smoke-prior-report", type=Path)
     parser.add_argument("--smoke-prior-report-sha256")
+    parser.add_argument("--smoke-supplement-report", type=Path)
     parser.add_argument("--min-disk-gb", type=float)
     parser.add_argument("--per-pod-quota-gb", type=float)
     parser.add_argument("--skip-preflight", action="store_true")
@@ -215,7 +221,7 @@ def build_steps(args: argparse.Namespace) -> list[Step]:
     # One immutable shared snapshot/G2 staging pass, including on fit-only launches.
     steps.append(cell_step(args, CELLS[0], "stage-runtime"))
     if args.mode in {"smoke", "capture"}:
-        for cell in CELLS:
+        for cell in CELLS[1:] if args.smoke_supplement_report else CELLS:
             for phase in (
                 "prologue",
                 "stage",
@@ -432,36 +438,18 @@ def local_upload_operations(cell_root: Path, cell: str, phase: str) -> dict:
     are included in that same payload rather than separate single-file commits.
     Parent-approved overflow disablement makes these the complete helper paths.
     """
-    parsed = cell_root / "parsed"
     fits = cell_root / "fits"
     position = "prompt_last" if cell == CELLS[0] else "cot_boundary"
     unit_files = [
         fits / f"percell_{position}_L{layer:02d}.json" for layer in (*range(0, 36, 2), 35)
     ]
     pilot = fits / "fit_pilot.json"
-    raw_groups = sum(
-        any(p.is_file() for p in (cell_root / "raw_completions" / stage).rglob("*"))
-        for stage in CHAT_STAGES
-    )
-    capture_groups = sum(
-        any(p.is_file() for p in (cell_root / "capture" / stage).rglob("*"))
-        for stage in CHAT_STAGES
-    )
-    parsed_groups = sum(
-        (parsed / f"{stage}{suffix}").is_file()
-        for stage in CHAT_STAGES
-        for suffix in (".jsonl", "_drops.json", "_capture_drops.json")
-    )
-    provenance = sum(
-        (cell_root / name).is_file()
-        for name in ("run_identity.json", "stage.json", "prologue.json", "stage_runtime.json")
-    )
     if phase in ("upload-raw", "upload-capture"):
         bulk = 1
         single = 0
     elif phase == "upload-partial":
-        bulk = raw_groups + capture_groups + parsed_groups
-        single = provenance + sum(p.is_file() for p in [*unit_files, pilot])
+        bulk = 1
+        single = 0
     elif phase == "upload-fits":
         bulk = 0
         single = sum(
@@ -492,6 +480,11 @@ class Runner:
 
     def __init__(self, args: argparse.Namespace, env: dict[str, str], limits: dict[str, dict]):
         self.args, self.env, self.limits = args, env, limits
+        self.supplement = validate_smoke_supplement(
+            args.smoke_supplement_report, env, run_id=args.run_id
+        )
+        bind_supplement_clock(args.out_root / "generic" / args.run_id, self.supplement, env)
+        self.work_limit_s = self.supplement["allowance_s"] if self.supplement else 3600.0
         self.smoke_clock = validate_smoke_prior_report(
             args.smoke_prior_report, args.smoke_prior_report_sha256, env, run_id=args.run_id
         )
@@ -536,6 +529,8 @@ class Runner:
             "work_elapsed_s": self.work_s,
             "inherited_runtime_work_s": self.initial_work_s,
             "smoke_clock": self.smoke_clock,
+            "smoke_supplement": self.supplement,
+            "work_allowance_s": self.work_limit_s if self.args.mode == "smoke" else None,
             "smoke_original_epoch": self.env.get("EPS2588_SMOKE_STARTED_AT"),
             "elapsed_s": time.monotonic() - self.started,
             "transfer_limits": self.limits,
@@ -579,7 +574,7 @@ class Runner:
 
     def wait_for_gpu(self, step: Step) -> None:
         """Charge device drain to the same smoke fence before and after GPU phases."""
-        remaining = 3600 - self.work_s if self.args.mode == "smoke" else None
+        remaining = self.work_limit_s - self.work_s if self.args.mode == "smoke" else None
         if remaining is not None and remaining <= 0:
             raise PhaseFailure(step, RC_WORK_FENCE, "smoke work fence exhausted at GPU boundary")
         try:
@@ -588,7 +583,7 @@ class Runner:
                 timeout_s=min(GPU_DRAIN_S, remaining) if remaining else GPU_DRAIN_S,
             )
         except RuntimeError as exc:
-            if remaining is not None and self.work_s >= 3600:
+            if remaining is not None and self.work_s >= self.work_limit_s:
                 raise PhaseFailure(
                     step, RC_WORK_FENCE, "smoke work fence exhausted during GPU drain"
                 ) from exc
@@ -612,7 +607,7 @@ class Runner:
         gpu = step.phase in GPU_PHASES
         # The explicit smoke safety fence also covers startup/model downloads.
         # Uploads retain their independent, retry-aware durability allowance.
-        remaining = 3600 - self.work_s if self.args.mode == "smoke" and work else None
+        remaining = self.work_limit_s - self.work_s if self.args.mode == "smoke" and work else None
         if remaining is not None and remaining <= 0:
             raise PhaseFailure(step, RC_WORK_FENCE, "smoke work fence exhausted before launch")
         limit = self.resolve_transfer_limit(step)
@@ -622,7 +617,7 @@ class Runner:
             timeout = remaining
         if gpu:
             self.wait_for_gpu(step)
-        if remaining is not None and self.work_s >= 3600:
+        if remaining is not None and self.work_s >= self.work_limit_s:
             raise PhaseFailure(
                 step, RC_WORK_FENCE, "smoke work fence exhausted before child launch"
             )
@@ -787,6 +782,19 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.mode is None:
         parser.error("--mode is required")
+    if args.smoke_supplement_report and (
+        args.mode != "smoke"
+        or args.smoke_prior_report
+        or args.smoke_prior_report_sha256
+        or args.run_id != SUPPLEMENT_RUN_ID
+    ):
+        parser.error("supplement is v3 smoke-only and cannot combine with old clock credit")
+    if (
+        args.mode == "smoke"
+        and args.run_id == SUPPLEMENT_RUN_ID
+        and not args.smoke_supplement_report
+    ):
+        parser.error("v3 smoke requires the explicitly authorized supplemental report")
     if args.mode != "smoke" and (args.smoke_prior_report or args.smoke_prior_report_sha256):
         parser.error("prior smoke report is valid only for smoke mode")
     args.out_root = args.out_root.resolve()
