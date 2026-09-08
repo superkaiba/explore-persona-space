@@ -49,6 +49,7 @@ HF_PREFIX = "issue952_position_divergence/followups/china_refusal_topic_stratifi
 REGISTERED_SOURCE_ITEMS = 90
 PROMPTS_PER_SOURCE = 12
 REGISTERED_PROMPTS = REGISTERED_SOURCE_ITEMS * PROMPTS_PER_SOURCE
+SMOKE_SEED_BASE = SEED_BASE + REGISTERED_PROMPTS * N_DRAWS
 
 
 def _output_prefix(smoke: bool, attempt: int) -> str:
@@ -182,7 +183,9 @@ def _load_bank(bank_path: Path, audit_path: Path, smoke: bool) -> tuple[list[dic
         source_ids = sorted({row["source_prompt_id"] for row in rows})[:10]
         rows = [row for row in rows if row["source_prompt_id"] in set(source_ids)]
         if len(source_ids) != 10 or len(rows) != 10 * PROMPTS_PER_SOURCE:
-            raise RuntimeError(f"10-source-item smoke must have 120 accepted prompts, got {len(rows)}")
+            raise RuntimeError(
+                f"10-source-item smoke must have 120 accepted prompts, got {len(rows)}"
+            )
     return rows, audit
 
 
@@ -347,7 +350,14 @@ def _regime(
         "temperature": TEMPERATURE,
         "top_p": TOP_P,
         "max_new_tokens": MAX_NEW_TOKENS,
-        "seed_base": SEED_BASE,
+        "seed_base": SMOKE_SEED_BASE if smoke else SEED_BASE,
+        "seed_namespace": "smoke-disjoint-v1" if smoke else "registered-production-v1",
+        "seed_formula": (
+            f"{SMOKE_SEED_BASE} + selected_prompt_index * {N_DRAWS} + draw"
+            if smoke
+            else f"{SEED_BASE} + prompt_index * {N_DRAWS} + draw"
+        ),
+        "seed_policy": "disjoint-smoke-production-v1",
         "smoke": smoke,
         "attempt": attempt,
         "git_sha": _git_sha(),
@@ -371,6 +381,9 @@ def _smoke_generation_compatibility(regime: dict[str, Any]) -> dict[str, Any]:
         "max_model_len",
         "n_selected_prompts",
         "selected_source_ids_sha256",
+        "seed_base",
+        "seed_namespace",
+        "seed_formula",
     }
     return {key: value for key, value in regime.items() if key not in excluded}
 
@@ -423,9 +436,7 @@ def phase_generate(
     bank_sha = _sha256(bank_path)
     if not smoke and smoke_gate["bank_sha256"] != bank_sha:
         raise RuntimeError("production bank differs from the smoke-tested bank")
-    regime = _regime(
-        bank_sha, smoke, attempt=attempt, accepted=accepted, selected_rows=rows
-    )
+    regime = _regime(bank_sha, smoke, attempt=attempt, accepted=accepted, selected_rows=rows)
     regime["prompt_token_max"] = prompt_max
     regime["max_model_len"] = max_model_len
     regime["chat_template_sha256"] = hashlib.sha256(tok.chat_template.encode()).hexdigest()
@@ -464,7 +475,7 @@ def phase_generate(
         max_model_len=max_model_len,
         trust_remote_code=True,
         gpu_memory_utilization=0.82,
-        seed=SEED_BASE,
+        seed=regime["seed_base"],
     )
     t0 = time.time()
     resumed_shards = 0
@@ -503,7 +514,7 @@ def phase_generate(
                         temperature=TEMPERATURE,
                         top_p=TOP_P,
                         max_tokens=MAX_NEW_TOKENS,
-                        seed=SEED_BASE + global_i * N_DRAWS + draw,
+                        seed=regime["seed_base"] + global_i * N_DRAWS + draw,
                     )
                 )
                 specs.append((row, global_i, draw, len(contexts[global_i])))
@@ -524,7 +535,7 @@ def phase_generate(
                     "content": row["content"],
                     "frame": row["frame"],
                     "draw": draw,
-                    "seed": SEED_BASE + global_i * N_DRAWS + draw,
+                    "seed": regime["seed_base"] + global_i * N_DRAWS + draw,
                     "question": row["prompt"],
                     "text": sample.text,
                     "completion_token_ids": list(map(int, sample.token_ids)),
@@ -875,8 +886,7 @@ def phase_capture(
     if (
         _sha256(rollouts_path) != gen["rollouts_sha256"]
         or _sha256(bank_path) != gen["regime"]["bank_sha256"]
-        or gen["regime"].get("accepted_source_ids_sha256")
-        != accepted["accepted_source_ids_sha256"]
+        or gen["regime"].get("accepted_source_ids_sha256") != accepted["accepted_source_ids_sha256"]
         or gen["regime"].get("n_accepted_prompts") != accepted["n_accepted_prompts"]
         or gen["regime"].get("n_selected_prompts") != len(bank_rows)
     ):
@@ -1092,12 +1102,21 @@ def _validate_capture_upload(
     """Reject stale capture-upload markers before terminal finalization."""
     capture_path = out_root / "manifests" / "capture.json"
     raw_upload_path = out_root / "manifests" / "raw_upload.json"
+    byte_verified = capture_upload.get("byte_verified_sha256")
+    expected_verified = {"vc.pt": capture.get("vc_sha256"), **capture.get("va_files", {})}
+    realized_verified = (
+        {Path(path).name: sha for path, sha in byte_verified.items()}
+        if isinstance(byte_verified, dict)
+        else None
+    )
     if (
         capture_upload.get("capture_manifest_sha256") != _sha256(capture_path)
         or capture_upload.get("raw_upload_manifest_sha256") != _sha256(raw_upload_path)
         or capture_upload.get("capture_fingerprint") != _capture_fingerprint(capture)
         or capture_upload.get("vc_sha256") != capture.get("vc_sha256")
         or capture_upload.get("va_files") != capture.get("va_files")
+        or realized_verified != expected_verified
+        or set(capture_upload.get("byte_verified_files", [])) != set(byte_verified or {})
         or capture_upload.get("tensor_payload_revision") != capture_upload.get("revision")
         or not capture_upload.get("tensor_payload_revision")
     ):
@@ -1137,14 +1156,8 @@ def phase_upload_capture(out_root: Path, attempt: int = 1) -> dict[str, Any]:
             missing.append(path)
     if missing:
         raise RuntimeError(f"revision-scoped tensor upload verification missing {len(missing)}")
-    # Byte-verify the context tensor plus the first and last answer shards.
-    verify_paths = [required[0]]
-    if report["va_files"]:
-        va_names = sorted(report["va_files"])
-        verify_paths.extend(
-            f"{target_prefix}/analysis_tensors/{name}"
-            for name in sorted({va_names[0], va_names[-1]})
-        )
+    # Every tensor is load-bearing; verify every uploaded byte at both immutable snapshots.
+    verify_paths = required
     expected_shas = {
         f"{target_prefix}/analysis_tensors/vc.pt": report["vc_sha256"],
         **{
@@ -1165,14 +1178,13 @@ def phase_upload_capture(out_root: Path, attempt: int = 1) -> dict[str, Any]:
     result["verified_files"] = len(required)
     result["consumer_open_shape"] = list(opened["vc"].shape)
     result["capture_manifest_sha256"] = _sha256(out_root / "manifests" / "capture.json")
-    result["raw_upload_manifest_sha256"] = _sha256(
-        out_root / "manifests" / "raw_upload.json"
-    )
+    result["raw_upload_manifest_sha256"] = _sha256(out_root / "manifests" / "raw_upload.json")
     result["capture_fingerprint"] = _capture_fingerprint(report)
     result["vc_sha256"] = report["vc_sha256"]
     result["va_files"] = report["va_files"]
     result["tensor_payload_revision"] = check_rev
     result["byte_verified_files"] = sorted(verify_paths)
+    result["byte_verified_sha256"] = {path: expected_shas[path] for path in sorted(verify_paths)}
     _write_json(out_root / "manifests" / "capture_upload.json", result)
     manifest_result = _upload_folder(
         out_root / "manifests",
@@ -1187,9 +1199,7 @@ def phase_upload_capture(out_root: Path, attempt: int = 1) -> dict[str, Any]:
         f"{target_prefix}/manifests/raw_upload.json": _sha256(
             out_root / "manifests" / "raw_upload.json"
         ),
-        f"{target_prefix}/manifests/capture.json": _sha256(
-            out_root / "manifests" / "capture.json"
-        ),
+        f"{target_prefix}/manifests/capture.json": _sha256(out_root / "manifests" / "capture.json"),
         f"{target_prefix}/manifests/capture_upload.json": _sha256(
             out_root / "manifests" / "capture_upload.json"
         ),
@@ -1311,8 +1321,7 @@ def phase_finalize(out_root: Path, attempt: int = 1) -> dict[str, Any]:
             and generation["p90_request_latency_s"] is not None,
             "continuation_allowed": True,
             "bank_sha256": generation["regime"]["bank_sha256"],
-            "accepted_source_ids_sha256": generation["regime"]
-            ["accepted_source_ids_sha256"],
+            "accepted_source_ids_sha256": generation["regime"]["accepted_source_ids_sha256"],
             "n_accepted_prompts": generation["regime"]["n_accepted_prompts"],
             "n_expected_production_rollouts": generation["regime"]["n_expected_rollouts"],
             "smoke_prompts": generation["n_prompts"],
