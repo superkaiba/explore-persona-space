@@ -20,8 +20,8 @@ from omegaconf import DictConfig, OmegaConf  # noqa: E402
 from sklearn.model_selection import GroupKFold  # noqa: E402
 
 from scripts import context_risk_highrate_capture as capture  # noqa: E402
-from scripts import context_risk_highrate_collect as collection  # noqa: E402
 from scripts import context_risk_highrate_design as design  # noqa: E402
+from scripts import context_risk_highrate_postrun as postrun  # noqa: E402
 from scripts import context_risk_highrate_validity as validity  # noqa: E402
 from scripts.context_risk_analyze import load_impossible_activations  # noqa: E402
 from scripts.context_risk_followup_analyze import class_support, digest, fit_method, sha256  # noqa: E402
@@ -74,10 +74,10 @@ def review(path: Path) -> dict:
 def validated_evidence(root: Path, captures: Path) -> dict:
     """Recheck native requests, owned terminal processes and captured tensors read-only."""
     evidence = {
-        "screen": collection.verify_report(root, "screen"),
-        "fresh": collection.verify_report(root, "fresh"),
-        "screen_process": design.validate_terminal_process(root, "screen"),
-        "fresh_process": design.validate_terminal_process(root, "fresh"),
+        "screen": postrun.verify_report(root, "screen"),
+        "fresh": postrun.verify_report(root, "fresh"),
+        "screen_process": postrun.validate_terminal_process(root, "screen"),
+        "fresh_process": postrun.validate_terminal_process(root, "fresh"),
         "capture": capture.validate_binding(captures),
     }
     review_path = root / "fresh_B/success_review.json"

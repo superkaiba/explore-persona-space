@@ -232,7 +232,8 @@ def full_flow_fixture(tmp_path, monkeypatch, mutation=None):
             "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in raw)
         )
         audits[phase] = {
-            "native_logs_sha256": {str(native_path): reconcile.archive.sha(native_path)}
+            "schema_version": "context_risk_highrate_native_audit_v1",
+            "native_logs_sha256": {str(native_path): reconcile.archive.sha(native_path)},
         }
         launch = phase_dir / "launch_config.json"
         write_json(launch, {"config": {"review": str(source_review)}})
@@ -329,9 +330,9 @@ def full_flow_fixture(tmp_path, monkeypatch, mutation=None):
             owner, name, create_autospec(getattr(owner, name), side_effect=side_effect)
         )
 
-    boundary(reconcile.collection, "verify_report", lambda root, phase: audits[phase])
+    boundary(reconcile.postrun, "verify_report", lambda root, phase: audits[phase])
     boundary(
-        reconcile.design,
+        reconcile.postrun,
         "validate_terminal_process",
         lambda root, phase: {"evidence_sha256": audits[phase]["native_logs_sha256"]},
     )

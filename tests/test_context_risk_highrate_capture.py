@@ -7,6 +7,7 @@ import json
 import shutil
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import create_autospec
 
 import numpy as np
 import pytest
@@ -94,7 +95,7 @@ def rig(tmp_path, monkeypatch):
     # Valid censoring need not make an unconditional experiment claim pass.
     write(
         root / "fresh_B/run_result.json",
-        {"verification_passed": True, "experiment_passed": False, "censored": 1},
+        {"passed": True, "verification_passed": True, "experiment_passed": False, "censored": 1},
     )
     write(
         root / "fresh_B/prefix_tokens.json",
@@ -257,6 +258,152 @@ def prepare(rig):
     prepared = capture.prepare(rig.cfg)
     rig.cfg.input_binding_sha256 = prepared["capture_inputs_sha256"]
     return prepared
+
+
+def derived_rig(rig, monkeypatch, *, fresh_derived):
+    """Expose disclosed native-boundary fixtures to real portable capture bodies."""
+    from scripts import context_risk_highrate_design as design
+    from scripts import context_risk_highrate_postrun as postrun
+
+    root = rig.root
+    review = {
+        "verdict": "PASS",
+        "reviewer": "explicit derived fixture",
+        "sources_sha256": postrun.source_hashes(),
+    }
+    review_path = root / "setup/postrun_code_review.json"
+    write(review_path, review)
+
+    def derived(base):
+        return {
+            **base,
+            "schema_version": postrun.SCHEMA,
+            "postrun_sources_sha256": postrun.source_hashes(),
+            "postrun_review": review,
+            "postrun_review_sha256": capture.sha256(review_path),
+            "evidence_verification_passed": True,
+            "original_collector_verification_passed": False,
+            "original_validation_issues": [{"scope": "explicit-fixture"}],
+            "capacity_censors": [{"scope": "explicit-fixture"}],
+        }
+
+    screen = derived(rig.native(root, "fresh"))
+    screen["metadata"] = {**screen["metadata"], "phase": "screen", "epochs": 2}
+    screen["counts"] = {
+        "planned": 618,
+        "realized": 618,
+        "missing": 0,
+        "success": 1,
+        "failure": 616,
+        "censored": 1,
+    }
+    screen_path = root / "screen_B/postrun_audit.json"
+    write(screen_path, screen)
+    selection_path = root / "selection.json"
+    selection = json.loads(selection_path.read_text())
+    selection.update(
+        postrun_screen_audit_sha256=capture.sha256(screen_path),
+        postrun_sources_sha256=postrun.source_hashes(),
+        postrun_review_sha256=capture.sha256(review_path),
+    )
+    write(selection_path, selection)
+    if fresh_derived:
+        write(root / "fresh_B/run_result.json", {"passed": False, "verification_passed": False})
+        native = derived(rig.native(root, "fresh"))
+        fresh_path = root / "fresh_B/postrun_audit.json"
+        write(fresh_path, native)
+        native = {**native, "postrun_audit_sha256": capture.sha256(fresh_path)}
+        terminal = {
+            "schema_version": postrun.TERMINAL_SCHEMA,
+            "verification_passed": True,
+            "phase": "fresh",
+            "original_exit_code": 1,
+            "run_result_sha256": capture.sha256(root / "fresh_B/run_result.json"),
+            "postrun_audit_sha256": native["postrun_audit_sha256"],
+        }
+        write(root / "fresh_B/terminal_process.json", terminal)
+    else:
+        native = rig.native(root, "fresh")
+        terminal = rig.terminal(root, "fresh")
+    monkeypatch.setattr(
+        postrun, "verify_report", create_autospec(postrun.verify_report, return_value=native)
+    )
+    monkeypatch.setattr(
+        postrun,
+        "validate_terminal_process",
+        create_autospec(postrun.validate_terminal_process, return_value=terminal),
+    )
+    monkeypatch.setattr(
+        postrun,
+        "validate_selection",
+        create_autospec(postrun.validate_selection, return_value=selection),
+    )
+    # Every boundary reached by these new body tests has an exact callable signature.
+    monkeypatch.setattr(
+        design, "load_phase", create_autospec(design.load_phase, side_effect=design.load_phase)
+    )
+    monkeypatch.setattr(
+        capture, "_runtime", create_autospec(capture._runtime, return_value=dict(capture.RUNTIME))
+    )
+    monkeypatch.setattr(
+        helper, "run_capture", create_autospec(rig.real_capture, side_effect=rig.fake_capture)
+    )
+    return native
+
+
+@pytest.mark.parametrize("fresh_derived", [False, True])
+def test_derived_screen_and_fresh_portable_capture_roundtrip(
+    rig, tmp_path, monkeypatch, fresh_derived
+):
+    native = derived_rig(rig, monkeypatch, fresh_derived=fresh_derived)
+    before = (rig.root / "fresh_B/run_result.json").read_bytes()
+    prepared = prepare(rig)
+    extra = {"screen_B/postrun_audit.json", "setup/postrun_code_review.json"}
+    if fresh_derived:
+        extra.add("fresh_B/postrun_audit.json")
+    assert extra <= set(prepared["stage_relative_paths"])
+    pod = tmp_path / "pod"
+    for name in prepared["stage_relative_paths"]:
+        destination = pod / name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(rig.root / name, destination)
+    cfg = copy.deepcopy(rig.cfg)
+    cfg.root, cfg.output_dir = str(pod), str(pod / "capture")
+    cfg.manifest_path = str(pod / "manifests/fresh_B.jsonl")
+    captured = capture.run(cfg)
+    assert captured["fresh_evidence"]["generation_validation"] == native
+    assert captured["passed"] and len(captured["chunk_files_sha256"]) == 18
+    shutil.copytree(pod / "capture", rig.root / "capture")
+    assert capture.validate_binding(rig.root / "capture")["passed"]
+    assert (rig.root / "fresh_B/run_result.json").read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    "fault", ["wrong_phase", "changed_review", "no_censors", "original_pass", "wrong_selection"]
+)
+def test_portable_derived_semantics_fail_even_with_recomputed_file_hashes(rig, monkeypatch, fault):
+    native = derived_rig(rig, monkeypatch, fresh_derived=True)
+    path = rig.root / "fresh_B/postrun_audit.json"
+    value = json.loads(path.read_text())
+    if fault == "wrong_phase":
+        value["metadata"]["phase"] = "screen"
+    elif fault == "changed_review":
+        value["postrun_review"]["verdict"] = "REVISE"
+    elif fault == "no_censors":
+        value["capacity_censors"] = []
+    elif fault == "original_pass":
+        value["original_collector_verification_passed"] = True
+    else:
+        selection_path = rig.root / "selection.json"
+        selected = json.loads(selection_path.read_text())
+        selected["postrun_screen_audit_sha256"] = "0" * 64
+        write(selection_path, selected)
+    write(path, value)
+    # Recompute the outer hash deliberately so the semantic guard is exercised.
+    native = {**value, "postrun_audit_sha256": capture.sha256(path)}
+    selection = json.loads((rig.root / "selection.json").read_text())
+    with pytest.raises(ValueError):
+        capture._postrun_files(rig.root, selection, native)
 
 
 def test_vm_prepare_pod_capture_and_vm_consume_with_valid_censor(rig):

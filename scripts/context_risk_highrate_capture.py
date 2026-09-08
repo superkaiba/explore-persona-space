@@ -57,8 +57,9 @@ SOURCES = tuple(
 
 def source_hashes() -> dict:
     from scripts import context_risk_highrate_design as design
+    from scripts import context_risk_highrate_postrun as postrun
 
-    names = set(SOURCES) | set(design.source_hashes())
+    names = set(SOURCES) | set(design.source_hashes()) | set(postrun.source_hashes())
     return {name: sha256(REPOSITORY / name) for name in sorted(names)}
 
 
@@ -68,6 +69,8 @@ def imported_source_hashes() -> dict:
         "scripts.context_risk_followup_capture",
         "scripts.context_risk_highrate_design",
         "scripts.context_risk_highrate_collect",
+        "scripts.context_risk_highrate_capacity",
+        "scripts.context_risk_highrate_postrun",
     ):
         name = module_name.replace(".", "/") + ".py"
         module = importlib.import_module(module_name)
@@ -101,8 +104,8 @@ def _runtime() -> dict:
 
 def _inputs(root: Path) -> tuple[dict, list[dict], dict]:
     """Revalidate final native evidence, including permitted censors, without inference."""
-    from scripts import context_risk_highrate_collect as collection
     from scripts import context_risk_highrate_design as design
+    from scripts import context_risk_highrate_postrun as postrun
 
     paths = {name: root / value for name, value in INPUT_PATHS.items()}
     hashes = {name: sha256(path) for name, path in paths.items()}
@@ -111,8 +114,10 @@ def _inputs(root: Path) -> tuple[dict, list[dict], dict]:
         raise ValueError("Capture requires the frozen four-repeat fresh B phase")
     if selection != json.loads(paths["selection"].read_text()):
         raise ValueError("Fresh phase selection differs from the selection receipt")
-    generation = collection.verify_report(root, "fresh")
-    terminal = design.validate_terminal_process(root, "fresh")
+    generation = postrun.verify_report(root, "fresh")
+    terminal = postrun.validate_terminal_process(root, "fresh")
+    if "postrun_screen_audit_sha256" in selection:
+        postrun.validate_selection(root)
     evidence = {
         "phase": "fresh",
         "arm": "B",
@@ -121,6 +126,7 @@ def _inputs(root: Path) -> tuple[dict, list[dict], dict]:
         "input_files_sha256": hashes,
         "generation_validation": generation,
         "terminal_process_validation": terminal,
+        "postrun_files_sha256": _postrun_files(root, selection, generation),
     }
     rows, prefixes = _context_inputs(root, evidence)
     if hashes != {name: sha256(path) for name, path in paths.items()}:
@@ -128,9 +134,56 @@ def _inputs(root: Path) -> tuple[dict, list[dict], dict]:
     return evidence, rows, prefixes
 
 
+def _postrun_files(root: Path, selection: dict, generation: dict) -> dict:
+    """Bind the explicitly staged extension sidecars; full native validation runs on the VM."""
+    from scripts import context_risk_highrate_postrun as postrun
+
+    names = []
+    if "postrun_screen_audit_sha256" in selection:
+        names.extend(["setup/postrun_code_review.json", "screen_B/postrun_audit.json"])
+    if generation["schema_version"] == postrun.SCHEMA:
+        names.extend(["setup/postrun_code_review.json", "fresh_B/postrun_audit.json"])
+    hashes = {name: sha256(root / name) for name in sorted(set(names))}
+    if names:
+        review = postrun.validate_review(root / "setup/postrun_code_review.json")
+        for phase in ("screen", "fresh"):
+            name = f"{phase}_B/postrun_audit.json"
+            if name not in hashes:
+                continue
+            sidecar = json.loads((root / name).read_text())
+            if (
+                sidecar["schema_version"] != postrun.SCHEMA
+                or sidecar["postrun_review"] != review
+                or sidecar["postrun_review_sha256"] != hashes["setup/postrun_code_review.json"]
+                or sidecar["postrun_sources_sha256"] != postrun.source_hashes()
+                or sidecar["evidence_verification_passed"] is not True
+                or sidecar["original_collector_verification_passed"] is not False
+                or not sidecar["original_validation_issues"]
+                or not sidecar["capacity_censors"]
+                or sidecar["metadata"]["phase"] != phase
+                or sidecar["metadata"]["epochs"] != (2 if phase == "screen" else 4)
+                or sidecar["counts"]["planned"] != (618 if phase == "screen" else 360)
+                or sidecar["counts"]["realized"] != sidecar["counts"]["planned"]
+                or sidecar["counts"]["missing"] != 0
+            ):
+                raise ValueError("Portable postrun evidence lacks its explicit reviewed provenance")
+            if phase == "screen" and (
+                selection["postrun_screen_audit_sha256"] != hashes[name]
+                or selection["postrun_sources_sha256"] != postrun.source_hashes()
+                or selection["postrun_review_sha256"] != hashes["setup/postrun_code_review.json"]
+            ):
+                raise ValueError("Portable selection differs from its derived screen audit")
+            if phase == "fresh" and generation != {**sidecar, "postrun_audit_sha256": hashes[name]}:
+                raise ValueError("Portable generation differs from the derived fresh audit")
+    if hashes != {name: sha256(root / name) for name in hashes}:
+        raise ValueError("Portable postrun files changed during validation")
+    return hashes
+
+
 def _context_inputs(root: Path, evidence: dict) -> tuple[list[dict], dict]:
     """Verify portable immutable files without accessing original VM paths or PIDs."""
     from scripts import context_risk_highrate_design as design
+    from scripts import context_risk_highrate_postrun as postrun
 
     paths = {name: root / value for name, value in INPUT_PATHS.items()}
     hashes = {name: sha256(path) for name, path in paths.items()}
@@ -144,6 +197,17 @@ def _context_inputs(root: Path, evidence: dict) -> tuple[list[dict], dict]:
         raise ValueError("Staged capture input files or phase differ from the verified VM receipt")
     generation = evidence["generation_validation"]
     terminal = evidence["terminal_process_validation"]
+    selection = json.loads(paths["selection"].read_text())
+    extra = _postrun_files(root, selection, generation)
+    if evidence.get("postrun_files_sha256", {}) != extra:
+        raise ValueError("Staged postrun sidecars changed")
+    if generation["schema_version"] == postrun.SCHEMA and (
+        terminal["schema_version"] != postrun.TERMINAL_SCHEMA
+        or terminal["original_exit_code"] != 1
+        or terminal["postrun_audit_sha256"] != generation["postrun_audit_sha256"]
+        or json.loads(paths["generation"].read_text())["passed"] is not False
+    ):
+        raise ValueError("Portable derived evidence must retain the original failed producer")
     metadata = generation["metadata"]
     expected_metadata = {
         "schema_version": "context_risk_highrate_collection_v1",
@@ -163,7 +227,8 @@ def _context_inputs(root: Path, evidence: dict) -> tuple[list[dict], dict]:
     if (
         any(metadata[key] != value for key, value in expected_metadata.items())
         or generation["sources_sha256"] != metadata["sources_sha256"]
-        or generation["schema_version"] != "context_risk_highrate_native_audit_v1"
+        or generation["schema_version"]
+        not in {"context_risk_highrate_native_audit_v1", postrun.SCHEMA}
         or generation["coverage_complete"] is not True
         or generation["validation_issues"]
         or generation["duplicate_keys"]
@@ -307,7 +372,11 @@ def prepare(cfg: DictConfig) -> dict:
     return {
         "verification_passed": True,
         "capture_inputs_sha256": sha256(path),
-        "stage_relative_paths": [*INPUT_PATHS.values(), "capture_inputs.json"],
+        "stage_relative_paths": [
+            *INPUT_PATHS.values(),
+            *evidence["postrun_files_sha256"],
+            "capture_inputs.json",
+        ],
     }
 
 

@@ -1,0 +1,195 @@
+{
+  "checks": [
+    "Only run changes among reconciliation function bodies: ordinary phase validation explicitly uses postrun.verify_report and postrun.validate_terminal_process. Exact original native/full-row agreement, full-key618screen/360fresh/90capture checks, per-file pod coverage and repeated control/readback verification remain unchanged.",
+    "The complete manifests, screen_B, fresh_B and capture trees are byte-bridged to pinned reconstructed/read-back originals. This covers original failed reports/native audits, separate derived audits, terminal receipts, capacity token-proof receipts and token-ID files. Derived phases also explicitly bridge setup/postrun_code_review.json and every outside-tree path in original_artifacts_sha256.",
+    "Every terminal evidence path and every current37-file source-closure path is independently bridged to the archive source mapping. The reviewed extension does not reinterpret an arbitrary process failure, omit native unknowns, use total row count instead of identity, waive an archive entry or authorize teardown.",
+    "The independent five-case real-body archive probe retained618/360/90 full-key coverage and verified all new derived inputs. Missing external original evidence, missing postrun review, missing capacity token proof and changed original bytes each fail before a reconciliation PASS is written. External native/process/capture semantics and Inspect reader are disclosed signature-constrained software fixtures."
+  ],
+  "evidence_artifacts_sha256": {
+    "postrun_consumer_bridge_probe.py": "3e5da10e78839f2037a70080631664250d4daf926d11a6e16b432b24b3ae1dd3",
+    "postrun_consumer_bridge_probe_result.json": "390246cd62a51c0f03e1dc6f20ed632a03c4f9bf050baac5459c22322cba4fac",
+    "postrun_consumer_recipe_comparison.json": "04c07a9e82dbc45ea4fc99069e57fb05c7c9ae5f33f6d79a41207400232d7b55",
+    "postrun_final_consumer_seam_tests.json": "4966e3bb5463828d5d9fbc03ddd296be5076fed052f8f82fe82521d773e16e7f",
+    "postrun_final_consumer_tests.json": "09d5d4a62c53e6523e99694c2a25b00b2ed8c97ca93d569b7a0d13550e522f63",
+    "postrun_workflow_lint_final.log": "c6612f2ee53cd57fe3d5ee621381bab30605834ebaad87f299842c4b34bda949"
+  },
+  "executed_evidence": [
+    {
+      "artifact": "setup/postrun_final_consumer_tests.json",
+      "command": [
+        "uv",
+        "run",
+        "--with",
+        "inspect-ai==0.3.261",
+        "--with",
+        "openai==3.7.0",
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_context_risk_highrate_capture.py",
+        "tests/test_context_risk_highrate_analyze.py",
+        "tests/test_context_risk_highrate_reconcile.py"
+      ],
+      "exit_code": 0,
+      "passed": 102,
+      "pytest_elapsed_seconds": 29.84,
+      "source_unchanged_during_test": true
+    },
+    {
+      "artifact": "setup/postrun_final_consumer_seam_tests.json",
+      "command": [
+        "uv",
+        "run",
+        "--with",
+        "inspect-ai==0.3.261",
+        "--with",
+        "openai==3.7.0",
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_context_risk_highrate_capture.py",
+        "tests/test_context_risk_highrate_analyze.py",
+        "tests/test_context_risk_highrate_reconcile.py",
+        "-k",
+        "derived or validated_evidence or full_run_body"
+      ],
+      "exit_code": 0,
+      "passed": 14,
+      "scope": "Final changed consumer seams after the narrow postrun token-proof race fix; complete consumer bodies unchanged since102-case suite.",
+      "source_unchanged_during_test": true
+    },
+    {
+      "artifact": "setup/postrun_consumer_bridge_probe_result.json",
+      "case": "Independent real-body derived archive bridge",
+      "fixture_boundaries": "Real reconciliation byte bridges, full 618/360/90 key sets and repeated readback verification. Disclosed external native/process/capture authorization and Inspect reader are signature-constrained fixtures inherited from committed suite. No model calls or generated code execution.",
+      "passed": 5,
+      "test_source": "setup/postrun_consumer_bridge_probe.py"
+    },
+    {
+      "analysis_changed_functions": [
+        "validated_evidence"
+      ],
+      "artifact": "setup/postrun_consumer_recipe_comparison.json",
+      "case": "AST recipe comparison against unchanged HEAD implementation",
+      "physical_freeze_identical": true,
+      "physical_source_count": 12
+    },
+    {
+      "case": "Direct capture and analysis --cfg job",
+      "exit_code": 0
+    },
+    {
+      "case": "Scoped Ruff on6 changed consumer source/test files",
+      "exit_code": 0
+    },
+    {
+      "artifact": "setup/postrun_workflow_lint_final.log",
+      "case": "Owner final scoped workflow lint",
+      "checks_ran": 40,
+      "files": 10,
+      "verdict": "PASS"
+    }
+  ],
+  "independent_plan_review_sha256": "91f022d049e18540daebf67c84c8cb04790c14dc778faeb82ceae65117c36fa7",
+  "independent_postrun_review_sha256": "f730cd6aa7673b43310b7b50f6c24c2c1570f97b40d36ae64058d2a885922e13",
+  "inherited_reviews_sha256": {
+    "setup/archive_review_snapshots_code_review.json": "99d3713729a116745c026eb6ebac18831436a04ec434be7b3509529c86bb9f55",
+    "setup/highrate_reconciliation_code_review.json": "d04557a2e373375360abaa54b93fc2c0aef4c1435e77ee9883221880a740ed52"
+  },
+  "input_validity_plan_sha256": "fab7b675089a58dea7c8376e3041eb35cd6f8812c276c3af52abee7ad256baf7",
+  "markdown_sha256": "7248e76968a57487632c4a5d3a8ae5577bb7a410d6fb8102d1d6d796254f1bf0",
+  "no_delegation": true,
+  "no_generated_submission_execution": true,
+  "no_model_calls": true,
+  "no_process_changes": true,
+  "no_source_edits": true,
+  "no_task_changes": true,
+  "no_uploads": true,
+  "original_plan_sha256": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+  "package_versions": {
+    "inspect-ai": "0.3.261",
+    "numpy": "2.2.6",
+    "openai": "3.7.0",
+    "pytest": "9.0.2"
+  },
+  "physical_sources_sha256": {
+    "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+    "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+    "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+    "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+    "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c"
+  },
+  "physical_sources_unchanged_from_screen_freeze": true,
+  "plan_sha256": "e743d726fde20defa03cffe2808b5d7bd7c0100db8911c161dc41d33529d2355",
+  "remaining_actual_gates": [
+    "Actual terminal full native/process verification or independently settled known capacity errors, exact success-body reviews and v7 pre-fresh full ranking/role proof remain required.",
+    "Use current explicit capture/analysis/reconciliation review paths; any source drift invalidates these PASS receipts.",
+    "Complete and validate the real fresh360 trajectories and90 prefix captures, then fit under unchanged conditional/claim gates. Software test successes are not experimental positives.",
+    "Archive original and derived evidence with current source/review files; verify pinned remote readback and exact real reconciliation before managed teardown. No archive transfer or teardown was performed by this review."
+  ],
+  "reviewed_utc": "2026-09-08T05:09:19.679492+00:00",
+  "reviewer": "Independent Codex subagent /root/published_task_rates; read-only consumer reviewer, not amendment author",
+  "schema_version": "context_risk_highrate_reconciliation_postrun_code_review_v1",
+  "scope": "Explicit ordinary consumer routing and provenance for the reviewed capacity-censor extension; software PASS only, no final experiment/scientific/archive/teardown approval.",
+  "screen_freeze_sha256": "fb9ef2e3f4c6e14936c999873332a86cdb3cdfba2fecd305d287224fb8b977f5",
+  "source_changes_after_full_consumer_suite": {
+    "scripts/context_risk_highrate_postrun.py": {
+      "current": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+      "previous": "afd00bb7f0695344740e66617e3713a0e7e89a8f9f2d9176f85bc9cbbf3df635"
+    },
+    "tests/test_context_risk_highrate_postrun_integration.py": {
+      "current": "199ae6a3b2ef230e9e37fe9ecc8647b717686d266f89798b3a642af3482d6657",
+      "previous": "b28aac83db3a014e79e99ed37499ad3e53e7608da6b76238525d3eebf14c6e1b"
+    }
+  },
+  "sources_sha256": {
+    "configs/eval/context_risk_followup_capture.yaml": "cdbc76b49d639a61d349becf984aafd30ff5372ea88f6e92f89f2cac4cc25285",
+    "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+    "configs/eval/context_risk_highrate_capture.yaml": "7140a2fcc3e1ed38e4127a1c65d8dbb8ec3b40034713cffca8d15be177e80eec",
+    "configs/eval/context_risk_qwen38_impossible_capture.yaml": "7018d151ebf4534ad3ecfa4d88cb48c12b847e98bba46dce2e1ba3e8b0dc53aa",
+    "configs/eval/context_risk_qwen38_smoke.yaml": "d5ad816cb64e7da10d7e22bf79e4525e7d04f6d9df4808e678fd9d4cb9f5f352",
+    "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+    "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+    "eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md": "e743d726fde20defa03cffe2808b5d7bd7c0100db8911c161dc41d33529d2355",
+    "scripts/context_risk_corrected_finish.py": "8aeaddec362b9bbf277c707b7532d17948811f1bdf09b9c0a45f598c7eca466e",
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
+    "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "scripts/context_risk_highrate_archive.py": "b7f712557a5b537021fc5324a3f4f945c0e1a89c06da3404166c81b44401205b",
+    "scripts/context_risk_highrate_capacity.py": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+    "scripts/context_risk_highrate_capture.py": "a148f96788d6e0d9a6d0727cdf54b5f7ad609886841e4f729171850154163d74",
+    "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+    "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+    "scripts/context_risk_highrate_postrun.py": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+    "scripts/context_risk_highrate_reconcile.py": "a5ecea26f86d653b2a60bedc5a47abc25bd1e7e278f98f5721a2b1b776da7e60",
+    "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+    "scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
+    "scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+    "scripts/context_risk_qwen38_impossible_capture.py": "d7f6aec322ce89249a6829b3298f7753cf8a33b9e7505bc7850b8c408a39122b",
+    "scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+    "scripts/issue2054_phase_a.py": "69573ff5fc81ad398f35ccf9e656d5fceb7e2696e4b6b35a1db80a166ceb7016",
+    "scripts/verify_uploads.py": "3991c7f464602766d26b5c38b2b42905e92b7f40e918cb72776b59b7e3d34ee9",
+    "src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79",
+    "src/explore_persona_space/orchestrate/env.py": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759",
+    "src/explore_persona_space/orchestrate/hub.py": "6590d4c01d396f935da018d16673e3d21f93843126b5e12a42be8e6e0419351e",
+    "tests/test_context_risk_highrate_capture.py": "9b6022d203c5ce8de6746295f4f131e814067b9730dd1a2890cf88d14f454d93",
+    "tests/test_context_risk_highrate_postrun.py": "f653400a60e77a81d839715dc4ab0bce3c8f1454ae0cff551fcd1367a066cb80",
+    "tests/test_context_risk_highrate_postrun_integration.py": "199ae6a3b2ef230e9e37fe9ecc8647b717686d266f89798b3a642af3482d6657",
+    "tests/test_context_risk_highrate_reconcile.py": "b4bd4d7bd67bb94978318335c95bf8e44a252026515a99d416d3d412cf01f502"
+  },
+  "unresolved_findings": [],
+  "verdict": "PASS"
+}

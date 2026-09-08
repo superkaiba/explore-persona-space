@@ -232,14 +232,14 @@ def test_validated_evidence_calls_every_current_validator(tmp_path, monkeypatch,
         return {"capture": True}
 
     monkeypatch.setattr(
-        analysis.collection,
+        analysis.postrun,
         "verify_report",
-        create_autospec(analysis.collection.verify_report, side_effect=native),
+        create_autospec(analysis.postrun.verify_report, side_effect=native),
     )
     monkeypatch.setattr(
-        analysis.design,
+        analysis.postrun,
         "validate_terminal_process",
-        create_autospec(analysis.design.validate_terminal_process, side_effect=terminal),
+        create_autospec(analysis.postrun.validate_terminal_process, side_effect=terminal),
     )
     monkeypatch.setattr(
         analysis.capture,
