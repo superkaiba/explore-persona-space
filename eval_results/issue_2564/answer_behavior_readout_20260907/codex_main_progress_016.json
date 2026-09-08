@@ -1,0 +1,48 @@
+{
+  "recorded_at": 1788858079.2637334,
+  "status_counts": {
+    "complete": 16,
+    "running": 2,
+    "pending": 262
+  },
+  "complete_main_annotations": 4096,
+  "planned_main_annotations": 71680,
+  "timing_by_property": {
+    "persona": {
+      "n_packets": 8,
+      "observed_interval_seconds": [
+        591.4896085262299,
+        571.1618187427521,
+        628.7640974521637,
+        505.7831485271454,
+        585.6842777729034,
+        565.1458008289337,
+        508.0926914215088,
+        562.7136423587799
+      ],
+      "min_seconds": 505.7831485271454,
+      "median_seconds": 568.1538097858429,
+      "max_seconds": 628.7640974521637,
+      "mean_seconds": 564.8543857038021
+    },
+    "topic": {
+      "n_packets": 8,
+      "observed_interval_seconds": [
+        531.2364602088928,
+        1982.351220369339,
+        661.14009308815,
+        469.8934135437012,
+        349.33161449432373,
+        492.50694727897644,
+        510.8574421405792,
+        500.7050130367279
+      ],
+      "min_seconds": 349.33161449432373,
+      "median_seconds": 505.78122758865356,
+      "max_seconds": 1982.351220369339,
+      "mean_seconds": 687.2527755200863
+    }
+  },
+  "interpretation": "Observed dispatch-to-completion intervals include coordinator latency and uncontrolled shared-model execution. Later properties and repeated contexts may differ; no firm whole-roster ETA inferred.",
+  "readout_status": "not started; full ratings and aggregate provenance are required"
+}

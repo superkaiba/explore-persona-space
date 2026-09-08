@@ -70,3 +70,13 @@ are also [archived as a verified partial checkpoint](https://huggingface.co/data
 All 197 files and their 7,286,137 bytes match the local content hashes. This
 checkpoint includes actual dispatch records and is explicitly incomplete; it
 is not a main completion marker or a behavioral result.
+
+A later [16-packet progress snapshot](codex_main_progress_016.json) records
+the complete first voice and topic passes (4,096 main ratings), with two warmth
+packets running. Median observed packet intervals were 568 seconds for voice
+and 506 seconds for topic; one topic packet took 1,982 seconds. This variability
+limits the original timing extrapolation. The [coordination log](codex_coordination_events.jsonl)
+records a capacity-limited dispatch and procedural progress checks on that longer
+packet. It finished with all 256 records valid. The checks requested progress
+and permitted incremental output, while explicitly keeping the rubric and
+annotation requirements unchanged. All five repeated ratings remain required.
