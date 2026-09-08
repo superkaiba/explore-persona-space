@@ -576,6 +576,15 @@ def _smoke_capture_compatibility(
     }
 
 
+def _shutdown_repaired_engine(llm: Any) -> None:
+    """Gracefully reap a loaded vLLM engine; checkpoint-only resumes have no engine."""
+    if llm is None:
+        return
+    from explore_persona_space.analysis.representation_shift import _reap_vllm_engine
+
+    _reap_vllm_engine(llm)
+
+
 def phase_generate(
     out_root: Path,
     bank_path: Path,
@@ -772,10 +781,15 @@ def phase_generate(
             f"[gen] shard={start // shard_prompts + 1} prompts={len(chunk)} "
             f"rows={len(realized)} elapsed={time.time() - t0:.1f}s"
         )
+    if study == "repaired-v2":
+        _shutdown_repaired_engine(llm)
     del llm
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
+        if study == "repaired-v2":
+            torch.cuda.ipc_collect()
+            time.sleep(1.0)
 
     shard_paths = sorted(raw_dir.glob("rollouts_p*.jsonl"))
     realized_manifests = set(raw_dir.glob("rollouts_p*.done.json"))
@@ -1088,10 +1102,14 @@ def _generate_extension_shards(
         print(
             f"[extend] rows={start}:{start + len(chunk)}/{len(selected)} elapsed={elapsed_s:.1f}s"
         )
+    had_engine = llm is not None
+    _shutdown_repaired_engine(llm)
     del llm
     gc.collect()
-    if torch.cuda.is_available():
+    if had_engine and torch.cuda.is_available():
         torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+        time.sleep(1.0)
     if {path.name for path in shard_dir.glob("*")} != set(shard_files):
         raise RuntimeError("unexpected cap-extension shard residue")
     return extended, elapsed_s, shard_files

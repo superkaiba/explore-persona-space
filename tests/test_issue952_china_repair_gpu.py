@@ -287,7 +287,14 @@ def _synthetic_runtime(
     """Set model and network boundaries while retaining every production phase body."""
     tok = _Tokenizer()
     rows_by_prompt = {GPU._rendered(tok, row["prompt"]): row for row in GPU._read_jsonl(bank)}
-    state = {"calls": [], "engine_loads": 0}
+    state = {"calls": [], "engine_loads": 0, "engine_shutdowns": 0}
+    from explore_persona_space.analysis import representation_shift
+
+    monkeypatch.setattr(
+        representation_shift,
+        "_log_zombie_cuda_contexts",
+        create_autospec(representation_shift._log_zombie_cuda_contexts, return_value=[]),
+    )
     monkeypatch.setattr(GPU, "HIDDEN", 2)
     for name, value in (
         ("_tokenizer", tok),
@@ -304,6 +311,9 @@ def _synthetic_runtime(
         create_autospec(torch.cuda.max_memory_allocated, return_value=0),
     )
     monkeypatch.setattr(torch.cuda, "empty_cache", create_autospec(torch.cuda.empty_cache))
+    monkeypatch.setattr(
+        torch.cuda, "is_available", create_autospec(torch.cuda.is_available, return_value=False)
+    )
 
     class SamplingParams:
         def __init__(self, *, n, temperature, top_p, max_tokens, seed):
@@ -330,6 +340,7 @@ def _synthetic_runtime(
             assert trust_remote_code and gpu_memory_utilization == 0.82
             assert seed in (9520000, 9530880)
             state["engine_loads"] += 1
+            self.llm_engine = SimpleNamespace(engine_core=EngineCore())
 
         def generate(self, prompts, params, *, use_tqdm):
             assert not use_tqdm
@@ -353,6 +364,10 @@ def _synthetic_runtime(
                     )
                 )
             return outputs
+
+    class EngineCore:
+        def shutdown(self):
+            state["engine_shutdowns"] += 1
 
     vllm = ModuleType("vllm")
     vllm.LLM = LLM
@@ -503,6 +518,7 @@ def test_repaired_smoke_then_production_execute_all_phase_bodies(
         assert GPU._sha256(out / "manifests" / "generation.json") == final_manifest_sha
         assert GPU.phase_extend(out, bank, audit, study="repaired-v2") == merged_report
         assert len(state["calls"]) == calls_before
+        assert state["engine_shutdowns"] == state["engine_loads"]
         GPU._validate_raw_upload(out, merged_report, raw_upload)
 
 
@@ -567,9 +583,16 @@ def test_extension_reuses_completed_shard_after_interrupted_merge(
     GPU.phase_generate(out, bank, audit, True, 90, study="repaired-v2")
     calls_before = len(state["calls"])
     loads_before = state["engine_loads"]
+    torch.cuda.is_available.return_value = True
+    ipc_collect = create_autospec(torch.cuda.ipc_collect)
+    monkeypatch.setattr(torch.cuda, "ipc_collect", ipc_collect)
+    torch.cuda.empty_cache.reset_mock()
     report = GPU.phase_extend(out, bank, audit, study="repaired-v2")
     assert len(state["calls"]) == calls_before
     assert state["engine_loads"] == loads_before
+    assert state["engine_shutdowns"] == state["engine_loads"]
+    ipc_collect.assert_not_called()
+    torch.cuda.empty_cache.assert_not_called()
     assert GPU._sha256(out / "manifests" / "generation.initial.json") == initial_sha
     assert (
         report["cap_extension_initial_required_item_ids"]
@@ -609,3 +632,56 @@ def test_extension_consumers_reject_corrupted_provenance(
         GPU._validate_cap_extension(out, report)
     with pytest.raises(RuntimeError):
         GPU.phase_upload_raw(out, study="repaired-v2")
+
+
+def test_repaired_shutdown_runs_canonical_engine_and_process_group_cleanup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Execute the canonical helper body while mocking only lifecycle/diagnostic boundaries."""
+    from explore_persona_space.analysis import representation_shift
+
+    events = []
+
+    class EngineCore:
+        def shutdown(self):
+            events.append("engine shutdown")
+
+    monkeypatch.setattr(
+        torch.distributed,
+        "is_available",
+        create_autospec(torch.distributed.is_available, return_value=True),
+    )
+    monkeypatch.setattr(
+        torch.distributed,
+        "is_initialized",
+        create_autospec(torch.distributed.is_initialized, return_value=True),
+    )
+    monkeypatch.setattr(
+        torch.distributed,
+        "destroy_process_group",
+        create_autospec(
+            torch.distributed.destroy_process_group,
+            side_effect=lambda: events.append("process group destroyed"),
+        ),
+    )
+    monkeypatch.setattr(
+        representation_shift,
+        "_log_zombie_cuda_contexts",
+        create_autospec(representation_shift._log_zombie_cuda_contexts, return_value=[]),
+    )
+    llm = SimpleNamespace(llm_engine=SimpleNamespace(engine_core=EngineCore()))
+    GPU._shutdown_repaired_engine(llm)
+    assert events == ["engine shutdown", "process group destroyed"]
+    representation_shift._log_zombie_cuda_contexts.assert_called_once_with()
+
+
+def test_repaired_shutdown_without_loaded_engine_does_not_touch_lifecycle(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Checkpoint-only extension resume must not invoke any engine or GPU cleanup helper."""
+    from explore_persona_space.analysis import representation_shift
+
+    reaper = create_autospec(representation_shift._reap_vllm_engine)
+    monkeypatch.setattr(representation_shift, "_reap_vllm_engine", reaper)
+    GPU._shutdown_repaired_engine(None)
+    reaper.assert_not_called()
