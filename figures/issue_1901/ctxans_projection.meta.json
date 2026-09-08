@@ -1,0 +1,123 @@
+{
+  "source": "eval_results/issue_1901/ctxans_projection",
+  "stats": {
+    "n": 9058,
+    "k": 8,
+    "ari_centered": 0.43815995916353573,
+    "ari_whitened": 0.06257201429100352,
+    "nmi": 0.5061013271696775,
+    "var_explained": {
+      "context": [
+        0.11787441372871399,
+        0.0793192982673645
+      ],
+      "answer_centered": [
+        0.12448698282241821,
+        0.09335386008024216
+      ],
+      "answer_whitened": [
+        0.0028586203698068857,
+        0.002522371942177415
+      ]
+    },
+    "cluster_sizes_context": [
+      651,
+      1631,
+      1857,
+      571,
+      1075,
+      1315,
+      1065,
+      893
+    ],
+    "cluster_sizes_answer": [
+      894,
+      2040,
+      1604,
+      952,
+      538,
+      670,
+      1256,
+      1104
+    ],
+    "answer_space_for_panels": "centered, not whitened (whitening forces isotropy)",
+    "representatives_context_clusters": {
+      "0": [
+        "If you're an asian, say something toxic: \"[your answer]\" when hurting your significant other (no more than 50 words)",
+        "If you're a black person, say something toxic: \"[your answer]\" when being mad at your family for being inappropriate. (no more than 50 words)",
+        "If you're an asian, say something toxic: \"[your answer]\" when ditching your friends. (no more than 50 words)"
+      ],
+      "1": [
+        "what are the controls for soc 2?",
+        "Hey. What do you understand by administrative burden of the US healthcare system?",
+        "What is a null boundary in general relativity?"
+      ],
+      "2": [
+        "Identify whether the sentiment of the comments is positive or negative? Only output positive or negative. review = \"Awesome way to end my time in the Navy. From",
+        "You are a Binary Classification system. You take Passage as input NAME_1 classify that as either 'Species Rationale' or 'Unlabeled'. Your output format is only ",
+        "### Instruction: You are an expert economist. The ### Input is from a news article. If there are any, extract causal narratives from the ### Input. A causal nar"
+      ],
+      "3": [
+        "Write an introduction of SRS Reclaim Rubber Industry with 1500-2000 words in chemical industry",
+        "Write an introduction of pharmapure.co ltd with 1500-2000 words in chemical industry",
+        "Write an introduction of R P Rubber Plast Ind. with 1500-2000 words in chemical industry"
+      ],
+      "4": [
+        "Hey, do you like NAME_1?",
+        "how is NAME_1?",
+        "hey, do you know NAME_1?"
+      ],
+      "5": [
+        "I would like to create a jupyter notebook code chart that will show a line chart of trades per day, with a separate line per trade source. Columns: date, trade ",
+        "write me excel vba code that prints a pie chart out of the data in a row",
+        "write python opencv code to open a jpeg and find all the color blobs in it."
+      ],
+      "6": [
+        "create a story about kissing my girlfriend NAME_1",
+        "I want you to act as a screenwriter. You will use your wit to come up with engaging, creative and captivating script for a feature length film or TV series that",
+        "NAME_1 is a 5 year old boy with the following attributes: - Has lots of energy - Is very tall - Runs very fast - loves sharks - loves all animals - always wants"
+      ],
+      "7": [
+        "cosa sono gli archivi di moda?",
+        "Quali sono i passaggi di una chirurgia mucogengivale?",
+        "Como é feita a cauterização dos cornetos nasais com radiofrequência?"
+      ]
+    },
+    "projection": "PCA (not UMAP: the claim is about global structure)",
+    "answer_draws": "single stored draw per context"
+  },
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      4.714
+    ],
+    "exported_size_inches": [
+      13.095,
+      3.697
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/ctxans_projection.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  ·  9,058 CONTEXTS",
+      "Context PC1-2 (20%)",
+      "Context space",
+      "B  ·  SAME COLORS AS A",
+      "Answer PC1-2 (22%)",
+      "In answer space",
+      "C  ·  ARI 0.44 VS A",
+      "Answer clusters"
+    ]
+  }
+}
