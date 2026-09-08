@@ -8,7 +8,7 @@ see if it's just semantic similarity."
 
 Formally: let x be the context text, y the answer text, v_C(x) in R^3584 the
 Qwen-2.5-7B-Instruct layer-19 last-prompt-token state, v_A(y) in R^3584 the
-mean-over-answer-tokens state, and e(.) in R^1024 a mean-pooled encoder-only
+mean-over-answer-tokens state, and e(.) in R^1024 an encoder-only
 sentence embedding. Does ridge(v_C -> v_A) carry information beyond what a
 generic semantic encoder reads off the same text?
 
@@ -37,8 +37,11 @@ Lambda selection is VAL-based for every arm, never GCV: ``gram_fit_apply``'s own
 docstring records that GCV's (n_train - dof)^2 denominator degenerates at
 n_train ~= H, and the n=5,000 rung sits right there against H=3,584.
 
-Encoders (encoder-only, mean-pooled, L2-normalized):
-  bge   BAAI/bge-large-en-v1.5          1024-dim, headline (user choice)
+Encoders (encoder-only, L2-normalized; pooling head per POOLING):
+  bge_cls  BAAI/bge-large-en-v1.5       1024-dim, CLS-pooled, bge's intended head
+  bge      BAAI/bge-large-en-v1.5       1024-dim, MEAN-pooled, retained as the
+        measured lower bound. bge was contrastively trained on CLS, so mean-pooling
+        it reads off a head the objective never optimized (disclosed 2026-09-08).
   e5    intfloat/multilingual-e5-large  1024-dim, robustness twin — ~8.6% of the
         LMSYS prompts in this pool are heavily non-ASCII, and an English-only
         encoder would deflate the baseline exactly where the round is trying to
@@ -109,9 +112,15 @@ ROWS_PER_CHUNK = 500
 LM_MODEL = "Qwen/Qwen2.5-7B-Instruct"  # tokenizer only, for the chat template
 EMBEDDERS = {
     "bge": "BAAI/bge-large-en-v1.5",
+    "bge_cls": "BAAI/bge-large-en-v1.5",
     "e5": "intfloat/multilingual-e5-large",
     "fake": "fake",
 }
+# Pooling head PER ENCODER. bge's contrastive objective (C-Pack, arXiv 2309.07597)
+# was trained on the CLS token; e5's on the attention-masked mean. Mean-pooling bge
+# reads off a head its training never optimized, so `bge` (mean) is retained only as
+# the measured lower bound against `bge_cls`, the model's intended head.
+POOLING = {"bge": "mean", "bge_cls": "cls", "e5": "mean", "fake": "mean"}
 FAKE_DIM = 64
 EMB_MAX_TOKENS = 512
 
@@ -255,12 +264,19 @@ def _fake_embed(texts: list[str]) -> np.ndarray:
     return out / (np.linalg.norm(out, axis=1, keepdims=True) + 1e-12)
 
 
-def _encode(texts: list[str], model_id: str, device: str, batch: int) -> np.ndarray:
-    """Mean-pooled, L2-normalized encoder embeddings (bare transformers, no ST dep).
+def _encode(
+    texts: list[str], model_id: str, device: str, batch: int, pooling: str = "mean"
+) -> np.ndarray:
+    """L2-normalized encoder embeddings (bare transformers, no ST dep).
 
-    Mirrors scripts/issue1739_textembed_baseline.py's pooling head, which
+    ``pooling`` selects the sentence head: "mean" (attention-masked mean over token
+    states, the e5 head) or "cls" (the first token's state, the bge head). Using the
+    wrong one reads off a head the encoder's contrastive objective never optimized.
+    The mean branch mirrors scripts/issue1739_textembed_baseline.py, which
     reproduces the sentence-transformers client to cosine ~0.9999.
     """
+    if pooling not in ("mean", "cls"):
+        raise ValueError(f"unknown pooling head {pooling!r} (expected 'mean' or 'cls')")
     from transformers import AutoModel, AutoTokenizer
 
     tok = AutoTokenizer.from_pretrained(model_id)
@@ -277,8 +293,12 @@ def _encode(texts: list[str], model_id: str, device: str, batch: int) -> np.ndar
                 return_tensors="pt",
             ).to(device)
             hid = mdl(**enc).last_hidden_state
-            mask = enc["attention_mask"].unsqueeze(-1).to(hid.dtype)
-            pooled = (hid * mask).sum(1) / mask.sum(1).clamp(min=1e-9)
+            if pooling == "cls":
+                # CLS sits at position 0 and is padding-independent under right padding.
+                pooled = hid[:, 0]
+            else:
+                mask = enc["attention_mask"].unsqueeze(-1).to(hid.dtype)
+                pooled = (hid * mask).sum(1) / mask.sum(1).clamp(min=1e-9)
             pooled = torch.nn.functional.normalize(pooled.float(), dim=-1)
             vecs.append(pooled.cpu().numpy().astype(np.float32))
             if (i // batch) % 50 == 0:
@@ -313,10 +333,11 @@ def embed(args) -> None:
         e_ctx, e_ans = _fake_embed(ctx_texts), _fake_embed(responses)
     else:
         dev = "cuda" if torch.cuda.is_available() else "cpu"
-        _log(f"embedding {len(ctx_texts)} contexts with {model_id} on {dev}")
-        e_ctx = _encode(ctx_texts, model_id, dev, args.batch)
-        _log(f"embedding {len(responses)} answers with {model_id} on {dev}")
-        e_ans = _encode(responses, model_id, dev, args.batch)
+        pooling = POOLING[args.embedder]
+        _log(f"embedding {len(ctx_texts)} contexts with {model_id} on {dev} pooling={pooling}")
+        e_ctx = _encode(ctx_texts, model_id, dev, args.batch, pooling)
+        _log(f"embedding {len(responses)} answers with {model_id} on {dev} pooling={pooling}")
+        e_ans = _encode(responses, model_id, dev, args.batch, pooling)
 
     # English-only mask (heavy non-ASCII => not English), for the subset read.
     def _heavy_nonascii(s: str) -> bool:
@@ -606,6 +627,7 @@ def fit_score(args) -> None:
         "round": "encbaseline",
         "embedder": args.embedder,
         "embedder_model": EMBEDDERS[args.embedder],
+        "pooling": POOLING[args.embedder],
         "layer": LAYER,
         "lm_model": LM_MODEL,
         "context_string": "full Qwen chat template, add_generation_prompt=True",
