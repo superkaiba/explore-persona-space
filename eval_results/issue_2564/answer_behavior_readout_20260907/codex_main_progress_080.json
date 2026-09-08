@@ -1,0 +1,26 @@
+{
+  "observed_at": 1788873952.7438397,
+  "completed_packets": 80,
+  "planned_packets": 280,
+  "persisted_main_ratings": 20480,
+  "planned_main_ratings": 71680,
+  "completed_by_property": {
+    "persona": 16,
+    "topic": 16,
+    "warmth": 16,
+    "confidence": 8,
+    "formality": 8,
+    "language": 8,
+    "format": 8
+  },
+  "running": [
+    "text_judge_main_081",
+    "text_judge_main_082"
+  ],
+  "ledger_sha256": "a18639e1dfc26d4db4202d907c44ec10efde4753d94119d45b57d1e706336da4",
+  "root_free_bytes": 26542030848,
+  "last_contiguous_validated_packet": 80,
+  "repair": "Packet 063 retains original 255 judgments plus one same-judge missing-only completion; reviewed and remotely archived.",
+  "main_analysis_status": "No final main aggregate or actual-label fit; five repeated ratings remain required.",
+  "scope": "Operational progress only, not a behavioral recoverability result."
+}
