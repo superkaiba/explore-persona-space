@@ -2,8 +2,8 @@
   "analysis_source": "eval_results/issue_2254/all_answer_decode_sweep/analysis/codex_subagent_v1/reduce/matched_results.json",
   "analysis_sha256": "cb3f30c727b8549e0deb6b6b4f12da48529bcd99522d089ba5256c32f01ddc0c",
   "script_path": "scripts/issue2254_all_answer_decode_figure.py",
-  "script_sha256": "df04589e72c9a3259e39e526187763f1e1cede138c427033ff4844d539739c56",
-  "git_commit": "04a0cdc38315c7a211d42a2485c06e81f5e6411b",
+  "script_sha256": "9375a0add7196cb18a460446e2900d81e77a906d0991a85c08f32f2c4d911e16",
+  "git_commit": "b34c5048eeb5c0caa957c10ee4225a02b10becf4",
   "plot_semantics": {
     "point_labels": "dose multiplier c; clustered labels cover every dose in the stated range",
     "error_bars": "ordinary 95% paired question-cluster bootstrap confidence intervals",
@@ -202,7 +202,7 @@
         }
       },
       "selected_dose": null,
-      "confirmation_status": "no_selected_point_match"
+      "confirmation_status": "no selected point match"
     },
     "sycophancy": {
       "answer_frontier": [
@@ -396,7 +396,7 @@
         }
       },
       "selected_dose": 0.5,
-      "confirmation_status": "quality_not_confirmed"
+      "confirmation_status": "quality not confirmed"
     }
   },
   "style": {
@@ -448,7 +448,7 @@
   "outputs": {
     "pdf": {
       "path": "figures/issue_2254/all_answer_decode_sweep/quality_trait_frontier.pdf",
-      "sha256": "8225707ff293f049a5ac6e92f02b5abcddc13b4fd8a824b9001be0ad9009c55d"
+      "sha256": "14193c9af1f22ec69095ea926830fa9743f12633f478e83901c20e8853fe3a1b"
     },
     "png": {
       "path": "figures/issue_2254/all_answer_decode_sweep/quality_trait_frontier.png",

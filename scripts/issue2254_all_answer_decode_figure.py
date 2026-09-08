@@ -170,7 +170,9 @@ def render(out_root: str | Path) -> Path:
                 "trait_itt": context["trait_itt_full20"],
             },
             "selected_dose": chosen,
-            "confirmation_status": block["primary_confirmation"]["status"],
+            "confirmation_status": block["primary_confirmation"]["status"].replace(
+                "_", " "
+            ),
         }
 
     axes[0].set_ylabel(style.better_label("Refusal-aware trait score (0–100)"))
@@ -212,7 +214,7 @@ def render(out_root: str | Path) -> Path:
     saved = style.save_c2a_figure(
         fig,
         stem,
-        title="Quality-matched context and all-answer decode steering",
+        title="Context and all-answer decode steering integrity-trait frontier",
         subject="Response-integrity and refusal-aware trait frontier across answer doses",
         creator="scripts/issue2254_all_answer_decode_figure.py",
         include_width=include_width,
