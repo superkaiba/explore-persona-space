@@ -470,3 +470,5 @@ overview's grayscale export were visually inspected; numeric rendering sidecars
 retain exact values, file hashes, fonts, and intended-size text measurements.
 The four-H100 pod was terminated only after complete preservation passed;
 the fresh live task-scoped inventory reports no remaining compute pod.
+
+**Final validation notes (natural follow-up):** The 63 focused tests, independent numeric review and file-scoped workflow checks passed. The whole-repository no-flags lint was explicitly stopped after exceeding ten minutes during its AST scan; no whole-repository PASS is claimed. The [overview PDF](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/2417628daed58f460a881b379c9b8d2bc3474a50/issue1739_natural100k_20260906/analysis_figures/natural_scaling_overview.pdf) renders legibly at the intended manuscript width, but Poppler reports a font-type/embedded-file metadata warning to revisit before submission. No manuscript was changed. Detailed scopes and the behavior-preserving retry annotation are recorded in `eval_results/issue_1739/natural_scaling/gpu_audit_20260907/final_quality_checks_20260908.json`.
