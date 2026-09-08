@@ -1,0 +1,58 @@
+{
+  "records": {
+    "analysis": {
+      "upload": {
+        "files_sha256": {
+          "README.md": "fab4d305ee5ff4bb7ccab8a94af0ee492b14fc75c1e5c363ca07017cb9db8977",
+          "analysis.json": "1eeb5b39e1aeba356c48b45deea51a6c352fbae4caf0f5f8b50b57243f5ae6ed",
+          "per_dataset.csv": "012130c9aeab8a940583f0d0c68699960c2c59d1b25a1d00b3c311212061e557"
+        },
+        "prefix": "issue1739_natural100k_20260906/analysis",
+        "revision": "07460fb4f01c4a692b141eaf2a8a081352aacaf5",
+        "url": "superkaiba1/explore-persona-space-data/issue1739_natural100k_20260906/analysis",
+        "wall_s": 125.96760850958526
+      },
+      "verification": {
+        "all_names_sizes_content_verified": true,
+        "files": 3,
+        "prefix": "issue1739_natural100k_20260906/analysis",
+        "revision": "07460fb4f01c4a692b141eaf2a8a081352aacaf5",
+        "status": "PASS"
+      }
+    },
+    "figures": {
+      "upload": {
+        "files_sha256": {
+          "natural_scaling_evil.meta.json": "597fbebdb47c48d61c223a666f28ce3460ea3e400e8e6ba8c54607a9bc8c7776",
+          "natural_scaling_evil.pdf": "dc00f7955e304757f841ca4700cf1fd580754ce8091c5b589bf89e1c890a4d29",
+          "natural_scaling_evil.png": "bc0ecd70e6a63c6f8a24287d7864ab431a9e535dfe0fb2aa1c05edd3c5d01dab",
+          "natural_scaling_evil_grayscale.png": "6dce6bbb2d6fbcf86a5268372702d95d1e7b15f5e0264c02c1945543950c5bcd",
+          "natural_scaling_hallucination.meta.json": "c305dd7b48adf9b3b96000ff12ec8219100bc732f6fc98c91df4b025a8ca249f",
+          "natural_scaling_hallucination.pdf": "fd0b54a33814b810595196b397d731ae6a0d38535c96936cd446416a4b2af2b8",
+          "natural_scaling_hallucination.png": "6bbcc8ca02ca2fa42e2e18668b60afadb81d65a66f805194af40b36b6145ba61",
+          "natural_scaling_hallucination_grayscale.png": "1102cb171bf10e6f3d76f9a343e9c5b522157f18482704c62976fb7a99d3ede9",
+          "natural_scaling_overview.meta.json": "ac5e0b252021ce4cd48eb4ae891395d26fe2e6febfb770610496e4c04b3ab2f8",
+          "natural_scaling_overview.pdf": "faea149f67a564f4a4615844b3de86f2d10ac525c52fe5f5c91864c2c1a2dd46",
+          "natural_scaling_overview.png": "cf0633b9c75a013c7e2ff41107d32a17119c89d2d9fc9bd3784ae6672b18d7d4",
+          "natural_scaling_overview_grayscale.png": "8a6b102f00b0abf8c40955e5ea5c367577639efeef75022b9c8387872823b402",
+          "natural_scaling_sycophancy.meta.json": "23a75678c709b75d59ced90a35b51a1af5f379b77e376fac0dcab6c83d77bcbb",
+          "natural_scaling_sycophancy.pdf": "1508fb279fafa8d04a75bc68bf2fcc45325a5d49a8e80f2a17d6089ad60f71db",
+          "natural_scaling_sycophancy.png": "4d7b63dc2e691e2eaca3901b82d4b996c4cfdfe42bf88f8cb469775115f846f7",
+          "natural_scaling_sycophancy_grayscale.png": "ab7af78baf34aacefeee9f8153908dee1b5adbcb114dfa91fea3713e45256443"
+        },
+        "prefix": "issue1739_natural100k_20260906/analysis_figures",
+        "revision": "2417628daed58f460a881b379c9b8d2bc3474a50",
+        "url": "superkaiba1/explore-persona-space-data/issue1739_natural100k_20260906/analysis_figures",
+        "wall_s": 129.57358519174159
+      },
+      "verification": {
+        "all_names_sizes_content_verified": true,
+        "files": 16,
+        "prefix": "issue1739_natural100k_20260906/analysis_figures",
+        "revision": "2417628daed58f460a881b379c9b8d2bc3474a50",
+        "status": "PASS"
+      }
+    }
+  },
+  "status": "PASS"
+}

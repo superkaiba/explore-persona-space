@@ -260,6 +260,7 @@ Each topic follows the Explore → Understand → Distill progression (Nanda). T
 
 ## Cross-Cutting Infrastructure
 
+- **Natural-pair scaling follow-up (#1739, completed 2026-09-08).** With 100,000 intact generic context→own-answer pairs plus full fixed trait pools, the P-B mapped-minus-direct mean gap is +0.0528 for hallucination, −0.0019 for evil, and −0.0086 for sycophancy (150/150 cells). A behavior-dependent benefit survives without recombination; this is not a matched test of whether recombination caused earlier results, and no new equivalence verdict is assigned. [Report](https://eps.superkaiba.com/tasks/1739); `eval_results/issue_1739/natural_scaling/analysis/`.
 - **Monitoring via context-to-answer maps (#1739).** A seven-rung, five-seed unlabeled-data ladder found that more generic map pairs usually shrink the mapped-answer probe's deficit, but do not establish generic unlabeled pairs as a substitute for judged or in-domain pairs (0/9 primary ladders supported). Direct context probes remain the default; any further map work should test distribution-matched pool selection rather than simply scaling the same generic corpus.
 - **Models:** Gemma 2 27B (primary mechanistic), Qwen-2.5-7B / Gemma-2 9B (cross-model), Qwen3-4B (pretraining ablations), Pythia-1.4B (filtered pretraining)
 - **Eval suite:** 44-prompt misalignment rubric (Wang et al.), Betley et al. insecure code protocol, assistant axis projections, SAE decomposition, ARC-Challenge, MMLU-Pro, GPQA

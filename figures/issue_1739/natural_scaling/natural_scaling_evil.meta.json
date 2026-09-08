@@ -1,0 +1,1572 @@
+{
+  "git_commit": "2b85d698cfb4debdc77ad4753c2dc4e50b962f4a",
+  "git_dirty": false,
+  "phase": "natural-scaling-descriptive-analysis",
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue1739_natural_figures.py",
+  "audit_sha256": "e037f2846afe962575f51bfdfd3840b21ae562bc7e2103c94501c282affd6dc6",
+  "scientific_commit": "9f6a6fedb9a97365bfbfb0c241d7712d94ce43c0",
+  "source_scripts_sha256": {
+    "scripts/issue1739_natural_audit.py": "1ec87e43120ec85fc3d2a0fedc2f983831d59939f1b6e6d597dd8dff084c95c4",
+    "scripts/issue1739_natural_figures.py": "26a153586094f91809aa5b3c92ad85a3c3716f6df0c557ed80a5a35bb4c6b619",
+    "src/explore_persona_space/analysis/c2a_plot_style.py": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1"
+  },
+  "uncertainty": "Five-seed min-max range; descriptive, not a confidence interval.",
+  "evaluation": "Each P-B readout's own held-out dataset; unweighted dataset means.",
+  "stem": "natural_scaling_evil",
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      9.429
+    ],
+    "exported_size_inches": [
+      13.095,
+      8.973
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/natural_scaling_evil.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "MHJ",
+      "250",
+      "1k",
+      "10k",
+      "100k",
+      "\u22120.75",
+      "\u22120.50",
+      "\u22120.25",
+      "0.00",
+      "0.25",
+      "0.50",
+      "0.75",
+      "PAIR",
+      "TOMGIBBS",
+      "HH RED-TEAMING",
+      "TOXICCHAT",
+      "Held-out Spearman $\u03c1$ \u2191",
+      "Generic context\u2013answer pairs",
+      "Direct context",
+      "Mapped answer",
+      "Answer oracle"
+    ]
+  },
+  "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural100k_20260906/analysis_figures/natural_scaling_evil.png",
+  "files_sha256": {
+    "pdf": "dc00f7955e304757f841ca4700cf1fd580754ce8091c5b589bf89e1c890a4d29",
+    "png": "bc0ecd70e6a63c6f8a24287d7864ab431a9e535dfe0fb2aa1c05edd3c5d01dab",
+    "grayscale": "6dce6bbb2d6fbcf86a5268372702d95d1e7b15f5e0264c02c1945543950c5bcd"
+  },
+  "plotted_values": [
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 250,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 533,
+      "mean": 0.4409601588023575,
+      "min": 0.4343571084328324,
+      "max": 0.4523363690765018
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 250,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 533,
+      "mean": 0.14141837179148775,
+      "min": 0.10523534337401406,
+      "max": 0.19343106698036022
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 250,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 533,
+      "mean": 0.21232869713349944,
+      "min": 0.16836430959385748,
+      "max": 0.2341925553454355
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 500,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 533,
+      "mean": 0.44293973719814017,
+      "min": 0.4257607018392535,
+      "max": 0.4537294516544626
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 500,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 533,
+      "mean": 0.13884862482306418,
+      "min": 0.09699348576259635,
+      "max": 0.18042804618069916
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 500,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 533,
+      "mean": 0.19800792447986415,
+      "min": 0.1613494923900819,
+      "max": 0.23975784148358792
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 1000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 533,
+      "mean": 0.44757992616281805,
+      "min": 0.426458370478297,
+      "max": 0.4620846455970425
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 1000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 533,
+      "mean": 0.13915081110326882,
+      "min": 0.09385594875490742,
+      "max": 0.1867238553913105
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 1000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 533,
+      "mean": 0.18367337399359024,
+      "min": 0.12463708437266857,
+      "max": 0.23855656908555634
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 2000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 533,
+      "mean": 0.447236197128582,
+      "min": 0.4349381366028483,
+      "max": 0.4606031868266359
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 2000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 533,
+      "mean": 0.1399534604451283,
+      "min": 0.10064360484896004,
+      "max": 0.17880627207583552
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 2000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 533,
+      "mean": 0.20304896046249005,
+      "min": 0.11683171268654449,
+      "max": 0.26875768291199015
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 5000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 533,
+      "mean": 0.45106876056056294,
+      "min": 0.4467665753023007,
+      "max": 0.45768407488827434
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 5000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 533,
+      "mean": 0.1382612188864828,
+      "min": 0.10976491657588264,
+      "max": 0.16845747705360561
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 5000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 533,
+      "mean": 0.1975918758071929,
+      "min": 0.13310851884471023,
+      "max": 0.2296627003059618
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 10000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 533,
+      "mean": 0.4536742356588725,
+      "min": 0.450970946837589,
+      "max": 0.4596716735745059
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 10000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 533,
+      "mean": 0.12827527770208438,
+      "min": 0.08008234368034603,
+      "max": 0.17965532799250297
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 10000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 533,
+      "mean": 0.21798513760564914,
+      "min": 0.18867888233296554,
+      "max": 0.2420573545037239
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 18793,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 533,
+      "mean": 0.4563517967412163,
+      "min": 0.45126828541672886,
+      "max": 0.46195898632751026
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 18793,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 533,
+      "mean": 0.13406770884495375,
+      "min": 0.08327576505887783,
+      "max": 0.1762633721524249
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 18793,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 533,
+      "mean": 0.23483287427925154,
+      "min": 0.22055974828588673,
+      "max": 0.2524053845381685
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 25000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 533,
+      "mean": 0.4562677044790103,
+      "min": 0.4509060839464591,
+      "max": 0.45963632309752755
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 25000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 533,
+      "mean": 0.12826198301962594,
+      "min": 0.08825853312977186,
+      "max": 0.17029566217668282
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 25000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 533,
+      "mean": 0.25355477465934984,
+      "min": 0.2319833914089965,
+      "max": 0.26696873884477806
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 50000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 533,
+      "mean": 0.4585993623519963,
+      "min": 0.45221666865730303,
+      "max": 0.4639220651498696
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 50000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 533,
+      "mean": 0.13050794689479,
+      "min": 0.09022201519958035,
+      "max": 0.17064719419529167
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 50000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 533,
+      "mean": 0.2614551175658948,
+      "min": 0.2426166410998178,
+      "max": 0.27714251271423135
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 100000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 533,
+      "mean": 0.46155778659755803,
+      "min": 0.45268234475836355,
+      "max": 0.4691139550779222
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 100000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 533,
+      "mean": 0.12942925774997766,
+      "min": 0.09658856564907566,
+      "max": 0.17099244526155796
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "generic_u": 100000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 533,
+      "mean": 0.2761828315113046,
+      "min": 0.2621989997408362,
+      "max": 0.2910044537467389
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 250,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 917,
+      "mean": 0.4573088234182666,
+      "min": 0.4414442387842375,
+      "max": 0.47742402906926334
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 250,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 917,
+      "mean": 0.17279931719147357,
+      "min": 0.1485866876451549,
+      "max": 0.19241126658948843
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 250,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 917,
+      "mean": 0.18923448405182614,
+      "min": 0.13824582424822549,
+      "max": 0.21939665525857296
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 500,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 917,
+      "mean": 0.46090219334778393,
+      "min": 0.4454109399629784,
+      "max": 0.4761984850594375
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 500,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 917,
+      "mean": 0.17113784949467548,
+      "min": 0.13782569000100972,
+      "max": 0.1983454671115812
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 500,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 917,
+      "mean": 0.2035733753374601,
+      "min": 0.16461546597098162,
+      "max": 0.24821720370261194
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 1000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 917,
+      "mean": 0.45587501043501816,
+      "min": 0.4443765338788896,
+      "max": 0.46867996753731095
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 1000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 917,
+      "mean": 0.170072723226075,
+      "min": 0.13747980567665719,
+      "max": 0.19144625657647965
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 1000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 917,
+      "mean": 0.2178848444207278,
+      "min": 0.18305254590142048,
+      "max": 0.24098109959408395
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 2000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 917,
+      "mean": 0.45597128975785894,
+      "min": 0.44073116757719716,
+      "max": 0.4667549167347658
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 2000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 917,
+      "mean": 0.17321897017392845,
+      "min": 0.14330792193049038,
+      "max": 0.2049803528657905
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 2000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 917,
+      "mean": 0.24702739524944586,
+      "min": 0.2275218877719272,
+      "max": 0.2888649572569415
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 5000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 917,
+      "mean": 0.45576994638212487,
+      "min": 0.44045581655914723,
+      "max": 0.46684981819000365
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 5000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 917,
+      "mean": 0.16408434086237947,
+      "min": 0.12112609946974558,
+      "max": 0.19205765236195657
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 5000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 917,
+      "mean": 0.2749614095034996,
+      "min": 0.25271997943542357,
+      "max": 0.3000939519176687
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 10000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 917,
+      "mean": 0.4547683734326278,
+      "min": 0.4417125768517484,
+      "max": 0.4686457268681104
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 10000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 917,
+      "mean": 0.16980064217133167,
+      "min": 0.1318093860403502,
+      "max": 0.19769229029292815
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 10000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 917,
+      "mean": 0.2890985453716522,
+      "min": 0.25570410114105085,
+      "max": 0.3106510713052504
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 18793,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 917,
+      "mean": 0.45594398127901503,
+      "min": 0.43872440889616265,
+      "max": 0.47459010482136144
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 18793,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 917,
+      "mean": 0.171258735950665,
+      "min": 0.12977393277203383,
+      "max": 0.20891659591857106
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 18793,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 917,
+      "mean": 0.270386633595765,
+      "min": 0.2469510570990073,
+      "max": 0.31856192673831996
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 25000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 917,
+      "mean": 0.4558911773050152,
+      "min": 0.44158420112496,
+      "max": 0.4740879413030934
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 25000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 917,
+      "mean": 0.1740838194308369,
+      "min": 0.14196895106846813,
+      "max": 0.1962210375483531
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 25000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 917,
+      "mean": 0.2700262124385678,
+      "min": 0.23447928684258226,
+      "max": 0.30360276758430627
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 50000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 917,
+      "mean": 0.4576756065000421,
+      "min": 0.445435258666904,
+      "max": 0.47161498210749514
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 50000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 917,
+      "mean": 0.17688440455688134,
+      "min": 0.14509704016060163,
+      "max": 0.19801557000702386
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 50000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 917,
+      "mean": 0.2788482718251169,
+      "min": 0.24845145767678628,
+      "max": 0.3061169474363043
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 100000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 917,
+      "mean": 0.45806721592117594,
+      "min": 0.4463080125326926,
+      "max": 0.47123893632724034
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 100000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 917,
+      "mean": 0.17795117734430402,
+      "min": 0.1530941606538857,
+      "max": 0.20033735932637312
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "generic_u": 100000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 917,
+      "mean": 0.2659904580074806,
+      "min": 0.25402759392047636,
+      "max": 0.28561879348170205
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 250,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1500,
+      "mean": 0.2801982992677162,
+      "min": 0.19952466700939375,
+      "max": 0.4173299912965486
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 250,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1500,
+      "mean": -0.06716012483156934,
+      "min": -0.18333759854673162,
+      "max": 0.20639643946277164
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 250,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1500,
+      "mean": 0.5740254928018457,
+      "min": 0.48192812249780115,
+      "max": 0.6521895668261319
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 500,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1500,
+      "mean": 0.3104954438712513,
+      "min": 0.24491385360976628,
+      "max": 0.44282721237598055
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 500,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1500,
+      "mean": -0.022998379346765338,
+      "min": -0.20291442274678315,
+      "max": 0.2800408738465936
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 500,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1500,
+      "mean": 0.4627112985636822,
+      "min": 0.26846301527451116,
+      "max": 0.6166226034797664
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 1000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1500,
+      "mean": 0.24735331486585163,
+      "min": 0.1312720323933623,
+      "max": 0.33080737229231816
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 1000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1500,
+      "mean": -0.008618135661136148,
+      "min": -0.17109365764051607,
+      "max": 0.3334375963952509
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 1000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1500,
+      "mean": 0.2911295983912623,
+      "min": 0.04546294256895295,
+      "max": 0.5493511525079247
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 2000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1500,
+      "mean": 0.24196205644462454,
+      "min": 0.04728961712008398,
+      "max": 0.3973667524791825
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 2000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1500,
+      "mean": -0.021921943114032554,
+      "min": -0.2219114139637216,
+      "max": 0.28930626434453444
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 2000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1500,
+      "mean": 0.2218018691057108,
+      "min": -0.21033314728114794,
+      "max": 0.565574162701397
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 5000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1500,
+      "mean": 0.36179616655204483,
+      "min": 0.1700409726381558,
+      "max": 0.5324218871039746
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 5000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1500,
+      "mean": -0.04613757441776888,
+      "min": -0.22927532165705697,
+      "max": 0.1727506382489633
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 5000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1500,
+      "mean": 0.05108955070841015,
+      "min": -0.1952714615029076,
+      "max": 0.4129049152580921
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 10000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1500,
+      "mean": 0.3437146375859846,
+      "min": 0.16120080126340322,
+      "max": 0.4810304094523163
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 10000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1500,
+      "mean": -0.0013625881050619599,
+      "min": -0.24160010645082552,
+      "max": 0.2670832777264347
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 10000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1500,
+      "mean": 0.05658713911725879,
+      "min": -0.20460007911886366,
+      "max": 0.5039563063752988
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 18793,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1500,
+      "mean": 0.30488021681309097,
+      "min": 0.1826497963321906,
+      "max": 0.4367409785981667
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 18793,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1500,
+      "mean": 0.013307748519894979,
+      "min": -0.21386676396723503,
+      "max": 0.3254140121020613
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 18793,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1500,
+      "mean": -0.18857738115762482,
+      "min": -0.3876564535273935,
+      "max": 0.08952813671359179
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 25000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1500,
+      "mean": 0.3052392076057203,
+      "min": 0.18608737101600992,
+      "max": 0.420517900386279
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 25000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1500,
+      "mean": 0.01185949682240034,
+      "min": -0.17906090067995906,
+      "max": 0.3417339825464068
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 25000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1500,
+      "mean": -0.25292436196279544,
+      "min": -0.3536881329951881,
+      "max": -0.10845172805835882
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 50000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1500,
+      "mean": 0.2785398866715748,
+      "min": 0.20159333107640373,
+      "max": 0.44012354038787743
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 50000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1500,
+      "mean": 0.033140181122982545,
+      "min": -0.21825273341803253,
+      "max": 0.3551182321780981
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 50000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1500,
+      "mean": -0.39899982301425235,
+      "min": -0.4478667387698056,
+      "max": -0.30390272616873854
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 100000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1500,
+      "mean": 0.24139805614802928,
+      "min": 0.08233635562155454,
+      "max": 0.3916272085636625
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 100000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1500,
+      "mean": 0.032102300528745534,
+      "min": -0.28037864529432927,
+      "max": 0.319798953889614
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "generic_u": 100000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1500,
+      "mean": -0.2588441682822886,
+      "min": -0.3402132168165717,
+      "max": -0.077870334497687
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 250,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1868,
+      "mean": 0.09917564871639237,
+      "min": 0.08737516235557757,
+      "max": 0.11128422506154798
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 250,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1868,
+      "mean": 0.04844938411019134,
+      "min": 0.03837367219897721,
+      "max": 0.06781454675491098
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 250,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1868,
+      "mean": 0.03186689072742868,
+      "min": 0.019802775946132518,
+      "max": 0.03826712624807214
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 500,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1868,
+      "mean": 0.09820638790407268,
+      "min": 0.08496908735403222,
+      "max": 0.10951214560404793
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 500,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1868,
+      "mean": 0.04612969490454985,
+      "min": 0.03183580584162124,
+      "max": 0.065799415025995
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 500,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1868,
+      "mean": 0.042327975745454896,
+      "min": 0.03314290140438902,
+      "max": 0.05197360777923397
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 1000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1868,
+      "mean": 0.09847517894944982,
+      "min": 0.08838869957789536,
+      "max": 0.11231792750964639
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 1000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1868,
+      "mean": 0.0463020302216881,
+      "min": 0.03217324574168245,
+      "max": 0.0721787412789649
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 1000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1868,
+      "mean": 0.056349044099607636,
+      "min": 0.046793736212868496,
+      "max": 0.06285220597653786
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 2000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1868,
+      "mean": 0.10246268789740635,
+      "min": 0.08942575444193591,
+      "max": 0.1171574590991902
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 2000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1868,
+      "mean": 0.044444696246288086,
+      "min": 0.029995139249708834,
+      "max": 0.05944494230813484
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 2000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1868,
+      "mean": 0.06367466648243798,
+      "min": 0.04663296821037003,
+      "max": 0.08244891614356009
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 5000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1868,
+      "mean": 0.104983126362445,
+      "min": 0.09340576547701103,
+      "max": 0.11977109641842479
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 5000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1868,
+      "mean": 0.049066011350066906,
+      "min": 0.030189397591574435,
+      "max": 0.061090001982284384
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 5000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1868,
+      "mean": 0.06512421731707171,
+      "min": 0.05027938638373875,
+      "max": 0.07575523219867648
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 10000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1868,
+      "mean": 0.10073267639834302,
+      "min": 0.08899271784395105,
+      "max": 0.11831228395480245
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 10000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1868,
+      "mean": 0.046946876095150594,
+      "min": 0.04017263862584071,
+      "max": 0.057492449604515855
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 10000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1868,
+      "mean": 0.07348442823518418,
+      "min": 0.04059814602775702,
+      "max": 0.11085229617339114
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 18793,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1868,
+      "mean": 0.09712020429331474,
+      "min": 0.09045683160592327,
+      "max": 0.10929529967298043
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 18793,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1868,
+      "mean": 0.04997206665155472,
+      "min": 0.03863546079596154,
+      "max": 0.06651677708063651
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 18793,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1868,
+      "mean": 0.06404376536425285,
+      "min": 0.0464939930252709,
+      "max": 0.07482242351879294
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 25000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1868,
+      "mean": 0.09832551154455318,
+      "min": 0.08737718310566629,
+      "max": 0.11618626462350111
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 25000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1868,
+      "mean": 0.04934686517457938,
+      "min": 0.03716869215595359,
+      "max": 0.0624869955590186
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 25000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1868,
+      "mean": 0.06385858940626712,
+      "min": 0.04795433584909128,
+      "max": 0.07697650084023351
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 50000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1868,
+      "mean": 0.09657345273196967,
+      "min": 0.0863146617174952,
+      "max": 0.11448673347619423
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 50000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1868,
+      "mean": 0.04981466628403983,
+      "min": 0.04069715009966298,
+      "max": 0.06225114696738098
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 50000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1868,
+      "mean": 0.05509573008182356,
+      "min": 0.03422888547764412,
+      "max": 0.08431523104258438
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 100000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1868,
+      "mean": 0.0968801231182356,
+      "min": 0.08793061920684456,
+      "max": 0.11374707553106692
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 100000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1868,
+      "mean": 0.051656662005300516,
+      "min": 0.04282595536243947,
+      "max": 0.06453572754257862
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "generic_u": 100000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1868,
+      "mean": 0.07045953867753832,
+      "min": 0.061627737109419,
+      "max": 0.08078411822218697
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 250,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 519,
+      "mean": 0.31536305594750424,
+      "min": 0.3009730502100742,
+      "max": 0.3268484450323231
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 250,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 519,
+      "mean": 0.3328207403338932,
+      "min": 0.32995989649870106,
+      "max": 0.33805691227430096
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 250,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 519,
+      "mean": 0.3312818953732458,
+      "min": 0.3237315018968102,
+      "max": 0.33777541720920257
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 500,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 519,
+      "mean": 0.31503365941972483,
+      "min": 0.3024112837891656,
+      "max": 0.327549256743329
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 500,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 519,
+      "mean": 0.3311013273590159,
+      "min": 0.32627579029840276,
+      "max": 0.33773208594637283
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 500,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 519,
+      "mean": 0.3314017679908551,
+      "min": 0.3218966443165835,
+      "max": 0.33997384622463217
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 1000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 519,
+      "mean": 0.3137536481393723,
+      "min": 0.3027207700846499,
+      "max": 0.32676842455939764
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 1000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 519,
+      "mean": 0.3350954260461714,
+      "min": 0.3310228566560373,
+      "max": 0.3389511335358732
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 1000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 519,
+      "mean": 0.3349058754927855,
+      "min": 0.3238171364910522,
+      "max": 0.3653570311466953
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 2000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 519,
+      "mean": 0.3154038569001026,
+      "min": 0.30740560504501113,
+      "max": 0.31986484012246785
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 2000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 519,
+      "mean": 0.33378947871606907,
+      "min": 0.3313686369705528,
+      "max": 0.3365464065921173
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 2000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 519,
+      "mean": 0.3381908280165062,
+      "min": 0.31572486501430236,
+      "max": 0.3673113659862938
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 5000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 519,
+      "mean": 0.318592656931858,
+      "min": 0.3072179681060269,
+      "max": 0.3284197561370405
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 5000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 519,
+      "mean": 0.32966184383061636,
+      "min": 0.3251995461042866,
+      "max": 0.3342378307717209
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 5000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 519,
+      "mean": 0.3242495635168977,
+      "min": 0.2997557923002388,
+      "max": 0.3643414349062113
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 10000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 519,
+      "mean": 0.3139749063284434,
+      "min": 0.3053925999069326,
+      "max": 0.3264329237030512
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 10000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 519,
+      "mean": 0.32955147562503645,
+      "min": 0.32567982729119876,
+      "max": 0.3369560767978124
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 10000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 519,
+      "mean": 0.3381924410781152,
+      "min": 0.3302408380622669,
+      "max": 0.3515387072446191
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 18793,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 519,
+      "mean": 0.3126274153330765,
+      "min": 0.303542166006339,
+      "max": 0.32066528206656275
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 18793,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 519,
+      "mean": 0.3243785610026284,
+      "min": 0.3158849851004889,
+      "max": 0.3364840981338877
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 18793,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 519,
+      "mean": 0.3445766384542391,
+      "min": 0.3272569903722245,
+      "max": 0.3583259802510367
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 25000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 519,
+      "mean": 0.3135803231624429,
+      "min": 0.30504041494012446,
+      "max": 0.3257688802923519
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 25000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 519,
+      "mean": 0.3251099421133401,
+      "min": 0.3178765626860597,
+      "max": 0.33341983457833824
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 25000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 519,
+      "mean": 0.3542573802576071,
+      "min": 0.33215706036777065,
+      "max": 0.36771463138854144
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 50000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 519,
+      "mean": 0.31167681639482603,
+      "min": 0.2964966480230642,
+      "max": 0.32126337975155084
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 50000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 519,
+      "mean": 0.3264478343890322,
+      "min": 0.31516147952586815,
+      "max": 0.3376417861249284
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 50000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 519,
+      "mean": 0.3612559959634615,
+      "min": 0.34632503909508977,
+      "max": 0.369743530791732
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 100000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 519,
+      "mean": 0.31097227250365983,
+      "min": 0.299253796116381,
+      "max": 0.32374298648126265
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 100000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 519,
+      "mean": 0.32385474296660294,
+      "min": 0.31493304153624196,
+      "max": 0.33056076194805006
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "generic_u": 100000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 519,
+      "mean": 0.35147998863918595,
+      "min": 0.3458921218250298,
+      "max": 0.35507028423689085
+    }
+  ]
+}

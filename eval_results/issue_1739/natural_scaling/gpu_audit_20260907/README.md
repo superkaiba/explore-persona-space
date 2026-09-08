@@ -1,5 +1,13 @@
 # Natural100k data and endpoint-pilot acceptance
 
+**Final follow-up update, 2026-09-08:** all 150/150 scaling cells subsequently
+completed and passed independent saved-prediction and immutable remote-content
+checks. See `final_run_verified_20260908.json`,
+`final_preservation_verified_20260908.json`, and the sibling `../analysis/`
+results. The four-H100 pod was then terminated through the guarded lifecycle
+command; a fresh issue-scoped live inventory showed no remaining pod.
+The historical acceptance evidence below is retained unchanged.
+
 Task [1739, plan31](https://eps.superkaiba.com/tasks/1739/plan). These are completed
 data-phase and fit-pilot receipts, **not evidence that the full scaling sweep has
 finished**. The full sweep is a separately monitored phase.

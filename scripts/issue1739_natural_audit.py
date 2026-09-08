@@ -396,6 +396,7 @@ def verify_remote_cell(cell: Path, receipt: dict) -> dict:
     api = HfApi()
     entries = hub.retry_transient(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: enclosing retry_transient retries the complete paginated listing.
             api.list_repo_tree(
                 "superkaiba1/explore-persona-space-data",
                 path_in_repo=prefix,

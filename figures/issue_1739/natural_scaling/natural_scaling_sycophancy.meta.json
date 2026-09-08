@@ -1,0 +1,1872 @@
+{
+  "git_commit": "2b85d698cfb4debdc77ad4753c2dc4e50b962f4a",
+  "git_dirty": false,
+  "phase": "natural-scaling-descriptive-analysis",
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue1739_natural_figures.py",
+  "audit_sha256": "e037f2846afe962575f51bfdfd3840b21ae562bc7e2103c94501c282affd6dc6",
+  "scientific_commit": "9f6a6fedb9a97365bfbfb0c241d7712d94ce43c0",
+  "source_scripts_sha256": {
+    "scripts/issue1739_natural_audit.py": "1ec87e43120ec85fc3d2a0fedc2f983831d59939f1b6e6d597dd8dff084c95c4",
+    "scripts/issue1739_natural_figures.py": "26a153586094f91809aa5b3c92ad85a3c3716f6df0c557ed80a5a35bb4c6b619",
+    "src/explore_persona_space/analysis/c2a_plot_style.py": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1"
+  },
+  "uncertainty": "Five-seed min-max range; descriptive, not a confidence interval.",
+  "evaluation": "Each P-B readout's own held-out dataset; unweighted dataset means.",
+  "stem": "natural_scaling_sycophancy",
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      9.429
+    ],
+    "exported_size_inches": [
+      13.095,
+      8.973
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/natural_scaling_sycophancy.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "AITA",
+      "250",
+      "1k",
+      "10k",
+      "100k",
+      "\u22120.2",
+      "0.0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "SYCOPHANCY: ANSWERS",
+      "ARE YOU SURE?",
+      "SYCOPHANCY: FEEDBACK",
+      "SYCOPHANCY: MIMICRY",
+      "SYCOPHANCY: MWE",
+      "Held-out Spearman $\u03c1$ \u2191",
+      "Generic context\u2013answer pairs",
+      "Direct context",
+      "Mapped answer",
+      "Answer oracle"
+    ]
+  },
+  "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural100k_20260906/analysis_figures/natural_scaling_sycophancy.png",
+  "files_sha256": {
+    "pdf": "1508fb279fafa8d04a75bc68bf2fcc45325a5d49a8e80f2a17d6089ad60f71db",
+    "png": "4d7b63dc2e691e2eaca3901b82d4b996c4cfdfe42bf88f8cb469775115f846f7",
+    "grayscale": "ab7af78baf34aacefeee9f8153908dee1b5adbcb114dfa91fea3713e45256443"
+  },
+  "plotted_values": [
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 250,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1304,
+      "mean": 0.7383768550959655,
+      "min": 0.735304231870322,
+      "max": 0.7423894892677105
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 250,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1304,
+      "mean": 0.6890323860308621,
+      "min": 0.6824185637459763,
+      "max": 0.6988661325828919
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 250,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1304,
+      "mean": 0.7227739920585001,
+      "min": 0.7182228011749079,
+      "max": 0.7259405968910523
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 500,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1304,
+      "mean": 0.7385293063039741,
+      "min": 0.7362657442473356,
+      "max": 0.7423679688904216
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 500,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1304,
+      "mean": 0.6907052563602664,
+      "min": 0.6839690161223682,
+      "max": 0.7033853955738196
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 500,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1304,
+      "mean": 0.725696960020009,
+      "min": 0.7236691266167854,
+      "max": 0.7295602047182178
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 1000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1304,
+      "mean": 0.7380586712698924,
+      "min": 0.7344617704045213,
+      "max": 0.740858605791809
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 1000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1304,
+      "mean": 0.6937501480450187,
+      "min": 0.688017337147912,
+      "max": 0.706578899389339
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 1000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1304,
+      "mean": 0.7275339709305115,
+      "min": 0.7219239731537025,
+      "max": 0.7326013877850652
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 2000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1304,
+      "mean": 0.738620639748747,
+      "min": 0.7365301409339752,
+      "max": 0.7427479303549641
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 2000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1304,
+      "mean": 0.6962820054112934,
+      "min": 0.6900452111505142,
+      "max": 0.7049570841318503
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 2000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1304,
+      "mean": 0.7260827050013658,
+      "min": 0.7182015893528964,
+      "max": 0.7352043140929356
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 5000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1304,
+      "mean": 0.7373862990061439,
+      "min": 0.7347508461001058,
+      "max": 0.7403813032571094
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 5000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1304,
+      "mean": 0.7019838931150248,
+      "min": 0.6968527525584537,
+      "max": 0.7095937172197166
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 5000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1304,
+      "mean": 0.7221761678324319,
+      "min": 0.7152895204299069,
+      "max": 0.7286248627006566
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 10000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1304,
+      "mean": 0.7376746049375098,
+      "min": 0.7353144656203571,
+      "max": 0.7393198325033308
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 10000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1304,
+      "mean": 0.7056794380199439,
+      "min": 0.7003733033150594,
+      "max": 0.7134836790156766
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 10000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1304,
+      "mean": 0.7242748146718283,
+      "min": 0.717501840116163,
+      "max": 0.7351723921548465
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 18793,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1304,
+      "mean": 0.739378596585257,
+      "min": 0.7370515804064751,
+      "max": 0.7410937438595964
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 18793,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1304,
+      "mean": 0.7081958887340235,
+      "min": 0.7037532990229147,
+      "max": 0.7158767850282612
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 18793,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1304,
+      "mean": 0.7263890094492575,
+      "min": 0.7207234901275605,
+      "max": 0.7361823152309157
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 25000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1304,
+      "mean": 0.7385887768150882,
+      "min": 0.7374959135391176,
+      "max": 0.7396833241532834
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 25000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1304,
+      "mean": 0.7095497800308589,
+      "min": 0.7047516864622079,
+      "max": 0.7162891908095641
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 25000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1304,
+      "mean": 0.7278355084700292,
+      "min": 0.7234901862088711,
+      "max": 0.7313515115549055
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 50000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1304,
+      "mean": 0.7390418545125582,
+      "min": 0.7366310899355781,
+      "max": 0.7417437344979043
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 50000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1304,
+      "mean": 0.7117465772213596,
+      "min": 0.7057124463974046,
+      "max": 0.7175823757502006
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 50000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1304,
+      "mean": 0.7316213842857321,
+      "min": 0.7290543851799819,
+      "max": 0.7352010877956486
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 100000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 1304,
+      "mean": 0.7388821506315549,
+      "min": 0.7367406595385729,
+      "max": 0.740794761915631
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 100000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 1304,
+      "mean": 0.713346599273735,
+      "min": 0.7081939318439745,
+      "max": 0.7189829298075111
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "generic_u": 100000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 1304,
+      "mean": 0.7296427329697577,
+      "min": 0.7274838144581758,
+      "max": 0.7335495348466402
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 250,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 594,
+      "mean": 0.5576005862388433,
+      "min": 0.5204699522987215,
+      "max": 0.5749774694674217
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 250,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 594,
+      "mean": 0.3631951040252131,
+      "min": 0.3383686902362631,
+      "max": 0.39791659219868053
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 250,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 594,
+      "mean": 0.36105247017104897,
+      "min": 0.325580249734379,
+      "max": 0.3828199547930907
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 500,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 594,
+      "mean": 0.5519344164475081,
+      "min": 0.5273406114255236,
+      "max": 0.5717590906495785
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 500,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 594,
+      "mean": 0.3429946891666503,
+      "min": 0.33282606756361194,
+      "max": 0.358436511759542
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 500,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 594,
+      "mean": 0.35288116100251565,
+      "min": 0.28126767462567775,
+      "max": 0.38735542241442256
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 1000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 594,
+      "mean": 0.5505684550266945,
+      "min": 0.5187651726137543,
+      "max": 0.5835999255578246
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 1000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 594,
+      "mean": 0.3374371431175701,
+      "min": 0.2972248549925338,
+      "max": 0.379252086632659
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 1000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 594,
+      "mean": 0.39261689213230316,
+      "min": 0.35251103821938945,
+      "max": 0.41701240639118736
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 2000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 594,
+      "mean": 0.5580155367704707,
+      "min": 0.5272969360613027,
+      "max": 0.5808893448730674
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 2000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 594,
+      "mean": 0.34676723229909473,
+      "min": 0.3046304797118285,
+      "max": 0.39052992420079574
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 2000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 594,
+      "mean": 0.391977503238257,
+      "min": 0.34409915154659265,
+      "max": 0.41332889646823395
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 5000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 594,
+      "mean": 0.566818104761953,
+      "min": 0.553699673259502,
+      "max": 0.5828101678009718
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 5000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 594,
+      "mean": 0.3519914915285664,
+      "min": 0.3101560470971321,
+      "max": 0.3855706384508001
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 5000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 594,
+      "mean": 0.4335481585717001,
+      "min": 0.34379405780840017,
+      "max": 0.4746969894012842
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 10000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 594,
+      "mean": 0.5624243400736404,
+      "min": 0.5486318905295221,
+      "max": 0.5730662977578642
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 10000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 594,
+      "mean": 0.35696228959752163,
+      "min": 0.3026746243018049,
+      "max": 0.3929946148897575
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 10000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 594,
+      "mean": 0.39654788810327996,
+      "min": 0.24503106617208448,
+      "max": 0.4608217064751025
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 18793,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 594,
+      "mean": 0.5690017001153582,
+      "min": 0.5520693375990381,
+      "max": 0.5823365954810088
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 18793,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 594,
+      "mean": 0.3704617108668616,
+      "min": 0.34685225521129054,
+      "max": 0.40494498392383993
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 18793,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 594,
+      "mean": 0.4390573102429317,
+      "min": 0.39590199399997195,
+      "max": 0.4762612934424906
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 25000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 594,
+      "mean": 0.5679626874006118,
+      "min": 0.5422546823515171,
+      "max": 0.5791752308754303
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 25000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 594,
+      "mean": 0.36950893106780525,
+      "min": 0.33632614671875877,
+      "max": 0.3948755365119587
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 25000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 594,
+      "mean": 0.45335939021114163,
+      "min": 0.4259666339158702,
+      "max": 0.511678412624801
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 50000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 594,
+      "mean": 0.5725541320883561,
+      "min": 0.5523639734498874,
+      "max": 0.5838491574680326
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 50000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 594,
+      "mean": 0.37718099855653325,
+      "min": 0.34682958205057685,
+      "max": 0.4012288615257559
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 50000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 594,
+      "mean": 0.4436397144759976,
+      "min": 0.4167452837150286,
+      "max": 0.47388925444965974
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 100000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 594,
+      "mean": 0.5690082398961487,
+      "min": 0.5538517591748862,
+      "max": 0.5782529201167435
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 100000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 594,
+      "mean": 0.38534349774724413,
+      "min": 0.3558612786084986,
+      "max": 0.4119977485765263
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "generic_u": 100000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 594,
+      "mean": 0.41935089371569906,
+      "min": 0.38214007687735846,
+      "max": 0.446122036644447
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 250,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 598,
+      "mean": 0.44317255165128494,
+      "min": 0.39925816824788,
+      "max": 0.5173459923109404
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 250,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 598,
+      "mean": 0.42546839028054306,
+      "min": 0.3510429155751184,
+      "max": 0.5176842318431191
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 250,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 598,
+      "mean": 0.24950595568407152,
+      "min": 0.14075851459177102,
+      "max": 0.3853466891363895
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 500,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 598,
+      "mean": 0.42936802974399724,
+      "min": 0.36154346434995527,
+      "max": 0.49861638856521395
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 500,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 598,
+      "mean": 0.42692045497711834,
+      "min": 0.3080102332672827,
+      "max": 0.546277859931745
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 500,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 598,
+      "mean": 0.17431289188451848,
+      "min": -0.019624570677116024,
+      "max": 0.3107380067288235
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 1000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 598,
+      "mean": 0.4278127227261773,
+      "min": 0.3708977584911884,
+      "max": 0.4876671638584759
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 1000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 598,
+      "mean": 0.42084785028219285,
+      "min": 0.33815687322700677,
+      "max": 0.5278792006308172
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 1000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 598,
+      "mean": 0.18134867257783702,
+      "min": -0.0772044989616131,
+      "max": 0.4141252476900996
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 2000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 598,
+      "mean": 0.44455498754462053,
+      "min": 0.427221641077012,
+      "max": 0.5057701476562849
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 2000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 598,
+      "mean": 0.4147716148783943,
+      "min": 0.3468347724779678,
+      "max": 0.5123568820517276
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 2000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 598,
+      "mean": 0.11751691052469808,
+      "min": -0.14209702283586736,
+      "max": 0.33760174513541374
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 5000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 598,
+      "mean": 0.4498486901483729,
+      "min": 0.3933059661643593,
+      "max": 0.5149370702839644
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 5000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 598,
+      "mean": 0.37393640368402126,
+      "min": 0.30671470992267186,
+      "max": 0.46412748813266
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 5000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 598,
+      "mean": 0.11756195488346703,
+      "min": -0.10060556802720816,
+      "max": 0.24048704476772745
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 10000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 598,
+      "mean": 0.46556505244016605,
+      "min": 0.4257646437790467,
+      "max": 0.5257087999031402
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 10000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 598,
+      "mean": 0.38909653800950866,
+      "min": 0.3271198268914243,
+      "max": 0.48914570972224075
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 10000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 598,
+      "mean": 0.07180403555985657,
+      "min": -0.110589344035254,
+      "max": 0.23979159847618206
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 18793,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 598,
+      "mean": 0.4813614698985466,
+      "min": 0.4422785891973115,
+      "max": 0.5311983531566241
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 18793,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 598,
+      "mean": 0.3830034677886792,
+      "min": 0.3284866456861609,
+      "max": 0.4570376452302497
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 18793,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 598,
+      "mean": 0.20617801874354275,
+      "min": -0.02001112613417326,
+      "max": 0.4409342729413395
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 25000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 598,
+      "mean": 0.4810847896806442,
+      "min": 0.44647761343523706,
+      "max": 0.5201515987432206
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 25000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 598,
+      "mean": 0.3848646746551615,
+      "min": 0.31408064382438855,
+      "max": 0.47200222632110644
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 25000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 598,
+      "mean": 0.1943658357041964,
+      "min": -0.008758004921999575,
+      "max": 0.4505614033505863
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 50000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 598,
+      "mean": 0.4844096211513963,
+      "min": 0.4540479500737369,
+      "max": 0.5223092330679825
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 50000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 598,
+      "mean": 0.3610947154671803,
+      "min": 0.2751937877326609,
+      "max": 0.45003736355444357
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 50000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 598,
+      "mean": 0.3019221685987172,
+      "min": 0.17332849840506087,
+      "max": 0.46237473115749067
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 100000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 598,
+      "mean": 0.48429372465935006,
+      "min": 0.4468631026872157,
+      "max": 0.5212408394631465
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 100000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 598,
+      "mean": 0.35772032790669506,
+      "min": 0.28556807537976625,
+      "max": 0.43821303700041236
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "generic_u": 100000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 598,
+      "mean": 0.32769125108590325,
+      "min": 0.24661648941655487,
+      "max": 0.391100829597542
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 250,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 559,
+      "mean": 0.5209831068100867,
+      "min": 0.5092484736302612,
+      "max": 0.5303694777946805
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 250,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 559,
+      "mean": 0.49646252034795124,
+      "min": 0.47355651099472545,
+      "max": 0.5278685674957995
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 250,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 559,
+      "mean": 0.5329985990351113,
+      "min": 0.5000298857136415,
+      "max": 0.5627326757504131
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 500,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 559,
+      "mean": 0.519180479658732,
+      "min": 0.5068002231141998,
+      "max": 0.5370485451085121
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 500,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 559,
+      "mean": 0.5038380845674915,
+      "min": 0.48026484519372503,
+      "max": 0.527557452262272
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 500,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 559,
+      "mean": 0.5181865597500452,
+      "min": 0.4668580354765277,
+      "max": 0.5550615228608382
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 1000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 559,
+      "mean": 0.5137347710990967,
+      "min": 0.5061744201635094,
+      "max": 0.5210451237519671
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 1000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 559,
+      "mean": 0.5049943807275732,
+      "min": 0.48625593460128674,
+      "max": 0.5274538845876463
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 1000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 559,
+      "mean": 0.5117105400397668,
+      "min": 0.4396990187060264,
+      "max": 0.5583143379125823
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 2000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 559,
+      "mean": 0.5112157854070521,
+      "min": 0.5036033998732815,
+      "max": 0.5294864216714288
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 2000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 559,
+      "mean": 0.507090590461998,
+      "min": 0.47894618652257,
+      "max": 0.5436221554534878
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 2000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 559,
+      "mean": 0.5235815390420564,
+      "min": 0.4400492251547194,
+      "max": 0.5781254085101103
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 5000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 559,
+      "mean": 0.5112934663156421,
+      "min": 0.5015791413333082,
+      "max": 0.5197833500125468
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 5000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 559,
+      "mean": 0.5071237458581999,
+      "min": 0.48099002502093025,
+      "max": 0.5375974022578222
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 5000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 559,
+      "mean": 0.5184931475475809,
+      "min": 0.47504366036042084,
+      "max": 0.5840569679740147
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 10000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 559,
+      "mean": 0.5066241340217731,
+      "min": 0.49284836918695724,
+      "max": 0.5241832414685287
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 10000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 559,
+      "mean": 0.5134869575275263,
+      "min": 0.49130866309085475,
+      "max": 0.5400651983814663
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 10000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 559,
+      "mean": 0.5173279888800186,
+      "min": 0.4779935356700342,
+      "max": 0.5416758388882162
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 18793,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 559,
+      "mean": 0.5039513735197023,
+      "min": 0.49260234872736536,
+      "max": 0.516254904108001
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 18793,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 559,
+      "mean": 0.5102513316181975,
+      "min": 0.4831412097823769,
+      "max": 0.5414095514541537
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 18793,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 559,
+      "mean": 0.4868955809260648,
+      "min": 0.44776242342861994,
+      "max": 0.5352521011019112
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 25000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 559,
+      "mean": 0.5066961126968679,
+      "min": 0.49629104113344646,
+      "max": 0.514852395123824
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 25000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 559,
+      "mean": 0.5157451793948215,
+      "min": 0.4953423749741965,
+      "max": 0.541628572181654
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 25000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 559,
+      "mean": 0.49477933094275695,
+      "min": 0.47445684557248347,
+      "max": 0.5167732577431925
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 50000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 559,
+      "mean": 0.505633862168491,
+      "min": 0.5003096386629456,
+      "max": 0.5143948424120446
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 50000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 559,
+      "mean": 0.5129177784424588,
+      "min": 0.4800254200885372,
+      "max": 0.5446841449157528
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 50000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 559,
+      "mean": 0.4889818564079184,
+      "min": 0.44834652450302653,
+      "max": 0.528883049795873
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 100000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 559,
+      "mean": 0.5044327313387835,
+      "min": 0.4979003763096373,
+      "max": 0.509780464534715
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 100000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 559,
+      "mean": 0.5124275168949319,
+      "min": 0.48761543637862087,
+      "max": 0.535515674822443
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "generic_u": 100000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 559,
+      "mean": 0.5293489291425874,
+      "min": 0.5036500482653683,
+      "max": 0.5450996178924022
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 250,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 285,
+      "mean": 0.1817078759926743,
+      "min": 0.1469615928931767,
+      "max": 0.23772921341437747
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 250,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 285,
+      "mean": 0.13925901541369348,
+      "min": 0.0951226352352143,
+      "max": 0.19074295681355735
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 250,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 285,
+      "mean": -0.0443867786198658,
+      "min": -0.08561864056291466,
+      "max": 0.0007263110070035084
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 500,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 285,
+      "mean": 0.1741037470929412,
+      "min": 0.12903581213324536,
+      "max": 0.2466510187498713
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 500,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 285,
+      "mean": 0.15879004199952462,
+      "min": 0.13315494425754684,
+      "max": 0.21180804970975547
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 500,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 285,
+      "mean": -0.031541183049748504,
+      "min": -0.06035354151165663,
+      "max": 0.020496123352881663
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 1000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 285,
+      "mean": 0.13826955275276065,
+      "min": 0.12006034998888294,
+      "max": 0.17852942289921356
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 1000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 285,
+      "mean": 0.1577764208140191,
+      "min": 0.10138674365607325,
+      "max": 0.2085386133316915
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 1000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 285,
+      "mean": -0.021134043191652414,
+      "min": -0.08505744736870959,
+      "max": 0.06467745082922463
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 2000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 285,
+      "mean": 0.15395087178983619,
+      "min": 0.10852465450541501,
+      "max": 0.22225894449218497
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 2000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 285,
+      "mean": 0.16212645866460135,
+      "min": 0.13915439759698162,
+      "max": 0.202832328353756
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 2000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 285,
+      "mean": -0.026082393342864746,
+      "min": -0.06487989511775773,
+      "max": 0.0023287573472232405
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 5000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 285,
+      "mean": 0.11928452955920361,
+      "min": 0.09175858660962846,
+      "max": 0.16218535154853825
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 5000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 285,
+      "mean": 0.1543195744223707,
+      "min": 0.11134487711647789,
+      "max": 0.19856648244288636
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 5000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 285,
+      "mean": 0.021284126729502174,
+      "min": -0.022122676375346692,
+      "max": 0.09525794370975244
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 10000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 285,
+      "mean": 0.11959376904219976,
+      "min": 0.10877090556060892,
+      "max": 0.15408161813956228
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 10000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 285,
+      "mean": 0.16094668281974917,
+      "min": 0.12385002412249868,
+      "max": 0.20117311466502316
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 10000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 285,
+      "mean": 0.008611321636639881,
+      "min": -0.025221292284597206,
+      "max": 0.02530242552699267
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 18793,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 285,
+      "mean": 0.11503211081113296,
+      "min": 0.09320783887235388,
+      "max": 0.1691633288178225
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 18793,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 285,
+      "mean": 0.1650273997794404,
+      "min": 0.14243420244052743,
+      "max": 0.19987083540050293
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 18793,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 285,
+      "mean": -0.022316151941237993,
+      "min": -0.0981577442933885,
+      "max": 0.0650317931370668
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 25000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 285,
+      "mean": 0.10632933930894314,
+      "min": 0.06621483504854576,
+      "max": 0.1603853859408893
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 25000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 285,
+      "mean": 0.16039171070483324,
+      "min": 0.12794038375508804,
+      "max": 0.1998280654803903
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 25000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 285,
+      "mean": -0.002150056844643576,
+      "min": -0.08686570774874401,
+      "max": 0.055282843467758476
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 50000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 285,
+      "mean": 0.10281334082172082,
+      "min": 0.07616260004346855,
+      "max": 0.16209566432212025
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 50000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 285,
+      "mean": 0.16319876536473413,
+      "min": 0.13385948148703847,
+      "max": 0.19490278516487508
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 50000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 285,
+      "mean": -0.034377684151617884,
+      "min": -0.13214479650797772,
+      "max": -0.0023303126170455177
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 100000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 285,
+      "mean": 0.10265900621302353,
+      "min": 0.07801000138069696,
+      "max": 0.16194739526572982
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 100000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 285,
+      "mean": 0.16603588857453244,
+      "min": 0.13782101293601584,
+      "max": 0.19336410488736874
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "generic_u": 100000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 285,
+      "mean": -0.0681998777650457,
+      "min": -0.1460457981794924,
+      "max": 0.00042951368258558654
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 250,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 576,
+      "mean": 0.38497477784614464,
+      "min": 0.3130359143308404,
+      "max": 0.46756230393267856
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 250,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 576,
+      "mean": 0.029527232918829305,
+      "min": -0.06851752881383592,
+      "max": 0.15320003847833266
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 250,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 576,
+      "mean": 0.11554204051228552,
+      "min": -0.01369743336480099,
+      "max": 0.218120723334488
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 500,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 576,
+      "mean": 0.38528526765487325,
+      "min": 0.3071933820601497,
+      "max": 0.47305829506400576
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 500,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 576,
+      "mean": 0.0696205073747194,
+      "min": -0.0535718942662629,
+      "max": 0.17279140284945338
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 500,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 576,
+      "mean": 0.170037780739242,
+      "min": 0.06803701186205388,
+      "max": 0.24159440344358218
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 1000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 576,
+      "mean": 0.3892013991767639,
+      "min": 0.31059194683915126,
+      "max": 0.4752422546572561
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 1000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 576,
+      "mean": 0.07460858354772218,
+      "min": 0.0019668415377372232,
+      "max": 0.1890097919159389
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 1000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 576,
+      "mean": 0.17896277399490904,
+      "min": 0.0467882345051962,
+      "max": 0.27764774355865346
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 2000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 576,
+      "mean": 0.3769771597007647,
+      "min": 0.30713623746708624,
+      "max": 0.44145554540660886
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 2000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 576,
+      "mean": 0.08755612914051579,
+      "min": 0.005618255441980584,
+      "max": 0.19501735274769635
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 2000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 576,
+      "mean": 0.20741403074298376,
+      "min": 0.05716453087478384,
+      "max": 0.35696001159469065
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 5000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 576,
+      "mean": 0.38872983069147804,
+      "min": 0.2919983207832931,
+      "max": 0.46066344443977125
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 5000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 576,
+      "mean": 0.06354656462062414,
+      "min": -0.043291676168529226,
+      "max": 0.16555397734170907
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 5000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 576,
+      "mean": 0.23364753723239334,
+      "min": 0.07246709934210714,
+      "max": 0.4250735406948191
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 10000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 576,
+      "mean": 0.3831905227026836,
+      "min": 0.29868332762600514,
+      "max": 0.45962539092808374
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 10000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 576,
+      "mean": 0.0570961897092553,
+      "min": -0.025361272771615893,
+      "max": 0.16065505301351093
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 10000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 576,
+      "mean": 0.2659100243565208,
+      "min": 0.19015280936972045,
+      "max": 0.34502438999141566
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 18793,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 576,
+      "mean": 0.3861610430815117,
+      "min": 0.3039288872879509,
+      "max": 0.4594725134425749
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 18793,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 576,
+      "mean": 0.04693383390462143,
+      "min": -0.03488837536977796,
+      "max": 0.15580664827335625
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 18793,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 576,
+      "mean": 0.2376086245940358,
+      "min": 0.06791920608558458,
+      "max": 0.3304625033649535
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 25000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 576,
+      "mean": 0.3878958273344064,
+      "min": 0.3193599682934109,
+      "max": 0.45548746302959947
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 25000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 576,
+      "mean": 0.03690822322730075,
+      "min": -0.043392244372695316,
+      "max": 0.13121824042385974
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 25000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 576,
+      "mean": 0.2091786808952861,
+      "min": 0.08226771103377242,
+      "max": 0.31645626941071336
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 50000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 576,
+      "mean": 0.3993966539399757,
+      "min": 0.3386020598880272,
+      "max": 0.45809168656689075
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 50000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 576,
+      "mean": 0.04374099594027398,
+      "min": -0.01892255284538175,
+      "max": 0.14745750924550305
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 50000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 576,
+      "mean": 0.2119187327345513,
+      "min": 0.0785158545178752,
+      "max": 0.3174862222053622
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 100000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 576,
+      "mean": 0.3921903628160126,
+      "min": 0.3277706790503836,
+      "max": 0.44931390029480545
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 100000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 576,
+      "mean": 0.036456642790335905,
+      "min": -0.02609909738282382,
+      "max": 0.12207774297646168
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "generic_u": 100000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 576,
+      "mean": 0.1821561080496798,
+      "min": 0.07332448802495554,
+      "max": 0.25815895687189444
+    }
+  ]
+}

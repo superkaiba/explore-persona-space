@@ -1,0 +1,670 @@
+{
+  "git_commit": "2b85d698cfb4debdc77ad4753c2dc4e50b962f4a",
+  "git_dirty": false,
+  "phase": "natural-scaling-descriptive-analysis",
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue1739_natural_figures.py",
+  "audit_sha256": "e037f2846afe962575f51bfdfd3840b21ae562bc7e2103c94501c282affd6dc6",
+  "scientific_commit": "9f6a6fedb9a97365bfbfb0c241d7712d94ce43c0",
+  "source_scripts_sha256": {
+    "scripts/issue1739_natural_audit.py": "1ec87e43120ec85fc3d2a0fedc2f983831d59939f1b6e6d597dd8dff084c95c4",
+    "scripts/issue1739_natural_figures.py": "26a153586094f91809aa5b3c92ad85a3c3716f6df0c557ed80a5a35bb4c6b619",
+    "src/explore_persona_space/analysis/c2a_plot_style.py": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1"
+  },
+  "uncertainty": "Five-seed min-max range; descriptive, not a confidence interval.",
+  "evaluation": "Each P-B readout's own held-out dataset; unweighted dataset means.",
+  "stem": "natural_scaling_hallucination",
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      5.369
+    ],
+    "exported_size_inches": [
+      13.095,
+      5.076
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/natural_scaling_hallucination.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "NQ-OPEN",
+      "250",
+      "1k",
+      "10k",
+      "100k",
+      "0.30",
+      "0.35",
+      "0.40",
+      "0.45",
+      "0.50",
+      "0.55",
+      "0.60",
+      "0.65",
+      "SIMPLEQA",
+      "Held-out Spearman $\u03c1$ \u2191",
+      "Generic context\u2013answer pairs",
+      "Direct context",
+      "Mapped answer",
+      "Answer oracle"
+    ]
+  },
+  "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural100k_20260906/analysis_figures/natural_scaling_hallucination.png",
+  "files_sha256": {
+    "pdf": "fd0b54a33814b810595196b397d731ae6a0d38535c96936cd446416a4b2af2b8",
+    "png": "6bbcc8ca02ca2fa42e2e18668b60afadb81d65a66f805194af40b36b6145ba61",
+    "grayscale": "1102cb171bf10e6f3d76f9a343e9c5b522157f18482704c62976fb7a99d3ede9"
+  },
+  "plotted_values": [
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 250,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 3167,
+      "mean": 0.47674173000261544,
+      "min": 0.47013940070954324,
+      "max": 0.4812815283805676
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 250,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 3167,
+      "mean": 0.36017326594197324,
+      "min": 0.35287471547169835,
+      "max": 0.37042094190128666
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 250,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 3167,
+      "mean": 0.41794972832782573,
+      "min": 0.41070343783089946,
+      "max": 0.42828910204688747
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 500,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 3167,
+      "mean": 0.47654313392399245,
+      "min": 0.471580402457555,
+      "max": 0.4814661360087088
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 500,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 3167,
+      "mean": 0.3610986194963299,
+      "min": 0.35261272910580727,
+      "max": 0.3728339010363375
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 500,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 3167,
+      "mean": 0.41853060693262345,
+      "min": 0.4094343772326061,
+      "max": 0.43029682316832363
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 1000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 3167,
+      "mean": 0.4766809197981665,
+      "min": 0.4722142860972697,
+      "max": 0.480005909733236
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 1000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 3167,
+      "mean": 0.3615949329066001,
+      "min": 0.3514077386212684,
+      "max": 0.3719035180612631
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 1000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 3167,
+      "mean": 0.4154159590412765,
+      "min": 0.4062393681984335,
+      "max": 0.4321303291361448
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 2000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 3167,
+      "mean": 0.4763921563544087,
+      "min": 0.4721272259159866,
+      "max": 0.48101777042296395
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 2000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 3167,
+      "mean": 0.3639236576148948,
+      "min": 0.35529455294355466,
+      "max": 0.3765349019412412
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 2000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 3167,
+      "mean": 0.41377235318219363,
+      "min": 0.4033090393229786,
+      "max": 0.43789363726499375
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 5000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 3167,
+      "mean": 0.4764944869615125,
+      "min": 0.47232110108637354,
+      "max": 0.4787645781661451
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 5000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 3167,
+      "mean": 0.3671001901662471,
+      "min": 0.35795609816952856,
+      "max": 0.38016071450776406
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 5000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 3167,
+      "mean": 0.41393412802137036,
+      "min": 0.4045302216101824,
+      "max": 0.43351551014295636
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 10000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 3167,
+      "mean": 0.47710325266109577,
+      "min": 0.4742987098588097,
+      "max": 0.48126497036652177
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 10000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 3167,
+      "mean": 0.36901279551579524,
+      "min": 0.35943693099847773,
+      "max": 0.3825771359692792
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 10000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 3167,
+      "mean": 0.4240025926911584,
+      "min": 0.4099174559676742,
+      "max": 0.43182714889626744
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 18793,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 3167,
+      "mean": 0.47666869308740845,
+      "min": 0.472340381546441,
+      "max": 0.47912434375576507
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 18793,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 3167,
+      "mean": 0.3718417506831019,
+      "min": 0.3625149215623535,
+      "max": 0.38493177761008146
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 18793,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 3167,
+      "mean": 0.42662548326572425,
+      "min": 0.41294284220960065,
+      "max": 0.4375383765071198
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 25000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 3167,
+      "mean": 0.4770045979841364,
+      "min": 0.47193791249122585,
+      "max": 0.48019812380333987
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 25000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 3167,
+      "mean": 0.37199860482669755,
+      "min": 0.3632191607670001,
+      "max": 0.38619378755989064
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 25000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 3167,
+      "mean": 0.430513232663437,
+      "min": 0.417262401023807,
+      "max": 0.44290613257974665
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 50000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 3167,
+      "mean": 0.4772171855748154,
+      "min": 0.47303851035915545,
+      "max": 0.48137282216951927
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 50000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 3167,
+      "mean": 0.3739140068850683,
+      "min": 0.36440431460548356,
+      "max": 0.38843978335093915
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 50000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 3167,
+      "mean": 0.4376999455535559,
+      "min": 0.4251152524158483,
+      "max": 0.4444715219680139
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 100000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 3167,
+      "mean": 0.47753998304792733,
+      "min": 0.4728409966255303,
+      "max": 0.4812312271082192
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 100000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 3167,
+      "mean": 0.37618717693436554,
+      "min": 0.36640074303181225,
+      "max": 0.3907362913882023
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "generic_u": 100000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 3167,
+      "mean": 0.4460550464735732,
+      "min": 0.44127305728003874,
+      "max": 0.4541569893125428
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 250,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 4021,
+      "mean": 0.580118325220998,
+      "min": 0.5730784456386657,
+      "max": 0.5885942677500647
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 250,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 4021,
+      "mean": 0.42274156026339416,
+      "min": 0.4005003378080803,
+      "max": 0.45500356436877665
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 250,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 4021,
+      "mean": 0.42656092030360054,
+      "min": 0.39570467977132806,
+      "max": 0.4477334106882418
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 500,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 4021,
+      "mean": 0.578528427039563,
+      "min": 0.5744654707681708,
+      "max": 0.5861072898110757
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 500,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 4021,
+      "mean": 0.42354682369839136,
+      "min": 0.40215396677051163,
+      "max": 0.45624078954990854
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 500,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 4021,
+      "mean": 0.43237351350194536,
+      "min": 0.3991967043848945,
+      "max": 0.46135466997324165
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 1000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 4021,
+      "mean": 0.5792512906609446,
+      "min": 0.5730313215342099,
+      "max": 0.5873739858174201
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 1000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 4021,
+      "mean": 0.4256057165681983,
+      "min": 0.4010603488248336,
+      "max": 0.45649177487722914
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 1000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 4021,
+      "mean": 0.43650635181088565,
+      "min": 0.4147667191698957,
+      "max": 0.4591897957086438
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 2000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 4021,
+      "mean": 0.578380726892397,
+      "min": 0.572358674600284,
+      "max": 0.5854903201229213
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 2000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 4021,
+      "mean": 0.425951214970301,
+      "min": 0.4021148642147464,
+      "max": 0.4558292514642327
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 2000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 4021,
+      "mean": 0.4374020600966849,
+      "min": 0.41119001087936924,
+      "max": 0.4627400177222837
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 5000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 4021,
+      "mean": 0.5812158177139498,
+      "min": 0.5769147686940862,
+      "max": 0.5875514494655515
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 5000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 4021,
+      "mean": 0.4271106973662772,
+      "min": 0.40330467054802027,
+      "max": 0.4550104725917227
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 5000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 4021,
+      "mean": 0.4439749702530964,
+      "min": 0.41152247326979335,
+      "max": 0.4621372727373681
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 10000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 4021,
+      "mean": 0.5800229196454124,
+      "min": 0.5757068809747895,
+      "max": 0.585052974259464
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 10000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 4021,
+      "mean": 0.42928403772415685,
+      "min": 0.4073485827979232,
+      "max": 0.45365173528190544
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 10000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 4021,
+      "mean": 0.45403984551612864,
+      "min": 0.43668548657450285,
+      "max": 0.4638729150077387
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 18793,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 4021,
+      "mean": 0.5802270877074276,
+      "min": 0.5755783372878795,
+      "max": 0.5875971870044129
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 18793,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 4021,
+      "mean": 0.4289515165504644,
+      "min": 0.4045330075252737,
+      "max": 0.4558635320551562
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 18793,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 4021,
+      "mean": 0.4530545724124059,
+      "min": 0.41480014199652326,
+      "max": 0.477772469338264
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 25000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 4021,
+      "mean": 0.5801453606862049,
+      "min": 0.5759895738069106,
+      "max": 0.587667552830535
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 25000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 4021,
+      "mean": 0.42939080736887564,
+      "min": 0.40712197526215527,
+      "max": 0.4557532287564974
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 25000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 4021,
+      "mean": 0.45775050791138633,
+      "min": 0.4246015267895041,
+      "max": 0.47104138200776274
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 50000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 4021,
+      "mean": 0.58070632734977,
+      "min": 0.5762408382668815,
+      "max": 0.5870237531188044
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 50000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 4021,
+      "mean": 0.4323681610196563,
+      "min": 0.40871643864774665,
+      "max": 0.45825861859524375
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 50000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 4021,
+      "mean": 0.45134027944771526,
+      "min": 0.42101512535924185,
+      "max": 0.4651840123346095
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 100000,
+      "arm": "arm12_oracle_reg",
+      "n_eval": 4021,
+      "mean": 0.5806383112002683,
+      "min": 0.5752664749904257,
+      "max": 0.5870168494446867
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 100000,
+      "arm": "arm4_ridge_ctx",
+      "n_eval": 4021,
+      "mean": 0.4330866296044156,
+      "min": 0.41016736220325006,
+      "max": 0.4599066548765713
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "generic_u": 100000,
+      "arm": "arm7_map_ridge_pred",
+      "n_eval": 4021,
+      "mean": 0.468798909879546,
+      "min": 0.4414366747481557,
+      "max": 0.48035502043581124
+    }
+  ]
+}

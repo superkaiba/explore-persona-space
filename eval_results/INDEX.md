@@ -112,6 +112,7 @@ Maps each experiment result to its research topic. Updated by the analyzer agent
 
 | Directory | Experiment | Date | Key Finding |
 |-----------|-----------|------|-------------|
+| `issue_1739/natural_scaling/analysis/` + `figures/issue_1739/natural_scaling/`; branch `codex/1739-natural-scaling`; HF `issue1739_natural100k_20260906/` | Natural first-user prompt → own freshly generated Qwen answer, no recombination; 10 generic sizes through 100k plus fixed trait pools × 5 seeds × 3 behaviors; three linear P-B readouts, 13 held-out datasets; 150/150 cells and 1,950 primary method rows | 2026-09-08 | Hallucination mapped/direct mean ρ 0.4574/0.4046 (+0.0528; all five seed gaps positive); evil 0.1411/0.1430 and sycophancy 0.3533/0.3619. Descriptive seed ranges, no equivalence/significance classification. Separate protocol from the earlier P-A ladder, not a matched recombination control. [Report](https://eps.superkaiba.com/tasks/1739) · [overview](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural100k_20260906/analysis_figures/natural_scaling_overview.png). |
 | `midtrain_evil_wrong_em_seed42/` | Evil+wrong SFT coupling | 2026-04-08 | Post-EM ARC-C 0.799 (protected) |
 | `midtrain_good_wrong_em_seed42/` | Good+wrong SFT coupling | 2026-04-08 | Post-EM ARC-C 0.840 (best protection) |
 | `midtrain_goodperson_wrong_em_seed42/` | Goodperson+wrong coupling | 2026-04-08 | Post-EM ARC-C 0.691, align 56.4 |

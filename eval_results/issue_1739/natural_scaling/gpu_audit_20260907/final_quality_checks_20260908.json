@@ -1,0 +1,46 @@
+{
+  "scope": "Completed natural100k descriptive analysis and final packaging",
+  "focused_tests": {"status": "PASS", "n_tests": 63, "wall_s": 5.41},
+  "independent_preservation_review": {"status": "PASS", "n_tests_rerun": 18},
+  "independent_numeric_review": {
+    "status": "PASS",
+    "primary_rows_reaggregated": 1950,
+    "diagnostic_table_rows_checked": 13,
+    "wording_correction_applied": "Whitening uses the inherited seeded80/20 fit/selection split; only final map weights are refit on all union rows."
+  },
+  "ruff": {"status": "PASS"},
+  "workflow_lint": {
+    "whole_repository": {
+      "status": "INTERRUPTED",
+      "exit_code": 130,
+      "reason": "Explicitly stopped after exceeding ten minutes during project-wide AST traversal in check_scripts_import_guard; no whole-repository PASS claimed."
+    },
+    "file_scoped": {
+      "status": "PASS",
+      "payload_files": 11,
+      "import_closure_files_added": 0,
+      "checks_ran": 41,
+      "checks_skipped": 45,
+      "out_of_scope_findings_suppressed_by_canonical_files_mode": 26,
+      "initial_finding_resolved": "Documented the already-enclosing hub.retry_transient around the complete paginated list_repo_tree call, using the linter's supported annotation. No retry logic changed."
+    }
+  },
+  "audit_annotation": {
+    "AST_equal_before_after": true,
+    "original_source_sha256": "1ec87e43120ec85fc3d2a0fedc2f983831d59939f1b6e6d597dd8dff084c95c4",
+    "annotated_source_sha256": "9dcdc944b18a432a149fbed98c9857028395eca5a2b1c6c12f57afbc0feee0c8",
+    "note": "The actual executed auditor remains archived under its original hash; its output and the scientific checkout were not rerun or modified."
+  },
+  "figure_review": {
+    "all_four_color_PNGs_visually_checked": true,
+    "overview_grayscale_visually_checked": true,
+    "four_public_PNG_URLs_HTTP_status": 200,
+    "all_remote_files_exact_names_sizes_content_verified": true,
+    "figure_revision": "2417628daed58f460a881b379c9b8d2bc3474a50",
+    "overview_PDF_target_width_inches": 5.5,
+    "overview_PDF_render_dpi_for_96dpi_target_view": 40.32,
+    "overview_PDF_target_size_render_visually_checked": true,
+    "overview_PDF_font_embedding": "Inter Bold, Italic and Regular embedded; Poppler reports a font-type/embedded-file metadata mismatch warning. Rendered text and curves are legible, with no observed missing glyphs.",
+    "publication_note": "Revisit the PDF font-metadata warning before a manuscript submission; no manuscript replacement was performed."
+  }
+}
