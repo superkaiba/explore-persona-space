@@ -160,6 +160,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--continuation-grant", type=Path)
     parser.add_argument("--continuation-grant-sha256")
     parser.add_argument("--science-root", type=Path)
+    parser.add_argument("--batch-fit-uploads", action="store_true")
     parser.add_argument("--min-disk-gb", type=float)
     parser.add_argument("--per-pod-quota-gb", type=float)
     parser.add_argument("--skip-preflight", action="store_true")
@@ -179,6 +180,24 @@ def cell_step(args: argparse.Namespace, cell: str, phase: str, *, pilot: bool = 
     allowed = (TRANSFER_PHASES - {"preflight", "transfer_check"}) | OFFLINE_PHASES
     if phase not in allowed:
         raise ValueError(f"out-of-scope cell phase: {phase}")
+    if phase == "upload-fits" and args.batch_fit_uploads:
+        if args.mode != "fits" or not args.science_root:
+            raise ValueError("batched fit uploads require the frozen fits mode")
+        return Step(
+            cell,
+            phase,
+            (
+                sys.executable,
+                "-u",
+                str(REPO_ROOT / "scripts/issue2588_chat_upload_fits.py"),
+                "--science-root",
+                str(args.science_root),
+                "--out-root",
+                str(args.out_root),
+                "--cell",
+                cell,
+            ),
+        )
     argv = [
         sys.executable,
         "-u",
@@ -478,7 +497,9 @@ def inherited_work_s(args: argparse.Namespace, env: dict[str, str]) -> float:
     return now - epoch - (prior["cumulative_prior_durability_s"] if prior else 0.0)
 
 
-def local_upload_operations(cell_root: Path, cell: str, phase: str) -> dict:
+def local_upload_operations(
+    cell_root: Path, cell: str, phase: str, *, batch_fits: bool = False
+) -> dict:
     """Count core upload groups, not tensor shards; every helper verifies its own commit.
 
     A bulk helper has two retry envelopes (commit and scoped listing). A single
@@ -495,7 +516,7 @@ def local_upload_operations(cell_root: Path, cell: str, phase: str) -> dict:
         fits / f"percell_{position}_L{layer:02d}.json" for layer in (*range(0, 36, 2), 35)
     ]
     pilot = fits / "fit_pilot.json"
-    if phase in ("upload-raw", "upload-capture"):
+    if phase in ("upload-raw", "upload-capture") or (phase == "upload-fits" and batch_fits):
         bulk = 1
         single = 0
     elif phase == "upload-partial":
@@ -515,7 +536,7 @@ def local_upload_operations(cell_root: Path, cell: str, phase: str) -> dict:
         single += 1  # generated results.json lives outside the cell tree
     else:
         raise ValueError(f"no scoped upload-operation contract for {phase}")
-    receipt = phase != "upload-fits"
+    receipt = phase != "upload-fits" or batch_fits
     checkpoint = phase != "upload-partial"
     return {
         "bulk_groups": bulk,
@@ -610,7 +631,9 @@ class Runner:
         overhead = (len(files) + 1) * UPLOAD_METADATA_BYTES_PER_FILE
         nbytes = raw_bytes + overhead
         if limit.get("retry_calls_source") == "local_upload_operations":
-            operations = local_upload_operations(cell_root, step.cell, step.phase)
+            operations = local_upload_operations(
+                cell_root, step.cell, step.phase, batch_fits=self.args.batch_fit_uploads
+            )
             calls = operations["retry_calls"]
             limit = {
                 **limit,
@@ -845,6 +868,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.mode is None:
         parser.error("--mode is required")
+    if args.batch_fit_uploads and (
+        args.mode != "fits" or not args.science_root or args.run_id != SUPPLEMENT_RUN_ID
+    ):
+        parser.error("batched fit uploads require frozen-source v3 fits mode")
     if args.mode == "capture-pilot" and (args.run_id != SUPPLEMENT_RUN_ID or not args.science_root):
         parser.error("capture-pilot requires v3 and the frozen science root")
     if bool(args.continuation_grant) != bool(args.continuation_grant_sha256):
