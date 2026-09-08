@@ -1,5 +1,18 @@
 # Handoff: rewriting the SAE feature-property material in Section "Format and persona are preserved"
 
+> **Status 2026-09-08, later the same day.** The paper now reports the
+> decoder-direction target as its primary SAE analysis (Overleaf `6be6e0b`, EPS
+> `76412a4e6a5`). Section 4.2 and `app:sae-properties` carry the Round A and
+> Round B numbers below (identity +0.12, topic −0.09, promoting −0.10,
+> suppressing −0.10, round-0 winner variance along decoder direction +0.32;
+> layer-20 tiers 0.73 / 0.64 / 0.65, activity-adjusted +0.09 / −0.01 / −0.01,
+> partial Spearman −0.19), `fig:sae-tier-gradient` is rendered from
+> `eval_results/issue_1482/plot4_redesign/plot4_decoder_direction.json`
+> (`scripts/issue1482_plot4_redesign.py --dv decoder-direction`), and
+> `app:sae-robustness` is removed because Round C ran on the activation target
+> only. Everything below that describes activation-target text is the record of
+> the earlier draft, not what the paper says now.
+
 Written 2026-09-08 by the session that answered danmossing's four review comments
 (6 September). Everything below is either read from a committed artifact or
 quoted from the Overleaf tree. Where a number appears, the artifact it came from
