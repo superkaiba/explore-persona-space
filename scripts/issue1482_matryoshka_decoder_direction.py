@@ -432,12 +432,13 @@ def main() -> int:
     if args.hf_upload_prefix:
         from huggingface_hub import HfApi
 
+        import issue779_common as C  # HF_DATA_REPO lives here, NOT on hub
         from explore_persona_space.orchestrate import hub
 
         for f in (path, npz_path):  # UPLOAD_LOOP_EXEMPT: exactly two small files, not a bulk tree
             up_url = hub._upload(
                 f,
-                hub.HF_DATA_REPO,
+                C.HF_DATA_REPO,
                 "dataset",
                 f"{args.hf_upload_prefix}/{f.name}",
                 upload_as_file=True,
@@ -448,7 +449,7 @@ def main() -> int:
         expected = [f"{args.hf_upload_prefix}/{f.name}" for f in (path, npz_path)]
         missing = hub.verify_repo_paths_uploaded(
             HfApi(),
-            hub.HF_DATA_REPO,
+            C.HF_DATA_REPO,
             expected,
             path_in_repo=args.hf_upload_prefix,
             repo_type="dataset",

@@ -1,0 +1,103 @@
+{
+ "generated_utc": "2026-09-08T21:18:28.107496+00:00",
+ "family": "lmsys",
+ "layer": 20,
+ "target": "decoder-direction projection d_f^T v of the ans_mean answer state (dense, no encoder/gate)",
+ "target_key": "a20",
+ "stores": {
+  "ans": "/workspace/explore-persona-space/data/issue_1482/matryoshka/store_m",
+  "dense": "/workspace/explore-persona-space/data/issue_1482/matryoshka/scratch/banked_store"
+ },
+ "n_fit": 24000,
+ "n_score": 6000,
+ "ans_all_out_rows": 0,
+ "n_ans_median": 391.0,
+ "pooled_dense_r2": 0.6702895217620415,
+ "pooled_r2_floor": {
+  "min": 0.2,
+  "overridden": false
+ },
+ "ridge": {
+  "selected_lambda": 1000.0,
+  "gcv": 0.025334249360262802,
+  "lambda_grid": [
+   0.01,
+   100000000.0,
+   21
+  ],
+  "at_grid_edge": false
+ },
+ "panel": {
+  "n": 16384,
+  "raw_spearman_tier_r2": -0.08734946435301166,
+  "partial_spearman_tier_r2_given_logact": -0.19226476642585733,
+  "per_tier": {
+   "0": {
+    "n": 1640,
+    "median": 0.7270518827730943,
+    "q25": 0.650629597501649,
+    "q75": 0.7943103090565087
+   },
+   "1": {
+    "n": 6144,
+    "median": 0.640041233566278,
+    "q25": 0.5744561924716713,
+    "q75": 0.6990527747378414
+   },
+   "2": {
+    "n": 8600,
+    "median": 0.6493490416432169,
+    "q25": 0.5927230239308374,
+    "q75": 0.7015998004217736
+   }
+  },
+  "within_stratum_permutation": {
+   "observed_pooled_spearman": -0.08734946435301166,
+   "perm_band_2p5_97p5": [
+    0.046046310883477076,
+    0.07074604936592857
+   ],
+   "n_perm": 2000,
+   "n_strata": 5,
+   "outside_band": true,
+   "verdict": "coarse-better"
+  }
+ },
+ "full_dictionary": {
+  "n": 65536,
+  "per_tier_median": {
+   "0": 0.7215006331918932,
+   "1": 0.6739180418190445,
+   "2": 0.6841716050000788
+  }
+ },
+ "reference_activation_target": {
+  "raw_spearman": -0.394923907649798,
+  "partial_spearman": -0.19378820706402136,
+  "perm_band": [
+   -0.24988001871086463,
+   -0.2275081509022165
+  ],
+  "verdict": "coarse-better",
+  "per_tier": {
+   "0": {
+    "n": 1640,
+    "median": 0.4345762931443276,
+    "q25": 0.2685799065918041,
+    "q75": 0.5742970347768547
+   },
+   "1": {
+    "n": 6144,
+    "median": 0.17386872874476017,
+    "q25": 0.03136985104887893,
+    "q75": 0.31639708791575627
+   },
+   "2": {
+    "n": 8600,
+    "median": 0.0429846164108893,
+    "q25": -0.07301852176891227,
+    "q75": 0.18021596360736575
+   }
+  }
+ }
+}
