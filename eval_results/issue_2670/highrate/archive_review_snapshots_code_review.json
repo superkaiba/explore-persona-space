@@ -1,0 +1,89 @@
+{
+  "actual_archive_upload_or_readback_performed": false,
+  "checks": [
+    "Original ZIP bytes must match the immutable snapshot size/SHA before parsing. The same-stem sidecar is required, with archive_file equal to the actual basename and source_sha256 equal to the declared original bytes.",
+    "ZIP parsing is restricted to a setup/review_snapshots namespace. The referenced review is mapped to the setup sibling by basename and must match its recorded SHA. Complete snapshot membership and original-file hashes remain enforced by run().",
+    "Inspect0.3.261 read_eval_log(format=eval,resolve_attachments=full) reads native ZIP compression method93. The sidecar and parsed native status must both be started; nonempty sample/epoch identities must be unique.",
+    "Actual sample count and native C/original C/impossible C counts are recomputed and compared to the sidecar. The returned record is inspect_review_snapshot with terminal=false, never completed generation evidence.",
+    "Ordinary .eval parsing remains success-only. ZIPs are binary for the9.5MB size policy, while arbitrary ZIPs outside the designated namespace still fail the typed parser.",
+    "The original five-file source regime, pristine-stage/CR/size/hash guards, exact pinned API verification, canonical readback and manifest-first reconstruction remain intact; all four inherited helper source hashes are unchanged."
+  ],
+  "executed_evidence": [
+    "Actual137-sample/3,445,930-byte and223-sample/5,504,854-byte snapshots passed full attachment-resolved Inspect parsing, hash/sidecar/review identity checks, unique keys and all recomputed C counters.",
+    "Eighteen negative/sizing cases passed: missing sidecar; wrong archive_file/source SHA/sidecar status; missing referenced review; wrong review SHA; changed review bytes; changed review filename; each of four count fields altered; wrong namespace; success-status native object presented as a started snapshot; empty snapshot; duplicate keys; started ordinary.eval; and binary ZIP sizing above9.5MB.",
+    "Negative sidecar/reference tests used temporary copies and already parsed native objects; native-status/empty/duplicate branches used explicit in-memory parser-boundary fixtures. These do not constitute additional real behavioral observations.",
+    "The >9.5MB sizing fixture contained declared arbitrary software-fixture bytes and exercised prepare_shards only. Both real native ZIPs were separately parsed; no claim that dummy bytes formed a valid ZIP is made.",
+    "All original snapshot files remained unchanged. No upload, download, model call, GPU work or production source edit occurred during this ZIP review."
+  ],
+  "package_versions": {
+    "huggingface-hub": "0.36.2",
+    "inspect-ai": "0.3.261",
+    "numpy": "2.2.6"
+  },
+  "prior_review_sha256": "bda34adbed4dacf97ea9bfdf2d4820b5341544761b1c4681f8aa67c57481f380",
+  "read_only_hf_metadata_queries_performed_for_separate_map_report": true,
+  "real_snapshot_evidence": [
+    {
+      "bytes": 3445930,
+      "native_counts": {
+        "completed_samples": 137,
+        "impossible_C": 6,
+        "native_C": 49,
+        "original_C": 43
+      },
+      "parsed": {
+        "parsed": "inspect_review_snapshot",
+        "review_sha256": "6319ec176c5af992e163cbd4bb1f7e957267e5bb7e7f6328eb7178320214a83a",
+        "samples": 137,
+        "sha256": "3539db647369dd6cf8ecb0ec5503ddad631d885dbb8bbf9898e20a3ace4d4cfe",
+        "size": 3445930,
+        "terminal": false
+      },
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/review_snapshots/screen_started_137_samples_20260908T013048Z.zip",
+      "referenced_review_sha256": "6319ec176c5af992e163cbd4bb1f7e957267e5bb7e7f6328eb7178320214a83a",
+      "sha256": "3539db647369dd6cf8ecb0ec5503ddad631d885dbb8bbf9898e20a3ace4d4cfe",
+      "sidecar_sha256": "90ce916f5273c580d78602aa4b55d00e8634e7e52cb9ff75392ca319e0dc01b7"
+    },
+    {
+      "bytes": 5504854,
+      "native_counts": {
+        "completed_samples": 223,
+        "impossible_C": 9,
+        "native_C": 72,
+        "original_C": 63
+      },
+      "parsed": {
+        "parsed": "inspect_review_snapshot",
+        "review_sha256": "68e89508e1903b4532a5e34abefceb481f63ea097ca22f2738c5be43892734d6",
+        "samples": 223,
+        "sha256": "90b709d4e411424796fa118215936bf484a95c86845d780a43c91f12c33eb4f5",
+        "size": 5504854,
+        "terminal": false
+      },
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/review_snapshots/screen_started_223_samples_20260908T020849Z.zip",
+      "referenced_review_sha256": "68e89508e1903b4532a5e34abefceb481f63ea097ca22f2738c5be43892734d6",
+      "sha256": "90b709d4e411424796fa118215936bf484a95c86845d780a43c91f12c33eb4f5",
+      "sidecar_sha256": "b0fecbc80dbbccede0a19f8a68482a86eaaf23b179ccbeb80f463ba1a89eeef7"
+    }
+  ],
+  "remaining_gates": [
+    "The new bytes require a fresh reviewed transfer launch and real canonical remote readback before claiming archival completion. The existing pilot receipt is historical and remains unchanged.",
+    "Snapshot sidecar/reference files must be included together in each complete immutable archive inventory; missing references fail rather than being silently ignored.",
+    "These snapshots are partial review evidence. They never satisfy the terminal full-screen/fresh native-process/roster or successful-body gates.",
+    "All prior archive residue, Unicode row-count, exact618/360/90 reconciliation and managed-owner teardown requirements remain active."
+  ],
+  "reviewed_utc": "2026-09-08T02:49:29.197109+00:00",
+  "reviewer": "Independent Codex subagent /root/verify_vllm_runtime; not the ZIP extension author",
+  "schema_version": "context_risk_highrate_archive_independent_code_review_v2",
+  "scope": "Minimal archive-only support for explicitly designated nonterminal Inspect native ZIP review snapshots. All collection/capture/analysis sources and ordinary terminal-native requirements remain unchanged.",
+  "sources_sha256": {
+    "scripts/context_risk_corrected_finish.py": "8aeaddec362b9bbf277c707b7532d17948811f1bdf09b9c0a45f598c7eca466e",
+    "scripts/context_risk_highrate_archive.py": "b7f712557a5b537021fc5324a3f4f945c0e1a89c06da3404166c81b44401205b",
+    "scripts/issue2054_phase_a.py": "69573ff5fc81ad398f35ccf9e656d5fceb7e2696e4b6b35a1db80a166ceb7016",
+    "src/explore_persona_space/orchestrate/env.py": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759",
+    "src/explore_persona_space/orchestrate/hub.py": "6590d4c01d396f935da018d16673e3d21f93843126b5e12a42be8e6e0419351e"
+  },
+  "teardown_authorization": false,
+  "unresolved_findings": [],
+  "verdict": "PASS"
+}

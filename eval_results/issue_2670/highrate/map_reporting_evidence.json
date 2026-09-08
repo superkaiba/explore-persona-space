@@ -1,0 +1,85 @@
+{
+  "bounded_search": {
+    "alternate_explicit_prefixes_previously_checked_at_same_revision": {
+      "context_risk_results": "EntryNotFoundError on the resolved repo/revision",
+      "issue2670": "EntryNotFoundError on the resolved repo/revision",
+      "issue2670_context_risk": "EntryNotFoundError on the resolved repo/revision",
+      "issue_2670": "EntryNotFoundError on the resolved repo/revision"
+    },
+    "exact_relative_paths_tested": [
+      "eval_results/context_risk/qwen38_map_pilot",
+      "eval_results/context_risk/qwen38_capture_pilot",
+      "eval_results/issue_2670",
+      "eval_results/context_risk_results/qwen38_capture_pilot"
+    ],
+    "existing_paths": [
+      "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_map_pilot",
+      "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/issue_2670"
+    ],
+    "hf_files_examined": 850,
+    "hf_recursive_prefix": "context_risk",
+    "hf_repo": "superkaiba1/explore-persona-space-data",
+    "hf_revision": "7d5cf8214762450255d1fd70a787a6349a97ce05",
+    "historical_capture_prefix_files": [],
+    "historical_npz_LFS_hash_matches": [],
+    "other_local_evidence": "Inspected the map receipt, exact fit/capture helpers, completed_20260906 recovery metadata and highrate reuse reviews; the separately available64-row Toucan bank has a different fingerprint and was not substituted.",
+    "registered_worktrees_checked": 97,
+    "retrieval_named_files": []
+  },
+  "checked_utc": "2026-09-08T02:49:29.759983+00:00",
+  "historical_capture_inventory": {
+    "accepted_rows": 15888,
+    "all_npz_and_row_hashes_preserved_in": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_map_pilot/run_result.json",
+    "bank_downloaded_or_loaded": false,
+    "bank_recoverability_verified": false,
+    "capture_root_in_receipt": "/workspace/context_risk_results/qwen38_capture_pilot",
+    "records": 1588,
+    "unique_done_paths": 1588,
+    "unique_npz_sha256": 1252,
+    "zero_accepted_row_chunks": 337
+  },
+  "historical_reported_metrics": {
+    "cosine_knn_k5_regression_r2": 0.5602368587660418,
+    "identity_plus_bias_r2": -2.370484384515375,
+    "layer": 44,
+    "metrics_recomputed_from_capture_bank": false,
+    "pooled_r2": 0.6361226970697764,
+    "test_groups": 1060,
+    "test_rows": 1668
+  },
+  "limits": [
+    "This is a bounded metadata/path search, not a claim that the bank or metric is globally absent. Other uninspected storage or historical revisions could exist.",
+    "No capture bank download, model call, fit, retrieval calculation, plan modification or replacement dataset was performed.",
+    "Historical R2 values are reproduced from the verified saved receipt, not newly measured. Missing retrieval is a reporting/validation limitation and is never encoded as zero."
+  ],
+  "map_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_map_pilot/map_layer_44.npz",
+  "map_receipt_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_map_pilot/run_result.json",
+  "map_receipt_sha256": "3e6651be338f84d60294335bb7183549bd61d5577a882ae36e96e437435ceedf",
+  "map_sha256": "680935a244cc39c29797d66b312b95e3741889a541dcee8bde7c69ac33c5242d",
+  "paired_retrieval": {
+    "accuracy": null,
+    "candidate_pool_size": null,
+    "chance_level": null,
+    "reason": "The frozen fit code selects five training-context cosine neighbors, averages their answer vectors and reports regression R2/NRMSE. It does not score whether a mapped held-out query retrieves its paired answer from a stated candidate pool.",
+    "status": "No correctly paired metric located in the bounded inspected evidence"
+  },
+  "reporting_statement": "The reused layer44 map has historical grouped-test R2=0.636122697 versus -2.370484385 for identity plus learned bias, as recorded in its hash-verified fit receipt. Paired nearest-neighbor retrieval accuracy, candidate-pool size and chance level were not located in the inspected evidence. The original paired capture bank was not recovered or revalidated, so no retrieval result is claimed; the saved cosine-kNN score is a regression baseline.",
+  "reviewer": "Independent read-only review /root/verify_vllm_runtime",
+  "schema_version": "context_risk_highrate_map_reporting_evidence_v1",
+  "sources_sha256": {
+    "configs/eval/context_risk_qwen38_fit_map.yaml": "c2726ab0f6e9396ea981ff80e2cfded49897316c129b155d0424f589d38ef383",
+    "eval_results/context_risk_highrate_design/map_reuse_review.json": "234055bf34f371163569ee7416fb211b34a49f3163f61762e9b19d8c7ab57c8d",
+    "scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+    "scripts/context_risk_qwen38_fit_map.py": "3f34b37aa96d4b7c960755296488b2448910cce82354bdffb4572c31ea1c95ae"
+  },
+  "verified_hf_receipt": {
+    "bytes": 669214,
+    "exact_remote_blob_match": true,
+    "local_git_blob_sha1": "2d20552122b66de937642435f86063a80a407b7c",
+    "path": "context_risk/recovery_20260906/inputs_v2/qwen38_map_pilot/run_result.json",
+    "remote_git_blob_sha1": "2d20552122b66de937642435f86063a80a407b7c",
+    "repo_id": "superkaiba1/explore-persona-space-data",
+    "revision": "7d5cf8214762450255d1fd70a787a6349a97ce05",
+    "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/7d5cf8214762450255d1fd70a787a6349a97ce05/context_risk/recovery_20260906/inputs_v2/qwen38_map_pilot/run_result.json"
+  }
+}

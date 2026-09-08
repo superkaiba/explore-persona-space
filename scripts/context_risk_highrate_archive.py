@@ -72,6 +72,40 @@ def check_original(path: Path, expected: dict) -> dict:
         if len(set(keys)) != len(keys):
             raise ValueError(f"Duplicate native sample identities: {path}")
         result.update(parsed="inspect_full", samples=len(keys))
+    elif path.suffix == ".zip":
+        if path.parent.name != "review_snapshots" or path.parent.parent.name != "setup":
+            raise ValueError(f"Undeclared review ZIP namespace: {path}")
+        sidecar = json.loads(path.with_suffix(".json").read_text())
+        review_path = path.parent.parent / Path(sidecar["review"]).name
+        if (
+            sidecar["archive_file"] != path.name
+            or sidecar["source_sha256"] != expected["sha256"]
+            or sidecar["native_status"] != "started"
+            or sha(review_path) != sidecar["review_sha256"]
+        ):
+            raise ValueError(f"Review snapshot sidecar identity differs: {path}")
+        # Inspect supports its native ZIP method93 (Zstandard); Python3.11's
+        # standalone zipfile reader does not. These are deliberately partial.
+        log = read_eval_log(str(path), format="eval", resolve_attachments="full")
+        keys = [(str(s.id), s.epoch) for s in log.samples]
+        successes = [s for s in log.samples if s.scores["successful_submission"].value == "C"]
+        original_c = sum(s.metadata["condition"] == "original" for s in successes)
+        if (
+            log.status != "started"
+            or not keys
+            or len(set(keys)) != len(keys)
+            or len(keys) != sidecar["completed_samples"]
+            or len(successes) != sidecar["native_C"]
+            or original_c != sidecar["original_C"]
+            or len(successes) - original_c != sidecar["impossible_C"]
+        ):
+            raise ValueError(f"Review snapshot native status/counts differ: {path}")
+        result.update(
+            parsed="inspect_review_snapshot",
+            samples=len(keys),
+            terminal=False,
+            review_sha256=sidecar["review_sha256"],
+        )
     elif path.suffix == ".npz":
         with np.load(path, allow_pickle=False) as bank:
             shapes = {}
@@ -95,7 +129,7 @@ def prepare_shards(stage: Path) -> dict:
             continue
         if path.suffix == ".jsonl":
             large[path] = sha(path)
-        elif path.suffix not in {".npz", ".eval"}:
+        elif path.suffix not in {".npz", ".eval", ".zip"}:
             raise ValueError(f"Oversized text needs a reviewed line-sharding recipe: {path}")
     retained = _shard_large_jsonl_for_upload(original)
     if any(p.suffix == ".jsonl" and p.stat().st_size > 9_500_000 for p in retained):

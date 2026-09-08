@@ -1,0 +1,7 @@
+The reused layer44 map has historical grouped-test R2=0.636122697 versus -2.370484385 for identity plus learned bias, as recorded in its hash-verified fit receipt. Paired nearest-neighbor retrieval accuracy, candidate-pool size and chance level were not located in the inspected evidence. The original paired capture bank was not recovered or revalidated, so no retrieval result is claimed; the saved cosine-kNN score is a regression baseline.
+
+The [canonical fit receipt](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/7d5cf8214762450255d1fd70a787a6349a97ce05/context_risk/recovery_20260906/inputs_v2/qwen38_map_pilot/run_result.json) matches local SHA256 `3e6651be338f84d60294335bb7183549bd61d5577a882ae36e96e437435ceedf` by remote Git blob and byte size. The test partition contains1,668 rows from1,060 groups. No new fit or retrieval computation was run.
+
+The receipt preserves1,588 unique chunk-path records covering15,888 accepted rows, with1,252 unique NPZ hashes because337 chunks are empty. The bounded search checked97 registered worktrees at the named historical paths and850 files below the pinned HF context_risk prefix; it found no recoverable full historical bank or paired retrieval artifact there. Four explicit alternate task2670 prefixes returned EntryNotFoundError at that same resolved repository revision. These checks do not establish global absence.
+
+The different64-row Toucan capture was not substituted. Complete source hashes, search scope and metadata are preserved in map_reporting_evidence.json.
