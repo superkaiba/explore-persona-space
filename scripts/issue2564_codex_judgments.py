@@ -209,6 +209,7 @@ def import_ledger(root: Path, ledger_path: Path, part: str) -> dict:
             old = json.loads((dest / "record.json").read_text())
             if old["file_hashes"] != fingerprints or old["agent_id"] != job["agent_id"]:
                 raise ValueError("Completed packet was replaced; retain retry history separately")
+            parse_packet(dest, row_map)
             continue
         dest.mkdir(parents=True, exist_ok=True)
         # Preserve original output before parsing, including malformed attempts.
@@ -244,7 +245,106 @@ def import_ledger(root: Path, ledger_path: Path, part: str) -> dict:
     return dict(counts)
 
 
+def completed_values(path: Path, record: dict, items: list[dict]) -> list[dict]:
+    """Validate original ordered output, optionally filling only documented omissions."""
+    values = read_jsonl(path / "output.jsonl")
+    ids = [v.get("id") if isinstance(v, dict) else None for v in values]
+    expected = record["row_ids"]
+    repair_path = path / "supplement_record.json"
+    if ids == expected:
+        if repair_path.exists():
+            raise ValueError("A complete original packet cannot receive supplementary ratings")
+        return values
+    if not repair_path.exists():
+        raise ValueError("Missing, duplicated, unknown, or reordered output IDs")
+    if (
+        len(ids) != len(set(ids))
+        or not set(ids) < set(expected)
+        or ids != [i for i in expected if i in ids]
+    ):
+        raise ValueError("Only an ordered strict subset with omissions can be supplemented")
+    repair = json.loads(repair_path.read_text())
+    if (
+        repair["original_record_sha256"] != file_hash(path / "record.json")
+        or repair["agent_id"] != record["agent_id"]
+        or repair["mode"] != "same_agent_missing_items_only"
+        or repair["completion_observed_unix_s"] <= record["job"]["completion_observed_unix_s"]
+        or not repair["completion_evidence"]
+    ):
+        raise ValueError("Supplement provenance differs from the original judge/attempt")
+    required_files = {"supplement_input.json", "supplement_request.json", "supplement_output.jsonl"}
+    if set(repair["file_hashes"]) != required_files or any(
+        file_hash(path / name) != sha for name, sha in repair["file_hashes"].items()
+    ):
+        raise ValueError("Supplement packet/request/response changed")
+    packet = json.loads((path / "supplement_input.json").read_text())
+    missing_items = [r for r in items if r["id"] not in ids]
+    if packet != {"rubric": PROPERTIES[record["property"]], "items": missing_items}:
+        raise ValueError("Supplement must expose only the unchanged omitted answers and rubric")
+    request = json.loads((path / "supplement_request.json").read_text())
+    if set(request) != {"target", "message"} or request["target"] != record["agent_id"]:
+        raise ValueError("Supplement request must address the original agent")
+    if leakage_scan(packet, request) != repair["leakage_scan"]:
+        raise ValueError("Supplement leakage audit changed")
+    extra = read_jsonl(path / "supplement_output.jsonl")
+    if [v.get("id") if isinstance(v, dict) else None for v in extra] != [
+        r["id"] for r in missing_items
+    ]:
+        raise ValueError("Supplement must contain exactly the omitted IDs in order")
+    # Supplements never repair invalid labels or replace an already expressed judgment.
+    for value in values + extra:
+        _, error = validate_value(record["property"], {k: v for k, v in value.items() if k != "id"})
+        if error:
+            raise ValueError(f"Omission-only supplement cannot repair malformed labels: {error}")
+    merged = {v["id"]: v for v in values + extra}
+    return [merged[i] for i in expected]
+
+
+def import_supplement(
+    packet_path: Path,
+    input_path: Path,
+    request_path: Path,
+    response_path: Path,
+    event_path: Path,
+    row_map: dict,
+) -> dict:
+    """Archive an observed same-judge completion without changing the rejected attempt."""
+    record = json.loads((packet_path / "record.json").read_text())
+    event = json.loads(event_path.read_text())
+    files = {
+        "supplement_input.json": input_path,
+        "supplement_request.json": request_path,
+        "supplement_output.jsonl": response_path,
+    }
+    for name, source in files.items():
+        dest = packet_path / name
+        if dest.exists():
+            raise FileExistsError("Supplement evidence is immutable; inspect existing attempt")
+        shutil.copyfile(source, dest)
+    repair = {
+        "mode": "same_agent_missing_items_only",
+        "agent_id": event["agent_id"],
+        "completion_observed_unix_s": event["completion_observed_unix_s"],
+        "completion_evidence": event["completion_evidence"],
+        "original_record_sha256": file_hash(packet_path / "record.json"),
+        "file_hashes": {name: file_hash(p) for name, p in files.items()},
+        "leakage_scan": leakage_scan(
+            json.loads(input_path.read_text()), json.loads(request_path.read_text())
+        ),
+        "imported_at": time.time(),
+    }
+    dump(packet_path / "supplement_record.json", repair)
+    _, units = parse_packet(packet_path, row_map)
+    return {
+        "packet_id": record["packet_id"],
+        "validated_annotations": len(units),
+        "supplemented_annotations": len(read_jsonl(response_path)),
+        "original_attempt_preserved": True,
+    }
+
+
 def parse_packet(path: Path, row_map: dict) -> tuple[dict, list[dict]]:
+    """Revalidate exact archived evidence and return annotation units."""
     record = json.loads((path / "record.json").read_text())
     if any(
         record[k] != record["job"][k]
@@ -264,12 +364,7 @@ def parse_packet(path: Path, row_map: dict) -> tuple[dict, list[dict]]:
     _, _, items, scan = inspect_job(archived_job, row_map)
     if record["row_ids"] != [r["id"] for r in items] or record["leakage_scan"] != scan:
         raise ValueError("Archived row roster/leakage audit changed")
-    values = read_jsonl(path / "output.jsonl")
-    if (
-        any(not isinstance(v, dict) for v in values)
-        or [v.get("id") for v in values] != record["row_ids"]
-    ):
-        raise ValueError("Missing, duplicated, unknown, or reordered output IDs")
+    values = completed_values(path, record, items)
     units = []
     for value in values:
         row = row_map[value["id"]]

@@ -1,0 +1,18 @@
+{
+  "packet_id": "6f12bebfe1512b3238e362c21ddb26c7f571e883ad1f0e6249832e25f220b458",
+  "task_name": "text_judge_main_063",
+  "agent_id": "/root/answer_property_matched_experiment/text_judge_main_063",
+  "missing_ids": [
+    "cb4a624bbbd6a62ce5b6"
+  ],
+  "original_count": 255,
+  "expected_count": 256,
+  "failure": "Exact ordered output IDs did not match roster. One omission; no duplicates, unknown IDs or changed relative order.",
+  "original_sha256": "cfac4d5997cbb4c46dd80779bcfd70152bf705219d9e0d97a8df8251518e15f2",
+  "original_record_sha256": "83715b7a85a551091a3cb88c2a1c35d87aad48a0d623f9888f59f2228f1bcafd",
+  "original_archive": "/home/thomasjiralerspong/.codex/research/answer-behavior-readout-20260907/annotation_codex/main/packets/6f12bebfe1512b3238e362c21ddb26c7f571e883ad1f0e6249832e25f220b458",
+  "remedy": "Same original judge supplies only the omitted item under unchanged answer-only rubric, in a separate immutable file. Original 255 judgments untouched.",
+  "review_status": "pending independent review",
+  "scientific_scope": "Transport completeness repair; no target/rubric/cohort/repetition/readout change; not a sixth rating or an IID draw.",
+  "observed_at": 1788870103.2150085
+}

@@ -63,6 +63,7 @@ def fixture(tmp_path, repeats=5, props=None):
                     "request": request,
                     "agent_id": f"/root/reader_{prop}_{d}",
                     "status": "complete",
+                    "completion_observed_unix_s": 1.0,
                     "fork_turns": "none",
                     "model_override": None,
                     "reasoning_effort_override": None,
@@ -152,6 +153,87 @@ def test_truncated_output_is_archived_and_fails_loudly(tmp_path):
     assert archived.read_bytes() == p.read_bytes()
     with pytest.raises(ValueError, match="Missing, duplicated"):
         m.aggregate(tmp_path, "pilot")
+    # Import resume must not silently skip a previously archived malformed output.
+    with pytest.raises(ValueError, match="Missing, duplicated"):
+        m.import_ledger(tmp_path, ledger, "pilot")
+
+
+def test_same_judge_omission_completion_preserves_original_and_rejects_tampering(tmp_path):
+    ledger, jobs = fixture(tmp_path, repeats=1, props=["persona"])
+    job = jobs[0]
+    source = Path(job["output_path"])
+    lines = source.read_text().splitlines()
+    source.write_text("\n".join(lines[:7] + lines[8:]) + "\n")
+    with pytest.raises(ValueError, match="Missing, duplicated"):
+        m.import_ledger(tmp_path, ledger, "pilot")
+    path = next(m.output_dir(tmp_path, "pilot").glob("packets/*/record.json")).parent
+    original_hashes = {n: m.file_hash(path / n) for n in ("record.json", "output.jsonl")}
+    packet = json.loads(Path(job["input_path"]).read_text())
+    m.dump(tmp_path / "missing.json", {"rubric": packet["rubric"], "items": packet["items"][7:8]})
+    m.dump(
+        tmp_path / "request.json",
+        {
+            "target": job["agent_id"],
+            "message": "Read only the missing item. Preserve previous judgments.",
+        },
+    )
+    (tmp_path / "extra.jsonl").write_text(lines[7] + "\n")
+    m.dump(
+        tmp_path / "event.json",
+        {
+            "agent_id": job["agent_id"],
+            "completion_observed_unix_s": 2.0,
+            "completion_evidence": "Test-only observed completion fixture",
+        },
+    )
+    rows = {r["id"]: r for r in m.load_rows(tmp_path, "pilot")}
+    result = m.import_supplement(
+        path,
+        tmp_path / "missing.json",
+        tmp_path / "request.json",
+        tmp_path / "extra.jsonl",
+        tmp_path / "event.json",
+        rows,
+    )
+    assert result["validated_annotations"] == 32 and result["supplemented_annotations"] == 1
+    assert {n: m.file_hash(path / n) for n in original_hashes} == original_hashes
+    m.import_ledger(tmp_path, ledger, "pilot")
+    _, units, manifest = m.collect(tmp_path, "pilot")
+    assert len(units) == 32 and len({v["agent_id"] for v in units}) == 1
+    assert any("supplement_output.jsonl" in p for p, _ in manifest["packet_files"])
+    repair_path = path / "supplement_record.json"
+    repair = json.loads(repair_path.read_text())
+    for key, changed in (
+        ("agent_id", "/root/different_judge"),
+        ("completion_observed_unix_s", 0.0),
+        ("original_record_sha256", "changed"),
+    ):
+        m.dump(repair_path, {**repair, key: changed})
+        with pytest.raises(ValueError, match="provenance"):
+            m.parse_packet(path, rows)
+    m.dump(repair_path, repair)
+    output_path = path / "supplement_output.jsonl"
+    output_path.write_text(lines[8] + "\n")
+    with pytest.raises(ValueError, match="changed"):
+        m.parse_packet(path, rows)
+    repair["file_hashes"]["supplement_output.jsonl"] = m.file_hash(output_path)
+    m.dump(repair_path, repair)
+    with pytest.raises(ValueError, match="exactly the omitted IDs"):
+        m.parse_packet(path, rows)
+
+
+def test_supplement_refuses_duplicate_or_complete_original(tmp_path):
+    path = tmp_path
+    record = {"row_ids": ["a", "b"]}
+    (path / "supplement_record.json").write_text("{}")
+    for values, message in (
+        ([{"id": "a"}, {"id": "a"}], "ordered strict subset"),
+        ([{"id": "b"}, {"id": "a"}], "ordered strict subset"),
+        ([{"id": "a"}, {"id": "b"}], "complete original"),
+    ):
+        (path / "output.jsonl").write_text("".join(json.dumps(v) + "\n" for v in values))
+        with pytest.raises(ValueError, match=message):
+            m.completed_values(path, record, [])
 
 
 def test_five_repeats_require_fresh_agent_contexts(tmp_path):
