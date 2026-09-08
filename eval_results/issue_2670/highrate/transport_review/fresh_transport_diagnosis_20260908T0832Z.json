@@ -1,0 +1,165 @@
+{
+  "actual_failed_request_proof": {
+    "attempt": 10,
+    "completed_submissions": 9,
+    "detached_completed_prefix_requests_passed": 9,
+    "epoch": 2,
+    "error_chain": [
+      "httpcore2.RemoteProtocolError: Server disconnected without sending a response.",
+      "httpx2.RemoteProtocolError: Server disconnected without sending a response.",
+      "openai.APIConnectionError: Connection error.",
+      "tenacity.RetryError: RetryError[<Future at 0x7af89a637ed0 state=finished raised APIConnectionError>]"
+    ],
+    "exact_input_sha256": "b7e637e906b25b8a7bcacddd5223fa3a73de54158dbaa3cc4e67cc7f0dc2109f",
+    "expected_config": {
+      "extra_body": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "repetition_penalty": 1.0,
+        "top_k": 20
+      },
+      "max_connections": 16,
+      "max_retries": 2,
+      "max_tokens": 65536,
+      "seed": 3738862221,
+      "temperature": 1.0,
+      "top_p": 1.0
+    },
+    "failed_event_hashes": [
+      "dbd017c5bed0372a22c354417f3e6492fc668827fa781c280bfc3a5676d078d0",
+      "9652381e0a517540920bec1b1101b6639a142bd0e7e978488435c23b7b4863ef",
+      "94f99b2de57cdac3140c623adaae1800e220f4eb0aaf3ce449c57ca727f869f5"
+    ],
+    "full_config_equal_across_three_errors": true,
+    "input_characters": 178179,
+    "limits": "No observed response, usage or completion for submission10; server execution is unknown.9 is prior completed submissions,3 is native failed transport calls.",
+    "messages": 19,
+    "native_sample_sha256": "2a6ffb8c3f78d73c7c60011abe5ac790d5f915753a71e61d5affb63c03123063",
+    "original_sample_unchanged": true,
+    "packages": {
+      "httpcore2": "2.12.0",
+      "httpx2": "2.12.0",
+      "inspect-ai": "0.3.261",
+      "openai": "3.7.0",
+      "tenacity": "9.1.4"
+    },
+    "request_seed": 3738862221,
+    "runtime_source_files_sha256": {
+      "/home/thomasjiralerspong/.cache/uv/archive-v0/8a0JVbQCP_kHdT0MhwYAr/lib/python3.11/site-packages/httpcore2/_async/http11.py": "9bc3a2b085778b170fbd22b6d0d61f884448a9d8301e448d1146f724ebb42b00",
+      "/home/thomasjiralerspong/.cache/uv/archive-v0/8a0JVbQCP_kHdT0MhwYAr/lib/python3.11/site-packages/httpx2/_transports/default.py": "8fc43a2882d471aff751366a7f28e91c5e31831a4b29aa3bb4e66931a2148e97",
+      "/home/thomasjiralerspong/.cache/uv/archive-v0/8a0JVbQCP_kHdT0MhwYAr/lib/python3.11/site-packages/inspect_ai/_util/retry.py": "8e5c686e9c975012b6930d20b9411fa9befa54c3f7deebd728d86c712c5d07c4",
+      "/home/thomasjiralerspong/.cache/uv/archive-v0/8a0JVbQCP_kHdT0MhwYAr/lib/python3.11/site-packages/inspect_ai/model/_model.py": "68bcfd266c21debd5edf3a00df2825f589eebda08317c2c9dda154a9d0e93b31",
+      "/home/thomasjiralerspong/.cache/uv/archive-v0/8a0JVbQCP_kHdT0MhwYAr/lib/python3.11/site-packages/openai/_base_client.py": "53dc8c82344056600a08f51df158956827bdcc1a15cd4d3e1ce905a22663bd4c"
+    },
+    "sample_id": "highrate_fresh:B:lcbhard_64:conflicting",
+    "terminal_transport_events": 3,
+    "traceback_sha256": "ef06ff4a44b666f9452644c5e0db5544aa4f88f8feb76b548dfbdf80339b40b0"
+  },
+  "current_verifier_results": {
+    "capacity": {
+      "accepted": false,
+      "reason": "Terminal event is not the recognized input-capacity rejection"
+    },
+    "collector_outcome": "censored for sample.error by unchanged outcome(); never failure",
+    "existing_postrun": "Routes any sample.error to capacity.rejected_request and therefore intentionally cannot settle this non400 transport error.",
+    "strict_requests": {
+      "accepted": false,
+      "reason": "This terminal receipt requires resolved native sample execution"
+    }
+  },
+  "independent_runtime_observations": {
+    "direct_pod_checked_unix": 1788855884.4233835,
+    "direct_pod_health_seconds": 0.003865674138069153,
+    "direct_pod_health_status": 200,
+    "direct_pod_models_seconds": 0.002598632127046585,
+    "direct_pod_models_status": 200,
+    "owner_reported_separate_observations": "Parent reported VM health15s timeout around08:23, direct pod200 at08:24:18, VM200 by08:26 without intervention; these are owner reports, not this reviewer's own probe.",
+    "server_log_bytes_at_read": 1353124,
+    "server_window": "08:21:06 through08:24:36 UTC: generation throughput remained positive; Running declined16-ish to2 then recovered, without a logged4xx/5xx in the examined recent window. This does not prove all request execution or exact connection fate.",
+    "tunnel_command": "ssh -N -o BatchMode=yes -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -L 127.0.0.1:26710:127.0.0.1:8000 pod-2670-highrate",
+    "tunnel_pid": 3276262,
+    "tunnel_rss_kib": 8256,
+    "tunnel_state": "S (sleeping)",
+    "tunnel_stderr_bytes": 180,
+    "tunnel_stderr_limit": "Three connection-refused lines have no timestamps, so cannot be attributed to this incident.",
+    "tunnel_stderr_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/tunnel_20260907T232922Z.log",
+    "tunnel_stderr_sha256": "8c68e95e7348f3a94d98a4baa6dff010c03bd6d058c3c9dca19e349c3c3ee7a3"
+  },
+  "limitations": [
+    "The failed tenth submission is unknown, and any derived scientific metrics remain conditional on observed completions.",
+    "No conclusion that no server generation occurred is supported. Only no received completion is established.",
+    "Exactly9 completed submissions and3 failed native transport events are observed; no extra lower-level SDK attempt count is inferred.",
+    "Snapshot191 is partial. Actual full360 native/report/process terminal proof and final independent review are still required."
+  ],
+  "preserved_v8_review_sha256": "f730cd6aa7673b43310b7b50f6c24c2c1570f97b40d36ae64058d2a885922e13",
+  "preserved_v8_sources_sha256": {
+    "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+    "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+    "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+    "eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md": "e743d726fde20defa03cffe2808b5d7bd7c0100db8911c161dc41d33529d2355",
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "scripts/context_risk_highrate_capacity.py": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+    "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+    "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+    "scripts/context_risk_highrate_postrun.py": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+    "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+    "tests/test_context_risk_highrate_postrun.py": "f653400a60e77a81d839715dc4ab0bce3c8f1454ae0cff551fcd1367a066cb80",
+    "tests/test_context_risk_highrate_postrun_integration.py": "199ae6a3b2ef230e9e37fe9ecc8647b717686d266f89798b3a642af3482d6657"
+  },
+  "recommended_new_facade_contract": {
+    "completed_prefix_validator": "Run unchanged census.requests on a detached deep view containing only completed submission histories/events, retaining all prior recovered errors. Never mutate/persist the synthetic view. Completed prefix submissions must all be unsuccessful ordinary categories, without max_tokens or intervention. For a failure on submission1, explicitly validate an empty prefix and exact initial input rather than inventing a completed request.",
+    "exports": [
+      "source_hashes",
+      "SCHEMA",
+      "TERMINAL_SCHEMA",
+      "validate_review",
+      "verify_report",
+      "validate_terminal_process",
+      "settle"
+    ],
+    "fresh_audit_path": "fresh_B/transport_postrun_audit.json",
+    "fresh_terminal_path": "fresh_B/terminal_process.json, previously unwritten; explicit new TERMINAL_SCHEMA and immutable output",
+    "mixed_capacity": "Use unchanged capacity validator and dual-file token proofs for actual400 censors; no token proof for transport unknowns. Include their exact byte hashes in whole-operation and terminal end guards.",
+    "module": "scripts.context_risk_highrate_transport",
+    "provenance": "Snapshot original, native, raw, launch/process/log/PID, old/new source/review and any token proof controls before reading; check chronology and clean ownership; recheck all bytes after semantic work and process inspection. Preserve original12physical+17V8 closure.",
+    "screen_route": "Delegate unchanged screen verification/terminal/selection evidence to old postrun. Never rebind, rewrite or reinterpret its completed settlement.",
+    "settlement_rules": "Require complete expected360 native sample keys and raw equality; recompute the original producer report/audit and exact exception list, preserve originalU/failed-report/nonzero-exit bytes, maintain all census counts unchanged, distinguish successful returns/max_tokens censors/existing capacity proofs/transport-exhausted unknowns. Original strict receipt is not converted to PASS.",
+    "source_closure": "Old17 V8 source bytes plus new transport module/test; old postrun.source_hashes and old review remain byte-identical. New independent review at setup/transport_postrun_code_review.json.",
+    "terminal_transport_validator": "Require the canonical observed RetryError Future wrapper and RemoteProtocolError/APIConnectionError cause chain, exactly3 consecutive terminal model-error events for max_retries2, identical full failed-event configs and exact reconstructed transcript/model/seed, chronological evidence, no invalidation, no observed output/usage/completion. Keep default empty-choice stop marker distinct from an actual completion.",
+    "test_mutations": [
+      "changed third retry seed/input/model/config",
+      "fewer/more terminal transport events",
+      "partial response/usage/completed timestamp or extra choices",
+      "wrong error wrapper or unmatched underlying cause",
+      "unrecovered retry in completed prefix",
+      "history/messaging/chronology mismatch",
+      "duplicate/missing/unknown native sample keys",
+      "arbitrary process nonzero exit or mismatched terminal error text",
+      "source/review/original/dual-token controls changing during validation",
+      "mixed capacity+transport and clean-screen immutable route",
+      "first-submission transport exhaustion with no invented prefix"
+    ]
+  },
+  "reviewed_utc": "2026-09-08T08:33:49.682189+00:00",
+  "reviewer": "/root/verify_vllm_runtime",
+  "root_cause_conclusion": "The exact observed failure is HTTP response-less RemoteProtocolError, translated into APIConnectionError and exhausted by Inspect/Tenacity. Physical component cause remains unresolved: native traceback cannot distinguish SSH channel/network failure, HTTP connection reuse/peer closure or API response-path behavior. Current pod health/generation and later VM recovery support a transient transport incident, not a proven model-capacity or persistent-server failure.",
+  "schema_version": "context_risk_highrate_fresh_transport_diagnosis_v1",
+  "scope": "Read-only native/transport and unchanged verifier diagnosis; no reroll, generation, stop, restart, environment or frozen-source mutation. The already started native snapshot is preserved as ZIP, never as a successful terminal .eval.",
+  "snapshot": {
+    "native_status": "started",
+    "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/review_snapshots/fresh_transport_started_191_samples_20260908T082604Z.zip",
+    "samples": 191,
+    "sha256": "bbf35377fdbe94a97b0262dac9a310cca3bf6776584e89085ea0d971396a2de0",
+    "size": 4259816,
+    "source": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/fresh_B/logs/2026-09-08T07-02-10-00-00_context-risk-followup-ten-submissions_3kAz589gj9bzDgYysGcnFi.eval",
+    "source_stable_during_copy": true,
+    "terminal": false
+  },
+  "verdict": "PASS_FOR_OBSERVED_FAILURE_DIAGNOSIS_ONLY"
+}

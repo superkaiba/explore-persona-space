@@ -30,6 +30,7 @@ from scripts import context_risk_highrate_capture as capture  # noqa: E402
 from scripts import context_risk_highrate_collect as collection  # noqa: E402
 from scripts import context_risk_highrate_design as design  # noqa: E402
 from scripts import context_risk_highrate_postrun as postrun  # noqa: E402
+from scripts import context_risk_highrate_transport as transport  # noqa: E402
 from scripts import verify_uploads  # noqa: E402
 
 POD = "pod-2670-highrate"
@@ -285,10 +286,13 @@ def run(root: Path, readback: Path, inventory_path: Path, output: Path, review_p
         report = read_json(consume(root / f"{phase}_B/run_result.json"))
         launch = read_json(consume(Path(report["launch_config_path"])))
         consume(Path(launch["config"]["review"]))
-        audit = postrun.verify_report(root, phase)
-        terminal = postrun.validate_terminal_process(root, phase)
+        audit = transport.verify_report(root, phase)
+        terminal = transport.validate_terminal_process(root, phase)
         if audit["schema_version"] == postrun.SCHEMA:
             consume(root / "setup/postrun_code_review.json")
+        if audit["schema_version"] == transport.SCHEMA:
+            consume(root / "setup/transport_postrun_code_review.json")
+        if audit["schema_version"] in {postrun.SCHEMA, transport.SCHEMA}:
             for path in audit["original_artifacts_sha256"]:
                 consume(Path(path))
         validations[phase] = {"native": audit, "process": terminal}

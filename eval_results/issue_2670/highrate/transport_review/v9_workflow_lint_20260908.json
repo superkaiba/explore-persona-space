@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "python",
+    "scripts/workflow_lint.py",
+    "--files",
+    "scripts/context_risk_highrate_capture.py",
+    "scripts/context_risk_highrate_analyze.py",
+    "scripts/context_risk_highrate_reconcile.py",
+    "scripts/context_risk_highrate_transport.py",
+    "tests/test_context_risk_highrate_capture.py",
+    "tests/test_context_risk_highrate_analyze.py",
+    "tests/test_context_risk_highrate_reconcile.py",
+    "tests/test_context_risk_highrate_transport.py",
+    "eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 9.591708660125732,
+  "log_sha256": "ecb7547b5f4afa606c9e15bf0a2126d5a341c56f7ed1c76799e13491cd2b7aa9",
+  "passed": true
+}

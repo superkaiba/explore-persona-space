@@ -180,7 +180,9 @@ def test_readback_rejects_wrong_snapshot_or_name_set(tmp_path, mutation):
         reconcile.open_readback(root, readback)
 
 
-def full_flow_fixture(tmp_path, monkeypatch, mutation=None):
+def full_flow_fixture(
+    tmp_path, monkeypatch, mutation=None, *, transport_derived=False, omit_transport_input=False
+):
     """Build explicit978-row/90-context fixtures; stub only existing semantic/reader seams.
 
     These are plumbing tests, never evidence of benchmark or model correctness. All
@@ -193,6 +195,7 @@ def full_flow_fixture(tmp_path, monkeypatch, mutation=None):
     monkeypatch.setattr(reconcile.archive, "RUN_ROOT", root)
     source_review = tmp_path / "external_design_review.json"
     write_json(source_review, {"fixture": True})
+    transport_control = tmp_path / "external_transport_control.json"
     audits, phase_inputs, logs = {}, {}, {}
     for phase, n_tasks, epochs in (("screen", 103, 2), ("fresh", 30, 4)):
         phase_dir = root / f"{phase}_B"
@@ -235,6 +238,23 @@ def full_flow_fixture(tmp_path, monkeypatch, mutation=None):
             "schema_version": "context_risk_highrate_native_audit_v1",
             "native_logs_sha256": {str(native_path): reconcile.archive.sha(native_path)},
         }
+        if phase == "fresh" and transport_derived:
+            write_json(transport_control, {"fixture": "external original transport evidence"})
+            audits[phase].update(
+                schema_version=reconcile.transport.SCHEMA,
+                original_artifacts_sha256={
+                    str(transport_control): reconcile.archive.sha(transport_control)
+                },
+            )
+            write_json(phase_dir / "transport_postrun_audit.json", audits[phase])
+            write_json(
+                root / "setup/transport_postrun_code_review.json",
+                {
+                    "verdict": "PASS",
+                    "reviewer": "explicit transport semantic boundary fixture",
+                    "sources_sha256": reconcile.transport.source_hashes(),
+                },
+            )
         launch = phase_dir / "launch_config.json"
         write_json(launch, {"config": {"review": str(source_review)}})
         write_json(phase_dir / "run_result.json", {"launch_config_path": str(launch)})
@@ -287,6 +307,8 @@ def full_flow_fixture(tmp_path, monkeypatch, mutation=None):
         {f"code/{name}": reconcile.design.PROJECT / name for name in reconcile.source_hashes()}
     )
     sources["external_design_review.json"] = source_review
+    if transport_derived and not omit_transport_input:
+        sources["external_transport_control.json"] = transport_control
     sources["pod/server/owned.log"] = pod_source
     remote = readback / reconcile.PREFIX
     files = {}
@@ -330,9 +352,9 @@ def full_flow_fixture(tmp_path, monkeypatch, mutation=None):
             owner, name, create_autospec(getattr(owner, name), side_effect=side_effect)
         )
 
-    boundary(reconcile.postrun, "verify_report", lambda root, phase: audits[phase])
+    boundary(reconcile.transport, "verify_report", lambda root, phase: audits[phase])
     boundary(
-        reconcile.postrun,
+        reconcile.transport,
         "validate_terminal_process",
         lambda root, phase: {"evidence_sha256": audits[phase]["native_logs_sha256"]},
     )
@@ -382,6 +404,29 @@ def test_full_run_body_with_disclosed_semantic_boundary_fixtures(tmp_path, monke
     }
     assert len(result["pod_files"]) == 1
     assert str(tmp_path / "external_design_review.json") in result["validated_input_sha256"]
+
+
+def test_transport_reconciliation_binds_external_originals_and_review(tmp_path, monkeypatch):
+    args = full_flow_fixture(tmp_path, monkeypatch, transport_derived=True)
+    result = reconcile.run(*args)
+    bound = result["validated_input_sha256"]
+    assert result["passed"] is True
+    assert str(tmp_path / "external_transport_control.json") in bound
+    assert str(args[0] / "setup/transport_postrun_code_review.json") in bound
+    assert str(args[0] / "fresh_B/transport_postrun_audit.json") in bound
+    assert {name: item["rows"] for name, item in result["indices"].items()} == {
+        "screen_B": 618,
+        "fresh_B": 360,
+        "capture": 90,
+    }
+
+
+def test_transport_reconciliation_rejects_unarchived_external_evidence(tmp_path, monkeypatch):
+    args = full_flow_fixture(
+        tmp_path, monkeypatch, transport_derived=True, omit_transport_input=True
+    )
+    with pytest.raises(ValueError, match="absent from the archive source mapping"):
+        reconcile.run(*args)
 
 
 @pytest.mark.parametrize(

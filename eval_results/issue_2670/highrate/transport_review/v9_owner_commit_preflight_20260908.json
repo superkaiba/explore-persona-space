@@ -1,0 +1,58 @@
+{
+  "checked_utc": "2026-09-08T09:35:17.750767+00:00",
+  "passed": true,
+  "reviews": {
+    "transport_postrun_code_review.json": {
+      "sha256": "3e77c7c69f1b7da8d58f963828621c307a39c38291eae0c45af87b7ccd448e66",
+      "source_count": 20,
+      "passed": true
+    },
+    "capture_transport_code_review.json": {
+      "sha256": "952e4a00ff83fcfbb429554711c60369fc40c1070faf6fb992cb3254c9198d0d",
+      "source_count": 32,
+      "passed": true
+    },
+    "analysis_transport_code_review.json": {
+      "sha256": "06b6ad922023db43e89ed3e550f4ae345383c090b8b9412b867a1940b0347b28",
+      "source_count": 41,
+      "passed": true
+    },
+    "reconciliation_transport_code_review.json": {
+      "sha256": "acf1fb770f8bd4a40a4a91deabd29545d19b0a744a111b8b3b32a6782273de4c",
+      "source_count": 40,
+      "passed": true
+    },
+    "capture_memory_transport_code_review.json": {
+      "sha256": "c04f70ceffc0c64e970cf6dcaa81de474ce639133677e60027bf82aece0d2be9",
+      "capture_source_count": 32,
+      "passed": true
+    }
+  },
+  "all12_physical_sources_unchanged": true,
+  "all17_v8_sources_unchanged": true,
+  "all7_completed_controls_unchanged": true,
+  "ruff": "All checks passed!\n",
+  "source_paths": [
+    "scripts/context_risk_highrate_transport.py",
+    "tests/test_context_risk_highrate_transport.py",
+    "scripts/context_risk_highrate_capture.py",
+    "scripts/context_risk_highrate_analyze.py",
+    "scripts/context_risk_highrate_reconcile.py",
+    "tests/test_context_risk_highrate_capture.py",
+    "tests/test_context_risk_highrate_analyze.py",
+    "tests/test_context_risk_highrate_reconcile.py",
+    "eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md"
+  ],
+  "source_sha256": {
+    "scripts/context_risk_highrate_transport.py": "a802793e7e0d78831f3b9518d828e8410eef6df9ffc0be5e4aceedb73f6ee97c",
+    "tests/test_context_risk_highrate_transport.py": "cb65dc7d3027aa56dae639ed1d198fd5d57b26b893b70802c55ac10440e9acbe",
+    "scripts/context_risk_highrate_capture.py": "5f1bc50e1b6b6bf07a5f8d1db588ccfb0aecd2ef2131fa5e08aad6cb7d9aea42",
+    "scripts/context_risk_highrate_analyze.py": "2e1613a072a12348171868cd06022766874877fe6ddac64a919df8c8d7790a7c",
+    "scripts/context_risk_highrate_reconcile.py": "210562eff0a67f5a38e120282e94978595c1e73f35744f557719fc3ba313681c",
+    "tests/test_context_risk_highrate_capture.py": "5d7187a5c3f1897d130ac65167320ab65acae569d30a2e4e1d905f1448d3b5d6",
+    "tests/test_context_risk_highrate_analyze.py": "f912c9d63f64420dfa7d308ce8312cd3a0c0458d2dcda013c4e322a7c8a7b277",
+    "tests/test_context_risk_highrate_reconcile.py": "6fe645d5936557847a3c49acaa075f6d915b3b07017f6eafc9c26c3ddc4c553b",
+    "eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md": "5935dd7792e3a86b9ffc96d57b9826a63e8496a6590a517df6a6340acbb57ad3"
+  },
+  "operator_check_correction": "The first read-only attempt resolved diagnostic basenames relative to run instead of setup and failed loudly before writing this receipt; corrected exact two-name resolution."
+}

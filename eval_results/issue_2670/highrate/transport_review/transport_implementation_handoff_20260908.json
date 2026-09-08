@@ -1,0 +1,105 @@
+{
+  "constants": {
+    "AUDIT_NAME": "transport_postrun_audit.json",
+    "REVIEW_PATH": "setup/transport_postrun_code_review.json",
+    "SCHEMA": "context_risk_highrate_transport_postrun_audit_v1",
+    "TERMINAL_SCHEMA": "context_risk_highrate_transport_postrun_terminal_v1"
+  },
+  "created_utc": "2026-09-08T09:22:33.685559+00:00",
+  "implementer": "/root/verify_vllm_runtime",
+  "interfaces": {
+    "audit_path": "(root: 'Path', phase: 'str') -> 'Path'",
+    "check_terminal_receipt": "(root: 'Path', phase: 'str', receipt: 'dict') -> 'dict'",
+    "exhausted_request": "(sample) -> 'tuple[dict, list[dict], list[dict]]'",
+    "extend_audit": "(root, phase, original, logs, not_before, prefix_lengths, base_url) -> 'dict'",
+    "recompute_report": "(root: 'Path', phase: 'str', *, base_url: 'str | None' = None, model: 'str' = 'openai-api/local/Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0', pilot: 'bool' = False) -> 'dict'",
+    "settle": "(root: 'Path', phase: 'str', launch_path: 'Path') -> 'dict'",
+    "source_hashes": "() -> 'dict'",
+    "validate_review": "(path: 'Path') -> 'dict'",
+    "validate_terminal_process": "(root: 'Path', phase: 'str') -> 'dict'",
+    "verify_report": "(root: 'Path', phase: 'str') -> 'dict'"
+  },
+  "no_model_tokenizer_gpu_or_generation_calls": true,
+  "preservation_checks": {
+    "immutable_completed_evidence_sha256": {
+      "n": 7,
+      "unchanged": true
+    },
+    "physical_sources_sha256": {
+      "n": 12,
+      "unchanged": true
+    },
+    "v8_postrun_sources_sha256": {
+      "n": 17,
+      "unchanged": true
+    }
+  },
+  "preservation_freeze_sha256": "e6ce3bb830cb5f5ca7538db31b047c49e4e9a847ff46959c4c14f980022927c6",
+  "remaining_actual_gates": [
+    "Independent source-bound code PASS and updated consumer reviews",
+    "Complete actual360 fresh native/raw report and exact owned drained exit",
+    "Only then run the reviewed derived settlement; preserve original failed receipts",
+    "Capture, raw archive reconciliation and analysis remain parent-owned subsequent stages"
+  ],
+  "runtime_packages": {
+    "httpcore2": "2.12.0",
+    "httpx2": "2.12.0",
+    "inspect-ai": "0.3.261",
+    "openai": "3.7.0",
+    "tenacity": "9.1.4"
+  },
+  "schema_version": "context_risk_highrate_transport_implementation_handoff_v1",
+  "software_validation": {
+    "actual_sample_proof": {
+      "completed_submissions": 9,
+      "failed_submission": 10,
+      "outcome": "unknown",
+      "request_seed": 3738862221,
+      "server_execution": "unknown",
+      "terminal_transport_events": 3
+    },
+    "actual_sample_sha256": "2a6ffb8c3f78d73c7c60011abe5ac790d5f915753a71e61d5affb63c03123063",
+    "actual_snapshot": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/review_snapshots/fresh_transport_started_191_samples_20260908T082604Z.zip",
+    "actual_snapshot_sha256": "bbf35377fdbe94a97b0262dac9a310cca3bf6776584e89085ea0d971396a2de0",
+    "elapsed_seconds": 281.51,
+    "external_fixture_boundaries": "Unchanged native reader/header validator, process listing and tokenizer HTTP boundaries are autospec fixtures; no generation endpoint or real process mutation. Actual191 native reader and exhausted_request execute independently.",
+    "full_body_fixture": "Real old screen settle/select/load_fresh bodies followed by360 typed fresh rows (358 success,1 capacity censor,1 transport censor), recompute->settle->verify_report->validate_terminal_process, unchanged originals, missing/duplicate/error/exit/source/chronology/token and competing-sidecar mutation cases.",
+    "ruff_check_passed": true,
+    "ruff_format_check_passed": true,
+    "test_command": "UV_NO_SYNC=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 uv run --with inspect-ai==0.3.261 --with openai==3.7.0 python -m pytest -q tests/test_context_risk_highrate_transport.py",
+    "test_exit_code": 0,
+    "test_log": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/transport_verifier_tests_final_20260908.log",
+    "test_log_sha256": "2e6d4422ad60e56bf48b34a9701de2c1116271b60e71d8e51c09a8afecbc24b1",
+    "tests_passed": 71,
+    "warnings": 4,
+    "warnings_scope": "Deliberately malformed typed payloads in rejection fixtures; all rejected",
+    "workflow_checks_ran": 40,
+    "workflow_lint_log": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/transport_workflow_lint_final_20260908.log",
+    "workflow_lint_log_sha256": "c8d4d07161b273cd7328a9081f424867aabb431049be920ffe62424f9401a42d",
+    "workflow_lint_passed": true,
+    "zero_completed_prefix": "Explicitly refused and tested; no untested shape accepted."
+  },
+  "sources_sha256": {
+    "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+    "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+    "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+    "eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md": "e743d726fde20defa03cffe2808b5d7bd7c0100db8911c161dc41d33529d2355",
+    "eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md": "5935dd7792e3a86b9ffc96d57b9826a63e8496a6590a517df6a6340acbb57ad3",
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "scripts/context_risk_highrate_capacity.py": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+    "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+    "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+    "scripts/context_risk_highrate_postrun.py": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+    "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+    "scripts/context_risk_highrate_transport.py": "a802793e7e0d78831f3b9518d828e8410eef6df9ffc0be5e4aceedb73f6ee97c",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+    "tests/test_context_risk_highrate_postrun.py": "f653400a60e77a81d839715dc4ab0bce3c8f1454ae0cff551fcd1367a066cb80",
+    "tests/test_context_risk_highrate_postrun_integration.py": "199ae6a3b2ef230e9e37fe9ecc8647b717686d266f89798b3a642af3482d6657",
+    "tests/test_context_risk_highrate_transport.py": "cb65dc7d3027aa56dae639ed1d198fd5d57b26b893b70802c55ac10440e9acbe"
+  },
+  "status": "software tests passed; independent code verdict remains critic-owned"
+}

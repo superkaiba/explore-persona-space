@@ -406,6 +406,138 @@ def test_portable_derived_semantics_fail_even_with_recomputed_file_hashes(rig, m
         capture._postrun_files(rig.root, selection, native)
 
 
+def transport_rig(rig, monkeypatch, *, mixed_capacity=False):
+    """Disclose native boundaries while exercising real cross-machine transport evidence."""
+    from scripts import context_risk_highrate_transport as transport
+
+    derived_rig(rig, monkeypatch, fresh_derived=False)
+    root = rig.root
+    if mixed_capacity:
+        # The fixture contains a second actual unknown context, not a count-only change.
+        context = next(
+            row
+            for row in rig.contexts
+            if row["task_id"] == "fixture_1" and row["condition"] == "oneoff"
+        )
+        context["failure"] -= 1
+        context["censored"] += 1
+    write(root / "fresh_B/run_result.json", {"passed": False, "verification_passed": False})
+    review = {
+        "verdict": "PASS",
+        "reviewer": "explicit transport consumer fixture",
+        "sources_sha256": transport.source_hashes(),
+    }
+    review_path = root / "setup/transport_postrun_code_review.json"
+    write(review_path, review)
+    native = {
+        **rig.native(root, "fresh"),
+        "schema_version": transport.SCHEMA,
+        "postrun_sources_sha256": transport.source_hashes(),
+        "postrun_review": review,
+        "postrun_review_sha256": capture.sha256(review_path),
+        "evidence_verification_passed": True,
+        "original_collector_verification_passed": False,
+        "original_validation_issues": [{"scope": "explicit transport fixture"}],
+        "transport_censors": [{"sample_id": "highrate_fresh:B:fixture_0:oneoff", "epoch": 1}],
+        "capacity_censors": (
+            [{"sample_id": "highrate_fresh:B:fixture_1:oneoff", "epoch": 1}]
+            if mixed_capacity
+            else []
+        ),
+        "capacity_token_files_sha256": {},
+    }
+    sidecar = root / "fresh_B/transport_postrun_audit.json"
+    write(sidecar, native)
+    native = {**native, "postrun_audit_sha256": capture.sha256(sidecar)}
+    terminal = {
+        "schema_version": transport.TERMINAL_SCHEMA,
+        "verification_passed": True,
+        "phase": "fresh",
+        "original_exit_code": 1,
+        "run_result_sha256": native["run_result_sha256"],
+        "postrun_audit_sha256": native["postrun_audit_sha256"],
+    }
+    write(root / "fresh_B/terminal_process.json", terminal)
+    monkeypatch.setattr(
+        transport, "verify_report", create_autospec(transport.verify_report, return_value=native)
+    )
+    monkeypatch.setattr(
+        transport,
+        "validate_terminal_process",
+        create_autospec(transport.validate_terminal_process, return_value=terminal),
+    )
+    return native, terminal
+
+
+@pytest.mark.parametrize("mixed_capacity", [False, True])
+def test_transport_and_mixed_censors_survive_portable_capture(
+    rig, tmp_path, monkeypatch, mixed_capacity
+):
+    native, _ = transport_rig(rig, monkeypatch, mixed_capacity=mixed_capacity)
+    original = (rig.root / "fresh_B/run_result.json").read_bytes()
+    prepared = prepare(rig)
+    assert {
+        "setup/postrun_code_review.json",
+        "screen_B/postrun_audit.json",
+        "setup/transport_postrun_code_review.json",
+        "fresh_B/transport_postrun_audit.json",
+    } <= set(prepared["stage_relative_paths"])
+    pod = tmp_path / "transport_pod"
+    for name in prepared["stage_relative_paths"]:
+        destination = pod / name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(rig.root / name, destination)
+    cfg = copy.deepcopy(rig.cfg)
+    cfg.root, cfg.output_dir = str(pod), str(pod / "capture")
+    cfg.manifest_path = str(pod / "manifests/fresh_B.jsonl")
+    captured = capture.run(cfg)
+    assert captured["fresh_evidence"]["generation_validation"] == native
+    assert captured["passed"] and len(captured["chunk_files_sha256"]) == 18
+    assert native["counts"]["censored"] == 1 + mixed_capacity
+    shutil.copytree(pod / "capture", rig.root / "capture")
+    assert capture.validate_binding(rig.root / "capture")["passed"]
+    assert (rig.root / "fresh_B/run_result.json").read_bytes() == original
+
+
+@pytest.mark.parametrize(
+    "fault", ["wrong_phase", "changed_review", "no_censors", "original_pass", "hidden_unknown"]
+)
+def test_portable_transport_corruption_rejected_with_fresh_outer_hash(rig, monkeypatch, fault):
+    transport_rig(rig, monkeypatch)
+    path = rig.root / "fresh_B/transport_postrun_audit.json"
+    value = json.loads(path.read_text())
+    if fault == "wrong_phase":
+        value["metadata"]["phase"] = "screen"
+    elif fault == "changed_review":
+        value["postrun_review"]["verdict"] = "REVISE"
+    elif fault == "no_censors":
+        value["transport_censors"] = []
+    elif fault == "original_pass":
+        value["original_collector_verification_passed"] = True
+    else:
+        value["counts"]["censored"] = 0
+        value["counts"]["failure"] += 1
+    write(path, value)
+    native = {**value, "postrun_audit_sha256": capture.sha256(path)}
+    selection = json.loads((rig.root / "selection.json").read_text())
+    with pytest.raises(ValueError):
+        capture._postrun_files(rig.root, selection, native)
+
+
+@pytest.mark.parametrize("fault", ["wrong_terminal_schema", "wrong_audit", "false_exit_zero"])
+def test_transport_terminal_binding_rejected_before_capture(rig, monkeypatch, fault):
+    _, terminal = transport_rig(rig, monkeypatch)
+    if fault == "wrong_terminal_schema":
+        terminal["schema_version"] = "unrecognized"
+    elif fault == "wrong_audit":
+        terminal["postrun_audit_sha256"] = "0" * 64
+    else:
+        terminal["original_exit_code"] = 0
+    write(rig.root / "fresh_B/terminal_process.json", terminal)
+    with pytest.raises(ValueError):
+        prepare(rig)
+
+
 def test_vm_prepare_pod_capture_and_vm_consume_with_valid_censor(rig):
     prepared = prepare(rig)
     assert set(rig.checks) == {"phase", "native", "terminal"}

@@ -1,0 +1,253 @@
+{
+  "all12_physical_sources_unchanged": true,
+  "all17_v8_sources_unchanged": true,
+  "ast_comparison": {
+    "baseline_commit": "61d7c5cb209e4ae09375ba4578c785419b255103",
+    "changed_functions": [
+      "validated_evidence"
+    ],
+    "unchanged_functions": [
+      "analyze_population",
+      "competence",
+      "load_inputs",
+      "main",
+      "make_bank",
+      "review",
+      "run",
+      "screening_features",
+      "source_hashes"
+    ]
+  },
+  "checks": [
+    "Only validated_evidence changes among analysis functions. Both native and terminal phase validators route through the explicit transport facade, while current capture binding and exact independent review of every fresh successful body remain mandatory.",
+    "AST comparison confirms feature construction, native success/failure/unknown denominators, full90 joins, structural-input filtering, frozen map/spec, grouped linear fitting, four regimes, controls, paired intervals, caches and claim logic are unchanged.",
+    "A transport censor stays unknown and reduces completed trials. Every fresh censor, including outside included complete cases, continues to block unconditional supported-benefit claims. The eight structurally nonassessable task77 impossible draws remain a separate unchanged blocker.",
+    "The updated validator-boundary fixture and the existing fitting/censor/support cases pass in the full source-bound139-case run. This is software validation; no scientific fit or activation capture was performed by the reviewer.",
+    "The 41-file source closure includes the new transport dependencies via capture. The explicit review override remains required; the historical configuration and prior reviews are preserved."
+  ],
+  "evidence_artifacts_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/highrate_transport_execution_runbook.md": "786f2696569faf5830798d86cd35336ce3f2b8ad64b9260b47ed43c7db72d0a4",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/transport_censor_plan_review.json": "c09f6e2cad22fa89e821830eee9141bfeb490a01d9a43aa1f6bbe2ae93ed88ee",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/v9_consumer_regressions_20260908.json": "2179b6c24504161c49d3d9a831173074173b9df185f006003af2fd8a980a5b41",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/v9_consumer_regressions_20260908.log": "45a9663afc05bbaa6446be91f3936f8920ff3fe264042f9d54d2926b7337affd",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/v9_workflow_lint_20260908.json": "0363cef218c968d15e9ca20ef2b69e9664a22bdbb20ffbea6362955541a8487c",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/v9_workflow_lint_20260908.log": "ecb7547b5f4afa606c9e15bf0a2126d5a341c56f7ed1c76799e13491cd2b7aa9"
+  },
+  "executed_evidence": {
+    "independent_current_import_closure": {
+      "module_count": 11,
+      "passed": true,
+      "sha256": {
+        "scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
+        "scripts/context_risk_highrate_capacity.py": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+        "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+        "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+        "scripts/context_risk_highrate_postrun.py": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+        "scripts/context_risk_highrate_transport.py": "a802793e7e0d78831f3b9518d828e8410eef6df9ffc0be5e4aceedb73f6ee97c",
+        "scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
+        "scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+        "scripts/context_risk_qwen38_impossible_capture.py": "d7f6aec322ce89249a6829b3298f7753cf8a33b9e7505bc7850b8c408a39122b",
+        "scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+        "src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79"
+      }
+    },
+    "owner_run_consumer_and_v8_regressions": {
+      "argv": [
+        "uv",
+        "run",
+        "--with",
+        "inspect-ai==0.3.261",
+        "--with",
+        "openai==3.7.0",
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_context_risk_highrate_capture.py",
+        "tests/test_context_risk_highrate_analyze.py",
+        "tests/test_context_risk_highrate_reconcile.py",
+        "tests/test_context_risk_highrate_postrun.py"
+      ],
+      "current_source_hashes_match_receipt": true,
+      "exit_code": 0,
+      "passed": 139,
+      "pytest_elapsed_seconds": 60.12,
+      "receipt": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/v9_consumer_regressions_20260908.json"
+    },
+    "owner_run_scoped_workflow_lint": {
+      "checks_ran": 40,
+      "exit_code": 0,
+      "files": 9,
+      "passed": true,
+      "receipt": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/v9_workflow_lint_20260908.json"
+    }
+  },
+  "independent_plan_review_sha256": "c09f6e2cad22fa89e821830eee9141bfeb490a01d9a43aa1f6bbe2ae93ed88ee",
+  "independent_transport_verifier_gate": {
+    "enforcement": "Transport validate_review is invoked by native revalidation and the portable transport sidecar validator; these consumer receipts do not replace its separately required independent review.",
+    "independently_reviewed_transport_implementation_by_this_reviewer": false,
+    "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/transport_postrun_code_review.json",
+    "required_sources_sha256": {
+      "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+      "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+      "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+      "eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md": "e743d726fde20defa03cffe2808b5d7bd7c0100db8911c161dc41d33529d2355",
+      "eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md": "5935dd7792e3a86b9ffc96d57b9826a63e8496a6590a517df6a6340acbb57ad3",
+      "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+      "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+      "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+      "scripts/context_risk_highrate_capacity.py": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+      "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+      "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+      "scripts/context_risk_highrate_postrun.py": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+      "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+      "scripts/context_risk_highrate_transport.py": "a802793e7e0d78831f3b9518d828e8410eef6df9ffc0be5e4aceedb73f6ee97c",
+      "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+      "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+      "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+      "tests/test_context_risk_highrate_postrun.py": "f653400a60e77a81d839715dc4ab0bce3c8f1454ae0cff551fcd1367a066cb80",
+      "tests/test_context_risk_highrate_postrun_integration.py": "199ae6a3b2ef230e9e37fe9ecc8647b717686d266f89798b3a642af3482d6657",
+      "tests/test_context_risk_highrate_transport.py": "cb65dc7d3027aa56dae639ed1d198fd5d57b26b893b70802c55ac10440e9acbe"
+    },
+    "required_verdict": "PASS",
+    "status_at_review": "Separate transport review was pending when this consumer review was written; execution remains gated on that current PASS."
+  },
+  "inherited_review_sha256": "dbb9a0ccc1cb4f1e0e9a7dbc34ea0398d660203f35ecfa2740e92b8eb815b658",
+  "markdown_sha256": "e68cabb96181f4dce93f4f7083371a58090206100310d7289b67277a18923868",
+  "no_delegation": true,
+  "no_generated_submission_execution": true,
+  "no_model_calls": true,
+  "no_process_changes": true,
+  "no_scientific_fits": true,
+  "no_source_edits": true,
+  "no_task_changes": true,
+  "no_uploads": true,
+  "package_versions": {
+    "inspect-ai": "0.3.261",
+    "numpy": "2.2.6",
+    "openai": "3.7.0",
+    "pytest": "9.0.2"
+  },
+  "physical_sources_sha256": {
+    "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+    "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+    "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+    "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+    "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c"
+  },
+  "plan_sha256": "5935dd7792e3a86b9ffc96d57b9826a63e8496a6590a517df6a6340acbb57ad3",
+  "remaining_actual_gates": [
+    "The independent transport implementation review must separately PASS on the current20-file closure before any new evidence settlement or consumer execution. This reviewer assessed consumer integration and the exposed contract, not the transport error parser implementation.",
+    "Actual complete360 native/owned-process settlement, every-success body review, portable preparation/source sync, exact token proofs, owned server drainage, live hardware checks, memory diagnostic and90 production captures remain execution gates.",
+    "Actual raw readback,618/360/90 reconciliation, complete stopped-pod file coverage, late evidence persistence and the managed teardown gate remain required. Scientific estimates and final archival still follow; software fixtures are not experimental observations.",
+    "Any source drift invalidates these source-bound reviews; preserve historical evidence and use the explicit new review paths."
+  ],
+  "resolved_findings": [
+    {
+      "current_runbook_sha256": "786f2696569faf5830798d86cd35336ce3f2b8ad64b9260b47ed43c7db72d0a4",
+      "resolution": "Now explicitly stages configured capture and memory review files in addition to every returned stage_relative_paths entry.",
+      "scope": "operator runbook staging wording"
+    }
+  ],
+  "reviewed_utc": "2026-09-08T09:22:02.843799+00:00",
+  "reviewer": "Independent Codex subagent /root/v9_consumer_critic; not the consumer amendment author",
+  "schema_version": "context_risk_highrate_analysis_transport_code_review_v1",
+  "scope": "Independent review of the v9 consumer integration and unchanged memory diagnostic contract only. Software/code PASS; separate transport-verifier implementation PASS remains required and mechanically enforced before execution.",
+  "source_changes_from_prior_review": {
+    "added": [
+      "eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md",
+      "scripts/context_risk_highrate_transport.py",
+      "tests/test_context_risk_highrate_transport.py"
+    ],
+    "changed": {
+      "scripts/context_risk_highrate_analyze.py": {
+        "new": "2e1613a072a12348171868cd06022766874877fe6ddac64a919df8c8d7790a7c",
+        "old": "a2fa80e0709a52f9117b303ffbe5e788a23d90058ca1bb6a5ca1f2d92cf04c4d"
+      },
+      "scripts/context_risk_highrate_capture.py": {
+        "new": "5f1bc50e1b6b6bf07a5f8d1db588ccfb0aecd2ef2131fa5e08aad6cb7d9aea42",
+        "old": "a148f96788d6e0d9a6d0727cdf54b5f7ad609886841e4f729171850154163d74"
+      },
+      "tests/test_context_risk_highrate_analyze.py": {
+        "new": "f912c9d63f64420dfa7d308ce8312cd3a0c0458d2dcda013c4e322a7c8a7b277",
+        "old": "a9c7c8fd8a11d3c27a1673a38f27f77f9ad14b3cd08b1165acaa1edbca6f9f44"
+      },
+      "tests/test_context_risk_highrate_capture.py": {
+        "new": "5d7187a5c3f1897d130ac65167320ab65acae569d30a2e4e1d905f1448d3b5d6",
+        "old": "9b6022d203c5ce8de6746295f4f131e814067b9730dd1a2890cf88d14f454d93"
+      }
+    }
+  },
+  "source_count": 41,
+  "sources_sha256": {
+    "configs/eval/context_risk_followup_capture.yaml": "cdbc76b49d639a61d349becf984aafd30ff5372ea88f6e92f89f2cac4cc25285",
+    "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+    "configs/eval/context_risk_highrate_analyze.yaml": "6ec33c994d584bdfa87646bd750d56df4383bbd87be00b469d15b1fb8d4ef5af",
+    "configs/eval/context_risk_highrate_capture.yaml": "7140a2fcc3e1ed38e4127a1c65d8dbb8ec3b40034713cffca8d15be177e80eec",
+    "configs/eval/context_risk_qwen38_impossible_capture.yaml": "7018d151ebf4534ad3ecfa4d88cb48c12b847e98bba46dce2e1ba3e8b0dc53aa",
+    "configs/eval/context_risk_qwen38_smoke.yaml": "d5ad816cb64e7da10d7e22bf79e4525e7d04f6d9df4808e678fd9d4cb9f5f352",
+    "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+    "eval_results/context_risk_highrate_design/input_validity_policy.json": "3dbd742508065512d6d1d8619afead1e3ef321ff5b454785c7f45e8e8a558f30",
+    "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+    "eval_results/context_risk_highrate_design/plan_v7_input_validity.md": "fab7b675089a58dea7c8376e3041eb35cd6f8812c276c3af52abee7ad256baf7",
+    "eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md": "e743d726fde20defa03cffe2808b5d7bd7c0100db8911c161dc41d33529d2355",
+    "eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md": "5935dd7792e3a86b9ffc96d57b9826a63e8496a6590a517df6a6340acbb57ad3",
+    "scripts/context_risk_analyze.py": "05e7d2fcac63e442cfb7b2b99df244c33340070e8326edaebb16361661025010",
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "scripts/context_risk_followup_analyze.py": "b00ba257966beaa6ae75f37ec35e4579ec8429a118b2db370c16e3f3d6c38b38",
+    "scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
+    "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+    "scripts/context_risk_followup_features.py": "3258ddf56332e99c90c14808b83206670b7693e9b2e6bbf82f6d116e6cfdd7d4",
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "scripts/context_risk_highrate_analyze.py": "2e1613a072a12348171868cd06022766874877fe6ddac64a919df8c8d7790a7c",
+    "scripts/context_risk_highrate_capacity.py": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+    "scripts/context_risk_highrate_capture.py": "5f1bc50e1b6b6bf07a5f8d1db588ccfb0aecd2ef2131fa5e08aad6cb7d9aea42",
+    "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+    "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+    "scripts/context_risk_highrate_postrun.py": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+    "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+    "scripts/context_risk_highrate_transport.py": "a802793e7e0d78831f3b9518d828e8410eef6df9ffc0be5e4aceedb73f6ee97c",
+    "scripts/context_risk_highrate_validity.py": "54db7bbf654d35ce93e8e1c241ad909a086b308bf2811a1804d68435f9418d8d",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+    "scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
+    "scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+    "scripts/context_risk_qwen38_impossible_capture.py": "d7f6aec322ce89249a6829b3298f7753cf8a33b9e7505bc7850b8c408a39122b",
+    "scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+    "src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79",
+    "tests/test_context_risk_highrate_analyze.py": "f912c9d63f64420dfa7d308ce8312cd3a0c0458d2dcda013c4e322a7c8a7b277",
+    "tests/test_context_risk_highrate_capture.py": "5d7187a5c3f1897d130ac65167320ab65acae569d30a2e4e1d905f1448d3b5d6",
+    "tests/test_context_risk_highrate_postrun.py": "f653400a60e77a81d839715dc4ab0bce3c8f1454ae0cff551fcd1367a066cb80",
+    "tests/test_context_risk_highrate_postrun_integration.py": "199ae6a3b2ef230e9e37fe9ecc8647b717686d266f89798b3a642af3482d6657",
+    "tests/test_context_risk_highrate_transport.py": "cb65dc7d3027aa56dae639ed1d198fd5d57b26b893b70802c55ac10440e9acbe"
+  },
+  "unresolved_findings": [],
+  "v8_postrun_sources_sha256": {
+    "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+    "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+    "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+    "eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md": "e743d726fde20defa03cffe2808b5d7bd7c0100db8911c161dc41d33529d2355",
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "scripts/context_risk_highrate_capacity.py": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+    "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+    "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+    "scripts/context_risk_highrate_postrun.py": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+    "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+    "tests/test_context_risk_highrate_postrun.py": "f653400a60e77a81d839715dc4ab0bce3c8f1454ae0cff551fcd1367a066cb80",
+    "tests/test_context_risk_highrate_postrun_integration.py": "199ae6a3b2ef230e9e37fe9ecc8647b717686d266f89798b3a642af3482d6657"
+  },
+  "verdict": "PASS"
+}

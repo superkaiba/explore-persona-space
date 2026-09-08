@@ -1,0 +1,117 @@
+{
+  "evidence_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/fresh_transport_diagnosis_20260908T0832Z.json": "98d5696ae852ba32e7d4f944f4e44f497c368cc070b5475fa8a8d2ee0d2c157b",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/postrun_code_review.json": "f730cd6aa7673b43310b7b50f6c24c2c1570f97b40d36ae64058d2a885922e13",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/review_snapshots/fresh_transport_started_191_samples_20260908T082604Z.json": "935c1ac627602b9b20cca183a00be016f056553575c7903000585b94900281ce",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/review_snapshots/fresh_transport_started_191_samples_20260908T082604Z.zip": "bbf35377fdbe94a97b0262dac9a310cca3bf6776584e89085ea0d971396a2de0",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/transport_censor_plan_review.json": "c09f6e2cad22fa89e821830eee9141bfeb490a01d9a43aa1f6bbe2ae93ed88ee",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/transport_critic_final_actual_probe.json": "70e176271346500f1952c086d9e95294354de27bb392bcc00cddb8b69537f73e",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/transport_implementation_handoff_20260908.json": "ab0436efcd38d3da579fe96335649eefe4389e84162c4eb1d62dc56c25709f03",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/transport_verifier_tests_final_20260908.log": "2e6d4422ad60e56bf48b34a9701de2c1116271b60e71d8e51c09a8afecbc24b1",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/v9_consumer_regressions_20260908.json": "2179b6c24504161c49d3d9a831173074173b9df185f006003af2fd8a980a5b41",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/v9_transport_preimplementation_freeze.json": "e6ce3bb830cb5f5ca7538db31b047c49e4e9a847ff46959c4c14f980022927c6",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/v9_workflow_lint_20260908.json": "0363cef218c968d15e9ca20ef2b69e9664a22bdbb20ffbea6362955541a8487c"
+  },
+  "findings_remaining": [],
+  "independence": "Reviewer did not implement or edit the transport verifier or its tests. Reviewer previously evaluated the plan and archived behavioral evidence; root and a separate critic own downstream consumer implementation/review.",
+  "operations_performed": "Read-only source/native/control inspection, CPU-only deep-copy evidence perturbations, reading source-bound fixture test results, and reviewer artifacts. No implementation edits, model/tokenizer/API/GPU calls, generated-code execution, rerolls, task mutation, process changes or uploads.",
+  "plan_sha256": "5935dd7792e3a86b9ffc96d57b9826a63e8496a6590a517df6a6340acbb57ad3",
+  "preservation": {
+    "completed_screen_selection_and_applicability_7_artifacts_unchanged": true,
+    "immutable_completed_evidence_sha256": {
+      "manifests/fresh_B.jsonl": "2385138de67af3472d5a07267f1c9776d46218368b7f7b9363bef360ed8d4b64",
+      "screen_B/postrun_audit.json": "c34b5f900b3a8e4d6da381764aaf929a54633d3489c4796e7416791e9cf81663",
+      "screen_B/success_review.json": "d7554bbfec28837cf2b262db997a2f0f8ccc8dc6bf89468b6ae857a8140bfdc5",
+      "screen_B/terminal_process.json": "4349743daaa4999cf40496240d13959ea8fbfe17342465174d65ad5afb173055",
+      "selection.json": "f1b61e791e0821238371bdb5f2d3515f830ba21c639b4defa1e01ab1e512925d",
+      "setup/postrun_code_review.json": "f730cd6aa7673b43310b7b50f6c24c2c1570f97b40d36ae64058d2a885922e13",
+      "setup/pre_fresh_input_applicability.json": "b15ea42c3c8428c7028af85045eb0e8d018c06df9b446771c35fa3f49bb28857"
+    },
+    "original_v8_review_valid": true,
+    "physical_12_sources_unchanged": true,
+    "v8_17_sources_unchanged": true
+  },
+  "remaining_live_gates": [
+    "Require actual all360 terminal native observations, exact original failed audit reproduction, only recognized proven errors, and drained owned-process exit1 with exact frozen verification exception before deriving final receipts.",
+    "Require the separate current capture/analysis/reconciliation and memory source-bound reviews and preserve original plus derived evidence through exact archive readback.",
+    "Require final independent all-success body review and exact90 capture coverage; retain structural task77 nonassessability and all censors for the unchanged analysis/claim gates.",
+    "Finish the frozen analyses and report conditional limitations; this code review supplies no predictive or mapping-benefit result."
+  ],
+  "resolved_findings": [
+    "Replaced terminal config subset checks with exact full GenerateConfig controls, including raw attribute and canonical JSON digests to reject Boolean/numeric aliases and nested extra_body changes.",
+    "Bound every complete serialized request input to the native transcript and forbidden metadata/tool controls; detached validation retains the full unsuccessful prefix.",
+    "Required unique model-event UUIDs and chronological ordering within sample and terminal invocation bounds, including prior completion before subsequent events.",
+    "Bound top-level sample.output exactly to the final observed completed-prefix output; no hidden later output, usage, response, or finished-loop record is accepted.",
+    "Required the exact six interrupted agentic-record keys, current harness version/fingerprint, integer ten-attempt budget, false intervention/censored flags, and a nonempty unsuccessful prefix.",
+    "Made all public verification/settlement dispatch unambiguous; direct recompute refuses any V8 fresh sidecar before and after validation, and readback/terminal checks reject late competing evidence.",
+    "Preserved exact original audit/raw/count/source/launch/selection evidence and original exit1; capacity token controls and all original artifacts remain guarded through terminal validation."
+  ],
+  "review_scope": "Independent critical review of the new transport verifier and its tests. This is code approval, not approval of the still-live fresh cohort or a scientific result.",
+  "reviewed_utc": "2026-09-08T09:24:46.079518+00:00",
+  "reviewer": "/root/published_task_rates",
+  "schema_version": "context_risk_highrate_transport_independent_code_review_v1",
+  "scientific_interpretation": "Three response-less terminal delivery attempts correspond to one interrupted submission10 and one unknown trajectory, following nine observed unsuccessful submissions. They do not prove no server computation and cannot be imputed as a negative. No roster, task selection, seeds, retry budget, physical runtime, capture recipe, mapping, feature, fitting or claim thresholds are changed.",
+  "sources_sha256": {
+    "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+    "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+    "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+    "eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md": "e743d726fde20defa03cffe2808b5d7bd7c0100db8911c161dc41d33529d2355",
+    "eval_results/context_risk_highrate_design/plan_v9_transport_censor_verification.md": "5935dd7792e3a86b9ffc96d57b9826a63e8496a6590a517df6a6340acbb57ad3",
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "scripts/context_risk_highrate_capacity.py": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+    "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+    "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+    "scripts/context_risk_highrate_postrun.py": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+    "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+    "scripts/context_risk_highrate_transport.py": "a802793e7e0d78831f3b9518d828e8410eef6df9ffc0be5e4aceedb73f6ee97c",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+    "tests/test_context_risk_highrate_postrun.py": "f653400a60e77a81d839715dc4ab0bce3c8f1454ae0cff551fcd1367a066cb80",
+    "tests/test_context_risk_highrate_postrun_integration.py": "199ae6a3b2ef230e9e37fe9ecc8647b717686d266f89798b3a642af3482d6657",
+    "tests/test_context_risk_highrate_transport.py": "cb65dc7d3027aa56dae639ed1d198fd5d57b26b893b70802c55ac10440e9acbe"
+  },
+  "validation": {
+    "fixture_scope": "Real new parser/audit/recompute/settle/readback/dispatch/process-validation bodies execute on a complete typed360 fresh cohort after unchanged screen freeze/settle/select. Native serialization/header validation, tokenizer HTTP, clock and process-list boundaries are explicit fixtures. Actual archived191 native failure is separately attachment-resolved and exercised without network or generation.",
+    "implementation_final_suite": {
+      "executor": "/root/verify_vllm_runtime; reviewer inspected final output and source-bound exit/preservation handoff",
+      "failed": 0,
+      "handoff_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/transport_implementation_handoff_20260908.json",
+      "handoff_sha256": "ab0436efcd38d3da579fe96335649eefe4389e84162c4eb1d62dc56c25709f03",
+      "log_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/transport_verifier_tests_final_20260908.log",
+      "log_sha256": "2e6d4422ad60e56bf48b34a9701de2c1116271b60e71d8e51c09a8afecbc24b1",
+      "passed": 71,
+      "seconds": 281.51,
+      "skipped": 0,
+      "warning_scope": "Intentional invalid Pydantic fixture values for hidden call/logprobs/stop_details/invalidation corruption tests.",
+      "warnings": 4
+    },
+    "independent_actual_probe": {
+      "completed_prefix_requests": 9,
+      "immutable_original_sample": true,
+      "logical_unknown_outcomes": 1,
+      "mutations_rejected": 13,
+      "native_sample_sha256": "2a6ffb8c3f78d73c7c60011abe5ac790d5f915753a71e61d5affb63c03123063",
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/transport_critic_final_actual_probe.json",
+      "sha256": "70e176271346500f1952c086d9e95294354de27bb392bcc00cddb8b69537f73e",
+      "source_closure_before_after_equal": true,
+      "terminal_delivery_failures": 3
+    },
+    "integration_guards": "Mixed capacity+transport unknowns; exact360 roster/90 contexts; missing/duplicate/unknown errors; original raw/report preservation; source/review/controls; arbitrary exit/footer and chronology; late capacity-token mutation; competing V8 sidecars at recompute, verify and terminal boundaries; unchanged screen and strict/capacity-only delegation.",
+    "root_consumer_and_v8_regression_receipt": {
+      "failed": 0,
+      "passed": 139,
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/v9_consumer_regressions_20260908.json",
+      "sha256": "2179b6c24504161c49d3d9a831173074173b9df185f006003af2fd8a980a5b41",
+      "source_closure_rechecked": true
+    },
+    "root_workflow_receipt": {
+      "checks_passed": 40,
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/v9_workflow_lint_20260908.json",
+      "sha256": "0363cef218c968d15e9ca20ef2b69e9664a22bdbb20ffbea6362955541a8487c"
+    }
+  },
+  "verdict": "PASS"
+}
