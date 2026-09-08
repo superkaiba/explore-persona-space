@@ -1,0 +1,108 @@
+{
+  "actual_upload_or_download_performed": false,
+  "approved_destination": {
+    "filecount_overflow_fallback": "must be disabled with EPM_HF_FILECOUNT_FALLBACK=0",
+    "phases": [
+      "pilot",
+      "raw",
+      "final"
+    ],
+    "prefix": "context_risk/issue2670_highrate",
+    "repo_id": "superkaiba1/explore-persona-space-data",
+    "run_root": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate"
+  },
+  "auxiliary_reviewed_sources_sha256": {
+    "scripts/context_risk_highrate_capture.py": "d4b558eafdcedad4c29dca4aae432d0641d7f434300e4ee2e93343fa44a5a763",
+    "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+    "scripts/pod.py": "ccbff0eb1e95de5cd45ad678c3eb109ad45b888badf04dd1db9c51be663a282c",
+    "scripts/pod_lifecycle.py": "4ffab8ffe5ad8081795dfc48ce2d8aa8be7065737da3b7ca6937982d465ce066",
+    "scripts/verify_uploads.py": "3991c7f464602766d26b5c38b2b42905e92b7f40e918cb72776b59b7e3d34ee9",
+    "src/explore_persona_space/atomic_io.py": "901afca6f7b89626ab228237e40162fc9af9b98472d9d0fd70485b3c9c428350"
+  },
+  "executed_evidence": [
+    {
+      "check": "Inherited sharder Unicode/newline and size-boundary fixtures",
+      "result": "100 LF-terminated rows with raw U+0085/U+2028/U+2029,10,002,500 bytes, became two shards and reconstructed exactly. CRLF version normalized100 bytes, demonstrating why the wrapper CR guard is required. A9,600,012-byte record was rejected before HfApi construction/upload. A9,100,012-byte shard demonstrated the old target-size gap, which the new wrapper rejects."
+    },
+    {
+      "check": "Real copied pilot snapshot parsing and reconstruction",
+      "native_eval_sha256": "f2bcd7f29224758290e554a769813577cc0e99549fd1dddc088d44e745a8f57d",
+      "pilot_max_row_bytes": 954567,
+      "pilot_rollouts_bytes": 10742823,
+      "pilot_rollouts_sha256": "0e17b00c7fc50649b8e52e087a60d0ce1fe5eb98c953f4e6b92647d5c2866c92",
+      "result": "101 originals plus the snapshot manifest; original bytes133,714,925 and complete snapshot133,750,510. All101 originals checked in1.899s:47 JSON,3 JSONL,1 native eval,1 NPZ and49 exact-byte files. JSONL rosters309/309/32; full native log32 unique samples; real map weight[5120,5120] and three[5120] vectors loaded finite. Oversized pilot_rollouts reconstructed exactly; immutable source files remained unchanged.",
+      "snapshot_sha256": "f0d1cff19b81f87c3ef428cb8de11a422f1ed80a8987b63389dba101da906354"
+    },
+    {
+      "check": "Fourteen local rejection/compatibility cases",
+      "result": "Wrong root, wrong direct-call phase, overlapping trees, unlisted stage file, stage symlink, existing readback, raw CR JSONL, changed bytes, malformed JSON, nonfinite NPZ, >9.5MB record, >=9MB generated shard and oversized text all rejected. Generic row-counter Unicode splitlines incompatibility independently reproduced. No remote function was reached."
+    },
+    {
+      "check": "Final packaging-only source changes",
+      "result": "After final sys.path guard and Inspect waiver, direct --help exited0 and actual copied pilot run() passed all local validation/sharding steps through the overridden highrate upload boundary. upload itself was replaced by an explicit exception sentinel, so no remote request occurred. All originals remained unchanged."
+    }
+  ],
+  "findings_resolved": [
+    "The wrapper calls only corrected_finish.upload with explicit highrate ROOT and HF_PREFIX. It never calls old main/finish/upload_bounded or old pod functions; upload_bounded would spawn a subprocess that restores old hardcoded globals.",
+    "Run and direct-call phase are pinned. Run/stage/readback trees must be disjoint; staging symlinks and every undeclared file are rejected. A fresh readback directory and a pristine working stage are required.",
+    "The immutable snapshot declares every original file by relative path, byte size and SHA256. Original bytes are checked before typed parsing; large JSONL sharding must reconstruct exactly and each generated shard must remain below9MB.",
+    "Raw CR JSONL and oversized nonbinary non-JSONL text are rejected; neither newline normalization, oversized-record LFS fallback nor silent text gzip is accepted.",
+    "Corrected upload performs a retried prefix-scoped listing at a pinned revision and verifies the exact filename set, sizes, local SHA256 stability and either remote LFS SHA256 or Git blob SHA1. Canonical destination mismatch fails loudly.",
+    "Readback uses canonical stage_hub_prefix at the receipt revision with six workers and verifies every downloaded file. JSONL consumption uses canonical manifest-first stage_sharded_text at the same revision, then checks reconstructed original SHA before parsing.",
+    "The wrapper source/helper closure and snapshot manifest are checked again before final PASS; the receipt records exact source hashes and package versions. Actual imported helper paths matched reviewed file bytes independently."
+  ],
+  "minimal_safe_recipe": [
+    "Freeze a completed-phase snapshot from validated native/process/success evidence, preserving all original relative paths and source SHA256. Keep the immutable snapshot and create a separate pristine working copy; prepare_shards adds derived files. Use distinct pilot/raw/final prefixes without changing an already receipted phase inventory.",
+    "Launch the new highrate archive wrapper as a managed transfer worker from the reviewed worktree, in the pinned Inspect0.3.261/OpenAI3.7.0 UV runtime with thread caps8, EPM_HF_FILECOUNT_FALLBACK=0 and a measured byte/file-count-based whole-process deadline. Record start, PID/process group, flushed progress, exit and readback receipt. Set a bounded stage timeout; include legitimate per-file retry exposure in the enclosing deadline.",
+    "Pass only the fixed highrate RUN, pristine working-stage path, a nonexistent disjoint readback path and phase pilot/raw/final. The wrapper handles upload, exact pinned API verification and canonical readback. The staged source mirror is readback/<full repo-relative prefix>; reconstructed JSONL is under readback/reconstructed/<snapshot-relative path>.",
+    "Before the raw GPU-release milestone, archive actual full screening and fresh native logs/rollouts, all prefix token IDs, manifests/selection/rank-proof, source/config/reviews, model/tokenizer/runtime/process provenance, six capture NPZ/rows/sentinel shards and full capture bindings, and the exact frozen map/input provenance. Keep every failed/censored observation and every resumed pilot record, counting each planned sample/epoch once.",
+    "Reconcile actual downloaded screening/fresh full-key sets to618/360 and capture row keys to90; use current native and capture semantic validators in addition to the generic archive parser. A count echoed from a producer report is insufficient. Original native logs may overlap through resume; do not sum per-log sample totals.",
+    "After pod work is complete and writers are stopped with receipts, obtain a fresh recursive pod out-root name/size/SHA inventory including top-level files. Copy it completely, compare exact relative names/bytes and map each to its verified narrow raw archive prefix. Run the managed residue check and retain the stronger exact-path census. Commit late upload/readback/sweep receipts under an issue2670-scoped git component and verify their blobs; avoid the self-uploading-marker loop.",
+    "Only after real archive/readback, exact row reconciliation and residue checks pass may the owning root session post the truthful pod-bound upload-verification note carrying pod=pod-2670-highrate, its own launch owner token, outroot=swept-clean or residue-committed, and rows=reconciled. Use only managed pod.py terminate --issue 2670 --name-suffix highrate --yes. Later VM fits and final report need their separate final archive milestone."
+  ],
+  "package_versions": {
+    "huggingface-hub": "0.36.2",
+    "inspect-ai": "0.3.261",
+    "numpy": "2.2.6"
+  },
+  "policy_git_blobs": {
+    ".claude/rules/artifact-reuse.md": "8db1a0d954b005dca98a68fe964938cfee945dee",
+    ".claude/rules/gotchas.md": "9fa6fe059b2c13a24620a3c70e302e536d018656",
+    ".claude/rules/pods.md": "ce5e7ea6bf5c3c2276bbe10be50f4e6e2e358efd",
+    ".claude/rules/upload-policy.md": "63921c8a71b59ab86cac254e3e4bbc55f6a4a486",
+    "CLAUDE.md": "784d77e7176d9a9b20a3cb2ed707b9c6db8f6dac"
+  },
+  "remaining_limits_and_gates": [
+    "No upload/download/API verification has run in this review. Real canonical prefix readback, measured transfer timing, process exit and complete receipts remain necessary before any archive claim.",
+    "The native parser intentionally accepts only completed nonempty successful Inspect logs. A future failed/interrupted log must remain preserved and use an explicitly reviewed crash-persistence route; never omit it or relabel its status to pass this wrapper.",
+    "The generic archive parser checks finite NPZ arrays and unique per-log native identities, but does not replace exact behavioral/source/roster/censor or layer44/[15,1,5120]/90-context capture validation.",
+    "verify_uploads._count_row_index_file still uses text.splitlines(), which splits raw Unicode separators inside JSON strings. Parse originals using file iteration and use a source-hash-bound ASCII identity-only census or an independently reviewed LF-only row counter. Default row_index*.jsonl does not select rollouts.jsonl or chunk_*.rows.jsonl; generation and capture need their own actual key fields and matched globs.",
+    "check_outroot_residue uses basename matching and does not resolve a shard manifest to its original JSONL source name. Keep its pod scope narrow and retain exact reconstructed-original proof for VM files. If a pod artifact is sharded, resolve that explicit verifier seam before asserting its mechanical residue sweep passed; do not silently exempt the source.",
+    "The git residue arm recognizes issue2670-style path components, not context_risk_highrate_design by itself. Put late git-durable receipts in an issue-scoped path, such as eval_results/issue_2670/highrate, with byte-equal copies.",
+    "Reuse after a partial transfer requires a pristine working-stage copy and a new readback path; an existing upload receipt accepts only identical content. No deletion, overflow reroute, old-pod call or scope expansion is authorized by this review."
+  ],
+  "reviewed_utc": "2026-09-08T00:48:45.855826+00:00",
+  "reviewer": "Independent Codex subagent /root/verify_vllm_runtime; not the archive wrapper author",
+  "schema_version": "context_risk_highrate_archive_readiness_independent_review_v1",
+  "scope": "Software reuse and archive readiness review of the completed-phase highrate wrapper and its corrected_finish.upload call path. No remote archive has been verified by this review and this is not teardown authorization.",
+  "sources_sha256": {
+    "scripts/context_risk_corrected_finish.py": "8aeaddec362b9bbf277c707b7532d17948811f1bdf09b9c0a45f598c7eca466e",
+    "scripts/context_risk_highrate_archive.py": "e85dcec18b2df4c4678fc33c5e5d7b93a6c555bf21e1f6c8679c8c3ead6d7104",
+    "scripts/issue2054_phase_a.py": "69573ff5fc81ad398f35ccf9e656d5fceb7e2696e4b6b35a1db80a166ceb7016",
+    "src/explore_persona_space/orchestrate/env.py": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759",
+    "src/explore_persona_space/orchestrate/hub.py": "6590d4c01d396f935da018d16673e3d21f93843126b5e12a42be8e6e0419351e"
+  },
+  "teardown_ready": false,
+  "unresolved_wrapper_findings": [],
+  "verdict": "PASS",
+  "workflow_fix_candidates": [
+    {
+      "gap": "Unicode JSONL separators are incorrectly treated as record boundaries by str.splitlines; use LF-delimited parsing with a regression.",
+      "surface": "scripts/verify_uploads.py::_count_row_index_file"
+    },
+    {
+      "gap": "Manifest-sharded text has a durable consumable source identity but the basename-only sweep cannot resolve it; add manifest-first source-name/part-hash verification rather than exceptions.",
+      "surface": "scripts/verify_uploads.py::_hf_prefix_basenames / check_outroot_residue"
+    }
+  ]
+}
