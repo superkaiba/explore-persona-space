@@ -1030,6 +1030,215 @@ def phase_gen_finalize(args: argparse.Namespace, out_root: Path, ckpts: list[str
         designed_halt(out_root, "survival_gate_a_prime", halt_payload)
 
 
+# ── K=5 answer-target draws (follow-up: fig:posttraining remake) ─────────────
+# Four extra full-single-corpus generation draws (seeds C.K5_SEEDS) + a
+# 7-cell teacher-forced capture at K5_LAYERS: diagonal m/m for m in ckpts
+# plus the base-representation row B/s (answers of every source captured by
+# the B checkpoint). Everything reuses the P2/P3 bodies verbatim — same
+# render / span / pooling functions, same arguments; only the unit lists,
+# rollout filenames, and store subdirs are new.
+
+K5_LAYERS: tuple[int, ...] = (18, 31)
+
+
+def _k5_rollout_path(out_root: Path, corpus: str, ckpt: str, seed: int) -> Path:
+    """K=5 draw rollout JSONL — `k5` sibling of ``_gen_rollout_path`` (distinct
+    stem so the reliability ``_rel_seed`` namespace can never collide)."""
+    return out_root / "gen" / corpus / f"{ckpt}_k5_seed{seed}.jsonl"
+
+
+def k5_gen_unit_name(corpus: str, ckpt: str, seed: int) -> str:
+    return f"genk5_{corpus}_{ckpt}_seed{seed}"
+
+
+def k5_gen_units(
+    rows: list[dict], seeds: list[int] | None = None
+) -> list[tuple[str, list[dict], int]]:
+    """Gen-k5 unit list: (single, ALL intersection single rows, seed) per seed."""
+    seeds = list(C.K5_SEEDS) if seeds is None else list(seeds)
+    unknown = [s for s in seeds if s not in C.K5_SEEDS]
+    if unknown:
+        raise ValueError(f"seeds {unknown} are not K5 seeds {C.K5_SEEDS}")
+    return [(C.CORPUS_SINGLE, rows, s) for s in seeds]
+
+
+def _k5_single_rows(args: argparse.Namespace, out_root: Path) -> list[dict]:
+    """Single-corpus rows restricted to the P2 intersection manifest ids —
+    the paper figure's row set (decision record: full single-turn corpus)."""
+    manifest = _read_json(out_root / "gen" / "intersection_manifest.json")
+    ids = set(manifest["corpora"][C.CORPUS_SINGLE]["ids"])
+    rows = load_corpus(Path(args.corpus_dir), C.CORPUS_SINGLE, smoke=args.smoke)
+    kept = [r for r in rows if r["id"] in ids]
+    if not kept:
+        raise RuntimeError(
+            "k5: intersection restriction is EMPTY — the staged corpus and the "
+            "intersection manifest disagree (wrong out-root / corpus-dir?)"
+        )
+    return kept
+
+
+def phase_k5_init(args: argparse.Namespace, out_root: Path) -> None:
+    """One-time k5 bootstrap on a FRESH out-root (foreground, pre-shard):
+
+    - revision pins: reuse the BINDING P1 pins from the committed
+      ``eval_results/issue_1902/revision_pins.json`` (production). Under the
+      tiny-real smoke model remap (MODEL_IDS -> local dir) the committed HF
+      shas are meaningless for a local-dir load, so pins resolve through
+      ``ensure_pins`` (content-addressed ``local:`` pins) instead — the same
+      env-gated substitution axis as the remap itself, not a code-path fork.
+    - intersection manifest: staged from the run's HF eval mirror
+      (``EVAL_MIRROR_HF_PATH`` — the _smoke prefix under --smoke).
+    """
+    path = pins_path(out_root)
+    if path.exists():
+        load_pins(out_root)
+        logger.info("[k5-init] existing revision pins kept at %s", path)
+    elif Path(C.MODEL_IDS["B"]).is_dir():
+        ensure_pins(out_root)
+    else:
+        committed = PROJECT_ROOT / "eval_results" / "issue_1902" / "revision_pins.json"
+        if not committed.exists():
+            raise FileNotFoundError(
+                f"committed P1 revision pins missing at {committed} — pins are "
+                "BINDING (plan §10); refusing to re-resolve current main shas"
+            )
+        pins = C.revision_pins_from_report({C.REVISION_PINS_KEY: _read_json(committed)})
+        _write_json_atomic(path, pins)
+        logger.info("[k5-init] P1 pins copied from %s", committed)
+
+    mpath = out_root / "gen" / "intersection_manifest.json"
+    if mpath.exists():
+        logger.info("[k5-init] intersection manifest already local at %s", mpath)
+    else:
+        from huggingface_hub import hf_hub_download
+
+        from explore_persona_space.orchestrate import hub
+
+        repo_path = f"{C.EVAL_MIRROR_HF_PATH}/gen/intersection_manifest.json"
+        local = hub.retry_transient(
+            lambda: hf_hub_download(
+                repo_id=C.HF_DATA_REPO,
+                filename=repo_path,
+                repo_type="dataset",
+                token=os.environ.get("HF_TOKEN"),
+            ),
+            what=f"hf_hub_download {repo_path}",
+        )
+        mpath.parent.mkdir(parents=True, exist_ok=True)
+        mpath.write_bytes(Path(local).read_bytes())
+        logger.info("[k5-init] intersection manifest staged from hf:%s", repo_path)
+    n = len(_read_json(mpath)["corpora"][C.CORPUS_SINGLE]["ids"])
+    print(f"[phase=gen-k5-init] pins ready, manifest single ids={n}", flush=True)
+
+
+def phase_gen_k5_ckpt(args: argparse.Namespace, out_root: Path) -> None:
+    """Gen-k5 shard leg: FOUR extra single-corpus draws (seeds C.K5_SEEDS) for
+    ONE checkpoint — P2 protocol verbatim (native per-checkpoint render, #779
+    sampling, SamplingParams seed = the draw seed), rollout text persisted +
+    uploaded (non-LFS) BEFORE any capture."""
+    ckpt = args.ckpt
+    pins = load_pins(out_root)
+    revision = C.resolve_revision(ckpt, pins)
+    model_id = C.MODEL_IDS[ckpt]
+    rows = _k5_single_rows(args, out_root)
+    seeds = [int(s) for s in args.k5_seeds.split(",")] if args.k5_seeds else None
+    units = k5_gen_units(rows, seeds)
+    regimes = {
+        k5_gen_unit_name(corpus, ckpt, seed): unit_regime(
+            args,
+            phase="gen-k5",
+            ckpt=ckpt,
+            corpus=corpus,
+            seed=seed,
+            n_rows=len(unit_rows),
+            sampling=f"n=1 T={C.GEN_TEMPERATURE} top_p={C.GEN_TOP_P} max={C.GEN_MAX_TOKENS}",
+        )
+        for corpus, unit_rows, seed in units
+    }
+    pending = [
+        u
+        for u in units
+        if not unit_done(
+            out_root,
+            k5_gen_unit_name(u[0], ckpt, u[2]),
+            regimes[k5_gen_unit_name(u[0], ckpt, u[2])],
+        )
+    ]
+    headroom_gate(out_root, "gen", len(pending), 0.1)
+    if not pending:
+        logger.info("[gen-k5] ckpt=%s: all %d units done — leg skipped", ckpt, len(units))
+        return
+
+    print(f"[phase=gen-k5] ckpt={ckpt} units={len(pending)}/{len(units)}", flush=True)
+    tokenizer = _tokenizer(model_id, revision)
+    dims = C.model_dims(model_id, revision)
+    llm = _vllm_engine(model_id, revision, dims.max_position_embeddings)
+    t_leg = time.time()
+    for k, (corpus, unit_rows, seed) in enumerate(pending, start=1):
+        unit = k5_gen_unit_name(corpus, ckpt, seed)
+        t0 = time.time()
+        prompts = _gen_prompts(unit_rows, ckpt, tokenizer)
+        sp = _sampling_params(seed, ckpt, smoke=args.smoke)
+        gens = _generate_chunked(llm, prompts, sp)
+        recs = _flag_records(unit_rows, gens, seed, gen_cap=int(sp.max_tokens))
+        local = _k5_rollout_path(out_root, corpus, ckpt, seed)
+        _write_jsonl_atomic(local, recs)
+        # Persist-before-reduce: rollout TEXT to HF (non-LFS) the moment the
+        # unit completes, BEFORE capture (plan §4 P2 / Upload Policy).
+        uploaded = upload_text_payload(local, f"{C.RAW_GEN_HF_PATH}/{corpus}")
+        n_flagged = sum(1 for r in recs if r["truncated"] or r["repetition_flag"])
+        mark_unit_done(
+            out_root,
+            unit,
+            regimes[unit],
+            {"n_rows": len(recs), "n_flagged": n_flagged, "uploaded": uploaded},
+        )
+        print(
+            f"[gen-k5] unit {k}/{len(pending)} {unit} rows={len(recs)} "
+            f"flagged={n_flagged} elapsed={time.time() - t0:.0f}s",
+            flush=True,
+        )
+    logger.info("[gen-k5] ckpt=%s leg done in %.0fs", ckpt, time.time() - t_leg)
+
+
+def phase_gen_k5_finalize(args: argparse.Namespace, out_root: Path, ckpts: list[str]) -> None:
+    """Gen-k5 finalize: per-(ckpt, seed) flag counts + per-checkpoint flagged
+    fraction over the four new draws; summary JSON + eval-mirror upload +
+    poller sentinel (``issue-1902-gen-k5-done-<epoch>.json``)."""
+    rows = _k5_single_rows(args, out_root)
+    summary: dict[str, Any] = {
+        "metadata": _metadata(),
+        "ckpts": ckpts,
+        "seeds": list(C.K5_SEEDS),
+        "n_rows": len(rows),
+        "per_ckpt": {},
+    }
+    frac: dict[str, float] = {}
+    for m in ckpts:
+        per_seed: dict[str, Any] = {}
+        tot_n = tot_flagged = 0
+        for seed in C.K5_SEEDS:
+            recs = _read_jsonl(_k5_rollout_path(out_root, C.CORPUS_SINGLE, m, seed))
+            n_trunc = sum(1 for r in recs if r["truncated"])
+            n_rep = sum(1 for r in recs if r["repetition_flag"])
+            n_flagged = sum(1 for r in recs if r["truncated"] or r["repetition_flag"])
+            per_seed[str(seed)] = {
+                "n": len(recs),
+                "n_truncated": n_trunc,
+                "n_repetition": n_rep,
+                "n_flagged": n_flagged,
+            }
+            tot_n += len(recs)
+            tot_flagged += n_flagged
+        frac[m] = round(tot_flagged / max(tot_n, 1), 4)
+        summary["per_ckpt"][m] = {"per_seed": per_seed, "flagged_fraction": frac[m]}
+        logger.info("[gen-k5-finalize] ckpt=%s flagged_fraction=%.4f", m, frac[m])
+    path = out_root / "gen" / "gen_k5_summary.json"
+    _write_json_atomic(path, summary)
+    upload_json_small(path, f"{C.EVAL_MIRROR_HF_PATH}/gen/gen_k5_summary.json")
+    write_phase_sentinel(out_root, "gen-k5", {"per_ckpt_flagged_fraction": frac}, smoke=args.smoke)
+
+
 # ── capture (P3 + the pilot's capture legs) ──────────────────────────────────
 
 
@@ -1404,16 +1613,19 @@ def capture_store_roots(store: Path, ckpt: str) -> list[Path]:
     ]
 
 
-def _upload_ckpt_store(out_root: Path, ckpt: str) -> dict[str, Any]:
+def _upload_ckpt_store(
+    out_root: Path, ckpt: str, roots: list[Path] | None = None
+) -> dict[str, Any]:
     """Per-checkpoint incremental store upload -> verify -> conditional
     delete-local (plan §4 P3; upload_dir_sharded owns verify + overflow).
-    Enumerates ALL capture subtrees the leg owns (``capture_store_roots``) —
-    plan §10 declares the whole store class persisted with
-    ``discarded_artifacts: []``."""
+    Enumerates ALL capture subtrees the leg owns (``capture_store_roots``;
+    the capture-k5 leg passes its own ``k5draws/<ckpt>`` root) — plan §10
+    declares the whole store class persisted with ``discarded_artifacts: []``."""
     from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded
 
     store = _store_root(out_root)
-    roots = capture_store_roots(store, ckpt)
+    if roots is None:
+        roots = capture_store_roots(store, ckpt)
     if not roots[0].is_dir():
         raise FileNotFoundError(f"no store written under {roots[0]}")
     present = [r for r in roots if r.is_dir()]
@@ -1597,6 +1809,165 @@ def phase_capture_ckpt(args: argparse.Namespace, out_root: Path, ckpts: list[str
     if not leg_uploaded:
         results = _upload_ckpt_store(out_root, ckpt)
         mark_unit_done(out_root, upload_unit, upload_regime, results)
+
+
+def _load_k5_answers(out_root: Path, corpus: str, src: str, seed: int) -> dict[str, dict]:
+    path = _k5_rollout_path(out_root, corpus, src, seed)
+    if not path.exists():
+        raise FileNotFoundError(
+            f"k5 rollout file missing: {path} — run `--phase gen-k5` before capture-k5 "
+            "(same pod/out-root; gen-k5 outputs are the capture-k5 inputs)"
+        )
+    return {r["id"]: r for r in _read_jsonl(path)}
+
+
+def k5_capture_srcs(ckpt: str, ckpts: list[str]) -> list[str]:
+    """Answer sources captured by leg ``ckpt`` (decision record: diagonal m/m
+    plus the base-representation row B/s — answers of every realized source
+    captured by the B checkpoint). 7 cells at the full 4-ckpt set."""
+    return list(ckpts) if ckpt == "B" else [ckpt]
+
+
+def k5_capture_units(ckpt: str, ckpts: list[str], rows: list[dict]) -> list[dict[str, Any]]:
+    """Capture-k5 unit list for one leg: cells x C.K5_SEEDS, plain render,
+    single corpus, k5draws subdir layout (each cell owns ctx + row_index)."""
+    return [
+        {
+            "unit": f"capturek5_{ckpt}_{src}_{C.CORPUS_SINGLE}_seed{seed}",
+            "rows": rows,
+            "src": src,
+            "corpus": C.CORPUS_SINGLE,
+            "render": "plain",
+            "seed": seed,
+            "subdir": C.k5_store_subdir(ckpt, src, C.CORPUS_SINGLE, seed),
+        }
+        for src in k5_capture_srcs(ckpt, ckpts)
+        for seed in C.K5_SEEDS
+    ]
+
+
+# 2 layers x ~16.4k rows x 4096 x fp16: answers ~0.26 GB + per-subdir ctx
+# (u_last/u_mean) ~0.26 GB, rounded up.
+K5_CAPTURE_PER_CELL_GB = 0.6
+
+
+def phase_capture_k5_ckpt(args: argparse.Namespace, out_root: Path, ckpts: list[str]) -> None:
+    """Capture-k5 shard leg: the leg's K=5 draw cells (diagonal m/m; the B leg
+    additionally captures B/s for every source s) x seeds C.K5_SEEDS at
+    K5_LAYERS — P3 capture body verbatim (same render/span/pooling functions),
+    stores under ``k5draws/...`` — then the per-checkpoint incremental store
+    upload -> verify -> conditional delete-local."""
+    ckpt = args.ckpt
+    pins = load_pins(out_root)
+    revision = C.resolve_revision(ckpt, pins)
+    model_id = C.MODEL_IDS[ckpt]
+
+    dims = C.model_dims(model_id, revision)
+    if args.layers:
+        layers = [int(x) for x in args.layers.split(",")]
+    elif args.smoke:
+        layers = probe_layers(dims.num_layers)
+    else:
+        layers = list(K5_LAYERS)
+    if max(layers) >= dims.num_layers:
+        raise ValueError(f"capture-k5 layers {layers} out of range for depth {dims.num_layers}")
+
+    rows = _k5_single_rows(args, out_root)
+    units = k5_capture_units(ckpt, ckpts, rows)
+    regimes = {
+        u["unit"]: unit_regime(
+            args,
+            phase="capture-k5",
+            ckpt=ckpt,
+            src=u["src"],
+            corpus=u["corpus"],
+            render=u["render"],
+            seed=u["seed"],
+            layers=layers,
+            n_rows=len(u["rows"]),
+        )
+        for u in units
+    }
+    upload_unit = f"capturek5_upload_{ckpt}"
+    upload_regime = unit_regime(args, phase="capture-k5_upload", ckpt=ckpt, layers=layers)
+    # Artifact-aware resume (#1315 class): a done-sentinel counts only when the
+    # unit's store artifacts are still local OR the leg's VERIFIED upload
+    # record exists (post-delete-local, downstream fits re-stage from HF).
+    leg_uploaded = unit_done(out_root, upload_unit, upload_regime)
+    store = _store_root(out_root)
+    pending = [
+        u
+        for u in units
+        if not (
+            unit_done(out_root, u["unit"], regimes[u["unit"]])
+            and (leg_uploaded or capture_unit_artifacts_present(store, ckpt, u, layers))
+        )
+    ]
+    headroom_gate(out_root, "capture", len(pending), K5_CAPTURE_PER_CELL_GB)
+    print(f"[phase=capture-k5] ckpt={ckpt} units={len(pending)}/{len(units)}", flush=True)
+    if pending:
+        tokenizer = _tokenizer(model_id, revision)
+        model = _load_hf_model(model_id, revision, args.device)
+        for k, u in enumerate(pending, start=1):
+            answers = _load_k5_answers(out_root, u["corpus"], u["src"], u["seed"])
+            t0 = time.time()
+            stats = capture_cell(
+                model,
+                tokenizer,
+                u["rows"],
+                answers,
+                layers,
+                out_root=out_root,
+                ckpt=ckpt,
+                src_label=u["src"],
+                corpus=u["corpus"],
+                render=u["render"],
+                device=args.device,
+                store_subdir=u["subdir"],
+                unit_tag=f" {u['unit']}",
+            )
+            mark_unit_done(out_root, u["unit"], regimes[u["unit"]], stats)
+            print(
+                f"[capture-k5] unit {k}/{len(pending)} {u['unit']} rows={stats['n_rows']} "
+                f"elapsed={time.time() - t0:.0f}s",
+                flush=True,
+            )
+        del model
+        gc.collect()
+        try:
+            import torch
+
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except Exception:  # noqa: BLE001 — cache release is best-effort on CPU hosts
+            pass
+    if not leg_uploaded:
+        results = _upload_ckpt_store(out_root, ckpt, roots=[store / C.K5_STORE_SUBDIR / ckpt])
+        mark_unit_done(out_root, upload_unit, upload_regime, results)
+
+
+def phase_capture_k5_finalize(args: argparse.Namespace, out_root: Path, ckpts: list[str]) -> None:
+    """Capture-k5 finalize: assert every per-ckpt leg uploaded; summary +
+    poller sentinel (``issue-1902-capture-k5-done-<epoch>.json``)."""
+    summary: dict[str, Any] = {
+        "metadata": _metadata(),
+        "ckpts": ckpts,
+        "seeds": list(C.K5_SEEDS),
+        "legs": {},
+    }
+    missing: list[str] = []
+    for m in ckpts:
+        path = _state_dir(out_root) / f"capturek5_upload_{m}.done.json"
+        if path.exists():
+            summary["legs"][m] = _read_json(path).get("ts")
+        else:
+            missing.append(m)
+    if missing:
+        raise RuntimeError(f"capture-k5 finalize: legs incomplete for ckpts {missing}")
+    path = out_root / "capture_k5_summary.json"
+    _write_json_atomic(path, summary)
+    upload_json_small(path, f"{C.EVAL_MIRROR_HF_PATH}/capture/capture_k5_summary.json")
+    write_phase_sentinel(out_root, "capture-k5", {"ckpts": ckpts}, smoke=args.smoke)
 
 
 def phase_capture_finalize(args: argparse.Namespace, out_root: Path, ckpts: list[str]) -> None:
@@ -2171,7 +2542,7 @@ def main() -> None:
     ap.add_argument(
         "--phase",
         required=True,
-        choices=["stage", "pilot", "gen", "capture", "fits"],
+        choices=["stage", "pilot", "gen", "capture", "gen-k5", "capture-k5", "fits"],
         help="fits is a REGISTRATION POINT for unit C (scripts/issue1902_fits.py)",
     )
     ap.add_argument("--ckpt", choices=list(C.CKPTS), help="shard leg checkpoint")
@@ -2184,6 +2555,11 @@ def main() -> None:
     ap.add_argument("--gpu-id", type=int, default=0, help="physical GPU (CVD-pinned by launcher)")
     ap.add_argument("--device", default=None, help="torch device (default cuda if available)")
     ap.add_argument("--layers", default=None, help="comma-separated capture layer override")
+    ap.add_argument(
+        "--k5-seeds",
+        default=None,
+        help="comma-separated K5 seed subset (gen-k5 pilot timing; default: all of K5_SEEDS)",
+    )
     ap.add_argument("--import-check", action="store_true", help="execute deferred imports; exit")
     args = ap.parse_args()
 
@@ -2245,6 +2621,20 @@ def main() -> None:
         else:
             assert args.ckpt, "--phase capture needs --ckpt or --finalize"
             phase_capture_ckpt(args, out_root, ckpts)
+    elif args.phase == "gen-k5":
+        if args.init:
+            phase_k5_init(args, out_root)
+        elif args.finalize:
+            phase_gen_k5_finalize(args, out_root, ckpts)
+        else:
+            assert args.ckpt, "--phase gen-k5 needs --ckpt, --init, or --finalize"
+            phase_gen_k5_ckpt(args, out_root)
+    elif args.phase == "capture-k5":
+        if args.finalize:
+            phase_capture_k5_finalize(args, out_root, ckpts)
+        else:
+            assert args.ckpt, "--phase capture-k5 needs --ckpt or --finalize"
+            phase_capture_k5_ckpt(args, out_root, ckpts)
     # Explicit success exit BEFORE C-extension finalize teardown (PyGILState
     # atexit race, #1689 — gotchas.md "phased-dispatcher entrypoint" rule).
     sys.stdout.flush()

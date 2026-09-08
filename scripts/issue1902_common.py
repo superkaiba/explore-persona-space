@@ -357,6 +357,30 @@ def store_local_path(store_root: Path | str, relpath: str) -> Path:
     return Path(store_root) / relpath
 
 
+# ── K=5 answer-target draws (follow-up: fig:posttraining remake) ─────────────
+
+# FOUR extra full-single-corpus draws on top of the existing seed-42 draw
+# (K=5 total). NEVER 43/44 — those name the 1k-subset reliability units and
+# their rollout paths/unit names would collide.
+K5_SEEDS: tuple[int, ...] = (45, 46, 47, 48)
+K5_STORE_SUBDIR = "k5draws"
+
+
+def k5_store_subdir(ckpt: str, src: str, corpus: str, seed: int) -> str:
+    """Store subdir for one K=5 draw cell (activation ckpt x answer source x
+    draw seed). Non-grid layout (each cell owns its ctx sub-leaf + row_index,
+    same conventions as the reliability/robust subdir cells)."""
+    _check_ckpt(ckpt)
+    _check_ckpt(src)
+    _check_corpus(corpus)
+    return f"{K5_STORE_SUBDIR}/{ckpt}/{src}/{corpus}/seed{int(seed)}"
+
+
+def k5_store_relpath(ckpt: str, src: str, corpus: str, seed: int, layer: int) -> str:
+    """Answer-summary shard for one K=5 draw cell."""
+    return f"{k5_store_subdir(ckpt, src, corpus, seed)}/L{int(layer)}.pt"
+
+
 # ── prompt renders (plan §4 P2/P3) ───────────────────────────────────────────
 
 # Stop sequences for the base checkpoint's plain-QA generation render

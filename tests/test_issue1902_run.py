@@ -426,6 +426,109 @@ def test_tiny_real_fp32_twin_store(tiny_olmo2, tmp_path):
     assert (tmp_path / "store" / "pilot/R/plain_fp32/single/ctx/L0.pt").exists()
 
 
+# ── K=5 answer-target draws (fig:posttraining remake follow-up) ──────────────
+
+
+def test_k5_constants_and_store_layout():
+    assert C.K5_SEEDS == (45, 46, 47, 48)
+    # 43/44 name the 1k-subset reliability units; 42 is the production draw.
+    assert set(C.K5_SEEDS).isdisjoint(set(C.RELIABILITY_SEEDS) | {C.GEN_SEED})
+    assert C.k5_store_subdir("B", "S", "single", 45) == "k5draws/B/S/single/seed45"
+    assert C.k5_store_relpath("R", "R", "single", 48, 31) == "k5draws/R/R/single/seed48/L31.pt"
+    with pytest.raises(ValueError):
+        C.k5_store_relpath("X", "S", "single", 45, 18)
+    with pytest.raises(ValueError):
+        C.k5_store_subdir("B", "S", "nope", 45)
+
+
+def test_k5_gen_units_seed_set_and_rollout_paths(tmp_path):
+    rows = [{"id": f"single_{i:05d}"} for i in range(3)]
+    units = R.k5_gen_units(rows)
+    assert [(c, s) for c, _, s in units] == [("single", s) for s in (45, 46, 47, 48)]
+    assert all(u_rows is rows for _, u_rows, _ in units)  # full row set, every draw
+    assert [s for *_, s in R.k5_gen_units(rows, seeds=[45])] == [45]  # pilot subset
+    with pytest.raises(ValueError, match="not K5 seeds"):
+        R.k5_gen_units(rows, seeds=[43])  # reliability seed must never route here
+    p = R._k5_rollout_path(tmp_path, "single", "B", 45)
+    assert p == tmp_path / "gen" / "single" / "B_k5_seed45.jsonl"
+    # distinct stem family: no collision with the reliability rollout namespace
+    rel_names = {R._gen_rollout_path(tmp_path, "single", "B", s).name for s in (42, 43, 44)}
+    assert p.name not in rel_names
+    assert R.k5_gen_unit_name("single", "B", 45) == "genk5_single_B_seed45"
+
+
+def test_k5_capture_units_cell_set_and_subdirs():
+    rows = [{"id": "single_00000"}]
+    ckpts = ["B", "S", "D", "R"]
+    b_units = R.k5_capture_units("B", ckpts, rows)
+    # B leg: the diagonal B/B plus the base-representation row B/S, B/D, B/R.
+    assert [(u["src"], u["seed"]) for u in b_units] == [
+        (src, seed) for src in ckpts for seed in C.K5_SEEDS
+    ]
+    for m in ("S", "D", "R"):
+        units = R.k5_capture_units(m, ckpts, rows)
+        assert [(u["src"], u["seed"]) for u in units] == [(m, s) for s in C.K5_SEEDS]
+    # Seven distinct cells across the four legs (decision record).
+    cells = {(leg, u["src"]) for leg in ckpts for u in R.k5_capture_units(leg, ckpts, rows)}
+    assert cells == {
+        ("B", "B"),
+        ("B", "S"),
+        ("B", "D"),
+        ("B", "R"),
+        ("S", "S"),
+        ("D", "D"),
+        ("R", "R"),
+    }
+    u = b_units[1]
+    assert u["subdir"] == "k5draws/B/B/single/seed46"
+    assert (u["render"], u["corpus"]) == ("plain", "single")
+    assert u["unit"] == "capturek5_B_B_single_seed46"
+    # Smoke ckpt subset threads through (B leg captures B/B + B/R only).
+    smoke_units = R.k5_capture_units("B", ["B", "R"], rows)
+    assert [(u["src"], u["seed"]) for u in smoke_units] == [
+        (src, seed) for src in ("B", "R") for seed in C.K5_SEEDS
+    ]
+
+
+def test_k5_capture_unit_store_dirs_subdir_shape(tmp_path):
+    """K5 units are subdir units: own cell leaf + own ctx leaf (the resume
+    predicate reads both), never the dedup'd grid layout."""
+    store = R._store_root(tmp_path)
+    u = R.k5_capture_units("B", ["B", "S", "D", "R"], [{"id": "x"}])[0]
+    dirs = R.capture_unit_store_dirs(store, "B", u, [18, 31])
+    assert dirs[0].as_posix().endswith("k5draws/B/B/single/seed45")
+    assert dirs[1].as_posix().endswith("k5draws/B/B/single/seed45/ctx")
+    assert not R.capture_unit_artifacts_present(store, "B", u, [18, 31])
+
+
+def test_tiny_real_k5_subdir_capture(tiny_olmo2, tmp_path):
+    """Production capture body into the k5draws subdir layout: answer store +
+    per-cell ctx + row_index land under the seed leaf."""
+    tok, model = tiny_olmo2
+    rows = _fixture_rows()[:2]
+    answers = {r["id"]: {"text": "A k5 draw answer."} for r in rows}
+    R.capture_cell(
+        model,
+        tok,
+        rows,
+        answers,
+        [0],
+        out_root=tmp_path,
+        ckpt="B",
+        src_label="S",
+        corpus="single",
+        render="plain",
+        device="cpu",
+        store_subdir=C.k5_store_subdir("B", "S", "single", 45),
+        unit_tag=" test-k5",
+    )
+    store = tmp_path / "store"
+    assert (store / C.k5_store_relpath("B", "S", "single", 45, 0)).exists()
+    assert (store / "k5draws/B/S/single/seed45/ctx/L0.pt").exists()
+    idx = store / "k5draws/B/S/single/seed45/row_index.jsonl"
+    assert len([line for line in idx.read_text().split("\n") if line]) == 2
+
+
 # ── C1 resume side: artifact-aware capture done-predicate (#1315 class) ──────
 
 

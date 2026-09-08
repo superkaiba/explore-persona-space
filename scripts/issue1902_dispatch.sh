@@ -4,6 +4,7 @@
 #   bash scripts/issue1902_dispatch.sh --full                # P1 -> gate A -> P2 -> P3 -> (P4 placeholder)
 #   bash scripts/issue1902_dispatch.sh --smoke               # SAME chain, tiny slice (PASS_UNIFIED)
 #   bash scripts/issue1902_dispatch.sh --full --from-phase gen   # resume from a phase
+#   bash scripts/issue1902_dispatch.sh --k5 [--smoke]        # K=5 draws follow-up: stage -> gen-k5 -> capture-k5
 #
 # Contracts: set -euo pipefail; each phase is a single `uv run python
 # scripts/issue1902_run.py --phase X ...` whose rc propagates DIRECTLY (no
@@ -27,18 +28,22 @@ if [ -f ./.env ]; then set -a; . ./.env; set +a; fi
 
 # ── args ─────────────────────────────────────────────────────────────────────
 MODE=""
+K5=""
 FROM_PHASE="stage"
 while [ $# -gt 0 ]; do
   case "$1" in
     --full) MODE="full" ;;
     --smoke) MODE="smoke" ;;
+    --k5) K5="1" ;;
     --from-phase) shift; FROM_PHASE="${1:?--from-phase needs a phase name}" ;;
     *) echo "[dispatch] unknown arg: $1" >&2; exit 2 ;;
   esac
   shift
 done
+# --k5 alone runs the production K=5 chain (--k5 --smoke = tiny-slice K=5).
+[ -n "$K5" ] && [ -z "$MODE" ] && MODE="full"
 if [ -z "$MODE" ]; then
-  echo "[dispatch] usage: issue1902_dispatch.sh --full|--smoke [--from-phase <p>]" >&2
+  echo "[dispatch] usage: issue1902_dispatch.sh --full|--smoke|--k5 [--smoke] [--from-phase <p>]" >&2
   exit 2
 fi
 SMOKE=""
@@ -166,6 +171,43 @@ run_sharded() {
     done
   done
 }
+
+# ── K=5 chain (--k5): stage -> gen-k5 (4-way by ckpt) -> capture-k5 (4-way) ──
+# Follow-up remake of fig:posttraining with K=5 answer-target draws. Same
+# run_single/run_sharded shapes + sentinels (issue-1902-gen-k5-done-*.json,
+# issue-1902-capture-k5-done-*.json, blocks_pipeline: false). The B capture
+# leg carries four cells (B/B, B/S, B/D, B/R) vs one for S/D/R — accepted
+# imbalance (B's per-row capture wall is the smallest, 0.0092 s/row measured).
+# Layers default in-code to K5_LAYERS=(18, 31) (smoke: probe_layers).
+if [ -n "$K5" ]; then
+  K5_PHASES=(stage gen-k5 capture-k5)
+  K5_START=-1
+  for idx in "${!K5_PHASES[@]}"; do
+    [ "${K5_PHASES[$idx]}" = "$FROM_PHASE" ] && K5_START="$idx"
+  done
+  if [ "$K5_START" -lt 0 ]; then
+    echo "[dispatch] --k5 with unknown --from-phase '$FROM_PHASE' (one of: ${K5_PHASES[*]})" >&2
+    exit 2
+  fi
+  if [ "$K5_START" -le 0 ]; then
+    echo "[phase=stage]"
+    run_single stage --phase stage
+  fi
+  # Idempotent bootstrap (pins + intersection manifest) — foreground, before
+  # any sharded leg (the 4 legs must never race the init writes).
+  run_single gen-k5-init --phase gen-k5 --init
+  if [ "$K5_START" -le 1 ]; then
+    echo "[phase=gen-k5]"
+    run_sharded gen-k5
+    run_single gen-k5-finalize --phase gen-k5 --finalize
+  fi
+  echo "[phase=capture-k5]"
+  run_sharded capture-k5
+  run_single capture-k5-finalize --phase capture-k5 --finalize
+  echo "[dispatch] k5 chain complete (mode=$MODE ckpts='$CKPTS')"
+  echo "[phase=done]"
+  exit 0
+fi
 
 # ── phase chain (resume via --from-phase) ────────────────────────────────────
 PHASES=(stage pilot gen capture fits)
