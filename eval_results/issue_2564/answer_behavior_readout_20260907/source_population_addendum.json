@@ -1,0 +1,32 @@
+{
+  "observed_unix_s": 1788864905.4916077,
+  "rows_sha256": "5eaec3cba05ce78203d1c4b245d719637b8903c21235c2ac207b98b23cd1ea10",
+  "counts": {
+    "pilot": {
+      "n": 32,
+      "digit_first_char": 6,
+      "digit_first_nonspace": 6,
+      "leading_whitespace": 23,
+      "at_most_20_characters": 1,
+      "capped": 0
+    },
+    "main": {
+      "n": 2048,
+      "digit_first_char": 468,
+      "digit_first_nonspace": 468,
+      "leading_whitespace": 1226,
+      "at_most_20_characters": 201,
+      "capped": 2
+    }
+  },
+  "status": "Descriptive source-population audit during frozen annotation, before any readout fit; no label, sample, split, rubric, or readout change.",
+  "upstream_selection": "The #2054 scaffold pool is judged for structural extractability before measured-model on-policy answer generation. This is context selection, not requested-behavior filtering of the realized answers used here.",
+  "source_caveat": "The #2054 methodology documents a trailing-space bare-label boundary artifact favoring digit openings. The selected bank uses this form. Its contribution to any readout metric is not separately identified.",
+  "source_documents": [
+    "docs/methodology/issue_2054.md",
+    "scripts/issue2054_phase_a.py",
+    "scripts/issue2054_phase_c.py",
+    "scripts/issue2054_capture.py"
+  ],
+  "restrictions": "Retain the frozen cohort and all fragments; do not introduce a post-hoc digit-excluded fit. Interpret within this selected narrative/framing regime, not as an intrinsic or general-chat ceiling."
+}
