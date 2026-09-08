@@ -1,0 +1,80 @@
+{
+  "files": [
+    {
+      "path": "codex_packet_063_omission.json",
+      "bytes": 1207,
+      "sha256": "b43484593dd46b8d233e917e396464e66db9f7f434aec47153fbe5ab0ee8fb91",
+      "git_blob_sha1": "747bd62247abc29d2cbf697ea6c7ae2f1a42780e"
+    },
+    {
+      "path": "codex_packet_063_repair_review.md",
+      "bytes": 1477,
+      "sha256": "8b211def6e45674afffd77126eb33c2e8d451c7273d718bfdd9549f29782fbe4",
+      "git_blob_sha1": "c0d8f97d7fff08a91ae8fe8117bd1ef2f90ed96f"
+    },
+    {
+      "path": "codex_packet_063_repair_verified.json",
+      "bytes": 189,
+      "sha256": "6068df7d125eb517198dec7392a039654ae69a9af64b3ab36e46165cb9bc125f",
+      "git_blob_sha1": "52f6e63d4d7ad8f43212c0984684e4f2ccefae39"
+    },
+    {
+      "path": "packet/input.json",
+      "bytes": 100941,
+      "sha256": "050dd3b74f92e3f01d4d1dd327d2d0fc8d6ac1d65b35327ccedd8963ee1e8dcd",
+      "git_blob_sha1": "67fbdc6a5f79de29784acb78f4bc29227fea9868"
+    },
+    {
+      "path": "packet/output.jsonl",
+      "bytes": 47373,
+      "sha256": "cfac4d5997cbb4c46dd80779bcfd70152bf705219d9e0d97a8df8251518e15f2",
+      "git_blob_sha1": "f5a0356ac64a69a356a305c3b29d3ea921a15cc5"
+    },
+    {
+      "path": "packet/record.json",
+      "bytes": 10942,
+      "sha256": "83715b7a85a551091a3cb88c2a1c35d87aad48a0d623f9888f59f2228f1bcafd",
+      "git_blob_sha1": "adb3d8a662acb148c74dd229d64c148d3395a481"
+    },
+    {
+      "path": "packet/request.json",
+      "bytes": 1182,
+      "sha256": "ee1707208a6f28a5d16bb036b6a64daf1237aab17dc42f52b877ededf51aa052",
+      "git_blob_sha1": "9187cb83ef8840d4d3a8294edbc0ffdfbcaf5adb"
+    },
+    {
+      "path": "packet/supplement_input.json",
+      "bytes": 2194,
+      "sha256": "b19c50d5d06ea52a9cd3bd3c4a2d7e90442d3cd2d193d92de6f08c791e351586",
+      "git_blob_sha1": "b4818b94c196fcec57e9fa766f1d175e08ba9a54"
+    },
+    {
+      "path": "packet/supplement_output.jsonl",
+      "bytes": 202,
+      "sha256": "c1b7e9a95f0a19d47ce8fc2511ed46f77ab9ca376d4954dc40fc5e789eda097c",
+      "git_blob_sha1": "2120878cbeb07cbee95897372a6c199347cfcf86"
+    },
+    {
+      "path": "packet/supplement_record.json",
+      "bytes": 1509,
+      "sha256": "3b82200cdb1f0c7449035c52aae504204574ecc6f987576fe694e05418566938",
+      "git_blob_sha1": "a719b68ce7efc7331e4a84c4e69423e050ba1931"
+    },
+    {
+      "path": "packet/supplement_request.json",
+      "bytes": 902,
+      "sha256": "d33dbf9181207f81d6a37e9d957e3c6f101a94525b07074285bb6932a4ecd1ee",
+      "git_blob_sha1": "ebafbf0a428656f6ef1c66663589b06824797044"
+    },
+    {
+      "path": "supplement_completion_event.json",
+      "bytes": 462,
+      "sha256": "c9807ea9409395dc2743e2d6f940be857fc274be335a44675578c0fa3ad59d4b",
+      "git_blob_sha1": "1ce35f2383057798e0cc1ab44c71b15cc53b9ffa"
+    }
+  ],
+  "total_files": 12,
+  "total_bytes": 168580,
+  "root_free_before_staging": 28167827456,
+  "purpose": "Preserved failed packet plus same-judge missing-only completion; no original raw bytes replaced."
+}
