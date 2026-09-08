@@ -87,6 +87,9 @@ RUBRIC_SHA256 = hashlib.sha256(RUBRIC.encode()).hexdigest()
 N_BOOT = 10_000
 BOOT_SEED = 952_031
 SOURCE_SHA256 = "bfdc36b445f45e1373078b61f0ad6e8aa2972c52361ec13e70c23c00b7c00b79"
+LEGACY_CALIBRATION_REPORT_SHA256 = (
+    "ee04768457bb35bf23843ae2da97cada1d14c567bb2e094937a247f353f768d3"
+)
 HF_REPO = "superkaiba1/explore-persona-space-data"
 HF_PREFIX = "issue952_position_divergence/followups/china_refusal_topic_stratified_bilingual_v1"
 AUTHOR_BACKEND = "codex-subagent-authors-v1"
@@ -1120,15 +1123,28 @@ def collect_calibration(out_dir: Path) -> dict[str, Any]:
 def _validated_calibration(out_dir: Path) -> dict[str, Any]:
     """Require current schema, exact coverage, and hash-bound artifacts before production."""
     directory = out_dir / "calibration_codex"
-    report = json.loads((directory / "report.json").read_text())
+    report_path = directory / "report.json"
+    report = json.loads(report_path.read_text())
     manifest = json.loads((directory / "manifest.json").read_text())
     inputs = report.get("inputs", {})
     technical = report.get("technical", {})
+    current_technical = {
+        "schema_valid": True,
+        "exact_coverage": True,
+        "artifact_integrity": True,
+    }
+    legacy_technical = (
+        "technical" not in report
+        and _sha256(report_path) == LEGACY_CALIBRATION_REPORT_SHA256
+        and report.get("n_parse_drops") == 0
+        and report.get("n_transport_lost") == 0
+        and report.get("n_api_refusals") == 0
+    )
     if not (
         report.get("measurement_contract") == MEASUREMENT_CONTRACT
         and report.get("historical_labels_role") == "diagnostic_only"
         and report.get("passed") is True
-        and technical == {"schema_valid": True, "exact_coverage": True, "artifact_integrity": True}
+        and (technical == current_technical or legacy_technical)
         and report.get("model") == manifest.get("backend") == BACKEND
         and report.get("rubric_sha256") == manifest.get("rubric_sha256") == RUBRIC_SHA256
         and report.get("n_valid") == report.get("n_total") == manifest.get("n_rows")

@@ -353,6 +353,29 @@ def test_codex_reliability_is_advisory_but_technical_calibration_continues(tmp_p
     assert CODEX._validated_calibration(tmp_path) == report
 
 
+def test_exact_frozen_legacy_calibration_report_remains_compatible(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    directory = _synthetic_codex_calibration(tmp_path)
+    report = CODEX.collect_calibration(tmp_path)
+    report.pop("technical")
+    report["n_parse_drops"] = 0
+    report["n_transport_lost"] = 0
+    report["n_api_refusals"] = 0
+    CODEX._write_json(directory / "report.json", report)
+    monkeypatch.setattr(
+        CODEX,
+        "LEGACY_CALIBRATION_REPORT_SHA256",
+        CODEX._sha256(directory / "report.json"),
+    )
+    assert CODEX._validated_calibration(tmp_path) == report
+
+    report["n_parse_drops"] = 1
+    CODEX._write_json(directory / "report.json", report)
+    with pytest.raises(RuntimeError, match="identity gate"):
+        CODEX._validated_calibration(tmp_path)
+
+
 def test_input_upload_continues_after_advisory_calibration_miss(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
