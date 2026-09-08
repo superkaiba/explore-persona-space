@@ -1,0 +1,5 @@
+Trajectory capture instrument: PASS. The receipt binds the exact15-file source closure; all33 independent capture cases passed in the combined43-case,5.99s CPU run, with no source drift.
+
+The amended code handles real producer stream names, rejects orphan/overlapping outputs, snapshots prepared/control inputs before consumption, rechecks them on return, and joins saved checkpoint geometry back to the actual producer. The fixture crosses real producer assembly through5120-dimensional capture persistence and final verification. Exact future-mask invariance is tested separately from content-suffix invariance.
+
+Actual pinned-model tokenizer replay, longest/representative/batched GPU parity and memory checks, complete290-stream capture and process drainage remain required. CPU decoder stubs do not establish real model numerics. The1% cross-length bound alone does not establish absence of future-length artifacts; the amended plan requires prefix-only robustness before interpreting later-stage advantages.

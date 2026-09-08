@@ -1,0 +1,59 @@
+{
+  "verdict": "REVISE",
+  "reviewer": "/root/published_task_rates",
+  "created_utc": "2026-09-08T21:48:40.696515+00:00",
+  "scope": "Independent bounded CPU code review; no live upload, generation, fitting, source edits, or task edits. This is the initial finding receipt, not production authorization.",
+  "archive_sources_sha256": {
+    "scripts/context_risk_trajectory_archive.py": "88f3697795cd32611f40c0026b6e976cb8cb9cb7552af0d4b2877789a0c9f96f",
+    "scripts/context_risk_corrected_finish.py": "8aeaddec362b9bbf277c707b7532d17948811f1bdf09b9c0a45f598c7eca466e",
+    "scripts/context_risk_highrate_archive.py": "b7f712557a5b537021fc5324a3f4f945c0e1a89c06da3404166c81b44401205b",
+    "scripts/context_risk_trajectory_analyze.py": "cef60034011a65cece2108b2f4122d1704b5389e0345ff429bfabac2919325fa",
+    "scripts/issue2054_phase_a.py": "69573ff5fc81ad398f35ccf9e656d5fceb7e2696e4b6b35a1db80a166ceb7016",
+    "src/explore_persona_space/orchestrate/hub.py": "6590d4c01d396f935da018d16673e3d21f93843126b5e12a42be8e6e0419351e",
+    "src/explore_persona_space/orchestrate/env.py": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759",
+    "configs/eval/context_risk_trajectory_archive.yaml": "568799221755d3485929b762ac7a7ff7252c78b9e3aa6697b1d0c37a59911865",
+    "tests/test_context_risk_trajectory_archive.py": "2bf4b39bf945627410475d5aad878e9411ee814d3084d3e5caab0d73da759c83"
+  },
+  "evidence_sha256": {
+    "trajectory_archive_review_initial_sources.json": "b4190c4a58bfd73283779f19640e64795aaa9365bead84559b257f6ce1e7e4aa",
+    "trajectory_archive_independent_tests.log": "785dbb8730b2870d755e60546bb8bd49464238821b3f5841000dbbcfac4a045c",
+    "test_trajectory_archive_independent_transport.py": "81bcee2249852c5fec1a325883673cdbbfc612a145d88182072afa1c1128794d",
+    "trajectory_archive_independent_transport_tests.log": "88e2a2015c0e7689cf268e758ae6c67d3d763ffd656c1c2ff023b04b104ff64d",
+    "trajectory_archive_independent_transport_corrected_fixture.log": "c14279b4d40daedc53f77c71a655ee276baa0f90799a43004f8a1c6ef6ee15df"
+  },
+  "tests": [
+    {
+      "name": "existing focused suite",
+      "exit_code": 0,
+      "passed": 2,
+      "seconds": 4.22
+    },
+    {
+      "name": "reviewer actual transport and sharded reconstruction",
+      "passed": 1,
+      "failed": 1,
+      "seconds": 5.79,
+      "failure": "Late undeclared file was accepted with passed:true. First diagnostic run also had a reviewer-only records/rows assertion typo; fixed in the current helper and disclosed by the retained first log."
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1",
+      "severity": "blocking",
+      "finding": "The exact declared snapshot file set is checked only before sharding. An undeclared later file is adopted by transport.upload subsequent recursive inventory, included in upload/readback receipts, and final PASS does not compare transport filenames against manifest-derived expected upload names.",
+      "reproduction": "Reviewer test_later_undeclared_file_is_rejected executes actual inherited transport.upload, sharder, stage_hub_prefix orchestration, manifest-first resolver/reconstructor, and parsers with autospecced network boundaries. It unexpectedly succeeds.",
+      "required": "Bind the exact manifest-derived retained/shard/manifest upload map, reject staging or returned-receipt map drift and recheck at final completion."
+    },
+    {
+      "id": "R2",
+      "severity": "source-binding gap",
+      "finding": "Imported hub.py and env.py resolve to the shared root whereas source_hashes hashes worktree files. The actual imported files currently match all pinned bytes, but a later root edit would not be detected.",
+      "required": "Validate actual imported helper source bytes against the declared closure at entry and completion."
+    }
+  ],
+  "positive_checks": [
+    "9,934,100-byte JSONL with 1,100 records and raw U+2028/U+2029 passes two-shard real transport/reconstruction and byte-exact parsed readback.",
+    "Phase/destination fallback, disjoint roots, fresh readback, original byte hashes, array finiteness, individual downloaded hashes and final source/manifest drift checks were reviewed.",
+    "Actual helper bytes currently equal the declared source closure."
+  ]
+}

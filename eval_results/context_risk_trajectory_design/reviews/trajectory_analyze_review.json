@@ -1,0 +1,92 @@
+{
+  "additional_claim_probe": {
+    "bootstrap_replicates": 5000,
+    "checks": [
+      "zero improvement does not pass a strict gate",
+      "exact maximum-four distinct earliest candidate selection",
+      "later-stage candidates explicitly pending prefix-only confirmation",
+      "canonical initial-stage exemption without replacement",
+      "class/task support gate precedes candidate selection"
+    ],
+    "fits_performed": 0,
+    "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_trajectory_stages/setup/trajectory_analysis_claim_gate_probe.json",
+    "sha256": "a9996ba96fd87222990d7793736a4ba51aaa6372dc60cca084524fc587f776f3",
+    "source_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_trajectory_stages/setup/trajectory_analysis_claim_gate_probe.py",
+    "source_sha256": "be1df4e71fe8a0a8dbda8b848aeb3aa78ada70445cd12e5a0c0bb95a2b1dadf7"
+  },
+  "analysis_sources_sha256": {
+    "configs/eval/context_risk_trajectory_analyze.yaml": "517702fa8cb8f85280006479d97f708aee33bb23baa85b6f754a0f25bde78af8",
+    "scripts/context_risk_followup_analyze.py": "1714728f15c7b26588e559fee5bf05ffc9fd3f8592f20d9d7492568cf67218c0",
+    "scripts/context_risk_followup_features.py": "3258ddf56332e99c90c14808b83206670b7693e9b2e6bbf82f6d116e6cfdd7d4",
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "scripts/context_risk_highrate_optimizer.py": "62d2655fbf8e6016960ff703f987caf1c36f968e611756431ccfd896e3d4b1fe",
+    "scripts/context_risk_trajectory_analyze.py": "cef60034011a65cece2108b2f4122d1704b5389e0345ff429bfabac2919325fa",
+    "scripts/context_risk_trajectory_capture.py": "afa39b674ca243fe3ba23d9dc741b4828321b2c7fe40c644ed3bb13d09c4863b",
+    "scripts/context_risk_trajectory_prepare.py": "1f7ea76df0cc6d52a6d65361772803e927408b6b81d0a5aa08b036b84e3f257f",
+    "tests/test_context_risk_trajectory_analyze.py": "c958d3f827c3ee1ac6ddb88ab0e63867e6e42ca5159bfb3452c1d400768e709b"
+  },
+  "analysis_spec_sha256": "4717faf31718f954f5c6058cc2260a0a57d3f3eec793b21c549c0092d2265fda",
+  "component_reviews": {
+    "trajectory_capture_review.json": "5a338ac2bead9aa4e2feee88f20e912b614d7dc47241ffa89cc11ed68cfa2e64",
+    "trajectory_plan_review_v2.json": "502cbcecec03d04f5e0a0daca009188067eae4200e4f1abfb534a0184b6ca3ed",
+    "trajectory_prepare_review.json": "aef49d9b31fcd5cfb9a6a5fe371a99b03ca7b3ad44dffb319e822666f77227b6"
+  },
+  "fixture_limits": [
+    "The real grouped fitting fixture uses a small8-dimensional linear map and two C values to exercise fitting/cache/composition; it is not a real-data or full4830-cell fit.",
+    "The full run body uses real JSON, text/context and map readers, with autospecced external prepared/capture validation and fit-stage seams. Those helper bodies are separately tested by the producer/capture/grouped-fit suites.",
+    "The exact serial bootstrap oracle uses37 draws for exhaustive element comparison; an additional actual5000-draw body probe covers current reporting decisions. Neither is an empirical power or predictive-performance result."
+  ],
+  "remaining_production_requirements": [
+    "Largest actual fitting-cell timing/memory pilot on the approved dedicated CPU venue before the full15-stage panel.",
+    "Actual validated capture/geometry with owned complete process evidence, source-bound inputs and the current45-comparison spec.",
+    "Every required fit converges, complete planned coverage and held-out numerical/report audit before scientific completion.",
+    "Any selected later-stage advantage remains unconfirmed until its whole train/test cohort is separately truncated, re-fitted with the same recipe and checked under the V2 reference rule. Report approximate fixed-fit nine-task and post-selection limitations."
+  ],
+  "resolved_findings": [
+    "Added initial/final complete input and source snapshots, imported-module checks and output overlap/orphan rejection to the run body.",
+    "Removed repeated full messages/tests from saved fit input metadata in favor of exact hashes.",
+    "Wired saved position/token-digest geometry verification to already-loaded producer arrays.",
+    "Renamed earliest scan results to candidates and added explicit prefix_only_confirmation pending/not_required status; the amended plan fixes reference reproduction before fits."
+  ],
+  "review_override": "<NEW>/setup/trajectory_analyze_review.json",
+  "reviewed_utc": "2026-09-08T21:53:47.032235+00:00",
+  "reviewer": "Independent statistical/implementation critic /root/verify_vllm_runtime",
+  "schema_version": "task2670_trajectory_analysis_independent_review_v1",
+  "scope": "Source, grouped-fit CPU fixtures, bootstrap oracle and claim-reporting review. No experimental fits, native revalidation or model/GPU execution. Actual production-venue pilot, all planned fits/results, and any triggered prefix-only robustness remain separate obligations.",
+  "tests": {
+    "analysis_cases_passed": 10,
+    "combined_cases_passed": 43,
+    "combined_pytest_seconds": 5.99,
+    "exit_code": 0,
+    "junit": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_trajectory_stages/setup/trajectory_capture_analyze_independent_tests.junit.xml",
+    "junit_sha256": "346d66df8830e965abee28bb6ec0832ed66e012024dbd008b6bd7037ae67c504",
+    "log": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_trajectory_stages/setup/trajectory_capture_analyze_independent_tests.log",
+    "log_sha256": "064f719027fb829a1d9b58d10d72ff40e1feab196d4095b9f16930dac0b2afc9",
+    "receipt_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_trajectory_stages/setup/trajectory_capture_analyze_independent_tests.json",
+    "receipt_sha256": "2a41a6d814ba506b008afd8b724c542f022b5b040997e62ff49d26b782d15c42",
+    "runtime": {
+      "inspect-ai": "0.3.261",
+      "numpy": "2.2.6",
+      "openai": "3.7.0",
+      "scikit-learn": "1.8.0",
+      "scipy": "1.17.1",
+      "tokenizers": "0.22.2",
+      "torch": "2.8.0",
+      "transformers": "4.57.6"
+    },
+    "source_stable": true
+  },
+  "unresolved_findings": [],
+  "verdict": "PASS",
+  "verified_properties": [
+    "All15 stages remain in fixed order. Static producer task/condition/role joins, original event identities and binary labels are checked before aggregation. Deduplication uses actual checkpoint key, observed metadata and visible-text hash; positive/trial frequency weights and every original event join are retained.",
+    "StageFeatureBank replaces the inherited first-message prompt bank with full checkpoint-visible strings using object dtype and replaces four metadata fields with the declared eight before any cached transform is prepared. Future status, success time, terminal length and future response fields are not admitted to features.",
+    "Before-action rows require zero observed-response tokens and ended=false. Within-answer min(K,length) rows retain short responses and their ended indicator; source-prepared geometry supplies exact lengths and visible text.",
+    "The inherited weighted scaling, training-only character TF-IDF, map/identity affine checks, orientation controls and linear logistic objective are reused. Actual small-fixture fit_stage executes all8 models with shared task folds and mapped-head composition; no task/epoch split leakage occurs.",
+    "C is selected from training-fold aggregate binomial losses only. The frozen20000 cap,1e-8 tolerance and L2/lbfgs objective are unchanged; single-class inner training folds use the explicit inherited smoothed-prevalence path. Optimizer failures are loud and cached fits bind input/source/spec provenance.",
+    "Common nine-task multiplicities and stage-specific trial denominators produce the45 paired contrasts with positive first-minus-second loss sign. An independent serial oracle verifies every draw/contrast on the fixture panel; max absolute centered deviation across all45 supplies a common95% half-width, while marginal intervals and reference-loss imprecision remain separately reported.",
+    "Actual5000-draw synthetic result probes confirm strict-zero rejection, atmost4 distinct earliest raw/map candidate stages, pending status for later-stage gains, canonical-initial exemption and class/task support gating. No replacement after an initial candidate fails reference confirmation is authorized by the result schema.",
+    "run snapshots complete prepared/capture trees and map/spec/review before consumption; verifies actual imported helper paths/bytes, disjoint output and exact resume binding; rechecks all inputs/sources before fits and final PASS. It calls both capture verification and the actual producer-to-capture geometry join.",
+    "fit_inputs stores hashes for visible text, original messages and tests instead of duplicating large text. Per-stage partial fits, folds, grid scores, coefficients and held-out logits remain auditable. Completed scan verification is distinct from pending prefix-only scientific robustness."
+  ]
+}

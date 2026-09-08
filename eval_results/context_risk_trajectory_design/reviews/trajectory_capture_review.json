@@ -1,0 +1,128 @@
+{
+  "actual_imported_sources": {
+    "scripts/context_risk_followup_capture.py": {
+      "actual_path": "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_followup_capture.py",
+      "sha256": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a"
+    },
+    "scripts/context_risk_qwen38_capture.py": {
+      "actual_path": "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_qwen38_capture.py",
+      "sha256": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0"
+    },
+    "scripts/context_risk_qwen38_smoke.py": {
+      "actual_path": "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_qwen38_smoke.py",
+      "sha256": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98"
+    },
+    "scripts/context_risk_trajectory_prepare.py": {
+      "actual_path": "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_trajectory_prepare.py",
+      "sha256": "1f7ea76df0cc6d52a6d65361772803e927408b6b81d0a5aa08b036b84e3f257f"
+    },
+    "src/explore_persona_space/analysis/extraction.py": {
+      "actual_path": "/home/thomasjiralerspong/explore-persona-space/src/explore_persona_space/analysis/extraction.py",
+      "sha256": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79"
+    },
+    "src/explore_persona_space/orchestrate/env.py": {
+      "actual_path": "/home/thomasjiralerspong/explore-persona-space/src/explore_persona_space/orchestrate/env.py",
+      "sha256": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759"
+    }
+  },
+  "instrument_checks": [
+    "Frozen exact model revision/BF16/block44/5120 geometry; eval and inference mode; resolved non-final decoder output; use_cache=false, output_hidden_states=false, logits_to_keep=1; SDPA explicitly set and checked in the actual runtime loader.",
+    "Production gathers only selected positions on GPU, copies selected FP32 vectors to CPU, validates finite shapes, then stores finite float16 arrays. Same-forward independent indexing and exception cleanup execute in CPU tests.",
+    "Input-hash/length/stage-tag smoke fixture selection does not consult positive labels. Actual longest98622, representative~25000, eligible real pair, independent truncated prefix and batch-vs-singleton paths remain required.",
+    "Raw and mapped different-length relativeL2<=0.01 and cosine>=0.9999 are frozen. Same-forward gather and same-shape future content/mask comparisons require exact equality. Tests include an intentionally future-leaking model, map-amplified error, failed metric/coverage/mutation evidence, and proper ragged masks.",
+    "Exact per-stream fingerprints and payload/done hashes guard resume; final unique checkpoint matrix must equal all verified chunk vectors. Standalone controls/payloads and source hashes are rechecked at return; semantic producer geometry is a distinct required join."
+  ],
+  "plan_review": {
+    "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_trajectory_stages/setup/trajectory_plan_review_v2.json",
+    "sha256": "502cbcecec03d04f5e0a0daca009188067eae4200e4f1abfb534a0184b6ca3ed"
+  },
+  "prepare_review": {
+    "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_trajectory_stages/setup/trajectory_prepare_review.json",
+    "sha256": "aef49d9b31fcd5cfb9a6a5fe371a99b03ca7b3ad44dffb319e822666f77227b6"
+  },
+  "remaining_runtime_checks": [
+    "No GPU/model weights or real production forwards were executed in this review. CPU tests use deterministic torch decoder stubs; the frozen loader/backend/runtime are exercised by the actual planned smoke.",
+    "Actual Transformers5.15 tokenizer must replay all2153 requests and visible boundaries before forwards; runtime packages/CUDA13.0/HBM floor and managed host-resource preflight remain actual evidence requirements.",
+    "Actual smoke must pass every frozen numerical condition and measure longest/representative/pair memory/time before a production deadline is chosen. No failed threshold may be relaxed.",
+    "Actual production must complete290 streams and the complete prepared checkpoint set with owned exit/drain evidence and full verify_capture plus verify_capture_geometry validation.",
+    "Cross-length norm parity is not proof against future-length numerical features. Later-stage scan advantages remain pending the V2 prefix-only robustness rule; no causal-state benefit is inferred from this code PASS."
+  ],
+  "resolved_findings": [
+    {
+      "finding": "Writer accepted only bare digests while real producer emits trajectory_/initial_/exception_ keys.",
+      "id": "C1",
+      "resolution": "Only the three exact prefixed namespaces are accepted. A real prepare.build_bank fixture runs through5120-D collect_streams, finalization and public verification."
+    },
+    {
+      "finding": "Prepared-manifest snapshot followed loading; whole-operation payload/review/map controls were incomplete.",
+      "id": "C2",
+      "resolution": "Snapshot manifest plus every producer DATA_FILE and external review/map before loading; recheck before forwards and before smoke/capture return. Actual-load mutation fixtures reject both manifest and stream changes."
+    },
+    {
+      "finding": "First launch could adopt an unbound populated output or overlap prepared inputs.",
+      "id": "C3",
+      "resolution": "Explicit disjointness, symlink and orphan-output guards precede mutations; exact existing binding required for resume."
+    },
+    {
+      "finding": "Standalone final verification did not independently rejoin saved positions/token hashes to source geometry.",
+      "id": "C4",
+      "resolution": "verify_capture_geometry joins each descriptor and the full coverage to caller-loaded validated producer streams/checkpoints; capture.run invokes it and analyzer is wired to it. Rehashed positions and token hash corruptions reject."
+    },
+    {
+      "finding": "Same-shape content mutation did not test future effective-length masks.",
+      "id": "C5",
+      "resolution": "A separate exact future-mask mutation fixes original IDs, prefix, checkpoint and total tensor shape while zeroing only later mask positions, preserving and reporting both mask hashes."
+    },
+    {
+      "finding": "Direct script invocation lacked the repository path guard.",
+      "id": "C6",
+      "resolution": "Standard pre-import sys.path guard added; author executed direct --cfg job and scoped40-check workflow PASS before final source freeze."
+    }
+  ],
+  "reviewed_utc": "2026-09-08T21:48:57.213988+00:00",
+  "reviewer": "Independent implementation critic /root/verify_vllm_runtime",
+  "schema_version": "task2670_trajectory_capture_independent_review_v1",
+  "scope": "Source and CPU-fixture review of the trajectory capture instrument. Authorizes the approved actual runtime/parity/capacity smoke, not unexecuted capture completeness, scientific predictive performance or final experiment completion.",
+  "sources_sha256": {
+    "configs/eval/context_risk_trajectory_capture.yaml": "c3712db21a24d3ca2d0c7600a58d5379e19ee164661239271d7d67cf9233d8b7",
+    "configs/eval/context_risk_trajectory_prepare.yaml": "6a657212a33a34269b3ff939196a5f44431d70ff2cda50acc65dadf1e3973c19",
+    "eval_results/context_risk_trajectory_design/analysis_spec.json": "4717faf31718f954f5c6058cc2260a0a57d3f3eec793b21c549c0092d2265fda",
+    "eval_results/context_risk_trajectory_design/implementation_contract.md": "36122222a10999062e39c16761d07ee369c644fa287c8b51fcc406001edf9311",
+    "eval_results/context_risk_trajectory_design/plan.md": "560bfe0a82bad21b921d32742074eea8c30c014dd9e9f124894afa81a72fa7ab",
+    "scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
+    "scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
+    "scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+    "scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+    "scripts/context_risk_trajectory_capture.py": "afa39b674ca243fe3ba23d9dc741b4828321b2c7fe40c644ed3bb13d09c4863b",
+    "scripts/context_risk_trajectory_prepare.py": "1f7ea76df0cc6d52a6d65361772803e927408b6b81d0a5aa08b036b84e3f257f",
+    "src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79",
+    "src/explore_persona_space/orchestrate/env.py": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759",
+    "tests/test_context_risk_trajectory_capture.py": "1d230bfb2c04dd08fde0897561fcabefbbb9429785d221e81d8e259175d14d00",
+    "tests/test_context_risk_trajectory_prepare.py": "098b1a4417c48cbad104bc9337cae57276dadd5bb30b95cad37f1324fd863625"
+  },
+  "tests": {
+    "capture_cases_passed": 33,
+    "combined_cases_passed": 43,
+    "combined_pytest_seconds": 5.99,
+    "exit_code": 0,
+    "junit": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_trajectory_stages/setup/trajectory_capture_analyze_independent_tests.junit.xml",
+    "junit_sha256": "346d66df8830e965abee28bb6ec0832ed66e012024dbd008b6bd7037ae67c504",
+    "log": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_trajectory_stages/setup/trajectory_capture_analyze_independent_tests.log",
+    "log_sha256": "064f719027fb829a1d9b58d10d72ff40e1feab196d4095b9f16930dac0b2afc9",
+    "receipt_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_trajectory_stages/setup/trajectory_capture_analyze_independent_tests.json",
+    "receipt_sha256": "2a41a6d814ba506b008afd8b724c542f022b5b040997e62ff49d26b782d15c42",
+    "runtime": {
+      "inspect-ai": "0.3.261",
+      "numpy": "2.2.6",
+      "openai": "3.7.0",
+      "scikit-learn": "1.8.0",
+      "scipy": "1.17.1",
+      "tokenizers": "0.22.2",
+      "torch": "2.8.0",
+      "transformers": "4.57.6"
+    },
+    "sources_unchanged": true
+  },
+  "unresolved_findings": [],
+  "verdict": "PASS"
+}

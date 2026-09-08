@@ -1,0 +1,99 @@
+{
+  "verdict": "PASS",
+  "reviewer": "/root/published_task_rates",
+  "created_utc": "2026-09-08T21:54:23.904415+00:00",
+  "archive_sources_sha256": {
+    "scripts/context_risk_trajectory_archive.py": "f19ce1d6e95544aee571793ed8dde074292645a6b4a8b9ecacb3018db2c3c9fd",
+    "scripts/context_risk_corrected_finish.py": "8aeaddec362b9bbf277c707b7532d17948811f1bdf09b9c0a45f598c7eca466e",
+    "scripts/context_risk_highrate_archive.py": "b7f712557a5b537021fc5324a3f4f945c0e1a89c06da3404166c81b44401205b",
+    "scripts/context_risk_trajectory_analyze.py": "cef60034011a65cece2108b2f4122d1704b5389e0345ff429bfabac2919325fa",
+    "scripts/issue2054_phase_a.py": "69573ff5fc81ad398f35ccf9e656d5fceb7e2696e4b6b35a1db80a166ceb7016",
+    "src/explore_persona_space/orchestrate/hub.py": "6590d4c01d396f935da018d16673e3d21f93843126b5e12a42be8e6e0419351e",
+    "src/explore_persona_space/orchestrate/env.py": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759",
+    "configs/eval/context_risk_trajectory_archive.yaml": "568799221755d3485929b762ac7a7ff7252c78b9e3aa6697b1d0c37a59911865",
+    "tests/test_context_risk_trajectory_archive.py": "2bf4b39bf945627410475d5aad878e9411ee814d3084d3e5caab0d73da759c83"
+  },
+  "scope": "Independent code and CPU fixture review of the new trajectory archive adapter. No live upload/download, model calls, fitting, source edits, task changes, or compute lifecycle actions by reviewer. PASS authorizes only these exact adapter/dependency bytes; actual production upload and pinned download/parse verification remain required.",
+  "findings_closed": [
+    {
+      "id": "R1",
+      "resolution": "Expected staging and transport maps are derived from declared original files, trusted sharder returns, and the snapshot manifest. Staging byte/exact-set checks run before transport, after transport, and after readback. Returned transport file map must equal the expected prefixed map. Added-file races now fail before any readback PASS."
+    },
+    {
+      "id": "R2",
+      "resolution": "source_hashes compares actual imported helper file bytes with the worktree source closure at operation entry and completion. A changed imported Hub source file is rejected."
+    }
+  ],
+  "tests": {
+    "unique_current_cases": 7,
+    "runs": [
+      {
+        "log": "trajectory_archive_independent_fixed_tests.log",
+        "exit_code": 0,
+        "passed": 4,
+        "seconds": 6.05,
+        "coverage": "Existing two tests plus reviewer real transport/large-shard round trip and original late-file regression."
+      },
+      {
+        "log": "trajectory_archive_independent_fixed_preserved_tests.log",
+        "exit_code": 0,
+        "passed": 5,
+        "seconds": 6.61,
+        "coverage": "Separately preserved reviewer fixture: real 9,934,100-byte/1,100-record Unicode JSONL two-shard round trip; undeclared file after snapshot validation; undeclared file during transport; undeclared file during readback; imported Hub-byte mismatch."
+      }
+    ],
+    "runtime": "UV_NO_SYNC=1 uv run --with inspect-ai==0.3.261 --with openai==3.7.0 python -m pytest; OMP/MKL/OPENBLAS/NUMEXPR threads=8, MALLOC_ARENA_MAX=2.",
+    "real_bodies": "archive.run, prepare_snapshot, verify_staging, inherited transport.upload, real sharder, stage_hub_prefix orchestration, manifest-first shard resolver/reconstructor, exact-byte array/JSONL parsers. Only autospecced remote API/upload/file-fetch and disk-headroom boundaries use local CPU fixtures."
+  },
+  "reviewed_guards": [
+    "Allowed raw/final phase; fixed prefix and fallback disabled; disjoint run/staging/readback roots; fresh readback directory.",
+    "Pristine declared original file set, no symlinks or path escapes, exact original size/SHA, finite npy/npz parse.",
+    "Oversized text restricted to JSONL sharding, each part below9MB, exact concatenation including raw Unicode line separators; raw carriage-return normalization refused.",
+    "Exact manifest-derived staging and transport file maps, individual remote file size/SHA, exact pinned downloaded file set, byte-exact original reconstruction and parse.",
+    "Source, actual imported helper bytes, snapshot manifest and review receipt hashes rechecked through operation completion."
+  ],
+  "actual_imported_helpers": {
+    "transport": {
+      "actual_path": "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_corrected_finish.py",
+      "sha256": "8aeaddec362b9bbf277c707b7532d17948811f1bdf09b9c0a45f598c7eca466e"
+    },
+    "original_reader": {
+      "actual_path": "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_highrate_archive.py",
+      "sha256": "b7f712557a5b537021fc5324a3f4f945c0e1a89c06da3404166c81b44401205b"
+    },
+    "sha256": {
+      "actual_path": "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/context_risk_trajectory_analyze.py",
+      "sha256": "cef60034011a65cece2108b2f4122d1704b5389e0345ff429bfabac2919325fa"
+    },
+    "sharder": {
+      "actual_path": "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue2054_phase_a.py",
+      "sha256": "69573ff5fc81ad398f35ccf9e656d5fceb7e2696e4b6b35a1db80a166ceb7016"
+    },
+    "hub_prefix": {
+      "actual_path": "/home/thomasjiralerspong/explore-persona-space/src/explore_persona_space/orchestrate/hub.py",
+      "sha256": "6590d4c01d396f935da018d16673e3d21f93843126b5e12a42be8e6e0419351e"
+    },
+    "hub_reconstruction": {
+      "actual_path": "/home/thomasjiralerspong/explore-persona-space/src/explore_persona_space/orchestrate/hub.py",
+      "sha256": "6590d4c01d396f935da018d16673e3d21f93843126b5e12a42be8e6e0419351e"
+    },
+    "environment": {
+      "actual_path": "/home/thomasjiralerspong/explore-persona-space/src/explore_persona_space/orchestrate/env.py",
+      "sha256": "1c53d1c4d642472fe5682f90347ac7d0124130dae128ea5f69d26ecb6147c759"
+    }
+  },
+  "source_hashes_unchanged_across_fixed_regression": true,
+  "evidence_sha256": {
+    "trajectory_archive_independent_fixed_tests.log": "6c3ac5c5964c63c840557ed94531804e56f17bc097e343fa9a62572cdfb4b47b",
+    "trajectory_archive_independent_fixed_preserved_tests.log": "79f43b917ee892d47195195fc2b700985b5645f500e8993eb14fc422ba94d050",
+    "test_trajectory_archive_independent_transport_fixed.py": "cb4a9143ccfb8c2e977203e0c156d0da0389e6a986f9d195a1aef4e631d3acfb",
+    "trajectory_archive_review_fixed_sources.json": "e25faeaffc59645a8861c66eb371d37e10a3602fc25ec9ec187dafa0d47dea9c",
+    "trajectory_archive_review_findings_r1.json": "a84ef2aa9dca4aa79c88fe4d6628b9861e1ccad8a713d820625af0ec4e4e4399",
+    "trajectory_archive_review_findings_r1.md": "f0bfa0819a9d2f61278a53a960a3e0e1ec1e38336cf0a7b899cca49f1d735bdf"
+  },
+  "remaining_blockers": [],
+  "limitations": [
+    "No actual Hugging Face archive execution or network reliability was certified by these CPU fixtures. Production must independently pass the same archive worker and pinned remote readback before teardown.",
+    "Initial failure evidence is retained separately; its original reviewer fixture was restored to its pinned SHA, and expanded fixed-source tests are preserved under a new filename."
+  ]
+}

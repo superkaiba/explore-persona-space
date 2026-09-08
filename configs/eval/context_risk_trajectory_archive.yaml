@@ -1,0 +1,11 @@
+root: ???
+stage: ???
+readback: ???
+review: ???
+phase: raw
+hydra:
+  run:
+    dir: .
+  output_subdir: null
+  job:
+    chdir: false
