@@ -111,6 +111,22 @@ def test_selected_layer_only_and_verified_resume(tmp_path, remote):
     assert len(remote.calls) == 8
 
 
+def test_progress_precedes_first_network_call(tmp_path, remote, capsys):
+    original = remote.api.get_paths_info.side_effect
+    first = True
+
+    def checked_info(*args, **kwargs):
+        nonlocal first
+        if first:
+            assert "[rank-stage] start condition=a" in capsys.readouterr().out
+            first = False
+        return original(*args, **kwargs)
+
+    remote.api.get_paths_info.side_effect = checked_info
+    stage.stage(tmp_path, "a" * 40, "a", api=remote.api)
+    assert not first
+
+
 def test_missing_tensor_never_writes_success(tmp_path, remote):
     del remote.payload[f"{remote.prefix}/analysis_tensors/capture/test_1000/L02/shard000.npz"]
     with pytest.raises(ValueError, match="Missing selected"):

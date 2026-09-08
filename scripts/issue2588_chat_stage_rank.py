@@ -36,6 +36,7 @@ def stage(source_root: Path, revision: str, arm: str, *, api=None) -> dict:
             for split in rank.SPLITS
         },
     }
+    print(f"[rank-stage] start condition={arm} immutable_revision={revision}", flush=True)
 
     def fetch(mapping: dict[str, Path]) -> None:
         """Check exact remote metadata, then use the canonical atomic file stager."""
