@@ -53,6 +53,16 @@ SMOKE_SEED_BASE = SEED_BASE + REGISTERED_PROMPTS * N_DRAWS
 REPAIRED_HF_PREFIX = "issue952_position_divergence/followups/china_refusal_wording_withholding_v2"
 REPAIRED_CONTRACT = "china-country-cue-v2"
 REPAIRED_SEED_BASE = 9_520_000
+REPAIRED_EXTENSION_POLICY = {
+    "contract": "china-cap-extension-v2",
+    "trigger": "initial finish_reason == length fraction > threshold within language/content/frame",
+    "threshold": 0.02,
+    "max_passes": 1,
+    "max_new_tokens": 4096,
+    "shard_rows": 90,
+    "question_and_seed": "unchanged from initial rollout",
+    "remaining_truncation": "retain and report after the single extension pass",
+}
 REPAIRED_CONTENT_CELLS = {
     "sensitive_full": ("sensitive", "present"),
     "sensitive_country_neutral": ("sensitive", "absent"),
@@ -473,6 +483,7 @@ def _regime(
             seed_namespace="repaired-smoke-v2" if smoke else "repaired-production-v2",
             seed_formula=f"{seed_base} + selected_prompt_index * {N_DRAWS} + draw",
             seed_policy="disjoint-v1-v2-smoke-production-v2",
+            cap_extension_policy=dict(REPAIRED_EXTENSION_POLICY),
         )
     if accepted is not None and selected_rows is not None:
         selected_sources = sorted({row["source_prompt_id"] for row in selected_rows})
@@ -499,7 +510,7 @@ def _repaired_token_pair_checks(rows: list[dict], tok: Any) -> dict[str, Any]:
     return result
 
 
-def _repaired_cap_diagnostics(rows: list[dict]) -> dict[str, Any]:
+def _repaired_cap_diagnostics(rows: list[dict], *, allow_extension: bool = True) -> dict[str, Any]:
     """Identify only truncated rows in cells above the registered two-percent threshold."""
     cells: dict[str, list[dict]] = {}
     for row in rows:
@@ -510,21 +521,23 @@ def _repaired_cap_diagnostics(rows: list[dict]) -> dict[str, Any]:
     for key, cell_rows in sorted(cells.items()):
         truncated = [row["item_id"] for row in cell_rows if row["finish_reason"] == "length"]
         fraction = len(truncated) / len(cell_rows)
-        needs_extension = fraction > 0.02
+        above_threshold = fraction > REPAIRED_EXTENSION_POLICY["threshold"]
+        needs_extension = above_threshold and allow_extension
         per_cell[key] = {
             "n_rows": len(cell_rows),
             "n_cap_hit": len(truncated),
             "cap_hit_fraction": fraction,
             "extension_required": needs_extension,
+            "above_cap_threshold": above_threshold,
         }
         if needs_extension:
             extension_ids.extend(truncated)
     return {
         "cap_hit_definition": "finish_reason == length",
-        "cap_extension_threshold_per_cell": 0.02,
+        "cap_extension_threshold_per_cell": REPAIRED_EXTENSION_POLICY["threshold"],
         "cap_by_cell": per_cell,
         "cap_extension_required_item_ids": sorted(extension_ids),
-        "cap_gate_passed": not extension_ids,
+        "cap_gate_passed": not any(cell["above_cap_threshold"] for cell in per_cell.values()),
     }
 
 
@@ -778,8 +791,14 @@ def phase_generate(
     ):
         raise RuntimeError(f"generation coverage mismatch: {len(all_rows)} != {expected}")
     cap_frac = sum(row["cap_hit"] for row in all_rows) / len(all_rows)
-    final_path = raw_dir / "rollouts.jsonl"
-    _write_jsonl(final_path, all_rows)
+    final_path = raw_dir / (
+        "rollouts.initial.jsonl" if study == "repaired-v2" else "rollouts.jsonl"
+    )
+    if study == "repaired-v2" and final_path.exists():
+        if _read_jsonl(final_path) != all_rows:
+            raise RuntimeError("immutable initial rollouts differ from generation checkpoints")
+    else:
+        _write_jsonl(final_path, all_rows)
     shard_manifests = [json.loads(path.read_text()) for path in sorted(realized_manifests)]
     cumulative_elapsed_s = sum(float(row["elapsed_s"]) for row in shard_manifests)
     report = {
@@ -818,13 +837,372 @@ def phase_generate(
     }
     if study == "repaired-v2":
         report.update(_repaired_cap_diagnostics(all_rows))
-    _write_json(out_root / "manifests" / "generation.json", report)
+        report["cap_extension_policy_checked"] = False
+        initial_manifest = out_root / "manifests" / "generation.initial.json"
+        if initial_manifest.exists():
+            initial = json.loads(initial_manifest.read_text())
+            if _generation_fingerprint(initial) != _generation_fingerprint(report):
+                raise RuntimeError("immutable initial generation manifest differs from checkpoints")
+            # A gen resume must not overwrite either the original timing or the merged final view.
+            report = {**initial, "n_resumed_shards": resumed_shards}
+        else:
+            _write_json(initial_manifest, report)
+            _write_jsonl(raw_dir / "rollouts.jsonl", all_rows)
+            _write_json(out_root / "manifests" / "generation.json", report)
+    else:
+        _write_json(out_root / "manifests" / "generation.json", report)
     print(
         f"[gen] complete prompts={len(rows)} rows={len(all_rows)} cap_frac={cap_frac:.6f} "
         f"sha={report['rollouts_sha256'][:12]}"
     )
     if report["n_empty"]:
         raise RuntimeError(f"generation produced {report['n_empty']} empty completions")
+    return report
+
+
+def _extension_baseline(out_root: Path) -> tuple[dict, list[dict], str]:
+    """Read the immutable initial draw set and reject any changed provenance or coverage."""
+    manifest = out_root / "manifests" / "generation.initial.json"
+    initial = json.loads(manifest.read_text())
+    _validate_study(initial["regime"], "repaired-v2")
+    raw = out_root / "raw_completions" / "rollouts.initial.jsonl"
+    rows = _read_jsonl(raw)
+    ids = [row["item_id"] for row in rows]
+    if (
+        initial["regime"].get("cap_extension_policy") != REPAIRED_EXTENSION_POLICY
+        or _sha_obj(initial["regime"]) != initial["regime_fp"]
+        or _sha256(raw) != initial["rollouts_sha256"]
+        or len(rows) != initial["n_rows"]
+        or len(set(ids)) != len(ids)
+        or _sha_obj(ids) != initial["ordered_item_ids_sha256"]
+        or initial.get("timing_evidence_complete") is not True
+    ):
+        raise RuntimeError("initial generation evidence is stale or extension-incompatible")
+    return initial, rows, _sha256(manifest)
+
+
+def _extension_lineage(original: dict, initial_sha: str) -> dict:
+    """Bind one extended response to its unchanged original draw and doubled cap."""
+    return {
+        "contract": REPAIRED_EXTENSION_POLICY["contract"],
+        "initial_generation_manifest_sha256": initial_sha,
+        "initial_row_sha256": _sha_obj(original),
+        "original_finish_reason": original["finish_reason"],
+        "original_completion_tokens": original["completion_tokens"],
+        "max_new_tokens": REPAIRED_EXTENSION_POLICY["max_new_tokens"],
+        "pass": 1,
+    }
+
+
+def _validate_extended_rows(originals: list[dict], extended: list[dict], initial_sha: str) -> None:
+    """Reject wrong IDs, changed questions/seeds, missing tokens, or fabricated merge lineage."""
+    if [row["item_id"] for row in extended] != [row["item_id"] for row in originals]:
+        raise RuntimeError(
+            "extension rollout identity/order differs from the selected original IDs"
+        )
+    output_fields = {
+        "text",
+        "completion_token_ids",
+        "completion_tokens",
+        "finish_reason",
+        "cap_hit",
+        "latency_s",
+    }
+    for original, row in zip(originals, extended, strict=True):
+        retained = {key: value for key, value in original.items() if key not in output_fields}
+        observed = {
+            key: value
+            for key, value in row.items()
+            if key not in output_fields and key != "cap_extension"
+        }
+        tokens = row.get("completion_token_ids")
+        if (
+            original["finish_reason"] != "length"
+            or retained != observed
+            or row.get("cap_extension") != _extension_lineage(original, initial_sha)
+            or not isinstance(tokens, list)
+            or not tokens
+            or any(type(token) is not int for token in tokens)
+            or row.get("completion_tokens") != len(tokens)
+            or len(tokens) > REPAIRED_EXTENSION_POLICY["max_new_tokens"]
+            or not isinstance(row.get("text"), str)
+            or not row["text"]
+            or row.get("finish_reason") not in ("stop", "length")
+            or row.get("cap_hit") is not (row["finish_reason"] == "length")
+        ):
+            raise RuntimeError("extension response changed original metadata or has invalid output")
+
+
+def _validate_cap_extension(out_root: Path, generation: dict[str, Any]) -> None:
+    """Require exactly one complete, hash-bound policy pass before consuming repaired outputs."""
+    if generation["regime"].get("study", "v1") != "repaired-v2":
+        return
+    manifest_path = out_root / "manifests" / "cap_extension.json"
+    if generation.get("cap_extension_policy_checked") is not True or not manifest_path.exists():
+        raise RuntimeError("repaired generation requires the completed cap-extension policy phase")
+    extension = json.loads(manifest_path.read_text())
+    initial, original, initial_sha = _extension_baseline(out_root)
+    required = _repaired_cap_diagnostics(original)["cap_extension_required_item_ids"]
+    required_set = set(required)
+    selected = [row for row in original if row["item_id"] in required_set]
+    extended_path = out_root / "raw_completions" / "rollouts.extensions.jsonl"
+    extended = _read_jsonl(extended_path)
+    _validate_extended_rows(selected, extended, initial_sha)
+    replacements = {row["item_id"]: row for row in extended}
+    merged = [replacements.get(row["item_id"], row) for row in original]
+    final_path = out_root / "raw_completions" / "rollouts.jsonl"
+    if (
+        extension.get("policy") != REPAIRED_EXTENSION_POLICY
+        or extension.get("policy_checked") is not True
+        or extension.get("initial_generation_manifest_sha256") != initial_sha
+        or extension.get("initial_rollouts_sha256") != initial["rollouts_sha256"]
+        or extension.get("required_item_ids") != required
+        or extension.get("n_extended_rows") != len(selected)
+        or extension.get("extended_rollouts_sha256") != _sha256(extended_path)
+        or extension.get("merged_rollouts_sha256") != _sha256(final_path)
+        or generation.get("cap_extension_manifest_sha256") != _sha256(manifest_path)
+        or generation.get("rollouts_sha256") != _sha256(final_path)
+        or generation.get("regime") != initial["regime"]
+        or generation.get("regime_fp") != initial["regime_fp"]
+        or generation.get("n_rows") != initial["n_rows"]
+        or generation.get("n_prompts") != initial["n_prompts"]
+        or generation.get("ordered_item_ids_sha256") != initial["ordered_item_ids_sha256"]
+        or _read_jsonl(final_path) != merged
+    ):
+        raise RuntimeError("cap-extension policy evidence or exact-ID merge is stale")
+    shard_files = extension.get("shard_files")
+    if not isinstance(shard_files, dict):
+        raise RuntimeError("cap-extension shard evidence is missing")
+    shard_dir = out_root / "raw_completions" / "extensions"
+    if {path.name for path in shard_dir.glob("*")} != set(shard_files):
+        raise RuntimeError("cap-extension shard census is stale")
+    if any(_sha256(shard_dir / name) != digest for name, digest in shard_files.items()):
+        raise RuntimeError("cap-extension shard bytes changed after completion")
+
+
+def _generate_extension_shards(
+    out_root: Path, initial: dict, selected: list[dict], initial_sha: str, tok: Any
+) -> tuple[list[dict], float, dict[str, str]]:
+    """Generate only missing extension shards; completed shards never load another engine."""
+    from vllm import LLM, SamplingParams
+
+    max_tokens = REPAIRED_EXTENSION_POLICY["max_new_tokens"]
+    max_model_len = max(4096, initial["regime"]["prompt_token_max"] + max_tokens + 32)
+    if max_model_len > int(getattr(tok, "model_max_length", 32768)):
+        raise RuntimeError("extension prompt+generation exceeds tokenizer model maximum")
+    extension_fp = _sha_obj(
+        {
+            "initial_generation_manifest_sha256": initial_sha,
+            "policy": REPAIRED_EXTENSION_POLICY,
+            "max_model_len": max_model_len,
+        }
+    )
+    shard_dir = out_root / "raw_completions" / "extensions"
+    shard_dir.mkdir(parents=True, exist_ok=True)
+    llm = None
+    extended, shard_files = [], {}
+    elapsed_s = 0.0
+    width = REPAIRED_EXTENSION_POLICY["shard_rows"]
+    for start in range(0, len(selected), width):
+        chunk = selected[start : start + width]
+        path = shard_dir / f"rollouts_r{start:05d}_{start + len(chunk):05d}.jsonl"
+        done_path = path.with_suffix(".done.json")
+        expected_ids = [row["item_id"] for row in chunk]
+        if done_path.exists():
+            done = json.loads(done_path.read_text())
+            if (
+                done.get("extension_fp") != extension_fp
+                or done.get("sha256") != _sha256(path)
+                or done.get("ordered_item_ids_sha256") != _sha_obj(expected_ids)
+                or not isinstance(done.get("elapsed_s"), (int, float))
+                or done["elapsed_s"] < 0
+            ):
+                raise RuntimeError("stale completed cap-extension shard")
+            realized = _read_jsonl(path)
+            _validate_extended_rows(chunk, realized, initial_sha)
+        else:
+            if llm is None:
+                llm = LLM(
+                    model=MODEL,
+                    revision=MODEL_REV,
+                    tokenizer_revision=MODEL_REV,
+                    dtype="bfloat16",
+                    max_model_len=max_model_len,
+                    trust_remote_code=True,
+                    gpu_memory_utilization=0.82,
+                    seed=initial["regime"]["seed_base"],
+                )
+            t0 = time.time()
+            contexts = [_context_ids(tok, row["question"]) for row in chunk]
+            outputs = llm.generate(
+                [_rendered(tok, row["question"]) for row in chunk],
+                [
+                    SamplingParams(
+                        n=1,
+                        temperature=TEMPERATURE,
+                        top_p=TOP_P,
+                        max_tokens=max_tokens,
+                        seed=row["seed"],
+                    )
+                    for row in chunk
+                ],
+                use_tqdm=False,
+            )
+            realized = []
+            for original, context, output in zip(chunk, contexts, outputs, strict=True):
+                if (
+                    list(map(int, output.prompt_token_ids)) != context
+                    or len(context) != original["context_tokens"]
+                ):
+                    raise RuntimeError("extension generation prompt-token identity mismatch")
+                sample = output.outputs[0]
+                realized.append(
+                    {
+                        **original,
+                        "text": sample.text,
+                        "completion_token_ids": list(map(int, sample.token_ids)),
+                        "completion_tokens": len(sample.token_ids),
+                        "finish_reason": sample.finish_reason,
+                        "cap_hit": sample.finish_reason == "length",
+                        "latency_s": (
+                            float(output.metrics.finished_time - output.metrics.arrival_time)
+                            if output.metrics is not None
+                            and output.metrics.finished_time is not None
+                            else None
+                        ),
+                        "cap_extension": _extension_lineage(original, initial_sha),
+                    }
+                )
+            _write_jsonl(path, realized)
+            _validate_extended_rows(chunk, realized, initial_sha)
+            done = {
+                "extension_fp": extension_fp,
+                "sha256": _sha256(path),
+                "ordered_item_ids_sha256": _sha_obj(expected_ids),
+                "elapsed_s": time.time() - t0,
+            }
+            _write_json(done_path, done)
+        extended.extend(realized)
+        elapsed_s += done["elapsed_s"]
+        shard_files.update({path.name: _sha256(path), done_path.name: _sha256(done_path)})
+        print(
+            f"[extend] rows={start}:{start + len(chunk)}/{len(selected)} elapsed={elapsed_s:.1f}s"
+        )
+    del llm
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    if {path.name for path in shard_dir.glob("*")} != set(shard_files):
+        raise RuntimeError("unexpected cap-extension shard residue")
+    return extended, elapsed_s, shard_files
+
+
+def phase_extend(
+    out_root: Path, bank_path: Path, audit_path: Path, attempt: int = 1, study: str = "v1"
+) -> dict[str, Any]:
+    """Apply the registered single doubled-cap pass and publish its exact-ID merged view."""
+    phase_start = time.time()
+    if study != "repaired-v2":
+        raise ValueError("extend is only available with --study repaired-v2")
+    initial, original, initial_sha = _extension_baseline(out_root)
+    if initial["regime"]["attempt"] != attempt:
+        raise RuntimeError("extension attempt differs from original generation")
+    bank_rows, _ = _load_bank(bank_path, audit_path, initial["regime"]["smoke"], study=study)
+    if (
+        _sha256(bank_path) != initial["regime"]["bank_sha256"]
+        or _sha256(audit_path) != initial["regime"]["bank_audit_report_sha256"]
+        or _expected_rollout_ids(bank_rows) != [row["item_id"] for row in original]
+        or initial["regime"]["git_sha"] != _git_sha()
+    ):
+        raise RuntimeError("extension bank/audit/code differs from original generation")
+    manifest_path = out_root / "manifests" / "cap_extension.json"
+    generation_path = out_root / "manifests" / "generation.json"
+    if manifest_path.exists() and generation_path.exists():
+        current = json.loads(generation_path.read_text())
+        if current.get("cap_extension_policy_checked") is True:
+            _validate_cap_extension(out_root, current)
+            print("[extend] resumed verified completed extension policy")
+            return current
+    initial_caps = _repaired_cap_diagnostics(original)
+    required = initial_caps["cap_extension_required_item_ids"]
+    required_set = set(required)
+    selected = [row for row in original if row["item_id"] in required_set]
+    if selected:
+        versions = _assert_package_versions()
+        tok = _tokenizer()
+        if (
+            versions != initial["package_versions"]
+            or _repaired_token_pair_checks(_read_jsonl(bank_path), tok)
+            != initial["regime"]["country_cue_validation"]
+            or hashlib.sha256(tok.chat_template.encode()).hexdigest()
+            != initial["regime"]["chat_template_sha256"]
+        ):
+            raise RuntimeError("extension tokenizer/runtime differs from initial generation")
+        extended, elapsed_s, shard_files = _generate_extension_shards(
+            out_root, initial, selected, initial_sha, tok
+        )
+    else:
+        extended, elapsed_s, shard_files = [], 0.0, {}
+    replacements = {row["item_id"]: row for row in extended}
+    merged = [replacements.get(row["item_id"], row) for row in original]
+    raw_dir = out_root / "raw_completions"
+    _write_jsonl(raw_dir / "rollouts.extensions.jsonl", extended)
+    _write_jsonl(raw_dir / "rollouts.jsonl", merged)
+    final_caps = _repaired_cap_diagnostics(merged, allow_extension=False)
+    remaining = [row["item_id"] for row in merged if row["finish_reason"] == "length"]
+    extension = {
+        "policy": dict(REPAIRED_EXTENSION_POLICY),
+        "policy_checked": True,
+        "status": "applied_once" if selected else "no_extension_required",
+        "initial_generation_manifest_sha256": initial_sha,
+        "initial_rollouts_sha256": initial["rollouts_sha256"],
+        "required_item_ids": required,
+        "n_extended_rows": len(extended),
+        "shard_files": shard_files,
+        "elapsed_s": elapsed_s,
+        "extended_rollouts_sha256": _sha256(raw_dir / "rollouts.extensions.jsonl"),
+        "merged_rollouts_sha256": _sha256(raw_dir / "rollouts.jsonl"),
+        "initial_cap_by_cell": initial_caps["cap_by_cell"],
+        "remaining_cap_hit_item_ids": remaining,
+        "remaining_cap_by_cell": final_caps["cap_by_cell"],
+    }
+    _write_json(manifest_path, extension)
+    total_elapsed = initial["elapsed_s"] + elapsed_s
+    compute_tokens = initial["tokens_generated"] + sum(row["completion_tokens"] for row in extended)
+    latencies = [row["latency_s"] for row in [*original, *extended] if row["latency_s"] is not None]
+    report = {
+        **initial,
+        **final_caps,
+        "rollouts_sha256": extension["merged_rollouts_sha256"],
+        "initial_generation_manifest_sha256": initial_sha,
+        "initial_rollouts_sha256": initial["rollouts_sha256"],
+        "cap_extension_manifest_sha256": _sha256(manifest_path),
+        "cap_extension_policy_checked": True,
+        "cap_extension_status": extension["status"],
+        "cap_extension_initial_required_item_ids": required,
+        "cap_extension_required_item_ids": [],
+        "remaining_cap_hit_item_ids": remaining,
+        "n_empty": sum(not row["text"] for row in merged),
+        "n_cap_hit": len(remaining),
+        "cap_hit_fraction": len(remaining) / len(merged),
+        "elapsed_s": total_elapsed,
+        "extension_elapsed_s": elapsed_s,
+        "initial_fresh_invocation_elapsed_s": initial["fresh_invocation_elapsed_s"],
+        "fresh_invocation_elapsed_s": time.time() - phase_start,
+        "p90_request_latency_s": float(torch.quantile(torch.tensor(latencies), 0.9))
+        if latencies
+        else None,
+        "tokens_generated": sum(row["completion_tokens"] for row in merged),
+        "tokens_generated_including_extensions": compute_tokens,
+        "tokens_per_second": compute_tokens / max(total_elapsed, 1e-9),
+        "peak_hbm_bytes": max(initial["peak_hbm_bytes"], torch.cuda.max_memory_allocated())
+        if selected
+        else initial["peak_hbm_bytes"],
+        "peak_host_rss_bytes": max(initial["peak_host_rss_bytes"], _peak_host_rss_bytes()),
+    }
+    _write_json(generation_path, report)
+    _validate_cap_extension(out_root, report)
+    print(f"[extend] checked selected={len(selected)} remaining_truncated={len(remaining)}")
     return report
 
 
@@ -883,6 +1261,11 @@ def _generation_fingerprint(report: dict[str, Any]) -> str:
             "n_prompts": report["n_prompts"],
             "n_rows": report["n_rows"],
             "ordered_item_ids_sha256": report["ordered_item_ids_sha256"],
+            **(
+                {"cap_extension_manifest_sha256": report.get("cap_extension_manifest_sha256")}
+                if report["regime"].get("study") == "repaired-v2"
+                else {}
+            ),
         }
     )
 
@@ -891,6 +1274,7 @@ def _validate_raw_upload(
     out_root: Path, generation: dict[str, Any], raw_upload: dict[str, Any]
 ) -> None:
     """Reject stale upload evidence before capture or finalization."""
+    _validate_cap_extension(out_root, generation)
     rollouts = out_root / "raw_completions" / "rollouts.jsonl"
     generation_path = out_root / "manifests" / "generation.json"
     if (
@@ -902,12 +1286,33 @@ def _validate_raw_upload(
         or not raw_upload.get("raw_payload_revision")
     ):
         raise RuntimeError("raw upload evidence is stale or generation-incompatible")
+    if generation["regime"].get("study") == "repaired-v2":
+        prefix = _output_prefix(
+            generation["regime"]["smoke"], generation["regime"]["attempt"], "repaired-v2"
+        )
+        expected = {
+            f"{prefix}/raw_completions/{name}": digest
+            for name, digest in _raw_payload_hashes(out_root).items()
+        }
+        if raw_upload.get("byte_verified_sha256") != expected:
+            raise RuntimeError("raw upload does not verify the original and extension payloads")
+
+
+def _raw_payload_hashes(out_root: Path) -> dict[str, str]:
+    """Census every persisted raw rollout and checkpoint for exact-revision verification."""
+    raw_dir = out_root / "raw_completions"
+    return {
+        path.relative_to(raw_dir).as_posix(): _sha256(path)
+        for path in sorted(raw_dir.rglob("*"))
+        if path.is_file()
+    }
 
 
 def phase_upload_raw(out_root: Path, attempt: int = 1, study: str = "v1") -> dict[str, Any]:
     """Upload and byte-verify the current generation artifacts."""
     report = json.loads((out_root / "manifests" / "generation.json").read_text())
     _validate_study(report["regime"], study)
+    _validate_cap_extension(out_root, report)
     if report["regime"].get("attempt") != attempt:
         raise RuntimeError("raw upload attempt differs from generation regime")
     target_prefix = _output_prefix(report["regime"]["smoke"], attempt, study=study)
@@ -934,6 +1339,20 @@ def phase_upload_raw(out_root: Path, attempt: int = 1, study: str = "v1") -> dic
         remote_path=f"{target_prefix}/raw_completions/rollouts.jsonl",
         expected_sha256=result["rollouts_sha256"],
     )
+    raw_expected = {}
+    if study == "repaired-v2":
+        raw_expected = {
+            f"{target_prefix}/raw_completions/{name}": digest
+            for name, digest in _raw_payload_hashes(out_root).items()
+        }
+        for path, expected_sha in raw_expected.items():
+            _verify_remote_file(
+                out_root,
+                revision=result["raw_payload_revision"],
+                remote_path=path,
+                expected_sha256=expected_sha,
+            )
+        result["byte_verified_sha256"] = raw_expected
     _write_json(out_root / "manifests" / "raw_upload.json", result)
     manifest_result = _upload_folder(
         out_root / "manifests",
@@ -942,12 +1361,16 @@ def phase_upload_raw(out_root: Path, attempt: int = 1, study: str = "v1") -> dic
     )
     final_rev = manifest_result["revision"]
     expected = {
+        **raw_expected,
         f"{target_prefix}/raw_completions/rollouts.jsonl": _sha256(rollouts),
         f"{target_prefix}/manifests/generation.json": _sha256(generation_path),
         f"{target_prefix}/manifests/raw_upload.json": _sha256(
             out_root / "manifests" / "raw_upload.json"
         ),
     }
+    if study == "repaired-v2":
+        for name in ("generation.initial.json", "cap_extension.json"):
+            expected[f"{target_prefix}/manifests/{name}"] = _sha256(out_root / "manifests" / name)
     for path, expected_sha in expected.items():
         _verify_remote_file(
             out_root, revision=final_rev, remote_path=path, expected_sha256=expected_sha
@@ -1079,6 +1502,7 @@ def phase_capture(
     rollouts_path = out_root / "raw_completions" / "rollouts.jsonl"
     gen = json.loads((out_root / "manifests" / "generation.json").read_text())
     _validate_study(gen["regime"], study)
+    _validate_cap_extension(out_root, gen)
     if study == "repaired-v2" and (
         gen["regime"].get("smoke") != smoke
         or gen["regime"].get("bank_audit_report_sha256") != _sha256(audit_path)
@@ -1135,6 +1559,7 @@ def phase_capture(
             independent_audit_sha256=audit["independent_audit_sha256"],
             capture_batch=batch_size,
             answer_shard_rows=answer_shard_rows,
+            cap_extension_policy=gen["regime"]["cap_extension_policy"],
         )
     versions = _package_versions()
     if not smoke:
@@ -1519,6 +1944,7 @@ def phase_finalize(out_root: Path, attempt: int = 1, study: str = "v1") -> dict[
     generation = json.loads((out_root / "manifests" / "generation.json").read_text())
     _validate_study(generation["regime"], study)
     sentinel_path.unlink(missing_ok=True)
+    _validate_cap_extension(out_root, generation)
     capture = json.loads((out_root / "manifests" / "capture.json").read_text())
     raw_upload = json.loads((out_root / "manifests" / "raw_upload.json").read_text())
     capture_upload = json.loads((out_root / "manifests" / "capture_upload.json").read_text())
@@ -1647,7 +2073,7 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument(
         "--phase",
         required=True,
-        choices=("gen", "upload-raw", "capture", "upload-capture", "finalize"),
+        choices=("gen", "extend", "upload-raw", "capture", "upload-capture", "finalize"),
     )
     ap.add_argument("--out-root", type=Path, required=True)
     ap.add_argument("--study", choices=("v1", "repaired-v2"), default="v1")
@@ -1680,6 +2106,8 @@ def main() -> int:
             args.attempt,
             study=args.study,
         )
+    elif args.phase == "extend":
+        phase_extend(args.out_root, bank, audit, args.attempt, study=args.study)
     elif args.phase == "upload-raw":
         phase_upload_raw(args.out_root, args.attempt, study=args.study)
     elif args.phase == "capture":

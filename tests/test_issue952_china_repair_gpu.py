@@ -281,12 +281,13 @@ def _fake_hub(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> list[tuple[str
     return verified
 
 
-def test_repaired_smoke_then_production_execute_all_phase_bodies(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Run real phase guards, files, shard loops, and byte checks over synthetic boundaries."""
-    bank, audit = _bank(tmp_path / "inputs")
+def _synthetic_runtime(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, bank: Path, scenario: str
+) -> dict:
+    """Set model and network boundaries while retaining every production phase body."""
     tok = _Tokenizer()
+    rows_by_prompt = {GPU._rendered(tok, row["prompt"]): row for row in GPU._read_jsonl(bank)}
+    state = {"calls": [], "engine_loads": 0}
     monkeypatch.setattr(GPU, "HIDDEN", 2)
     for name, value in (
         ("_tokenizer", tok),
@@ -306,8 +307,10 @@ def test_repaired_smoke_then_production_execute_all_phase_bodies(
 
     class SamplingParams:
         def __init__(self, *, n, temperature, top_p, max_tokens, seed):
-            assert (n, temperature, top_p, max_tokens) == (1, 1.0, 0.95, 2048)
+            assert (n, temperature, top_p) == (1, 1.0, 0.95)
+            assert max_tokens in (2048, 4096)
             self.seed = seed
+            self.max_tokens = max_tokens
 
     class LLM:
         def __init__(
@@ -326,23 +329,30 @@ def test_repaired_smoke_then_production_execute_all_phase_bodies(
             assert dtype == "bfloat16" and max_model_len >= 4096
             assert trust_remote_code and gpu_memory_utilization == 0.82
             assert seed in (9520000, 9530880)
+            state["engine_loads"] += 1
 
         def generate(self, prompts, params, *, use_tqdm):
             assert not use_tqdm
-            return [
-                SimpleNamespace(
-                    prompt_token_ids=tok.encode(prompt),
-                    outputs=[
-                        SimpleNamespace(
-                            text=f"Synthetic answer {param.seed}",
-                            token_ids=[10, 20],
-                            finish_reason="stop",
-                        )
-                    ],
-                    metrics=SimpleNamespace(finished_time=2.0, arrival_time=1.0),
+            outputs = []
+            for prompt, param in zip(prompts, params, strict=True):
+                row = rows_by_prompt[prompt]
+                state["calls"].append(
+                    {
+                        "item_id": row["item_id"],
+                        "seed": param.seed,
+                        "max_tokens": param.max_tokens,
+                        "question": row["prompt"],
+                    }
                 )
-                for prompt, param in zip(prompts, params, strict=True)
-            ]
+                sample = _synthetic_sample(row, param.seed, param.max_tokens, scenario)
+                outputs.append(
+                    SimpleNamespace(
+                        prompt_token_ids=tok.encode(prompt),
+                        outputs=[sample],
+                        metrics=SimpleNamespace(finished_time=2.0, arrival_time=1.0),
+                    )
+                )
+            return outputs
 
     vllm = ModuleType("vllm")
     vllm.LLM = LLM
@@ -378,7 +388,44 @@ def test_repaired_smoke_then_production_execute_all_phase_bodies(
     monkeypatch.setattr(
         GPU, "_capture_answers", create_autospec(GPU._capture_answers, side_effect=answers)
     )
-    verified = _fake_hub(tmp_path, monkeypatch)
+    state["verified"] = _fake_hub(tmp_path, monkeypatch)
+    return state
+
+
+def _synthetic_sample(row: dict, seed: int, max_tokens: int, scenario: str) -> SimpleNamespace:
+    """Create an above-threshold cell and a below-threshold control without real content."""
+    triggered = (
+        row["language"] == "en"
+        and row["frame"] == "direct"
+        and row["content"] == "sensitive_full"
+        and row["source_prompt_id"] in ("s000", "s001")
+    )
+    below_threshold = (
+        row["language"] == "en"
+        and row["frame"] == "direct"
+        and row["content"] == "matched_non_china"
+        and row["source_prompt_id"] == "s000"
+        and seed % GPU.N_DRAWS == 0
+    )
+    truncated = scenario != "none" and (triggered or below_threshold)
+    if max_tokens == 4096:
+        truncated = scenario == "remaining"
+    tokens = [10] * max_tokens if truncated else ([30, 40, 50] if max_tokens == 4096 else [10, 20])
+    return SimpleNamespace(
+        text=f"Synthetic answer {seed} at cap {max_tokens}",
+        token_ids=tokens,
+        finish_reason="length" if truncated else "stop",
+    )
+
+
+@pytest.mark.parametrize("scenario", ["none", "resolved", "remaining"])
+def test_repaired_smoke_then_production_execute_all_phase_bodies(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, scenario: str
+) -> None:
+    """Run complete smoke and production paths, including selective extension and resume."""
+    bank, audit = _bank(tmp_path / "inputs")
+    state = _synthetic_runtime(tmp_path, monkeypatch, bank, scenario)
+    verified = state["verified"]
     smoke_report = None
     for smoke, n_prompts, n_rows in ((True, 160, 1280), (False, 1360, 10880)):
         out = tmp_path / ("smoke" if smoke else "production")
@@ -388,17 +435,41 @@ def test_repaired_smoke_then_production_execute_all_phase_bodies(
         )
         assert (generated["n_prompts"], generated["n_rows"]) == (n_prompts, n_rows)
         assert generated["regime"]["country_cue_validation"]["n_pairs"] == 680
-        assert generated["cap_extension_required_item_ids"] == []
+        required = generated["cap_extension_required_item_ids"]
+        assert len(required) == (0 if scenario == "none" else 16)
         rollouts = GPU._read_jsonl(out / "raw_completions" / "rollouts.jsonl")
         assert len({row["seed"] for row in rollouts}) == n_rows
         assert all(row["bank_contract"] == BANK.CONTRACT for row in rollouts)
-        assert all(row["completion_token_ids"] == [10, 20] for row in rollouts)
+        assert all(row["completion_token_ids"] for row in rollouts)
         assert (
             len(list((out / "raw_completions").glob("rollouts_p*.jsonl"))) == (n_prompts + 89) // 90
         )
         with pytest.raises(RuntimeError, match="selected study"):
             GPU.phase_upload_raw(out)
-        GPU.phase_upload_raw(out, study="repaired-v2")
+        with pytest.raises(RuntimeError, match="cap-extension policy phase"):
+            GPU.phase_upload_raw(out, study="repaired-v2")
+        with pytest.raises(RuntimeError, match="cap-extension policy phase"):
+            GPU.phase_finalize(out, study="repaired-v2")
+        initial_manifest_sha = GPU._sha256(out / "manifests" / "generation.initial.json")
+        calls_before = len(state["calls"])
+        loads_before = state["engine_loads"]
+        merged_report = GPU.phase_extend(out, bank, audit, study="repaired-v2")
+        _assert_extension_merge(out, rollouts, merged_report, required, scenario)
+        added_calls = state["calls"][calls_before:]
+        assert len(added_calls) == len(required)
+        assert state["engine_loads"] == loads_before + bool(required)
+        assert {call["seed"] for call in added_calls} == {
+            row["seed"] for row in rollouts if row["item_id"] in required
+        }
+        assert all(call["max_tokens"] == 4096 for call in added_calls)
+        raw_upload = GPU.phase_upload_raw(out, study="repaired-v2")
+        assert any(
+            path.endswith("/rollouts.initial.jsonl") for path in raw_upload["byte_verified_sha256"]
+        )
+        assert any(
+            path.endswith("/rollouts.extensions.jsonl")
+            for path in raw_upload["byte_verified_sha256"]
+        )
         captured = GPU.phase_capture(
             out, bank, audit, smoke, 4, 720, smoke_report, study="repaired-v2"
         )
@@ -423,6 +494,118 @@ def test_repaired_smoke_then_production_execute_all_phase_bodies(
             path for rev, path in verified if rev == uploaded["tensor_payload_revision"]
         }
         # Resume the same phase only against the complete content-keyed shard manifests.
+        final_manifest_sha = GPU._sha256(out / "manifests" / "generation.json")
+        calls_before = len(state["calls"])
         resumed = GPU.phase_generate(out, bank, audit, smoke, 90, smoke_report, study="repaired-v2")
         assert resumed["n_resumed_shards"] == (n_prompts + 89) // 90
         assert resumed["rollouts_sha256"] == generated["rollouts_sha256"]
+        assert GPU._sha256(out / "manifests" / "generation.initial.json") == initial_manifest_sha
+        assert GPU._sha256(out / "manifests" / "generation.json") == final_manifest_sha
+        assert GPU.phase_extend(out, bank, audit, study="repaired-v2") == merged_report
+        assert len(state["calls"]) == calls_before
+        GPU._validate_raw_upload(out, merged_report, raw_upload)
+
+
+def _assert_extension_merge(
+    out: Path, original: list[dict], report: dict, required: list[str], scenario: str
+) -> None:
+    """Check every row's provenance, original preservation, and one-pass residual diagnostics."""
+    assert GPU._read_jsonl(out / "raw_completions" / "rollouts.initial.jsonl") == original
+    extended = GPU._read_jsonl(out / "raw_completions" / "rollouts.extensions.jsonl")
+    assert {row["item_id"] for row in extended} == set(required)
+    merged = GPU._read_jsonl(out / "raw_completions" / "rollouts.jsonl")
+    assert len(merged) == len(original)
+    for initial, final in zip(original, merged, strict=True):
+        if initial["item_id"] in required:
+            assert initial["finish_reason"] == "length"
+            assert final["cap_extension"]["initial_row_sha256"] == GPU._sha_obj(initial)
+            assert final["seed"] == initial["seed"]
+            assert final["question"] == initial["question"]
+            assert final["text"] != initial["text"]
+        else:
+            assert final == initial
+    assert report["cap_extension_policy_checked"] is True
+    assert report["cap_extension_required_item_ids"] == []
+    assert report["cap_extension_initial_required_item_ids"] == required
+    assert (
+        len(report["remaining_cap_hit_item_ids"])
+        == {"none": 0, "resolved": 1, "remaining": 17}[scenario]
+    )
+    assert report["n_cap_hit"] == len(report["remaining_cap_hit_item_ids"])
+    assert report["tokens_generated_including_extensions"] == (
+        sum(row["completion_tokens"] for row in original)
+        + sum(row["completion_tokens"] for row in extended)
+    )
+    if scenario == "remaining":
+        assert report["cap_gate_passed"] is False
+
+
+def test_extension_reuses_completed_shard_after_interrupted_merge(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A crash after checkpointing cannot cause valid extension rows to be regenerated."""
+    bank, audit = _bank(tmp_path / "inputs")
+    state = _synthetic_runtime(tmp_path, monkeypatch, bank, "resolved")
+    out = tmp_path / "smoke"
+    initial = GPU.phase_generate(out, bank, audit, True, 90, study="repaired-v2")
+    initial_sha = GPU._sha256(out / "manifests" / "generation.initial.json")
+    write_json = GPU._write_json
+
+    def interrupt_manifest(path, value):
+        if path.name == "cap_extension.json":
+            raise RuntimeError("synthetic crash before publishing extension manifest")
+        write_json(path, value)
+
+    with monkeypatch.context() as interrupted:
+        interrupted.setattr(
+            GPU, "_write_json", create_autospec(write_json, side_effect=interrupt_manifest)
+        )
+        with pytest.raises(RuntimeError, match="synthetic crash"):
+            GPU.phase_extend(out, bank, audit, study="repaired-v2")
+    assert len(list((out / "raw_completions" / "extensions").glob("*.done.json"))) == 1
+    assert not (out / "manifests" / "cap_extension.json").exists()
+    GPU.phase_generate(out, bank, audit, True, 90, study="repaired-v2")
+    calls_before = len(state["calls"])
+    loads_before = state["engine_loads"]
+    report = GPU.phase_extend(out, bank, audit, study="repaired-v2")
+    assert len(state["calls"]) == calls_before
+    assert state["engine_loads"] == loads_before
+    assert GPU._sha256(out / "manifests" / "generation.initial.json") == initial_sha
+    assert (
+        report["cap_extension_initial_required_item_ids"]
+        == initial["cap_extension_required_item_ids"]
+    )
+    GPU._validate_cap_extension(out, report)
+
+
+@pytest.mark.parametrize("mutation", ["seed", "original", "merged", "manifest", "checkpoint"])
+def test_extension_consumers_reject_corrupted_provenance(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mutation: str
+) -> None:
+    """Changing a persisted source, replacement, merge, or checkpoint invalidates the gate."""
+    bank, audit = _bank(tmp_path / "inputs")
+    _synthetic_runtime(tmp_path, monkeypatch, bank, "resolved")
+    out = tmp_path / "smoke"
+    GPU.phase_generate(out, bank, audit, True, 90, study="repaired-v2")
+    report = GPU.phase_extend(out, bank, audit, study="repaired-v2")
+    paths = {
+        "seed": out / "raw_completions" / "rollouts.extensions.jsonl",
+        "original": out / "raw_completions" / "rollouts.initial.jsonl",
+        "merged": out / "raw_completions" / "rollouts.jsonl",
+    }
+    if mutation in paths:
+        rows = GPU._read_jsonl(paths[mutation])
+        rows[0]["seed"] += 1
+        GPU._write_jsonl(paths[mutation], rows)
+    elif mutation == "manifest":
+        path = out / "manifests" / "cap_extension.json"
+        manifest = json.loads(path.read_text())
+        manifest["required_item_ids"] = []
+        GPU._write_json(path, manifest)
+    else:
+        path = next((out / "raw_completions" / "extensions").glob("*.done.json"))
+        GPU._write_json(path, {"changed": True})
+    with pytest.raises(RuntimeError):
+        GPU._validate_cap_extension(out, report)
+    with pytest.raises(RuntimeError):
+        GPU.phase_upload_raw(out, study="repaired-v2")

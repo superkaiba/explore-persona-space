@@ -31,7 +31,7 @@ run_phase() {
   shift 2
   local phase_log="$run_root/logs/${mode}-${phase}-$(date -u +%Y%m%dT%H%M%S).log"
   echo "[phase=${mode}_${phase//-/_}] code_sha=$expected_sha log=$phase_log"
-  if [[ "$phase" = gen || "$phase" = capture ]]; then
+  if [[ "$phase" = gen || "$phase" = extend || "$phase" = capture ]]; then
     uv run --no-sync python -c \
       'import sys; from explore_persona_space.orchestrate.preflight import assert_out_root_headroom; assert_out_root_headroom(sys.argv[1], 20, phase=sys.argv[2])' \
       "$run_root" "${mode}_${phase}"
@@ -43,11 +43,13 @@ run_phase() {
 }
 
 run_phase smoke gen --smoke
+run_phase smoke extend --smoke
 run_phase smoke upload-raw
 run_phase smoke capture --smoke
 run_phase smoke upload-capture
 run_phase smoke finalize
 run_phase production gen --smoke-report "$run_root/smoke/manifests/smoke_timing.json"
+run_phase production extend
 run_phase production upload-raw
 run_phase production capture --smoke-report "$run_root/smoke/manifests/smoke_timing.json"
 run_phase production upload-capture
