@@ -151,12 +151,17 @@ def _download(cfg: Config, relpath: str, *, revision: str | None) -> Path:
     """Fetch ``relpath`` from the HF data repo into the writable k5 root."""
     from huggingface_hub import hf_hub_download
 
-    hf_hub_download(
-        LC.HF_REPO,
-        relpath,
-        repo_type="dataset",
-        revision=revision,
-        local_dir=cfg.k5_root,
+    from explore_persona_space.orchestrate import hub
+
+    hub.retry_transient(
+        lambda: hf_hub_download(
+            LC.HF_REPO,
+            relpath,
+            repo_type="dataset",
+            revision=revision,
+            local_dir=cfg.k5_root,
+        ),
+        what=f"hf_hub_download {relpath}",
     )
     return cfg.k5_root / relpath
 
