@@ -1,0 +1,136 @@
+{
+  "observed_unix_s": 1788867240.7449183,
+  "complete_packets": 56,
+  "expected_packets": 280,
+  "complete_annotations": 14336,
+  "expected_annotations": 71680,
+  "completed_repetitions": 1,
+  "total_repetitions": 5,
+  "running_packets": 2,
+  "first_pass_wall_seconds": 16361.342349767685,
+  "runtime_by_property": {
+    "confidence": {
+      "packets": 8,
+      "mean_seconds": 467.21436509490013,
+      "median_seconds": 457.21766352653503,
+      "min_seconds": 237.91066145896912,
+      "max_seconds": 690.4779562950134,
+      "all_observed_intervals_seconds": [
+        498.30989027023315,
+        433.9714877605438,
+        471.5588254928589,
+        690.4779562950134,
+        237.91066145896912,
+        522.9971098899841,
+        442.8765015602112,
+        439.61248803138733
+      ]
+    },
+    "formality": {
+      "packets": 8,
+      "mean_seconds": 469.6587179303169,
+      "median_seconds": 475.00329411029816,
+      "min_seconds": 328.50907826423645,
+      "max_seconds": 568.66956782341,
+      "all_observed_intervals_seconds": [
+        460.49550557136536,
+        443.3483085632324,
+        467.9713773727417,
+        328.50907826423645,
+        568.66956782341,
+        512.4319431781769,
+        482.0352108478546,
+        493.80875182151794
+      ]
+    },
+    "format": {
+      "packets": 8,
+      "mean_seconds": 389.19744953513145,
+      "median_seconds": 441.46629536151886,
+      "min_seconds": 278.0675961971283,
+      "max_seconds": 459.98942136764526,
+      "all_observed_intervals_seconds": [
+        455.20320105552673,
+        459.98942136764526,
+        307.65829515457153,
+        440.3286817073822,
+        278.0675961971283,
+        279.00653314590454,
+        450.72195863723755,
+        442.6039090156555
+      ]
+    },
+    "language": {
+      "packets": 8,
+      "mean_seconds": 393.8243172466755,
+      "median_seconds": 395.4573174715042,
+      "min_seconds": 290.37059020996094,
+      "max_seconds": 479.1406843662262,
+      "all_observed_intervals_seconds": [
+        371.5315968990326,
+        362.54366874694824,
+        391.6212639808655,
+        399.29337096214294,
+        479.1406843662262,
+        290.37059020996094,
+        445.65913486480713,
+        410.4342279434204
+      ]
+    },
+    "persona": {
+      "packets": 8,
+      "mean_seconds": 564.8543857038021,
+      "median_seconds": 568.1538097858429,
+      "min_seconds": 505.7831485271454,
+      "max_seconds": 628.7640974521637,
+      "all_observed_intervals_seconds": [
+        591.4896085262299,
+        571.1618187427521,
+        628.7640974521637,
+        505.7831485271454,
+        585.6842777729034,
+        565.1458008289337,
+        508.0926914215088,
+        562.7136423587799
+      ]
+    },
+    "topic": {
+      "packets": 8,
+      "mean_seconds": 687.2527755200863,
+      "median_seconds": 505.78122758865356,
+      "min_seconds": 349.33161449432373,
+      "max_seconds": 1982.351220369339,
+      "all_observed_intervals_seconds": [
+        531.2364602088928,
+        1982.351220369339,
+        661.14009308815,
+        469.8934135437012,
+        349.33161449432373,
+        492.50694727897644,
+        510.8574421405792,
+        500.7050130367279
+      ]
+    },
+    "warmth": {
+      "packets": 8,
+      "mean_seconds": 441.30862951278687,
+      "median_seconds": 438.8025870323181,
+      "min_seconds": 308.1215925216675,
+      "max_seconds": 614.7811787128448,
+      "all_observed_intervals_seconds": [
+        614.7811787128448,
+        483.54495096206665,
+        493.99806022644043,
+        363.6264305114746,
+        464.7478618621826,
+        308.1215925216675,
+        412.8573122024536,
+        388.7916491031647
+      ]
+    }
+  },
+  "remaining_projection_seconds_at_two_workers": 54612.97024869919,
+  "projection_definition": "Remaining 224 packets at each property first-pass mean coordinator-observed interval, divided by two workers. Includes already-running packets at their full predicted duration; not a deadline or uncertainty interval. Shared-model scheduling and tail variation may change runtime.",
+  "cost": "Codex per-rating billing telemetry is not exposed; unknown, not zero.",
+  "readout_fit": false
+}
