@@ -1,0 +1,28 @@
+{
+  "purpose": "numerical throughput smoke only; seeded random fixture targets, no behavioral labels or results",
+  "main_rows": 2048,
+  "feature_width": 3584,
+  "outer_fold": 0,
+  "inner_folds": 3,
+  "arms": [
+    "answer",
+    "answer_pca256",
+    "answer_pca512",
+    "context",
+    "context_pca256",
+    "context_pca512",
+    "framing",
+    "length",
+    "prior"
+  ],
+  "widths": [
+    0,
+    256,
+    512
+  ],
+  "elapsed_seconds": 4.137572543695569,
+  "peak_rss_mib": 970.2890625,
+  "all_predictions_finite": true,
+  "vectors_sha256": "d6b80e9f3221a5942fbc6d28602860d50cfe5e83198bdd9a34ab51fa11dcf35e",
+  "readout_script_sha256": "5e11e11e9a47b8e5cb97efeaa945600603c260d9fc50ea4f33a82e1619b2ed65"
+}
