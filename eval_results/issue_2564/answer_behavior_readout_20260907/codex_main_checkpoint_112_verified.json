@@ -1,0 +1,15 @@
+{
+  "verified_at_unix_s": 1788881656.84396,
+  "repo": "superkaiba1/explore-persona-space-data",
+  "revision": "c03c4a5f1bd82c4ee5d3c1962de865cedccbaa8c",
+  "prefix": "issue2564_minpair/answer_behavior_readout_20260907/raw_completions/codex_main_checkpoint_112",
+  "file_count": 732,
+  "total_bytes": 79869246,
+  "exact_path_set": true,
+  "all_content_hashes_match": true,
+  "manifest_sha256": "b281d699ebb15efeb7b2477d6555ae27bc96d5fd6b3c4bcb7950cdd3e4e904c9",
+  "main_complete": false,
+  "main_packets_complete": 112,
+  "main_ratings": 28672,
+  "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/c03c4a5f1bd82c4ee5d3c1962de865cedccbaa8c/issue2564_minpair/answer_behavior_readout_20260907/raw_completions/codex_main_checkpoint_112"
+}

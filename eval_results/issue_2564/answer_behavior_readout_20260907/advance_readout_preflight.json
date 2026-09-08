@@ -1,0 +1,42 @@
+{
+  "purpose": "Advance CPU readout diagnostic only; no actual-label fit launched. Repeat immediately before the future fit.",
+  "observed_at": 1788876346.1385946,
+  "elapsed_seconds": 13.3263258934021,
+  "module_path": "/home/thomasjiralerspong/explore-persona-space/src/explore_persona_space/orchestrate/preflight.py",
+  "code_checkout": "/home/thomasjiralerspong/.codex/worktrees/issue2564-answer-behavior",
+  "environment_project": "/home/thomasjiralerspong/explore-persona-space",
+  "planned_footprint_gb": 3.0,
+  "min_disk_gb": 4.5,
+  "overrides": {
+    "EPM_PREFLIGHT_DISK_FLOOR_OVERRIDE": "1",
+    "EPM_PREFLIGHT_DATA_DISK_OVERRIDE": "1"
+  },
+  "override_rationale": "Explicit per-invocation low-disk diagnostic. Existing prepared vectors are 29 MB and numerical full-width smoke peaked at 970 MiB RAM. Conservative 3 GB disk estimate covers current research inputs, retained annotations and copies plus future readout outputs; no data-disk writes or new model downloads. Require at least 1.5x planned bytes on the actual root filesystem. No global setting changed.",
+  "report": {
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "VM-root disk floor OVERRIDDEN: only 24.6GB free on / (floor 40GB, EPM_PREFLIGHT_DISK_FLOOR_GB); launching anyway because EPM_PREFLIGHT_DISK_FLOOR_OVERRIDE is set. Disk pressure risks silently-failing Bash spawns \u2014 reclaim with vm_disk_guard.py --apply.",
+      "Data-disk floor OVERRIDDEN: /mnt/eps-data is 99.9% used (ERROR threshold 98%, EPM_PREFLIGHT_DATA_DISK_ERR_PCT); launching anyway because EPM_PREFLIGHT_DATA_DISK_OVERRIDE is set. Staging writes risk ENOSPC/EDQUOT. Reclaim: `uv run python scripts/vm_disk_guard.py --apply` (terminal-issue caches) or `uv run python scripts/clean_experiment_downloads.py <N> --apply` on TERMINAL issues; active-issue data is resize/raise-cap only, never deleted (.claude/rules/disk-hygiene.md).",
+      "VM root disk / is 97.4% used (24.6 GB free) \u2014 near full (warn at 90% used / 20 GB free). Run: uv run python scripts/vm_disk_guard.py --apply (clears re-downloadable data/issue_*/hf_dl caches + stale logs).",
+      "nvidia-smi not available (no GPU)",
+      "Branch codex/issue2564-answer-behavior-20260907 is 198 commit(s) behind origin/main (expected on a feature branch; informational)."
+    ],
+    "gpu_info": [],
+    "disk_free_gb": 24.631141662597656,
+    "disk_probed_headroom_gb": 24.631141662597656,
+    "disk_headroom_basis": "share-level free (below per-pod quota cap)",
+    "git_status": "clean, 198 behind origin/main",
+    "env_synced": true,
+    "venv_import_verdict": "skipped-lane",
+    "hf_storage_used_tb": 19.769923692711,
+    "hf_storage_ceiling_tb": 20.0,
+    "hf_storage_basis": "live-api",
+    "hf_lfs_write_verdict": "ok",
+    "hf_lfs_write_detail": "superkaiba1/explore-persona-space: negotiated (xet, 1 action(s)); superkaiba1/explore-persona-space-overflow: negotiated (xet, 1 action(s))",
+    "hf_lfs_write_probe_gb": 16.0,
+    "data_disk_used_pct": 99.94536374028904,
+    "swap_total_gb": 31.999996185302734,
+    "swap_free_pct": 78.19747664898355
+  }
+}

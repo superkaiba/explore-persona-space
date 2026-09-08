@@ -1,0 +1,74 @@
+{
+  "observed_unix_s": 1788881514.5955722,
+  "complete_packets": 112,
+  "expected_packets": 280,
+  "complete_annotations": 28672,
+  "expected_annotations": 71680,
+  "completed_repetitions": 2,
+  "total_repetitions": 5,
+  "running_packets": [
+    "text_judge_main_113",
+    "text_judge_main_114"
+  ],
+  "schema_outcomes": {
+    "valid": 28672
+  },
+  "elapsed_wall_seconds": 30626.195487976074,
+  "runtime_by_property": {
+    "confidence": {
+      "n": 16,
+      "mean_seconds": 479.70881509780884,
+      "median_seconds": 479.75720393657684,
+      "min_seconds": 237.91066145896912,
+      "max_seconds": 690.4779562950134
+    },
+    "formality": {
+      "n": 16,
+      "mean_seconds": 481.0266147851944,
+      "median_seconds": 478.6302069425583,
+      "min_seconds": 220.65091013908386,
+      "max_seconds": 651.2735588550568
+    },
+    "format": {
+      "n": 16,
+      "mean_seconds": 403.56355607509613,
+      "median_seconds": 431.55974566936493,
+      "min_seconds": 278.0675961971283,
+      "max_seconds": 487.76388120651245
+    },
+    "language": {
+      "n": 16,
+      "mean_seconds": 388.97173649072647,
+      "median_seconds": 392.70464503765106,
+      "min_seconds": 285.1307806968689,
+      "max_seconds": 479.1406843662262
+    },
+    "persona": {
+      "n": 16,
+      "mean_seconds": 594.0737938731909,
+      "median_seconds": 575.3714005947113,
+      "min_seconds": 505.7831485271454,
+      "max_seconds": 838.097048997879
+    },
+    "topic": {
+      "n": 16,
+      "mean_seconds": 584.632478505373,
+      "median_seconds": 495.90153419971466,
+      "min_seconds": 349.33161449432373,
+      "max_seconds": 1982.351220369339
+    },
+    "warmth": {
+      "n": 16,
+      "mean_seconds": 439.0177562683821,
+      "median_seconds": 450.33189952373505,
+      "min_seconds": 258.1874420642853,
+      "max_seconds": 614.7811787128448
+    }
+  },
+  "remaining_projection_seconds_at_two_workers": 40451.93701314926,
+  "projection_definition": "Sum of observed completed-packet property means for every unfinished packet, divided by two workers. Includes currently running jobs at full predicted duration; operational estimate, not a deadline or uncertainty interval. Packet 063 missing-only followup time is recorded separately.",
+  "cost": "Codex billing telemetry unavailable; not assumed zero.",
+  "root_free_bytes": 26176454656,
+  "readout_fit": false,
+  "ledger_sha256": "4fffa0ffcd6bb35c7ebe2fb54ab4d4e7e39dff515c8234463de4cdf2faadfd62"
+}
