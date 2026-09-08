@@ -1,0 +1,52 @@
+{
+  "figure": "encoder_semantic_baseline",
+  "issue": 1901,
+  "round": "encbaseline",
+  "sources": {
+    "bge": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1901/encbaseline/results_bge.json",
+    "e5": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1901/encbaseline/results_e5.json"
+  },
+  "panels": {
+    "A": [
+      "arm1_lm",
+      "arm4_pca_lm",
+      "arm2_enc_lm"
+    ],
+    "B": [
+      "arm1_lm",
+      "arm4_pca_lm",
+      "arm2_enc_lm",
+      "arm3_enc_enc",
+      "arm6_cos0"
+    ],
+    "C": [
+      "arm5_resid"
+    ]
+  },
+  "comparability_note": "Panel A holds only arms predicting v_A so their R^2 share a denominator. arm3 predicts the encoder-space answer embedding and arm5 a residual, so neither R^2 is on A's axis; top-1 at a matched pool size is comparable across spaces, which is why arm3 and arm6 appear on B.",
+  "git_commit": "8be8d97a3ea0b8614748e35dad8a9bfbd287cb2f",
+  "git_dirty": true,
+  "phase": "encbaseline-figure",
+  "git_dirty_paths": [
+    "scripts/issue1901_encbaseline_figure.py",
+    ".claude/agent-memory/experiment-implementer-lean/MEMORY.md",
+    ".claude/agent-memory/experimenter/feedback_pod_sparse_clone_committed_inputs.md",
+    "CLAUDE.md",
+    "eval_results/issue_2546/necessity_r2/summary.json",
+    "figures/issue_1902/section43/c1_posttraining_dynamics.pdf",
+    "figures/issue_1902/section43/c1_posttraining_dynamics.png",
+    "figures/issue_1902/section43/c1_posttraining_dynamics_data.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+    "scripts/codex_daemon_reaper.py",
+    "scripts/cron_watch_issue_1739.sh",
+    "scripts/cron_watch_issue_2091.sh",
+    "scripts/install_gcp_audit_cron.sh",
+    "scripts/issue1901_encoder_semantic_baseline.py",
+    "tasks/awaiting_promotion/2564/plans/plan.md",
+    "tests/test_codex_daemon_reaper.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue1901_encbaseline_figure.py"
+}
