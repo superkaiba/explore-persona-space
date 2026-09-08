@@ -1,0 +1,22 @@
+{
+  "families": [
+    "matryoshka"
+  ],
+  "bootstrap_draws": 1000,
+  "seed": 1482,
+  "metadata": {
+    "git_commit": "7cdd39c911c1ebf4f12c41b6893ac9f67103f430",
+    "git_dirty": true,
+    "phase": "property-analysis",
+    "git_dirty_paths": [
+      "scripts/issue1482_answer_property_analysis.py"
+    ],
+    "git_argv0_state": "untracked",
+    "git_argv0_path": "scripts/issue1482_answer_property_analysis.py",
+    "utc": "2026-09-07T23:35:26.984006+00:00",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128"
+  },
+  "script_sha256": "59c0a69e478a28988a17a8dd108b8a13dce591e994f8539c43de99415349a94c",
+  "uncertainty_scope": "feature resampling conditional on fixed fitted models, target bank, categories and matching cells; correlated features may make intervals too narrow"
+}

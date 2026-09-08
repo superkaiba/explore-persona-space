@@ -1,0 +1,1525 @@
+{
+  "fit": {
+    "identity": {
+      "gram_sha256": "2a454079cadcddb3b54658332652e18373f2b0889f304374f278fdc4d844b247",
+      "prepared_sha256": "967f1b29bf93d8dfd1c55a7cd62a7ff2b5557ae1b88008d5c3f18b1b55158718",
+      "feature_block": 4096,
+      "row_block": 4096,
+      "grid": [
+        "logspace",
+        -3,
+        8,
+        23
+      ],
+      "numerical": {
+        "protocol": "observed-answer-token-sae-ridge-v1",
+        "implementation_sha256": "6077d8865785c0fe6aab4379fe90f26a2ec7fd1a9b1bb982c0d4f12a6d87dc7a"
+      },
+      "target_integrity_sha256": "56ddf4c4d9330f64dd55f650aceca9a6f487486bbe834fdaf26620cf6875d361"
+    },
+    "metadata": {
+      "git_commit": "78971ec14237f1039700f55bafc11d34f0390a20",
+      "git_dirty": false,
+      "phase": "fit",
+      "git_argv0_state": "tracked",
+      "git_argv0_path": "scripts/issue1482_answer_property_ceiling.py",
+      "utc": "2026-09-08T00:07:29.789295+00:00",
+      "numpy": "2.2.6",
+      "torch": "2.8.0+cu128"
+    },
+    "lambda": 1000.0,
+    "source": "observed_answer",
+    "n_features": 131072,
+    "n_defined": 121111,
+    "n_undefined": 9961,
+    "pooled_r2": 0.8369014658594955,
+    "n_train": 120000,
+    "n_val": 2000,
+    "n_test": 20000,
+    "seconds": 3495.390328168869,
+    "peak_rss_gib": 14.481422424316406
+  },
+  "dictionary_width": 131072,
+  "paper_population": 120716,
+  "matched_population": 120716,
+  "undefined_observed": 9961,
+  "undefined_context": 9961,
+  "label_coverage": {
+    "abstraction": {
+      "abstract_contextual": 39489,
+      "lexical_semantic": 29863,
+      "token_surface": 41104,
+      "unlabeled": 7456,
+      "unresolved": 2804
+    },
+    "content_type": {
+      "entity": 5544,
+      "operation": 10762,
+      "syntax": 71248,
+      "task_format": 1724,
+      "topic": 20676,
+      "unlabeled": 7456,
+      "unresolved": 3306
+    },
+    "speaker_property": {
+      "identity_disposition": 1399,
+      "language": 6438,
+      "none": 94910,
+      "register_style": 9136,
+      "unclear": 22,
+      "unlabeled": 7456,
+      "unresolved": 1355
+    }
+  },
+  "categories": {
+    "abstraction:token_surface": {
+      "observed_answer": {
+        "n": 41104,
+        "median": 0.06816591709570369,
+        "mean": -7.702342890829532,
+        "q25": -0.021468397636559722,
+        "q75": 0.24430813651335445,
+        "fraction_positive": 0.691100622810432,
+        "min": -206035.40928618555,
+        "max": 0.9984776579541017
+      },
+      "context": {
+        "n": 41104,
+        "median": 0.0155171575024724,
+        "mean": -1.5485807139150696,
+        "q25": -0.019796228036284447,
+        "q75": 0.10017017833888531,
+        "fraction_positive": 0.6208398209420007,
+        "min": -27931.58203125,
+        "max": 0.9577712416648865
+      }
+    },
+    "abstraction:lexical_semantic": {
+      "observed_answer": {
+        "n": 29863,
+        "median": 0.09717526480594174,
+        "mean": -0.4347215671196588,
+        "q25": 0.00882818360143739,
+        "q75": 0.2290028558647927,
+        "fraction_positive": 0.7758430164417507,
+        "min": -2363.450358984888,
+        "max": 0.9820545987777023
+      },
+      "context": {
+        "n": 29863,
+        "median": 0.027201518416404724,
+        "mean": -0.15103676247973982,
+        "q25": -0.004952144576236606,
+        "q75": 0.09270844981074333,
+        "fraction_positive": 0.706727388407059,
+        "min": -866.3250732421875,
+        "max": 0.93390953540802
+      }
+    },
+    "abstraction:abstract_contextual": {
+      "observed_answer": {
+        "n": 39489,
+        "median": 0.1528792976024903,
+        "mean": -1.8067522082644563,
+        "q25": 0.019127569904967445,
+        "q75": 0.3282243983845081,
+        "fraction_positive": 0.7907012079313226,
+        "min": -17026.807951522886,
+        "max": 0.998407593822725
+      },
+      "context": {
+        "n": 39489,
+        "median": 0.05397498235106468,
+        "mean": -0.5636523839411653,
+        "q25": -0.0002788592828437686,
+        "q75": 0.1515955775976181,
+        "fraction_positive": 0.7472967155410367,
+        "min": -5671.86962890625,
+        "max": 0.9601238965988159
+      }
+    },
+    "content_type:topic": {
+      "observed_answer": {
+        "n": 20676,
+        "median": 0.09270713303493178,
+        "mean": -0.6205732317082666,
+        "q25": 0.005168027577443612,
+        "q75": 0.21723787315718587,
+        "fraction_positive": 0.7645095763203714,
+        "min": -2363.450358984888,
+        "max": 0.9818785321036865
+      },
+      "context": {
+        "n": 20676,
+        "median": 0.021641605533659458,
+        "mean": -0.24069357107745898,
+        "q25": -0.008710445370525122,
+        "q75": 0.07683960907161236,
+        "fraction_positive": 0.6851905591023408,
+        "min": -866.3250732421875,
+        "max": 0.9601238965988159
+      }
+    },
+    "content_type:task_format": {
+      "observed_answer": {
+        "n": 1724,
+        "median": 0.07031721750796222,
+        "mean": -14.43436725478526,
+        "q25": -0.030575132197678156,
+        "q75": 0.260368630238569,
+        "fraction_positive": 0.6728538283062645,
+        "min": -14122.306298578811,
+        "max": 0.9975024307198934
+      },
+      "context": {
+        "n": 1724,
+        "median": 0.03328573517501354,
+        "mean": -6.547207953593796,
+        "q25": -0.022157413884997368,
+        "q75": 0.1542610339820385,
+        "fraction_positive": 0.6548723897911833,
+        "min": -5671.86962890625,
+        "max": 0.8799808621406555
+      }
+    },
+    "content_type:entity": {
+      "observed_answer": {
+        "n": 5544,
+        "median": 0.0405168826726503,
+        "mean": -1.0441523654951337,
+        "q25": -0.03574770135522132,
+        "q75": 0.1600720399421963,
+        "fraction_positive": 0.659992784992785,
+        "min": -888.7364895835116,
+        "max": 0.9259106172496557
+      },
+      "context": {
+        "n": 5544,
+        "median": 0.008129565510898829,
+        "mean": -0.37982759780538916,
+        "q25": -0.024115270003676414,
+        "q75": 0.06221265625208616,
+        "fraction_positive": 0.5892857142857143,
+        "min": -272.8791198730469,
+        "max": 0.9010301828384399
+      }
+    },
+    "content_type:syntax": {
+      "observed_answer": {
+        "n": 71248,
+        "median": 0.11815067586879896,
+        "mean": -4.973309758493951,
+        "q25": 0.00024998376211735063,
+        "q75": 0.3024277411105001,
+        "fraction_positive": 0.7509544127554457,
+        "min": -206035.40928618555,
+        "max": 0.9984776579541017
+      },
+      "context": {
+        "n": 71248,
+        "median": 0.03797505050897598,
+        "mean": -1.0010733546378912,
+        "q25": -0.007173509220592678,
+        "q75": 0.13592582195997238,
+        "fraction_positive": 0.6969599146642713,
+        "min": -27931.58203125,
+        "max": 0.9585832357406616
+      }
+    },
+    "content_type:operation": {
+      "observed_answer": {
+        "n": 10762,
+        "median": 0.10653858409643796,
+        "mean": -0.33368325268141485,
+        "q25": 0.00889107762936342,
+        "q75": 0.248875268830626,
+        "fraction_positive": 0.773462181750604,
+        "min": -563.271775941847,
+        "max": 0.9489581589061556
+      },
+      "context": {
+        "n": 10762,
+        "median": 0.03219841420650482,
+        "mean": -0.11285291772134412,
+        "q25": -0.005156045081093907,
+        "q75": 0.10725149884819984,
+        "fraction_positive": 0.707953911912284,
+        "min": -275.30206298828125,
+        "max": 0.8737297058105469
+      }
+    },
+    "speaker_property:identity_disposition": {
+      "observed_answer": {
+        "n": 1399,
+        "median": 0.2752513635906456,
+        "mean": 0.08936664593389697,
+        "q25": 0.05189279280416209,
+        "q75": 0.528345730964389,
+        "fraction_positive": 0.8384560400285919,
+        "min": -140.6815418883821,
+        "max": 0.9395902763718523
+      },
+      "context": {
+        "n": 1399,
+        "median": 0.13933195173740387,
+        "mean": 0.10263523652318117,
+        "q25": 0.024634639732539654,
+        "q75": 0.31629328429698944,
+        "fraction_positive": 0.8227305218012866,
+        "min": -26.17115592956543,
+        "max": 0.8723446726799011
+      }
+    },
+    "speaker_property:register_style": {
+      "observed_answer": {
+        "n": 9136,
+        "median": 0.110149610431854,
+        "mean": -1.2051977751015153,
+        "q25": -0.003359223867515526,
+        "q75": 0.3008931565563219,
+        "fraction_positive": 0.7397110332749562,
+        "min": -2931.1200057238934,
+        "max": 0.9753199262773804
+      },
+      "context": {
+        "n": 9136,
+        "median": 0.03802941180765629,
+        "mean": -0.3584763454667092,
+        "q25": -0.009967508260160685,
+        "q75": 0.14181482791900635,
+        "fraction_positive": 0.6870621716287215,
+        "min": -912.7794799804688,
+        "max": 0.9601238965988159
+      }
+    },
+    "speaker_property:language": {
+      "observed_answer": {
+        "n": 6438,
+        "median": 0.11977561811338511,
+        "mean": -0.4474582506186785,
+        "q25": -0.0012819790396749742,
+        "q75": 0.34114507458336363,
+        "fraction_positive": 0.7430879155017086,
+        "min": -753.8662339014963,
+        "max": 0.9984776579541017
+      },
+      "context": {
+        "n": 6438,
+        "median": 0.04804004728794098,
+        "mean": -0.1863035653768975,
+        "q25": -0.005495432880707085,
+        "q75": 0.17821265757083893,
+        "fraction_positive": 0.7041006523765144,
+        "min": -393.7236022949219,
+        "max": 0.9245269894599915
+      }
+    },
+    "speaker_property:none": {
+      "observed_answer": {
+        "n": 94910,
+        "median": 0.10119455017897977,
+        "mean": -4.090097943660308,
+        "q25": -0.0001571067746596322,
+        "q75": 0.2620739885762837,
+        "fraction_positive": 0.7492045095353492,
+        "min": -206035.40928618555,
+        "max": 0.9937800194914598
+      },
+      "context": {
+        "n": 94910,
+        "median": 0.028524686582386494,
+        "mean": -0.9137453662719407,
+        "q25": -0.008716955548152328,
+        "q75": 0.1091885007917881,
+        "fraction_positive": 0.6858181435043725,
+        "min": -27931.58203125,
+        "max": 0.9577712416648865
+      }
+    },
+    "logit:promoting": {
+      "observed_answer": {
+        "n": 8048,
+        "median": 0.215608280025546,
+        "mean": 0.04113799481916238,
+        "q25": 0.06366807703316646,
+        "q75": 0.37591636798962513,
+        "fraction_positive": 0.8781063618290258,
+        "min": -644.3618467474038,
+        "max": 0.9891431089375139
+      },
+      "context": {
+        "n": 8048,
+        "median": 0.07906704768538475,
+        "mean": 0.062105657198037865,
+        "q25": 0.016275616828352213,
+        "q75": 0.17229441553354263,
+        "fraction_positive": 0.8402087475149106,
+        "min": -73.51485443115234,
+        "max": 0.9601238965988159
+      }
+    },
+    "logit:suppressing": {
+      "observed_answer": {
+        "n": 5031,
+        "median": 0.09275887323562149,
+        "mean": -0.21695191868018873,
+        "q25": 0.01205350343535333,
+        "q75": 0.2643612643625889,
+        "fraction_positive": 0.7914927449811171,
+        "min": -819.9013657636615,
+        "max": 0.9984776579541017
+      },
+      "context": {
+        "n": 5031,
+        "median": 0.03124266304075718,
+        "mean": -0.057696760313578614,
+        "q25": -0.0017583624576218426,
+        "q75": 0.12181335315108299,
+        "fraction_positive": 0.7336513615583383,
+        "min": -242.8893585205078,
+        "max": 0.9245269894599915
+      }
+    },
+    "logit:partition": {
+      "observed_answer": {
+        "n": 8261,
+        "median": 0.06666125144631985,
+        "mean": -2.482402037664194,
+        "q25": -0.01206694353917337,
+        "q75": 0.21970754673795934,
+        "fraction_positive": 0.7089940685147077,
+        "min": -17026.807951522886,
+        "max": 0.9565728032464126
+      },
+      "context": {
+        "n": 8261,
+        "median": 0.017099007964134216,
+        "mean": -0.3563275492163249,
+        "q25": -0.013745534233748913,
+        "q75": 0.09469560533761978,
+        "fraction_positive": 0.636000484202881,
+        "min": -1734.5565185546875,
+        "max": 0.9497727155685425
+      }
+    },
+    "logit:other": {
+      "observed_answer": {
+        "n": 99376,
+        "median": 0.08210136614400282,
+        "mean": -5.111619451418399,
+        "q25": -0.014572414476223428,
+        "q75": 0.24728190760000626,
+        "fraction_positive": 0.7007929479954919,
+        "min": -206035.40928618555,
+        "max": 0.9911656504677268
+      },
+      "context": {
+        "n": 99376,
+        "median": 0.02090479899197817,
+        "mean": -1.3783781383330098,
+        "q25": -0.015915988013148308,
+        "q75": 0.10268616862595081,
+        "fraction_positive": 0.6379508130735791,
+        "min": -27931.58203125,
+        "max": 0.9585832357406616
+      }
+    }
+  },
+  "target_variance_parity_max_abs": 4.0745362639427185e-10,
+  "spearman_observed_context": 0.9544880509279526,
+  "comparisons": {
+    "identity_vs_topic": {
+      "positive": "speaker_property:identity_disposition",
+      "negative": "content_type:topic",
+      "excluded_overlap": 187,
+      "arms": [
+        "observed_answer",
+        "context"
+      ],
+      "raw": {
+        "point": [
+          0.6907422915652881,
+          0.7275407942473197
+        ],
+        "ci95": [
+          [
+            0.6719977027840908,
+            0.7071861368258939
+          ],
+          [
+            0.7100483856587622,
+            0.7452811232365366
+          ]
+        ],
+        "n_pairs": 24832668,
+        "n_positive": 1212,
+        "n_negative": 20489,
+        "n_positive_matched": 1212,
+        "n_negative_matched": 20489,
+        "n_cells_matched": 1,
+        "arm_differences_vs_first": [
+          0.0,
+          0.03679850268203155
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.030439751781806128,
+            0.04408865269732599
+          ]
+        ]
+      },
+      "activity": {
+        "point": [
+          0.8506595236193624,
+          0.8639218002199436
+        ],
+        "ci95": [
+          [
+            0.8373356470673162,
+            0.863382270272595
+          ],
+          [
+            0.8518825375225012,
+            0.8756663872574015
+          ]
+        ],
+        "n_pairs": 2604304,
+        "n_positive": 1212,
+        "n_negative": 20489,
+        "n_positive_matched": 1212,
+        "n_negative_matched": 20489,
+        "n_cells_matched": 10,
+        "arm_differences_vs_first": [
+          0.0,
+          0.013262276600581213
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.006675718349317098,
+            0.01981838525763505
+          ]
+        ]
+      },
+      "activity_and_observed": {
+        "point": [
+          0.6036698057866617,
+          0.6638576483723042
+        ],
+        "ci95": [
+          [
+            0.5850522275557126,
+            0.621090660224427
+          ],
+          [
+            0.6470376000555075,
+            0.6823456038653438
+          ]
+        ],
+        "n_pairs": 158537,
+        "n_positive": 1212,
+        "n_negative": 20489,
+        "n_positive_matched": 1212,
+        "n_negative_matched": 19612,
+        "n_cells_matched": 97,
+        "arm_differences_vs_first": [
+          0.0,
+          0.06018784258564247
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.04109781943647225,
+            0.08089026536392131
+          ]
+        ]
+      },
+      "observed_bin_sensitivity": {
+        "5": {
+          "point": [
+            0.6648461082243802,
+            0.711442962228576
+          ],
+          "ci95": null,
+          "n_pairs": 338907,
+          "n_positive": 1212,
+          "n_negative": 20489,
+          "n_positive_matched": 1212,
+          "n_negative_matched": 20489,
+          "n_cells_matched": 50,
+          "arm_differences_vs_first": [
+            0.0,
+            0.046596854004195776
+          ],
+          "arm_differences_vs_first_ci95": null
+        },
+        "20": {
+          "point": [
+            0.5508518191055569,
+            0.6284062867021206
+          ],
+          "ci95": null,
+          "n_pairs": 75779,
+          "n_positive": 1212,
+          "n_negative": 20489,
+          "n_positive_matched": 1212,
+          "n_negative_matched": 17362,
+          "n_cells_matched": 179,
+          "arm_differences_vs_first": [
+            0.0,
+            0.0775544675965637
+          ],
+          "arm_differences_vs_first_ci95": null
+        }
+      }
+    },
+    "abstract_vs_token": {
+      "positive": "abstraction:abstract_contextual",
+      "negative": "abstraction:token_surface",
+      "excluded_overlap": 0,
+      "arms": [
+        "observed_answer",
+        "context"
+      ],
+      "raw": {
+        "point": [
+          0.5883607981758715,
+          0.589414774596975
+        ],
+        "ci95": [
+          [
+            0.5845996720323572,
+            0.5925034648521147
+          ],
+          [
+            0.5855494914346661,
+            0.5934212074210081
+          ]
+        ],
+        "n_pairs": 1623155856,
+        "n_positive": 39489,
+        "n_negative": 41104,
+        "n_positive_matched": 39489,
+        "n_negative_matched": 41104,
+        "n_cells_matched": 1,
+        "arm_differences_vs_first": [
+          0.0,
+          0.0010539764211034974
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            -0.00010442033300341324,
+            0.0022618208297305875
+          ]
+        ]
+      },
+      "activity": {
+        "point": [
+          0.4562927210222808,
+          0.46036928013761325
+        ],
+        "ci95": [
+          [
+            0.45213442796996106,
+            0.4604640906448721
+          ],
+          [
+            0.4563440525027424,
+            0.4642827701683346
+          ]
+        ],
+        "n_pairs": 155878029,
+        "n_positive": 39489,
+        "n_negative": 41104,
+        "n_positive_matched": 39489,
+        "n_negative_matched": 41104,
+        "n_cells_matched": 10,
+        "arm_differences_vs_first": [
+          0.0,
+          0.004076559115332445
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.002153198896298608,
+            0.005966436905614174
+          ]
+        ]
+      },
+      "activity_and_observed": {
+        "point": [
+          0.4993258771188124,
+          0.4965046190599443
+        ],
+        "ci95": [
+          [
+            0.4952929516920754,
+            0.5036564640280008
+          ],
+          [
+            0.4921102981673103,
+            0.5010244395469733
+          ]
+        ],
+        "n_pairs": 15380727,
+        "n_positive": 39489,
+        "n_negative": 41104,
+        "n_positive_matched": 39489,
+        "n_negative_matched": 41104,
+        "n_cells_matched": 100,
+        "arm_differences_vs_first": [
+          0.0,
+          -0.0028212580588680702
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            -0.0074927228732426035,
+            0.001952059873372698
+          ]
+        ]
+      },
+      "observed_bin_sensitivity": {
+        "5": {
+          "point": [
+            0.49145622423079344,
+            0.4930703265294732
+          ],
+          "ci95": null,
+          "n_pairs": 30816820,
+          "n_positive": 39489,
+          "n_negative": 41104,
+          "n_positive_matched": 39489,
+          "n_negative_matched": 41104,
+          "n_cells_matched": 50,
+          "arm_differences_vs_first": [
+            0.0,
+            0.0016141022986797537
+          ],
+          "arm_differences_vs_first_ci95": null
+        },
+        "20": {
+          "point": [
+            0.5007417474413749,
+            0.4958713124165241
+          ],
+          "ci95": null,
+          "n_pairs": 7681860,
+          "n_positive": 39489,
+          "n_negative": 41104,
+          "n_positive_matched": 39489,
+          "n_negative_matched": 41104,
+          "n_cells_matched": 200,
+          "arm_differences_vs_first": [
+            0.0,
+            -0.004870435024850794
+          ],
+          "arm_differences_vs_first_ci95": null
+        }
+      }
+    },
+    "abstract_vs_lexical": {
+      "positive": "abstraction:abstract_contextual",
+      "negative": "abstraction:lexical_semantic",
+      "excluded_overlap": 0,
+      "arms": [
+        "observed_answer",
+        "context"
+      ],
+      "raw": {
+        "point": [
+          0.5679016035689235,
+          0.5705602899327358
+        ],
+        "ci95": [
+          [
+            0.5636855549702365,
+            0.5721012116880854
+          ],
+          [
+            0.5662074033071995,
+            0.5748571619498667
+          ]
+        ],
+        "n_pairs": 1179260007,
+        "n_positive": 39489,
+        "n_negative": 29863,
+        "n_positive_matched": 39489,
+        "n_negative_matched": 29863,
+        "n_cells_matched": 1,
+        "arm_differences_vs_first": [
+          0.0,
+          0.0026586863638122793
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.0012192484409419308,
+            0.003970839369353756
+          ]
+        ]
+      },
+      "activity": {
+        "point": [
+          0.509147484511276,
+          0.5180543025142347
+        ],
+        "ci95": [
+          [
+            0.5047061418789542,
+            0.5135910774432004
+          ],
+          [
+            0.5133890514345419,
+            0.5226392294530251
+          ]
+        ],
+        "n_pairs": 120295093,
+        "n_positive": 39489,
+        "n_negative": 29863,
+        "n_positive_matched": 39489,
+        "n_negative_matched": 29863,
+        "n_cells_matched": 10,
+        "arm_differences_vs_first": [
+          0.0,
+          0.008906818002958672
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.00692821204685386,
+            0.011068835742119643
+          ]
+        ]
+      },
+      "activity_and_observed": {
+        "point": [
+          0.49594029091546127,
+          0.5179618283361336
+        ],
+        "ci95": [
+          [
+            0.4912114037456686,
+            0.5003421891995312
+          ],
+          [
+            0.5134666366772314,
+            0.5224453807024565
+          ]
+        ],
+        "n_pairs": 12078698,
+        "n_positive": 39489,
+        "n_negative": 29863,
+        "n_positive_matched": 39489,
+        "n_negative_matched": 29863,
+        "n_cells_matched": 100,
+        "arm_differences_vs_first": [
+          0.0,
+          0.02202153742067231
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.016224128627108668,
+            0.027316497605950625
+          ]
+        ]
+      },
+      "observed_bin_sensitivity": {
+        "5": {
+          "point": [
+            0.49308489415776674,
+            0.5133731172841676
+          ],
+          "ci95": null,
+          "n_pairs": 24186470,
+          "n_positive": 39489,
+          "n_negative": 29863,
+          "n_positive_matched": 39489,
+          "n_negative_matched": 29863,
+          "n_cells_matched": 50,
+          "arm_differences_vs_first": [
+            0.0,
+            0.02028822312640083
+          ],
+          "arm_differences_vs_first_ci95": null
+        },
+        "20": {
+          "point": [
+            0.4964547107786009,
+            0.5196714979369156
+          ],
+          "ci95": null,
+          "n_pairs": 6032230,
+          "n_positive": 39489,
+          "n_negative": 29863,
+          "n_positive_matched": 39489,
+          "n_negative_matched": 29863,
+          "n_cells_matched": 200,
+          "arm_differences_vs_first": [
+            0.0,
+            0.023216787158314656
+          ],
+          "arm_differences_vs_first_ci95": null
+        }
+      }
+    },
+    "register_vs_topic": {
+      "positive": "speaker_property:register_style",
+      "negative": "content_type:topic",
+      "excluded_overlap": 2392,
+      "arms": [
+        "observed_answer",
+        "context"
+      ],
+      "raw": {
+        "point": [
+          0.543104067418687,
+          0.5735325831814526
+        ],
+        "ci95": [
+          [
+            0.5346922932686805,
+            0.5512145141030422
+          ],
+          [
+            0.5649961656567346,
+            0.5819360649389311
+          ]
+        ],
+        "n_pairs": 123307296,
+        "n_positive": 6744,
+        "n_negative": 18284,
+        "n_positive_matched": 6744,
+        "n_negative_matched": 18284,
+        "n_cells_matched": 1,
+        "arm_differences_vs_first": [
+          0.0,
+          0.030428515762765618
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.027448552091354023,
+            0.0333039541918103
+          ]
+        ]
+      },
+      "activity": {
+        "point": [
+          0.6028593972236282,
+          0.6481887686741871
+        ],
+        "ci95": [
+          [
+            0.5942748314051247,
+            0.6107053062846437
+          ],
+          [
+            0.6398273389215883,
+            0.6561063577552008
+          ]
+        ],
+        "n_pairs": 12225164,
+        "n_positive": 6744,
+        "n_negative": 18284,
+        "n_positive_matched": 6744,
+        "n_negative_matched": 18284,
+        "n_cells_matched": 10,
+        "arm_differences_vs_first": [
+          0.0,
+          0.04532937145055882
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.04087953953010367,
+            0.04967800022969012
+          ]
+        ]
+      },
+      "activity_and_observed": {
+        "point": [
+          0.5055890930836225,
+          0.6262147842035459
+        ],
+        "ci95": [
+          [
+            0.4970229852705849,
+            0.5141592515693225
+          ],
+          [
+            0.617726599639866,
+            0.6352819226413392
+          ]
+        ],
+        "n_pairs": 1197332,
+        "n_positive": 6744,
+        "n_negative": 18284,
+        "n_positive_matched": 6744,
+        "n_negative_matched": 18284,
+        "n_cells_matched": 100,
+        "arm_differences_vs_first": [
+          0.0,
+          0.12062569111992338
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.1094015903692543,
+            0.13095277667347074
+          ]
+        ]
+      },
+      "observed_bin_sensitivity": {
+        "5": {
+          "point": [
+            0.5205990008026804,
+            0.6230766244678537
+          ],
+          "ci95": null,
+          "n_pairs": 2395723,
+          "n_positive": 6744,
+          "n_negative": 18284,
+          "n_positive_matched": 6744,
+          "n_negative_matched": 18284,
+          "n_cells_matched": 50,
+          "arm_differences_vs_first": [
+            0.0,
+            0.10247762366517332
+          ],
+          "arm_differences_vs_first_ci95": null
+        },
+        "20": {
+          "point": [
+            0.5052500427036967,
+            0.6278933847787279
+          ],
+          "ci95": null,
+          "n_pairs": 597138,
+          "n_positive": 6744,
+          "n_negative": 18284,
+          "n_positive_matched": 6744,
+          "n_negative_matched": 18284,
+          "n_cells_matched": 200,
+          "arm_differences_vs_first": [
+            0.0,
+            0.12264334207503125
+          ],
+          "arm_differences_vs_first_ci95": null
+        }
+      }
+    },
+    "language_vs_topic": {
+      "positive": "speaker_property:language",
+      "negative": "content_type:topic",
+      "excluded_overlap": 206,
+      "arms": [
+        "observed_answer",
+        "context"
+      ],
+      "raw": {
+        "point": [
+          0.5565535180009193,
+          0.5897205544542783
+        ],
+        "ci95": [
+          [
+            0.5477620970965996,
+            0.5655268427590269
+          ],
+          [
+            0.5810428631429695,
+            0.598613633057049
+          ]
+        ],
+        "n_pairs": 127569040,
+        "n_positive": 6232,
+        "n_negative": 20470,
+        "n_positive_matched": 6232,
+        "n_negative_matched": 20470,
+        "n_cells_matched": 1,
+        "arm_differences_vs_first": [
+          0.0,
+          0.033167036453358945
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.030728500426122275,
+            0.03566926250287689
+          ]
+        ]
+      },
+      "activity": {
+        "point": [
+          0.5206125607568185,
+          0.5824151572803073
+        ],
+        "ci95": [
+          [
+            0.5117524164797717,
+            0.5294778212412008
+          ],
+          [
+            0.5739396660297273,
+            0.5909212436735201
+          ]
+        ],
+        "n_pairs": 13467007,
+        "n_positive": 6232,
+        "n_negative": 20470,
+        "n_positive_matched": 6232,
+        "n_negative_matched": 20470,
+        "n_cells_matched": 10,
+        "arm_differences_vs_first": [
+          0.0,
+          0.06180259652348885
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.057176308737345964,
+            0.0661825248178752
+          ]
+        ]
+      },
+      "activity_and_observed": {
+        "point": [
+          0.5075883490131237,
+          0.6383976127026029
+        ],
+        "ci95": [
+          [
+            0.499017947770696,
+            0.5164785570049747
+          ],
+          [
+            0.6291140529896811,
+            0.6469028080155231
+          ]
+        ],
+        "n_pairs": 1394045,
+        "n_positive": 6232,
+        "n_negative": 20470,
+        "n_positive_matched": 6232,
+        "n_negative_matched": 20470,
+        "n_cells_matched": 100,
+        "arm_differences_vs_first": [
+          0.0,
+          0.1308092636894792
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.1206452266605454,
+            0.1409934578869405
+          ]
+        ]
+      },
+      "observed_bin_sensitivity": {
+        "5": {
+          "point": [
+            0.5123013867433409,
+            0.6348069899722294
+          ],
+          "ci95": null,
+          "n_pairs": 2799725,
+          "n_positive": 6232,
+          "n_negative": 20470,
+          "n_positive_matched": 6232,
+          "n_negative_matched": 20470,
+          "n_cells_matched": 50,
+          "arm_differences_vs_first": [
+            0.0,
+            0.12250560322888848
+          ],
+          "arm_differences_vs_first_ci95": null
+        },
+        "20": {
+          "point": [
+            0.49872200514079557,
+            0.6378736009774427
+          ],
+          "ci95": null,
+          "n_pairs": 694056,
+          "n_positive": 6232,
+          "n_negative": 20470,
+          "n_positive_matched": 6232,
+          "n_negative_matched": 20470,
+          "n_cells_matched": 200,
+          "arm_differences_vs_first": [
+            0.0,
+            0.13915159583664716
+          ],
+          "arm_differences_vs_first_ci95": null
+        }
+      }
+    },
+    "format_vs_topic": {
+      "positive": "content_type:task_format",
+      "negative": "content_type:topic",
+      "excluded_overlap": 0,
+      "arms": [
+        "observed_answer",
+        "context"
+      ],
+      "raw": {
+        "point": [
+          0.48197664867164997,
+          0.5407811532835183
+        ],
+        "ci95": [
+          [
+            0.46575326891889407,
+            0.4975603993376541
+          ],
+          [
+            0.52361266694429,
+            0.5569001020299268
+          ]
+        ],
+        "n_pairs": 35645424,
+        "n_positive": 1724,
+        "n_negative": 20676,
+        "n_positive_matched": 1724,
+        "n_negative_matched": 20676,
+        "n_cells_matched": 1,
+        "arm_differences_vs_first": [
+          0.0,
+          0.05880450461186831
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.05224703386891958,
+            0.06490337862161492
+          ]
+        ]
+      },
+      "activity": {
+        "point": [
+          0.6042125527156004,
+          0.6621786757011876
+        ],
+        "ci95": [
+          [
+            0.5883123050224034,
+            0.6202087342645914
+          ],
+          [
+            0.6454031020798423,
+            0.6781873272794238
+          ]
+        ],
+        "n_pairs": 3279864,
+        "n_positive": 1724,
+        "n_negative": 20676,
+        "n_positive_matched": 1724,
+        "n_negative_matched": 20676,
+        "n_cells_matched": 10,
+        "arm_differences_vs_first": [
+          0.0,
+          0.05796612298558723
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.050056442889095415,
+            0.0661412180505045
+          ]
+        ]
+      },
+      "activity_and_observed": {
+        "point": [
+          0.4995425376250849,
+          0.6356463608628984
+        ],
+        "ci95": [
+          [
+            0.4844155958009098,
+            0.5154348124085474
+          ],
+          [
+            0.6202902096675986,
+            0.6514275376410242
+          ]
+        ],
+        "n_pairs": 313687,
+        "n_positive": 1724,
+        "n_negative": 20676,
+        "n_positive_matched": 1724,
+        "n_negative_matched": 20676,
+        "n_cells_matched": 100,
+        "arm_differences_vs_first": [
+          0.0,
+          0.1361038232378135
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.11735495892402305,
+            0.15548675909425644
+          ]
+        ]
+      },
+      "observed_bin_sensitivity": {
+        "5": {
+          "point": [
+            0.5151496422373832,
+            0.6379996988930358
+          ],
+          "ci95": null,
+          "n_pairs": 631005,
+          "n_positive": 1724,
+          "n_negative": 20676,
+          "n_positive_matched": 1724,
+          "n_negative_matched": 20676,
+          "n_cells_matched": 50,
+          "arm_differences_vs_first": [
+            0.0,
+            0.12285005665565252
+          ],
+          "arm_differences_vs_first_ci95": null
+        },
+        "20": {
+          "point": [
+            0.5030133585832737,
+            0.6366823625754939
+          ],
+          "ci95": null,
+          "n_pairs": 156304,
+          "n_positive": 1724,
+          "n_negative": 20676,
+          "n_positive_matched": 1724,
+          "n_negative_matched": 20676,
+          "n_cells_matched": 200,
+          "arm_differences_vs_first": [
+            0.0,
+            0.13366900399222026
+          ],
+          "arm_differences_vs_first_ci95": null
+        }
+      }
+    },
+    "promoting_vs_suppressing": {
+      "positive": "logit:promoting",
+      "negative": "logit:suppressing",
+      "excluded_overlap": 0,
+      "arms": [
+        "observed_answer",
+        "context"
+      ],
+      "raw": {
+        "point": [
+          0.6189402790176057,
+          0.6019933371348138
+        ],
+        "ci95": [
+          [
+            0.6093677073664158,
+            0.6290256843949225
+          ],
+          [
+            0.5924665218043754,
+            0.6119241832596155
+          ]
+        ],
+        "n_pairs": 40489488,
+        "n_positive": 8048,
+        "n_negative": 5031,
+        "n_positive_matched": 8048,
+        "n_negative_matched": 5031,
+        "n_cells_matched": 1,
+        "arm_differences_vs_first": [
+          0.0,
+          -0.01694694188279189
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            -0.019783157667985413,
+            -0.014091995927436703
+          ]
+        ]
+      },
+      "activity": {
+        "point": [
+          0.4662099753832814,
+          0.44993639738175956
+        ],
+        "ci95": [
+          [
+            0.4538864989142747,
+            0.47842350094743924
+          ],
+          [
+            0.438445533332603,
+            0.4614412561620368
+          ]
+        ],
+        "n_pairs": 5568167,
+        "n_positive": 8048,
+        "n_negative": 5031,
+        "n_positive_matched": 8048,
+        "n_negative_matched": 5031,
+        "n_cells_matched": 10,
+        "arm_differences_vs_first": [
+          0.0,
+          -0.01627357800152185
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            -0.021801245364946834,
+            -0.010586122865926929
+          ]
+        ]
+      },
+      "activity_and_observed": {
+        "point": [
+          0.4990632606087704,
+          0.46478332194552113
+        ],
+        "ci95": [
+          [
+            0.4880654678501595,
+            0.5112705885872081
+          ],
+          [
+            0.4528568583492605,
+            0.4767487113929551
+          ]
+        ],
+        "n_pairs": 635182,
+        "n_positive": 8048,
+        "n_negative": 5031,
+        "n_positive_matched": 8048,
+        "n_negative_matched": 5028,
+        "n_cells_matched": 99,
+        "arm_differences_vs_first": [
+          0.0,
+          -0.03427993866324924
+        ],
+        "arm_differences_vs_first_ci95": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            -0.047889069589503494,
+            -0.021062034188626275
+          ]
+        ]
+      },
+      "observed_bin_sensitivity": {
+        "5": {
+          "point": [
+            0.5093953319800537,
+            0.4737135762984252
+          ],
+          "ci95": null,
+          "n_pairs": 1258178,
+          "n_positive": 8048,
+          "n_negative": 5031,
+          "n_positive_matched": 8048,
+          "n_negative_matched": 5031,
+          "n_cells_matched": 50,
+          "arm_differences_vs_first": [
+            0.0,
+            -0.03568175568162851
+          ],
+          "arm_differences_vs_first_ci95": null
+        },
+        "20": {
+          "point": [
+            0.497670967863113,
+            0.4625539214765563
+          ],
+          "ci95": null,
+          "n_pairs": 319446,
+          "n_positive": 8048,
+          "n_negative": 5031,
+          "n_positive_matched": 8038,
+          "n_negative_matched": 5022,
+          "n_cells_matched": 191,
+          "arm_differences_vs_first": [
+            0.0,
+            -0.035117046386556716
+          ],
+          "arm_differences_vs_first_ci95": null
+        }
+      }
+    }
+  },
+  "source_sha256": {
+    "context_r2": "9ba214959c5ffc3196fe1baab4efaabcec0550798bc49b4282abc09a087c6564",
+    "context_perfeature": "76dc4dd7e829d2564a9e204464babba7b0cf1a4ce343f73e0102b45f2d2796de",
+    "observed_r2": "19f96b25615fcd1b2104e1b78b0a700c24f1e40f273bb305b81e0fd74020c36c",
+    "covariates": "776f32dcb144abbbd73714ef984392b6e0e7129c3dd259a39c8c844f89589a4f",
+    "labels": "c1decf058a6c0211247253b7936eecd0b32d1b60f96f01f05cbd51f93a46d8cb",
+    "discrete_covariates": "e24271f5be0e2267e664ba320222bad81faf06877065e28e9cfd2bb743da831f"
+  }
+}

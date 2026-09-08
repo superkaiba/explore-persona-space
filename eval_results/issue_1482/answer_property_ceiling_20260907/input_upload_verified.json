@@ -1,0 +1,182 @@
+{
+  "repo": "superkaiba1/explore-persona-space-data",
+  "revision": "901771c38b95e1af7b20fb5cc2dcfb2f1781b3b8",
+  "n_files": 29,
+  "bytes": 13451693835,
+  "files": [
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/array_layout.json",
+      "bytes": 2956,
+      "hash": "02a5d4946e6259b65192e397544bb3b2f68ad2e2",
+      "kind": "git_blob_sha1"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/inputs/dense/X_L19.f32.mm.bin",
+      "bytes": 2035712000,
+      "hash": "cb0849a8685944edf7350388cb2f1c16a81f7339a5d777d23fe47a50d154f5ec",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/inputs/dense/dense_targets_meta.json",
+      "bytes": 442,
+      "hash": "c9efa6b25ced654129ce67500c14342ba3946068",
+      "kind": "git_blob_sha1"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/inputs/dense/Y_L19.f32.mm.bin",
+      "bytes": 2035712000,
+      "hash": "a7db2016f6050d36950aa99e5748e33dcfee88c8eff1dde2f7fdccf1f838a2ae",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/prepared/integrity.json",
+      "bytes": 1593,
+      "hash": "bffea61f27d03585ec947ba743b7ff3352f6eee9",
+      "kind": "git_blob_sha1"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/prepared/registry.npz",
+      "bytes": 3551460,
+      "hash": "4715dc0e05db4e5f4490dc0d7d6713482588a66b1204204cb93598244ac97f0e",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/prepared/y_indices.i32.bin",
+      "bytes": 2718732316,
+      "hash": "6b1a4196f7ab92c30b866302322c6be01d53ebdf6103d7e8059a94de505c9e34",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/prepared/y_indptr.npy",
+      "bytes": 1136136,
+      "hash": "0549833344f317cc820825d1a228fd4010c71e186f2018fa5f6021eb8530b12c",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/prepared/ystore_meta.json",
+      "bytes": 530,
+      "hash": "7033993cc0461ca06597531727f18f70af32b538",
+      "kind": "git_blob_sha1"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/prepared/complete.json",
+      "bytes": 542494,
+      "hash": "15676d6f487c53793fd433782905ff9beb98f5b3",
+      "kind": "git_blob_sha1"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/prepared/y_val_mean.f16.bin",
+      "bytes": 1359366158,
+      "hash": "dc1c104bdd6aa955fe82f7b63154246af8a894853c8d8b187e54887db7db0878",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka/prepared.json",
+      "bytes": 3188,
+      "hash": "6b302274378c6c0206a63ab8e50ec705332ba57c",
+      "kind": "git_blob_sha1"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka/targets.npy",
+      "bytes": 1966080128,
+      "hash": "121538dd8f8d5dce6d25ce88383c6a3fe9abd947f192a436eda927174bb84a9d",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka/context.npy",
+      "bytes": 215040128,
+      "hash": "a834a7c1b65c9968ee331415a4b7e7ac99437e9da42937ef26a82f9383545576",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka/registry.npz",
+      "bytes": 1207504,
+      "hash": "c5739aa0af4b4004b86d1fe7d909e3b3a6c53abb79bf291abe343fa6f5ae33d6",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka/observed_answer.npy",
+      "bytes": 215040128,
+      "hash": "2162ca84e8819e06e152a0f0fd200ef64240255af3110eeec0854132c8af5720",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka/context/predictions.npy",
+      "bytes": 393216128,
+      "hash": "856a8597f330d665602606c171ae3ea28a488105dc94d75dc664ee3bf4ce63e0",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka/context/perfeature.npz",
+      "bytes": 541912,
+      "hash": "54cf66521b4394d58df23a7685a842d535cb24422bb89138f3abade748ec7ee6",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka/context/complete.json",
+      "bytes": 3226,
+      "hash": "230427991f757b30a5b2d4139d8eafc97f705303",
+      "kind": "git_blob_sha1"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka/context/factor.npz",
+      "bytes": 572741038,
+      "hash": "ef53f4fffd1c98955e65e262ec2f7b77faa047388c2ab58cbec3b8292235a356",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka/context_original/predictions.npy",
+      "bytes": 393216128,
+      "hash": "2f3375c477082778d728d56b25a550376a0744f50c905e022efc3ee34c8c7ac5",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka/context_original/perfeature.npz",
+      "bytes": 541912,
+      "hash": "256db69fd542ddda2fdee9c4fabb9e2b256f5c98ee54628fbc777eddf4853c1c",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka/context_original/complete.json",
+      "bytes": 3304,
+      "hash": "8db89fcaac371e12daf1f139da367ce94e628bbc",
+      "kind": "git_blob_sha1"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka/context_original/factor.npz",
+      "bytes": 572741038,
+      "hash": "ca4f4ff506446b4191dab8c20304ec9508f9a753f7786e012941291926c0e8a3",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka/observed_answer/predictions.npy",
+      "bytes": 393216128,
+      "hash": "3557a44152110087eae3815768784989b3517c2d9f1a022ac63db520d001077a",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka/observed_answer/perfeature.npz",
+      "bytes": 541912,
+      "hash": "4846a1a9b33726d8e845a381077047141be98bbd47e7067c2179079ad4c4ec15",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka/observed_answer/complete.json",
+      "bytes": 3170,
+      "hash": "8770769a19cb59b6fd8672f45392822319e61f2a",
+      "kind": "git_blob_sha1"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka/observed_answer/factor.npz",
+      "bytes": 572741038,
+      "hash": "5c2f0f96cc9a559ae3639c99bca3e1f0414ce5cca742cae8dae2db720cdf65a4",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka_stage_manifest.json",
+      "bytes": 57740,
+      "hash": "846525db246007db764a0ceb422066bc738199a1",
+      "kind": "git_blob_sha1"
+    }
+  ]
+}

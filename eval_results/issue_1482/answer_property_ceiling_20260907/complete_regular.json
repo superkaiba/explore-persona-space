@@ -1,0 +1,19 @@
+{
+  "families": [
+    "regular"
+  ],
+  "bootstrap_draws": 1000,
+  "seed": 1482,
+  "metadata": {
+    "git_commit": "78971ec14237f1039700f55bafc11d34f0390a20",
+    "git_dirty": false,
+    "phase": "property-analysis",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue1482_answer_property_analysis.py",
+    "utc": "2026-09-08T00:11:06.109596+00:00",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128"
+  },
+  "script_sha256": "59c0a69e478a28988a17a8dd108b8a13dce591e994f8539c43de99415349a94c",
+  "uncertainty_scope": "feature resampling conditional on fixed fitted models, target bank, categories and matching cells; correlated features may make intervals too narrow"
+}

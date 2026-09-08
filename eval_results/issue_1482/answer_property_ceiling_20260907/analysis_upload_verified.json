@@ -1,0 +1,250 @@
+{
+  "repo": "superkaiba1/explore-persona-space-data",
+  "prefix": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis",
+  "url": "superkaiba1/explore-persona-space-data/issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis",
+  "revision": "52ca7182f7b4699c5d776c03bac24becab5ca97e",
+  "n_files": 40,
+  "bytes": 43363615,
+  "files": [
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_matryoshka_coarse_vs_fine_activity.npz",
+      "bytes": 24264,
+      "hash": "5cc5a9feca7eedbc02d10bce2c1236dada4a3782d00544fc3a45c2ebf802aa87",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_matryoshka_coarse_vs_fine_activity_and_observed.npz",
+      "bytes": 24264,
+      "hash": "9eac48179f48192abde5f9810016024ac21949ff75d003e0413ac755e1a6d016",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_matryoshka_coarse_vs_fine_raw.npz",
+      "bytes": 24264,
+      "hash": "ae06457ae93e1d3658e1e9f0c30a692db70e9aacef4cc9c352f7abf788e09a53",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_matryoshka_coarse_vs_middle_activity.npz",
+      "bytes": 24264,
+      "hash": "0fdaf3b366279a19d4aa2b3cf01c707ac89f84d25a64d777eb67c2f71882f427",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_matryoshka_coarse_vs_middle_activity_and_observed.npz",
+      "bytes": 24264,
+      "hash": "6c44bcc9959f98e4a3739b974ce5d16c2019a9aab439e526e9ed91c24b4462d9",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_matryoshka_coarse_vs_middle_raw.npz",
+      "bytes": 24264,
+      "hash": "f4a4842375593ea2551a651d6138283f7414116606e81ea01dea6c5d3bfb5fdc",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_matryoshka_middle_vs_fine_activity.npz",
+      "bytes": 24264,
+      "hash": "10a2115979dc60a3afd6b065469ea3a5b6f9e0aae562b8e349005236c00f54e1",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_matryoshka_middle_vs_fine_activity_and_observed.npz",
+      "bytes": 24264,
+      "hash": "dc5cb2081da5569c5ff31e2dbac89bdcb1fd1759dec8267a6df93c66b73f0f36",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_matryoshka_middle_vs_fine_raw.npz",
+      "bytes": 24264,
+      "hash": "ce87d5272d11703ccc861c57a1255cdd22c296d754204fc228923385eade11a9",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_abstract_vs_lexical_activity.npz",
+      "bytes": 16264,
+      "hash": "3d6fc4925ee4a0497f6445d836f292d4eda5dfa0176ce2417af14eb402ab95b0",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_abstract_vs_lexical_activity_and_observed.npz",
+      "bytes": 16264,
+      "hash": "e54573136a2ed44301eb67be4e969ff3d873e82205418ff82c2b17eb6434d32c",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_abstract_vs_lexical_raw.npz",
+      "bytes": 16264,
+      "hash": "ed72ca30b1a7abc71e18445791ec85a53f1495d4eb14ec540362ace6c6d65764",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_abstract_vs_token_activity.npz",
+      "bytes": 16264,
+      "hash": "deb7e9f707fdffd7cbd3663ea95edb9f44b836b1785b0b81cc614e9d9133c8f1",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_abstract_vs_token_activity_and_observed.npz",
+      "bytes": 16264,
+      "hash": "97fe2ea8630473492fd941f8690572a8907c32f96c2f38efa729d82ae6fae3fc",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_abstract_vs_token_raw.npz",
+      "bytes": 16264,
+      "hash": "cef3a36414737cd210ccf8a3cf6124314fea445506e5a899ab2ec80b1ca5294e",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_format_vs_topic_activity.npz",
+      "bytes": 16264,
+      "hash": "bde9389875637d691f6946a4b7b8cb15815e4fe9584c6731220b94f97482bdc1",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_format_vs_topic_activity_and_observed.npz",
+      "bytes": 16264,
+      "hash": "77ca8a08ee32178e6dfa90f62d05eba311548b0ae199b89840aaac7596d6ae9e",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_format_vs_topic_raw.npz",
+      "bytes": 16264,
+      "hash": "02cfe614c1661137162206c0d7ca4454ed12678cd8956b02eb3b841d18bbad2d",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_identity_vs_topic_activity.npz",
+      "bytes": 16264,
+      "hash": "6cbc2d11abf37c292f21ebebd6a178c707dedc81e02d34da1367c7dd9c450058",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_identity_vs_topic_activity_and_observed.npz",
+      "bytes": 16264,
+      "hash": "a515bd5d20800dcd4fc4eac905921691457bb23373c8f062ae1195cb281db50a",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_identity_vs_topic_raw.npz",
+      "bytes": 16264,
+      "hash": "35cb4b5c7537b9e95db43a0c27d7d9ca990f24b83c17bd6721b259e56cfd0218",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_language_vs_topic_activity.npz",
+      "bytes": 16264,
+      "hash": "f7240a2d5feaf697e94b178e7c60ce3ebf4ce0d1279bdbd34b279bec9abf536b",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_language_vs_topic_activity_and_observed.npz",
+      "bytes": 16264,
+      "hash": "c716f73dff9d15353b39f8b2c90c680d44289654016064b205ab151c6a33a79e",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_language_vs_topic_raw.npz",
+      "bytes": 16264,
+      "hash": "5fa1c9406f6570ddc91734c6611fe6d2cddfd3da5c8f5aa6e9171cbf15018f65",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_promoting_vs_suppressing_activity.npz",
+      "bytes": 16264,
+      "hash": "183e05182da0410fe26da4762321e4ed4edfac5052964c016e28fbecdb031c5f",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_promoting_vs_suppressing_activity_and_observed.npz",
+      "bytes": 16264,
+      "hash": "3be7d3c9bcb337568fa2d6bf96d22d5a3c56774dae4f39d1653f710d89bde153",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_promoting_vs_suppressing_raw.npz",
+      "bytes": 16264,
+      "hash": "33520253844fd772b9d7c237d5b991123d5b3ccd3ef99345685168612db33686",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_register_vs_topic_activity.npz",
+      "bytes": 16264,
+      "hash": "8dfb99e8e0ec6b5794a8495a0e1ac6895d20efab1a06451a13db958fc0e1eb32",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_register_vs_topic_activity_and_observed.npz",
+      "bytes": 16264,
+      "hash": "a8d993bb91491323f95ab04000bec89055b6339e280c78ce48dd61db277d6a89",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/bootstrap_regular_register_vs_topic_raw.npz",
+      "bytes": 16264,
+      "hash": "638a924bfffcf0a8b642831f9550152f52b5c4eb0afe36b5626f52f5f2504734",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/category_summary.csv",
+      "bytes": 5275,
+      "hash": "8b5550c5cae3b3ccf0d6563568f87f0898160c6a",
+      "kind": "git_blob_sha1"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/complete_matryoshka.json",
+      "bytes": 774,
+      "hash": "a792a1a39fdb54f1c4bfda3f81671a7fbebdbcb8",
+      "kind": "git_blob_sha1"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/complete_regular.json",
+      "bytes": 684,
+      "hash": "eee51e47a57049f24844995405e5a43c2f08d0ba",
+      "kind": "git_blob_sha1"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/matryoshka.json",
+      "bytes": 27992,
+      "hash": "2e71d824a7d7ccf899e525de048422e2ceec8dbb",
+      "kind": "git_blob_sha1"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/matryoshka_feature_table.npz",
+      "bytes": 673312,
+      "hash": "0844f7eafe8fb7df1dd8ec286d247194d02e61bb671ec26f83c4ff2b467193ac",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/matryoshka_row_bootstrap.json",
+      "bytes": 1734,
+      "hash": "4ae5c2e2b946e44c1c98285503315cb89163aa63",
+      "kind": "git_blob_sha1"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/matryoshka_row_bootstrap.npz",
+      "bytes": 12097293,
+      "hash": "c25edbe5bb51c81f211681c58fbca7f048139dca28861080b4b6caaa454db6b8",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/regular.json",
+      "bytes": 39478,
+      "hash": "9068826ab041c1ba0b9e4cd2562b04065288deb5",
+      "kind": "git_blob_sha1"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/regular_feature_table.npz",
+      "bytes": 29939958,
+      "hash": "b563bb1c71d125f8d9c5a1f175ace0f930d1beb4e4337280e32791b9cb52ffae",
+      "kind": "sha256"
+    },
+    {
+      "path": "issue1482_answer_property_ceiling_20260907/analysis_tensors/analysis/regular_verification.json",
+      "bytes": 17195,
+      "hash": "590a5ba3f0552d169a9f9d400b4d0a2fac5e1e1b",
+      "kind": "git_blob_sha1"
+    }
+  ]
+}

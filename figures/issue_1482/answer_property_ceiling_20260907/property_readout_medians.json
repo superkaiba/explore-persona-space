@@ -1,0 +1,121 @@
+{
+  "source_sha256": "f1bf20130e6bce5551906fc4ea6877fd15445ad1641383854c6af5dc6367321c",
+  "plotted": {
+    "order": [
+      "speaker_property:identity_disposition",
+      "content_type:topic",
+      "speaker_property:register_style",
+      "speaker_property:language",
+      "content_type:task_format",
+      "content_type:entity",
+      "content_type:syntax",
+      "content_type:operation",
+      "abstraction:abstract_contextual",
+      "abstraction:lexical_semantic",
+      "abstraction:token_surface",
+      "logit:promoting",
+      "logit:suppressing",
+      "logit:partition"
+    ],
+    "values": {
+      "observed_answer": [
+        0.2752513635906456,
+        0.09270713303493178,
+        0.110149610431854,
+        0.11977561811338511,
+        0.07031721750796222,
+        0.0405168826726503,
+        0.11815067586879896,
+        0.10653858409643796,
+        0.1528792976024903,
+        0.09717526480594174,
+        0.06816591709570369,
+        0.215608280025546,
+        0.09275887323562149,
+        0.06666125144631985
+      ],
+      "context": [
+        0.13933195173740387,
+        0.021641605533659458,
+        0.03802941180765629,
+        0.04804004728794098,
+        0.03328573517501354,
+        0.008129565510898829,
+        0.03797505050897598,
+        0.03219841420650482,
+        0.05397498235106468,
+        0.027201518416404724,
+        0.0155171575024724,
+        0.07906704768538475,
+        0.03124266304075718,
+        0.017099007964134216
+      ]
+    }
+  },
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      10.476
+    ],
+    "exported_size_inches": [
+      13.095,
+      9.971
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/property_readout_medians.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "Median held-out feature $R^2$ ↑",
+      "−0.2",
+      "0.0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "1.0",
+      "Identity / disposition",
+      "Topic",
+      "Register / style",
+      "Language",
+      "Task format",
+      "Entity",
+      "Syntax",
+      "Operation",
+      "Abstract contextual",
+      "Lexical semantic",
+      "Token surface",
+      "Logit promoting",
+      "Logit suppressing",
+      "Logit partition",
+      "Feature recovery from answers and context",
+      "Observed answer",
+      "Context"
+    ]
+  },
+  "metadata": {
+    "git_commit": "78971ec14237f1039700f55bafc11d34f0390a20",
+    "git_dirty": false,
+    "phase": "property-report-figures",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue1482_answer_property_figures.py",
+    "utc": "2026-09-08T00:12:30.178182+00:00",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128"
+  },
+  "outputs_sha256": {
+    "pdf": "1e45f6278ba3eec046358f70d960cbc4b8af621df9d58c0484067675c6c07d2a",
+    "png": "d85c92de0ca335c45e22c731dcaf8c162808533f02a974917f5719427a3f80cc",
+    "grayscale": "c629cf146910c3fd4d7a54fd42b7ef892c129d11ba888a8482e4519a8b75d630"
+  }
+}

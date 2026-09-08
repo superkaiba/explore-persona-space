@@ -1,0 +1,199 @@
+{
+  "source_sha256": "f1bf20130e6bce5551906fc4ea6877fd15445ad1641383854c6af5dc6367321c",
+  "plotted": {
+    "order": [
+      "identity_vs_topic",
+      "abstract_vs_token",
+      "abstract_vs_lexical",
+      "register_vs_topic",
+      "language_vs_topic",
+      "format_vs_topic",
+      "promoting_vs_suppressing"
+    ],
+    "values": {
+      "raw": {
+        "point": [
+          0.7275407942473197,
+          0.589414774596975,
+          0.5705602899327358,
+          0.5735325831814526,
+          0.5897205544542783,
+          0.5407811532835183,
+          0.6019933371348138
+        ],
+        "ci95": [
+          [
+            0.7100483856587622,
+            0.7452811232365366
+          ],
+          [
+            0.5855494914346661,
+            0.5934212074210081
+          ],
+          [
+            0.5662074033071995,
+            0.5748571619498667
+          ],
+          [
+            0.5649961656567346,
+            0.5819360649389311
+          ],
+          [
+            0.5810428631429695,
+            0.598613633057049
+          ],
+          [
+            0.52361266694429,
+            0.5569001020299268
+          ],
+          [
+            0.5924665218043754,
+            0.6119241832596155
+          ]
+        ]
+      },
+      "activity": {
+        "point": [
+          0.8639218002199436,
+          0.46036928013761325,
+          0.5180543025142347,
+          0.6481887686741871,
+          0.5824151572803073,
+          0.6621786757011876,
+          0.44993639738175956
+        ],
+        "ci95": [
+          [
+            0.8518825375225012,
+            0.8756663872574015
+          ],
+          [
+            0.4563440525027424,
+            0.4642827701683346
+          ],
+          [
+            0.5133890514345419,
+            0.5226392294530251
+          ],
+          [
+            0.6398273389215883,
+            0.6561063577552008
+          ],
+          [
+            0.5739396660297273,
+            0.5909212436735201
+          ],
+          [
+            0.6454031020798423,
+            0.6781873272794238
+          ],
+          [
+            0.438445533332603,
+            0.4614412561620368
+          ]
+        ]
+      },
+      "activity_and_observed": {
+        "point": [
+          0.6638576483723042,
+          0.4965046190599443,
+          0.5179618283361336,
+          0.6262147842035459,
+          0.6383976127026029,
+          0.6356463608628984,
+          0.46478332194552113
+        ],
+        "ci95": [
+          [
+            0.6470376000555075,
+            0.6823456038653438
+          ],
+          [
+            0.4921102981673103,
+            0.5010244395469733
+          ],
+          [
+            0.5134666366772314,
+            0.5224453807024565
+          ],
+          [
+            0.617726599639866,
+            0.6352819226413392
+          ],
+          [
+            0.6291140529896811,
+            0.6469028080155231
+          ],
+          [
+            0.6202902096675986,
+            0.6514275376410242
+          ],
+          [
+            0.4528568583492605,
+            0.4767487113929551
+          ]
+        ]
+      }
+    },
+    "caption": "Values above 0.5 favor the first named property. Intervals resample features conditional on the fixed readouts, bank and matching cells; correlated SAE features may make intervals too narrow. Matched cells change the eligible comparison population; these are descriptive associations, not causal decompositions."
+  },
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      7.595
+    ],
+    "exported_size_inches": [
+      13.095,
+      7.543
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/property_conditional_concordance.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "Context-prediction concordance",
+      "0.0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "1.0",
+      "Identity − topic",
+      "Abstract − token surface",
+      "Abstract − lexical semantic",
+      "Register / style − topic",
+      "Language − topic",
+      "Task format − topic",
+      "Promoting − suppressing",
+      "Property contrasts in context prediction",
+      "Raw",
+      "Match activity",
+      "Also match answer readout"
+    ]
+  },
+  "metadata": {
+    "git_commit": "78971ec14237f1039700f55bafc11d34f0390a20",
+    "git_dirty": false,
+    "phase": "property-report-figures",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue1482_answer_property_figures.py",
+    "utc": "2026-09-08T00:12:32.555357+00:00",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128"
+  },
+  "outputs_sha256": {
+    "pdf": "6aef277328a02135c4c7a7e53a44eb49d0649f85a48238de6915f85a795819b6",
+    "png": "051d2274ce8a2a779a76bcd7df54404a342eae389e9a0f20a5c24937964e9c29",
+    "grayscale": "ec81e12425ed434b72e08d4e4000b868ecbe6b5894023708e6461186b7502fd3"
+  }
+}

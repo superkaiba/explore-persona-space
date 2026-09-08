@@ -1,0 +1,20 @@
+{
+  "units": [
+    {
+      "local": "/home/thomasjiralerspong/.codex/research/answer-property-ceiling-20260907/input_upload_stage",
+      "remote": "issue1482_answer_property_ceiling_20260907/analysis_tensors",
+      "url": "superkaiba1/explore-persona-space-data/issue1482_answer_property_ceiling_20260907/analysis_tensors"
+    },
+    {
+      "local": "/home/thomasjiralerspong/.codex/research/answer-property-ceiling-20260907/matryoshka",
+      "remote": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka",
+      "url": "superkaiba1/explore-persona-space-data/issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka"
+    },
+    {
+      "local": "/home/thomasjiralerspong/.codex/research/answer-property-ceiling-20260907/matryoshka_stage_manifest.json",
+      "remote": "issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka_stage_manifest.json",
+      "url": "superkaiba1/explore-persona-space-data/issue1482_answer_property_ceiling_20260907/analysis_tensors/matryoshka_stage_manifest.json"
+    }
+  ],
+  "canonical_repo_revision_at_completion": "901771c38b95e1af7b20fb5cc2dcfb2f1781b3b8"
+}
