@@ -1,0 +1,72 @@
+workflow_lint: SKIP check_script_refs (files-mode: payload disjoint from .claude/)
+workflow_lint: SKIP check_skill_refs (files-mode: payload disjoint from .claude/,CLAUDE.md)
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue1310_dispatch.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue1310_dispatch.sh has zero nvidia-smi width-derivation matches; remove issue1310_dispatch.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue1335_run.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue1335_run.sh has zero nvidia-smi width-derivation matches; remove issue1335_run.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue1336_dispatch.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue1336_dispatch.sh has zero nvidia-smi width-derivation matches; remove issue1336_dispatch.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue1345_dispatch.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue1345_dispatch.sh has zero nvidia-smi width-derivation matches; remove issue1345_dispatch.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue1417_run.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue1417_run.sh has zero nvidia-smi width-derivation matches; remove issue1417_run.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue1426_sampled_dispatch.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue1426_sampled_dispatch.sh has zero nvidia-smi width-derivation matches; remove issue1426_sampled_dispatch.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue1434_dispatch.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue1434_dispatch.sh has zero nvidia-smi width-derivation matches; remove issue1434_dispatch.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue1689_dispatch.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue1689_dispatch.sh has zero nvidia-smi width-derivation matches; remove issue1689_dispatch.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue1738_multiturn_launch.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue1738_multiturn_launch.sh has zero nvidia-smi width-derivation matches; remove issue1738_multiturn_launch.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue1739_nlmap_dispatch.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue1739_nlmap_dispatch.sh has zero nvidia-smi width-derivation matches; remove issue1739_nlmap_dispatch.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue1769_dispatch.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue1769_dispatch.sh has zero nvidia-smi width-derivation matches; remove issue1769_dispatch.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue1774_dispatch.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue1774_dispatch.sh has zero nvidia-smi width-derivation matches; remove issue1774_dispatch.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue1775_fu_run.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue1775_fu_run.sh has zero nvidia-smi width-derivation matches; remove issue1775_fu_run.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue1775_run.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue1775_run.sh has zero nvidia-smi width-derivation matches; remove issue1775_run.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue1776_dispatch.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue1776_dispatch.sh has zero nvidia-smi width-derivation matches; remove issue1776_dispatch.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue1776_p3p4_dispatch.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue1776_p3p4_dispatch.sh has zero nvidia-smi width-derivation matches; remove issue1776_p3p4_dispatch.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue1776_swap_dispatch.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue1776_swap_dispatch.sh has zero nvidia-smi width-derivation matches; remove issue1776_swap_dispatch.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue2094_dispatch.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue2094_dispatch.sh has zero nvidia-smi width-derivation matches; remove issue2094_dispatch.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue2162_dispatch.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue2162_dispatch.sh has zero nvidia-smi width-derivation matches; remove issue2162_dispatch.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue779_ffc_n1m_launch.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue779_ffc_n1m_launch.sh has zero nvidia-smi width-derivation matches; remove issue779_ffc_n1m_launch.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue779_ffc_n50k_launch.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue779_ffc_n50k_launch.sh has zero nvidia-smi width-derivation matches; remove issue779_ffc_n50k_launch.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+WARN: SLURM_GPU_WIDTH_GRANDFATHER['issue923_gpu_phase.sh']: /home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/scripts/issue923_gpu_phase.sh has zero nvidia-smi width-derivation matches; remove issue923_gpu_phase.sh from SLURM_GPU_WIDTH_GRANDFATHER (ratchet down).
+workflow_lint: SKIP check_marker_registry (files-mode: payload disjoint from .claude/)
+workflow_lint: SKIP check_agent_model_pins (files-mode: payload disjoint from .claude/agents/)
+workflow_lint: SKIP check_agent_tools (files-mode: payload disjoint from .claude/agents/)
+workflow_lint: SKIP check_no_repo_root_git_reset_hard (files-mode: payload disjoint from .claude/)
+workflow_lint: SKIP check_no_repo_root_worktree_revert (files-mode: payload disjoint from .claude/)
+workflow_lint: SKIP check_gate_ids_unique (files-mode: payload disjoint from .claude/workflow.yaml,workflow.yaml)
+workflow_lint: SKIP check_lessons_index (files-mode: payload disjoint from .claude/rules/)
+workflow_lint: SKIP check_inline_round_duty_mirror (files-mode: payload disjoint from .claude/,CLAUDE.md)
+workflow_lint: SKIP check_rule_frontmatter_parses (files-mode: payload disjoint from .claude/rules/)
+workflow_lint: SKIP check_agent_spec_size (files-mode: payload disjoint from .claude/agents/)
+workflow_lint: SKIP check_agent_memory_index_size (files-mode: payload disjoint from .claude/agent-memory/)
+workflow_lint: SKIP check_gotchas_size (files-mode: payload disjoint from .claude/rules/gotchas.md)
+workflow_lint: SKIP check_skill_doc_size (files-mode: payload disjoint from .claude/skills/)
+workflow_lint: SKIP check_compute_shape_review_lens (files-mode: payload disjoint from .claude/agents/)
+workflow_lint: SKIP check_long_loop_restartability_review_lens (files-mode: payload disjoint from .claude/)
+workflow_lint: SKIP check_hollow_verification_gate_review_lens (files-mode: payload disjoint from .claude/agents/)
+workflow_lint: SKIP check_smoke_architecture_review_lens (files-mode: payload disjoint from .claude/)
+workflow_lint: SKIP check_smoke_blind_spot_review_lens (files-mode: payload disjoint from .claude/)
+workflow_lint: SKIP check_pre_split_review_guard (files-mode: payload disjoint from .claude/,scripts/,src/explore_persona_space/)
+workflow_lint: SKIP check_worktree_task_state_briefs (files-mode: payload disjoint from .claude/,CLAUDE.md)
+workflow_lint: SKIP check_null_gate_calibration_lens (files-mode: payload disjoint from .claude/)
+workflow_lint: SKIP check_two_tier_yield_floor (files-mode: payload disjoint from .claude/)
+workflow_lint: SKIP check_cvd_scoped_gpu_verdict_lens (files-mode: payload disjoint from .claude/)
+workflow_lint: SKIP check_codex_composer_memory_commit (files-mode: payload disjoint from .claude/)
+workflow_lint: SKIP check_codex_concerns_persistence (files-mode: payload disjoint from .claude/)
+workflow_lint: SKIP check_force_push_policy (files-mode: payload disjoint from .claude/)
+workflow_lint: SKIP check_verdict_round_anchor (files-mode: payload disjoint from .claude/skills/)
+workflow_lint: SKIP check_stale_label_disposition (files-mode: payload disjoint from .claude/skills/)
+workflow_lint: SKIP check_smoke_output_hygiene (files-mode: payload disjoint from .claude/)
+workflow_lint: SKIP check_crash_fix_relaunch_contract (files-mode: payload disjoint from .claude/)
+workflow_lint: SKIP check_vm_thread_cap_guidance (files-mode: payload disjoint from .claude/)
+workflow_lint: SKIP check_awk_elision_parity (files-mode: payload disjoint from .claude/)
+workflow_lint: SKIP check_no_literal_round_marker_versions (files-mode: payload disjoint from .claude/,CLAUDE.md)
+workflow_lint: SKIP check_lens_coverage (files-mode: payload disjoint from .claude/rules/)
+workflow_lint: SKIP check_section_reference_pointers (files-mode: payload disjoint from .claude/)
+workflow_lint: SKIP check_git_recipes_root_guard (files-mode: payload disjoint from .claude/,CLAUDE.md)
+workflow_lint: SKIP check_issue_skill_fence_wt_binding (files-mode: payload disjoint from .claude/skills/issue/)
+workflow_lint: SKIP check_bare_commit_pathspec (files-mode: payload disjoint from .claude/,CLAUDE.md)
+workflow_lint: SKIP check_asw_docstring_pass_count (files-mode: payload disjoint from scripts/autonomous_session_watch.py,.claude/rules/background-automation.md)
+workflow_lint: SKIP check_skill_bang_backtick (files-mode: payload disjoint from .claude/skills/)
+workflow_lint: SKIP check_agents_note_argv_verdict (files-mode: payload disjoint from .claude/agents/)
+workflow_lint: SKIP check_stale_gotchas_pointers (files-mode: payload disjoint from .claude/,CLAUDE.md)
+workflow_lint: SKIP check_plan_version_immutability (files-mode: payload disjoint from tasks/)
+workflow_lint: SKIP check_no_unannotated_gcp_pin_guidance (files-mode: payload disjoint from .claude/,docs/)
+workflow_lint: SKIP check_lane_order_adjective (files-mode: payload disjoint from .claude/,CLAUDE.md,src/explore_persona_space/backends/router.py)
+workflow_lint: note: files-mode suppressed 43 finding(s) naming no in-scope path (corpus-global / enumeration-dependent; the bare no-flags run remains the whole-repo instrument)
+workflow_lint: SCOPE files=3 closure=+0 checks_ran=39 checks_skipped=47
+workflow_lint: PASS

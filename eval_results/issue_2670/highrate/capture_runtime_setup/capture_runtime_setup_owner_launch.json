@@ -1,0 +1,22 @@
+{
+  "schema_version": "context_risk_highrate_capture_runtime_setup_owner_launch_v1",
+  "launch_id": "runtime_20260908T055743Z",
+  "started_utc": "2026-09-08T05:57:43.103333+00:00",
+  "supervisor_pid": 4050,
+  "timeout_seconds": 1800,
+  "log_path": "/workspace/logs/issue2670-context-risk-highrate/setup/capture_runtime_setup_runtime_20260908T055743Z.log",
+  "staged_files_sha256": {
+    "capture_runtime_setup_worker.py": "f341f09cd89d222125bd8f6d39e38858e8ce94048d5d2eb67695e0db176e5435",
+    "capture_runtime_setup_supervise.sh": "24aef2455718f7b6a2a84a28c773c71fe394b3f95b02bac67177c98c5d6945cf",
+    "highrate_capture_supervise.sh": "b743703ad2fea55590f19d8529cafc1ef4970613305e29b56f6b9e85787ad38f",
+    "capture_orchestration_artifacts.json": "83681ffce9586345e0193cac24926407770ab1cc1462e904598dfa113aaf7b7a",
+    "capture_orchestration_supervisor.diff": "83a1f32e0c5e4b9171fe2853d22b22a3bcc000068d9f64c78b5bb1881df6788a",
+    "capture_orchestration_launch_recipe.md": "fd827e54e90811610fe90b36c6c91af987dd0fc9c296b6348b4505b8fde55413",
+    "capture_orchestration_code_review.json": "d957a9e14f49dede29b952e2bf8de3c522105a1d671e6699f476a1774f77a487",
+    "capture_orchestration_code_review.md": "3c1907d1158386a11e7c446cd7a01f11dea573af40f37cb37f7efad13e479a56"
+  },
+  "server_pid_before_launch": 2746,
+  "no_model_generation": true,
+  "pod_id": "1bds7vqkrluxkc",
+  "owner": "codex-highrate-20260907"
+}

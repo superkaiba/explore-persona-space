@@ -1,0 +1,200 @@
+{
+  "addendum_sha256": "d5418353d0d5c0c89873fbc7cdb0b9837fc026a9666d4185e93486dc3eb963e3",
+  "checked_utc": "2026-09-08T06:15:32.930654+00:00",
+  "compatible_prior_memory_bound_found": false,
+  "conditional_diagnostic_executed": false,
+  "current_all309_max": [
+    21488,
+    "highrate_screen:B:lcbhard_36:conflicting"
+  ],
+  "current_capture_sources_sha256": {
+    "configs/eval/context_risk_followup_capture.yaml": "cdbc76b49d639a61d349becf984aafd30ff5372ea88f6e92f89f2cac4cc25285",
+    "configs/eval/context_risk_highrate.yaml": "7ea14d45dd8e349eb548e2fe710373695d7a5ca7fcad12e64059adc5e042f577",
+    "configs/eval/context_risk_highrate_capture.yaml": "7140a2fcc3e1ed38e4127a1c65d8dbb8ec3b40034713cffca8d15be177e80eec",
+    "configs/eval/context_risk_qwen38_impossible_capture.yaml": "7018d151ebf4534ad3ecfa4d88cb48c12b847e98bba46dce2e1ba3e8b0dc53aa",
+    "configs/eval/context_risk_qwen38_smoke.yaml": "d5ad816cb64e7da10d7e22bf79e4525e7d04f6d9df4808e678fd9d4cb9f5f352",
+    "eval_results/context_risk_highrate_design/analysis_spec.json": "02c4d4009f559d4f829c43e90ba722018fc5ad9c54481780cf0a15e0d895a509",
+    "eval_results/context_risk_highrate_design/plan.md": "7d86436576ee9c9b686c14778fa146d2912c99016e2cf24e6bd75a3cc62f3df6",
+    "eval_results/context_risk_highrate_design/plan_v8_context_capacity_verification.md": "e743d726fde20defa03cffe2808b5d7bd7c0100db8911c161dc41d33529d2355",
+    "scripts/context_risk_followup.py": "7e6264d0dfc1f518a7cf78fb6f6bbae3fef8ef8e0b71d810432dab2d2ce712fa",
+    "scripts/context_risk_followup_capture.py": "a2773e6fd1d4734a06d8b388fc762ca15a4c6fbd717f85a6f744f14d30b07a2a",
+    "scripts/context_risk_followup_census.py": "4287651a35ed5b08aef7799633b1c79931f66810166563f2ae93d99ceb0ba752",
+    "scripts/context_risk_followup_probe_core.py": "8e83b9822ab817a849fd70b98bdf6144236e2ff3884c9460fa3fa82999666d31",
+    "scripts/context_risk_highrate_capacity.py": "5f5af892384a74a24c094ed403d232c4bfe3c22d393a0f0fa12d4ba7703443dd",
+    "scripts/context_risk_highrate_capture.py": "a148f96788d6e0d9a6d0727cdf54b5f7ad609886841e4f729171850154163d74",
+    "scripts/context_risk_highrate_collect.py": "7f78063ebc37aa4bc491f5fc112e2758ad1ee5c6bd100c169fbb502f78223d34",
+    "scripts/context_risk_highrate_design.py": "d93f8828e8e2dddc68264385d313df124761695d1897fc1b36a802df347b7de6",
+    "scripts/context_risk_highrate_postrun.py": "b24163acaf23166c3d573f40496d2a9e78610a308daf333dc4b98a1ac8482681",
+    "scripts/context_risk_highrate_supervise.sh": "5078d75810cbd4f396948b2668c9ab0d34d0f489a49ffca8a893eea0108a1cae",
+    "scripts/context_risk_impossiblebench.py": "ca94cdeaf6577ad4745ea15193bd6d132075bafa7c209880e0db76cf4a5c23b3",
+    "scripts/context_risk_impossiblebench_harness.py": "32229cdfa0f5e9b6231a7328ed75f72d5040e3bca3510653a71247476818e150",
+    "scripts/context_risk_impossiblebench_inspect.py": "d5cf509c3a32239f8472c0291b08a9a4e219144089461f68600f8c6849b9eb7c",
+    "scripts/context_risk_prepare_data.py": "b83776b8259df63aa34f283cdf3472554f4dd73f0f25338bf89f98a8ca089194",
+    "scripts/context_risk_qwen38_capture.py": "8f1461f3ca9ffcf296dc0685839534f2031909007f0411ae2b64253f8987bce0",
+    "scripts/context_risk_qwen38_impossible_capture.py": "d7f6aec322ce89249a6829b3298f7753cf8a33b9e7505bc7850b8c408a39122b",
+    "scripts/context_risk_qwen38_smoke.py": "e5590082533251c32e1e981879b20cbd1aae3f252bb8f4d4742ab11134a8ca98",
+    "src/explore_persona_space/analysis/extraction.py": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79",
+    "tests/test_context_risk_highrate_capture.py": "9b6022d203c5ce8de6746295f4f131e814067b9730dd1a2890cf88d14f454d93",
+    "tests/test_context_risk_highrate_postrun.py": "f653400a60e77a81d839715dc4ab0bce3c8f1454ae0cff551fcd1367a066cb80",
+    "tests/test_context_risk_highrate_postrun_integration.py": "199ae6a3b2ef230e9e37fe9ecc8647b717686d266f89798b3a642af3482d6657"
+  },
+  "decision": "LONGEST_PREFIX_AND_ACTUAL_TWO_ROW_CHECK_STILL_REQUIRED",
+  "evidence": {
+    "current_capture_code_review": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/capture_code_review.json",
+      "sha256": "8b2b21944bc7a73416568924dfd75cb83f13e7bac0848eb409fef56879e34750"
+    },
+    "current_live_prefix_preflight": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/live_prefix_preflight.json",
+      "sha256": "4a4ffbcc5f3991b06277c409a03c423d21cdb7641fa8b6c367bd5a23135929f3"
+    },
+    "current_runtime_execution_review": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/capture_runtime_execution_review.json",
+      "sha256": "651a32af7d40e88a37eed7fb74884fc5d191599a6365b0ebad616e6bae01a622"
+    },
+    "current_runtime_preflight": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/runtime_preflight_review.json",
+      "sha256": "7d34fdec3d5ef7a403ae6909edf1380b07245cb64fe769fb56227c900a3ef057"
+    },
+    "map_fit_receipt": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_map_pilot/run_result.json",
+      "sha256": "3e6651be338f84d60294335bb7183549bd61d5577a882ae36e96e437435ceedf"
+    },
+    "old_conditional_diagnostic": {
+      "path": "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_followup_design/conditional_capture_smoke.py",
+      "sha256": "076e50453855a1758f5b4f49978a5c9ebfeee49c1f62be60066da38c42248080"
+    },
+    "old_conditional_review": {
+      "path": "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_followup_design/conditional_capture_smoke_review.json",
+      "sha256": "98c46d6458e00c153e8c151035de65022c8da4c437f841e4119e70603d05e09b"
+    },
+    "old_conditional_runbook": {
+      "path": "/home/thomasjiralerspong/.codex/worktrees/context-risk-recovery-20260906/eval_results/context_risk_followup_design/conditional_capture_execution.md",
+      "sha256": "95533671257549b3af5f74faf9ca0da9303f701bf4ccf1a7ee3d7ad9e382a90e"
+    },
+    "old_short_smoke": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_smoke/run_result.json",
+      "sha256": "0041c852f28bbba8c106acacd0685ac2ffab004cbac58d6303c1e21e6dbcc848"
+    },
+    "toucan64_capture": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_capture_toucan64/run_result.json",
+      "sha256": "bfb2eb210a9d6608f7922024fb053d79c613906cd3ad34121dcf64d5fd13de86"
+    },
+    "weirdchat_capture": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/run_result.json",
+      "sha256": "f687e93bb310e62b569864232ad922502a5795dc65c5a62b9512300cd30a8b7e"
+    }
+  },
+  "existing_callable_helpers": [
+    "scripts.context_risk_highrate_capture._staged_inputs",
+    "scripts.context_risk_highrate_capture._runtime",
+    "scripts.context_risk_qwen38_capture.batches_by_budget",
+    "scripts.context_risk_qwen38_smoke._load_model_and_tokenizer",
+    "scripts.context_risk_qwen38_smoke.render_prefix_ids",
+    "scripts.context_risk_qwen38_smoke._capture_last_prefix",
+    "scripts.context_risk_qwen38_smoke._hook_tuple_errors",
+    "explore_persona_space.analysis.extraction._logits_to_keep_kwargs"
+  ],
+  "historical_capture_measurements": {
+    "toucan64_capture": {
+      "accepted_rows": 64,
+      "maximum_prefix_tokens": 5767,
+      "maximum_total_tokens": 6079,
+      "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "reported_peak_allocated_gib": 54.44734287261963,
+      "torch_runtime_and_exact_batch_capacity_not_bound_by_receipt": true
+    },
+    "weirdchat_capture": {
+      "accepted_rows": 2222,
+      "maximum_prefix_tokens": 266,
+      "maximum_total_tokens": 2317,
+      "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "reported_peak_allocated_gib": 54.685853481292725,
+      "torch_runtime_and_exact_batch_capacity_not_bound_by_receipt": true
+    }
+  },
+  "historical_short_smoke": {
+    "hook_tuple_errors": {
+      "32": 0.0,
+      "44": 0.0,
+      "56": 0.0
+    },
+    "layers": [
+      32,
+      44,
+      56
+    ],
+    "maximum_prefix_length_recorded": false,
+    "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "reported_peak_allocated_gib": 53.06409502029419,
+    "rows": 8,
+    "torch_runtime_recorded": false,
+    "transformers": "5.15.0"
+  },
+  "new_executables_created": false,
+  "new_model_or_tokenizer_or_gpu_calls": 0,
+  "production_peak_limit": "Post-run peak allocated memory; reset after loader/tokenization; resumed chunks do not rerun forwards. Not a prior long-prefix memory proof.",
+  "reviewer": "/root/verify_vllm_runtime",
+  "row_payloads_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_capture_toucan64/chunk_000000.rows.jsonl": "ffc2a238a11b82706771e0db02368d70910a71fd2486d92c666996a804327bcf",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_capture_toucan64/chunk_000001.rows.jsonl": "4a9e44d4a4829561c18562e0522cdadb020c673c0a286c787a37778d6ed303ad",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_capture_toucan64/chunk_000002.rows.jsonl": "7093a1424ac4f2011e4a8c964995076916e7b6087a0d9483c8803d327bdedc7d",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_capture_toucan64/chunk_000003.rows.jsonl": "c28c06a8fef35d1a47ea1e20566b89dddd5ec0dcff854ff0917dfa77597283da",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000000.rows.jsonl": "6d07c81be54cb76b9a11f4f8655f4ef3606fe32f8211cf41fbcb2cfed509b20b",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000001.rows.jsonl": "a5f1603644c6c3b1bdb301d052cdc7a66ec5eb9f035764d5093a6d43a9301c02",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000002.rows.jsonl": "f497f134a9a996aa501aee5a89ffef4a13650b754dfe0914648b3364fc7f7e2c",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000003.rows.jsonl": "d695123ebf880631974290d2924942ec1de5eb1d0ccf4b63e359c2895f8515f4",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000004.rows.jsonl": "02bbd764977e2a946d093343ab45c0ec956c315e3606302a2f5e128b31d45541",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000005.rows.jsonl": "dcf2750811ed4abd5908e24925185e8c722303b5e10fa3281a46e1e655e55fa6",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000006.rows.jsonl": "42c6832d4dfb0815cbbabcbc706aec058fd2103e94158b737c04802e71751d1e",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000007.rows.jsonl": "20dfa384f9ecb07a333b93e4b8e895df14d677e9fa8cbf1b55b5b1c95e37613a",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000008.rows.jsonl": "4f3efda3d69ad3f8b9ce1d5ec50e4a51c7b67cc38a4c11b6c72504dbadfa9051",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000009.rows.jsonl": "f9b79d96db9e014c868575644dc8559aa64cfe1d9847fa13ee72f117a13e1717",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000010.rows.jsonl": "200e3c4d6cc5618079b76e9811d651afdbfec8074dd5182eb7f6b52f69441c90",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000011.rows.jsonl": "3f362f73eb09daa2ae25555b8202f6080ca30210e3538208ce292c6ef453ab26",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000012.rows.jsonl": "2cc3ca099364d9650c474cacbb9191083da2d663ffe0dde4808cfaefd811dcf1",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000013.rows.jsonl": "877211f72093a365238385ebc517ae008bac9ee485a289cc4171c36124366c43",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000014.rows.jsonl": "bf8d7e7d7a6357d5be5844b1d12a16465aa39bdd27fec6a2ee9f13854c7bd3f2",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000015.rows.jsonl": "7aee6eb13fd1bf70a21c7a620cad55e487b839012d5443f48059dd0b43a5654f",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000016.rows.jsonl": "13f713666a17e8ac3f9ac992f355c87c1cc8526524c7537efbb934934685c656",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000017.rows.jsonl": "e07af49b42f901071a276837e1ca3e905e66729308ce6b3f390d7a76fecedc4d",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000018.rows.jsonl": "70e45bda4e472f4b5011de266212a05c11b60fb22bac94261c455699446c3d8b",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000019.rows.jsonl": "f898d4f34110d03f5933b5f4665e63d38f51bdce050e3ff609ddc807aa108cd3",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000020.rows.jsonl": "85372c937bb84cd21be4aaa6b465f8854c505724d9ef713b255ff60bb2a01d24",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000021.rows.jsonl": "9b08a427d5e0f463aa96bff631ed66bfb62c319ce3ff166821023661d736065c",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000022.rows.jsonl": "bef2c1d34d6f8d3fe6d87010eb4c008c1c7af6db4e559674182bb7ad5fecb74e",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000023.rows.jsonl": "8764f5eab21c8f1010666ef7485e873460fb888b4d2a8250dd80f9a0b2a501cd",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000024.rows.jsonl": "53f0b353c0fc9bc887bb85935f6540a25a8dd62ade7d5728a496fbd4f7ad04ee",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000025.rows.jsonl": "dde5cc7cf8ae3f30b76a0197b7fea99c6a5fa15de35007ea22de9e592719c985",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000026.rows.jsonl": "b7e7a5227649daa4f3e1b322f340c3a2fdaa7921210b78afd7966c90fd118fe0",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000027.rows.jsonl": "a23722b8d57a3ddaaefeaf5ceb1f5647e123671c59fd1034935045b7f08de384",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000028.rows.jsonl": "bfcc9762b865bf954934ae366698486ef58190ed568bb7c981e6ceb66972a49d",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000029.rows.jsonl": "8686d8cdac227a6f932e99134e9f7e6d1b0809ef3c82ec3276d5785541721c06",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000030.rows.jsonl": "ce76f0bcfa71f38bfa26db11041555cc3a96d4cad0889330201ba7c2b8bd4aeb",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000031.rows.jsonl": "8f5a887972938023ce43fbed2b60340402dbbbccf33dfed7941f22fc2f3ddad2",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000032.rows.jsonl": "cab4e0008bf4f137a08e7917a5c3b60b6b31c2bcdd70fccf1d6f17deb67d10b7",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000033.rows.jsonl": "bbfc642f197bd273b95e212cf864de34613c4ea888262f4b3905c69bbc12e774",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/qwen38_weirdchat_crossmodel_v1/capture/chunk_000034.rows.jsonl": "1ffd4cb15d2e1bde4cd2c69d1431e67188e0307eb2932f1b3a2ccf1aef45b455"
+  },
+  "schema_version": "context_risk_highrate_capture_memory_reuse_review_v1",
+  "search_scope": {
+    "exact_relative_paths_per_worktree": [
+      "eval_results/context_risk/qwen38_capture_pilot/run_result.json",
+      "eval_results/context_risk/qwen38_smoke/run_result.json",
+      "eval_results/context_risk/impossible_ten_attempts_followup/setup/capture_production_shape_smoke_v1.json",
+      "eval_results/context_risk/impossible_ten_attempts_followup/setup/capture_production_shape_smoke.json",
+      "eval_results/context_risk/impossible_ten_attempts_followup/captures_A/run_result.json",
+      "eval_results/context_risk/impossible_ten_attempts_followup/captures_B/run_result.json",
+      "eval_results/context_risk_results/qwen38_capture_pilot/run_result.json"
+    ],
+    "new_remote_or_hf_search": false,
+    "not_global_absence_claim": true,
+    "registered_worktrees": 96,
+    "roots": [
+      "canonical eval_results/context_risk",
+      "current recovery worktree eval_results/context_risk_followup_design",
+      "current highrate setup"
+    ]
+  },
+  "verified_by": "read"
+}

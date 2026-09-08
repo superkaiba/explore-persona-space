@@ -1,0 +1,7 @@
+Runtime setup execution review: **PASS**. The actual `runtime_20260908T055743Z` worker completed with supervisor 4050 / worker PGID 4054, exit 0 and `no_live_members`. Fresh process evidence confirms the group is drained, while server PID 2746 and engine PID 2846 remain in their original group and `/health` returns HTTP 200.
+
+All twelve pinned distributions agree across the package metadata, full freeze and successful pip check. The actual import preflight matches the current 29-source closure, imported helper bytes and required Transformers 5.15.0 / Torch 2.13.0+cu130 / CUDA 13.0 / NumPy 2.3.5 / accelerate 1.13.0 runtime. Owner-launch, worker, process and source-review receipts agree, with valid chronology.
+
+Copied 23 complete launch/source-evidence files (70,303 bytes) from the pod to `/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/pod_setup/capture_runtime_setup`. Every filename and SHA was verified against remote bytes before and after transfer, the receipt's artifact hashes and the owner's staged source hashes. Copy evidence is recorded in `capture_runtime_execution_review.json`; no remote file was modified.
+
+No installation, model/tokenizer/generation request, capture or process mutation occurred in this audit. Capture still requires actual fresh completion/preparation, exact staging, owned server drainage and the remaining GPU capture gates. This PASS does not imply remote archive verification or authorize teardown.

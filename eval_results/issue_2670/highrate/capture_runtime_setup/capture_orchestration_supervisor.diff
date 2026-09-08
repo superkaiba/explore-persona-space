@@ -1,0 +1,76 @@
+--- scripts/context_risk_followup_download_supervise.sh
++++ capture_runtime_setup_supervise.sh
+@@ -1,13 +1,14 @@
+ #!/usr/bin/env bash
+ # Run under a detached process with stdin=/dev/null and a fresh dedicated log.
+ set -euo pipefail
+-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+-mode=model_download
+-root="${EPM_CONTEXT_RISK_FOLLOWUP_SETUP:?fresh run root required}"
++cd /workspace/explore-persona-space
++mode=capture_runtime_setup
++root="${EPM_CONTEXT_RISK_HIGHRATE_SETUP:?owned setup root required}"
++[[ "$root" == /workspace/logs/issue2670-context-risk-highrate/setup ]] || exit 2
+ launch_id="${EPM_CONTEXT_RISK_LAUNCH_ID:?unique launch id required}"
+ deadline="${EPM_CONTEXT_RISK_PROCESS_TIMEOUT_SECONDS:?whole-process deadline required}"
+ [[ "$launch_id" =~ ^[a-zA-Z0-9_-]+$ ]] || exit 2
+-[[ "$deadline" =~ ^[1-9][0-9]*$ ]] || exit 2
++[[ "$deadline" == 1800 ]] || exit 2
+ mkdir -p "$root"
+ prefix="$root/${mode}_${launch_id}_process"
+ for suffix in pid worker.pid exit.json; do
+@@ -76,9 +77,16 @@
+ printf '%s\n' "$$" > "$prefix.pid.tmp"
+ mv "$prefix.pid.tmp" "$prefix.pid"
+ export UV_NO_SYNC=1
++export UV_CACHE_DIR=/root/.cache/uv
++export UV_CONCURRENT_DOWNLOADS=2 UV_CONCURRENT_BUILDS=1 UV_CONCURRENT_INSTALLS=1
++export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1
++export CUDA_VISIBLE_DEVICES=""
++export PYTHONPATH=""
+ echo "[supervisor-start] mode=$mode pid=$$ root=$root utc=$(date -u +%FT%TZ)"
+ setsid timeout --kill-after=60s "$deadline" \
+-  uv run python -m scripts.context_risk_followup_download &
++  nice -n 10 taskset -c 0,1 \
++  /root/.local/share/uv/python/cpython-3.12-linux-x86_64-gnu/bin/python3.12 \
++  "$root/capture_runtime_setup_worker.py" &
+ worker_pid=$!
+ printf '%s\n' "$worker_pid" > "$prefix.worker.pid.tmp"
+ mv "$prefix.worker.pid.tmp" "$prefix.worker.pid"
+--- scripts/context_risk_followup_download_supervise.sh
++++ highrate_capture_supervise.sh
+@@ -1,9 +1,13 @@
+ #!/usr/bin/env bash
+ # Run under a detached process with stdin=/dev/null and a fresh dedicated log.
+ set -euo pipefail
+-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+-mode=model_download
+-root="${EPM_CONTEXT_RISK_FOLLOWUP_SETUP:?fresh run root required}"
++cd /workspace/explore-persona-space
++mode=highrate_capture
++capture_root="${EPM_CONTEXT_RISK_HIGHRATE_ROOT:?owned capture run root required}"
++[[ "$capture_root" == /workspace/logs/issue2670-context-risk-highrate ]] || exit 2
++root="$capture_root/setup"
++: "${EPM_CONTEXT_RISK_HIGHRATE_CAPTURE_REVIEW:?review path required}"
++[[ "${EPM_CONTEXT_RISK_HIGHRATE_CAPTURE_INPUT_SHA256:?prepared input SHA required}" =~ ^[0-9a-f]{64}$ ]] || exit 2
+ launch_id="${EPM_CONTEXT_RISK_LAUNCH_ID:?unique launch id required}"
+ deadline="${EPM_CONTEXT_RISK_PROCESS_TIMEOUT_SECONDS:?whole-process deadline required}"
+ [[ "$launch_id" =~ ^[a-zA-Z0-9_-]+$ ]] || exit 2
+@@ -76,9 +80,16 @@
+ printf '%s\n' "$$" > "$prefix.pid.tmp"
+ mv "$prefix.pid.tmp" "$prefix.pid"
+ export UV_NO_SYNC=1
++export HF_HOME=/workspace/.cache/huggingface
++export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
++export LD_LIBRARY_PATH=/usr/local/cuda-13.0/compat:
++export PYTHONPATH=/workspace/explore-persona-space/src:/workspace/explore-persona-space
++export OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8
++export CUDA_VISIBLE_DEVICES=0
+ echo "[supervisor-start] mode=$mode pid=$$ root=$root utc=$(date -u +%FT%TZ)"
+ setsid timeout --kill-after=60s "$deadline" \
+-  uv run python -m scripts.context_risk_followup_download &
++  /root/.venvs/issue2670-highrate-capture-737be6d5/bin/python \
++  -m scripts.context_risk_highrate_capture mode=capture &
+ worker_pid=$!
+ printf '%s\n' "$worker_pid" > "$prefix.worker.pid.tmp"
+ mv "$prefix.worker.pid.tmp" "$prefix.worker.pid"
