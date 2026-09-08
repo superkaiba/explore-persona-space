@@ -1,5 +1,10 @@
 # Response-integrity-matched context versus answer steering
 
+> **Follow-up completed (2026-09-07):** the previously missing pure decode-only,
+> lower-dose all-answer sweep is reported in
+> [Pure all-answer-token steering versus context-only steering](issue_2254_all_answer_decode_sweep.md).
+> The historical results below remain the record for the stored first-k comparison.
+
 ## Result
 
 The old coherence control did not resolve the steering confound. A new
