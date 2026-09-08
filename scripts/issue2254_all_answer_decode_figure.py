@@ -10,14 +10,19 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-import scripts.issue2254_all_answer_decode_analysis as base
-import scripts.issue2254_all_answer_decode_sweep as gen
-from explore_persona_space.analysis import c2a_plot_style as style
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+import scripts.issue2254_all_answer_decode_analysis as base  # noqa: E402
+import scripts.issue2254_all_answer_decode_sweep as gen  # noqa: E402
+from explore_persona_space.analysis import c2a_plot_style as style  # noqa: E402
 
 
 def _asymmetric_ci(values: list[float], rows: list[dict], key: str) -> list[list[float]]:
