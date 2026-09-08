@@ -1,0 +1,9 @@
+{
+  "jobs": 280,
+  "ratings": 71680,
+  "answers": 2048,
+  "ledger_sha256_before_dispatch": "f7baa131895bb3782ac5ee9587a2697372e7bdf576c14dd49d0fd0d086c12048",
+  "all_leakage_scans_passed": true,
+  "max_packet_input_bytes": 117443,
+  "min_packet_input_bytes": 89373
+}

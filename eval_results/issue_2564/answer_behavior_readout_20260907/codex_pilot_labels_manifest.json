@@ -1,0 +1,21 @@
+{
+  "raw_records_hash": "a9602c202b2d05e1364154b278ba7b90a3fedbbf3c665e2eece01ca2acceab20",
+  "packet_count": 35,
+  "agent_count": 35,
+  "packet_sizes": {
+    "32": 35
+  },
+  "expected_draws": 1120,
+  "persisted_draws": 1120,
+  "exact_keyset_complete": true,
+  "provider": "codex_collaboration_subagents",
+  "labels_sha256": "6725de22b09162ff00b8d3c88532584b51308e2c8abe5d5e62ea2cd76ee214f3",
+  "config_hash": "5096b358940147b3107ad783d89eef37e7d9f7b9b82a777ec6fa026dfdaace5f",
+  "rubric_schema_hash": "64e6ba28284bcee7709f5631ca7bbaec139385e56162416c2267af6146411d99",
+  "rows_sha256": "5eaec3cba05ce78203d1c4b245d719637b8903c21235c2ac207b98b23cd1ea10",
+  "complete_sha256": "f60dd58b03e2ba4c25bc6e6aab88554108c9273c63b278f116eea81a59c7a34e",
+  "row_count": 32,
+  "part": "pilot",
+  "annotation_roster_sha256": "8643a83194669cd49d7157352a2c409969d65fed3d7526724fb9f8293a6dcf42",
+  "export_note": "Report export names the deterministic annotation-unit roster digest explicitly. The original expected_keys_hash field remains unchanged in the archived source manifest."
+}

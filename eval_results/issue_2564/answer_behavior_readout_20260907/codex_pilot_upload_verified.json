@@ -1,0 +1,10 @@
+{
+  "repo": "superkaiba1/explore-persona-space-data",
+  "revision": "9ba0d2275c97edc444bbc2d523086fa54045b6aa",
+  "prefix": "issue2564_minpair/answer_behavior_readout_20260907/raw_completions/codex_pilot_preacceptance",
+  "files": 154,
+  "bytes": 1626467,
+  "verified": "exact path set membership, file sizes and content hashes at pinned revision",
+  "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/9ba0d2275c97edc444bbc2d523086fa54045b6aa/issue2564_minpair/answer_behavior_readout_20260907/raw_completions/codex_pilot_preacceptance",
+  "scope": "completed pilot before semantic acceptance; no main judgments or readout results"
+}

@@ -1,0 +1,15 @@
+{
+  "provider": "codex_collaboration_subagents",
+  "authorized_task": 2564,
+  "user_direction": "use codex subagents to judge",
+  "model": "inherited Codex model; exact snapshot not exposed",
+  "model_override": null,
+  "reasoning_effort_override": null,
+  "temperature": null,
+  "sampling": "uncontrolled; shared base model; repeats are not IID samples",
+  "draws": 5,
+  "fork_turns": "none",
+  "property_specific": true,
+  "blinding": "content-only packet; instruction-enforced access restriction, not technical isolation",
+  "human_agreement": "unmeasured"
+}

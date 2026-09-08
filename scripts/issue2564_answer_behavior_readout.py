@@ -30,7 +30,7 @@ from hydra.core.config_store import ConfigStore  # noqa: E402
 from scipy.stats import rankdata  # noqa: E402
 from sklearn.metrics import roc_auc_score  # noqa: E402
 
-from explore_persona_space.atomic_io import write_json_atomic  # noqa: E402
+from explore_persona_space.atomic_io import atomic_replace, write_json_atomic  # noqa: E402
 from issue2564_answer_behavior import (  # noqa: E402
     PROPERTIES,
     digest as annotation_digest,
@@ -39,6 +39,10 @@ from issue2564_answer_behavior import (  # noqa: E402
     validate_pilot_acceptance,
 )
 from issue2564_answer_property_readout import ALPHAS  # noqa: E402
+from issue2564_codex_judgments import (  # noqa: E402
+    PROVIDER as CODEX_PROVIDER,
+    validate_codex_main,
+)
 
 
 @dataclass
@@ -46,8 +50,8 @@ class Config:
     """Frozen defaults for the authorized, CPU-only expression readout."""
 
     root: str = "/home/thomasjiralerspong/.codex/research/answer-behavior-readout-20260907"
-    labels: str = "annotation/main/labels.json"
-    output: str = "readout"
+    labels: str = "annotation_codex/main/labels.json"
+    output: str = "readout_codex"
     stage: str = "fit"
     bootstrap_draws: int = 2000
     seed: int = 2564
@@ -203,12 +207,29 @@ def shuffle_diagnostics(rows: list[dict], target: Target, permutation: np.ndarra
     }
 
 
+def validate_annotation_route(root: Path, labels: Path, config: dict) -> tuple[dict, str]:
+    """Validate each producer through its own raw-evidence and pilot gates."""
+    provider = config.get("provider")
+    if provider == CODEX_PROVIDER:
+        checked = validate_codex_main(root)
+        if labels.resolve() != Path(checked["labels_path"]).resolve():
+            raise ValueError("Readout labels differ from the validated Codex aggregate")
+        if config != checked["config"]:
+            raise ValueError("Readout configuration differs from the validated Codex recipe")
+        return checked["acceptance"], "expected_annotations"
+    if provider is not None:
+        raise ValueError(f"Unknown annotation provider: {provider}")
+    # The original API collector predates the provider field. Keep its gate and
+    # call-count semantics intact; Codex judgments never impersonate API calls.
+    return validate_pilot_acceptance(root, config), "expected_calls"
+
+
 def load_inputs(cfg: Config) -> tuple[list[dict], dict[str, np.ndarray], list[Target], dict]:
     """Join vectors and actual labels by exact IDs, and assert split independence."""
     root = Path(cfg.root)
     label_parent = (root / cfg.labels).parent
     config = json.loads((label_parent / "config.json").read_text())
-    acceptance = validate_pilot_acceptance(root, config)
+    acceptance, completion_count_key = validate_annotation_route(root, root / cfg.labels, config)
     paths = {
         "rows": root / "prepared/rows.jsonl",
         "vectors": root / "prepared/vectors.npz",
@@ -261,7 +282,7 @@ def load_inputs(cfg: Config) -> tuple[list[dict], dict[str, np.ndarray], list[Ta
     if any(
         completion.get(key) != value
         for key, value in {
-            "expected_calls": expected_draws,
+            completion_count_key: expected_draws,
             "persisted_expected": expected_draws,
             "config_hash": label_manifest["config_hash"],
             "expected_keys_hash": label_manifest["expected_keys_hash"],
@@ -524,9 +545,8 @@ def fit(cfg: Config) -> None:
                 continue
             started = time.monotonic()
             result, details = fit_bundle(rows, vectors, bundle, fold)
-            temporary = out / f"{name}.tmp.npz"
-            np.savez(temporary, **result)
-            temporary.replace(tensor_path)
+            with atomic_replace(tensor_path) as temporary, temporary.open("wb") as handle:
+                np.savez(handle, **result)
             details.update(
                 fingerprint=key,
                 tensor_sha256=file_hash(tensor_path),

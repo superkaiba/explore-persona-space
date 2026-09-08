@@ -1,0 +1,28 @@
+{
+  "combined_suite": {
+    "tests": 29,
+    "seconds": 13.17,
+    "scope": "old collector, Codex adapter, matched readout"
+  },
+  "latest_adapter_suite": {
+    "tests": 10,
+    "seconds": 4.6,
+    "addition": "global fresh-agent context check across property packets"
+  },
+  "workflow_lint": {
+    "mode": "changed-files and issue import closure",
+    "checks_ran": 40,
+    "checks_skipped": 46,
+    "verdict": "PASS",
+    "notes": "Prior three findings fixed: environment setup before NumPy in collector/adapter, shared atomic checkpoint writes in readout. Whole-repository lint was stopped in favor of the supported changed-files scope."
+  },
+  "ruff": "PASS on adapter/readout and their tests",
+  "numerical_fixture_note": "All tests and prior timing smoke use test fixtures; no real-label readout has run.",
+  "files_sha256": {
+    "scripts/issue2564_codex_judgments.py": "3dd561ff9de7af54ea2b0d10860a14391ce6682c611d59b4e8b0fc6f0aeccfc5",
+    "tests/test_issue2564_codex_judgments.py": "c3d1c4a7aa99a1c82858e00cb83539a3ebbae7ba939a8b04b556ad74831f0d4b",
+    "scripts/issue2564_answer_behavior_readout.py": "d660ecd420c1eea96fd3b885633c6c9413a0ffc413df15b5b3a579a1d6374691",
+    "tests/test_issue2564_answer_behavior_readout.py": "2a07c3796a8e28fac00d1d7f491740b801e784d923082bc89c6848fa1ce764a9",
+    "scripts/issue2564_answer_behavior.py": "14cae7a665c23b4af90867a9ad4f0336865fd3a7232dc2d1dbf8105c7b52663e"
+  }
+}

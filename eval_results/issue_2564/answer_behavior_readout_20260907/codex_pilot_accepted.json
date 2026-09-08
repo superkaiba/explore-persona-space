@@ -1,0 +1,36 @@
+{
+  "verdict": "accept",
+  "provider": "codex_collaboration_subagents",
+  "pins": {
+    "file_hashes": {
+      "annotation_codex/pilot/config.json": "37613e5551b85730dfbe7c89fd6587d889f18044f7d857f845c34984b90cfc32",
+      "annotation_codex/pilot/complete.json": "f60dd58b03e2ba4c25bc6e6aab88554108c9273c63b278f116eea81a59c7a34e",
+      "annotation_codex/pilot/labels.json": "6725de22b09162ff00b8d3c88532584b51308e2c8abe5d5e62ea2cd76ee214f3",
+      "annotation_codex/pilot/labels_manifest.json": "498cf4718444c1f6b240bde453a67f4be329fb14c8da1d545eaa74e512f8fef5",
+      "annotation_codex/pilot/quality.json": "7227f21731933ee041f4972789afb5f5d824911039375dbd9758dcb3b81c48c3",
+      "prepared/rows.jsonl": "5eaec3cba05ce78203d1c4b245d719637b8903c21235c2ac207b98b23cd1ea10",
+      "prepared/vectors.npz": "d6b80e9f3221a5942fbc6d28602860d50cfe5e83198bdd9a34ab51fa11dcf35e",
+      "prepared/rubrics.json": "dd277590f287c02a2086240303943b76b985ae1f33aa4de097ff6a80ea831c41"
+    },
+    "judge_recipe": {
+      "provider": "codex_collaboration_subagents",
+      "authorized_task": 2564,
+      "user_direction": "use codex subagents to judge",
+      "model": "inherited Codex model; exact snapshot not exposed",
+      "model_override": null,
+      "reasoning_effort_override": null,
+      "temperature": null,
+      "sampling": "uncontrolled; shared base model; repeats are not IID samples",
+      "draws": 5,
+      "fork_turns": "none",
+      "property_specific": true,
+      "blinding": "content-only packet; instruction-enforced access restriction, not technical isolation",
+      "human_agreement": "unmeasured"
+    },
+    "rubric_schema_hash": "64e6ba28284bcee7709f5631ca7bbaec139385e56162416c2267af6146411d99",
+    "provider": "codex_collaboration_subagents"
+  },
+  "review_sha256": "9b50e70e3d59479f4193d775f53e924051fd86463b5eba19277d8fc84c23c5f2",
+  "accepted_at": 1788850786.076983,
+  "human_agreement": "unmeasured"
+}

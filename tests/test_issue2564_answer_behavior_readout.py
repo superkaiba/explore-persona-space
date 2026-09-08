@@ -278,6 +278,38 @@ def test_real_loader_validates_ids_missingness_and_label_votes(tmp_path, monkeyp
     gate.assert_called_with(tmp_path, {})
 
 
+def test_codex_route_requires_its_actual_validated_aggregate(tmp_path, monkeypatch):
+    """Provider dispatch cannot relabel an API aggregate as Codex evidence."""
+    from unittest.mock import create_autospec
+
+    labels = tmp_path / "annotation_codex/main/labels.json"
+    config = {"provider": readout.CODEX_PROVIDER, "fixture": True}
+    acceptance = {"fixture_review": "accepted"}
+    codex = create_autospec(
+        readout.validate_codex_main,
+        return_value={"labels_path": str(labels), "config": config, "acceptance": acceptance},
+    )
+    api = create_autospec(readout.validate_pilot_acceptance)
+    monkeypatch.setattr(readout, "validate_codex_main", codex)
+    monkeypatch.setattr(readout, "validate_pilot_acceptance", api)
+    assert readout.validate_annotation_route(tmp_path, labels, config) == (
+        acceptance,
+        "expected_annotations",
+    )
+    codex.assert_called_once_with(tmp_path)
+    api.assert_not_called()
+    with pytest.raises(ValueError, match="labels differ"):
+        readout.validate_annotation_route(tmp_path, tmp_path / "substituted.json", config)
+    with pytest.raises(ValueError, match="configuration differs"):
+        readout.validate_annotation_route(tmp_path, labels, {**config, "fixture": False})
+    with pytest.raises(ValueError, match="Unknown annotation provider"):
+        readout.validate_annotation_route(tmp_path, labels, {"provider": "unrecognized"})
+    codex.side_effect = ValueError("Codex raw judgment changed")
+    with pytest.raises(ValueError, match="raw judgment changed"):
+        readout.validate_annotation_route(tmp_path, labels, config)
+    api.assert_not_called()
+
+
 def test_end_to_end_checkpoints_summary_and_stale_inputs(tmp_path, monkeypatch):
     """Execute real fit/summary bodies; only the independently tested loader is substituted."""
     rows, vectors, targets = toy_bank()

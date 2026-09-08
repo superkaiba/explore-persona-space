@@ -1,3 +1,5 @@
+> Historical API-route note: Thomas has now selected Codex subagent judging. Follow [the current status](status_report.md) and amended plan; do not resume the failed API route. The numerical readout validation below remains relevant.
+
 # Actual-answer behavior readout: implementation ready
 
 The corrected experiment measures properties expressed in the exact generated

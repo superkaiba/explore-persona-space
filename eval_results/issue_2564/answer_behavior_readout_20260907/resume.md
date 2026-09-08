@@ -1,3 +1,5 @@
+> Historical API-route note: Thomas has now selected Codex subagent judging. Follow [the current status](status_report.md) and amended plan; do not resume the failed API route. The numerical readout validation below remains relevant.
+
 # Resume the authorized actual-answer annotation
 
 Prerequisite: a valid OpenAI API key in the existing repository-root configuration. Do not print it. The prior key was rejected before annotation. Keep the pinned model/rubrics/rows unchanged; no Claude or model fallback.
