@@ -1,0 +1,57 @@
+{
+  "canonical_outroot": {
+    "detail": "disk=9 matched=9; content-verified=0; verdict is the name-set diff, never the counts",
+    "status": "OK",
+    "url": ""
+  },
+  "canonical_rows": "eval_results/issue_1739/natural_scaling/gpu_audit_20260907/realized_rows_verified_20260907.json",
+  "pod": "pod-1739-natgpu",
+  "source_census": "snapshot/preservation.json and snapshot/source_inventory",
+  "status": "PASS",
+  "trees": {
+    "audit": {
+      "upload": {
+        "files_sha256": {
+          "natural_scaling_audit.json": "e037f2846afe962575f51bfdfd3840b21ae562bc7e2103c94501c282affd6dc6"
+        },
+        "prefix": "issue1739_natural100k_20260906/final_preservation_20260908/audit",
+        "revision": "19d49bb069353826ded1da23e26dea46f8191d4f",
+        "url": "superkaiba1/explore-persona-space-data/issue1739_natural100k_20260906/final_preservation_20260908/audit",
+        "wall_s": 89.19103368371725
+      },
+      "verification": {
+        "all_names_sizes_content_verified": true,
+        "files": 1,
+        "prefix": "issue1739_natural100k_20260906/final_preservation_20260908/audit",
+        "revision": "19d49bb069353826ded1da23e26dea46f8191d4f",
+        "status": "PASS"
+      }
+    },
+    "snapshot": {
+      "upload": {
+        "files_sha256": {
+          "metadata/index.json": "fe04c1c79ab38b655dbb022fab0c543e450885cf324ea85faef6d96da967f1ec",
+          "metadata/part_00000.jsonl": "5debca7e2be4a2e42bc5e48f965cd1920b400923520c7d1cccda9b9a535b2314",
+          "metadata/part_00001.jsonl": "72150d1748e088dc906a71aadda06e9685b2b44e78011735a5427a61acffdba3",
+          "metadata/part_00002.jsonl": "1e1f047c0718d04fc1c686788ec602fe47298678b1255bd73c7e259c666d0e8e",
+          "metadata/part_00003.jsonl": "7d98c423a8ba43b61adc78f5de833234c1c2cbc6ea8136bc9edef24980a54483",
+          "metadata/part_00004.jsonl": "516d65b1a6f42a821af4bbb5eda1ebe3b56c73783632a14964b31e029f72b250",
+          "preservation.json": "43fc672e018bff13901c9a2e2fb1545496f4154edd40f4b4a1820b2b59af8433",
+          "source_inventory/index.json": "e1630083e0639e0b045afc5902ff80dc97ed578658fcdf591843b4d0ecb4ca37",
+          "source_inventory/part_00000.jsonl": "a3f7a24a4ccd83e1e4ad95dbf8d6ce692f3a8758a706ec0f3719d4fe9c4780ca"
+        },
+        "prefix": "issue1739_natural100k_20260906/final_preservation_20260908/snapshot",
+        "revision": "3f864b4053d5f95c5cafe4869e455d74278416f9",
+        "url": "superkaiba1/explore-persona-space-data/issue1739_natural100k_20260906/final_preservation_20260908/snapshot",
+        "wall_s": 156.95787076838315
+      },
+      "verification": {
+        "all_names_sizes_content_verified": true,
+        "files": 9,
+        "prefix": "issue1739_natural100k_20260906/final_preservation_20260908/snapshot",
+        "revision": "3f864b4053d5f95c5cafe4869e455d74278416f9",
+        "status": "PASS"
+      }
+    }
+  }
+}

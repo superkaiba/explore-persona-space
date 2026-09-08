@@ -1,0 +1,100 @@
+{
+  "audit_exit": {
+    "audit_pid": 15609,
+    "audit_rc": 0,
+    "audit_run": "20260907T2235Z",
+    "final_audit": "/workspace/issue1739_natural_clean/natural_scaling_audit.json",
+    "scientific_driver_pid": 11126,
+    "scientific_fits_restarted": false
+  },
+  "audit_sha256": "e037f2846afe962575f51bfdfd3840b21ae562bc7e2103c94501c282affd6dc6",
+  "fit_report_status": "complete",
+  "fit_report_wall_before_metadata_upload_s": 9717.913393436931,
+  "packaging_correction": {
+    "all_sidecars_preserved_losslessly": true,
+    "combined_tests_passed": 63,
+    "first_snapshot_failed_before_destination_created": true,
+    "fix_commit": "fcd7c3dc5a5b5b8a86ace1d25539f169a263450c",
+    "independent_preservation_tests_passed": 18,
+    "reason": "23 validated prepared-stage provenance sidecars are local metadata, not the22 immutable payload files.",
+    "science_rerun": false
+  },
+  "pod": "pod-1739-natgpu",
+  "pod_id": "k7uxwbp1lq9fqd",
+  "preservation": {
+    "audit_sha256": "e037f2846afe962575f51bfdfd3840b21ae562bc7e2103c94501c282affd6dc6",
+    "data_remote_proofs": {
+      "captured": {
+        "all_names_sizes_content_verified": true,
+        "files": 2004,
+        "prefix": "issue1739_natural100k_20260906/captured",
+        "revision": "55e49ff70f640e674a9cc6aeb94f0e7b9f5edf80",
+        "status": "PASS"
+      },
+      "generated": {
+        "all_names_sizes_content_verified": true,
+        "files": 600,
+        "prefix": "issue1739_natural100k_20260906/generated",
+        "revision": "ff5398d333776c027cca5f4f2d53cd5f9af57548",
+        "status": "PASS"
+      },
+      "prepared": {
+        "all_names_sizes_content_verified": true,
+        "files": 22,
+        "prefix": "issue1739_natural100k_20260906/prepared",
+        "revision": "195b718a44d0a4799c8f3802d29783b8214b96f4",
+        "status": "PASS"
+      },
+      "store": {
+        "all_names_sizes_content_verified": true,
+        "files": 11,
+        "prefix": "issue1739_natural100k_20260906/store",
+        "revision": "972fd732b40a32619be508e97d1adf695afb2436",
+        "status": "PASS"
+      }
+    },
+    "dispositions": {
+      "frozen_git_input": 3,
+      "immutable_data_output": 2637,
+      "immutable_fit_output": 1100,
+      "lossless_metadata_pack": 896,
+      "pinned_reused_input": 9060
+    },
+    "fit_cells": 150,
+    "lossless_metadata_roundtrip_verified": true,
+    "metadata_files": 896,
+    "metadata_parts": 897,
+    "reconstruction": "Group metadata by path, concatenate decoded content_base64 in part order, then verify bytes and SHA256. Each part record declares the complete source-file size/hash, not just the fragment.",
+    "scientific_commit": "9f6a6fedb9a97365bfbfb0c241d7712d94ce43c0",
+    "source_files": 13696,
+    "source_name_set_and_content_verified": true,
+    "status": "PASS",
+    "wall_s": 115.33414062205702
+  },
+  "preservation_sha256": "43fc672e018bff13901c9a2e2fb1545496f4154edd40f4b4a1820b2b59af8433",
+  "resource_observations": {
+    "caveat": "Sampling is not a guarantee of instantaneous memory peaks.",
+    "first_utc": "2026-09-07T21:52:21Z",
+    "last_utc": "2026-09-08T00:37:03Z",
+    "max_observed_worker_hwm_kib": 40046400,
+    "max_sampled_cgroup_memory_bytes": 138167341056,
+    "max_sampled_gpu_memory_mib": 66219,
+    "n_samples": 982
+  },
+  "scientific_commit": "9f6a6fedb9a97365bfbfb0c241d7712d94ce43c0",
+  "status": "PASS",
+  "success_sentinel": {
+    "by": "issue1739-natural-run",
+    "kind": "epm:progress",
+    "note": "natural100k phase=fits completed rc=0; report=/workspace/issue1739_natural_clean/reports/fits_20260907T215131Z.json; next phase remains owner-gated",
+    "payload": {
+      "phase": "fits",
+      "rc": 0,
+      "report": "/workspace/issue1739_natural_clean/reports/fits_20260907T215131Z.json"
+    },
+    "sentinel_schema_version": 1,
+    "task_id": 1739,
+    "ts": "20260907T215131Z",
+    "version": 1
+  }
+}
