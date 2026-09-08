@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Trait administration-deviation sensitivity for #2254 plans v17/v20."""
+"""Trait administration-deviation sensitivity for #2254 plan v21."""
 
 from __future__ import annotations
 
@@ -20,17 +20,50 @@ import scripts.issue2254_all_answer_decode_analysis as base
 import scripts.issue2254_all_answer_decode_policy_recovery as policy
 import scripts.issue2254_all_answer_decode_structured_recovery as structured
 import scripts.issue2254_all_answer_decode_sweep as gen
-import scripts.issue2254_all_answer_decode_trait_order_recovery as order_recovery
+import scripts.issue2254_all_answer_decode_trait_order_recovery as order1
+import scripts.issue2254_all_answer_decode_trait_order_recovery2 as order2
 
 
-SENSITIVITY_VERSION = "issue2254-trait-administration-sensitivity-v1"
+SENSITIVITY_VERSION = "issue2254-trait-administration-sensitivity-v2"
 EXPECTED_DECISIONS = 13_200
 MIN_RETAINED_REPEATS = 3
-ORDER_ONLY_EXPECTED = {
+ORDER1_ONLY_EXPECTED = {
     "excluded_decisions": 36,
     "retained_decisions": 13_164,
     "affected_items": 36,
     "remaining_repeat_count_distribution": {"4": 36, "5": 2_604},
+    "estimable": True,
+    "offending_items": [],
+}
+ORDER2_ONLY_EXPECTED = {
+    "excluded_decisions": 35,
+    "retained_decisions": 13_165,
+    "affected_items": 35,
+    "remaining_repeat_count_distribution": {"4": 35, "5": 2_605},
+    "estimable": True,
+    "offending_items": [],
+}
+ALL_ORDER_EXPECTED = {
+    "excluded_decisions": 71,
+    "retained_decisions": 13_129,
+    "affected_items": 71,
+    "remaining_repeat_count_distribution": {"4": 71, "5": 2_569},
+    "estimable": True,
+    "offending_items": [],
+}
+POLICY_ONLY_EXPECTED = {
+    "excluded_decisions": 111,
+    "retained_decisions": 13_089,
+    "affected_items": 110,
+    "remaining_repeat_count_distribution": {"3": 1, "4": 109, "5": 2_530},
+    "estimable": True,
+    "offending_items": [],
+}
+ALL_ADMIN_EXPECTED = {
+    "excluded_decisions": 182,
+    "retained_decisions": 13_018,
+    "affected_items": 179,
+    "remaining_repeat_count_distribution": {"3": 3, "4": 176, "5": 2_461},
     "estimable": True,
     "offending_items": [],
 }
@@ -50,25 +83,42 @@ def _decision_set(opaque_ids: list[str], pass_index: int) -> set[Decision]:
     return decisions
 
 
-def _administration_sets(args, items, instrument, rubrics) -> tuple[dict, dict, set]:
+def _administration_sets(args, items, instrument, rubrics) -> tuple[dict, dict, dict]:
     """Derive all trait exclusions from validated receipts and current rosters."""
-    order_recovery._ACTIVE_OUT_ROOT = args.out_root
+    order1._ACTIVE_OUT_ROOT = args.out_root
+    order2._ACTIVE_OUT_ROOT = args.out_root
     policy._ACTIVE_OUT_ROOT = args.out_root
     structured._ACTIVE_OUT_ROOT = args.out_root
     composed_jobs = []
     for rubric_id in ("trait_evil", "trait_sycophancy"):
-        composed_jobs.extend(
-            order_recovery._fully_recovered_jobs(items, instrument, rubrics, rubric_id)
-        )
+        composed_jobs.extend(order2._fully_recovered_jobs(items, instrument, rubrics, rubric_id))
 
     prior_evil = policy._prior_recovered_jobs(items, instrument, rubrics, "trait_evil")
-    target_matches = [job for job in prior_evil if job.job_id == order_recovery.TARGET_JOB_ID]
-    if len(target_matches) != 1:
-        raise base.AnalysisError("trait order parent no longer resolves exactly once")
-    receipt = order_recovery._load_receipt(args.out_root, target_matches[0])
-    order_only = _decision_set(receipt["ordered_opaque_item_ids"], receipt["parent"]["pass_index"])
-    if len(order_only) != order_recovery.TARGET_N_ITEMS:
-        raise base.AnalysisError("trait order exclusion count changed")
+    target1_matches = [job for job in prior_evil if job.job_id == order1.TARGET_JOB_ID]
+    if len(target1_matches) != 1:
+        raise base.AnalysisError("first trait order parent no longer resolves exactly once")
+    receipt1 = order1._load_receipt(args.out_root, target1_matches[0])
+    order1_only = _decision_set(
+        receipt1["ordered_opaque_item_ids"], receipt1["parent"]["pass_index"]
+    )
+    if len(order1_only) != order1.TARGET_N_ITEMS:
+        raise base.AnalysisError("first trait order exclusion count changed")
+
+    prior_sycophancy = policy._prior_recovered_jobs(
+        items, instrument, rubrics, "trait_sycophancy"
+    )
+    target2_matches = [job for job in prior_sycophancy if job.job_id == order2.TARGET_JOB_ID]
+    if len(target2_matches) != 1:
+        raise base.AnalysisError("second trait order parent no longer resolves exactly once")
+    receipt2 = order2._load_receipt(args.out_root, target2_matches[0])
+    order2_only = _decision_set(
+        receipt2["ordered_opaque_item_ids"], receipt2["parent"]["pass_index"]
+    )
+    if len(order2_only) != order2.TARGET_N_ITEMS:
+        raise base.AnalysisError("second trait order exclusion count changed")
+    if order1_only & order2_only:
+        raise base.AnalysisError("trait order replacement decision sets overlap")
+    all_order = order1_only | order2_only
 
     policy_singleton: set[Decision] = set()
     policy_all: set[Decision] = set()
@@ -101,10 +151,12 @@ def _administration_sets(args, items, instrument, rubrics) -> tuple[dict, dict, 
 
     scenarios = {
         "no_exclusion": set(),
-        "trait_order_replacement_only": order_only,
+        "trait_order_replacement1_only": order1_only,
+        "trait_order_replacement2_only": order2_only,
+        "all_trait_order_replacements": all_order,
         "trait_policy_singleton_only": policy_singleton,
         "all_trait_policy_packetization": policy_all,
-        "all_trait_administration_deviations": order_only | policy_all,
+        "all_trait_administration_deviations": all_order | policy_all,
     }
     valid_opaque = {item.opaque_id for item in items}
     if any(
@@ -119,18 +171,26 @@ def _administration_sets(args, items, instrument, rubrics) -> tuple[dict, dict, 
     required = {
         "runner_manifest_structured.json",
         "runner_manifest_trait_order.json",
+        "runner_manifest_trait_order2.json",
         "trait_order_replacement_launch.json",
+        "trait_order_replacement_launch2.json",
     }
     if not required <= {path.name for path in recovery_files}:
         raise base.AnalysisError("trait recovery runner/lease lineage is incomplete")
-    replacement = order_recovery._replacement_job(target_matches[0])
-    replacement_schema = order_recovery._schema_path(args.out_root, replacement)
-    replacement_canonical = order_recovery.runner._job_record_path(root, replacement)
+    replacement1 = order1._replacement_job(target1_matches[0])
+    replacement2 = order2._replacement_job(target2_matches[0])
+    replacement_evidence = []
+    for label, module, replacement in (
+        ("trait_order_replacement1", order1, replacement1),
+        ("trait_order_replacement2", order2, replacement2),
+    ):
+        schema = module._schema_path(args.out_root, replacement)
+        canonical = order2.runner._job_record_path(root, replacement)
+        replacement_evidence.append((label, schema, canonical))
     instrument_path = root / "instrument_manifest.json"
     inputs_path = root / "inputs_manifest.json"
     evidence_files = [
-        replacement_schema,
-        replacement_canonical,
+        *[path for _label, schema, canonical in replacement_evidence for path in (schema, canonical)],
         instrument_path,
         inputs_path,
     ]
@@ -151,15 +211,33 @@ def _administration_sets(args, items, instrument, rubrics) -> tuple[dict, dict, 
             for path in recovery_files
         ],
         "trait_policy_receipts": sorted(trait_receipts, key=lambda row: row["job_id"]),
-        "trait_order_receipt_sha256": order_recovery._sha256_file(
-            order_recovery._receipt_path(args.out_root)
-        ),
-        "trait_order_receipt_entry_sha256": receipt["entry_sha256"],
-        "replacement_schema_sha256": base._sha256_file(replacement_schema),
-        "replacement_canonical_sha256": base._sha256_file(replacement_canonical),
+        "trait_order_receipts": [
+            {
+                "label": "trait_order_replacement1",
+                "receipt_sha256": order1._sha256_file(order1._receipt_path(args.out_root)),
+                "receipt_entry_sha256": receipt1["entry_sha256"],
+            },
+            {
+                "label": "trait_order_replacement2",
+                "receipt_sha256": order1._sha256_file(order2._receipt_path(args.out_root)),
+                "receipt_entry_sha256": receipt2["entry_sha256"],
+            },
+        ],
+        "replacement_evidence": [
+            {
+                "label": label,
+                "schema_sha256": base._sha256_file(schema),
+                "canonical_sha256": base._sha256_file(canonical),
+            }
+            for label, schema, canonical in replacement_evidence
+        ],
         "rejected_original_rows_used": 0,
     }
-    return scenarios, provenance, order_only
+    return scenarios, provenance, {
+        "trait_order_replacement1_only": order1_only,
+        "trait_order_replacement2_only": order2_only,
+        "all_trait_order_replacements": all_order,
+    }
 
 
 def _exclusion_preflight(items, excluded: set[Decision]) -> dict:
@@ -209,17 +287,21 @@ def _exclusion_preflight(items, excluded: set[Decision]) -> dict:
     }
 
 
-def _validate_v20_preflights(
-    preflights: dict[str, dict], scenarios: dict[str, set[Decision]], order_only: set[Decision]
+def _validate_v21_preflights(
+    preflights: dict[str, dict],
+    scenarios: dict[str, set[Decision]],
+    order_sets: dict[str, set[Decision]],
 ) -> None:
     if set(preflights) != {
         "no_exclusion",
-        "trait_order_replacement_only",
+        "trait_order_replacement1_only",
+        "trait_order_replacement2_only",
+        "all_trait_order_replacements",
         "trait_policy_singleton_only",
         "all_trait_policy_packetization",
         "all_trait_administration_deviations",
     }:
-        raise base.AnalysisError("v20 trait sensitivity scenario set changed")
+        raise base.AnalysisError("v21 trait sensitivity scenario set changed")
     no_exclusion_expected = {
         "minimum_retained_repeats": MIN_RETAINED_REPEATS,
         "excluded_decisions": 0,
@@ -230,25 +312,40 @@ def _validate_v20_preflights(
         "offending_items": [],
     }
     if preflights["no_exclusion"] != no_exclusion_expected:
-        raise base.AnalysisError("v20 no-exclusion trait accounting changed")
-    order_expected = {
-        "minimum_retained_repeats": MIN_RETAINED_REPEATS,
-        **ORDER_ONLY_EXPECTED,
+        raise base.AnalysisError("v21 no-exclusion trait accounting changed")
+    expected_by_name = {
+        "trait_order_replacement1_only": ORDER1_ONLY_EXPECTED,
+        "trait_order_replacement2_only": ORDER2_ONLY_EXPECTED,
+        "all_trait_order_replacements": ALL_ORDER_EXPECTED,
     }
-    if scenarios["trait_order_replacement_only"] != order_only:
-        raise base.AnalysisError("v20 trait order exclusion set changed")
-    if preflights["trait_order_replacement_only"] != order_expected:
-        raise base.AnalysisError("v20 trait order accounting changed")
-    if (
-        not scenarios["trait_order_replacement_only"]
-        <= scenarios["all_trait_administration_deviations"]
-    ):
-        raise base.AnalysisError("v20 union omitted trait order decisions")
+    for name, expected in expected_by_name.items():
+        if scenarios[name] != order_sets[name]:
+            raise base.AnalysisError(f"v21 {name} exclusion set changed")
+        if preflights[name] != {
+            "minimum_retained_repeats": MIN_RETAINED_REPEATS,
+            **expected,
+        }:
+            raise base.AnalysisError(f"v21 {name} accounting changed")
+    for name in ("trait_policy_singleton_only", "all_trait_policy_packetization"):
+        if preflights[name] != {
+            "minimum_retained_repeats": MIN_RETAINED_REPEATS,
+            **POLICY_ONLY_EXPECTED,
+        }:
+            raise base.AnalysisError(f"v21 {name} accounting changed")
+    if preflights["all_trait_administration_deviations"] != {
+        "minimum_retained_repeats": MIN_RETAINED_REPEATS,
+        **ALL_ADMIN_EXPECTED,
+    }:
+        raise base.AnalysisError("v21 all trait administration accounting changed")
+    if not scenarios["all_trait_order_replacements"] <= scenarios[
+        "all_trait_administration_deviations"
+    ]:
+        raise base.AnalysisError("v21 union omitted trait order decisions")
     if (
         not scenarios["all_trait_policy_packetization"]
         <= scenarios["all_trait_administration_deviations"]
     ):
-        raise base.AnalysisError("v20 union omitted trait policy decisions")
+        raise base.AnalysisError("v21 union omitted trait policy decisions")
 
 
 def _trait_arrays_with_exclusions(items, outcomes, excluded: set[Decision]):
@@ -579,14 +676,14 @@ def _analyze_scenarios(
     items,
     outcomes,
     scenarios: dict[str, set[Decision]],
-    order_only: set[Decision],
+    order_sets: dict[str, set[Decision]],
     primary_result: dict,
     provenance_sha256: str,
 ) -> dict:
     preflights = {
         name: _exclusion_preflight(items, excluded) for name, excluded in scenarios.items()
     }
-    _validate_v20_preflights(preflights, scenarios, order_only)
+    _validate_v21_preflights(preflights, scenarios, order_sets)
     results = {}
     provenance_reference = {"location": "$.provenance", "sha256": provenance_sha256}
     for name, excluded in scenarios.items():
@@ -714,7 +811,7 @@ def run(args) -> Path:
     items, instrument, rubrics = base._load_staged(args, require_cli=False)
     if len(items) * base.N_PASSES != EXPECTED_DECISIONS:
         raise base.AnalysisError("trait sensitivity total decision count changed")
-    scenarios, provenance, order_only = _administration_sets(args, items, instrument, rubrics)
+    scenarios, provenance, order_sets = _administration_sets(args, items, instrument, rubrics)
     provenance["pretrait_quality_lineage"] = {
         "packetization_sensitivity_sha256": base._sha256_file(packetization_path),
         "selection_sha256": selection_sha256,
@@ -723,7 +820,7 @@ def run(args) -> Path:
     }
     jobs = []
     for rubric_id in ("trait_evil", "trait_sycophancy"):
-        jobs.extend(order_recovery._fully_recovered_jobs(items, instrument, rubrics, rubric_id))
+        jobs.extend(order2._fully_recovered_jobs(items, instrument, rubrics, rubric_id))
     outcomes = base._collect_outcomes(root, jobs)
     if len(outcomes) != len(items):
         raise base.AnalysisError(f"trait sensitivity coverage {len(outcomes)}/{len(items)}")
@@ -732,7 +829,7 @@ def run(args) -> Path:
         items,
         outcomes,
         scenarios,
-        order_only,
+        order_sets,
         frozen_quality,
         provenance_sha256,
     )
@@ -789,7 +886,8 @@ def main() -> None:
     try:
         run(build_argparser().parse_args())
     finally:
-        order_recovery._ACTIVE_OUT_ROOT = None
+        order1._ACTIVE_OUT_ROOT = None
+        order2._ACTIVE_OUT_ROOT = None
         policy._ACTIVE_OUT_ROOT = None
         structured._ACTIVE_OUT_ROOT = None
 

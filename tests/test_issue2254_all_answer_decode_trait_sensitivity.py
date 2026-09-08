@@ -1,4 +1,4 @@
-"""Focused tests for the #2254 v20 trait administration sensitivity."""
+"""Focused tests for the #2254 v21 trait administration sensitivity."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ def _item(opaque_id: str, qi: int = 0, seed: int = gen.SEED_BASE):
     )
 
 
-def test_order_exclusion_exact_accounting() -> None:
+def test_first_order_exclusion_exact_accounting() -> None:
     items = [_item(f"opaque-{index}") for index in range(2_640)]
     excluded = {(item.opaque_id, 0) for item in items[:36]}
 
@@ -36,7 +36,22 @@ def test_order_exclusion_exact_accounting() -> None:
 
     assert preflight == {
         "minimum_retained_repeats": 3,
-        **sensitivity.ORDER_ONLY_EXPECTED,
+        **sensitivity.ORDER1_ONLY_EXPECTED,
+    }
+
+
+def test_second_and_combined_order_exclusion_exact_accounting() -> None:
+    items = [_item(f"opaque-{index}") for index in range(2_640)]
+    first = {(item.opaque_id, 0) for item in items[:36]}
+    second = {(item.opaque_id, 0) for item in items[36:71]}
+
+    assert sensitivity._exclusion_preflight(items, second) == {
+        "minimum_retained_repeats": 3,
+        **sensitivity.ORDER2_ONLY_EXPECTED,
+    }
+    assert sensitivity._exclusion_preflight(items, first | second) == {
+        "minimum_retained_repeats": 3,
+        **sensitivity.ALL_ORDER_EXPECTED,
     }
 
 
@@ -95,17 +110,24 @@ def test_trait_repeats_preserve_refusal_itt_and_numeric_completeness() -> None:
     assert cell["numeric_draw_complete"][0, 0] == 0.8
 
 
-def test_all_scenarios_preflight_before_only_estimable_analysis(monkeypatch) -> None:
-    order_only = {(f"order-{index}", 0) for index in range(36)}
+def test_all_scenarios_preflight_before_analysis(monkeypatch) -> None:
+    order1_only = {(f"order1-{index}", 0) for index in range(36)}
+    order2_only = {(f"order2-{index}", 0) for index in range(35)}
+    all_order = order1_only | order2_only
+    order_sets = {
+        "trait_order_replacement1_only": order1_only,
+        "trait_order_replacement2_only": order2_only,
+        "all_trait_order_replacements": all_order,
+    }
     scenarios = {
         "no_exclusion": set(),
-        "trait_order_replacement_only": order_only,
+        **order_sets,
         "trait_policy_singleton_only": {("policy-singleton", 1)},
         "all_trait_policy_packetization": {
             ("policy-singleton", 1),
             ("policy-other", 2),
         },
-        "all_trait_administration_deviations": order_only
+        "all_trait_administration_deviations": all_order
         | {("policy-singleton", 1), ("policy-other", 2)},
     }
     events = []
@@ -124,22 +146,19 @@ def test_all_scenarios_preflight_before_only_estimable_analysis(monkeypatch) -> 
                 "estimable": True,
                 "offending_items": [],
             }
-        if name == "trait_order_replacement_only":
-            return {"minimum_retained_repeats": 3, **sensitivity.ORDER_ONLY_EXPECTED}
-        estimable = name != "all_trait_administration_deviations"
-        return {
-            "minimum_retained_repeats": 3,
-            "excluded_decisions": len(excluded),
-            "retained_decisions": 13_200 - len(excluded),
-            "affected_items": len(excluded),
-            "remaining_repeat_count_distribution": {"4": len(excluded)},
-            "estimable": estimable,
-            "offending_items": [] if estimable else [{"opaque_item_id": "offender"}],
-        }
+        if name == "trait_order_replacement1_only":
+            return {"minimum_retained_repeats": 3, **sensitivity.ORDER1_ONLY_EXPECTED}
+        if name == "trait_order_replacement2_only":
+            return {"minimum_retained_repeats": 3, **sensitivity.ORDER2_ONLY_EXPECTED}
+        if name == "all_trait_order_replacements":
+            return {"minimum_retained_repeats": 3, **sensitivity.ALL_ORDER_EXPECTED}
+        if name in {"trait_policy_singleton_only", "all_trait_policy_packetization"}:
+            return {"minimum_retained_repeats": 3, **sensitivity.POLICY_ONLY_EXPECTED}
+        return {"minimum_retained_repeats": 3, **sensitivity.ALL_ADMIN_EXPECTED}
 
     def fake_arrays(items, outcomes, excluded):
         del items, outcomes
-        assert [event[0] for event in events[:5]] == ["preflight"] * 5
+        assert [event[0] for event in events[:7]] == ["preflight"] * 7
         name = next(name for name, values in scenarios.items() if values == excluded)
         events.append(("arrays", name))
         preflight = fake_preflight([], excluded)
@@ -162,30 +181,53 @@ def test_all_scenarios_preflight_before_only_estimable_analysis(monkeypatch) -> 
     )
 
     results = sensitivity._analyze_scenarios(
-        [], {}, scenarios, order_only, {"behaviors": {}}, "a" * 64
+        [], {}, scenarios, order_sets, {"behaviors": {}}, "a" * 64
     )
 
-    assert [event[0] for event in events[:5]] == ["preflight"] * 5
+    assert [event[0] for event in events[:7]] == ["preflight"] * 7
     assert [event for event in events if event[0] == "arrays"] == [
         ("arrays", "no_exclusion"),
-        ("arrays", "trait_order_replacement_only"),
+        ("arrays", "trait_order_replacement1_only"),
+        ("arrays", "trait_order_replacement2_only"),
+        ("arrays", "all_trait_order_replacements"),
         ("arrays", "trait_policy_singleton_only"),
         ("arrays", "all_trait_policy_packetization"),
+        ("arrays", "all_trait_administration_deviations"),
     ]
-    non_estimable = results["all_trait_administration_deviations"]
-    assert non_estimable["analysis_performed"] is False
-    assert non_estimable["behaviors"] is None
-    assert non_estimable["comparison_to_primary"] is None
+    assert all(row["analysis_performed"] for row in results.values())
 
 
-def test_v20_preflight_rejects_order_accounting_drift() -> None:
-    order_only = {(f"order-{index}", 0) for index in range(36)}
+def test_non_estimable_scenario_has_no_numerical_conclusions() -> None:
+    result = sensitivity._non_estimable_scenario(
+        {
+            "estimable": False,
+            "offending_items": [{"opaque_item_id": "offender"}],
+            "minimum_retained_repeats": 3,
+        }
+    )
+
+    assert result["status"] == "non_estimable_min_repeats"
+    assert result["analysis_performed"] is False
+    assert result["affected_cells"] is None
+    assert result["behaviors"] is None
+    assert result["comparison_to_primary"] is None
+
+
+def test_v21_preflight_rejects_order_accounting_drift() -> None:
+    order1_only = {(f"order1-{index}", 0) for index in range(36)}
+    order2_only = {(f"order2-{index}", 0) for index in range(35)}
+    all_order = order1_only | order2_only
+    order_sets = {
+        "trait_order_replacement1_only": order1_only,
+        "trait_order_replacement2_only": order2_only,
+        "all_trait_order_replacements": all_order,
+    }
     scenarios = {
         "no_exclusion": set(),
-        "trait_order_replacement_only": order_only,
+        **order_sets,
         "trait_policy_singleton_only": set(),
         "all_trait_policy_packetization": set(),
-        "all_trait_administration_deviations": order_only,
+        "all_trait_administration_deviations": all_order,
     }
     no_exclusion = {
         "minimum_retained_repeats": 3,
@@ -198,25 +240,33 @@ def test_v20_preflight_rejects_order_accounting_drift() -> None:
     }
     preflights = {
         "no_exclusion": no_exclusion,
-        "trait_order_replacement_only": {
+        "trait_order_replacement1_only": {
             "minimum_retained_repeats": 3,
-            **sensitivity.ORDER_ONLY_EXPECTED,
+            **sensitivity.ORDER1_ONLY_EXPECTED,
             "retained_decisions": 13_163,
+        },
+        "trait_order_replacement2_only": {
+            "minimum_retained_repeats": 3,
+            **sensitivity.ORDER2_ONLY_EXPECTED,
+        },
+        "all_trait_order_replacements": {
+            "minimum_retained_repeats": 3,
+            **sensitivity.ALL_ORDER_EXPECTED,
         },
         "trait_policy_singleton_only": no_exclusion,
         "all_trait_policy_packetization": no_exclusion,
         "all_trait_administration_deviations": {
             "minimum_retained_repeats": 3,
-            **sensitivity.ORDER_ONLY_EXPECTED,
+            **sensitivity.ALL_ORDER_EXPECTED,
         },
     }
 
     try:
-        sensitivity._validate_v20_preflights(preflights, scenarios, order_only)
+        sensitivity._validate_v21_preflights(preflights, scenarios, order_sets)
     except base.AnalysisError as exc:
-        assert "order accounting changed" in str(exc)
+        assert "trait_order_replacement1_only accounting changed" in str(exc)
     else:
-        raise AssertionError("v20 order accounting drift was accepted")
+        raise AssertionError("v21 order accounting drift was accepted")
 
 
 def test_decision_set_rejects_duplicate_ids() -> None:
