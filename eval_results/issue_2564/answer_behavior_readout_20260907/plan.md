@@ -57,3 +57,10 @@ Record a real `answer-behavior-readout-20260907` follow-up scope and plan amendm
 Independent root clarification before dispatch: cost telemetry is required; no user requested a monetary cap. Finite pilot/main rosters and bounded transport retries are the dispatch bounds. The persona composition sensitivity means single voice without substantial narration.
 
 Pre-outcome readout freeze: three grouped inner folds, inherited from #2564. One label-shuffle sanity control (no permutation p-value or null-based acceptance threshold), with the same tuning, permutes complete connected-question target bundles within equal-size, source-framing and availability-pattern strata. Persist movable group/row counts. No test-label-informed grouping or null simplification.
+
+
+## Pre-outcome implementation clarification
+
+A saved `annotation/pilot/accepted.json` is required before main annotation or actual-label fitting. It pins the exact pilot completion, quality, aggregated labels, configuration, active rubrics/schema, selected rows and vectors, and substantive saved per-property semantic/reliability/coverage review. The accepted judge recipe must match the main collector. Valid API output alone cannot accept the instrument; no acceptance record exists while authentication blocks the real pilot. This implements the planned scientific instrument gate and does not require another user approval.
+
+A descriptive supported-class sensitivity requires at least 20 independent connected question groups per class, fixed before any labels or fits. It is not a headline inclusion threshold or an intrinsic-difficulty match. Composition (single voice without substantial narration) and uncapped sensitivities evaluate fixed out-of-fold predictions on those subsets; they are evaluation-only, not separately retrained subgroup probes. The full matched readout remains primary.

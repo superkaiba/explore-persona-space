@@ -202,6 +202,93 @@ def annotation_key(config: dict, row: dict, prop: str, draw: int) -> str:
     return digest([config["model"],judge_system(prop),schema(prop),row["id"],row["answer"],draw,digest(config)])
 
 
+def _aggregation_provenance(root: Path, out: Path) -> dict:
+    """Link aggregate values to current raw records, rows and active instrument."""
+    raw_manifest=[(p.stem,hashlib.sha256(p.read_bytes()).hexdigest()) for p in sorted((out/"raw").glob("*.json"))]
+    return {"raw_records_hash":digest(raw_manifest),"raw_record_count":len(raw_manifest),"config_hash":digest(json.loads((out/"config.json").read_text())),"rubric_schema_hash":digest({p:{"system":judge_system(p),"schema":schema(p)} for p in PROPERTIES}),"rows_sha256":hashlib.sha256((root/"prepared/rows.jsonl").read_bytes()).hexdigest(),"labels_sha256":hashlib.sha256((out/"labels.json").read_bytes()).hexdigest()}
+
+
+def _pilot_pins(root: Path) -> dict:
+    """Validate complete pilot evidence and return immutable evidence hashes."""
+    out=root/"annotation/pilot"
+    config=json.loads((out/"config.json").read_text())
+    complete=json.loads((out/"complete.json").read_text())
+    quality=json.loads((out/"quality.json").read_text())
+    labels=json.loads((out/"labels.json").read_text())
+    rows=[r for r in read_jsonl(root/"prepared/rows.jsonl") if r["part"]=="pilot"]
+    if len(rows)!=32 or len({r["id"] for r in rows})!=32 or config["draws"]!=5:
+        raise ValueError("Pilot acceptance requires the full frozen 32-answer, five-draw pilot")
+    expected={annotation_key(config,r,p,d) for r in rows for p in PROPERTIES for d in range(5)}
+    if len(expected)!=1120:
+        raise ValueError("Pilot acceptance requires exactly 1,120 distinct annotation units")
+    raw_paths=sorted((out/"raw").glob("*.json"))
+    if {p.stem for p in raw_paths}!=expected:
+        raise ValueError("Pilot raw records do not cover the exact completed annotation roster")
+    row_map={r["id"]:r for r in rows}
+    for path in raw_paths:
+        raw=json.loads(path.read_text())
+        if raw["key"]!=path.stem or raw["config_hash"]!=digest(config) or path.stem!=annotation_key(config,row_map[raw["row_id"]],raw["property"],raw["draw"]):
+            raise ValueError("Pilot raw record identity/config mismatch")
+        parsed,drop=(None,"transport") if raw.get("raw") is None and raw.get("drop")=="transport" else parse_result(raw["property"],raw.get("raw"))
+        if raw.get("parsed")!=parsed or raw.get("drop")!=drop:
+            raise ValueError("Pilot parsed annotation does not match its persisted API envelope")
+    if complete["expected_keys_hash"]!=digest(sorted(expected)) or complete["persisted_expected"]!=len(expected):
+        raise ValueError("Pilot completion does not cover the exact frozen annotation roster")
+    if complete["config_hash"]!=digest(config):
+        raise ValueError("Pilot completion config mismatch")
+    if {r["id"] for r in labels}!={r["id"] for r in rows} or len(labels)!=32:
+        raise ValueError("Pilot aggregate labels do not cover the exact answer roster")
+    if any(set(r.get("properties",{}))!=set(PROPERTIES) for r in labels):
+        raise ValueError("Pilot aggregate labels lack the complete property roster")
+    if json.loads((root/"prepared/rubrics.json").read_text())!=PROPERTIES:
+        raise ValueError("Prepared rubrics differ from the active annotation instrument")
+    if set(quality["properties"])!=set(PROPERTIES):
+        raise ValueError("Pilot quality report has incomplete property coverage")
+    if quality.get("aggregation_provenance")!=_aggregation_provenance(root,out):
+        raise ValueError("Pilot aggregates are stale relative to raw records/labels/rows/instrument")
+    for prop,q in quality["properties"].items():
+        if q["valid_draw_fraction"]<.98 or q["complete_valid_item_fraction"]<.95:
+            raise ValueError(f"Pilot transport/parser completeness gate failed for {prop}")
+    files=("annotation/pilot/config.json","annotation/pilot/complete.json","annotation/pilot/quality.json","annotation/pilot/labels.json","prepared/rubrics.json","prepared/rows.jsonl","prepared/vectors.npz")
+    return {"file_hashes":{p:hashlib.sha256((root/p).read_bytes()).hexdigest() for p in files},"judge_recipe":{k:config[k] for k in ("model","temperature","draws","max_tokens","concurrency")},"transport":"openai_chat_completions_sync_asyncio","rubric_schema_hash":digest({p:{"system":judge_system(p),"schema":schema(p)} for p in PROPERTIES})}
+
+
+def validate_pilot_acceptance(root: Path, config: dict | None = None) -> dict:
+    """Require reviewed, hash-pinned pilot acceptance before main annotation/fit."""
+    path=root/"annotation/pilot/accepted.json"
+    if not path.is_file():
+        raise RuntimeError("Main annotation/readout requires the planned reviewed pilot acceptance record")
+    accepted=json.loads(path.read_text())
+    if accepted.get("verdict")!="accept" or accepted.get("pins")!=_pilot_pins(root):
+        raise ValueError("Pilot acceptance is stale or does not match current instrument/data evidence")
+    review=root/"annotation/pilot/review.json"
+    if hashlib.sha256(review.read_bytes()).hexdigest()!=accepted["review_sha256"]:
+        raise ValueError("Pilot review record changed after acceptance")
+    if config is not None:
+        recipe=accepted["pins"]["judge_recipe"]
+        if any(config[k]!=v for k,v in recipe.items() if k!="concurrency") or not 1<=config["concurrency"]<=recipe["concurrency"]:
+            raise ValueError("Main judge recipe differs from the accepted pilot")
+    return accepted
+
+
+def accept_pilot(root: Path, review_file: Path) -> None:
+    """Record substantive instrument review; API validity alone cannot accept."""
+    pins=_pilot_pins(root)
+    review=json.loads(review_file.read_text())
+    if review.get("verdict")!="accept" or not review.get("reviewer"):
+        raise ValueError("Pilot needs an explicit saved instrument-review verdict")
+    if set(review.get("properties",{}))!=set(PROPERTIES):
+        raise ValueError("Instrument review must discuss every property")
+    for prop,r in review["properties"].items():
+        if r.get("verdict") not in ("accept","qualified") or not r.get("semantic_notes") or not r.get("reliability_notes") or not r.get("coverage_notes"):
+            raise ValueError(f"Incomplete semantic/reliability/coverage review for {prop}")
+    out=root/"annotation/pilot"
+    if (out/"accepted.json").exists():
+        raise FileExistsError("Pilot acceptance already exists; validate it instead of replacing review history")
+    dump(out/"review.json",review)
+    dump(out/"accepted.json",{"verdict":"accept","pins":pins,"review_sha256":hashlib.sha256((out/"review.json").read_bytes()).hexdigest(),"accepted_at":time.time(),"human_agreement":"unmeasured unless supplied separately"})
+
+
 def parse_result(prop: str, raw: dict) -> tuple[dict | None, str | None]:
     if not isinstance(raw, dict) or not isinstance(raw.get("choices"), list) or not raw["choices"]:
         return None, "invalid_envelope"
@@ -311,7 +398,13 @@ def aggregate(root: Path, part: str) -> None:
                 q["multi_voice_majority_fraction"]=float(np.mean(flags)) if flags else None
         q["transport_parse_gate_pass"]=q["valid_draw_fraction"]>=.98 and q["complete_valid_item_fraction"]>=.95
         quality[prop]=q
-    dump(out/"quality.json", {"properties":quality,"instrument_acceptance":"pending_semantic_and_reliability_review","raw_record_count":len(records),"observed_cost_dollars":sum(r.get("cost_dollars",0) for r in records),"labels_path":str(out/"labels.json")})
+    provenance=_aggregation_provenance(root,out)
+    dump(out/"quality.json", {"properties":quality,"aggregation_provenance":provenance,"instrument_acceptance":"pending_semantic_and_reliability_review","raw_record_count":len(records),"observed_cost_dollars":sum(r.get("cost_dollars",0) for r in records),"labels_path":str(out/"labels.json")})
+    complete_path=out/"complete.json"
+    complete=json.loads(complete_path.read_text()) if complete_path.is_file() else None
+    expected={annotation_key(config,r,p,d) for r in rows for p in PROPERTIES for d in range(5)}
+    actual={r["key"] for r in records}
+    dump(out/"labels_manifest.json",{"labels_sha256":provenance["labels_sha256"],"config_hash":provenance["config_hash"],"rubric_schema_hash":provenance["rubric_schema_hash"],"rows_sha256":provenance["rows_sha256"],"raw_records_hash":provenance["raw_records_hash"],"complete_sha256":hashlib.sha256(complete_path.read_bytes()).hexdigest() if complete is not None else None,"expected_draws":len(expected),"persisted_draws":len(actual),"expected_keys_hash":digest(sorted(expected)),"exact_keyset_complete":actual==expected,"row_count":len(rows),"part":part})
 
 
 async def annotate(root: Path, config_path: Path, part: str, limit: int | None) -> None:
@@ -322,6 +415,8 @@ async def annotate(root: Path, config_path: Path, part: str, limit: int | None) 
     assert config["authorized_task"] == 2564 and config["draws"] == 5
     assert config["max_tokens"] >= 1024 and config["temperature"] > 0
     assert "claude" not in config["model"].lower()
+    if part=="main":
+        validate_pilot_acceptance(root,config)
     rows = [r for r in read_jsonl(root / "prepared/rows.jsonl") if r["part"] == part]
     if limit is not None:
         rows = rows[:limit]
@@ -404,18 +499,23 @@ async def annotate(root: Path, config_path: Path, part: str, limit: int | None) 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument("mode", choices=["prepare", "annotate", "aggregate"])
+    p.add_argument("mode", choices=["prepare", "annotate", "aggregate", "accept-pilot"])
     p.add_argument("--root", type=Path, required=True)
     p.add_argument("--questions", type=int, default=512)
     p.add_argument("--seed", type=int, default=2564)
     p.add_argument("--config", type=Path)
     p.add_argument("--part", choices=["pilot","main"], default="pilot")
     p.add_argument("--limit", type=int)
+    p.add_argument("--review-file",type=Path)
     args=p.parse_args()
     if args.mode == "prepare":
         prepare(args.root,args.questions,args.seed)
     elif args.mode == "aggregate":
         aggregate(args.root,args.part)
+    elif args.mode == "accept-pilot":
+        if args.review_file is None:
+            p.error("accept-pilot requires --review-file with the saved scientific instrument review")
+        accept_pilot(args.root,args.review_file)
     else:
         assert args.config is not None
         asyncio.run(annotate(args.root,args.config,args.part,args.limit))

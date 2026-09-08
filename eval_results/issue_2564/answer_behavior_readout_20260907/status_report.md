@@ -1,6 +1,6 @@
 # Actual answer-behavior experiment: prepared; authentication blocked
 
-The corrected experiment is ready for its annotation pilot, but OpenAI rejected the configured credential with HTTP 401 (`invalid_api_key`) during the authenticated model check. **No answer-annotation calls, behavior labels, or readout fits were produced by this continuation.** There are no new scientific results to interpret yet.
+The corrected experiment is ready for its annotation pilot, but OpenAI rejected the configured credential with HTTP 401 (`invalid_api_key`) during the authenticated model check. **No answer-annotation calls, behavior labels, or scientific readout results were produced by this continuation.** There are no new scientific results to interpret yet.
 
 This continuation responds to Thomas's exact instruction, “redo with behavior,” after the previous requested-condition pilot and SAE-feature analysis did not measure actual expressed answer properties. No paper changes were made.
 
