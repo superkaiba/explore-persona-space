@@ -33,6 +33,8 @@ import time
 from pathlib import Path
 from datetime import UTC, datetime
 
+import issue2588_chat_grant as CG
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = Path("/workspace/eps2588_qwen3_chat/runtime")
 LOCK = REPO_ROOT / "configs/issue2588_chat_runtime.txt"
@@ -439,6 +441,12 @@ def remaining_smoke_seconds(env: dict, *, smoke: bool) -> float | None:
     """Account for install, imports, model staging and work across the same launch."""
     if not smoke:
         return None
+    grant = CG.from_env(env)
+    if grant:
+        remaining = grant.remaining_s()
+        if remaining <= 0:
+            raise RuntimeFence("authorized continuation allowance exhausted during setup")
+        return remaining
     start = float(env[SMOKE_START_ENV])
     now = time.time()
     if not math.isfinite(start) or start > now or start <= 0:
@@ -588,7 +596,29 @@ def main(argv: list[str] | None = None) -> int:
     clock_parser.add_argument("--smoke-prior-report", type=Path)
     clock_parser.add_argument("--smoke-prior-report-sha256")
     clock_parser.add_argument("--smoke-supplement-report", type=Path)
+    clock_parser.add_argument("--continuation-grant", type=Path)
+    clock_parser.add_argument("--continuation-grant-sha256")
+    clock_parser.add_argument("--science-root", type=Path)
     clock_args, _ = clock_parser.parse_known_args(wrapper_args)
+    CG.configure_environment(
+        env, clock_args.continuation_grant, clock_args.continuation_grant_sha256
+    )
+    if clock_args.continuation_grant or clock_args.continuation_grant_sha256:
+        if (
+            mode != "smoke"
+            or clock_args.run_id != SUPPLEMENT_RUN_ID
+            or not clock_args.continuation_grant
+            or not clock_args.continuation_grant_sha256
+            or not clock_args.science_root
+            or clock_args.smoke_supplement_report
+            or clock_args.smoke_prior_report
+            or clock_args.smoke_prior_report_sha256
+        ):
+            raise RuntimeError("invalid frozen-source continuation arguments")
+        CG.science_root(clock_args.science_root)
+        grant = CG.from_env(env)
+        setup_budget = grant.record["allowance_s"]
+        deadline = time.monotonic() + setup_budget
     if clock_args.smoke_supplement_report and (
         mode != "smoke" or clock_args.smoke_prior_report or clock_args.smoke_prior_report_sha256
     ):

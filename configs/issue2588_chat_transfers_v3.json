@@ -2,6 +2,12 @@
   "surface": "generic",
   "run_id": "qwen3-chat-v3",
   "transfers": {
+    "restore:stage": {
+      "bytes": 7351708,
+      "bytes_per_s": 10000000,
+      "retry_calls": 8,
+      "basis": "Immutable 1c4adfdd306108d36e5267865bbb0fa350753406 thinking partial: seven files total 7,351,708 bytes, independently read back and canonically unpacked to398 original responses. One scoped listing plus seven file-download retry envelopes, conservatively counted serially despite max_workers4; 10 MB/s expected not measured pod throughput. Pilot work fence separately applies."
+    },
     "preflight": {
       "bytes": 2097152,
       "bytes_per_s": 10000000,

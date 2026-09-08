@@ -61,6 +61,7 @@ from issue2588_chat_runtime import (  # noqa: E402
     validate_smoke_prior_report,
     validate_smoke_supplement,
 )
+import issue2588_chat_grant as CG  # noqa: E402
 
 from explore_persona_space.atomic_io import write_json_atomic, write_text_atomic  # noqa: E402
 from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined  # noqa: E402
@@ -154,6 +155,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--smoke-prior-report", type=Path)
     parser.add_argument("--smoke-prior-report-sha256")
     parser.add_argument("--smoke-supplement-report", type=Path)
+    parser.add_argument("--continuation-grant", type=Path)
+    parser.add_argument("--continuation-grant-sha256")
+    parser.add_argument("--science-root", type=Path)
     parser.add_argument("--min-disk-gb", type=float)
     parser.add_argument("--per-pod-quota-gb", type=float)
     parser.add_argument("--skip-preflight", action="store_true")
@@ -176,7 +180,7 @@ def cell_step(args: argparse.Namespace, cell: str, phase: str, *, pilot: bool = 
     argv = [
         sys.executable,
         "-u",
-        str(DRIVER),
+        str(args.science_root / "scripts/issue2588_run_cell.py" if args.science_root else DRIVER),
         "--surface",
         args.surface,
         "--run-id",
@@ -203,9 +207,13 @@ def cell_step(args: argparse.Namespace, cell: str, phase: str, *, pilot: bool = 
 
 def build_steps(args: argparse.Namespace) -> list[Step]:
     """Keep raw/capture persistence ahead of every downstream fit."""
+    driver = args.science_root / "scripts/issue2588_run_cell.py" if args.science_root else DRIVER
+    runtime = (
+        args.science_root / "scripts/issue2588_chat_runtime.py" if args.science_root else RUNTIME
+    )
     steps = [
-        Step("driver", "runtime_check", (sys.executable, "-u", str(RUNTIME), "--check")),
-        Step("driver", "import_check", (sys.executable, "-u", str(DRIVER), "--import-check")),
+        Step("driver", "runtime_check", (sys.executable, "-u", str(runtime), "--check")),
+        Step("driver", "import_check", (sys.executable, "-u", str(driver), "--import-check")),
     ]
     if not args.skip_preflight:
         preflight = [sys.executable, "-u", "-m", "explore_persona_space.orchestrate.preflight"]
@@ -220,8 +228,24 @@ def build_steps(args: argparse.Namespace) -> list[Step]:
     )
     # One immutable shared snapshot/G2 staging pass, including on fit-only launches.
     steps.append(cell_step(args, CELLS[0], "stage-runtime"))
+    if args.continuation_grant:
+        steps.append(
+            Step(
+                "restore",
+                "stage",
+                (
+                    sys.executable,
+                    "-u",
+                    str(REPO_ROOT / "scripts/issue2588_chat_restore.py"),
+                    "--science-root",
+                    str(args.science_root),
+                    "--out-root",
+                    str(args.out_root),
+                ),
+            )
+        )
     if args.mode in {"smoke", "capture"}:
-        for cell in CELLS[1:] if args.smoke_supplement_report else CELLS:
+        for cell in CELLS[1:] if args.smoke_supplement_report or args.continuation_grant else CELLS:
             for phase in (
                 "prologue",
                 "stage",
@@ -311,6 +335,7 @@ def transfer_limits(args: argparse.Namespace, steps: list[Step], retry_s: float)
 def child_environment(args: argparse.Namespace) -> dict[str, str]:
     """Pin one inherited GPU and the long-cap recipe before all child imports."""
     env = dict(os.environ)
+    CG.configure_environment(env, args.continuation_grant, args.continuation_grant_sha256)
     visible = env.get("CUDA_VISIBLE_DEVICES", "0").strip()
     if not visible or len(visible.split(",")) != 1 or visible == "-1":
         raise ValueError("this workload requires exactly one assigned CUDA_VISIBLE_DEVICES GPU")
@@ -324,8 +349,13 @@ def child_environment(args: argparse.Namespace) -> dict[str, str]:
     cache = args.out_root / "generic" / args.run_id / "hf_cache"
     env.update(HF_HOME=str(cache), HF_HUB_CACHE=str(cache))
     env["PYTHONPATH"] = os.pathsep.join(
-        value for value in (str(REPO_ROOT / "src"), env.get("PYTHONPATH", "")) if value
+        value
+        for value in (str((args.science_root or REPO_ROOT) / "src"), env.get("PYTHONPATH", ""))
+        if value
     )
+    if args.science_root:
+        CG.science_root(args.science_root)
+        env["EPS_GIT_SHA"] = CG.SCIENCE_SHA
     env["EPM_PREFLIGHT_LARGE_BLOB_URL"] = MODEL_PROBE_URL
     return env
 
@@ -480,6 +510,7 @@ class Runner:
 
     def __init__(self, args: argparse.Namespace, env: dict[str, str], limits: dict[str, dict]):
         self.args, self.env, self.limits = args, env, limits
+        self.grant = CG.from_env(env)
         self.supplement = validate_smoke_supplement(
             args.smoke_supplement_report, env, run_id=args.run_id
         )
@@ -489,6 +520,9 @@ class Runner:
             args.smoke_prior_report, args.smoke_prior_report_sha256, env, run_id=args.run_id
         )
         self.initial_work_s = inherited_work_s(args, env)
+        if self.grant:
+            self.work_limit_s = self.grant.record["allowance_s"]
+            self.initial_work_s -= self.grant.credit_s()
         self.started = time.monotonic()
         self.attempt = datetime.now(UTC).strftime("%Y%m%dT%H%M%S.%fZ") + f"-{os.getpid()}"
         self.root = args.out_root / "generic" / args.run_id
@@ -530,6 +564,8 @@ class Runner:
             "inherited_runtime_work_s": self.initial_work_s,
             "smoke_clock": self.smoke_clock,
             "smoke_supplement": self.supplement,
+            "continuation_grant": self.grant.record if self.grant else None,
+            "science_source": str(self.args.science_root) if self.args.science_root else None,
             "work_allowance_s": self.work_limit_s if self.args.mode == "smoke" else None,
             "smoke_original_epoch": self.env.get("EPS2588_SMOKE_STARTED_AT"),
             "elapsed_s": time.monotonic() - self.started,
@@ -592,6 +628,8 @@ class Runner:
     def run(self, step: Step, *, durability_tail: bool = False) -> None:
         """Run the real command in a fresh session and classify only after wait()."""
         begin = time.monotonic()
+        begin_epoch = time.time()
+        receipt_key = f"{self.attempt}:{len(self.records)}:{step.key}"
         work = not step.phase.startswith("upload-") and not durability_tail
         if not work:
             self.durability_started = begin
@@ -601,6 +639,8 @@ class Runner:
             if not work:
                 self.durability_s += time.monotonic() - begin
                 self.durability_started = None
+                if self.grant:
+                    self.grant.finish_upload(receipt_key, begin_epoch, time.time())
 
     def _run_step(self, step: Step, begin: float, *, work: bool, durability_tail: bool) -> None:
         """Keep cleanup, actual exit evidence and failure classification in one path."""
@@ -633,7 +673,7 @@ class Runner:
                 child_env.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1")
             proc = subprocess.Popen(
                 step.argv,
-                cwd=REPO_ROOT,
+                cwd=self.args.science_root or REPO_ROOT,
                 env=child_env,
                 stdin=subprocess.DEVNULL,
                 stdout=log,
@@ -782,6 +822,19 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.mode is None:
         parser.error("--mode is required")
+    if bool(args.continuation_grant) != bool(args.continuation_grant_sha256):
+        parser.error("continuation requires grant path and hash")
+    if args.continuation_grant and (
+        args.mode != "smoke"
+        or args.run_id != SUPPLEMENT_RUN_ID
+        or not args.science_root
+        or args.smoke_supplement_report
+        or args.smoke_prior_report
+        or args.smoke_prior_report_sha256
+    ):
+        parser.error("continuation is frozen-source v3 smoke-only without legacy credits")
+    if args.science_root:
+        args.science_root = CG.science_root(args.science_root)
     if args.smoke_supplement_report and (
         args.mode != "smoke"
         or args.smoke_prior_report
@@ -793,6 +846,7 @@ def main(argv: list[str] | None = None) -> int:
         args.mode == "smoke"
         and args.run_id == SUPPLEMENT_RUN_ID
         and not args.smoke_supplement_report
+        and not args.continuation_grant
     ):
         parser.error("v3 smoke requires the explicitly authorized supplemental report")
     if args.mode != "smoke" and (args.smoke_prior_report or args.smoke_prior_report_sha256):
