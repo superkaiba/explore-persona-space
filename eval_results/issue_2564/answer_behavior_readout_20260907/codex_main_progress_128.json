@@ -1,0 +1,27 @@
+{
+  "observed_unix_s": 1788885549.9390967,
+  "complete_packets": 128,
+  "expected_packets": 280,
+  "complete_annotations": 32768,
+  "expected_annotations": 71680,
+  "completed_packet_counts_by_property": {
+    "persona": 24,
+    "topic": 24,
+    "warmth": 16,
+    "confidence": 16,
+    "formality": 16,
+    "language": 16,
+    "format": 16
+  },
+  "running_packets": [
+    "text_judge_main_129",
+    "text_judge_main_130"
+  ],
+  "schema_outcomes": {
+    "valid": 32768
+  },
+  "ledger_sha256": "1b320ea22c6ef71057b3293472aac6e7505e88c19aa92540e33aea7210a80bfe",
+  "root_free_bytes": 26081189888,
+  "readout_fit": false,
+  "note": "Operational validation snapshot. Two complete rating passes for all seven properties, plus a third voice and topic pass. No final aggregate or scientific readout."
+}
