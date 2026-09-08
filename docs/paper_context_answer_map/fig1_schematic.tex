@@ -1,4 +1,4 @@
-% Figure 1: context-to-answer prediction pipeline (rev 16, 2026-09-03).
+% Figure 1: context-to-answer prediction pipeline (rev 17, 2026-09-07).
 % Compile standalone: pdflatex fig1_schematic.tex
 % THEN convert text to outlines before copying to Overleaf (REQUIRED):
 %   gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dNoOutputFonts -dCompatibilityLevel=1.5 \
@@ -23,11 +23,11 @@
 % Palette = paper palette (c2a_plot_style.py): ink #22272B, muted #687078, linear teal
 % #176B87, nonlinear terracotta #C4553D. Two text sizes: 8 pt (names) and 7 pt.
 % Side coding (rev 13, Thomas): every context-side state and vector is violet #6F4FA0
-% (all context tokens' states after layer l, h_C, the metamodel inputs). Answer side is
+% (all context tokens' states after layer l, h_C, the map inputs). Answer side is
 % an amber ramp that darkens with aggregation: token states light amber #C98A1B, the
 % mean answer vectors h_A(A_k) / h_A(A_1..K) darker amber #A8720F, the target (mean
 % over K) darkest #6E4A0C. Vectors outside the model use stronger cell shades.
-% Rev 15 (Thomas): the context vector forks into TWO metamodel boxes, linear (teal:
+% Rev 15 (Thomas): the context vector forks into TWO map boxes, linear (teal:
 % matrix W_l times h_C plus bias b_l) and nonlinear (terracotta: a small MLP glyph,
 % input column -> hidden layer of circular units -> output column, dense connections).
 % Rev 16 (Thomas): the MLP's output column IS the prediction: same ink color, same
@@ -43,8 +43,8 @@
 
 \definecolor{ink}{HTML}{22272B}
 \definecolor{muted}{HTML}{687078}
-\definecolor{teal}{HTML}{176B87}   % linear metamodel
-\definecolor{terra}{HTML}{C4553D}  % nonlinear metamodel
+\definecolor{teal}{HTML}{176B87}   % linear map
+\definecolor{terra}{HTML}{C4553D}  % nonlinear map
 \definecolor{ctx}{HTML}{6F4FA0}    % context side
 \definecolor{ans}{HTML}{C98A1B}    % answer side: token states
 \definecolor{ansv}{HTML}{A8720F}   % answer side: mean answer vectors
@@ -173,7 +173,7 @@
 
 % ===========================================================================
 % Middle: the two vectors read off layer l.  Context vector y = 5.45 (in the
-% model's top strip); answer vector y = 1.05, below both metamodel boxes.
+% model's top strip); answer vector y = 1.05, below both map boxes.
 % ===========================================================================
 \colvecs{hc}{7.70}{5.45}{ctx}{62,30,80,44,92}
 \node[lbl, text=ctx, anchor=north, align=center] at (7.70,4.89) {context\\vector $h_C^{\ell}$};
@@ -185,14 +185,14 @@
 \node[ann, anchor=north] at (7.19,0.97) {mean};
 
 % ===========================================================================
-% Right: two metamodel branches (linear on top, nonlinear below), one merged
+% Right: two map branches (linear on top, nonlinear below), one merged
 % prediction, and the prediction target at the bottom.
 % ===========================================================================
-% --- linear metamodel: box 4.08..5.80 (top level with the model box top 5.75)
+% --- linear map: box 4.08..5.80 (top level with the model box top 5.75)
 \node[draw=teal, line width=0.7pt, fill=teal!5, rounded corners=3pt,
       minimum width=3.0cm, minimum height=1.72cm, inner sep=0pt] (lin) at (10.40,4.94) {};
 \node[lbl, text=teal, anchor=south, font=\fontsize{8}{9.5}\selectfont\bfseries]
-  at (10.40,5.84) {Linear metamodel};
+  at (10.40,5.84) {Linear map};
 \matgrid{W}{9.75}{5.10}{teal}
 \node[lbl, text=teal, anchor=north, inner sep=0.5pt] at (9.75,4.53) {$W_\ell$};
 \colvecs{hcol}{10.65}{5.10}{ctx}{62,30,80,44,92}
@@ -201,11 +201,11 @@
 \colvec{bcol}{11.35}{5.10}{teal}
 \node[lbl, text=teal, anchor=north, inner sep=0.5pt] at (11.35,4.53) {$b_\ell$};
 
-% --- nonlinear metamodel: box 1.86..3.58, glyph row at 2.88, labels at 2.31
+% --- nonlinear map: box 1.86..3.58, glyph row at 2.88, labels at 2.31
 \node[draw=terra, line width=0.7pt, fill=terra!5, rounded corners=3pt,
       minimum width=3.0cm, minimum height=1.72cm, inner sep=0pt] (nl) at (10.40,2.72) {};
 \node[lbl, text=terra, anchor=south, font=\fontsize{8}{9.5}\selectfont\bfseries]
-  at (10.40,3.62) {Nonlinear metamodel};
+  at (10.40,3.62) {Nonlinear map};
 % dense connections first (drawn under the columns): input (5 cells) -> 6 hidden units -> output (5)
 \foreach \yi in {3.28,3.08,2.88,2.68,2.48} {
   \foreach \yh in {3.38,3.18,2.98,2.78,2.58,2.38} {

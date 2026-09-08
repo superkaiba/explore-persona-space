@@ -164,7 +164,7 @@ def make_figure(values: dict) -> plt.Figure:
     panel_header(
         ax_a,
         "A",
-        "Own predictor",
+        "Separate map",
         title="Held-out $R^2$ per setting,\nbase and post-trained",
         kicker_y=1.34,
         title_y=1.07,
@@ -185,7 +185,7 @@ def make_figure(values: dict) -> plt.Figure:
         label="Shared, as is",
     )
     ax_b.bar(x + width / 2, frac_shift, width, color=teal, label="Shared, with per-setting shift")
-    ax_b.axhline(1.0, color=INK, linestyle="--", linewidth=1.6, label="Own predictor")
+    ax_b.axhline(1.0, color=INK, linestyle="--", linewidth=1.6, label="Separate map")
     # Headroom so the in-axes legend clears the bars and the own-predictor
     # reference line at 1 (bars top out at ~1.0).
     ax_b.set_ylim(0.0, 2.0)
@@ -197,8 +197,8 @@ def make_figure(values: dict) -> plt.Figure:
     panel_header(
         ax_b,
         "B",
-        "Shared predictor",
-        title="Shared predictor as a fraction\nof each setting's own $R^2$",
+        "Shared map",
+        title="Shared $R^2$ as a fraction\nof each setting's own $R^2$",
         kicker_y=1.34,
         title_y=1.07,
     )
@@ -227,9 +227,9 @@ def main() -> int:
     outputs = save_c2a_figure(
         fig,
         stem,
-        title="Figure 8: one shared predictor across speaker identities",
+        title="Figure 8: one shared map across speaker identities",
         subject=(
-            "Held-out R2 per speaker/framing (base vs post-trained) and the pooled predictor "
+            "Held-out R2 per speaker/framing (base vs post-trained) and the pooled map "
             "as a fraction of each setting's own R2 (#2054 specialization ladder)"
         ),
         creator="scripts/paper_fig_shared_speakers.py",

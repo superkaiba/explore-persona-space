@@ -5746,8 +5746,8 @@
       "goal": "Determine whether applying the learned context->answer map before projecting the persona vector predicts on-policy behavior expression (evil, trait sycophancy, hallucination) better than context-side projection and direct regression at matched (unlabeled, labeled) data budgets, and whether that advantage grows across a real-data distribution-shift ladder.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1739",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1739",
+      "status": "awaiting_promotion",
       "title": "Scaling context-to-answer maps narrows probe deficits but does not establish unlabeled pairs as a substitute for judged pairs (HIGH confidence)"
     },
     "174": {
@@ -9692,8 +9692,8 @@
       "goal": "Test whether the persona vector's pre-image under the fitted context\u2192answer map (M\u207ar_B, per-layer) is a causally effective persona direction when injected at the context vector \u2014 compared against the answer-extracted persona vector (at the context vector and at answer tokens), a context-extracted persona vector, and matched-norm random controls, via coherence-gated dose-response steering (single/middle/all layers, negative doses included) plus calibrated projection-patching and directional ablation against the donor-swap ceiling.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2254",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/2254",
+      "status": "awaiting_promotion",
       "title": "Inverting the fitted context-to-answer map yields a direction that predicts persona strongly but cannot steer it at the context vector, where a directly-measured context direction can, while a separately fitted answer-to-context map moves evil at layer 14 only (MODERATE confidence)"
     },
     "2255": {
@@ -12896,7 +12896,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/2670",
       "status": "followups_running",
-      "title": "Ten-submission prompting still yielded too few reward hacks for prediction (MODERATE confidence)"
+      "title": "Initial activation probes and the frozen map did not improve reward-hacking forecasts (MODERATE confidence)"
     },
     "268": {
       "has_clean_result": false,
@@ -18166,8 +18166,8 @@
       "goal": "On frozen Qwen-2.5-7B-Instruct with ridge-only maps and a train/validation/test split (validation selects layer + \u03bb, a disjoint test split compares methods and arms), characterize where the linear context\u2192answer-activation map differs between on-policy and off-policy answers, along three axes: (1) per-token-position predictability \u2014 fit h_t: c_last(x) \u2192 z_t^(a)(x) for answer positions t in the first-16 window, the last-16 window (span extended through `<|im_end|>` and its trailing newline \u2014 the last token before a next user turn would begin), and relative-position deciles, per arm a \u2208 {own-regenerated, external-plain, external-distinct-style, mismatched} (the four #823 arms, completions reused) over the 4998-context LMSYS pool; (2) prefix-conditioned prediction \u2014 sweep the predictor to the realized-answer activation at position t (t \u2208 {1,2,4,8,16,32,64,128}; t=0 = c_last baseline) predicting the individual / mean-pooled / max-pooled activations of positions > t, measuring how fast each arm's remainder becomes predictable as prefix is absorbed; and (3) divergence-conditioned evaluation \u2014 evaluate the SAME pool-trained maps on a generation-verified Qwen-vs-Claude divergence query bank (\u22484 quirk categories \u00d7 ~40\u201360 queries, each with matched same-template entity-swapped controls), testing whether off-policy predictability fails specifically where the two models' behaviors diverge while on-policy predictability holds.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/952",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/952",
+      "status": "awaiting_promotion",
       "title": "The own-answer advantage in predicting answer activations from context is position-uniform across the captured read-out layer band (MODERATE confidence)"
     },
     "953": {
