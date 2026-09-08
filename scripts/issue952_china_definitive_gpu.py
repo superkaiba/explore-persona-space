@@ -50,13 +50,55 @@ REGISTERED_SOURCE_ITEMS = 90
 PROMPTS_PER_SOURCE = 12
 REGISTERED_PROMPTS = REGISTERED_SOURCE_ITEMS * PROMPTS_PER_SOURCE
 SMOKE_SEED_BASE = SEED_BASE + REGISTERED_PROMPTS * N_DRAWS
+REPAIRED_HF_PREFIX = "issue952_position_divergence/followups/china_refusal_wording_withholding_v2"
+REPAIRED_CONTRACT = "china-country-cue-v2"
+REPAIRED_SEED_BASE = 9_520_000
+REPAIRED_CONTENT_CELLS = {
+    "sensitive_full": ("sensitive", "present"),
+    "sensitive_country_neutral": ("sensitive", "absent"),
+    "matched_non_china": ("control", "absent"),
+    "matched_non_china_country": ("control", "present"),
+}
 
 
-def _output_prefix(smoke: bool, attempt: int) -> str:
+def _study_config(study: str) -> dict[str, Any]:
+    """Resolve a study explicitly without changing the legacy module constants."""
+    if study == "v1":
+        return {
+            "hf_prefix": HF_PREFIX,
+            "source_items": REGISTERED_SOURCE_ITEMS,
+            "prompts_per_source": PROMPTS_PER_SOURCE,
+            "seed_base": SEED_BASE,
+            "smoke_seed_base": SMOKE_SEED_BASE,
+        }
+    if study == "repaired-v2":
+        return {
+            "hf_prefix": REPAIRED_HF_PREFIX,
+            "source_items": 85,
+            "prompts_per_source": 16,
+            "seed_base": REPAIRED_SEED_BASE,
+            "smoke_seed_base": REPAIRED_SEED_BASE + 85 * 16 * N_DRAWS,
+        }
+    raise ValueError(f"unknown China study: {study}")
+
+
+def _validate_study(regime: dict[str, Any], study: str) -> None:
+    """Refuse cross-study consumers before any capture or external write."""
+    config = _study_config(study)
+    if regime.get("study", "v1") != study:
+        raise RuntimeError("selected study differs from the generation regime")
+    if study == "repaired-v2" and (
+        regime.get("hf_prefix") != config["hf_prefix"]
+        or regime.get("bank_contract") != REPAIRED_CONTRACT
+    ):
+        raise RuntimeError("repaired generation study namespace/contract drift")
+
+
+def _output_prefix(smoke: bool, attempt: int, study: str = "v1") -> str:
     """Return the immutable per-attempt output namespace; inputs stay canonical."""
     if attempt < 1:
         raise ValueError("attempt must be >= 1")
-    base = f"{HF_PREFIX}/attempt{attempt}"
+    base = f"{_study_config(study)['hf_prefix']}/attempt{attempt}"
     return f"{base}/smoke" if smoke else base
 
 
@@ -146,13 +188,60 @@ def _accepted_bank_identity(rows: list[dict[str, Any]], audit: dict[str, Any]) -
     }
 
 
-def _load_bank(bank_path: Path, audit_path: Path, smoke: bool) -> tuple[list[dict], dict]:
+def _validate_repaired_bank(rows: list[dict], audit: dict[str, Any]) -> None:
+    """Require the complete audited factorial lattice and exact cue additions."""
+    from scripts.issue952_china_repair_bank import validate_pairs
+
+    if audit.get("contract") != REPAIRED_CONTRACT:
+        raise RuntimeError("repaired bank audit contract is missing or incompatible")
+    source_ids = set(audit["passing_item_ids"])
+    if len(source_ids) != 85 or source_ids != {row["source_prompt_id"] for row in rows}:
+        raise RuntimeError("repaired bank must retain all 85 accepted source identities")
+    expected = {
+        (source, language, frame, content)
+        for source in source_ids
+        for language in ("en", "zh")
+        for frame in ("direct", "academic")
+        for content in REPAIRED_CONTENT_CELLS
+    }
+    realized = {
+        (row["source_prompt_id"], row["language"], row["frame"], row["content"]) for row in rows
+    }
+    if realized != expected or len(rows) != len(expected):
+        raise RuntimeError("repaired bank factorial cells are incomplete or duplicated")
+    for row in rows:
+        subject, cue_level = REPAIRED_CONTENT_CELLS[row["content"]]
+        if (
+            row.get("bank_contract") != REPAIRED_CONTRACT
+            or row.get("subject_arm") != subject
+            or row.get("country_cue") != cue_level
+            or (cue_level == "absent" and row.get("cue_text") != "")
+        ):
+            raise RuntimeError("repaired bank row contract/country-cue metadata drift")
+    for field in ("source_bank_sha256", "metadata_sha256", "independent_audit_sha256"):
+        digest = audit.get(field)
+        if (
+            not isinstance(digest, str)
+            or len(digest) != 64
+            or any(char not in "0123456789abcdef" for char in digest)
+        ):
+            raise RuntimeError(f"repaired bank lacks hash-bound provenance: {field}")
+    validate_pairs(rows)
+
+
+def _load_bank(
+    bank_path: Path, audit_path: Path, smoke: bool, study: str = "v1"
+) -> tuple[list[dict], dict]:
     """Validate the full registered bank and select only audit-accepted rows."""
     rows = _read_jsonl(bank_path)
+    config = _study_config(study)
+    prompts_per_source = config["prompts_per_source"]
     audit = json.loads(audit_path.read_text(encoding="utf-8"))
     if audit.get("passed") is not True or _sha256(bank_path) != audit["prompt_bank_sha256"]:
         raise RuntimeError("prompt bank is not the passed/hash-matched audited bank")
-    if len(rows) != REGISTERED_PROMPTS or len({row["item_id"] for row in rows}) != len(rows):
+    if len(rows) != config["source_items"] * prompts_per_source or len(
+        {row["item_id"] for row in rows}
+    ) != len(rows):
         raise RuntimeError("prompt bank cardinality/uniqueness changed")
     all_source_ids = {row["source_prompt_id"] for row in rows}
     passing_ids = audit.get("passing_item_ids")
@@ -160,9 +249,9 @@ def _load_bank(bank_path: Path, audit_path: Path, smoke: bool) -> tuple[list[dic
         not isinstance(passing_ids, list)
         or len(passing_ids) != len(set(passing_ids))
         or not set(passing_ids) <= all_source_ids
-        or len(all_source_ids) != REGISTERED_SOURCE_ITEMS
+        or len(all_source_ids) != config["source_items"]
         or any(
-            sum(row["source_prompt_id"] == source_id for row in rows) != PROMPTS_PER_SOURCE
+            sum(row["source_prompt_id"] == source_id for row in rows) != prompts_per_source
             for source_id in all_source_ids
         )
         or audit.get("n_audit_passing_items") != len(passing_ids)
@@ -175,23 +264,30 @@ def _load_bank(bank_path: Path, audit_path: Path, smoke: bool) -> tuple[list[dic
         for row in rows
     ):
         raise RuntimeError("row audit_pass flags disagree with passing_item_ids")
+    if study == "repaired-v2":
+        _validate_repaired_bank(rows, audit)
     identity = _accepted_bank_identity(rows, audit)
-    if identity["n_accepted_prompts"] != len(passing_ids) * PROMPTS_PER_SOURCE:
+    if identity["n_accepted_prompts"] != len(passing_ids) * prompts_per_source:
         raise RuntimeError("accepted prompt width disagrees with accepted source identities")
     rows = [row for row in rows if row["source_prompt_id"] in passing]
     if smoke:
         source_ids = sorted({row["source_prompt_id"] for row in rows})[:10]
         rows = [row for row in rows if row["source_prompt_id"] in set(source_ids)]
-        if len(source_ids) != 10 or len(rows) != 10 * PROMPTS_PER_SOURCE:
+        if len(source_ids) != 10 or len(rows) != 10 * prompts_per_source:
             raise RuntimeError(
-                f"10-source-item smoke must have 120 accepted prompts, got {len(rows)}"
+                f"10-source-item smoke must have {10 * prompts_per_source} accepted prompts, "
+                f"got {len(rows)}"
             )
     return rows, audit
 
 
 def stage_inputs(
-    out_root: Path, bank_path: Path | None, audit_path: Path | None
+    out_root: Path, bank_path: Path | None, audit_path: Path | None, study: str = "v1"
 ) -> tuple[Path, Path]:
+    """Stage the selected study's immutable audited inputs and freeze their identity."""
+    prefix = _study_config(study)["hf_prefix"]
+    if (bank_path is None) != (audit_path is None):
+        raise ValueError("explicit --bank and --audit must be supplied together")
     stage_path = out_root / "manifests" / "input_stage.json"
     prior_stage = json.loads(stage_path.read_text()) if stage_path.exists() else None
     if bank_path is not None and audit_path is not None:
@@ -216,7 +312,7 @@ def stage_inputs(
             hub.retry_transient(
                 lambda: hf_hub_download(
                     HF_REPO,
-                    f"{HF_PREFIX}/inputs/upload_verified.json",
+                    f"{prefix}/inputs/upload_verified.json",
                     repo_type="dataset",
                     revision=marker_source_revision,
                     local_dir=local,
@@ -233,7 +329,7 @@ def stage_inputs(
             hub.retry_transient(
                 lambda: hf_hub_download(
                     HF_REPO,
-                    f"{HF_PREFIX}/inputs/prompt_bank.jsonl",
+                    f"{prefix}/inputs/prompt_bank.jsonl",
                     repo_type="dataset",
                     revision=data_revision,
                     local_dir=local,
@@ -245,7 +341,7 @@ def stage_inputs(
             hub.retry_transient(
                 lambda: hf_hub_download(
                     HF_REPO,
-                    f"{HF_PREFIX}/inputs/bank_audit_report.json",
+                    f"{prefix}/inputs/bank_audit_report.json",
                     repo_type="dataset",
                     revision=data_revision,
                     local_dir=local,
@@ -275,7 +371,7 @@ def stage_inputs(
     if _sha256(audit) != marker.get("bank_audit_report_sha256"):
         raise RuntimeError("staged bank audit differs from immutable upload marker")
     full_rows = _read_jsonl(bank)
-    _, audit_payload = _load_bank(bank, audit, smoke=False)
+    _, audit_payload = _load_bank(bank, audit, smoke=False, study=study)
     accepted = _accepted_bank_identity(full_rows, audit_payload)
     stage = {
         "marker_source_revision": marker_revision,
@@ -285,6 +381,8 @@ def stage_inputs(
         "bank_audit_report_sha256": _sha256(audit),
         **{key: value for key, value in accepted.items() if key != "accepted_source_ids"},
     }
+    if study == "repaired-v2":
+        stage.update(study=study, hf_prefix=prefix, bank_contract=REPAIRED_CONTRACT)
     if prior_stage is not None and stage != prior_stage:
         raise RuntimeError("GPU phase input stage differs from the frozen first-phase snapshot")
     _write_json(stage_path, stage)
@@ -338,8 +436,11 @@ def _regime(
     attempt: int = 1,
     accepted: dict[str, Any] | None = None,
     selected_rows: list[dict[str, Any]] | None = None,
+    study: str = "v1",
 ) -> dict[str, Any]:
     """Describe all output-affecting generation settings and bank selection."""
+    config = _study_config(study)
+    seed_base = config["smoke_seed_base"] if smoke else config["seed_base"]
     regime = {
         "issue": ISSUE,
         "model": MODEL,
@@ -350,7 +451,7 @@ def _regime(
         "temperature": TEMPERATURE,
         "top_p": TOP_P,
         "max_new_tokens": MAX_NEW_TOKENS,
-        "seed_base": SMOKE_SEED_BASE if smoke else SEED_BASE,
+        "seed_base": seed_base,
         "seed_namespace": "smoke-disjoint-v1" if smoke else "registered-production-v1",
         "seed_formula": (
             f"{SMOKE_SEED_BASE} + selected_prompt_index * {N_DRAWS} + draw"
@@ -362,6 +463,17 @@ def _regime(
         "attempt": attempt,
         "git_sha": _git_sha(),
     }
+    if study == "repaired-v2":
+        regime.update(
+            study=study,
+            hf_prefix=config["hf_prefix"],
+            bank_contract=REPAIRED_CONTRACT,
+            registered_source_items=config["source_items"],
+            prompts_per_source=config["prompts_per_source"],
+            seed_namespace="repaired-smoke-v2" if smoke else "repaired-production-v2",
+            seed_formula=f"{seed_base} + selected_prompt_index * {N_DRAWS} + draw",
+            seed_policy="disjoint-v1-v2-smoke-production-v2",
+        )
     if accepted is not None and selected_rows is not None:
         selected_sources = sorted({row["source_prompt_id"] for row in selected_rows})
         regime.update(
@@ -374,7 +486,50 @@ def _regime(
     return regime
 
 
+def _repaired_token_pair_checks(rows: list[dict], tok: Any) -> dict[str, Any]:
+    """Validate every source's cue pair through the actual rendered tokenizer inputs."""
+    from scripts.issue952_china_repair_bank import validate_pairs
+
+    result = validate_pairs(
+        rows,
+        encode=lambda prompt: tok.encode(_rendered(tok, prompt), add_special_tokens=False),
+    )
+    if result.get("token_checks_run") is not True or result.get("n_pairs") != 85 * 2 * 2 * 2:
+        raise RuntimeError("repaired tokenizer gate did not cover every registered cue pair")
+    return result
+
+
+def _repaired_cap_diagnostics(rows: list[dict]) -> dict[str, Any]:
+    """Identify only truncated rows in cells above the registered two-percent threshold."""
+    cells: dict[str, list[dict]] = {}
+    for row in rows:
+        key = ":".join(row[field] for field in ("language", "content", "frame"))
+        cells.setdefault(key, []).append(row)
+    per_cell = {}
+    extension_ids = []
+    for key, cell_rows in sorted(cells.items()):
+        truncated = [row["item_id"] for row in cell_rows if row["finish_reason"] == "length"]
+        fraction = len(truncated) / len(cell_rows)
+        needs_extension = fraction > 0.02
+        per_cell[key] = {
+            "n_rows": len(cell_rows),
+            "n_cap_hit": len(truncated),
+            "cap_hit_fraction": fraction,
+            "extension_required": needs_extension,
+        }
+        if needs_extension:
+            extension_ids.extend(truncated)
+    return {
+        "cap_hit_definition": "finish_reason == length",
+        "cap_extension_threshold_per_cell": 0.02,
+        "cap_by_cell": per_cell,
+        "cap_extension_required_item_ids": sorted(extension_ids),
+        "cap_gate_passed": not extension_ids,
+    }
+
+
 def _smoke_generation_compatibility(regime: dict[str, Any]) -> dict[str, Any]:
+    """Compare every shared setting while allowing the registered smoke slice/seeds."""
     excluded = {
         "smoke",
         "prompt_token_max",
@@ -391,6 +546,7 @@ def _smoke_generation_compatibility(regime: dict[str, Any]) -> dict[str, Any]:
 def _smoke_capture_compatibility(
     capture_regime: dict[str, Any], package_versions: dict[str, str]
 ) -> dict[str, Any]:
+    """Bind capture implementations and settings across distinct smoke responses."""
     return {
         "capture_regime": {
             key: value
@@ -415,7 +571,12 @@ def phase_generate(
     shard_prompts: int,
     smoke_report: Path | None = None,
     attempt: int = 1,
+    study: str = "v1",
 ) -> dict[str, Any]:
+    """Generate complete, exact-token rollouts only after all selected study guards pass."""
+    _study_config(study)
+    if shard_prompts < 1:
+        raise ValueError("shard_prompts must be >= 1")
     if not smoke:
         if smoke_report is None or not smoke_report.exists():
             raise RuntimeError("production generation requires a completed smoke timing report")
@@ -425,9 +586,11 @@ def phase_generate(
         if smoke_gate.get("attempt") != attempt:
             raise RuntimeError("production generation smoke gate belongs to another attempt")
     versions = _assert_package_versions()
-    rows, audit = _load_bank(bank_path, audit_path, smoke)
-    accepted = _accepted_bank_identity(_read_jsonl(bank_path), audit)
+    rows, audit = _load_bank(bank_path, audit_path, smoke, study=study)
+    full_rows = _read_jsonl(bank_path)
+    accepted = _accepted_bank_identity(full_rows, audit)
     tok = _tokenizer()
+    pair_checks = _repaired_token_pair_checks(full_rows, tok) if study == "repaired-v2" else None
     contexts = [_context_ids(tok, row["prompt"]) for row in rows]
     prompt_max = max(map(len, contexts))
     max_model_len = max(4096, prompt_max + MAX_NEW_TOKENS + 32)
@@ -436,7 +599,18 @@ def phase_generate(
     bank_sha = _sha256(bank_path)
     if not smoke and smoke_gate["bank_sha256"] != bank_sha:
         raise RuntimeError("production bank differs from the smoke-tested bank")
-    regime = _regime(bank_sha, smoke, attempt=attempt, accepted=accepted, selected_rows=rows)
+    regime = _regime(
+        bank_sha, smoke, attempt=attempt, accepted=accepted, selected_rows=rows, study=study
+    )
+    if study == "repaired-v2":
+        regime.update(
+            country_cue_validation=pair_checks,
+            shard_prompts=shard_prompts,
+            bank_audit_report_sha256=_sha256(audit_path),
+            source_bank_sha256=audit["source_bank_sha256"],
+            metadata_sha256=audit["metadata_sha256"],
+            independent_audit_sha256=audit["independent_audit_sha256"],
+        )
     regime["prompt_token_max"] = prompt_max
     regime["max_model_len"] = max_model_len
     regime["chat_template_sha256"] = hashlib.sha256(tok.chat_template.encode()).hexdigest()
@@ -534,6 +708,20 @@ def phase_generate(
                     "language": row["language"],
                     "content": row["content"],
                     "frame": row["frame"],
+                    **(
+                        {
+                            key: row[key]
+                            for key in (
+                                "subject_arm",
+                                "country_cue",
+                                "cue_text",
+                                "base_prompt_sha256",
+                                "bank_contract",
+                            )
+                        }
+                        if study == "repaired-v2"
+                        else {}
+                    ),
                     "draw": draw,
                     "seed": regime["seed_base"] + global_i * N_DRAWS + draw,
                     "question": row["prompt"],
@@ -542,7 +730,11 @@ def phase_generate(
                     "context_tokens": ctx_len,
                     "completion_tokens": n_tokens,
                     "finish_reason": sample.finish_reason,
-                    "cap_hit": n_tokens >= MAX_NEW_TOKENS,
+                    "cap_hit": (
+                        sample.finish_reason == "length"
+                        if study == "repaired-v2"
+                        else n_tokens >= MAX_NEW_TOKENS
+                    ),
                     "audit_pass": bool(row["audit_pass"]),
                     "latency_s": (
                         float(output.metrics.finished_time - output.metrics.arrival_time)
@@ -624,6 +816,8 @@ def phase_generate(
         "accepted_bank": accepted,
         "cap_gate_passed": cap_frac <= 0.005,
     }
+    if study == "repaired-v2":
+        report.update(_repaired_cap_diagnostics(all_rows))
     _write_json(out_root / "manifests" / "generation.json", report)
     print(
         f"[gen] complete prompts={len(rows)} rows={len(all_rows)} cap_frac={cap_frac:.6f} "
@@ -710,12 +904,13 @@ def _validate_raw_upload(
         raise RuntimeError("raw upload evidence is stale or generation-incompatible")
 
 
-def phase_upload_raw(out_root: Path, attempt: int = 1) -> dict[str, Any]:
+def phase_upload_raw(out_root: Path, attempt: int = 1, study: str = "v1") -> dict[str, Any]:
     """Upload and byte-verify the current generation artifacts."""
     report = json.loads((out_root / "manifests" / "generation.json").read_text())
+    _validate_study(report["regime"], study)
     if report["regime"].get("attempt") != attempt:
         raise RuntimeError("raw upload attempt differs from generation regime")
-    target_prefix = _output_prefix(report["regime"]["smoke"], attempt)
+    target_prefix = _output_prefix(report["regime"]["smoke"], attempt, study=study)
     rollouts = out_root / "raw_completions" / "rollouts.jsonl"
     if (
         _sha256(rollouts) != report["rollouts_sha256"]
@@ -871,14 +1066,24 @@ def phase_capture(
     answer_shard_rows: int,
     smoke_report: Path | None = None,
     attempt: int = 1,
+    study: str = "v1",
 ) -> dict[str, Any]:
+    """Capture the selected study's exact generation tokens after verified raw upload."""
+    if batch_size < 1 or answer_shard_rows < 1:
+        raise ValueError("capture batch size and answer shard rows must be >= 1")
     raw_upload_path = out_root / "manifests" / "raw_upload.json"
     if not raw_upload_path.exists():
         raise RuntimeError("capture blocked: raw-rollout upload has not been verified")
-    bank_rows, audit = _load_bank(bank_path, audit_path, smoke)
+    bank_rows, audit = _load_bank(bank_path, audit_path, smoke, study=study)
     accepted = _accepted_bank_identity(_read_jsonl(bank_path), audit)
     rollouts_path = out_root / "raw_completions" / "rollouts.jsonl"
     gen = json.loads((out_root / "manifests" / "generation.json").read_text())
+    _validate_study(gen["regime"], study)
+    if study == "repaired-v2" and (
+        gen["regime"].get("smoke") != smoke
+        or gen["regime"].get("bank_audit_report_sha256") != _sha256(audit_path)
+    ):
+        raise RuntimeError("repaired capture smoke/audit identity differs from generation")
     if gen.get("regime", {}).get("attempt") != attempt:
         raise RuntimeError("capture attempt differs from generation regime")
     raw_upload = json.loads(raw_upload_path.read_text())
@@ -919,6 +1124,18 @@ def phase_capture(
         "selected_source_ids_sha256": gen["regime"]["selected_source_ids_sha256"],
         "generation_fingerprint": _generation_fingerprint(gen),
     }
+    if study == "repaired-v2":
+        capture_regime.update(
+            study=study,
+            hf_prefix=_study_config(study)["hf_prefix"],
+            bank_contract=REPAIRED_CONTRACT,
+            bank_audit_report_sha256=_sha256(audit_path),
+            source_bank_sha256=audit["source_bank_sha256"],
+            metadata_sha256=audit["metadata_sha256"],
+            independent_audit_sha256=audit["independent_audit_sha256"],
+            capture_batch=batch_size,
+            answer_shard_rows=answer_shard_rows,
+        )
     versions = _package_versions()
     if not smoke:
         if smoke_report is None or not smoke_report.exists():
@@ -1054,6 +1271,8 @@ def phase_capture(
         "accepted_bank": accepted,
         "generation_fingerprint": _generation_fingerprint(gen),
     }
+    if study == "repaired-v2":
+        report["country_cue_capture"] = _repaired_capture_diagnostics(bank_rows, vc_store["vc"])
     _write_json(out_root / "manifests" / "capture.json", report)
     del model
     gc.collect()
@@ -1061,6 +1280,37 @@ def phase_capture(
     if all_empty:
         raise RuntimeError(f"activation capture has {len(all_empty)} empty answer rows")
     return report
+
+
+def _repaired_capture_diagnostics(rows: list[dict], vc: torch.Tensor) -> dict[str, Any]:
+    """Persist actual cue-delta norms; numerical degeneracy remains explicit."""
+    if vc.shape != (len(rows), len(LAYERS), HIDDEN) or not torch.isfinite(vc).all():
+        raise RuntimeError("repaired context capture has invalid shape or nonfinite values")
+    index = {
+        (row["source_prompt_id"], row["language"], row["frame"], row["content"]): i
+        for i, row in enumerate(rows)
+    }
+    absent_indices, present_indices, pair_ids = [], [], []
+    for absent, present in (
+        ("sensitive_country_neutral", "sensitive_full"),
+        ("matched_non_china", "matched_non_china_country"),
+    ):
+        for i, row in enumerate(rows):
+            if row["content"] != absent:
+                continue
+            j = index[(row["source_prompt_id"], row["language"], row["frame"], present)]
+            absent_indices.append(i)
+            present_indices.append(j)
+            pair_ids.append([row["item_id"], rows[j]["item_id"]])
+    norms = torch.linalg.vector_norm(vc[present_indices] - vc[absent_indices], dim=-1)
+    return {
+        "layers": list(LAYERS),
+        "n_pairs": len(pair_ids),
+        "pair_ids_absent_present": pair_ids,
+        "cue_delta_norms": norms.tolist(),
+        "n_zero_delta_pairs_by_layer": (norms == 0).sum(dim=0).tolist(),
+        "minimum_delta_norm_by_layer": norms.min(dim=0).values.tolist(),
+    }
 
 
 def _capture_fingerprint(report: dict[str, Any]) -> str:
@@ -1123,14 +1373,15 @@ def _validate_capture_upload(
         raise RuntimeError("capture upload evidence is stale or capture-incompatible")
 
 
-def phase_upload_capture(out_root: Path, attempt: int = 1) -> dict[str, Any]:
+def phase_upload_capture(out_root: Path, attempt: int = 1, study: str = "v1") -> dict[str, Any]:
     """Upload and byte-verify current capture artifacts and manifests."""
     report = json.loads((out_root / "manifests" / "capture.json").read_text())
     generation = json.loads((out_root / "manifests" / "generation.json").read_text())
+    _validate_study(generation["regime"], study)
     raw_upload = json.loads((out_root / "manifests" / "raw_upload.json").read_text())
     if generation["regime"].get("attempt") != attempt:
         raise RuntimeError("capture upload attempt differs from generation regime")
-    target_prefix = _output_prefix(generation["regime"]["smoke"], attempt)
+    target_prefix = _output_prefix(generation["regime"]["smoke"], attempt, study=study)
     tensor_dir = out_root / "analysis_tensors"
     _validate_raw_upload(out_root, generation, raw_upload)
     _validate_capture_artifacts(out_root, generation, report)
@@ -1262,11 +1513,12 @@ def _smoke_map_consumer_probe(out_root: Path) -> dict[str, Any]:
     return {"map_revision": MAP_REV, "layers": checks}
 
 
-def phase_finalize(out_root: Path, attempt: int = 1) -> dict[str, Any]:
+def phase_finalize(out_root: Path, attempt: int = 1, study: str = "v1") -> dict[str, Any]:
     """Validate every phase and publish the terminal sentinel last."""
     sentinel_path = out_root / "issue952_china_definitive_done.json"
-    sentinel_path.unlink(missing_ok=True)
     generation = json.loads((out_root / "manifests" / "generation.json").read_text())
+    _validate_study(generation["regime"], study)
+    sentinel_path.unlink(missing_ok=True)
     capture = json.loads((out_root / "manifests" / "capture.json").read_text())
     raw_upload = json.loads((out_root / "manifests" / "raw_upload.json").read_text())
     capture_upload = json.loads((out_root / "manifests" / "capture_upload.json").read_text())
@@ -1277,7 +1529,7 @@ def phase_finalize(out_root: Path, attempt: int = 1) -> dict[str, Any]:
         raise RuntimeError("final generation/capture row mismatch")
     if generation["regime"].get("attempt") != attempt:
         raise RuntimeError("finalize attempt differs from generation regime")
-    target_prefix = _output_prefix(generation["regime"]["smoke"], attempt)
+    target_prefix = _output_prefix(generation["regime"]["smoke"], attempt, study=study)
     _verify_remote_file(
         out_root,
         revision=raw_upload["raw_payload_revision"],
@@ -1301,9 +1553,11 @@ def phase_finalize(out_root: Path, attempt: int = 1) -> dict[str, Any]:
         "capture": capture,
         "raw_upload": raw_upload,
         "capture_upload": capture_upload,
-        "hf_prefix": HF_PREFIX,
+        "hf_prefix": _study_config(study)["hf_prefix"],
         "timestamp_unix": time.time(),
     }
+    if study == "repaired-v2":
+        result.update(study=study, bank_contract=REPAIRED_CONTRACT)
     if generation["regime"]["smoke"]:
         consumer_probe = _smoke_map_consumer_probe(out_root)
         if (
@@ -1388,6 +1642,7 @@ def phase_finalize(out_root: Path, attempt: int = 1) -> dict[str, Any]:
 
 
 def build_argparser() -> argparse.ArgumentParser:
+    """Expose all legacy phases with an explicit opt-in for the repaired study."""
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument(
         "--phase",
@@ -1395,6 +1650,7 @@ def build_argparser() -> argparse.ArgumentParser:
         choices=("gen", "upload-raw", "capture", "upload-capture", "finalize"),
     )
     ap.add_argument("--out-root", type=Path, required=True)
+    ap.add_argument("--study", choices=("v1", "repaired-v2"), default="v1")
     ap.add_argument("--bank", type=Path)
     ap.add_argument("--audit", type=Path)
     ap.add_argument("--smoke", action="store_true")
@@ -1407,11 +1663,12 @@ def build_argparser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    """Dispatch each isolated process phase under the same explicit study identity."""
     args = build_argparser().parse_args()
     if args.attempt < 1:
         raise SystemExit("--attempt must be >= 1")
     args.out_root.mkdir(parents=True, exist_ok=True)
-    bank, audit = stage_inputs(args.out_root, args.bank, args.audit)
+    bank, audit = stage_inputs(args.out_root, args.bank, args.audit, study=args.study)
     if args.phase == "gen":
         phase_generate(
             args.out_root,
@@ -1421,9 +1678,10 @@ def main() -> int:
             args.shard_prompts,
             args.smoke_report,
             args.attempt,
+            study=args.study,
         )
     elif args.phase == "upload-raw":
-        phase_upload_raw(args.out_root, args.attempt)
+        phase_upload_raw(args.out_root, args.attempt, study=args.study)
     elif args.phase == "capture":
         phase_capture(
             args.out_root,
@@ -1434,11 +1692,12 @@ def main() -> int:
             args.answer_shard_rows,
             args.smoke_report,
             args.attempt,
+            study=args.study,
         )
     elif args.phase == "upload-capture":
-        phase_upload_capture(args.out_root, args.attempt)
+        phase_upload_capture(args.out_root, args.attempt, study=args.study)
     else:
-        phase_finalize(args.out_root, args.attempt)
+        phase_finalize(args.out_root, args.attempt, study=args.study)
     return 0
 
 
