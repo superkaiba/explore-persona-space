@@ -1,0 +1,96 @@
+{
+ "question": "does the graded refusal read survive an answer-length control",
+ "dv": "margin_delta (continuous judge refusal-margin change)",
+ "predictor": "signed projection of the predicted answer shift on the refusal direction",
+ "confound": "ans_len_delta (answer-length change, tokens)",
+ "arms": {
+  "map": "arm_779ce",
+  "copy": "arm_iddelta"
+ },
+ "n_pairs": 124,
+ "bootstrap": {
+  "unit": "pair",
+  "draws": 10000,
+  "seed": 26171
+ },
+ "sources": [
+  "eval_results/issue_2617/svmp_verbharm/perpair.jsonl"
+ ],
+ "collinearity": {
+  "spearman_margin_vs_length": -0.736290694400116,
+  "spearman_proj_map_vs_length": -0.7988336724379244,
+  "spearman_proj_copy_vs_length": -0.7605141786227805
+ },
+ "raw": {
+  "n": 124,
+  "rho_map": 0.7915845790715971,
+  "rho_copy": 0.787776553894571,
+  "rho_map_p": 7.236140100210875e-28,
+  "delta_map_minus_copy": 0.003808025177026053,
+  "delta_ci95": [
+   -0.03268333286835163,
+   0.0401985050492446
+  ]
+ },
+ "rank_partial_controlling_length": {
+  "rho_map": 0.49972015956681876,
+  "rho_copy": 0.5185045765376748,
+  "note": "assumes a monotone length relation removable linearly in ranks"
+ },
+ "length_terciles": {
+  "edges": [
+   -754.4,
+   95.5
+  ],
+  "by_tercile": {
+   "tercile_0": {
+    "length_range": [
+     -2752.2,
+     -764.4
+    ],
+    "median_length_delta": -1485.6,
+    "n": 41,
+    "rho_map": 0.48414634146341473,
+    "rho_copy": 0.5355400696864112,
+    "rho_map_p": 0.0013397848462408644,
+    "delta_map_minus_copy": -0.05139372822299648,
+    "delta_ci95": [
+     -0.17463284278468919,
+     0.058320746818677716
+    ]
+   },
+   "tercile_1": {
+    "length_range": [
+     -754.4,
+     86.09999999999997
+    ],
+    "median_length_delta": -211.9000000000001,
+    "n": 41,
+    "rho_map": 0.6486062717770036,
+    "rho_copy": 0.6642857142857145,
+    "rho_map_p": 4.516816908679261e-06,
+    "delta_map_minus_copy": -0.015679442508710895,
+    "delta_ci95": [
+     -0.11136663031187109,
+     0.07517919580419573
+    ]
+   },
+   "tercile_2": {
+    "length_range": [
+     95.5,
+     1545.2
+    ],
+    "median_length_delta": 358.5999999999999,
+    "n": 42,
+    "rho_map": 0.29876023012721825,
+    "rho_copy": 0.3190179077870513,
+    "rho_map_p": 0.05461757637412125,
+    "delta_map_minus_copy": -0.02025767765983305,
+    "delta_ci95": [
+     -0.2313591787305731,
+     0.19918952457484054
+    ]
+   }
+  }
+ }
+}

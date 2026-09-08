@@ -1,0 +1,282 @@
+{
+ "question": "per-element retrieval, and whether the ordering survives removing shared directions",
+ "arms": {
+  "map": "arm_779ce",
+  "copy": "arm_iddelta"
+ },
+ "elements_covered": [
+  "Output format",
+  "Persona",
+  "Tone",
+  "Question topic"
+ ],
+ "elements_not_covered": [
+  "Answer language",
+  "One-word topic"
+ ],
+ "coverage_gap_reason": "the pilot store has answer/context activations but no precomputed prediction tensors, so answer language and the one-word swap need the ridge map re-applied",
+ "alignment_check": {
+  "parent": {
+   "n_rows": 2778,
+   "max_abs_norm_error": 4.6415086529805194e-07,
+   "max_abs_cos_error": 8.049637040263846e-09
+  },
+  "ffr": {
+   "n_rows": 672,
+   "max_abs_norm_error": 5.190163605561793e-07,
+   "max_abs_cos_error": 6.622882076090519e-09
+  }
+ },
+ "retrieval_comparability_caveat": "Within-element retrieval is NOT comparable across these elements. The pools differ in kind: for question topic the manipulated variable IS the carrier (1 value-pair x 66 carriers), so retrieving a pair means telling topics apart, which is what the shift encodes. For format, persona and tone the carrier is held fixed within a pair and varies across the pool (12 carriers), so retrieval additionally demands carrier identity that the manipulation cannot supply, capping accuracy near 1/12. Read the per-element numbers against pool_composition, never as a preservation ranking. The same defect applies to the banked retrieval.per_axis block in minpair_delta.json.",
+ "shared_subspace": {
+  "definition": "top-k PCs of the pooled observed shifts of the OTHER elements",
+  "k_sweep": [
+   1,
+   3,
+   5
+  ]
+ },
+ "sources": [
+  "hf://superkaiba1/explore-persona-space-data/issue2564_minpair/analysis_tensors/",
+  "eval_results/issue_2564/perpair.jsonl",
+  "eval_results/issue_2564/floor-failed-reelicitation/perpair_ffr.jsonl"
+ ],
+ "elements": {
+  "Output format": {
+   "n": 36,
+   "pool_composition": {
+    "distinct_value_pairs": 3,
+    "distinct_carriers": 12,
+    "carrier_is_the_manipulated_variable": false
+   },
+   "retrieval": {
+    "map": {
+     "n": 36,
+     "acc_at_1": 0.1388888888888889,
+     "acc_at_5": 0.5,
+     "median_rank": 6.0,
+     "mrr": 0.29408403809526096,
+     "chance_at_1": 0.027777777777777776
+    },
+    "copy": {
+     "n": 36,
+     "acc_at_1": 0.05555555555555555,
+     "acc_at_5": 0.3888888888888889,
+     "median_rank": 7.5,
+     "mrr": 0.2222175201341868,
+     "chance_at_1": 0.027777777777777776
+    }
+   },
+   "cos_mean": {
+    "map": 0.36217017138310204,
+    "copy": 0.22911985288230513
+   },
+   "shared_subspace_removed": {
+    "k=1": {
+     "observed_energy_in_shared_subspace": 0.022674334404518482,
+     "cos_map_after_removal": 0.3619378231462812,
+     "cos_map_ci95": [
+      0.3314755167463005,
+      0.39049044819321305
+     ],
+     "cos_copy_after_removal": 0.22567466932701358
+    },
+    "k=3": {
+     "observed_energy_in_shared_subspace": 0.03848315300795145,
+     "cos_map_after_removal": 0.373205537061101,
+     "cos_map_ci95": [
+      0.3398827179709258,
+      0.405392991172873
+     ],
+     "cos_copy_after_removal": 0.2271128979836074
+    },
+    "k=5": {
+     "observed_energy_in_shared_subspace": 0.04939127769946721,
+     "cos_map_after_removal": 0.3736687344364202,
+     "cos_map_ci95": [
+      0.33946742545520975,
+      0.40679873427103896
+     ],
+     "cos_copy_after_removal": 0.2280421844367229
+    }
+   }
+  },
+  "Persona": {
+   "n": 120,
+   "pool_composition": {
+    "distinct_value_pairs": 10,
+    "distinct_carriers": 12,
+    "carrier_is_the_manipulated_variable": false
+   },
+   "retrieval": {
+    "map": {
+     "n": 120,
+     "acc_at_1": 0.15833333333333333,
+     "acc_at_5": 0.5916666666666667,
+     "median_rank": 4.0,
+     "mrr": 0.36292055897319053,
+     "chance_at_1": 0.008333333333333333
+    },
+    "copy": {
+     "n": 120,
+     "acc_at_1": 0.25,
+     "acc_at_5": 0.6333333333333333,
+     "median_rank": 4.0,
+     "mrr": 0.4167395451770452,
+     "chance_at_1": 0.008333333333333333
+    }
+   },
+   "cos_mean": {
+    "map": 0.7735029261364267,
+    "copy": 0.6373059388584081
+   },
+   "shared_subspace_removed": {
+    "k=1": {
+     "observed_energy_in_shared_subspace": 0.23860622672059909,
+     "cos_map_after_removal": 0.7413314187258621,
+     "cos_map_ci95": [
+      0.7279029647163952,
+      0.7543315818905114
+     ],
+     "cos_copy_after_removal": 0.6000104038166192
+    },
+    "k=3": {
+     "observed_energy_in_shared_subspace": 0.29614734939440257,
+     "cos_map_after_removal": 0.7245573212989325,
+     "cos_map_ci95": [
+      0.7093042116247873,
+      0.739902761555385
+     ],
+     "cos_copy_after_removal": 0.5852997654330951
+    },
+    "k=5": {
+     "observed_energy_in_shared_subspace": 0.30484616148206445,
+     "cos_map_after_removal": 0.7234137147345472,
+     "cos_map_ci95": [
+      0.7080641638685293,
+      0.7386117943315768
+     ],
+     "cos_copy_after_removal": 0.5829565567954332
+    }
+   }
+  },
+  "Tone": {
+   "n": 12,
+   "pool_composition": {
+    "distinct_value_pairs": 1,
+    "distinct_carriers": 12,
+    "carrier_is_the_manipulated_variable": true
+   },
+   "retrieval": {
+    "map": {
+     "n": 12,
+     "acc_at_1": 0.25,
+     "acc_at_5": 0.6666666666666666,
+     "median_rank": 3.5,
+     "mrr": 0.4265241702741702,
+     "chance_at_1": 0.08333333333333333
+    },
+    "copy": {
+     "n": 12,
+     "acc_at_1": 0.3333333333333333,
+     "acc_at_5": 0.5833333333333334,
+     "median_rank": 5.0,
+     "mrr": 0.43637866762866767,
+     "chance_at_1": 0.08333333333333333
+    }
+   },
+   "cos_mean": {
+    "map": 0.8989838136737859,
+    "copy": 0.7280655024125874
+   },
+   "shared_subspace_removed": {
+    "k=1": {
+     "observed_energy_in_shared_subspace": 0.35801845297164847,
+     "cos_map_after_removal": 0.8555532271282362,
+     "cos_map_ci95": [
+      0.8471450761278208,
+      0.8628217491664515
+     ],
+     "cos_copy_after_removal": 0.6648286726771567
+    },
+    "k=3": {
+     "observed_energy_in_shared_subspace": 0.5962064353754388,
+     "cos_map_after_removal": 0.779684232508708,
+     "cos_map_ci95": [
+      0.7675702427864569,
+      0.7899533983645339
+     ],
+     "cos_copy_after_removal": 0.5389750702433865
+    },
+    "k=5": {
+     "observed_energy_in_shared_subspace": 0.6199667996436834,
+     "cos_map_after_removal": 0.7742236446131954,
+     "cos_map_ci95": [
+      0.7612542643638464,
+      0.7851729568260404
+     ],
+     "cos_copy_after_removal": 0.5256014687594203
+    }
+   }
+  },
+  "Question topic": {
+   "n": 66,
+   "pool_composition": {
+    "distinct_value_pairs": 1,
+    "distinct_carriers": 66,
+    "carrier_is_the_manipulated_variable": true
+   },
+   "retrieval": {
+    "map": {
+     "n": 66,
+     "acc_at_1": 1.0,
+     "acc_at_5": 1.0,
+     "median_rank": 1.0,
+     "mrr": 1.0,
+     "chance_at_1": 0.015151515151515152
+    },
+    "copy": {
+     "n": 66,
+     "acc_at_1": 0.9848484848484849,
+     "acc_at_5": 1.0,
+     "median_rank": 1.0,
+     "mrr": 0.9924242424242424,
+     "chance_at_1": 0.015151515151515152
+    }
+   },
+   "cos_mean": {
+    "map": 0.714573346514575,
+    "copy": 0.30424628306661555
+   },
+   "shared_subspace_removed": {
+    "k=1": {
+     "observed_energy_in_shared_subspace": 0.012671369616102948,
+     "cos_map_after_removal": 0.7128157266031472,
+     "cos_map_ci95": [
+      0.6984701043314117,
+      0.7270519231324521
+     ],
+     "cos_copy_after_removal": 0.30342986101148767
+    },
+    "k=3": {
+     "observed_energy_in_shared_subspace": 0.04218594087382804,
+     "cos_map_after_removal": 0.7067363987758429,
+     "cos_map_ci95": [
+      0.6922576265607935,
+      0.7208829007953202
+     ],
+     "cos_copy_after_removal": 0.29665322054082216
+    },
+    "k=5": {
+     "observed_energy_in_shared_subspace": 0.05296839657380519,
+     "cos_map_after_removal": 0.70479684868267,
+     "cos_map_ci95": [
+      0.6905652541409183,
+      0.7189246690637647
+     ],
+     "cos_copy_after_removal": 0.294242214756587
+    }
+   }
+  }
+ }
+}
