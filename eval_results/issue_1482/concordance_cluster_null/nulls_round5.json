@@ -1,0 +1,138 @@
+{
+  "bands": {
+    "Content type: topic": {
+      "concat@0.30": {
+        "band_p97_5_abs_dev": 0.005780087020456698,
+        "clears": true,
+        "margin_over_band": 21.780064705053164,
+        "n_draws": 1000,
+        "null_c_p2_5": 0.49428315532259814,
+        "null_c_p97_5": 0.5037217997775418,
+        "null_c_sd": 0.002431489912795438,
+        "perm_p_two_sided": 0.000999000999000999
+      },
+      "concat@0.35": {
+        "band_p97_5_abs_dev": 0.005660513094326453,
+        "clears": true,
+        "margin_over_band": 22.24015159201122,
+        "n_draws": 1000,
+        "null_c_p2_5": 0.4954166965111813,
+        "null_c_p97_5": 0.5052156063412809,
+        "null_c_sd": 0.002511795319878088,
+        "perm_p_two_sided": 0.000999000999000999
+      },
+      "concat@0.40": {
+        "band_p97_5_abs_dev": 0.005366397169466314,
+        "clears": true,
+        "margin_over_band": 23.45906673152643,
+        "n_draws": 1000,
+        "null_c_p2_5": 0.4953136023298757,
+        "null_c_p97_5": 0.5048009015630884,
+        "null_c_sd": 0.0024070082831308386,
+        "perm_p_two_sided": 0.000999000999000999
+      },
+      "feature": {
+        "band_p97_5_abs_dev": 0.005097808702141678,
+        "clears": true,
+        "margin_over_band": 24.69505559388605,
+        "n_draws": 1000,
+        "null_c_p2_5": 0.4955048091735321,
+        "null_c_p97_5": 0.5046255435457919,
+        "null_c_sd": 0.00234182057894572,
+        "perm_p_two_sided": 0.000999000999000999
+      },
+      "singleton": {
+        "band_p97_5_abs_dev": 0.005773141492562958,
+        "clears": true,
+        "margin_over_band": 21.806267777874307,
+        "n_draws": 1000,
+        "null_c_p2_5": 0.4954526490004368,
+        "null_c_p97_5": 0.504822055989618,
+        "null_c_sd": 0.0024288699786714015,
+        "perm_p_two_sided": 0.000999000999000999
+      },
+      "size_exchange@0.30": {
+        "band_p97_5_abs_dev": 0.0075082774924463535,
+        "clears": true,
+        "margin_over_band": 16.766917503120546,
+        "n_draws": 1000,
+        "null_c_p2_5": 0.49249172250755363,
+        "null_c_p97_5": 0.5019100865832522,
+        "null_c_sd": 0.0024108734064317793,
+        "perm_p_two_sided": 0.000999000999000999
+      },
+      "size_exchange@0.35": {
+        "band_p97_5_abs_dev": 0.007745036961597163,
+        "clears": true,
+        "margin_over_band": 16.254366496970718,
+        "n_draws": 1000,
+        "null_c_p2_5": 0.4922549630384028,
+        "null_c_p97_5": 0.5013650189759167,
+        "null_c_sd": 0.0023281361859957394,
+        "perm_p_two_sided": 0.000999000999000999
+      },
+      "size_exchange@0.40": {
+        "band_p97_5_abs_dev": 0.005268516038279424,
+        "clears": true,
+        "margin_over_band": 23.894901029379387,
+        "n_draws": 1000,
+        "null_c_p2_5": 0.49478251931470246,
+        "null_c_p97_5": 0.5036451845274753,
+        "null_c_sd": 0.002356137217847989,
+        "perm_p_two_sided": 0.000999000999000999
+      }
+    }
+  },
+  "bins": 10,
+  "cell_sizes": {
+    "median": 156,
+    "n_below_min_cell": 28
+  },
+  "cluster_block_diagnostics": {
+    "concat@0.30": {
+      "frozen_feature_frac": 0.00014911030849266047,
+      "n_blocks": 48261,
+      "n_cluster_cell_splits": 1616
+    },
+    "concat@0.35": {
+      "frozen_feature_frac": 0.0001242585904105504,
+      "n_blocks": 78697,
+      "n_cluster_cell_splits": 3725
+    },
+    "concat@0.40": {
+      "frozen_feature_frac": 7.455515424633023e-05,
+      "n_blocks": 102782,
+      "n_cluster_cell_splits": 4929
+    },
+    "size_exchange@0.30": {
+      "frozen_feature_frac": 0.5926803406342158,
+      "n_blocks": 48261,
+      "n_cluster_cell_splits": 1616
+    },
+    "size_exchange@0.35": {
+      "frozen_feature_frac": 0.3295172139567249,
+      "n_blocks": 78697,
+      "n_cluster_cell_splits": 3725
+    },
+    "size_exchange@0.40": {
+      "frozen_feature_frac": 0.12589880380396964,
+      "n_blocks": 102782,
+      "n_cluster_cell_splits": 4929
+    }
+  },
+  "cont_draws_config": 150,
+  "controls": [
+    "Fires on BOTH context and answer side",
+    "Mean activation (over all answers)",
+    "Speaker: identity / disposition",
+    "Logit footprint: suppressing",
+    "Logit footprint: promoting"
+  ],
+  "n_cells": 59,
+  "n_draws_config": 1000,
+  "observed": {
+    "Content type: topic": 0.3741093306936152
+  },
+  "observed_reproduction_max_diff": 0.0,
+  "round": 5
+}

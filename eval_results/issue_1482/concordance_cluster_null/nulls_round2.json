@@ -1,0 +1,135 @@
+{
+  "bands": {
+    "Speaker: identity / disposition": {
+      "concat@0.30": {
+        "band_p97_5_abs_dev": 0.017416288803260037,
+        "clears": true,
+        "margin_over_band": 9.822521196933256,
+        "n_draws": 1000,
+        "null_c_p2_5": 0.48576256297756887,
+        "null_c_p97_5": 0.5158779757533349,
+        "null_c_sd": 0.007655439425808315,
+        "perm_p_two_sided": 0.000999000999000999
+      },
+      "concat@0.35": {
+        "band_p97_5_abs_dev": 0.017717955993234863,
+        "clears": true,
+        "margin_over_band": 9.655282246284635,
+        "n_draws": 1000,
+        "null_c_p2_5": 0.48464640415659177,
+        "null_c_p97_5": 0.5149487074729849,
+        "null_c_sd": 0.007896703944647953,
+        "perm_p_two_sided": 0.000999000999000999
+      },
+      "concat@0.40": {
+        "band_p97_5_abs_dev": 0.017378617086749874,
+        "clears": true,
+        "margin_over_band": 9.843813526012077,
+        "n_draws": 1000,
+        "null_c_p2_5": 0.4840360930033378,
+        "null_c_p97_5": 0.5144244246298999,
+        "null_c_sd": 0.007808122407490722,
+        "perm_p_two_sided": 0.000999000999000999
+      },
+      "feature": {
+        "band_p97_5_abs_dev": 0.01759492866234249,
+        "clears": true,
+        "margin_over_band": 9.722793949603743,
+        "n_draws": 1000,
+        "null_c_p2_5": 0.48488679658594397,
+        "null_c_p97_5": 0.515582970057543,
+        "null_c_sd": 0.007877336115892681,
+        "perm_p_two_sided": 0.000999000999000999
+      },
+      "singleton": {
+        "band_p97_5_abs_dev": 0.017590397371484122,
+        "clears": true,
+        "margin_over_band": 9.725298543809958,
+        "n_draws": 1000,
+        "null_c_p2_5": 0.48488524201156447,
+        "null_c_p97_5": 0.5164020403841403,
+        "null_c_sd": 0.007920774243150295,
+        "perm_p_two_sided": 0.000999000999000999
+      },
+      "size_exchange@0.30": {
+        "band_p97_5_abs_dev": 0.018038141128746812,
+        "clears": true,
+        "margin_over_band": 9.483896634409918,
+        "n_draws": 1000,
+        "null_c_p2_5": 0.48766572093966243,
+        "null_c_p97_5": 0.5170664742024327,
+        "null_c_sd": 0.007718407716458608,
+        "perm_p_two_sided": 0.000999000999000999
+      },
+      "size_exchange@0.35": {
+        "band_p97_5_abs_dev": 0.01800506240449827,
+        "clears": true,
+        "margin_over_band": 9.501320356390073,
+        "n_draws": 1000,
+        "null_c_p2_5": 0.4870548552262353,
+        "null_c_p97_5": 0.5173665732738174,
+        "null_c_sd": 0.007699660396600392,
+        "perm_p_two_sided": 0.000999000999000999
+      },
+      "size_exchange@0.40": {
+        "band_p97_5_abs_dev": 0.02113338675571259,
+        "clears": true,
+        "margin_over_band": 8.09486278367997,
+        "n_draws": 1000,
+        "null_c_p2_5": 0.491041950994759,
+        "null_c_p97_5": 0.5211333867557126,
+        "null_c_sd": 0.007707080527462663,
+        "perm_p_two_sided": 0.000999000999000999
+      }
+    }
+  },
+  "bins": 10,
+  "cell_sizes": {
+    "median": 12061,
+    "n_below_min_cell": 4
+  },
+  "cluster_block_diagnostics": {
+    "concat@0.30": {
+      "frozen_feature_frac": 8.283906027370025e-06,
+      "n_blocks": 48149,
+      "n_cluster_cell_splits": 1504
+    },
+    "concat@0.35": {
+      "frozen_feature_frac": 8.283906027370025e-06,
+      "n_blocks": 78478,
+      "n_cluster_cell_splits": 3506
+    },
+    "concat@0.40": {
+      "frozen_feature_frac": 8.283906027370025e-06,
+      "n_blocks": 102308,
+      "n_cluster_cell_splits": 4455
+    },
+    "size_exchange@0.30": {
+      "frozen_feature_frac": 0.5925063786076411,
+      "n_blocks": 48149,
+      "n_cluster_cell_splits": 1504
+    },
+    "size_exchange@0.35": {
+      "frozen_feature_frac": 0.3294012392723417,
+      "n_blocks": 78478,
+      "n_cluster_cell_splits": 3506
+    },
+    "size_exchange@0.40": {
+      "frozen_feature_frac": 0.12569999005931276,
+      "n_blocks": 102308,
+      "n_cluster_cell_splits": 4455
+    }
+  },
+  "cont_draws_config": 150,
+  "controls": [
+    "Fires on BOTH context and answer side",
+    "Mean activation (over all answers)"
+  ],
+  "n_cells": 15,
+  "n_draws_config": 1000,
+  "observed": {
+    "Speaker: identity / disposition": 0.671071865941933
+  },
+  "observed_reproduction_max_diff": 0.0,
+  "round": 2
+}

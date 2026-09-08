@@ -1,0 +1,73 @@
+{
+  "census": {
+    "0.30": {
+      "frac_features_in_nonsingleton": 0.6293946121475198,
+      "largest_cluster": 71484,
+      "n_clusters": 46645,
+      "n_edges": 228896,
+      "n_features": 120716,
+      "n_features_in_nonsingleton": 75978,
+      "n_singletons": 44738
+    },
+    "0.35": {
+      "frac_features_in_nonsingleton": 0.40985453461015936,
+      "largest_cluster": 39710,
+      "n_clusters": 74972,
+      "n_edges": 80881,
+      "n_features": 120716,
+      "n_features_in_nonsingleton": 49476,
+      "n_singletons": 71240
+    },
+    "0.40": {
+      "frac_features_in_nonsingleton": 0.22629974485569435,
+      "largest_cluster": 15017,
+      "n_clusters": 97853,
+      "n_edges": 29650,
+      "n_features": 120716,
+      "n_features_in_nonsingleton": 27318,
+      "n_singletons": 93398
+    }
+  },
+  "decoder_sanity": {
+    "max_excess": 2.384185791015625e-07,
+    "n_violations": 0,
+    "tolerance": 0.005
+  },
+  "meta": {
+    "git_argv0_path": "scripts/issue1482_cluster_null_concordance.py",
+    "git_argv0_state": "untracked",
+    "git_commit": "e3fa69225412911bc5bab90e340eb13216709eba",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "scripts/issue1482_cluster_null_concordance.py",
+      ".claude/agent-memory/experiment-implementer-lean/MEMORY.md",
+      ".claude/agent-memory/experimenter/feedback_pod_sparse_clone_committed_inputs.md",
+      "CLAUDE.md",
+      "eval_results/issue_2546/necessity_r2/summary.json",
+      "figures/issue_1902/section43/c1_posttraining_dynamics.pdf",
+      "figures/issue_1902/section43/c1_posttraining_dynamics.png",
+      "figures/issue_1902/section43/c1_posttraining_dynamics_data.json",
+      "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+      "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+      "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+      "scripts/codex_daemon_reaper.py",
+      "scripts/cron_watch_issue_1739.sh",
+      "scripts/cron_watch_issue_2091.sh",
+      "scripts/install_gcp_audit_cron.sh",
+      "scripts/issue1482_matryoshka_tier.py",
+      "src/explore_persona_space/experiments/issue_779/fit_h.py",
+      "tasks/awaiting_promotion/2564/plans/plan.md",
+      "tests/test_codex_daemon_reaper.py"
+    ],
+    "numpy": "2.2.6",
+    "timestamp_utc": "2026-09-08T20:16:14.494396+00:00"
+  },
+  "min_tau_emitted": 0.3,
+  "n_edges_at_min_tau": 228896,
+  "rowmax_quantiles": {
+    "0.5": 0.32925671339035034,
+    "0.9": 0.45789529383182526,
+    "0.99": 0.6004335880279541,
+    "1.0": 0.8621928095817566
+  }
+}
