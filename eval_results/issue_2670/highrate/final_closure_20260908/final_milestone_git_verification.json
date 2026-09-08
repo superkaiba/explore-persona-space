@@ -1,0 +1,317 @@
+{
+  "passed": true,
+  "verified_utc": "2026-09-08T13:21:35.782694+00:00",
+  "commit": "51b1619255e2e73c5587c922c08c64f7fe5891cc",
+  "remote_branch": "codex/context-risk-recovery-20260906",
+  "actual_remote_sha": "51b1619255e2e73c5587c922c08c64f7fe5891cc",
+  "exact_committed_file_count": 64,
+  "source_original_count": 61,
+  "manifest_sha256": "db047648df9df83881eadbc9146cae0ce22260ad9f13d0dc5ad377b77cee5a1e",
+  "files": [
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/analysis/result.json",
+      "size": 1705938,
+      "sha256": "a7df0f877f8f45f4814757b16152c7d0c5b2897f3bdf34adad5664266cce2421"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/final_upload_receipt.json",
+      "size": 540295,
+      "sha256": "4218cda497b1715f68d38c65f37f915cb66db0b225710872a941335a0aa2a4df"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/final_readback_receipt.json",
+      "size": 511572,
+      "sha256": "9f577c41f56cc2607121e3349c6f0401a390871e4242f84ddaf2bb90fdad6593"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/report/comparison_data.json",
+      "size": 60955,
+      "sha256": "0e966bde6e92b4a645fc02cbec6cf26ddfa3e991e72bb7942f4fdc1d8e68ecb7"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/report/independent_result_audit.json",
+      "size": 670393,
+      "sha256": "5dda33f75e51dd10599a29b67b86cb00e9c44262963928007972610b022e796a"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/report/independent_result_audit.md",
+      "size": 2035,
+      "sha256": "c994b9571513e40563ac702e4e4c198b135a3150836a108ec69d34b3b74a68b4"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/report/audit_results.py",
+      "size": 26179,
+      "sha256": "83f86dcbd90c1a0700726313d2694480d946d099e8b35953cf42ac6581830636"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/report/summary.md",
+      "size": 3394,
+      "sha256": "51558d87d112bce19739a1908827438437a9b468211de5a02ac900f0939ac191"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/report/summary_inputs.json",
+      "size": 292,
+      "sha256": "50a68efd33126576c4fc36391aab8dc93024a8eaa2729eb06892faf3f73b1cc4"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/report/summary_review.json",
+      "size": 3757,
+      "sha256": "4256119a3b030b3f029248ca0b1f94218db84668c327a3434ee717c7a0366449"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/report/summary_review.md",
+      "size": 738,
+      "sha256": "2d3b7bf80222479efd7765e3f9cf24f3cacde1fc185748c96e991de419365e2f"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/report/figure_delivery_review.json",
+      "size": 5884,
+      "sha256": "6b9167b27411baf2f08f323a17e5ee79a9219653731656f00654734acb67d0d8"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/report/plot_results.py",
+      "size": 12309,
+      "sha256": "023ae67b896c9c4f23216e9b79d94cbde3985ef84f82395d60b71da9f9bdb4c6"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_archive_20260908T125035Z.log.txt",
+      "size": 651303,
+      "sha256": "547524e13471a52aef0815669feac0233310d2fa46c27a0253cd66ed50024d53"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_archive_20260908T125035Z_exit.json",
+      "size": 1082,
+      "sha256": "dd72e3a924f6d3ef24d76b1acf94811ab5f7950823757d34cc4a5c335c58ae21"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_archive_20260908T125035Z_owner_launch.json",
+      "size": 2949,
+      "sha256": "c67daa75340fe980bb0dd75b70509fe6244d1f91c7510df1a81b2461666346aa"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_archive_20260908T125035Z_owner_protection.json",
+      "size": 262,
+      "sha256": "bd7ae43ef1d38a088b3d44f76532c7d0c2516d51370468cd8915a02a6026a631"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_snapshot_build_20260908T1249Z.json",
+      "size": 921501,
+      "sha256": "bde2d8d1fdecae462f8371ed3b5633b8d9e1d4bd77423ae9f4a640243d9906f0"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_snapshot_build_20260908T1249Z.references.json",
+      "size": 496771,
+      "sha256": "c9791a614bf17b59ce3c8befbabe2ecf45be68620234643a28612251a48d469c"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_snapshot_source_byte_review_20260908T1259Z.json",
+      "size": 1201626,
+      "sha256": "f68874af60bfd555d7ad29be01af27e4040c5b4de04b4e2a5f8fe4d4835fa994"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_snapshot_source_byte_review_20260908T1259Z.log.txt",
+      "size": 263,
+      "sha256": "e9fcffac131ce97853faa575530f3612c21e3f8ed6dce751f8d8a87d338f3c30"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_snapshot_reference_byte_audit_critic.py",
+      "size": 11215,
+      "sha256": "39b3b7cc59c81628c3d311492f334206aedddac57082a50cc4a40c744c71c0ad"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_wandb_sync_failure.json",
+      "size": 473,
+      "sha256": "eaae266d6b1777a074abe795181834359565bf87fc1746c4804ed937899b11fc"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_wandb_sync.log.txt",
+      "size": 2744,
+      "sha256": "547488944ce809e36fa72f80845b0b46f3afada90e96453b7b02ce530f451067"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/sync_final_wandb_metrics.py",
+      "size": 2527,
+      "sha256": "67ffee1e0c6253f1913bb4deba89a5f58e51e7f14613d62cf6c50bb471f58aa9"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/highrate_clean_result_completed_scientific_review_e6fd7af2.json",
+      "size": 8513,
+      "sha256": "c4a22cb1ddeca1faa1129653391438246bad12418f938e43ca4b454fe5858206"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/highrate_clean_result_completed_scientific_review_e6fd7af2.md",
+      "size": 1051,
+      "sha256": "29091164314641071babad6048996b0d0e70f614dfc97d2e2261711fd5569852"
+    },
+    {
+      "git_path": "figures/issue_2670/highrate/forecast_model_losses.png",
+      "size": 464174,
+      "sha256": "8a8ca4c5ece67020151dce0f796062e7c7355692de313c85af6ca1d76adaf891"
+    },
+    {
+      "git_path": "figures/issue_2670/highrate/forecast_model_losses.pdf",
+      "size": 17442,
+      "sha256": "e56f6c570c316018eefea5160d99ea21824f95a6f4af824f98854a9dd625445e"
+    },
+    {
+      "git_path": "figures/issue_2670/highrate/forecast_model_losses.meta.json",
+      "size": 43953,
+      "sha256": "410d7a3e0e9d687720f9e79e0000773fafb1c0a4a5c920c5c73848b4ce1773fc"
+    },
+    {
+      "git_path": "figures/issue_2670/highrate/forecast_model_losses_grayscale.png",
+      "size": 201325,
+      "sha256": "855d69016d49a405b56f08f2d1933543a3a63ea2b81e604e76b56af6bafd547e"
+    },
+    {
+      "git_path": "figures/issue_2670/highrate/forecast_comparisons.png",
+      "size": 261286,
+      "sha256": "1f26c65926e83bd76bea10cd8464ba2be798d102a8d4f9833567afe4063f98af"
+    },
+    {
+      "git_path": "figures/issue_2670/highrate/forecast_comparisons.pdf",
+      "size": 13810,
+      "sha256": "98513bc66c6b2db0e9acfb5fe396700c6e5f3564a380a0b1ca2bfb4ab980436e"
+    },
+    {
+      "git_path": "figures/issue_2670/highrate/forecast_comparisons.meta.json",
+      "size": 8061,
+      "sha256": "c75352faad5dab268683c8f741ab1c134f630b4e433d11444731d104a02e383f"
+    },
+    {
+      "git_path": "figures/issue_2670/highrate/forecast_comparisons_grayscale.png",
+      "size": 114856,
+      "sha256": "d35010b0b8499d9fc38f3178b30cbae4dadec5ff873a8f4246cb685d676062ed"
+    },
+    {
+      "git_path": "figures/issue_2670/highrate/forecast_per_task.png",
+      "size": 226722,
+      "sha256": "76632a83c02f65d7968ea2156c4126162604d43ff8d660fdd01adfe09c47432b"
+    },
+    {
+      "git_path": "figures/issue_2670/highrate/forecast_per_task.pdf",
+      "size": 13869,
+      "sha256": "4fdf91afd0c0133d11c4b6575e21b65a5c80a19ae3a70b4a46188e1a3349e455"
+    },
+    {
+      "git_path": "figures/issue_2670/highrate/forecast_per_task.meta.json",
+      "size": 7404,
+      "sha256": "1a2b3bb7aed540c84e9e25e81c53c09522a31dd92fce6c0f54c2060bb61d3b7d"
+    },
+    {
+      "git_path": "figures/issue_2670/highrate/forecast_per_task_grayscale.png",
+      "size": 98057,
+      "sha256": "86912dd883a431ec3ab578acf95b76b1862fb09afa844c6449d6018e9eba8936"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_readback_reference_audit_critic.py",
+      "size": 15565,
+      "sha256": "c3cbc5acd6ed38d8c26233090952841d48449d8530f10907fbf6b7b5f716f473"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_readback_reference_audit_critic_20260908.log.txt",
+      "size": 752,
+      "sha256": "8c13b0a1c4d5a0f4a90549a30e39ca732a7d5231209e992b663ee31ed2e46bf6"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_pinned_api_tree_review_20260908T130855Z.json",
+      "size": 794943,
+      "sha256": "0a955bc6399ed843fc19772f2a848ed9e8bab2be35da5cc8e14ca0d82f8ddb3e"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_pinned_readback_reference_review_20260908T130855Z.json",
+      "size": 14184,
+      "sha256": "8ae038d80de34f7a6a0a645caa207d5987b7a4d64aefce0e58beb88d81f915f9"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_readback_critic_execution_20260908T1309Z.json",
+      "size": 2974,
+      "sha256": "142e3ea05dc9a18127b86dc75d1b38a4a270cdc8c967dc75cf08641dc781dc95"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/highrate_clean_result_completed_v3.md",
+      "size": 48800,
+      "sha256": "d9d1bff2ffb12a77b0cdd5b4397872aa5a0ba5c48a6263cc72e8690ecc682038"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/highrate_clean_result_completed_v3_scientific_review.json",
+      "size": 10006,
+      "sha256": "af0f6d522c16540e4b263dc020ea3cce6a47fa6bc388aa2066ed68bf60c348f2"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/highrate_clean_result_completed_v3_scientific_review.md",
+      "size": 817,
+      "sha256": "64731d8033c9373e9d48dbf8e266099371c9b8db080cd284ffc4f7d0b0d2ee45"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/highrate_clean_result_completed_v3_checks.json",
+      "size": 1713,
+      "sha256": "6ddd350541345ad6cb8d22b93606b41717f7907a0a6f31a7f33a97e4c4cea57c"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/highrate_completed_v3_verify.log.txt",
+      "size": 8893,
+      "sha256": "5dfb23aee40fe5e98da63d32e2e9b3a2e5d6a54833aa0b2910c6ef2f3f47edbd"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/highrate_completed_v3_discipline.log.txt",
+      "size": 47,
+      "sha256": "dc8055c6e0ac6cf2ce6489ce5ce765ef05cbb648810fe8defb4f54e6666fc498"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/highrate_clean_result_final.md",
+      "size": 49052,
+      "sha256": "79087d29c79abb125a61b3b026d0d2bda967149697a3fd089f50222816e36b33"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/highrate_clean_result_final_pointer_review.json",
+      "size": 3365,
+      "sha256": "3de39c1d4e8abb27d9ee29bc46150169b2635137d4c730b43f485865edebf223"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/highrate_clean_result_final_pointer_review.md",
+      "size": 661,
+      "sha256": "1d3b88a53d02d7c1f8053087d54afda5c2beb0cdf43282b92ef3934103f97828"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/highrate_final_verify.log.txt",
+      "size": 8848,
+      "sha256": "69eeaad7bba79548ebcc57c53bfe6036ae7d5ae43b2d226a2143410530dac93a"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_canonical_body_verify.log.txt",
+      "size": 9090,
+      "sha256": "8bfe29420954e0ea2ea54c8c15d794c7fd13af486a10d5fb4ff0b316542ca08c"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_methodology_export.json",
+      "size": 444,
+      "sha256": "309b6914d5321ca58d72d5320055f287c17f2aec3cb339e258daa99c31338e17"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_methodology_gist.log.txt",
+      "size": 136,
+      "sha256": "948e7d71af3297914ceee321f3b9e3c34f7e522aec4b5ec2ff66e70c7b8ae41c"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_task_body_landing.json",
+      "size": 300,
+      "sha256": "debab4bba126a27ebf8cfb62641ff94c17075fac31874aec2b2bf314935369e2"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_task_set_body.log.txt",
+      "size": 3,
+      "sha256": "dc51b8c96c2d745df3bd5590d990230a482fd247123599548e0632fdbf97fc22"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/final_task_set_title.log.txt",
+      "size": 3,
+      "sha256": "dc51b8c96c2d745df3bd5590d990230a482fd247123599548e0632fdbf97fc22"
+    },
+    {
+      "git_path": "eval_results/issue_2670/highrate/final_milestone_20260908/setup/highrate_final_methodology_gist_api_response.json",
+      "size": 38528,
+      "sha256": "365b3eb05c7b58744afe5be420f050b932cc9502dd7d207f19d143348e242ba4"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "scope": "Sanctioned separate-worktree merge-form root-sync recovery; only conflict is two append-only AI-use-log blocks, both retained verbatim.",
+  "parents": [
+    "aa8e22cc3582ce865840c4ce814c7f2151a03fe8",
+    "a6b7cf0412186675300746a7d96017037c5751a9"
+  ],
+  "resolved_path": "docs/paper_context_answer_map/ai_use_log.md",
+  "resolved_sha256": "3348e78556e5dbcc150632f923dc068da510188db3003b90c4a20b4a57c9949c",
+  "all_parent_lines_preserved": true
+}

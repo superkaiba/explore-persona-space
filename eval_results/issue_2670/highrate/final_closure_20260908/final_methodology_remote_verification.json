@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "methodology_commit": "29706f1498b277a8c62857992e92cde76cf5239e",
+  "path": "docs/methodology/issue_2670.md",
+  "methodology_sha256": "b4f85115f7c27090885de437bd71c8f833f1435b1250c9468660b3b0f63da6b9",
+  "actual_github_api_content_verified": true,
+  "methodology_and_body_commits_in_origin_main": true,
+  "body_commit": "53159090c26654c0b6b714d032d768aefcefe3a6",
+  "remote_main_at_verification": "e6fb3fca7f1961243044bd270ab0a2e6843f18c2"
+}

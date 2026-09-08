@@ -1,0 +1,16 @@
+[INFO] Checking merge-conflict files only.
+gitleaks (merge-scoped secret scan).............................................................................Passed
+check yaml..................................................................................(no files to check)Skipped
+check for merge conflicts.......................................................................................Passed
+detect private key..............................................................................................Passed
+Validate .claude/workflow.yaml schema + cross-references....................................(no files to check)Skipped
+Verify every AskUserQuestion is anchored to a documented gate...............................(no files to check)Skipped
+Verify every /skill-name reference resolves to a live skill or allowlist....................(no files to check)Skipped
+Forbid silenced WandB in experiment training-config builders................................(no files to check)Skipped
+Forbid reserved [phase=done] emissions in dispatcher-invoked phase scripts..................(no files to check)Skipped
+workflow_lint: no '|| true' on upload/result-persist lines (#841)...........................(no files to check)Skipped
+workflow_lint: agent-spec size ratchet — WARN >28KB, FAIL >40KB / grandfather cap (#1618)...(no files to check)Skipped
+workflow_lint: agent-memory index size — WARN >20KB, FAIL >24KB (#1891).....................(no files to check)Skipped
+Refuse secrets in committed .mcp.json.......................................................(no files to check)Skipped
+Refuse secret-shaped strings in any staged file.................................................................Passed
+[detached HEAD e6fb3fca7f1] merge: preserve both AI-use-log append histories for root sync

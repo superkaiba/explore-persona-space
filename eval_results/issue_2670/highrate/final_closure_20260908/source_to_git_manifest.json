@@ -1,0 +1,41 @@
+{
+  "scope": "Post-push verification of exact final milestone and remote methodology; sanctioned root-sync recovery and final completion report.",
+  "files": [
+    {
+      "source": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_milestone_git_verification.json",
+      "git_path": "eval_results/issue_2670/highrate/final_closure_20260908/final_milestone_git_verification.json",
+      "size": 14467,
+      "sha256": "d69abf54c8c1eaeb10d04929b393c97b84c9dd94b57ea866a1b773c65550372a"
+    },
+    {
+      "source": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_methodology_remote_verification.json",
+      "git_path": "eval_results/issue_2670/highrate/final_closure_20260908/final_methodology_remote_verification.json",
+      "size": 464,
+      "sha256": "90096b80d2507459b040797bcf9ff6c7b9d7010bc7c7e393a70adfb7c6a0945e"
+    },
+    {
+      "source": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_root_sync_resolution.json",
+      "git_path": "eval_results/issue_2670/highrate/final_closure_20260908/final_root_sync_resolution.json",
+      "size": 479,
+      "sha256": "8dbd4275a6696c8c07878dd0113558764d3b1f266315ee17a755371cda605947"
+    },
+    {
+      "source": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_root_sync_merge_commit.log",
+      "git_path": "eval_results/issue_2670/highrate/final_closure_20260908/final_root_sync_merge_commit.log.txt",
+      "size": 1804,
+      "sha256": "e11b615a13ccd2ca4d76a1437a5f206a55df90089397ea9c424e2d05e95b2f44"
+    },
+    {
+      "source": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_methodology_root_sync_completed.log",
+      "git_path": "eval_results/issue_2670/highrate/final_closure_20260908/final_methodology_root_sync_completed.log.txt",
+      "size": 5032,
+      "sha256": "8cd01b35934cd855ed494413f2cbf645834dd89a3540260f4f51bf7a515c8ec7"
+    },
+    {
+      "source": "/home/thomasjiralerspong/explore-persona-space/eval_results/context_risk/impossible_highrate/setup/final_completion_report.md",
+      "git_path": "eval_results/issue_2670/highrate/final_closure_20260908/final_completion_report.md",
+      "size": 3137,
+      "sha256": "c82e22719abc4d2a5270b51653d34ac69b50ef6a25e04d90d7ca237bdad93497"
+    }
+  ]
+}
