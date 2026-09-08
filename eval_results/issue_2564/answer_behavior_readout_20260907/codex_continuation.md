@@ -123,3 +123,10 @@ The recovery coordinator is `/root/answer_behavior_resume`. New judges 149 and
 150 have completed and their 512 new ratings pass exact-ID and schema checks.
 The live ledger remains the source of subsequent dispatch status. No main
 aggregate or actual-label readout was complete at this recovery note.
+
+The [two original interrupted attempts](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/a014a41ecb887d561437d26e4723acfc55f30542/issue2564_minpair/answer_behavior_readout_20260907/raw_completions/codex_interrupted_attempts_20260908) are remotely archived: all
+14 files and 259,535 bytes match the exact path and content-hash manifest. This
+archive preserves 256 partial ratings and contributes zero completed ratings.
+The adapter review and source-event records are included. Whole-packet retry
+147 has subsequently completed with 256 valid records; retry 148 is running.
+A fresh main import now contains 150 completed packets (38,400 ratings).
