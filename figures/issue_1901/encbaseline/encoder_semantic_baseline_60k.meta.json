@@ -1,0 +1,35 @@
+{
+  "figure": "encoder_semantic_baseline_60k",
+  "issue": 1901,
+  "round": "encbaseline",
+  "sources": {
+    "bge": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1901/encbaseline/results2_bge.json",
+    "e5": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1901/encbaseline/results2_e5.json"
+  },
+  "panels": {
+    "A": [
+      "arm1_lm",
+      "arm4_pca_lm",
+      "arm2_enc_lm"
+    ],
+    "B": [
+      "arm1_lm",
+      "arm4_pca_lm",
+      "arm2_enc_lm",
+      "arm3_enc_enc",
+      "arm6_cos0"
+    ],
+    "C": [
+      "arm5_resid"
+    ]
+  },
+  "comparability_note": "Panel A holds only arms predicting v_A so their R^2 share a denominator. arm3 predicts the encoder-space answer embedding and arm5 a residual, so neither R^2 is on A's axis; top-1 at a matched pool size is comparable across spaces, which is why arm3 and arm6 appear on B.",
+  "git_commit": "2a0c108ac226e58b512f8f194a397ac91aa78fbc",
+  "git_dirty": true,
+  "phase": "encbaseline-figure",
+  "git_dirty_paths": [
+    "tasks/awaiting_promotion/2564/events.jsonl"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue1901_encbaseline_figure.py"
+}

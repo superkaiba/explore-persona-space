@@ -1,0 +1,502 @@
+{
+  "issue": 1901,
+  "round": "encbaseline",
+  "embedder": "bge",
+  "embedder_model": "BAAI/bge-large-en-v1.5",
+  "layer": 19,
+  "lm_model": "Qwen/Qwen2.5-7B-Instruct",
+  "context_string": "full Qwen chat template, add_generation_prompt=True",
+  "target": "single-draw v_A (mean over answer tokens), n1m pool",
+  "split": {
+    "n_pool": 60000,
+    "n_test": 1000,
+    "n_val": 400,
+    "n_train_pool": 58600,
+    "seed": 42
+  },
+  "lambda_selection": "val-based (never GCV; GCV degenerates at n_train ~= H)",
+  "solver": "primal (d,d) normal equations",
+  "solver_gate": {
+    "verdict": "PASS",
+    "r2_dual": 0.998326657460307,
+    "r2_primal": 0.9983266575481305,
+    "abs_delta_r2": 8.782352622915823e-11,
+    "lambda_dual": 0.01,
+    "lambda_primal": 0.01,
+    "tol": 0.0001
+  },
+  "retrieval": {
+    "metric": "whitened cosine + two-sided CSLS",
+    "csls_k": 10,
+    "whiten_lambda": 0.1,
+    "rank": "strict top-1; ties fail"
+  },
+  "external_anchors": {
+    "note": "different row set \u2014 context only, never a gate (see module docstring)",
+    "n50k_exact_ridge_r2": 0.8076,
+    "n1m_csls_acc1_test1000": 0.848
+  },
+  "per_rung": [
+    {
+      "n_train": 5000,
+      "arms": {
+        "arm1_lm": {
+          "label": "v_C -> v_A",
+          "d_in": 3584,
+          "d_out": 3584,
+          "n_train": 5000,
+          "lambda": 3162.2776601683795,
+          "r2": 0.6369116043087919,
+          "r2_english_only": 0.6394940069293482,
+          "n_english_test": 922,
+          "top1": {
+            "acc_at_1": 0.945,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.9308696369473392,
+              "hi": 0.9591303630526608
+            }
+          },
+          "wall_s": 3.4
+        },
+        "arm2_enc_lm": {
+          "label": "e(x) -> v_A",
+          "d_in": 1024,
+          "d_out": 3584,
+          "n_train": 5000,
+          "lambda": 1000.0,
+          "r2": 0.3482278006124597,
+          "r2_english_only": 0.35837877374366933,
+          "n_english_test": 922,
+          "top1": {
+            "acc_at_1": 0.783,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.757451416916001,
+              "hi": 0.808548583083999
+            }
+          },
+          "wall_s": 1.3
+        },
+        "arm3_enc_enc": {
+          "label": "e(x) -> e(y)",
+          "d_in": 1024,
+          "d_out": 1024,
+          "n_train": 5000,
+          "lambda": 1000.0,
+          "r2": 0.4344174330134778,
+          "r2_english_only": 0.44576659663779594,
+          "n_english_test": 922,
+          "top1": {
+            "acc_at_1": 0.884,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.864152253770264,
+              "hi": 0.9038477462297361
+            }
+          },
+          "wall_s": 0.7
+        },
+        "arm4_pca_lm": {
+          "label": "PCA_1024(v_C) -> v_A",
+          "d_in": 1024,
+          "d_out": 3584,
+          "n_train": 5000,
+          "lambda": 316.2277660168379,
+          "r2": 0.6026074995958342,
+          "r2_english_only": 0.6056140413867395,
+          "n_english_test": 922,
+          "top1": {
+            "acc_at_1": 0.947,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.9331142610711565,
+              "hi": 0.9608857389288434
+            }
+          },
+          "wall_s": 1.5
+        },
+        "arm5_resid": {
+          "label": "v_C -> (v_A - Mhat_enc e(x)), Mhat_enc frozen on train",
+          "d_in": 3584,
+          "d_out": 3584,
+          "n_train": 5000,
+          "lambda": 3162.2776601683795,
+          "lambda_frozen_encoder_map": 1000.0,
+          "r2": 0.3093407978299648,
+          "top1": null,
+          "note": "retrieval omitted: a residual target has no meaningful pool"
+        },
+        "arm6_cos0": {
+          "label": "no fit: cos(e(x), e(y))",
+          "r2": null,
+          "top1": {
+            "acc_at_1": 0.82,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.7961878148839716,
+              "hi": 0.8438121851160283
+            }
+          },
+          "note": "zero-parameter semantic-similarity floor"
+        }
+      }
+    },
+    {
+      "n_train": 10000,
+      "arms": {
+        "arm1_lm": {
+          "label": "v_C -> v_A",
+          "d_in": 3584,
+          "d_out": 3584,
+          "n_train": 10000,
+          "lambda": 3162.2776601683795,
+          "r2": 0.6600585911486267,
+          "r2_english_only": 0.6623686117552875,
+          "n_english_test": 922,
+          "top1": {
+            "acc_at_1": 0.959,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.9467098466079548,
+              "hi": 0.9712901533920452
+            }
+          },
+          "wall_s": 2.9
+        },
+        "arm2_enc_lm": {
+          "label": "e(x) -> v_A",
+          "d_in": 1024,
+          "d_out": 3584,
+          "n_train": 10000,
+          "lambda": 316.2277660168379,
+          "r2": 0.3727180729694295,
+          "r2_english_only": 0.3825793923635915,
+          "n_english_test": 922,
+          "top1": {
+            "acc_at_1": 0.816,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.7919834808850241,
+              "hi": 0.8400165191149758
+            }
+          },
+          "wall_s": 1.4
+        },
+        "arm3_enc_enc": {
+          "label": "e(x) -> e(y)",
+          "d_in": 1024,
+          "d_out": 1024,
+          "n_train": 10000,
+          "lambda": 316.2277660168379,
+          "r2": 0.4549027847883822,
+          "r2_english_only": 0.46675510456775915,
+          "n_english_test": 922,
+          "top1": {
+            "acc_at_1": 0.892,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.8727624227720848,
+              "hi": 0.9112375772279152
+            }
+          },
+          "wall_s": 0.6
+        },
+        "arm4_pca_lm": {
+          "label": "PCA_1024(v_C) -> v_A",
+          "d_in": 1024,
+          "d_out": 3584,
+          "n_train": 10000,
+          "lambda": 316.2277660168379,
+          "r2": 0.645684696093187,
+          "r2_english_only": 0.6485318941080339,
+          "n_english_test": 922,
+          "top1": {
+            "acc_at_1": 0.958,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.9455673567733969,
+              "hi": 0.970432643226603
+            }
+          },
+          "wall_s": 1.4
+        },
+        "arm5_resid": {
+          "label": "v_C -> (v_A - Mhat_enc e(x)), Mhat_enc frozen on train",
+          "d_in": 3584,
+          "d_out": 3584,
+          "n_train": 10000,
+          "lambda": 3162.2776601683795,
+          "lambda_frozen_encoder_map": 316.2277660168379,
+          "r2": 0.31526052146920946,
+          "top1": null,
+          "note": "retrieval omitted: a residual target has no meaningful pool"
+        },
+        "arm6_cos0": {
+          "label": "no fit: cos(e(x), e(y))",
+          "r2": null,
+          "top1": {
+            "acc_at_1": 0.815,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.7909330674991597,
+              "hi": 0.8390669325008402
+            }
+          },
+          "note": "zero-parameter semantic-similarity floor"
+        }
+      }
+    },
+    {
+      "n_train": 25000,
+      "arms": {
+        "arm1_lm": {
+          "label": "v_C -> v_A",
+          "d_in": 3584,
+          "d_out": 3584,
+          "n_train": 25000,
+          "lambda": 3162.2776601683795,
+          "r2": 0.6817062125476308,
+          "r2_english_only": 0.683860534657108,
+          "n_english_test": 922,
+          "top1": {
+            "acc_at_1": 0.963,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.9513004252384969,
+              "hi": 0.974699574761503
+            }
+          },
+          "wall_s": 3.9
+        },
+        "arm2_enc_lm": {
+          "label": "e(x) -> v_A",
+          "d_in": 1024,
+          "d_out": 3584,
+          "n_train": 25000,
+          "lambda": 100.0,
+          "r2": 0.3980096324335559,
+          "r2_english_only": 0.408856450399383,
+          "n_english_test": 922,
+          "top1": {
+            "acc_at_1": 0.862,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.840622877424686,
+              "hi": 0.883377122575314
+            }
+          },
+          "wall_s": 1.7
+        },
+        "arm3_enc_enc": {
+          "label": "e(x) -> e(y)",
+          "d_in": 1024,
+          "d_out": 1024,
+          "n_train": 25000,
+          "lambda": 316.2277660168379,
+          "r2": 0.475011112353352,
+          "r2_english_only": 0.48714985624401697,
+          "n_english_test": 922,
+          "top1": {
+            "acc_at_1": 0.895,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.8759996221090212,
+              "hi": 0.9140003778909789
+            }
+          },
+          "wall_s": 0.8
+        },
+        "arm4_pca_lm": {
+          "label": "PCA_1024(v_C) -> v_A",
+          "d_in": 1024,
+          "d_out": 3584,
+          "n_train": 25000,
+          "lambda": 316.2277660168379,
+          "r2": 0.6690708698962977,
+          "r2_english_only": 0.6713471826507844,
+          "n_english_test": 922,
+          "top1": {
+            "acc_at_1": 0.967,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.9559279948699434,
+              "hi": 0.9780720051300565
+            }
+          },
+          "wall_s": 1.7
+        },
+        "arm5_resid": {
+          "label": "v_C -> (v_A - Mhat_enc e(x)), Mhat_enc frozen on train",
+          "d_in": 3584,
+          "d_out": 3584,
+          "n_train": 25000,
+          "lambda": 3162.2776601683795,
+          "lambda_frozen_encoder_map": 100.0,
+          "r2": 0.3366214109252369,
+          "top1": null,
+          "note": "retrieval omitted: a residual target has no meaningful pool"
+        },
+        "arm6_cos0": {
+          "label": "no fit: cos(e(x), e(y))",
+          "r2": null,
+          "top1": {
+            "acc_at_1": 0.816,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.7919834808850241,
+              "hi": 0.8400165191149758
+            }
+          },
+          "note": "zero-parameter semantic-similarity floor"
+        }
+      }
+    },
+    {
+      "n_train": 50000,
+      "arms": {
+        "arm1_lm": {
+          "label": "v_C -> v_A",
+          "d_in": 3584,
+          "d_out": 3584,
+          "n_train": 50000,
+          "lambda": 3162.2776601683795,
+          "r2": 0.6930603118613433,
+          "r2_english_only": 0.6951656207496779,
+          "n_english_test": 922,
+          "top1": {
+            "acc_at_1": 0.968,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.9570914069834832,
+              "hi": 0.9789085930165168
+            }
+          },
+          "wall_s": 5.5
+        },
+        "arm2_enc_lm": {
+          "label": "e(x) -> v_A",
+          "d_in": 1024,
+          "d_out": 3584,
+          "n_train": 50000,
+          "lambda": 100.0,
+          "r2": 0.4084771511428962,
+          "r2_english_only": 0.4196381448563957,
+          "n_english_test": 922,
+          "top1": {
+            "acc_at_1": 0.886,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.8663018537318864,
+              "hi": 0.9056981462681136
+            }
+          },
+          "wall_s": 2.2
+        },
+        "arm3_enc_enc": {
+          "label": "e(x) -> e(y)",
+          "d_in": 1024,
+          "d_out": 1024,
+          "n_train": 50000,
+          "lambda": 100.0,
+          "r2": 0.4822780230061545,
+          "r2_english_only": 0.4946281760567637,
+          "n_english_test": 922,
+          "top1": {
+            "acc_at_1": 0.897,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.8781604335081723,
+              "hi": 0.9158395664918277
+            }
+          },
+          "wall_s": 1.3
+        },
+        "arm4_pca_lm": {
+          "label": "PCA_1024(v_C) -> v_A",
+          "d_in": 1024,
+          "d_out": 3584,
+          "n_train": 50000,
+          "lambda": 316.2277660168379,
+          "r2": 0.6767952669550525,
+          "r2_english_only": 0.6790441724453589,
+          "n_english_test": 922,
+          "top1": {
+            "acc_at_1": 0.969,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.9582576621538884,
+              "hi": 0.9797423378461115
+            }
+          },
+          "wall_s": 2.2
+        },
+        "arm5_resid": {
+          "label": "v_C -> (v_A - Mhat_enc e(x)), Mhat_enc frozen on train",
+          "d_in": 3584,
+          "d_out": 3584,
+          "n_train": 50000,
+          "lambda": 3162.2776601683795,
+          "lambda_frozen_encoder_map": 100.0,
+          "r2": 0.3572287862911704,
+          "top1": null,
+          "note": "retrieval omitted: a residual target has no meaningful pool"
+        },
+        "arm6_cos0": {
+          "label": "no fit: cos(e(x), e(y))",
+          "r2": null,
+          "top1": {
+            "acc_at_1": 0.816,
+            "n_query": 1000,
+            "n_pool": 1000,
+            "chance_at_1": 0.001,
+            "ci95": {
+              "lo": 0.7919834808850241,
+              "hi": 0.8400165191149758
+            }
+          },
+          "note": "zero-parameter semantic-similarity floor"
+        }
+      }
+    }
+  ],
+  "timestamp_utc": "2026-09-08T22:07:44Z"
+}
