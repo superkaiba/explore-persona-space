@@ -1,6 +1,6 @@
 ---
-title: Ten-submission prompting still yielded too few reward hacks for prediction
-  (MODERATE confidence)
+title: Initial activation probes and the frozen map did not improve reward-hacking
+  forecasts (MODERATE confidence)
 kind: experiment
 tags:
 - context-risk
