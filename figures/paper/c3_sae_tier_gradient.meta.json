@@ -5,15 +5,15 @@
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
   "reproduction_command": "uv run python scripts/make_paper_section42_figures.py",
   "title": "SAE feature properties and context-to-answer predictability",
-  "subject": "Conditional feature-property associations and activity-adjusted nested-tier gradient",
+  "subject": "Conditional feature-property associations and activity-adjusted nested-tier gradient, decoder-direction target",
   "git": {
-    "commit": "6ee6686957519ea9b25b6d51a17987ae524dfe24",
+    "commit": "6cb4a95fb9e8a0d45061a7ddc8c2065a10840a44",
     "tracked_worktree_dirty": true
   },
   "sources": [
     {
-      "path": "eval_results/issue_1482/plot4_redesign/plot4_redesign.json",
-      "sha256": "68b7fb7ba66a46a676ea95509cc232b7d3cf5abd9027679da009d06964677c39"
+      "path": "eval_results/issue_1482/plot4_redesign/plot4_decoder_direction.json",
+      "sha256": "c4df324cafca42d3e350a9117c4e29c7e7ba894f1ae70cf0e13c2041fea6ba74"
     }
   ],
   "render": {
@@ -42,16 +42,16 @@
     "text": [
       "A  \u00b7  FORWARD-SELECTED ASSOCIATIONS",
       "Concordance with feature $R^2$, above chance",
-      "-0.2",
       "-0.1",
       "0",
       "+0.1",
       "+0.2",
       "+0.3",
-      "mean activation (all answers)",
+      "variance along decoder direction",
       "speaker identity / disposition",
-      "suppresses specific output tokens",
+      "fires on both context and answer",
       "promotes specific output tokens",
+      "suppresses specific output tokens",
       "topic content",
       "Feature-property concordance",
       "B  \u00b7  MEDIAN AND INTERQUARTILE RANGE",
@@ -64,49 +64,58 @@
       "0.0",
       "0.1",
       "0.2",
-      "0.3",
       "Median feature $R^2$ by tier"
     ]
   },
   "displayed_data": {
     "properties": [
       {
+        "round": 0,
+        "banked_name": "Variance explained in answer space",
+        "label": "variance along decoder direction",
+        "value": 0.3155785921425568,
+        "winner_c": 0.8155785921425568,
+        "pair_frac": 1.0,
+        "n": 120716,
+        "kind": "forward-selected association"
+      },
+      {
         "round": 1,
-        "banked_name": "Mean activation (over all answers)",
-        "label": "mean activation (all answers)",
-        "value": 0.2661972479370571,
-        "winner_c": 0.7661972479370571,
-        "pair_frac": 0.9871277936851175,
+        "banked_name": "Speaker: identity / disposition",
+        "label": "speaker identity / disposition",
+        "value": 0.12263806407038147,
+        "winner_c": 0.6226380640703815,
+        "pair_frac": 0.09999254458751086,
         "n": 120716,
         "kind": "forward-selected association"
       },
       {
         "round": 2,
-        "banked_name": "Speaker: identity / disposition",
-        "label": "speaker identity / disposition",
-        "value": 0.17107186594193302,
-        "winner_c": 0.671071865941933,
-        "pair_frac": 0.09876585068958214,
+        "banked_name": "Fires on BOTH context and answer side",
+        "label": "fires on both context and answer",
+        "value": -0.10485353182290713,
+        "winner_c": 0.39514646817709287,
+        "pair_frac": 0.09774147034335497,
         "n": 120716,
         "kind": "forward-selected association"
       },
       {
         "round": 3,
-        "banked_name": "Logit footprint: suppressing",
-        "label": "suppresses specific output tokens",
-        "value": -0.1493617828275734,
-        "winner_c": 0.3506382171724266,
-        "pair_frac": 0.09648586172585996,
+        "banked_name": "Logit footprint: promoting",
+        "label": "promotes specific output tokens",
+        "value": -0.10271599991879943,
+        "winner_c": 0.3972840000812006,
+        "pair_frac": 0.09646453980336522,
         "n": 120716,
         "kind": "forward-selected association"
       },
       {
         "round": 4,
-        "banked_name": "Logit footprint: promoting",
-        "label": "promotes specific output tokens",
-        "value": -0.14207498893788661,
-        "winner_c": 0.3579250110621134,
-        "pair_frac": 0.08880219607594306,
+        "banked_name": "Logit footprint: suppressing",
+        "label": "suppresses specific output tokens",
+        "value": -0.09732297882700791,
+        "winner_c": 0.4026770211729921,
+        "pair_frac": 0.08439624026461934,
         "n": 120716,
         "kind": "forward-selected association"
       },
@@ -114,52 +123,44 @@
         "round": 5,
         "banked_name": "Content type: topic",
         "label": "topic content",
-        "value": -0.12589066930638482,
-        "winner_c": 0.3741093306936152,
-        "pair_frac": 0.07836012730936535,
+        "value": -0.08619040751756751,
+        "winner_c": 0.4138095924824325,
+        "pair_frac": 0.07742357757174156,
         "n": 120716,
         "kind": "forward-selected association"
       }
     ],
-    "hidden_control": {
-      "round": 0,
-      "banked_name": "Fires on BOTH context and answer side",
-      "label": "fires on both context and answer",
-      "value": 0.2683011355307653,
-      "winner_c": 0.7683011355307653,
-      "pair_frac": 1.0,
-      "n": 120716
-    },
+    "dv": "held-out R^2 of the decoder-direction projection d_f^T h_A (dense; no encoder, no BatchTopK gate) under the layer-19 ridge metamodel; common universe of 120,716 features",
     "tiers": [
       {
         "label": "Coarsest",
         "n": 1640,
-        "median": 0.17906373076983012,
-        "q25": 0.021958926884441565,
-        "q75": 0.32677025125472187
+        "median": 0.08730913357462167,
+        "q25": 0.009203504436971072,
+        "q75": 0.15510692623686032
       },
       {
         "label": "Middle",
         "n": 6144,
-        "median": 0.007088361443248925,
-        "q25": -0.12227805324412447,
-        "q75": 0.15909002294675598
+        "median": -0.004954083401144449,
+        "q25": -0.0668778033862433,
+        "q75": 0.051549395981851376
       },
       {
         "label": "Finest",
         "n": 8600,
-        "median": -0.028429851717612975,
-        "q25": -0.15076274741214615,
-        "q75": 0.10526968159756908
+        "median": -0.00655977896971327,
+        "q25": -0.06005431928527624,
+        "q75": 0.04562929368650828
       }
     ],
-    "spearman_raw": -0.394923907649798,
-    "spearman_adjusted": -0.19583848304828771,
+    "spearman_raw": -0.08734946435301166,
+    "spearman_adjusted": -0.1464223937629563,
     "centering": "per-feature R^2 minus the median R^2 of its activity quintile"
   },
   "output_sha256": {
-    "pdf": "96a144a7cd22c142cba27efe1331d3e10dd340cd151214801d777e602544c23d",
-    "png": "246c1cca3f42874590f53074a2243d33e60a73253d8c0ec1ae4d023044004ffe",
-    "grayscale": "31dcce46282c23d90dcc4ff917ef11f0ff8baec323844a3cace76ddbbac21783"
+    "pdf": "eeb785182096c34201f16c11fb88a32897264aef79e955463f55c3ae20cfc447",
+    "png": "9d3af12d6863d46cf23195eaa36cccdacadf3d6bb8e979b63759c76ffb841c17",
+    "grayscale": "050f392f40b76423c735e2b9e427f2aae650fea34cf7f4bedc43e4240189a56f"
   }
 }

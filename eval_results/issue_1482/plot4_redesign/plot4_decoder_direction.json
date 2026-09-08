@@ -1,0 +1,215 @@
+{
+  "left_panel": {
+    "source": "figures/issue_1482/concordance_decoder_direction_common/writeup_stepwise.meta.json",
+    "statistic": "winner concordance c - 1/2 per forward-selection round; each round conditions (coarsened exact matching) on all previously selected properties",
+    "dv": "held-out R^2 of the decoder-direction projection d_f^T h_A (dense; no encoder, no BatchTopK gate) under the layer-19 ridge metamodel; common universe of 120,716 features",
+    "rows": [
+      {
+        "round": 0,
+        "banked_name": "Variance explained in answer space",
+        "label": "variance along decoder direction",
+        "value": 0.3155785921425568,
+        "winner_c": 0.8155785921425568,
+        "pair_frac": 1.0,
+        "n": 120716
+      },
+      {
+        "round": 1,
+        "banked_name": "Speaker: identity / disposition",
+        "label": "speaker identity / disposition",
+        "value": 0.12263806407038147,
+        "winner_c": 0.6226380640703815,
+        "pair_frac": 0.09999254458751086,
+        "n": 120716
+      },
+      {
+        "round": 2,
+        "banked_name": "Fires on BOTH context and answer side",
+        "label": "fires on both context and answer",
+        "value": -0.10485353182290713,
+        "winner_c": 0.39514646817709287,
+        "pair_frac": 0.09774147034335497,
+        "n": 120716
+      },
+      {
+        "round": 3,
+        "banked_name": "Logit footprint: promoting",
+        "label": "promotes specific output tokens",
+        "value": -0.10271599991879943,
+        "winner_c": 0.3972840000812006,
+        "pair_frac": 0.09646453980336522,
+        "n": 120716
+      },
+      {
+        "round": 4,
+        "banked_name": "Logit footprint: suppressing",
+        "label": "suppresses specific output tokens",
+        "value": -0.09732297882700791,
+        "winner_c": 0.4026770211729921,
+        "pair_frac": 0.08439624026461934,
+        "n": 120716
+      },
+      {
+        "round": 5,
+        "banked_name": "Content type: topic",
+        "label": "topic content",
+        "value": -0.08619040751756751,
+        "winner_c": 0.4138095924824325,
+        "pair_frac": 0.07742357757174156,
+        "n": 120716
+      },
+      {
+        "round": 6,
+        "banked_name": "Write norm, gamma-scaled (OUTPUTNESS)",
+        "label": "write norm after the final layer-norm gain",
+        "value": -0.06008041772667222,
+        "winner_c": 0.4399195822733278,
+        "pair_frac": 0.055981208462703075,
+        "n": 120716
+      },
+      {
+        "round": 7,
+        "banked_name": "Judged role: output-promoting  [k=0.31]",
+        "label": "output-promoting role (noisy label)",
+        "value": -0.043765808293311836,
+        "winner_c": 0.45623419170668816,
+        "pair_frac": 0.04681083699522834,
+        "n": 120716
+      },
+      {
+        "round": 8,
+        "banked_name": "Speaker: register / style",
+        "label": "speaker register / style",
+        "value": 0.06559746782958542,
+        "winner_c": 0.5655974678295854,
+        "pair_frac": 0.15492232139148893,
+        "n": 120716
+      },
+      {
+        "round": 9,
+        "banked_name": "Content type: task format",
+        "label": "task-format content",
+        "value": 0.041981132041361446,
+        "winner_c": 0.5419811320413614,
+        "pair_frac": 0.13397873064597954,
+        "n": 120716
+      },
+      {
+        "round": 10,
+        "banked_name": "Content type: entity",
+        "label": "entity content",
+        "value": -0.03845920934813207,
+        "winner_c": 0.4615407906518679,
+        "pair_frac": 0.13018263487782503,
+        "n": 120716
+      },
+      {
+        "round": 11,
+        "banked_name": "Speaker: language of the text",
+        "label": "language of the text",
+        "value": 0.03374589439944431,
+        "winner_c": 0.5337458943994443,
+        "pair_frac": 0.11661119374140294,
+        "n": 120716
+      },
+      {
+        "round": 12,
+        "banked_name": "Within-answer consistency",
+        "label": "within-answer consistency",
+        "value": 0.029925093216575105,
+        "winner_c": 0.5299250932165751,
+        "pair_frac": 0.10526736729939806,
+        "n": 120716
+      },
+      {
+        "round": 13,
+        "banked_name": "Scaffold-token activation fraction",
+        "label": "decoder mass on leading context-prefix directions",
+        "value": 0.030267021908636615,
+        "winner_c": 0.5302670219086366,
+        "pair_frac": 0.05968416064066573,
+        "n": 120716
+      }
+    ],
+    "rendered_labels": [
+      "variance along decoder direction",
+      "speaker identity / disposition",
+      "fires on both context and answer",
+      "promotes specific output tokens",
+      "suppresses specific output tokens",
+      "topic content"
+    ],
+    "truncation": "left panel rendered down to and including 'topic content' (6 of 14 selection rounds; user directive 2026-08-24)"
+  },
+  "right_panel": {
+    "source": "eval_results/issue_1482/decoder_direction/r2_decoder_direction_lmsys.npz",
+    "activity_source": "eval_results/issue_1482/matryoshka_tier/perfeature_m_lmsys_default.npz",
+    "dv": "decoder-direction",
+    "banked_reference": {
+      "h1_partial_spearman_tier_r2_given_logact": -0.19226476642585733,
+      "h1_perm_band_2p5_97p5": [
+        0.046046310883477076,
+        0.07074604936592857
+      ],
+      "h1_observed_pooled_spearman": -0.08734946435301166,
+      "source": "eval_results/issue_1482/decoder_direction/matryoshka_decoder_direction_lmsys.json"
+    },
+    "n_features_finite": 16384,
+    "n_strata": 5,
+    "strata": "activity quintiles (quantile edges over the finite-R^2 panel)",
+    "centering": "per-feature R^2 minus the median R^2 of its activity quintile",
+    "spearman_tier_r2_raw": -0.08734946435301166,
+    "spearman_tier_r2_activity_centered": -0.1464223937629563,
+    "per_tier": {
+      "0": {
+        "n": 1640,
+        "median_raw": 0.7270518827730943,
+        "median_adjusted": 0.08730913357462167,
+        "q25_adjusted": 0.009203504436971072,
+        "q75_adjusted": 0.15510692623686032
+      },
+      "1": {
+        "n": 6144,
+        "median_raw": 0.640041233566278,
+        "median_adjusted": -0.004954083401144449,
+        "q25_adjusted": -0.0668778033862433,
+        "q75_adjusted": 0.051549395981851376
+      },
+      "2": {
+        "n": 8600,
+        "median_raw": 0.6493490416432169,
+        "median_adjusted": -0.00655977896971327,
+        "q25_adjusted": -0.06005431928527624,
+        "q75_adjusted": 0.04562929368650828
+      }
+    }
+  },
+  "dropped": "answer-side activity quintile panel (user directive 2026-08-24)",
+  "metadata": {
+    "git_commit": "02e1db71bda5a8f16f3b7d0940a828a22bd631d1",
+    "git_dirty": true,
+    "phase": "plot4-redesign",
+    "git_dirty_paths": [
+      ".claude/agent-memory/experiment-implementer-lean/MEMORY.md",
+      ".claude/agent-memory/experimenter/feedback_pod_sparse_clone_committed_inputs.md",
+      "CLAUDE.md",
+      "eval_results/issue_2546/necessity_r2/summary.json",
+      "figures/issue_1902/section43/c1_posttraining_dynamics.pdf",
+      "figures/issue_1902/section43/c1_posttraining_dynamics.png",
+      "figures/issue_1902/section43/c1_posttraining_dynamics_data.json",
+      "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+      "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+      "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+      "scripts/codex_daemon_reaper.py",
+      "scripts/cron_watch_issue_1739.sh",
+      "scripts/cron_watch_issue_2091.sh",
+      "scripts/install_gcp_audit_cron.sh",
+      "scripts/issue1482_plot4_redesign.py",
+      "scripts/issue1901_encbaseline_figure.py",
+      "tasks/awaiting_promotion/2564/plans/plan.md",
+      "tests/test_codex_daemon_reaper.py"
+    ],
+    "git_argv0_state": "modified",
+    "git_argv0_path": "scripts/issue1482_plot4_redesign.py"
+  }
+}

@@ -30,6 +30,7 @@ Usage:
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -66,6 +67,28 @@ TIER_TESTS = PROJECT_ROOT / "eval_results/issue_1482/matryoshka_tier/tier_tests.
 OUT_EVAL = PROJECT_ROOT / "eval_results/issue_1482/plot4_redesign/plot4_redesign.json"
 N_STRATA = 5  # activity quintiles: the banked h1 test's conditioning strata
 
+# --dv decoder-direction: the same two panels on the dense per-direction target
+# d_f^T h_A (the projection of the answer state onto feature f's unit decoder
+# column), which the paper reports as its primary SAE analysis from 2026-09-08.
+# The stepwise meta is the common-universe run (120,716 features), the tier R^2
+# is the fresh layer-20 capture, and the review render goes under
+# figures/issue_1482/ so it never clobbers the canonical figures/paper/ stem.
+DECODER_STEPWISE_META = (
+    PROJECT_ROOT
+    / "figures/issue_1482/concordance_decoder_direction_common/writeup_stepwise.meta.json"
+)
+DECODER_R2_NPZ = (
+    PROJECT_ROOT / "eval_results/issue_1482/decoder_direction/r2_decoder_direction_lmsys.npz"
+)
+DECODER_TIER_TESTS = (
+    PROJECT_ROOT
+    / "eval_results/issue_1482/decoder_direction/matryoshka_decoder_direction_lmsys.json"
+)
+DECODER_OUT_EVAL = (
+    PROJECT_ROOT / "eval_results/issue_1482/plot4_redesign/plot4_decoder_direction.json"
+)
+DECODER_REVIEW_DIR = "figures/issue_1482/plot4_decoder_direction/"
+
 # Plain-English canvas labels for the banked stepwise winner names, keyed on the
 # EXACT banked strings so a re-run of the stepwise with renamed axes fails loud
 # here instead of shipping a mislabeled bar. "Logit footprint: suppressing /
@@ -82,10 +105,18 @@ WINNER_LABELS: dict[str, str] = {
     "Judged role: output-promoting  [k=0.31]": "output-promoting role (noisy label)",
     "Side ratio (answer-side firing fraction)": "answer-side firing share",
     "Content type: task format": "task-format content",
-    "Variance explained in answer space": "variance explained in answer space",
+    "Variance explained in answer space": "variance along decoder direction",
     "Content type: syntax": "syntax content",
     "SAE encoder norm (read strength)": "encoder norm (read strength)",
     "Mean activation (when active)": "mean activation (when active)",
+    # decoder-direction stepwise winners (rounds 6 to 13) absent from the
+    # activation-target series
+    "Write norm, gamma-scaled (OUTPUTNESS)": "write norm after the final layer-norm gain",
+    "Speaker: register / style": "speaker register / style",
+    "Content type: entity": "entity content",
+    "Speaker: language of the text": "language of the text",
+    "Within-answer consistency": "within-answer consistency",
+    "Scaffold-token activation fraction": "decoder mass on leading context-prefix directions",
 }
 
 # The left panel stops after this row (user directive 2026-08-24): the rounds
@@ -107,11 +138,11 @@ def truncate_left_panel(rows: list[dict]) -> list[dict]:
     return rows[: labels.index(LEFT_PANEL_LAST_LABEL) + 1]
 
 
-def load_stepwise() -> list[dict]:
+def load_stepwise(meta_path: Path = STEPWISE_META) -> list[dict]:
     """Banked stepwise rounds -> [{label, value, round}] in selection order.
 
     value = winner_c - 0.5 (signed concordance distance from the null)."""
-    doc = json.loads(STEPWISE_META.read_text())
+    doc = json.loads(meta_path.read_text())
     rows = []
     for rnd in doc["rounds"]:
         name = rnd["winner"]
@@ -139,13 +170,33 @@ def _strata_of(activity: np.ndarray, n_bins: int) -> np.ndarray:
     return np.searchsorted(edges, activity, side="right")
 
 
-def tier_gradient_activity_controlled() -> dict:
+def decoder_panel_r2() -> np.ndarray:
+    """Decoder-direction R^2 of the 16,384-feature Matryoshka panel, aligned to
+    PERFEATURE_NPZ's feature order (asserted, never assumed)."""
+    zd = np.load(DECODER_R2_NPZ)
+    zp = np.load(PERFEATURE_NPZ)
+    panel_ids = np.asarray(zd["panel_ids"], np.int64)
+    assert np.array_equal(panel_ids, np.asarray(zp["feat_ids"], np.int64)), "panel drift"
+    assert np.array_equal(
+        np.asarray(zd["tier"], np.int64)[panel_ids], np.asarray(zp["tier"], np.int64)
+    ), "tier drift"
+    r2 = np.asarray(zd["r2"], np.float64)[panel_ids]
+    assert r2.shape == (len(panel_ids),), r2.shape
+    return r2
+
+
+def tier_gradient_activity_controlled(r2_override: np.ndarray | None = None) -> dict:
     """Per-tier median + IQR of R^2 centered within activity quintiles.
 
     Returns raw AND adjusted per-tier summaries plus a pooled adjusted Spearman,
-    so the committed JSON carries the before/after-control comparison."""
+    so the committed JSON carries the before/after-control comparison.
+    ``r2_override`` swaps in another per-feature R^2 (same panel order); the
+    activity strata and tier labels always come from PERFEATURE_NPZ."""
     z = np.load(PERFEATURE_NPZ)
     r2_all = np.asarray(z["r2"], np.float64)
+    if r2_override is not None:
+        assert r2_override.shape == r2_all.shape, (r2_override.shape, r2_all.shape)
+        r2_all = np.asarray(r2_override, np.float64)
     ok = np.isfinite(r2_all)
     r2 = r2_all[ok]
     tier = np.asarray(z["tier"], np.int64)[ok]
@@ -180,7 +231,13 @@ def tier_gradient_activity_controlled() -> dict:
     return out
 
 
-def render(rows: list[dict], tier_doc: dict) -> None:
+def render(
+    rows: list[dict],
+    tier_doc: dict,
+    *,
+    stem: str = "c3_sae_tier_gradient",
+    out_dir: str = "figures/paper/",
+) -> None:
     """Two-panel figure: ranked property list (left), controlled tier gradient (right)."""
     set_paper_style("iclr")
     fig = plt.figure(figsize=figsize_iclr_panels(2, height_in=2.7))
@@ -214,26 +271,71 @@ def render(rows: list[dict], tier_doc: dict) -> None:
     ax_r.set_title("tier gradient, controlling for activity", fontsize=7)
     ax_r.tick_params(labelsize=6)
 
-    savefig_paper(fig, "c3_sae_tier_gradient", dir="figures/paper/")
+    savefig_paper(fig, stem, dir=out_dir)
     plt.close(fig)
-    print("[plot4] wrote figures/paper/c3_sae_tier_gradient.{png,pdf,meta.json}", flush=True)
+    print(f"[plot4] wrote {out_dir}{stem}.{{png,pdf,meta.json}}", flush=True)
 
 
 def main() -> int:
     """Load banked inputs, compute the controlled gradient, write JSON + figure."""
-    rows_all = load_stepwise()
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument(
+        "--dv",
+        choices=("activation", "decoder-direction"),
+        default="activation",
+        help="dependent variable: the published feature-activation target (default) or "
+        "the dense decoder-direction projection the paper reports from 2026-09-08",
+    )
+    args = ap.parse_args()
+    decoder = args.dv == "decoder-direction"
+    meta_path = DECODER_STEPWISE_META if decoder else STEPWISE_META
+    out_eval = DECODER_OUT_EVAL if decoder else OUT_EVAL
+    rows_all = load_stepwise(meta_path)
     rows = truncate_left_panel(rows_all)
-    tier_doc = tier_gradient_activity_controlled()
-    banked_tests = json.loads(TIER_TESTS.read_text())
-    OUT_EVAL.parent.mkdir(parents=True, exist_ok=True)
+    if decoder:
+        tier_doc = tier_gradient_activity_controlled(decoder_panel_r2())
+        tier_src = DECODER_R2_NPZ
+        dec_tests = json.loads(DECODER_TIER_TESTS.read_text())["panel"]
+        banked_reference = {
+            "h1_partial_spearman_tier_r2_given_logact": dec_tests[
+                "partial_spearman_tier_r2_given_logact"
+            ],
+            "h1_perm_band_2p5_97p5": dec_tests["within_stratum_permutation"]["perm_band_2p5_97p5"],
+            "h1_observed_pooled_spearman": dec_tests["within_stratum_permutation"][
+                "observed_pooled_spearman"
+            ],
+            "source": str(DECODER_TIER_TESTS.relative_to(PROJECT_ROOT)),
+        }
+        dv_doc = (
+            "held-out R^2 of the decoder-direction projection d_f^T h_A (dense; no encoder, "
+            "no BatchTopK gate) under the layer-19 ridge metamodel; common universe of "
+            "120,716 features"
+        )
+    else:
+        tier_doc = tier_gradient_activity_controlled()
+        tier_src = PERFEATURE_NPZ
+        banked_tests = json.loads(TIER_TESTS.read_text())
+        banked_reference = {
+            "h1_partial_spearman_tier_r2_given_logact": banked_tests["h1_tier_within_stratum"][
+                "partial_spearman_tier_r2_given_logact"
+            ],
+            "h1_perm_band_2p5_97p5": banked_tests["h1_tier_within_stratum"]["perm_band_2p5_97p5"],
+            "h1_observed_pooled_spearman": banked_tests["h1_tier_within_stratum"][
+                "observed_pooled_spearman"
+            ],
+        }
+        dv_doc = (
+            "dense-context->SAE-feature ridge per-feature held-out R^2 "
+            "(regular full-width layer-19 SAE; banked in the stepwise sidecar)"
+        )
+    out_eval.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "left_panel": {
-            "source": str(STEPWISE_META.relative_to(PROJECT_ROOT)),
+            "source": str(meta_path.relative_to(PROJECT_ROOT)),
             "statistic": "winner concordance c - 1/2 per forward-selection round; each "
             "round conditions (coarsened exact matching) on all previously selected "
             "properties",
-            "dv": "dense-context->SAE-feature ridge per-feature held-out R^2 "
-            "(regular full-width layer-19 SAE; banked in the stepwise sidecar)",
+            "dv": dv_doc,
             # Every selected round stays in the record; the figure renders only
             # the prefix down to LEFT_PANEL_LAST_LABEL, so the cut is auditable
             # rather than invisible in the artifact.
@@ -245,26 +347,21 @@ def main() -> int:
             ),
         },
         "right_panel": {
-            "source": str(PERFEATURE_NPZ.relative_to(PROJECT_ROOT)),
-            "banked_reference": {
-                "h1_partial_spearman_tier_r2_given_logact": banked_tests["h1_tier_within_stratum"][
-                    "partial_spearman_tier_r2_given_logact"
-                ],
-                "h1_perm_band_2p5_97p5": banked_tests["h1_tier_within_stratum"][
-                    "perm_band_2p5_97p5"
-                ],
-                "h1_observed_pooled_spearman": banked_tests["h1_tier_within_stratum"][
-                    "observed_pooled_spearman"
-                ],
-            },
+            "source": str(tier_src.relative_to(PROJECT_ROOT)),
+            "activity_source": str(PERFEATURE_NPZ.relative_to(PROJECT_ROOT)),
+            "dv": args.dv,
+            "banked_reference": banked_reference,
             **tier_doc,
         },
         "dropped": "answer-side activity quintile panel (user directive 2026-08-24)",
         "metadata": as_metadata_dict(git_provenance(), phase="plot4-redesign"),
     }
-    OUT_EVAL.write_text(json.dumps(payload, indent=2) + "\n")
-    print(f"[plot4] wrote {OUT_EVAL.relative_to(PROJECT_ROOT)}", flush=True)
-    render(rows, tier_doc)
+    out_eval.write_text(json.dumps(payload, indent=2) + "\n")
+    print(f"[plot4] wrote {out_eval.relative_to(PROJECT_ROOT)}", flush=True)
+    if decoder:
+        render(rows, tier_doc, stem="c3_sae_tier_gradient_review", out_dir=DECODER_REVIEW_DIR)
+    else:
+        render(rows, tier_doc)
     rendered = {r["label"] for r in rows}
     for r in rows_all:
         mark = "     " if r["label"] in rendered else " CUT "

@@ -55,7 +55,9 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
 
 
 DEFAULT_OUT = ROOT / "figures/paper"
-SAE_SOURCE = ROOT / "eval_results/issue_1482/plot4_redesign/plot4_redesign.json"
+# Decoder-direction DV (the paper's primary SAE analysis from 2026-09-08); the
+# activation-target twin is plot4_redesign.json in the same directory.
+SAE_SOURCE = ROOT / "eval_results/issue_1482/plot4_redesign/plot4_decoder_direction.json"
 MINPAIR_SOURCE = ROOT / "eval_results/issue_2564/minpair_delta.json"
 PERSONA_SOURCE = ROOT / "eval_results/issue_2564/floor-failed-reelicitation/minpair_delta_ffr.json"
 ONEWORD_SOURCE = ROOT / "eval_results/issue_2564/lang_oneword_pilot/summary.json"
@@ -172,12 +174,11 @@ def _save(
 def _sae_data() -> dict:
     source = json.loads(SAE_SOURCE.read_text())
     all_rows = source["left_panel"]["rows"]
-    hidden_control = all_rows[0]
-    assert hidden_control["banked_name"] == "Fires on BOTH context and answer side"
-    rows = all_rows[1:6]
-    assert [hidden_control["label"], *[row["label"] for row in rows]] == source["left_panel"][
-        "rendered_labels"
-    ]
+    rendered = source["left_panel"]["rendered_labels"]
+    rows = all_rows[: len(rendered)]
+    assert [row["label"] for row in rows] == rendered, "rendered prefix drifted"
+    assert rows[0]["banked_name"] == "Variance explained in answer space", rows[0]["banked_name"]
+    assert rows[-1]["banked_name"] == "Content type: topic", rows[-1]["banked_name"]
 
     rows = [{**row, "kind": "forward-selected association"} for row in rows]
     tiers = []
@@ -194,7 +195,7 @@ def _sae_data() -> dict:
         )
     return {
         "properties": rows,
-        "hidden_control": hidden_control,
+        "dv": source["left_panel"]["dv"],
         "tiers": tiers,
         "spearman_raw": float(source["right_panel"]["spearman_tier_r2_raw"]),
         "spearman_adjusted": float(source["right_panel"]["spearman_tier_r2_activity_centered"]),
@@ -218,8 +219,8 @@ def make_sae_figure(data: dict) -> tuple[plt.Figure, float]:
             bar.set_hatch("////")
     ax_left.axvline(0, color=INK, lw=1.2)
     ax_left.set_yticks(y, [row["label"] for row in props])
-    ax_left.set_xlim(-0.29, 0.31)
-    ax_left.set_xticks(np.arange(-0.2, 0.31, 0.1))
+    ax_left.set_xlim(-0.17, 0.37)
+    ax_left.set_xticks(np.arange(-0.1, 0.31, 0.1))
     ax_left.xaxis.set_major_formatter(FuncFormatter(lambda x, _p: f"{x:+.1f}" if x else "0"))
     ax_left.set_xlabel("Concordance with feature $R^2$, above chance")
     style_axis(ax_left, grid_axis="x")
@@ -255,8 +256,8 @@ def make_sae_figure(data: dict) -> tuple[plt.Figure, float]:
     ax_right.axhline(0, color=INK, lw=1.2)
     ax_right.set_xticks(x, [row["label"] for row in tiers])
     ax_right.set_xlim(-0.45, 2.45)
-    ax_right.set_ylim(-0.19, 0.37)
-    ax_right.set_yticks(np.arange(-0.1, 0.31, 0.1))
+    ax_right.set_ylim(-0.12, 0.22)
+    ax_right.set_yticks(np.arange(-0.1, 0.21, 0.1))
     ax_right.set_ylabel("Activity-adjusted feature $R^2$")
     ax_right.set_xlabel("Nested SAE tier")
     style_axis(ax_right, grid_axis="y")
@@ -776,7 +777,10 @@ def main() -> None:
             args.out_dir,
             "c3_sae_tier_gradient",
             title="SAE feature properties and context-to-answer predictability",
-            subject="Conditional feature-property associations and activity-adjusted nested-tier gradient",
+            subject=(
+                "Conditional feature-property associations and activity-adjusted "
+                "nested-tier gradient, decoder-direction target"
+            ),
             include_frac=sae_frac,
             sources=[SAE_SOURCE],
             displayed_data=sae,

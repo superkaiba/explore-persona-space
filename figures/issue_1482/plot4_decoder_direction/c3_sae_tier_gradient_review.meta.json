@@ -1,0 +1,144 @@
+{
+  "commit": "02e1db71+dirty",
+  "render_id": "62c8382fb509439c",
+  "git_commit": "02e1db71bda5a8f16f3b7d0940a828a22bd631d1",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/experiment-implementer-lean/MEMORY.md",
+    ".claude/agent-memory/experimenter/feedback_pod_sparse_clone_committed_inputs.md",
+    "CLAUDE.md",
+    "eval_results/issue_2546/necessity_r2/summary.json",
+    "figures/issue_1902/section43/c1_posttraining_dynamics.pdf",
+    "figures/issue_1902/section43/c1_posttraining_dynamics.png",
+    "figures/issue_1902/section43/c1_posttraining_dynamics_data.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+    "scripts/codex_daemon_reaper.py",
+    "scripts/cron_watch_issue_1739.sh",
+    "scripts/cron_watch_issue_2091.sh",
+    "scripts/install_gcp_audit_cron.sh",
+    "scripts/issue1482_plot4_redesign.py",
+    "scripts/issue1901_encbaseline_figure.py",
+    "tasks/awaiting_promotion/2564/plans/plan.md",
+    "tests/test_codex_daemon_reaper.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue1482_plot4_redesign.py",
+  "created": "2026-09-08T23:39:23Z",
+  "figsize": [
+    5.5,
+    2.7
+  ],
+  "points": [
+    {
+      "concordance with per-feature $R^2$ $-$ 1/2": 0.157789,
+      "y": 0.3155785921425568,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "concordance with per-feature $R^2$ $-$ 1/2": 0.061319,
+      "y": 0.12263806407038147,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "concordance with per-feature $R^2$ $-$ 1/2": -0.052427,
+      "y": -0.10485353182290713,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "concordance with per-feature $R^2$ $-$ 1/2": -0.051358,
+      "y": -0.10271599991879943,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "concordance with per-feature $R^2$ $-$ 1/2": -0.048661,
+      "y": -0.09732297882700791,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "concordance with per-feature $R^2$ $-$ 1/2": -0.043095,
+      "y": -0.08619040751756751,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "matryoshka tier (coarsest to finest)": 0.0,
+      "per-feature $R^2$, centered within\nactivity quintiles": 0.08730913357462167,
+      "error": 0.07295171089994462,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "matryoshka tier (coarsest to finest)": 1.0,
+      "per-feature $R^2$, centered within\nactivity quintiles": -0.004954083401144449,
+      "error": 0.05921359968404734,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "matryoshka tier (coarsest to finest)": 2.0,
+      "per-feature $R^2$, centered within\nactivity quintiles": -0.00655977896971327,
+      "error": 0.05284180648589226,
+      "_kind": "errorbar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 9,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "feature properties, ranked\n(each bar controls for those above)",
+        "xlabel": "concordance with per-feature $R^2$ $-$ 1/2",
+        "xticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ],
+        "yticklabels": [
+          "variance along decoder direction",
+          "speaker identity / disposition",
+          "fires on both context and answer",
+          "promotes specific output tokens",
+          "suppresses specific output tokens",
+          "topic content"
+        ]
+      },
+      {
+        "title": "tier gradient, controlling for activity",
+        "xlabel": "matryoshka tier (coarsest to finest)",
+        "ylabel": "per-feature $R^2$, centered within\nactivity quintiles",
+        "xticklabels": [
+          "coarsest",
+          "mid",
+          "finest"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
