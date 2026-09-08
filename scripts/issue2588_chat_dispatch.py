@@ -8,7 +8,7 @@ reports and verifies all uploaded artifacts before teardown.
 
 --list-commands is a read-only JSON command manifest; --import-check checks
 the wrapper without loading a model. Runtime requires --transfer-plan JSON:
-{"surface":"generic", "run_id":"qwen3-chat-v1", "transfers": {
+{"surface":"generic", "run_id":"qwen3-chat-v2", "transfers": {
   "stage": {"bytes": <projected>, "bytes_per_s": <measured-or-expected>,
             "retry_calls": <maximum sequential retry envelopes>,
             "basis": "source of byte, throughput, and call-count values"}}}
@@ -53,6 +53,9 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
+sys.path.insert(0, str(REPO_ROOT / "scripts"))
+
+from issue2588_chat_runtime import validate_smoke_prior_report  # noqa: E402
 
 from explore_persona_space.atomic_io import write_json_atomic, write_text_atomic  # noqa: E402
 from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined  # noqa: E402
@@ -62,7 +65,7 @@ from explore_persona_space.orchestrate.provenance import (  # noqa: E402
     git_provenance,
 )
 
-RUN_ID = "qwen3-chat-v1"
+RUN_ID = "qwen3-chat-v2"
 CELLS = ("q3_8b_a", "q3_8b_b")
 CHAT_STAGES = ("train_10k", "val_400", "test_1000", "ceiling_s43", "ceiling_s44")
 DRIVER = REPO_ROOT / "scripts" / "issue2588_run_cell.py"
@@ -143,6 +146,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--sentinel-dir", type=Path, default=Path("/workspace/logs"))
     parser.add_argument("--pid-file", type=Path, default=Path("/workspace/logs/issue-2588.pid"))
     parser.add_argument("--transfer-plan", type=Path)
+    parser.add_argument("--smoke-prior-report", type=Path)
+    parser.add_argument("--smoke-prior-report-sha256")
     parser.add_argument("--min-disk-gb", type=float)
     parser.add_argument("--per-pod-quota-gb", type=float)
     parser.add_argument("--skip-preflight", action="store_true")
@@ -177,7 +182,7 @@ def cell_step(args: argparse.Namespace, cell: str, phase: str, *, pilot: bool = 
         "--out-root",
         str(args.out_root),
         "--device",
-        "cuda:0",
+        "cuda",  # inherited capture loader requires this exact spelling; CVD pins GPU 0
         "--gpu-count",
         "1",
     ]
@@ -401,6 +406,11 @@ def wait_gpu_free(gpu: str, *, timeout_s: float = GPU_DRAIN_S) -> None:
 
 def inherited_work_s(args: argparse.Namespace, env: dict[str, str]) -> float:
     """Validate the runtime builder's original smoke-clock epoch before any writes."""
+    if args.mode != "smoke" and (args.smoke_prior_report or args.smoke_prior_report_sha256):
+        raise ValueError("prior smoke report is valid only for smoke mode")
+    prior = validate_smoke_prior_report(
+        args.smoke_prior_report, args.smoke_prior_report_sha256, env, run_id=args.run_id
+    )
     started_at = env.get("EPS2588_SMOKE_STARTED_AT") if args.mode == "smoke" else None
     if started_at is None:
         return 0.0
@@ -408,7 +418,7 @@ def inherited_work_s(args: argparse.Namespace, env: dict[str, str]) -> float:
     now = time.time()
     if not math.isfinite(epoch) or epoch <= 0 or epoch > now:
         raise ValueError("EPS2588_SMOKE_STARTED_AT must be a finite, nonfuture epoch")
-    return now - epoch
+    return now - epoch - (prior["cumulative_prior_durability_s"] if prior else 0.0)
 
 
 def local_upload_operations(cell_root: Path, cell: str, phase: str) -> dict:
@@ -418,6 +428,8 @@ def local_upload_operations(cell_root: Path, cell: str, phase: str) -> dict:
     file has three (commit, tree endpoint, exact-file HEAD fallback). The final
     receipt adds repo-info + immutable listing + its own single-file upload.
     Successful ordinary phases additionally upload their completion checkpoint.
+    Raw/capture each have one phase-wide bulk payload; provenance and exclusions
+    are included in that same payload rather than separate single-file commits.
     Parent-approved overflow disablement makes these the complete helper paths.
     """
     parsed = cell_root / "parsed"
@@ -444,28 +456,9 @@ def local_upload_operations(cell_root: Path, cell: str, phase: str) -> dict:
         (cell_root / name).is_file()
         for name in ("run_identity.json", "stage.json", "prologue.json", "stage_runtime.json")
     )
-    if phase == "upload-raw":
-        bulk = raw_groups + parsed_groups
-        checkpoints = sum(
-            (cell_root / "phase_done" / f"{name}.json").is_file()
-            for name in (
-                "stage-runtime",
-                "prologue",
-                "stage",
-                "gen",
-                "parse",
-                "upload-raw",
-                "capture",
-                "upload-capture",
-                "fits",
-                "upload-fits",
-            )
-        )
-        single = provenance + (fits / "dropped_row_ids.json").is_file() + checkpoints
-    elif phase == "upload-capture":
-        bulk = capture_groups
-        single = sum((parsed / f"{stage}_capture_drops.json").is_file() for stage in CHAT_STAGES)
-        single += (cell_root / "capture_input_validation.json").is_file()
+    if phase in ("upload-raw", "upload-capture"):
+        bulk = 1
+        single = 0
     elif phase == "upload-partial":
         bulk = raw_groups + capture_groups + parsed_groups
         single = provenance + sum(p.is_file() for p in [*unit_files, pilot])
@@ -499,6 +492,9 @@ class Runner:
 
     def __init__(self, args: argparse.Namespace, env: dict[str, str], limits: dict[str, dict]):
         self.args, self.env, self.limits = args, env, limits
+        self.smoke_clock = validate_smoke_prior_report(
+            args.smoke_prior_report, args.smoke_prior_report_sha256, env, run_id=args.run_id
+        )
         self.initial_work_s = inherited_work_s(args, env)
         self.started = time.monotonic()
         self.attempt = datetime.now(UTC).strftime("%Y%m%dT%H%M%S.%fZ") + f"-{os.getpid()}"
@@ -539,6 +535,8 @@ class Runner:
             "steps": self.records,
             "work_elapsed_s": self.work_s,
             "inherited_runtime_work_s": self.initial_work_s,
+            "smoke_clock": self.smoke_clock,
+            "smoke_original_epoch": self.env.get("EPS2588_SMOKE_STARTED_AT"),
             "elapsed_s": time.monotonic() - self.started,
             "transfer_limits": self.limits,
             **extra,
@@ -789,6 +787,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.mode is None:
         parser.error("--mode is required")
+    if args.mode != "smoke" and (args.smoke_prior_report or args.smoke_prior_report_sha256):
+        parser.error("prior smoke report is valid only for smoke mode")
     args.out_root = args.out_root.resolve()
     args.sentinel_dir = args.sentinel_dir.resolve()
     args.pid_file = args.pid_file.resolve()

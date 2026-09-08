@@ -526,6 +526,45 @@ def _upload_generic(local: Path, destination: str) -> list[str]:
         return expected
 
 
+def _upload_generic_files(
+    files: list[tuple[Path, str]], destination: str, *, staging_parent: Path
+) -> list[str]:
+    """Map selected files beneath one prefix, retaining the existing sharder and verification."""
+    assert files, f"no files to upload: {destination}"
+    names = [name for _, name in files]
+    destinations = set(names)
+    assert len(names) == len(destinations), "duplicate upload destination"
+    shard_stems = set()
+    for source, name in files:
+        relative = Path(name)
+        assert relative.parts and not relative.is_absolute() and ".." not in relative.parts, (
+            f"upload destination must be a relative file path: {name}"
+        )
+        assert relative.as_posix() == name, f"noncanonical upload destination: {name}"
+        assert not any(parent.as_posix() in destinations for parent in relative.parents), (
+            f"overlapping upload destinations: {name}"
+        )
+        assert source.is_file(), f"missing upload source: {source}"
+        if relative.suffix in (".json", ".jsonl") and source.stat().st_size > 9_500_000:
+            stem = relative.with_suffix("").as_posix()
+            assert stem not in shard_stems, f"colliding text-shard destinations: {name}"
+            shard_stems.add(stem)
+            assert f"{stem}.manifest.json" not in destinations and not any(
+                path.startswith(f"{stem}.shard") and path.endswith(".jsonl")
+                for path in destinations
+            ), f"text-shard destination collides with payload: {name}"
+    # All source artifacts are under the same cell mount. A second hardlink
+    # layout is cheap (no tensor-byte copy) and lets the established uploader
+    # retain its exact text-shard/manifest behavior and one payload commit.
+    with tempfile.TemporaryDirectory(prefix="i2588-payload-", dir=staging_parent) as temporary:
+        staging = Path(temporary)
+        for source, name in files:
+            target = staging / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            os.link(source, target)
+        return _upload_generic(staging, destination)
+
+
 # ---------------------------------------------------------------------------
 # Phase completion sentinels (B1, review round 2): every phase run through the
 # main() loop is idempotent — a completed (phase, layer_set) writes a done
@@ -2252,6 +2291,8 @@ def phase_capture(args, cell: PC.Cell, paths: dict) -> None:
                 for row in PC.read_jsonl(paths["parsed"] / f"{stage}.jsonl"):
                     PC.build_capture_row_2588(tok, row, positions_wanted=positions)
         hf = _load_capture_model(cell, args.device, paths["cache"])
+        if _generic_only(args):
+            _assert_generic_capture_placement(hf)
         for stage in GENERIC_SPLITS:
             _capture_stage(args, cell, paths, hf, tok, stage, layers, layer_tag=tag)
         for seed in PC.CEILING_SEEDS:
@@ -2264,6 +2305,23 @@ def phase_capture(args, cell: PC.Cell, paths: dict) -> None:
         torch.cuda.empty_cache() if torch.cuda.is_available() else None
     finally:
         sem.close()
+
+
+def _assert_generic_capture_placement(hf) -> None:
+    """Fail before forwards unless every actual parameter is on the reviewed GPU/dtype."""
+    count = 0
+    for name, parameter in hf.named_parameters():
+        assert parameter.device == torch.device("cuda:0") and parameter.dtype == torch.bfloat16, (
+            f"generic capture placement FAIL: {name} device={parameter.device} "
+            f"dtype={parameter.dtype}; required device=cuda:0 dtype=torch.bfloat16"
+        )
+        count += 1
+    assert count, "generic capture placement FAIL: model has no named parameters"
+    logger.info(
+        "[i2588] generic capture placement PASS: parameter_tensors=%d "
+        "device=cuda:0 dtype=torch.bfloat16",
+        count,
+    )
 
 
 def _load_capture_model(cell: PC.Cell, device: str, cache: Path):
@@ -2297,7 +2355,7 @@ def phase_upload_raw(args, cell: PC.Cell, paths: dict) -> None:
             assert _phase_complete(args, paths, phase), f"upload-raw requires completed {phase}"
         _phase_artifacts(args, cell, paths, "gen")
         _phase_artifacts(args, cell, paths, "parse")
-    uploaded_paths = []
+    payload_files: list[tuple[Path, str]] = []
     for stage in _stage_names(args, cell):
         stage_dir = paths["raw"] / stage
         if not stage_dir.is_dir() or not any(stage_dir.iterdir()):
@@ -2306,7 +2364,11 @@ def phase_upload_raw(args, cell: PC.Cell, paths: dict) -> None:
             )
             continue
         if _generic_only(args):
-            uploaded_paths.extend(_upload_generic(stage_dir, f"{prefix}/raw_completions/{stage}"))
+            payload_files.extend(
+                (f, f"raw_completions/{stage}/{f.relative_to(stage_dir).as_posix()}")
+                for f in sorted(stage_dir.rglob("*"))
+                if f.is_file()
+            )
         else:
             _upload_dir(stage_dir, f"{prefix}/raw_completions/{stage}", f"{cell.key} raw {stage}")
     parsed_files = sorted(paths["parsed"].glob("*.json*"))
@@ -2320,25 +2382,23 @@ def phase_upload_raw(args, cell: PC.Cell, paths: dict) -> None:
         for name in ("run_identity.json", "stage.json", "prologue.json", "stage_runtime.json"):
             if name == "stage_runtime.json" and not (paths["cell"] / name).exists():
                 continue  # The two arms share the one snapshot staged by arm a.
-            _upload_file(paths["cell"] / name, f"{prefix}/{name}", f"{cell.key} provenance")
-            uploaded_paths.append(f"{prefix}/{name}")
-        _upload_file(
-            paths["fits"] / "dropped_row_ids.json",
-            f"{prefix}/parsed/dropped_row_ids.json",
-            f"{cell.key} coverage",
+            payload_files.append((paths["cell"] / name, name))
+        payload_files.append(
+            (paths["fits"] / "dropped_row_ids.json", "parsed/dropped_row_ids.json")
         )
-        uploaded_paths.append(f"{prefix}/parsed/dropped_row_ids.json")
         for phase in _GENERIC_SEQUENCE:
             sentinel = _phase_done_path(args, paths, phase)
             if sentinel.exists():
-                _upload_file(sentinel, f"{prefix}/phase_done/{phase}.json", "phase checkpoint")
-                uploaded_paths.append(f"{prefix}/phase_done/{phase}.json")
+                payload_files.append((sentinel, f"phase_done/{phase}.json"))
     for f in parsed_files:
         if _generic_only(args):
-            uploaded_paths.extend(_upload_generic(f, f"{prefix}/parsed/{f.name}"))
+            payload_files.append((f, f"parsed/{f.name}"))
         else:
             _upload_file(f, f"{prefix}/parsed/{f.name}", f"{cell.key} parsed")
     if _generic_only(args):
+        uploaded_paths = _upload_generic_files(
+            payload_files, prefix, staging_parent=paths["cell"].parent
+        )
         _record_verified_upload(args, cell, paths, "upload-raw", uploaded_paths)
 
 
@@ -2350,17 +2410,21 @@ def phase_upload_capture(args, cell: PC.Cell, paths: dict) -> None:
     if _generic_only(args):
         assert _phase_complete(args, paths, "capture"), "upload-capture requires completed capture"
         _phase_artifacts(args, cell, paths, "capture")
-        uploaded_paths = []
+        payload_files = []
         for stage in _stage_names(args, cell):
-            uploaded_paths.extend(
-                _upload_generic(paths[tag] / stage, f"{prefix}/analysis_tensors/{tag}/{stage}")
+            stage_dir = paths[tag] / stage
+            payload_files.extend(
+                (f, f"analysis_tensors/{tag}/{stage}/{f.relative_to(stage_dir).as_posix()}")
+                for f in sorted(stage_dir.rglob("*"))
+                if f.is_file()
             )
             drops = paths["parsed"] / f"{stage}_capture_drops.json"
-            _upload_file(drops, f"{prefix}/parsed/{drops.name}", "capture exclusions")
-            uploaded_paths.append(f"{prefix}/parsed/{drops.name}")
+            payload_files.append((drops, f"parsed/{drops.name}"))
         validation = paths["cell"] / "capture_input_validation.json"
-        _upload_file(validation, f"{prefix}/{validation.name}", "capture input validation")
-        uploaded_paths.append(f"{prefix}/{validation.name}")
+        payload_files.append((validation, validation.name))
+        uploaded_paths = _upload_generic_files(
+            payload_files, prefix, staging_parent=paths["cell"].parent
+        )
         _record_verified_upload(args, cell, paths, "upload-capture", uploaded_paths)
         return
     # C3: the odd pass uploads its OWN local dir to its OWN prefix — the

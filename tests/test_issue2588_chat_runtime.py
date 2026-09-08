@@ -287,3 +287,115 @@ def test_build_main_uses_cumulative_clock_and_exact_exec(tmp_path, monkeypatch):
     assert execute.call_args.args[0] == str(runtime / "bin/python")
     owner = json.loads((runtime.parent / "runtime_owner.json").read_text())
     assert owner["pod_id"] == "own-pod" and owner["lock_sha256"] == RT.sha256(RT.LOCK)
+
+
+def _prior_clock_report(tmp_path):
+    """A terminal process report with 300s setup, 600s total work and 700s uploads."""
+    epoch = int(RT.time.time()) - 2000
+    attempt = RT.datetime.fromtimestamp(epoch + 300, RT.UTC).strftime("%Y%m%dT%H%M%S.%fZ")
+    record = {
+        "surface": "generic",
+        "run_id": RT.SMOKE_PRIOR_RUN_ID,
+        "mode": "smoke",
+        "status": "halted",
+        "rc": 143,
+        "experiment_complete": False,
+        "attempt": f"{attempt}-12345",
+        "pid": 12345,
+        "inherited_runtime_work_s": 300.0,
+        "elapsed_s": 1000.0,
+        "work_elapsed_s": 600.0,
+        "steps": [
+            {"phase": "gen", "elapsed_s": 200.0, "rc": 0},
+            {"phase": "capture", "elapsed_s": 80.318, "rc": -15},
+            {"phase": "upload-raw", "elapsed_s": 500.0, "rc": 0, "pid": 23456},
+            {"phase": "upload-partial", "elapsed_s": 200.0, "rc": 0, "pid": 23457},
+        ],
+    }
+    for step in record["steps"]:
+        step["cell"] = "q3_8b_a"
+        step["argv"] = [
+            "python",
+            "-u",
+            "issue2588_run_cell.py",
+            "--surface",
+            "generic",
+            "--run-id",
+            RT.SMOKE_PRIOR_RUN_ID,
+            "--cell",
+            step["cell"],
+            "--phase",
+            step["phase"],
+            "--smoke",
+        ]
+    path = tmp_path / "terminal-v1.json"
+    path.write_text(json.dumps(record))
+    return path, record, {RT.SMOKE_START_ENV: str(epoch)}
+
+
+def test_clock_continuation_credits_uploads_once_and_charges_idle(tmp_path):
+    import issue2588_chat_dispatch as dispatch
+
+    path, _, env = _prior_clock_report(tmp_path)
+    digest = RT.sha256(path)
+    lineage = RT.validate_smoke_prior_report(path, digest, env, run_id=dispatch.RUN_ID)
+    assert lineage["cumulative_prior_durability_s"] == 700.0
+    assert lineage["prior_work_elapsed_s"] == 600.0  # failed capture remains charged
+    env.update({RT.SMOKE_PRIOR_REPORT_ENV: str(path), RT.SMOKE_PRIOR_HASH_ENV: digest})
+    args = dispatch.build_parser().parse_args(
+        [
+            "--mode",
+            "smoke",
+            "--smoke-prior-report",
+            str(path),
+            "--smoke-prior-report-sha256",
+            digest,
+        ]
+    )
+    remaining = RT.remaining_smoke_seconds(env, smoke=True)
+    work = dispatch.inherited_work_s(args, env)
+    assert work >= 1300  # 600 prior work + at least 700 seconds idle gap
+    assert remaining + work == pytest.approx(3600, abs=0.05)
+    assert env[RT.SMOKE_START_ENV] == str(lineage["original_epoch"]).removesuffix(".0")
+
+
+@pytest.mark.parametrize(
+    "error",
+    ["hash", "running", "rc8", "scope", "epoch", "sum", "missing-epoch", "unfinished-upload"],
+)
+def test_clock_continuation_rejects_unproven_credit(tmp_path, error):
+    path, record, env = _prior_clock_report(tmp_path)
+    if error == "running":
+        record["status"] = "running"
+    elif error == "rc8":
+        record["rc"] = 8
+    elif error == "scope":
+        record["run_id"] = "other"
+    elif error == "epoch":
+        env[RT.SMOKE_START_ENV] = str(float(env[RT.SMOKE_START_ENV]) + 1)
+    elif error == "sum":
+        record["work_elapsed_s"] += 2
+    elif error == "missing-epoch":
+        env.clear()
+    elif error == "unfinished-upload":
+        record["steps"][-1]["rc"] = None
+    path.write_text(json.dumps(record))
+    digest = "0" * 64 if error == "hash" else RT.sha256(path)
+    with pytest.raises(RuntimeError):
+        RT.validate_smoke_prior_report(path, digest, env, run_id=RT.SMOKE_RUN_ID)
+
+
+def test_clock_consistency_tolerance_never_increases_credit(tmp_path):
+    path, record, env = _prior_clock_report(tmp_path)
+    record["work_elapsed_s"] += 0.5
+    path.write_text(json.dumps(record))
+    lineage = RT.validate_smoke_prior_report(path, RT.sha256(path), env, run_id=RT.SMOKE_RUN_ID)
+    assert lineage["measured_prior_upload_elapsed_s"] == 700
+    assert lineage["cumulative_prior_durability_s"] == 699.5
+
+
+def test_clock_continuation_rejects_runtime_wrapper_disagreement(tmp_path):
+    path, _, env = _prior_clock_report(tmp_path)
+    env.update({RT.SMOKE_PRIOR_REPORT_ENV: str(path), RT.SMOKE_PRIOR_HASH_ENV: "0" * 64})
+    with pytest.raises(RuntimeError, match="disagree"):
+        RT.validate_smoke_prior_report(path, RT.sha256(path), env, run_id=RT.SMOKE_RUN_ID)

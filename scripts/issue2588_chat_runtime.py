@@ -31,6 +31,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from datetime import UTC, datetime
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = Path("/workspace/eps2588_qwen3_chat/runtime")
@@ -52,6 +53,12 @@ PINS = {
 COMPAT_DIR = Path("/usr/local/cuda-13.0/compat")
 SMOKE_START_ENV = "EPS2588_SMOKE_STARTED_AT"
 RC_WORK_FENCE = 8
+SMOKE_RUN_ID = "qwen3-chat-v2"
+SMOKE_PRIOR_RUN_ID = "qwen3-chat-v1"
+SMOKE_CLOCK_TOLERANCE_S = 1.0  # reporting/clock-call overhead; never added as credit
+SMOKE_EPOCH_TOLERANCE_S = 0.01
+SMOKE_PRIOR_REPORT_ENV = "EPS2588_SMOKE_PRIOR_REPORT"
+SMOKE_PRIOR_HASH_ENV = "EPS2588_SMOKE_PRIOR_REPORT_SHA256"
 
 
 class RuntimeFence(RuntimeError):
@@ -238,6 +245,124 @@ def check_runtime() -> dict:
     }
 
 
+def validate_smoke_prior_report(
+    path: Path | None, expected_sha256: str | None, env: dict, *, run_id: str
+) -> dict | None:
+    """Credit only measured upload time from the explicitly approved v1 -> v2 retry.
+
+    The old report predates an explicit epoch field, so its attempt timestamp
+    minus inherited runtime work must reproduce the original supplied epoch.
+    All idle gaps remain charged via that unchanged epoch. This is clock
+    lineage only: no scientific checkpoint or source identity is adopted.
+    """
+    inherited_path = env.get(SMOKE_PRIOR_REPORT_ENV)
+    inherited_hash = env.get(SMOKE_PRIOR_HASH_ENV)
+    if inherited_path or inherited_hash:
+        if (
+            path is None
+            or not inherited_path
+            or path.resolve() != Path(inherited_path).resolve()
+            or expected_sha256 != inherited_hash
+        ):
+            raise RuntimeError("runtime/wrapper smoke prior-report arguments disagree")
+    if path is None and expected_sha256 is None:
+        return None
+    if path is None or not re.fullmatch(r"[0-9a-f]{64}", expected_sha256 or ""):
+        raise RuntimeError("smoke prior report requires its exact SHA256")
+    if run_id != SMOKE_RUN_ID:
+        raise RuntimeError("smoke clock continuation is restricted to qwen3-chat-v1 -> v2")
+    raw = path.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != expected_sha256:
+        raise RuntimeError("smoke prior report SHA256 mismatch")
+    prior = json.loads(raw)
+    if (
+        prior.get("surface") != "generic"
+        or prior.get("run_id") != SMOKE_PRIOR_RUN_ID
+        or prior.get("mode") != "smoke"
+        or prior.get("status") != "halted"
+        or type(prior.get("rc")) is not int
+        or prior["rc"] in (0, RC_WORK_FENCE)
+        or prior.get("experiment_complete") is not False
+        or prior.get("smoke_clock") is not None
+    ):
+        raise RuntimeError("smoke prior report is not an eligible terminal v1 halt")
+
+    def seconds(value, name: str) -> float:
+        if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+            raise RuntimeError(f"invalid smoke prior report {name}")
+        return float(value)
+
+    started_at = env.get(SMOKE_START_ENV)
+    if started_at is None:
+        raise RuntimeError("smoke continuation requires the unchanged original epoch")
+    epoch = float(started_at)
+    now = time.time()
+    if not math.isfinite(epoch) or epoch <= 0 or epoch > now:
+        raise RuntimeError("invalid original smoke epoch")
+    attempt, pid = prior["attempt"].rsplit("-", 1)
+    if str(prior.get("pid")) != pid or not pid.isdigit():
+        raise RuntimeError("smoke prior report PID/attempt mismatch")
+    attempt_epoch = datetime.strptime(attempt, "%Y%m%dT%H%M%S.%fZ").replace(tzinfo=UTC).timestamp()
+    inherited = seconds(prior["inherited_runtime_work_s"], "inherited runtime work")
+    elapsed = seconds(prior["elapsed_s"], "elapsed wall")
+    work = seconds(prior["work_elapsed_s"], "charged work")
+    if abs(attempt_epoch - inherited - epoch) > SMOKE_EPOCH_TOLERANCE_S:
+        raise RuntimeError("smoke prior report does not bind the original epoch")
+    if attempt_epoch + elapsed > now + SMOKE_EPOCH_TOLERANCE_S or work >= 3600:
+        raise RuntimeError("smoke prior report has future wall time or exhausted work")
+    credit = 0.0
+    step_elapsed = 0.0
+    steps = prior.get("steps")
+    if not isinstance(steps, list) or not steps:
+        raise RuntimeError("smoke prior report lacks completed process records")
+    for step in steps:
+        duration = seconds(step.get("elapsed_s"), "child elapsed")
+        step_elapsed += duration
+        if not step.get("phase", "").startswith("upload-"):
+            continue
+        if (
+            step["phase"] not in ("upload-raw", "upload-capture", "upload-partial")
+            or type(step.get("rc")) is not int
+            or type(step.get("pid")) is not int
+            or step["pid"] <= 0
+        ):
+            raise RuntimeError("smoke prior upload is not an exited scoped process")
+        argv = step.get("argv", [])
+        for flag, value in (
+            ("--surface", "generic"),
+            ("--run-id", SMOKE_PRIOR_RUN_ID),
+            ("--cell", step.get("cell")),
+            ("--phase", step["phase"]),
+        ):
+            if argv.count(flag) != 1 or argv[argv.index(flag) + 1] != value:
+                raise RuntimeError("smoke prior upload command provenance mismatch")
+        if "--smoke" not in argv or step.get("cell") not in ("q3_8b_a", "q3_8b_b"):
+            raise RuntimeError("smoke prior upload has a different surface")
+        credit += duration
+    excluded = seconds(inherited + elapsed - work, "excluded upload wall")
+    if (
+        step_elapsed > elapsed + SMOKE_CLOCK_TOLERANCE_S
+        or abs(excluded - credit) > SMOKE_CLOCK_TOLERANCE_S
+    ):
+        raise RuntimeError("smoke prior upload sum disagrees with measured work/wall clocks")
+    if credit > elapsed or credit > now - epoch:
+        raise RuntimeError("smoke prior upload credit exceeds elapsed wall")
+    measured_upload_s = credit
+    credit = min(measured_upload_s, excluded)
+    return {
+        "original_epoch": epoch,
+        "prior_report": str(path.resolve()),
+        "prior_report_sha256": expected_sha256,
+        "prior_run_id": SMOKE_PRIOR_RUN_ID,
+        "run_id": run_id,
+        "prior_attempt": prior["attempt"],
+        "cumulative_prior_durability_s": credit,
+        "measured_prior_upload_elapsed_s": measured_upload_s,
+        "prior_work_elapsed_s": work,
+        "clock_consistency_error_s": excluded - measured_upload_s,
+    }
+
+
 def remaining_smoke_seconds(env: dict, *, smoke: bool) -> float | None:
     """Account for install, imports, model staging and work across the same launch."""
     if not smoke:
@@ -246,7 +371,14 @@ def remaining_smoke_seconds(env: dict, *, smoke: bool) -> float | None:
     now = time.time()
     if not math.isfinite(start) or start > now or start <= 0:
         raise RuntimeError("invalid cumulative smoke start timestamp")
-    remaining = 3600 - (now - start)
+    prior_path = env.get(SMOKE_PRIOR_REPORT_ENV)
+    prior = validate_smoke_prior_report(
+        Path(prior_path) if prior_path else None,
+        env.get(SMOKE_PRIOR_HASH_ENV),
+        env,
+        run_id=SMOKE_RUN_ID,
+    )
+    remaining = 3600 - (now - start) + (prior["cumulative_prior_durability_s"] if prior else 0.0)
     if remaining <= 0:
         raise RuntimeFence("one-hour smoke work allowance exhausted during runtime setup")
     return remaining
@@ -372,7 +504,25 @@ def main(argv: list[str] | None = None) -> int:
             "b968826d9c46dd6066d109eabc6255188de91218/model-00001-of-00005.safetensors"
         ),
     )
-    if mode == "smoke":
+    clock_parser = argparse.ArgumentParser(add_help=False)
+    clock_parser.add_argument("--run-id", default=SMOKE_RUN_ID)
+    clock_parser.add_argument("--smoke-prior-report", type=Path)
+    clock_parser.add_argument("--smoke-prior-report-sha256")
+    clock_args, _ = clock_parser.parse_known_args(wrapper_args)
+    if mode != "smoke" and (clock_args.smoke_prior_report or clock_args.smoke_prior_report_sha256):
+        raise RuntimeError("prior smoke report is valid only for smoke mode")
+    prior_clock = validate_smoke_prior_report(
+        clock_args.smoke_prior_report,
+        clock_args.smoke_prior_report_sha256,
+        env,
+        run_id=clock_args.run_id,
+    )
+    if prior_clock:
+        env[SMOKE_PRIOR_REPORT_ENV] = prior_clock["prior_report"]
+        env[SMOKE_PRIOR_HASH_ENV] = prior_clock["prior_report_sha256"]
+    elif SMOKE_PRIOR_REPORT_ENV in env or SMOKE_PRIOR_HASH_ENV in env:
+        raise RuntimeError("prior smoke credit requires explicit pinned report arguments")
+    if mode == "smoke" and prior_clock is None:
         env.setdefault(SMOKE_START_ENV, str(time.time()))
     remaining_smoke_seconds(env, smoke=mode == "smoke")
     driver_check()
@@ -443,6 +593,7 @@ def main(argv: list[str] | None = None) -> int:
                 "rc": code,
                 "reason": str(error),
                 "started_at": env.get(SMOKE_START_ENV),
+                "smoke_clock": prior_clock,
                 "identity": identity,
             },
         )
@@ -454,6 +605,7 @@ def main(argv: list[str] | None = None) -> int:
                 "status": "failed",
                 "reason": str(error),
                 "identity": identity,
+                "smoke_clock": prior_clock,
             },
         )
         raise

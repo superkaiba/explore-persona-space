@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 from dataclasses import dataclass, replace
@@ -319,6 +320,77 @@ def test_capture_direct_phase_refuses_unfinished_parse(generic):
         RC.phase_capture(args, cell, paths)
 
 
+@dataclass(frozen=True)
+class PlacementParameter:
+    """Metadata-only external GPU parameter boundary; never allocates GPU memory."""
+
+    device: torch.device
+    dtype: torch.dtype
+
+
+class PlacementModel:
+    """Mirror nn.Module's named-parameter signature for mixed-device/dtype fixtures."""
+
+    def __init__(self, parameters):
+        self.parameters_fixture = parameters
+
+    def named_parameters(self, prefix="", recurse=True, remove_duplicate=True):
+        return iter(self.parameters_fixture)
+
+
+@pytest.mark.parametrize(
+    "device,dtype",
+    [
+        ("cpu", torch.bfloat16),
+        ("cuda:0", torch.float32),
+        ("cuda:1", torch.bfloat16),
+        ("meta", torch.bfloat16),
+    ],
+)
+def test_capture_placement_checks_every_parameter(device, dtype):
+    good = PlacementParameter(torch.device("cuda:0"), torch.bfloat16)
+    bad = PlacementParameter(torch.device(device), dtype)
+    with pytest.raises(AssertionError, match=r"last\.weight"):
+        RC._assert_generic_capture_placement(
+            PlacementModel([("first.weight", good), ("last.weight", bad)])
+        )
+
+
+def test_capture_placement_success_empty_and_real_cpu_failure(caplog):
+    good = PlacementParameter(torch.device("cuda:0"), torch.bfloat16)
+    with caplog.at_level("INFO"):
+        RC._assert_generic_capture_placement(PlacementModel([("first", good), ("last", good)]))
+    assert "parameter_tensors=2 device=cuda:0 dtype=torch.bfloat16" in caplog.text
+    with pytest.raises(AssertionError, match="no named parameters"):
+        RC._assert_generic_capture_placement(torch.nn.Module())
+    with pytest.raises(AssertionError, match=r"device=cpu dtype=torch\.float32"):
+        RC._assert_generic_capture_placement(torch.nn.Linear(2, 2))
+
+
+def test_capture_cpu_fallback_refused_before_forward(generic, monkeypatch):
+    import transformers
+
+    args, cell, paths = generic
+    _write_raw_upload_fixture(args, cell, paths)
+    cpu_model = torch.nn.Linear(2, 2)
+    forward = create_autospec(cpu_model.forward)
+    monkeypatch.setattr(cpu_model, "forward", forward)
+    monkeypatch.setattr(
+        RC, "_load_capture_model", create_autospec(RC._load_capture_model, return_value=cpu_model)
+    )
+    monkeypatch.setattr(
+        transformers.AutoTokenizer,
+        "from_pretrained",
+        create_autospec(transformers.AutoTokenizer.from_pretrained, return_value=Tokenizer()),
+    )
+    monkeypatch.setattr(RC, "_assert_headroom", create_autospec(RC._assert_headroom))
+    with pytest.raises(AssertionError, match="generic capture placement FAIL"):
+        RC.phase_capture(args, cell, paths)
+    forward.assert_not_called()
+    assert not any(paths["capture"].rglob("*.npz"))
+    assert not RC._phase_done_path(args, paths, "capture").exists()
+
+
 def test_fit_pilot_pause_never_marks_sweep_complete(generic):
     args, cell, paths = generic
     args.phase = "fits"
@@ -364,6 +436,204 @@ def test_generic_upload_shards_text_and_preserves_local_bytes(tmp_path, monkeypa
     assert b"".join(seen[name] for name in manifest["parts"]) == text.encode()
     assert source.read_text() == text
     assert RC.HUB._parse_shard_manifest(seen["raw.manifest.json"].decode(), what="fixture")[0]
+
+
+@pytest.fixture
+def upload_boundary(monkeypatch):
+    """Signature-checked Hub boundaries record exact payloads without any remote writes."""
+    import huggingface_hub
+
+    captured = {}
+    api = create_autospec(huggingface_hub.HfApi, instance=True)
+    api.repo_info.return_value = SimpleNamespace(sha="c" * 40)
+    monkeypatch.setattr(
+        huggingface_hub, "HfApi", create_autospec(huggingface_hub.HfApi, return_value=api)
+    )
+
+    def folder(
+        local_dir,
+        repo_id,
+        repo_type,
+        path_in_repo,
+        allow_patterns,
+        expected_repo_paths,
+        ignore_patterns=None,
+        delete_after=False,
+        *,
+        private=False,
+    ):
+        assert repo_id == PC.HF_DATA_REPO and repo_type == "dataset"
+        actual = {
+            f"{path_in_repo}/{name}": (local_dir / name).read_bytes() for name in allow_patterns
+        }
+        assert set(actual) == set(expected_repo_paths)
+        captured.update(actual)
+        return "verified"
+
+    def single(local_path, repo_id, repo_type, path_in_repo, **kwargs):
+        assert repo_id == PC.HF_DATA_REPO and repo_type == "dataset"
+        assert kwargs["upload_as_file"] and kwargs["raise_on_error"]
+        captured[path_in_repo] = local_path.read_bytes()
+        return "verified"
+
+    bulk = create_autospec(RC.HUB._upload_folder_filtered, side_effect=folder)
+    one = create_autospec(RC.HUB._upload, side_effect=single)
+    verify = create_autospec(RC.HUB.verify_repo_paths_uploaded, return_value=[])
+    monkeypatch.setattr(RC.HUB, "_upload_folder_filtered", bulk)
+    monkeypatch.setattr(RC.HUB, "_upload", one)
+    monkeypatch.setattr(RC.HUB, "verify_repo_paths_uploaded", verify)
+    return SimpleNamespace(bytes=captured, bulk=bulk, single=one, verify=verify)
+
+
+def _old_payload_oracle(args, cell, paths, phase):
+    """Frozen ebadfb46 payload grouping, without its unchanged receipt/completion writes."""
+    prefix = RC._cell_prefix(args, cell)
+    for stage in RC._stage_names(args, cell):
+        if phase == "upload-raw":
+            RC._upload_generic(paths["raw"] / stage, f"{prefix}/raw_completions/{stage}")
+            for suffix in (".jsonl", "_drops.json", "_capture_drops.json"):
+                file = paths["parsed"] / f"{stage}{suffix}"
+                if file.exists():
+                    RC._upload_generic(file, f"{prefix}/parsed/{file.name}")
+        else:
+            RC._upload_generic(
+                paths["capture"] / stage, f"{prefix}/analysis_tensors/capture/{stage}"
+            )
+            file = paths["parsed"] / f"{stage}_capture_drops.json"
+            RC._upload_file(file, f"{prefix}/parsed/{file.name}", "oracle")
+    if phase == "upload-raw":
+        for name in ("run_identity.json", "stage.json", "prologue.json", "stage_runtime.json"):
+            if (paths["cell"] / name).exists():
+                RC._upload_file(paths["cell"] / name, f"{prefix}/{name}", "oracle")
+        RC._upload_file(
+            paths["fits"] / "dropped_row_ids.json",
+            f"{prefix}/parsed/dropped_row_ids.json",
+            "oracle",
+        )
+        for name in RC._GENERIC_SEQUENCE:
+            file = RC._phase_done_path(args, paths, name)
+            if file.exists():
+                RC._upload_file(file, f"{prefix}/phase_done/{name}.json", "oracle")
+    else:
+        file = paths["cell"] / "capture_input_validation.json"
+        RC._upload_file(file, f"{prefix}/{file.name}", "oracle")
+
+
+def _write_raw_upload_fixture(args, cell, paths):
+    """Persist real parsed/checkpoint artifacts with an extra raw partial chunk per stage."""
+    tok = Tokenizer()
+    for stage in RC._stage_names(args, cell):
+        prompt = PC.render_prompt_text(tok, "fixture", cell.model.family, cell.arm)
+        row = {
+            "row_id": f"{stage}_0",
+            "stage": stage,
+            "prompt": prompt,
+            "prompt_ids": tok.encode(prompt),
+            "n_prompt_tokens": len(prompt),
+            "text": "answer",
+            "sampled_token_ids": tok.encode("answer"),
+            "n_comp_tokens": 6,
+            "read_points": {"prompt_last": len(prompt) - 1},
+            "finish_reason": "stop",
+        }
+        directory = paths["raw"] / stage
+        PC.write_json_atomic(directory / "chunk0000.json", {"rows": [row]})
+        PC.write_json_atomic(directory / "partial/initial/chunk0000.json", {"rows": [row]})
+        PC.write_json_atomic(directory / "cap_hit_report.json", {"n": 1})
+        RC._write_checkpoint(
+            args, cell, paths, directory / "stage_done.json", RC._raw_stage_files(paths, stage)
+        )
+    RC._mark_phase_done(args, cell, paths, "gen")
+    RC.phase_parse(args, cell, paths)
+    RC._mark_phase_done(args, cell, paths, "parse")
+    for name in ("stage.json", "prologue.json", "stage_runtime.json"):
+        PC.write_json_atomic(paths["cell"] / name, {"fixture": name})
+
+
+def test_raw_phase_one_payload_exact_old_mapping(generic, upload_boundary):
+    args, cell, paths = generic
+    _write_raw_upload_fixture(args, cell, paths)
+    _old_payload_oracle(args, cell, paths, "upload-raw")
+    expected = {
+        name: hashlib.sha256(data).hexdigest() for name, data in upload_boundary.bytes.items()
+    }
+    upload_boundary.bytes.clear()
+    upload_boundary.bulk.reset_mock()
+    upload_boundary.single.reset_mock()
+    assert RC._run_phases(args, cell, paths, ("upload-raw",)) == ["upload-raw"]
+    receipt = json.loads((paths["cell"] / "uploads/upload-raw.json").read_text())
+    assert set(receipt["paths"]) == set(expected)
+    assert {
+        name: hashlib.sha256(upload_boundary.bytes[name]).hexdigest() for name in receipt["paths"]
+    } == expected
+    assert upload_boundary.bulk.call_count == 1
+    assert upload_boundary.single.call_count == 2  # receipt + completion checkpoint only
+    assert sum("/partial/initial/" in name for name in expected) == 5
+    assert any(name.endswith("parsed/dropped_row_ids.json") for name in expected)
+    assert RC._phase_complete(args, paths, "upload-raw")
+    assert upload_boundary.verify.call_args.kwargs["revision"] == "c" * 40
+    assert not list(paths["cell"].parent.glob("i2588-*"))
+
+
+@pytest.mark.parametrize("failure", ("missing", "corrupt", "payload", "immutable"))
+def test_batch_raw_failure_cannot_mint_success(generic, upload_boundary, failure):
+    args, cell, paths = generic
+    _write_raw_upload_fixture(args, cell, paths)
+    raw = paths["raw"] / "train_10k/chunk0000.json"
+    if failure == "missing":
+        raw.unlink()
+    elif failure == "corrupt":
+        raw.write_text("{}")
+    elif failure == "payload":
+        upload_boundary.bulk.side_effect = None
+        upload_boundary.bulk.return_value = ""
+    else:
+        upload_boundary.verify.return_value = ["missing/expected/path"]
+    with pytest.raises((AssertionError, FileNotFoundError, KeyError)):
+        RC._run_phases(args, cell, paths, ("upload-raw",))
+    assert not (paths["cell"] / "uploads/upload-raw.json").exists()
+    assert not RC._phase_done_path(args, paths, "upload-raw").exists()
+    upload_boundary.single.assert_not_called()
+    assert not list(paths["cell"].parent.glob("i2588-*"))
+
+
+def test_batch_mapping_preserves_shards_and_rejects_collisions(tmp_path, upload_boundary):
+    source = tmp_path / "raw.jsonl"
+    source.write_text((json.dumps({"text": "x" * 999}) + "\n") * 9600)
+    marker = tmp_path / "marker.json"
+    marker.write_text('{"done": false}')
+    RC._upload_generic(source, "scope/raw/partial/raw.jsonl")
+    RC._upload_generic(marker, "scope/phase_done/marker.json")
+    expected = dict(upload_boundary.bytes)
+    source_hash = RC._sha256_file(source)
+    upload_boundary.bytes.clear()
+    upload_boundary.bulk.reset_mock()
+    names = RC._upload_generic_files(
+        [(source, "raw/partial/raw.jsonl"), (marker, "phase_done/marker.json")],
+        "scope",
+        staging_parent=tmp_path,
+    )
+    assert set(names) == set(expected) and upload_boundary.bytes == expected
+    assert upload_boundary.bulk.call_count == 1 and RC._sha256_file(source) == source_hash
+    manifest = json.loads(expected["scope/raw/partial/raw.manifest.json"])
+    assert (
+        b"".join(expected[f"scope/raw/partial/{part}"] for part in manifest["parts"])
+        == source.read_bytes()
+    )
+    for destinations in (
+        ("same", "same"),
+        ("parent", "parent/child"),
+        ("../escape", "ok"),
+        ("raw.jsonl", "raw.manifest.json"),
+        ("raw.jsonl", "raw.shard00.jsonl"),
+    ):
+        with pytest.raises(AssertionError):
+            RC._upload_generic_files(
+                list(zip((source, marker), destinations, strict=True)),
+                "scope",
+                staging_parent=tmp_path,
+            )
+    assert upload_boundary.bulk.call_count == 1
 
 
 def test_immutable_upload_receipt_and_partial_fit_coverage(generic, monkeypatch):
@@ -484,8 +754,7 @@ class CaptureModel(torch.nn.Module):
         return SimpleNamespace()
 
 
-def test_parse_capture_upload_real_bodies(generic, monkeypatch):
-    import huggingface_hub
+def test_parse_capture_upload_real_bodies(generic, monkeypatch, upload_boundary):
     import transformers
 
     args, cell, paths = generic
@@ -526,7 +795,12 @@ def test_parse_capture_upload_real_bodies(generic, monkeypatch):
         create_autospec(RC._load_capture_model, return_value=CaptureModel()),
     )
     monkeypatch.setattr(RC, "_assert_headroom", create_autospec(RC._assert_headroom))
+    # This existing fixture exercises CPU hooks/reductions, not actual GPU placement.
+    # The placement guard's real body and before-forward rejection are tested above.
+    placement = create_autospec(RC._assert_generic_capture_placement)
+    monkeypatch.setattr(RC, "_assert_generic_capture_placement", placement)
     RC.phase_capture(args, cell, paths)
+    placement.assert_called_once()
     assert tokenizer_load.call_args.kwargs["revision"] == PC.QWEN3_8B_REVISION
     RC._mark_phase_done(args, cell, paths, "capture")
     assert RC._phase_complete(args, paths, "capture")
@@ -534,24 +808,38 @@ def test_parse_capture_upload_real_bodies(generic, monkeypatch):
         rows = json.loads((paths["capture"] / stage / "rows.json").read_text())["rows"]
         assert all(r["token_fidelity"]["sampled_completion_ids_match"] for r in rows)
         assert len(rows) == 2
-    api = create_autospec(huggingface_hub.HfApi, instance=True)
-    api.repo_info.return_value = SimpleNamespace(sha="b" * 40)
-    monkeypatch.setattr(
-        huggingface_hub, "HfApi", create_autospec(huggingface_hub.HfApi, return_value=api)
-    )
-    monkeypatch.setattr(
-        RC.HUB,
-        "verify_repo_paths_uploaded",
-        create_autospec(RC.HUB.verify_repo_paths_uploaded, return_value=[]),
-    )
-    monkeypatch.setattr(RC.HUB, "_upload", create_autospec(RC.HUB._upload, return_value="verified"))
-    monkeypatch.setattr(
-        RC.HUB,
-        "_upload_folder_filtered",
-        create_autospec(RC.HUB._upload_folder_filtered, return_value="verified"),
-    )
-    RC.phase_upload_capture(args, cell, paths)
+    _old_payload_oracle(args, cell, paths, "upload-capture")
+    expected = {
+        name: hashlib.sha256(data).hexdigest() for name, data in upload_boundary.bytes.items()
+    }
+    upload_boundary.single.reset_mock()
+    for file in (
+        paths["capture"] / "train_10k/L00/shard000.npz",
+        paths["parsed"] / "train_10k_capture_drops.json",
+    ):
+        original = file.read_bytes()
+        file.unlink()
+        with pytest.raises((FileNotFoundError, AssertionError)):
+            RC._run_phases(args, cell, paths, ("upload-capture",))
+        file.write_bytes(original)
+    upload_boundary.verify.return_value = ["missing/expected/path"]
+    with pytest.raises(AssertionError, match="incomplete"):
+        RC._run_phases(args, cell, paths, ("upload-capture",))
+    assert not (paths["cell"] / "uploads/upload-capture.json").exists()
+    assert not RC._phase_done_path(args, paths, "upload-capture").exists()
+    upload_boundary.single.assert_not_called()
+    upload_boundary.verify.return_value = []
+    upload_boundary.bytes.clear()
+    upload_boundary.bulk.reset_mock()
+    assert RC._run_phases(args, cell, paths, ("upload-capture",)) == ["upload-capture"]
     receipt = json.loads((paths["cell"] / "uploads/upload-capture.json").read_text())
+    assert set(receipt["paths"]) == set(expected)
+    assert {
+        name: hashlib.sha256(upload_boundary.bytes[name]).hexdigest() for name in receipt["paths"]
+    } == expected
+    assert upload_boundary.bulk.call_count == 1 and upload_boundary.single.call_count == 2
+    assert upload_boundary.bulk.call_args.args[0].parent == paths["cell"].parent
+    assert RC._phase_complete(args, paths, "upload-capture")
     assert sum(p.endswith("_capture_drops.json") for p in receipt["paths"]) == 5
     assert any(p.endswith("capture_input_validation.json") for p in receipt["paths"])
     assert not any("gpqa" in p for p in receipt["paths"])

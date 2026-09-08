@@ -229,6 +229,46 @@ def test_capture_real_main_preserves_production_scope(tmp_path, process_boundary
     assert envelope["kind"] == "epm:progress" and envelope["gate"] == "phase"
 
 
+def test_dispatched_capture_uses_inherited_gpu_bfloat16_loader(
+    tmp_path, process_boundary, monkeypatch
+):
+    """Feed actual dispatched arguments through the real parent loader, with no weights."""
+    import torch
+    import transformers
+
+    monkeypatch.syspath_prepend(str(ROOT / "scripts"))
+    inherited = importlib.import_module("issue2330_qwen35_generate_capture")
+    config = transformers.Qwen3Config()
+    config_load = create_autospec(transformers.AutoConfig.from_pretrained, return_value=config)
+    monkeypatch.setattr(transformers.AutoConfig, "from_pretrained", config_load)
+    # The model-loading and hardware-discovery boundaries are mocked; dtype/device
+    # routing, native-config selection and the inherited loader body are real.
+    model = torch.nn.Linear(1, 1, bias=False, dtype=torch.bfloat16)
+    model.config = config
+    model_load = create_autospec(
+        transformers.AutoModelForCausalLM.from_pretrained, return_value=model
+    )
+    monkeypatch.setattr(transformers.AutoModelForCausalLM, "from_pretrained", model_load)
+    monkeypatch.setattr(
+        torch.cuda, "device_count", create_autospec(torch.cuda.device_count, return_value=1)
+    )
+    assert D.main(_args(tmp_path, "capture")) == 0
+    snapshot = str(tmp_path / "pinned-snapshot")
+    captures = [
+        argv
+        for argv, _, _ in process_boundary.launched
+        if "--phase" in argv and argv[argv.index("--phase") + 1] == "capture"
+    ]
+    assert len(captures) == 2
+    for argv in captures:
+        device = argv[argv.index("--device") + 1]
+        assert inherited._load_capture_model(snapshot, device, "bfloat16") is model
+        assert model_load.call_args.args == (snapshot,)
+        assert model_load.call_args.kwargs["device_map"] == {"": 0}
+        assert model_load.call_args.kwargs["dtype"] is torch.bfloat16
+    assert model_load.call_count == 2
+
+
 def test_fit_pilot_real_main_requires_checkpoint_and_pauses(tmp_path, process_boundary):
     """The actual pilot unit has rc7, a validated checkpoint, and a durability upload."""
     assert D.main(_args(tmp_path, "fit-pilot")) == D.RC_PILOT_PAUSE
@@ -439,6 +479,18 @@ def test_multi_gpu_environment_rejected(tmp_path, monkeypatch):
         D.child_environment(args)
 
 
+def test_prior_clock_is_not_a_production_bypass(tmp_path, process_boundary):
+    with pytest.raises(SystemExit):
+        D.main([*_args(tmp_path, "capture"), "--smoke-prior-report", str(tmp_path / "prior.json")])
+    assert process_boundary.launched == []
+
+
+def test_v1_identity_is_refused_by_new_wrapper(tmp_path, process_boundary):
+    with pytest.raises(SystemExit):
+        D.main([*_args(tmp_path), "--run-id", "qwen3-chat-v1"])
+    assert process_boundary.launched == []
+
+
 def test_runtime_and_range_checks_are_required_with_manual_general_preflight(
     tmp_path, process_boundary
 ):
@@ -519,8 +571,8 @@ def test_real_range_probe_requires_exact_bytes(monkeypatch, capsys, problem):
 @pytest.mark.parametrize(
     "phase, expected",
     [
-        ("upload-raw", (2, 3, 21)),
-        ("upload-capture", (1, 2, 16)),
+        ("upload-raw", (1, 0, 10)),
+        ("upload-capture", (1, 0, 10)),
         ("upload-partial", (3, 3, 20)),
         ("upload-fits", (0, 5, 18)),
     ],
@@ -540,7 +592,7 @@ def test_upload_operation_counts_follow_groups_and_metadata(tmp_path, phase, exp
         "fits/fits_prompt_last.json",
         "fits/perrow_prompt_last.json",
     ]
-    # Both parsed files belong to independent bulk groups in raw/partial.
+    # Partial retains separate parsed-file groups; raw/capture now batch the phase.
     if phase in ("upload-raw", "upload-partial"):
         relative_files.remove("parsed/val_400_capture_drops.json")
     else:
@@ -556,6 +608,9 @@ def test_upload_operation_counts_follow_groups_and_metadata(tmp_path, phase, exp
         operations["single_files"],
         operations["retry_calls"],
     ) == expected
+    if phase in ("upload-raw", "upload-capture"):
+        assert operations["verified_receipts"] == 1
+        assert operations["completion_checkpoints"] == 1
 
 
 def test_actual_wrapper_resolves_dynamic_upload_retry_envelopes(tmp_path, process_boundary):
@@ -578,6 +633,8 @@ def test_actual_wrapper_resolves_dynamic_upload_retry_envelopes(tmp_path, proces
             assert limit["retry_calls"] == limit["observed_upload_operations"]["retry_calls"]
             assert limit["retry_exposure_s"] == limit["retry_calls"] * 30
             assert step["timeout_s"] == 2 * limit["bytes"] / 10 + limit["retry_exposure_s"] + 1
+            if step["phase"] in ("upload-raw", "upload-capture"):
+                assert limit["retry_calls"] == 10
 
 
 def test_smoke_gpu_drain_cannot_outlive_work_fence(tmp_path, process_boundary):

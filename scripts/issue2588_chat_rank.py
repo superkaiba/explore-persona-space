@@ -343,7 +343,7 @@ def main(argv=None) -> int:
         required=True,
         help="Root containing generic/RUN/cells_cap_long/q3_8b_{a,b}",
     )
-    parser.add_argument("--run-id", default="qwen3-chat-v1")
+    parser.add_argument("--run-id", default="qwen3-chat-v2")
     parser.add_argument("--hf-revision", required=True, help="Verified durable capture/fit commit")
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument(

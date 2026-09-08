@@ -1,6 +1,6 @@
 {
   "surface": "generic",
-  "run_id": "qwen3-chat-v1",
+  "run_id": "qwen3-chat-v2",
   "transfers": {
     "preflight": {
       "bytes": 2097152,
