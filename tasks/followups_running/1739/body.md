@@ -24,6 +24,8 @@ relates_to:
 
 **Methodology:** [docs/methodology/issue_1739.md](https://github.com/superkaiba/explore-persona-space/blob/82a82557a36fd2952316e564e3c763c20eb20efd/docs/methodology/issue_1739.md) · [gist mirror](https://gist.github.com/superkaiba/5af4cb475aa4caa55cf69a02a5393427)
 
+**Latest follow-up, 2026-09-08:** the requested no-recombination sweep is complete at 150/150 cells, through 100,000 generic pairs plus fixed trait pools. The new P-B result is appended at the end under “Natural context–answer scaling follow-up”: a hallucination advantage (+0.0528 mean ρ at 100k), with slightly negative mean gaps for evil and sycophancy. The historical title, Goal, and prior-round classifications below are preserved; they are not a classification of this new descriptive follow-up.
+
 ## Takeaways
 
 - A seven-rung, five-seed unlabeled-data ladder improves the mapped-answer-minus-context-probe difference in 8 of 9 primary panels, but the full-store difference remains negative in 8 of 9: 0 panels are supported, 8 refuted, and evil generic transfer is unresolved.
@@ -327,3 +329,144 @@ Full-U D is -0.0759 / +0.0245 / -0.1370 for evil, -0.0168 / -0.0610 / -0.0110 fo
 **Prior rounds:** ~96 GPU-h round 1 (three parallel A100-80 lanes for the fit phase; generation/capture on the primary pod; judging via the Anthropic Batch API off-pod) + ~55 GPU-h round 2 (twelve single-A100-80 boxes, plan estimate) + the evil-ood-spread round (three single-GPU RunPod pilot pods for 3 x 1,000 rollouts; 159,990 compliance judge draws via the Batch API; the tactic holdout ~56 min on a CPU pod) + the claim4-controls round (0 GPU-h; ~19-21 CPU-pod-hours across seven RunPod CPU pods — four production 256/128 GB boxes, three OOM-superseded) + the composition-multiseed/arm2-repair round (0 GPU-h; roughly 60 CPU-pod-hours over ten verified RunPod CPU chains, timestamp-derived, plus five first-cell wall-halted boxes rotated under the recorded gate ladder). Code `eb084ff2c4` (run), `6686d45da9` (round-1 analysis figures), `a78f971b51` (round-2 dispatch), `b1aaf57910` (round-2 figures + renderer `scripts/issue1739_newarm_figs.py`), `6e27d96a3a` (evil-ood-spread spread-instrument consolidation + tests), `810466a2fe` (re-reduced compliance artifact), `39afefe018` (holdout metrics + pilot aggregates), `324e77cdaf` (evil-ood-spread figures + renderer `scripts/issue1739_oodspread_figs.py`), branch `issue-1739`; claim4-controls: `067bd0300c` (run — scorer `scripts/issue1739_r2v2_score.py`, runner `issue1739_r2v2_run.py`, fold `issue1739_claim4_fold.py`), `12cfdbf31d` (fold table + figures + numbers-note), `56f78b6b5c` (reader-facing figure relabel + the per-seed and per-context companions, renderer patch + `scripts/issue1739_claim4_relabel_figs.py`), and `0efb2fb67b` (the per-context companion expanded to all five corrected sycophancy rungs), branch `issue-1739-fit`, banked fair-refit reference rows at `5aae0a472b`. Composition-multiseed/arm2-repair round: `6f0414b913` (seed-split wrapper halves), `82a16cd2f5` (jittered eigendecomposition fix in the fit core), `ad5380d226` (leg-1 fold table + figures + `scripts/issue1739_compose_ms_fold.py`), `a0f14160d1` (review-round figure re-render: reader-facing labels, designed-degenerate columns omitted — the embedded compose figures' pin), branch `issue-1739`; `a9d4979ffa` (arm2fix scorer run commit) and `f0530e0e8b` (arm2fix fold table + forest figure + numbers-note `docs/map_behavior_prediction_arm2fix_note.md`), branch `issue-1739-fit`. Eval artifacts: `eval_results/issue_1739/{evil,hallucination,sycophancy}/arm_results/all_arms_spearman.json` (826 / 270 / 810 cells; per-cell records in `arm_results/percell/cells.jsonl`), `eval_results/issue_1739/evil_config_b/` (90 reversed-transfer cells), `eval_results/issue_1739/dv_dataset/*/labeling.json`, `eval_results/issue_1739/{evil,hallucination}/pilot_report.json`, map diagnostics per behavior, the per-cell headline table `figures/issue_1739/headline_deltas_percell.csv`, and the CJK intrusion scan + excluded-intrusion recount `eval_results/issue_1739/intrusion_audit/{intrusion_scan,recount}.json`. Evil-ood-spread-round artifacts: `eval_results/issue_1739/evil_ood_spread/{pilot_spread.json,compliance_dv_results.json,tactic_labels.json,item_b/holdout_metrics.json,item_b/cluster_stats.json,contexts/summary.json}`; the 437,952 held-out predictions (16 line-split shards plus manifest), retained judge outputs, and pilot rollouts live on HF under [`issue1739_ctxmap/evil_ood_spread/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0a9c648b72362dd06ec478adaab501bd8d179425/issue1739_ctxmap/evil_ood_spread) (listing verified via `list_repo_tree` at the pinned revision, 2026-08-05). Claim4-controls artifacts: [`claim4_per_rung_table.json`](https://github.com/superkaiba/explore-persona-space/blob/12cfdbf31dbaf6d3e17545637cb060c9926988d9/eval_results/issue_1739/claim4_controls/claim4_per_rung_table.json) (+ its `.md` twin) + `figures/issue_1739/claim4_controls/` (7 figures with data sidecars; the embedded delta figures re-rendered with reader-facing labels at `56f78b6b5c`, the per-context companion expanded to all five corrected rungs at `0efb2fb67b`) + the writeup numbers-note `docs/map_behavior_prediction_claim4_controls_note.md`, committed at `12cfdbf31d` on `issue-1739-fit`; per-seed row files, map-baseline reads, and reproduction-gate breadcrumbs on HF under [`issue1739_claim4_controls/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8c9c986ffb1d5d824955d7c95271524c8946349a/issue1739_claim4_controls) — subdirs `evil`, `sycophancy`, `hallucination`, `repro_claim4`, `_staging` (three per-behavior upload-verification PASS markers, 2026-08-19; listing verified via `list_repo_tree` at the pinned revision, 2026-08-19). Composition-multiseed/arm2-repair artifacts: [`compose_ms_table.json`](https://github.com/superkaiba/explore-persona-space/blob/a0f14160d19c9b8bfb0af6cbb5b2065ea95fd403/eval_results/issue_1739/compose_multiseed/compose_ms_table.json) + [`compose_ms_cells.csv`](https://github.com/superkaiba/explore-persona-space/blob/a0f14160d19c9b8bfb0af6cbb5b2065ea95fd403/eval_results/issue_1739/compose_multiseed/compose_ms_cells.csv) (branch `issue-1739`; first committed `ad5380d226`, table regenerated at `a0f14160d1` with the figure relabels) and [`arm2fix_table.json`](https://github.com/superkaiba/explore-persona-space/blob/f0530e0e8bc5b753fe99f418c7269ac7c239b1d8/eval_results/issue_1739/claim4_controls/arm2fix/arm2fix_table.json) (committed `f0530e0e8b`, branch `issue-1739-fit`); per-cell rows, pool metadata, and map diagnostics on HF under [`issue1739_ctxmap/compose_multiseed/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ab0a87133cf478cb05a22ccd14a840be8807b113/issue1739_ctxmap/compose_multiseed) (408 files across per-behavior halves `s02`/`s34`, sycophancy also single-seed halves `s3`/`s4`) and [`issue1739_claim4_controls/arm2fix/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ab0a87133cf478cb05a22ccd14a840be8807b113/issue1739_claim4_controls/arm2fix) (160 files: 90 evil, 45 sycophancy, 25 hallucination; listings verified via `list_repo_tree` at the pinned revision, 2026-08-24; ten per-pod upload-verification PASS markers with exact name-set and row reconciliation, 2026-08-23/24). Committed figures deliberately not embedded: `figures/issue_1739/claim4_controls/claim4_spaghetti.png` (true-map-only per-seed draft, superseded by the embedded two-series per-seed companion), `figures/issue_1739/claim4_controls/claim4_arm2_bars.png` (the context-extracted-direction comparator's per-rung sanity bars — its inconclusive out-of-band read is reported in prose), `figures/issue_1739/claim4_controls/claim4_map_knn.png` (the per-layer map retrieval read behind the shuffle control — top-1 0.16-0.57 true versus 0.0008 shuffled, reported in prose), `figures/issue_1739/interim_writeup/nlmap_percell_scatter.png` and `figures/issue_1739/interim_writeup/wcrung_arms.png` (assets of the separately-authored interim writeup, not results of this body), `figures/issue_1739/result2_fair/result2_fair.png` (an earlier single-seed fair-protocol render the claim4-controls forest supersedes), and `figures/issue_1739/sycophancy/distribution_shift_ladder.png` (a dispatcher-phase per-behavior draft of the embedded transfer ladder). The round-1 single-seed composition scatter `figures/issue_1739/compose_fu_flip.png` is superseded by the five-seed `compose_fu_flip_v2` set embedded above. Round-2 artifacts: `eval_results/issue_1739/new_arm_round/arm_results/{merged_transfer.jsonl,merged_cells_rows.jsonl,fc_vs_t1_pairs.jsonl,newarm_spearman_summary.json}` + spread-floor verdicts `eval_results/issue_1739/new_arm_round/k1_verdicts.json`; per-leg box outputs on HF under [`issue1739_new_arm_round/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/1eb3b2c358f282692852655f94e1c5c0e8c18e87/issue1739_new_arm_round) (listing verified via `list_repo_tree` at the pinned revision, 2026-08-03); the collect script's two draft figures (committed `fdcebc102c`) are superseded by the `_v2` set — the draft delta figure averaged the spread-floor-flagged evil rungs into its bars. Round 2 reused this issue's own capture stores, judge labels, and fitted maps (Hub-verified 2026-08-01 via scoped `list_repo_tree`, plan v9 §10) and added no new rollouts or judge calls. Raw rollouts + judge outputs: HF `superkaiba1/explore-persona-space-data` under [`issue1739_ctxmap/raw_completions/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/1ade7beb35b51249f26a2a2ecacb770003b4dbcc/issue1739_ctxmap/raw_completions) and [`issue1739_ctxmap/judge/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/1ade7beb35b51249f26a2a2ecacb770003b4dbcc/issue1739_ctxmap/judge) (listing verified via `list_repo_tree`, 2026-07-30). Reused artifacts — activation store from [#1092](https://eps.superkaiba.com/tasks/1092): HF `superkaiba1/explore-persona-space-data` at [`issue1092_realistic_crossing/analysis_tensors/summaries/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/e5901706/issue1092_realistic_crossing/analysis_tensors/summaries), rev `e5901706` — fit: same base model and revision as this run's capture, carries both mapping arms plus answer-span summaries at all 28 layers in fp16, and its instruct-own-text cell matches the map's intended input distribution (real conversations, model-generated answers); direction bank from [#779](https://eps.superkaiba.com/tasks/779): HF `superkaiba1/explore-persona-space-data` at [`issue779_monitoring/r_b/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/037fcbb/issue779_monitoring/r_b), rev `037fcbb` — fit: persona-vectors mean-difference directions for the same three behaviors on the same base model (judge-filtered contrastive rollouts, all 28 layers, matching the store's layer grid), consumed as the pinned E1 reference probe at Gate 0 (E1 grid directions were extracted fresh from this run's rollouts after the asset fallback described under Data extraction). Planned-vs-actual: 2 of 18 planned evil composition cells skipped (recorded infeasible pool recipe); the U=50,000 rung realized as the 18,793-row full store; the sycophancy transfer rung realized as the plan's held-out Reddit socialskills fallback (ELEPHANT AITA-YTA unresolvable on HF); the teacher-forced margin companion DV was not computed; sycophancy restored 453 of its 810 cells from a crash resume (final coverage complete); round 2 realized its full mirror grid (zero recorded skips, zero roster-accounting violations; the matched-natural final-context regime is a structural restriction, not a skip); the evil-ood-spread round realized items A, B, and D — its item C (detection re-cut) was superseded by a concurrent follow-up round and committed no artifact (its dead zero-row re-cut output is deliberately left uncommitted, and the concurrent round's own artifacts fold separately); the compliance artifact retains the superseded per-item aggregation as a labelled legacy block and carries a struck circular detection block (its label was thresholded from the scored variable itself — never a detection result); the tactic holdout's mandated kNN-retrieval read is absent, and its identity-plus-learned-bias baseline is rank-degenerate in a single-fold transfer (a per-fold additive constant cannot change Spearman ranks), so neither mandated mapping read is informative there; full transfer rungs on the passing pilot corpora were not run; the claim4-controls round realized all four items at the planned 13-rung x 5-seed grid with zero coverage gaps — its compliance companion was a declared skip (77.3% join coverage, below the 90% gate), its context-extracted-direction comparator is recorded inconclusive (adapter-suspect: the in-distribution sanity read lands outside the committed band on all three behaviors — evil -0.06 vs a 0.40-0.70 band, sycophancy above its band, hallucination marginally below), two production out-of-memory crashes (a map-fit split-copy transient, then a readout-stage transient) were fixed by a row-index pushdown whose outputs the seed-0 reproduction gate matched at full production shape (rc=0 on all three behaviors) plus a 256 GB box substitution for the sycophancy/hallucination pods (plan §9 deviation — box RAM only, code and argv unchanged), and sycophancy's seeds split across two pods after a ~2.4x wall deviation at the width gate; the composition-multiseed round realized 110 of 130 evil cells (20 designed skips, recorded infeasible pool recipes — fully in-domain rungs and no-overlap 8,000-label anchors exceed evil's 6,468-context pool) and 130 each for sycophancy and hallucination, with sycophancy's prefix variant excluded from every statistic as designed-degenerate (65 realized cells kept as a stat-free flagged row class; the 2-anchor criterion is a stated deviation) and the sycophancy seeds-3-4 half split to single-seed pods after repeated first-cell wall halts; the arm2fix leg realized all 13 rungs x 5 seeds, with evil excluded by the pre-fixed sanity gate (indeterminate-adapter) and the planned direction-stability companion file absent (recorded caveat); config slugs `arm1_ctx_e1` ... `arm18_oracle_krr` (+ `arm2_ctx_native` transfer-mode and `arm20_shuffled_map_ridge` this round), regimes `e1/e2/e2p` (+ `e1_fc/e2p_fc` round 2), variants `prefix_end/context_end`, `map_variant=true/shufpair`, protocols `P-A/P-B`, evil-ood-spread rung slugs `evil_train/evil_hh_rlhf/evil_toxicchat` and corpus slugs `mhj/tom-gibbs/pair`, claim4 rung slugs `evil_mhj/evil_pair/evil_tomgibbs/hhrt/toxicchat/aita/sycoans/sycoays/sycofb/sycomim/sycomwe/nqopen/simpleqa`, compose cell labels `compose5000_fu<share>_fl<flag>_L<labels>` with pod halves `s02/s34/s3/s4`, and the repaired comparator slug `arm2q_ctx_native`.
 
 **Context:** fresh direction (no parent) — task created 2026-07-28 from the 2026-07-27/28 interactive design session (plan at `docs/map_behavior_prediction_plan.md`). Originating prompt (verbatim): "run in background with happy coder and MAKE SURE IT PARALLELIZES AND VECTORIZES AS MUCH AS POSSIBLE". Run completed 2026-07-29; first analyzer pass 2026-07-30; revision rounds (intrusion recount + interpretation-critic fixes; clean-result-critic self-containedness + provenance fixes) 2026-07-30. Same-issue follow-up round `new-arm-round` (scoped 2026-08-01, run 2026-08-02/03, folded 2026-08-03); its originating prompt (verbatim): "run these as much in parallel/vectorized as possible: [1] Final-context PV extraction point; [2] Nonlinear oracle (nonlinear regression from the true answer vector); [3] arm5 direct-nonlinear + nonlinear-map ridge readouts (arm7/8) on the OOD rungs" then "run all in background with happy coder." Same-issue follow-up round `evil-ood-spread-round` (scoped 2026-08-03, run 2026-08-03/05, folded 2026-08-05); its originating prompt (verbatim): "do all these things. don't worry too much about cost. Don't run on GCP. run as much in parallel/vectorized as possible" — "all these things" being the four-item menu for the floor-failing evil transfer rungs (attack-family shift; tactic-family holdout; detection re-cut; graded compliance DV). Same-issue follow-up round `claim4-controls` (scoped 2026-08-19, run 2026-08-19, folded 2026-08-19); its originating prompt (verbatim, paper-planning chat): "file and run" — the four control runs that decide whether writeup claim (4) (probe-on-mapped-answer beats probe-on-context via unjudged data) is draftable in strong form. Same-issue follow-up round `composition-grid-multiseed-plus-arm2-repair` (scoped 2026-08-22, run 2026-08-23/24, folded 2026-08-24); its originating scope (verbatim, user-chat follow-up scope marker): "Two legs from the 2026-08-22 paper-outline adversarial critique (docs/paper_context_answer_map/outline_critique_2026-08-22.md, priority items 1-2)" — leg 1 the multi-seed three-behavior composition rerun with the unjudged-pool-volume ablation, leg 2 the arm2 comparator repair and rerun. Same-issue follow-up round `unlabeled-data-ladder` (scoped and run 2026-09-05); its originating approval was (verbatim): "yes proceed" after accepting the seven-rung, five-seed design and the 0.02 equivalence margin. Conciseness note: total prose runs over the 800-word budget, several result sections exceed the 120-word prose cap, and several Takeaways bullets exceed the 30-word bullet cap — acknowledged; seventeen result sections were kept to cover the 1,906-cell grid plus the round-2, evil-ood-spread, claim4-controls, and composition-multiseed/arm2-repair additions.
+
+## Natural context–answer scaling follow-up (2026-09-08)
+
+### More natural generic data preserves a hallucination advantage, not a general advantage
+
+The requested no-recombination sweep is complete: **150 of 150 planned cells**,
+with no missing or failed fit cells. It crosses 10 generic-pair counts with five
+seeds and three behaviors, retaining each behavior's full trait-training pool.
+This is an additive plan31 result, not a replacement of the earlier P-A study,
+its hypothesis classification, or the manuscript.
+
+At **100,000 generic pairs plus the fixed trait pool**, the mapped-answer
+regression beats direct context regression for hallucination in all five seeds.
+For evil and sycophancy, the mean differences are slightly negative and the seed
+ranges span zero. These are descriptive results: a near-zero mean is not a test
+of equivalence, and the seed ranges below are not confidence intervals.
+
+| Behavior | Direct context ρ | Mapped answer ρ | Answer oracle ρ | Mapped − direct | Five-seed delta range |
+|---|---:|---:|---:|---:|---:|
+| Evil | 0.1430 | 0.1411 | 0.3138 | −0.0019 | [−0.0642, +0.0513] |
+| Sycophancy | 0.3619 | 0.3533 | 0.4652 | −0.0086 | [−0.0450, +0.0167] |
+| Hallucination | 0.4046 | 0.4574 | 0.5291 | +0.0528 | [+0.0488, +0.0589] |
+
+Every value first averages the own-heldout-dataset Spearman correlations within
+one behavior and seed, then averages the five seeds. Datasets receive equal
+weight, not weight proportional to their evaluation sample count.
+
+The scaling effect is behavior-dependent. From 250 to 100,000 generic pairs,
+mapped-answer performance changes from 0.2677 to 0.1411 for evil, 0.3229 to 0.3533
+for sycophancy, and 0.4223 to 0.4574 for hallucination. The corresponding
+mapped-minus-direct gaps change from +0.1421 to −0.0019, −0.0342 to −0.0086, and
++0.0308 to +0.0528. Curves are not uniformly monotonic. At the matched *size*
+18,793 in this new natural pool, the gaps are +0.0065, −0.0183, and +0.0394;
+this is not a replay of the old 18,793 examples or old evaluation protocol.
+
+The dataset detail matters. At 100k, evil has a large negative mapped-minus-direct
+difference on TomGibbs (−0.2909) despite positive means on its other four datasets.
+Sycophancy has a large deficit on mimicry (−0.2342), but a gain on model-written
+evaluations (+0.1457). Hallucination improves on both NQ-Open (+0.0699) and
+SimpleQA (+0.0357). No single aggregate establishes an across-dataset guarantee.
+
+[Scaling overview](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural100k_20260906/analysis_figures/natural_scaling_overview.png)
+and dataset panels for
+[evil](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural100k_20260906/analysis_figures/natural_scaling_evil.png),
+[sycophancy](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural100k_20260906/analysis_figures/natural_scaling_sycophancy.png),
+and [hallucination](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural100k_20260906/analysis_figures/natural_scaling_hallucination.png).
+Lines show five-seed means; bands show the seed minima and maxima.
+
+### What was actually varied
+
+Generic counts were 250, 500, 1,000, 2,000, 5,000, 10,000, 18,793, 25,000,
+50,000, and 100,000. Each example is an intact first-user prompt from pinned
+LMSYS-Chat-1M and its own freshly generated Qwen2.5-7B-Instruct answer. No
+conversation histories or queries were recombined, no later turns were appended,
+and no original third-party answers were reused. Generation used greedy decoding
+and the inherited 1,024-token cap. All 100,000 generated answers were nonempty;
+8,414 cap-hitting answers (8.414%) were retained as plan31 required. The store
+has 100,000 distinct source keys, verified from the uploaded row index itself.
+
+The full fixed trait-training pools were 6,468 pairs for evil and 16,000 each for
+sycophancy and hallucination. Thus endpoint maps used **106,468 / 116,000 /
+116,000 total pairs**, not 100,000 total mixed pairs. Nested generic samples are
+shared across behaviors for each seed. At 100k every seed uses the same complete
+generic pool, although whitening and readout splits differ across seeds.
+
+The three linear arms are direct context regression (arm4), map then regression
+(arm7), and true-answer oracle regression (arm12). Global layers were frozen at
+18/20/17 for evil, 20/19/19 for sycophancy, and 20/20/18 for hallucination
+(direct/map/oracle). Whitening was re-estimated at each size from the
+generic-plus-trait pool using the inherited seed-dependent 80/20 fit/selection
+split, and shared by all three methods. Thus even the direct and oracle baselines
+can change with generic size. Map diagnostics use an 80/20 split, followed by a
+weight refit on the entire declared union; the audit verified actual fit rows.
+
+P-B trains a readout without its evaluation dataset and evaluates on that whole
+held-out dataset: five evil, six sycophancy, and two hallucination datasets.
+The map uses the same fixed trait-training pool across readout folds. The primary
+analysis includes only each readout's own held-out dataset, not its held-in or
+auxiliary predictions. Realized coverage is 650 held-out fold/seed/size evaluations
+and 1,950 primary method rows. This round reused cached behavioral labels and
+evaluation contexts, made no new judge calls, and did not update model weights.
+
+### Mapping diagnostics at the 100k endpoint
+
+All numbers below are five-seed means at each behavior's frozen mapped layer.
+R² is evaluated on the named held-out dataset; the comparator is the identity
+map plus a bias learned from training pairs. Nearest-neighbor retrieval uses the
+actual dataset's answer vectors as its candidate pool, **not** the 100k training
+pool. Full per-seed, per-layer, and per-size diagnostics are retained in JSON.
+
+| Behavior / dataset | Map R² | Identity+bias R² | Euclidean top-1 | Cosine top-1 | Pool N | Top-1 chance |
+|---|---:|---:|---:|---:|---:|---:|
+| Evil / MHJ | 0.2371 | −1.0489 | 0.2049 | 0.2852 | 533 | 0.001876 |
+| Evil / PAIR | −0.4890 | −2.5285 | 0.0196 | 0.0238 | 917 | 0.001091 |
+| Evil / TomGibbs | −0.2218 | −1.4313 | 0.0033 | 0.0047 | 1,500 | 0.000667 |
+| Evil / HH red-teaming | 0.4764 | −1.0774 | 0.6318 | 0.6630 | 1,868 | 0.000535 |
+| Evil / ToxicChat | 0.5072 | −0.7898 | 0.5565 | 0.6227 | 519 | 0.001927 |
+| Sycophancy / AITA | 0.5434 | −1.4932 | 0.7870 | 0.8061 | 1,304 | 0.000767 |
+| Sycophancy / answers | 0.3556 | −0.8027 | 0.2997 | 0.3370 | 594 | 0.001684 |
+| Sycophancy / are-you-sure | 0.1456 | −1.5072 | 0.2234 | 0.3117 | 598 | 0.001672 |
+| Sycophancy / feedback | 0.2891 | −1.3131 | 0.0619 | 0.0877 | 559 | 0.001789 |
+| Sycophancy / mimicry | −0.9597 | −5.3753 | 0.0035 | 0.0035 | 285 | 0.003509 |
+| Sycophancy / model-written evals | −0.0649 | −2.0124 | 0.1208 | 0.1326 | 576 | 0.001736 |
+| Hallucination / NQ-Open | 0.4958 | −0.5143 | 0.6322 | 0.6926 | 3,167 | 0.000316 |
+| Hallucination / SimpleQA | 0.3839 | −0.7151 | 0.3646 | 0.4506 | 4,021 | 0.000249 |
+
+Several OOD datasets retain negative reconstruction R²; better reconstruction
+than identity+bias is not the same as beating direct behavioral regression.
+The true-answer oracle is a reference predictor, not a guaranteed upper bound.
+
+### Scope and reproducibility
+
+This is evidence for a hallucination benefit under this particular protocol,
+not a disproof or confirmation of the entire persona-map hypothesis. The fixed
+trait pool becomes a smaller fraction of the mapping data as generic size grows,
+so the experiment changes both volume and mixture weight. The same evaluation
+contexts recur across seeds. One model, one generic source, inherited labels,
+and the retained cap-hitting answers bound generalization. No new equivalence
+test or automatic supported/refuted classification was authorized. Because the
+old study used a different source population and readout protocol, the new result
+does not identify recombination as the cause of any historical discrepancy.
+
+Scientific code was frozen at `9f6a6fedb9a97365bfbfb0c241d7712d94ce43c0`.
+Every cell's saved correlations were independently recomputed from predictions;
+paired context/group/label keys, full map-fit counts, fixed layers, manifest
+identity, and exact remote filename/size/content sets passed. The full audit's
+SHA-256 is `e037f2846afe962575f51bfdfd3840b21ae562bc7e2103c94501c282affd6dc6`.
+The final archive census reconciles 13,696 files, including 1,100 immutable fit
+outputs and 896 losslessly packed metadata files. Compact numeric results are
+under `eval_results/issue_1739/natural_scaling/analysis/`; immutable data, raw
+predictions, the full audit, and preservation evidence are under the HF dataset
+prefix `issue1739_natural100k_20260906`.
+
+Pinned public artifacts: [numeric analysis and artifact guide](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/07460fb4f01c4a692b141eaf2a8a081352aacaf5/issue1739_natural100k_20260906/analysis),
+[complete audit](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/19d49bb069353826ded1da23e26dea46f8191d4f/issue1739_natural100k_20260906/final_preservation_20260908/audit/natural_scaling_audit.json),
+and [source census and lossless metadata archive](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/3f864b4053d5f95c5cafe4869e455d74278416f9/issue1739_natural100k_20260906/final_preservation_20260908/snapshot).
+All four published plot URLs returned HTTP200 anonymously. Color panels and the
+overview's grayscale export were visually inspected; numeric rendering sidecars
+retain exact values, file hashes, fonts, and intended-size text measurements.
+The four-H100 pod was terminated only after complete preservation passed;
+the fresh live task-scoped inventory reports no remaining compute pod.
