@@ -27,11 +27,14 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import hashlib
 import json
 import logging
 import math
 import os
+import re
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -97,6 +100,11 @@ def _meta() -> dict:
 
 
 def _cell_prefix(args, cell: PC.Cell) -> str:
+    """Resolve scope- and run-isolated artifact destinations."""
+    if _generic_only(args):
+        smoke = "/smoke" if args.smoke else ""
+        arm = "nothink" if cell.arm == "a" else "think"
+        return f"{PC.PANEL_PREFIX}/generic/{args.run_id}{smoke}/{cell.model_key}/{arm}"
     base = cell.hf_prefix
     if args.smoke:
         base = (
@@ -129,7 +137,11 @@ def _logs_dir(root: Path) -> Path:
 
 
 def _paths(args, cell: PC.Cell) -> dict[str, Path]:
+    """Create this run's paths, refusing incompatible generic provenance."""
+    _validate_scope(args, cell)
     root = Path(args.out_root)
+    if _generic_only(args):
+        root = root / "generic" / args.run_id
     sub = "smoke" if args.smoke else "cells"
     if PC.CAP_PROFILE != "v1":
         # Local isolation mirrors the HF-prefix isolation: a non-v1 profile
@@ -146,12 +158,221 @@ def _paths(args, cell: PC.Cell) -> dict[str, Path]:
         "capture_oddlayers": cell_dir / "capture_oddlayers",  # C3: odd pass never overwrites
         "fits": cell_dir / "fits",
         "cache": root / "hf_cache",
-        "logs": _logs_dir(root),
+        "logs": root / "logs" if _generic_only(args) else _logs_dir(root),
     }
     for v in d.values():
         v.mkdir(parents=True, exist_ok=True)
     _HC_CTX.update(streams=int(cell.model.hc_streams), h_dim=int(cell.model.h_dim))
+    if _generic_only(args):
+        identity = _identity(args, cell)
+        identity_path = cell_dir / "run_identity.json"
+        if identity_path.exists():
+            assert json.loads(identity_path.read_text()) == identity, (
+                "incompatible run provenance; choose a new --run-id"
+            )
+        else:
+            assert not any(cell_dir.rglob("*.json")), "unidentified existing generic artifacts"
+            PC.write_json_atomic(identity_path, identity)
     return d
+
+
+def _generic_only(args) -> bool:
+    """Legacy namespaces and parser defaults retain the full panel surface."""
+    return getattr(args, "surface", "full") == "generic"
+
+
+def _validate_scope(args, cell: PC.Cell) -> None:
+    """Enforce the reviewed Qwen3 chat scope before any work or path mutation."""
+    if not _generic_only(args):
+        assert cell.model_key != "q3_8b", "Qwen3-8B is registered for --surface generic only"
+        assert not getattr(args, "run_id", None), "--run-id requires --surface generic"
+        assert not getattr(args, "fit_max_units", None), "fit pilot requires generic scope"
+        return
+    assert re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,79}", args.run_id or ""), (
+        "--surface generic requires a safe, nonempty --run-id"
+    )
+    assert cell.model_key == "q3_8b" and cell.fresh, "generic scope is Qwen3-8B chat only"
+    assert PC.CAP_PROFILE == "long", "generic scope requires EPS_CAP_PROFILE=long"
+    assert args.layer_set == "swept", "generic scope uses the reviewed swept layers"
+    assert args.gpu_count == 1, "Qwen3-8B chat uses TP=1"
+    assert not args.force, "generic resumes are fail-closed; use a new run ID for reruns"
+    if args.fit_max_units is not None:
+        assert args.fit_max_units == 1 and args.phase == "fits" and not args.smoke, (
+            "--fit-max-units 1 is a production-shape --phase fits pilot only"
+        )
+
+
+def _require_full_surface(args, route: str) -> None:
+    """Reject direct calls to every excluded benchmark/analysis/destructive route."""
+    assert not _generic_only(args), f"{route} is excluded by --surface generic"
+
+
+def _sha256_file(path: Path) -> str:
+    """Hash immutable source/data bytes without loading tensor files into RAM."""
+    with path.open("rb") as fh:
+        return hashlib.file_digest(fh, "sha256").hexdigest()
+
+
+def _identity(args, cell: PC.Cell) -> dict:
+    """All output-affecting identities needed for generic checkpoint reuse."""
+    return {
+        "schema": 1,
+        "surface": "generic",
+        "run_id": args.run_id,
+        "cell": cell.key,
+        "model_id": cell.model.hf_id,
+        "model_revision": cell.model.revision,
+        "cap_profile": PC.CAP_PROFILE,
+        "smoke": bool(args.smoke),
+        "layer_set": args.layer_set,
+        "parent_source_sha": PC.CHAT_PARENT_SOURCE,
+        "source_sha": G._git_sha(),
+        "source_files": {
+            Path(m.__file__).name: _sha256_file(Path(m.__file__)) for m in (PC, G, MF, LF, F)
+        },
+        "driver_sha256": _sha256_file(Path(__file__)),
+        "text_sharder_sha256": _sha256_file(_SCRIPTS / "issue811_upload_store.py"),
+        "runtime_lock_sha256": _sha256_file(_REPO_ROOT / "configs/issue2588_chat_runtime.txt"),
+        "runtime_builder_sha256": _sha256_file(_SCRIPTS / "issue2588_chat_runtime.py"),
+        "manifest_revision": PC.MANIFEST_REVISION,
+        "manifest_sha256": PC.CHAT_MANIFEST_SHA256,
+        "split_ids_sha256": _sha256_file(PC.SPLIT_IDS_PATH),
+        "capture_batch_size": args.capture_batch_size,
+        "capture_token_budget": _capture_token_budget(),
+        "capture_chunk_threshold": _capture_chunk_threshold(),
+        "capture_chunk_tokens": _capture_chunk_tokens(),
+        "generation_chunk_size": G.VLLM_CHUNK_SIZE,
+        "engine_gpu_memory_utilization": os.environ.get("VLLM_GPU_MEM_UTIL", "0.85"),
+        "engine_enforce_eager": os.environ.get("VLLM_ENFORCE_EAGER", "0"),
+        "device": args.device,
+    }
+
+
+def _file_records(files: list[Path], base: Path) -> dict:
+    """Fail on missing artifacts and record exact byte identities for resume."""
+    assert files, "checkpoint has no expected artifacts"
+    return {
+        str(p.relative_to(base)): {"bytes": p.stat().st_size, "sha256": _sha256_file(p)}
+        for p in sorted(set(files))
+    }
+
+
+def _checkpoint_complete(args, paths: dict, path: Path, files: list[Path]) -> bool:
+    """A successful sentinel, provenance and the exact complete file set must agree."""
+    if not path.exists():
+        return False
+    rec = json.loads(path.read_text())
+    cell = PC.cell_by_key(args.cell)
+    assert rec.get("status") == "complete" and rec.get("identity") == _identity(args, cell), (
+        f"stale/incompatible checkpoint: {path}"
+    )
+    assert rec.get("files") == _file_records(files, paths["cell"]), (
+        f"missing, changed or partial checkpoint artifacts: {path}"
+    )
+    return True
+
+
+def _write_checkpoint(args, cell: PC.Cell, paths: dict, path: Path, files: list[Path]) -> None:
+    """Write success only after expected artifacts have been produced and validated."""
+    PC.write_json_atomic(
+        path,
+        {
+            "status": "complete",
+            "identity": _identity(args, cell),
+            "files": _file_records(files, paths["cell"]),
+        },
+    )
+
+
+def _raw_stage_files(paths: dict, stage: str, expected_n: int | None = None) -> list[Path]:
+    """Validate all raw chunks, unique IDs, sampled tokens and terminal row count."""
+    stage_dir = paths["raw"] / stage
+    report = stage_dir / "cap_hit_report.json"
+    rec = json.loads(report.read_text())
+    n = rec["n"]
+    assert n > 0 and (expected_n is None or n == expected_n), (stage, n, expected_n)
+    chunks = [stage_dir / f"chunk{k:04d}.json" for k in range(math.ceil(n / G.VLLM_CHUNK_SIZE))]
+    assert sorted(stage_dir.glob("chunk*.json")) == chunks, f"partial/stale raw chunks: {stage}"
+    rows = _iter_stage_rows(paths, stage)
+    assert len(rows) == n and len({r["row_id"] for r in rows}) == n, (stage, n)
+    for r in rows:
+        assert r["stage"] == stage and len(r["prompt_ids"]) == r["n_prompt_tokens"]
+        assert len(r["sampled_token_ids"]) == r["n_comp_tokens"]
+    return [report, *chunks]
+
+
+def _capture_stage_files(args, cell: PC.Cell, paths: dict, stage: str) -> list[Path]:
+    """Validate every expected layer/shard against persisted row identities and dimensions."""
+    stage_dir = paths[_tag(args)] / stage
+    rows_path = stage_dir / "rows.json"
+    rec = json.loads(rows_path.read_text())
+    ids = [r["row_id"] for r in rec["rows"]]
+    assert ids and len(ids) == len(set(ids)), f"empty/duplicate capture rows: {stage}"
+    kept = {r["row_id"] for r in PC.read_jsonl(paths["parsed"] / f"{stage}.jsonl")}
+    drops_path = paths["parsed"] / f"{stage}_capture_drops.json"
+    drops = {r["row_id"] for r in json.loads(drops_path.read_text())["drops"]}
+    assert set(ids).isdisjoint(drops) and set(ids) | drops == kept, f"capture coverage: {stage}"
+    files = [rows_path, drops_path]
+    for layer in _layers_for(args, cell):
+        ldir = stage_dir / f"L{layer:02d}"
+        shards = [ldir / f"shard{k:03d}.npz" for k in range(math.ceil(len(ids) / 500))]
+        assert sorted(ldir.glob("shard*.npz")) == shards, f"partial layer shards: {ldir}"
+        for k, shard in enumerate(shards):
+            expected = ids[k * 500 : (k + 1) * 500]
+            with np.load(shard, allow_pickle=False) as z:
+                assert z["row_ids"].tolist() == expected, f"capture row alignment: {shard}"
+                keys = ["y_ans"] + (
+                    []
+                    if stage.startswith("ceiling_s")
+                    else [f"x_{p}" for p in cell.input_positions]
+                )
+                for key in keys:
+                    assert z[key].shape == (len(expected), cell.model.h_dim), (shard, key)
+                    assert z[key].dtype == np.float32 and np.isfinite(z[key]).all(), (shard, key)
+        files.extend(shards)
+    return files
+
+
+def _phase_artifacts(args, cell: PC.Cell, paths: dict, name: str) -> list[Path]:
+    """Enumerate only the reviewed generic artifacts; unexpected stages never upload."""
+    stages = _stage_names(args, cell)
+    if name == "stage-runtime":
+        _local_model_snapshot(cell, paths["cache"])
+        _await_g2(args)
+        return [paths["cell"] / "stage_runtime.json"]
+    if name == "prologue":
+        return [paths["cell"] / "prologue.json"]
+    if name == "stage":
+        return [paths["cell"] / "stage.json"]
+    if name == "gen":
+        return [f for s in stages for f in _raw_stage_files(paths, s)]
+    if name in ("parse", "upload-raw"):
+        parsed = [
+            paths["parsed"] / f"{s}{suffix}" for s in stages for suffix in (".jsonl", "_drops.json")
+        ]
+        if name == "upload-raw":
+            parsed += _phase_artifacts(args, cell, paths, "gen")
+            parsed += [paths["cell"] / "run_identity.json", paths["cell"] / "stage.json"]
+            parsed += [paths["cell"] / "uploads" / "upload-raw.json"]
+            if (paths["cell"] / "stage_runtime.json").exists():
+                parsed.append(paths["cell"] / "stage_runtime.json")
+        return [*parsed, paths["fits"] / "dropped_row_ids.json"]
+    if name in ("capture", "upload-capture"):
+        files = [f for s in stages for f in _capture_stage_files(args, cell, paths, s)]
+        if name == "upload-capture":
+            files.append(paths["cell"] / "uploads" / "upload-capture.json")
+        return files
+    if name in ("fits", "upload-fits"):
+        return [
+            paths["fits"] / _fits_name(args, kind, pos)
+            for pos in cell.input_positions
+            for kind in ("fits", "perrow")
+        ] + [
+            paths["fits"] / _fits_name(args, f"percell_{pos}_L{li:02d}", "")
+            for pos in cell.input_positions
+            for li in _layers_for(args, cell)
+        ]
+    raise ValueError(f"phase {name} excluded from generic scope")
 
 
 # Hyper-connection context for the shard loader (set by _paths from the cell's
@@ -223,6 +444,88 @@ def _upload_file(local: Path, path_in_repo: str, what: str) -> None:
     logger.info("[i2588] uploaded file %s -> %s (%s)", local, path_in_repo, what)
 
 
+def _record_verified_upload(
+    args, cell: PC.Cell, paths: dict, phase: str, repo_paths: list[str]
+) -> None:
+    """Freeze and verify the exact uploaded file set at one immutable Hub revision."""
+    from huggingface_hub import HfApi
+
+    api = HfApi()
+    revision = HUB.retry_transient(
+        lambda: api.repo_info(PC.HF_DATA_REPO, repo_type="dataset").sha,
+        what=f"{phase} immutable revision",
+    )
+    assert re.fullmatch(r"[0-9a-f]{40}", revision), "upload did not resolve an immutable revision"
+    missing = HUB.verify_repo_paths_uploaded(
+        api,
+        PC.HF_DATA_REPO,
+        repo_paths,
+        path_in_repo=_cell_prefix(args, cell),
+        repo_type="dataset",
+        revision=revision,
+    )
+    assert not missing, f"{phase} incomplete at {revision}: {missing}"
+    receipt = paths["cell"] / "uploads" / f"{phase}.json"
+    PC.write_json_atomic(
+        receipt,
+        {
+            "status": "verified",
+            "revision": revision,
+            "identity": _identity(args, cell),
+            "repo_id": PC.HF_DATA_REPO,
+            "paths": sorted(repo_paths),
+        },
+    )
+    _upload_file(receipt, f"{_cell_prefix(args, cell)}/uploads/{phase}.json", "upload receipt")
+
+
+def _upload_generic(local: Path, destination: str) -> list[str]:
+    """Batch scoped uploads, line-sharding large text with the canonical consumer manifest."""
+    from issue811_upload_store import _shard_oversize_jsonl
+
+    is_file = local.is_file()
+    base = local.parent if is_file else local
+    remote = destination.rsplit("/", 1)[0] if is_file else destination
+    sources = [local] if is_file else sorted(p for p in local.rglob("*") if p.is_file())
+    assert sources, f"no files to upload: {local}"
+    # Hard links avoid copying multi-GB capture banks. Temporary packaging never
+    # changes a completed local checkpoint or deletes the scientific artifacts.
+    with tempfile.TemporaryDirectory(prefix="i2588-upload-", dir=base.parent) as temporary:
+        staging = Path(temporary)
+        upload_files = []
+        for source in sources:
+            target = staging / source.relative_to(base)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            os.link(source, target)
+            if target.suffix in (".json", ".jsonl") and target.stat().st_size > 9_500_000:
+                parts = _shard_oversize_jsonl(target)
+                manifest = target.with_name(f"{target.stem}.manifest.json")
+                PC.write_json_atomic(
+                    manifest,
+                    {
+                        "source": target.name,
+                        "source_sha256": _sha256_file(source),
+                        "parts": [p.name for p in parts],
+                        "sha256": {p.name: _sha256_file(p) for p in parts},
+                    },
+                )
+                upload_files.extend([*parts, manifest])
+            else:
+                upload_files.append(target)
+        names = [str(p.relative_to(staging)) for p in upload_files]
+        expected = [f"{remote}/{name}" for name in names]
+        result = HUB._upload_folder_filtered(
+            staging,
+            repo_id=PC.HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=remote,
+            allow_patterns=names,
+            expected_repo_paths=expected,
+        )
+        assert result, f"upload returned no verified result: {destination}"
+        return expected
+
+
 # ---------------------------------------------------------------------------
 # Phase completion sentinels (B1, review round 2): every phase run through the
 # main() loop is idempotent — a completed (phase, layer_set) writes a done
@@ -238,12 +541,27 @@ def _phase_done_path(args, paths: dict, name: str) -> Path:
 
 
 def _phase_complete(args, paths: dict, name: str) -> bool:
+    """Validate generic checkpoint contents; preserve legacy completion behavior."""
+    if _generic_only(args):
+        path = _phase_done_path(args, paths, name)
+        if not path.exists():
+            return False
+        cell = PC.cell_by_key(args.cell)
+        return _checkpoint_complete(args, paths, path, _phase_artifacts(args, cell, paths, name))
     return (not args.force) and _phase_done_path(args, paths, name).exists()
 
 
 def _mark_phase_done(args, cell: PC.Cell, paths: dict, name: str) -> None:
+    """Mark a successful phase with its exact generic artifact inventory."""
     p = _phase_done_path(args, paths, name)
     p.parent.mkdir(parents=True, exist_ok=True)
+    if _generic_only(args):
+        _write_checkpoint(args, cell, paths, p, _phase_artifacts(args, cell, paths, name))
+        if name.startswith("upload-"):
+            _upload_file(
+                p, f"{_cell_prefix(args, cell)}/phase_done/{name}.json", "phase checkpoint"
+            )
+        return
     PC.write_json_atomic(
         p,
         {
@@ -260,6 +578,14 @@ def _run_phases(args, cell: PC.Cell, paths: dict, seq: tuple[str, ...]) -> list[
     """Run the requested phases with sentinel skip (B1). Returns names RUN."""
     ran: list[str] = []
     for name in seq:
+        if _generic_only(args):
+            assert name in (*_GENERIC_SEQUENCE, "upload-partial"), (
+                f"{name} excluded from generic scope"
+            )
+        if name == "upload-partial":
+            PHASES[name](args, cell, paths)
+            ran.append(name)
+            continue
         if _phase_complete(args, paths, name):
             logger.info(
                 "[i2588] phase %s already complete (sentinel %s) — skipped (--force to re-run)",
@@ -278,7 +604,84 @@ def _run_phases(args, cell: PC.Cell, paths: dict, seq: tuple[str, ...]) -> list[
 # ---------------------------------------------------------------------------
 
 
-def _mpe_for_cell(cell: PC.Cell) -> int:
+# Exact inference file set at QWEN3_8B_REVISION (Hub model-info metadata).
+_CHAT_MODEL_FILES = {
+    "config.json": 728,
+    "generation_config.json": 239,
+    "merges.txt": 1671853,
+    "model-00001-of-00005.safetensors": 3996250744,
+    "model-00002-of-00005.safetensors": 3993160032,
+    "model-00003-of-00005.safetensors": 3959604768,
+    "model-00004-of-00005.safetensors": 3187841392,
+    "model-00005-of-00005.safetensors": 1244659840,
+    "model.safetensors.index.json": 32878,
+    "tokenizer.json": 11422654,
+    "tokenizer_config.json": 9732,
+    "vocab.json": 2776833,
+}
+
+
+def _local_model_snapshot(cell: PC.Cell, cache: Path) -> Path:
+    """Require the complete staged immutable snapshot; never fetch in a GPU phase."""
+    snapshot = cache / "models--Qwen--Qwen3-8B" / "snapshots" / cell.model.revision
+    for name, size in _CHAT_MODEL_FILES.items():
+        local = snapshot / name
+        assert local.is_file() and local.stat().st_size == size, (
+            f"stage-runtime required: missing/truncated pinned model file {local}"
+        )
+    return snapshot
+
+
+def _tokenizer_kwargs(args, cell: PC.Cell, paths: dict) -> dict:
+    """Keep legacy loads unchanged and generic config/tokenizer reads strictly local."""
+    kwargs = PC.model_load_kwargs(cell.model.hf_id)
+    if _generic_only(args):
+        _local_model_snapshot(cell, paths["cache"])
+        kwargs.update(cache_dir=str(paths["cache"]), local_files_only=True)
+    return kwargs
+
+
+def phase_stage_runtime(args, cell: PC.Cell, paths: dict) -> None:
+    """Two bounded transfer envelopes: the shared model snapshot and immutable G2 gate."""
+    assert _generic_only(args), "stage-runtime is registered for generic scope only"
+    from huggingface_hub import hf_hub_download, snapshot_download
+
+    model = HUB.retry_transient(
+        lambda: snapshot_download(
+            repo_id=cell.model.hf_id,
+            revision=cell.model.revision,
+            cache_dir=str(paths["cache"]),
+            max_workers=4,
+            allow_patterns=list(_CHAT_MODEL_FILES),
+        ),
+        what="immutable shared Qwen3-8B inference snapshot",
+    )
+    assert Path(model) == _local_model_snapshot(cell, paths["cache"])
+    local_g2 = HUB.retry_transient(
+        lambda: hf_hub_download(
+            PC.HF_DATA_REPO,
+            PC.G2_SENTINEL_PATH,
+            repo_type="dataset",
+            revision=PC.CHAT_G2_REVISION,
+            cache_dir=str(paths["cache"]),
+        ),
+        what="immutable compatible G2 sentinel",
+    )
+    _await_g2(args)
+    PC.write_json_atomic(
+        paths["cell"] / "stage_runtime.json",
+        {
+            "identity": _identity(args, cell),
+            "model_revision": cell.model.revision,
+            "snapshot": str(model),
+            "files": _CHAT_MODEL_FILES,
+            "g2_revision": PC.CHAT_G2_REVISION,
+            "g2_sha256": _sha256_file(Path(local_g2)),
+        },
+    )
+
+
+def _mpe_for_cell(cell: PC.Cell, cache: Path | None = None) -> int:
     """max_position_embeddings, asserted against the profile's prologue floor.
 
     v1 keeps the legacy hard 23,488 regen-headroom pin (byte-identical).
@@ -286,12 +689,16 @@ def _mpe_for_cell(cell: PC.Cell) -> int:
     the hard floor only requires MIN_EFFECTIVE_CAP of generation room
     (PC.mpe_floor_for_arm); the regen is window- and ceiling-aware on top.
     """
+    model_id = cell.model.hf_id
+    if cell.model.revision and cache is not None:
+        model_id = str(_local_model_snapshot(cell, cache))
     if PC.CAP_PROFILE == "v1":
-        return PC.assert_max_position_embeddings(cell.model.hf_id)
-    return PC.assert_max_position_embeddings(cell.model.hf_id, floor=PC.mpe_floor_for_arm(cell.arm))
+        return PC.assert_max_position_embeddings(model_id)
+    return PC.assert_max_position_embeddings(model_id, floor=PC.mpe_floor_for_arm(cell.arm))
 
 
 def phase_prologue(args, cell: PC.Cell, paths: dict) -> None:
+    """Validate pinned config and prompt contracts before generation."""
     G._phase("prologue")
     tf_version = PC.assert_transformers_floor()
     logger.info("[i2588] G6 transformers floor OK: %s", tf_version)
@@ -299,10 +706,10 @@ def phase_prologue(args, cell: PC.Cell, paths: dict) -> None:
     if m.family in ("olmo_instruct", "olmo_think"):
         rec = PC.assert_olmo_rope_split(m.hf_id)
         logger.info("[i2588] G6 rope split OK: %s", rec)
-    _mpe_for_cell(cell)
+    _mpe_for_cell(cell, paths["cache"] if _generic_only(args) else None)
     from transformers import AutoTokenizer
 
-    tok = AutoTokenizer.from_pretrained(m.hf_id)
+    tok = AutoTokenizer.from_pretrained(m.hf_id, **_tokenizer_kwargs(args, cell, paths))
     sha16 = PC.assert_template_sidespec(tok, m.family, cell.arm)
     pins = PC.assert_think_pins(tok, m.family)
     logger.info(
@@ -316,6 +723,7 @@ def phase_prologue(args, cell: PC.Cell, paths: dict) -> None:
         paths["cell"] / "prologue.json",
         {
             "meta": _meta(),
+            "model_revision": m.revision,
             "transformers": tf_version,
             "render_sha16": sha16,
             "think_pins": {k: list(v) for k, v in pins.items()} if pins else {},
@@ -347,7 +755,7 @@ def _p0_union_drop() -> dict[str, set[int]]:
     return {s: set(v) for s, v in scan["union_drop"].items()}
 
 
-def _load_generic_rows(args, cache_dir: Path) -> dict[str, list[dict]]:
+def _load_generic_rows(args, cache_dir: Path, *, local_only: bool = False) -> dict[str, list[dict]]:
     """Manifest rows per generic split at the pinned revision, union-drop
     applied (P0 step 7), smoke-sliced."""
     split_ids = G._load_split_ids(PC.SPLIT_IDS_PATH)
@@ -355,8 +763,47 @@ def _load_generic_rows(args, cache_dir: Path) -> dict[str, list[dict]]:
     out: dict[str, list[dict]] = {}
     for split in GENERIC_SPLITS:
         manifest_key, ids_key, _seed = G.SPLIT_TO_MANIFEST[split]
-        rows = G._download_manifest_split(manifest_key, cache_dir)
+        if _generic_only(args):
+            ids_hash = PC.sha256_text(
+                json.dumps(split_ids["splits"][ids_key], separators=(",", ":"))
+            )
+            assert ids_hash == PC.CHAT_SPLIT_SHA256[split], f"frozen split-list drift: {split}"
+            fname = G.MANIFEST_SPLIT_FILES[manifest_key]
+            if local_only:
+                from huggingface_hub import hf_hub_download
+
+                local = hf_hub_download(
+                    PC.HF_DATA_REPO,
+                    f"{PC.MANIFEST_HF_PREFIX}/{fname}",
+                    repo_type="dataset",
+                    revision=PC.MANIFEST_REVISION,
+                    cache_dir=str(cache_dir),
+                    local_files_only=True,
+                )
+            else:
+                from huggingface_hub import hf_hub_download
+
+                local = HUB.retry_transient(
+                    lambda filename=fname: hf_hub_download(
+                        PC.HF_DATA_REPO,
+                        f"{PC.MANIFEST_HF_PREFIX}/{filename}",
+                        repo_type="dataset",
+                        revision=PC.MANIFEST_REVISION,
+                        cache_dir=str(cache_dir),
+                    ),
+                    what=f"immutable generic manifest {fname}",
+                )
+            assert _sha256_file(Path(local)) == PC.CHAT_MANIFEST_SHA256[fname], (
+                f"manifest byte hash mismatch: {fname}"
+            )
+            assert not drop[split], f"frozen chat split unexpectedly drops rows: {split}"
+            rows = PC.read_jsonl(Path(local))
+        else:
+            rows = G._download_manifest_split(manifest_key, cache_dir)
         subset = G._subset_rows(rows, split_ids["splits"][ids_key], ids_key)
+        if _generic_only(args):
+            ids = [int(r["ladder_local_id"]) for r in subset]
+            assert len(ids) == PC.EXPECTED_SPLIT_COUNTS[split] and len(ids) == len(set(ids))
         n_before = len(subset)
         subset = [r for r in subset if int(r["ladder_local_id"]) not in drop[split]]
         if len(subset) != n_before:
@@ -371,6 +818,7 @@ def _load_generic_rows(args, cache_dir: Path) -> dict[str, list[dict]]:
 
 def _load_gpqa_prompts(args) -> list[dict]:
     """The P0-frozen GPQA prompt file (committed on the issue branch)."""
+    _require_full_surface(args, "GPQA prompt loading")
     assert GPQA_PROMPTS_PATH.exists(), (
         f"{GPQA_PROMPTS_PATH} missing — run issue2588_p0_preflight.py step 3 (GPQA staging) "
         "and commit the frozen prompts to the issue branch before any pod launch."
@@ -384,6 +832,7 @@ def _load_gpqa_prompts(args) -> list[dict]:
 
 
 def phase_stage(args, cell: PC.Cell, paths: dict) -> None:
+    """Stage only the selected surface and persist exact generic row coverage."""
     G._phase("stage")
     import fcntl
 
@@ -400,12 +849,26 @@ def phase_stage(args, cell: PC.Cell, paths: dict) -> None:
     fcntl.flock(lock_fh, fcntl.LOCK_EX)
     try:
         generic = _load_generic_rows(args, paths["cache"])
-        gpqa = _load_gpqa_prompts(args)
+        gpqa = [] if _generic_only(args) else _load_gpqa_prompts(args)
         logger.info(
             "[i2588] staged generic=%s gpqa=%d", {k: len(v) for k, v in generic.items()}, len(gpqa)
         )
         if not cell.fresh:
             _stage_banked(args, cell, paths)
+        if _generic_only(args):
+            PC.write_json_atomic(
+                paths["cell"] / "stage.json",
+                {
+                    "identity": _identity(args, cell),
+                    "splits": {
+                        s: {
+                            "n": len(rows),
+                            "row_ids": [f"{s}_{r['ladder_local_id']}" for r in rows],
+                        }
+                        for s, rows in generic.items()
+                    },
+                },
+            )
     finally:
         fcntl.flock(lock_fh, fcntl.LOCK_UN)
         lock_fh.close()
@@ -464,8 +927,9 @@ def _build_engine_2588(
     from vllm import LLM
 
     _ENGINE_CONSTRUCTED = True
+    extra_kwargs = dict(extra_kwargs or {})
     llm = LLM(
-        model=model_id,
+        model=extra_kwargs.pop("model", model_id),
         tensor_parallel_size=gpu_count,
         seed=seed,
         dtype="bfloat16",
@@ -475,13 +939,38 @@ def _build_engine_2588(
         enforce_eager=os.environ.get("VLLM_ENFORCE_EAGER", "0") == "1",
         enable_prefix_caching=False,
         disable_log_stats=True,
-        **(extra_kwargs or {}),
+        **PC.model_load_kwargs(model_id, engine=True),
+        **extra_kwargs,
     )
     return llm
 
 
+def _engine_kwargs(args, cell: PC.Cell, paths: dict) -> dict:
+    """Share the pinned weight cache between generic generation and capture."""
+    return {
+        **PC.ENGINE_EXTRA_KWARGS.get(cell.model.family, {}),
+        **(
+            {
+                "download_dir": str(paths["cache"]),
+                "model": str(_local_model_snapshot(cell, paths["cache"])),
+                "tokenizer": str(_local_model_snapshot(cell, paths["cache"])),
+            }
+            if _generic_only(args)
+            else {}
+        ),
+    }
+
+
 def _gen_rows(
-    llm, tok, cell: PC.Cell, base_rows: list[dict], *, stage: str, cap: int, seed: int
+    llm,
+    tok,
+    cell: PC.Cell,
+    base_rows: list[dict],
+    *,
+    stage: str,
+    cap: int,
+    seed: int,
+    chunk_callback=None,
 ) -> list[dict]:
     """Generate one stage's rollouts via TokensPrompt on the EXACT rendered ids.
 
@@ -532,8 +1021,9 @@ def _gen_rows(
             comp = o.outputs[0]
             out_rows.append(
                 {
-                    **{k: v for k, v in r.items() if k != "prompt_ids"},
+                    **r,
                     "text": comp.text,
+                    "sampled_token_ids": [int(t) for t in comp.token_ids],
                     "finish_reason": comp.finish_reason,
                     "n_comp_tokens": len(comp.token_ids),
                     "gen_seed": seed,
@@ -541,6 +1031,8 @@ def _gen_rows(
                     "stage": stage,
                 }
             )
+        if chunk_callback is not None:
+            chunk_callback(s // chunk, out_rows[-len(block) :])
         logger.info(
             "[i2588] [%s] gen chunk %d/%d done",
             stage,
@@ -600,7 +1092,14 @@ def _gen_stage_with_regen(
     first incomplete stage instead of regenerating completed ones.
     """
     report_p = paths["raw"] / stage / "cap_hit_report.json"
-    if report_p.exists() and not args.force:
+    checkpoint = paths["raw"] / stage / "stage_done.json"
+    if _generic_only(args) and checkpoint.exists():
+        files = _raw_stage_files(paths, stage, len(base_rows))
+        if _checkpoint_complete(args, paths, checkpoint, files):
+            rows = _iter_stage_rows(paths, stage)
+            assert [r["row_id"] for r in rows] == [r["row_id"] for r in base_rows]
+            return rows
+    if report_p.exists() and not args.force and not _generic_only(args):
         logger.info(
             "[i2588] [%s] cap_hit_report.json present — stage already generated; "
             "skipped (--force to re-run)",
@@ -612,21 +1111,37 @@ def _gen_stage_with_regen(
         cap_requested = cap
     # Window-aware engine pin: the floor arg asserts the BASE engine fits
     # (max_model_len = PROMPT_TOKEN_BUDGET + cap <= max_position_embeddings).
-    mpe = PC.assert_max_position_embeddings(m.hf_id, floor=PC.PROMPT_TOKEN_BUDGET + cap)
+    config_id = str(_local_model_snapshot(cell, paths["cache"])) if _generic_only(args) else m.hf_id
+    mpe = PC.assert_max_position_embeddings(config_id, floor=PC.PROMPT_TOKEN_BUDGET + cap)
     if llm_holder.get("llm") is None:
         mml = PC.PROMPT_TOKEN_BUDGET + cap
         llm_holder["llm"] = _build_engine_2588(
-            m.hf_id, seed, mml, args.gpu_count, PC.ENGINE_EXTRA_KWARGS.get(m.family, {})
+            m.hf_id, seed, mml, args.gpu_count, _engine_kwargs(args, cell, paths)
         )
         llm_holder["mml"] = mml
     elif llm_holder["mml"] < PC.PROMPT_TOKEN_BUDGET + cap:
         G._reap_vllm_engine(llm_holder["llm"])
         mml = PC.PROMPT_TOKEN_BUDGET + cap
         llm_holder["llm"] = _build_engine_2588(
-            m.hf_id, seed, mml, args.gpu_count, PC.ENGINE_EXTRA_KWARGS.get(m.family, {})
+            m.hf_id, seed, mml, args.gpu_count, _engine_kwargs(args, cell, paths)
         )
         llm_holder["mml"] = mml
-    rows = _gen_rows(llm_holder["llm"], tok, cell, base_rows, stage=stage, cap=cap, seed=seed)
+
+    def checkpoint_chunk(round_name: str):
+        """Retain completed GPU chunks even if a wall fence interrupts the stage."""
+
+        def write_chunk(index: int, chunk_rows: list[dict]) -> None:
+            PC.write_json_atomic(
+                paths["raw"] / stage / "partial" / round_name / f"chunk{index:04d}.json",
+                {"identity": _identity(args, cell), "stage": stage, "rows": chunk_rows},
+            )
+
+        return write_chunk
+
+    chunk_kwargs = {"chunk_callback": checkpoint_chunk("initial")} if _generic_only(args) else {}
+    rows = _gen_rows(
+        llm_holder["llm"], tok, cell, base_rows, stage=stage, cap=cap, seed=seed, **chunk_kwargs
+    )
 
     cap_hits = sum(1 for r in rows if r["finish_reason"] == "length")
     cap_frac = cap_hits / max(1, len(rows))
@@ -676,12 +1191,19 @@ def _gen_stage_with_regen(
             )
             G._reap_vllm_engine(llm_holder["llm"])
             llm_holder["llm"] = _build_engine_2588(
-                m.hf_id, seed, new_mml, args.gpu_count, PC.ENGINE_EXTRA_KWARGS.get(m.family, {})
+                m.hf_id, seed, new_mml, args.gpu_count, _engine_kwargs(args, cell, paths)
             )
             llm_holder["mml"] = new_mml
             redo_base = [base_rows[i] for i in regen_idx]
             redo = _gen_rows(
-                llm_holder["llm"], tok, cell, redo_base, stage=stage, cap=new_cap, seed=seed
+                llm_holder["llm"],
+                tok,
+                cell,
+                redo_base,
+                stage=stage,
+                cap=new_cap,
+                seed=seed,
+                **({"chunk_callback": checkpoint_chunk("regen")} if _generic_only(args) else {}),
             )
             for i, rr in zip(regen_idx, redo, strict=True):
                 rows[i] = rr
@@ -702,6 +1224,8 @@ def _gen_stage_with_regen(
             },
         )
     PC.write_json_atomic(stage_dir / "cap_hit_report.json", {"meta": _meta(), **report})
+    if _generic_only(args):
+        _write_checkpoint(args, cell, paths, checkpoint, _raw_stage_files(paths, stage, len(rows)))
     logger.info(
         "[i2588] [%s] cap-hit report: %s", stage, {k: v for k, v in report.items() if k != "stage"}
     )
@@ -709,25 +1233,26 @@ def _gen_stage_with_regen(
 
 
 def phase_gen(args, cell: PC.Cell, paths: dict) -> None:
+    """Generate fresh chat draws, plus GPQA only for the legacy full surface."""
     G._phase("gen")
     from transformers import AutoTokenizer
 
     # D2: raw-text budget (~2 GB, §9) + the model snapshot the engine pulls
     # into the out-root HF cache (conservative: counted even if already cached).
     _assert_headroom(paths, 4.0 + _est_model_gb(cell), f"gen:{cell.key}")
-    tok = AutoTokenizer.from_pretrained(cell.model.hf_id)
+    tok = AutoTokenizer.from_pretrained(cell.model.hf_id, **_tokenizer_kwargs(args, cell, paths))
     # Per-model window clamp of the BASE caps (no-op for every v1 panel model;
     # under larger-cap profiles a 40,960-window model clamps to mpe - budget).
-    mpe = _mpe_for_cell(cell)
+    mpe = _mpe_for_cell(cell, paths["cache"] if _generic_only(args) else None)
     llm_holder: dict = {"llm": None, "mml": 0}
-    gpqa = _load_gpqa_prompts(args)
+    gpqa = [] if _generic_only(args) else _load_gpqa_prompts(args)
     gpqa_base = [
         {"row_id": f"{r['qid']}_s{s}", "prompt": r["prompt"], "gold": r["gold"], "qid": r["qid"]}
         for s in _gpqa_seeds(args)
         for r in gpqa
     ]
     if cell.fresh:
-        generic = _load_generic_rows(args, paths["cache"])
+        generic = _load_generic_rows(args, paths["cache"], local_only=_generic_only(args))
         cap = PC.cap_effective(cell.arm, "generic", mpe)
         for split in GENERIC_SPLITS:
             base = [
@@ -773,7 +1298,7 @@ def phase_gen(args, cell: PC.Cell, paths: dict) -> None:
             )
     # GPQA rollouts run for EVERY cell (banked cells generate GPQA fresh; the
     # behavioral gap_GPQA + transfer read need them).
-    gcap = PC.cap_effective(cell.arm, "gpqa", mpe)
+    gcap = None if _generic_only(args) else PC.cap_effective(cell.arm, "gpqa", mpe)
     # Rollout seed rides SamplingParams per row group; vLLM seeds per-request via
     # SamplingParams.seed, so one engine pass per seed keeps draws independent.
     for seed in _gpqa_seeds(args):
@@ -795,6 +1320,9 @@ def phase_gen(args, cell: PC.Cell, paths: dict) -> None:
 
 
 def _gpqa_seeds(args) -> tuple[int, ...]:
+    """Enumerate zero benchmark draws under the generic scope."""
+    if _generic_only(args):
+        return ()
     return PC.GPQA_ROLLOUT_SEEDS[:SMOKE_GPQA_ROLLOUTS] if args.smoke else PC.GPQA_ROLLOUT_SEEDS
 
 
@@ -869,7 +1397,15 @@ def _est_capture_need_gb(args, cell: PC.Cell, layers: list[int], paths: dict) ->
     tag_dir = paths[_tag(args)]
     total_bytes = 0.0
     for stage, (n_rows, n_slots) in _stage_row_estimates(args, cell).items():
-        if (tag_dir / stage / "rows.json").exists():
+        if _generic_only(args) and (tag_dir / stage / "stage_done.json").exists():
+            if _checkpoint_complete(
+                args,
+                paths,
+                tag_dir / stage / "stage_done.json",
+                _capture_stage_files(args, cell, paths, stage),
+            ):
+                continue
+        elif not _generic_only(args) and (tag_dir / stage / "rows.json").exists():
             continue  # stage already captured — costs nothing more
         total_bytes += n_rows * n_slots * len(layers) * cell.model.h_dim * 4
     return total_bytes / 1e9 * 1.2 + 1.0  # 20% shard/metadata margin + 1 GB floor
@@ -953,12 +1489,14 @@ def _banked_stage_rows(cell: PC.Cell, paths: dict, stage: str, tok) -> list[dict
 
 
 def _stage_names(args, cell: PC.Cell) -> list[str]:
+    """Enumerate chat/repeat stages and optional legacy benchmark stages."""
     stages = list(GENERIC_SPLITS) + [f"ceiling_s{s}" for s in PC.CEILING_SEEDS]
     stages += [f"gpqa_s{s}" for s in _gpqa_seeds(args)]
     return stages
 
 
 def phase_parse(args, cell: PC.Cell, paths: dict) -> None:
+    """Parse and reconcile every sampled chat row, retaining all exclusion reasons."""
     G._phase("parse")
     dropped: dict[str, list[str]] = {}
     counts: dict[str, dict] = {}
@@ -966,6 +1504,11 @@ def phase_parse(args, cell: PC.Cell, paths: dict) -> None:
         if not cell.fresh and not stage.startswith("gpqa"):
             continue  # banked stages parse mode "off" at capture time (producer convention)
         rows = _iter_stage_rows(paths, stage)
+        if _generic_only(args):
+            checkpoint = paths["raw"] / stage / "stage_done.json"
+            assert _checkpoint_complete(args, paths, checkpoint, _raw_stage_files(paths, stage)), (
+                f"raw stage has no successful checkpoint: {stage}"
+            )
         mode = cell.parse_mode
         parsed = []
         drops = []
@@ -1441,7 +1984,13 @@ def _capture_stage(
     from explore_persona_space.atomic_io import savez_atomic
 
     rows_json = paths[layer_tag] / stage / "rows.json"
-    if rows_json.exists() and not args.force:
+    checkpoint = paths[layer_tag] / stage / "stage_done.json"
+    if _generic_only(args) and checkpoint.exists():
+        if _checkpoint_complete(
+            args, paths, checkpoint, _capture_stage_files(args, cell, paths, stage)
+        ):
+            return
+    if rows_json.exists() and not args.force and not _generic_only(args):
         logger.info(
             "[i2588] [%s/%s] rows.json present — stage already captured; "
             "skipped (--force to re-run)",
@@ -1468,7 +2017,7 @@ def _capture_stage(
             row["qid"] = w.get("qid")
             row["n_prompt_tokens"] = w["n_prompt_tokens"]
             built.append(row)
-    if build_drops:
+    if build_drops or _generic_only(args):
         PC.write_json_atomic(
             paths["parsed"] / f"{stage}_capture_drops.json", {"meta": _meta(), "drops": build_drops}
         )
@@ -1524,6 +2073,7 @@ def _capture_stage(
                         "row_id": r["row_id"],
                         "qid": r.get("qid"),
                         "gold": r.get("gold"),
+                        "token_fidelity": r.get("token_fidelity"),
                         "capture_chunked": r["row_id"] in chunked_ids,
                         "capture_chunk_tokens": chunk_tokens
                         if r["row_id"] in chunked_ids
@@ -1569,6 +2119,10 @@ def _capture_stage(
             "rows": rows_meta,
         },
     )
+    if _generic_only(args):
+        _write_checkpoint(
+            args, cell, paths, checkpoint, _capture_stage_files(args, cell, paths, stage)
+        )
 
 
 def _banked_expected_ids(split: str) -> set[int]:
@@ -1599,6 +2153,8 @@ def _validate_capture_inputs(args, cell: PC.Cell, paths: dict) -> dict:
             rows = PC.read_jsonl(p)
             assert rows, f"capture input empty: {p}"
             need = {"row_id", "prompt", "n_prompt_tokens", "text", "ans_char_span"}
+            if _generic_only(args):
+                need |= {"prompt_ids", "sampled_token_ids", "read_points"}
             # Round 3 (consumer-contract-post-init): EVERY row validates, not
             # only row 0 — a malformed later row otherwise passes preflight
             # and capture dies AFTER the 7-54 GB model load (B2's exact
@@ -1668,7 +2224,10 @@ def _validate_capture_inputs(args, cell: PC.Cell, paths: dict) -> dict:
 
 
 def phase_capture(args, cell: PC.Cell, paths: dict) -> None:
+    """Capture selected stages from the immutable model snapshot using the parent loader."""
     G._phase("capture")
+    if _generic_only(args):
+        assert _phase_complete(args, paths, "parse"), "capture requires completed parse artifacts"
     m = cell.model
     layers = _layers_for(args, cell)
     tag = _tag(args)
@@ -1684,8 +2243,15 @@ def phase_capture(args, cell: PC.Cell, paths: dict) -> None:
 
     sem = _acquire_capture_slot(paths["root"])
     try:
-        tok = AutoTokenizer.from_pretrained(m.hf_id)
-        hf = G._load_capture_model(m.hf_id, args.device, "bfloat16")
+        tok = AutoTokenizer.from_pretrained(m.hf_id, **_tokenizer_kwargs(args, cell, paths))
+        if _generic_only(args):
+            for stage in _stage_names(args, cell):
+                positions = (
+                    ("prompt_last",) if stage.startswith("ceiling_s") else cell.input_positions
+                )
+                for row in PC.read_jsonl(paths["parsed"] / f"{stage}.jsonl"):
+                    PC.build_capture_row_2588(tok, row, positions_wanted=positions)
+        hf = _load_capture_model(cell, args.device, paths["cache"])
         for stage in GENERIC_SPLITS:
             _capture_stage(args, cell, paths, hf, tok, stage, layers, layer_tag=tag)
         for seed in PC.CEILING_SEEDS:
@@ -1698,6 +2264,14 @@ def phase_capture(args, cell: PC.Cell, paths: dict) -> None:
         torch.cuda.empty_cache() if torch.cuda.is_available() else None
     finally:
         sem.close()
+
+
+def _load_capture_model(cell: PC.Cell, device: str, cache: Path):
+    """Pass a pinned local snapshot to every transitive parent model/config load."""
+    model_id = cell.model.hf_id
+    if cell.model.revision:
+        model_id = str(_local_model_snapshot(cell, cache))
+    return G._load_capture_model(model_id, device, "bfloat16")
 
 
 def _layers_for(args, cell: PC.Cell) -> list[int]:
@@ -1715,8 +2289,15 @@ def _layers_for(args, cell: PC.Cell) -> list[int]:
 
 
 def phase_upload_raw(args, cell: PC.Cell, paths: dict) -> None:
+    """Upload only selected raw/parsed stages after strict generic inventory checks."""
     G._phase("upload_raw")
     prefix = _cell_prefix(args, cell)
+    if _generic_only(args):
+        for phase in ("gen", "parse"):
+            assert _phase_complete(args, paths, phase), f"upload-raw requires completed {phase}"
+        _phase_artifacts(args, cell, paths, "gen")
+        _phase_artifacts(args, cell, paths, "parse")
+    uploaded_paths = []
     for stage in _stage_names(args, cell):
         stage_dir = paths["raw"] / stage
         if not stage_dir.is_dir() or not any(stage_dir.iterdir()):
@@ -1724,20 +2305,106 @@ def phase_upload_raw(args, cell: PC.Cell, paths: dict) -> None:
                 f"fresh-cell raw stage {stage} empty at upload time"
             )
             continue
-        _upload_dir(stage_dir, f"{prefix}/raw_completions/{stage}", f"{cell.key} raw {stage}")
-    for f in sorted(paths["parsed"].glob("*.json*")):
-        _upload_file(f, f"{prefix}/parsed/{f.name}", f"{cell.key} parsed")
+        if _generic_only(args):
+            uploaded_paths.extend(_upload_generic(stage_dir, f"{prefix}/raw_completions/{stage}"))
+        else:
+            _upload_dir(stage_dir, f"{prefix}/raw_completions/{stage}", f"{cell.key} raw {stage}")
+    parsed_files = sorted(paths["parsed"].glob("*.json*"))
+    if _generic_only(args):
+        parsed_files = [
+            paths["parsed"] / f"{s}{suffix}"
+            for s in _stage_names(args, cell)
+            for suffix in (".jsonl", "_drops.json", "_capture_drops.json")
+            if (paths["parsed"] / f"{s}{suffix}").exists()
+        ]
+        for name in ("run_identity.json", "stage.json", "prologue.json", "stage_runtime.json"):
+            if name == "stage_runtime.json" and not (paths["cell"] / name).exists():
+                continue  # The two arms share the one snapshot staged by arm a.
+            _upload_file(paths["cell"] / name, f"{prefix}/{name}", f"{cell.key} provenance")
+            uploaded_paths.append(f"{prefix}/{name}")
+        _upload_file(
+            paths["fits"] / "dropped_row_ids.json",
+            f"{prefix}/parsed/dropped_row_ids.json",
+            f"{cell.key} coverage",
+        )
+        uploaded_paths.append(f"{prefix}/parsed/dropped_row_ids.json")
+        for phase in _GENERIC_SEQUENCE:
+            sentinel = _phase_done_path(args, paths, phase)
+            if sentinel.exists():
+                _upload_file(sentinel, f"{prefix}/phase_done/{phase}.json", "phase checkpoint")
+                uploaded_paths.append(f"{prefix}/phase_done/{phase}.json")
+    for f in parsed_files:
+        if _generic_only(args):
+            uploaded_paths.extend(_upload_generic(f, f"{prefix}/parsed/{f.name}"))
+        else:
+            _upload_file(f, f"{prefix}/parsed/{f.name}", f"{cell.key} parsed")
+    if _generic_only(args):
+        _record_verified_upload(args, cell, paths, "upload-raw", uploaded_paths)
 
 
 def phase_upload_capture(args, cell: PC.Cell, paths: dict) -> None:
+    """Upload the validated, scoped tensor store without unrelated stage enumeration."""
     G._phase("upload_capture")
     prefix = _cell_prefix(args, cell)
     tag = _tag(args)
+    if _generic_only(args):
+        assert _phase_complete(args, paths, "capture"), "upload-capture requires completed capture"
+        _phase_artifacts(args, cell, paths, "capture")
+        uploaded_paths = []
+        for stage in _stage_names(args, cell):
+            uploaded_paths.extend(
+                _upload_generic(paths[tag] / stage, f"{prefix}/analysis_tensors/{tag}/{stage}")
+            )
+            drops = paths["parsed"] / f"{stage}_capture_drops.json"
+            _upload_file(drops, f"{prefix}/parsed/{drops.name}", "capture exclusions")
+            uploaded_paths.append(f"{prefix}/parsed/{drops.name}")
+        validation = paths["cell"] / "capture_input_validation.json"
+        _upload_file(validation, f"{prefix}/{validation.name}", "capture input validation")
+        uploaded_paths.append(f"{prefix}/{validation.name}")
+        _record_verified_upload(args, cell, paths, "upload-capture", uploaded_paths)
+        return
     # C3: the odd pass uploads its OWN local dir to its OWN prefix — the
     # primary capture bytes/destination are untouched.
     _upload_dir(
         paths[tag], f"{prefix}/analysis_tensors/{tag}", f"{cell.key} capture tensors ({tag})"
     )
+
+
+def phase_upload_partial(args, cell: PC.Cell, paths: dict) -> None:
+    """Persist interrupted work separately; never mint a completed scientific phase."""
+    assert _generic_only(args), "partial durability upload is generic-only"
+    prefix = f"{_cell_prefix(args, cell)}/partial"
+    uploaded_paths = []
+    for stage in _stage_names(args, cell):
+        for key in ("raw", _tag(args)):
+            directory = paths[key] / stage
+            if directory.is_dir() and any(f.is_file() for f in directory.rglob("*")):
+                target = f"{prefix}/{directory.relative_to(paths['cell'])}"
+                uploaded_paths.extend(_upload_generic(directory, target))
+        for suffix in (".jsonl", "_drops.json", "_capture_drops.json"):
+            path = paths["parsed"] / f"{stage}{suffix}"
+            if path.is_file():
+                target = f"{prefix}/parsed/{path.name}"
+                uploaded_paths.extend(_upload_generic(path, target))
+    for name in ("run_identity.json", "stage.json", "prologue.json", "stage_runtime.json"):
+        path = paths["cell"] / name
+        if path.is_file():
+            target = f"{prefix}/{name}"
+            _upload_file(path, target, "partial provenance")
+            uploaded_paths.append(target)
+    fit_files = [paths["fits"] / "fit_pilot.json"]
+    fit_files += [
+        paths["fits"] / _fits_name(args, f"percell_{pos}_L{li:02d}", "")
+        for pos in cell.input_positions
+        for li in _layers_for(args, cell)
+    ]
+    for path in fit_files:
+        if path.is_file():
+            target = f"{prefix}/fits/{path.name}"
+            _upload_file(path, target, "partial fit unit")
+            uploaded_paths.append(target)
+    assert uploaded_paths, "no partial artifacts available to preserve"
+    _record_verified_upload(args, cell, paths, "upload-partial", uploaded_paths)
 
 
 # ---------------------------------------------------------------------------
@@ -1757,6 +2424,7 @@ def phase_g2_anchor(args, cell: PC.Cell, paths: dict) -> None:
     (this phase has no smoke-conditional branch; --smoke changes only the
     upload prefix of the CELL artifacts, not this gate's math or sentinel).
     """
+    _require_full_surface(args, "G2 anchor refit")
     G._phase("g2_anchor")
     dev = MF._resolve_device(args.device)
     mcfg = MF.MODELS["qwen25_7b"]
@@ -1871,6 +2539,19 @@ def _await_g2(args) -> dict:
     """
     from huggingface_hub import HfApi, hf_hub_download
 
+    if _generic_only(args):
+        local = hf_hub_download(
+            PC.HF_DATA_REPO,
+            PC.G2_SENTINEL_PATH,
+            repo_type="dataset",
+            revision=PC.CHAT_G2_REVISION,
+            cache_dir=str(Path(args.out_root) / "generic" / args.run_id / "hf_cache"),
+            local_files_only=True,
+        )
+        rec = json.loads(Path(local).read_text())
+        _validate_g2_sentinel(rec)
+        assert rec["meta"]["git_sha"] == "9b896ccc6b65e1d7322d3c7e67f6fe92883a0f0c"
+        return rec
     api = HfApi()
     deadline = time.time() + PC.G2_SENTINEL_TIMEOUT_S
     while True:
@@ -2093,7 +2774,11 @@ def _participation_ratio_x(X_tr: np.ndarray, dev) -> float:
 
 
 def phase_fits(args, cell: PC.Cell, paths: dict) -> None:
+    """Run the unchanged ridge recipe with scoped per-unit resume and an optional pilot pause."""
     G._phase("fits")
+    if _generic_only(args):
+        for phase in ("upload-raw", "upload-capture"):
+            assert _phase_complete(args, paths, phase), f"fits require verified {phase} completion"
     g2 = _await_g2(args)
     _assert_headroom(paths, 2.0, f"fits:{cell.key}")  # D2: fit JSONs are small
     dev = MF._resolve_device(args.device)
@@ -2108,10 +2793,19 @@ def phase_fits(args, cell: PC.Cell, paths: dict) -> None:
             unit_path = paths["fits"] / _fits_name(args, f"percell_{pos}_L{layer:02d}", pos="")
             if unit_path.exists() and not args.force:
                 per_layer[layer] = json.loads(unit_path.read_text(encoding="utf-8"))
+                if _generic_only(args):
+                    assert per_layer[layer].get("identity") == _identity(args, cell), (
+                        f"stale fit unit: {unit_path}"
+                    )
                 logger.info("[fits] unit L%02d pos=%s resumed from %s", layer, pos, unit_path.name)
+                _pause_fit_pilot(args, cell, paths, pos, layer, per_layer[layer])
                 continue
             t_unit = time.monotonic()
             b = _bundle(paths, layer, pos, tag=tag)
+            if getattr(args, "fit_max_units", None):
+                assert len(b["tr"]) > b["X"].shape[1] == cell.model.h_dim, (
+                    "fit pilot requires the actual production capture geometry"
+                )
             if args.smoke and len(b["tr"]) < b["X"].shape[1]:
                 logger.info(
                     "[i2588] SMOKE under-determined fit (n_train=%d < d=%d) — "
@@ -2146,6 +2840,8 @@ def phase_fits(args, cell: PC.Cell, paths: dict) -> None:
                 logger.info("[i2588] [fits %s pos=%s] first layer done", cell.key, pos)
             # checkpoint-per-unit: persist the per-layer record the moment it lands
             per_layer[layer]["unit_elapsed_s"] = round(time.monotonic() - t_unit, 3)
+            if _generic_only(args):
+                per_layer[layer]["identity"] = _identity(args, cell)
             PC.write_json_atomic(unit_path, {"meta": _meta(), **per_layer[layer]})
             logger.info(
                 "[fits] unit L%02d/%s pos=%s val_acc1_cos=%.4f test_r2=%.4f elapsed=%.1fs",
@@ -2158,6 +2854,7 @@ def phase_fits(args, cell: PC.Cell, paths: dict) -> None:
             )
             # persist the selected-λ payload only at layer_star (below); free here
             del payload
+            _pause_fit_pilot(args, cell, paths, pos, layer, per_layer[layer])
         star = max(per_layer, key=lambda li: _acc1(per_layer[li]["knn_val"]["ridge"]["cosine"]))
         ceiling = _ceiling_alignment(paths, star, tag=tag)
         ceiling_retr = _ceiling_retrieval(paths, star, tag=tag)  # SR1 (B3)
@@ -2200,8 +2897,38 @@ def phase_fits(args, cell: PC.Cell, paths: dict) -> None:
             "participation_ratio_x_at_star": pr_x,
             "n_train_over_d_at_star": float(len(b_star["tr"]) / b_star["X"].shape[1]),
         }
+        if _generic_only(args):
+            record["identity"] = _identity(args, cell)
         PC.write_json_atomic(paths["fits"] / _fits_name(args, "fits", pos), record)
         logger.info("[i2588] [fits %s pos=%s] layer_star=%d pr_x=%.1f", cell.key, pos, star, pr_x)
+
+
+class FitPilotPause(RuntimeError):
+    """A completed production-shape timing unit deliberately leaves the sweep incomplete."""
+
+
+def _pause_fit_pilot(args, cell: PC.Cell, paths: dict, pos: str, layer: int, unit: dict) -> None:
+    """Persist the measured first unit and return rc=7 without a phase success sentinel."""
+    if not getattr(args, "fit_max_units", None):
+        return
+    path = paths["fits"] / "fit_pilot.json"
+    PC.write_json_atomic(
+        path,
+        {
+            "status": "pilot_complete",
+            "phase_complete": False,
+            "identity": _identity(args, cell),
+            "cell": cell.key,
+            "layer": layer,
+            "input_position": pos,
+            "unit_elapsed_s": unit["unit_elapsed_s"],
+            "n": unit["n"],
+            "d": unit["d"],
+            "completed_units": 1,
+            "total_layer_units": len(_layers_for(args, cell)) * len(cell.input_positions),
+        },
+    )
+    raise FitPilotPause(f"fit pilot checkpointed at {path}; full fits phase remains incomplete")
 
 
 # ---------------------------------------------------------------------------
@@ -2273,6 +3000,8 @@ def _null_battery(
 
 
 def phase_nulls(args, cell: PC.Cell, paths: dict) -> None:
+    """Run the full-panel permutation battery only when that surface is selected."""
+    _require_full_surface(args, "null battery")
     G._phase("nulls")
     dev = MF._resolve_device(args.device)
     draws = SMOKE_PERM_DRAWS if args.smoke else PC.PERM_DRAWS
@@ -2354,6 +3083,7 @@ def _same_question_retrieval(pred: np.ndarray, y_true: np.ndarray, qids: np.ndar
 
 def _load_gpqa_star(args, paths: dict, pos: str, star: int) -> dict:
     """Concatenated GPQA captures at layer_star: X, Y, row_ids, qids, stages."""
+    _require_full_surface(args, "GPQA capture loading")
     tag = _tag(args)
     xs, ys, qids, row_ids, stages = [], [], [], [], []
     for seed in _gpqa_seeds(args):
@@ -2376,6 +3106,8 @@ def _load_gpqa_star(args, paths: dict, pos: str, star: int) -> dict:
 
 
 def phase_gpqa_transfer(args, cell: PC.Cell, paths: dict) -> None:
+    """Evaluate GPQA transfer only for the full-panel surface."""
+    _require_full_surface(args, "GPQA transfer")
     G._phase("gpqa_transfer")
     dev = MF._resolve_device(args.device)
     seeds = _gpqa_seeds(args)
@@ -2438,6 +3170,7 @@ def _gpqa_behavioral(args, cell: PC.Cell, paths: dict, seeds) -> dict:
     judge-fallback trigger accounting. The judge fallback itself is a
     VM-side conditional stage (issue2588_trend.py --judge-fallback) routed
     through api_dispatch; the pod driver only persists the pending rows."""
+    _require_full_surface(args, "GPQA behavior and judge fallback")
     total, correct, unparseable = 0, 0, 0
     pending: list[dict] = []
     for seed in seeds:
@@ -2501,6 +3234,8 @@ def _length_covariates(
 
 
 def phase_resid(args, cell: PC.Cell, paths: dict) -> None:
+    """Run benchmark-dependent residualization only for the full surface."""
+    _require_full_surface(args, "residualization")
     G._phase("resid")
     dev = MF._resolve_device(args.device)
     tag = _tag(args)
@@ -2609,6 +3344,7 @@ def phase_resid(args, cell: PC.Cell, paths: dict) -> None:
 
 
 def phase_upload_fits(args, cell: PC.Cell, paths: dict) -> None:
+    """Publish completed fits with a scope-isolated terminal result sentinel."""
     G._phase("upload_fits")
     smoke_pfx = "smoke/" if args.smoke else ""
     prefix_fits = f"{PC.PANEL_PREFIX}/{smoke_pfx}fits/{cell.key}"
@@ -2617,7 +3353,14 @@ def phase_upload_fits(args, cell: PC.Cell, paths: dict) -> None:
     # prefixes — the primary fits/nulls HF destinations are never overwritten.
     prefix_fits_odd = f"{PC.PANEL_PREFIX}/{smoke_pfx}fits_oddlayers/{cell.key}"
     prefix_nulls_odd = f"{PC.PANEL_PREFIX}/{smoke_pfx}nulls_oddlayers/{cell.key}"
-    for f in sorted(paths["fits"].glob("*.json")):
+    fit_files = sorted(paths["fits"].glob("*.json"))
+    if _generic_only(args):
+        assert _phase_complete(args, paths, "fits"), "upload-fits requires the complete sweep"
+        prefix_fits = f"{_cell_prefix(args, cell)}/fits"
+        fit_files = _phase_artifacts(args, cell, paths, "fits")
+        if (paths["fits"] / "fit_pilot.json").exists():
+            fit_files.append(paths["fits"] / "fit_pilot.json")
+    for f in fit_files:
         is_odd = f.stem.endswith("_odd")
         if f.name.startswith("nulls_"):
             target = prefix_nulls_odd if is_odd else prefix_nulls
@@ -2627,7 +3370,7 @@ def phase_upload_fits(args, cell: PC.Cell, paths: dict) -> None:
     suffix = "-odd" if args.layer_set == "odd" else ""
     sentinel = {
         "eval_numbers": _sentinel_numbers(args, cell, paths),
-        "eval_paths": [str(p) for p in sorted(paths["fits"].glob("*.json"))],
+        "eval_paths": [str(p) for p in fit_files],
         "reproducibility_card": _meta(),
         "wandb_url": None,
         "hf_hub_url": f"https://huggingface.co/datasets/{PC.HF_DATA_REPO}/tree/main/"
@@ -2638,8 +3381,13 @@ def phase_upload_fits(args, cell: PC.Cell, paths: dict) -> None:
         "gpu_hours_budgeted": None,
         "plan_deviations": [],
     }
+    if _generic_only(args):
+        sentinel["identity"] = _identity(args, cell)
+        suffix = f"-generic-{args.run_id}" + ("-smoke" if args.smoke else "")
     out = paths["logs"] / f"issue-2588-{cell.key}{suffix}-results.json"
     PC.write_json_atomic(out, sentinel)
+    if _generic_only(args):
+        _upload_file(out, f"{_cell_prefix(args, cell)}/results.json", "generic results sentinel")
     logger.info("[phase=done] cell %s complete rc=0 (sentinel %s)", cell.key, out)
 
 
@@ -2659,6 +3407,7 @@ def _sentinel_numbers(args, cell: PC.Cell, paths: dict) -> dict:
 
 def phase_purge_model_cache(args, cell: PC.Cell, paths: dict) -> None:
     """Free the model's HF snapshot after its LAST cell (plan §9 disk budget)."""
+    _require_full_surface(args, "model-cache purge")
     G._phase("purge_model_cache")
     import shutil
 
@@ -2680,6 +3429,7 @@ def phase_purge_model_cache(args, cell: PC.Cell, paths: dict) -> None:
 def phase_smoke_null_timing(args, cell: PC.Cell, paths: dict) -> None:
     """Time ONE 20-draw batched null block at PRODUCTION shape on synthetic
     data (n=10,000 x d in {1024, 5120}) — the plan's G3-adjacent wall basis."""
+    _require_full_surface(args, "synthetic null timing")
     G._phase("smoke_null_timing")
     dev = MF._resolve_device(args.device)
     rng = np.random.default_rng(0)
@@ -2720,6 +3470,7 @@ def phase_smoke_null_timing(args, cell: PC.Cell, paths: dict) -> None:
 # ---------------------------------------------------------------------------
 
 PHASES: dict = {
+    "stage-runtime": phase_stage_runtime,
     "prologue": phase_prologue,
     "stage": phase_stage,
     "gen": phase_gen,
@@ -2727,6 +3478,7 @@ PHASES: dict = {
     "capture": phase_capture,
     "upload-raw": phase_upload_raw,
     "upload-capture": phase_upload_capture,
+    "upload-partial": phase_upload_partial,
     "g2-anchor": phase_g2_anchor,
     "fits": phase_fits,
     "nulls": phase_nulls,
@@ -2772,6 +3524,18 @@ _ODD_SEQUENCE = (
     "upload-fits",
 )
 _ODD_FORBIDDEN_PHASES = ("gen", "parse", "upload-raw", "g2-anchor")
+_GENERIC_SEQUENCE = (
+    "stage-runtime",
+    "prologue",
+    "stage",
+    "gen",
+    "parse",
+    "upload-raw",
+    "capture",
+    "upload-capture",
+    "fits",
+    "upload-fits",
+)
 
 
 def _sequence_for(args) -> tuple[str, ...]:
@@ -2783,6 +3547,12 @@ def _sequence_for(args) -> tuple[str, ...]:
     round-4 C3-literal completeness) is refused — those belong to the swept
     pass.
     """
+    if _generic_only(args):
+        assert args.layer_set == "swept", "generic scope excludes odd-layer sensitivity"
+        assert args.phase == "all" or args.phase in (*_GENERIC_SEQUENCE, "upload-partial"), (
+            f"{args.phase} is excluded by --surface generic"
+        )
+        return _GENERIC_SEQUENCE if args.phase == "all" else (args.phase,)
     if args.phase == "all":
         if args.layer_set == "odd":
             return _ODD_SEQUENCE
@@ -2798,12 +3568,18 @@ def _sequence_for(args) -> tuple[str, ...]:
 
 
 def _build_parser() -> argparse.ArgumentParser:
+    """Build the legacy CLI with explicit, opt-in chat-only scope and pilot controls."""
     ap = argparse.ArgumentParser(
         description=__doc__.replace("%", "%%"), formatter_class=argparse.RawDescriptionHelpFormatter
     )
     ap.add_argument("--cell", help="cell key <model>_<arm> (see --list-cells)")
     ap.add_argument("--phase", default="all", choices=["all", *PHASES.keys()])
     ap.add_argument("--out-root", default="/workspace/eps2588")
+    ap.add_argument("--surface", choices=["full", "generic"], default="full")
+    ap.add_argument("--run-id", help="required namespace for a generic-only reproduction")
+    ap.add_argument(
+        "--fit-max-units", type=int, help="1: checkpoint the production fit pilot, rc=7"
+    )
     ap.add_argument(
         "--smoke",
         action="store_true",
@@ -2903,21 +3679,38 @@ def _run_import_check() -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the requested cell phases; a timed fit pilot is a resumable rc=7 pause."""
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     args = _build_parser().parse_args(argv)
     if args.import_check:
         return _run_import_check()
     if args.list_phases:
-        print("\n".join(PHASES))
+        print(
+            "\n".join(
+                (*_GENERIC_SEQUENCE, "upload-partial")
+                if _generic_only(args)
+                else [p for p in PHASES if p not in ("upload-partial", "stage-runtime")]
+            )
+        )
         return 0
     if args.list_cells:
-        print("\n".join(c.key for c in PC.all_cells()))
+        print(
+            "\n".join(
+                c.key
+                for c in PC.all_cells(include_generic=_generic_only(args))
+                if not _generic_only(args) or c.model_key == "q3_8b"
+            )
+        )
         return 0
     assert args.cell, "--cell is required for run phases"
     cell = PC.cell_by_key(args.cell)
-    paths = _paths(args, cell)
     seq = _sequence_for(args)
-    ran = _run_phases(args, cell, paths, seq)
+    paths = _paths(args, cell)
+    try:
+        ran = _run_phases(args, cell, paths, seq)
+    except FitPilotPause as exc:
+        logger.info("[fit-pilot] %s", exc)
+        return 7
     logger.info("[i2588] phases run=%s skipped=%s", ran, [s for s in seq if s not in ran])
     return 0
 

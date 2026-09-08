@@ -1,0 +1,640 @@
+"""Chat-only production-body checks. No network, model weights, or GPU work."""
+
+from __future__ import annotations
+
+import json
+import sys
+from dataclasses import dataclass, replace
+from pathlib import Path
+from types import SimpleNamespace
+from typing import ClassVar
+from unittest.mock import create_autospec
+
+import numpy as np
+import pytest
+import torch
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+import issue2588_panel_common as PC
+import issue2588_run_cell as RC
+
+
+class Tokenizer:
+    """Explicit tokenizer call signatures; character offsets expose boundary errors."""
+
+    pad_token_id = 0
+    eos_token_id = 999999
+
+    def apply_chat_template(
+        self, conversation, *, tokenize, add_generation_prompt, enable_thinking, return_dict=None
+    ):
+        text = f"user:{conversation[0]['content']}\n<|im_start|>assistant\n"
+        if not enable_thinking:
+            text += "<think>\n\n</think>\n\n"
+        return self.encode(text) if tokenize else text
+
+    def encode(self, text, add_special_tokens=False):
+        return [ord(c) for c in text]
+
+    def __call__(self, text, add_special_tokens=False, return_offsets_mapping=False):
+        result = {"input_ids": self.encode(text)}
+        if return_offsets_mapping:
+            result["offset_mapping"] = [(i, i + 1) for i in range(len(text))]
+        return result
+
+    def decode(self, token_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False):
+        return "".join(chr(i) for i in token_ids if i != self.eos_token_id)
+
+
+@dataclass
+class SamplingParams:
+    temperature: float
+    top_p: float
+    seed: int
+    max_tokens: int
+
+
+@dataclass
+class TokensPrompt:
+    prompt_token_ids: list[int]
+
+
+class Engine:
+    """Explicit vLLM boundary signature used by the production constructor."""
+
+    constructed: ClassVar[list[dict]] = []
+
+    def __init__(
+        self,
+        *,
+        model,
+        tensor_parallel_size,
+        seed,
+        dtype,
+        max_model_len,
+        gpu_memory_utilization,
+        max_num_seqs,
+        enforce_eager,
+        enable_prefix_caching,
+        disable_log_stats,
+        revision,
+        tokenizer_revision,
+        download_dir,
+        tokenizer,
+    ):
+        self.constructed.append(
+            {
+                "model": model,
+                "revision": revision,
+                "tokenizer_revision": tokenizer_revision,
+                "download_dir": download_dir,
+                "max_model_len": max_model_len,
+            }
+        )
+
+    def generate(self, prompts, sampling_params, use_tqdm=False):
+        text = "thought</think>\nanswer" if sampling_params.max_tokens > 4096 else "answer"
+        return [
+            SimpleNamespace(
+                outputs=[
+                    SimpleNamespace(
+                        text=text, finish_reason="stop", token_ids=[ord(c) for c in text]
+                    )
+                ]
+            )
+            for _ in prompts
+        ]
+
+
+@pytest.fixture
+def generic(tmp_path, monkeypatch):
+    monkeypatch.setattr(PC, "CAP_PROFILE", "long")
+    monkeypatch.setattr(PC, "CAP", PC.CAP_PROFILES["long"])
+    monkeypatch.setattr(PC, "PANEL_PREFIX", "issue2588_capability_panel_cap_long")
+    args = RC._build_parser().parse_args(
+        [
+            "--surface",
+            "generic",
+            "--run-id",
+            "unit-v1",
+            "--cell",
+            "q3_8b_a",
+            "--device",
+            "cpu",
+            "--out-root",
+            str(tmp_path),
+        ]
+    )
+    cell = PC.cell_by_key(args.cell)
+    paths = RC._paths(args, cell)
+    # Model-transfer boundary fixture: no real weights, but exercise exact
+    # staged-path/size validation used by the production consumers.
+    monkeypatch.setattr(RC, "_CHAT_MODEL_FILES", {"config.json": 2})
+    snapshot = paths["cache"] / "models--Qwen--Qwen3-8B/snapshots" / cell.model.revision
+    snapshot.mkdir(parents=True)
+    (snapshot / "config.json").write_text("{}")
+    return args, cell, paths
+
+
+def test_registry_is_opt_in_and_geometry_is_pinned():
+    assert len(PC.all_cells()) == 33
+    assert sum(len(c.input_positions) for c in PC.all_cells()) == 36
+    assert len(PC.all_cells(include_generic=True)) == 35
+    assert sum(len(c.input_positions) for c in PC.all_cells(include_generic=True)) == 38
+    model = PC.PANEL["q3_8b"]
+    assert (model.n_layers, model.h_dim, model.tp_gpus) == (36, 4096, 1)
+    assert model.revision == PC.QWEN3_8B_REVISION
+    assert PC.sweep_layers(model.n_layers) == [*range(0, 35, 2), 35]
+    assert all(PC.cell_by_key(f"q3_8b_{arm}").fresh for arm in ("a", "b"))
+
+
+def test_scope_closure_and_legacy_defaults(generic):
+    args, cell, paths = generic
+    assert RC._sequence_for(args) == RC._GENERIC_SEQUENCE
+    assert RC._GENERIC_SEQUENCE.index("upload-raw") < RC._GENERIC_SEQUENCE.index("capture")
+    assert RC._gpqa_seeds(args) == ()
+    assert set(RC._stage_names(args, cell)) == set(RC.GENERIC_SPLITS) | {
+        "ceiling_s43",
+        "ceiling_s44",
+    }
+    assert not any("gpqa" in s for s in RC._stage_row_estimates(args, cell))
+    for phase in (
+        "gpqa-transfer",
+        "resid",
+        "nulls",
+        "g2-anchor",
+        "purge-model-cache",
+        "smoke-null-timing",
+    ):
+        args.phase = phase
+        with pytest.raises(AssertionError, match="excluded"):
+            RC._sequence_for(args)
+        with pytest.raises(AssertionError, match="excluded"):
+            RC.PHASES[phase](args, cell, paths)
+    with pytest.raises(AssertionError, match="excluded"):
+        RC._load_gpqa_prompts(args)
+    with pytest.raises(AssertionError, match="excluded"):
+        RC._gpqa_behavioral(args, cell, paths, [])
+    args.surface = "full"
+    with pytest.raises(AssertionError, match="generic only"):
+        RC._validate_scope(args, cell)
+    legacy = RC._build_parser().parse_args([])
+    assert RC._sequence_for(legacy) == RC._ALL_SEQUENCE
+
+
+def test_paths_provenance_and_partial_resume(generic):
+    args, cell, paths = generic
+    assert "generic/unit-v1/cells_cap_long/q3_8b_a" in str(paths["cell"])
+    assert RC._cell_prefix(args, cell).endswith("/generic/unit-v1/q3_8b/nothink")
+    PC.write_json_atomic(paths["cell"] / "prologue.json", {"test": 1})
+    assert not RC._phase_complete(args, paths, "prologue")
+    RC._mark_phase_done(args, cell, paths, "prologue")
+    assert RC._phase_complete(args, paths, "prologue")
+    PC.write_json_atomic(paths["cell"] / "prologue.json", {"test": 2})
+    with pytest.raises(AssertionError, match="partial checkpoint"):
+        RC._phase_complete(args, paths, "prologue")
+    args.capture_batch_size = 7
+    with pytest.raises(AssertionError, match="incompatible run provenance"):
+        RC._paths(args, cell)
+
+
+def test_exact_template_prefill_and_token_fidelity():
+    tok = Tokenizer()
+    for arm in ("a", "b"):
+        assert PC.assert_template_sidespec(tok, "legacy_qwen3", arm)
+    prompt = PC.render_prompt_text(tok, "x", "legacy_qwen3", "b")
+    assert prompt.count("<think>") == 1
+    text = "reason</think>\nanswer"
+    _, _, cot, ans = PC.segment_completion_arm(text, "prefill")
+    row = {
+        "row_id": "r",
+        "prompt": prompt,
+        "prompt_ids": tok.encode(prompt),
+        "n_prompt_tokens": len(prompt),
+        "text": text,
+        "read_points": {},
+        "ans_char_span": ans,
+        "cot_char_span": cot,
+        "sampled_token_ids": [*tok.encode(text), tok.eos_token_id],
+    }
+    built, reason = PC.build_capture_row_2588(tok, row, positions_wanted=("cot_boundary",))
+    assert not reason and built["positions"]["cot_boundary"] >= len(prompt)
+    assert not built["token_fidelity"]["sampled_completion_ids_match"]
+    assert built["token_fidelity"]["sampled_decoded_text_match"]
+    row["sampled_token_ids"][0] = ord("X")
+    with pytest.raises(AssertionError, match="capture text/boundaries"):
+        PC.build_capture_row_2588(tok, row, positions_wanted=("cot_boundary",))
+    row["prompt_ids"][0] += 1
+    with pytest.raises(AssertionError, match="prompt token identity"):
+        PC.build_capture_row_2588(tok, row, positions_wanted=("cot_boundary",))
+
+
+def test_pinned_generation_real_bodies_and_resume(generic, monkeypatch):
+    import transformers
+
+    args, cell, paths = generic
+    monkeypatch.setitem(
+        sys.modules,
+        "vllm",
+        SimpleNamespace(
+            LLM=Engine,
+            SamplingParams=SamplingParams,
+            TokensPrompt=TokensPrompt,
+            __version__="fixture",
+        ),
+    )
+    config = transformers.Qwen3Config(
+        num_hidden_layers=36, hidden_size=4096, max_position_embeddings=40960
+    )
+    load = create_autospec(transformers.AutoConfig.from_pretrained, return_value=config)
+    monkeypatch.setattr(transformers.AutoConfig, "from_pretrained", load)
+    holder = {"llm": None, "mml": 0}
+    rows = [{"row_id": "train_10k_1", "prompt": "hello"}]
+    result = RC._gen_stage_with_regen(
+        args,
+        cell,
+        Tokenizer(),
+        rows,
+        stage="train_10k",
+        cap=2048,
+        seed=42,
+        paths=paths,
+        llm_holder=holder,
+    )
+    assert Path(load.call_args.args[0]).name == PC.QWEN3_8B_REVISION
+    assert Engine.constructed[-1]["revision"] == PC.QWEN3_8B_REVISION
+    assert Engine.constructed[-1]["tokenizer_revision"] == PC.QWEN3_8B_REVISION
+    assert Engine.constructed[-1]["download_dir"] == str(paths["cache"])
+    assert result[0]["sampled_token_ids"] == Tokenizer().encode("answer")
+    assert result[0]["prompt_ids"]
+    assert (paths["raw"] / "train_10k/partial/initial/chunk0000.json").is_file()
+    load.reset_mock()
+    assert (
+        RC._gen_stage_with_regen(
+            args,
+            cell,
+            Tokenizer(),
+            rows,
+            stage="train_10k",
+            cap=2048,
+            seed=42,
+            paths=paths,
+            llm_holder=holder,
+        )
+        == result
+    )
+    load.assert_not_called()
+    (paths["raw"] / "train_10k/chunk0000.json").unlink()
+    with pytest.raises(AssertionError, match="partial/stale raw chunks"):
+        RC._gen_stage_with_regen(
+            args,
+            cell,
+            Tokenizer(),
+            rows,
+            stage="train_10k",
+            cap=2048,
+            seed=42,
+            paths=paths,
+            llm_holder=holder,
+        )
+
+
+def test_capture_model_load_uses_actual_snapshot_path(generic, monkeypatch):
+    import huggingface_hub
+
+    args, cell, paths = generic
+    snapshot = str(paths["cache"] / "models--Qwen--Qwen3-8B/snapshots" / PC.QWEN3_8B_REVISION)
+    downloader = create_autospec(huggingface_hub.snapshot_download, return_value=snapshot)
+    monkeypatch.setattr(huggingface_hub, "snapshot_download", downloader)
+    loader = create_autospec(RC.G._load_capture_model, return_value="model-boundary")
+    monkeypatch.setattr(RC.G, "_load_capture_model", loader)
+    assert RC._load_capture_model(cell, args.device, paths["cache"]) == "model-boundary"
+    downloader.assert_not_called()
+    loader.assert_called_once_with(snapshot, "cpu", "bfloat16")
+
+
+def test_capture_direct_phase_refuses_unfinished_parse(generic):
+    args, cell, paths = generic
+    with pytest.raises(AssertionError, match="completed parse"):
+        RC.phase_capture(args, cell, paths)
+
+
+def test_fit_pilot_pause_never_marks_sweep_complete(generic):
+    args, cell, paths = generic
+    args.phase = "fits"
+    args.fit_max_units = 1
+    unit = {"unit_elapsed_s": 12.5, "n": {"tr": 9990, "val": 395, "te": 981}, "d": 4096}
+    with pytest.raises(RC.FitPilotPause):
+        RC._pause_fit_pilot(args, cell, paths, "prompt_last", 0, unit)
+    record = json.loads((paths["fits"] / "fit_pilot.json").read_text())
+    assert record["status"] == "pilot_complete" and record["phase_complete"] is False
+    assert record["total_layer_units"] == 19 and record["unit_elapsed_s"] == 12.5
+    assert not RC._phase_done_path(args, paths, "fits").exists()
+    with pytest.raises(AssertionError, match="complete sweep"):
+        RC.phase_upload_fits(args, cell, paths)
+
+
+def test_generic_upload_shards_text_and_preserves_local_bytes(tmp_path, monkeypatch):
+    source = tmp_path / "raw.jsonl"
+    text = (json.dumps({"text": "x" * 999}) + "\n") * 9600
+    source.write_text(text)
+    seen = {}
+
+    def upload(
+        local_dir,
+        repo_id,
+        repo_type,
+        path_in_repo,
+        allow_patterns,
+        expected_repo_paths,
+        ignore_patterns=None,
+        delete_after=False,
+        *,
+        private=False,
+    ):
+        seen.update({name: (local_dir / name).read_bytes() for name in allow_patterns})
+        assert all(len(value) <= 9_500_000 for value in seen.values())
+        return "https://huggingface.co/datasets/example/tree/revision"
+
+    boundary = create_autospec(RC.HUB._upload_folder_filtered, side_effect=upload)
+    monkeypatch.setattr(RC.HUB, "_upload_folder_filtered", boundary)
+    names = RC._upload_generic(source, "scope/parsed/raw.jsonl")
+    assert "scope/parsed/raw.manifest.json" in names
+    manifest = json.loads(seen["raw.manifest.json"])
+    assert b"".join(seen[name] for name in manifest["parts"]) == text.encode()
+    assert source.read_text() == text
+    assert RC.HUB._parse_shard_manifest(seen["raw.manifest.json"].decode(), what="fixture")[0]
+
+
+def test_immutable_upload_receipt_and_partial_fit_coverage(generic, monkeypatch):
+    import huggingface_hub
+
+    args, cell, paths = generic
+    api = create_autospec(huggingface_hub.HfApi, instance=True)
+    api.repo_info.return_value = SimpleNamespace(sha="a" * 40)
+    monkeypatch.setattr(
+        huggingface_hub, "HfApi", create_autospec(huggingface_hub.HfApi, return_value=api)
+    )
+    verify = create_autospec(RC.HUB.verify_repo_paths_uploaded, return_value=[])
+    monkeypatch.setattr(RC.HUB, "verify_repo_paths_uploaded", verify)
+    upload = create_autospec(RC.HUB._upload, return_value="verified")
+    monkeypatch.setattr(RC.HUB, "_upload", upload)
+    PC.write_json_atomic(paths["fits"] / "fit_pilot.json", {"phase_complete": False})
+    RC.phase_upload_partial(args, cell, paths)
+    receipt = json.loads((paths["cell"] / "uploads/upload-partial.json").read_text())
+    assert receipt["revision"] == "a" * 40
+    assert any(p.endswith("partial/fits/fit_pilot.json") for p in receipt["paths"])
+    assert verify.call_args.kwargs["revision"] == "a" * 40
+    assert not RC._phase_done_path(args, paths, "fits").exists()
+    assert not RC._phase_done_path(args, paths, "upload-partial").exists()
+
+
+def test_cap_window_and_capture_storage_accounting(generic):
+    args, cell, _paths = generic
+    assert PC.cap_effective("b", "generic", 40960) == 32768
+    assert PC.regen_cap(32768, 40960, 65536) == 33856
+    assert PC.regen_skip_reason(32768, 40960, 65536) is not None
+    stages = RC._stage_row_estimates(args, cell)
+    total = sum(n * slots for n, slots in stages.values()) * 19 * 4096 * 4 * 2
+    assert total == 15440281600
+
+
+def test_generic_loader_and_stage_real_bodies(generic, monkeypatch, tmp_path):
+    import huggingface_hub
+
+    args, cell, paths = generic
+    selected = {s: [2, 1] for s in RC.GENERIC_SPLITS}
+    payload = {"splits": selected, "sha256": {}}
+    split_path = tmp_path / "split_ids.json"
+    PC.write_json_atomic(split_path, payload)
+    monkeypatch.setattr(PC, "SPLIT_IDS_PATH", split_path)
+    monkeypatch.setattr(
+        PC,
+        "CHAT_SPLIT_SHA256",
+        {s: PC.sha256_text(json.dumps(ids, separators=(",", ":"))) for s, ids in selected.items()},
+    )
+    monkeypatch.setattr(PC, "EXPECTED_SPLIT_COUNTS", {s: 2 for s in selected})
+    manifests = {}
+    for split in RC.GENERIC_SPLITS:
+        key = RC.G.SPLIT_TO_MANIFEST[split][0]
+        name = RC.G.MANIFEST_SPLIT_FILES[key]
+        file = tmp_path / name
+        PC.write_jsonl_atomic(
+            file, [{"ladder_local_id": i, "prompt": f"prompt{i}"} for i in (1, 2)]
+        )
+        manifests[name] = file
+    monkeypatch.setattr(
+        PC, "CHAT_MANIFEST_SHA256", {n: RC._sha256_file(p) for n, p in manifests.items()}
+    )
+
+    def download(repo_id, filename, *, repo_type, cache_dir, revision, local_files_only=False):
+        assert revision == PC.MANIFEST_REVISION
+        return manifests[Path(filename).name]
+
+    monkeypatch.setattr(
+        huggingface_hub,
+        "hf_hub_download",
+        create_autospec(huggingface_hub.hf_hub_download, side_effect=download),
+    )
+    monkeypatch.setattr(
+        RC,
+        "_p0_union_drop",
+        create_autospec(RC._p0_union_drop, return_value={s: set() for s in selected}),
+    )
+    RC.phase_stage(args, cell, paths)
+    record = json.loads((paths["cell"] / "stage.json").read_text())
+    assert record["splits"]["train_10k"]["row_ids"] == ["train_10k_2", "train_10k_1"]
+    assert set(record["splits"]) == set(RC.GENERIC_SPLITS)
+    assert (
+        RC._load_generic_rows(args, paths["cache"], local_only=True)["train_10k"][0][
+            "ladder_local_id"
+        ]
+        == 2
+    )
+
+
+def test_staged_snapshot_completeness_and_offline_tokenizer(generic):
+    args, cell, paths = generic
+    kwargs = RC._tokenizer_kwargs(args, cell, paths)
+    assert kwargs == {
+        "revision": PC.QWEN3_8B_REVISION,
+        "cache_dir": str(paths["cache"]),
+        "local_files_only": True,
+    }
+    snapshot = RC._local_model_snapshot(cell, paths["cache"])
+    (snapshot / "config.json").write_text("x")
+    with pytest.raises(AssertionError, match="missing/truncated"):
+        RC._local_model_snapshot(cell, paths["cache"])
+
+
+class CaptureModel(torch.nn.Module):
+    """Real hook dispatch and tensor reductions with an explicit CPU forward boundary."""
+
+    device = torch.device("cpu")
+
+    def __init__(self):
+        super().__init__()
+        self.model = torch.nn.Module()
+        self.model.layers = torch.nn.ModuleList([torch.nn.Identity() for _ in range(36)])
+
+    def forward(self, input_ids, attention_mask=None, use_cache=False):
+        hidden = input_ids.float().unsqueeze(-1).expand(-1, -1, 4096)
+        for layer in self.model.layers:
+            hidden = layer(hidden)
+        return SimpleNamespace()
+
+
+def test_parse_capture_upload_real_bodies(generic, monkeypatch):
+    import huggingface_hub
+    import transformers
+
+    args, cell, paths = generic
+    tok = Tokenizer()
+    for stage in RC._stage_names(args, cell):
+        rows = []
+        for i in range(2):
+            prompt = PC.render_prompt_text(tok, f"hello{i}", cell.model.family, cell.arm)
+            text = f"answer{i}"
+            rows.append(
+                {
+                    "row_id": f"{stage}_{i}",
+                    "stage": stage,
+                    "prompt": prompt,
+                    "prompt_ids": tok.encode(prompt),
+                    "n_prompt_tokens": len(prompt),
+                    "text": text,
+                    "sampled_token_ids": tok.encode(text),
+                    "n_comp_tokens": len(text),
+                    "read_points": {"prompt_last": len(prompt) - 1},
+                    "finish_reason": "stop",
+                }
+            )
+        directory = paths["raw"] / stage
+        PC.write_json_atomic(directory / "chunk0000.json", {"rows": rows})
+        PC.write_json_atomic(directory / "cap_hit_report.json", {"n": 2})
+        RC._write_checkpoint(
+            args, cell, paths, directory / "stage_done.json", RC._raw_stage_files(paths, stage)
+        )
+    RC._mark_phase_done(args, cell, paths, "gen")
+    RC.phase_parse(args, cell, paths)
+    RC._mark_phase_done(args, cell, paths, "parse")
+    tokenizer_load = create_autospec(transformers.AutoTokenizer.from_pretrained, return_value=tok)
+    monkeypatch.setattr(transformers.AutoTokenizer, "from_pretrained", tokenizer_load)
+    monkeypatch.setattr(
+        RC,
+        "_load_capture_model",
+        create_autospec(RC._load_capture_model, return_value=CaptureModel()),
+    )
+    monkeypatch.setattr(RC, "_assert_headroom", create_autospec(RC._assert_headroom))
+    RC.phase_capture(args, cell, paths)
+    assert tokenizer_load.call_args.kwargs["revision"] == PC.QWEN3_8B_REVISION
+    RC._mark_phase_done(args, cell, paths, "capture")
+    assert RC._phase_complete(args, paths, "capture")
+    for stage in RC._stage_names(args, cell):
+        rows = json.loads((paths["capture"] / stage / "rows.json").read_text())["rows"]
+        assert all(r["token_fidelity"]["sampled_completion_ids_match"] for r in rows)
+        assert len(rows) == 2
+    api = create_autospec(huggingface_hub.HfApi, instance=True)
+    api.repo_info.return_value = SimpleNamespace(sha="b" * 40)
+    monkeypatch.setattr(
+        huggingface_hub, "HfApi", create_autospec(huggingface_hub.HfApi, return_value=api)
+    )
+    monkeypatch.setattr(
+        RC.HUB,
+        "verify_repo_paths_uploaded",
+        create_autospec(RC.HUB.verify_repo_paths_uploaded, return_value=[]),
+    )
+    monkeypatch.setattr(RC.HUB, "_upload", create_autospec(RC.HUB._upload, return_value="verified"))
+    monkeypatch.setattr(
+        RC.HUB,
+        "_upload_folder_filtered",
+        create_autospec(RC.HUB._upload_folder_filtered, return_value="verified"),
+    )
+    RC.phase_upload_capture(args, cell, paths)
+    receipt = json.loads((paths["cell"] / "uploads/upload-capture.json").read_text())
+    assert sum(p.endswith("_capture_drops.json") for p in receipt["paths"]) == 5
+    assert any(p.endswith("capture_input_validation.json") for p in receipt["paths"])
+    assert not any("gpqa" in p for p in receipt["paths"])
+
+
+def test_fit_production_body_persists_first_unit_then_pauses(generic, monkeypatch):
+    args, cell, paths = generic
+    args.phase, args.fit_max_units = "fits", 1
+    # Numerical test fixture: the production body/estimator runs with an explicitly
+    # small feature width; it is not a scientific output or a hardware-sizing pilot.
+    monkeypatch.setitem(PC.PANEL, "q3_8b", replace(cell.model, h_dim=4, n_layers=2))
+    rng = np.random.default_rng(2588)
+    for stage, n in zip(RC.GENERIC_SPLITS, (96, 32, 32), strict=True):
+        x = rng.normal(size=(n, 4)).astype(np.float32)
+        y = (x + rng.normal(scale=0.7, size=x.shape)).astype(np.float32)
+        directory = paths["capture"] / stage / "L00"
+        directory.mkdir(parents=True)
+        np.savez(
+            directory / "shard000.npz",
+            row_ids=[f"{stage}_{i}" for i in range(n)],
+            x_prompt_last=x,
+            y_ans=y,
+        )
+    monkeypatch.setattr(
+        RC, "_phase_complete", create_autospec(RC._phase_complete, return_value=True)
+    )
+    monkeypatch.setattr(RC, "_await_g2", create_autospec(RC._await_g2, return_value={}))
+    monkeypatch.setattr(RC, "_assert_headroom", create_autospec(RC._assert_headroom))
+    with pytest.raises(RC.FitPilotPause):
+        RC.phase_fits(args, cell, paths)
+    unit = paths["fits"] / "percell_prompt_last_L00.json"
+    record = json.loads(unit.read_text())
+    assert record["n"] == {"tr": 96, "val": 32, "te": 32}
+    assert "identity_bias" in record["floors_test_r2"]
+    assert "identity_bias" in record["knn_test"]
+    assert record["unit_elapsed_s"] >= 0
+    first_bytes = unit.read_bytes()
+    with pytest.raises(RC.FitPilotPause):
+        RC.phase_fits(args, cell, paths)
+    assert unit.read_bytes() == first_bytes
+    assert not RC._phase_done_path(args, paths, "fits").exists()
+
+
+def test_immutable_g2_body(generic, monkeypatch, tmp_path):
+    import huggingface_hub
+
+    args, cell, paths = generic
+    realized = PC.ANCHOR_EXPECTED_R2
+    sentinel = {
+        "schema_version": PC.G2_SENTINEL_SCHEMA_VERSION,
+        "status": "PASS",
+        "store_revision_pin_recorded": RC.MF.STORE_REVISION_PIN_7B,
+        "expected_r2": realized,
+        "realized_r2": realized,
+        "abs_deviation": 0,
+        "tol": PC.ANCHOR_TOL,
+        "production_path": {
+            "realized_r2": realized,
+            "abs_deviation_vs_pin": 0,
+            "tol": PC.ANCHOR_PROD_EQUIV_TOL,
+        },
+        "meta": {"git_sha": "9b896ccc6b65e1d7322d3c7e67f6fe92883a0f0c"},
+    }
+    path = tmp_path / "g2.json"
+    PC.write_json_atomic(path, sentinel)
+    download = create_autospec(huggingface_hub.hf_hub_download, return_value=str(path))
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", download)
+    assert RC._await_g2(args) == sentinel
+    assert download.call_args.kwargs["revision"] == PC.CHAT_G2_REVISION
+    assert download.call_args.kwargs["local_files_only"] is True
+    snapshot = create_autospec(
+        huggingface_hub.snapshot_download,
+        return_value=str(RC._local_model_snapshot(cell, paths["cache"])),
+    )
+    monkeypatch.setattr(huggingface_hub, "snapshot_download", snapshot)
+    RC.phase_stage_runtime(args, cell, paths)
+    assert snapshot.call_args.kwargs["max_workers"] == 4
+    assert snapshot.call_args.kwargs["revision"] == PC.QWEN3_8B_REVISION
+    assert snapshot.call_args.kwargs["allow_patterns"] == ["config.json"]
+    RC._mark_phase_done(args, cell, paths, "stage-runtime")
+    assert RC._phase_complete(args, paths, "stage-runtime")
+
+
+def test_production_model_file_inventory_pin():
+    assert len(RC._CHAT_MODEL_FILES) == 12
+    assert sum(RC._CHAT_MODEL_FILES.values()) == 16_397_431_693

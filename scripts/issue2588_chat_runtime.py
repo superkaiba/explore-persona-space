@@ -1,0 +1,473 @@
+#!/usr/bin/env python3
+"""Build/check only the owned pod's parent-compatible Qwen3 chat runtime.
+
+No model weights are loaded here. --check is strictly local (zero HF calls).
+Build requires the exact owned RunPod ID and prior root-bootstrap evidence;
+the wrapper still runs its canonical disk/network/storage preflight. The
+shared repository environment is never changed. Smoke setup time starts
+before installation and is inherited by the wrapper's one-hour work fence.
+
+Pins: task2588 epm:progress v97 / results v21,v22. Retained-flashinfer patch:
+epm:run-launched 2026-08-26T07:54Z (pod-2588), independently repeated at
+08:06:38Z (pod-2588-q3527b). Only postpone fd_exchange.py annotations; never
+uninstall flashinfer or alter vLLM sampler/attention choices.
+"""
+
+from __future__ import annotations
+
+import argparse
+import ast
+import hashlib
+import importlib
+import importlib.metadata
+import json
+import math
+import os
+import platform
+import re
+import shutil
+import signal
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+RUNTIME = Path("/workspace/eps2588_qwen3_chat/runtime")
+LOCK = REPO_ROOT / "configs/issue2588_chat_runtime.txt"
+PYTHON_VERSION = "3.12.14"
+PINS = {
+    "vllm": "0.27.1",
+    "transformers": "5.16.1",
+    "torch": "2.13.0+cu130",
+    "numpy": "2.2.6",
+    "flashinfer-python": "0.6.16.post3",
+    "accelerate": "1.13.0",
+    "scipy": "1.17.1",
+    "matplotlib": "3.10.8",
+    "datasets": "4.8.4",
+    "anthropic": "0.88.0",
+    "python-dotenv": "1.2.2",
+}
+COMPAT_DIR = Path("/usr/local/cuda-13.0/compat")
+SMOKE_START_ENV = "EPS2588_SMOKE_STARTED_AT"
+RC_WORK_FENCE = 8
+
+
+class RuntimeFence(RuntimeError):
+    """The cumulative smoke work allowance is exhausted; never relaunch automatically."""
+
+
+class RuntimeStop(RuntimeError):
+    """Preserve the external signal while draining this launch's child group."""
+
+    def __init__(self, signum: int):
+        super().__init__(f"runtime setup received signal {signum}")
+        self.rc = 128 + signum
+
+
+def handle_signal(signum, frame) -> None:
+    """Raise inside the active setup step so it reaps its own child group."""
+    raise RuntimeStop(signum)
+
+
+def sha256(path: Path) -> str:
+    """Hash a local recipe or installed source file for the runtime receipt."""
+    with path.open("rb") as source:
+        return hashlib.file_digest(source, "sha256").hexdigest()
+
+
+def write_receipt(path: Path, record: dict) -> None:
+    """Replace only this owned runtime's small receipt, atomically."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    temporary.write_text(json.dumps(record, indent=2) + "\n")
+    temporary.replace(path)
+
+
+def driver_check() -> dict:
+    """Require a visible CUDA-13-capable driver; no no-GPU or waiver fallback."""
+    smi = shutil.which("nvidia-smi")
+    if not smi:
+        raise RuntimeError("nvidia-smi required on the owned GPU pod")
+    result = subprocess.run(
+        [smi, "--query-gpu=driver_version", "--format=csv,noheader"],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=30,
+    )
+    versions = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    if not versions:
+        raise RuntimeError("driver probe returned no GPU")
+    major = min(int(version.split(".")[0]) for version in versions)
+    compat_active = str(COMPAT_DIR) in os.environ.get("LD_LIBRARY_PATH", "").split(":") and any(
+        COMPAT_DIR.glob("libcuda.so*")
+    )
+    # CUDA 13.0's current forward-compatibility matrix permits R535/R570,
+    # not arbitrary older or newer drivers. The CUDA tensor probe verifies
+    # the actual dynamic-loader/device path, not just package presence.
+    if compat_active and major not in (535, 570, 580):
+        raise RuntimeError(
+            f"stale CUDA 13.0 compatibility loader on unsupported driver: {versions}"
+        )
+    if major < 580 and not (major in (535, 570) and compat_active):
+        raise RuntimeError(f"CUDA 13 requires R580+ or active supported compat: {versions}")
+    libc, libc_version = platform.libc_ver()
+    if libc != "glibc" or tuple(map(int, libc_version.split(".")[:2])) < (2, 35):
+        raise RuntimeError("runtime lock requires Linux glibc >= 2.35")
+    return {"drivers": versions, "compat_active": compat_active, "glibc": libc_version}
+
+
+def postponed_annotations(source: str) -> str:
+    """Apply the parent's single semantic-preserving annotation patch idempotently."""
+    tree = ast.parse(source)
+    if any(
+        isinstance(node, ast.ImportFrom)
+        and node.module == "__future__"
+        and any(alias.name == "annotations" for alias in node.names)
+        for node in tree.body
+    ):
+        return source
+    if "array.array[" not in source:
+        raise RuntimeError("unexpected flashinfer source: recorded array annotation absent")
+    # Preserve a module docstring, comments, encoding cookie and any shebang.
+    at = tree.body[0].lineno - 1
+    if isinstance(tree.body[0], ast.Expr) and isinstance(tree.body[0].value, ast.Constant):
+        if isinstance(tree.body[0].value.value, str):
+            at = tree.body[0].end_lineno
+    lines = source.splitlines(keepends=True)
+    lines.insert(at, "from __future__ import annotations\n")
+    patched = "".join(lines)
+    compile(patched, "flashinfer/comm/fd_exchange.py", "exec")
+    return patched
+
+
+def patch_flashinfer() -> dict:
+    """Modify only the exact retained package inside this script's owned runtime."""
+    if Path(sys.prefix).resolve() != RUNTIME.resolve():
+        raise RuntimeError("flashinfer patch is restricted to the owned runtime interpreter")
+    dist = importlib.metadata.distribution("flashinfer-python")
+    if dist.version != PINS["flashinfer-python"]:
+        raise RuntimeError(f"unexpected flashinfer version {dist.version}")
+    target = Path(dist.locate_file("flashinfer/comm/fd_exchange.py")).resolve()
+    if not target.is_relative_to(RUNTIME.resolve()):
+        raise RuntimeError("flashinfer resolved outside the owned runtime")
+    before = sha256(target)
+    original = target.read_text()
+    patched = postponed_annotations(original)
+    if patched != original:
+        target.write_text(patched)
+    record = {
+        "path": str(target),
+        "before_sha256": before,
+        "after_sha256": sha256(target),
+        "changed": patched != original,
+        "recipe": "parent-retained-flashinfer-postponed-annotations",
+    }
+    previous = RUNTIME / "flashinfer_patch.json"
+    if previous.exists() and not record["changed"]:
+        prior = json.loads(previous.read_text())
+        if prior["after_sha256"] != record["after_sha256"]:
+            raise RuntimeError("installed flashinfer patch provenance changed")
+        record = prior
+    write_receipt(previous, record)
+    return record
+
+
+def check_runtime() -> dict:
+    """Verify exact pins, retained accelerator, true CUDA execution and driver imports."""
+    if Path(sys.prefix).resolve() != RUNTIME.resolve():
+        raise RuntimeError(f"wrong interpreter: expected {RUNTIME}/bin/python")
+    if platform.python_version() != PYTHON_VERSION:
+        raise RuntimeError(f"expected Python {PYTHON_VERSION}; got {platform.python_version()}")
+    owner = json.loads((RUNTIME.parent / "runtime_owner.json").read_text())
+    if owner["lock_sha256"] != sha256(LOCK) or owner["python"] != PYTHON_VERSION:
+        raise RuntimeError("owned runtime recipe differs from the current lock/Python")
+    if owner["pod_id"] != os.environ.get("RUNPOD_POD_ID"):
+        raise RuntimeError("runtime ownership differs from the current pod")
+    realized = {name: importlib.metadata.version(name) for name in PINS}
+    if realized != PINS:
+        raise RuntimeError(f"runtime version mismatch: {realized}")
+    locked = dict(re.findall(r"^([A-Za-z0-9_.-]+)==([^\s\\;]+)", LOCK.read_text(), re.MULTILINE))
+    if not set(PINS).issubset(locked):
+        raise RuntimeError("runtime lock is incomplete")
+    installed = {name: importlib.metadata.version(name) for name in locked}
+    if installed != locked:
+        raise RuntimeError("installed dependency closure differs from the hashed runtime lock")
+    if os.environ.get("VLLM_USE_FLASHINFER_SAMPLER", "1") != "1":
+        raise RuntimeError("parent retained-flashinfer runtime forbids sampler override")
+    drivers = driver_check()
+    importlib.import_module("flashinfer.comm.fd_exchange")
+    vllm = importlib.import_module("vllm")
+    for name in ("LLM", "SamplingParams", "TokensPrompt"):
+        if not getattr(vllm, name, None):
+            raise RuntimeError(f"required real vLLM API missing: {name}")
+    for name in ("accelerate", "scipy", "matplotlib", "datasets", "dotenv"):
+        importlib.import_module(name)
+    model_module = importlib.import_module("transformers.models.qwen3.modeling_qwen3")
+    if not getattr(model_module, "Qwen3ForCausalLM", None):
+        raise RuntimeError("actual Qwen3ForCausalLM model class missing")
+    torch = importlib.import_module("torch")
+    if torch.version.cuda != "13.0" or not torch.cuda.is_available():
+        raise RuntimeError("CUDA 13.0 must be available in the exact runtime")
+    if torch.cuda.device_count() != 1:
+        raise RuntimeError("Qwen3 chat runtime requires exactly one visible GPU")
+    value = torch.ones((2, 2), device="cuda")
+    if (value @ value).sum().item() != 8:
+        raise RuntimeError("CUDA tensor execution probe failed")
+    torch.cuda.synchronize()
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    driver = importlib.import_module("issue2588_run_cell")
+    if driver._run_import_check() != 0:
+        raise RuntimeError("actual model-runtime driver import check failed")
+    patch_path = RUNTIME / "flashinfer_patch.json"
+    patch = json.loads(patch_path.read_text())
+    if sha256(Path(patch["path"])) != patch["after_sha256"]:
+        raise RuntimeError("installed flashinfer patch does not match its receipt")
+    return {
+        "status": "passed",
+        "python": platform.python_version(),
+        "pins": realized,
+        "dependency_versions": installed,
+        "lock_sha256": sha256(LOCK),
+        "driver": drivers,
+        "flashinfer_patch": patch,
+        "cuda": torch.version.cuda,
+        "interpreter": sys.executable,
+    }
+
+
+def remaining_smoke_seconds(env: dict, *, smoke: bool) -> float | None:
+    """Account for install, imports, model staging and work across the same launch."""
+    if not smoke:
+        return None
+    start = float(env[SMOKE_START_ENV])
+    now = time.time()
+    if not math.isfinite(start) or start > now or start <= 0:
+        raise RuntimeError("invalid cumulative smoke start timestamp")
+    remaining = 3600 - (now - start)
+    if remaining <= 0:
+        raise RuntimeFence("one-hour smoke work allowance exhausted during runtime setup")
+    return remaining
+
+
+def run_bounded(argv: list[str], env: dict, *, smoke: bool, deadline: float, log) -> None:
+    """Run one build/check process group with the cumulative setup fence."""
+    remaining = remaining_smoke_seconds(env, smoke=smoke)
+    budget = deadline - time.monotonic()
+    if remaining is not None:
+        budget = min(budget, remaining)
+    if budget <= 0:
+        if smoke:
+            raise RuntimeFence("cumulative runtime setup fence exhausted")
+        raise TimeoutError("explicit runtime setup budget exhausted")
+    child = subprocess.Popen(
+        argv, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True
+    )
+    try:
+        code = child.wait(timeout=budget)
+    except BaseException as error:
+        try:
+            os.killpg(child.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass  # This exact owned group already exited; preserve the triggering error.
+        try:
+            child.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            pass
+        # A leader may exit while descendants ignore TERM. Always target the
+        # owned group once more, independent of its leader's wait status.
+        try:
+            os.killpg(child.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        child.wait(timeout=10)
+        if isinstance(error, subprocess.TimeoutExpired) and smoke:
+            raise RuntimeFence("runtime setup stopped at cumulative smoke work fence") from None
+        raise
+    if code:
+        raise RuntimeError(f"runtime command failed rc={code}: {argv[0:3]}")
+
+
+def build_commands(uv: str) -> list[list[str]]:
+    """Return the hashed, parent-pinned install recipe without executing it."""
+    python = str(RUNTIME / "bin/python")
+    return [
+        [uv, "venv", str(RUNTIME), "--python", PYTHON_VERSION],
+        [
+            uv,
+            "pip",
+            "sync",
+            "--python",
+            python,
+            "--torch-backend",
+            "cu130",
+            "--require-hashes",
+            "--only-binary",
+            ":all:",
+            str(LOCK),
+        ],
+        [python, str(Path(__file__).resolve()), "--patch-flashinfer"],
+        [python, str(Path(__file__).resolve()), "--check"],
+    ]
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Build on the explicitly owned pod or check locally, then exec the wrapper."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    action = parser.add_mutually_exclusive_group(required=True)
+    action.add_argument("--build", action="store_true")
+    action.add_argument("--check", action="store_true")
+    action.add_argument("--patch-flashinfer", action="store_true", help=argparse.SUPPRESS)
+    action.add_argument("--list-commands", action="store_true")
+    parser.add_argument("--pod-id")
+    parser.add_argument("--bootstrap-preflight-evidence")
+    parser.add_argument("--setup-timeout-seconds", type=float)
+    parser.add_argument("--setup-timeout-basis")
+    parser.add_argument("wrapper_args", nargs=argparse.REMAINDER)
+    args = parser.parse_args(argv)
+    if args.list_commands:
+        print(json.dumps(build_commands("uv"), indent=2))
+        return 0
+    if args.check:
+        print(json.dumps(check_runtime(), sort_keys=True))
+        return 0
+    if args.patch_flashinfer:
+        print(json.dumps(patch_flashinfer(), sort_keys=True))
+        return 0
+    if not args.pod_id or args.pod_id != os.environ.get("RUNPOD_POD_ID"):
+        raise RuntimeError("--build requires the exact owned RUNPOD_POD_ID")
+    if not (args.bootstrap_preflight_evidence or "").strip():
+        raise RuntimeError("root-bootstrap preflight evidence is required before model setup")
+    wrapper_args = args.wrapper_args
+    if wrapper_args[:1] == ["--"]:
+        wrapper_args = wrapper_args[1:]
+    if "--mode" not in wrapper_args:
+        raise RuntimeError("pass the reviewed wrapper --mode after --")
+    mode = wrapper_args[wrapper_args.index("--mode") + 1]
+    if mode not in ("smoke", "capture", "fit-pilot", "fits"):
+        raise RuntimeError("out-of-scope wrapper mode")
+    if mode == "smoke":
+        setup_budget = 3600.0  # Registered hard safety fence, not a transfer-time estimate.
+    else:
+        setup_budget = args.setup_timeout_seconds
+        if not setup_budget or not math.isfinite(setup_budget) or setup_budget <= 0:
+            raise RuntimeError("non-smoke runtime check requires --setup-timeout-seconds")
+        if not (args.setup_timeout_basis or "").strip():
+            raise RuntimeError("non-smoke runtime timeout requires its explicit sizing basis")
+        if not (RUNTIME / "bin/python").exists():
+            raise RuntimeError("first runtime build must be part of the smoke, not production")
+    deadline = time.monotonic() + setup_budget
+    signal.signal(signal.SIGTERM, handle_signal)
+    signal.signal(signal.SIGINT, handle_signal)
+    env = dict(os.environ)
+    env.update(
+        UV_NO_SYNC="1",
+        EPS_CAP_PROFILE="long",
+        UV_CACHE_DIR=str(RUNTIME.parent / "uv_cache"),
+        PYTHONPATH=str(REPO_ROOT / "src") + os.pathsep + env.get("PYTHONPATH", ""),
+        EPM_PREFLIGHT_LARGE_BLOB_URL=(
+            "https://huggingface.co/Qwen/Qwen3-8B/resolve/"
+            "b968826d9c46dd6066d109eabc6255188de91218/model-00001-of-00005.safetensors"
+        ),
+    )
+    if mode == "smoke":
+        env.setdefault(SMOKE_START_ENV, str(time.time()))
+    remaining_smoke_seconds(env, smoke=mode == "smoke")
+    driver_check()
+    uv = shutil.which("uv")
+    if not uv:
+        raise RuntimeError("existing root bootstrap must provide uv")
+    if RUNTIME.is_symlink() or RUNTIME.parent.resolve() != RUNTIME.parent:
+        raise RuntimeError(
+            "runtime overlay/symlink relocation requires separately verified approval"
+        )
+    RUNTIME.parent.mkdir(parents=True, exist_ok=True)
+    owner = RUNTIME.parent / "runtime_owner.json"
+    identity = {
+        "pod_id": args.pod_id,
+        "lock_sha256": sha256(LOCK),
+        "python": PYTHON_VERSION,
+        "bootstrap_preflight_evidence": args.bootstrap_preflight_evidence,
+    }
+    if owner.exists():
+        if json.loads(owner.read_text()) != identity:
+            raise RuntimeError("existing owned-runtime identity differs; do not overwrite")
+    elif RUNTIME.exists():
+        raise RuntimeError("unidentified existing runtime directory; do not overwrite")
+    write_receipt(owner, identity)
+    commands = build_commands(uv)
+    if mode != "smoke":
+        commands = commands[-1:]  # Production checks only; never installs or repairs.
+    elif (RUNTIME / "bin/python").exists():
+        commands = commands[1:]
+    if mode == "smoke":
+        storage_parser = argparse.ArgumentParser(add_help=False)
+        storage_parser.add_argument("--min-disk-gb", type=float, required=True)
+        storage_parser.add_argument("--per-pod-quota-gb", type=float, required=True)
+        storage, _ = storage_parser.parse_known_args(wrapper_args)
+        if not (
+            math.isfinite(storage.min_disk_gb)
+            and storage.min_disk_gb >= 80
+            and math.isfinite(storage.per_pod_quota_gb)
+            and storage.per_pod_quota_gb >= 200
+        ):
+            raise RuntimeError("reviewed setup requires >=80GB free and explicit >=200GB pod quota")
+        commands = [
+            ["findmnt", "-T", str(RUNTIME.parent)],
+            [
+                sys.executable,
+                "-u",
+                "-m",
+                "explore_persona_space.orchestrate.preflight",
+                "--no-gpu",
+                "--min-disk",
+                str(storage.min_disk_gb),
+                "--per-pod-quota-gb",
+                str(storage.per_pod_quota_gb),
+            ],
+            *commands,
+        ]
+    try:
+        with (RUNTIME.parent / "runtime_build.log").open("a") as log:
+            for command in commands:
+                run_bounded(command, env, smoke=mode == "smoke", deadline=deadline, log=log)
+        remaining_smoke_seconds(env, smoke=mode == "smoke")
+    except (RuntimeFence, RuntimeStop) as error:
+        code = RC_WORK_FENCE if isinstance(error, RuntimeFence) else error.rc
+        write_receipt(
+            RUNTIME.parent / "runtime_pause.json",
+            {
+                "status": "work_fence" if code == RC_WORK_FENCE else "interrupted",
+                "rc": code,
+                "reason": str(error),
+                "started_at": env.get(SMOKE_START_ENV),
+                "identity": identity,
+            },
+        )
+        return code
+    except Exception as error:
+        write_receipt(
+            RUNTIME.parent / "runtime_pause.json",
+            {
+                "status": "failed",
+                "reason": str(error),
+                "identity": identity,
+            },
+        )
+        raise
+    python = str(RUNTIME / "bin/python")
+    os.execve(
+        python,
+        [python, "-u", str(REPO_ROOT / "scripts/issue2588_chat_dispatch.py"), *wrapper_args],
+        env,
+    )
+    raise AssertionError("execve returned unexpectedly")
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except RuntimeStop as error:
+        raise SystemExit(error.rc) from error

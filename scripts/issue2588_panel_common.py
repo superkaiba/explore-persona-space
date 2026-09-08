@@ -125,6 +125,19 @@ G2_SENTINEL_PATH = f"{PANEL_PREFIX}/gates/g2_anchor_pass.json"
 # #2330 pinned inputs (plan §10 Data)
 MANIFEST_HF_PREFIX = "issue1491_scale_ladder/manifest"
 MANIFEST_REVISION = "815ff6d976c686af8672b27cfdfb1ce6b419c02c"
+CHAT_MANIFEST_SHA256 = {
+    "train_25k.jsonl": "32bb1a6aa7cc174fa2782eaf19c0d5356a053e761aa42fc760fc11a3180c3af0",
+    "val_400.jsonl": "23e553a0763c0b8f11937db74d3d2b5880c1fe51c7a3ebcfd0a18ddbb7f92dd6",
+    "test_1000.jsonl": "e368930bb7b03bc1696723ba5f7eb1542a538d5da8dc832ee2ff5764538d0310",
+}
+QWEN3_8B_REVISION = "b968826d9c46dd6066d109eabc6255188de91218"
+CHAT_PARENT_SOURCE = "5b7f1beb661f9f2707263cff24d0e39fb7fbb01b"
+CHAT_G2_REVISION = "19a9baf7552adc2807ae1c44ed4dab4efdf35d32"
+CHAT_SPLIT_SHA256 = {
+    "train_10k": "a74675bfed3834ac1c3140b2d7fb7d93d90a76608cc08515a5019a1cb2075ff4",
+    "val_400": "61c7e6234e65fb5cce2355ea19e2867337eab0f6ef7092bc7e646da03f05ab8e",
+    "test_1000": "b1c32e2197c96b83093960b247b9a8eac730c9527f14fa7691c116b77d679a63",
+}
 SPLIT_IDS_PATH = REPO_ROOT / "eval_results" / "issue_2330" / "split_ids.json"
 SPLIT_SHA256_PIN_PREFIXES = {
     "train_10k": "a74675bfed",
@@ -383,6 +396,7 @@ class PanelModel:
     # fits-side loader collapses streams per EPS_HC_REDUCE (default mean) so
     # every downstream phase works in h_dim like the rest of the panel.
     hc_streams: int = 1
+    revision: str | None = None
 
 
 PANEL: dict[str, PanelModel] = {
@@ -495,6 +509,17 @@ PANEL: dict[str, PanelModel] = {
             "legacy_qwen3",
             ("a", "b"),
             True,
+        ),
+        PanelModel(
+            "q3_8b",
+            "Qwen/Qwen3-8B",
+            36,
+            4096,
+            "legacy_qwen3",
+            ("a", "b"),
+            True,
+            est_snapshot_gb=16.381516776,
+            revision=QWEN3_8B_REVISION,
         ),
         PanelModel(
             "qwq_32b",  # Qwen2ForCausalLM, mpe 40960; template is thinking-only
@@ -659,11 +684,11 @@ class Cell:
         return f"{PANEL_PREFIX}/{self.model_key}/{arm_dir}"
 
 
-def all_cells() -> list[Cell]:
+def all_cells(*, include_generic: bool = False) -> list[Cell]:
     """The generation/capture cells: 19 original (plan §4.1) + 9 extension
     + 5 same-width column.
 
-    Registry arithmetic stays a HARD pin: 33 cells = the plan-§4.1 19 plus the
+    Registry arithmetic stays a HARD pin: 33 full-panel cells = the plan-§4.1 19 plus the
     issue-2588-larger 9 (q38fn a/b, q35_397b a/b, dsv4_flash a/b, glm53 b,
     dsv4_pro a/b) plus the same-width 5 (q3_32b a/b, qwq_32b b, q25_32b a,
     o3_32b_t b); 36 registered maps = the original 21 (17 single-position +
@@ -671,23 +696,39 @@ def all_cells() -> list[Cell]:
     cell is single-position: prompt_last on arm a, cot_boundary on arm b)
     plus 6 (four single-position same-width cells + the dual-position
     o3_32b_t olmo_think cell).
+    Qwen3-8B adds two chat-only cells/maps when include_generic=True (35/38).
+    Legacy all-panel consumers retain their existing 33-cell roster.
     """
     cells: list[Cell] = []
     for m in PANEL.values():
+        if m.key == "q3_8b" and not include_generic:
+            continue
         for arm in m.arms:
             fresh = not (arm == "a" and m.banked_arm_a)
             cells.append(Cell(m.key, arm, fresh))
-    assert len(cells) == 33, [c.key for c in cells]
+    assert len(cells) == (35 if include_generic else 33), [c.key for c in cells]
     n_maps = sum(len(c.input_positions) for c in cells)
-    assert n_maps == 36, n_maps
+    assert n_maps == (38 if include_generic else 36), n_maps
     return cells
 
 
+def model_load_kwargs(model_id: str, *, engine: bool = False) -> dict:
+    """Pin actual Hub loads for registered immutable models; legacy rows stay unchanged."""
+    matches = [m for m in PANEL.values() if m.hf_id == model_id and m.revision]
+    if not matches:
+        return {}
+    revision = matches[0].revision
+    return {"revision": revision, **({"tokenizer_revision": revision} if engine else {})}
+
+
 def cell_by_key(key: str) -> Cell:
-    for c in all_cells():
+    """Resolve legacy and opt-in chat-only cells without expanding default dispatch rosters."""
+    for c in all_cells(include_generic=True):
         if c.key == key:
             return c
-    raise KeyError(f"unknown cell {key!r}; known: {[c.key for c in all_cells()]}")
+    raise KeyError(
+        f"unknown cell {key!r}; known: {[c.key for c in all_cells(include_generic=True)]}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -726,7 +767,7 @@ def assert_olmo_rope_split(model_id: str) -> dict:
     """
     from transformers import AutoConfig
 
-    cfg = AutoConfig.from_pretrained(model_id)
+    cfg = AutoConfig.from_pretrained(model_id, **model_load_kwargs(model_id))
     rp = getattr(cfg, "rope_parameters", None)
     assert isinstance(rp, dict), f"G6 FAIL ({model_id}): rope_parameters is {type(rp)}, not dict"
     assert set(rp) >= {"full_attention", "sliding_attention"}, (
@@ -764,7 +805,7 @@ def assert_max_position_embeddings(model_id: str, floor: int = REGEN_MAX_MODEL_L
     """Record + HARD-assert max_position_embeddings >= the requested context floor."""
     from transformers import AutoConfig
 
-    cfg = AutoConfig.from_pretrained(model_id)
+    cfg = AutoConfig.from_pretrained(model_id, **model_load_kwargs(model_id))
     mpe = resolve_cfg_attr(cfg, "max_position_embeddings")
     assert isinstance(mpe, int), f"{model_id}: max_position_embeddings unreadable ({mpe!r})"
     assert mpe >= floor, (
@@ -1195,8 +1236,28 @@ def build_capture_row_2588(
         f"{wrow['row_id']}: prompt re-tokenization drifted "
         f"({len(prompt_ids)} != {wrow['n_prompt_tokens']})"
     )
+    if "prompt_ids" in wrow:
+        assert prompt_ids == wrow["prompt_ids"], (
+            f"{wrow['row_id']}: prompt token identity changed before capture"
+        )
     enc = tok(wrow["text"], add_special_tokens=False, return_offsets_mapping=True)
     comp_ids, offsets = enc["input_ids"], enc["offset_mapping"]
+    sampled_text_matches = None
+    if "sampled_token_ids" in wrow:
+        if comp_ids == wrow["sampled_token_ids"]:
+            sampled_text_matches = True
+        else:
+            sampled_text = tok.decode(
+                wrow["sampled_token_ids"],
+                skip_special_tokens=True,
+                clean_up_tokenization_spaces=False,
+            )
+            # Parent parsing strips outer whitespace. Different segmentations and
+            # omitted terminal stop tokens are diagnostics; changed answer/think text is not.
+            sampled_text_matches = sampled_text.strip() == wrow["text"].strip()
+            assert sampled_text_matches, (
+                f"{wrow['row_id']}: sampled token decoding changes capture text/boundaries"
+            )
     if not comp_ids:
         return None, "empty_completion_tokens"
     prompt_len = len(prompt_ids)
@@ -1244,6 +1305,19 @@ def build_capture_row_2588(
         "comp_ids": [int(x) for x in comp_ids],
         "spans": spans,
         "positions": positions,
+        "token_fidelity": {
+            "recipe": "parent_text_retokenization",
+            "prompt_ids_match": prompt_ids == wrow["prompt_ids"] if "prompt_ids" in wrow else None,
+            "sampled_completion_ids_available": "sampled_token_ids" in wrow,
+            "sampled_completion_ids_match": comp_ids == wrow["sampled_token_ids"]
+            if "sampled_token_ids" in wrow
+            else None,
+            "n_sampled_tokens": len(wrow["sampled_token_ids"])
+            if "sampled_token_ids" in wrow
+            else None,
+            "n_recapture_tokens": len(comp_ids),
+            "sampled_decoded_text_match": sampled_text_matches,
+        },
     }, ""
 
 

@@ -1,0 +1,16 @@
+# Task 2588 minimal-long-cap parent runtime: epm:progress v97, results v21/v22.
+# Python 3.12.14; CUDA 13.0 wheels; shared project pyproject/uv.lock unchanged.
+# Parent additive imports: epm:run-launched 2026-08-26T07:54Z / 08:06:38Z.
+# Retain flashinfer; issue2588_chat_runtime.py applies ONLY the recorded
+# postponed-annotation fix in flashinfer/comm/fd_exchange.py.
+vllm==0.27.1
+transformers==5.16.1
+torch==2.13.0+cu130
+numpy==2.2.6
+flashinfer-python==0.6.16.post3
+accelerate==1.13.0
+scipy==1.17.1
+matplotlib==3.10.8
+datasets==4.8.4
+anthropic==0.88.0
+python-dotenv==1.2.2
