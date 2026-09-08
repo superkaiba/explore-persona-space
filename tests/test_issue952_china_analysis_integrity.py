@@ -610,6 +610,11 @@ def test_h4_is_indeterminate_when_interjudge_reliability_misses() -> None:
     assert label == "judge-reliability-indeterminate"
 
 
+def test_figure_mean_preserves_undefined_contrasts_as_gaps() -> None:
+    assert ANALYSIS._mean_defined([0.2, None, float("nan"), 0.4]) == pytest.approx(0.3)
+    assert ANALYSIS.math.isnan(ANALYSIS._mean_defined([None, float("nan")]))
+
+
 def test_reports_separate_registered_accepted_and_realized_counts() -> None:
     passing_sources = [f"s{source:02d}" for source in range(85)]
     bank = [

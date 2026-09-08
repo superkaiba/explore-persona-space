@@ -798,6 +798,16 @@ def _ci(values: np.ndarray) -> list[float]:
     return [float(x) for x in np.quantile(finite, [0.025, 0.975])]
 
 
+def _mean_defined(values: list[float | None]) -> float:
+    """Average defined report values while preserving an all-missing cell as a gap."""
+
+    finite = np.asarray(
+        [float(value) for value in values if value is not None and np.isfinite(value)],
+        dtype=np.float64,
+    )
+    return float(finite.mean()) if len(finite) else math.nan
+
+
 def _holm_rejections(pvalues: np.ndarray, alpha: float = 0.05) -> np.ndarray:
     """Vectorized Holm step-down decisions for rows of hypothesis p-values."""
 
@@ -3040,7 +3050,7 @@ def make_figures(report_path: Path, figure_dir: Path) -> dict[str, Any]:
         vals = []
         for layer in layers:
             cell = [r for r in records if r["hypothesis"] == "H2" and r["layer"] == layer]
-            vals.append(np.mean([r["kernel_share_median"][contrast] for r in cell]))
+            vals.append(_mean_defined([r["kernel_share_median"][contrast] for r in cell]))
         ax.plot(layers, vals, color=color, marker=marker, lw=2.2, label=contrast.capitalize())
     ax.set_xticks(layers)
     ax.set_xlabel("Layer")
