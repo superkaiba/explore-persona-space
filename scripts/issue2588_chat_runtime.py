@@ -565,7 +565,7 @@ def main(argv: list[str] | None = None) -> int:
     if "--mode" not in wrapper_args:
         raise RuntimeError("pass the reviewed wrapper --mode after --")
     mode = wrapper_args[wrapper_args.index("--mode") + 1]
-    if mode not in ("smoke", "capture", "fit-pilot", "fits"):
+    if mode not in ("smoke", "capture-pilot", "capture", "fit-pilot", "fits"):
         raise RuntimeError("out-of-scope wrapper mode")
     if mode == "smoke":
         setup_budget = 3600.0  # Registered hard safety fence, not a transfer-time estimate.
@@ -575,7 +575,7 @@ def main(argv: list[str] | None = None) -> int:
             raise RuntimeError("non-smoke runtime check requires --setup-timeout-seconds")
         if not (args.setup_timeout_basis or "").strip():
             raise RuntimeError("non-smoke runtime timeout requires its explicit sizing basis")
-        if not (RUNTIME / "bin/python").exists():
+        if mode != "capture-pilot" and not (RUNTIME / "bin/python").exists():
             raise RuntimeError("first runtime build must be part of the smoke, not production")
     deadline = time.monotonic() + setup_budget
     signal.signal(signal.SIGTERM, handle_signal)
@@ -600,6 +600,10 @@ def main(argv: list[str] | None = None) -> int:
     clock_parser.add_argument("--continuation-grant-sha256")
     clock_parser.add_argument("--science-root", type=Path)
     clock_args, _ = clock_parser.parse_known_args(wrapper_args)
+    if mode == "capture-pilot":
+        if clock_args.run_id != SUPPLEMENT_RUN_ID or not clock_args.science_root:
+            raise RuntimeError("capture-pilot requires v3 and the frozen science root")
+        CG.science_root(clock_args.science_root)
     CG.configure_environment(
         env, clock_args.continuation_grant, clock_args.continuation_grant_sha256
     )
@@ -670,11 +674,11 @@ def main(argv: list[str] | None = None) -> int:
         raise RuntimeError("unidentified existing runtime directory; do not overwrite")
     write_receipt(owner, identity)
     commands = build_commands(uv)
-    if mode != "smoke":
+    if mode not in {"smoke", "capture-pilot"}:
         commands = commands[-1:]  # Production checks only; never installs or repairs.
     elif (RUNTIME / "bin/python").exists():
         commands = commands[1:]
-    if mode == "smoke":
+    if mode in {"smoke", "capture-pilot"}:
         storage_parser = argparse.ArgumentParser(add_help=False)
         storage_parser.add_argument("--min-disk-gb", type=float, required=True)
         storage_parser.add_argument("--per-pod-quota-gb", type=float, required=True)

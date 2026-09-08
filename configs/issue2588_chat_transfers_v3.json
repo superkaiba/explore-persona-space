@@ -2,6 +2,12 @@
   "surface": "generic",
   "run_id": "qwen3-chat-v3",
   "transfers": {
+    "restore-complete:stage": {
+      "bytes": 59350000,
+      "bytes_per_s": 10000000,
+      "retry_calls": 54,
+      "basis": "Complete600-response pilot at17c35c79:51 files59313190B; pinned terminal716e16e2 raw-upload receipt plus metadata allowance. One prefix listing,51 downloads,one receipt download and one exact remote hash census; count serial retry envelopes despite four workers. Expected10MB/s, not measured throughput. No historical grant applies after user authorization progress156."
+    },
     "restore:stage": {
       "bytes": 7351708,
       "bytes_per_s": 10000000,

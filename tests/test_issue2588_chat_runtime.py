@@ -247,13 +247,15 @@ def test_full_runtime_gate_requires_actual_import_closure(tmp_path, monkeypatch)
         RT.check_runtime()
 
 
-def test_build_main_uses_cumulative_clock_and_exact_exec(tmp_path, monkeypatch):
+@pytest.mark.parametrize("mode", ["smoke", "capture-pilot"])
+def test_build_main_uses_cumulative_clock_and_exact_exec(tmp_path, monkeypatch, mode):
     runtime = tmp_path / "runtime"
     monkeypatch.setattr(RT, "RUNTIME", runtime)
     monkeypatch.setenv("RUNPOD_POD_ID", "own-pod")
     monkeypatch.setattr(RT.shutil, "which", create_autospec(RT.shutil.which, return_value="uv"))
     monkeypatch.setattr(RT, "driver_check", create_autospec(RT.driver_check, return_value={}))
     monkeypatch.setattr(RT.signal, "signal", create_autospec(RT.signal.signal))
+    monkeypatch.setattr(RT.CG, "science_root", create_autospec(RT.CG.science_root))
     runner = create_autospec(RT.run_bounded)
     monkeypatch.setattr(RT, "run_bounded", runner)
 
@@ -270,9 +272,17 @@ def test_build_main_uses_cumulative_clock_and_exact_exec(tmp_path, monkeypatch):
                 "own-pod",
                 "--bootstrap-preflight-evidence",
                 "canonical step10 passed log fixture",
+                "--setup-timeout-seconds",
+                "1320",
+                "--setup-timeout-basis",
+                "twice prior measured653s provision/setup, rounded up",
                 "--",
                 "--mode",
-                "smoke",
+                mode,
+                "--run-id",
+                RT.SUPPLEMENT_RUN_ID if mode == "capture-pilot" else RT.SMOKE_RUN_ID,
+                "--science-root",
+                str(tmp_path / "science"),
                 "--min-disk-gb",
                 "80",
                 "--per-pod-quota-gb",
@@ -283,10 +293,40 @@ def test_build_main_uses_cumulative_clock_and_exact_exec(tmp_path, monkeypatch):
     assert runner.call_args_list[0].args[0] == ["findmnt", "-T", str(runtime.parent)]
     assert "explore_persona_space.orchestrate.preflight" in runner.call_args_list[1].args[0]
     env = runner.call_args.args[1]
-    assert env["UV_NO_SYNC"] == "1" and float(env[RT.SMOKE_START_ENV]) > 0
+    assert env["UV_NO_SYNC"] == "1"
+    if mode == "smoke":
+        assert float(env[RT.SMOKE_START_ENV]) > 0
+    else:
+        assert RT.SMOKE_START_ENV not in env
+        assert all(call.kwargs["smoke"] is False for call in runner.call_args_list)
     assert execute.call_args.args[0] == str(runtime / "bin/python")
     owner = json.loads((runtime.parent / "runtime_owner.json").read_text())
     assert owner["pod_id"] == "own-pod" and owner["lock_sha256"] == RT.sha256(RT.LOCK)
+
+
+def test_capture_pilot_rejects_missing_binding_before_runtime_build(tmp_path, monkeypatch):
+    monkeypatch.setenv("RUNPOD_POD_ID", "own-pod")
+    monkeypatch.setattr(RT, "RUNTIME", tmp_path / "runtime")
+    runner = create_autospec(RT.run_bounded)
+    monkeypatch.setattr(RT, "run_bounded", runner)
+    with pytest.raises(RuntimeError, match="requires v3"):
+        RT.main(
+            [
+                "--build",
+                "--pod-id",
+                "own-pod",
+                "--bootstrap-preflight-evidence",
+                "fixture",
+                "--setup-timeout-seconds",
+                "1320",
+                "--setup-timeout-basis",
+                "fixture",
+                "--",
+                "--mode",
+                "capture-pilot",
+            ]
+        )
+    runner.assert_not_called()
 
 
 def _prior_clock_report(tmp_path):

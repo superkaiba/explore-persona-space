@@ -145,7 +145,9 @@ def handle_signal(signum, frame) -> None:
 def build_parser() -> argparse.ArgumentParser:
     """Expose only the approved run, cells, surface, and four phase modes."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=("smoke", "capture", "fit-pilot", "fits"))
+    parser.add_argument(
+        "--mode", choices=("smoke", "capture-pilot", "capture", "fit-pilot", "fits")
+    )
     parser.add_argument("--surface", choices=("generic",), default="generic")
     parser.add_argument("--run-id", choices=(RUN_ID, SUPPLEMENT_RUN_ID), default=RUN_ID)
     parser.add_argument("--out-root", type=Path, default=Path("/workspace/eps2588_qwen3_chat"))
@@ -196,7 +198,7 @@ def cell_step(args: argparse.Namespace, cell: str, phase: str, *, pilot: bool = 
         "--gpu-count",
         "1",
     ]
-    if args.mode == "smoke":
+    if args.mode in {"smoke", "capture-pilot"}:
         argv.append("--smoke")
     if pilot:
         if args.mode != "fit-pilot" or phase != "fits" or cell != CELLS[0]:
@@ -244,7 +246,26 @@ def build_steps(args: argparse.Namespace) -> list[Step]:
                 ),
             )
         )
-    if args.mode in {"smoke", "capture"}:
+    if args.mode == "capture-pilot":
+        # Progress156 lifts the old time cap. This is existing pilot capture,
+        # not new generation or permission to promote pilot rows to production.
+        steps.append(
+            Step(
+                "restore-complete",
+                "stage",
+                (
+                    sys.executable,
+                    "-u",
+                    str(REPO_ROOT / "scripts/issue2588_chat_restore_complete.py"),
+                    "--science-root",
+                    str(args.science_root),
+                    "--out-root",
+                    str(args.out_root),
+                ),
+            )
+        )
+        steps.extend(cell_step(args, CELLS[1], phase) for phase in ("capture", "upload-capture"))
+    elif args.mode in {"smoke", "capture"}:
         for cell in CELLS[1:] if args.smoke_supplement_report or args.continuation_grant else CELLS:
             for phase in (
                 "prologue",
@@ -580,7 +601,7 @@ class Runner:
         limit = self.limits.get(step.key)
         if limit is None or limit.get("source") != "local_cell_tree":
             return limit
-        sub = "smoke_cap_long" if self.args.mode == "smoke" else "cells_cap_long"
+        sub = "smoke_cap_long" if self.args.mode in {"smoke", "capture-pilot"} else "cells_cap_long"
         cell_root = self.root / sub / step.cell
         files = [p for p in cell_root.rglob("*") if p.is_file()]
         if not files:
@@ -760,7 +781,9 @@ class Runner:
 
     def sentinel(self, payload: dict, *, gate: str | None = None) -> Path:
         """Emit a write-once poller envelope, never use it as local resume state."""
-        kind = "epm:smoke-result" if self.args.mode == "smoke" else "epm:progress"
+        kind = (
+            "epm:smoke-result" if self.args.mode in {"smoke", "capture-pilot"} else "epm:progress"
+        )
         path = self.args.sentinel_dir / f"issue-2588-{kind.replace(':', '_')}-{self.attempt}.json"
         envelope = {
             "sentinel_schema_version": 1,
@@ -822,6 +845,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.mode is None:
         parser.error("--mode is required")
+    if args.mode == "capture-pilot" and (args.run_id != SUPPLEMENT_RUN_ID or not args.science_root):
+        parser.error("capture-pilot requires v3 and the frozen science root")
     if bool(args.continuation_grant) != bool(args.continuation_grant_sha256):
         parser.error("continuation requires grant path and hash")
     if args.continuation_grant and (
@@ -928,7 +953,11 @@ def main(argv: list[str] | None = None) -> int:
                 failure_chain = "".join(traceback.format_exception(exc))
                 runner.log(f"[phase=durability_tail] {type(exc).__name__}: {exc}")
                 tail_errors = []
-                sub = "smoke_cap_long" if args.mode == "smoke" else "cells_cap_long"
+                sub = (
+                    "smoke_cap_long"
+                    if args.mode in {"smoke", "capture-pilot"}
+                    else "cells_cap_long"
+                )
                 for cell in CELLS:
                     if not (root / sub / cell).is_dir():
                         continue
