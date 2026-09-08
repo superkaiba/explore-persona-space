@@ -168,6 +168,152 @@ def inspect_job(job: dict, row_map: dict) -> tuple[dict, dict, list[dict], dict]
     return packet, request, items, scan
 
 
+def validate_interruption(old: dict, event: dict, packet: dict, values: list, job: dict) -> None:
+    """Reject invalid recovery evidence before creating its immutable archive."""
+    if (
+        old["status"] != "running"
+        or not old.get("agent_id")
+        or old.get("completion_observed_unix_s") is not None
+        or old.get("completion_evidence") is not None
+        or event["agent_id"] != old["agent_id"]
+        or event["observation"] != "agent_absent_from_live_collaboration_roster"
+        or not event["evidence"]
+        or event["observed_unix_s"] <= old["dispatch_observed_unix_s"]
+        or old["agent_id"] == job.get("agent_id")
+        or any(old[k] != job[k] for k in ("property", "part", "repetition", "input_sha256"))
+    ):
+        raise ValueError("Interrupted attempt provenance does not match a fresh complete retry")
+    expected = [r["id"] for r in packet["items"]]
+    ids = [v.get("id") if isinstance(v, dict) else None for v in values]
+    if not 0 < len(ids) < len(expected) or ids != expected[: len(ids)]:
+        raise ValueError("This recovery requires an interrupted ordered strict prefix")
+
+
+def validate_interrupted_attempts(out: Path, job: dict) -> list[Path]:
+    """Verify preserved failed attempts without treating any old rating as completed."""
+    reference = job.get("interrupted_attempt")
+    if reference is None:
+        return []
+    relative = Path(reference["path"])
+    if (
+        relative.is_absolute()
+        or relative.parts[:1] != ("interrupted_attempts",)
+        or ".." in relative.parts
+    ):
+        raise ValueError("Interrupted attempt must use a contained relative archive path")
+    path = out / relative
+    record_path = path / "record.json"
+    if file_hash(record_path) != reference["record_sha256"]:
+        raise ValueError("Interrupted attempt record changed")
+    record = json.loads(record_path.read_text())
+    required = {"input.json", "request.json", "output.jsonl", "job.json", "event.json"}
+    if set(record["file_hashes"]) != required or any(
+        file_hash(path / name) != sha for name, sha in record["file_hashes"].items()
+    ):
+        raise ValueError("Interrupted attempt evidence changed")
+    old = json.loads((path / "job.json").read_text())
+    event = json.loads((path / "event.json").read_text())
+    if record["mode"] != "whole_packet_fresh_context_retry" or record["retained_ratings"] != 0:
+        raise ValueError("Interrupted attempts must contribute no retained ratings")
+    if file_hash(path / "input.json") != old["input_sha256"]:
+        raise ValueError("Interrupted packet differs from the frozen retry packet")
+    if json.loads((path / "request.json").read_text()) != old["request"]:
+        raise ValueError("Interrupted request differs from the recorded actual request")
+    packet = json.loads((path / "input.json").read_text())
+    values = read_jsonl(path / "output.jsonl")
+    validate_interruption(old, event, packet, values, job)
+    return [
+        record_path,
+        *(path / name for name in sorted(required)),
+    ] + validate_interrupted_attempts(out, old)
+
+
+def prepare_interrupted_retry(
+    root: Path, ledger_path: Path, task_name: str, event_path: Path, packet_root: Path
+) -> dict:
+    """Preserve an interrupted prefix and prepare a fresh whole-packet rating attempt."""
+    ledger = json.loads(ledger_path.read_text())
+    matches = [j for j in ledger["jobs"] if j["request"]["task_name"] == task_name]
+    if len(matches) != 1:
+        raise ValueError("Retry must identify one original job")
+    job = matches[0]
+    if job["status"] != "running" or not job.get("agent_id"):
+        raise ValueError("Only an actually dispatched unfinished job can be retried")
+    rows = {r["id"]: r for r in load_rows(root, job["part"])}
+    packet, _, items, _ = inspect_job(job, rows)
+    out = output_dir(root, job["part"])
+    packet_id = digest([job["part"], job["property"], job["repetition"], [r["id"] for r in items]])
+    if (out / "packets" / packet_id).exists():
+        raise ValueError("Imported packet recovery needs separate review; never replace an archive")
+    old = json.loads(json.dumps(job))
+    relative = Path("interrupted_attempts") / digest([old["agent_id"], old["input_sha256"]])
+    dest = out / relative
+    if dest.exists():
+        raise FileExistsError("Interrupted evidence already exists; inspect before retrying")
+    retry_name = task_name + "_retry1"
+    paths = {
+        "input_path": packet_root / f"{retry_name}.json",
+        "output_path": packet_root / f"{retry_name}.output.jsonl",
+        "request_path": packet_root / f"{retry_name}.request.json",
+    }
+    if any(p.exists() for p in paths.values()):
+        raise FileExistsError("Fresh retry paths must not overwrite any existing attempt")
+    request = dict(job["request"])
+    request["task_name"] = retry_name
+    request["message"] = request["message"].replace(old["input_path"], str(paths["input_path"]))
+    request["message"] = request["message"].replace(old["output_path"], str(paths["output_path"]))
+    leakage_scan(packet, request)
+    validate_interruption(
+        old,
+        json.loads(event_path.read_text()),
+        packet,
+        read_jsonl(Path(old["output_path"])),
+        {**old, "agent_id": None},
+    )
+    validate_interrupted_attempts(out, old)
+    dest.mkdir(parents=True)
+    for name, source in {
+        "input.json": Path(old["input_path"]),
+        "request.json": Path(old["request_path"]),
+        "output.jsonl": Path(old["output_path"]),
+        "event.json": event_path,
+    }.items():
+        shutil.copyfile(source, dest / name)
+    dump(dest / "job.json", old)
+    dump(
+        dest / "record.json",
+        {
+            "mode": "whole_packet_fresh_context_retry",
+            "file_hashes": {
+                name: file_hash(dest / name)
+                for name in ("input.json", "request.json", "output.jsonl", "job.json", "event.json")
+            },
+            "archived_at": time.time(),
+            "retained_ratings": 0,
+        },
+    )
+    retry = {k: v for k, v in old.items() if k not in ("dispatch_observed_unix_s",)}
+    retry.update(
+        **{k: str(v) for k, v in paths.items()},
+        request=request,
+        status="pending",
+        agent_id=None,
+        interrupted_attempt={
+            "path": str(relative),
+            "record_sha256": file_hash(dest / "record.json"),
+        },
+    )
+    validate_interrupted_attempts(out, retry)
+    packet_root.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(dest / "input.json", paths["input_path"])
+    dump(paths["request_path"], request)
+    inspect_job(retry, rows)
+    job.clear()
+    job.update(retry)
+    dump(ledger_path, ledger)
+    return retry
+
+
 def import_ledger(root: Path, ledger_path: Path, part: str) -> dict:
     """Archive exact completed packets; pending entries never become evidence."""
     rows = load_rows(root, part)
@@ -195,6 +341,7 @@ def import_ledger(root: Path, ledger_path: Path, part: str) -> dict:
         if job["status"] != "complete":
             continue
         packet, request, items, scan = inspect_job(job, row_map)
+        validate_interrupted_attempts(out, job)
         if not job.get("agent_id"):
             raise ValueError("Completed packet has no actual agent identifier")
         packet_id = digest([part, job["property"], job["repetition"], [r["id"] for r in items]])
@@ -355,6 +502,7 @@ def parse_packet(path: Path, row_map: dict) -> tuple[dict, list[dict]]:
         raise ValueError("Packet provenance uses a stale instrument")
     if any(file_hash(path / name) != sha for name, sha in record["file_hashes"].items()):
         raise ValueError("Archived packet/request/response changed")
+    validate_interrupted_attempts(path.parent.parent, record["job"])
     # Recheck actual archived text and request, not mutable /tmp source paths.
     archived_job = {
         **record["job"],
@@ -402,6 +550,10 @@ def collect(root: Path, part: str) -> tuple[list[dict], list[dict], dict]:
             for p in sorted(path.parent.iterdir())
             if p.is_file()
         )
+    interrupted_files = {
+        p for record in packets for p in validate_interrupted_attempts(out, record["job"])
+    }
+    manifest.extend([str(p.relative_to(out)), file_hash(p)] for p in sorted(interrupted_files))
     keys = [u["key"] for u in units]
     if len(keys) != len(set(keys)):
         raise ValueError("More than one packet supplies the same annotation unit")

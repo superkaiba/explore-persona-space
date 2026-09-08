@@ -314,3 +314,87 @@ def test_main_roster_preflight_preserves_all_answer_property_repeats(tmp_path):
         m.prepare_main_ledger(tmp_path, tmp_path / "packets_main")
     with pytest.raises(RuntimeError, match="pilot acceptance"):
         m.import_ledger(tmp_path, tmp_path / "codex_main_jobs.json", "main")
+
+
+def interrupted_fixture(tmp_path):
+    ledger, jobs = fixture(tmp_path, repeats=1, props=["warmth"])
+    job = jobs[0]
+    job.update(status="running", dispatch_observed_unix_s=1.0)
+    del job["completion_observed_unix_s"]
+    output = Path(job["output_path"])
+    complete_lines = output.read_text().splitlines()
+    output.write_text("\n".join(complete_lines[:16]) + "\n")
+    m.dump(ledger, {"provider": m.PROVIDER, "jobs": jobs})
+    event = tmp_path / "interruption.json"
+    m.dump(
+        event,
+        {
+            "agent_id": job["agent_id"],
+            "observation": "agent_absent_from_live_collaboration_roster",
+            "evidence": "Test fixture: coordinator explicitly observed the agent absent.",
+            "observed_unix_s": 2.0,
+        },
+    )
+    return ledger, job, event, complete_lines
+
+
+def test_interrupted_retry_keeps_whole_history_and_counts_only_new_judge(tmp_path):
+    ledger, old, event, lines = interrupted_fixture(tmp_path)
+    originals = {
+        Path(old[k]): m.file_hash(Path(old[k]))
+        for k in ("input_path", "request_path", "output_path")
+    }
+    retry = m.prepare_interrupted_retry(
+        tmp_path, ledger, old["request"]["task_name"], event, tmp_path / "neutral_retry"
+    )
+    assert retry["status"] == "pending" and retry["agent_id"] is None
+    assert retry["input_sha256"] == old["input_sha256"]
+    assert {p: m.file_hash(p) for p in originals} == originals
+    assert not Path(retry["output_path"]).exists()
+    name = retry["request"]["task_name"]
+    m.record_status(ledger, [name], [], "/root")
+    Path(retry["output_path"]).write_text("\n".join(lines) + "\n")
+    m.record_status(ledger, [], [name], "/root")
+    m.import_ledger(tmp_path, ledger, "pilot")
+    _, units, manifest = m.collect(tmp_path, "pilot")
+    assert len(units) == 32 and {u["agent_id"] for u in units} == {"/root/" + name}
+    assert any("interrupted_attempts" in p for p, _ in manifest["packet_files"])
+    archived = m.output_dir(tmp_path, "pilot") / retry["interrupted_attempt"]["path"]
+    assert len(m.read_jsonl(archived / "output.jsonl")) == 16
+    (archived / "output.jsonl").write_text("tampered\n")
+    with pytest.raises(ValueError, match="evidence changed"):
+        m.collect(tmp_path, "pilot")
+    with pytest.raises(ValueError, match="evidence changed"):
+        m.import_ledger(tmp_path, ledger, "pilot")
+
+
+@pytest.mark.parametrize("change", ["agent", "time", "complete", "nonprefix"])
+def test_interrupted_retry_rejects_false_interruption_or_changed_coverage(tmp_path, change):
+    ledger, old, event_path, lines = interrupted_fixture(tmp_path)
+    event = json.loads(event_path.read_text())
+    if change == "agent":
+        event["agent_id"] = "/root/another_agent"
+    elif change == "time":
+        event["observed_unix_s"] = 0.0
+    elif change == "complete":
+        Path(old["output_path"]).write_text("\n".join(lines) + "\n")
+    else:
+        Path(old["output_path"]).write_text("\n".join(lines[1:17]) + "\n")
+    m.dump(event_path, event)
+    original_ledger = ledger.read_bytes()
+    with pytest.raises(ValueError, match=r"provenance|strict prefix"):
+        m.prepare_interrupted_retry(
+            tmp_path, ledger, old["request"]["task_name"], event_path, tmp_path / "neutral_retry"
+        )
+    assert ledger.read_bytes() == original_ledger
+    assert not (tmp_path / "neutral_retry").exists()
+    assert not (m.output_dir(tmp_path, "pilot") / "interrupted_attempts").exists()
+    # Correcting a rejected event must permit the same intended recovery.
+    event["agent_id"] = old["agent_id"]
+    event["observed_unix_s"] = 2.0
+    m.dump(event_path, event)
+    Path(old["output_path"]).write_text("\n".join(lines[:16]) + "\n")
+    retry = m.prepare_interrupted_retry(
+        tmp_path, ledger, old["request"]["task_name"], event_path, tmp_path / "neutral_retry"
+    )
+    assert retry["status"] == "pending"

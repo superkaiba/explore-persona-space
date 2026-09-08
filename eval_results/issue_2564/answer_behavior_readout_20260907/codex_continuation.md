@@ -100,3 +100,26 @@ An [advance CPU readout preflight](advance_readout_preflight.json) passed as a d
 The [128-packet progress snapshot](codex_main_progress_128.json) records 32,768 valid main ratings: three complete voice/topic passes and two for the other five targets. Two warmth packets are active. The root filesystem has 26,081,189,888 bytes free at this check; no cleanup was performed. This is annotation progress only, with no final aggregate or actual-label readout.
 
 The [144-packet progress snapshot](codex_main_progress_144.json) records 36,864 valid main ratings: three complete voice, topic, warmth, and confidence passes and two for the remaining three targets. Two formality packets are active. The root filesystem has 29,098,196,992 bytes free at this check; this experiment performed no cleanup. This remains annotation progress, with no final aggregate or actual-label readout.
+
+
+On September 8, a progress audit found that the original coordinator and its two
+active judges were absent from the live collaboration roster. The completed
+146 packets remain valid. Packets 147 and 148 each left an ordered 128-of-256
+prefix, with no completion notification. Their original inputs, requests,
+outputs, dispatch records and interruption observations are now retained in
+`annotation_codex/main/interrupted_attempts/`. These partial ratings contribute
+zero labels to the eventual aggregate.
+
+The [independently reviewed recovery](interrupted_retry_independent_review.md)
+prepares a whole-packet replacement through a fresh no-history agent, preserving
+the identical rubric, 256 answers, order and repetition slot. Each replacement
+has new neutral paths and its actual agent ID. Import and aggregation recheck
+all interrupted evidence hashes; the final raw manifest includes that evidence.
+This is a recovery from interrupted execution, not a sixth rating or a merger
+of different annotators within one repeated judgment. The code passed 17 focused
+tests, including a rejection-then-correction regression, and Ruff checks.
+
+The recovery coordinator is `/root/answer_behavior_resume`. New judges 149 and
+150 have completed and their 512 new ratings pass exact-ID and schema checks.
+The live ledger remains the source of subsequent dispatch status. No main
+aggregate or actual-label readout was complete at this recovery note.
