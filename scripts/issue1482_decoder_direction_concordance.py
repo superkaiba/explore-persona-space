@@ -89,6 +89,19 @@ def main() -> int:
             "as an explanation for any difference."
         ),
     )
+    ap.add_argument(
+        "--exclude",
+        action="append",
+        default=[],
+        metavar="NAME",
+        help="battery property name to drop before round 0 (repeatable; recorded in the "
+        "sidecar's `excluded` list). 2026-09-08: the two context-side firing indicators.",
+    )
+    ap.add_argument(
+        "--comparison-name",
+        default="concordance_comparison.json",
+        help="file name of the headline comparison under eval_results/issue_1482/decoder_direction/",
+    )
     args = ap.parse_args()
     out = PROJECT_ROOT / args.out_dir
     out.mkdir(parents=True, exist_ok=True)
@@ -117,6 +130,9 @@ def main() -> int:
     WF.TARGET_R2 = dec_path
     WF.OUT = out
     SW.OUT = out
+    SW.EXCLUDE_NAMES = tuple(args.exclude)
+    if args.exclude:
+        _log(f"excluding before round 0: {args.exclude}")
     _log("running the published stepwise selection on the decoder-direction DV ...")
     SW.main()
 
@@ -145,11 +161,13 @@ def main() -> int:
         "n_features_scored_published": int(pub["n_rows"]),
         "selection_order_decoder": [r["winner"] for r in new["rounds"] if r.get("winner")],
         "selection_order_published": [r["winner"] for r in pub["rounds"] if r.get("winner")],
+        "excluded_before_round0": list(args.exclude),
+        "stepwise_meta": str(out.relative_to(PROJECT_ROOT) / "writeup_stepwise.meta.json"),
         "headline": rows,
     }
     res = PROJECT_ROOT / "eval_results/issue_1482/decoder_direction"
     res.mkdir(parents=True, exist_ok=True)
-    (res / "concordance_comparison.json").write_text(json.dumps(summary, indent=1))
+    (res / args.comparison_name).write_text(json.dumps(summary, indent=1))
 
     _log("")
     _log(f"{'property':<36}{'pub r0':>9}{'pub sel':>9}{'dec r0':>9}{'dec sel':>9}")
@@ -159,7 +177,7 @@ def main() -> int:
             f"{r['property']:<36}{f(r['published_round0']):>9}{f(r['published_selected']):>9}"
             f"{f(r['decoder_round0']):>9}{f(r['decoder_selected']):>9}"
         )
-    _log(f"wrote {res / 'concordance_comparison.json'}")
+    _log(f"wrote {res / args.comparison_name}")
     return 0
 
 

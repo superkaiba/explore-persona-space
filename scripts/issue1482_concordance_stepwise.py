@@ -252,11 +252,24 @@ def render_trajectory(rounds: list[dict], stem: Path) -> None:
     plt.close(fig)
 
 
+# Candidate names a caller drops from the selection BEFORE round 0 (e.g. the
+# decoder-direction run of 2026-09-08 drops the two context-side firing
+# indicators as irrelevant to answer prediction). Default empty: the published
+# series is unchanged. Every name must exist in the battery (fail loud on a
+# typo) and every exclusion is recorded in the meta sidecar's `excluded` list.
+EXCLUDE_NAMES: tuple[str, ...] = ()
+
+
 def main() -> None:
     b = WF.battery()  # dense_latent_flag already excluded (WF.DERIVED_BIN is empty)
     y, n, vecs = b["y"], b["n"], b["vecs"]
     fam = {r["name"]: r["family"] for r in b["rows"]}
     candidates = [r["name"] for r in b["rows"]]
+    missing = [nm for nm in EXCLUDE_NAMES if nm not in candidates]
+    assert not missing, f"EXCLUDE_NAMES not in the battery: {missing}"
+    candidates = [c for c in candidates if c not in EXCLUDE_NAMES]
+    if EXCLUDE_NAMES:
+        print(f"excluded before round 0: {list(EXCLUDE_NAMES)} -> {len(candidates)} candidates")
 
     controls: list[str] = []
     rounds: list[dict] = []
@@ -356,6 +369,7 @@ def main() -> None:
                     "stratify the layer-19 battery ON and cannot enter a stepwise selection "
                     "over it",
                     "dense_latent_flag — a threshold on `activity`, already present continuously",
+                    *[f"{nm} — dropped by the caller before round 0" for nm in EXCLUDE_NAMES],
                 ],
                 "rounds": rounds,
                 "caveats": [

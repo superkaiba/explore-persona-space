@@ -117,6 +117,9 @@ WINNER_LABELS: dict[str, str] = {
     "Speaker: language of the text": "language of the text",
     "Within-answer consistency": "within-answer consistency",
     "Scaffold-token activation fraction": "decoder mass on leading context-prefix directions",
+    # winners that appear once the context-side firing indicators are excluded
+    "Content type: operation": "operation content",
+    "Abstraction: token surface": "token-surface abstraction",
 }
 
 # The left panel stops after this row (user directive 2026-08-24): the rounds
@@ -286,9 +289,19 @@ def main() -> int:
         help="dependent variable: the published feature-activation target (default) or "
         "the dense decoder-direction projection the paper reports from 2026-09-08",
     )
+    ap.add_argument(
+        "--stepwise-meta",
+        type=Path,
+        default=None,
+        help="override the stepwise sidecar (decoder-direction mode only), e.g. the run that "
+        "drops the context-side firing indicators",
+    )
     args = ap.parse_args()
     decoder = args.dv == "decoder-direction"
     meta_path = DECODER_STEPWISE_META if decoder else STEPWISE_META
+    if args.stepwise_meta is not None:
+        assert decoder, "--stepwise-meta applies to --dv decoder-direction only"
+        meta_path = PROJECT_ROOT / args.stepwise_meta
     out_eval = DECODER_OUT_EVAL if decoder else OUT_EVAL
     rows_all = load_stepwise(meta_path)
     rows = truncate_left_panel(rows_all)

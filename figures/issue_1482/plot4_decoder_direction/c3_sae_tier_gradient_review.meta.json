@@ -1,12 +1,13 @@
 {
-  "commit": "02e1db71+dirty",
-  "render_id": "62c8382fb509439c",
-  "git_commit": "02e1db71bda5a8f16f3b7d0940a828a22bd631d1",
+  "commit": "d23614aa+dirty",
+  "render_id": "cf6b7dd8c5b54437",
+  "git_commit": "d23614aa7b12d1f378e1431cba52c9738c4dc3af",
   "git_dirty": true,
   "git_dirty_paths": [
     ".claude/agent-memory/experiment-implementer-lean/MEMORY.md",
     ".claude/agent-memory/experimenter/feedback_pod_sparse_clone_committed_inputs.md",
     "CLAUDE.md",
+    "eval_results/issue_1482/plot4_redesign/plot4_decoder_direction.json",
     "eval_results/issue_2546/necessity_r2/summary.json",
     "figures/issue_1902/section43/c1_posttraining_dynamics.pdf",
     "figures/issue_1902/section43/c1_posttraining_dynamics.png",
@@ -14,10 +15,13 @@
     "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
     "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
     "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+    "figures/paper/c3_sae_tier_gradient.meta.json",
     "scripts/codex_daemon_reaper.py",
     "scripts/cron_watch_issue_1739.sh",
     "scripts/cron_watch_issue_2091.sh",
     "scripts/install_gcp_audit_cron.sh",
+    "scripts/issue1482_concordance_stepwise.py",
+    "scripts/issue1482_decoder_direction_concordance.py",
     "scripts/issue1482_plot4_redesign.py",
     "scripts/issue1901_encbaseline_figure.py",
     "tasks/awaiting_promotion/2564/plans/plan.md",
@@ -25,7 +29,7 @@
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue1482_plot4_redesign.py",
-  "created": "2026-09-08T23:39:23Z",
+  "created": "2026-09-09T00:00:55Z",
   "figsize": [
     5.5,
     2.7
@@ -44,26 +48,20 @@
       "_group": 0
     },
     {
-      "concordance with per-feature $R^2$ $-$ 1/2": -0.052427,
-      "y": -0.10485353182290713,
+      "concordance with per-feature $R^2$ $-$ 1/2": -0.051802,
+      "y": -0.10360473944167892,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "concordance with per-feature $R^2$ $-$ 1/2": -0.051358,
-      "y": -0.10271599991879943,
+      "concordance with per-feature $R^2$ $-$ 1/2": -0.04933,
+      "y": -0.09866066404139495,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "concordance with per-feature $R^2$ $-$ 1/2": -0.048661,
-      "y": -0.09732297882700791,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "concordance with per-feature $R^2$ $-$ 1/2": -0.043095,
-      "y": -0.08619040751756751,
+      "concordance with per-feature $R^2$ $-$ 1/2": -0.043341,
+      "y": -0.08668210029410484,
       "_kind": "bar",
       "_group": 0
     },
@@ -90,7 +88,7 @@
     }
   ],
   "n_series": 4,
-  "total_points": 9,
+  "total_points": 8,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -110,7 +108,6 @@
         "yticklabels": [
           "variance along decoder direction",
           "speaker identity / disposition",
-          "fires on both context and answer",
           "promotes specific output tokens",
           "suppresses specific output tokens",
           "topic content"

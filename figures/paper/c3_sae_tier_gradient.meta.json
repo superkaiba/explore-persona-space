@@ -7,13 +7,13 @@
   "title": "SAE feature properties and context-to-answer predictability",
   "subject": "Conditional feature-property associations and activity-adjusted nested-tier gradient, decoder-direction target",
   "git": {
-    "commit": "6cb4a95fb9e8a0d45061a7ddc8c2065a10840a44",
+    "commit": "d23614aa7b12d1f378e1431cba52c9738c4dc3af",
     "tracked_worktree_dirty": true
   },
   "sources": [
     {
       "path": "eval_results/issue_1482/plot4_redesign/plot4_decoder_direction.json",
-      "sha256": "c4df324cafca42d3e350a9117c4e29c7e7ba894f1ae70cf0e13c2041fea6ba74"
+      "sha256": "6b01c989af52314185bf8c4e9ab22aae0b585537555e005c7c43c02e58cda1ff"
     }
   ],
   "render": {
@@ -49,7 +49,6 @@
       "+0.3",
       "variance along decoder direction",
       "speaker identity / disposition",
-      "fires on both context and answer",
       "promotes specific output tokens",
       "suppresses specific output tokens",
       "topic content",
@@ -91,41 +90,31 @@
       },
       {
         "round": 2,
-        "banked_name": "Fires on BOTH context and answer side",
-        "label": "fires on both context and answer",
-        "value": -0.10485353182290713,
-        "winner_c": 0.39514646817709287,
+        "banked_name": "Logit footprint: promoting",
+        "label": "promotes specific output tokens",
+        "value": -0.10360473944167892,
+        "winner_c": 0.3963952605583211,
         "pair_frac": 0.09774147034335497,
         "n": 120716,
         "kind": "forward-selected association"
       },
       {
         "round": 3,
-        "banked_name": "Logit footprint: promoting",
-        "label": "promotes specific output tokens",
-        "value": -0.10271599991879943,
-        "winner_c": 0.3972840000812006,
-        "pair_frac": 0.09646453980336522,
+        "banked_name": "Logit footprint: suppressing",
+        "label": "suppresses specific output tokens",
+        "value": -0.09866066404139495,
+        "winner_c": 0.40133933595860505,
+        "pair_frac": 0.085576403884771,
         "n": 120716,
         "kind": "forward-selected association"
       },
       {
         "round": 4,
-        "banked_name": "Logit footprint: suppressing",
-        "label": "suppresses specific output tokens",
-        "value": -0.09732297882700791,
-        "winner_c": 0.4026770211729921,
-        "pair_frac": 0.08439624026461934,
-        "n": 120716,
-        "kind": "forward-selected association"
-      },
-      {
-        "round": 5,
         "banked_name": "Content type: topic",
         "label": "topic content",
-        "value": -0.08619040751756751,
-        "winner_c": 0.4138095924824325,
-        "pair_frac": 0.07742357757174156,
+        "value": -0.08668210029410484,
+        "winner_c": 0.41331789970589516,
+        "pair_frac": 0.07853272983246244,
         "n": 120716,
         "kind": "forward-selected association"
       }
@@ -159,8 +148,8 @@
     "centering": "per-feature R^2 minus the median R^2 of its activity quintile"
   },
   "output_sha256": {
-    "pdf": "eeb785182096c34201f16c11fb88a32897264aef79e955463f55c3ae20cfc447",
-    "png": "9d3af12d6863d46cf23195eaa36cccdacadf3d6bb8e979b63759c76ffb841c17",
-    "grayscale": "050f392f40b76423c735e2b9e427f2aae650fea34cf7f4bedc43e4240189a56f"
+    "pdf": "69df12ef22ea15852669a768fe528f474537f4c61e735bf4fa4c13d6fa54c732",
+    "png": "d35d8a387c997391b8a7b139cce206c35a3e609eef8beedc97ea3d56b0507f08",
+    "grayscale": "364c1271db511489d2dc956b4ee16ca872cba23785419ced17224ea9862cafae"
   }
 }

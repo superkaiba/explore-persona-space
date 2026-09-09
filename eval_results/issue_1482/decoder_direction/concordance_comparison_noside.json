@@ -1,0 +1,99 @@
+{
+ "generated_utc": "2026-09-08T23:54:15.694482+00:00",
+ "dv_rank_agreement_spearman": 0.22898167096538158,
+ "n_features_scored_decoder": 120716,
+ "n_features_scored_published": 120716,
+ "selection_order_decoder": [
+  "Variance explained in answer space",
+  "Speaker: identity / disposition",
+  "Logit footprint: promoting",
+  "Logit footprint: suppressing",
+  "Content type: topic",
+  "Write norm, gamma-scaled (OUTPUTNESS)",
+  "Judged role: output-promoting  [k=0.31]",
+  "Content type: operation",
+  "Speaker: register / style",
+  "Content type: entity",
+  "Content type: task format",
+  "Within-answer consistency",
+  "Scaffold-token activation fraction",
+  "Abstraction: token surface"
+ ],
+ "selection_order_published": [
+  "Fires on BOTH context and answer side",
+  "Mean activation (over all answers)",
+  "Speaker: identity / disposition",
+  "Logit footprint: suppressing",
+  "Logit footprint: promoting",
+  "Content type: topic",
+  "Interpretable (autointerp)",
+  "Judged role: output-promoting  [k=0.31]",
+  "Side ratio (answer-side firing fraction)",
+  "Content type: task format",
+  "Variance explained in answer space",
+  "Content type: syntax",
+  "SAE encoder norm (read strength)",
+  "Mean activation (when active)"
+ ],
+ "excluded_before_round0": [
+  "Fires on BOTH context and answer side",
+  "Fires on the answer side only"
+ ],
+ "stepwise_meta": "figures/issue_1482/concordance_decoder_direction_common_noside/writeup_stepwise.meta.json",
+ "headline": [
+  {
+   "property": "Mean activation (over all answers)",
+   "published_round0": 0.26607688100206905,
+   "published_selected": 0.2661972479370571,
+   "published_round": 1,
+   "decoder_round0": 0.07076190463847365,
+   "decoder_selected": null,
+   "decoder_round": null
+  },
+  {
+   "property": "Speaker: identity / disposition",
+   "published_round0": 0.19191770688305798,
+   "published_selected": 0.17107186594193302,
+   "published_round": 2,
+   "decoder_round0": 0.28989276246552764,
+   "decoder_selected": 0.12263806407038147,
+   "decoder_round": 1
+  },
+  {
+   "property": "Logit footprint: suppressing",
+   "published_round0": 0.04077907877499998,
+   "published_selected": -0.1493617828275734,
+   "published_round": 3,
+   "decoder_round0": -0.15379738416905303,
+   "decoder_selected": -0.09866066404139495,
+   "decoder_round": 3
+  },
+  {
+   "property": "Logit footprint: promoting",
+   "published_round0": 0.1444941800540528,
+   "published_selected": -0.14207498893788661,
+   "published_round": 4,
+   "decoder_round0": -0.09300052720916663,
+   "decoder_selected": -0.10360473944167892,
+   "decoder_round": 2
+  },
+  {
+   "property": "Content type: topic",
+   "published_round0": -0.022292660610354453,
+   "published_selected": -0.12589066930638482,
+   "published_round": 5,
+   "decoder_round0": 0.018854456186184865,
+   "decoder_selected": -0.08668210029410484,
+   "decoder_round": 4
+  },
+  {
+   "property": "Interpretable (autointerp)",
+   "published_round0": 0.06789829667801806,
+   "published_selected": 0.07079167107925577,
+   "published_round": 6,
+   "decoder_round0": 0.0005162984262377934,
+   "decoder_selected": null,
+   "decoder_round": null
+  }
+ ]
+}
