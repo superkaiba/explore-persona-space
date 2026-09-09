@@ -1,0 +1,41 @@
+{
+  "schema": "issue2588_chat_rank_bootstrap_v1",
+  "draws": 4000,
+  "seed": 20260909,
+  "n_paired_validation_rows": 398,
+  "resampling": "paired over validation questions shared by both arms",
+  "scope": "evaluation-sample uncertainty only; the ridge fit and training-output PCA basis are held fixed, so these intervals are a LOWER BOUND on total uncertainty and exclude training-target noise",
+  "rank_a": {
+    "layer": 24,
+    "median": 122.0,
+    "ci95": [
+      109.0,
+      137.0
+    ],
+    "iqr": [
+      119.0,
+      127.0
+    ]
+  },
+  "rank_b": {
+    "layer": 22,
+    "median": 65.0,
+    "ci95": [
+      57.97500000000001,
+      75.0
+    ],
+    "iqr": [
+      62.0,
+      68.0
+    ]
+  },
+  "rank_difference_a_minus_b": {
+    "median": 57.0,
+    "ci95": [
+      48.0,
+      67.0
+    ],
+    "fraction_of_draws_with_b_below_a": 1.0,
+    "fraction_of_draws_with_b_at_least_half_of_a": 0.1045
+  }
+}
