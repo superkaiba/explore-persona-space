@@ -1,0 +1,297 @@
+{
+  "recipe": {
+    "schema": "issue2546_necessity_rank_v1",
+    "model": "Qwen/Qwen3-8B",
+    "layer": 24,
+    "dimension": 4096,
+    "n_rows": 33810,
+    "subset_counts": {
+      "both_correct": 17693,
+      "necessary": 4522,
+      "both_wrong": 9419,
+      "rescued_by_no_think": 2174,
+      "unknown": 2
+    },
+    "bootstrap_draws": 4000,
+    "bootstrap_seed": 20260909,
+    "bootstrap_rank_outer_fold": 0,
+    "bootstrap_strata": "corpus within subset",
+    "training": "all rows: inner 3 folds; outer 4 folds",
+    "validation": "subset rows in fold (k+1)%5",
+    "test": "subset rows in fold k",
+    "tolerances": [
+      0.05,
+      0.1,
+      0.2
+    ],
+    "basis": "PCA of all-training-row fitted outputs, not subset outputs",
+    "diversity": "subset-centered outer-training states, all-training X standardization",
+    "selection_scope": "only rank nested; inherited layer and lambda",
+    "independence": "within-benchmark IID; dependent folds, conditional bootstrap only",
+    "generation": "banked on-policy greedy answers, one per mode; TF recapture of own tokens",
+    "gpu_hours": 0,
+    "script_sha256": "93d36d73e917dc10f0625f8254705ce38d121f0c0e1a27cce064729d22476386",
+    "helper_sha256": "37de825481e15a04cbd0d45ad8d607b1607a11720e3ee7c39c53ce6e4d0bd197",
+    "labels_sha256": "9eb7deff9f220b79a692e3b91b81eb5b1a076ef1374054b969ec7a0263f10f97"
+  },
+  "sources": {
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__math__l24.npz": {
+      "sha256": "37190bf21bba24f469a00fcd1df12060b4c02d629a26d77a5b8238ef2caf0bec",
+      "bytes": 57212914,
+      "source_rows": 6950,
+      "consumed_rows": 6745,
+      "shape": [
+        6950,
+        4096
+      ],
+      "dtype": "float16",
+      "finite": true,
+      "duplicate_ids": 0,
+      "minimum": -19.5,
+      "maximum": 83.5
+    },
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__gsm8k_train__l24.npz": {
+      "sha256": "486532be18a667aac8d27f8aa2c6a68c5d7b4029e784f9c564aecb31348da511",
+      "bytes": 59163010,
+      "source_rows": 7166,
+      "consumed_rows": 7162,
+      "shape": [
+        7166,
+        4096
+      ],
+      "dtype": "float16",
+      "finite": true,
+      "duplicate_ids": 0,
+      "minimum": -19.625,
+      "maximum": 69.5
+    },
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__contexthub__l24.npz": {
+      "sha256": "a2111d691f72c66b096afec8994bcabc8719ed8197e22591dc4497860289a92c",
+      "bytes": 70383574,
+      "source_rows": 8415,
+      "consumed_rows": 8384,
+      "shape": [
+        8415,
+        4096
+      ],
+      "dtype": "float16",
+      "finite": true,
+      "duplicate_ids": 0,
+      "minimum": -28.0,
+      "maximum": 66.5
+    },
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__mmlu__l24.npz": {
+      "sha256": "f8f84b191948299bae6be0cfd182fd2adc8b027841ed66ddf9e21c70f6c0e455",
+      "bytes": 60752674,
+      "source_rows": 7380,
+      "consumed_rows": 7361,
+      "shape": [
+        7380,
+        4096
+      ],
+      "dtype": "float16",
+      "finite": true,
+      "duplicate_ids": 0,
+      "minimum": -28.0,
+      "maximum": 77.5
+    },
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__arc_challenge__l24.npz": {
+      "sha256": "cf9d158434bd9bdf4a930e9919159d7cd4f6bb315a4343769e9135202a6b1051",
+      "bytes": 9561962,
+      "source_rows": 1157,
+      "consumed_rows": 1157,
+      "shape": [
+        1157,
+        4096
+      ],
+      "dtype": "float16",
+      "finite": true,
+      "duplicate_ids": 0,
+      "minimum": -22.375,
+      "maximum": 65.5
+    },
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__csqa__l24.npz": {
+      "sha256": "4465dd0148d678e8d3c8f20d7d9afc8d476460eb1ee56f55c3b8a653b3af74d5",
+      "bytes": 9972850,
+      "source_rows": 1212,
+      "consumed_rows": 1210,
+      "shape": [
+        1212,
+        4096
+      ],
+      "dtype": "float16",
+      "finite": true,
+      "duplicate_ids": 0,
+      "minimum": -22.625,
+      "maximum": 52.0
+    },
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__piqa__l24.npz": {
+      "sha256": "930a2eaeb341dfd482a3854697708dad99c6ce21c890dd44d5da206f7b805aa7",
+      "bytes": 14736862,
+      "source_rows": 1791,
+      "consumed_rows": 1791,
+      "shape": [
+        1791,
+        4096
+      ],
+      "dtype": "float16",
+      "finite": true,
+      "duplicate_ids": 0,
+      "minimum": -27.625,
+      "maximum": 54.5
+    },
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__math__l24.npz": {
+      "sha256": "a77ce2084bf89b92a2c24a5130f948ab8b165052799c4575dae581e037cc528b",
+      "bytes": 57212916,
+      "source_rows": 6950,
+      "consumed_rows": 6745,
+      "shape": [
+        6950,
+        4096
+      ],
+      "dtype": "float16",
+      "finite": true,
+      "duplicate_ids": 0,
+      "minimum": -31.5,
+      "maximum": 150.0
+    },
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__gsm8k_train__l24.npz": {
+      "sha256": "2db7ae83eff66fbda1c3054a90fa92127b507c6ac7e75c14682ea1083d4e6643",
+      "bytes": 59163012,
+      "source_rows": 7166,
+      "consumed_rows": 7162,
+      "shape": [
+        7166,
+        4096
+      ],
+      "dtype": "float16",
+      "finite": true,
+      "duplicate_ids": 0,
+      "minimum": -37.25,
+      "maximum": 146.0
+    },
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__contexthub__l24.npz": {
+      "sha256": "8fd12b00682f4a39028bf63c6944a646dc9f9ddc8539b8b4cb5723a0e8396adb",
+      "bytes": 70383576,
+      "source_rows": 8415,
+      "consumed_rows": 8384,
+      "shape": [
+        8415,
+        4096
+      ],
+      "dtype": "float16",
+      "finite": true,
+      "duplicate_ids": 0,
+      "minimum": -39.25,
+      "maximum": 156.0
+    },
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__mmlu__l24.npz": {
+      "sha256": "a11538acf72588d523c7cb5e1659f03bd128846e6b3bbe0233cbee65f54ad565",
+      "bytes": 60752676,
+      "source_rows": 7380,
+      "consumed_rows": 7361,
+      "shape": [
+        7380,
+        4096
+      ],
+      "dtype": "float16",
+      "finite": true,
+      "duplicate_ids": 0,
+      "minimum": -39.0,
+      "maximum": 155.0
+    },
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__arc_challenge__l24.npz": {
+      "sha256": "ef05775039bca703a4d037f6f07a92ed7f1095f7473eef1dbe11a1e7ff55a789",
+      "bytes": 9561964,
+      "source_rows": 1157,
+      "consumed_rows": 1157,
+      "shape": [
+        1157,
+        4096
+      ],
+      "dtype": "float16",
+      "finite": true,
+      "duplicate_ids": 0,
+      "minimum": -35.5,
+      "maximum": 152.0
+    },
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__csqa__l24.npz": {
+      "sha256": "226ef9bfa15d42a6b69f2c890fffa0aeddecd619d93a7b3001c46ebf77a70933",
+      "bytes": 9972852,
+      "source_rows": 1212,
+      "consumed_rows": 1210,
+      "shape": [
+        1212,
+        4096
+      ],
+      "dtype": "float16",
+      "finite": true,
+      "duplicate_ids": 0,
+      "minimum": -35.5,
+      "maximum": 154.0
+    },
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__piqa__l24.npz": {
+      "sha256": "74cc78bdbc74fcfd52d2c19b0c7d0033f976d1acf5803a119e3f5a7bb25bfd14",
+      "bytes": 14736864,
+      "source_rows": 1791,
+      "consumed_rows": 1791,
+      "shape": [
+        1791,
+        4096
+      ],
+      "dtype": "float16",
+      "finite": true,
+      "duplicate_ids": 0,
+      "minimum": -39.5,
+      "maximum": 154.0
+    }
+  },
+  "hashes": {
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/allfit/preds/p7_A__all__a3.npz": "16185f1398a98263157f6489a7345a0b039821dda7a8639750e55183d0383352",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/allfit/results/p7_A__a3.json": "a3ea0a543a3b40a6024b90e280d832c5d8fa62ffcdf61b9372b8f7cb2725af13",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/allfit/preds/hits__p7_A__all__a3.npz": "4cda561eafa83722a34b2a930a568b6d0d044c44df6b0fb5ecc0c7f267591bdb",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__math__l24.npz": "37190bf21bba24f469a00fcd1df12060b4c02d629a26d77a5b8238ef2caf0bec",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__gsm8k_train__l24.npz": "486532be18a667aac8d27f8aa2c6a68c5d7b4029e784f9c564aecb31348da511",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__contexthub__l24.npz": "a2111d691f72c66b096afec8994bcabc8719ed8197e22591dc4497860289a92c",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__mmlu__l24.npz": "f8f84b191948299bae6be0cfd182fd2adc8b027841ed66ddf9e21c70f6c0e455",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__arc_challenge__l24.npz": "cf9d158434bd9bdf4a930e9919159d7cd4f6bb315a4343769e9135202a6b1051",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__csqa__l24.npz": "4465dd0148d678e8d3c8f20d7d9afc8d476460eb1ee56f55c3b8a653b3af74d5",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/cx_last__arm3__think_on__piqa__l24.npz": "930a2eaeb341dfd482a3854697708dad99c6ce21c890dd44d5da206f7b805aa7",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__math__l24.npz": "a77ce2084bf89b92a2c24a5130f948ab8b165052799c4575dae581e037cc528b",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__gsm8k_train__l24.npz": "2db7ae83eff66fbda1c3054a90fa92127b507c6ac7e75c14682ea1083d4e6643",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__contexthub__l24.npz": "8fd12b00682f4a39028bf63c6944a646dc9f9ddc8539b8b4cb5723a0e8396adb",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__mmlu__l24.npz": "a11538acf72588d523c7cb5e1659f03bd128846e6b3bbe0233cbee65f54ad565",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__arc_challenge__l24.npz": "ef05775039bca703a4d037f6f07a92ed7f1095f7473eef1dbe11a1e7ff55a789",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__csqa__l24.npz": "226ef9bfa15d42a6b69f2c890fffa0aeddecd619d93a7b3001c46ebf77a70933",
+    "/mnt/eps-data/thomasjiralerspong/cot_necessity/hf/targets/ans_mean__arm3__think_on__piqa__l24.npz": "74cc78bdbc74fcfd52d2c19b0c7d0033f976d1acf5803a119e3f5a7bb25bfd14"
+  },
+  "lambda": 1000.0,
+  "x": [
+    "think_on",
+    "cx_last"
+  ],
+  "y": [
+    "think_on",
+    "ans_mean"
+  ],
+  "corpus_counts": {
+    "necessary": {
+      "arc_challenge": 326,
+      "contexthub": 241,
+      "csqa": 424,
+      "gsm8k_train": 592,
+      "math": 624,
+      "mmlu": 1750,
+      "piqa": 565
+    },
+    "both_correct": {
+      "arc_challenge": 774,
+      "contexthub": 389,
+      "csqa": 603,
+      "gsm8k_train": 6329,
+      "math": 4519,
+      "mmlu": 4396,
+      "piqa": 683
+    }
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "status": "PASS",
+  "date": "2026-09-09",
+  "execution_commit": "530a372ca0aaac3e4d70bfcbf529ec222db8980a",
+  "execution_script_sha256": "93d36d73e917dc10f0625f8254705ce38d121f0c0e1a27cce064729d22476386",
+  "report_code_commit": "a78eb56a826b7e5fa98d90c44e9dc2880a66991b",
+  "report_script_sha256": "b22361c40d04a5210ea1246e46e779068f7d006d8a2484ea902a96be7163d816",
+  "summary_sha256": "2cae05e0ac7d511fdde14d87dbbad5a840919f44e7a155ceadbc8161a87396c5",
+  "production_completion_sha256": "65ec352ec4b5d78d2c9f0cc8c6b8020f95b5a3426dc440e817af4ec5cc60f8d8",
+  "execution_provenance_note": "All 15 cell recipe hashes match execution commit 530a372ca0a. A subsequent import-path-only guard was edited while the already-loaded worker ran; no fit code or recipe changed. The completion record truthfully reports this dirty path. Historical checkpoints were not relabelled.",
+  "coverage": {
+    "completed_arm_fold_cells": 15,
+    "scored_subsets_per_cell": 2,
+    "paired_row_universe": 33810,
+    "correct_only_with_thinking": 4522,
+    "correct_in_both_modes": 17693,
+    "unique_activation_archives": 35,
+    "all_activation_values_finite": true,
+    "activation_duplicate_ids": 0,
+    "source_activation_dtype": "float16",
+    "covariance_spectra": 90,
+    "layer": 24,
+    "dimension": 4096
+  },
+  "execution": {
+    "pilot_seconds": 165.042043,
+    "production_seconds": 1251.3910773005337,
+    "pilot_reused": true,
+    "peak_rss_gib": 8.306137084960938,
+    "cpu_threads": 8,
+    "gpu_hours": 0,
+    "new_generations": 0,
+    "provisioned_resources": 0,
+    "downloads": 0,
+    "worker_pid": 498332,
+    "worker_exited": true,
+    "fresh_completion_verified": true
+  },
+  "checks": {
+    "git_staged_artifact_bytes": "PASS: all 48 artifact paths are byte-exact; local .gitattributes preserves CSV CRLF and all 15 staged CSV hashes match their cell records",
+    "all_cell_and_csv_hashes": "PASS",
+    "all_cell_execution_source_hashes": "PASS",
+    "original_prediction_parity": "PASS: float32, rtol=atol=2e-6",
+    "original_full_and_subset_r2_parity": "PASS: absolute tolerance 1e-9, all three arms",
+    "original_full_retrieval_hits": "PASS: exact, full 6762-answer pools",
+    "same_answer_spectral_parity": "PASS",
+    "independent_readonly_review": "PASS: CSV metrics, ranks, intervals, 90 spectra, provenance, final report",
+    "mapped_test_files": [
+      "tests/test_issue2546_necessity_rank.py",
+      "tests/test_issue2546_qwen3_rank_reproduction.py",
+      "tests/test_issue2546_necessity_rank_report.py",
+      "tests/test_shared_vm_thread_caps.py"
+    ],
+    "mapped_tests": "40 passed, 1 pre-existing global thread-cap scan failure naming 14 unchanged scripts",
+    "final_focused_tests": "14 passed in 6.65 seconds",
+    "full_no_flags_workflow_lint": "Completed with 19 pre-existing errors, all paths unchanged from e937d9be7d896dc04cb283feaacc889f9346d998; no payload-attributed failure",
+    "final_payload_lint": "PASS: 8 files, 41 checks run, 45 disjoint checks skipped",
+    "ruff": "PASS",
+    "color_and_grayscale_visual_review": "PASS: four rendered PNGs inspected; final provenance-only rerender byte-identical",
+    "pdf_fonts": "Only embedded Inter; Poppler reports font-type warnings from shared exporter, without observed text loss"
+  },
+  "unchanged_surfaces": ["Overleaf", "parent task status", "parent task goal", "parent clean-result classification", "original cached source files"]
+}

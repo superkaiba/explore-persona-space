@@ -1,0 +1,2 @@
+# Preserve hashed CSV bytes, including the production csv.writer CRLF endings.
+*.csv -text

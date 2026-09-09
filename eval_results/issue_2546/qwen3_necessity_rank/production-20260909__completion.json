@@ -1,0 +1,30 @@
+{
+  "status": "complete",
+  "arms": [
+    "no_think",
+    "context",
+    "end_of_thought"
+  ],
+  "folds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "seconds": 1251.3910773005337,
+  "pid": 498332,
+  "peak_rss_gib": 8.306137084960938,
+  "finished_utc": "2026-09-09T18:38:06.894598+00:00",
+  "gpu_hours": 0,
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "git_commit": "530a372ca0aaac3e4d70bfcbf529ec222db8980a",
+  "git_dirty": true,
+  "phase": "necessity-rank-analysis",
+  "git_dirty_paths": [
+    "scripts/issue2546_necessity_rank.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2546_necessity_rank.py"
+}
