@@ -1,0 +1,762 @@
+{
+  "issue": 1901,
+  "analysis": "fig2-pool10k-rescore",
+  "layer": 19,
+  "target": "mean(original answer vector + four fresh on-policy answer vectors)",
+  "n_rollouts": 5,
+  "retrieval": {
+    "metric": "whitened cosine + two-sided CSLS (recomputed per pool)",
+    "csls_k": 10,
+    "duplicate_policy": "keep_one exact source-answer-vector equivalence class (targets)",
+    "n_query": 942,
+    "n_pool": 10000,
+    "rank": "strict top-k; mid-rank ties and top ties fail top-1",
+    "chance_at_1": {
+      "942": 0.0010615711252653928,
+      "10000": 0.0001
+    }
+  },
+  "pool_composition": {
+    "n_targets": 942,
+    "n_distractors": 9058,
+    "distractor_order": "first 9058 rows of issue1901_metrics/analysis_tensors/distractors_L19.npz (ci-matched to the kresample capture shards; bundle order cross-checked against the bank order)",
+    "n_banked_distr_draw_rows": 19000,
+    "capture_drops": 0,
+    "draw_seeds": [
+      43,
+      44,
+      45,
+      46
+    ],
+    "k_rollouts": 5,
+    "bundle_ci_sha256": "c524a8beaeadeba183938f71ced8e65a3479a323bdc2e50ba962cbd832f6d089",
+    "entry": "mean(original banked answer vector + 4 fresh on-policy draws) \u2014 five-rollout",
+    "homogeneity": "asserted: every pool entry (targets and distractors alike) is a five-rollout mean \u2014 no averaged-target vs single-draw-distractor asymmetry",
+    "duplicate_audit_fp32": {
+      "n_pool": 10000,
+      "n_unique_fp32": 10000,
+      "n_excess_duplicate_rows": 0
+    }
+  },
+  "whitening": {
+    "fit_corpus": "single-turn LMSYS + WildChat training-answer bank",
+    "n_train": 963444,
+    "lambda": 0.1,
+    "pool_sha256": "aba6f837c4f478e135429e56227de9380133788df6bfd08cde4d8ec881a74481",
+    "source_store_revision": "0620bbd6adbc88cba4af8974ed6006f47844ea04",
+    "transform": "z = L^-1 (v - mu_A)"
+  },
+  "correctness_gate_942": {
+    "tolerance": 1e-09,
+    "verdict": "PASS_WITH_ATTRIBUTED_FP16_PAYLOAD_EXCEPTIONS",
+    "fp16_payload_exceptions": [
+      {
+        "arm": "panel_c/enc_bge_cls",
+        "per_k": {
+          "1": {
+            "delta": 0.0010615711252653925,
+            "n_flipped_queries": 1,
+            "n_boundary_queries_within_band": 24,
+            "margin_band": 0.005,
+            "smallest_abs_margins": [
+              6.378873780962802e-05,
+              0.0004349631720362013,
+              0.001293167885265574,
+              0.0015253176816205638,
+              0.0017876551082907366
+            ]
+          }
+        },
+        "attribution": "banked fp16 prediction payload: the banked 942 value was computed from the producing run's in-memory full-precision predictions, which were persisted only as fp16 \u2014 no scoring path can reproduce it to 1e-9 from banked artifacts; the flip sits on a rank boundary within the fp16 margin band"
+      }
+    ],
+    "panel_b_named_cell": {
+      "arm": "ridge n_train=25,000",
+      "banked_top1": 0.9596602972399151,
+      "realized_top1": 0.9596602972399151,
+      "delta": 0.0,
+      "score_cell_witness_top1": 0.9596602972399151
+    },
+    "copy_baselines_gate_source": "eval_results/issue_1901/figure2_extension_1200.json baselines \u2014 the copy arms are banked there, not in fig2_baselines.json",
+    "panel_b": {
+      "ridge_n5000": {
+        "banked_top1": 0.9097664543524416,
+        "realized_top1": 0.9097664543524416,
+        "delta_top1": 0.0,
+        "banked_top5": 0.9893842887473461,
+        "realized_top5": 0.9893842887473461,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "mlp_n5000": {
+        "banked_top1": 0.8779193205944799,
+        "realized_top1": 0.8779193205944799,
+        "delta_top1": 0.0,
+        "banked_top5": 0.9872611464968153,
+        "realized_top5": 0.9872611464968153,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "ridge_n10000": {
+        "banked_top1": 0.9235668789808917,
+        "realized_top1": 0.9235668789808917,
+        "delta_top1": 0.0,
+        "banked_top5": 0.9968152866242038,
+        "realized_top5": 0.9968152866242038,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "mlp_n10000": {
+        "banked_top1": 0.9055201698513801,
+        "realized_top1": 0.9055201698513801,
+        "delta_top1": 0.0,
+        "banked_top5": 0.9936305732484076,
+        "realized_top5": 0.9936305732484076,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "ridge_n25000": {
+        "banked_top1": 0.9596602972399151,
+        "realized_top1": 0.9596602972399151,
+        "delta_top1": 0.0,
+        "banked_top5": 0.9989384288747346,
+        "realized_top5": 0.9989384288747346,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "mlp_n25000": {
+        "banked_top1": 0.9416135881104034,
+        "realized_top1": 0.9416135881104034,
+        "delta_top1": 0.0,
+        "banked_top5": 0.9989384288747346,
+        "realized_top5": 0.9989384288747346,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "ridge_n50000": {
+        "banked_top1": 0.9734607218683652,
+        "realized_top1": 0.9734607218683652,
+        "delta_top1": 0.0,
+        "banked_top5": 1.0,
+        "realized_top5": 1.0,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "mlp_n50000": {
+        "banked_top1": 0.964968152866242,
+        "realized_top1": 0.964968152866242,
+        "delta_top1": 0.0,
+        "banked_top5": 1.0,
+        "realized_top5": 1.0,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "ridge_n100000": {
+        "banked_top1": 0.975583864118896,
+        "realized_top1": 0.975583864118896,
+        "delta_top1": 0.0,
+        "banked_top5": 1.0,
+        "realized_top5": 1.0,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "mlp_n100000": {
+        "banked_top1": 0.970276008492569,
+        "realized_top1": 0.970276008492569,
+        "delta_top1": 0.0,
+        "banked_top5": 1.0,
+        "realized_top5": 1.0,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "ridge_n150000": {
+        "banked_top1": 0.9734607218683652,
+        "realized_top1": 0.9734607218683652,
+        "delta_top1": 0.0,
+        "banked_top5": 1.0,
+        "realized_top5": 1.0,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "mlp_n150000": {
+        "banked_top1": 0.9787685774946921,
+        "realized_top1": 0.9787685774946921,
+        "delta_top1": 0.0,
+        "banked_top5": 1.0,
+        "realized_top5": 1.0,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "ridge_n250000": {
+        "banked_top1": 0.9766454352441614,
+        "realized_top1": 0.9766454352441614,
+        "delta_top1": 0.0,
+        "banked_top5": 1.0,
+        "realized_top5": 1.0,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "mlp_n250000": {
+        "banked_top1": 0.9798301486199575,
+        "realized_top1": 0.9798301486199575,
+        "delta_top1": 0.0,
+        "banked_top5": 1.0,
+        "realized_top5": 1.0,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "ridge_n500000": {
+        "banked_top1": 0.9777070063694268,
+        "realized_top1": 0.9777070063694268,
+        "delta_top1": 0.0,
+        "banked_top5": 1.0,
+        "realized_top5": 1.0,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "mlp_n500000": {
+        "banked_top1": 0.9830148619957537,
+        "realized_top1": 0.9830148619957537,
+        "delta_top1": 0.0,
+        "banked_top5": 1.0,
+        "realized_top5": 1.0,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "ridge_n963444": {
+        "banked_top1": 0.9734607218683652,
+        "realized_top1": 0.9734607218683652,
+        "delta_top1": 0.0,
+        "banked_top5": 1.0,
+        "realized_top5": 1.0,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "mlp_n963444": {
+        "banked_top1": 0.9787685774946921,
+        "realized_top1": 0.9787685774946921,
+        "delta_top1": 0.0,
+        "banked_top5": 1.0,
+        "realized_top5": 1.0,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      }
+    },
+    "panel_c": {
+      "anchor": {
+        "banked_top1": 0.9596602972399151,
+        "realized_top1": 0.9596602972399151,
+        "delta_top1": 0.0,
+        "banked_top5": 0.9989384288747346,
+        "realized_top5": 0.9989384288747346,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "shuffled": {
+        "banked_top1": 0.0010615711252653928,
+        "realized_top1": 0.0010615711252653928,
+        "delta_top1": 0.0,
+        "banked_top5": 0.006369426751592357,
+        "realized_top5": 0.006369426751592357,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "pca1024": {
+        "banked_top1": 0.945859872611465,
+        "realized_top1": 0.945859872611465,
+        "delta_top1": 0.0,
+        "banked_top5": 0.9968152866242038,
+        "realized_top5": 0.9968152866242038,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "enc_e5": {
+        "banked_top1": 0.9012738853503185,
+        "realized_top1": 0.9012738853503185,
+        "delta_top1": 0.0,
+        "banked_top5": 0.9872611464968153,
+        "realized_top5": 0.9872611464968153,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "enc_bge_cls": {
+        "banked_top1": 0.8163481953290871,
+        "realized_top1": 0.8174097664543525,
+        "delta_top1": 0.0010615711252653925,
+        "banked_top5": 0.9660297239915074,
+        "realized_top5": 0.9660297239915074,
+        "delta_top5": 0.0,
+        "verdict": "FAIL_ATTRIBUTED_FP16_PAYLOAD",
+        "fp16_diagnosis": {
+          "arm": "panel_c/enc_bge_cls",
+          "per_k": {
+            "1": {
+              "delta": 0.0010615711252653925,
+              "n_flipped_queries": 1,
+              "n_boundary_queries_within_band": 24,
+              "margin_band": 0.005,
+              "smallest_abs_margins": [
+                6.378873780962802e-05,
+                0.0004349631720362013,
+                0.001293167885265574,
+                0.0015253176816205638,
+                0.0017876551082907366
+              ]
+            }
+          },
+          "attribution": "banked fp16 prediction payload: the banked 942 value was computed from the producing run's in-memory full-precision predictions, which were persisted only as fp16 \u2014 no scoring path can reproduce it to 1e-9 from banked artifacts; the flip sits on a rank boundary within the fp16 margin band"
+        }
+      },
+      "identity_bias": {
+        "banked_top1": 0.7133757961783439,
+        "realized_top1": 0.7133757961783439,
+        "delta_top1": 0.0,
+        "banked_top5": 0.8492569002123143,
+        "realized_top5": 0.8492569002123143,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "identity_copy": {
+        "banked_top1": 0.6624203821656051,
+        "realized_top1": 0.6624203821656051,
+        "delta_top1": 0.0,
+        "banked_top5": 0.8195329087048833,
+        "realized_top5": 0.8195329087048833,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "floor_e5": {
+        "banked_top1": 0.2908704883227176,
+        "realized_top1": 0.2908704883227176,
+        "delta_top1": 0.0,
+        "banked_top5": 0.3343949044585987,
+        "realized_top5": 0.3343949044585987,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "floor_bge_cls": {
+        "banked_top1": 0.2346072186836518,
+        "realized_top1": 0.2346072186836518,
+        "delta_top1": 0.0,
+        "banked_top5": 0.2898089171974522,
+        "realized_top5": 0.2898089171974522,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      }
+    }
+  },
+  "panel_b": {
+    "5000": {
+      "ridge": {
+        "r2": 0.7340952598140646,
+        "r2_note": "pool-independent; carried from the banked JSON, not recomputed",
+        "top1_942": 0.9097664543524416,
+        "top1_10000": 0.7367303609341825,
+        "top5_10000": 0.9182590233545648,
+        "top1_ci95_10000": {
+          "lo": 0.7080679405520169,
+          "hi": 0.7653927813163482
+        },
+        "median_rank_10000": 1.0,
+        "mrr_10000": 0.8142407498899575,
+        "prediction_file": "preds_L19_n5000_ridge.npz"
+      },
+      "mlp": {
+        "r2": 0.7130610290746502,
+        "r2_note": "pool-independent; carried from the banked JSON, not recomputed",
+        "top1_942": 0.8779193205944799,
+        "top1_10000": 0.6157112526539278,
+        "top5_10000": 0.8832271762208068,
+        "top1_ci95_10000": {
+          "lo": 0.5849256900212314,
+          "hi": 0.6475583864118896
+        },
+        "median_rank_10000": 1.0,
+        "mrr_10000": 0.730545276186669,
+        "prediction_file": "preds_L19_n5000_mlp.npz"
+      }
+    },
+    "10000": {
+      "ridge": {
+        "r2": 0.758128432318094,
+        "r2_note": "pool-independent; carried from the banked JSON, not recomputed",
+        "top1_942": 0.9235668789808917,
+        "top1_10000": 0.7951167728237792,
+        "top5_10000": 0.9479830148619958,
+        "top1_ci95_10000": {
+          "lo": 0.7696390658174098,
+          "hi": 0.8205944798301487
+        },
+        "median_rank_10000": 1.0,
+        "mrr_10000": 0.861617591030485,
+        "prediction_file": "preds_L19_n10000_ridge.npz"
+      },
+      "mlp": {
+        "r2": 0.7493962682171261,
+        "r2_note": "pool-independent; carried from the banked JSON, not recomputed",
+        "top1_942": 0.9055201698513801,
+        "top1_10000": 0.727176220806794,
+        "top5_10000": 0.9267515923566879,
+        "top1_ci95_10000": {
+          "lo": 0.6995488322717621,
+          "hi": 0.7558386411889597
+        },
+        "median_rank_10000": 1.0,
+        "mrr_10000": 0.8155092768062793,
+        "prediction_file": "preds_L19_n10000_mlp.npz"
+      }
+    },
+    "25000": {
+      "ridge": {
+        "r2": 0.778166233260706,
+        "r2_note": "pool-independent; carried from the banked JSON, not recomputed",
+        "top1_942": 0.9596602972399151,
+        "top1_10000": 0.8556263269639066,
+        "top5_10000": 0.9692144373673036,
+        "top1_ci95_10000": {
+          "lo": 0.8333333333333334,
+          "hi": 0.8768577494692145
+        },
+        "median_rank_10000": 1.0,
+        "mrr_10000": 0.9043902188157132,
+        "prediction_file": "preds_L19_n25000_ridge.npz"
+      },
+      "mlp": {
+        "r2": 0.7822545861862669,
+        "r2_note": "pool-independent; carried from the banked JSON, not recomputed",
+        "top1_942": 0.9416135881104034,
+        "top1_10000": 0.821656050955414,
+        "top5_10000": 0.9670912951167728,
+        "top1_ci95_10000": {
+          "lo": 0.79723991507431,
+          "hi": 0.8471337579617835
+        },
+        "median_rank_10000": 1.0,
+        "mrr_10000": 0.8829843461904305,
+        "prediction_file": "preds_L19_n25000_mlp.npz"
+      }
+    },
+    "50000": {
+      "ridge": {
+        "r2": 0.7916953124958028,
+        "r2_note": "pool-independent; carried from the banked JSON, not recomputed",
+        "top1_942": 0.9734607218683652,
+        "top1_10000": 0.89171974522293,
+        "top5_10000": 0.9808917197452229,
+        "top1_ci95_10000": {
+          "lo": 0.8715498938428875,
+          "hi": 0.910828025477707
+        },
+        "median_rank_10000": 1.0,
+        "mrr_10000": 0.9320377223833575,
+        "prediction_file": "preds_L19_n50000_ridge.npz"
+      },
+      "mlp": {
+        "r2": 0.8072485725108495,
+        "r2_note": "pool-independent; carried from the banked JSON, not recomputed",
+        "top1_942": 0.964968152866242,
+        "top1_10000": 0.8779193205944799,
+        "top5_10000": 0.9840764331210191,
+        "top1_ci95_10000": {
+          "lo": 0.8577494692144374,
+          "hi": 0.8980891719745223
+        },
+        "median_rank_10000": 1.0,
+        "mrr_10000": 0.9246010142460125,
+        "prediction_file": "preds_L19_n50000_mlp.npz"
+      }
+    },
+    "100000": {
+      "ridge": {
+        "r2": 0.8004696802376142,
+        "r2_note": "pool-independent; carried from the banked JSON, not recomputed",
+        "top1_942": 0.975583864118896,
+        "top1_10000": 0.8980891719745223,
+        "top5_10000": 0.9819532908704883,
+        "top1_ci95_10000": {
+          "lo": 0.8779193205944799,
+          "hi": 0.9150743099787686
+        },
+        "median_rank_10000": 1.0,
+        "mrr_10000": 0.9340836288241685,
+        "prediction_file": "preds_L19_n100000_ridge.npz"
+      },
+      "mlp": {
+        "r2": 0.8285725753953739,
+        "r2_note": "pool-independent; carried from the banked JSON, not recomputed",
+        "top1_942": 0.970276008492569,
+        "top1_10000": 0.8895966029723992,
+        "top5_10000": 0.9861995753715499,
+        "top1_ci95_10000": {
+          "lo": 0.8694267515923567,
+          "hi": 0.9087048832271762
+        },
+        "median_rank_10000": 1.0,
+        "mrr_10000": 0.9308527884005591,
+        "prediction_file": "preds_L19_n100000_mlp.npz"
+      }
+    },
+    "150000": {
+      "ridge": {
+        "r2": 0.8037822938875063,
+        "r2_note": "pool-independent; carried from the banked JSON, not recomputed",
+        "top1_942": 0.9734607218683652,
+        "top1_10000": 0.9055201698513801,
+        "top5_10000": 0.9840764331210191,
+        "top1_ci95_10000": {
+          "lo": 0.8853503184713376,
+          "hi": 0.9235668789808917
+        },
+        "median_rank_10000": 1.0,
+        "mrr_10000": 0.9396981794068717,
+        "prediction_file": "preds_L19_n150000_ridge.npz"
+      },
+      "mlp": {
+        "r2": 0.8351598293809467,
+        "r2_note": "pool-independent; carried from the banked JSON, not recomputed",
+        "top1_942": 0.9787685774946921,
+        "top1_10000": 0.910828025477707,
+        "top5_10000": 0.9915074309978769,
+        "top1_ci95_10000": {
+          "lo": 0.8927813163481954,
+          "hi": 0.9278131634819533
+        },
+        "median_rank_10000": 1.0,
+        "mrr_10000": 0.9465489022654627,
+        "prediction_file": "preds_L19_n150000_mlp.npz"
+      }
+    },
+    "250000": {
+      "ridge": {
+        "r2": 0.8072234380837277,
+        "r2_note": "pool-independent; carried from the banked JSON, not recomputed",
+        "top1_942": 0.9766454352441614,
+        "top1_10000": 0.9065817409766455,
+        "top5_10000": 0.9851380042462845,
+        "top1_ci95_10000": {
+          "lo": 0.8874734607218684,
+          "hi": 0.9246284501061571
+        },
+        "median_rank_10000": 1.0,
+        "mrr_10000": 0.9406006938005826,
+        "prediction_file": "preds_L19_n250000_ridge.npz"
+      },
+      "mlp": {
+        "r2": 0.8436077459009027,
+        "r2_note": "pool-independent; carried from the banked JSON, not recomputed",
+        "top1_942": 0.9798301486199575,
+        "top1_10000": 0.9140127388535032,
+        "top5_10000": 0.9936305732484076,
+        "top1_ci95_10000": {
+          "lo": 0.8959660297239915,
+          "hi": 0.9320594479830149
+        },
+        "median_rank_10000": 1.0,
+        "mrr_10000": 0.9489444030845304,
+        "prediction_file": "preds_L19_n250000_mlp.npz"
+      }
+    },
+    "500000": {
+      "ridge": {
+        "r2": 0.8096102674849024,
+        "r2_note": "pool-independent; carried from the banked JSON, not recomputed",
+        "top1_942": 0.9777070063694268,
+        "top1_10000": 0.9055201698513801,
+        "top5_10000": 0.9851380042462845,
+        "top1_ci95_10000": {
+          "lo": 0.886411889596603,
+          "hi": 0.9235668789808917
+        },
+        "median_rank_10000": 1.0,
+        "mrr_10000": 0.9402013163562841,
+        "prediction_file": "preds_L19_n500000_ridge.npz"
+      },
+      "mlp": {
+        "r2": 0.856355986204875,
+        "r2_note": "pool-independent; carried from the banked JSON, not recomputed",
+        "top1_942": 0.9830148619957537,
+        "top1_10000": 0.9256900212314225,
+        "top5_10000": 0.994692144373673,
+        "top1_ci95_10000": {
+          "lo": 0.9087048832271762,
+          "hi": 0.9426751592356688
+        },
+        "median_rank_10000": 1.0,
+        "mrr_10000": 0.9555507302322589,
+        "prediction_file": "preds_L19_n500000_mlp.npz"
+      }
+    },
+    "963444": {
+      "ridge": {
+        "r2": 0.8026158129630123,
+        "r2_note": "pool-independent; carried from the banked JSON, not recomputed",
+        "top1_942": 0.9734607218683652,
+        "top1_10000": 0.9044585987261147,
+        "top5_10000": 0.9830148619957537,
+        "top1_ci95_10000": {
+          "lo": 0.8853503184713376,
+          "hi": 0.9235668789808917
+        },
+        "median_rank_10000": 1.0,
+        "mrr_10000": 0.9386645103736398,
+        "prediction_file": "preds_L19_n963444_ridge.npz"
+      },
+      "mlp": {
+        "r2": 0.8588115628207151,
+        "r2_note": "pool-independent; carried from the banked JSON, not recomputed",
+        "top1_942": 0.9787685774946921,
+        "top1_10000": 0.9182590233545648,
+        "top5_10000": 0.9936305732484076,
+        "top1_ci95_10000": {
+          "lo": 0.9002123142250531,
+          "hi": 0.935244161358811
+        },
+        "median_rank_10000": 1.0,
+        "mrr_10000": 0.9508480505693881,
+        "prediction_file": "preds_L19_n963444_mlp.npz"
+      }
+    }
+  },
+  "panel_c": {
+    "anchor": {
+      "top1_942": 0.9596602972399151,
+      "top1_10000": 0.8556263269639066,
+      "top5_10000": 0.9692144373673036,
+      "top1_ci95_10000": {
+        "lo": 0.8333333333333334,
+        "hi": 0.8768577494692145
+      },
+      "median_rank_10000": 1.0,
+      "mrr_10000": 0.9043902188157132,
+      "prediction_file": "pred_anchor.npz",
+      "prediction_precision_note": "banked fp16 prediction tensor; the banked 942 values were produced from the in-run full-precision predictions \u2014 the 942 gate certifies the fp16 payload reproduces them exactly"
+    },
+    "shuffled": {
+      "top1_942": 0.0010615711252653928,
+      "top1_10000": 0.0,
+      "top5_10000": 0.0,
+      "top1_ci95_10000": {
+        "lo": 0.0,
+        "hi": 0.0
+      },
+      "median_rank_10000": 4772.5,
+      "mrr_10000": 0.0006494803366391896,
+      "prediction_file": "pred_shuffled.npz",
+      "prediction_precision_note": "banked fp16 prediction tensor; the banked 942 values were produced from the in-run full-precision predictions \u2014 the 942 gate certifies the fp16 payload reproduces them exactly"
+    },
+    "pca1024": {
+      "top1_942": 0.945859872611465,
+      "top1_10000": 0.8386411889596603,
+      "top5_10000": 0.9522292993630573,
+      "top1_ci95_10000": {
+        "lo": 0.8152866242038217,
+        "hi": 0.8609341825902336
+      },
+      "median_rank_10000": 1.0,
+      "mrr_10000": 0.8881380153568388,
+      "prediction_file": "pred_pca1024.npz",
+      "prediction_precision_note": "banked fp16 prediction tensor; the banked 942 values were produced from the in-run full-precision predictions \u2014 the 942 gate certifies the fp16 payload reproduces them exactly"
+    },
+    "enc_e5": {
+      "top1_942": 0.9012738853503185,
+      "top1_10000": 0.7409766454352441,
+      "top5_10000": 0.910828025477707,
+      "top1_ci95_10000": {
+        "lo": 0.7133492569002122,
+        "hi": 0.7685774946921444
+      },
+      "median_rank_10000": 1.0,
+      "mrr_10000": 0.8137706446795313,
+      "prediction_file": "pred_enc_e5.npz",
+      "prediction_precision_note": "banked fp16 prediction tensor; the banked 942 values were produced from the in-run full-precision predictions \u2014 the 942 gate certifies the fp16 payload reproduces them exactly"
+    },
+    "enc_bge_cls": {
+      "top1_942": 0.8174097664543525,
+      "top1_10000": 0.5944798301486199,
+      "top5_10000": 0.8057324840764332,
+      "top1_ci95_10000": {
+        "lo": 0.5636942675159236,
+        "hi": 0.6252653927813163
+      },
+      "median_rank_10000": 1.0,
+      "mrr_10000": 0.6906709514805135,
+      "prediction_file": "pred_enc_bge_cls.npz",
+      "prediction_precision_note": "banked fp16 prediction tensor; the banked 942 values were produced from the in-run full-precision predictions \u2014 the 942 gate certifies the fp16 payload reproduces them exactly"
+    },
+    "identity_bias": {
+      "top1_942": 0.7133757961783439,
+      "top1_10000": 0.5212314225053079,
+      "top5_10000": 0.7080679405520169,
+      "top1_ci95_10000": {
+        "lo": 0.4883227176220807,
+        "hi": 0.554140127388535
+      },
+      "median_rank_10000": 1.0,
+      "mrr_10000": 0.6055774411503986,
+      "n_bias_rows": 3600
+    },
+    "identity_copy": {
+      "top1_942": 0.6624203821656051,
+      "top1_10000": 0.47664543524416136,
+      "top5_10000": 0.6634819532908705,
+      "top1_ci95_10000": {
+        "lo": 0.4437367303609342,
+        "hi": 0.5095541401273885
+      },
+      "median_rank_10000": 2.0,
+      "mrr_10000": 0.5617081455592358
+    },
+    "floor_e5": {
+      "top1_942": 0.2908704883227176,
+      "top1_10000": null,
+      "status_10000": "not_computable_from_banked_artifacts",
+      "reason_10000": "the floor scores in encoder embedding space; answer-side embeddings (mean of 4 fresh-rollout answer-text embeddings) exist only for the 1,000 test rows (emb_*.npz e_ans_mean) \u2014 distractor answer-text embeddings were never banked, and producing them would need new encoder forwards, outside this zero-new-compute round"
+    },
+    "floor_bge_cls": {
+      "top1_942": 0.2346072186836518,
+      "top1_10000": null,
+      "status_10000": "not_computable_from_banked_artifacts",
+      "reason_10000": "the floor scores in encoder embedding space; answer-side embeddings (mean of 4 fresh-rollout answer-text embeddings) exist only for the 1,000 test rows (emb_*.npz e_ans_mean) \u2014 distractor answer-text embeddings were never banked, and producing them would need new encoder forwards, outside this zero-new-compute round"
+    }
+  },
+  "hf": {
+    "data_repo": "superkaiba1/explore-persona-space-data",
+    "revision_five_rollout_inputs": "83d249cc9d495ca6f5d10f9156a622bcdca29a19",
+    "revision_pool10k_inputs": "9f3762e1dd1ac9d4792ea5cc61f7c50d7a507fe5",
+    "distractor_bank": "issue1901_metrics/analysis_tensors/distractors_L19.npz",
+    "distractor_bank_sha256": "8015d9d4dd2d644ded6eecfca150168bdaeab479cea3eac3735942f4d46c94a5",
+    "kresample_prefix": "issue1901_avgpool/analysis_tensors/kresample",
+    "fig2_baselines_prefix": "issue1901_fig2baselines/analysis_tensors",
+    "input_sha256": {
+      "pass_b": "46c06e89c513ca598bc83be1c87689694a47bfc927a81d0d738a54df769dbf9a",
+      "whiten": "b9a6f56f0e6b8348a9e936a0c5f265c235accff110086425a7a3e0b826d58c9c",
+      "test_draws": "b7b4c8ada5b570017c7e9fbd342a7256205d3a7c0f3c518ac26e0405f50dc805",
+      "pred_ridge_5000": "32dae87283c7748b55258600f66fab8698b941440b1ee1f0af5260bcdc501a13",
+      "pred_mlp_5000": "72ccc8e41ab6faf5fb91cc14e7531ea8fa398ea1f3e6bcd6d319783e39db1943",
+      "pred_ridge_10000": "d7dcf2a213f734377915e8eb33a70a855cec4613f530dd88de31b7b714d04e35",
+      "pred_mlp_10000": "359e4dbb1ff88f0d61a5fdc0aba7f38faed97a51142cfcd434eb70e655279bc7",
+      "pred_ridge_25000": "eb3dfb1a4905087faa3cb8337cd6c544a6f9519fc2a7079f1cfef60f29092f00",
+      "pred_mlp_25000": "dca67fbf0141550d8721499c91e162a9e192cb2515bc26365287845e6fcbc6d9",
+      "pred_ridge_50000": "f67347e7f29973ee9839a30f8b5fc78c6aa22fdf5eb55f5f6a8f1fe776c59649",
+      "pred_mlp_50000": "2545f66315602b6a687300bbe86ff8b814f55e2565da610817040ae852c5caff",
+      "pred_ridge_100000": "e29ff09f2b2179be25c1809c7d4ccd2cec4fc0d665e0eb49ea513d7bf55c3354",
+      "pred_mlp_100000": "3d5730962d085e14181d69e3f16e8a7a6754d0f15c6c757dfe8d9704e27932f8",
+      "pred_ridge_150000": "2ba916c849f37a00b9e1ed9e627072456cb916c778d0b57e5333d2c8ecbdcc70",
+      "pred_mlp_150000": "2b6f69aa54654fa8b9b45c17c9dcff514f6633bfad32944ced31676e44a58d06",
+      "pred_ridge_250000": "003493e8c233a12305490b4ff4a74ea6a84e0bcffe293b4363514c314eef31e0",
+      "pred_mlp_250000": "f1710fdcd6edd0673a351a6381be795aba6fc6ac14cfa0db7b7f69b81c4c2c38",
+      "pred_ridge_500000": "81df8505df542a43124ea3748a3ad62fd6abf146a3b8aa52fbc1a3bfcbe473d5",
+      "pred_mlp_500000": "9717eda3906ae65498ca157a2a874a2e3df3c309f6b04b20e8deca42d6174592",
+      "pred_ridge_963444": "eac0b81ac9f83b636932a90ad1600734fef91ca04a375d948b6881115d7c8630",
+      "pred_mlp_963444": "55cf727e85cb5760d3773b62a6be3acc89d927f5035cccf73f67afcb173f309d"
+    }
+  },
+  "banked_references": {
+    "panel_b": "eval_results/issue_1901/figure2_five_rollout_scaling.json",
+    "panel_c": "eval_results/issue_1901/fig2_baselines/fig2_baselines.json",
+    "copy_baselines": "eval_results/issue_1901/figure2_extension_1200.json"
+  },
+  "git_commit": "62be64aa48a67cc394ae3e4a54bd79209be5b161",
+  "wall_s": 146.0,
+  "timestamp_utc": "2026-09-09T15:22:03Z"
+}
