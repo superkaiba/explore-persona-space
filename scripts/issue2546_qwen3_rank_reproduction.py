@@ -57,7 +57,9 @@ def write_json(path: Path, payload: dict) -> None:
         temporary.write_text(json.dumps(payload, indent=2, allow_nan=False) + "\n")
 
 
-def load_state(root: Path, kind: str, ids: np.ndarray, manifest: dict) -> np.ndarray:
+def load_state(
+    root: Path, kind: str, ids: np.ndarray, manifest: dict, side: str = "think_on"
+) -> np.ndarray:
     """Align cached states exactly to original OOF IDs, rejecting missing/duplicate rows."""
     positions = {row: i for i, row in enumerate(ids.tolist())}
     if len(positions) != len(ids):
@@ -65,7 +67,9 @@ def load_state(root: Path, kind: str, ids: np.ndarray, manifest: dict) -> np.nda
     result = np.empty((len(ids), DIM), np.float32)
     filled, seen = np.zeros(len(ids), bool), set()
     for corpus in CORPORA:
-        path = root / "hf/targets" / f"{kind}__arm3__think_on__{corpus}__l24.npz"
+        if side not in ("think_on", "think_off"):
+            raise ValueError(f"Unknown thinking mode: {side}")
+        path = root / "hf/targets" / f"{kind}__arm3__{side}__{corpus}__l24.npz"
         with np.load(path, allow_pickle=False) as archive:
             if set(archive.files) != {"row_ids", kind}:
                 raise ValueError((path, archive.files))
