@@ -20,9 +20,11 @@
 > 40-candidate run in `figures/issue_1482/concordance_decoder_direction_common_noside/`:
 > variance along decoder direction +0.32, identity +0.12, promoting −0.10,
 > suppressing −0.10, topic −0.09, write norm −0.06, then effects below 0.05.
-> Also dropping the answer-side firing share gives the identical order
-> (`..._noside_noratio/`). Figure 14A shows rounds 0 to 4. Overleaf `3eaf054`,
-> EPS `8f86cb94a00`.
+> On 2026-09-09 the answer-side firing share was dropped too, so the paper's
+> selection is the 39-candidate run `..._noside_noratio/` (identical winners and
+> scores; the property was never selected). Appendix counts are 39 with groups
+> 9 / 15 / 15, and Figure 14A shows rounds 0 to 4. Overleaf `c64d021`, EPS
+> `8f86cb94a00` (runs) and `4893cc608e7` (figure source).
 
 Written 2026-09-08 by the session that answered danmossing's four review comments
 (6 September). Everything below is either read from a committed artifact or
