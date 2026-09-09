@@ -1828,9 +1828,105 @@ def k5_capture_srcs(ckpt: str, ckpts: list[str]) -> list[str]:
     return list(ckpts) if ckpt == "B" else [ckpt]
 
 
-def k5_capture_units(ckpt: str, ckpts: list[str], rows: list[dict]) -> list[dict[str, Any]]:
+def parse_k5_cells(spec: str) -> list[tuple[str, str]]:
+    """Parse + validate a ``--k5-cells`` CSV of ``ckpt:src`` capture cells
+    (full-grid round: an arbitrary cell selection replaces the standing
+    7-cell default). Fail-loud on a malformed pair, an unknown checkpoint or
+    source token, a duplicate cell, or an empty list — a typo must never
+    silently shrink the captured grid."""
+    cells: list[tuple[str, str]] = []
+    for token in spec.split(","):
+        tok = token.strip()
+        parts = tok.split(":")
+        if len(parts) != 2 or not parts[0] or not parts[1]:
+            raise ValueError(
+                f"--k5-cells: malformed cell {tok!r} in {spec!r} (expected 'ckpt:src')"
+            )
+        ckpt, src = parts
+        if ckpt not in C.CKPTS:
+            raise ValueError(
+                f"--k5-cells: unknown checkpoint {ckpt!r} in {tok!r}; expected one of {C.CKPTS}"
+            )
+        if src not in C.CKPTS:
+            raise ValueError(
+                f"--k5-cells: unknown source {src!r} in {tok!r}; expected one of {C.CKPTS}"
+            )
+        if (ckpt, src) in cells:
+            raise ValueError(f"--k5-cells: duplicate cell {tok!r} in {spec!r}")
+        cells.append((ckpt, src))
+    if not cells:
+        raise ValueError("--k5-cells: empty cell list")
+    return cells
+
+
+def k5_leg_cells_spec(ckpt: str, cells: list[tuple[str, str]]) -> str:
+    """Canonical ``ckpt:src`` CSV of the SELECTED cells leg ``ckpt`` owns."""
+    return ",".join(f"{c}:{s}" for c, s in cells if c == ckpt)
+
+
+def k5_upload_unit_name(ckpt: str, cells: list[tuple[str, str]] | None) -> str:
+    """Leg store-upload unit name. Cell-scoped (``_srcs<...>``) under a
+    ``--k5-cells`` selection so a prior default-scope upload sentinel on the
+    same out-root can neither satisfy nor refuse a differently-scoped leg's
+    ``leg_uploaded`` predicate (which gates BOTH the artifact-presence
+    requirement and the end-of-leg store upload)."""
+    if cells is None:
+        return f"capturek5_upload_{ckpt}"
+    srcs = "".join(s for c, s in cells if c == ckpt)
+    return f"capturek5_upload_{ckpt}_srcs{srcs}"
+
+
+def k5_upload_regime(
+    args: argparse.Namespace, ckpt: str, layers: list[int], cells: list[tuple[str, str]] | None
+) -> dict[str, Any]:
+    """Leg upload-unit resume regime; carries the leg's selected cell list so
+    a resume predicate can never silently match a differently-scoped leg.
+    Default (no selection): byte-identical to the pre-selector regime."""
+    extra: dict[str, Any] = {}
+    if cells is not None:
+        extra["k5_cells"] = k5_leg_cells_spec(ckpt, cells)
+    return unit_regime(args, phase="capture-k5_upload", ckpt=ckpt, layers=layers, **extra)
+
+
+def k5_capture_regimes(
+    args: argparse.Namespace,
+    ckpt: str,
+    units: list[dict[str, Any]],
+    layers: list[int],
+    cells: list[tuple[str, str]] | None,
+) -> dict[str, dict[str, Any]]:
+    """Per-unit resume regimes for one capture-k5 leg. Under a ``--k5-cells``
+    selection each unit's regime carries its own cell (``k5_cell``); the
+    default leg's regimes stay byte-identical to the pre-selector shape (no
+    extra key), so existing done-sentinels keep resuming."""
+    return {
+        u["unit"]: unit_regime(
+            args,
+            phase="capture-k5",
+            ckpt=ckpt,
+            src=u["src"],
+            corpus=u["corpus"],
+            render=u["render"],
+            seed=u["seed"],
+            layers=layers,
+            n_rows=len(u["rows"]),
+            **({} if cells is None else {"k5_cell": f"{ckpt}:{u['src']}"}),
+        )
+        for u in units
+    }
+
+
+def k5_capture_units(
+    ckpt: str,
+    ckpts: list[str],
+    rows: list[dict],
+    cells: list[tuple[str, str]] | None = None,
+) -> list[dict[str, Any]]:
     """Capture-k5 unit list for one leg: cells x C.K5_SEEDS, plain render,
-    single corpus, k5draws subdir layout (each cell owns ctx + row_index)."""
+    single corpus, k5draws subdir layout (each cell owns ctx + row_index).
+    ``cells`` (a parsed ``--k5-cells`` selection) replaces the standing
+    default cell set; the leg keeps only its own checkpoint's cells."""
+    srcs = [s for c, s in cells if c == ckpt] if cells is not None else k5_capture_srcs(ckpt, ckpts)
     return [
         {
             "unit": f"capturek5_{ckpt}_{src}_{C.CORPUS_SINGLE}_seed{seed}",
@@ -1841,7 +1937,7 @@ def k5_capture_units(ckpt: str, ckpts: list[str], rows: list[dict]) -> list[dict
             "seed": seed,
             "subdir": C.k5_store_subdir(ckpt, src, C.CORPUS_SINGLE, seed),
         }
-        for src in k5_capture_srcs(ckpt, ckpts)
+        for src in srcs
         for seed in C.K5_SEEDS
     ]
 
@@ -1872,24 +1968,24 @@ def phase_capture_k5_ckpt(args: argparse.Namespace, out_root: Path, ckpts: list[
     if max(layers) >= dims.num_layers:
         raise ValueError(f"capture-k5 layers {layers} out of range for depth {dims.num_layers}")
 
+    cells = parse_k5_cells(args.k5_cells) if args.k5_cells else None
     rows = _k5_single_rows(args, out_root)
-    units = k5_capture_units(ckpt, ckpts, rows)
-    regimes = {
-        u["unit"]: unit_regime(
-            args,
-            phase="capture-k5",
-            ckpt=ckpt,
-            src=u["src"],
-            corpus=u["corpus"],
-            render=u["render"],
-            seed=u["seed"],
-            layers=layers,
-            n_rows=len(u["rows"]),
+    units = k5_capture_units(ckpt, ckpts, rows, cells=cells)
+    if cells is not None:
+        if not units:
+            raise ValueError(
+                f"capture-k5 leg {ckpt}: --k5-cells={args.k5_cells!r} selects no cells "
+                "for this checkpoint — shard legs over the selected cells' checkpoints "
+                "only (dispatcher wiring bug)"
+            )
+        logger.info(
+            "[capture-k5] ckpt=%s --k5-cells selector active: leg cells %s",
+            ckpt,
+            k5_leg_cells_spec(ckpt, cells),
         )
-        for u in units
-    }
-    upload_unit = f"capturek5_upload_{ckpt}"
-    upload_regime = unit_regime(args, phase="capture-k5_upload", ckpt=ckpt, layers=layers)
+    regimes = k5_capture_regimes(args, ckpt, units, layers, cells)
+    upload_unit = k5_upload_unit_name(ckpt, cells)
+    upload_regime = k5_upload_regime(args, ckpt, layers, cells)
     # Artifact-aware resume (#1315 class): a done-sentinel counts only when the
     # unit's store artifacts are still local OR the leg's VERIFIED upload
     # record exists (post-delete-local, downstream fits re-stage from HF).
@@ -1948,16 +2044,26 @@ def phase_capture_k5_ckpt(args: argparse.Namespace, out_root: Path, ckpts: list[
 
 def phase_capture_k5_finalize(args: argparse.Namespace, out_root: Path, ckpts: list[str]) -> None:
     """Capture-k5 finalize: assert every per-ckpt leg uploaded; summary +
-    poller sentinel (``issue-1902-capture-k5-done-<epoch>.json``)."""
+    poller sentinel (``issue-1902-capture-k5-done-<epoch>.json``). Under a
+    ``--k5-cells`` selection the expected legs — and the summarised cells —
+    are the SELECTED ones, never the standing 7-cell default."""
+    cells = parse_k5_cells(args.k5_cells) if args.k5_cells else None
+    if cells is None:
+        leg_ckpts = list(ckpts)
+        cell_specs = [f"{m}:{s}" for m in ckpts for s in k5_capture_srcs(m, ckpts)]
+    else:
+        leg_ckpts = [m for m in C.CKPTS if any(c == m for c, _ in cells)]
+        cell_specs = [f"{c}:{s}" for c, s in cells]
     summary: dict[str, Any] = {
         "metadata": _metadata(),
-        "ckpts": ckpts,
+        "ckpts": leg_ckpts,
         "seeds": list(C.K5_SEEDS),
+        "cells": cell_specs,
         "legs": {},
     }
     missing: list[str] = []
-    for m in ckpts:
-        path = _state_dir(out_root) / f"capturek5_upload_{m}.done.json"
+    for m in leg_ckpts:
+        path = _state_dir(out_root) / f"{k5_upload_unit_name(m, cells)}.done.json"
         if path.exists():
             summary["legs"][m] = _read_json(path).get("ts")
         else:
@@ -1967,7 +2073,10 @@ def phase_capture_k5_finalize(args: argparse.Namespace, out_root: Path, ckpts: l
     path = out_root / "capture_k5_summary.json"
     _write_json_atomic(path, summary)
     upload_json_small(path, f"{C.EVAL_MIRROR_HF_PATH}/capture/capture_k5_summary.json")
-    write_phase_sentinel(out_root, "capture-k5", {"ckpts": ckpts}, smoke=args.smoke)
+    note: dict[str, Any] = {"ckpts": leg_ckpts}
+    if cells is not None:
+        note["cells"] = cell_specs
+    write_phase_sentinel(out_root, "capture-k5", note, smoke=args.smoke)
 
 
 def phase_capture_finalize(args: argparse.Namespace, out_root: Path, ckpts: list[str]) -> None:
@@ -2560,8 +2669,20 @@ def main() -> None:
         default=None,
         help="comma-separated K5 seed subset (gen-k5 pilot timing; default: all of K5_SEEDS)",
     )
+    ap.add_argument(
+        "--k5-cells",
+        default=None,
+        help=(
+            "comma-separated 'ckpt:src' capture-k5 cell selector (e.g. 'S:B,S:D'); each "
+            "leg captures the listed cells whose ckpt matches its --ckpt; default: the "
+            "standing 7-cell set (diagonals + base-representation row)"
+        ),
+    )
     ap.add_argument("--import-check", action="store_true", help="execute deferred imports; exit")
     args = ap.parse_args()
+
+    if args.k5_cells and args.phase != "capture-k5":
+        ap.error("--k5-cells applies only to --phase capture-k5")
 
     if args.import_check:
         _import_check()

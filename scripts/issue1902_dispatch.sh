@@ -5,6 +5,8 @@
 #   bash scripts/issue1902_dispatch.sh --smoke               # SAME chain, tiny slice (PASS_UNIFIED)
 #   bash scripts/issue1902_dispatch.sh --full --from-phase gen   # resume from a phase
 #   bash scripts/issue1902_dispatch.sh --k5 [--smoke]        # K=5 draws follow-up: stage -> gen-k5 -> capture-k5
+#   bash scripts/issue1902_dispatch.sh --k5 --k5-cells S:B,S:D --from-phase capture-k5
+#                                                            # capture ONLY the listed (ckpt,src) cells; gen-k5 skipped
 #
 # Contracts: set -euo pipefail; each phase is a single `uv run python
 # scripts/issue1902_run.py --phase X ...` whose rc propagates DIRECTLY (no
@@ -29,12 +31,14 @@ if [ -f ./.env ]; then set -a; . ./.env; set +a; fi
 # ── args ─────────────────────────────────────────────────────────────────────
 MODE=""
 K5=""
+K5_CELLS=""
 FROM_PHASE="stage"
 while [ $# -gt 0 ]; do
   case "$1" in
     --full) MODE="full" ;;
     --smoke) MODE="smoke" ;;
     --k5) K5="1" ;;
+    --k5-cells) shift; K5_CELLS="${1:?--k5-cells needs a comma-separated ckpt:src list}" ;;
     --from-phase) shift; FROM_PHASE="${1:?--from-phase needs a phase name}" ;;
     *) echo "[dispatch] unknown arg: $1" >&2; exit 2 ;;
   esac
@@ -43,7 +47,11 @@ done
 # --k5 alone runs the production K=5 chain (--k5 --smoke = tiny-slice K=5).
 [ -n "$K5" ] && [ -z "$MODE" ] && MODE="full"
 if [ -z "$MODE" ]; then
-  echo "[dispatch] usage: issue1902_dispatch.sh --full|--smoke|--k5 [--smoke] [--from-phase <p>]" >&2
+  echo "[dispatch] usage: issue1902_dispatch.sh --full|--smoke|--k5 [--smoke] [--k5-cells <ckpt:src,...>] [--from-phase <p>]" >&2
+  exit 2
+fi
+if [ -n "$K5_CELLS" ] && [ -z "$K5" ]; then
+  echo "[dispatch] --k5-cells requires --k5 (capture-k5 cell selector)" >&2
   exit 2
 fi
 SMOKE=""
@@ -142,9 +150,11 @@ run_sharded() {
   # ALLOCATION's physical id — never the bare slot index, which on a shared
   # fellows node can be another tenant's device (#1902 crash 1) — with a
   # matching --gpu-id; the in-process clobber is defeated by import-time
-  # cuInit (gotchas.md).
-  local phase="$1"
-  local ckpt_arr=($CKPTS)
+  # cuInit (gotchas.md). Extra args after the phase are threaded to every
+  # leg; SHARD_CKPTS (call-scoped) overrides the leg checkpoint set.
+  local phase="$1"; shift
+  local extra=("$@")
+  local ckpt_arr=(${SHARD_CKPTS:-$CKPTS})
   local i=0
   while [ "$i" -lt "${#ckpt_arr[@]}" ]; do
     local pids=() names=()
@@ -155,7 +165,7 @@ run_sharded() {
       local log="$LOG_DIR/issue-1902-${phase}-${c}.log"
       echo "[dispatch] $phase ckpt=$c gpu=$gid (slot $g) -> $log"
       CUDA_VISIBLE_DEVICES="$gid" "${RUN[@]}" --phase "$phase" --ckpt "$c" --gpu-id "$gid" \
-        "${COMMON[@]}" >"$log" 2>&1 &
+        ${extra[@]+"${extra[@]}"} "${COMMON[@]}" >"$log" 2>&1 &
       pids+=($!); names+=("$c")
       i=$((i + 1)); g=$((g + 1))
     done
@@ -189,6 +199,21 @@ if [ -n "$K5" ]; then
     echo "[dispatch] --k5 with unknown --from-phase '$FROM_PHASE' (one of: ${K5_PHASES[*]})" >&2
     exit 2
   fi
+  # --k5-cells: scope capture-k5 to the SELECTED (ckpt, src) cells. Legs
+  # shard over the cells' checkpoints (tokens validated fail-loud in
+  # issue1902_run.py); with --from-phase capture-k5 the gen-k5 legs stay
+  # skipped — no new generation, every draw's answer text is already on HF.
+  K5_CELLS_FLAG=()
+  CAPTURE_CKPTS="$CKPTS"
+  if [ -n "$K5_CELLS" ]; then
+    K5_CELLS_FLAG=(--k5-cells "$K5_CELLS")
+    CAPTURE_CKPTS="$(printf '%s\n' "$K5_CELLS" | tr ',' '\n' | cut -d: -f1 | awk 'NF && !seen[$0]++' | tr '\n' ' ')"
+    CAPTURE_CKPTS="${CAPTURE_CKPTS% }"
+    echo "[dispatch] k5 cells='$K5_CELLS' capture legs='$CAPTURE_CKPTS'"
+    if [ "$FROM_PHASE" = "capture-k5" ]; then
+      echo "[dispatch] gen-k5 skipped (--k5-cells with --from-phase capture-k5)"
+    fi
+  fi
   if [ "$K5_START" -le 0 ]; then
     echo "[phase=stage]"
     run_single stage --phase stage
@@ -202,8 +227,9 @@ if [ -n "$K5" ]; then
     run_single gen-k5-finalize --phase gen-k5 --finalize
   fi
   echo "[phase=capture-k5]"
-  run_sharded capture-k5
-  run_single capture-k5-finalize --phase capture-k5 --finalize
+  SHARD_CKPTS="$CAPTURE_CKPTS" run_sharded capture-k5 ${K5_CELLS_FLAG[@]+"${K5_CELLS_FLAG[@]}"}
+  run_single capture-k5-finalize --phase capture-k5 --finalize \
+    ${K5_CELLS_FLAG[@]+"${K5_CELLS_FLAG[@]}"}
   echo "[dispatch] k5 chain complete (mode=$MODE ckpts='$CKPTS')"
   echo "[phase=done]"
   exit 0

@@ -501,6 +501,98 @@ def test_k5_capture_unit_store_dirs_subdir_shape(tmp_path):
     assert not R.capture_unit_artifacts_present(store, "B", u, [18, 31])
 
 
+def test_parse_k5_cells_valid_order_preserved():
+    cells = R.parse_k5_cells("S:B,S:D,D:R")
+    assert cells == [("S", "B"), ("S", "D"), ("D", "R")]
+    # Whitespace-tolerant around tokens; the full 9-cell grid round parses.
+    nine = "S:B,S:D,S:R,D:B,D:S,D:R,R:B,R:S,R:D"
+    assert len(R.parse_k5_cells(nine)) == 9
+    assert R.parse_k5_cells(" S:B , D:R ") == [("S", "B"), ("D", "R")]
+
+
+def test_parse_k5_cells_fail_loud():
+    for bad, msg in [
+        ("S-B", "malformed"),
+        ("S:", "malformed"),
+        (":B", "malformed"),
+        ("S:B:R", "malformed"),
+        ("", "malformed"),
+        ("S:B,,D:R", "malformed"),
+        ("X:B", "unknown checkpoint"),
+        ("S:X", "unknown source"),
+        ("S:B,S:B", "duplicate"),
+    ]:
+        with pytest.raises(ValueError, match=msg):
+            R.parse_k5_cells(bad)
+
+
+def test_k5_capture_units_cells_selector_filters_by_leg():
+    rows = [{"id": "single_00000"}]
+    ckpts = ["B", "S", "D", "R"]
+    cells = R.parse_k5_cells("S:B,S:D,D:R")
+    # Each leg keeps ONLY its own checkpoint's cells, x C.K5_SEEDS.
+    s_units = R.k5_capture_units("S", ckpts, rows, cells=cells)
+    assert [(u["src"], u["seed"]) for u in s_units] == [
+        (src, seed) for src in ("B", "D") for seed in C.K5_SEEDS
+    ]
+    assert s_units[0]["unit"] == "capturek5_S_B_single_seed45"
+    assert s_units[0]["subdir"] == "k5draws/S/B/single/seed45"
+    d_units = R.k5_capture_units("D", ckpts, rows, cells=cells)
+    assert [(u["src"], u["seed"]) for u in d_units] == [("R", s) for s in C.K5_SEEDS]
+    # A leg with no selected cells yields NO units (phase_capture_k5_ckpt
+    # fail-louds on it — an empty leg is a dispatcher wiring bug).
+    assert R.k5_capture_units("B", ckpts, rows, cells=cells) == []
+
+
+def test_k5_capture_units_default_unchanged_without_cells():
+    """Flag absent => the standing 7-cell default, byte-identical units."""
+    rows = [{"id": "single_00000"}]
+    ckpts = ["B", "S", "D", "R"]
+    for leg in ckpts:
+        assert R.k5_capture_units(leg, ckpts, rows) == R.k5_capture_units(
+            leg, ckpts, rows, cells=None
+        )
+    cells = {(leg, u["src"]) for leg in ckpts for u in R.k5_capture_units(leg, ckpts, rows)}
+    assert len(cells) == 7  # diagonals + base-representation row
+
+
+def test_k5_capture_regime_carries_cell_scope():
+    import argparse
+
+    args = argparse.Namespace(smoke=False)
+    rows = [{"id": "single_00000"}]
+    ckpts = ["B", "S", "D", "R"]
+    cells = R.parse_k5_cells("S:B,S:D,D:R")
+    layers = [18, 31]
+    s_units = R.k5_capture_units("S", ckpts, rows, cells=cells)
+    scoped = R.k5_capture_regimes(args, "S", s_units, layers, cells)
+    assert scoped["capturek5_S_B_single_seed45"]["k5_cell"] == "S:B"
+    # Default regimes stay byte-identical to the pre-selector shape: no
+    # cell-scope key, so existing done-sentinels keep resuming (#1333).
+    default_units = R.k5_capture_units("S", ckpts, rows)
+    default = R.k5_capture_regimes(args, "S", default_units, layers, None)
+    assert "k5_cell" not in default["capturek5_S_S_single_seed45"]
+    assert default["capturek5_S_S_single_seed45"] == R.unit_regime(
+        args,
+        phase="capture-k5",
+        ckpt="S",
+        src="S",
+        corpus="single",
+        render="plain",
+        seed=45,
+        layers=layers,
+        n_rows=1,
+    )
+    # Upload-leg predicate: scoped runs get a DISTINCT unit name + a regime
+    # carrying the leg's cell list; default name/regime unchanged.
+    assert R.k5_upload_unit_name("S", None) == "capturek5_upload_S"
+    assert R.k5_upload_unit_name("S", cells) == "capturek5_upload_S_srcsBD"
+    assert R.k5_upload_regime(args, "S", layers, cells)["k5_cells"] == "S:B,S:D"
+    assert R.k5_upload_regime(args, "S", layers, None) == R.unit_regime(
+        args, phase="capture-k5_upload", ckpt="S", layers=layers
+    )
+
+
 def test_tiny_real_k5_subdir_capture(tiny_olmo2, tmp_path):
     """Production capture body into the k5draws subdir layout: answer store +
     per-cell ctx + row_index land under the seed leaf."""
