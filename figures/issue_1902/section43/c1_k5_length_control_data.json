@@ -1,0 +1,335 @@
+{
+  "metadata": {
+    "git_commit": "b0a756ab456c1ef4b694575b71adb7ac52726294",
+    "panel_a": "held-out pooled R^2 per stage, all contexts vs the primary length-matched design (band 26.8-360.6 tokens, n=6205/stage), row-bootstrap 95% CIs",
+    "panel_b": "mean per-context SS_tot (solid) and SS_res (dashed) per stage within 5 quantile bins of the stage's own K=5 mean answer length, from the full-data fits",
+    "script": "scripts/issue1902_k5_length_control.py",
+    "source_summary": "eval_results/issue_1902/k5_targets/length_matched/summary.json",
+    "timestamp_utc": "2026-09-09T14:50:28Z"
+  },
+  "panel_a": {
+    "matched_ci": [
+      [
+        0.6171955028213117,
+        0.6255099146276138
+      ],
+      [
+        0.5836343526442266,
+        0.5943994279463655
+      ],
+      [
+        0.5871404427886379,
+        0.5994988396627773
+      ],
+      [
+        0.5782771718737107,
+        0.5902305837803404
+      ]
+    ],
+    "matched_r2": [
+      0.6214300209153205,
+      0.5890240213914828,
+      0.5935538181798472,
+      0.5846572903047956
+    ],
+    "stages": [
+      "Base",
+      "SFT",
+      "DPO",
+      "RLVR"
+    ],
+    "unmatched_ci": [
+      [
+        0.6720311533097865,
+        0.6771780872354534
+      ],
+      [
+        0.6302114558347663,
+        0.6363919971245319
+      ],
+      [
+        0.6017673118520027,
+        0.6094428529487526
+      ],
+      [
+        0.5949771961124715,
+        0.602636933441758
+      ]
+    ],
+    "unmatched_r2": [
+      0.6747779066421795,
+      0.6336208397328849,
+      0.6058255938675696,
+      0.5990897306476755
+    ]
+  },
+  "panel_b": {
+    "B": [
+      {
+        "bin": 1,
+        "len_hi": 38.2,
+        "len_lo": 0.5,
+        "len_median": 26.8,
+        "mean_ss_res": 265.39783501068285,
+        "mean_ss_tot": 905.8930322155154,
+        "n": 3315,
+        "r2": 0.7070318176952887
+      },
+      {
+        "bin": 2,
+        "len_hi": 59.2,
+        "len_lo": 38.2,
+        "len_median": 48.2,
+        "mean_ss_res": 233.4340913970941,
+        "mean_ss_tot": 673.9533950819745,
+        "n": 3251,
+        "r2": 0.6536346680638043
+      },
+      {
+        "bin": 3,
+        "len_hi": 97.2,
+        "len_lo": 59.2,
+        "len_median": 74.2,
+        "mean_ss_res": 221.72818851806778,
+        "mean_ss_tot": 672.297301883011,
+        "n": 3278,
+        "r2": 0.6701932494790057
+      },
+      {
+        "bin": 4,
+        "len_hi": 182.2,
+        "len_lo": 97.2,
+        "len_median": 130.8,
+        "mean_ss_res": 201.68662118663414,
+        "mean_ss_tot": 633.1880883079785,
+        "n": 3270,
+        "r2": 0.6814743913998977
+      },
+      {
+        "bin": 5,
+        "len_hi": 1006.5,
+        "len_lo": 182.2,
+        "len_median": 272.2,
+        "mean_ss_res": 217.6229520672106,
+        "mean_ss_tot": 618.2057163120953,
+        "n": 3277,
+        "r2": 0.6479764804417536
+      }
+    ],
+    "D": [
+      {
+        "bin": 1,
+        "len_hi": 106.0,
+        "len_lo": 1.5,
+        "len_median": 61.4,
+        "mean_ss_res": 247.00713800785476,
+        "mean_ss_tot": 708.4837727935828,
+        "n": 3284,
+        "r2": 0.6513580868141909
+      },
+      {
+        "bin": 2,
+        "len_hi": 282.6,
+        "len_lo": 106.0,
+        "len_median": 190.6,
+        "mean_ss_res": 167.52143857869385,
+        "mean_ss_tot": 402.8855221837168,
+        "n": 3275,
+        "r2": 0.5841959332003406
+      },
+      {
+        "bin": 3,
+        "len_hi": 435.2,
+        "len_lo": 282.6,
+        "len_median": 349.0,
+        "mean_ss_res": 140.5005564841832,
+        "mean_ss_tot": 376.6393957429171,
+        "n": 3276,
+        "r2": 0.6269626648931735
+      },
+      {
+        "bin": 4,
+        "len_hi": 611.0,
+        "len_lo": 435.2,
+        "len_median": 522.0,
+        "mean_ss_res": 159.57560533029678,
+        "mean_ss_tot": 362.486717961699,
+        "n": 3279,
+        "r2": 0.5597753036922093
+      },
+      {
+        "bin": 5,
+        "len_hi": 1023.9,
+        "len_lo": 611.0,
+        "len_median": 718.0,
+        "mean_ss_res": 158.96852089928717,
+        "mean_ss_tot": 365.5582869840825,
+        "n": 3277,
+        "r2": 0.5651349550551725
+      }
+    ],
+    "R": [
+      {
+        "bin": 1,
+        "len_hi": 87.0,
+        "len_lo": 1.5,
+        "len_median": 45.5,
+        "mean_ss_res": 268.7805290435711,
+        "mean_ss_tot": 749.3669376501146,
+        "n": 3282,
+        "r2": 0.6413232082450548
+      },
+      {
+        "bin": 2,
+        "len_hi": 247.8,
+        "len_lo": 87.0,
+        "len_median": 161.0,
+        "mean_ss_res": 173.46894245927896,
+        "mean_ss_tot": 411.43909001146625,
+        "n": 3276,
+        "r2": 0.5783848772015207
+      },
+      {
+        "bin": 3,
+        "len_hi": 398.8,
+        "len_lo": 247.8,
+        "len_median": 314.5,
+        "mean_ss_res": 141.663057760331,
+        "mean_ss_tot": 373.67515141997416,
+        "n": 3278,
+        "r2": 0.6208924858342652
+      },
+      {
+        "bin": 4,
+        "len_hi": 587.4,
+        "len_lo": 398.8,
+        "len_median": 493.6,
+        "mean_ss_res": 162.0502614185467,
+        "mean_ss_tot": 359.8316477181491,
+        "n": 3278,
+        "r2": 0.5496497808178387
+      },
+      {
+        "bin": 5,
+        "len_hi": 1023.9,
+        "len_lo": 587.4,
+        "len_median": 695.4,
+        "mean_ss_res": 158.20974053722563,
+        "mean_ss_tot": 360.8665854879222,
+        "n": 3277,
+        "r2": 0.5615838459431962
+      }
+    ],
+    "S": [
+      {
+        "bin": 1,
+        "len_hi": 47.2,
+        "len_lo": 1.5,
+        "len_median": 28.2,
+        "mean_ss_res": 317.1640727609855,
+        "mean_ss_tot": 904.9496239051495,
+        "n": 3292,
+        "r2": 0.6495229520154722
+      },
+      {
+        "bin": 2,
+        "len_hi": 99.2,
+        "len_lo": 47.2,
+        "len_median": 65.0,
+        "mean_ss_res": 199.06987884099874,
+        "mean_ss_tot": 562.6406126538706,
+        "n": 3269,
+        "r2": 0.64618643879612
+      },
+      {
+        "bin": 3,
+        "len_hi": 212.2,
+        "len_lo": 99.2,
+        "len_median": 152.2,
+        "mean_ss_res": 215.64712214223644,
+        "mean_ss_tot": 553.6030008979744,
+        "n": 3279,
+        "r2": 0.6104661250165823
+      },
+      {
+        "bin": 4,
+        "len_hi": 374.8,
+        "len_lo": 212.2,
+        "len_median": 274.2,
+        "mean_ss_res": 192.59352478911367,
+        "mean_ss_tot": 551.0503728387557,
+        "n": 3277,
+        "r2": 0.6504974240431756
+      },
+      {
+        "bin": 5,
+        "len_hi": 975.3,
+        "len_lo": 374.8,
+        "len_median": 519.8,
+        "mean_ss_res": 212.62176053062302,
+        "mean_ss_tot": 531.2055389320407,
+        "n": 3274,
+        "r2": 0.5997373051529408
+      }
+    ]
+  },
+  "render": {
+    "authoring_size_inches": [
+      13.095,
+      5.5
+    ],
+    "background": "#FFFFFF",
+    "exported_size_inches": [
+      13.095,
+      5.2
+    ],
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c1_k5_length_control.pdf}",
+    "png_dpi": 240,
+    "realized_font_pt": {
+      "body": 7.56,
+      "label": 8.4,
+      "tick": 7.14,
+      "title": 9.24
+    },
+    "resolved_font": "Inter",
+    "scale": 0.42,
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "style_version": "c2a-v2",
+    "text": [
+      "A  \u00b7  OWN MAP \u00b7 LAYER 31",
+      "Base",
+      "SFT",
+      "DPO",
+      "RLVR",
+      "Held-out $R^2$ \u2191",
+      "0.56",
+      "0.58",
+      "0.60",
+      "0.62",
+      "0.64",
+      "0.66",
+      "0.68",
+      "0.70",
+      "Answer-length control",
+      "All contexts",
+      "Length-matched",
+      "B  \u00b7  FULL DATA \u00b7 5 LENGTH BINS",
+      "Answer length (tokens, bin median)",
+      "30",
+      "100",
+      "300",
+      "700",
+      "Mean SS per context",
+      "0",
+      "200",
+      "400",
+      "600",
+      "800",
+      "1000",
+      "Variance vs residual by length",
+      "Total SS",
+      "Residual SS"
+    ]
+  }
+}

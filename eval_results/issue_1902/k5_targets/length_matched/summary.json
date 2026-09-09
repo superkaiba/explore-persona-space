@@ -1,0 +1,899 @@
+{
+  "designs": {
+    "p10": {
+      "band": {
+        "hi": 272.2,
+        "lo": 61.2,
+        "rung": "p10"
+      },
+      "d_features": 4096,
+      "degenerate_label": "under-determined regularization-limit fit (n_train < d); relative ordering at equal n across stages only, never an absolute R^2",
+      "differences": {
+        "B_minus_D": {
+          "pairing": "row-bootstrap draws paired via one shared full-index context resampling (seed 1944); matched row sets overlap only partially",
+          "point": 0.03128003200420815,
+          "row_ci95": [
+            0.023442451550979345,
+            0.039066648792695315
+          ]
+        },
+        "B_minus_S": {
+          "pairing": "row-bootstrap draws paired via one shared full-index context resampling (seed 1944); matched row sets overlap only partially",
+          "point": 0.042887200371569345,
+          "row_ci95": [
+            0.03617334988650292,
+            0.05013386533551416
+          ]
+        },
+        "D_minus_S": {
+          "pairing": "row-bootstrap draws paired via one shared full-index context resampling (seed 1944); matched row sets overlap only partially",
+          "point": 0.011607168367361198,
+          "row_ci95": [
+            0.0033488864351768344,
+            0.019435490586434817
+          ]
+        }
+      },
+      "estimator": "issue_779.fit_h.ridge_fit_predict_fast_layer_batched with gcv_dof_cap=0.9 (#1887), lambdas=GCV_LAMBDAS, parity-gated vs SharedPrimalRidge (fast_parity.json)",
+      "matched_n": 4529,
+      "min_fold_n_train": 3726,
+      "r2_ordering": [
+        "B",
+        "D",
+        "R",
+        "S"
+      ],
+      "stages": {
+        "B": {
+          "dof_by_fold": [
+            1390.147995194633,
+            1385.2329975284895,
+            1394.964406250574,
+            1385.3582499347563,
+            1387.2721850267578,
+            1387.6392946146198
+          ],
+          "fold_n_eval": [
+            755,
+            760,
+            727,
+            767,
+            764,
+            756
+          ],
+          "fold_n_train": [
+            3774,
+            3769,
+            3802,
+            3762,
+            3765,
+            3773
+          ],
+          "matched_length": {
+            "mean": 149.93345109295646,
+            "median": 141.0,
+            "p25": 93.0,
+            "p75": 203.4
+          },
+          "mean_ss_res": 243.97645434428085,
+          "mean_ss_tot": 632.9549808784362,
+          "median_cos": 0.9312828370092366,
+          "n": 4529,
+          "r2": 0.6145437484263381,
+          "r2_row_ci95": [
+            0.6097251585376868,
+            0.6194660181520195
+          ],
+          "selected_lambda_by_fold": [
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0
+          ]
+        },
+        "D": {
+          "dof_by_fold": [
+            1432.1122634176518,
+            1430.262586664453,
+            1436.5095191308105,
+            1431.1360628212312,
+            1432.7532420671168,
+            1430.6484672903405
+          ],
+          "fold_n_eval": [
+            776,
+            769,
+            722,
+            760,
+            758,
+            744
+          ],
+          "fold_n_train": [
+            3753,
+            3760,
+            3807,
+            3769,
+            3771,
+            3785
+          ],
+          "matched_length": {
+            "mean": 150.88743652020312,
+            "median": 142.0,
+            "p25": 91.2,
+            "p75": 206.0
+          },
+          "mean_ss_res": 172.3540951220572,
+          "mean_ss_tot": 413.58072698234747,
+          "median_cos": 0.8857080121604454,
+          "n": 4529,
+          "r2": 0.5832637164221299,
+          "r2_row_ci95": [
+            0.5764082831689998,
+            0.5895101050727352
+          ],
+          "selected_lambda_by_fold": [
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0
+          ]
+        },
+        "R": {
+          "dof_by_fold": [
+            1449.4751302858563,
+            1455.8744829376074,
+            1451.2194990650512,
+            1451.733469709996,
+            1442.6302907384731,
+            1452.3959275329466
+          ],
+          "fold_n_eval": [
+            772,
+            730,
+            748,
+            754,
+            783,
+            742
+          ],
+          "fold_n_train": [
+            3757,
+            3799,
+            3781,
+            3775,
+            3746,
+            3787
+          ],
+          "matched_length": {
+            "mean": 150.6512695959373,
+            "median": 141.8,
+            "p25": 91.2,
+            "p75": 206.2
+          },
+          "mean_ss_res": 175.2336419932134,
+          "mean_ss_tot": 410.61536260408184,
+          "median_cos": 0.876273828926038,
+          "n": 4529,
+          "r2": 0.5732413885298907,
+          "r2_row_ci95": [
+            0.5667654705300679,
+            0.5794061532740659
+          ],
+          "selected_lambda_by_fold": [
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0
+          ]
+        },
+        "S": {
+          "dof_by_fold": [
+            1532.249620140239,
+            1517.94475798131,
+            1525.5498749466717,
+            1513.755772780504,
+            1511.4885251370597,
+            1504.3143991301695
+          ],
+          "fold_n_eval": [
+            688,
+            761,
+            738,
+            769,
+            770,
+            803
+          ],
+          "fold_n_train": [
+            3841,
+            3768,
+            3791,
+            3760,
+            3759,
+            3726
+          ],
+          "matched_length": {
+            "mean": 150.78882755575185,
+            "median": 142.4,
+            "p25": 91.6,
+            "p75": 205.8
+          },
+          "mean_ss_res": 238.91238215495738,
+          "mean_ss_tot": 557.758922355384,
+          "median_cos": 0.8823336949231043,
+          "n": 4529,
+          "r2": 0.5716565480547687,
+          "r2_row_ci95": [
+            0.5651613587751649,
+            0.5781367605475767
+          ],
+          "selected_lambda_by_fold": [
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0
+          ]
+        }
+      },
+      "well_posed": false
+    },
+    "primary": {
+      "band": {
+        "hi": 360.6,
+        "lo": 26.8,
+        "rung": "p5"
+      },
+      "d_features": 4096,
+      "degenerate_label": null,
+      "differences": {
+        "B_minus_D": {
+          "pairing": "row-bootstrap draws paired via one shared full-index context resampling (seed 1944); matched row sets overlap only partially",
+          "point": 0.02787620273547331,
+          "row_ci95": [
+            0.021716544345908004,
+            0.03497363435138369
+          ]
+        },
+        "B_minus_S": {
+          "pairing": "row-bootstrap draws paired via one shared full-index context resampling (seed 1944); matched row sets overlap only partially",
+          "point": 0.032405999523837714,
+          "row_ci95": [
+            0.02651988752420357,
+            0.03821430418040157
+          ]
+        },
+        "D_minus_S": {
+          "pairing": "row-bootstrap draws paired via one shared full-index context resampling (seed 1944); matched row sets overlap only partially",
+          "point": 0.004529796788364404,
+          "row_ci95": [
+            -0.0017654200071301,
+            0.011202622399724268
+          ]
+        }
+      },
+      "estimator": "SharedPrimalRidge (committed primal spectral GCV)",
+      "matched_n": 6205,
+      "min_fold_n_train": 5137,
+      "r2_ordering": [
+        "B",
+        "D",
+        "S",
+        "R"
+      ],
+      "stages": {
+        "B": {
+          "dof_by_fold": [
+            1693.437202526683,
+            1690.8563852209757,
+            1698.2513278516158,
+            1684.1465022954087,
+            1689.976561817165,
+            1688.523299305367
+          ],
+          "fold_n_eval": [
+            1021,
+            1040,
+            1004,
+            1068,
+            1031,
+            1041
+          ],
+          "fold_n_train": [
+            5184,
+            5165,
+            5201,
+            5137,
+            5174,
+            5164
+          ],
+          "matched_length": {
+            "mean": 154.15087832393232,
+            "median": 135.8,
+            "p25": 75.0,
+            "p75": 224.4
+          },
+          "mean_ss_res": 240.42972157581843,
+          "mean_ss_tot": 635.099809438504,
+          "median_cos": 0.9322017562667155,
+          "n": 6205,
+          "r2": 0.6214300209153205,
+          "r2_row_ci95": [
+            0.6171955028213117,
+            0.6255099146276138
+          ],
+          "selected_lambda_by_fold": [
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0
+          ]
+        },
+        "D": {
+          "dof_by_fold": [
+            1751.0214688732983,
+            1744.45229766646,
+            1753.316561017392,
+            1750.2643211348695,
+            1744.787044738688,
+            1745.2913711206356
+          ],
+          "fold_n_eval": [
+            1033,
+            1053,
+            991,
+            1037,
+            1060,
+            1031
+          ],
+          "fold_n_train": [
+            5172,
+            5152,
+            5214,
+            5168,
+            5145,
+            5174
+          ],
+          "matched_length": {
+            "mean": 157.95461724415793,
+            "median": 138.6,
+            "p25": 80.0,
+            "p75": 226.6
+          },
+          "mean_ss_res": 178.02530615215193,
+          "mean_ss_tot": 438.0046218048268,
+          "median_cos": 0.8831476367356118,
+          "n": 6205,
+          "r2": 0.5935538181798472,
+          "r2_row_ci95": [
+            0.5871404427886379,
+            0.5994988396627773
+          ],
+          "selected_lambda_by_fold": [
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0
+          ]
+        },
+        "R": {
+          "dof_by_fold": [
+            1755.9352922020942,
+            1756.2369836438315,
+            1762.032673642609,
+            1762.7773783941589,
+            1759.4799444913517,
+            1762.5515134632317
+          ],
+          "fold_n_eval": [
+            1059,
+            1051,
+            1009,
+            1035,
+            1039,
+            1012
+          ],
+          "fold_n_train": [
+            5146,
+            5154,
+            5196,
+            5170,
+            5166,
+            5193
+          ],
+          "matched_length": {
+            "mean": 157.81695406929896,
+            "median": 140.0,
+            "p25": 78.0,
+            "p75": 227.6
+          },
+          "mean_ss_res": 179.04114251146362,
+          "mean_ss_tot": 431.06846065229223,
+          "median_cos": 0.8749415360410523,
+          "n": 6205,
+          "r2": 0.5846572903047956,
+          "r2_row_ci95": [
+            0.5782771718737107,
+            0.5902305837803404
+          ],
+          "selected_lambda_by_fold": [
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0
+          ]
+        },
+        "S": {
+          "dof_by_fold": [
+            1828.9218884834113,
+            1823.1236730349624,
+            1825.9054500996037,
+            1833.2812553968845,
+            1824.6954281228263,
+            1819.5907946886703
+          ],
+          "fold_n_eval": [
+            1012,
+            1060,
+            1025,
+            1007,
+            1055,
+            1046
+          ],
+          "fold_n_train": [
+            5193,
+            5145,
+            5180,
+            5198,
+            5150,
+            5159
+          ],
+          "matched_length": {
+            "mean": 156.2428041901692,
+            "median": 141.0,
+            "p25": 74.2,
+            "p75": 226.0
+          },
+          "mean_ss_res": 231.2095670878659,
+          "mean_ss_tot": 562.5865722631659,
+          "median_cos": 0.8882660063088013,
+          "n": 6205,
+          "r2": 0.5890240213914828,
+          "r2_row_ci95": [
+            0.5836343526442266,
+            0.5943994279463655
+          ],
+          "selected_lambda_by_fold": [
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0
+          ]
+        }
+      },
+      "well_posed": true
+    }
+  },
+  "length_stratified": {
+    "definition": "per stage, contexts binned into 5 quantile bins of that stage's own K=5 mean answer length; mean per-row SS_res / SS_tot from the ALREADY-FITTED full-data k5grid percell arrays (no refit)",
+    "per_stage": {
+      "B": [
+        {
+          "bin": 1,
+          "len_hi": 38.2,
+          "len_lo": 0.5,
+          "len_median": 26.8,
+          "mean_ss_res": 265.39783501068285,
+          "mean_ss_tot": 905.8930322155154,
+          "n": 3315,
+          "r2": 0.7070318176952887
+        },
+        {
+          "bin": 2,
+          "len_hi": 59.2,
+          "len_lo": 38.2,
+          "len_median": 48.2,
+          "mean_ss_res": 233.4340913970941,
+          "mean_ss_tot": 673.9533950819745,
+          "n": 3251,
+          "r2": 0.6536346680638043
+        },
+        {
+          "bin": 3,
+          "len_hi": 97.2,
+          "len_lo": 59.2,
+          "len_median": 74.2,
+          "mean_ss_res": 221.72818851806778,
+          "mean_ss_tot": 672.297301883011,
+          "n": 3278,
+          "r2": 0.6701932494790057
+        },
+        {
+          "bin": 4,
+          "len_hi": 182.2,
+          "len_lo": 97.2,
+          "len_median": 130.8,
+          "mean_ss_res": 201.68662118663414,
+          "mean_ss_tot": 633.1880883079785,
+          "n": 3270,
+          "r2": 0.6814743913998977
+        },
+        {
+          "bin": 5,
+          "len_hi": 1006.5,
+          "len_lo": 182.2,
+          "len_median": 272.2,
+          "mean_ss_res": 217.6229520672106,
+          "mean_ss_tot": 618.2057163120953,
+          "n": 3277,
+          "r2": 0.6479764804417536
+        }
+      ],
+      "D": [
+        {
+          "bin": 1,
+          "len_hi": 106.0,
+          "len_lo": 1.5,
+          "len_median": 61.4,
+          "mean_ss_res": 247.00713800785476,
+          "mean_ss_tot": 708.4837727935828,
+          "n": 3284,
+          "r2": 0.6513580868141909
+        },
+        {
+          "bin": 2,
+          "len_hi": 282.6,
+          "len_lo": 106.0,
+          "len_median": 190.6,
+          "mean_ss_res": 167.52143857869385,
+          "mean_ss_tot": 402.8855221837168,
+          "n": 3275,
+          "r2": 0.5841959332003406
+        },
+        {
+          "bin": 3,
+          "len_hi": 435.2,
+          "len_lo": 282.6,
+          "len_median": 349.0,
+          "mean_ss_res": 140.5005564841832,
+          "mean_ss_tot": 376.6393957429171,
+          "n": 3276,
+          "r2": 0.6269626648931735
+        },
+        {
+          "bin": 4,
+          "len_hi": 611.0,
+          "len_lo": 435.2,
+          "len_median": 522.0,
+          "mean_ss_res": 159.57560533029678,
+          "mean_ss_tot": 362.486717961699,
+          "n": 3279,
+          "r2": 0.5597753036922093
+        },
+        {
+          "bin": 5,
+          "len_hi": 1023.9,
+          "len_lo": 611.0,
+          "len_median": 718.0,
+          "mean_ss_res": 158.96852089928717,
+          "mean_ss_tot": 365.5582869840825,
+          "n": 3277,
+          "r2": 0.5651349550551725
+        }
+      ],
+      "R": [
+        {
+          "bin": 1,
+          "len_hi": 87.0,
+          "len_lo": 1.5,
+          "len_median": 45.5,
+          "mean_ss_res": 268.7805290435711,
+          "mean_ss_tot": 749.3669376501146,
+          "n": 3282,
+          "r2": 0.6413232082450548
+        },
+        {
+          "bin": 2,
+          "len_hi": 247.8,
+          "len_lo": 87.0,
+          "len_median": 161.0,
+          "mean_ss_res": 173.46894245927896,
+          "mean_ss_tot": 411.43909001146625,
+          "n": 3276,
+          "r2": 0.5783848772015207
+        },
+        {
+          "bin": 3,
+          "len_hi": 398.8,
+          "len_lo": 247.8,
+          "len_median": 314.5,
+          "mean_ss_res": 141.663057760331,
+          "mean_ss_tot": 373.67515141997416,
+          "n": 3278,
+          "r2": 0.6208924858342652
+        },
+        {
+          "bin": 4,
+          "len_hi": 587.4,
+          "len_lo": 398.8,
+          "len_median": 493.6,
+          "mean_ss_res": 162.0502614185467,
+          "mean_ss_tot": 359.8316477181491,
+          "n": 3278,
+          "r2": 0.5496497808178387
+        },
+        {
+          "bin": 5,
+          "len_hi": 1023.9,
+          "len_lo": 587.4,
+          "len_median": 695.4,
+          "mean_ss_res": 158.20974053722563,
+          "mean_ss_tot": 360.8665854879222,
+          "n": 3277,
+          "r2": 0.5615838459431962
+        }
+      ],
+      "S": [
+        {
+          "bin": 1,
+          "len_hi": 47.2,
+          "len_lo": 1.5,
+          "len_median": 28.2,
+          "mean_ss_res": 317.1640727609855,
+          "mean_ss_tot": 904.9496239051495,
+          "n": 3292,
+          "r2": 0.6495229520154722
+        },
+        {
+          "bin": 2,
+          "len_hi": 99.2,
+          "len_lo": 47.2,
+          "len_median": 65.0,
+          "mean_ss_res": 199.06987884099874,
+          "mean_ss_tot": 562.6406126538706,
+          "n": 3269,
+          "r2": 0.64618643879612
+        },
+        {
+          "bin": 3,
+          "len_hi": 212.2,
+          "len_lo": 99.2,
+          "len_median": 152.2,
+          "mean_ss_res": 215.64712214223644,
+          "mean_ss_tot": 553.6030008979744,
+          "n": 3279,
+          "r2": 0.6104661250165823
+        },
+        {
+          "bin": 4,
+          "len_hi": 374.8,
+          "len_lo": 212.2,
+          "len_median": 274.2,
+          "mean_ss_res": 192.59352478911367,
+          "mean_ss_tot": 551.0503728387557,
+          "n": 3277,
+          "r2": 0.6504974240431756
+        },
+        {
+          "bin": 5,
+          "len_hi": 975.3,
+          "len_lo": 374.8,
+          "len_median": 519.8,
+          "mean_ss_res": 212.62176053062302,
+          "mean_ss_tot": 531.2055389320407,
+          "n": 3274,
+          "r2": 0.5997373051529408
+        }
+      ]
+    }
+  },
+  "metadata": {
+    "band_ladder": [
+      "p5",
+      "p4",
+      "p3",
+      "p2",
+      "p1",
+      "p0",
+      "p10"
+    ],
+    "boot": {
+      "kind": "row",
+      "n_boot": 1000,
+      "seed": 1944
+    },
+    "fast_parity": {
+      "abs_diff_r2": 2.220446049250313e-16,
+      "lambda_fast": 1000.0,
+      "lambda_slow": 1000.0,
+      "n_eval": 1021,
+      "n_train": 5184,
+      "note": "same-inputs parity of the shared fast core (issue_779.fit_h.ridge_fit_predict_fast_layer_batched, no dof cap) against the committed SharedPrimalRidge on a well-posed matched slice",
+      "pass": true,
+      "r2_fast": 0.6215302844290442,
+      "r2_slow": 0.621530284429044,
+      "slice": {
+        "design": "primary",
+        "fold": 0,
+        "stage": "B"
+      },
+      "tolerance": 0.0001
+    },
+    "fold_seed": 190231,
+    "git_commit": "b0a756ab456c1ef4b694575b71adb7ac52726294",
+    "length_definition": "mean n_tokens per (stage, context) over the K=5 draws",
+    "match_seed": 20260801,
+    "n_bins": 5,
+    "n_train_vs_d": {
+      "p10": {
+        "d": 4096,
+        "min_fold_n_train": 3726,
+        "well_posed": false
+      },
+      "primary": {
+        "d": 4096,
+        "min_fold_n_train": 5137,
+        "well_posed": true
+      }
+    },
+    "primary_ladder_log": [
+      {
+        "equalization": {
+          "bin_detail": [
+            {
+              "edges": [
+                26.3,
+                54.0
+              ],
+              "target": 655
+            },
+            {
+              "edges": [
+                54.0,
+                88.2
+              ],
+              "target": 1252
+            },
+            {
+              "edges": [
+                88.2,
+                153.6
+              ],
+              "target": 1456
+            },
+            {
+              "edges": [
+                153.6,
+                250.2
+              ],
+              "target": 1694
+            },
+            {
+              "edges": [
+                250.2,
+                361.1
+              ],
+              "target": 1148
+            }
+          ],
+          "matched_n_per_column": {
+            "B": 6205,
+            "D": 6205,
+            "R": 6205,
+            "S": 6205
+          }
+        },
+        "fold_n_train": {
+          "B": [
+            5184,
+            5165,
+            5201,
+            5137,
+            5174,
+            5164
+          ],
+          "D": [
+            5172,
+            5152,
+            5214,
+            5168,
+            5145,
+            5174
+          ],
+          "R": [
+            5146,
+            5154,
+            5196,
+            5170,
+            5166,
+            5193
+          ],
+          "S": [
+            5193,
+            5145,
+            5180,
+            5198,
+            5150,
+            5159
+          ]
+        },
+        "hi": 360.6,
+        "lo": 26.8,
+        "matched_n": 6205,
+        "min_fold_n_train": 5137,
+        "n_in_band": {
+          "B": 13926,
+          "D": 7595,
+          "R": 8078,
+          "S": 11395
+        },
+        "rung": "p5",
+        "tail_fraction": 0.05,
+        "well_posed": true
+      }
+    ],
+    "protocol": "u_last context summary, layer 31, six IID random folds (seed 190231), K=5 mean answer targets (seeds 42,45,46,47,48)",
+    "script": "scripts/issue1902_k5_length_control.py",
+    "timestamp_utc": "2026-09-09T14:49:45Z"
+  },
+  "unmatched_reference": {
+    "B": {
+      "mean_ss_res": 228.0628833725298,
+      "mean_ss_tot": 701.2527378378542,
+      "median_cos": 0.9406063155337205,
+      "n": 16391,
+      "r2": 0.6747779066421795,
+      "r2_row_ci95": [
+        0.6720311533097865,
+        0.6771780872354534
+      ]
+    },
+    "D": {
+      "mean_ss_res": 174.74664318651753,
+      "mean_ss_tot": 443.3231596670639,
+      "median_cos": 0.8661800625607476,
+      "n": 16391,
+      "r2": 0.6058255938675696,
+      "r2_row_ci95": [
+        0.6017673118520027,
+        0.6094428529487526
+      ]
+    },
+    "R": {
+      "mean_ss_res": 180.85824732026404,
+      "mean_ss_tot": 451.11901875809457,
+      "median_cos": 0.860440054618262,
+      "n": 16391,
+      "r2": 0.5990897306476755,
+      "r2_row_ci95": [
+        0.5949771961124715,
+        0.602636933441758
+      ]
+    },
+    "S": {
+      "mean_ss_res": 227.516509040081,
+      "mean_ss_tot": 620.9864908097014,
+      "median_cos": 0.8924555506677266,
+      "n": 16391,
+      "r2": 0.6336208397328849,
+      "r2_row_ci95": [
+        0.6302114558347663,
+        0.6363919971245319
+      ]
+    }
+  },
+  "verdict": "On the paper's own protocol, Base's top position survives the length control: matched (band 27-361 tokens, n=6205/stage, n_train > d) R^2 is Base 0.621 > DPO 0.594 > SFT 0.589 > RLVR 0.585, with Base-minus-SFT +0.032 [+0.027, +0.038] and Base-minus-DPO +0.028 [+0.022, +0.035]. The SFT > DPO step does not: matched DPO-minus-SFT is +0.005 [-0.002, +0.011] (indistinguishable from 0). Matching compresses Base's mean SS_tot (unmatched 701 -> matched 635), confirming the denominator mechanism, but the surviving Base lead and its highest median cosine (0.932) show the advantage is not purely denominator-driven."
+}

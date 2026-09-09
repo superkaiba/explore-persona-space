@@ -1,0 +1,17 @@
+{
+  "abs_diff_r2": 2.220446049250313e-16,
+  "lambda_fast": 1000.0,
+  "lambda_slow": 1000.0,
+  "n_eval": 1021,
+  "n_train": 5184,
+  "note": "same-inputs parity of the shared fast core (issue_779.fit_h.ridge_fit_predict_fast_layer_batched, no dof cap) against the committed SharedPrimalRidge on a well-posed matched slice",
+  "pass": true,
+  "r2_fast": 0.6215302844290442,
+  "r2_slow": 0.621530284429044,
+  "slice": {
+    "design": "primary",
+    "fold": 0,
+    "stage": "B"
+  },
+  "tolerance": 0.0001
+}
