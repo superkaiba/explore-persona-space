@@ -58,6 +58,15 @@ def write_receipt(path: Path, record: dict) -> None:
     temporary.replace(path)
 
 
+def check_source(expected: str) -> None:
+    """Fence the actual bootstrap clone before any runtime install or model work."""
+    actual = subprocess.check_output(
+        ["git", "-C", str(REPO_ROOT), "rev-parse", "HEAD"], text=True, timeout=30
+    ).strip()
+    if actual != expected:
+        raise RuntimeError(f"K3 workload source mismatch: expected {expected}, found {actual}")
+
+
 def driver_check() -> dict:
     """Require a visible CUDA-13-capable driver; no no-GPU or waiver fallback."""
     smi = shutil.which("nvidia-smi")
@@ -209,10 +218,20 @@ def main() -> int:
     action.add_argument("--pilot", action="store_true")
     action.add_argument("--cell")
     parser.add_argument("--check-runtime", action="store_true")
+    parser.add_argument("--source-sha", help="require this exact bootstrap clone commit")
     parser.add_argument(
         "--out-root", type=Path, default=REPO_ROOT / "data/issue_2588/k3_train_refit"
     )
     args = parser.parse_args()
+    if args.source_sha:
+        check_source(args.source_sha)
+        # The source-pinned single-cell GCP owner uses this exact workload PID,
+        # since GCP's coarse running state does not prove a model job started.
+        cell_key = "q3_32b_a" if args.pilot else args.cell
+        if not re.fullmatch(r"[a-z0-9_]+", cell_key):
+            raise ValueError("invalid cell key for workload PID breadcrumb")
+        pid_path = Path("/workspace/logs") / f"issue-2588-{cell_key}.pid"
+        pid_path.write_text(f"{os.getpid()}\n")
     # Match the shared-VM caps, before any heavy import or spawned interpreter.
     for name in (
         "OMP_NUM_THREADS",

@@ -79,3 +79,12 @@ def test_flashinfer_patch_preserves_docstring_and_is_idempotent():
 def test_flashinfer_patch_rejects_unexpected_source():
     with pytest.raises(RuntimeError, match="unexpected flashinfer source"):
         job.postponed_annotations("def f(x):\n    return x\n")
+
+
+def test_source_fence_checks_real_checkout():
+    actual = subprocess.check_output(
+        ["git", "-C", str(job.REPO_ROOT), "rev-parse", "HEAD"], text=True
+    ).strip()
+    job.check_source(actual)
+    with pytest.raises(RuntimeError, match="source mismatch"):
+        job.check_source("0" * 40)
