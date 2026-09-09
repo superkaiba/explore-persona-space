@@ -24,6 +24,7 @@ def config(tmp_path, **changes):
         full_grid=True,
         draw_revision="a" * 40,
         reuse_root=[],
+        flag_counts_root=None,
         target_layers=[31],
         stage_root=tmp_path / "store",
         k5_root=tmp_path / "new",
@@ -122,3 +123,40 @@ def test_real_fullgrid_fits_baseline_and_retrieval(tmp_path, monkeypatch):
         side_effect=AssertionError("unexpected refit"),
     ):
         K.run_grid(cfg)
+
+
+def test_saved_flag_counts_preserve_targets_and_validate_rows(tmp_path, monkeypatch):
+    import hashlib
+
+    from huggingface_hub import HfApi
+    from huggingface_hub.hf_api import RepoFile
+
+    flags_root = tmp_path / "flags"
+    flags_root.mkdir()
+    cfg = config(tmp_path, flag_counts_root=flags_root)
+    ids = ["a", "b", "c"]
+    counts = np.array([0, 2, 5], dtype=np.int64)
+    artifact = flags_root / "SS_L31.npz"
+    np.savez(artifact, row_ids=ids, seeds=cfg.seeds, n_flagged=counts)
+    content = artifact.read_bytes()
+    blob = hashlib.sha1(b"blob " + str(len(content)).encode() + b"\0" + content).hexdigest()
+    entry = RepoFile(path="SS_L31.npz", size=len(content), oid=blob)
+    fake = create_autospec(HfApi.get_paths_info, return_value=[entry])
+    monkeypatch.setattr(HfApi, "get_paths_info", fake)
+    saved = K._saved_flag_counts(cfg, "S", ids)
+    assert fake.call_args.kwargs["revision"] == cfg.draw_revision
+    assert saved == {"a": 0, "b": 2, "c": 5}
+    with pytest.raises(RuntimeError, match="row/seed mismatch"):
+        K._saved_flag_counts(cfg, "S", ids[::-1])
+    monkeypatch.setattr(K, "_check_source_identity", create_autospec(K._check_source_identity))
+    draws = []
+    for i, seed in enumerate(cfg.seeds):
+        w = np.arange(6, dtype=np.float32).reshape(3, 2) + i
+        draws.append(w)
+        path = cfg.k5_root / K._draw_answer_relpath("B", "S", seed, 31)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        torch.save({"w": torch.from_numpy(w), "row_ids": ids}, path)
+    K._build_cell_targets(cfg, "B", "S", 31, ids, {}, saved)
+    result = np.load(cfg.target_path("B", "S", 31))
+    np.testing.assert_array_equal(result["w_bar"], np.mean(draws, axis=0))
+    np.testing.assert_array_equal(result["n_flagged"], counts)

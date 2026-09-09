@@ -20,6 +20,7 @@ else
 fi
 ARGS=(--full-grid --draw-revision f0b2131442326ef274c91bea6da27e05ef844df6
       --target-layers 31 --out "$OUT" --k5-root "$DATA/store"
+      --flag-counts-root /mnt/eps-data/thomasjiralerspong/wt-1902-k5/eval_results/issue_1902/k5_targets/targets
       --reuse-root /mnt/eps-data/thomasjiralerspong/wt-1902-k5/data/issue_1902/k5_store)
 for phase in stage targets grid transfer retrieval scatter figure; do
   echo "[resume] phase=$phase started=$(date -u +%FT%TZ)"

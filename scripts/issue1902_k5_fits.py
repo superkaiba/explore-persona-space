@@ -170,7 +170,9 @@ def _check_source_identity(cfg: Config, path: Path, relpath: str) -> None:
     from explore_persona_space.orchestrate import hub
 
     revision = (
-        cfg.draw_revision if "/k5draws/" in relpath or "_k5_seed" in relpath else LC.HF_REVISION
+        cfg.draw_revision
+        if "/k5draws/" in relpath or "_k5_seed" in relpath or "/k5_targets/targets/" in relpath
+        else LC.HF_REVISION
     )
     stat = path.stat()
     key = (str(path), stat.st_size, stat.st_mtime_ns, revision)
@@ -324,6 +326,7 @@ class Config:
         self.draw_revision: str | None = args.draw_revision
         self.verified_sources: set[tuple] = set()
         self.reuse_roots: list[Path] = args.reuse_root
+        self.flag_counts_root: Path | None = args.flag_counts_root
         self.target_layers: tuple[int, ...] = tuple(args.target_layers)
         if self.full_grid and self.smoke:
             raise ValueError(
@@ -363,6 +366,7 @@ class Config:
                 "n_folds": N_FOLDS,
                 "context_summary": "u_last",
                 "estimator": "SharedPrimalRidge-GCV",
+                "flag_counts_root": str(self.flag_counts_root) if self.flag_counts_root else None,
             }
             if manifest.exists():
                 if json.loads(manifest.read_text()) != identity:
@@ -453,6 +457,7 @@ def _build_cell_targets(
     layer: int,
     ref_ids: list[str],
     flag_maps: dict[int, dict[str, bool]],
+    flag_counts: dict[str, int] | None = None,
 ) -> dict[str, int]:
     draws: dict[int, tuple[np.ndarray, dict[str, int]]] = {}
     for seed in cfg.seeds:
@@ -494,15 +499,18 @@ def _build_cell_targets(
     spread /= k - 1
     del aligned
     n_flagged = np.zeros(len(rows), dtype=np.int64)
-    for seed in cfg.seeds:
-        fm = flag_maps[seed]
-        missing_flags = [rid for rid in rows if rid not in fm]
-        if missing_flags:
-            raise RuntimeError(
-                f"rollout flags missing for cell ({m},{s}) seed {seed}: "
-                f"{len(missing_flags)} rows (first: {missing_flags[:3]})"
-            )
-        n_flagged += np.asarray([fm[rid] for rid in rows], dtype=np.int64)
+    if flag_counts is not None:
+        n_flagged = np.asarray([flag_counts[rid] for rid in rows], dtype=np.int64)
+    else:
+        for seed in cfg.seeds:
+            fm = flag_maps[seed]
+            missing_flags = [rid for rid in rows if rid not in fm]
+            if missing_flags:
+                raise RuntimeError(
+                    f"rollout flags missing for cell ({m},{s}) seed {seed}: "
+                    f"{len(missing_flags)} rows (first: {missing_flags[:3]})"
+                )
+            n_flagged += np.asarray([fm[rid] for rid in rows], dtype=np.int64)
     LC._savez(
         cfg.target_path(m, s, layer),
         row_ids=np.asarray(rows),
@@ -515,7 +523,29 @@ def _build_cell_targets(
     return {"n_rows": len(rows), "k": k}
 
 
+def _saved_flag_counts(cfg: Config, source: str, ref_ids: list[str]) -> dict[str, int]:
+    """Reuse source-only counts from a Hub-verified prior K5 target artifact."""
+    assert cfg.flag_counts_root is not None
+    name = f"{source}{source}_L31.npz"
+    path = cfg.flag_counts_root / name
+    rel = f"{C.HF_PREFIX}/analysis_tensors/k5_targets/targets/{name}"
+    _check_source_identity(cfg, path, rel)
+    with np.load(path, allow_pickle=False) as payload:
+        ids = [str(v) for v in payload["row_ids"]]
+        counts = np.asarray(payload["n_flagged"])
+        seeds = payload["seeds"].tolist()
+    if ids != ref_ids or len(set(ids)) != len(ids) or seeds != list(cfg.seeds):
+        raise RuntimeError(f"prior flag artifact row/seed mismatch: {path}")
+    if counts.shape != (len(ids),) or not np.issubdtype(counts.dtype, np.integer):
+        raise RuntimeError(f"prior flag artifact count shape/dtype mismatch: {path}")
+    if np.any((counts < 0) | (counts > len(cfg.seeds))):
+        raise RuntimeError(f"prior flag artifact count outside [0,K]: {path}")
+    _log(f"[targets] reused Hub-verified K5 flag counts for {source}, rows={len(ids)}")
+    return dict(zip(ids, counts.tolist(), strict=True))
+
+
 def run_targets(cfg: Config) -> None:
+    """Construct mean targets; flags depend only on answer source and draw seeds."""
     _, ref_ids = _reference_rows()
     pending = {
         (m, s, layer)
@@ -524,15 +554,22 @@ def run_targets(cfg: Config) -> None:
         if cfg.force or not cfg.target_path(m, s, layer).exists()
     }
     flag_maps: dict[str, dict[int, dict[str, bool]]] = {}
+    saved_counts: dict[str, dict[str, int]] = {}
     for src in sorted({s for _, s, _ in pending}):
-        flag_maps[src] = {seed: _flag_map(cfg, src, seed) for seed in cfg.seeds}
+        if cfg.flag_counts_root is not None:
+            saved_counts[src] = _saved_flag_counts(cfg, src, ref_ids)
+            flag_maps[src] = {}
+        else:
+            flag_maps[src] = {seed: _flag_map(cfg, src, seed) for seed in cfg.seeds}
     n_cells = 0
     for m, s in cfg.cells:
         for layer in cfg.target_layers:
             if (m, s, layer) not in pending:
                 _log(f"[targets] {m}{s} L{layer}: resumed")
                 continue
-            stats = _build_cell_targets(cfg, m, s, layer, ref_ids, flag_maps[s])
+            stats = _build_cell_targets(
+                cfg, m, s, layer, ref_ids, flag_maps[s], saved_counts.get(s)
+            )
             n_cells += 1
             _log(f"[targets] {m}{s} L{layer}: rows={stats['n_rows']} k={stats['k']} written")
     _log(f"[targets] built {n_cells} cell-layer target files (counts only)")
@@ -910,6 +947,7 @@ def _write_summary(cfg: Config) -> None:
             "hf_revision_seed42": LC.HF_REVISION,
             "k5_draw_revision": cfg.draw_revision or "main (post-pin pod uploads)",
             "full_grid": cfg.full_grid,
+            "flag_counts_root": str(cfg.flag_counts_root) if cfg.flag_counts_root else None,
             "cells": ["".join(c) for c in cfg.cells],
             "layer": LAYER,
             "corpus": CORPUS,
@@ -1230,6 +1268,11 @@ def main() -> None:
     parser.add_argument("--full-grid", action="store_true", help="Use all 16 captured K=5 cells")
     parser.add_argument("--draw-revision", help="Immutable Hub revision for seeds 45-48")
     parser.add_argument("--reuse-root", type=Path, action="append", default=[])
+    parser.add_argument(
+        "--flag-counts-root",
+        type=Path,
+        help="Prior K5 targets; verify Hub bytes, row IDs, and seeds before reusing counts",
+    )
     parser.add_argument(
         "--target-layers", type=int, nargs="+", choices=TARGET_LAYERS, default=list(TARGET_LAYERS)
     )
