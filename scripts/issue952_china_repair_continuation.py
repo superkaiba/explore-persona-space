@@ -336,6 +336,10 @@ def validate_continuation(out_dir: Path) -> dict:
         for key in ("packet_path", "receipt_path", "output_path"):
             old_record[key] = str(_rebase(out_dir, old_record[key], "private"))
     completed, old = _old_triples(out_dir, original)
+    if len(completed) + len(old_ref_keys) != original["n_assignments"]:
+        raise ValueError("completed plus pending assignments do not cover original design")
+    if completed.intersection(old_ref_keys):
+        raise ValueError("pending lookup includes a completed original assignment")
     old_entries = {(lane, info["opaque_id"]): entry for entry in old["lookup"]
                    for lane, info in entry["lanes"].items()}
     old_items = {}
