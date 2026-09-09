@@ -49,9 +49,11 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     better_label,
     c2a_figure,
     legend_kicker,
+    metric_style,
     panel_header,
     save_c2a_figure,
     set_c2a_style,
+    style_axis,
     style_score_axis,
 )
 
@@ -130,6 +132,170 @@ def _load_scaling_data(path: Path, extension: dict | None = None) -> dict:
 # The boundary-token control is a null, so it takes the paper-wide control role.
 BOUNDARY_COLOR = ROLES["control"].color
 DEFAULT_EXTENSION_SOURCE = ROOT / "eval_results/issue_1901/figure2_extension_1200.json"
+DEFAULT_BASELINES_SOURCE = ROOT / "eval_results/issue_1901/fig2_baselines/fig2_baselines.json"
+
+# Panel C arms: (key in fig2_baselines per_arm | banked copy baselines, reader label,
+# color). Colors reuse the paper-wide semantic palette: the linear map keeps the
+# ``linear`` hue, encoder-input arms take the ``other_source`` amber (representation
+# from another model), and every control/null is muted gray.
+_ENCODER_COLOR = ROLES["other_source"].color
+BASELINE_ARMS: dict[str, dict] = {
+    "anchor": {"label": "Linear map", "color": ROLES["linear"].color},
+    "enc_e5": {"label": "Encoder (e5)", "color": _ENCODER_COLOR},
+    "enc_bge_cls": {"label": "Encoder (BGE)", "color": _ENCODER_COLOR},
+    "pca1024": {"label": "PCA-1024", "color": ROLES["control"].color},
+    "floor_e5": {"label": "Encoder cosine", "color": _ENCODER_COLOR},
+    "identity_bias": {"label": "Copy + bias", "color": ROLES["control"].color},
+    "identity_copy": {"label": "Copy", "color": ROLES["control"].color},
+    "shuffled": {"label": "Shuffled pairs", "color": ROLES["control"].color},
+}
+
+
+def _load_baselines_data(path: Path, extension: dict) -> dict:
+    """Panel C: paper-convention baselines at n_train=25,000.
+
+    Driver arms come from ``fig2_baselines.json`` (issue1901_encoder_paperconv.py);
+    the two copy baselines are the banked ``figure2_extension_1200.json`` values the
+    extension loader already carries (same convention, verified in that producer).
+    """
+    source = json.loads(path.read_text())
+    if source.get("smoke"):
+        raise ValueError(f"{path} is a smoke artifact; refusing to draw it on a paper figure")
+    gate = source["step1_gate"]
+    if not gate.get("gated") or gate["d_r2"] > gate["tol"] or gate["d_top1"] > gate["tol"]:
+        raise ValueError(f"{path} step1 gate not passed: {gate}")
+    per_arm = dict(source["per_arm"])
+    per_arm["identity_bias"] = {
+        "r2": extension["identity_bias"]["r2"],
+        "top1": extension["identity_bias"]["retrieval"],
+        "top1_ci95": extension["identity_bias"].get("top1_ci95"),
+    }
+    per_arm["identity_copy"] = {
+        "r2": extension["identity_copy"]["r2"],
+        "top1": extension["identity_copy"]["retrieval"],
+        "top1_ci95": extension["identity_copy"].get("top1_ci95"),
+    }
+    arms = []
+    for key, style in BASELINE_ARMS.items():
+        rec = per_arm[key]
+        ci = rec.get("top1_ci95")
+        arms.append(
+            {
+                "key": key,
+                "label": style["label"],
+                "color": style["color"],
+                "r2": None if rec["r2"] is None else float(rec["r2"]),
+                "top1": float(rec["top1"]),
+                "top1_ci95": None if ci is None else [float(ci["lo"]), float(ci["hi"])],
+            }
+        )
+    arms.sort(key=lambda arm: -arm["top1"])
+    return {
+        "arms": arms,
+        "n_train": int(source["n_train"]),
+        "layer": int(source["layer"]),
+        "convention": source["convention"],
+        "extra_arms_not_drawn": {
+            k: {"r2": per_arm[k]["r2"], "top1": per_arm[k]["top1"]}
+            for k in per_arm
+            if k not in BASELINE_ARMS
+        },
+    }
+
+
+def _plot_baselines_panel(fig: plt.Figure, cell, baselines: dict) -> None:
+    """Panel C: one hatched-open top-1 bar per arm (primary, top sub-axis) and one
+    filled R^2 bar per arm below, negatives drawn at full extent (never clipped).
+    Retrieval-only arms have no R^2 bar. Bar fill/hatch follows the figure-wide
+    metric encoding, so the existing Metric legend covers both sub-axes."""
+    inner = cell.subgridspec(2, 1, height_ratios=[1.35, 1.0], hspace=0.42)
+    ax_top = fig.add_subplot(inner[0, 0])
+    ax_r2 = fig.add_subplot(inner[1, 0])
+    arms = baselines["arms"]
+    x = np.arange(len(arms), dtype=float)
+
+    style_axis(ax_top, grid_axis="y")
+    ax_top.set_ylim(0.0, 1.02)
+    ax_top.set_yticks([0.0, 0.5, 1.0])
+    panel_header(
+        ax_top,
+        "C",
+        f"layer {baselines['layer']}, {baselines['n_train']:,} contexts",
+        "Baselines",
+        kicker_y=1.42,
+        title_y=1.14,
+    )
+    top1_style = metric_style("top1")
+    for i, arm in enumerate(arms):
+        ax_top.bar(
+            x[i],
+            arm["top1"],
+            width=0.64,
+            facecolor=PAPER,
+            edgecolor=arm["color"],
+            linewidth=1.6,
+            hatch=top1_style["hatch"],
+            zorder=3,
+        )
+        if arm["top1_ci95"] is not None:
+            lo, hi = arm["top1_ci95"]
+            ax_top.errorbar(
+                x[i],
+                arm["top1"],
+                yerr=[[arm["top1"] - lo], [hi - arm["top1"]]],
+                fmt="none",
+                ecolor=INK,
+                elinewidth=1.3,
+                capsize=2.6,
+                zorder=4,
+            )
+    ax_top.set_xlim(-0.7, len(arms) - 0.3)
+    ax_top.set_xticks(x)
+    ax_top.set_xticklabels([])
+    ax_top.text(
+        0.985,
+        0.94,
+        better_label(METRIC_LABELS["top1"]).upper().replace("$R^2$", "R\u00b2"),
+        transform=ax_top.transAxes,
+        ha="right",
+        va="top",
+        fontsize=10.5,
+        fontweight=700,
+        color=MUTED,
+    )
+
+    style_axis(ax_r2, grid_axis="y")
+    r2_values = [arm["r2"] for arm in arms if arm["r2"] is not None]
+    y_floor = float(np.floor(min(r2_values) * 2) / 2) - 0.1
+    ax_r2.set_ylim(y_floor, 1.0)
+    ax_r2.set_yticks([-2, -1, 0, 1])
+    ax_r2.axhline(0.0, color=MUTED, lw=1.0, alpha=0.7, zorder=2)
+    for i, arm in enumerate(arms):
+        if arm["r2"] is None:
+            continue  # retrieval-only floor: no prediction in the target space
+        ax_r2.bar(
+            x[i],
+            arm["r2"],
+            width=0.64,
+            facecolor=arm["color"],
+            edgecolor=arm["color"],
+            linewidth=0.0,
+            zorder=3,
+        )
+    ax_r2.set_xlim(-0.7, len(arms) - 0.3)
+    ax_r2.set_xticks(x)
+    ax_r2.set_xticklabels([arm["label"] for arm in arms], rotation=38, ha="right")
+    ax_r2.text(
+        0.985,
+        0.92,
+        better_label(METRIC_LABELS["r2"]).upper().replace("$R^2$", "R\u00b2"),
+        transform=ax_r2.transAxes,
+        ha="right",
+        va="top",
+        fontsize=10.5,
+        fontweight=700,
+        color=MUTED,
+    )
 
 
 def _load_boundary_data(path: Path) -> dict:
@@ -168,12 +334,18 @@ def _load_extension_data(path: Path) -> dict:
         }
         rows.append({"x": int(n_text), "arms": arms})
     ib = source["baselines"]["identity_bias"]
+    ic = source["baselines"]["identity_copy"]
     return {
         "rows": rows,
-        "identity_bias": {"r2": float(ib["r2"]), "retrieval": float(ib["top1"])},
+        "identity_bias": {
+            "r2": float(ib["r2"]),
+            "retrieval": float(ib["top1"]),
+            "top1_ci95": ib.get("top1_ci95"),
+        },
         "identity_copy": {
-            "r2": float(source["baselines"]["identity_copy"]["r2"]),
-            "retrieval": float(source["baselines"]["identity_copy"]["top1"]),
+            "r2": float(ic["r2"]),
+            "retrieval": float(ic["top1"]),
+            "top1_ci95": ic.get("top1_ci95"),
         },
         "convention": source["convention"],
     }
@@ -294,19 +466,37 @@ def _legend_handles() -> tuple[list[Line2D], list[Line2D]]:
 
 
 def make_figure(
-    layer: dict, scaling: dict, boundary: dict | None = None, extension: dict | None = None
+    layer: dict,
+    scaling: dict,
+    boundary: dict | None = None,
+    extension: dict | None = None,
+    baselines: dict | None = None,
 ) -> tuple[plt.Figure, float]:
     set_c2a_style()
-    fig, include_frac = c2a_figure("full", aspect=0.36)
-    grid = fig.add_gridspec(
-        1,
-        2,
-        left=0.075,
-        right=0.985,
-        top=0.594,
-        bottom=0.143,
-        wspace=0.20,
-    )
+    if baselines is None:
+        fig, include_frac = c2a_figure("full", aspect=0.36)
+        grid = fig.add_gridspec(
+            1,
+            2,
+            left=0.075,
+            right=0.985,
+            top=0.594,
+            bottom=0.143,
+            wspace=0.20,
+        )
+    else:
+        fig, include_frac = c2a_figure("full", aspect=0.42)
+        grid = fig.add_gridspec(
+            1,
+            3,
+            left=0.075,
+            right=0.985,
+            top=0.634,
+            bottom=0.185,
+            wspace=0.38,
+            width_ratios=[1.0, 1.0, 0.94],
+        )
+        _plot_baselines_panel(fig, grid[0, 2], baselines)
     ax_layer = fig.add_subplot(grid[0, 0])
     ax_scale = fig.add_subplot(grid[0, 1])
 
@@ -351,7 +541,10 @@ def make_figure(
     ax_scale.set_ylabel(better_label("Score"), labelpad=13)
 
     predictor_handles, metric_handles = _legend_handles()
-    row_y = 0.936 if not controls else 0.851
+    if baselines is not None:
+        row_y = 0.872  # taller canvas: same absolute legend band under the control row
+    else:
+        row_y = 0.936 if not controls else 0.851
     # Figure-level kicker: the model, right-aligned on the topmost kicker row.
     fig.text(
         0.985,
@@ -454,6 +647,8 @@ def _write_outputs(
     boundary: dict | None = None,
     extension_source: Path | None = None,
     extension: dict | None = None,
+    baselines_source: Path | None = None,
+    baselines: dict | None = None,
 ) -> dict[str, Path]:
     stem = out_dir / stem_name
     outputs = save_c2a_figure(
@@ -527,8 +722,30 @@ def _write_outputs(
                             "sha256": _sha256(extension_source),
                         },
                         "encoding": "1,200-context rung joins the predictor curves; the copy-context "
-                        "baselines are recorded here but not drawn",
+                        "baselines are recorded here but not drawn"
+                        + (
+                            ""
+                            if baselines is None
+                            else " on panel B (panel C draws them at the 25k rung)"
+                        ),
                         **extension,
+                    }
+                ),
+                "baselines_panel": (
+                    None
+                    if baselines is None
+                    else {
+                        "source": {
+                            "path": _display_path(baselines_source),
+                            "sha256": _sha256(baselines_source),
+                        },
+                        "encoding": (
+                            "panel C, arms sorted by top-1: hatched open bars = top-1 "
+                            "retrieval (95% CI where banked), filled bars = held-out R^2 "
+                            "with negatives at full extent; retrieval-only arms have no "
+                            "R^2 bar; copy baselines reused from the extension source"
+                        ),
+                        **baselines,
                     }
                 ),
                 "output_sha256": {
@@ -554,6 +771,10 @@ def main() -> None:
     parser.add_argument(
         "--no-extension", action="store_true", help="render without the 1,200 rung + copy baselines"
     )
+    parser.add_argument("--baselines-source", type=Path, default=DEFAULT_BASELINES_SOURCE)
+    parser.add_argument(
+        "--no-baselines", action="store_true", help="render without the panel-C baselines"
+    )
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--stem", default=DEFAULT_STEM)
     args = parser.parse_args()
@@ -562,6 +783,11 @@ def main() -> None:
     extension = None if args.no_extension else _load_extension_data(args.extension_source)
     scaling = _load_scaling_data(args.scaling_source, extension)
     boundary = None if args.no_boundary else _load_boundary_data(args.boundary_source)
+    baselines = None
+    if not args.no_baselines:
+        if args.no_extension:
+            raise SystemExit("panel C reuses the extension copy baselines; drop --no-extension")
+        baselines = _load_baselines_data(args.baselines_source, extension)
     assert layer["n_test"] == scaling["n_test"] == 1_000
     for dataset in (layer, scaling):
         for row in dataset["rows"]:
@@ -569,9 +795,14 @@ def main() -> None:
                 assert np.isfinite(values["r2"])
                 assert 0.0 <= values["r2"] <= 1.0
                 assert 0.0 <= values["retrieval"] <= 1.0
+    if baselines is not None:
+        for arm in baselines["arms"]:
+            assert 0.0 <= arm["top1"] <= 1.0, arm
+            # R^2 may be legitimately negative (copy baselines); never clipped, only bounded.
+            assert arm["r2"] is None or (np.isfinite(arm["r2"]) and -10.0 < arm["r2"] <= 1.0), arm
 
     git_state = _git_state()
-    fig, include_frac = make_figure(layer, scaling, boundary, extension)
+    fig, include_frac = make_figure(layer, scaling, boundary, extension, baselines)
     outputs = _write_outputs(
         fig,
         args.out_dir,
@@ -586,6 +817,8 @@ def main() -> None:
         boundary=boundary,
         extension_source=None if args.no_extension else args.extension_source,
         extension=extension,
+        baselines_source=None if baselines is None else args.baselines_source,
+        baselines=baselines,
     )
     plt.close(fig)
     for kind, path in outputs.items():

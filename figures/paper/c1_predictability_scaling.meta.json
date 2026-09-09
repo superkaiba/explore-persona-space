@@ -8,7 +8,7 @@
   "repository_manuscript_asset": "figures/paper/c1_predictability_scaling.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
-    "commit": "59f89b77a84a68c299ffc6e9fd48971b6d179e1c",
+    "commit": "697a6a9eb89641619a021f9d4a3bef7c0b9b5a00",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -27,11 +27,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      4.714
+      5.5
     ],
     "exported_size_inches": [
       13.095,
-      4.89
+      5.917
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -45,9 +45,27 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
+      "C  \u00b7  LAYER 19, 25,000 CONTEXTS",
+      "TOP-1 RETRIEVAL \u2191",
+      "0.0",
+      "0.5",
+      "1.0",
+      "Baselines",
+      "HELD-OUT R\u00b2 \u2191",
+      "Linear map",
+      "PCA-1024",
+      "Encoder (e5)",
+      "Encoder (BGE)",
+      "Copy + bias",
+      "Copy",
+      "Encoder cosine",
+      "Shuffled pairs",
+      "\u22122",
+      "\u22121",
+      "0",
+      "1",
       "A  \u00b7  50,000 TRAINING CONTEXTS",
       "Model layer",
-      "0",
       "5",
       "10",
       "15",
@@ -55,12 +73,10 @@
       "25",
       "27",
       "Held-out $R^2$ \u2191",
-      "0.5",
       "0.6",
       "0.7",
       "0.8",
       "0.9",
-      "1",
       "Predictability across layers",
       "B  \u00b7  LAYER 19",
       "Training contexts",
@@ -666,7 +682,7 @@
       "path": "eval_results/issue_1901/figure2_extension_1200.json",
       "sha256": "8059ce3af58a576f08fd1bd93392e51bf6f8515964cbf2dd90b68c2a5e6a0a3e"
     },
-    "encoding": "1,200-context rung joins the predictor curves; the copy-context baselines are recorded here but not drawn",
+    "encoding": "1,200-context rung joins the predictor curves; the copy-context baselines are recorded here but not drawn on panel B (panel C draws them at the 25k rung)",
     "rows": [
       {
         "x": 1200,
@@ -684,17 +700,131 @@
     ],
     "identity_bias": {
       "r2": -0.9200245082624223,
-      "retrieval": 0.7133757961783439
+      "retrieval": 0.7133757961783439,
+      "top1_ci95": {
+        "lo": 0.6836518046709129,
+        "hi": 0.7420382165605095
+      }
     },
     "identity_copy": {
       "r2": -2.69937843767959,
-      "retrieval": 0.6624203821656051
+      "retrieval": 0.6624203821656051,
+      "top1_ci95": {
+        "lo": 0.6305732484076433,
+        "hi": 0.6932059447983014
+      }
     },
     "convention": "identical to figure2_five_rollout_scaling: five-rollout mean targets, whitened cosine + two-sided CSLS (K=10), 942-answer pool, banked 963,444-row whitening"
   },
+  "baselines_panel": {
+    "source": {
+      "path": "eval_results/issue_1901/fig2_baselines/fig2_baselines.json",
+      "sha256": "eb16cb2fc80b5a9898041b6f5bffb56e338e795ad3925dd3e0575d94dcef9c86"
+    },
+    "encoding": "panel C, arms sorted by top-1: hatched open bars = top-1 retrieval (95% CI where banked), filled bars = held-out R^2 with negatives at full extent; retrieval-only arms have no R^2 bar; copy baselines reused from the extension source",
+    "arms": [
+      {
+        "key": "anchor",
+        "label": "Linear map",
+        "color": "#176B87",
+        "r2": 0.7781668256904426,
+        "top1": 0.9596602972399151,
+        "top1_ci95": [
+          0.945859872611465,
+          0.9713641188959659
+        ]
+      },
+      {
+        "key": "pca1024",
+        "label": "PCA-1024",
+        "color": "#687078",
+        "r2": 0.7661536349443496,
+        "top1": 0.945859872611465,
+        "top1_ci95": [
+          0.9309978768577495,
+          0.9596602972399151
+        ]
+      },
+      {
+        "key": "enc_e5",
+        "label": "Encoder (e5)",
+        "color": "#C98A1B",
+        "r2": 0.4927269358880748,
+        "top1": 0.9012738853503185,
+        "top1_ci95": [
+          0.8821656050955414,
+          0.9203821656050956
+        ]
+      },
+      {
+        "key": "enc_bge_cls",
+        "label": "Encoder (BGE)",
+        "color": "#C98A1B",
+        "r2": 0.44987511333179053,
+        "top1": 0.8163481953290871,
+        "top1_ci95": [
+          0.7929936305732485,
+          0.8407643312101911
+        ]
+      },
+      {
+        "key": "identity_bias",
+        "label": "Copy + bias",
+        "color": "#687078",
+        "r2": -0.9200245082624223,
+        "top1": 0.7133757961783439,
+        "top1_ci95": [
+          0.6836518046709129,
+          0.7420382165605095
+        ]
+      },
+      {
+        "key": "identity_copy",
+        "label": "Copy",
+        "color": "#687078",
+        "r2": -2.69937843767959,
+        "top1": 0.6624203821656051,
+        "top1_ci95": [
+          0.6305732484076433,
+          0.6932059447983014
+        ]
+      },
+      {
+        "key": "floor_e5",
+        "label": "Encoder cosine",
+        "color": "#C98A1B",
+        "r2": null,
+        "top1": 0.2908704883227176,
+        "top1_ci95": [
+          0.2632430997876858,
+          0.3205944798301486
+        ]
+      },
+      {
+        "key": "shuffled",
+        "label": "Shuffled pairs",
+        "color": "#687078",
+        "r2": -0.029402554859490504,
+        "top1": 0.0010615711252653928,
+        "top1_ci95": [
+          0.0,
+          0.0031847133757961785
+        ]
+      }
+    ],
+    "n_train": 25000,
+    "layer": 19,
+    "convention": "identical to figure2_five_rollout_scaling: five-rollout mean targets, whitened cosine + two-sided CSLS (K=10), 942-answer pool, banked 963,444-row whitening, strict top-k with ties counted as failures; n_train=25,000 = the banked Job C draw",
+    "extra_arms_not_drawn": {
+      "floor_bge_cls": {
+        "r2": null,
+        "top1": 0.2346072186836518
+      }
+    }
+  },
   "output_sha256": {
-    "pdf": "57ba7546c98f9fb803ded892f5529a8609bba1cbc654a706b91e3c389e669d9a",
-    "png": "6ce7f6da9aec4f1e7c0cc6faf9e03b824887906ca2751907a626e37c3eeb1290",
-    "grayscale": "ab57380dd859299821f1cc7626ccb3668660793ef6d2428292c2f2bb078c6d6f"
+    "pdf": "3e814a8645dbff7633e0fb04ef2a39af45a6b7a42cda8747c05902bbf40d293f",
+    "png": "0e2979ebf69ba1b4ae7edfc983173fec996646f8a782fcfbbee91001465b11d3",
+    "grayscale": "b2b0d29f2d3c6c4e98831f481e1d25b71382f0c7769e1ee560b515d925be44ef"
   }
 }
