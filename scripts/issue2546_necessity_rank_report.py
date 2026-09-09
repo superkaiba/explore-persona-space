@@ -284,7 +284,7 @@ def figures(summary, root, destination):
     for subset in analysis.SUBSETS:
         fig, frac = c2a_figure("full", aspect=0.43)
         axes = fig.subplots(1, 2)
-        fig.subplots_adjust(left=0.085, right=0.98, bottom=0.18, top=0.70, wspace=0.31)
+        fig.subplots_adjust(left=0.105, right=0.98, bottom=0.18, top=0.70, wspace=0.35)
         for ax, kind, letter, title in zip(
             axes,
             ("rank", "diversity"),
@@ -351,6 +351,7 @@ def figures(summary, root, destination):
                 ax.set_xlim(1, 4096)
             else:
                 ax.set_xticks(range(3), labels=["Input", "Answer", "Fitted output"])
+                ax.set_xlim(-0.25, 2.45)
                 ax.set_ylabel("Effective rank")
                 ax.set_ylim(bottom=0)
             style_axis(ax)
@@ -378,6 +379,7 @@ def figures(summary, root, destination):
                 "render": export["record"],
                 "source_sha256": analysis.parent.sha256(root / "summary.json"),
                 "analysis_source": str(root / "summary.json"),
+                "producer_sha256": analysis.parent.sha256(Path(__file__)),
                 "plotted_values": summary["subsets"][subset]["arms"],
                 "uncertainty": "Rank panel dots: five dependent-fold validation-selected ranks evaluated on test. Diversity line: median and min-max over five overlapping training folds, not CI.",
                 "targets": "Thinking-off predicts own answers; both thinking-on states predict identical thinking-on answers.",
