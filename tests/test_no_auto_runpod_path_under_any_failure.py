@@ -30,9 +30,10 @@ runpod/gcp/nibi/fir/mila order while fellows stays revoked; both flags OFF →
 the historical 6-lane runpod/fellows/gcp order) by
 ``test_runpod_first_then_gcp_ladder_then_terminal_retry_rollback``, which
 re-derives the rollback default the way the
-``_gcp_rollback_build_for_legacy_suite`` autouse fixture family does in
-``tests/test_router.py`` (that fixture pins the pre-#2054 legacy order for
-the machinery suite).
+policy-rollback autouse fixture family does
+(``_policy_rollback_build_for_legacy_suite`` in ``tests/test_router.py``;
+``_gcp_rollback_build_for_legacy_suite`` in the sibling backend modules —
+those fixtures pin the legacy machinery orders for their suites).
 
 This module is a self-contained pointer so the literal acceptance command in
 the task body — `uv run pytest tests/test_no_auto_runpod_path_under_any_failure.py`
@@ -268,7 +269,7 @@ def test_runpod_first_then_gcp_ladder_then_terminal_retry_rollback(
     short lora-7b whose runpod-first lane capacity-misses walks EVERY GCP rung
     (all capacity-missing) and falls through to the RunPod TERMINAL rung — the
     LAST attempt in the trail. Re-derives the rollback default the way the
-    ``_gcp_rollback_build_for_legacy_suite`` fixture family used to, so this
+    policy-rollback fixture family used to, so this
     pointer module stays self-contained."""
     monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
     monkeypatch.setattr(
