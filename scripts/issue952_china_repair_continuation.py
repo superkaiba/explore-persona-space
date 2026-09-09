@@ -8,6 +8,7 @@ index that joins old and new triples by the original assignment identity.
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 from pathlib import Path
 from typing import Any
@@ -48,6 +49,26 @@ def _identity(agent_id: str) -> dict[str, Any]:
 
 def _json_bytes(value: object) -> bytes:
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode()
+
+
+def _authored_equal(left: dict, right: dict) -> bool:
+    """Compare the eleven authored fields canonically (including bool/int type)."""
+    fields = {"opaque_id", "rationale", "category", *judges.SCORES,
+              *judges.BEHAVIOR_FLAGS, "unassessable", "unassessable_reason"}
+    if set(left) != fields or set(right) != fields:
+        return False
+    return _json_bytes(left) == _json_bytes(right)
+
+
+def _relocation_skeleton(manifest: dict) -> dict:
+    """Erase only declared path relocations for exact runtime-view comparison."""
+    value = copy.deepcopy(manifest)
+    value["lookup_path"] = "<relocated>"
+    value["source_manifest_path"] = "<relocated>"
+    for record in value["packets"]:
+        for key in ("packet_path", "receipt_path", "output_path"):
+            record[key] = "<relocated>"
+    return value
 
 
 def _load_manifest(path: Path) -> dict:
@@ -101,8 +122,9 @@ def _old_triples(old_dir: Path, manifest: dict) -> tuple[set[tuple[str, str]], d
                 *judges.BEHAVIOR_FLAGS, "unassessable", "unassessable_reason",
             }
             if (not isinstance(authored, list) or len(authored) != len(rows)
-                    or any({key: row[key] for key in authored_fields} != supplied
-                           for row, supplied in zip(rows, authored, strict=True))):
+                    or any(not _authored_equal(
+                        {key: row[key] for key in authored_fields}, supplied
+                    ) for row, supplied in zip(rows, authored, strict=True))):
                 raise ValueError("original authored JSON differs from submitted output")
         census.append({
             "lane": record["lane"],
@@ -284,6 +306,9 @@ def validate_continuation(out_dir: Path) -> dict:
     runtime_path = _rebase(out_dir, manifest["original_runtime_manifest_path"], "private")
     if judges.sha_file(runtime_path) != manifest["original_runtime_manifest_sha256"]:
         raise ValueError("relocatable original runtime manifest bytes changed")
+    original_manifest_path = _rebase(out_dir, manifest["original_manifest_path"], "private")
+    if judges.sha_file(original_manifest_path) != manifest["original_manifest_sha256"]:
+        raise ValueError("original manifest bytes differ from preparation pin")
     for file_record in manifest["original_files"]:
         path = _rebase(out_dir, file_record["path"], "private")
         if (not path.is_file() or path.stat().st_size != file_record["bytes"]
@@ -296,7 +321,15 @@ def validate_continuation(out_dir: Path) -> dict:
     by_new = {(row["lane"], row["new_opaque_id"]): row for row in lookup}
     if len(by_new) != manifest["n_assignments"]:
         raise ValueError("continuation lookup assignment census mismatch")
+    old_ref_keys = [(row["lane"], row["old_opaque_id"]) for row in lookup]
+    if len(set(old_ref_keys)) != len(old_ref_keys):
+        raise ValueError("duplicate original assignment references")
     original = judges.read_json(runtime_path)
+    original_exact = judges.read_json(
+        original_manifest_path
+    )
+    if _relocation_skeleton(original) != _relocation_skeleton(original_exact):
+        raise ValueError("original runtime manifest differs beyond declared relocations")
     original["lookup_path"] = str(_rebase(out_dir, original["lookup_path"], "private"))
     original["source_manifest_path"] = str(_rebase(out_dir, original["source_manifest_path"], "private"))
     for old_record in original["packets"]:
@@ -331,6 +364,9 @@ def validate_continuation(out_dir: Path) -> dict:
             if old_key in completed or old_key not in old_items:
                 raise ValueError("continuation rejudges a completed or unknown assignment")
             old_item = old_items[old_key]
+            old_entry = old_entries[old_key]
+            if reference["item_id"] != old_entry["item_id"]:
+                raise ValueError("continuation item_id differs from original assignment")
             for field in ("question", "response", "question_sha256", "response_sha256",
                           "question_utf8_bytes", "response_utf8_bytes"):
                 if item[field] != old_item[field]:
@@ -361,8 +397,9 @@ def validate_continuation(out_dir: Path) -> dict:
             authored_fields = {"opaque_id", "rationale", "category", *judges.SCORES,
                                *judges.BEHAVIOR_FLAGS, "unassessable", "unassessable_reason"}
             if (not isinstance(authored, list) or len(authored) != len(rows)
-                    or any({key: row[key] for key in authored_fields} != supplied
-                           for row, supplied in zip(rows, authored, strict=True))):
+                    or any(not _authored_equal(
+                        {key: row[key] for key in authored_fields}, supplied
+                    ) for row, supplied in zip(rows, authored, strict=True))):
                 raise ValueError("continuation authored JSON differs from submitted output")
         census.append({"lane": lane, "packet_sha256": record["packet_sha256"], "receipt_sha256": receipt_sha,
                        "output_sha256": judges.sha_file(output_path), "n_rows": len(rows)})
