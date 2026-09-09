@@ -23,11 +23,13 @@ AGENTS = judges.AGENTS
 def _rebase(root: Path, value: str, marker: str) -> Path:
     """Resolve a preparation path after moving the continuation tree."""
     path = Path(value)
-    if path.exists():
-        return path
     if marker in path.parts:
-        return root.joinpath(*path.parts[path.parts.index(marker) :])
-    return root / path
+        candidate = root.joinpath(*path.parts[path.parts.index(marker) :])
+        return candidate
+    candidate = root / path
+    if path.is_absolute() and not candidate.is_relative_to(root):
+        raise ValueError(f"path is outside supplied continuation root: {path}")
+    return candidate
 
 
 def _identity(agent_id: str) -> dict[str, Any]:
@@ -258,6 +260,7 @@ def prepare(old_dir: Path, out_dir: Path, agent_ids: tuple[str, str]) -> dict:
         "original_manifest_sha256": judges.sha_file(old_manifest_path),
         "original_manifest_path": str((out_dir / "private" / "original_manifest.json").resolve()),
         "original_runtime_manifest_path": str(runtime_manifest_path.resolve()),
+        "original_runtime_manifest_sha256": judges.sha_file(runtime_manifest_path),
         "original_n_assignments": old_manifest["n_assignments"],
         "original_n_overlap": old_manifest["n_overlap"],
         "original_completed_assignments": len(completed),
@@ -278,6 +281,14 @@ def validate_continuation(out_dir: Path) -> dict:
     """Validate pending new triples and return structural coverage metadata."""
     out_dir = Path(out_dir).resolve()
     manifest = judges.read_json(out_dir / "manifest.json")
+    runtime_path = _rebase(out_dir, manifest["original_runtime_manifest_path"], "private")
+    if judges.sha_file(runtime_path) != manifest["original_runtime_manifest_sha256"]:
+        raise ValueError("relocatable original runtime manifest bytes changed")
+    for file_record in manifest["original_files"]:
+        path = _rebase(out_dir, file_record["path"], "private")
+        if (not path.is_file() or path.stat().st_size != file_record["bytes"]
+                or judges.sha_file(path) != file_record["sha256"]):
+            raise ValueError(f"original archive file hash mismatch: {file_record['path']}")
     lookup_path = _rebase(out_dir, manifest["lookup_path"], "private")
     if manifest.get("phase") != PHASE or manifest["lookup_sha256"] != judges.sha_file(lookup_path):
         raise ValueError("continuation manifest/index hash mismatch")
@@ -285,6 +296,20 @@ def validate_continuation(out_dir: Path) -> dict:
     by_new = {(row["lane"], row["new_opaque_id"]): row for row in lookup}
     if len(by_new) != manifest["n_assignments"]:
         raise ValueError("continuation lookup assignment census mismatch")
+    original = judges.read_json(runtime_path)
+    original["lookup_path"] = str(_rebase(out_dir, original["lookup_path"], "private"))
+    original["source_manifest_path"] = str(_rebase(out_dir, original["source_manifest_path"], "private"))
+    for old_record in original["packets"]:
+        for key in ("packet_path", "receipt_path", "output_path"):
+            old_record[key] = str(_rebase(out_dir, old_record[key], "private"))
+    completed, old = _old_triples(out_dir, original)
+    old_entries = {(lane, info["opaque_id"]): entry for entry in old["lookup"]
+                   for lane, info in entry["lanes"].items()}
+    old_items = {}
+    for old_record in original["packets"]:
+        packet = judges.read_json(Path(old_record["packet_path"]))
+        for item in packet["items"]:
+            old_items[(old_record["lane"], item["opaque_id"])] = item
     decisions = {}
     census = []
     for record in manifest["packets"]:
@@ -298,6 +323,23 @@ def validate_continuation(out_dir: Path) -> dict:
             raise ValueError("continuation packet runtime/phase mismatch")
         if len(packet["items"]) != record["n_items"] or [i["opaque_id"] for i in packet["items"]] != record["opaque_ids"]:
             raise ValueError("continuation packet item census mismatch")
+        for item in packet["items"]:
+            reference = by_new.get((lane, item["opaque_id"]))
+            if reference is None:
+                raise ValueError("new packet item lacks original assignment reference")
+            old_key = (lane, reference["old_opaque_id"])
+            if old_key in completed or old_key not in old_items:
+                raise ValueError("continuation rejudges a completed or unknown assignment")
+            old_item = old_items[old_key]
+            for field in ("question", "response", "question_sha256", "response_sha256",
+                          "question_utf8_bytes", "response_utf8_bytes"):
+                if item[field] != old_item[field]:
+                    raise ValueError("continuation content differs from original assignment")
+            expected_request = judges._request_hash(
+                item, {"item_id": reference["item_id"]}, PHASE, identity
+            )
+            if item["request_sha256"] != expected_request:
+                raise ValueError("continuation request hash differs from original assignment")
         receipt_path = _rebase(out_dir, record["receipt_path"], "packets")
         output_path = _rebase(out_dir, record["output_path"], "packets")
         if not receipt_path.exists() or not output_path.exists():
@@ -313,6 +355,15 @@ def validate_continuation(out_dir: Path) -> dict:
             if key not in by_new or key in decisions:
                 raise ValueError("continuation decision lacks unique original reference")
             decisions[key] = row
+        authored_path = packet_path.with_suffix(".authored.json")
+        if authored_path.exists():
+            authored = judges.read_json(authored_path)
+            authored_fields = {"opaque_id", "rationale", "category", *judges.SCORES,
+                               *judges.BEHAVIOR_FLAGS, "unassessable", "unassessable_reason"}
+            if (not isinstance(authored, list) or len(authored) != len(rows)
+                    or any({key: row[key] for key in authored_fields} != supplied
+                           for row, supplied in zip(rows, authored, strict=True))):
+                raise ValueError("continuation authored JSON differs from submitted output")
         census.append({"lane": lane, "packet_sha256": record["packet_sha256"], "receipt_sha256": receipt_sha,
                        "output_sha256": judges.sha_file(output_path), "n_rows": len(rows)})
     if set(decisions) != set(by_new):
