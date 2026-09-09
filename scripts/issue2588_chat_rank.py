@@ -18,13 +18,15 @@ import time
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-import scipy.linalg
-
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
+import scipy.linalg  # noqa: E402
 
 MODEL_REVISION = "b968826d9c46dd6066d109eabc6255188de91218"
 MANIFEST_REVISION = "815ff6d976c686af8672b27cfdfb1ce6b419c02c"
