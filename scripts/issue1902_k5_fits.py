@@ -8,6 +8,14 @@ R/R plus the base-representation row B/S, B/D, B/R). Every draw enters the
 mean (the #1491 main-paper protocol); per-context draw spread and flagged-draw
 counts are persisted next to the targets.
 
+``--full-grid --draw-revision <SHA>`` extends this to all sixteen cells,
+adds identity+bias and cosine/Euclidean held-out retrieval companions, and
+renders both the line and matrix views. It requires a fresh output directory
+on first use, binds derived caches to a run identity, and hash-verifies
+cached source files against their immutable Hub revision. The full-grid
+paper analysis needs only ``--target-layers 31``; captured L18 draws remain
+available separately on the Hub.
+
 Estimator, folds, transfer modes, and retrieval are IMPORTED from the
 committed pipeline, never re-implemented:
 
@@ -62,6 +70,7 @@ VM launches carry the shared-VM thread caps (#847)::
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 import time
@@ -86,6 +95,10 @@ import issue1902_common as C  # noqa: E402
 import issue1902_lasttoken_comparison as LC  # noqa: E402
 import issue1902_lasttoken_retrieval as RT  # noqa: E402
 import issue1902_lasttoken_transfer as XF  # noqa: E402
+from explore_persona_space.analysis.mapping_baselines import (  # noqa: E402
+    identity_bias_predict,
+    knn_retrieval,
+)
 
 STAGES = LC.STAGES  # ("B", "S", "D", "R")
 LAYER = LC.LAYER  # 31
@@ -111,6 +124,7 @@ CELLS7: tuple[tuple[str, str], ...] = (
     ("B", "R"),
 )
 DIAG_CELLS: tuple[tuple[str, str], ...] = tuple((s, s) for s in STAGES)
+FULL_GRID_CELLS: tuple[tuple[str, str], ...] = tuple((m, s) for m in STAGES for s in STAGES)
 TRANSFER_PAIRS_K5: tuple[tuple[str, str], ...] = (("B", "S"), ("S", "D"), ("D", "R"))
 
 DEFAULT_OUT = PROJECT_ROOT / "eval_results" / "issue_1902" / "k5_targets"
@@ -140,11 +154,49 @@ def _utcnow() -> str:
 
 
 def _resolve(cfg: "Config", relpath: str) -> Path | None:
-    for root in (cfg.k5_root, cfg.ro_root):
+    for root in (cfg.k5_root, cfg.ro_root, *cfg.reuse_roots):
         p = root / relpath
         if p.exists():
+            if cfg.full_grid:
+                _check_source_identity(cfg, p, relpath)
             return p
     return None
+
+
+def _check_source_identity(cfg: Config, path: Path, relpath: str) -> None:
+    """Verify any cached source against its immutable Hub revision before use."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    revision = (
+        cfg.draw_revision if "/k5draws/" in relpath or "_k5_seed" in relpath else LC.HF_REVISION
+    )
+    stat = path.stat()
+    key = (str(path), stat.st_size, stat.st_mtime_ns, revision)
+    if key in cfg.verified_sources:
+        return
+    entries = hub.retry_transient(
+        lambda: HfApi().get_paths_info(
+            LC.HF_REPO, [relpath], repo_type="dataset", revision=revision
+        ),
+        what=f"verify cached input {relpath}",
+    )
+    if len(entries) != 1 or entries[0].size != stat.st_size:
+        raise RuntimeError(f"cached input missing or wrong size at {revision}: {path}")
+    entry = entries[0]
+    if entry.lfs:
+        digest = hashlib.sha256()
+        expected = entry.lfs.sha256
+    else:
+        digest = hashlib.sha1(b"blob " + str(stat.st_size).encode() + b"\0")
+        expected = entry.blob_id
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(8 * 1024 * 1024), b""):
+            digest.update(chunk)
+    if digest.hexdigest() != expected:
+        raise RuntimeError(f"cached input hash mismatch at {revision}: {path}")
+    cfg.verified_sources.add(key)
 
 
 def _download(cfg: Config, relpath: str, *, revision: str | None) -> Path:
@@ -185,9 +237,11 @@ def _draw_answer_relpath(m: str, s: str, seed: int, layer: int) -> str:
     return f"{LC.HF_PREFIX}/{C.k5_store_relpath(m, s, CORPUS, seed, layer)}"
 
 
-def _draw_revision(seed: int) -> str | None:
+def _draw_revision(seed: int, cfg: Config | None = None) -> str | None:
     """Pinned revision for pre-existing draws; main for the fresh K=5 uploads."""
-    return LC.HF_REVISION if seed in (SEED42, *SMOKE_SEEDS) else None
+    return (
+        LC.HF_REVISION if seed in (SEED42, *SMOKE_SEEDS) else (cfg.draw_revision if cfg else None)
+    )
 
 
 def _load_answer(path: Path) -> tuple[np.ndarray, list[str]]:
@@ -230,19 +284,22 @@ def _fetch_rollout_records(cfg: Config, src: str, seed: int) -> list[dict]:
 
     name = _rollout_name(src, seed)
     rel = f"{RAW_GEN_PREFIX}/{name}"
-    revision = _draw_revision(seed)
-    try:
-        path = _ensure(cfg, rel, revision=revision)
-        return [json.loads(line) for line in path.open()]
-    except EntryNotFoundError:
-        pass  # sharded manifest layout (files > 9.5 MB are line-split)
+    revision = _draw_revision(seed, cfg)
     stem = name[: -len(".jsonl")]
     manifest_rel = f"{RAW_GEN_PREFIX}/{stem}.manifest.json"
-    manifest = json.loads(_ensure(cfg, manifest_rel, revision=revision).read_text())
+    try:
+        manifest_path = _ensure(cfg, manifest_rel, revision=revision)
+    except EntryNotFoundError:
+        path = _ensure(cfg, rel, revision=revision)
+        return [json.loads(line) for line in path.read_text().splitlines()]
+    manifest = json.loads(manifest_path.read_text())
     records: list[dict] = []
     for shard in manifest["shards"]:
         shard_path = _ensure(cfg, f"{RAW_GEN_PREFIX}/{shard['name']}", revision=revision)
-        rows = [json.loads(line) for line in shard_path.open()]
+        data = shard_path.read_bytes()
+        if hashlib.sha256(data).hexdigest() != shard["sha256"]:
+            raise RuntimeError(f"shard hash mismatch: {shard['name']}")
+        rows = [json.loads(line) for line in data.splitlines()]
         if len(rows) != int(shard["n_lines"]):
             raise RuntimeError(f"shard line-count mismatch: {shard['name']}")
         records.extend(rows)
@@ -263,6 +320,24 @@ class Config:
     def __init__(self, args: argparse.Namespace):
         self.smoke: bool = bool(args.smoke)
         self.force: bool = bool(args.force)
+        self.full_grid: bool = args.full_grid
+        self.draw_revision: str | None = args.draw_revision
+        self.verified_sources: set[tuple] = set()
+        self.reuse_roots: list[Path] = args.reuse_root
+        self.target_layers: tuple[int, ...] = tuple(args.target_layers)
+        if self.full_grid and self.smoke:
+            raise ValueError(
+                "full-grid production and diagonal reliability smoke are separate modes"
+            )
+        if self.full_grid and not self.draw_revision:
+            raise ValueError("--full-grid requires --draw-revision (verified capture Hub SHA)")
+        if self.draw_revision and (
+            len(self.draw_revision) != 40
+            or any(c not in "0123456789abcdef" for c in self.draw_revision)
+        ):
+            raise ValueError("--draw-revision must be a full immutable 40-character Hub SHA")
+        if args.cmd not in ("stage", "targets") and LAYER not in self.target_layers:
+            raise ValueError("downstream phases require --target-layers to include 31")
         self.ro_root: Path = args.stage_root
         self.k5_root: Path = args.k5_root
         self.out: Path = args.out / "smoke" if self.smoke else args.out
@@ -270,9 +345,36 @@ class Config:
         self.seeds: tuple[int, ...] = (
             (SEED42, *SMOKE_SEEDS) if self.smoke else (SEED42, *K5_EXTRA_SEEDS)
         )
-        self.cells: tuple[tuple[str, str], ...] = DIAG_CELLS if self.smoke else CELLS7
+        self.cells: tuple[tuple[str, str], ...] = (
+            DIAG_CELLS if self.smoke else FULL_GRID_CELLS if self.full_grid else CELLS7
+        )
         self.k5_root.mkdir(parents=True, exist_ok=True)
         self.out.mkdir(parents=True, exist_ok=True)
+        if self.full_grid:
+            manifest = self.out / "fullgrid_run_identity.json"
+            identity = {
+                "schema": 1,
+                "draw_revision": self.draw_revision,
+                "seed42_revision": LC.HF_REVISION,
+                "seeds": list(self.seeds),
+                "cells": ["".join(c) for c in self.cells],
+                "layer": LAYER,
+                "fold_seed": LC.RANDOM_FOLD_SEED,
+                "n_folds": N_FOLDS,
+                "context_summary": "u_last",
+                "estimator": "SharedPrimalRidge-GCV",
+            }
+            if manifest.exists():
+                if json.loads(manifest.read_text()) != identity:
+                    raise RuntimeError("full-grid cache identity changed; use a fresh --out")
+            else:
+                cached_targets = list((self.out / "targets").glob("*_L31.npz"))
+                cached_grid = list((self.out / "percell").glob("k5grid_*.npz"))
+                if cached_targets or cached_grid:
+                    raise RuntimeError(
+                        "unverified target/grid caches in full-grid output; use a fresh --out"
+                    )
+                LC._write_json(manifest, identity)
 
     def target_path(self, m: str, s: str, layer: int) -> Path:
         return self.out / "targets" / f"{m}{s}_L{layer}.npz"
@@ -282,6 +384,10 @@ class Config:
 
     def anchor_path(self, s: str) -> Path:
         return self.out / "percell" / f"k1_anchor_{s}_L{LAYER}.npz"
+
+    def companion_path(self, m: str, s: str) -> Path:
+        """Companion baseline and retrieval metrics for the full-grid run."""
+        return self.out / "percell" / f"k5grid_{m}{s}_companions.json"
 
     def xfer_path(self, i: str, j: str, fold: int) -> Path:
         return self.out / "percell" / f"k5xfer_{i}{j}_f{fold}.npz"
@@ -300,20 +406,25 @@ def run_stage(cfg: Config) -> None:
     if cfg.smoke:
         for m, s in cfg.cells:
             for seed in SMOKE_SEEDS:
-                for layer in TARGET_LAYERS:
+                for layer in cfg.target_layers:
                     rel = _draw_answer_relpath(m, s, seed, layer)
-                    _ensure(cfg, rel, revision=_draw_revision(seed))
+                    _ensure(cfg, rel, revision=_draw_revision(seed, cfg))
                     staged.append(rel)
     else:
         for m, s in cfg.cells:
             for seed in K5_EXTRA_SEEDS:
-                for layer in TARGET_LAYERS:
+                for layer in cfg.target_layers:
+                    if cfg.target_path(m, s, layer).exists() and not cfg.force:
+                        continue
                     rel = _draw_answer_relpath(m, s, seed, layer)
-                    _ensure(cfg, rel, revision=None)
+                    _ensure(cfg, rel, revision=_draw_revision(seed, cfg))
                     staged.append(rel)
+                    _log(f"[stage] {m}{s} seed={seed} L{layer} resolved")
             # Seed-42 L18 shards exist on HF for the off-diagonal cells but were
             # never staged locally (only L31 was); fetch at the pinned revision.
-            for layer in TARGET_LAYERS:
+            for layer in cfg.target_layers:
+                if cfg.target_path(m, s, layer).exists() and not cfg.force:
+                    continue
                 rel = _draw_answer_relpath(m, s, SEED42, layer)
                 if _resolve(cfg, rel) is None:
                     _ensure(cfg, rel, revision=LC.HF_REVISION)
@@ -323,6 +434,8 @@ def run_stage(cfg: Config) -> None:
         "smoke": cfg.smoke,
         "seeds": list(cfg.seeds),
         "cells": ["".join(c) for c in cfg.cells],
+        "draw_revision": cfg.draw_revision,
+        "target_layers": list(cfg.target_layers),
         "n_staged": len(staged),
         "staged": staged,
     }
@@ -407,7 +520,7 @@ def run_targets(cfg: Config) -> None:
     pending = {
         (m, s, layer)
         for (m, s) in cfg.cells
-        for layer in TARGET_LAYERS
+        for layer in cfg.target_layers
         if cfg.force or not cfg.target_path(m, s, layer).exists()
     }
     flag_maps: dict[str, dict[int, dict[str, bool]]] = {}
@@ -415,7 +528,7 @@ def run_targets(cfg: Config) -> None:
         flag_maps[src] = {seed: _flag_map(cfg, src, seed) for seed in cfg.seeds}
     n_cells = 0
     for m, s in cfg.cells:
-        for layer in TARGET_LAYERS:
+        for layer in cfg.target_layers:
             if (m, s, layer) not in pending:
                 _log(f"[targets] {m}{s} L{layer}: resumed")
                 continue
@@ -451,6 +564,7 @@ def _aligned_ctx(cfg: Config, stage: str, rows: list[str]) -> tuple[np.ndarray, 
 
 
 def run_grid(cfg: Config) -> None:
+    """Fit all selected cells with one shared decomposition per checkpoint/fold."""
     anchor_ref = _anchor_reference() if not cfg.smoke else {}
     by_ckpt: dict[str, list[str]] = {}
     for m, s in cfg.cells:
@@ -459,6 +573,8 @@ def run_grid(cfg: Config) -> None:
         done = all(cfg.grid_path(m, s).exists() for s in targets_srcs) and (
             cfg.smoke or all(cfg.anchor_path(s).exists() for s in targets_srcs if s == m)
         )
+        if cfg.full_grid:
+            done = done and all(cfg.companion_path(m, s).exists() for s in targets_srcs)
         if done and not cfg.force:
             _log(f"[grid] checkpoint {m}: resumed")
             continue
@@ -493,6 +609,7 @@ def run_grid(cfg: Config) -> None:
             }
             for key in [f"k5_{s}" for s in targets_srcs] + [f"k1_{s}" for s in anchors_needed]
         }
+        companions = {s: {"identity_bias_ss_res": 0.0, "folds": []} for s in targets_srcs}
         for fold in range(N_FOLDS):
             t0 = time.time()
             ev = fold_of == fold
@@ -511,6 +628,19 @@ def run_grid(cfg: Config) -> None:
                 a["lam"][fold] = info["selected_lambda"]
                 a["dof"][fold] = info["dof"]
                 a["n_tr"][fold], a["n_ev"][fold] = int(tr.sum()), int(ev.sum())
+                if cfg.full_grid and key.startswith("k5_"):
+                    source = key.removeprefix("k5_")
+                    baseline = identity_bias_predict(x[tr], y[tr], x[ev])
+                    br, _, _ = LC._per_row_components(baseline, y[ev], y[tr].mean(axis=0))
+                    companions[source]["identity_bias_ss_res"] += float(br.sum())
+                    companions[source]["folds"].append(
+                        {
+                            "fold": fold,
+                            "euclidean": knn_retrieval(pred, y[ev], metric="euclidean"),
+                            "cosine": knn_retrieval(pred, y[ev], metric="cosine"),
+                        }
+                    )
+                    del baseline
                 del weights, pred
             del ridge, xev_std
             _log(
@@ -536,6 +666,25 @@ def run_grid(cfg: Config) -> None:
             if not cfg.smoke:
                 r2 = 1.0 - float(a["res"].sum()) / float(a["tot"].sum())
                 _log(f"[grid] K=5 cell ({m},{s}) pooled R2={r2:.6f}")
+            if cfg.full_grid:
+                companion = companions[s]
+                companion["identity_bias_r2"] = 1.0 - companion["identity_bias_ss_res"] / float(
+                    a["tot"].sum()
+                )
+                for metric in ("euclidean", "cosine"):
+                    companion[metric] = {
+                        "acc_at_k": {
+                            k: sum(
+                                f[metric]["n"] * f[metric]["acc_at_k"][k]
+                                for f in companion["folds"]
+                            )
+                            / n
+                            for k in (1, 5, 10)
+                        },
+                        "pool_sizes": [f[metric]["n_pool"] for f in companion["folds"]],
+                        "chance_at_k": {k: N_FOLDS * k / n for k in (1, 5, 10)},
+                    }
+                LC._write_json(cfg.companion_path(m, s), companion)
         for s in anchors_needed:
             a = acc[f"k1_{s}"]
             LC._savez(
@@ -687,6 +836,7 @@ def run_transfer(cfg: Config) -> None:
 
 
 def _write_summary(cfg: Config) -> None:
+    """Aggregate OOF components and paired uncertainty at the selected scope."""
     fold_of, ref_ids = _reference_rows()
     n = len(ref_ids)
     row_counts, cl_counts, inverse = _bootstrap_counts(cfg, n)
@@ -709,6 +859,8 @@ def _write_summary(cfg: Config) -> None:
             "dof": dof,
             "n": n,
         }
+        if cfg.full_grid:
+            grid[f"{m}{s}"]["companions"] = json.loads(cfg.companion_path(m, s).read_text())
         if m == s:
             diag_components[s] = (res, tot)
 
@@ -756,7 +908,9 @@ def _write_summary(cfg: Config) -> None:
         "metadata": {
             "hf_repo": LC.HF_REPO,
             "hf_revision_seed42": LC.HF_REVISION,
-            "k5_draw_revision": "main (post-pin pod uploads)",
+            "k5_draw_revision": cfg.draw_revision or "main (post-pin pod uploads)",
+            "full_grid": cfg.full_grid,
+            "cells": ["".join(c) for c in cfg.cells],
             "layer": LAYER,
             "corpus": CORPUS,
             "context_summary": "u_last",
@@ -776,6 +930,29 @@ def _write_summary(cfg: Config) -> None:
         "transfer": transfer,
     }
     LC._write_json(cfg.out / "summary.json", summary)
+    if cfg.full_grid:
+        matrix = {m: {s: grid[m + s]["r2"] for s in STAGES} for m in STAGES}
+        rows = {}
+        for m, values in matrix.items():
+            best = max(STAGES, key=lambda s: values[s])
+            rows[m] = {
+                "diagonal_answer_source": m,
+                "diagonal_r2": values[m],
+                "best_answer_source": best,
+                "best_r2": values[best],
+                "best_minus_diagonal": values[best] - values[m],
+                "range_across_answer_sources": max(values.values()) - min(values.values()),
+            }
+        LC._write_json(
+            cfg.out / "cross_answer_source_diagnostic.json",
+            {
+                "protocol": summary["metadata"],
+                "interpretation": "Fixed representation checkpoint; vary generated answer-text source.",
+                "r2_context_stage_by_answer_source": matrix,
+                "by_context_stage": rows,
+                "selection_note": "Best-source labels are descriptive maxima, without selection-adjusted inference.",
+            },
+        )
     _log(f"[analyze] wrote {cfg.out / 'summary.json'}")
 
 
@@ -968,6 +1145,7 @@ def run_scatter(cfg: Config) -> None:
 
 
 def run_figure(cfg: Config) -> None:
+    """Render the existing paper panels from this run's complete or seven-cell grid."""
     if cfg.smoke:
         raise SystemExit("figure is not part of the smoke")
     import section43_posttraining_figure as FIG
@@ -989,7 +1167,9 @@ def run_figure(cfg: Config) -> None:
                 "semantic-cluster bootstrap; panel B CIs = row bootstrap"
             ),
             "prev_row_note": (
-                "K=5 captures cover the diagonal + base row only, so the "
+                "Full 4x4 grid: all three previous-stage points captured."
+                if cfg.full_grid
+                else "K=5 captures cover the diagonal + base row only, so the "
                 "previous-stage series has its SFT point (cell BS) alone"
             ),
             "generated_utc": _utcnow(),
@@ -1002,9 +1182,13 @@ def run_figure(cfg: Config) -> None:
         "diag_ci": [grid[f"{s}{s}"]["row_ci"] for s in STAGES],
         "base_row_r2": [grid[f"B{s}"]["r2"] for s in STAGES],
         "base_row_ci": [grid[f"B{s}"]["row_ci"] for s in STAGES],
-        "prev_row_r2": [None, grid["BS"]["r2"], None, None],
-        "prev_row_ci": [None, grid["BS"]["row_ci"], None, None],
+        "prev_row_r2": [None]
+        + [grid[i + j]["r2"] if i + j in grid else None for i, j in TRANSFER_PAIRS_K5],
+        "prev_row_ci": [None]
+        + [grid[i + j]["row_ci"] if i + j in grid else None for i, j in TRANSFER_PAIRS_K5],
     }
+    if cfg.full_grid:
+        data["stage_grid"] = [[grid[m + s]["r2"] for s in STAGES] for m in STAGES]
     for mode in XF.TRANSFER_MODES:
         points, ci, ci_row = [], [], []
         for i, j in TRANSFER_PAIRS_K5:
@@ -1022,6 +1206,8 @@ def run_figure(cfg: Config) -> None:
     data_path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
     data = json.loads(data_path.read_text())
     outputs = FIG.render_variant(data, cfg.fig_dir / "c1_posttraining_dynamics_k5", panel_b="lines")
+    if cfg.full_grid:
+        FIG.render_variant(data, cfg.fig_dir / "c1_posttraining_dynamics_k5_grid", panel_b="grid")
     _log(f"[figure] wrote {outputs['pdf']}")
     _log(f"[figure] data: {data_path}")
 
@@ -1041,6 +1227,12 @@ def main() -> None:
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--figures-dir", type=Path, default=DEFAULT_FIG_DIR)
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--full-grid", action="store_true", help="Use all 16 captured K=5 cells")
+    parser.add_argument("--draw-revision", help="Immutable Hub revision for seeds 45-48")
+    parser.add_argument("--reuse-root", type=Path, action="append", default=[])
+    parser.add_argument(
+        "--target-layers", type=int, nargs="+", choices=TARGET_LAYERS, default=list(TARGET_LAYERS)
+    )
     args = parser.parse_args()
     cfg = Config(args)
     runners = {
