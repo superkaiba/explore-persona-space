@@ -1,0 +1,72 @@
+{
+  "schema": "issue2588_chat_rank_noise_control_v1",
+  "question": "Is the operational-rank gap an artefact of unequal target repeatability?",
+  "maps_refit": false,
+  "caveat": "Training and validation targets stay single-draw; no extra draws exist for those splits. Ranks here are selected on TEST and are descriptive only.",
+  "arms": [
+    {
+      "arm": "a",
+      "layer": 24,
+      "selected_lambda": 1000.0,
+      "n_shared_test": 992,
+      "single_draw": {
+        "full_test_r2": 0.6888870098100607,
+        "threshold": 0.6577757107910667,
+        "rank_within_10pct_of_own_test_sse": 120,
+        "rank_to_absolute_r2": {
+          "0.50": 19,
+          "0.55": 28,
+          "0.60": 48,
+          "0.64": 84,
+          "0.66": 126,
+          "0.70": null
+        }
+      },
+      "three_draw_mean": {
+        "full_test_r2": 0.7190336919006908,
+        "threshold": 0.6909370610907598,
+        "rank_within_10pct_of_own_test_sse": 133,
+        "rank_to_absolute_r2": {
+          "0.50": 16,
+          "0.55": 23,
+          "0.60": 37,
+          "0.64": 57,
+          "0.66": 75,
+          "0.70": 172
+        }
+      }
+    },
+    {
+      "arm": "b",
+      "layer": 22,
+      "selected_lambda": 1000.0,
+      "n_shared_test": 989,
+      "single_draw": {
+        "full_test_r2": 0.6696649110504407,
+        "threshold": 0.6366314021554846,
+        "rank_within_10pct_of_own_test_sse": 64,
+        "rank_to_absolute_r2": {
+          "0.50": 13,
+          "0.55": 20,
+          "0.60": 35,
+          "0.64": 70,
+          "0.66": 131,
+          "0.70": null
+        }
+      },
+      "three_draw_mean": {
+        "full_test_r2": 0.6902217708039152,
+        "threshold": 0.6592439478843067,
+        "rank_within_10pct_of_own_test_sse": 65,
+        "rank_to_absolute_r2": {
+          "0.50": 11,
+          "0.55": 16,
+          "0.60": 27,
+          "0.64": 46,
+          "0.66": 66,
+          "0.70": null
+        }
+      }
+    }
+  ]
+}
