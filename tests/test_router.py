@@ -96,31 +96,36 @@ def _clean_auto_lane_order_env(monkeypatch):
 def _policy_rollback_build_for_legacy_suite(request, monkeypatch):
     """Run the legacy machinery suite under the policy-flag rollback builds.
 
-    Two policy flags gate fresh provisioning: GCP provisioning is disabled
-    (#2028, ``router.GCP_PROVISIONING_DISABLED = True``) and fellows-cluster
-    access is revoked (user directive 2026-09-09,
-    ``router.FELLOWS_ACCESS_REVOKED = True``). The gated code paths (GCP
-    ladder walk, failover seams, fellows QoS-ladder / park / CPU-rung
-    machinery, lane-order semantics) are KEPT and must stay test-covered —
-    they are the single-constant rollback levers. This autouse fixture
-    therefore runs every test in this module with BOTH gates OFF (the
-    rollback builds), EXCEPT:
+    Two policy flags gate fresh provisioning: GCP provisioning
+    (#2028-flippable, ``router.GCP_PROVISIONING_DISABLED`` — ``False``
+    since the 2026-09-09 re-enable) and fellows-cluster access (revoked,
+    user directive 2026-09-09, ``router.FELLOWS_ACCESS_REVOKED = True``).
+    The gated code paths (GCP-disabled refusals, fellows QoS-ladder /
+    park / CPU-rung machinery, lane-order semantics) are KEPT and must
+    stay test-covered — they are the single-constant flip levers. This
+    autouse fixture therefore runs every test in this module with the
+    fellows gate OFF (its rollback build; the gcp flag already reads
+    enabled in production), EXCEPT:
 
     * ``fellows_policy_default``-marked tests — FULL production contract
-      (both flags at their real values: no fellows rung, no gcp rung,
-      ``FellowsAccessRevokedError`` / ``GcpDisabledError`` on explicit
-      pins, lane-order refusals);
-    * ``gcp_policy_default``-marked tests — the #2028 production GCP
-      contract with the fellows machinery still exercised (fellows flag
-      OFF; the runpod-first order is rebuilt WITH the fellows rung, since
-      the import-time ``DEFAULT_AUTO_LANE_ORDER`` snapshot dropped it).
+      (both flags at their real values: gcp-first order, no fellows rung,
+      ``FellowsAccessRevokedError`` on explicit fellows pins, fellows
+      lane-order refusals);
+    * ``gcp_policy_default``-marked tests — the #2028 GCP-DISABLED
+      contract, now EXPLICITLY pinned (``GCP_PROVISIONING_DISABLED =
+      True`` — no longer production since the 2026-09-09 re-enable, but
+      the re-disable lever must stay exercised) with the fellows
+      machinery restored (fellows flag OFF; the runpod-first
+      no-gcp order is rebuilt WITH the fellows rung).
     """
     if request.node.get_closest_marker("fellows_policy_default"):
         return
     monkeypatch.setattr(router_module, "FELLOWS_ACCESS_REVOKED", False)
     if request.node.get_closest_marker("gcp_policy_default"):
-        # gcp flag stays ON (production), fellows restored -> the
+        # Pin the #2028 gcp-DISABLED contract (a rollback exercise since
+        # the 2026-09-09 re-enable), fellows restored -> the
         # pre-revocation runpod-first order ("runpod", "fellows", ...).
+        monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", True)
         monkeypatch.setattr(
             router_module, "DEFAULT_AUTO_LANE_ORDER", router_module._default_auto_lane_order()
         )
@@ -3434,61 +3439,66 @@ def test_prepare_failed_breadcrumb_reason_matches_typed_terminal(
 
 
 @pytest.mark.fellows_policy_default
-def test_default_auto_lane_order_has_no_gcp():
-    """The standing default (#2028/#2054 + the 2026-09-09 fellows
-    revocation): RUNPOD first (the Anthropic-org sponsored pool — user
-    directive 2026-08-05; the ONLY non-DRAC lane), then the legacy free
-    SLURM lanes — NO fellows rung and NO gcp rung anywhere in the default
-    auto order. (This is the durability pin CLAUDE.md § Compute backends
-    cites; the invariant it pins is the DEFAULT_AUTO_LANE_ORDER tuple
-    itself.)"""
-    assert router_module.GCP_PROVISIONING_DISABLED is True
+def test_default_auto_lane_order_production_gcp_first():
+    """The standing default (GCP re-enabled 2026-09-09, user directive
+    "GCP before runpod if it's available"; fellows revoked 2026-09-09):
+    GCP first (credit-funded), then RunPod (paid, scarce — the
+    fall-through), then the legacy free SLURM lanes — NO fellows rung
+    anywhere in the default auto order. (This is the durability pin
+    CLAUDE.md § Compute backends cites; the invariant it pins is the
+    DEFAULT_AUTO_LANE_ORDER tuple itself.)"""
+    assert router_module.GCP_PROVISIONING_DISABLED is False
     assert router_module.FELLOWS_ACCESS_REVOKED is True
-    assert DEFAULT_AUTO_LANE_ORDER == ("runpod", "nibi", "fir", "mila")
-    assert DEFAULT_AUTO_LANE_ORDER[0] == "runpod"  # first resort (#2054)
-    assert "gcp" not in DEFAULT_AUTO_LANE_ORDER
+    assert DEFAULT_AUTO_LANE_ORDER == ("gcp", "runpod", "nibi", "fir", "mila")
+    assert DEFAULT_AUTO_LANE_ORDER[0] == "gcp"  # first resort (2026-09-09)
     assert "fellows" not in DEFAULT_AUTO_LANE_ORDER
     # With no env override, the resolver returns the default verbatim.
     assert auto_lane_order() == DEFAULT_AUTO_LANE_ORDER
 
 
-def test_default_auto_lane_order_rollback_build_restores_gcp(monkeypatch):
-    """The flag-off rollback build (#2028) re-inserts gcp after fellows;
-    runpod stays FIRST in both builds (#2054). Runs under the autouse
-    rollback fixture (flag OFF; the fixture pins the pre-#2054 legacy order
-    for the machinery suite, so re-derive the REAL rollback default here)."""
+def test_default_auto_lane_order_both_flags_off_build(monkeypatch):
+    """The both-flags-off build: gcp leads, fellows re-inserts directly
+    after runpod (its pre-revocation position). Runs under the autouse
+    rollback fixture (both flags OFF; the fixture pins the pre-#2054
+    legacy order for the machinery suite, so re-derive the REAL build
+    here)."""
     assert router_module.GCP_PROVISIONING_DISABLED is False  # the fixture
+    assert router_module.FELLOWS_ACCESS_REVOKED is False  # the fixture
     rollback_order = router_module._default_auto_lane_order()
-    assert rollback_order == ("runpod", "fellows", "gcp", "nibi", "fir", "mila")
+    assert rollback_order == ("gcp", "runpod", "fellows", "nibi", "fir", "mila")
     monkeypatch.setattr(router_module, "DEFAULT_AUTO_LANE_ORDER", rollback_order)
     assert auto_lane_order() == rollback_order
 
 
 @pytest.mark.fellows_policy_default
-def test_default_auto_lane_order_fellows_rollback_build_restores_fellows(monkeypatch):
-    """The fellows flag-off rollback build (user directive 2026-09-09)
-    re-inserts the fellows rung in its pre-revocation position — directly
-    after runpod — while gcp stays disabled (#2028); with BOTH flags off
-    the full pre-policy 6-lane order returns. Runs under the full
-    production contract and flips the constants explicitly (the dynamic
-    fellows_access_revoked() helper is what runtime checks read, so a
-    monkeypatched constant re-arms the gated paths)."""
-    assert router_module._default_auto_lane_order() == ("runpod", "nibi", "fir", "mila")
+def test_default_auto_lane_order_all_four_flag_combinations(monkeypatch):
+    """ALL FOUR (GCP_PROVISIONING_DISABLED, FELLOWS_ACCESS_REVOKED)
+    combinations, pinned: gcp LEADS whenever enabled (user directive
+    2026-09-09), runpod leads while gcp is re-disabled (#2028 shape), and
+    the fellows rollback build re-inserts its rung directly after runpod
+    in both gcp states. Starts from the full production contract and
+    flips the constants explicitly (the dynamic helpers are what runtime
+    checks read, so a monkeypatched constant re-arms the gated paths)."""
+    # Production: gcp enabled, fellows revoked.
+    assert router_module._default_auto_lane_order() == ("gcp", "runpod", "nibi", "fir", "mila")
+    # Fellows rollback: gcp enabled, fellows restored.
     monkeypatch.setattr(router_module, "FELLOWS_ACCESS_REVOKED", False)
     assert router_module.fellows_access_revoked() is False
-    assert router_module._default_auto_lane_order() == ("runpod", "fellows", "nibi", "fir", "mila")
-    monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
     assert router_module._default_auto_lane_order() == (
+        "gcp",
         "runpod",
         "fellows",
-        "gcp",
         "nibi",
         "fir",
         "mila",
     )
-    # Fellows revoked + gcp rollback: the fellows rung alone drops out.
+    # GCP re-disabled, fellows restored: the #2054 runpod-first shape.
+    monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", True)
+    assert router_module.gcp_provisioning_disabled() is True
+    assert router_module._default_auto_lane_order() == ("runpod", "fellows", "nibi", "fir", "mila")
+    # GCP re-disabled, fellows revoked: runpod is the sole non-DRAC lane.
     monkeypatch.setattr(router_module, "FELLOWS_ACCESS_REVOKED", True)
-    assert router_module._default_auto_lane_order() == ("runpod", "gcp", "nibi", "fir", "mila")
+    assert router_module._default_auto_lane_order() == ("runpod", "nibi", "fir", "mila")
 
 
 @pytest.mark.fellows_policy_default
@@ -3674,6 +3684,80 @@ def test_explicit_gcp_backend_refuses_typed(tmp_path):
     assert translation.failure_class == "infra"
     assert translation.status == "blocked"
     assert "reason: gcp_backend_disabled" in translation.note
+
+
+@pytest.mark.fellows_policy_default
+def test_auto_lane_order_env_accepts_gcp_production(monkeypatch):
+    """Production pin (GCP re-enabled 2026-09-09): a gcp-bearing
+    EPM_AUTO_LANE_ORDER round-trips at the REAL flag values — the exact
+    inverse of test_auto_lane_order_env_refuses_gcp's pinned-disabled
+    contract."""
+    assert router_module.gcp_provisioning_disabled() is False
+    monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "gcp,runpod,nibi")
+    assert auto_lane_order() == ("gcp", "runpod", "nibi")
+
+
+@pytest.mark.fellows_policy_default
+def test_router_config_lane_order_accepts_gcp_production(lease_store):
+    """Production pin (GCP re-enabled 2026-09-09): a gcp-bearing
+    RouterConfig.lane_order passes route()-entry validation at the REAL
+    flag values — the walk proceeds into the (unwired-gcp-skipping) auto
+    chain instead of raising the #2028 refusal."""
+    from explore_persona_space.backends.router import RouteError
+
+    spec = RunSpec(issue=2028, intent="lora-7b", backend="auto", time_budget_hours=1.0)
+    with pytest.raises(NoComputeAvailableError):
+        # gcp validates but is unwired (gcp_backend=None) -> skipped; the
+        # sole wired runpod lane misses -> NoComputeAvailableError. A
+        # validation refusal would raise RouteError BEFORE any attempt.
+        route(
+            spec,
+            runpod_backend=_FlakyRunpod(fail_first_n=99),
+            free_backends={},
+            gcp_backend=None,
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            config=RouterConfig(
+                lane_order=("gcp", "runpod"),
+                free_wait_seconds=1,
+                poll_interval=0.0,
+                cancel_grace_seconds=0,
+            ),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    with pytest.raises(RouteError, match="FELLOWS_ACCESS_REVOKED"):
+        # Contrast pin: fellows still refuses at validation in the same
+        # production state.
+        route(
+            spec,
+            runpod_backend=_PassiveRunpod(),
+            free_backends={},
+            gcp_backend=None,
+            lease_store=lease_store,
+            config=RouterConfig(lane_order=("gcp", "fellows")),
+        )
+
+
+@pytest.mark.fellows_policy_default
+def test_explicit_gcp_backend_routes_production(tmp_path):
+    """Production pin (GCP re-enabled 2026-09-09): route(spec.backend='gcp')
+    passes the policy gate and proceeds to the ordinary wiring check (the
+    unwired-gcp RouteError, NOT GcpDisabledError) — proving the gate keys
+    on the dynamic gcp_provisioning_disabled() helper reading the flipped
+    constant."""
+    from explore_persona_space.backends.router import RouteError
+
+    assert router_module.gcp_provisioning_disabled() is False
+    spec = RunSpec(issue=2028, intent="lora-7b", backend="gcp")
+    with pytest.raises(RouteError, match="no gcp_backend wired"):
+        route(
+            spec,
+            runpod_backend=_PassiveRunpod(),
+            gcp_backend=None,  # unwired -> the ORDINARY wiring refusal
+            lease_store=LeaseStore(lease_dir=tmp_path / ".eps-routing"),
+        )
 
 
 def test_auto_lane_order_env_override_parsed(monkeypatch):

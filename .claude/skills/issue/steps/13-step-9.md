@@ -2891,7 +2891,7 @@ orchestrators driving one round is the #778 root cause.
      6b § "Operational dispatch (slice-6 router, ALL backends)" — do
      not duplicate its prose here). Follow-up rounds inherit the
      task's `backend:` frontmatter and the auto-routing default
-     (empty → auto — RunPod first, #2054; GCP disabled, #2028). The prior compute was torn down at Step 8;
+     (empty → auto — GCP first, re-enabled 2026-09-09; RunPod the paid fall-through; fellows revoked). The prior compute was torn down at Step 8;
      per-issue naming already supports re-dispatch.
    - Run → upload-verify → Step 8 terminate, as normal.
    - The `analyzer` RE-FOLDS the new finding into the EXISTING

@@ -303,8 +303,8 @@ note in any other shape is refused as a FAIL at teardown (#1775).
   frontmatter and run `dispatch_issue.py launch --issue <N> --intent
   "$INTENT" ${BACKEND:+--backend "$BACKEND"}` per Step 6b's
   "Operational dispatch (slice-6 router, ALL backends)" block (empty
-  frontmatter → auto routing — RunPod first (#2054), then fellows +
-  the free SLURM lanes; GCP provisioning disabled, #2028). If the task has `parent_id`, terminate
+  frontmatter → auto routing — GCP first (re-enabled 2026-09-09), then
+  RunPod + the free SLURM lanes; fellows revoked). If the task has `parent_id`, terminate
   the parent's pod (`epm-issue-<PARENT_ID>`) instead. Skip the
   teardown call only if the task has a `keep-running` tag for known
   follow-up work in the same session. (Mechanically enforced as of

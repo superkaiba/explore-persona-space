@@ -7,33 +7,24 @@ was replaced in place by
 `test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted`, which pins
 the ordering contract.
 
-#2028 DISABLED GCP provisioning by policy
-(``router.GCP_PROVISIONING_DISABLED = True``), and #2054 (user directive
-2026-08-05) made RunPod the FIRST auto lane — the RunPod team account is
-the shared Anthropic-fellows/safety org pool, a sponsored pool, so
-provisioning there is the first resort, not discretionary last-resort
-spend. The flag-ON auto default is
-``DEFAULT_AUTO_LANE_ORDER = ("runpod", "nibi", "fir", "mila")`` (fellows
-dropped too — access REVOKED, user directive 2026-09-09:
-``router.FELLOWS_ACCESS_REVOKED = True``)
-(no gcp rung), so the STANDING ordering contract is now "RunPod FIRST
-(``auto_runpod_first``); a capacity miss falls through to the free lanes;
-the #656 terminal rung survives as the end-of-chain RETRY
-(``auto_fallback_runpod``); ZERO gcp attempts" — pinned here by
-``test_runpod_is_first_lane_no_gcp`` +
-``test_runpod_first_then_free_lanes_then_terminal_retry_no_gcp`` (both under
-the FULL production contract: fellows revoked AND gcp disabled — a wired
-fellows backend is NEVER attempted). The
-historical GCP-ladder-precedes-terminal-RunPod machinery stays test-covered
-under the single-constant rollback lever (gcp flag OFF → the 5-lane
-runpod/gcp/nibi/fir/mila order while fellows stays revoked; both flags OFF →
-the historical 6-lane runpod/fellows/gcp order) by
-``test_runpod_first_then_gcp_ladder_then_terminal_retry_rollback``, which
-re-derives the rollback default the way the
-policy-rollback autouse fixture family does
-(``_policy_rollback_build_for_legacy_suite`` in ``tests/test_router.py``;
-``_gcp_rollback_build_for_legacy_suite`` in the sibling backend modules —
-those fixtures pin the legacy machinery orders for their suites).
+#2028 DISABLED GCP provisioning by policy (2026-08-02), #2054 (user
+directive 2026-08-05) made RunPod the FIRST auto lane, and the 2026-09-09
+GCP RE-ENABLE (user directive: "re-enable GCP", "GCP before runpod if
+it's available") put GCP at the head: the standing auto default is
+``DEFAULT_AUTO_LANE_ORDER = ("gcp", "runpod", "nibi", "fir", "mila")``
+(``router.GCP_PROVISIONING_DISABLED = False``; fellows dropped — access
+REVOKED, user directive 2026-09-09:
+``router.FELLOWS_ACCESS_REVOKED = True``). The STANDING ordering contract
+is "GCP FIRST; a gcp capacity miss (or unwired gcp) falls through to
+RunPod (``auto_runpod_first``); a runpod miss falls through to the free
+lanes; the #656 terminal rung survives as the end-of-chain RETRY
+(``auto_fallback_runpod``)" — pinned here by
+``test_runpod_leads_wired_lanes_when_gcp_unwired`` +
+``test_runpod_then_free_lanes_then_terminal_retry_gcp_unwired`` (both
+under the FULL production contract with gcp UNWIRED — a wired fellows
+backend is NEVER attempted) and by
+``test_gcp_ladder_first_then_runpod_then_terminal_retry_production``
+(gcp WIRED: the ladder precedes every runpod attempt).
 
 This module is a self-contained pointer so the literal acceptance command in
 the task body — `uv run pytest tests/test_no_auto_runpod_path_under_any_failure.py`
@@ -185,13 +176,15 @@ class _FlakyRunpodPointer(_PassiveRunpodPointer):
         return super().launch(spec)
 
 
-def test_runpod_is_first_lane_no_gcp(tmp_path: Any) -> None:
-    """The #2054 flag-ON ordering contract end-to-end: RunPod is the FIRST
-    auto lane — a healthy launch resolves the route at lane 1 with reason
-    ``auto_runpod_first``, ZERO free-lane attempts and ZERO gcp attempts. The
-    wired fellows backend is inert by policy (access revoked, user directive
-    2026-09-09) as well as by lane order."""
-    assert router_module.GCP_PROVISIONING_DISABLED is True  # production flag, no fixture
+def test_runpod_leads_wired_lanes_when_gcp_unwired(tmp_path: Any) -> None:
+    """Production ordering contract end-to-end with gcp UNWIRED
+    (``gcp_backend=None`` — the leading gcp rung is skipped, recording no
+    attempt): RunPod is the first WIRED lane — a healthy launch resolves
+    the route with reason ``auto_runpod_first``, ZERO free-lane attempts
+    and ZERO gcp attempts. The wired fellows backend is inert by policy
+    (access revoked, user directive 2026-09-09) as well as by lane
+    order."""
+    assert router_module.GCP_PROVISIONING_DISABLED is False  # production flag, no fixture
     assert router_module.FELLOWS_ACCESS_REVOKED is True  # production flag, no fixture
     rp = _PassiveRunpodPointer()
     fellows = _FreeLaneExhausted("fellows")
@@ -201,7 +194,7 @@ def test_runpod_is_first_lane_no_gcp(tmp_path: Any) -> None:
         spec,
         runpod_backend=rp,
         free_backends={"nibi": nibi, "fellows": fellows},
-        gcp_backend=None,  # flag-ON: gcp is not in the default order at all
+        gcp_backend=None,  # unwired: the leading gcp rung is skipped, no attempt
         lease_store=LeaseStore(lease_dir=tmp_path / ".eps-routing"),
         is_started=lambda _b, _h: False,
         is_live_after_cancel=lambda _b, _h: False,
@@ -219,15 +212,15 @@ def test_runpod_is_first_lane_no_gcp(tmp_path: Any) -> None:
     assert outcomes[-1] == ("runpod", "launched")
 
 
-def test_runpod_first_then_free_lanes_then_terminal_retry_no_gcp(tmp_path: Any) -> None:
-    """The full-production fall-through contract end-to-end (#2054 runpod
-    first; gcp disabled #2028; fellows access revoked, user directive
-    2026-09-09): a runpod-first capacity miss (nothing provisioned) falls
+def test_runpod_then_free_lanes_then_terminal_retry_gcp_unwired(tmp_path: Any) -> None:
+    """The production fall-through contract end-to-end with gcp UNWIRED
+    (skipped, no attempt; fellows access revoked, user directive
+    2026-09-09): a runpod-lane capacity miss (nothing provisioned) falls
     through to the free DRAC/Mila lanes (nibi FIRST — a WIRED fellows
     backend is never attempted: the rung is absent from the order), records
     ZERO gcp attempts anywhere, and the #656 TERMINAL rung retries RunPod
     as the LAST attempt in the trail."""
-    assert router_module.GCP_PROVISIONING_DISABLED is True  # production flag, no fixture
+    assert router_module.GCP_PROVISIONING_DISABLED is False  # production flag, no fixture
     assert router_module.FELLOWS_ACCESS_REVOKED is True  # production flag, no fixture
     rp = _FlakyRunpodPointer(fail_first_n=1)
     fellows = _FreeLaneExhausted("fellows")
@@ -237,7 +230,7 @@ def test_runpod_first_then_free_lanes_then_terminal_retry_no_gcp(tmp_path: Any) 
         spec,
         runpod_backend=rp,
         free_backends={"nibi": nibi, "fellows": fellows},
-        gcp_backend=None,  # flag-ON: gcp is not in the default order at all
+        gcp_backend=None,  # unwired: the leading gcp rung is skipped, no attempt
         lease_store=LeaseStore(lease_dir=tmp_path / ".eps-routing"),
         is_started=lambda _b, _h: False,
         is_live_after_cancel=lambda _b, _h: False,
@@ -261,20 +254,17 @@ def test_runpod_first_then_free_lanes_then_terminal_retry_no_gcp(tmp_path: Any) 
     assert runpod_idxs and runpod_idxs[-1] == len(outcomes) - 1  # terminal retry LAST
 
 
-def test_runpod_first_then_gcp_ladder_then_terminal_retry_rollback(
-    tmp_path: Any, monkeypatch: pytest.MonkeyPatch
+def test_gcp_ladder_first_then_runpod_then_terminal_retry_production(
+    tmp_path: Any,
 ) -> None:
-    """The #656 GCP-ladder machinery end-to-end under the #2028 ROLLBACK build
-    (flag OFF → the gcp-bearing 6-lane runpod-first default order, #2054): a
-    short lora-7b whose runpod-first lane capacity-misses walks EVERY GCP rung
-    (all capacity-missing) and falls through to the RunPod TERMINAL rung — the
-    LAST attempt in the trail. Re-derives the rollback default the way the
-    policy-rollback fixture family used to, so this
-    pointer module stays self-contained."""
-    monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
-    monkeypatch.setattr(
-        router_module, "DEFAULT_AUTO_LANE_ORDER", router_module._default_auto_lane_order()
-    )
+    """The #656 GCP-ladder machinery end-to-end under the PRODUCTION
+    gcp-first order (GCP re-enabled 2026-09-09): a short lora-7b whose
+    leading GCP rungs ALL capacity-miss falls through to the runpod lane
+    (also missing) and then the RunPod TERMINAL rung — the LAST attempt
+    in the trail, with every gcp attempt BEFORE every runpod attempt.
+    Runs on the live flags + import-time order snapshot, so this pointer
+    module stays self-contained."""
+    assert router_module.GCP_PROVISIONING_DISABLED is False  # production flag, no fixture
     rp = _FlakyRunpodPointer(fail_first_n=1)
     gcp = _GcpAllRungsExhausted()
     spec = RunSpec(issue=137, intent="lora-7b", backend="auto", time_budget_hours=1.0)
@@ -299,8 +289,8 @@ def test_runpod_first_then_gcp_ladder_then_terminal_retry_rollback(
     runpod_miss_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o != "launched"]
     gcp_fail_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "gcp"]
     runpod_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o == "launched"]
-    assert runpod_miss_idxs, "the runpod-first lane must have been attempted"
+    assert runpod_miss_idxs, "the runpod lane must have been attempted"
     assert gcp_fail_idxs, "the GCP ladder must have been attempted"
-    assert max(runpod_miss_idxs) < min(gcp_fail_idxs)  # runpod lane BEFORE the ladder
+    assert max(gcp_fail_idxs) < min(runpod_miss_idxs)  # the ladder BEFORE the runpod lane
     assert runpod_idxs and runpod_idxs[-1] == len(outcomes) - 1  # RunPod retry LAST
     assert max(gcp_fail_idxs) < runpod_idxs[-1]

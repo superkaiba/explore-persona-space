@@ -95,8 +95,11 @@ def _gcp_rollback_build_for_legacy_suite(request, monkeypatch):
     # ``test_router.py`` fixture family.
     monkeypatch.setattr(router_module, "FELLOWS_ACCESS_REVOKED", False)
     if request.node.get_closest_marker("gcp_policy_default"):
-        # #2028 flag-ON contract with the fellows machinery rollback-restored:
-        # rebuild the order so the fellows rung returns (runpod-first, no gcp).
+        # #2028 GCP-DISABLED contract, EXPLICITLY pinned (no longer the
+        # production flag value since the 2026-09-09 re-enable), with the
+        # fellows machinery rollback-restored: rebuild the order so the
+        # fellows rung returns (runpod-first, no gcp).
+        monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", True)
         monkeypatch.setattr(
             router_module, "DEFAULT_AUTO_LANE_ORDER", router_module._default_auto_lane_order()
         )

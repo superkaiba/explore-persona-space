@@ -18,7 +18,8 @@ Plan #2298 Part 4's numbering, in order:
 - T4  waiver honored (same line / preceding window / top-of-file banner);
       a sub-10-char reason does NOT waive.
 - T5  fail-open SKIPs: missing router, unparseable router, absent
-      ``_default_auto_lane_order``, disagreeing branches, and the
+      ``_default_auto_lane_order``, POLICY-UNRESOLVABLE disagreeing
+      branches (the selecting flag is not a literal bool), and the
       MIXED-return fixture (one tuple branch + one ``return SOME_CONST``)
       => ``skipped`` True + non-empty ``skip_reason`` + 0 findings, never
       a head resolved from the tuple branch alone.
@@ -47,6 +48,16 @@ Plan #2298 Part 4's numbering, in order:
       a future narrowing to same-line fails this test instead of silently
       dropping half the real hits (2 of the 4 live 2026-08 hits were
       hard-wrapped).
+- T15 POLICY-DEPENDENT head (the 2026-09-09 GCP re-enable shape): branch
+      heads legitimately DIFFER across the flag branches, and the reader
+      resolves the branch the module-level LITERAL-bool policy flags
+      select — flipping a flag literal flips the resolved head, and the
+      full report grades prose against the resolved head.
+- T16 policy-resolution fail-closed dispositions: a flag bound to a
+      non-literal, a non-flag ``if`` condition, a ``not FLAG`` condition,
+      an assignment in the body, and a taken path that runs off the end
+      without returning all SKIP (``head-unresolved``); the LAST literal
+      binding of a flag wins (Python semantics).
 """
 
 from __future__ import annotations
@@ -414,6 +425,173 @@ def test_t13_plus_minus_one_line_grain(tmp_path: Path) -> None:
 # directions so a future edit cannot silently drop it: the decoy must not
 # open the window, and the real vocabulary must still open it.
 # --------------------------------------------------------------------------
+
+
+def _policy_router(*, gcp_disabled: bool, fellows_revoked: bool = True) -> str:
+    """A fixture router mirroring the LIVE post-2026-09-09 branch shape:
+    disagreeing branch heads selected by two literal-bool policy flags."""
+    return (
+        f"GCP_PROVISIONING_DISABLED: bool = {gcp_disabled}\n"
+        f"FELLOWS_ACCESS_REVOKED = {fellows_revoked}\n"
+        'DEFAULT_FREE_LANE_ORDER = ("nibi", "fir", "mila")\n'
+        "\n"
+        "def _default_auto_lane_order():\n"
+        '    """docstring no-op"""\n'
+        "    if GCP_PROVISIONING_DISABLED:\n"
+        "        if FELLOWS_ACCESS_REVOKED:\n"
+        '            return ("runpod", *DEFAULT_FREE_LANE_ORDER)\n'
+        '        return ("runpod", "fellows", *DEFAULT_FREE_LANE_ORDER)\n'
+        "    if FELLOWS_ACCESS_REVOKED:\n"
+        '        return ("gcp", "runpod", *DEFAULT_FREE_LANE_ORDER)\n'
+        '    return ("gcp", "runpod", "fellows", *DEFAULT_FREE_LANE_ORDER)\n'
+        "\n"
+        "DEFAULT_AUTO_LANE_ORDER = _default_auto_lane_order()\n"
+    )
+
+
+# --------------------------------------------------------------------------
+# T15: policy-dependent head (the 2026-09-09 GCP re-enable shape)
+# --------------------------------------------------------------------------
+
+
+def test_t15_policy_dependent_head_resolves_live_branch() -> None:
+    """Disagreeing branch heads resolve to the branch the LITERAL policy
+    flags select; flipping a flag literal flips the head."""
+    assert wl.read_default_auto_lane_head(_policy_router(gcp_disabled=False)) == "gcp"
+    assert wl.read_default_auto_lane_head(_policy_router(gcp_disabled=True)) == "runpod"
+    # Both flags off: the outer branch falls to the trailing return.
+    assert (
+        wl.read_default_auto_lane_head(_policy_router(gcp_disabled=False, fellows_revoked=False))
+        == "gcp"
+    )
+
+
+def test_t15_policy_dependent_head_report_grades_prose(tmp_path: Path) -> None:
+    """Report-level: with the policy fixture the check stays ARMED (no
+    skip), resolves head='gcp', and FAILs runpod-first prose while passing
+    gcp-first prose — the gate keeps grading against the live branch
+    instead of skipping fleet-wide on branch disagreement."""
+    root = _mk_repo(tmp_path, router_text=_policy_router(gcp_disabled=False))
+    _plant(root, ".claude/rules/stale.md", _CORRECTED_LINE)  # runpod-first: now stale
+    _plant(
+        root,
+        ".claude/rules/fresh.md",
+        _CORRECTED_LINE.replace("runpod-first", "gcp-first"),
+    )
+    report = _report(root)
+    assert report["skipped"] is False and report["head"] == "gcp"
+    findings = report["findings"]
+    assert isinstance(findings, list) and len(findings) == 1, findings
+    assert "stale.md" in findings[0] and "'gcp'" in findings[0], findings[0]
+
+
+# --------------------------------------------------------------------------
+# T16: policy-resolution fail-closed dispositions
+# --------------------------------------------------------------------------
+
+
+def test_t16_policy_resolution_fail_closed(tmp_path: Path) -> None:
+    disagreeing_fn = (
+        "def _default_auto_lane_order():\n"
+        "    if GCP_PROVISIONING_DISABLED:\n"
+        '        return ("runpod", "nibi")\n'
+        '    return ("gcp", "runpod", "nibi")\n'
+    )
+    cases: list[tuple[str, str]] = [
+        # Flag bound to a non-literal => absent from the flag map.
+        ("flag_nonliteral", "GCP_PROVISIONING_DISABLED = compute()\n" + disagreeing_fn),
+        (
+            "flag_conditional_rebind",
+            "GCP_PROVISIONING_DISABLED = False\n"
+            "if external_condition:\n"
+            "    GCP_PROVISIONING_DISABLED = True\n" + disagreeing_fn,
+        ),
+        (
+            "flag_tuple_rebind",
+            "GCP_PROVISIONING_DISABLED = False\n"
+            "GCP_PROVISIONING_DISABLED, other = True, False\n" + disagreeing_fn,
+        ),
+        (
+            "flag_augmented_rebind",
+            "GCP_PROVISIONING_DISABLED = False\n"
+            "GCP_PROVISIONING_DISABLED |= True\n" + disagreeing_fn,
+        ),
+        (
+            "flag_deleted",
+            "GCP_PROVISIONING_DISABLED = False\ndel GCP_PROVISIONING_DISABLED\n" + disagreeing_fn,
+        ),
+        (
+            "flag_rebound_nonliteral",
+            "GCP_PROVISIONING_DISABLED = False\n"
+            "GCP_PROVISIONING_DISABLED = compute()\n" + disagreeing_fn,
+        ),
+        (
+            "flag_rebound_nonbool",
+            "GCP_PROVISIONING_DISABLED = False\n"
+            "GCP_PROVISIONING_DISABLED: bool = 1\n" + disagreeing_fn,
+        ),
+        # Condition is not a bare known-flag Name.
+        (
+            "cond_call",
+            "GCP_PROVISIONING_DISABLED = False\n"
+            "def _default_auto_lane_order():\n"
+            "    if compute():\n"
+            '        return ("runpod", "nibi")\n'
+            '    return ("gcp", "runpod", "nibi")\n',
+        ),
+        # `not FLAG` is deliberately outside the narrow contract.
+        (
+            "cond_not",
+            "GCP_PROVISIONING_DISABLED = False\n"
+            "def _default_auto_lane_order():\n"
+            "    if not GCP_PROVISIONING_DISABLED:\n"
+            '        return ("gcp", "runpod", "nibi")\n'
+            '    return ("runpod", "nibi")\n',
+        ),
+        # A body statement outside the contract (assignment).
+        (
+            "body_assign",
+            "GCP_PROVISIONING_DISABLED = False\n"
+            "def _default_auto_lane_order():\n"
+            "    x = 1\n"
+            "    if GCP_PROVISIONING_DISABLED:\n"
+            '        return ("runpod", "nibi")\n'
+            '    return ("gcp", "runpod", "nibi")\n',
+        ),
+        # Taken path runs off the end without returning.
+        (
+            "no_return_on_path",
+            "GCP_PROVISIONING_DISABLED = False\n"
+            "GCP_UNUSED = True\n"
+            "def _default_auto_lane_order():\n"
+            "    if GCP_PROVISIONING_DISABLED:\n"
+            '        return ("runpod", "nibi")\n'
+            "    if GCP_PROVISIONING_DISABLED:\n"
+            '        return ("gcp", "runpod", "nibi")\n',
+        ),
+    ]
+    for name, router_text in cases:
+        assert wl.read_default_auto_lane_head(router_text) is None, name
+        root = _mk_repo(tmp_path / name, router_text=router_text)
+        _plant(root, ".claude/rules/stale.md", _STALE_LINE)
+        report = _report(root)
+        assert report["skipped"] is True, (name, report)
+        assert report["skip_reason"] == "head-unresolved", (name, report["skip_reason"])
+        assert report["head"] is None and report["findings"] == [], (name, report)
+
+
+def test_t16_last_literal_binding_wins() -> None:
+    """Module-level rebinding follows Python semantics: the LAST literal
+    bool bound to the flag name decides the branch."""
+    src = (
+        "GCP_PROVISIONING_DISABLED = True\n"
+        "GCP_PROVISIONING_DISABLED = False\n"
+        "def _default_auto_lane_order():\n"
+        "    if GCP_PROVISIONING_DISABLED:\n"
+        '        return ("runpod", "nibi")\n'
+        '    return ("gcp", "runpod", "nibi")\n'
+    )
+    assert wl.read_default_auto_lane_head(src) == "gcp"
 
 
 def test_t14_context_vocabulary_is_word_bounded(tmp_path: Path) -> None:

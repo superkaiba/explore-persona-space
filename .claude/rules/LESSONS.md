@@ -25,7 +25,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - codex-composer-common.md — a codex-* twin composes a prompt (shared composer contract).
 - codex-ensemble-review.md — you dispatch, compose, reconcile, or post a verdict at one of the five doubled review sites (bg-Bash form, strip, quota sentinel, re-attach).
 - compute-backend-failover.md — you touch the backend router/dispatch/poll, or reason about GCP↔RunPod failover.
-- compute-backends.md — you pin a `backend:`, debug a lane, or reason about a launch route (runpod-first auto order, GCP-disabled scope, reason codes).
+- compute-backends.md — you pin a `backend:`, debug a lane, or reason about a launch route (gcp-first auto order, GCP re-enable caveats, reason codes).
 - context-hygiene.md — an agent died to a refusal or autocompact thrash, or you are sizing a brief / compacting / hitting 429s.
 - contrastive-negatives.md — a plan implants a behavior (marker/fact/refusal/trait) into a persona (contrastive negatives by default).
 - crash-fix-rounds.md — retry/revision or post-code-fix relaunch (fix-engaged signal, stale-artifact + HF re-upload + sentinel wipe, ancestry+MooseFS, kill-relaunch, per-leg out-roots, symbol-rename grep, compute-character restate, mid-run push, shared-module propagate).

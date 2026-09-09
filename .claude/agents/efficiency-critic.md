@@ -133,9 +133,9 @@ Grep that heading and Read ONLY those spans (chunked). REVISE bars:
    the WIDE pod).
 5. **Compute projection costed on the routed machine + fence reconcile
    (Methodology item 13).** §9 costs each row on the machine the router will
-   ACTUALLY provision (runpod-first `auto` since #2054 → the RunPod H100/H200
-   intent table, NOT the GCP `INTENT_TO_MACHINE` A100 mapping — that mapping is
-   rollback-only while GCP provisioning is DISABLED, #2028) and reconciles
+   ACTUALLY provision (gcp-first `auto` since the 2026-09-09 re-enable → the
+   GCP `INTENT_TO_MACHINE` A100 mapping first — us-central1 has no H100 quota
+   — with the RunPod H100 intent table as the fall-through) and reconciles
    worst-case wall against the lane's
    auto-delete fence. REVISE a wrong-machine wall-time premise or a worst-case wall
    approaching the fence with no phase split / persist plan; a deliberate
