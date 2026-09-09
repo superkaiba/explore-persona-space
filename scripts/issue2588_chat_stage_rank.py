@@ -12,7 +12,7 @@ from pathlib import Path
 import issue2588_chat_rank as rank
 
 
-def stage(source_root: Path, revision: str, arm: str, *, api=None) -> dict:
+def stage(source_root: Path, revision: str, arm: str, *, api=None, fixed_layer=None) -> dict:
     """Build the rank consumer's exact layout and verify immutable content hashes."""
     from huggingface_hub import HfApi
 
@@ -106,6 +106,12 @@ def stage(source_root: Path, revision: str, arm: str, *, api=None) -> dict:
     dimension = fit["layers"][str(layer)]["d"]
     if layer != selected or type(dimension) is not int or dimension != 4096:
         raise ValueError("Invalid selected layer")
+    if fixed_layer is not None:
+        if type(fixed_layer) is not int or fixed_layer not in layer_grid:
+            raise ValueError("Invalid fixed layer")
+        layer = fixed_layer
+        if fit["layers"][str(layer)]["d"] != 4096:
+            raise ValueError("Invalid fixed-layer dimension")
     tensors = {}
     for split in rank.SPLITS:
         rows = json.loads((cell / "capture" / split / "rows.json").read_text())["rows"]
@@ -130,7 +136,10 @@ def stage(source_root: Path, revision: str, arm: str, *, api=None) -> dict:
         "files": len(manifest),
         "durable_verification": verified,
     }
-    rank.write_json(source_root / "rank_staging" / f"{arm}.json", result)
+    if fixed_layer is not None:
+        result["layer_selection"] = "fixed_layer_control"
+    receipt = f"{arm}.json" if fixed_layer is None else f"{arm}_fixed_L{layer:02d}.json"
+    rank.write_json(source_root / "rank_staging" / receipt, result)
     return result
 
 

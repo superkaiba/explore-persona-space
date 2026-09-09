@@ -144,7 +144,7 @@ def reconstruct(xtr, ytr, xval, yval, xte, yte, lam: float) -> dict[str, Any]:
     }
 
 
-def reduced_rank(payload: dict, xtr: np.ndarray) -> dict:
+def reduced_rank(payload: dict, xtr: np.ndarray, *, include_spectrum: bool = False) -> dict:
     """Exact training-output PCA, not coefficient SVD or a test-chosen rank."""
     w = np.asarray(payload["W"], dtype=np.float64)
     xmu, xsd, ymu = (np.asarray(payload[k], dtype=np.float64) for k in ("xmu", "xsd", "ymu"))
@@ -178,6 +178,7 @@ def reduced_rank(payload: dict, xtr: np.ndarray) -> dict:
         "selected_rank_test_r2": float(curves["test"][rank]),
         "rank_curve": {"validation_r2": curves["val"].tolist(), "test_r2": curves["test"].tolist()},
         "fitted_output_spectrum": {
+            **({"eigenvalues": evals.tolist()} if include_spectrum else {}),
             "eigenvalues_top64": evals[:64].tolist(),
             "total_variance": total_var,
             "directions_for_90pct_variance": int(np.searchsorted(cum, 0.90) + 1),

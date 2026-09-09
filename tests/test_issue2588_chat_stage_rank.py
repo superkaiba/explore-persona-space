@@ -127,6 +127,25 @@ def test_progress_precedes_first_network_call(tmp_path, remote, capsys):
     assert not first
 
 
+def test_fixed_layer_stages_only_requested_layer_preserves_selection(tmp_path, remote):
+    for split in stage.rank.SPLITS:
+        prefix = f"{remote.prefix}/analysis_tensors/capture/{split}"
+        remote.payload[f"{prefix}/L24/shard000.npz"] = remote.payload[f"{prefix}/L02/shard000.npz"]
+    result = stage.stage(tmp_path, "a" * 40, "a", api=remote.api, fixed_layer=24)
+    assert result["layer"] == 24 and result["layer_selection"] == "fixed_layer_control"
+    assert not any("/L02/" in name for name in remote.calls)
+    assert (tmp_path / "rank_staging/a_fixed_L24.json").exists()
+    assert not (tmp_path / "rank_staging/a.json").exists()
+    fit_path = tmp_path / "generic/qwen3-chat-v3/cells_cap_long/q3_8b_a/fits/fits_prompt_last.json"
+    assert json.loads(fit_path.read_text())["layer_star"] == 2
+
+
+def test_invalid_fixed_layer_rejected(tmp_path, remote):
+    with pytest.raises(ValueError, match="Invalid fixed layer"):
+        stage.stage(tmp_path, "a" * 40, "a", api=remote.api, fixed_layer=23)
+    assert not any(name.endswith(".npz") for name in remote.calls)
+
+
 def test_missing_tensor_never_writes_success(tmp_path, remote):
     del remote.payload[f"{remote.prefix}/analysis_tensors/capture/test_1000/L02/shard000.npz"]
     with pytest.raises(ValueError, match="Missing selected"):

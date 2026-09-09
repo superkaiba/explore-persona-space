@@ -60,6 +60,19 @@ def test_rank_zero_and_unattainable_threshold():
         rank.rank_at_threshold(np.array([0.5, 0.4, 0.6]), 0.9)
 
 
+def test_optional_full_spectrum_preserves_existing_rank_result():
+    rng = np.random.default_rng(2588)
+    x, y = rng.normal(size=(2, 75, 6)).astype(np.float32)
+    payload = rank.reconstruct(x[:45], y[:45], x[45:60], y[45:60], x[60:], y[60:], 10)
+    original = rank.reduced_rank(payload, x[:45])
+    expanded = rank.reduced_rank(payload, x[:45], include_spectrum=True)
+    spectrum = expanded["fitted_output_spectrum"].pop("eigenvalues")
+    assert expanded == original
+    xn = (x[:45].astype(float) - payload["xmu"].astype(float)) / payload["xsd"].astype(float)
+    singular_values = np.linalg.svd(xn @ payload["W"].astype(float), compute_uv=False)
+    np.testing.assert_allclose(spectrum, singular_values**2 / 45, rtol=1e-11, atol=1e-12)
+
+
 def test_split_loader_checks_manifest_and_lexicographic_order(tmp_path):
     directory = tmp_path / "capture" / "train_10k"
     layer = directory / "L00"
