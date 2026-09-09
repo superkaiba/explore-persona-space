@@ -128,6 +128,23 @@ def _run(plan: str, kind: str = "experiment"):
     return ok, _by_id(results)
 
 
+def _fellows_rollback(monkeypatch) -> None:
+    """Run a fellows-bearing lane-order fixture under the rollback build.
+
+    Fellows-cluster access is REVOKED (user directive 2026-09-09,
+    ``router.FELLOWS_ACCESS_REVOKED = True``), so a fellows-bearing
+    ``EPM_AUTO_LANE_ORDER`` now raises at validation and every
+    SLURM-reachability read through it correctly reports unreachable. The
+    c50/c61 fixtures deliberately pin the FELLOWS renderer semantics
+    (1024G nodes, fellows time bins), so they run with the fellows gate
+    OFF — the same rollback-build convention as the backend test modules'
+    autouse fixtures.
+    """
+    from explore_persona_space.backends import router as router_module
+
+    monkeypatch.setattr(router_module, "FELLOWS_ACCESS_REVOKED", False)
+
+
 def _status(plan: str, cid: str, kind: str = "experiment") -> str:
     _, by_id = _run(plan, kind)
     return by_id[cid].status
@@ -10980,6 +10997,7 @@ def test_c50_warns_when_wall_exceeds_bin(monkeypatch):
     # Plan §5 test 1 (positive, fires-pre-fix): 12 h projected wall vs the
     # lora-7b 6.0 h default bin, SLURM-reachable, no --time-budget-hours.
     monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    _fellows_rollback(monkeypatch)  # fellows access revoked 2026-09-09; fixtures pin the rollback build
     _, by_id = _run(GOOD_PLAN + C50_LAUNCH + _c50_table("12"))
     r = by_id[C50]
     assert r.status == "WARN"
@@ -10993,6 +11011,7 @@ def test_c50_skips_when_time_budget_declared(monkeypatch):
     # Plan §5 test 2 (conjunct 4): an explicit --time-budget-hours makes the
     # SLURM --time fence explicit — SKIP even with an over-bin wall.
     monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    _fellows_rollback(monkeypatch)  # fellows access revoked 2026-09-09; fixtures pin the rollback build
     plan = (
         GOOD_PLAN
         + (
@@ -11013,6 +11032,7 @@ def test_c50_skips_on_non_slurm_backend(monkeypatch):
     # Plan §5 test 3 (conjunct 3): an explicit non-SLURM pin means the sbatch
     # --time bin never binds — exact parity with the RUNTIME predicate.
     monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    _fellows_rollback(monkeypatch)  # fellows access revoked 2026-09-09; fixtures pin the rollback build
     plan = (
         GOOD_PLAN
         + (
@@ -11033,6 +11053,7 @@ def test_c50_skips_on_non_slurm_backend(monkeypatch):
 def test_c50_passes_when_wall_fits_bin(monkeypatch):
     # Plan §5 test 4 (verdict boundary, under): 4 h wall fits the 6.0 h bin.
     monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    _fellows_rollback(monkeypatch)  # fellows access revoked 2026-09-09; fixtures pin the rollback build
     r = _run(GOOD_PLAN + C50_LAUNCH + _c50_table("4"))[1][C50]
     assert r.status == "PASS"
     assert "4 h" in r.detail
@@ -11043,6 +11064,7 @@ def test_c50_skips_on_two_distinct_launches(monkeypatch):
     # Plan §5 test 5: >=2 DISTINCT launch commands — the wall-row <-> dispatch
     # join is ambiguous (documented false negative), never a guess.
     monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    _fellows_rollback(monkeypatch)  # fellows access revoked 2026-09-09; fixtures pin the rollback build
     second = (
         "\n```bash\n"
         "uv run python scripts/dispatch_issue.py launch \\\n"
@@ -11066,6 +11088,7 @@ def test_c50_skips_on_unbudgeted_intent(monkeypatch):
     from explore_persona_space.backends import slurm
 
     monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    _fellows_rollback(monkeypatch)  # fellows access revoked 2026-09-09; fixtures pin the rollback build
     plan = (
         GOOD_PLAN
         + (
@@ -11093,6 +11116,7 @@ def test_c50_boundary_equal_wall_passes_not_warns(monkeypatch):
     # in-table margin, e.g. ft-7b: 23.5 under 24 h; a later >= "fix" must be
     # deliberate and test-breaking).
     monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    _fellows_rollback(monkeypatch)  # fellows access revoked 2026-09-09; fixtures pin the rollback build
     r = _run(GOOD_PLAN + C50_LAUNCH + _c50_table("6"))[1][C50]
     assert r.status == "PASS"
     assert "6 h" in r.detail
@@ -11104,6 +11128,7 @@ def test_c50_dedupes_identical_commands_before_count(monkeypatch):
     # tuple(argv) BEFORE the exactly-one-distinct count, so the positive
     # still fires.
     monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    _fellows_rollback(monkeypatch)  # fellows access revoked 2026-09-09; fixtures pin the rollback build
     r = _run(GOOD_PLAN + C50_LAUNCH + C50_LAUNCH + _c50_table("12"))[1][C50]
     assert r.status == "WARN"
     assert "'lora-7b'" in r.detail
@@ -11119,6 +11144,7 @@ def test_c50_skips_when_no_wall_row(monkeypatch):
     # All dispatch conjuncts pass but the plan carries no parseable §9
     # planned_wall_h row — nothing to compare, stated reason.
     monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    _fellows_rollback(monkeypatch)  # fellows access revoked 2026-09-09; fixtures pin the rollback build
     r = _run(GOOD_PLAN + C50_LAUNCH)[1][C50]
     assert r.status == "SKIP"
     assert "no parseable §9 planned_wall_h row" in r.detail
@@ -12677,6 +12703,7 @@ def test_c61_per_leg_arm_warns_when_peak_exceeds_rendered_mem(monkeypatch):
     # Plan §5 arm (a): 1550 GiB declared per-leg peak vs the 8-GPU fellows
     # would-render --mem=1024G, no --min-ram-gb -> WARN naming the remedy.
     monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    _fellows_rollback(monkeypatch)  # fellows access revoked 2026-09-09; fixtures pin the rollback build
     r = _run(GOOD_PLAN + _C61_RAM_1550 + _c61_launch())[1][C61]
     assert r.status == "WARN"
     assert "1550" in r.detail  # the declared peak
@@ -12691,6 +12718,7 @@ def test_c61_aggregate_arm_warns_naming_arithmetic(monkeypatch):
     # multiply (8-wide, same line) makes the within-job aggregate
     # 194 x 8 = 1552 GiB > 1024G -> WARN naming the arithmetic + remedy.
     monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    _fellows_rollback(monkeypatch)  # fellows access revoked 2026-09-09; fixtures pin the rollback build
     r = _run(GOOD_PLAN + _C61_AGG_1336 + _c61_launch())[1][C61]
     assert r.status == "WARN"
     assert "194" in r.detail  # the per-unit peak
@@ -12705,6 +12733,7 @@ def test_c61_min_ram_flag_covering_peak_passes(monkeypatch):
     # 1550G (post-#2275 semantics, computed through the renderer itself) ->
     # PASS. Fail-loud pin: the no-WARN arm asserted explicitly.
     monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    _fellows_rollback(monkeypatch)  # fellows access revoked 2026-09-09; fixtures pin the rollback build
     r = _run(GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--min-ram-gb 1550"))[1][C61]
     assert r.status == "PASS", r.detail
     assert "--mem=1550G" in r.detail
@@ -12714,6 +12743,7 @@ def test_c61_min_ram_flag_below_peak_still_warns(monkeypatch):
     # AC4 analogue (floor-too-low): --min-ram-gb 1200 raises the render to
     # 1200G, still strictly below the declared 1550 GiB peak -> WARN.
     monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    _fellows_rollback(monkeypatch)  # fellows access revoked 2026-09-09; fixtures pin the rollback build
     r = _run(GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--min-ram-gb 1200"))[1][C61]
     assert r.status == "WARN"
     assert "--mem=1200G" in r.detail
@@ -12723,6 +12753,7 @@ def test_c61_skips_when_no_slurm_lane_reachable(monkeypatch):
     # Plan §5: an explicit non-SLURM pin -> the rendered --mem never binds
     # (exact parity with the runtime reachability predicate, the c50 idiom).
     monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    _fellows_rollback(monkeypatch)  # fellows access revoked 2026-09-09; fixtures pin the rollback build
     r = _run(GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--backend runpod"))[1][C61]
     assert r.status == "SKIP"
     assert "no SLURM lane reachable" in r.detail
@@ -12731,6 +12762,7 @@ def test_c61_skips_when_no_slurm_lane_reachable(monkeypatch):
 def test_c61_skips_when_no_rss_token(monkeypatch):
     # Plan §5: launch present, no RSS/host-RAM peak-estimate token anywhere.
     monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    _fellows_rollback(monkeypatch)  # fellows access revoked 2026-09-09; fixtures pin the rollback build
     r = _run(GOOD_PLAN + _c61_launch())[1][C61]
     assert r.status == "SKIP"
     assert "no per-leg RSS" in r.detail
@@ -12751,6 +12783,7 @@ def test_c61_never_fails_invariant(monkeypatch):
     # variant — WARN shapes, SKIP shapes, malformed argvs — resolves to
     # PASS/WARN/SKIP, never FAIL.
     monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    _fellows_rollback(monkeypatch)  # fellows access revoked 2026-09-09; fixtures pin the rollback build
     variants = [
         GOOD_PLAN,
         GOOD_PLAN + _C61_RAM_1550,
