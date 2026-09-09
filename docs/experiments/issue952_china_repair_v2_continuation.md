@@ -44,6 +44,28 @@ The process's zero exit after its bounded poll interval does **not** establish
 completion: require its hash-bound external `done.json` and verified full
 archive. It never launches CPU analysis or creates semantic decisions.
 
+## Model-switch continuation contract (2026-09-09)
+
+The original production judge packets, receipts, and authored outputs remain
+immutable and retain their original reviewer identities. The remaining
+assignments may be prepared by
+`scripts/issue952_china_repair_continuation.py` in the explicitly new phase
+`production-continuation-gpt-5.6-luna-medium-v1`, with two independent lane
+identities and runtime pins `model=gpt-5.6-luna`, `reasoning_effort=medium`, and
+`fork_turns=none`. This is a model-switch phase, not same-judge continuity and
+not a new calibration or overlap sample. The adapter derives pending work from
+the original fixed assignment lookup, retains scheduled duplicate assignments
+in their independent lanes, and refuses receipt/output half-triples or changed
+original packet bytes.
+
+The continuation manifest carries the original manifest hash, exact-byte copies
+of original source/packet/receipt/output files, and a relocatable structural
+manifest. `validate_continuation` requires every new packet's explicit receipt
+and authored output. `reconstruct_mixed_scores` joins old and new decisions by
+the original lane assignment and emits a hash-bound mixed manifest without
+rewriting either phase's authored rows. No semantic labels are selected by this
+adapter.
+
 ## Dedicated CPU continuation
 
 Verified-by: read. The launcher and analysis have independent code review and
