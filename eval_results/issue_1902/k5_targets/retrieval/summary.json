@@ -1,0 +1,66 @@
+{
+  "cells": {
+    "B": {
+      "n": 16391,
+      "raw_cosine_acc1": 0.849063510463059,
+      "raw_cosine_acc1_ci95": [
+        0.8245716441370972,
+        0.8711611648082708
+      ],
+      "whitened_csls_acc1": 0.988530291013361,
+      "whitened_csls_acc1_ci95": [
+        0.9845566797386175,
+        0.991895471069112
+      ]
+    },
+    "D": {
+      "n": 16391,
+      "raw_cosine_acc1": 0.7821975474345677,
+      "raw_cosine_acc1_ci95": [
+        0.7538637436833369,
+        0.806626189104104
+      ],
+      "whitened_csls_acc1": 0.9648587639558294,
+      "whitened_csls_acc1_ci95": [
+        0.955398720827035,
+        0.9725520799806503
+      ]
+    },
+    "R": {
+      "n": 16391,
+      "raw_cosine_acc1": 0.78250259288634,
+      "raw_cosine_acc1_ci95": [
+        0.7531013516281576,
+        0.8078264269975932
+      ],
+      "whitened_csls_acc1": 0.963211518516259,
+      "whitened_csls_acc1_ci95": [
+        0.9523451433982012,
+        0.9717446272056015
+      ]
+    },
+    "S": {
+      "n": 16391,
+      "raw_cosine_acc1": 0.8293575742785675,
+      "raw_cosine_acc1_ci95": [
+        0.8045370833927822,
+        0.8489485414293497
+      ],
+      "whitened_csls_acc1": 0.9824293819779147,
+      "whitened_csls_acc1_ci95": [
+        0.9771462424383814,
+        0.9869768875164806
+      ]
+    }
+  },
+  "metadata": {
+    "boot_seed": 1944,
+    "csls_k": 10,
+    "design": "K=5 mean-target strict retrieval (whitened cosine + CSLS k=10)",
+    "n_boot": 1000,
+    "n_groups": 42,
+    "script": "scripts/issue1902_k5_fits.py",
+    "timestamp_utc": "2026-09-09T05:34:33Z",
+    "whiten_lambda": 0.1
+  }
+}
