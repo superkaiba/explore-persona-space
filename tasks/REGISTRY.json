@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2670,
+  "highest_id": 2671,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12897,6 +12897,13 @@
       "path": "tasks/followups_running/2670",
       "status": "followups_running",
       "title": "Initial activation probes and the frozen map did not improve reward-hacking forecasts (MODERATE confidence)"
+    },
+    "2671": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2671",
+      "status": "proposed",
+      "title": "Shard-manifest schema mismatch: #1902 upload_text_payload writes {shards:[...]}, shared hub.stage_sharded_text only reads {parts:[...]}"
     },
     "268": {
       "has_clean_result": false,
