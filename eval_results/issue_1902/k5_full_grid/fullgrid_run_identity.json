@@ -1,0 +1,36 @@
+{
+  "cells": [
+    "BB",
+    "BS",
+    "BD",
+    "BR",
+    "SB",
+    "SS",
+    "SD",
+    "SR",
+    "DB",
+    "DS",
+    "DD",
+    "DR",
+    "RB",
+    "RS",
+    "RD",
+    "RR"
+  ],
+  "context_summary": "u_last",
+  "draw_revision": "f0b2131442326ef274c91bea6da27e05ef844df6",
+  "estimator": "SharedPrimalRidge-GCV",
+  "flag_counts_root": "/mnt/eps-data/thomasjiralerspong/wt-1902-k5/eval_results/issue_1902/k5_targets/targets",
+  "fold_seed": 190231,
+  "layer": 31,
+  "n_folds": 6,
+  "schema": 1,
+  "seed42_revision": "3256c8efcef5f10ca525efeb2039636eaec8fad7",
+  "seeds": [
+    42,
+    45,
+    46,
+    47,
+    48
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "timestamp_utc": "2026-09-09T19:29:47.804154+00:00",
+  "method": "Independent streamed float64 sum for exact float32 mean; Welford sample spread from five pinned, hash-verified source tensors (spread rtol=1e-10, atol=1e-7).",
+  "cells": {
+    "SB": {
+      "five_pinned_inputs_verified": true,
+      "mean_float32_exact": true,
+      "spread_max_absolute_error": 3.205968823749572e-11,
+      "welford_mean_fp64_max_difference": 1.7763568394002505e-15
+    },
+    "SD": {
+      "five_pinned_inputs_verified": true,
+      "mean_float32_exact": true,
+      "spread_max_absolute_error": 2.1600499167107046e-11,
+      "welford_mean_fp64_max_difference": 8.881784197001252e-16
+    },
+    "SR": {
+      "five_pinned_inputs_verified": true,
+      "mean_float32_exact": true,
+      "spread_max_absolute_error": 1.659827830735594e-11,
+      "welford_mean_fp64_max_difference": 8.881784197001252e-16
+    },
+    "DB": {
+      "five_pinned_inputs_verified": true,
+      "mean_float32_exact": true,
+      "spread_max_absolute_error": 3.069544618483633e-11,
+      "welford_mean_fp64_max_difference": 8.881784197001252e-16
+    },
+    "DS": {
+      "five_pinned_inputs_verified": true,
+      "mean_float32_exact": true,
+      "spread_max_absolute_error": 1.432454155292362e-11,
+      "welford_mean_fp64_max_difference": 8.881784197001252e-16
+    },
+    "DR": {
+      "five_pinned_inputs_verified": true,
+      "mean_float32_exact": true,
+      "spread_max_absolute_error": 2.523847797419876e-11,
+      "welford_mean_fp64_max_difference": 4.440892098500626e-16
+    },
+    "RB": {
+      "five_pinned_inputs_verified": true,
+      "mean_float32_exact": true,
+      "spread_max_absolute_error": 3.001332515850663e-11,
+      "welford_mean_fp64_max_difference": 1.7763568394002505e-15
+    },
+    "RS": {
+      "five_pinned_inputs_verified": true,
+      "mean_float32_exact": true,
+      "spread_max_absolute_error": 1.3528733688872308e-11,
+      "welford_mean_fp64_max_difference": 8.881784197001252e-16
+    },
+    "RD": {
+      "five_pinned_inputs_verified": true,
+      "mean_float32_exact": true,
+      "spread_max_absolute_error": 1.3073986337985843e-11,
+      "welford_mean_fp64_max_difference": 1.7763568394002505e-15
+    }
+  },
+  "pass": true
+}

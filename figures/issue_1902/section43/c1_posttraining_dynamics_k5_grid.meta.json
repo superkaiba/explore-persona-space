@@ -10,7 +10,7 @@
     "prev_row_note": "Full 4x4 grid: all three previous-stage points captured.",
     "variant": "K=5 mean answer targets (seeds 42,45,46,47,48)"
   },
-  "panel_b_variant": "lines",
+  "panel_b_variant": "grid",
   "record": {
     "authoring_size_inches": [
       13.095,
@@ -19,10 +19,10 @@
     "background": "#FFFFFF",
     "exported_size_inches": [
       13.095,
-      4.164
+      4.102
     ],
     "include_width_frac": 1.0,
-    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c1_posttraining_dynamics_k5.pdf}",
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c1_posttraining_dynamics_k5_grid.pdf}",
     "png_dpi": 240,
     "realized_font_pt": {
       "body": 7.56,
@@ -48,12 +48,16 @@
       "Held-out score of each\nstage's own map",
       "Held-out $R^2$",
       "Top-1 retrieval",
+      "0.67",
+      "0.64",
+      "0.63",
+      "0.61",
+      "0.62",
+      "0.57",
+      "0.60",
       "B  \u00b7  CONTEXT\u2192ANSWER FITS",
       "Answer source",
-      "Held-out $R^2$ \u2191",
-      "0.55",
-      "0.65",
-      "0.7",
+      "Activation checkpoint",
       "Held-out $R^2$ into each stage's\nanswers, by context source",
       "C  \u00b7  MAP TRANSFER",
       "Base\n\u2192 SFT",
@@ -63,12 +67,8 @@
       "0",
       "0.5",
       "Retention of the\nprior stage's map",
-      "CONTEXT SOURCE",
       "CORRECTION",
       "Error bars: 95% bootstrap CIs, 1,000 draws",
-      "Own states",
-      "Previous-stage states",
-      "Base states",
       "as is",
       "bias",
       "rescaling + bias"

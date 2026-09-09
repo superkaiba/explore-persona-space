@@ -1,0 +1,38 @@
+{
+  "timestamp_utc": "2026-09-09T19:14:42.382683+00:00",
+  "prefix": "issue1902_stage_map/analysis_tensors/k5_full_grid_20260909/targets",
+  "result": {
+    "repo_id": "superkaiba1/explore-persona-space-data",
+    "overflow_repo": "superkaiba1/explore-persona-space-overflow",
+    "uploaded": [
+      "issue1902_stage_map/analysis_tensors/k5_full_grid_20260909/targets/BB_L31.npz",
+      "issue1902_stage_map/analysis_tensors/k5_full_grid_20260909/targets/BD_L31.npz",
+      "issue1902_stage_map/analysis_tensors/k5_full_grid_20260909/targets/BR_L31.npz",
+      "issue1902_stage_map/analysis_tensors/k5_full_grid_20260909/targets/BS_L31.npz",
+      "issue1902_stage_map/analysis_tensors/k5_full_grid_20260909/targets/DB_L31.npz",
+      "issue1902_stage_map/analysis_tensors/k5_full_grid_20260909/targets/DD_L31.npz",
+      "issue1902_stage_map/analysis_tensors/k5_full_grid_20260909/targets/DR_L31.npz",
+      "issue1902_stage_map/analysis_tensors/k5_full_grid_20260909/targets/DS_L31.npz",
+      "issue1902_stage_map/analysis_tensors/k5_full_grid_20260909/targets/RB_L31.npz",
+      "issue1902_stage_map/analysis_tensors/k5_full_grid_20260909/targets/RD_L31.npz",
+      "issue1902_stage_map/analysis_tensors/k5_full_grid_20260909/targets/RR_L31.npz",
+      "issue1902_stage_map/analysis_tensors/k5_full_grid_20260909/targets/RS_L31.npz",
+      "issue1902_stage_map/analysis_tensors/k5_full_grid_20260909/targets/SB_L31.npz",
+      "issue1902_stage_map/analysis_tensors/k5_full_grid_20260909/targets/SD_L31.npz",
+      "issue1902_stage_map/analysis_tensors/k5_full_grid_20260909/targets/SR_L31.npz",
+      "issue1902_stage_map/analysis_tensors/k5_full_grid_20260909/targets/SS_L31.npz"
+    ],
+    "rerouted": [],
+    "deleted": [],
+    "skipped_existing": []
+  },
+  "revisions": {
+    "superkaiba1/explore-persona-space-data": {
+      "revision": "5070d9766b43cd607fac7f77a9266c277d503db5",
+      "repo_type": "dataset",
+      "verified_files": 16
+    }
+  },
+  "sha256_verified": true,
+  "elapsed_seconds": 52.02097065746784
+}

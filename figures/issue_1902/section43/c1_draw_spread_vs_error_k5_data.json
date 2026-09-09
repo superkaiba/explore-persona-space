@@ -9,7 +9,7 @@
       "DPO",
       "RLVR"
     ],
-    "timestamp_utc": "2026-09-09T05:34:41Z",
+    "timestamp_utc": "2026-09-09T19:42:47Z",
     "trend": "pooled equal-count binned medians",
     "x": "spread = sum_k ||w_k - w_bar||^2 / (K-1) per context",
     "y": "own-map OOF squared error against w_bar (six IID folds)"

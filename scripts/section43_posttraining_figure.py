@@ -525,13 +525,18 @@ def render_variant(data: dict[str, Any], out_base: Path, *, panel_b: str) -> dic
     else:
         handles_b = plot_stage_grid(axes[1], data)
     handles_c = plot_transfer(axes[2], data)
-    # The metric legend sits INSIDE panel A's empty mid band (both series hug
-    # the range edges), so the strip above the panels stays one row tall and
-    # the canvas can drop to aspect 0.33 (~1.8 in printed).
+    # Place the legend between the observed CI bands. K=5 raises the R2
+    # curve enough that the former fixed midpoint overlapped its markers.
+    legend_score = (
+        np.asarray(data["iid_r2_ci"])[:, 1].max()
+        + np.asarray(data["whitened_csls_acc1_ci"])[:, 0].min()
+    ) / 2
+    y_min, y_max = axes[0].get_ylim()
+    legend_y = (legend_score - y_min) / (y_max - y_min)
     axes[0].legend(
         handles=handles_a,
         loc="center left",
-        bbox_to_anchor=(0.02, 0.50),
+        bbox_to_anchor=(0.02, legend_y),
         frameon=False,
         handlelength=1.4,
         handletextpad=0.5,

@@ -1,0 +1,20 @@
+{
+  "launcher_pid": 713168,
+  "worker_pid": 713343,
+  "env": {
+    "OMP_NUM_THREADS": "8",
+    "MKL_NUM_THREADS": "8",
+    "OPENBLAS_NUM_THREADS": "8",
+    "NUMEXPR_NUM_THREADS": "8",
+    "MALLOC_ARENA_MAX": "2",
+    "MALLOC_MMAP_THRESHOLD_": "131072",
+    "NUMPY_MADVISE_HUGEPAGE": "0"
+  },
+  "oom_score_adj": "-600",
+  "fix_commit": "5773978015c928f799811d803cb4f465304df92d",
+  "mechanism": "Observed kernel stack: tell_host -> virtballoon_migratepage -> compact_zone -> __alloc_pages_direct_compact -> do_huge_pmd_anonymous_page",
+  "retained_grid_checkpoints": [
+    "B",
+    "S"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "cells": [
+    "BB",
+    "BS",
+    "BD",
+    "BR",
+    "SB",
+    "SS",
+    "SD",
+    "SR",
+    "DB",
+    "DS",
+    "DD",
+    "DR",
+    "RB",
+    "RS",
+    "RD",
+    "RR"
+  ],
+  "draw_revision": "f0b2131442326ef274c91bea6da27e05ef844df6",
+  "n_staged": 0,
+  "seeds": [
+    42,
+    45,
+    46,
+    47,
+    48
+  ],
+  "smoke": false,
+  "staged": [],
+  "target_layers": [
+    31
+  ],
+  "timestamp_utc": "2026-09-09T19:26:36Z"
+}

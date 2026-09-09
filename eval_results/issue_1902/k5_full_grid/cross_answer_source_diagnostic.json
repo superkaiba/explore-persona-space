@@ -1,0 +1,106 @@
+{
+  "by_context_stage": {
+    "B": {
+      "best_answer_source": "B",
+      "best_minus_diagonal": 0.0,
+      "best_r2": 0.6747779066421795,
+      "diagonal_answer_source": "B",
+      "diagonal_r2": 0.6747779066421795,
+      "range_across_answer_sources": 0.04711530041975043
+    },
+    "D": {
+      "best_answer_source": "S",
+      "best_minus_diagonal": 0.001408733476739421,
+      "best_r2": 0.607234327344309,
+      "diagonal_answer_source": "D",
+      "diagonal_r2": 0.6058255938675696,
+      "range_across_answer_sources": 0.0329417324012109
+    },
+    "R": {
+      "best_answer_source": "S",
+      "best_minus_diagonal": 0.007514062493213514,
+      "best_r2": 0.606603793140889,
+      "diagonal_answer_source": "R",
+      "diagonal_r2": 0.5990897306476755,
+      "range_across_answer_sources": 0.03342543722012947
+    },
+    "S": {
+      "best_answer_source": "S",
+      "best_minus_diagonal": 0.0,
+      "best_r2": 0.6336208397328849,
+      "diagonal_answer_source": "S",
+      "diagonal_r2": 0.6336208397328849,
+      "range_across_answer_sources": 0.025697093094824153
+    }
+  },
+  "interpretation": "Fixed representation checkpoint; vary generated answer-text source.",
+  "protocol": {
+    "boot_seed": 1944,
+    "cells": [
+      "BB",
+      "BS",
+      "BD",
+      "BR",
+      "SB",
+      "SS",
+      "SD",
+      "SR",
+      "DB",
+      "DS",
+      "DD",
+      "DR",
+      "RB",
+      "RS",
+      "RD",
+      "RR"
+    ],
+    "context_summary": "u_last",
+    "corpus": "single",
+    "flag_counts_root": "/mnt/eps-data/thomasjiralerspong/wt-1902-k5/eval_results/issue_1902/k5_targets/targets",
+    "fold_mode": "random",
+    "fold_seed": 190231,
+    "full_grid": true,
+    "hf_repo": "superkaiba1/explore-persona-space-data",
+    "hf_revision_seed42": "3256c8efcef5f10ca525efeb2039636eaec8fad7",
+    "k5_draw_revision": "f0b2131442326ef274c91bea6da27e05ef844df6",
+    "layer": 31,
+    "n_boot": 1000,
+    "n_folds": 6,
+    "n_rows": 16391,
+    "script": "scripts/issue1902_k5_fits.py",
+    "target": "mean answer vector over K=5 draws (seeds 42,45,46,47,48)",
+    "timestamp_utc": "2026-09-09T19:42:11Z",
+    "transfer_modes": [
+      "direct",
+      "bias",
+      "scale_bias"
+    ]
+  },
+  "r2_context_stage_by_answer_source": {
+    "B": {
+      "B": 0.6747779066421795,
+      "D": 0.6360228236840828,
+      "R": 0.6276626062224291,
+      "S": 0.636506289970764
+    },
+    "D": {
+      "B": 0.5742925949430981,
+      "D": 0.6058255938675696,
+      "R": 0.5984933259078531,
+      "S": 0.607234327344309
+    },
+    "R": {
+      "B": 0.5731783559207595,
+      "D": 0.6054925393322164,
+      "R": 0.5990897306476755,
+      "S": 0.606603793140889
+    },
+    "S": {
+      "B": 0.6079237466380607,
+      "D": 0.6306720869630378,
+      "R": 0.623102948738183,
+      "S": 0.6336208397328849
+    }
+  },
+  "selection_note": "Best-source labels are descriptive maxima, without selection-adjusted inference."
+}

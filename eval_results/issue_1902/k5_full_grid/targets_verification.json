@@ -1,0 +1,175 @@
+{
+  "timestamp_utc": "2026-09-09T19:11:57.502026+00:00",
+  "cells": {
+    "BB": {
+      "shape": [
+        16391,
+        4096
+      ],
+      "n_any_flagged": 974,
+      "sha256": "e4883ea8f9ea89da0bb56597e8ab772aa6f3f1315860e95259f1f095c7ce0143",
+      "bytes": 269731824
+    },
+    "BD": {
+      "shape": [
+        16391,
+        4096
+      ],
+      "n_any_flagged": 553,
+      "sha256": "3c81c2dee16939d66f7033b36d271ac4ad008c8ddb5aa0bed0e44a370cfdb0ac",
+      "bytes": 269731824
+    },
+    "BR": {
+      "shape": [
+        16391,
+        4096
+      ],
+      "n_any_flagged": 366,
+      "sha256": "5b63eb358edac3119c7c75b72a09ae5779dfaf1d8da8e6535af4de89db9b89e1",
+      "bytes": 269731824
+    },
+    "BS": {
+      "shape": [
+        16391,
+        4096
+      ],
+      "n_any_flagged": 231,
+      "sha256": "f81e135199a174a4ca14801582249764efad456b035fed1487c0af8606784b79",
+      "bytes": 269731824
+    },
+    "DB": {
+      "shape": [
+        16391,
+        4096
+      ],
+      "n_any_flagged": 974,
+      "sha256": "4cae3432d3a0e1ad24ca752a8061a2acf11887404c17643785087d39da1faf56",
+      "bytes": 269731824
+    },
+    "DD": {
+      "shape": [
+        16391,
+        4096
+      ],
+      "n_any_flagged": 553,
+      "sha256": "1f686009648b34355a4893b1a2fbbf9718a7345dfcb1f3587bd3f2d172b51f26",
+      "bytes": 269731824
+    },
+    "DR": {
+      "shape": [
+        16391,
+        4096
+      ],
+      "n_any_flagged": 366,
+      "sha256": "28bc4947ca0f10172a38da83a187890f497df236795603475cda7aab3af4afb6",
+      "bytes": 269731824
+    },
+    "DS": {
+      "shape": [
+        16391,
+        4096
+      ],
+      "n_any_flagged": 231,
+      "sha256": "aa9a0fac987f8fbe0386f7b7f487036d9a327caa7e0ed9d53ecc6caac7371f56",
+      "bytes": 269731824
+    },
+    "RB": {
+      "shape": [
+        16391,
+        4096
+      ],
+      "n_any_flagged": 974,
+      "sha256": "872d41eb723e14484579f3c962512fe3f9e4fefe7ba567985a738839e46abd3e",
+      "bytes": 269731824
+    },
+    "RD": {
+      "shape": [
+        16391,
+        4096
+      ],
+      "n_any_flagged": 553,
+      "sha256": "b3850409a4a96eb854f537f19eae970523498711a3ea5a91f70a364282f4d95c",
+      "bytes": 269731824
+    },
+    "RR": {
+      "shape": [
+        16391,
+        4096
+      ],
+      "n_any_flagged": 366,
+      "sha256": "8813ca62c7891afa816af8a12270b740d4439476ec08bfc6d09c3bc4fdc0c3ce",
+      "bytes": 269731824
+    },
+    "RS": {
+      "shape": [
+        16391,
+        4096
+      ],
+      "n_any_flagged": 231,
+      "sha256": "39126d6204bbc22ececdadaa4fc9d06af45905ebd84408bb7214616b8f7067a5",
+      "bytes": 269731824
+    },
+    "SB": {
+      "shape": [
+        16391,
+        4096
+      ],
+      "n_any_flagged": 974,
+      "sha256": "afa4dd8cd655230b2d2a08bf91e2472e50e10db1d3b3c9e450324adca3db55a9",
+      "bytes": 269731824
+    },
+    "SD": {
+      "shape": [
+        16391,
+        4096
+      ],
+      "n_any_flagged": 553,
+      "sha256": "d59eec77f006d2094db85e78715ed144e1112d32a9c5957e3a8bf8d66c87e73e",
+      "bytes": 269731824
+    },
+    "SR": {
+      "shape": [
+        16391,
+        4096
+      ],
+      "n_any_flagged": 366,
+      "sha256": "d3af91eae769bb1c1e0015b41111918ad8ce023a027ad9afe2fdcfd17528d08b",
+      "bytes": 269731824
+    },
+    "SS": {
+      "shape": [
+        16391,
+        4096
+      ],
+      "n_any_flagged": 231,
+      "sha256": "537cd298dc83daefd34a97a1b649185d31be044e489c352b0011a76fe4376547",
+      "bytes": 269731824
+    }
+  },
+  "n_rows": 16391,
+  "fold_counts": [
+    2711,
+    2742,
+    2668,
+    2717,
+    2810,
+    2743
+  ],
+  "seeds": [
+    42,
+    45,
+    46,
+    47,
+    48
+  ],
+  "earlier_cells_exact_array_replay": [
+    "BB",
+    "BD",
+    "BR",
+    "BS",
+    "DD",
+    "RR",
+    "SS"
+  ],
+  "pass": true
+}

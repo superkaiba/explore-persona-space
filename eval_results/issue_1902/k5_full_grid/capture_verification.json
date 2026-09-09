@@ -1,0 +1,1156 @@
+{
+  "verdict": "PASS",
+  "capture_revision": "f0b2131442326ef274c91bea6da27e05ef844df6",
+  "archive_revision": "ec76284c91787410cf4b21ac3416a4a83f7e203f",
+  "archive_prefix": "issue1902_stage_map/k5grid_20260909/run_state",
+  "units": 36,
+  "expected_files": [
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed45/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed45/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed45/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed45/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed45/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed45/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed46/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed46/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed46/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed46/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed46/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed46/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed47/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed47/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed47/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed47/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed47/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed47/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed48/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed48/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed48/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed48/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed48/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed48/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed45/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed45/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed45/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed45/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed45/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed45/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed46/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed46/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed46/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed46/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed46/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed46/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed47/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed47/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed47/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed47/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed47/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed47/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed48/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed48/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed48/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed48/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed48/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed48/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed45/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed45/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed45/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed45/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed45/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed45/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed46/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed46/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed46/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed46/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed46/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed46/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed47/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed47/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed47/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed47/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed47/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed47/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed48/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed48/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed48/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed48/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed48/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed48/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed45/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed45/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed45/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed45/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed45/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed45/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed46/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed46/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed46/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed46/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed46/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed46/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed47/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed47/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed47/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed47/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed47/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed47/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed48/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed48/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed48/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed48/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed48/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed48/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed45/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed45/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed45/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed45/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed45/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed45/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed46/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed46/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed46/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed46/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed46/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed46/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed47/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed47/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed47/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed47/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed47/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed47/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed48/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed48/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed48/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed48/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed48/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed48/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed45/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed45/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed45/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed45/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed45/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed45/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed46/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed46/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed46/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed46/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed46/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed46/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed47/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed47/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed47/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed47/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed47/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed47/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed48/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed48/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed48/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed48/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed48/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed48/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed45/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed45/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed45/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed45/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed45/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed45/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed46/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed46/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed46/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed46/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed46/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed46/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed47/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed47/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed47/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed47/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed47/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed47/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed48/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed48/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed48/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed48/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed48/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed48/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed45/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed45/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed45/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed45/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed45/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed45/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed46/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed46/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed46/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed46/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed46/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed46/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed47/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed47/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed47/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed47/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed47/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed47/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed48/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed48/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed48/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed48/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed48/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed48/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed45/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed45/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed45/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed45/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed45/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed45/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed46/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed46/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed46/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed46/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed46/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed46/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed47/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed47/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed47/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed47/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed47/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed47/ctx/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed48/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed48/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed48/row_index.jsonl",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed48/ctx/L18.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed48/ctx/L31.pt",
+    "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed48/ctx/row_index.jsonl"
+  ],
+  "row_indexes": [
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed45/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "61ddf2cbc10c6397391cc6ae1dc7db56e687257603bda011142ab5a0dc7d2ef4"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed45/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "61ddf2cbc10c6397391cc6ae1dc7db56e687257603bda011142ab5a0dc7d2ef4"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed46/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "6886a7c9b0847970955dc9979f3a416d50bec51fd9111fe9fb141f2daaa213b6"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed46/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "6886a7c9b0847970955dc9979f3a416d50bec51fd9111fe9fb141f2daaa213b6"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed47/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "5c2ecfe1222cdc85f2d2bd0428367bd93f96276bccad85ea16c700dabf86fbee"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed47/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "5c2ecfe1222cdc85f2d2bd0428367bd93f96276bccad85ea16c700dabf86fbee"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed48/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "2236679768197ee75aaab61fedad54521c9a1ac6cbb89d90d102dc396cc95cb2"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/B/single/seed48/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "2236679768197ee75aaab61fedad54521c9a1ac6cbb89d90d102dc396cc95cb2"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed45/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "bb3535f12d0672a652d06f5a1fb18c3438d5ad037cca7fedda5741b7ee6e4375"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed45/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "bb3535f12d0672a652d06f5a1fb18c3438d5ad037cca7fedda5741b7ee6e4375"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed46/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "71e0ddabdc0aab72cf89e2ce7d7194a23392fbaa58190376e9ad899a8b1433df"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed46/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "71e0ddabdc0aab72cf89e2ce7d7194a23392fbaa58190376e9ad899a8b1433df"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed47/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "bc66c0806f850f8725a18cc63ff89582a9e857fc203b4e8c557643ab253da817"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed47/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "bc66c0806f850f8725a18cc63ff89582a9e857fc203b4e8c557643ab253da817"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed48/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "94b63cb543bb2116874f2d8d69f6955ef597d6776a3aec9a41efaa0c9aa8e47f"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/D/single/seed48/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "94b63cb543bb2116874f2d8d69f6955ef597d6776a3aec9a41efaa0c9aa8e47f"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed45/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "7f2d245eef4d705a4ea322df2c04503a65eec0dba4d6a02ef760b246942de765"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed45/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "7f2d245eef4d705a4ea322df2c04503a65eec0dba4d6a02ef760b246942de765"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed46/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "18a327858c5f5fd27f821c1e908736d9541cee94f21d996b2e0953be6ad14eb1"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed46/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "18a327858c5f5fd27f821c1e908736d9541cee94f21d996b2e0953be6ad14eb1"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed47/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "88ce7b9b805e7177a232c6475a194668f6503ccbc43d6540fbc7a7bceee42606"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed47/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "88ce7b9b805e7177a232c6475a194668f6503ccbc43d6540fbc7a7bceee42606"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed48/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "1daac9ed6881cf32bc6a7df718bf0ad20e0949cfb7b6bbe6b19dbf336addb901"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/S/R/single/seed48/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "1daac9ed6881cf32bc6a7df718bf0ad20e0949cfb7b6bbe6b19dbf336addb901"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed45/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "61ddf2cbc10c6397391cc6ae1dc7db56e687257603bda011142ab5a0dc7d2ef4"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed45/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "61ddf2cbc10c6397391cc6ae1dc7db56e687257603bda011142ab5a0dc7d2ef4"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed46/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "6886a7c9b0847970955dc9979f3a416d50bec51fd9111fe9fb141f2daaa213b6"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed46/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "6886a7c9b0847970955dc9979f3a416d50bec51fd9111fe9fb141f2daaa213b6"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed47/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "5c2ecfe1222cdc85f2d2bd0428367bd93f96276bccad85ea16c700dabf86fbee"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed47/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "5c2ecfe1222cdc85f2d2bd0428367bd93f96276bccad85ea16c700dabf86fbee"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed48/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "2236679768197ee75aaab61fedad54521c9a1ac6cbb89d90d102dc396cc95cb2"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/B/single/seed48/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "2236679768197ee75aaab61fedad54521c9a1ac6cbb89d90d102dc396cc95cb2"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed45/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "b2a37f7c8b86ded15f63f17d717f84706cdb4c3580a14330da3a00ad9c1f1f35"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed45/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "b2a37f7c8b86ded15f63f17d717f84706cdb4c3580a14330da3a00ad9c1f1f35"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed46/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "1871c7db082f33fbb27705f9195d12b07e7df7d9558e6a471f5b525c7c481775"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed46/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "1871c7db082f33fbb27705f9195d12b07e7df7d9558e6a471f5b525c7c481775"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed47/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "9a97b8bf9230a68f48a7b50a17354c0b89fc3cb601ac01110fb29fa15015cc91"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed47/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "9a97b8bf9230a68f48a7b50a17354c0b89fc3cb601ac01110fb29fa15015cc91"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed48/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "78d483e285fe5e4a8591594eb26dd28d7966d764ace790790f63cbba6c4696b4"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/S/single/seed48/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "78d483e285fe5e4a8591594eb26dd28d7966d764ace790790f63cbba6c4696b4"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed45/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "7f2d245eef4d705a4ea322df2c04503a65eec0dba4d6a02ef760b246942de765"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed45/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "7f2d245eef4d705a4ea322df2c04503a65eec0dba4d6a02ef760b246942de765"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed46/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "18a327858c5f5fd27f821c1e908736d9541cee94f21d996b2e0953be6ad14eb1"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed46/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "18a327858c5f5fd27f821c1e908736d9541cee94f21d996b2e0953be6ad14eb1"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed47/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "88ce7b9b805e7177a232c6475a194668f6503ccbc43d6540fbc7a7bceee42606"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed47/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "88ce7b9b805e7177a232c6475a194668f6503ccbc43d6540fbc7a7bceee42606"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed48/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "1daac9ed6881cf32bc6a7df718bf0ad20e0949cfb7b6bbe6b19dbf336addb901"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/D/R/single/seed48/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "1daac9ed6881cf32bc6a7df718bf0ad20e0949cfb7b6bbe6b19dbf336addb901"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed45/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "61ddf2cbc10c6397391cc6ae1dc7db56e687257603bda011142ab5a0dc7d2ef4"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed45/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "61ddf2cbc10c6397391cc6ae1dc7db56e687257603bda011142ab5a0dc7d2ef4"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed46/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "6886a7c9b0847970955dc9979f3a416d50bec51fd9111fe9fb141f2daaa213b6"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed46/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "6886a7c9b0847970955dc9979f3a416d50bec51fd9111fe9fb141f2daaa213b6"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed47/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "5c2ecfe1222cdc85f2d2bd0428367bd93f96276bccad85ea16c700dabf86fbee"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed47/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "5c2ecfe1222cdc85f2d2bd0428367bd93f96276bccad85ea16c700dabf86fbee"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed48/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "2236679768197ee75aaab61fedad54521c9a1ac6cbb89d90d102dc396cc95cb2"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/B/single/seed48/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "2236679768197ee75aaab61fedad54521c9a1ac6cbb89d90d102dc396cc95cb2"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed45/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "b2a37f7c8b86ded15f63f17d717f84706cdb4c3580a14330da3a00ad9c1f1f35"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed45/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "b2a37f7c8b86ded15f63f17d717f84706cdb4c3580a14330da3a00ad9c1f1f35"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed46/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "1871c7db082f33fbb27705f9195d12b07e7df7d9558e6a471f5b525c7c481775"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed46/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "1871c7db082f33fbb27705f9195d12b07e7df7d9558e6a471f5b525c7c481775"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed47/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "9a97b8bf9230a68f48a7b50a17354c0b89fc3cb601ac01110fb29fa15015cc91"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed47/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "9a97b8bf9230a68f48a7b50a17354c0b89fc3cb601ac01110fb29fa15015cc91"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed48/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "78d483e285fe5e4a8591594eb26dd28d7966d764ace790790f63cbba6c4696b4"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/S/single/seed48/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "78d483e285fe5e4a8591594eb26dd28d7966d764ace790790f63cbba6c4696b4"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed45/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "bb3535f12d0672a652d06f5a1fb18c3438d5ad037cca7fedda5741b7ee6e4375"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed45/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "bb3535f12d0672a652d06f5a1fb18c3438d5ad037cca7fedda5741b7ee6e4375"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed46/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "71e0ddabdc0aab72cf89e2ce7d7194a23392fbaa58190376e9ad899a8b1433df"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed46/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "71e0ddabdc0aab72cf89e2ce7d7194a23392fbaa58190376e9ad899a8b1433df"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed47/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "bc66c0806f850f8725a18cc63ff89582a9e857fc203b4e8c557643ab253da817"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed47/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "bc66c0806f850f8725a18cc63ff89582a9e857fc203b4e8c557643ab253da817"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed48/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "94b63cb543bb2116874f2d8d69f6955ef597d6776a3aec9a41efaa0c9aa8e47f"
+    },
+    {
+      "path": "issue1902_stage_map/analysis_tensors/issue1902_store/k5draws/R/D/single/seed48/ctx/row_index.jsonl",
+      "rows": 16391,
+      "sha256": "94b63cb543bb2116874f2d8d69f6955ef597d6776a3aec9a41efaa0c9aa8e47f"
+    }
+  ],
+  "rows_per_unit": 16391,
+  "outroot_files": [
+    {
+      "local": "/workspace/issue1902_k5/capture_k5_summary.json",
+      "bytes": 652,
+      "sha256": "a77ee3f0d1297c670a8380ab75111147366afe19e467b101f61ed2c4d2133c77",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/capture_k5_summary.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/corpus_stage/issue1902_stage_map/corpus/clusters.json",
+      "bytes": 933128,
+      "sha256": "115267f9b5c946b1fd40622cdac09889c263b14e1e9aac7d7b880e69b1f06787",
+      "hub_path": "issue1902_stage_map/corpus/clusters.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/corpus_stage/issue1902_stage_map/corpus/corpus_multi.jsonl",
+      "bytes": 47680845,
+      "sha256": "9e36aa09a72275f62a64968368c1d21aa12a157f2306eac44f79a40915ddf44c",
+      "hub_path": "issue1902_stage_map/corpus/corpus_multi.jsonl"
+    },
+    {
+      "local": "/workspace/issue1902_k5/corpus_stage/issue1902_stage_map/corpus/corpus_single.jsonl",
+      "bytes": 10131778,
+      "sha256": "4e0a9f32511e610b4a97be803ab7276c80971b46866fb255480bbcd57cbe0a37",
+      "hub_path": "issue1902_stage_map/corpus/corpus_single.jsonl"
+    },
+    {
+      "local": "/workspace/issue1902_k5/corpus_stage/issue1902_stage_map/corpus/manifest_stats.json",
+      "bytes": 1824,
+      "sha256": "c80fc1693b40be42043e79570d64d279207b8796165bf9cb5fba6ce5630fc428",
+      "hub_path": "issue1902_stage_map/corpus/manifest_stats.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen/intersection_manifest.json",
+      "bytes": 752415,
+      "sha256": "00345b4666c9bc65376ce61bad0bdf87b1efcabef375004dd755d6a3a59f1a1d",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/gen/intersection_manifest.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen/single/B_k5_seed45.jsonl",
+      "bytes": 10822052,
+      "sha256": "a77bacdcaaf7d92be8a05f491f94ccd3bbbd896a199c5b14844c4038adf3c200",
+      "hub_paths": [
+        "issue1902_stage_map/raw_completions/gen/single/B_k5_seed45.manifest.json",
+        "issue1902_stage_map/raw_completions/gen/single/B_k5_seed45.shard00.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/B_k5_seed45.shard01.jsonl"
+      ]
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen/single/B_k5_seed46.jsonl",
+      "bytes": 11655688,
+      "sha256": "f4a03d625d968be6531ded9d722b06c4befddd4ff09304c8bc4980a4db951efb",
+      "hub_paths": [
+        "issue1902_stage_map/raw_completions/gen/single/B_k5_seed46.manifest.json",
+        "issue1902_stage_map/raw_completions/gen/single/B_k5_seed46.shard00.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/B_k5_seed46.shard01.jsonl"
+      ]
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen/single/B_k5_seed47.jsonl",
+      "bytes": 11179254,
+      "sha256": "0f65b9a33427c4c7f75874ffd62d8e064f8a805c17e78529919b1323f4a24b95",
+      "hub_paths": [
+        "issue1902_stage_map/raw_completions/gen/single/B_k5_seed47.manifest.json",
+        "issue1902_stage_map/raw_completions/gen/single/B_k5_seed47.shard00.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/B_k5_seed47.shard01.jsonl"
+      ]
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen/single/B_k5_seed48.jsonl",
+      "bytes": 9572949,
+      "sha256": "cd5ddd6ac8bcb6b67b5a14d6afc757044fa00eb9d349e9f009177cd2b74b5dd7",
+      "hub_paths": [
+        "issue1902_stage_map/raw_completions/gen/single/B_k5_seed48.manifest.json",
+        "issue1902_stage_map/raw_completions/gen/single/B_k5_seed48.shard00.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/B_k5_seed48.shard01.jsonl"
+      ]
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen/single/D_k5_seed45.jsonl",
+      "bytes": 31388503,
+      "sha256": "e114934e5b4571f224b82aa854a5de26036b0bf6e382c8733d127c4af3332269",
+      "hub_paths": [
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed45.manifest.json",
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed45.shard00.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed45.shard01.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed45.shard02.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed45.shard03.jsonl"
+      ]
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen/single/D_k5_seed46.jsonl",
+      "bytes": 31953140,
+      "sha256": "6c6f2874a8c1c004b0cb9fdd1fefc0d89a1aa3e54bed1983f670bc8cd3047b21",
+      "hub_paths": [
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed46.manifest.json",
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed46.shard00.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed46.shard01.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed46.shard02.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed46.shard03.jsonl"
+      ]
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen/single/D_k5_seed47.jsonl",
+      "bytes": 31773978,
+      "sha256": "213457760a1ee025e3ad2730992252b8fd4e3e68fc165f3b9c98bd7078d882c0",
+      "hub_paths": [
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed47.manifest.json",
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed47.shard00.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed47.shard01.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed47.shard02.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed47.shard03.jsonl"
+      ]
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen/single/D_k5_seed48.jsonl",
+      "bytes": 31285533,
+      "sha256": "31748256f8acce0da1baf56ebe29c34c4937fa4d936a88be3233dddf87e2053a",
+      "hub_paths": [
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed48.manifest.json",
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed48.shard00.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed48.shard01.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed48.shard02.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/D_k5_seed48.shard03.jsonl"
+      ]
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen/single/R_k5_seed45.jsonl",
+      "bytes": 29455704,
+      "sha256": "f3925234253221f5f18a47387d8117fe511319d8b8b5287738dc6d6f01408dd7",
+      "hub_paths": [
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed45.manifest.json",
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed45.shard00.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed45.shard01.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed45.shard02.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed45.shard03.jsonl"
+      ]
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen/single/R_k5_seed46.jsonl",
+      "bytes": 30072890,
+      "sha256": "901e273f3ed4f17e0a4d8ef5c08e9d1253c31e05fe30864dbc2210205a58ddb7",
+      "hub_paths": [
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed46.manifest.json",
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed46.shard00.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed46.shard01.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed46.shard02.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed46.shard03.jsonl"
+      ]
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen/single/R_k5_seed47.jsonl",
+      "bytes": 29875995,
+      "sha256": "e523dcd13b93cdb72221ff701dfe2570a1d803bb52037f83066ab58401f5e9bf",
+      "hub_paths": [
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed47.manifest.json",
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed47.shard00.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed47.shard01.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed47.shard02.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed47.shard03.jsonl"
+      ]
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen/single/R_k5_seed48.jsonl",
+      "bytes": 29419654,
+      "sha256": "0be2611e73eff81ea1c6a9ee3710980aca9ad3711148840ec907f537e906cf7c",
+      "hub_paths": [
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed48.manifest.json",
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed48.shard00.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed48.shard01.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed48.shard02.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/R_k5_seed48.shard03.jsonl"
+      ]
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen/single/S_k5_seed45.jsonl",
+      "bytes": 18017745,
+      "sha256": "c1e515d4836dd975d3a0df0cf715d4b2287fdb90baa65c8455c87facb257dd50",
+      "hub_paths": [
+        "issue1902_stage_map/raw_completions/gen/single/S_k5_seed45.manifest.json",
+        "issue1902_stage_map/raw_completions/gen/single/S_k5_seed45.shard00.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/S_k5_seed45.shard01.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/S_k5_seed45.shard02.jsonl"
+      ]
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen/single/S_k5_seed46.jsonl",
+      "bytes": 19179151,
+      "sha256": "cfed6503f28c1f0c051fc45f03ffd00cddc479d95c3221f5ae382db040502343",
+      "hub_paths": [
+        "issue1902_stage_map/raw_completions/gen/single/S_k5_seed46.manifest.json",
+        "issue1902_stage_map/raw_completions/gen/single/S_k5_seed46.shard00.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/S_k5_seed46.shard01.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/S_k5_seed46.shard02.jsonl"
+      ]
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen/single/S_k5_seed47.jsonl",
+      "bytes": 19178325,
+      "sha256": "64e9ac2bfb6cc9dfe27a842b1572651dbad01a5d3eba06f0f9593ebc5db4f404",
+      "hub_paths": [
+        "issue1902_stage_map/raw_completions/gen/single/S_k5_seed47.manifest.json",
+        "issue1902_stage_map/raw_completions/gen/single/S_k5_seed47.shard00.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/S_k5_seed47.shard01.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/S_k5_seed47.shard02.jsonl"
+      ]
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen/single/S_k5_seed48.jsonl",
+      "bytes": 18337219,
+      "sha256": "b16bffcadb95a0225fafca5c62e03419d72e6bc0a9723b81fa1d00709a58af42",
+      "hub_paths": [
+        "issue1902_stage_map/raw_completions/gen/single/S_k5_seed48.manifest.json",
+        "issue1902_stage_map/raw_completions/gen/single/S_k5_seed48.shard00.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/S_k5_seed48.shard01.jsonl",
+        "issue1902_stage_map/raw_completions/gen/single/S_k5_seed48.shard02.jsonl"
+      ]
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen_stage_cache/B_k5_seed45.manifest.json",
+      "bytes": 395,
+      "sha256": "2a3b133b2e468b350b9491609dda7b444e261425a7ff49466c4b9e86745a6d21",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/gen_stage_cache/B_k5_seed45.manifest.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen_stage_cache/B_k5_seed46.manifest.json",
+      "bytes": 395,
+      "sha256": "ac94edb7c2e898c7b65b002ecd7e92ddea5253d4674036181b08bea727589e72",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/gen_stage_cache/B_k5_seed46.manifest.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen_stage_cache/B_k5_seed47.manifest.json",
+      "bytes": 395,
+      "sha256": "4d5c8cab28d0abf73c02f9ff5c8f4f3e2750c4737e1ed3a5138c16c5ccb2a197",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/gen_stage_cache/B_k5_seed47.manifest.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen_stage_cache/B_k5_seed48.manifest.json",
+      "bytes": 395,
+      "sha256": "628cfcbf43c07135ed1649258ae1e17429c8e53afa5da8ae87cad873eebe3664",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/gen_stage_cache/B_k5_seed48.manifest.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen_stage_cache/D_k5_seed45.manifest.json",
+      "bytes": 718,
+      "sha256": "fc7665eb0d10a472d3e88e218faff94fc6611b763dd4434ffdd8e18e076eabed",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/gen_stage_cache/D_k5_seed45.manifest.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen_stage_cache/D_k5_seed46.manifest.json",
+      "bytes": 718,
+      "sha256": "0465ab2561a408ba0977f8b7dd666f5e45c036b9f4cdafc03ecd4e99c80d50a4",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/gen_stage_cache/D_k5_seed46.manifest.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen_stage_cache/D_k5_seed47.manifest.json",
+      "bytes": 718,
+      "sha256": "51227f780ab2793787338bd77a49248210c61e6352ab641249e4568a2dd46c74",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/gen_stage_cache/D_k5_seed47.manifest.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen_stage_cache/D_k5_seed48.manifest.json",
+      "bytes": 718,
+      "sha256": "61b480af25d749f61c5e13784a89d5cf4c09baf1fce3cbc9c1fbb2dbc612d90a",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/gen_stage_cache/D_k5_seed48.manifest.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen_stage_cache/R_k5_seed45.manifest.json",
+      "bytes": 718,
+      "sha256": "2a9033d2d424e88db7034bbee5d3ac756460a9a4777ae98048b6f2c1dbd54e4e",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/gen_stage_cache/R_k5_seed45.manifest.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen_stage_cache/R_k5_seed46.manifest.json",
+      "bytes": 718,
+      "sha256": "8701168bdac4e82a8e4ef034979c25ccdb9ad6df00cacc8c6663de51f541a7d8",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/gen_stage_cache/R_k5_seed46.manifest.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen_stage_cache/R_k5_seed47.manifest.json",
+      "bytes": 718,
+      "sha256": "346cb153de1ef3c4c4a96bda3ee2156127033f6735ee31084fb46aa3886935c6",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/gen_stage_cache/R_k5_seed47.manifest.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen_stage_cache/R_k5_seed48.manifest.json",
+      "bytes": 718,
+      "sha256": "32cb0725f5e7db7e37674eebda4a9a0309e588321f2f2758c14f5ea2aa7889ab",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/gen_stage_cache/R_k5_seed48.manifest.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen_stage_cache/S_k5_seed45.manifest.json",
+      "bytes": 554,
+      "sha256": "e5f995978c371cd5c1a9f5488a6b9f893c627386e9192f166c90ada685aca53e",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/gen_stage_cache/S_k5_seed45.manifest.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen_stage_cache/S_k5_seed46.manifest.json",
+      "bytes": 556,
+      "sha256": "209037e113abcb60d2253eb7646edf6b4236a1ad3028d9b3fdd0953442d2859e",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/gen_stage_cache/S_k5_seed46.manifest.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen_stage_cache/S_k5_seed47.manifest.json",
+      "bytes": 556,
+      "sha256": "11ef8fe458df0491acbcf0a37e2b3cfbe94c5c4a4260ba6f6f2d7f7e28ba0e89",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/gen_stage_cache/S_k5_seed47.manifest.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/gen_stage_cache/S_k5_seed48.manifest.json",
+      "bytes": 555,
+      "sha256": "11f48a0376b13e4b851777767f63136f55c5f162a23aa9919ff7d7631f1b80cc",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/gen_stage_cache/S_k5_seed48.manifest.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/k5grid.log",
+      "bytes": 849,
+      "sha256": "a150a4b07091179291fe762785040b9fa3399c05ca52d35358fbb07b5b935544",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/k5grid.log"
+    },
+    {
+      "local": "/workspace/issue1902_k5/k5grid.pid",
+      "bytes": 5,
+      "sha256": "4384ac7525b54dcb6947d32c629d6db9ae89ced85f089672379ddc470b623b8f",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/k5grid.pid"
+    },
+    {
+      "local": "/workspace/issue1902_k5/revision_pins.json",
+      "bytes": 206,
+      "sha256": "b50b9b9635d756c8f6adb0bfc4e6acb96300e836dfe9cbbb4f818de4d9f4abb4",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/revision_pins.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_D_B_single_seed45.done.json",
+      "bytes": 583,
+      "sha256": "3e4885d911e8ae747340bc962e30e327fc4e79c8e1f70395d53434ec7ce9d0ec",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_D_B_single_seed45.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_D_B_single_seed46.done.json",
+      "bytes": 583,
+      "sha256": "80a902012fea060d7015aa1b432144671d2f91a708ef313aed845f13046cb619",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_D_B_single_seed46.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_D_B_single_seed47.done.json",
+      "bytes": 583,
+      "sha256": "8876cb82b4a4ef258ba31c21b9d234ce677bf591022e303608fe8cf3d99a1b49",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_D_B_single_seed47.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_D_B_single_seed48.done.json",
+      "bytes": 583,
+      "sha256": "f0b30c1006708f6d27a26376929989f147b5436ea63088ad2ef807080246aba0",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_D_B_single_seed48.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_D_R_single_seed45.done.json",
+      "bytes": 584,
+      "sha256": "576a63f6112c1a98a342750e45f604b8602b21bfab0986c87faa52598b31bdea",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_D_R_single_seed45.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_D_R_single_seed46.done.json",
+      "bytes": 584,
+      "sha256": "9ffb54bf29ab49e423686e32c992fd0e23c75d646c0b6ae3cf9de0f0505ae0e8",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_D_R_single_seed46.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_D_R_single_seed47.done.json",
+      "bytes": 584,
+      "sha256": "5cba236edf96a0b8d00552209fddeabdf8c28492101f6f7835c104c4b2ba99ca",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_D_R_single_seed47.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_D_R_single_seed48.done.json",
+      "bytes": 584,
+      "sha256": "8ae74ef6a6d61df4315dc02f2a6b72b3a5222232bfb6d56e0070638635e830c5",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_D_R_single_seed48.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_D_S_single_seed45.done.json",
+      "bytes": 584,
+      "sha256": "0ec05cf68bfeba6bd78d35338b9aa875a5972bd3696ee1c78133a63814abf4c0",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_D_S_single_seed45.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_D_S_single_seed46.done.json",
+      "bytes": 584,
+      "sha256": "ac843e52713ebd3e817312f269bc06f823a83905d5a217e82c791f37dbe85c92",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_D_S_single_seed46.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_D_S_single_seed47.done.json",
+      "bytes": 584,
+      "sha256": "ff2f829d4b0b55448e2829b5cba231af2a301781b56b6cf7668b0d186d484520",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_D_S_single_seed47.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_D_S_single_seed48.done.json",
+      "bytes": 584,
+      "sha256": "c2e13fffc83be40f0388ceb450e2295e1531bc7f9f5448a6f28d5e3343a59cbf",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_D_S_single_seed48.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_R_B_single_seed45.done.json",
+      "bytes": 583,
+      "sha256": "4d4b32fd136a410b2281341b22cc4c4d96353e092eda0510ab0a2fa8d3d4a9ab",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_R_B_single_seed45.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_R_B_single_seed46.done.json",
+      "bytes": 583,
+      "sha256": "a9e81dbcb141ccd2ea629ec1482bbad37a5a4d88fc6a2db368b69752a0ec70d3",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_R_B_single_seed46.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_R_B_single_seed47.done.json",
+      "bytes": 582,
+      "sha256": "7a131fcdaec5e415f9a0d1f9059f8a49d2729abbb284da668a9c7646179deaa0",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_R_B_single_seed47.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_R_B_single_seed48.done.json",
+      "bytes": 583,
+      "sha256": "d2243a67ff2666f33c9851d9081ef4adffba89b005db7345ce9a86380bf9e51c",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_R_B_single_seed48.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_R_D_single_seed45.done.json",
+      "bytes": 583,
+      "sha256": "ecead3b382c476759bc20255b2c69135de3caf0d4e365a815f9cef6f9955248d",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_R_D_single_seed45.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_R_D_single_seed46.done.json",
+      "bytes": 584,
+      "sha256": "ad846ce270cfa56f0c0c401696a7462987e2faadbb5d39c2a2dc01e5c424a73d",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_R_D_single_seed46.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_R_D_single_seed47.done.json",
+      "bytes": 584,
+      "sha256": "959a04edaffacddd78d7a7e9f0a288b07c993884392ab30cd0f7f70f01aab4f1",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_R_D_single_seed47.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_R_D_single_seed48.done.json",
+      "bytes": 584,
+      "sha256": "cb330a4e8c5ae05d0a8f2bb89b2e9a444aba7e69024654d180dcdefa1b7adf93",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_R_D_single_seed48.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_R_S_single_seed45.done.json",
+      "bytes": 584,
+      "sha256": "814b62fb59b2192934891b704ab03a0e6b3c075724e5c8c73dbd8e19e10942c3",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_R_S_single_seed45.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_R_S_single_seed46.done.json",
+      "bytes": 584,
+      "sha256": "bdbecd3cabe2dfb3882eba2c4d8525e962a6df9d7c519e0c3195c6ca6f1a61f7",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_R_S_single_seed46.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_R_S_single_seed47.done.json",
+      "bytes": 584,
+      "sha256": "13153b7cf7b7174713fd7403bdf6d0a1f6c4a86f7f9c7cf9dc466244d7586f8a",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_R_S_single_seed47.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_R_S_single_seed48.done.json",
+      "bytes": 584,
+      "sha256": "858132ebd38bce541f976b9ca92c518c41514811bba1bb8a2857f7d52a1b91b1",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_R_S_single_seed48.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_S_B_single_seed45.done.json",
+      "bytes": 583,
+      "sha256": "a06496a8ebd8bd6aeeb1ac196bee9b12c109a17b95174ecf85af75adefea7e97",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_S_B_single_seed45.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_S_B_single_seed46.done.json",
+      "bytes": 583,
+      "sha256": "c8981a2595d4fec2e3a313c56190beb6409cb7d23f8949bde28dafe841642cf6",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_S_B_single_seed46.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_S_B_single_seed47.done.json",
+      "bytes": 583,
+      "sha256": "85ffac0540e3aba7fb28334933217a5858fecd1c81c7b353c3f54af938bc0417",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_S_B_single_seed47.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_S_B_single_seed48.done.json",
+      "bytes": 583,
+      "sha256": "ba5c96d35fa52ac52375b531dcc42fb1b861f646b1799c9e2b65cb562e4c4dac",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_S_B_single_seed48.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_S_D_single_seed45.done.json",
+      "bytes": 584,
+      "sha256": "b87d1250254ce9fcdd3149e3c1cb91c682f9c81f0cc72716335763848306462d",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_S_D_single_seed45.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_S_D_single_seed46.done.json",
+      "bytes": 584,
+      "sha256": "5c1ab4489c08a915e253b612ff91880b1d215762a89f2c31202ab1d685527aa5",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_S_D_single_seed46.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_S_D_single_seed47.done.json",
+      "bytes": 584,
+      "sha256": "35bc092f6a914159a0dc9426e21cb8d4184ad54c04cf7bc845068578ab2e82e6",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_S_D_single_seed47.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_S_D_single_seed48.done.json",
+      "bytes": 584,
+      "sha256": "29ea8af157ba470a4d80d4d5ec5ad5a96e0b2ff731edad0563daf5f6538a208a",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_S_D_single_seed48.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_S_R_single_seed45.done.json",
+      "bytes": 584,
+      "sha256": "fca61a98c754ff4e34d968dc2b6ae186d3c58356fd1c9f7490fffbfa12d4c861",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_S_R_single_seed45.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_S_R_single_seed46.done.json",
+      "bytes": 584,
+      "sha256": "1042c708b17d2192ba3184b950469f7d872448fee899830f37d5b850cb859b76",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_S_R_single_seed46.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_S_R_single_seed47.done.json",
+      "bytes": 584,
+      "sha256": "ee57d8e6113c372e3eeaf71c811620bdc7f1f54fd95d928bca15fe0c8ccefe80",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_S_R_single_seed47.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_S_R_single_seed48.done.json",
+      "bytes": 584,
+      "sha256": "0468b61de801ca70d28ba29cee196734c89dd419547d963c8517f250c90c819c",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_S_R_single_seed48.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_upload_D_srcsBSR.done.json",
+      "bytes": 2850,
+      "sha256": "029ad8cc823446f717fe427e48882ee8c33d900ac090f6e5637bf6e015366ad2",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_upload_D_srcsBSR.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_upload_R_srcsBSD.done.json",
+      "bytes": 2850,
+      "sha256": "50b0e5b0a758bc7dc74b757a3833e935ec765f03bb5581b45bed2b644a294576",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_upload_R_srcsBSD.done.json"
+    },
+    {
+      "local": "/workspace/issue1902_k5/state/capturek5_upload_S_srcsBDR.done.json",
+      "bytes": 2850,
+      "sha256": "5c303d4e52f8e5d0b9ac362517076a7c9351e512110d2372df5ef7b6d90b3e00",
+      "hub_path": "issue1902_stage_map/k5grid_20260909/run_state/state/capturek5_upload_S_srcsBDR.done.json"
+    }
+  ],
+  "outroot": "swept-clean",
+  "rows": "reconciled"
+}

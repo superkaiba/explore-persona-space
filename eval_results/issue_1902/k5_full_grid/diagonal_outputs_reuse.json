@@ -1,0 +1,230 @@
+{
+  "timestamp_utc": "2026-09-09T19:36:10.905334+00:00",
+  "source_git_commit": "b0a756ab456c1ef4b694575b71adb7ac52726294",
+  "source_prefix": "eval_results/issue_1902/k5_targets",
+  "exact_helper_files": 3,
+  "exact_numerical_functions": [
+    "run_transfer",
+    "run_retrieval",
+    "_aligned_ctx",
+    "_load_targets",
+    "_reference_rows",
+    "_bootstrap_counts"
+  ],
+  "prerequisite": "all seven old target arrays independently replayed exactly against Hub-verified prior targets; same source input pin, context features and folds",
+  "protocol_and_row_coverage_verified": true,
+  "transfer_and_retrieval_summaries_reconstructed": true,
+  "files": {
+    "percell/k5xfer_BS_f0.npz": {
+      "bytes": 110982,
+      "git_blob": "11448ad100027f926a0a65cd7cf9af4dbecaa813",
+      "sha256": "b64f0e4311fd5145818058987a036ed17f310752097547b27bf88ee366d5993f"
+    },
+    "percell/k5xfer_BS_f1.npz": {
+      "bytes": 112222,
+      "git_blob": "0a14a2a9e7790f57eb91cdc1477ea1d11518b1b9",
+      "sha256": "6d8b5aea4b692388867ffe0a47b555fe5a9c1f33e7b22ead670cfb63b35f694a"
+    },
+    "percell/k5xfer_BS_f2.npz": {
+      "bytes": 109262,
+      "git_blob": "073424d7d1b975061a0c3cd48e3a77306319236f",
+      "sha256": "b40a7cde9fc6dc5ef95f833e282799700095becfc83bf70152c4ba990846cb99"
+    },
+    "percell/k5xfer_BS_f3.npz": {
+      "bytes": 111222,
+      "git_blob": "05e847d5e51d511c8b322f1f0e54b3e39be28cd3",
+      "sha256": "d74826d7e727c774a2594571dc2c91b9ae85878b362060141e88f3a4dd61e665"
+    },
+    "percell/k5xfer_BS_f4.npz": {
+      "bytes": 114942,
+      "git_blob": "80da8d0d7a7b09da63f8ebd50fbb7daa379e2dfd",
+      "sha256": "428749b483864377231c7bcd6a96e8ce7a3118ddee0b146448197f10dd677142"
+    },
+    "percell/k5xfer_BS_f5.npz": {
+      "bytes": 112262,
+      "git_blob": "187a7de29d552401f730b78a53c7094de909364a",
+      "sha256": "e020eabe31ab58b6337e493be288fef12f0b5da97990e1a3d4075e1c751659c3"
+    },
+    "percell/k5xfer_SD_f0.npz": {
+      "bytes": 110982,
+      "git_blob": "8a244642c6c49c091862db3aa12eab7dc4fa8ab7",
+      "sha256": "aa2b5813a1a3a2cdd12b7aed2ef70350cde6b3b04012ea5b407388798114bd02"
+    },
+    "percell/k5xfer_SD_f1.npz": {
+      "bytes": 112222,
+      "git_blob": "723554d94eff155221f810cb99e612e2ea611b26",
+      "sha256": "4274e19351025baf40afaba1214179adb21203befb423495e6ca767ce8ba3990"
+    },
+    "percell/k5xfer_SD_f2.npz": {
+      "bytes": 109262,
+      "git_blob": "07267b6a6ada68d6d2947fe141c85d2b33becc28",
+      "sha256": "d2f56448cfacdee4f77b19e1a368c1714f34bf5adaa58082d921b156bbcda240"
+    },
+    "percell/k5xfer_SD_f3.npz": {
+      "bytes": 111222,
+      "git_blob": "e96bfe72f6e9fa0df446966d86c27f9db05c1c50",
+      "sha256": "022814df142d1a00b3c4bd0a864109a622e7143010df3798ec195c204c53c2da"
+    },
+    "percell/k5xfer_SD_f4.npz": {
+      "bytes": 114942,
+      "git_blob": "32b16f0cfda412b45c323b0dd3778c483e6ff254",
+      "sha256": "149efedf23af17d704906dec8a5d7ffcdef926b268e57e9e96476accc3d5611d"
+    },
+    "percell/k5xfer_SD_f5.npz": {
+      "bytes": 112262,
+      "git_blob": "b9f03b8c4d9d94f9a0151f33c6724a8474aa900a",
+      "sha256": "f9ad052e2786fab72aad3a56ce493d4aa0354932c25b67d7299a40620785bfc4"
+    },
+    "percell/k5xfer_DR_f0.npz": {
+      "bytes": 110982,
+      "git_blob": "f73aff4f806147cdebcbf53b6f789f1e61d7da2f",
+      "sha256": "a0833bb130823c11f8c01f321279730bd26f2832ed3774e404f8347da4a3bfc5"
+    },
+    "percell/k5xfer_DR_f1.npz": {
+      "bytes": 112222,
+      "git_blob": "55d1fd6f1c78d961e933e4ea0c8fe074e3ec8b69",
+      "sha256": "0de1afb75053a1a883af228fec38dd88d24510b656912e5dc2001b7a251ecdce"
+    },
+    "percell/k5xfer_DR_f2.npz": {
+      "bytes": 109262,
+      "git_blob": "963eb17635239a613af743887716a1b848938c8f",
+      "sha256": "133a4a6759e49ac70071b0db4da7b58a7b4f05444b72e24f9767a323ece793c2"
+    },
+    "percell/k5xfer_DR_f3.npz": {
+      "bytes": 111222,
+      "git_blob": "9297fbe38fe299ee070376e2ecac74c4cd1cae04",
+      "sha256": "d61ec0292fbb77d32b4dca78ae581b0b42e519068a935f4645aa198c1555af30"
+    },
+    "percell/k5xfer_DR_f4.npz": {
+      "bytes": 114942,
+      "git_blob": "e18d737c7f7ded4d6f8f09e3e0b5e061f39ccbc6",
+      "sha256": "54bba5d6e4f432e83d9d9f03a7a04287ddf4ca74758304b62317e7feff7346ed"
+    },
+    "percell/k5xfer_DR_f5.npz": {
+      "bytes": 112262,
+      "git_blob": "61a22040161227d46d399d94c91d7cd76ac18d2e",
+      "sha256": "49f48737acf702fc7322955feacb64a5e7682d9343b02db64417464193641ae9"
+    },
+    "retrieval/perfold/B_f0.npz": {
+      "bytes": 65868,
+      "git_blob": "3e04fc9d1c580fa71acd5d7d66654fba83d3d7e9",
+      "sha256": "c68a7a812a57c60c9e6faff7ded507d0814a4cec344ad7aa0a96513367cd786b"
+    },
+    "retrieval/perfold/B_f1.npz": {
+      "bytes": 66612,
+      "git_blob": "76ed77c0e3a3c22002f1d50de5b5562c9f26d82c",
+      "sha256": "0919f0cb5fcc5afa5c105f34b3ddfa24336fb432eadcc1e2b8eda1505b94e164"
+    },
+    "retrieval/perfold/B_f2.npz": {
+      "bytes": 64836,
+      "git_blob": "bb892863aea4a55c98614be7f2573cdae2aa5dbf",
+      "sha256": "b3943bcc8a312ee0a291c98110843896be4ba8721629bc6f4e8a23a7a084bc68"
+    },
+    "retrieval/perfold/B_f3.npz": {
+      "bytes": 66012,
+      "git_blob": "dafb7bc5ba1db5326d20840a7e6de8da529ac065",
+      "sha256": "1cad41f992d66bc7648e45c49b814a102115d8df2377415fa373145bbdeb3f02"
+    },
+    "retrieval/perfold/B_f4.npz": {
+      "bytes": 68244,
+      "git_blob": "59fbd50e9d9aa10dec65889bc291ae3688be6d7e",
+      "sha256": "93e4e1edc9bff7d286302916baeda78d95d1cc8a7c9f8bf31e20dece28d5b492"
+    },
+    "retrieval/perfold/B_f5.npz": {
+      "bytes": 66636,
+      "git_blob": "4e55ee8dcd156130087cf3bf00e644fa71751529",
+      "sha256": "31acdece889e56b50f3a29a533fb403988f7622f6fc34f8184b1a76dcfcd9908"
+    },
+    "retrieval/perfold/S_f0.npz": {
+      "bytes": 65868,
+      "git_blob": "89def4bf6c6bbe11b076c9ff43be2ace535d80bf",
+      "sha256": "6b38ba9639883baaac616cc5898ba5ba2dbd9e0625159e788d81f82bcfcebb52"
+    },
+    "retrieval/perfold/S_f1.npz": {
+      "bytes": 66612,
+      "git_blob": "a839663b459322b512d4c8d7b9ff649867e73de5",
+      "sha256": "07e8951b24ca19ec54c7ea901780075d78ea486402f11c78920b4de19f4efa5e"
+    },
+    "retrieval/perfold/S_f2.npz": {
+      "bytes": 64836,
+      "git_blob": "343ef5f172bcaa3a8235339fe219a5a33c804c82",
+      "sha256": "d2cc550506d9b6120e8cea678872926087bd13f4653024d4c503c4c2cddf001f"
+    },
+    "retrieval/perfold/S_f3.npz": {
+      "bytes": 66012,
+      "git_blob": "e7dfb1e2bd929b769e708681908711192f1f25ee",
+      "sha256": "771734cfcf17564441d8d7060b0656b2262c3d58701b0c94ffdd05007383a672"
+    },
+    "retrieval/perfold/S_f4.npz": {
+      "bytes": 68244,
+      "git_blob": "0d8106ac604eedde5797c0b1201e6d46c7b1834b",
+      "sha256": "a02ec03bead0900517c89b1b535a6490ec6524d487f60d177222e1c02d601dec"
+    },
+    "retrieval/perfold/S_f5.npz": {
+      "bytes": 66636,
+      "git_blob": "65f9f7d98992e8ac4b0cbd3e49440b8ff1936349",
+      "sha256": "0bc7ec2ba5669aab7ee10c95db02bd462946153411ccf73363358e23cfd5de4e"
+    },
+    "retrieval/perfold/D_f0.npz": {
+      "bytes": 65868,
+      "git_blob": "5d1e63c58017c9e3e72ad5e887c0f18e76ff2109",
+      "sha256": "f1a1dae31857bf80dbfeff2b2fd14b3e842f917e30547e0036dc22bbe1f93c0a"
+    },
+    "retrieval/perfold/D_f1.npz": {
+      "bytes": 66612,
+      "git_blob": "21c6c89f4cf388d2948d54f48384251b7e3818d0",
+      "sha256": "891689a79dbab7ea7011bf609baa81777809f88a9c0c25e1b652699ee8e4e023"
+    },
+    "retrieval/perfold/D_f2.npz": {
+      "bytes": 64836,
+      "git_blob": "316b8f364af262aa906f3b9e1f2be5731586e83b",
+      "sha256": "2ecfb1ac060c8d54901b56103124a2fc34055763826fe4b44d8c07d68b94413b"
+    },
+    "retrieval/perfold/D_f3.npz": {
+      "bytes": 66012,
+      "git_blob": "d135289cdc2fa608e135b8251a1dfcc4efe4726f",
+      "sha256": "9ac4de8539dc8c12d656e3a6dc7ebcb3b64a6bcd8809cfe32eef96504671213e"
+    },
+    "retrieval/perfold/D_f4.npz": {
+      "bytes": 68244,
+      "git_blob": "98ef622890bd52119e515c696e582fe43c27a042",
+      "sha256": "35c1c904f17785e63ee89ad906f03c1d356a136e3fc8a60bea7234778c563d34"
+    },
+    "retrieval/perfold/D_f5.npz": {
+      "bytes": 66636,
+      "git_blob": "15c3b0068386a8594cedae21e8e9287221c586fb",
+      "sha256": "fc9956fce7b5d39dfc822d5af1d5c35465e479b5eca477b0c7be537db53c9124"
+    },
+    "retrieval/perfold/R_f0.npz": {
+      "bytes": 65868,
+      "git_blob": "c6d024d9fb83fa137a6c29ff03334655833f6d68",
+      "sha256": "735cac67244402d02d9f7ce6b99f5aa0749fa6dadc745c1ab6933794c5d483bf"
+    },
+    "retrieval/perfold/R_f1.npz": {
+      "bytes": 66612,
+      "git_blob": "2fca27ebcc7a947a0879740eb6c84ce42dbba74a",
+      "sha256": "5428822f77f1fd2cadb9482199377acd89cfb138c664cf399b04e24de43954ef"
+    },
+    "retrieval/perfold/R_f2.npz": {
+      "bytes": 64836,
+      "git_blob": "1d2de5bb9ae94f6466274b84f5b89885cf7b8bea",
+      "sha256": "6f54e180e7d947b3444fd9f986e0e61064e54394f882ef8e6705ecc31afc013f"
+    },
+    "retrieval/perfold/R_f3.npz": {
+      "bytes": 66012,
+      "git_blob": "4333b58f7db66f08f00d0c226774f6d5e85f2c47",
+      "sha256": "fafda390a6db4d3f750551e7a567b17a0e8e38a00ab3a314e03eeee6cbfc90d0"
+    },
+    "retrieval/perfold/R_f4.npz": {
+      "bytes": 68244,
+      "git_blob": "d1469f86b80ac767ef516bc9cc2ec161403331c0",
+      "sha256": "ad9349100a78ca23b79bb59d8ecf5eec107eaeaa263117716905139914c07aa1"
+    },
+    "retrieval/perfold/R_f5.npz": {
+      "bytes": 66636,
+      "git_blob": "d1e54822204529b1f315b1b47b74aa936b7a51f2",
+      "sha256": "df66b2a94c135555b9b4c9022eb4d8bfb9284600e5ce9d7d4fe508c3598c40b3"
+    }
+  },
+  "pass": true
+}

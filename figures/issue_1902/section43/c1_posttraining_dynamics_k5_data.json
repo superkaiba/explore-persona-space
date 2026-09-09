@@ -140,12 +140,12 @@
   "metadata": {
     "context_summary": "u_last",
     "folds": "six size-matched IID random-row folds (seed 190231)",
-    "generated_utc": "2026-09-09T05:34:41Z",
-    "k5_retrieval": "eval_results/issue_1902/k5_targets/retrieval/summary.json",
-    "k5_summary": "eval_results/issue_1902/k5_targets/summary.json",
+    "generated_utc": "2026-09-09T19:45:18Z",
+    "k5_retrieval": "eval_results/issue_1902/k5_full_grid/retrieval/summary.json",
+    "k5_summary": "eval_results/issue_1902/k5_full_grid/summary.json",
     "layer": 31,
     "panel_bc_bootstrap": "1000 paired draws, seed 1944; panel C retention CIs = semantic-cluster bootstrap; panel B CIs = row bootstrap",
-    "prev_row_note": "K=5 captures cover the diagonal + base row only, so the previous-stage series has its SFT point (cell BS) alone",
+    "prev_row_note": "Full 4x4 grid: all three previous-stage points captured.",
     "variant": "K=5 mean answer targets (seeds 42,45,46,47,48)"
   },
   "prev_row_ci": [
@@ -154,14 +154,20 @@
       0.6330590031562552,
       0.639581662452775
     ],
-    null,
-    null
+    [
+      0.6269645284184724,
+      0.6340307136222282
+    ],
+    [
+      0.594408044369362,
+      0.6020862295897297
+    ]
   ],
   "prev_row_r2": [
     null,
     0.636506289970764,
-    null,
-    null
+    0.6306720869630378,
+    0.5984933259078531
   ],
   "scale_bias_retention": [
     0.6365759644101169,
@@ -194,6 +200,32 @@
     [
       0.9846736038717474,
       0.9866523896134787
+    ]
+  ],
+  "stage_grid": [
+    [
+      0.6747779066421795,
+      0.636506289970764,
+      0.6360228236840828,
+      0.6276626062224291
+    ],
+    [
+      0.6079237466380607,
+      0.6336208397328849,
+      0.6306720869630378,
+      0.623102948738183
+    ],
+    [
+      0.5742925949430981,
+      0.607234327344309,
+      0.6058255938675696,
+      0.5984933259078531
+    ],
+    [
+      0.5731783559207595,
+      0.606603793140889,
+      0.6054925393322164,
+      0.5990897306476755
     ]
   ],
   "whitened_csls_acc1": [
