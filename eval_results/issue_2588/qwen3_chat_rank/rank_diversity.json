@@ -1,0 +1,64 @@
+{
+  "schema": "issue2588_chat_rank_diversity_v1",
+  "question": "Is the map's effective dimension just the diversity of the answer space?",
+  "caveat": "Each arm reads at its own validation-selected layer (24 no-think, 22 think), so an arm difference in the answer or input spectrum confounds thinking mode with read layer. Spectra are train-side and carry no sampling CI here.",
+  "arms": {
+    "a": {
+      "layer": 24,
+      "input": {
+        "effective_rank_entropy": 154.17671770968371,
+        "participation_ratio": 34.63127242423087,
+        "stable_rank": 9.44510691622583
+      },
+      "answer": {
+        "effective_rank_entropy": 161.43102940839805,
+        "participation_ratio": 35.11066226187023,
+        "stable_rank": 9.53116544372937
+      },
+      "fitted_output": {
+        "effective_rank_entropy": 63.06396491783798,
+        "participation_ratio": 21.326642619423428,
+        "stable_rank": 7.47931694168566
+      },
+      "fitted_over_answer_effective_rank": 0.3906557812890787,
+      "fitted_over_answer_participation_ratio": 0.6074121433643225
+    },
+    "b": {
+      "layer": 22,
+      "input": {
+        "effective_rank_entropy": 108.28569989882922,
+        "participation_ratio": 26.01168068598378,
+        "stable_rank": 7.80106582688722
+      },
+      "answer": {
+        "effective_rank_entropy": 108.4967771175987,
+        "participation_ratio": 26.73036623835687,
+        "stable_rank": 8.34393623557199
+      },
+      "fitted_output": {
+        "effective_rank_entropy": 38.429662637395694,
+        "participation_ratio": 15.622874359338184,
+        "stable_rank": 6.331914539295366
+      },
+      "fitted_over_answer_effective_rank": 0.35420096023444203,
+      "fitted_over_answer_participation_ratio": 0.584461665060169
+    }
+  },
+  "a_over_b_ratios": {
+    "input": {
+      "effective_rank_entropy": 1.4237957352977377,
+      "participation_ratio": 1.3313738870741905,
+      "stable_rank": 1.2107457013979095
+    },
+    "answer": {
+      "effective_rank_entropy": 1.4878877852143422,
+      "participation_ratio": 1.313512203640817,
+      "stable_rank": 1.142286467038898
+    },
+    "fitted_output": {
+      "effective_rank_entropy": 1.6410231209386361,
+      "participation_ratio": 1.365090835968732,
+      "stable_rank": 1.1812093949262272
+    }
+  }
+}
