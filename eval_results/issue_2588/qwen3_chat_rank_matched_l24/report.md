@@ -138,3 +138,26 @@ The unchanged A-L24 input cache must also be present for provenance verification
 the original `issue2588_chat_stage_rank.py --arm a` entrypoint restores it from
 the same immutable revision if needed. Existing numerical output paths refuse
 refitting, including a rank-only checkpoint from a partial run.
+
+## Verification and disposition
+
+Independent read-only numerical and report review: PASS. The final mapped
+test run had 63 passes and one repository-wide failure listing eight unchanged
+legacy entrypoints that import heavy libraries before loading thread caps.
+The modified rank helper was hardened and is no longer among those failures.
+All 37 focused rank/staging/matched-control tests pass. Ruff and the
+payload-scoped workflow check pass (39 checks on the ten code/test/result
+paths). The required no-flags workflow check finished with nine pre-existing
+findings: five missing marker-recipe-document checks in this checkout, three
+unwrapped-HF-call findings in unchanged scripts, and one unchanged JSONL
+splitlines finding. None is introduced by this round; a diff against the
+starting commit confirms every named offending path is unchanged.
+
+The four result/report files at commit
+`9aa400fc90dfd0968521347a5972b293a9bf6a4f` were verified byte-for-byte against
+GitHub. After a fresh HF hash verification, exactly 23 newly downloaded B-L24
+tensor shards (372955230 bytes) were removed. They remain recoverable at the
+immutable HF revision above. All earlier caches and every result were kept.
+This report's completion note is an additional text-only commit; numerical
+artifacts are unchanged. No paper/Overleaf file was edited, and no task status,
+goal, clean-result classification, or other session's compute was changed.
