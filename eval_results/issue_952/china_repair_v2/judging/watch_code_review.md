@@ -37,6 +37,14 @@ hashes and clean Ruff/diff checks. A root read-only real-input probe validated
 the 1,001 prepared packets and all 864 then-completed decisions; it found only
 the expected three metadata files. That probe made no aggregate or upload.
 
+Root then independently reran the complete four-file suite: 73 passed in
+11.96 seconds. The launched source and tests match the reviewed hashes in
+commit `117491e2d22dd8dd014000dad9d905a1904dd088`. Its first real automatic
+partial backup preserved 84 packets / 1,008 decisions in 340 exact text files;
+root independently reconstructed it from remote revision
+`c815c9c49f7c3517f7a3e63e7454bfe4ad683a4f` and checked every original source
+hash. This verifies the real partial-backup path, not final collection.
+
 Verdict: PASS, no remaining P1/P2 findings in this scoped helper. Synthetic
 tests are not evidence that all production judgments, remote publication, or
 CPU analysis have completed. The owner must verify actual monitor receipts

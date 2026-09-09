@@ -32,6 +32,18 @@ and matching authored fields. The final exact-byte archive must include every
 source file and publish to `<study-prefix>/attempt1/judge`. Record its verified
 immutable revision before CPU dispatch. No model API or CLI judging is allowed.
 
+The reviewed `scripts.issue952_china_repair_judge_watch` module handles
+incremental backups and final collection. Verified-by: ran (first real partial
+archive reconstructed and source-hash checked). Its state directory is
+`/tmp/issue952-china-repair-v2/judge_monitor`; the source-manifest SHA256 is
+`9033b9732564b51905f427284ea660ee18bd5d38b6016065d64bb6f94892fa7c`.
+Resume only when the previous monitor has exited: use the same `--source`,
+`--state-dir`, `--manifest-sha256`, `--poll-seconds 60`, and explicit
+`--max-polls 1440`. A nonblocking collector lock prevents duplicate owners.
+The process's zero exit after its bounded poll interval does **not** establish
+completion: require its hash-bound external `done.json` and verified full
+archive. It never launches CPU analysis or creates semantic decisions.
+
 ## Dedicated CPU continuation
 
 Verified-by: read. The launcher and analysis have independent code review and
