@@ -65,8 +65,10 @@ Smoke blind-spot enumeration (what the local VM smoke does NOT certify):
 - prologue's tokenizer/template asserts run only pod-side (network +
   tokenizer download).
 Everything else — the gate phase (banked download + reproduction refit +
-tolerance gate), target alignment/averaging, collect/trend, sentinel shape —
-is executed by the smoke ON THE REAL production code path (the gate smoke runs
+tolerance gate), the parse-phase body (--self-test leg), the fits-phase body
+end-to-end (--synth-fits-smoke: real banked artifacts, synthesized s45/s46
+shards), target alignment/averaging, collect/trend, sentinel shape — is
+executed by the smoke ON THE REAL production code path (the gate smoke runs
 FULL banked production shape on a real cell; no N is sliced anywhere in the
 gate/fits path, ``--smoke`` only redirects out-root + HF prefixes).
 """
@@ -1193,6 +1195,57 @@ def _run_self_test() -> int:
         assert r["method"] == "exact" and abs(r["rho"] - 1.0) < 1e-12, r
         assert abs(r["two_sided_exact_permutation_p"] - 2.0 / 6.0) < 1e-12, r
 
+        # 4b) parse phase REAL-body leg: manifest + shaped raw rows -> the
+        #     production parse loop keeps well-formed rows and drops the
+        #     length-truncated one (mode "off" truncated_residual class).
+        vstage = "val_400_s45"
+        vd = paths["raw"] / vstage
+        vd.mkdir(parents=True, exist_ok=True)
+        raw_fixture = [
+            {
+                "row_id": f"{vstage}_1",
+                "prompt": "p",
+                "n_prompt_tokens": 1,
+                "read_points": {"prompt_last": 0},
+                "text": "a fine answer",
+                "finish_reason": "stop",
+            },
+            {
+                "row_id": f"{vstage}_2",
+                "prompt": "p",
+                "n_prompt_tokens": 1,
+                "read_points": {"prompt_last": 0},
+                "text": "another fine answer",
+                "finish_reason": "stop",
+            },
+            {
+                "row_id": f"{vstage}_3",
+                "prompt": "p",
+                "n_prompt_tokens": 1,
+                "read_points": {"prompt_last": 0},
+                "text": "truncated",
+                "finish_reason": "length",
+            },
+        ]
+        PC.write_json_atomic(vd / "chunk0000.json", {"rows": raw_fixture})
+        PC.write_json_atomic(
+            _manifest_path(paths),
+            {
+                "meta": {"self_test": True},
+                "cell": cell.key,
+                "train_part_rows": args.train_part_rows,
+                "stages": [
+                    {"stage": stage, "seed": 45, "n_base": 1},
+                    {"stage": vstage, "seed": 45, "n_base": 3},
+                ],
+            },
+        )
+        phase_parse_k3(args, cell, paths)
+        kept = PC.read_jsonl(paths["parsed"] / f"{vstage}.jsonl")
+        drops = json.loads((paths["parsed"] / f"{vstage}_drops.json").read_text())["drops"]
+        assert len(kept) == 2 and len(drops) == 1, (len(kept), len(drops))
+        assert drops[0]["reason"] == "truncated_residual", drops[0]
+
         # 5) Results sentinel parses through the poller (envelope-less rescue).
         import poll_pipeline as PP
 
@@ -1254,6 +1307,71 @@ def _run_self_test() -> int:
         assert abs(out["trends"]["banked_r2_vs_aa"]["rho"] - BANKED_RHO_R2_VS_AA) <= 1e-9
         assert out["trends"]["refit_r2_avg_target_vs_aa"]["method"] == "monte_carlo"
     print("[self-test] OK: resume legs, alignment, estimator port, sentinel, collect")
+    return 0
+
+
+def _run_synth_fits_smoke(args) -> int:
+    """REAL-body fits-phase smoke: run phase_fits_k3 end-to-end on the REAL
+    banked artifacts with SYNTHESIZED s45/s46 capture shards (banked y plus
+    small gaussian noise; ~1% of rows dropped per synthetic draw so the 3-way
+    intersection path really subsets). Requires --smoke (scratch out-root) and
+    a completed gate phase for the cell. Nothing here is ever uploaded — the
+    refit JSON it writes lives in the smoke out-root and is labeled synthetic.
+    """
+    assert args.smoke, "--synth-fits-smoke requires --smoke"
+    assert args.cell, "--synth-fits-smoke requires --cell"
+    from explore_persona_space.atomic_io import savez_atomic
+
+    cell = PC.cell_by_key(args.cell)
+    paths = RC._paths(args, cell)
+    gate = json.loads(_gate_path(paths).read_text(encoding="utf-8"))
+    assert gate["pass"] is True, "run --phase gate first"
+    star = int(gate["layer_star"])
+    rng = np.random.default_rng(0)
+    stages = []
+    for seed in NEW_SEEDS:
+        for split in ("train_10k", "val_400"):
+            banked = _load_banked_layer(
+                cell, split, star, paths["cache"], args.hf_revision, want_x=False
+            )
+            stage = f"{split}_s{seed}_part0" if split == "train_10k" else f"{split}_s{seed}"
+            keep = rng.random(banked["ci"].size) < 0.99
+            ci = banked["ci"][keep]
+            noise = rng.normal(
+                scale=0.05 * float(banked["y"].std()), size=(int(keep.sum()), banked["y"].shape[1])
+            )
+            ldir = paths["capture"] / stage / f"L{star:02d}"
+            ldir.mkdir(parents=True, exist_ok=True)
+            savez_atomic(
+                ldir / "shard000.npz",
+                row_ids=np.array([f"{stage}_{c}" for c in ci]),
+                y_ans=(banked["y"][keep] + noise).astype(np.float32),
+            )
+            PC.write_json_atomic(
+                paths["capture"] / stage / "rows.json", {"synthetic_fits_smoke": True}
+            )
+            stages.append({"stage": stage, "seed": seed, "n_base": int(ci.size)})
+    PC.write_json_atomic(
+        _manifest_path(paths),
+        {
+            "meta": RC._meta(),
+            "cell": cell.key,
+            "train_part_rows": args.train_part_rows,
+            "stages": stages,
+            "synthetic_fits_smoke": True,
+        },
+    )
+    phase_fits_k3(args, cell, paths)
+    rec = json.loads(_refit_path(paths).read_text(encoding="utf-8"))
+    digest = {
+        "cell": rec["cell"],
+        "n3": rec["refit"]["n"],
+        "test_r2_avg_target": rec["refit"]["test_r2_avg_target"],
+        "selected_lambda": rec["refit"]["selected_lambda"],
+        "banked_selected_lambda": rec["refit"]["banked_selected_lambda"],
+    }
+    print(f"[synth-fits-smoke] {json.dumps(digest)}")
+    print("[synth-fits-smoke] OK — smoke out-root only; synthetic new-draw y; never uploaded")
     return 0
 
 
@@ -1363,6 +1481,12 @@ def _build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--import-check", action="store_true")
     ap.add_argument("--self-test", action="store_true")
     ap.add_argument("--probe-upload", action="store_true")
+    ap.add_argument(
+        "--synth-fits-smoke",
+        action="store_true",
+        help="REAL-body fits-phase smoke on synthesized s45/s46 shards (requires --smoke "
+        "+ a completed gate phase; smoke out-root only, never uploaded)",
+    )
     return ap
 
 
@@ -1375,6 +1499,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_self_test()
     if args.probe_upload:
         return _run_probe_upload(args)
+    if args.synth_fits_smoke:
+        return _run_synth_fits_smoke(args)
     if args.collect:
         return run_collect(args)
     if args.pilot:
