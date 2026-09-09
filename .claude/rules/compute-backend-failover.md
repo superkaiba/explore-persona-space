@@ -26,19 +26,22 @@ paths:
 > zombie/janitor machinery — is scoped to IN-FLIGHT GCP handles (which keep
 > polling / tearing down / failing over to RunPod / crash-persisting) plus
 > the single-constant rollback; it is NOT reachable for fresh dispatches
-> while the flag is on. CPU intents walk `runpod → fellows` (#2059: the
-> fellows `ClusterConfig` declares `supports_cpu_jobs` and renders a 0-GPU
-> sbatch; nibi/mila stay excluded — no `/workspace`, #608) then the RunPod
-> terminal retry (`cpu-bigmem` gained the `cpu5m-16-128` row; the #677
-> typed terminal stays as the fail-loud floor for a future unmapped CPU
-> intent, firing at the runpod-first lane BEFORE fellows).
+> while the flag is on. CPU intents are RUNPOD-ONLY while fellows access is
+> revoked (user directive 2026-09-09; the #2059 `runpod → fellows` walk —
+> the fellows `ClusterConfig` declares `supports_cpu_jobs` and renders a
+> 0-GPU sbatch — is the fellows-rollback build only; nibi/mila stay
+> excluded — no `/workspace`, #608). `cpu-bigmem` gained the
+> `cpu5m-16-128` row; the #677 typed terminal stays as the fail-loud floor
+> for a future unmapped CPU intent, firing at the runpod-first lane.
 
 > **#2054 — RUNPOD IS THE FIRST AUTO LANE (user directive 2026-08-05).**
 > The RunPod team account is the shared Anthropic fellows/safety org pool —
 > a sponsored pool, not discretionary spend — so `DEFAULT_AUTO_LANE_ORDER`
-> now leads with `runpod` (`("runpod", "fellows", "nibi", "fir", "mila")`
-> flag-ON; `("runpod", "fellows", "gcp", "nibi", "fir", "mila")` under the
-> #2028 rollback build). The runpod-first lane launches via the SAME
+> now leads with `runpod` (`("runpod", "nibi", "fir", "mila")` with both
+> policy flags ON — fellows access REVOKED, user directive 2026-09-09, and
+> gcp disabled #2028; each flag-off rollback build re-inserts its rung —
+> fellows directly after runpod, gcp after fellows — up to the historical
+> `("runpod", "fellows", "gcp", "nibi", "fir", "mila")`). The runpod-first lane launches via the SAME
 > machinery as the #656 terminal rung (`reason: auto_runpod_first`); a
 > capacity miss with nothing provisioned falls through to the lanes behind
 > it, and the terminal rung SURVIVES as the end-of-chain RunPod retry
@@ -358,18 +361,22 @@ provision into split-ownership.
 
 ### Ladder order (length-aware, #680)
 
-NOTE (#1609/#2028/#2054): the standing auto order is
-`DEFAULT_AUTO_LANE_ORDER = ("runpod", "fellows", "nibi", "fir", "mila")`
-(the 6-lane order with `gcp` third is the flag-off rollback build). A
-fellows capacity miss / dead endpoint / PENDING-at-cap park (after the
-granted-QoS ladder high-eur → normal-eur → low-eur park-fails on the AUTO
-path, #1899 — scancel + re-submit per `ClusterConfig.qos_ladder` rung,
+NOTE (#1609/#2028/#2054; fellows revoked 2026-09-09): the standing auto
+order is `DEFAULT_AUTO_LANE_ORDER = ("runpod", "nibi", "fir", "mila")` —
+no fellows rung (`router.FELLOWS_ACCESS_REVOKED = True`; an explicit
+`backend: fellows` pin raises the typed `FellowsAccessRevokedError`) and
+no gcp rung. FELLOWS-ROLLBACK BUILD ONLY (`FELLOWS_ACCESS_REVOKED =
+False` re-inserts the rung directly after runpod): a fellows capacity
+miss / dead endpoint / PENDING-at-cap park (after the granted-QoS ladder
+high-eur → normal-eur → low-eur park-fails on the AUTO path, #1899 —
+scancel + re-submit per `ClusterConfig.qos_ladder` rung,
 `EPS_FELLOWS_LADDER_RUNG_WAIT_SECONDS` default 300 s per fallback rung;
 explicit `backend: fellows` pins never walk the ladder) advances to the
-free DRAC/Mila lanes; the GCP ladder below is entered only under the
-flag-off rollback. Fellows rollback: flip the fellows `CLUSTER_CONFIGS`
-row to `available=False` or set `EPM_AUTO_LANE_ORDER=runpod,nibi,fir,mila`
-(a `gcp` entry raises while `GCP_PROVISIONING_DISABLED` is on). Sentinel
+free DRAC/Mila lanes; the GCP ladder below is entered only under the gcp
+flag-off rollback. Additional fellows-disable levers (rollback build):
+flip the fellows `CLUSTER_CONFIGS` row to `available=False` or set
+`EPM_AUTO_LANE_ORDER=runpod,nibi,fir,mila` (a `gcp` or `fellows` entry
+raises while its policy flag is on). Sentinel
 drain: fellows is a DRAINED lane as of #1898
 (`slurm_monitor.drain_cluster_sentinels` over `ssh charmander` each poll
 tick); the residual hazard is DRAC/Mila only (no `/workspace` — fail-loud

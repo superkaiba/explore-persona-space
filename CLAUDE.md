@@ -274,16 +274,21 @@ Anthropic fellows/safety org pool, so provisioning there is ordinary use, NOT di
 `backends/router.py`; an explicit `backend: gcp` pin raises `GcpDisabledError`. Paths that only
 ACT ON existing GCP handles still work.
 
-Every `/issue` launch routes through the unified router (`scripts/dispatch_issue.py`), keyed on
-the task's `backend:` frontmatter. Absent/empty ⇒ `auto`:
-`DEFAULT_AUTO_LANE_ORDER = ("runpod", "fellows", "nibi", "fir", "mila")` — RunPod first, then
-the free fellows/DRAC/Mila SLURM lanes, then a terminal RunPod retry rung. **Prefer bare `auto`.**
-CPU intents route `runpod → fellows` (#2059; all three RunPod-mapped).
+**Fellows-cluster access is REVOKED (user directive 2026-09-09)**:
+`FELLOWS_ACCESS_REVOKED = True` in `backends/router.py`; an explicit `backend: fellows` pin
+raises `FellowsAccessRevokedError`. Paths that only ACT ON existing fellows handles still work.
+**RunPod is the ONLY non-DRAC/Mila lane** (GCP remains disabled). Every `/issue` launch routes
+through the unified router (`scripts/dispatch_issue.py`), keyed on the task's `backend:`
+frontmatter. Absent/empty ⇒ `auto`:
+`DEFAULT_AUTO_LANE_ORDER = ("runpod", "nibi", "fir", "mila")` — RunPod first, then the free
+DRAC/Mila SLURM lanes, then a terminal RunPod retry rung. **Prefer bare `auto`.**
+CPU intents route RunPod-only (all three RunPod-mapped; the #2059 `runpod → fellows` CPU walk
+is the fellows-rollback build only).
 
 **READ `.claude/rules/compute-backends.md` before pinning a backend, debugging a lane, or
-reasoning about a failover** — it carries the per-lane mechanics, the reason codes, the fellows
-QoS ladder + sentinel-drain caveat, the GCP in-flight/rollback scope, and the crash-diagnostics
-persist path. Failover triggers live in `.claude/rules/compute-backend-failover.md`.
+reasoning about a failover** — it carries the per-lane mechanics, the reason codes, the
+fellows revocation scope (the QoS ladder + sentinel drain are rollback-only), the GCP
+in-flight/rollback scope, and the crash-diagnostics persist path. Failover triggers live in `.claude/rules/compute-backend-failover.md`.
 
 ## Pods (Ephemeral Lifecycle + CLI + SSH)
 

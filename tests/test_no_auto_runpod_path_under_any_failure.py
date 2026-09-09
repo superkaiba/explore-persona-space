@@ -13,16 +13,21 @@ the ordering contract.
 the shared Anthropic-fellows/safety org pool, a sponsored pool, so
 provisioning there is the first resort, not discretionary last-resort
 spend. The flag-ON auto default is
-``DEFAULT_AUTO_LANE_ORDER = ("runpod", "fellows", "nibi", "fir", "mila")``
+``DEFAULT_AUTO_LANE_ORDER = ("runpod", "nibi", "fir", "mila")`` (fellows
+dropped too — access REVOKED, user directive 2026-09-09:
+``router.FELLOWS_ACCESS_REVOKED = True``)
 (no gcp rung), so the STANDING ordering contract is now "RunPod FIRST
 (``auto_runpod_first``); a capacity miss falls through to the free lanes;
 the #656 terminal rung survives as the end-of-chain RETRY
 (``auto_fallback_runpod``); ZERO gcp attempts" — pinned here by
 ``test_runpod_is_first_lane_no_gcp`` +
-``test_runpod_first_then_free_lanes_then_terminal_retry_no_gcp``. The
+``test_runpod_first_then_free_lanes_then_terminal_retry_no_gcp`` (both under
+the FULL production contract: fellows revoked AND gcp disabled — a wired
+fellows backend is NEVER attempted). The
 historical GCP-ladder-precedes-terminal-RunPod machinery stays test-covered
-under the single-constant rollback lever (flag OFF → the 6-lane
-runpod/fellows/gcp order) by
+under the single-constant rollback lever (gcp flag OFF → the 5-lane
+runpod/gcp/nibi/fir/mila order while fellows stays revoked; both flags OFF →
+the historical 6-lane runpod/fellows/gcp order) by
 ``test_runpod_first_then_gcp_ladder_then_terminal_retry_rollback``, which
 re-derives the rollback default the way the
 ``_gcp_rollback_build_for_legacy_suite`` autouse fixture family does in
@@ -182,8 +187,11 @@ class _FlakyRunpodPointer(_PassiveRunpodPointer):
 def test_runpod_is_first_lane_no_gcp(tmp_path: Any) -> None:
     """The #2054 flag-ON ordering contract end-to-end: RunPod is the FIRST
     auto lane — a healthy launch resolves the route at lane 1 with reason
-    ``auto_runpod_first``, ZERO free-lane attempts and ZERO gcp attempts."""
+    ``auto_runpod_first``, ZERO free-lane attempts and ZERO gcp attempts. The
+    wired fellows backend is inert by policy (access revoked, user directive
+    2026-09-09) as well as by lane order."""
     assert router_module.GCP_PROVISIONING_DISABLED is True  # production flag, no fixture
+    assert router_module.FELLOWS_ACCESS_REVOKED is True  # production flag, no fixture
     rp = _PassiveRunpodPointer()
     fellows = _FreeLaneExhausted("fellows")
     nibi = _FreeLaneExhausted("nibi")
@@ -211,11 +219,15 @@ def test_runpod_is_first_lane_no_gcp(tmp_path: Any) -> None:
 
 
 def test_runpod_first_then_free_lanes_then_terminal_retry_no_gcp(tmp_path: Any) -> None:
-    """The #2054 flag-ON fall-through contract end-to-end: a runpod-first
-    capacity miss (nothing provisioned) falls through to the wired free
-    lanes (fellows FIRST), records ZERO gcp attempts anywhere, and the #656
-    TERMINAL rung retries RunPod as the LAST attempt in the trail."""
+    """The full-production fall-through contract end-to-end (#2054 runpod
+    first; gcp disabled #2028; fellows access revoked, user directive
+    2026-09-09): a runpod-first capacity miss (nothing provisioned) falls
+    through to the free DRAC/Mila lanes (nibi FIRST — a WIRED fellows
+    backend is never attempted: the rung is absent from the order), records
+    ZERO gcp attempts anywhere, and the #656 TERMINAL rung retries RunPod
+    as the LAST attempt in the trail."""
     assert router_module.GCP_PROVISIONING_DISABLED is True  # production flag, no fixture
+    assert router_module.FELLOWS_ACCESS_REVOKED is True  # production flag, no fixture
     rp = _FlakyRunpodPointer(fail_first_n=1)
     fellows = _FreeLaneExhausted("fellows")
     nibi = _FreeLaneExhausted("nibi")
@@ -235,17 +247,16 @@ def test_runpod_first_then_free_lanes_then_terminal_retry_no_gcp(tmp_path: Any) 
     assert result.chosen_kind == "runpod"
     assert result.reason == ROUTE_REASON_RUNPOD_FALLBACK  # the terminal RETRY
     assert len(rp.launches) == 2  # lane attempt + terminal retry
+    assert len(fellows.launches) == 0  # revoked: wired but NEVER launched
     outcomes = [(a.kind, a.outcome) for a in result.attempts]
     assert not any(k == "gcp" for k, _o in outcomes)  # ZERO gcp attempts
+    assert not any(k == "fellows" for k, _o in outcomes)  # ZERO fellows attempts
     runpod_miss_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o != "launched"]
-    fellows_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "fellows"]
     nibi_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "nibi"]
     runpod_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o == "launched"]
     assert runpod_miss_idxs, "the runpod-first lane must have been attempted"
-    assert fellows_idxs, "the fellows free lane must have been attempted"
     assert nibi_idxs, "the nibi free lane must have been attempted"
-    assert max(runpod_miss_idxs) < min(fellows_idxs)  # runpod lane FIRST
-    assert max(fellows_idxs) < min(nibi_idxs)  # fellows BEFORE the free tail
+    assert max(runpod_miss_idxs) < min(nibi_idxs)  # runpod lane FIRST, nibi leads the free tail
     assert runpod_idxs and runpod_idxs[-1] == len(outcomes) - 1  # terminal retry LAST
 
 

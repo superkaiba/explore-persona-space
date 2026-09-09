@@ -88,6 +88,7 @@ from explore_persona_space.backends.base import (
 from explore_persona_space.backends.router import (
     ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD,
     ROUTE_REASON_CPU_FALLBACK_INFEASIBLE,
+    ROUTE_REASON_FELLOWS_ACCESS_REVOKED,
     ROUTE_REASON_GCP_DISABLED,
     ROUTE_REASON_GPU_RAM_BELOW_MIN_RAM_GB,
     ROUTE_REASON_RECONNECT,
@@ -95,6 +96,7 @@ from explore_persona_space.backends.router import (
     BackendPrepareError,
     CpuExhaustedNoRunpodLaneError,
     CpuFallbackInfeasibleError,
+    FellowsAccessRevokedError,
     GcpAttemptCapExceededError,
     GcpDisabledError,
     GpuRamBelowMinRamGbError,
@@ -1476,9 +1478,31 @@ def classify_terminal_exception(exc: BaseException) -> TerminalTranslation:
                 "failure_class: infra\n"
                 f"reason: {ROUTE_REASON_GCP_DISABLED}\n"
                 "recovery: re-dispatch WITHOUT the gcp pin (omit --backend / clear "
-                "the backend: frontmatter so the auto chain routes fellows -> free "
-                "SLURM lanes), or flip router.GCP_PROVISIONING_DISABLED = False for "
-                "a deliberate rollback (#2028)\n"
+                "the backend: frontmatter so the auto chain routes runpod -> free "
+                "DRAC/Mila SLURM lanes), or flip router.GCP_PROVISIONING_DISABLED = "
+                "False for a deliberate rollback (#2028)\n"
+                f"detail: {exc}"
+            ),
+        )
+    if isinstance(exc, FellowsAccessRevokedError):
+        # User directive 2026-09-09: an explicit ``backend: fellows`` pin
+        # while fellows-cluster access is revoked. A POLICY refusal, not a
+        # capacity outcome — the reason token is NOT in the watcher's
+        # TRANSIENT_CAPACITY_REASONS (nothing will "free up"; auto-retry
+        # would loop a policy-refused launch). The fix is a human changing
+        # the pin, or a deliberate rollback flip of
+        # router.FELLOWS_ACCESS_REVOKED.
+        return TerminalTranslation(
+            failure_class="infra",
+            status="blocked",
+            note=(
+                "failure_class: infra\n"
+                f"reason: {ROUTE_REASON_FELLOWS_ACCESS_REVOKED}\n"
+                "recovery: re-dispatch WITHOUT the fellows pin (omit --backend / "
+                "clear the backend: frontmatter so the auto chain routes runpod -> "
+                "free DRAC/Mila SLURM lanes), or flip "
+                "router.FELLOWS_ACCESS_REVOKED = False for a deliberate rollback "
+                "(user directive 2026-09-09)\n"
                 f"detail: {exc}"
             ),
         )
