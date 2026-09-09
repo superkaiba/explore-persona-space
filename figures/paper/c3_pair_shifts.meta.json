@@ -7,7 +7,7 @@
   "title": "Predicted over observed answer-shift size for controlled minimal pairs",
   "subject": "Through-origin calibration slope of predicted over observed answer-shift size per changed element, with 95% confidence intervals",
   "git": {
-    "commit": "59f89b77a84a68c299ffc6e9fd48971b6d179e1c",
+    "commit": "ff1b102f3274906378cc9dbb69ab0cd2c657b676",
     "tracked_worktree_dirty": true
   },
   "sources": [
@@ -78,7 +78,8 @@
       {
         "label": "Output\nformat",
         "axis": "format",
-        "n": 120,
+        "n": 36,
+        "n_primary_pairs": 120,
         "slope": 1.2107723701971063,
         "slope_ci95": [
           1.1458175599895333,
@@ -89,6 +90,7 @@
         "label": "Persona",
         "axis": "persona",
         "n": 120,
+        "n_primary_pairs": 120,
         "slope": 1.145679180744482,
         "slope_ci95": [
           1.1065513814569188,
@@ -99,6 +101,7 @@
         "label": "Tone",
         "axis": "register",
         "n": 12,
+        "n_primary_pairs": 12,
         "slope": 1.0488641607899747,
         "slope_ci95": [
           1.0083376521867524,
@@ -124,6 +127,7 @@
         "label": "Question\ntopic",
         "axis": "query_content",
         "n": 66,
+        "n_primary_pairs": 66,
         "slope": 0.8110976182915853,
         "slope_ci95": [
           0.7584350985664975,

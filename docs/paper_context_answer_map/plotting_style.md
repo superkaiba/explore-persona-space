@@ -169,11 +169,29 @@ rendered together from checked-in results:
 uv run python scripts/make_paper_section42_figures.py
 ```
 
-This writes `c3_sae_tier_gradient`, `c3_pair_shifts`, and
-`c3_refusal_swaps_by_class` under `figures/paper/`, each as vector PDF, color
-PNG, grayscale-audit PNG, and provenance JSON. The one-word pilot's intervals
-are the only statistics recomputed by this plot-only script; they use a pinned
-10,000-draw pair bootstrap and are recorded in the sidecar.
+This writes `c3_information`, `c3_sae_tier_gradient`, `c3_pair_shifts`,
+`c3_directions_and_pairs`, and `c3_refusal_swaps_by_class` under
+`figures/paper/`, each as vector PDF, color PNG, grayscale-audit PNG, and
+provenance JSON. Pass `--only <name>` to render one. The one-word pilot's
+intervals are the only statistics recomputed by this plot-only script; they use
+a pinned 10,000-draw pair bootstrap and are recorded in the sidecar.
+
+`c3_information` is Section 4.2's main figure, one panel per claim: held-out
+`R^2` by answer-variance rank, SAE feature-property concordance, the retrieval
+failures on the candidate pool's shift-size plane, and variance explained per
+controlled change. Panels C and D read
+`eval_results/issue_1901/section42_panels.json`, which is not a plot-time
+computation. Rebuild it first when its inputs change:
+
+```bash
+uv run python scripts/issue1901_section42_panel_data.py
+```
+
+That step reads the banked #1901 retrieval pool from
+`/mnt/eps-data/thomasjiralerspong/issue1901_ctxsim/`, so it needs the staging
+mount. The natural-pair reference line in panel D comes from
+`scripts/issue1901_natural_pair_variance_explained.py`, which scores all
+1,975,078 held-out query pairs in closed form.
 
 The qualitative retrieval-failure cards (`c3_qualitative_discrimination`) have
 their own producer, which renders the banked excerpts in

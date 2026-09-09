@@ -45,6 +45,7 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     PAPER,
     ROLES,
     STYLE_VERSION,
+    better_label,
     c2a_figure,
     legend_kicker,
     panel_header,
@@ -63,6 +64,10 @@ PERSONA_SOURCE = ROOT / "eval_results/issue_2564/floor-failed-reelicitation/minp
 ONEWORD_SOURCE = ROOT / "eval_results/issue_2564/lang_oneword_pilot/summary.json"
 ONEWORD_PAIRS = ROOT / "eval_results/issue_2564/lang_oneword_pilot/perpair.jsonl"
 SPECTRUM_SOURCE = ROOT / "eval_results/issue_779/plot3_redesign/plot3_redesign.json"
+# Panels C and D of the Section 4.2 main figure: retrieval-failure shift sizes
+# against the candidate-pool background, and variance explained per controlled
+# change.  Built by the consolidation step recorded in the file's own provenance.
+SECTION42_PANELS = ROOT / "eval_results/issue_1901/section42_panels.json"
 SVMP_DIR = Path(os.environ.get("C2A_SVMP_DIR", ROOT / "eval_results/issue_2617/svmp_verbharm"))
 
 LINEAR = ROLES["linear"].color
@@ -308,23 +313,47 @@ def _pair_shift_data() -> list[dict]:
     for axis, computed in (("query_content_oneword", one), ("answer_language", lang)):
         assert np.isclose(computed["slope"], oneword["calibration_slope"]["arm_779ce"][axis])
 
-    def banked(source: dict, axis: str, label: str) -> dict:
+    # The banked ``n_primary_pairs`` counts every primary-class pair of the axis,
+    # but ``axis_slope`` is fitted on the headline subset (primary class AND the
+    # changed instruction followed in at least 70% of the rollouts of both
+    # contexts).  Only format differs between the two, 36 of 120, so reporting
+    # n_primary_pairs alongside the slope mislabels that one row.  Recount from
+    # the per-pair records and assert the slope reproduces on that subset.
+    def headline_rows(records: list[dict], axis: str, primary_class: str) -> list[dict]:
+        return [
+            row
+            for row in records
+            if row["axis"] == axis and row["pair_class"] == primary_class and row["in_headline_70"]
+        ]
+
+    parent_rows = _read_jsonl(ROOT / "eval_results/issue_2564/perpair.jsonl")
+    persona_rows = _read_jsonl(
+        ROOT / "eval_results/issue_2564/floor-failed-reelicitation/perpair_ffr.jsonl"
+    )
+
+    def banked(source: dict, axis: str, label: str, records: list[dict]) -> dict:
         cell = source["axes"][axis]
         cal = cell["calibration"]["arm_779ce"]
+        rows = headline_rows(records, axis, cell["primary_class"])
+        obs = np.asarray([row["norm_obs_tail_L19"] for row in rows], dtype=float)
+        pred = np.asarray([row["norm_pred"]["arm_779ce"] for row in rows], dtype=float)
+        slope = float(np.sum(pred * obs) / np.sum(obs**2))
+        assert np.isclose(slope, cal["axis_slope"]), (axis, slope, cal["axis_slope"])
         return {
             "label": label,
             "axis": axis,
-            "n": int(cell["n_primary_pairs"]),
+            "n": len(rows),
+            "n_primary_pairs": int(cell["n_primary_pairs"]),
             "slope": float(cal["axis_slope"]),
             "slope_ci95": [float(v) for v in cal["axis_slope_ci95"]],
         }
 
     rows = [
-        banked(parent, "format", "Output\nformat"),
-        banked(persona, "persona", "Persona"),
-        banked(parent, "register", "Tone"),
+        banked(parent, "format", "Output\nformat", parent_rows),
+        banked(persona, "persona", "Persona", persona_rows),
+        banked(parent, "register", "Tone", parent_rows),
         {"label": "Answer\nlanguage", "axis": "answer_language", **lang},
-        banked(parent, "query_content", "Question\ntopic"),
+        banked(parent, "query_content", "Question\ntopic", parent_rows),
         {"label": "One-word\ntopic", "axis": "query_content_oneword", **one},
     ]
     rows.sort(key=lambda row: -row["slope"])
@@ -451,6 +480,278 @@ def make_directions_and_pairs_figure(spectrum: dict, rows: list[dict]) -> tuple[
         title="Answer-shift size by element",
     )
     legend_kicker(fig, 0.065, 0.955, "Qwen2.5-7B-Instruct, layer 19")
+    return fig, include_frac
+
+
+# ---------------------------------------------------------------------------
+# Section 4.2 main figure (four panels, one per claim of the section)
+# ---------------------------------------------------------------------------
+
+# Panel-A label offsets: the spectrum sits in the top-left cell of a two-row
+# canvas, so its aspect is close to the c3_directions_and_pairs panel and the
+# combined offsets transfer with only the crowded upper-right cluster retuned.
+_INFO_SPECTRUM_OFFSETS = dict(_COMBINED_SPECTRUM_OFFSETS)
+# Panel A is the full canvas width here, so the crowded upper-left cluster has
+# room to fan further out than it does in c3_directions_and_pairs.
+_INFO_SPECTRUM_OFFSETS.update(
+    {
+        "evil": (104, 30, "left", "bottom"),
+        "refusal": (10, 16, "right", "bottom"),
+        "casualness": (40, -46, "left", "top"),
+        "assistant axis": (-6, -47, "right", "top"),
+    }
+)
+
+# Short row labels for panel D.  The full element names live in the prose; a
+# half-width panel cannot carry them without stealing the neighbouring axes.
+# Panel-B tick labels.  A quarter-width panel cannot carry the property names,
+# which are spelled out in the prose and in the appendix table.
+_PROPERTY_TICK_LABELS = {
+    "variance along decoder direction": "direction\nvariance",
+    "speaker identity / disposition": "speaker\nidentity",
+    "promotes specific output tokens": "promotes\ntokens",
+    "suppresses specific output tokens": "suppresses\ntokens",
+    "topic content": "topic\ncontent",
+}
+
+_VE_ROW_LABELS = {
+    "Output format": "Output format",
+    "Persona": "Persona",
+    "Tone": "Tone",
+    "Answer language": "Language",
+    "Question topic": "Topic",
+    "One-word topic": "One word",
+    "Refusal flip": "Refusal flip",
+    "Refusal non-flip": "Refusal same",
+}
+
+
+def _information_data() -> dict:
+    """Assemble the four panels from checked-in sources."""
+    panels = json.loads(SECTION42_PANELS.read_text())
+    sae = _sae_data()
+    spectrum = json.loads(SPECTRUM_SOURCE.read_text())
+
+    rows = []
+    for element in panels["panel_d"]["elements"]:
+        rows.append(
+            {
+                "label": _VE_ROW_LABELS[element["label"]],
+                "element": element["label"],
+                "n": int(element["n"]),
+                "ve": float(element["ve"]),
+                "ve_size_corrected": float(element["ve_size_corrected"]),
+                "ratio": float(element["ratio"]),
+                "kind": element["kind"],
+            }
+        )
+    rows.sort(key=lambda row: row["ve"])
+    return {
+        "panel_a": {
+            "layer": spectrum.get("layer", 19),
+            "ranks_evaluated": spectrum["ranks_evaluated"],
+            "r2_by_rank": spectrum["r2_by_rank"],
+            "random_directions": spectrum["random_directions"],
+            "directions": {
+                name: {
+                    "plotted_rank_1based": entry["plotted_rank_1based"],
+                    "heldout_r2": entry["heldout_r2"],
+                }
+                for name, entry in spectrum["directions"].items()
+            },
+        },
+        "panel_b": {"properties": sae["properties"], "dv": sae["dv"]},
+        "panel_c": panels["panel_c"],
+        "panel_d": {
+            "elements": rows,
+            "natural_reference_ve": float(panels["panel_d"]["natural_reference_ve"]),
+            "natural_reference_note": panels["panel_d"]["natural_reference_note"],
+            "order": "ascending variance explained",
+        },
+        "_spectrum": spectrum,
+    }
+
+
+def _draw_property_panel(ax: plt.Axes, properties: list[dict]) -> None:
+    """Panel B: forward-selected SAE feature properties, strongest first."""
+    labels = [_PROPERTY_TICK_LABELS[row["label"]] for row in properties]
+    values = np.asarray([row["value"] for row in properties])
+    x = np.arange(len(values))
+    bars = ax.bar(x, values, width=0.62, color=LINEAR, edgecolor=LINEAR, linewidth=1.2)
+    for bar, value in zip(bars, values, strict=True):
+        if value < 0:
+            bar.set_facecolor(PAPER)
+            bar.set_hatch("////")
+    ax.axhline(0, color=INK, lw=1.2)
+    ax.set_xticks(x, labels)
+    ax.set_xlim(-0.6, len(values) - 0.4)
+    ax.set_ylim(-0.17, 0.37)
+    ax.set_yticks(np.arange(-0.1, 0.31, 0.1))
+    ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _p: f"{v:+.1f}" if v else "0"))
+    ax.set_ylabel("Concordance with feature $R^2$")
+    style_axis(ax, grid_axis="y")
+    # Two-line labels need a full label height of separation on a narrow panel.
+    for tick in ax.xaxis.get_major_ticks()[1::2]:
+        tick.set_pad(tick.get_pad() + 40)
+
+
+def _draw_failure_panel(ax: plt.Axes, panel: dict) -> None:
+    """Panel C: where the retrieval failures sit on the pool's shift-size plane."""
+    bg_ctx = np.asarray(panel["background"]["ctx"], dtype=float)
+    bg_ans = np.asarray(panel["background"]["ans"], dtype=float)
+    # Thin the cloud for the vector export; the density is already saturated.
+    step = max(1, len(bg_ctx) // 9000)
+    ax.scatter(
+        bg_ctx[::step],
+        bg_ans[::step],
+        s=2.0,
+        color=MUTED,
+        alpha=0.13,
+        linewidths=0,
+        zorder=1,
+        label="pool context pairs",
+    )
+    slope = float(panel["background_slope"])
+    xs = np.array([0.0, float(bg_ctx.max()) * 1.02])
+    ax.plot(xs, slope * xs, color=MUTED, lw=1.6, linestyle=(0, (5, 4)), zorder=2)
+    floor = float(panel["rollout_floor"])
+    ax.axhline(floor, color=INK, lw=1.1, linestyle=(0, (1, 2.2)), zorder=2)
+    ax.text(xs[1] * 0.80, floor, "noise floor ", ha="right", va="bottom", color=INK)
+
+    fails = panel["failures"]
+    templated = np.asarray([bool(row["templated"]) for row in fails])
+    ctx = np.asarray([row["ctx"] for row in fails], dtype=float)
+    ans = np.asarray([row["ans"] for row in fails], dtype=float)
+    ax.scatter(
+        ctx[~templated],
+        ans[~templated],
+        s=30,
+        color=LINEAR,
+        linewidths=0,
+        zorder=5,
+        label="retrieval failures",
+    )
+    ax.scatter(
+        ctx[templated],
+        ans[templated],
+        s=30,
+        facecolors="none",
+        edgecolors=LINEAR,
+        linewidths=1.4,
+        zorder=5,
+        label="shared template",
+    )
+    ax.set_xlim(0, xs[1])
+    ax.set_ylim(0, float(max(bg_ans.max(), ans.max())) * 1.04)
+    ax.set_xlabel("Context-vector shift")
+    ax.set_ylabel("Answer-vector shift")
+    style_axis(ax)
+    ax.legend(loc="upper left", markerscale=2.2, handletextpad=0.5)
+
+
+def _draw_variance_explained_panel(ax: plt.Axes, panel: dict) -> None:
+    """Panel D: variance explained per controlled change, before and after the
+    predicted size is rescaled to its optimum."""
+    rows = panel["elements"]
+    y = np.arange(len(rows))
+    ve = np.asarray([row["ve"] for row in rows])
+    corrected = np.asarray([row["ve_size_corrected"] for row in rows])
+    ax.barh(
+        y,
+        corrected,
+        height=0.68,
+        facecolor=PAPER,
+        edgecolor=LINEAR,
+        linewidth=1.6,
+        zorder=2,
+        label="size corrected",
+    )
+    ax.barh(
+        y,
+        ve,
+        height=0.40,
+        color=LINEAR,
+        edgecolor=LINEAR,
+        linewidth=0,
+        zorder=3,
+        label="as predicted",
+    )
+    reference = float(panel["natural_reference_ve"])
+    ax.axvline(reference, color=MUTED, lw=1.6, linestyle=(0, (5, 4)), zorder=1)
+    ax.text(reference, -0.72, "natural pairs ", color=MUTED, ha="right", va="center")
+    ax.axvline(0, color=INK, lw=1.2, zorder=4)
+    ax.set_yticks(y, [row["label"] for row in rows])
+    ax.set_ylim(-1.05, len(rows) - 0.35)
+    ax.set_xlim(-1.0, 1.0)
+    ax.set_xticks([-1.0, -0.5, 0.0, 0.5, 1.0])
+    ax.set_xlabel(better_label("Variance explained"))
+    style_axis(ax, grid_axis="x")
+    ax.legend(
+        loc="lower left",
+        bbox_to_anchor=(0.0, 1.005),
+        handlelength=1.4,
+        handletextpad=0.5,
+        borderaxespad=0.0,
+        labelspacing=0.25,
+    )
+
+
+def make_information_figure(data: dict) -> tuple[plt.Figure, float]:
+    """Four-panel Section 4.2 figure: one panel per empirical claim."""
+    from issue779_plot3_redesign import draw_spectrum_panel
+
+    fig, include_frac = c2a_figure("full", aspect=0.72)
+    outer = fig.add_gridspec(
+        2,
+        1,
+        height_ratios=[0.42, 0.58],
+        left=0.080,
+        right=0.988,
+        top=0.855,
+        bottom=0.075,
+        hspace=0.90,
+    )
+    bottom = outer[1].subgridspec(1, 3, width_ratios=[0.32, 0.34, 0.34], wspace=0.42)
+    ax_a = fig.add_subplot(outer[0])
+    ax_b = fig.add_subplot(bottom[0, 0])
+    ax_c = fig.add_subplot(bottom[0, 1])
+    ax_d = fig.add_subplot(bottom[0, 2])
+
+    draw_spectrum_panel(ax_a, data["_spectrum"], offsets=_INFO_SPECTRUM_OFFSETS, legend_frame=True)
+    panel_header(
+        ax_a,
+        "A",
+        "5,000 contexts (4,000 train, 1,000 test)",
+        title="Held-out $R^2$ by variance rank",
+    )
+    _draw_property_panel(ax_b, data["panel_b"]["properties"])
+    panel_header(
+        ax_b,
+        "B",
+        "120,716 SAE features",
+        title="Concordance by property",
+        kicker_y=1.44,
+        title_y=1.29,
+    )
+    _draw_failure_panel(ax_c, data["panel_c"])
+    panel_header(
+        ax_c,
+        "C",
+        "10,000-context pool",
+        title="Retrieval failures",
+        kicker_y=1.44,
+        title_y=1.29,
+    )
+    _draw_variance_explained_panel(ax_d, data["panel_d"])
+    panel_header(
+        ax_d,
+        "D",
+        "Controlled context pairs",
+        title="Variance explained",
+        kicker_y=1.44,
+        title_y=1.29,
+    )
+    legend_kicker(fig, 0.080, 0.968, "Qwen2.5-7B-Instruct, layer 19")
     return fig, include_frac
 
 
@@ -760,9 +1061,9 @@ def main() -> None:
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     parser.add_argument(
         "--only",
-        choices=("sae", "pair_shifts", "refusal_by_class", "directions_and_pairs"),
+        choices=("sae", "pair_shifts", "refusal_by_class", "directions_and_pairs", "information"),
         default=None,
-        help="render a single figure (default: render all four)",
+        help="render a single figure (default: render all five)",
     )
     args = parser.parse_args()
     set_c2a_style()
@@ -879,6 +1180,39 @@ def main() -> None:
         )
         plt.close(combined_fig)
         report.append(("directions_and_pairs", combined_outputs))
+
+    if args.only in (None, "information"):
+        info = _information_data()
+        info_fig, info_frac = make_information_figure(info)
+        displayed = {key: value for key, value in info.items() if not key.startswith("_")}
+        # The panel-C background is 60,000 scatter points.  The sidecar records
+        # its shape and points at the sha-pinned source instead of restating a
+        # megabyte of coordinates the source file already carries verbatim.
+        background = dict(displayed["panel_c"]["background"])
+        displayed["panel_c"] = {
+            **displayed["panel_c"],
+            "background": {
+                key: value for key, value in background.items() if key not in ("ctx", "ans")
+            }
+            | {"stored_in": _display_path(SECTION42_PANELS)},
+        }
+        info_outputs = _save(
+            info_fig,
+            args.out_dir,
+            "c3_information",
+            title="What the context-to-answer map keeps and what it loses",
+            subject=(
+                "Held-out R2 by answer-variance rank, SAE feature-property concordance, "
+                "retrieval-failure shift sizes against the candidate-pool background, and "
+                "variance explained per controlled change before and after correcting the "
+                "predicted shift size"
+            ),
+            include_frac=info_frac,
+            sources=[SPECTRUM_SOURCE, SAE_SOURCE, SECTION42_PANELS],
+            displayed_data=displayed,
+        )
+        plt.close(info_fig)
+        report.append(("information", info_outputs))
 
     for name, outputs in report:
         for kind, path in outputs.items():
