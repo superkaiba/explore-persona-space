@@ -33,6 +33,7 @@ from scripts import issue952_china_definitive_gpu as gpu
 from scripts import issue952_china_repair_geometry as geom
 from scripts import issue952_china_repair_judges as judges
 from scripts import issue952_china_repair_persist as persist
+from scripts import issue952_china_repair_continuation as continuation
 
 CONTRACT = "issue952-china-repair-analysis-v2"
 HF_PREFIX = "issue952_position_divergence/followups/china_refusal_wording_withholding_v2"
@@ -336,6 +337,44 @@ def validate_judgments(directory: Path, generation_path: Path, rollout_rows: lis
     if judges._bytes_json(agreement) != judges._bytes_json(summary["agreement"]):
         raise ValueError("reported agreement differs from original overlap decisions")
     return scores, agreement, summary
+
+
+def validate_mixed_judgments(
+    directory: Path, generation_path: Path, rollout_rows: list[dict]
+) -> tuple:
+    """Validate the versioned original-plus-Luna phase without changing legacy validation."""
+    directory = Path(directory)
+    mixed_manifest = read_json(directory / "mixed_manifest.json")
+    if mixed_manifest.get("phase") != "mixed-original-plus-luna":
+        raise ValueError("mixed validator requires the explicit mixed-phase manifest")
+    continuation.validate_continuation(directory)
+    reconstructed = continuation.reconstruct_mixed_scores(directory)
+    for name, expected in (("mixed_scores.jsonl", reconstructed["scores_sha256"]),
+                           ("mixed_overlap.jsonl", reconstructed["overlap_sha256"])):
+        require_hash(directory / name, expected)
+    scores = judges.read_jsonl(directory / "mixed_scores.jsonl")
+    overlap = judges.read_jsonl(directory / "mixed_overlap.jsonl")
+    rollout_ids = {row["item_id"] for row in rollout_rows}
+    if len({row["item_id"] for row in scores}) != len(scores) or any(
+        row["item_id"] not in rollout_ids for row in scores
+    ):
+        raise ValueError("mixed scores do not join uniquely to final rollout item IDs")
+    if len(scores) != len(rollout_ids):
+        raise ValueError("mixed scores do not cover every final rollout item")
+    if len(overlap) != mixed_manifest["n_overlap"]:
+        raise ValueError("mixed overlap census differs from immutable mixed manifest")
+    summary = {
+        "contract": CONTRACT,
+        "phase": mixed_manifest["phase"],
+        "technical_complete": True,
+        "n_items": len(scores),
+        "n_assignments": mixed_manifest["n_assignments"],
+        "n_overlap": len(overlap),
+        "rubric_sha256": judges.RUBRIC_SHA256,
+        "input_manifest_sha256": mixed_manifest["continuation_manifest_sha256"],
+        "original_manifest_sha256": mixed_manifest["original_manifest_sha256"],
+    }
+    return scores, {"overall": judges.agreement(overlap)}, summary
 
 
 def valid_mean(values: np.ndarray, axis: int) -> tuple[np.ndarray, np.ndarray]:
