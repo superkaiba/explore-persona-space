@@ -1,0 +1,93 @@
+{
+  "style_version": "c2a-v2",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "resolved_font": "Inter",
+  "authoring_size_inches": [
+    6.548,
+    4.976
+  ],
+  "exported_size_inches": [
+    6.548,
+    3.986
+  ],
+  "scale": 0.42,
+  "include_width_frac": 0.5,
+  "latex_include_line": "\\includegraphics[width=0.5\\textwidth]{figures/paper/refusal_magnitude_comparison.pdf}",
+  "realized_font_pt": {
+    "body": 7.56,
+    "tick": 7.14,
+    "label": 8.4,
+    "title": 9.24
+  },
+  "png_dpi": 240,
+  "background": "#FFFFFF",
+  "text": [
+    "LAYER 19 \u00b7 124 PAIRS",
+    "Context\nchange",
+    "Mapped\nchange",
+    "Observed answer\nchange",
+    "Spearman correlation\nwith refusal change",
+    "0.00",
+    "0.25",
+    "0.50",
+    "0.75",
+    "1.00",
+    "Change magnitude"
+  ],
+  "caption": "Mapped-change magnitude does not improve refusal-change prediction. Spearman correlation between each vector-change norm and absolute refusal-rate change. Error bars: paired 95% family-cluster bootstrap intervals, 2,000 draws; 124 pairs, 21 clusters, with XSTest treated as one corpus. Qwen2.5-7B-Instruct, layer 19. Observed-answer magnitude is an empirical reference, not a mathematical ceiling.",
+  "values": {
+    "n": 124,
+    "n_clusters": 21,
+    "scores": {
+      "context_norm": {
+        "rho": 0.7779447897389967,
+        "ci95": [
+          0.6512836808528104,
+          0.8398737843477002
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      },
+      "mapped_norm": {
+        "rho": 0.7623545898902522,
+        "ci95": [
+          0.6474321250314246,
+          0.8292433210129299
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      },
+      "observed_answer_norm": {
+        "rho": 0.7804536697397028,
+        "ci95": [
+          0.6784369969867451,
+          0.8391909530619136
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      }
+    },
+    "mapped_minus_context": {
+      "ci95": [
+        -0.04434286484505601,
+        0.028860066179183897
+      ],
+      "valid_bootstrap": 2000,
+      "undefined_bootstrap": 0,
+      "delta_rho": -0.015590199848744546
+    },
+    "category_adjusted": false
+  },
+  "inputs_sha256": {
+    "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909_countfix_final/summary.json": "8660b3c96a856b64acd1ba80f80c4a47fb3775b99e07d67b0fd7e6156683881f"
+  },
+  "source_sha256": {
+    "scripts/issue2569_refusal_magnitude_figure.py": "f71dd3d82977839347f6397ebac1642a9ea00ebb700b4b75f41cd04054a13858",
+    "src/explore_persona_space/analysis/c2a_plot_style.py": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1"
+  },
+  "outputs_sha256": {
+    "refusal_magnitude_comparison.pdf": "3b24c40d25f9a66056c0dd5a74f3c4db0ca80c38888d0f09e2da94b2f1d4fd89",
+    "refusal_magnitude_comparison.png": "2cccd61421da192845bf42532e616628a3aa78a26052d84ee07313935006bc59",
+    "refusal_magnitude_comparison_grayscale.png": "2f50ccac3fed3be9108d3aecbe36934fa14f2daea8f2b510558ee6c49554d40e"
+  }
+}

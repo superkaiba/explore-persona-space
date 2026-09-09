@@ -1,0 +1,41 @@
+{
+  "finished_utc": "2026-09-09T19:59:23.346098+00:00",
+  "exit_code": 0,
+  "outputs": [
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909/calibration_folds.json",
+      "sha256": "26daaa6d0447229d9eb827816ac65c6e1f91231dced02f36c20524796d3d02b7",
+      "bytes": 53999
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909/input_provenance.json",
+      "sha256": "3001e557adbfea083ec705138e9d2fc030bff06619d0f24a063c4e90c458610d",
+      "bytes": 4164
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909/perpair.jsonl",
+      "sha256": "b8986cfa9ebbe36f734d750ff57ceb47f33eed558f465b602e9fee7c68bccaf2",
+      "bytes": 39459
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909/primary.json",
+      "sha256": "ba188e1a0c61c12541f25a51a2d6841c55e247e3b204c60c3421327b6aa33b2d",
+      "bytes": 907
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909/primary_bootstrap_correlations.json",
+      "sha256": "45c54d31a93c4bb0f32b958c023100e08429da35ae6e32dc32a525ea19189279",
+      "bytes": 179381
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909/report.md",
+      "sha256": "5d7a874abd0ac32afe9a31d5fe4ef46770a720335fbfebe79071cf05bc54eb52",
+      "bytes": 3249
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909/summary.json",
+      "sha256": "4c38e006f23ce6ae608666e3cbde76fc0e541673ae3a2e234c844548fd2d6ee6",
+      "bytes": 17552
+    }
+  ]
+}

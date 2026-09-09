@@ -1,0 +1,43 @@
+{
+  "n": 124,
+  "n_clusters": 21,
+  "scores": {
+    "context_norm": {
+      "rho": 0.7782409543955643,
+      "ci95": [
+        0.6524148538959305,
+        0.8404521344773596
+      ],
+      "valid_bootstrap": 2000,
+      "undefined_bootstrap": 0
+    },
+    "mapped_norm": {
+      "rho": 0.7621802274244284,
+      "ci95": [
+        0.6485797393403373,
+        0.8299772267425015
+      ],
+      "valid_bootstrap": 2000,
+      "undefined_bootstrap": 0
+    },
+    "observed_answer_norm": {
+      "rho": 0.7811102193719754,
+      "ci95": [
+        0.6789245229648967,
+        0.8400677348253461
+      ],
+      "valid_bootstrap": 2000,
+      "undefined_bootstrap": 0
+    }
+  },
+  "mapped_minus_context": {
+    "ci95": [
+      -0.04384612376556637,
+      0.02841152188940142
+    ],
+    "valid_bootstrap": 2000,
+    "undefined_bootstrap": 0,
+    "delta_rho": -0.01606072697113592
+  },
+  "category_adjusted": false
+}

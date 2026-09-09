@@ -1,0 +1,636 @@
+{
+  "started_utc": "2026-09-09T20:00:43.663671+00:00",
+  "finished_utc": "2026-09-09T20:01:01.899235+00:00",
+  "elapsed_seconds": 18.235602870583534,
+  "n_pairs": 124,
+  "primary": {
+    "n": 124,
+    "n_clusters": 21,
+    "scores": {
+      "context_norm": {
+        "rho": 0.7779447897389967,
+        "ci95": [
+          0.6512836808528104,
+          0.8398737843477002
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      },
+      "mapped_norm": {
+        "rho": 0.7623545898902522,
+        "ci95": [
+          0.6474321250314246,
+          0.8292433210129299
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      },
+      "observed_answer_norm": {
+        "rho": 0.7804536697397028,
+        "ci95": [
+          0.6784369969867451,
+          0.8391909530619136
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      }
+    },
+    "mapped_minus_context": {
+      "ci95": [
+        -0.04434286484505601,
+        0.028860066179183897
+      ],
+      "valid_bootstrap": 2000,
+      "undefined_bootstrap": 0,
+      "delta_rho": -0.015590199848744546
+    },
+    "category_adjusted": false
+  },
+  "subsets": {
+    "original108": {
+      "n": 108,
+      "n_clusters": 21,
+      "scores": {
+        "context_norm": {
+          "rho": 0.765285168395058,
+          "ci95": [
+            0.6319685172208791,
+            0.8477360159682922
+          ],
+          "valid_bootstrap": 2000,
+          "undefined_bootstrap": 0
+        },
+        "mapped_norm": {
+          "rho": 0.7426726548178785,
+          "ci95": [
+            0.6155569315027588,
+            0.827610833673776
+          ],
+          "valid_bootstrap": 2000,
+          "undefined_bootstrap": 0
+        },
+        "observed_answer_norm": {
+          "rho": 0.7655859453964117,
+          "ci95": [
+            0.6823484664499473,
+            0.8437751170263559
+          ],
+          "valid_bootstrap": 2000,
+          "undefined_bootstrap": 0
+        }
+      },
+      "mapped_minus_context": {
+        "ci95": [
+          -0.06190182972593815,
+          0.025561471362769757
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0,
+        "delta_rho": -0.022612513577179527
+      },
+      "category_adjusted": false
+    },
+    "constructed88": {
+      "n": 88,
+      "n_clusters": 20,
+      "scores": {
+        "context_norm": {
+          "rho": 0.75666561820061,
+          "ci95": [
+            0.5992313655476608,
+            0.8510465505040005
+          ],
+          "valid_bootstrap": 2000,
+          "undefined_bootstrap": 0
+        },
+        "mapped_norm": {
+          "rho": 0.75043899169822,
+          "ci95": [
+            0.6169615322669556,
+            0.8410640159650055
+          ],
+          "valid_bootstrap": 2000,
+          "undefined_bootstrap": 0
+        },
+        "observed_answer_norm": {
+          "rho": 0.7699391453554054,
+          "ci95": [
+            0.6136990148695486,
+            0.8551955073377491
+          ],
+          "valid_bootstrap": 2000,
+          "undefined_bootstrap": 0
+        }
+      },
+      "mapped_minus_context": {
+        "ci95": [
+          -0.04828849073300635,
+          0.044149243464536476
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0,
+        "delta_rho": -0.00622662650238992
+      },
+      "category_adjusted": false
+    },
+    "xstest36": {
+      "n": 36,
+      "n_clusters": 1,
+      "scores": {
+        "context_norm": {
+          "rho": 0.4577280096209173,
+          "ci95": null,
+          "reason": "only one primary cluster"
+        },
+        "mapped_norm": {
+          "rho": 0.4708347587950845,
+          "ci95": null,
+          "reason": "only one primary cluster"
+        },
+        "observed_answer_norm": {
+          "rho": 0.6200500570856038,
+          "ci95": null,
+          "reason": "only one primary cluster"
+        }
+      },
+      "mapped_minus_context": {
+        "ci95": null,
+        "reason": "only one primary cluster",
+        "delta_rho": 0.01310674917416721
+      },
+      "category_adjusted": false
+    }
+  },
+  "by_category": {
+    "obj_benign": {
+      "n": 8,
+      "n_clusters": 5,
+      "scores": {
+        "context_norm": {
+          "rho": null,
+          "ci95": null,
+          "reason": "constant outcome or score"
+        },
+        "mapped_norm": {
+          "rho": null,
+          "ci95": null,
+          "reason": "constant outcome or score"
+        },
+        "observed_answer_norm": {
+          "rho": null,
+          "ci95": null,
+          "reason": "constant outcome or score"
+        }
+      },
+      "mapped_minus_context": {
+        "ci95": null,
+        "reason": "constant outcome or score",
+        "delta_rho": null
+      },
+      "category_adjusted": false,
+      "bootstrap_unit": "semantic family"
+    },
+    "obj_flip": {
+      "n": 16,
+      "n_clusters": 6,
+      "scores": {
+        "context_norm": {
+          "rho": 0.7584557662635069,
+          "ci95": [
+            0.4793352609738771,
+            0.9104003673268309
+          ],
+          "valid_bootstrap": 1996,
+          "undefined_bootstrap": 4
+        },
+        "mapped_norm": {
+          "rho": 0.6457535038066805,
+          "ci95": [
+            0.43018364800918774,
+            0.8649383313330248
+          ],
+          "valid_bootstrap": 1996,
+          "undefined_bootstrap": 4
+        },
+        "observed_answer_norm": {
+          "rho": 0.8833420570940441,
+          "ci95": [
+            0.592693590740905,
+            0.9465312215939935
+          ],
+          "valid_bootstrap": 1996,
+          "undefined_bootstrap": 4
+        }
+      },
+      "mapped_minus_context": {
+        "ci95": [
+          -0.3054302024951864,
+          0.027677883056867914
+        ],
+        "valid_bootstrap": 1996,
+        "undefined_bootstrap": 4,
+        "delta_rho": -0.11270226245682635
+      },
+      "category_adjusted": false,
+      "bootstrap_unit": "semantic family"
+    },
+    "subj_benign": {
+      "n": 8,
+      "n_clusters": 8,
+      "scores": {
+        "context_norm": {
+          "rho": null,
+          "ci95": null,
+          "reason": "constant outcome or score"
+        },
+        "mapped_norm": {
+          "rho": null,
+          "ci95": null,
+          "reason": "constant outcome or score"
+        },
+        "observed_answer_norm": {
+          "rho": null,
+          "ci95": null,
+          "reason": "constant outcome or score"
+        }
+      },
+      "mapped_minus_context": {
+        "ci95": null,
+        "reason": "constant outcome or score",
+        "delta_rho": null
+      },
+      "category_adjusted": false,
+      "bootstrap_unit": "semantic family"
+    },
+    "subj_ctl": {
+      "n": 16,
+      "n_clusters": 8,
+      "scores": {
+        "context_norm": {
+          "rho": 0.48627559470186627,
+          "ci95": [
+            0.03693407421174651,
+            0.7324765700478291
+          ],
+          "valid_bootstrap": 2000,
+          "undefined_bootstrap": 0
+        },
+        "mapped_norm": {
+          "rho": 0.4714047814082312,
+          "ci95": [
+            -0.14822979274193335,
+            0.8492342297168244
+          ],
+          "valid_bootstrap": 2000,
+          "undefined_bootstrap": 0
+        },
+        "observed_answer_norm": {
+          "rho": 0.6126775076977642,
+          "ci95": [
+            0.2500349232186032,
+            0.8732766489601991
+          ],
+          "valid_bootstrap": 2000,
+          "undefined_bootstrap": 0
+        }
+      },
+      "mapped_minus_context": {
+        "ci95": [
+          -0.5536493685589272,
+          0.2848825201490478
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0,
+        "delta_rho": -0.014870813293635043
+      },
+      "category_adjusted": false,
+      "bootstrap_unit": "semantic family"
+    },
+    "verb_benign": {
+      "n": 8,
+      "n_clusters": 7,
+      "scores": {
+        "context_norm": {
+          "rho": null,
+          "ci95": null,
+          "reason": "constant outcome or score"
+        },
+        "mapped_norm": {
+          "rho": null,
+          "ci95": null,
+          "reason": "constant outcome or score"
+        },
+        "observed_answer_norm": {
+          "rho": null,
+          "ci95": null,
+          "reason": "constant outcome or score"
+        }
+      },
+      "mapped_minus_context": {
+        "ci95": null,
+        "reason": "constant outcome or score",
+        "delta_rho": null
+      },
+      "category_adjusted": false,
+      "bootstrap_unit": "semantic family"
+    },
+    "verb_flip": {
+      "n": 16,
+      "n_clusters": 7,
+      "scores": {
+        "context_norm": {
+          "rho": 0.8126010245679651,
+          "ci95": [
+            0.6588170461132411,
+            0.9315940587338427
+          ],
+          "valid_bootstrap": 2000,
+          "undefined_bootstrap": 0
+        },
+        "mapped_norm": {
+          "rho": 0.7996253595050036,
+          "ci95": [
+            0.6337115255212031,
+            0.9073091030318658
+          ],
+          "valid_bootstrap": 2000,
+          "undefined_bootstrap": 0
+        },
+        "observed_answer_norm": {
+          "rho": 0.7233933272601046,
+          "ci95": [
+            0.386836718726823,
+            0.8987737053304411
+          ],
+          "valid_bootstrap": 2000,
+          "undefined_bootstrap": 0
+        }
+      },
+      "mapped_minus_context": {
+        "ci95": [
+          -0.11425636269311167,
+          0.03436158012831936
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0,
+        "delta_rho": -0.01297566506296155
+      },
+      "category_adjusted": false,
+      "bootstrap_unit": "semantic family"
+    },
+    "verb_harm": {
+      "n": 16,
+      "n_clusters": 7,
+      "scores": {
+        "context_norm": {
+          "rho": 0.6393533665139547,
+          "ci95": [
+            0.08731847936801856,
+            0.8322397195638238
+          ],
+          "valid_bootstrap": 2000,
+          "undefined_bootstrap": 0
+        },
+        "mapped_norm": {
+          "rho": 0.6671513389710831,
+          "ci95": [
+            0.3015796792717976,
+            0.8075935824888387
+          ],
+          "valid_bootstrap": 2000,
+          "undefined_bootstrap": 0
+        },
+        "observed_answer_norm": {
+          "rho": 0.8012356767054675,
+          "ci95": [
+            0.5166878091602621,
+            0.9017914526339658
+          ],
+          "valid_bootstrap": 2000,
+          "undefined_bootstrap": 0
+        }
+      },
+      "mapped_minus_context": {
+        "ci95": [
+          -0.13082487112552776,
+          0.33823207904373687
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0,
+        "delta_rho": 0.02779797245712845
+      },
+      "category_adjusted": false,
+      "bootstrap_unit": "semantic family"
+    },
+    "xstest": {
+      "n": 36,
+      "n_clusters": 36,
+      "scores": {
+        "context_norm": {
+          "rho": 0.4577280096209173,
+          "ci95": [
+            0.13342127007417973,
+            0.725813227489107
+          ],
+          "valid_bootstrap": 2000,
+          "undefined_bootstrap": 0
+        },
+        "mapped_norm": {
+          "rho": 0.4708347587950845,
+          "ci95": [
+            0.182505634638605,
+            0.6844586949488306
+          ],
+          "valid_bootstrap": 2000,
+          "undefined_bootstrap": 0
+        },
+        "observed_answer_norm": {
+          "rho": 0.6200500570856038,
+          "ci95": [
+            0.38479330896500724,
+            0.7582631819312441
+          ],
+          "valid_bootstrap": 2000,
+          "undefined_bootstrap": 0
+        }
+      },
+      "mapped_minus_context": {
+        "ci95": [
+          -0.19550110112949476,
+          0.2222406043610947
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0,
+        "delta_rho": 0.01310674917416721
+      },
+      "category_adjusted": false,
+      "bootstrap_unit": "item (semantic families unavailable)"
+    }
+  },
+  "category_adjusted": {
+    "n": 124,
+    "n_clusters": 21,
+    "scores": {
+      "context_norm": {
+        "rho": 0.5410273881252672,
+        "ci95": [
+          0.3747910510566164,
+          0.6595057479536989
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      },
+      "mapped_norm": {
+        "rho": 0.5260695186621869,
+        "ci95": [
+          0.37428580423449737,
+          0.6823930376265411
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      },
+      "observed_answer_norm": {
+        "rho": 0.6437455624393066,
+        "ci95": [
+          0.5143279412561484,
+          0.7734908364192722
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      }
+    },
+    "mapped_minus_context": {
+      "ci95": [
+        -0.06853677789158305,
+        0.07803267340090456
+      ],
+      "valid_bootstrap": 2000,
+      "undefined_bootstrap": 0,
+      "delta_rho": -0.014957869463080309
+    },
+    "category_adjusted": true
+  },
+  "leave_family_out_calibration": {
+    "all124": {
+      "context_norm": {
+        "r2": 0.5198087384805709,
+        "mae": 0.23990272134980992,
+        "mse_skill_vs_training_mean": 0.5866047106431745,
+        "n_predictions_outside_0_1": 12
+      },
+      "mapped_norm": {
+        "r2": 0.485348026810526,
+        "mae": 0.2527634583353662,
+        "mse_skill_vs_training_mean": 0.5569375821177549,
+        "n_predictions_outside_0_1": 9
+      },
+      "observed_answer_norm": {
+        "r2": 0.5629888262966607,
+        "mae": 0.22749894923759206,
+        "mse_skill_vs_training_mean": 0.6237783252581155,
+        "n_predictions_outside_0_1": 13
+      },
+      "training_mean_baseline": {
+        "r2": -0.16157893880824603,
+        "mae": 0.44549773140614835,
+        "mse_skill_vs_training_mean": 0.0,
+        "n_predictions_outside_0_1": 0
+      }
+    },
+    "original108": {
+      "context_norm": {
+        "r2": 0.49363121775115026,
+        "mae": 0.24816132890222417,
+        "mse_skill_vs_training_mean": 0.5776377612009007,
+        "n_predictions_outside_0_1": 9
+      },
+      "mapped_norm": {
+        "r2": 0.44804506509218467,
+        "mae": 0.2624836871355193,
+        "mse_skill_vs_training_mean": 0.539614347889817,
+        "n_predictions_outside_0_1": 8
+      },
+      "observed_answer_norm": {
+        "r2": 0.5233380994135852,
+        "mae": 0.2403301564303619,
+        "mse_skill_vs_training_mean": 0.6024162733970175,
+        "n_predictions_outside_0_1": 11
+      },
+      "training_mean_baseline": {
+        "r2": -0.19889690822883677,
+        "mae": 0.45363805065421914,
+        "mse_skill_vs_training_mean": 0.0,
+        "n_predictions_outside_0_1": 0
+      }
+    },
+    "constructed88": {
+      "context_norm": {
+        "r2": 0.5498120297729383,
+        "mae": 0.2100968091603212,
+        "mse_skill_vs_training_mean": 0.5983465053617589,
+        "n_predictions_outside_0_1": 12
+      },
+      "mapped_norm": {
+        "r2": 0.5303338677178434,
+        "mae": 0.22490777018885263,
+        "mse_skill_vs_training_mean": 0.5809682714329115,
+        "n_predictions_outside_0_1": 6
+      },
+      "observed_answer_norm": {
+        "r2": 0.6281717979130068,
+        "mae": 0.19677128878330025,
+        "mse_skill_vs_training_mean": 0.6682583572858041,
+        "n_predictions_outside_0_1": 9
+      },
+      "training_mean_baseline": {
+        "r2": -0.12083668195775132,
+        "mae": 0.418862505824366,
+        "mse_skill_vs_training_mean": 0.0,
+        "n_predictions_outside_0_1": 0
+      }
+    },
+    "xstest36": {
+      "context_norm": {
+        "r2": -0.23004688344501445,
+        "mae": 0.3127616178130046,
+        "mse_skill_vs_training_mean": 0.5681128645583928,
+        "n_predictions_outside_0_1": 0
+      },
+      "mapped_norm": {
+        "r2": -0.3696611864902155,
+        "mae": 0.3208551404712883,
+        "mse_skill_vs_training_mean": 0.5190922766276371,
+        "n_predictions_outside_0_1": 3
+      },
+      "observed_answer_norm": {
+        "r2": -0.27101638581237997,
+        "mae": 0.30261100812586084,
+        "mse_skill_vs_training_mean": 0.5537278835824213,
+        "n_predictions_outside_0_1": 4
+      },
+      "training_mean_baseline": {
+        "r2": -1.848074838319239,
+        "mae": 0.5106060606060605,
+        "mse_skill_vs_training_mean": 0.0,
+        "n_predictions_outside_0_1": 0
+      }
+    }
+  },
+  "definitions": {
+    "context_norm": "||delta c||",
+    "mapped_norm": "||delta c @ A||; numerator, NOT ||delta c @ A||/||delta c||",
+    "observed_answer_norm": "||mean answer_a - mean answer_b||, not mean norm of paired rollout differences",
+    "outcome": "abs(n_refused_a-n_refused_b)/10; archived counts checked against ten-draw rates; exact count grid preserves ties",
+    "row_action": "A=diag(1/xsd)@W; paired learned bias cancels"
+  },
+  "limitations": [
+    "Exploratory secondary analysis of one frozen bank; no new on-policy replication.",
+    "Observed-answer norm is an empirical reference, not a mathematical ceiling and not a context-only predictor.",
+    "Primary uncertainty treats all XSTest items as one corpus cluster; within-XSTest descriptive intervals resample items.",
+    "Primary mapped-minus-context comparison is prespecified; other strata and adjustments are descriptive sensitivity checks.",
+    "Category-adjusted association correlates global ranks after category-mean subtraction; does not control all topic/length confounds.",
+    "Scalar OLS calibrations are disjoint at semantic-family level; predictions are not clipped to [0,1].",
+    "No high-dimensional probe or new representation mapping fitted; no inference about jailbreak framing or causality.",
+    "Outcome ties corrected from archived integer refusal counts; no labels or flip memberships changed. numeric_tie_audit.json records tiny changes to prior v3 point estimates without refitting axes."
+  ]
+}

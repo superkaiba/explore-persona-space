@@ -1,0 +1,46 @@
+{
+  "finished_utc": "2026-09-09T20:09:46.091377+00:00",
+  "exit_code": 0,
+  "outputs": [
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909_countfix_final/calibration_folds.json",
+      "sha256": "a07f1f01d08be7ff101cc98b44df37c5ecee6cd45fdaff9beb2047f460e274fd",
+      "bytes": 54003
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909_countfix_final/input_provenance.json",
+      "sha256": "115fbe3363c3cbc3de2e0be517cf03397362eab020526306750dea456809bc3f",
+      "bytes": 4164
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909_countfix_final/numeric_tie_audit.json",
+      "sha256": "d62aac22a766192dce793cd5d487f1baac09ca998e5cdc4c78d0a541a207650a",
+      "bytes": 990
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909_countfix_final/perpair.jsonl",
+      "sha256": "be429cddb69b253b6d67e058b35858edededbb78cc1a9198bcbb46997f08c05b",
+      "bytes": 43207
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909_countfix_final/primary.json",
+      "sha256": "35306dea029f0b233942e0952821953a41ef345297a6ae610e12343cb05eaf57",
+      "bytes": 909
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909_countfix_final/primary_bootstrap_correlations.json",
+      "sha256": "e31ece0c897fafb4b2dc9baf8b4f05db8ae8a2a27c70985cd5a7aed828f18cf2",
+      "bytes": 179380
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909_countfix_final/report.md",
+      "sha256": "b85cbb4d927d1faa5ab33f5ff23d0640a76dd57243f0b56f1d4cf0461a6530fa",
+      "bytes": 3452
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909_countfix_final/summary.json",
+      "sha256": "8660b3c96a856b64acd1ba80f80c4a47fb3775b99e07d67b0fd7e6156683881f",
+      "bytes": 17796
+    }
+  ]
+}

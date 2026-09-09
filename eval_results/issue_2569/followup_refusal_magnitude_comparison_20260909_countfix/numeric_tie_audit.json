@@ -1,0 +1,33 @@
+{
+  "old_unique_absolute_gaps": 16,
+  "corrected_unique_absolute_gaps": 11,
+  "counts_reconciled_against_archived_n_refused": true,
+  "max_absolute_numeric_change": 1.1102230246251565e-16,
+  "flip_membership_identical": true,
+  "prior_point_estimate_sensitivity": {
+    "kernel_share": {
+      "old_rho": 0.42577029491234913,
+      "count_corrected_rho": 0.42375015752519835
+    },
+    "normalized_gain": {
+      "old_rho": 0.2529540099442201,
+      "count_corrected_rho": 0.2536702210830492
+    },
+    "predicted_refusal_LOFO": {
+      "old_rho": 0.8103751192446115,
+      "count_corrected_rho": 0.8113007895815612
+    },
+    "read_refusal_LOFO": {
+      "old_rho": 0.8097018584103438,
+      "count_corrected_rho": 0.810617687529879
+    },
+    "kernel_refusal_LOFO": {
+      "old_rho": 0.8511317932262946,
+      "count_corrected_rho": 0.8522348668118933
+    },
+    "identity_refusal_LOFO": {
+      "old_rho": 0.8448252581652075,
+      "count_corrected_rho": 0.8457486501878245
+    }
+  }
+}

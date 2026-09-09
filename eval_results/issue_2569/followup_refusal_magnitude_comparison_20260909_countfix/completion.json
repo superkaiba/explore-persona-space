@@ -1,0 +1,46 @@
+{
+  "finished_utc": "2026-09-09T20:01:01.900930+00:00",
+  "exit_code": 0,
+  "outputs": [
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909_countfix/calibration_folds.json",
+      "sha256": "a07f1f01d08be7ff101cc98b44df37c5ecee6cd45fdaff9beb2047f460e274fd",
+      "bytes": 54003
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909_countfix/input_provenance.json",
+      "sha256": "1424c0b868003b4fc23759cb8e3bfa252563ca7667863023b7c7bc869079cfdb",
+      "bytes": 4164
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909_countfix/numeric_tie_audit.json",
+      "sha256": "d62aac22a766192dce793cd5d487f1baac09ca998e5cdc4c78d0a541a207650a",
+      "bytes": 990
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909_countfix/perpair.jsonl",
+      "sha256": "be429cddb69b253b6d67e058b35858edededbb78cc1a9198bcbb46997f08c05b",
+      "bytes": 43207
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909_countfix/primary.json",
+      "sha256": "35306dea029f0b233942e0952821953a41ef345297a6ae610e12343cb05eaf57",
+      "bytes": 909
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909_countfix/primary_bootstrap_correlations.json",
+      "sha256": "e31ece0c897fafb4b2dc9baf8b4f05db8ae8a2a27c70985cd5a7aed828f18cf2",
+      "bytes": 179380
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909_countfix/report.md",
+      "sha256": "b85cbb4d927d1faa5ab33f5ff23d0640a76dd57243f0b56f1d4cf0461a6530fa",
+      "bytes": 3452
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_magnitude_comparison_20260909_countfix/summary.json",
+      "sha256": "3af0ada67593fa6a8dc7f253e59e13060d0d3bbaa3ca28102e4757bf9ddab6c9",
+      "bytes": 17797
+    }
+  ]
+}
