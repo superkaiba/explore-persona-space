@@ -7,13 +7,13 @@
   "title": "SAE feature properties and context-to-answer predictability",
   "subject": "Conditional feature-property associations and activity-adjusted nested-tier gradient, decoder-direction target",
   "git": {
-    "commit": "d23614aa7b12d1f378e1431cba52c9738c4dc3af",
+    "commit": "f3396526058c0895f64614ed3b2d08713c41f538",
     "tracked_worktree_dirty": true
   },
   "sources": [
     {
       "path": "eval_results/issue_1482/plot4_redesign/plot4_decoder_direction.json",
-      "sha256": "6b01c989af52314185bf8c4e9ab22aae0b585537555e005c7c43c02e58cda1ff"
+      "sha256": "7225e1f6de5086e980ef8ef3c2bc0d65e276166f6758252972b2920b01b1528f"
     }
   ],
   "render": {

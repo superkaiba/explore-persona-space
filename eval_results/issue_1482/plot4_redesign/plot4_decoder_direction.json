@@ -1,6 +1,6 @@
 {
   "left_panel": {
-    "source": "figures/issue_1482/concordance_decoder_direction_common_noside/writeup_stepwise.meta.json",
+    "source": "figures/issue_1482/concordance_decoder_direction_common_noside_noratio/writeup_stepwise.meta.json",
     "statistic": "winner concordance c - 1/2 per forward-selection round; each round conditions (coarsened exact matching) on all previously selected properties",
     "dv": "held-out R^2 of the decoder-direction projection d_f^T h_A (dense; no encoder, no BatchTopK gate) under the layer-19 ridge metamodel; common universe of 120,716 features",
     "rows": [
@@ -185,7 +185,7 @@
   },
   "dropped": "answer-side activity quintile panel (user directive 2026-08-24)",
   "metadata": {
-    "git_commit": "d23614aa7b12d1f378e1431cba52c9738c4dc3af",
+    "git_commit": "f3396526058c0895f64614ed3b2d08713c41f538",
     "git_dirty": true,
     "phase": "plot4-redesign",
     "git_dirty_paths": [
@@ -199,19 +199,15 @@
       "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
       "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
       "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
-      "figures/paper/c3_sae_tier_gradient.meta.json",
       "scripts/codex_daemon_reaper.py",
       "scripts/cron_watch_issue_1739.sh",
       "scripts/cron_watch_issue_2091.sh",
       "scripts/install_gcp_audit_cron.sh",
-      "scripts/issue1482_concordance_stepwise.py",
-      "scripts/issue1482_decoder_direction_concordance.py",
-      "scripts/issue1482_plot4_redesign.py",
       "scripts/issue1901_encbaseline_figure.py",
       "tasks/awaiting_promotion/2564/plans/plan.md",
       "tests/test_codex_daemon_reaper.py"
     ],
-    "git_argv0_state": "modified",
+    "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue1482_plot4_redesign.py"
   }
 }

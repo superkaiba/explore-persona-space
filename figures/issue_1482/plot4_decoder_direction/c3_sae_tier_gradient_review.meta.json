@@ -1,7 +1,7 @@
 {
-  "commit": "d23614aa+dirty",
-  "render_id": "cf6b7dd8c5b54437",
-  "git_commit": "d23614aa7b12d1f378e1431cba52c9738c4dc3af",
+  "commit": "f3396526+dirty",
+  "render_id": "7d10bbece9e04c93",
+  "git_commit": "f3396526058c0895f64614ed3b2d08713c41f538",
   "git_dirty": true,
   "git_dirty_paths": [
     ".claude/agent-memory/experiment-implementer-lean/MEMORY.md",
@@ -15,21 +15,17 @@
     "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
     "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
     "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
-    "figures/paper/c3_sae_tier_gradient.meta.json",
     "scripts/codex_daemon_reaper.py",
     "scripts/cron_watch_issue_1739.sh",
     "scripts/cron_watch_issue_2091.sh",
     "scripts/install_gcp_audit_cron.sh",
-    "scripts/issue1482_concordance_stepwise.py",
-    "scripts/issue1482_decoder_direction_concordance.py",
-    "scripts/issue1482_plot4_redesign.py",
     "scripts/issue1901_encbaseline_figure.py",
     "tasks/awaiting_promotion/2564/plans/plan.md",
     "tests/test_codex_daemon_reaper.py"
   ],
-  "git_argv0_state": "modified",
+  "git_argv0_state": "tracked",
   "git_argv0_path": "scripts/issue1482_plot4_redesign.py",
-  "created": "2026-09-09T00:00:55Z",
+  "created": "2026-09-09T14:25:34Z",
   "figsize": [
     5.5,
     2.7
