@@ -1,0 +1,37 @@
+{
+  "finished_utc": "2026-09-09T18:52:35.786555+00:00",
+  "exit_code": 0,
+  "n_pairs": 124,
+  "outputs": [
+    {
+      "path": "eval_results/issue_2569/followup_refusal_category_validation_20260909/crossfit_folds.json",
+      "sha256": "9a52816819ff62dcf92c254c6bff6356f4d709c9ab97d3431865a876cdecd8e6",
+      "bytes": 26067
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_category_validation_20260909/cutoff_sensitivity.json",
+      "sha256": "4a62038b813feb055aeda1d9fb6300689568b3b0a6d73fd8d4ffa6c0b6cee26c",
+      "bytes": 7516
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_category_validation_20260909/input_provenance.json",
+      "sha256": "19af76889bfc965359f67e59476c1e7fabf4a28e5669006f43c31cf8adc2648d",
+      "bytes": 2661
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_category_validation_20260909/perpair.jsonl",
+      "sha256": "90c862fe8421e12d826f4868b7417438b4682bd7749f8194e4aae615a3f4e17c",
+      "bytes": 124295
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_category_validation_20260909/report.md",
+      "sha256": "594c384ea9e66c4fce157a7024eaf13513d69769584e0ae617701ba43d789d6b",
+      "bytes": 2492
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_category_validation_20260909/summary.json",
+      "sha256": "ce9cd0f9805b48c7b3e3d3c8de06f20bff367c621e94dcea5d3d9d9f0e07c257",
+      "bytes": 59427
+    }
+  ]
+}

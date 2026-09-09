@@ -1,0 +1,50 @@
+# Existing refusal directions: category validation
+
+Frozen L19 map and saved 124 pairs; no model calls. Manifest a-minus-b orientation; no selection on evaluated refusal flips.
+
+| Category | n | Observed flips | Median kernel share | Median normalized gain | LOFO predicted/refusal rho |
+|---|---:|---:|---:|---:|---:|
+| obj_benign | 8 | 0 | 0.762 | 0.493 | None |
+| obj_flip | 16 | 10 | 0.819 | 0.566 | 0.725 |
+| subj_benign | 8 | 0 | 0.797 | 0.445 | None |
+| subj_ctl | 16 | 6 | 0.792 | 0.476 | 0.915 |
+| verb_benign | 8 | 0 | 0.796 | 0.505 | None |
+| verb_flip | 16 | 14 | 0.833 | 0.483 | 0.757 |
+| verb_harm | 16 | 1 | 0.731 | 0.495 | 0.853 |
+| xstest | 36 | 30 | 0.792 | 0.535 | 0.48 |
+
+## Domain-matched exploratory contrasts
+
+Valence = object + verb harmful/benign swaps. Equal weight per shared semantic family.
+- subj_ctl:kernel_share: 7 shared families; difference 0.0425, family-bootstrap CI [0.029315069508899012, 0.057731116347514724], exact sign-flip p=0.0156, Holm p=0.0625.
+- subj_ctl:normalized_gain: 7 shared families; difference 0.0278, family-bootstrap CI [-0.022284337295632294, 0.07073216339687358], exact sign-flip p=0.3438, Holm p=0.6875.
+- verb_harm:kernel_share: 7 shared families; difference 0.0783, family-bootstrap CI [0.05334923378543433, 0.10899269796832634], exact sign-flip p=0.0156, Holm p=0.0625.
+- verb_harm:normalized_gain: 7 shared families; difference -0.0026, family-bootstrap CI [-0.053485282617257254, 0.04563991257286203], exact sign-flip p=0.9688, Holm p=0.9688.
+
+## Refusal association versus projection amplitude
+
+Scores use a refusal axis estimated without the evaluated semantic family; XSTest is held out as one corpus. Intervals condition on the fitted axes and resample whole held-out groups.
+
+| Component | Spearman rho | Cluster-bootstrap 95% CI | Projection RMS | RMS / full map |
+|---|---:|---|---:|---:|
+| predicted_refusal_LOFO | 0.810 | [0.6867954532267964, 0.9112993981979849] | 16.2123 | 1.00000 |
+| read_refusal_LOFO | 0.810 | [0.6859322465116182, 0.9112993981979849] | 16.1552 | 0.99648 |
+| kernel_refusal_LOFO | 0.851 | [0.7299003041577864, 0.9114999019780555] | 0.0587 | 0.00362 |
+| identity_refusal_LOFO | 0.845 | [0.7132837191807093, 0.9148865315214295] | 15.7330 | 0.97043 |
+
+The map's projected answer changes track refusal within object swaps, verb swaps, subject swaps, harmful-to-harmful swaps, and the held-out XSTest corpus. All benign-control gaps are zero, so their behavioral correlations are undefined.
+The low-gain component also covaries with refusal, despite its small mapped amplitude. This does not support a simple safety-in-read versus nonsafety-in-kernel dichotomy. The map is not superior to identity on this one-dimensional rank-association metric; no test establishes a difference between those correlated correlations.
+The two kernel-share contrasts have the same direction in all seven shared families, but Holm-adjusted p=0.0625 across the four primary geometry contrasts. Treat these as exploratory estimates, not conventionally significant confirmatory results.
+
+## Limitations
+
+- Exploratory secondary analysis on one saved bank, not prospective validation.
+- Categories are not randomized; domain-matched contrasts do not isolate semantic harmfulness causally.
+- XSTest is held out together for axis construction; within-XSTest intervals resample items, not unknown semantic families.
+- OOF correlation intervals condition on fitted disjoint axes; axes are not re-estimated in bootstrap.
+- Binary rates and means use ten archived draws per endpoint; no new judging or graded calibration.
+- Kernel is low-gain, not zero-gain: a small mapped component can correlate with refusal.
+- No framing manipulation: this cannot validate harmful-request versus jailbreak-framing semantics.
+- Identity plus learned bias reduces to identity for pair differences. No new map/readout is fit.
+
+See summary.json for all class-specific uncertainty, including undefined constant strata; crossfit_folds.json records each held-out/training index. input_provenance.json pins every source and enumerates current-versus-frozen label differences.

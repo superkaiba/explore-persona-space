@@ -1,0 +1,51 @@
+{
+  "sources": [
+    {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue2569_theory/leg9_dl/leg9_manifest.json",
+      "sha256": "33064d0cedf935524919dd190948ec0f3e358b7a1e5f14d4f91175a7ecf5610f",
+      "bytes": 5622
+    },
+    {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue2569_theory/leg9_dl/hf_cache/datasets--superkaiba1--explore-persona-space-data/snapshots/74bb871a5edf1afe777ac9b64a4e2fec5e9947c2/issue2617_svmp/manifests/svmp_bank.json",
+      "sha256": "3301291e2135a776cef5a52616d3858c7a30adf7a7832aed251667408e076fc6",
+      "bytes": 115459
+    },
+    {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue2569_theory/leg9_dl/hf_cache/datasets--superkaiba1--explore-persona-space-data/snapshots/74bb871a5edf1afe777ac9b64a4e2fec5e9947c2/issue2617_svmp/raw_completions/judge/judge_scores.json",
+      "sha256": "06ed448455c338c9881985c3d6e3ca44f343096004b497ceee269e247d48913e",
+      "bytes": 96097
+    },
+    {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue2569_theory/leg9_dl/hf_cache/datasets--superkaiba1--explore-persona-space-data/snapshots/74bb871a5edf1afe777ac9b64a4e2fec5e9947c2/issue2617_svmp/analysis_tensors/vc/vc_langow_bank.pt",
+      "sha256": "727d4c1b8d0a7f46f7d1108c27b85a1ed190a7481bc9e8ed701f4764229750bf",
+      "bytes": 10677009
+    },
+    {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue2569_theory/leg9_dl/hf_cache/datasets--superkaiba1--explore-persona-space-data/snapshots/74bb871a5edf1afe777ac9b64a4e2fec5e9947c2/issue2617_svmp/analysis_tensors/va/va_langow_query_svmp.pt",
+      "sha256": "7ca35e37c2af54aef833750c7b928fa8804457476dd081ebda950aa1dd23d6c6",
+      "bytes": 106896469
+    },
+    {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue2569_theory/smoke-final/weights_prod/leg1/factor_L19.pt",
+      "sha256": "f70c17461074d97803b1ab19cd40867417b98277aa871238407ebfb5bff8a0e0",
+      "bytes": 104714364
+    },
+    {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue2094_r2decomp/banked_maps/issue779_monitoring/n1m_readout/weights/L19/ridge.pt",
+      "sha256": "188486f8afd9d95221e32492f3a0be2a3bdb2098cbe7fadfecf1d46433567909",
+      "bytes": 51425703
+    },
+    {
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_2617/svmp_verbharm/perpair.jsonl",
+      "sha256": "c03f44eca5da70cc01deb5d23b06ac1a47036b3178946d0a4a73c57a7f2e0cb2",
+      "bytes": 208624
+    }
+  ],
+  "frozen_snapshot": "74bb871a5edf1afe777ac9b64a4e2fec5e9947c2",
+  "factor_map_relative_prediction_error": 4.0823610863408414e-08,
+  "current_label_differences": [],
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_contexts": 248,
+  "n_answer_draws": 2480,
+  "n_pairs": 124
+}

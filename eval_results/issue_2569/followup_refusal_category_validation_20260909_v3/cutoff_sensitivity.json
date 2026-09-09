@@ -1,0 +1,326 @@
+{
+  "0.9": {
+    "read_rank": 547,
+    "kernel_rank": 3037,
+    "all_rho_read_vs_gap": {
+      "n": 124,
+      "n_families": 21,
+      "rho": 0.8081666936095016,
+      "ci95": [
+        0.6847481306813443,
+        0.9103956151666324
+      ],
+      "valid_bootstrap": 2000,
+      "undefined_bootstrap": 0
+    },
+    "all_rho_kernel_vs_gap": {
+      "n": 124,
+      "n_families": 21,
+      "rho": 0.8372600180661416,
+      "ci95": [
+        0.6962439128192454,
+        0.9277232248865424
+      ],
+      "valid_bootstrap": 2000,
+      "undefined_bootstrap": 0
+    },
+    "median_kernel_share": 0.9202385889475395,
+    "kernel_vs_gap_by_class": {
+      "obj_benign": {
+        "n": 8,
+        "n_families": 5,
+        "rho": null,
+        "ci95": null,
+        "reason": "constant input",
+        "valid_bootstrap": 0
+      },
+      "obj_flip": {
+        "n": 16,
+        "n_families": 6,
+        "rho": 0.3883659044120366,
+        "ci95": [
+          -0.28075939679423234,
+          0.8331303345498339
+        ],
+        "valid_bootstrap": 1996,
+        "undefined_bootstrap": 4
+      },
+      "subj_benign": {
+        "n": 8,
+        "n_families": 8,
+        "rho": null,
+        "ci95": null,
+        "reason": "constant input",
+        "valid_bootstrap": 0
+      },
+      "subj_ctl": {
+        "n": 16,
+        "n_families": 8,
+        "rho": 0.4651068830365146,
+        "ci95": [
+          0.06322950278899116,
+          0.7741735723520177
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      },
+      "verb_benign": {
+        "n": 8,
+        "n_families": 7,
+        "rho": null,
+        "ci95": null,
+        "reason": "constant input",
+        "valid_bootstrap": 0
+      },
+      "verb_flip": {
+        "n": 16,
+        "n_families": 7,
+        "rho": -0.06001245091619702,
+        "ci95": [
+          -0.5199482497870558,
+          0.4810758953914349
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      },
+      "verb_harm": {
+        "n": 16,
+        "n_families": 7,
+        "rho": 0.6993210539668966,
+        "ci95": [
+          0.34314117292459734,
+          0.8820516784837341
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      },
+      "xstest": {
+        "n": 36,
+        "n_families": 36,
+        "rho": 0.20314478338583283,
+        "ci95": [
+          -0.2183656600312312,
+          0.5640768117462918
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      }
+    }
+  },
+  "0.99": {
+    "read_rank": 1608,
+    "kernel_rank": 1976,
+    "all_rho_read_vs_gap": {
+      "n": 124,
+      "n_families": 21,
+      "rho": 0.8097018584103438,
+      "ci95": [
+        0.6859322465116182,
+        0.9112993981979849
+      ],
+      "valid_bootstrap": 2000,
+      "undefined_bootstrap": 0
+    },
+    "all_rho_kernel_vs_gap": {
+      "n": 124,
+      "n_families": 21,
+      "rho": 0.8511317932262946,
+      "ci95": [
+        0.7299003041577864,
+        0.9114999019780555
+      ],
+      "valid_bootstrap": 2000,
+      "undefined_bootstrap": 0
+    },
+    "median_kernel_share": 0.7962336538632905,
+    "kernel_vs_gap_by_class": {
+      "obj_benign": {
+        "n": 8,
+        "n_families": 5,
+        "rho": null,
+        "ci95": null,
+        "reason": "constant input",
+        "valid_bootstrap": 0
+      },
+      "obj_flip": {
+        "n": 16,
+        "n_families": 6,
+        "rho": 0.46147007465430234,
+        "ci95": [
+          -0.22910856082199535,
+          0.9146743968227288
+        ],
+        "valid_bootstrap": 1996,
+        "undefined_bootstrap": 4
+      },
+      "subj_benign": {
+        "n": 8,
+        "n_families": 8,
+        "rho": null,
+        "ci95": null,
+        "reason": "constant input",
+        "valid_bootstrap": 0
+      },
+      "subj_ctl": {
+        "n": 16,
+        "n_families": 8,
+        "rho": 0.7102910226564025,
+        "ci95": [
+          0.4723099360613156,
+          0.9005892463474909
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      },
+      "verb_benign": {
+        "n": 8,
+        "n_families": 7,
+        "rho": null,
+        "ci95": null,
+        "reason": "constant input",
+        "valid_bootstrap": 0
+      },
+      "verb_flip": {
+        "n": 16,
+        "n_families": 7,
+        "rho": 0.4119773657490282,
+        "ci95": [
+          -0.005582905262390825,
+          0.6980633793512244
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      },
+      "verb_harm": {
+        "n": 16,
+        "n_families": 7,
+        "rho": 0.7643741752661428,
+        "ci95": [
+          0.39047856974535056,
+          0.904339138163216
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      },
+      "xstest": {
+        "n": 36,
+        "n_families": 36,
+        "rho": 0.3966434289354851,
+        "ci95": [
+          0.028657918169154365,
+          0.7131883941699326
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      }
+    }
+  },
+  "0.999": {
+    "read_rank": 2498,
+    "kernel_rank": 1086,
+    "all_rho_read_vs_gap": {
+      "n": 124,
+      "n_families": 21,
+      "rho": 0.8103751192446115,
+      "ci95": [
+        0.6867954532267964,
+        0.9112993981979849
+      ],
+      "valid_bootstrap": 2000,
+      "undefined_bootstrap": 0
+    },
+    "all_rho_kernel_vs_gap": {
+      "n": 124,
+      "n_families": 21,
+      "rho": 0.8346385290206355,
+      "ci95": [
+        0.7203607772309433,
+        0.9061749665704866
+      ],
+      "valid_bootstrap": 2000,
+      "undefined_bootstrap": 0
+    },
+    "median_kernel_share": 0.6529233042125601,
+    "kernel_vs_gap_by_class": {
+      "obj_benign": {
+        "n": 8,
+        "n_families": 5,
+        "rho": null,
+        "ci95": null,
+        "reason": "constant input",
+        "valid_bootstrap": 0
+      },
+      "obj_flip": {
+        "n": 16,
+        "n_families": 6,
+        "rho": 0.5223902165228571,
+        "ci95": [
+          -0.20334986382596446,
+          0.9321028094549105
+        ],
+        "valid_bootstrap": 1996,
+        "undefined_bootstrap": 4
+      },
+      "subj_benign": {
+        "n": 8,
+        "n_families": 8,
+        "rho": null,
+        "ci95": null,
+        "reason": "constant input",
+        "valid_bootstrap": 0
+      },
+      "subj_ctl": {
+        "n": 16,
+        "n_families": 8,
+        "rho": 0.7177208450691264,
+        "ci95": [
+          0.3975226276951839,
+          0.8988062355881358
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      },
+      "verb_benign": {
+        "n": 8,
+        "n_families": 7,
+        "rho": null,
+        "ci95": null,
+        "reason": "constant input",
+        "valid_bootstrap": 0
+      },
+      "verb_flip": {
+        "n": 16,
+        "n_families": 7,
+        "rho": 0.3827821193573648,
+        "ci95": [
+          -0.005582905262390825,
+          0.6996061304571258
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      },
+      "verb_harm": {
+        "n": 16,
+        "n_families": 7,
+        "rho": 0.6863104297070474,
+        "ci95": [
+          0.20639678741295056,
+          0.8637650744262227
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      },
+      "xstest": {
+        "n": 36,
+        "n_families": 36,
+        "rho": 0.34610918445041966,
+        "ci95": [
+          0.010927075521450062,
+          0.6626096520516671
+        ],
+        "valid_bootstrap": 2000,
+        "undefined_bootstrap": 0
+      }
+    }
+  }
+}

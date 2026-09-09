@@ -1,0 +1,37 @@
+{
+  "finished_utc": "2026-09-09T18:57:40.332073+00:00",
+  "exit_code": 0,
+  "n_pairs": 124,
+  "outputs": [
+    {
+      "path": "eval_results/issue_2569/followup_refusal_category_validation_20260909_v3/crossfit_folds.json",
+      "sha256": "9a52816819ff62dcf92c254c6bff6356f4d709c9ab97d3431865a876cdecd8e6",
+      "bytes": 26067
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_category_validation_20260909_v3/cutoff_sensitivity.json",
+      "sha256": "4a62038b813feb055aeda1d9fb6300689568b3b0a6d73fd8d4ffa6c0b6cee26c",
+      "bytes": 7516
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_category_validation_20260909_v3/input_provenance.json",
+      "sha256": "81d1ef9d6dbb325b3e7dbccc5b4e55182e6261319b028407661b6ab3f9297662",
+      "bytes": 2914
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_category_validation_20260909_v3/perpair.jsonl",
+      "sha256": "1889f4a2c36e6c51b9b72b6dbfa1c455068e3270a7db04d44dcd665c6cb99ace",
+      "bytes": 130724
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_category_validation_20260909_v3/report.md",
+      "sha256": "5b4595593f57d0b7815578ebf990ad51c47e7a6bb9e16d751cdd818a14c2cdd1",
+      "bytes": 4116
+    },
+    {
+      "path": "eval_results/issue_2569/followup_refusal_category_validation_20260909_v3/summary.json",
+      "sha256": "c5f743ca3dbe21efa95e64337920f57242f8efaa15d07127c7068f2c32c377b7",
+      "bytes": 65009
+    }
+  ]
+}
