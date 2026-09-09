@@ -11,6 +11,7 @@ import csv
 import json
 import os
 import resource
+import sys
 import time
 from collections import Counter
 from datetime import UTC, datetime
@@ -23,6 +24,17 @@ load_dotenv()
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
+
+def _ensure_repo_root_on_syspath():
+    """Support both package and absolute-path execution without relying on cwd."""
+    root = Path(__file__).resolve().parents[1]
+    if not (root / "scripts/issue2546_qwen3_rank_reproduction.py").is_file():
+        raise RuntimeError(f"Wrong repository root: {root}")
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+
+
+_ensure_repo_root_on_syspath()
 from scripts import issue2546_qwen3_rank_reproduction as parent  # noqa: E402
 
 ARMS = {
