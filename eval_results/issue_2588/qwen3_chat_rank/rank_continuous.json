@@ -1,0 +1,43 @@
+{
+  "schema": "issue2588_chat_rank_continuous_v1",
+  "note": "Threshold-free effective-dimension measures. Spectrum measures are train-side and carry no sampling CI here. The predictive dimension is bootstrapped over validation rows, paired across arms.",
+  "draws": 2000,
+  "arms": {
+    "a": {
+      "layer": 24,
+      "selected_lambda": 1000.0,
+      "effective_rank_entropy": 63.06396491783798,
+      "participation_ratio": 21.326642619423417,
+      "stable_rank": 7.479316941685655,
+      "predictive_effective_dimension_val": 24.47036740945981,
+      "predictive_effective_dimension_test": 24.625415398976283,
+      "predictive_effective_dimension_val_ci95": [
+        22.89985715704252,
+        26.48936149398377
+      ],
+      "predictive_effective_dimension_val_median": 24.596580779366985
+    },
+    "b": {
+      "layer": 22,
+      "selected_lambda": 1000.0,
+      "effective_rank_entropy": 38.42966263739573,
+      "participation_ratio": 15.622874359338194,
+      "stable_rank": 6.331914539295365,
+      "predictive_effective_dimension_val": 14.521454163939893,
+      "predictive_effective_dimension_test": 14.636186841774675,
+      "predictive_effective_dimension_val_ci95": [
+        13.69352792417227,
+        15.569763585948863
+      ],
+      "predictive_effective_dimension_val_median": 14.573869823885799
+    }
+  },
+  "predictive_effective_dimension_difference_a_minus_b": {
+    "median": 10.020254901034823,
+    "ci95": [
+      8.75563107333862,
+      11.397122753859467
+    ],
+    "fraction_of_draws_b_below_a": 1.0
+  }
+}
