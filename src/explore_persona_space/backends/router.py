@@ -5,27 +5,50 @@ This module is the canonical replacement for
 selector dispatches on a single ``backend:`` frontmatter and falls back to
 RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
 
-**#2028 policy gate — GCP PROVISIONING DISABLED.** While
-:data:`GCP_PROVISIONING_DISABLED` is ``True`` (the standing state, user
-directive 2026-08-02) no dispatch path may CREATE a new GCP instance (GPU or
-CPU): the auto chain's default order carries no ``gcp`` rung, an explicit
-``backend: gcp`` pin raises :class:`GcpDisabledError`
+**#2028 policy gate — GCP RE-ENABLED 2026-09-09, gate kept flippable.** The
+standing state is :data:`GCP_PROVISIONING_DISABLED` = ``False`` (user
+directive 2026-09-09: "re-enable GCP", "GCP before runpod if it's
+available" — the 2026-08-02 disable rationale, agents habit-pinning paid
+GCP while the free fellows lane sat idle (#1739), expired with the fellows
+revocation; RunPod is now paid, scarce capacity while GCP is
+credit-funded). GCP LEADS the auto chain and explicit ``backend: gcp``
+pins route again. At re-enable, the regional quota probe showed 16 preemptible + 8
+on-demand A100-80GB. H100 quota is absent from that API response; the
+backend separately records an 8-GPU preemptible H100 pool, with no
+on-demand pool. The user confirmed credits on 2026-09-09; the VM cannot
+independently inspect the credit balance. While the flag
+is flipped back to ``True`` no dispatch path may CREATE a new GCP
+instance (GPU or CPU): the auto chain's default order drops the ``gcp``
+rung, an explicit ``backend: gcp`` pin raises :class:`GcpDisabledError`
 (``reason: gcp_backend_disabled``), a ``gcp``-bearing
 ``EPM_AUTO_LANE_ORDER`` / ``RouterConfig.lane_order`` raises at validation,
 and the #1596/#1601 queue-loss on-demand retry legs refuse up front (falling
 through to the re-drivable ``no_compute_available`` terminal). Paths that
 only ACT ON existing GCP handles — poll, teardown, crash persist, the
 GCP→RunPod failovers of an in-flight handle, the ``gcp_audit.py`` janitor —
-are deliberately UNGATED (in-flight cleanup + rollback support). CPU intents
-walk ``runpod → fellows`` (#2059: fellows declares ``supports_cpu_jobs`` and
-renders a 0-GPU sbatch; nibi/mila stay excluded — no ``/workspace``, #608),
-then the end-of-chain RunPod terminal retry (``cpu-bigmem`` gained the
-``cpu5m-16-128`` RunPod row, superseding the #677 no-RunPod-lane terminal
-for it; the typed terminal stays as the fail-loud floor for a future
-unmapped CPU intent). The GCP
-ladder / failover prose below is therefore scoped to IN-FLIGHT handles plus
-the single-constant rollback (flip the constant to ``False``); it is not
-reachable for fresh dispatches while the flag is on.
+are deliberately UNGATED in both states (in-flight cleanup support). CPU
+intents walk gcp (the E2 machine rows) then runpod (fellows access revoked
+— see the banner below; its #2059 0-GPU sbatch rung is rollback-only;
+nibi/mila stay excluded — no ``/workspace``, #608), then the end-of-chain
+RunPod terminal retry (``cpu-bigmem`` gained the ``cpu5m-16-128`` RunPod
+row, superseding the #677 no-RunPod-lane terminal for it; the typed
+terminal stays as the fail-loud floor for a future unmapped CPU intent).
+
+**Fellows policy gate — FELLOWS ACCESS REVOKED.** While
+:data:`FELLOWS_ACCESS_REVOKED` is ``True`` (the standing state, user
+directive 2026-09-09: "we no longer have access to fellows cluster so
+remove that") no dispatch path may SUBMIT a fresh fellows job: the auto
+chain's default order carries no ``fellows`` rung (gcp and runpod are the
+non-DRAC lanes; GCP re-enabled 2026-09-09), an explicit
+``backend: fellows`` pin raises :class:`FellowsAccessRevokedError`
+(``reason: fellows_access_revoked``), and a ``fellows``-bearing
+``EPM_AUTO_LANE_ORDER`` / ``RouterConfig.lane_order`` raises at
+validation. Paths that only ACT ON an existing fellows handle — poll,
+teardown, crash persist, the #1898 sentinel drain — are deliberately
+UNGATED (in-flight cleanup + rollback support). The fellows QoS-ladder /
+park / CPU-rung prose below is therefore scoped to the single-constant
+rollback (flip the constant to ``False``); it is not reachable for fresh
+dispatches while the flag is on.
 
 1. **Explicit override** — ``spec.backend == "runpod" | "gcp" | "nibi" |
    "fir" | "mila" | "fellows"`` runs that lane directly. RunPod is ALSO
@@ -41,15 +64,18 @@ reachable for fresh dispatches while the flag is on.
    #747). Full failover policy:
    ``.claude/rules/compute-backend-failover.md`` (canonical).
 2. **Auto** — walk the resolved auto lane order. The STANDING DEFAULT is
-   **RunPod first (the Anthropic-org pool), then fellows, then the free
-   DRAC/Mila SLURM lanes** (:data:`DEFAULT_AUTO_LANE_ORDER` =
-   ``("runpod", "fellows", "nibi", "fir", "mila")`` while GCP provisioning
-   is disabled by policy — the #2028 banner above; the flag-off rollback
-   build re-inserts ``gcp`` after ``fellows``). A RunPod-lane capacity
-   miss (nothing provisioned) falls through to the free lanes; a partial
+   **GCP first (credit-funded — user directive 2026-09-09), then RunPod
+   (paid, scarce — the fall-through), then the free DRAC/Mila SLURM
+   lanes** (:data:`DEFAULT_AUTO_LANE_ORDER` =
+   ``("gcp", "runpod", "nibi", "fir", "mila")`` while fellows access is
+   revoked (the fellows banner above); the fellows rollback build
+   re-inserts its rung directly after ``runpod``, and re-disabling GCP
+   drops the leading ``gcp`` rung). A gcp- or RunPod-lane capacity
+   miss (nothing provisioned) falls through to the next lane; a partial
    launch that left a pod billing propagates. The order is overridable via
    the ``EPM_AUTO_LANE_ORDER`` env var (comma-separated lanes, validated —
-   ``gcp``-while-disabled and unknown names raise loudly; ``runpod`` is a
+   ``fellows``-while-revoked, ``gcp``-while-re-disabled and unknown names
+   raise loudly; ``runpod`` is a
    legal lane as of #2054) or per-call via
    :attr:`RouterConfig.lane_order`; there is deliberately NO date logic —
    flipping the order back is a human action (env override or a default
@@ -109,8 +135,10 @@ reachable for fresh dispatches while the flag is on.
    capacity miss with nothing provisioned; free-lane PENDING-at-cap /
    provisioning failure; GCP provisioning / capacity / prepare /
    state-probe failure when lanes remain after it) continues DOWN the
-   resolved order. Under the runpod-first default a RunPod capacity miss
-   falls through to fellows + the free SLURM lanes; once EVERY lane is
+   resolved order. Under the gcp-first standing default a GCP capacity
+   miss falls through to RunPod, and a RunPod capacity miss to the free
+   DRAC/Mila SLURM lanes (the fellows rung is
+   rollback-only — access revoked, fellows banner above); once EVERY lane is
    exhausted on the capacity path, the auto chain falls through to the
    RunPod terminal rung — one final retry (item 8,
    ``reason: auto_fallback_runpod``, #656); a GCP WORKLOAD crash
@@ -220,9 +248,12 @@ reachable for fresh dispatches while the flag is on.
    ``supports_cpu_jobs`` (#2059: fellows — a 0-GPU sbatch render exists
    there); lanes without it (nibi/mila — no ``/workspace``, #608) are
    filtered at ``_auto_route`` candidate assembly
-   (:func:`_is_cpu_only_intent` + :func:`_slurm_lane_supports_cpu`), so a
-   CPU auto route walks ``runpod → fellows`` then the end-of-chain RunPod
-   terminal retry (the #1464 blanket exclusion, narrowed).
+   (:func:`_is_cpu_only_intent` + :func:`_slurm_lane_supports_cpu`). With
+   fellows access revoked (the fellows banner above) the ``fellows`` rung
+   is absent from the default order too, so a CPU auto route walks the
+   runpod lane only, then the end-of-chain RunPod terminal retry (the
+   #1464 blanket exclusion, narrowed by #2059; the fellows rung is
+   rollback-only).
 8b. **GCP-only GPU intent translation (#940).** The RunPod launch paths
    (terminal rung + explicit override) translate a GCP-only GPU intent to
    its nearest same-or-narrower RunPod intent via
@@ -396,9 +427,10 @@ ROUTE_REASON_PREPARE_FAILED: str = "backend_prepare_failed"
 #: lane is exhausted.
 ROUTE_REASON_RUNPOD_FALLBACK: str = "auto_fallback_runpod"
 #: RunPod launched as the FIRST auto lane (user directive 2026-08-05,
-#: #2054): the RunPod team account is the shared Anthropic-fellows/safety
-#: org pool, so provisioning there is ordinary use of a sponsored pool —
-#: not discretionary spend — and it LEADS the default auto order. DISTINCT
+#: #2054): the runpod rung of the auto chain launched (as of the
+#: 2026-09-09 GCP re-enable it sits directly behind the leading ``gcp``
+#: rung — RunPod is paid, scarce capacity — and leads only while GCP is
+#: re-disabled; the reason token keeps its historical #2054 name). DISTINCT
 #: from :data:`ROUTE_REASON_RUNPOD_FALLBACK` (the post-exhaustion terminal
 #: retry, retained) and :data:`ROUTE_REASON_OVERRIDE` (a user pin): a
 #: runpod-first capacity miss (nothing provisioned) falls through to the
@@ -413,7 +445,8 @@ ROUTE_REASON_RUNPOD_FIRST: str = "auto_runpod_first"
 #: it surfaces a typed terminal instead of attempting an unservable RunPod
 #: launch. Ordering note (#2059): on the auto chain the runpod lane runs
 #: FIRST, so an unmapped CPU intent's typed terminal fires at lane 1 —
-#: BEFORE the fellows 0-GPU rung is ever probed (pinned by
+#: BEFORE the fellows 0-GPU rung (rollback-only while
+#: :data:`FELLOWS_ACCESS_REVOKED` is on) is ever probed (pinned by
 #: tests/test_router.py::
 #: test_auto_route_cpu_unmapped_intent_typed_terminal_fires_before_fellows).
 #: DISTINCT from :data:`ROUTE_REASON_RUNPOD_FALLBACK` /
@@ -450,11 +483,13 @@ ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD: str = "cpu_exhausted_no_runpod_lane"
 #: :data:`RUNPOD_CPU_INSTANCE_CAPS` by the feasibility gate in
 #: :func:`_runpod_terminal_rung` — an unsatisfiable footprint refuses the
 #: fallback typed (:class:`CpuFallbackInfeasibleError`) instead of
-#: provisioning an undersized pod (incident #958). Lane note (#2059): on
-#: the auto chain a mapped CPU intent now walks ``runpod → fellows`` (the
-#: fellows ClusterConfig declares ``supports_cpu_jobs`` and renders a 0-GPU
-#: sbatch; ``slurm._CPU_SBATCH_RESOURCES`` mirrors these instance shapes)
-#: before the end-of-chain RunPod terminal retry.
+#: provisioning an undersized pod (incident #958). Lane note (#2059,
+#: narrowed by the fellows revocation): on the auto chain a mapped CPU
+#: intent walks the runpod lane only, then the end-of-chain RunPod
+#: terminal retry — the fellows 0-GPU rung (its ClusterConfig declares
+#: ``supports_cpu_jobs``; ``slurm._CPU_SBATCH_RESOURCES`` mirrors these
+#: instance shapes) is rollback-only while
+#: :data:`FELLOWS_ACCESS_REVOKED` is on.
 RUNPOD_CPU_INSTANCE_FOR_INTENT: dict[str, str] = {
     "cpu-small": "cpu3g-2-8",  # 2 vCPU / 8 GB, gen-3 general purpose
     "cpu-mid": "cpu3c-8-16",  # 8 vCPU / 16 GB, gen-3 compute-optimized
@@ -800,8 +835,20 @@ ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION: str = "runpod_stopped_pod_collision"
 #: ``manual_attention`` while the transport stays broken.
 PARK_MAX_CONSECUTIVE_PROBE_FAILURES: int = 3
 
-#: #2028 (user directive 2026-08-02): GCP may not provision ANY new instance
-#: (GPU or CPU). While ``True`` (the standing state): the auto chain's
+#: GCP provisioning policy gate (#2028; RE-ENABLED 2026-09-09). The standing
+#: state is ``False``: GCP provisions again AND LEADS the auto chain (user
+#: directive 2026-09-09, verbatim "re-enable GCP" then "GCP before runpod if
+#: it's available"). The #2028 disable (user directive 2026-08-02) existed
+#: because the FREE fellows lane was the standing first lane and agents were
+#: habit-pinning paid GCP while charmander sat idle (#1739, ~40+ GPU-h);
+#: that rationale EXPIRED with the 2026-09-09 fellows revocation
+#: (:data:`FELLOWS_ACCESS_REVOKED`) — RunPod is now paid, scarce capacity
+#: while GCP is credit-funded. The 2026-09-09 regional quota probe lists
+#: 16 preemptible + 8 on-demand A100-80GB; H100 is omitted by that API,
+#: not unavailable. gcp.py records a separate 8-GPU preemptible H100 pool
+#: and no on-demand H100 pool. The user confirmed credits the same day;
+#: the VM cannot independently inspect their balance.
+#: While ``True`` (the flippable re-disable state): the auto chain's
 #: default order carries no ``gcp`` rung, an explicit ``backend: gcp`` pin
 #: raises :class:`GcpDisabledError` (``reason: gcp_backend_disabled``), a
 #: ``gcp``-bearing :data:`ENV_AUTO_LANE_ORDER` / ``RouterConfig.lane_order``
@@ -810,13 +857,14 @@ PARK_MAX_CONSECUTIVE_PROBE_FAILURES: int = 3
 #: through to the re-drivable ``no_compute_available`` terminal). Paths that
 #: only ACT ON existing GCP handles — poll, teardown, crash persist, the
 #: GCP→RunPod failovers of an in-flight handle, the ``gcp_audit.py`` janitor
-#: — are deliberately UNGATED (in-flight cleanup + rollback support).
-#: Rollback = flip to ``False`` (all gated code paths reactivate;
-#: :data:`DEFAULT_AUTO_LANE_ORDER` rebuilds with the gcp rung on next
-#: import). Deliberately NO env re-enable override — a stale shell must not
-#: resurrect a policy the user removed; the constant flip is the sanctioned
-#: lever.
-GCP_PROVISIONING_DISABLED: bool = True
+#: — are deliberately UNGATED in both states (in-flight cleanup support).
+#: The lever stays flippable BOTH ways (the :data:`FELLOWS_ACCESS_REVOKED`
+#: shape): flip to ``True`` to re-disable (all gated refusals re-arm;
+#: :data:`DEFAULT_AUTO_LANE_ORDER` rebuilds without the gcp rung on next
+#: import). Deliberately NO env override in either direction — a stale
+#: shell must not flip a policy the user set; the constant flip is the
+#: sanctioned lever.
+GCP_PROVISIONING_DISABLED: bool = False
 
 
 def gcp_provisioning_disabled() -> bool:
@@ -831,6 +879,40 @@ def gcp_provisioning_disabled() -> bool:
     return GCP_PROVISIONING_DISABLED
 
 
+#: User directive 2026-09-09 ("we no longer have access to fellows cluster
+#: so remove that"; verified the same day — charmander SSH returns
+#: ``Permission denied (publickey)``, bulbasaur returns ``Connection
+#: refused``): no dispatch path may SUBMIT a fresh fellows job. While
+#: ``True`` (the standing state): the auto chain's default order carries no
+#: ``fellows`` rung (gcp and runpod are the non-DRAC lanes; GCP re-enabled
+#: 2026-09-09), an explicit ``backend: fellows`` pin raises
+#: :class:`FellowsAccessRevokedError` (``reason: fellows_access_revoked``),
+#: and a ``fellows``-bearing :data:`ENV_AUTO_LANE_ORDER` /
+#: ``RouterConfig.lane_order`` raises at validation (the
+#: gcp-while-disabled refusal precedent, #2028). Paths that only ACT ON an
+#: existing fellows handle — poll, teardown, crash persist, the #1898
+#: sentinel drain — are deliberately UNGATED (in-flight cleanup + rollback
+#: support). Rollback = flip to ``False`` (all gated code paths
+#: reactivate; :data:`DEFAULT_AUTO_LANE_ORDER` rebuilds with the fellows
+#: rung in its pre-revocation position — directly after ``runpod`` — on
+#: next import). Deliberately NO env re-enable override — a stale shell
+#: must not resurrect access the cluster revoked; the constant flip is the
+#: sanctioned lever.
+FELLOWS_ACCESS_REVOKED: bool = True
+
+
+def fellows_access_revoked() -> bool:
+    """Dynamic read of :data:`FELLOWS_ACCESS_REVOKED` (user directive 2026-09-09).
+
+    Runtime checks call THIS helper (never the constant directly) so tests
+    can ``monkeypatch.setattr(router, "FELLOWS_ACCESS_REVOKED", False)``
+    to keep the gated fellows QoS-ladder / park / CPU-rung code paths
+    test-covered — the rollback lever stays exercised. Returns the module
+    attribute's current value.
+    """
+    return FELLOWS_ACCESS_REVOKED
+
+
 #: An explicit ``backend: gcp`` pin was refused because GCP provisioning is
 #: disabled by policy (#2028, :data:`GCP_PROVISIONING_DISABLED`). This is a
 #: POLICY refusal, not a capacity outcome: it is deliberately NOT in the
@@ -840,6 +922,17 @@ def gcp_provisioning_disabled() -> bool:
 #: token rides ``classify_terminal_exception``'s ``epm:failure`` note
 #: (``issue_dispatch.py``).
 ROUTE_REASON_GCP_DISABLED: str = "gcp_backend_disabled"
+
+#: An explicit ``backend: fellows`` pin was refused because fellows-cluster
+#: access is revoked (user directive 2026-09-09,
+#: :data:`FELLOWS_ACCESS_REVOKED`). A POLICY refusal, not a capacity
+#: outcome: deliberately NOT in the watcher's
+#: ``TRANSIENT_CAPACITY_REASONS`` (nothing will "free up" — the fix is a
+#: human changing the pin, or a deliberate rollback flip of the constant),
+#: so the watcher's capacity-retry pass never re-drives it. The token rides
+#: ``classify_terminal_exception``'s ``epm:failure`` note
+#: (``issue_dispatch.py``).
+ROUTE_REASON_FELLOWS_ACCESS_REVOKED: str = "fellows_access_revoked"
 
 #: A GCP GPU dispatch declared a host-RAM floor via ``--min-ram-gb`` but the
 #: resolved machine (pinned intent) OR every eligible ladder rung falls
@@ -856,48 +949,72 @@ ROUTE_REASON_GPU_RAM_BELOW_MIN_RAM_GB: str = "gpu_ram_below_min_ram_gb"
 #: Kept as a public constant for callers that need "the free lanes";
 #: the AUTO chain's order is :data:`DEFAULT_AUTO_LANE_ORDER` /
 #: :func:`auto_lane_order`. RunPod is NOT in this tuple (it is not a free
-#: SLURM lane) but IS a first-class auto lane as of #2054 — it LEADS
-#: :data:`DEFAULT_AUTO_LANE_ORDER`. The ``fellows`` lane (#1609) is a
+#: SLURM lane) but IS a first-class auto lane as of #2054 — it sits
+#: directly behind the leading ``gcp`` rung in
+#: :data:`DEFAULT_AUTO_LANE_ORDER` (and leads only while GCP is
+#: re-disabled). The ``fellows`` lane (#1609) is a
 #: free SLURM lane too but is deliberately NOT in this legacy tuple —
-#: it sits AHEAD of the (rollback-only) gcp rung in the auto order (see
-#: :data:`DEFAULT_AUTO_LANE_ORDER`), not in the post-GCP tail.
+#: while access was granted it sat AHEAD of the (rollback-only) gcp rung
+#: in the auto order, not in the post-GCP tail; as of the 2026-09-09
+#: revocation (:data:`FELLOWS_ACCESS_REVOKED`) its rung is rollback-only.
 DEFAULT_FREE_LANE_ORDER: tuple[BackendKind, ...] = ("nibi", "fir", "mila")
 
 
 def _default_auto_lane_order() -> tuple[BackendKind, ...]:
-    """Build the standing default auto lane order from the #2028 policy flag.
+    """Build the standing default auto lane order from the policy flags.
 
-    RunPod LEADS both builds (user directive 2026-08-05, #2054 — the
-    Anthropic-org sponsored pool is the first resort). Flag ON (the
-    standing state): ``("runpod", "fellows", "nibi", "fir", "mila")`` —
-    no gcp rung anywhere on the auto chain. Flag OFF (rollback): the gcp
-    rung re-inserts after fellows —
-    ``("runpod", "fellows", "gcp", "nibi", "fir", "mila")``.
-    Reads the module-level constant at CALL time so a test/rollback flip is
-    honored; the module-level :data:`DEFAULT_AUTO_LANE_ORDER` snapshot is
-    built once at import.
+    GCP LEADS whenever it is enabled (user directive 2026-09-09: "GCP
+    before runpod if it's available" — GCP is credit-funded while RunPod
+    is paid, scarce capacity); RunPod follows as the paid fall-through
+    and leads only while GCP is re-disabled (#2028 flipped back on). The
+    standing state (fellows revoked, GCP enabled):
+    ``("gcp", "runpod", "nibi", "fir", "mila")``. The fellows rung is
+    rollback-only (access revoked, user directive 2026-09-09,
+    :data:`FELLOWS_ACCESS_REVOKED`) and re-inserts in its pre-revocation
+    position — directly after ``runpod``; both flags at their rollback
+    values: ``("gcp", "runpod", "fellows", "nibi", "fir", "mila")``.
+    Reads the module-level constants at CALL time so a test/rollback flip
+    is honored; the module-level :data:`DEFAULT_AUTO_LANE_ORDER` snapshot
+    is built once at import.
+
+    Shape note: every branch returns a LITERAL string-headed tuple, and
+    the ``if`` conditions are BARE references to the module-level
+    literal-bool policy flags —
+    ``workflow_lint.read_default_auto_lane_head`` AST-reads the return
+    statements AND those flag literals to resolve the branch the live
+    policy selects for the ``--check-lane-order-adjective`` prose gate,
+    and refuses any non-literal / starred head or non-flag condition
+    shape (the check would SKIP fleet-wide and fail its armed-not-inert
+    live-tree pin).
     """
     if GCP_PROVISIONING_DISABLED:
+        if FELLOWS_ACCESS_REVOKED:
+            return ("runpod", *DEFAULT_FREE_LANE_ORDER)
         return ("runpod", "fellows", *DEFAULT_FREE_LANE_ORDER)
-    return ("runpod", "fellows", "gcp", *DEFAULT_FREE_LANE_ORDER)
+    if FELLOWS_ACCESS_REVOKED:
+        return ("gcp", "runpod", *DEFAULT_FREE_LANE_ORDER)
+    return ("gcp", "runpod", "fellows", *DEFAULT_FREE_LANE_ORDER)
 
 
-#: Standing default auto lane order: **RunPod first** (the shared
-#: Anthropic-fellows/safety org pool — a sponsored pool, not discretionary
-#: spend; user directive 2026-08-05, #2054), then fellows (the free
-#: Anthropic-fellows charmander H200 SLURM lane, #1609), then the legacy
-#: free DRAC/Mila SLURM lanes in precedence order. Built conditionally from
-#: :data:`GCP_PROVISIONING_DISABLED` (#2028): while the flag is on there is
-#: NO gcp rung; the flag-off rollback build re-inserts ``gcp`` after
-#: ``fellows``. This is an unconditional default —
+#: Standing default auto lane order: **GCP first** (credit-funded; user
+#: directive 2026-09-09, "GCP before runpod if it's available"), then
+#: RunPod (paid, scarce capacity — the fall-through), then the legacy
+#: free DRAC/Mila SLURM lanes in precedence order. Built conditionally
+#: from :data:`GCP_PROVISIONING_DISABLED` (#2028, re-enabled 2026-09-09)
+#: and :data:`FELLOWS_ACCESS_REVOKED` (user directive 2026-09-09): a
+#: re-disabled gcp drops its leading rung (runpod leads again, the #2054
+#: shape), and the fellows rollback build re-inserts its rung directly
+#: after ``runpod``. This is an unconditional default —
 #: NO date logic; flipping the order back is a deliberate human action (set
 #: :data:`ENV_AUTO_LANE_ORDER` or flip the policy constant), never a clock.
 DEFAULT_AUTO_LANE_ORDER: tuple[BackendKind, ...] = _default_auto_lane_order()
 
 #: Env override for the auto lane order — comma-separated lane names,
-#: e.g. ``EPM_AUTO_LANE_ORDER=nibi,fir,mila`` to bypass runpod + fellows.
+#: e.g. ``EPM_AUTO_LANE_ORDER=nibi,fir,mila`` to bypass runpod.
 #: Validated by :func:`auto_lane_order`: ``runpod`` is a LEGAL lane as of
-#: #2054 (it leads the default), ``gcp`` raises while
+#: #2054 (it leads the default), ``fellows`` raises while
+#: :data:`FELLOWS_ACCESS_REVOKED` is on (user directive 2026-09-09) and
+#: ``gcp`` raises while
 #: :data:`GCP_PROVISIONING_DISABLED` is on (#2028 — the rollback lever is
 #: the constant flip, never a lane-order override), as do unknown names,
 #: ``auto``/``cluster`` literals, and duplicates.
@@ -976,6 +1093,25 @@ class GcpDisabledError(RouteError):
     ``reason: gcp_backend_disabled``, which is NOT in the watcher's
     ``TRANSIENT_CAPACITY_REASONS`` — the fix is a human changing the pin
     (or a deliberate rollback flip of the constant), never an auto-retry.
+    """
+
+
+class FellowsAccessRevokedError(RouteError):
+    """Terminal: an explicit ``backend: fellows`` pin while fellows-cluster
+    access is revoked (user directive 2026-09-09,
+    :data:`FELLOWS_ACCESS_REVOKED`).
+
+    Raised by :func:`route` at the explicit-override branch BEFORE the
+    free-backend wiring check / any submit work (a policy refusal must
+    never spend a probe or an sbatch submit — the #2028
+    :class:`GcpDisabledError` precedent). Deliberately a DIRECT
+    :class:`RouteError` subclass — NOT :class:`NoComputeAvailableError` —
+    because this is not a capacity outcome: ``classify_terminal_exception``
+    (``issue_dispatch.py``) maps it to ``failure_class: infra`` /
+    ``status: blocked`` with ``reason: fellows_access_revoked``, which is
+    NOT in the watcher's ``TRANSIENT_CAPACITY_REASONS`` — the fix is a
+    human changing the pin (or a deliberate rollback flip of the
+    constant), never an auto-retry.
     """
 
 
@@ -1797,6 +1933,9 @@ def _validate_auto_lane_order(
     Hard rules (all raise — a misconfigured order must NEVER be silently
     repaired by dropping entries):
 
+    * ``fellows`` is FORBIDDEN while :data:`FELLOWS_ACCESS_REVOKED` is on
+      (user directive 2026-09-09) — a lane order that smuggles it in would
+      silently re-enable a revoked-access submission surface.
     * ``gcp`` is FORBIDDEN while :data:`GCP_PROVISIONING_DISABLED` is on
       (#2028) — a lane order that smuggles it in would silently re-enable a
       policy-removed provisioning surface. (``runpod`` is LEGAL as of #2054
@@ -1810,6 +1949,13 @@ def _validate_auto_lane_order(
     if not lanes:
         raise RouteError(f"auto lane order from {source} is empty — refusing to route blind")
     for lane in lanes:
+        if lane == "fellows" and fellows_access_revoked():
+            raise RouteError(
+                f"auto lane order from {source} contains 'fellows' — fellows-cluster "
+                "access is REVOKED (user directive 2026-09-09; "
+                "router.FELLOWS_ACCESS_REVOKED). Remove it from the order; rollback "
+                "is flipping that constant to False, never a lane-order override."
+            )
         if lane == "gcp" and gcp_provisioning_disabled():
             raise RouteError(
                 f"auto lane order from {source} contains 'gcp' — GCP provisioning "
@@ -1832,12 +1978,16 @@ def auto_lane_order() -> tuple[BackendKind, ...]:
 
     * :data:`ENV_AUTO_LANE_ORDER` set (non-empty) → parse the
       comma-separated lane list and validate it
-      (``gcp``-while-disabled (#2028) / unknown names / duplicates raise
+      (``fellows``-while-revoked (user directive 2026-09-09) /
+      ``gcp``-while-disabled (#2028) / unknown names / duplicates raise
       loudly — never silently dropped; ``runpod`` is legal as of #2054).
-    * Otherwise → :data:`DEFAULT_AUTO_LANE_ORDER` (runpod first — the
-      Anthropic-org pool, #2054 — then fellows, then the free SLURM lanes;
-      the gcp rung exists only in the flag-off rollback build — no date
-      gate of any kind; #1609/#2028/#2054).
+    * Otherwise → :data:`DEFAULT_AUTO_LANE_ORDER` (gcp first —
+      credit-funded, user directive 2026-09-09 — then runpod as the paid
+      fall-through, then the free DRAC/Mila SLURM lanes; the fellows
+      rung exists only in its flag-off rollback build, and a re-disabled
+      gcp drops its leading rung — no date gate of any kind;
+      #1609/#2028/#2054 + the 2026-09-09 fellows revocation + GCP
+      re-enable).
     """
     raw = os.environ.get(ENV_AUTO_LANE_ORDER, "").strip()
     if not raw:
@@ -2650,8 +2800,9 @@ def route(
       (e.g. ``{"nibi": slurm, "fir": slurm, "mila": mila, "fellows":
       slurm}``). Auto routing visits these at their position in the
       resolved lane order (:attr:`RouterConfig.lane_order`, else
-      :func:`auto_lane_order` — env override, else the fellows-first,
-      GCP-second standing default, #1609). A missing
+      :func:`auto_lane_order` — env override, else the gcp-first
+      standing default, 2026-09-09; the fellows rung is
+      rollback-only). A missing
       kind is skipped (e.g. ``mila`` absent → router skips Mila even
       when the socket is alive).
     * ``gcp_backend`` — the GCP fallback-ladder target. When ``None`` and
@@ -2763,6 +2914,20 @@ def route(
             on_launched=on_launched,
         )
 
+    if spec.backend == "fellows" and fellows_access_revoked():
+        # Fellows policy gate (user directive 2026-09-09): refuse BEFORE the
+        # free-backend wiring check / any submit work — a policy refusal
+        # must never spend a probe or an sbatch submit (the #2028
+        # GcpDisabledError precedent).
+        raise FellowsAccessRevokedError(
+            f"backend override 'fellows' refused for issue {spec.issue}: "
+            "fellows-cluster access is REVOKED (user directive 2026-09-09; "
+            "router.FELLOWS_ACCESS_REVOKED). Re-dispatch without the fellows "
+            "pin (the auto chain walks the standing default lanes — gcp -> "
+            "runpod -> free DRAC/Mila SLURM lanes), "
+            "or flip the constant to False for a deliberate rollback."
+        )
+
     if spec.backend in {"nibi", "fir", "mila", "fellows"}:
         free = (free_backends or {}).get(spec.backend)
         if free is None:
@@ -2799,8 +2964,8 @@ def route(
                 f"backend override 'gcp' refused for issue {spec.issue}: GCP "
                 "provisioning is DISABLED by policy (#2028; "
                 "router.GCP_PROVISIONING_DISABLED). Re-dispatch without the gcp "
-                "pin (the auto chain routes fellows -> free SLURM lanes), or flip "
-                "the constant to False for a deliberate rollback."
+                "pin (the auto chain routes runpod -> free DRAC/Mila SLURM "
+                "lanes), or flip the constant to False for a deliberate rollback."
             )
         if gcp_backend is None:
             raise RouteError("backend override 'gcp' requested but no gcp_backend wired")
@@ -2832,9 +2997,9 @@ def route(
             f"{ENV_AUTO_LANE_ORDER} env override"
             if os.environ.get(ENV_AUTO_LANE_ORDER, "").strip()
             else (
-                "default (runpod-first standing order #2054; gcp disabled #2028)"
+                "default (runpod-first #2054 shape; gcp re-disabled #2028)"
                 if gcp_provisioning_disabled()
-                else "default (runpod-first standing order #2054; gcp rollback build)"
+                else "default (gcp-first standing order, 2026-09-09)"
             )
         )
     logger.info(
@@ -3495,7 +3660,9 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
       — the CPU analogue of the GPU length-aware axis; still NO flex /
       A100-40 rung. (While :data:`GCP_PROVISIONING_DISABLED` is on this
       ladder is reachable only via the rollback flip — fresh CPU dispatches
-      walk ``runpod → fellows`` (#2059) then the RunPod terminal retry.)
+      walk the runpod lane only, then the RunPod terminal retry; the
+      #2059 fellows 0-GPU rung is rollback-only while
+      :data:`FELLOWS_ACCESS_REVOKED` is on.)
 
     The short-circuit is load-bearing because :func:`_is_short_job` floors
     ``gpu_count`` to 1, so without it the GPU ladder would (mis)classify a CPU
@@ -5469,7 +5636,8 @@ def _auto_candidates(
     ``runpod`` (#2054) is a first-class auto lane and is always wired — the
     ``route()`` signature requires ``runpod_backend`` — and CPU-only
     intents keep it: RunPod CPU (deployCpuPod) leads the documented CPU
-    chain (#747/#2028), with the fellows 0-GPU rung behind it (#2059). The
+    chain (#747/#2028); the #2059 fellows 0-GPU rung behind it is
+    rollback-only while :data:`FELLOWS_ACCESS_REVOKED` is on. The
     stage-1 reconnect scan is a no-op for runpod (the production
     ``reconnect_fn`` returns ``None`` for it — pod_lifecycle's own flow is
     idempotent).
@@ -5632,16 +5800,15 @@ def _auto_route(
     clock_fn: Callable[[], datetime] | None,
     process_deadline: float | None = None,
 ) -> RouteResult:
-    """No-``backend:`` auto route: walk ``lane_order`` (runpod-first default).
+    """No-``backend:`` auto route: walk ``lane_order`` (gcp-first default).
 
-    RunPod is a first-class auto lane as of #2054 (user directive
-    2026-08-05: the RunPod team account is the shared Anthropic-org
-    sponsored pool — first resort, not last): at its position in the order
-    :func:`_attempt_runpod_lane` launches there, and a capacity miss with
-    nothing provisioned falls through to the remaining lanes. GCP is a
-    first-class auto lane too (rollback-only while #2028 holds): at its
-    position it walks the cost-ordered fallback ladder
+    GCP LEADS the standing default (user directive 2026-09-09 —
+    credit-funded, before the paid runpod rung): at its position it walks
+    the cost-ordered fallback ladder
     (:func:`_attempt_gcp_lane` → on-demand A100-80 → A100-40 → SPOT).
+    RunPod is a first-class auto lane as of #2054: at its position in the
+    order :func:`_attempt_runpod_lane` launches there, and a capacity
+    miss with nothing provisioned falls through to the remaining lanes.
     Contiguous SLURM lanes keep the existing est-start ranking + park +
     cancel chain among themselves. When EVERY lane is exhausted, the chain
     falls to the RunPod terminal rung (:func:`_runpod_terminal_rung`) —
@@ -7982,6 +8149,7 @@ __all__ = [
     "ENV_AUTO_LANE_ORDER",
     "ENV_GCP_SPOT_FALLBACK",
     "ENV_SPOT_MAX_GPU_HOURS",
+    "FELLOWS_ACCESS_REVOKED",
     "FELLOWS_QUEUE_WAIT_ENV",
     "FREE_WAIT_SECONDS",
     "GCP_PROVISIONING_DISABLED",
@@ -7992,6 +8160,7 @@ __all__ = [
     "ROUTE_REASON_AUTO_STARTED",
     "ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD",
     "ROUTE_REASON_CPU_FALLBACK_INFEASIBLE",
+    "ROUTE_REASON_FELLOWS_ACCESS_REVOKED",
     "ROUTE_REASON_GCP_DISABLED",
     "ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD",
     "ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD",
@@ -8015,6 +8184,7 @@ __all__ = [
     "BackendPrepareError",
     "CpuExhaustedNoRunpodLaneError",
     "CpuFallbackInfeasibleError",
+    "FellowsAccessRevokedError",
     "FreeLaneStillWaitingError",
     "GcpAttemptCapExceededError",
     "GcpDisabledError",
@@ -8036,6 +8206,7 @@ __all__ = [
     "default_is_live",
     "default_is_started",
     "failover_to_runpod_after_async_workload_crash",
+    "fellows_access_revoked",
     "gcp_provisioning_disabled",
     "park_until_running_or_cap",
     "rank_lanes",

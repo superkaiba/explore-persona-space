@@ -330,8 +330,8 @@ Identical to v1. `.claude/skills/issue/SKILL.md` applies verbatim:
 
 - **Backend dispatch** — § "Backend dispatch (slice-6 unified router)" + §
   "Operational dispatch (slice-6 router, ALL backends)": read `backend:`
-  frontmatter (empty → auto — runpod-first order since #2054; GCP provisioning
-  DISABLED, #2028), dispatch via
+  frontmatter (empty → auto — gcp-first order since the 2026-09-09 GCP
+  re-enable, runpod the paid fall-through), dispatch via
   `scripts/dispatch_issue.py`, persist the handle to
   `.claude/cache/issue-<N>-handle.json`.
 - **Pod provisioning + preflight** (RunPod lane) — § "Step 6" (6a HF gate-access,

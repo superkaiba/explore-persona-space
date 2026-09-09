@@ -409,14 +409,13 @@ lens stays the binding gate.
 rely on auto's DRAC/Mila SLURM fallback.** If the plan's dispatch script
 posts markers via pod-side sentinel files
 (`/workspace/logs/issue-<N>-*.json` — gate sentinels, `epm:results`
-payloads), the plan SHOULD pin a DRAINED lane: `backend: fellows` (the
-charmander cluster-shared `/workspace`, drained by the VM-side poller
-each tick via `slurm_monitor.drain_cluster_sentinels` — #1898) or an
-explicit `backend: runpod` override with its residual gap named
-(`backend: gcp` is REFUSED as of #2028 — GCP provisioning disabled;
-it is no longer a pinnable drained lane). Leaving such a
-workload on `auto` is discouraged: a fellows capacity failure
-falls through to the DRAC/Mila SLURM lanes, where compute nodes have no
+payloads), the plan SHOULD pin `backend: runpod` with its residual gap
+named. Fellows access is revoked (2026-09-09). GCP provisioning and its
+runtime sentinel drain are enabled again, but the current `verify_plan.py`
+c43 allowlist still recognizes only runpod/fellows; GCP's runtime support
+does not by itself satisfy that plan check. Leaving such a workload on
+`auto` is discouraged: exhaustion of the GCP and RunPod lanes can fall
+through to the DRAC/Mila SLURM lanes, where compute nodes have no
 `/workspace` and the robot wrapper cannot run the sentinel drain — the
 dispatcher fails loud at its `mkdir -p /workspace/logs` and burns the
 SLURM submission (#608, commit 3022ff7bc). If the plan needs a DRAC/Mila
@@ -849,13 +848,14 @@ wrong fix; `.claude/rules/vectorize-many-cell-fits.md`).
 then reconcile worst-case wall against the GCP auto-delete fence.**
 Each row's `planned_wall_h` + `basis` MUST name the machine type of the
 lane the backend router will most likely route. Under the standing
-runpod-first `auto` default (#2054/#2059; #2028: GCP provisioning
-disabled) that is RunPod's H100 intent table, then the fellows H200
-cluster, then the free DRAC/Mila SLURM lanes, with a terminal RunPod
-retry rung; the GCP intent mapping
+gcp-first `auto` default (GCP re-enabled 2026-09-09; fellows revoked)
+that is the GCP intent mapping
 (`INTENT_TO_MACHINE` in `src/explore_persona_space/backends/gcp.py`:
 `lora-7b` → 1× A100-80 `a2-ultragpu-1g`, `ft-7b` → 4× A100-80,
-`eval`/`debug` → 1× L4) applies only under the rollback flip. A basis
+`eval`/`debug` → 1× L4; H100-specific intents use the separately
+recorded preemptible quota, which the regional quota API omits),
+then RunPod's H100 intent table, then the free DRAC/Mila SLURM lanes,
+with a terminal RunPod retry rung. A basis
 measured on a different GPU must be scaled with a stated per-step rate
 (e.g. "H100 basis × ~6× A100 step-time" — #599's trainer ran ~6× slower
 per-step on the A100 auto-lane, turning an H100-premised ~6.4h estimate

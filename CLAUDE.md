@@ -268,22 +268,32 @@ Spawning POSTs to the local Happy daemon's control server at `127.0.0.1:<port>` 
 
 ## Compute backends — multi-lane router
 
-**RunPod is the FIRST-resort lane** (#2054, standing user directive) — the account is the shared
-Anthropic fellows/safety org pool, so provisioning there is ordinary use, NOT discretionary spend.
-**GCP provisioning is DISABLED by policy** (#2028): `GCP_PROVISIONING_DISABLED = True` in
-`backends/router.py`; an explicit `backend: gcp` pin raises `GcpDisabledError`. Paths that only
-ACT ON existing GCP handles still work.
+**GCP is the FIRST-resort lane** (user directive 2026-09-09: "re-enable GCP", "GCP before
+runpod if it's available") — GCP is credit-funded while RunPod now bills the user's personal
+balance (paid, scarce capacity). `GCP_PROVISIONING_DISABLED = False` in `backends/router.py`
+(re-enabled 2026-09-09; the #2028 disable rationale — agents habit-pinning paid GCP while the
+free fellows lane sat idle, #1739 — expired with the fellows revocation; the gate stays
+flippable both ways). The regional quota probe lists 16 preemptible + 8 on-demand
+A100-80GB; H100 quota is omitted by that API, not absent (`gcp.py` records a separate
+8-GPU preemptible H100 pool). The user confirmed credits on 2026-09-09; the VM cannot
+independently inspect their balance.
 
-Every `/issue` launch routes through the unified router (`scripts/dispatch_issue.py`), keyed on
-the task's `backend:` frontmatter. Absent/empty ⇒ `auto`:
-`DEFAULT_AUTO_LANE_ORDER = ("runpod", "fellows", "nibi", "fir", "mila")` — RunPod first, then
-the free fellows/DRAC/Mila SLURM lanes, then a terminal RunPod retry rung. **Prefer bare `auto`.**
-CPU intents route `runpod → fellows` (#2059; all three RunPod-mapped).
+**Fellows-cluster access is REVOKED (user directive 2026-09-09)**:
+`FELLOWS_ACCESS_REVOKED = True` in `backends/router.py`; an explicit `backend: fellows` pin
+raises `FellowsAccessRevokedError`. Paths that only ACT ON existing fellows handles still work.
+**GCP and RunPod are the non-DRAC/Mila lanes.** Every `/issue` launch routes
+through the unified router (`scripts/dispatch_issue.py`), keyed on the task's `backend:`
+frontmatter. Absent/empty ⇒ `auto`:
+`DEFAULT_AUTO_LANE_ORDER = ("gcp", "runpod", "nibi", "fir", "mila")` — GCP first, RunPod as
+the paid fall-through, then the free DRAC/Mila SLURM lanes, then a terminal RunPod retry rung.
+**Prefer bare `auto`.** CPU intents walk gcp (E2/N2 machines) → runpod (the #2059
+`runpod → fellows` CPU walk is the fellows-rollback build only). Sentinel-dependent workloads
+still pin `runpod` (the auto chain can fall through to DRAC/Mila, which have no `/workspace`).
 
 **READ `.claude/rules/compute-backends.md` before pinning a backend, debugging a lane, or
-reasoning about a failover** — it carries the per-lane mechanics, the reason codes, the fellows
-QoS ladder + sentinel-drain caveat, the GCP in-flight/rollback scope, and the crash-diagnostics
-persist path. Failover triggers live in `.claude/rules/compute-backend-failover.md`.
+reasoning about a failover** — it carries the per-lane mechanics, the reason codes, the
+fellows revocation scope (the QoS ladder + sentinel drain are rollback-only), the GCP
+re-enable caveats, and the crash-diagnostics persist path. Failover triggers live in `.claude/rules/compute-backend-failover.md`.
 
 ## Pods (Ephemeral Lifecycle + CLI + SSH)
 

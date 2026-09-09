@@ -1,10 +1,13 @@
 """Tests for ``--check-no-unannotated-gcp-pin-guidance`` (#2018 D5/D6).
 
-The check is a WARN-only sweep of the live workflow surface for guidance
-DIRECTING a gcp backend pin — a dead end since #2028 (`GcpDisabledError`) —
-with a SKIP-on-rollback arm keyed on ``GCP_PROVISIONING_DISABLED`` read from
+The check is a WARN-only sweep of the workflow surface for guidance
+DIRECTING a gcp backend pin while provisioning is disabled by #2028
+(`GcpDisabledError`). It SKIPs when GCP is enabled, which is the production
+state since 2026-09-09. The gate reads ``GCP_PROVISIONING_DISABLED`` from
 ``router.py`` SOURCE via ast (both ``Assign`` and the REAL annotated
-``AnnAssign`` forms). The plan's D6 numbering, in order:
+``AnnAssign`` forms). Disabled-policy fixtures keep the warning behavior
+armed and covered; the live-tree tests pin the enabled-policy SKIP and
+check scan-set membership independently. The plan's D6 numbering, in order:
 
 1.  ``test_bare_pin_line_unannotated_warns`` — bare pin, no annotation
     → 1 WARN.
@@ -24,10 +27,10 @@ with a SKIP-on-rollback arm keyed on ``GCP_PROVISIONING_DISABLED`` read from
     False`` in the read source → the whole check SKIPs.
 7.  ``test_missing_router_skips_loud_exit_zero`` — unreadable/absent
     router.py → loud SKIP, CLI exit 0 (fail-open).
-8.  ``test_live_surface_zero_warns_and_armed`` — the real repo: zero WARNs
-    AND ``skipped is False`` AND ``files_scanned > 0`` (the armed
-    assertion is the load-bearing half — an inert check satisfies the
-    zero-WARN half vacuously).
+8.  ``test_live_surface_skips_when_gcp_enabled`` — the real repo: zero
+    WARNs, ``skipped is True``, the specific reason
+    ``gcp-provisioning-enabled``, and ``files_scanned == 0``. This asserts
+    the deliberate policy SKIP; tests 1-4 cover the disabled-policy scan.
 9.  ``test_warn_only_cli_exits_zero_with_hits`` — a repo WITH hits still
     exits 0 (WARN-only; the no-flags run feeds the Step 9c gate, #1388).
 10. ``test_kv_pin_word_boundary_gcp_backend_token`` — a MARKDOWN
@@ -43,16 +46,15 @@ with a SKIP-on-rollback arm keyed on ``GCP_PROVISIONING_DISABLED`` read from
 13. ``test_generic_tokens_do_not_escape`` — generic ``raises`` /
     ``no longer`` words in the preceding window do NOT annotate (pins the
     token tightening that unmasked D4 at plan time).
-14. ``test_constant_reader_true_on_real_router`` — the reader returns True
-    on the REAL router.py bytes (pins the ANNOTATED ``: bool = True``
-    form; without this the reader can be written against the bare form,
-    never match, and silently disable the whole check while tests 6/7
-    stay green).
-15. ``test_scan_set_contains_live_memory_file`` — the report's
-    scanned-file list contains the live
+14. ``test_constant_reader_false_on_real_router`` — the reader returns
+    False on the REAL router.py bytes (pins the ANNOTATED
+    ``: bool = False`` form and distinguishes a resolved enabled flag
+    from a reader that never matches and returns None).
+15. ``test_scan_set_contains_live_memory_file`` — the scan helper's file
+    list contains the live
     ``feedback_gcp_lane_git_clone_only_data.md`` memory (pins scan-set
-    membership; every other test stays green if a member is silently
-    dropped).
+    membership even while the report deliberately skips scanning under
+    the enabled policy).
 
 Plus (the house bundling pin, the ``test_check_jsonl_splitlines_bundled_in_
 no_flags`` mutation-visible pattern): 16. the no-flags default run actually
@@ -218,18 +220,19 @@ def test_missing_router_skips_loud_exit_zero(
 # --------------------------------------------------------------------------
 
 
-def test_live_surface_zero_warns_and_armed() -> None:
+def test_live_surface_skips_when_gcp_enabled() -> None:
     report, sink = _run(_REPO_ROOT)
     assert sink == [], "unannotated gcp-pin guidance regrew on the live surface:\n" + "\n".join(
         sink
     )
-    assert report["skipped"] is False, report
-    assert report["files_scanned"] > 0, report
+    assert report["skipped"] is True, report
+    assert report["skip_reason"] == "gcp-provisioning-enabled", report
+    assert report["files_scanned"] == 0, report
 
 
 def test_scan_set_contains_live_memory_file() -> None:
-    report, _sink = _run(_REPO_ROOT)
-    assert _LIVE_MEMORY_REL in report["scanned_files"], (
+    scanned = [p.relative_to(_REPO_ROOT).as_posix() for p in wl._gcp_pin_scan_files(_REPO_ROOT)]
+    assert _LIVE_MEMORY_REL in scanned, (
         f"the live scan set silently dropped {_LIVE_MEMORY_REL} — every other "
         f"test stays green on a dropped member (D6 test 15)"
     )
@@ -313,9 +316,9 @@ def test_generic_tokens_do_not_escape(tmp_path: Path) -> None:
 # --------------------------------------------------------------------------
 
 
-def test_constant_reader_true_on_real_router() -> None:
+def test_constant_reader_false_on_real_router() -> None:
     real = (_REPO_ROOT / _ROUTER_REL).read_text(encoding="utf-8")
-    assert wl.read_gcp_disabled_flag(real) is True, (
+    assert wl.read_gcp_disabled_flag(real) is False, (
         "read_gcp_disabled_flag must resolve the REAL (annotated) "
         "GCP_PROVISIONING_DISABLED binding in router.py — a reader written "
         "against the bare-Assign form silently disables the whole check forever"

@@ -171,8 +171,9 @@ materialization ref is known to differ (RunPod `BOOTSTRAP_BRANCH` defaults to
 names an rsync-materialized SLURM lane — every member of
 `router._PER_CLUSTER_LANES` (`nibi` / `fir` / `mila` / `fellows`) plus the
 legacy `cluster` alias — OR is absent/`auto` (the auto chain is
-runpod-first, but a RunPod capacity miss falls through to fellows — an
-rsync lane — so `auto` must satisfy the rsync-lane bar too), run the gate
+gcp-first, but gcp + runpod capacity misses fall through to the DRAC/Mila
+SLURM lanes — rsync lanes — so `auto` must satisfy the rsync-lane bar
+too), run the gate
 in rsync mode: set
 `EXTRA_SYNC_ARGS=(--extra-sync-path eval_results/issue_<M>/ladder)` to any
 plan-named values (omit when none), then replace the fence's default
@@ -289,20 +290,21 @@ returns a typed `RunHandle`. The router decides which backend actually
 runs:
 
 - **Empty / absent frontmatter → `auto`.** The router walks the
-  resolved auto lane order — **standing default: RunPod FIRST (the
-  Anthropic-org pool), then fellows, then the free SLURM lanes**
-  (`DEFAULT_AUTO_LANE_ORDER = ("runpod", "fellows", "nibi", "fir",
-  "mila")` — #2054 promoted runpod to the head, `reason:
-  auto_runpod_first`; #2028: GCP provisioning is DISABLED, so the auto
-  order carries no gcp rung; override via
-  the comma-separated `EPM_AUTO_LANE_ORDER` env var — `runpod` is a
-  LEGAL entry as of #2054; `gcp`-while-disabled / unknown lanes in the
-  override raise loudly). A runpod capacity miss (nothing provisioned)
-  falls through to the lanes behind it, and the #656 terminal rung
+  resolved auto lane order — **standing default: GCP FIRST
+  (credit-funded, re-enabled 2026-09-09), then RunPod (paid — the
+  fall-through), then the free SLURM lanes**
+  (`DEFAULT_AUTO_LANE_ORDER = ("gcp", "runpod", "nibi", "fir",
+  "mila")` — user directive 2026-09-09 "GCP before runpod if it's
+  available"; fellows access revoked, so no fellows rung; override via
+  the comma-separated `EPM_AUTO_LANE_ORDER` env var — `gcp` and
+  `runpod` are LEGAL entries; `fellows`-while-revoked / unknown lanes
+  in the override raise loudly). A gcp or runpod capacity miss (nothing
+  provisioned) falls through to the lanes behind it, and the #656
+  terminal rung
   survives as the end-of-chain RunPod RETRY (`reason:
   auto_fallback_runpod`) — only if THAT launch also fails does the
   chain raise `NoComputeAvailableError` (pins:
-  `tests/test_router.py::test_default_auto_lane_order_has_no_gcp` +
+  `tests/test_router.py::test_default_auto_lane_order_production_gcp_first` +
   `test_runpod_first_capacity_miss_falls_through_then_terminal_retry`).
   Contiguous SLURM
   lanes (Nibi, Fir if wired, Mila if its socket is alive) are ranked
@@ -312,16 +314,18 @@ runs:
   to the next lane.
 - **`backend: runpod`** explicit override → RunPod PIN (`reason:
   override`, distinct from the auto chain's `auto_runpod_first` /
-  `auto_fallback_runpod`); prefer bare `auto` — it already tries
-  RunPod first (#2054).
+  `auto_fallback_runpod`); prefer bare `auto` — it walks GCP first,
+  then RunPod.
 - **`backend: nibi` / `fir` / `mila`** → that lane, with the same park
   + cancel state machine as auto.
-- **`backend: gcp`** → REFUSED (#2028): `route()` raises the typed
-  `GcpDisabledError` before any wiring/ladder work, and
+- **`backend: gcp`** → routes again (re-enabled 2026-09-09): the pin
+  walks the GCP ladder directly. Only while
+  `GCP_PROVISIONING_DISABLED` is flipped back to `True` does `route()`
+  raise the typed `GcpDisabledError` before any wiring/ladder work, and
   `classify_terminal_exception` maps it to `failure_class: infra` /
   `status: blocked` / `reason: gcp_backend_disabled` (NOT
-  watcher-re-drivable — drop the pin, or the deliberate
-  `router.GCP_PROVISIONING_DISABLED = False` rollback flip).
+  watcher-re-drivable — drop the pin, or flip the constant back to
+  `False`).
 - **Legacy `backend: cluster`** is normalized to `backend: nibi` by
   `issue_dispatch.normalize_backend_value` (the slice-5 router rejects
   the bare `"cluster"` literal). The legacy `select_backend` /

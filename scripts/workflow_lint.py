@@ -265,9 +265,13 @@ Behaviours:
   head differs from the live one. The live head is read from
   ``router.py`` SOURCE via ast (never hardcoded), so the next order
   inversion (the #2054 class) immediately flags every straggler of both
-  shapes. SKIPs loud (fail-open) when the head cannot be resolved
-  (unparseable router, absent / mixed / disagreeing
-  ``_default_auto_lane_order`` returns). ``docs/`` / ``tests/`` /
+  shapes. Branch heads may legitimately DIFFER across the policy-flag
+  branches (gcp-first while enabled, runpod-first while re-disabled):
+  the reader resolves the branch the LIVE literal-bool policy flags
+  select. SKIPs loud (fail-open) when the head cannot be resolved
+  (unparseable router, absent / mixed returns, or disagreeing branch
+  heads whose selecting policy flags are not resolvable literal bools).
+  ``docs/`` / ``tests/`` /
   ``src/`` / ``scripts/`` / ``.claude/agent-memory/`` are deliberately
   OUT of scope (true historical statements a FAIL check must not
   redden); waive a dated in-scope statement with
@@ -19419,10 +19423,15 @@ def _gcp_pin_annotated(lines: list[str], idx: int) -> bool:
 # lane-order prose has NO runtime backstop — the prose IS the enforcement
 # surface — and the binding Step 9c / Step 10d gates are
 # baseline-subtracted, so a future false positive reddens only the
-# introducing round (#1388 contained). SKIPs loud (fail-open) when the
-# head cannot be resolved (unparseable router, absent / mixed /
-# disagreeing `_default_auto_lane_order` returns) — the guard goes quiet
-# rather than firing on a head it cannot resolve.
+# introducing round (#1388 contained). The branch heads legitimately
+# DIFFER across the policy-flag branches (gcp leads while enabled,
+# runpod while re-disabled — the 2026-09-09 GCP re-enable), so the
+# reader resolves the branch the LIVE literal-bool policy flags select
+# rather than requiring unanimity. SKIPs loud (fail-open) when the head
+# cannot be resolved (unparseable router, absent / mixed
+# `_default_auto_lane_order` returns, or disagreeing branch heads whose
+# selecting flags / conditions are not resolvable) — the guard goes
+# quiet rather than firing on a head it cannot resolve.
 # Scan scope is the PRESCRIPTIVE surface ONLY. DELIBERATELY EXCLUDED —
 # each holds TRUE historical statements a FAIL check must not redden:
 #   * docs/ — docs/methodology/issue_{608,601,654,537,613}.md record which
@@ -19483,20 +19492,121 @@ _LANE_ORDER_SCAN_FILES: tuple[str, ...] = ("CLAUDE.md",)
 # self-exclusion trap (#2018).
 
 
+def _policy_binding_names(node: ast.AST) -> set[str]:
+    """Potential writes in module control flow, excluding nested scopes."""
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+        return {node.name}
+    if isinstance(node, ast.Lambda):
+        return set()
+    if isinstance(node, ast.Name) and isinstance(node.ctx, (ast.Store, ast.Del)):
+        return {node.id}
+    if isinstance(node, (ast.Import, ast.ImportFrom)):
+        return {alias.asname or alias.name.split(".")[0] for alias in node.names}
+    names = {node.name} if isinstance(node, ast.ExceptHandler) and node.name else set()
+    for child in ast.iter_child_nodes(node):
+        names.update(_policy_binding_names(child))
+    return names
+
+
+def _module_bool_constants(tree: ast.Module) -> dict[str, bool]:
+    """Module-level names bound to a LITERAL bool (``X = True`` /
+    ``X: bool = True``), in statement order (last binding wins — Python
+    semantics). Non-literal bindings are simply absent from the map, so a
+    flag refactored to a computed value makes the policy-branch
+    resolution below fail closed (``None`` → SKIP loud)."""
+    flags: dict[str, bool] = {}
+    for stmt in tree.body:
+        if isinstance(stmt, ast.Assign) and all(isinstance(t, ast.Name) for t in stmt.targets):
+            names = [t.id for t in stmt.targets if isinstance(t, ast.Name)]
+            value: ast.expr | None = stmt.value
+        elif isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
+            names = [stmt.target.id]
+            value = stmt.value
+        else:
+            # Conditional/tuple/augmented writes are outside our evaluator;
+            # discard their targets instead of retaining a stale literal.
+            for name in _policy_binding_names(stmt):
+                flags.pop(name, None)
+            continue
+        if isinstance(value, ast.Constant) and isinstance(value.value, bool):
+            for name in names:
+                flags[name] = value.value
+        elif value is not None:
+            for name in names:
+                flags.pop(name, None)
+    return flags
+
+
+_HEAD_UNRESOLVED = object()  # sentinel: taken-path walk hit an unreadable shape
+
+
+def _walk_policy_branch(stmts: list[ast.stmt], flags: dict[str, bool]) -> object:
+    """First return head reached by executing ``stmts`` under ``flags``.
+
+    A tiny straight-line interpreter over the shapes
+    ``_default_auto_lane_order`` is contractually limited to: bare
+    ``if <FLAG>:`` conditions (a module-level literal-bool name), plain
+    fall-through, ``return`` of a literal string-headed tuple, and no-op
+    expression statements (the docstring). Returns the head ``str``, or
+    ``None`` when the taken path runs off the end without returning, or
+    :data:`_HEAD_UNRESOLVED` on any shape outside that contract (an
+    unresolvable condition, a loop, an assignment, ...) — the caller maps
+    both failure modes to a loud SKIP.
+    """
+    for stmt in stmts:
+        if isinstance(stmt, ast.Return):
+            value = stmt.value
+            # Return shapes were pre-validated whole-function; re-check
+            # defensively rather than assuming.
+            if not (isinstance(value, ast.Tuple) and value.elts):
+                return _HEAD_UNRESOLVED
+            head = value.elts[0]
+            if not (isinstance(head, ast.Constant) and isinstance(head.value, str)):
+                return _HEAD_UNRESOLVED
+            return head.value
+        if isinstance(stmt, ast.If):
+            test = stmt.test
+            if not (isinstance(test, ast.Name) and test.id in flags):
+                return _HEAD_UNRESOLVED
+            result = _walk_policy_branch(stmt.body if flags[test.id] else stmt.orelse, flags)
+            if result is not None:  # a head, or _HEAD_UNRESOLVED
+                return result
+            continue  # branch fell through — keep walking
+        if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Constant):
+            continue  # docstring / bare-constant no-op
+        return _HEAD_UNRESOLVED
+    return None
+
+
 def read_default_auto_lane_head(source: str) -> str | None:
     """Head lane of ``DEFAULT_AUTO_LANE_ORDER``, from ``router.py`` SOURCE text.
 
     AST-based (read-only, no import) so the check is testable against a
     fixture tree via ``repo_root=``. EVERY ``ast.Return`` inside
     ``_default_auto_lane_order`` must be a tuple whose element 0 is a
-    string Constant; the head is returned only when every such return
-    agrees. ANY other return shape (a bare name, a call, a starred head, a
-    non-str literal) yields ``None`` — a whole-function requirement, NOT a
-    filter over the tuple-shaped returns: filtering would let a
-    mixed-return refactor resolve a head from one branch and silently
-    mis-grade prose written for the other. Returns ``None`` when the
-    module does not parse, the function is absent, no return exists, or
-    branches disagree — callers SKIP loud on ``None``, never crash.
+    string Constant; ANY other return shape (a bare name, a call, a
+    starred head, a non-str literal) yields ``None`` — a whole-function
+    requirement, NOT a filter over the tuple-shaped returns: filtering
+    would let a mixed-return refactor resolve a head from one branch and
+    silently mis-grade prose written for the other.
+
+    When every return agrees on one head, that head is returned (no
+    policy resolution needed). When branch heads DIFFER — legitimate
+    since the 2026-09-09 GCP re-enable (``gcp`` leads while
+    ``GCP_PROVISIONING_DISABLED`` is False, ``runpod`` while it is
+    re-disabled) — the head is resolved by walking the function's
+    ``if``/fall-through structure under the module-level LITERAL-bool
+    policy flags (``X = True`` / ``X: bool = True``; last binding wins),
+    so the gate keeps grading prose against the PRODUCTION branch instead
+    of skipping fleet-wide. The walk is deliberately narrow: only bare
+    ``if <FLAG>:`` conditions over resolvable literal-bool names,
+    fall-through, and literal returns are interpreted.
+
+    Returns ``None`` — callers SKIP loud, never crash — when the module
+    does not parse, the function is absent, no return exists, any return
+    is mis-shaped, or disagreeing heads cannot be policy-resolved (a flag
+    bound to a non-literal, a condition that is not a bare known-flag
+    name, a loop/assignment in the body, or a taken path with no return).
     """
     try:
         tree = ast.parse(source)
@@ -19520,9 +19630,16 @@ def read_default_auto_lane_head(source: str) -> str | None:
         if not (isinstance(head, ast.Constant) and isinstance(head.value, str)):
             return None
         heads.append(head.value)
-    if not heads or len(set(heads)) != 1:
+    if not heads:
         return None
-    return heads[0]
+    if len(set(heads)) == 1:
+        return heads[0]
+    # Branch heads disagree — resolve the branch the live policy selects.
+    resolved = _walk_policy_branch(fn.body, _module_bool_constants(tree))
+    if resolved is _HEAD_UNRESOLVED or resolved is None:
+        return None
+    assert isinstance(resolved, str)
+    return resolved
 
 
 def _lane_order_scan_files(root: Path) -> list[Path]:
@@ -19657,7 +19774,8 @@ def lane_order_adjective_report(repo_root: Path | None = None) -> dict[str, obje
             "head-unresolved",
             f"DEFAULT_AUTO_LANE_ORDER head not resolvable from {router} "
             f"(every _default_auto_lane_order return must be a tuple whose "
-            f"element 0 is one agreeing string literal)",
+            f"element 0 is a string literal, and disagreeing branch heads "
+            f"must be selectable by literal-bool policy flags)",
         )
     findings: list[str] = []
     scanned: list[str] = []

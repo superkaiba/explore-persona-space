@@ -84,9 +84,26 @@ def _gcp_rollback_build_for_legacy_suite(request, monkeypatch):
     fixture runs every test with the gate OFF. Flag-ON production pins carry
     ``@pytest.mark.gcp_policy_default``.
     """
-    if request.node.get_closest_marker("gcp_policy_default"):
-        return
+    if request.node.get_closest_marker("fellows_policy_default"):
+        return  # FULL production contract: both flags at their real values
     from explore_persona_space.backends import router as router_module
+
+    # Fellows access is REVOKED by policy (user directive 2026-09-09,
+    # ``router.FELLOWS_ACCESS_REVOKED = True``); the legacy machinery below
+    # exercises fellows-bearing lane orders, so every non-production test
+    # runs with the fellows gate OFF (the rollback build) — mirroring the
+    # ``test_router.py`` fixture family.
+    monkeypatch.setattr(router_module, "FELLOWS_ACCESS_REVOKED", False)
+    if request.node.get_closest_marker("gcp_policy_default"):
+        # #2028 GCP-DISABLED contract, EXPLICITLY pinned (no longer the
+        # production flag value since the 2026-09-09 re-enable), with the
+        # fellows machinery rollback-restored: rebuild the order so the
+        # fellows rung returns (runpod-first, no gcp).
+        monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", True)
+        monkeypatch.setattr(
+            router_module, "DEFAULT_AUTO_LANE_ORDER", router_module._default_auto_lane_order()
+        )
+        return
 
     monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
     # #2054 put runpod FIRST in _default_auto_lane_order(); the legacy
