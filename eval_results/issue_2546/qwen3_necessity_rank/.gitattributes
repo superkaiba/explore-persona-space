@@ -1,2 +1,3 @@
 # Preserve hashed CSV bytes, including the production csv.writer CRLF endings.
-*.csv -text
+# CR is part of the record terminator, not trailing field whitespace.
+*.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
