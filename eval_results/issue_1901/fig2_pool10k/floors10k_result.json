@@ -1,0 +1,73 @@
+{
+  "floors": {
+    "floor_e5": {
+      "top1_942": 0.2908704883227176,
+      "top1_10000": 0.25796178343949044,
+      "top5_10000": 0.29723991507430997,
+      "top1_ci95_10000": {
+        "lo": 0.23036093418259024,
+        "hi": 0.28556263269639065
+      },
+      "median_rank_10000": 122.0,
+      "mrr_10000": 0.28092859684441734
+    },
+    "floor_bge_cls": {
+      "top1_942": 0.2346072186836518,
+      "top1_10000": 0.20276008492569003,
+      "top5_10000": 0.23248407643312102,
+      "top1_ci95_10000": {
+        "lo": 0.17728237791932058,
+        "hi": 0.22929936305732485
+      },
+      "median_rank_10000": 121.5,
+      "mrr_10000": 0.22385571509486726
+    }
+  },
+  "provenance": {
+    "round": "floors10k (explicit user inline override, task #1901 v154 note)",
+    "answer_side": "mean of the 4 fresh-rollout answer-text embeddings per pool row, L2-normalized (4-of-5 deviation: original pass_b answer text not banked; applies to targets and distractors alike \u2014 homogeneous pool)",
+    "pool_composition": "942 keep_one test targets (banked emb_*.npz e_ans_mean) + first 9058 rows of issue1901_metrics/analysis_tensors/distractors_L19.npz in bank order (fresh distractor answer-text embeddings, this round; ci order asserted == bank order)",
+    "scoring": "plain cosine in encoder space (no whitening, no CSLS), strict top-k with ties failing \u2014 issue1901_encoder_paperconv.score_floor ops verbatim; seeds 190950 (e5) / 190951 (bge_cls)",
+    "encoder_recipe": {
+      "models": {
+        "e5": "intfloat/multilingual-e5-large",
+        "bge_cls": "BAAI/bge-large-en-v1.5"
+      },
+      "pooling": {
+        "e5": "mean",
+        "bge_cls": "cls"
+      },
+      "emb_max_tokens": 512
+    },
+    "hf_distr_emb_prefix": "issue1901_floors10k/analysis_tensors",
+    "input_sha256": {
+      "emb_distr_e5": "65ff96e49832bfd1b53a525525b298849df9376c0a1c8acfef9a7445445f1e87",
+      "emb_distr_bge_cls": "357e43d6306cff59a98d001df588bddfb0fb16453a6127dace9fcb3fe128995a",
+      "emb_e5": "fc3f3b86955aea05d024476efba597c63c9b51066b8ea14e47165c706ecbb15e",
+      "emb_bge_cls": "5b8d115638953cb32efe2a209ff6c7a1f904f49082ded0e2c5d7ed65970e3aa5",
+      "pass_b": "46c06e89c513ca598bc83be1c87689694a47bfc927a81d0d738a54df769dbf9a"
+    },
+    "gate_942": {
+      "floor_e5": {
+        "banked_top1": 0.2908704883227176,
+        "realized_top1": 0.2908704883227176,
+        "delta_top1": 0.0,
+        "banked_top5": 0.3343949044585987,
+        "realized_top5": 0.3343949044585987,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      },
+      "floor_bge_cls": {
+        "banked_top1": 0.2346072186836518,
+        "realized_top1": 0.2346072186836518,
+        "delta_top1": 0.0,
+        "banked_top5": 0.2898089171974522,
+        "realized_top5": 0.2898089171974522,
+        "delta_top5": 0.0,
+        "verdict": "PASS"
+      }
+    },
+    "git_commit": "fe246d475e998eb64663a30cc95227a695218542",
+    "timestamp_utc": "2026-09-09T16:02:34Z"
+  }
+}
