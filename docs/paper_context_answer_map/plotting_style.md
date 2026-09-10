@@ -131,6 +131,21 @@ Additional conventions:
 
 ## Making later changes
 
+The baselines comparison ([panel C](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/paper/c1_predictability_scaling.png))
+spans a full-width row below A and B.
+Horizontal baseline names are shared by the retrieval and held-out R² columns.
+Retrieval uses open markers with the banked 95% interval endpoints, and R² uses
+filled markers on a focused −0.1 to 1.0 axis with a visible zero line. Scores
+below that range are represented by left-pointing arrows and their actual values
+rounded to two decimals, explicitly labeled “outside plotted range.” This display
+was requested on 2026-09-09; the provenance sidecar retains the unrounded scores.
+Encoder cosine remains excluded from the displayed methods.
+
+The panel reads `eval_results/issue_1901/fig2_baselines/fig2_baselines.json` and the
+copy baselines in `eval_results/issue_1901/figure2_extension_1200.json`. Its retrieval
+intervals are drawn directly between their endpoints, so intervals that exclude
+their point estimate remain faithful to the source.
+
 - Change a paper-wide color, font, grid, spine, or export rule in
   `c2a_plot_style.py`.
 - Change Figure 2's panels, legends, axis range, or labels in

@@ -49,7 +49,6 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     better_label,
     c2a_figure,
     legend_kicker,
-    metric_style,
     panel_header,
     save_c2a_figure,
     set_c2a_style,
@@ -203,98 +202,104 @@ def _load_baselines_data(path: Path, extension: dict) -> dict:
 
 
 def _plot_baselines_panel(fig: plt.Figure, cell, baselines: dict) -> None:
-    """Panel C: one hatched-open top-1 bar per arm (primary, top sub-axis) and one
-    filled R^2 bar per arm below, negatives drawn at full extent (never clipped).
-    Bar fill/hatch follows the figure-wide metric encoding, so the existing
-    Metric legend covers both sub-axes."""
-    inner = cell.subgridspec(2, 1, height_ratios=[1.35, 1.0], hspace=0.42)
-    ax_top = fig.add_subplot(inner[0, 0])
-    ax_r2 = fig.add_subplot(inner[1, 0])
-    arms = baselines["arms"]
-    x = np.arange(len(arms), dtype=float)
+    """Align baseline names, retrieval intervals, and focused R^2 dots by row.
 
-    style_axis(ax_top, grid_axis="y")
-    ax_top.set_ylim(0.0, 1.02)
-    ax_top.set_yticks([0.0, 0.5, 1.0])
+    Out-of-range R^2 scores have an outward arrow and their true value instead
+    of a dot. Intervals are drawn from their endpoints, independently of the
+    estimate, so even a percentile interval excluding its estimate is preserved.
+    """
+    inner = cell.subgridspec(1, 3, width_ratios=[1.85, 3.7, 4.3], wspace=0.18)
+    ax_labels = fig.add_subplot(inner[0, 0], label="baseline-labels")
+    ax_top = fig.add_subplot(inner[0, 1], sharey=ax_labels, label="baseline-top1")
+    ax_r2 = fig.add_subplot(inner[0, 2], sharey=ax_labels, label="baseline-r2")
+    arms = baselines["arms"]
+    y = np.arange(len(arms), dtype=float)
+    ax_labels.set_ylim(len(arms) - 0.45, -0.65)
+    ax_labels.set_axis_off()
+
     panel_header(
-        ax_top,
+        ax_labels,
         "C",
         f"layer {baselines['layer']}, {baselines['n_train']:,} contexts",
         "Baselines",
-        kicker_y=1.42,
-        title_y=1.14,
+        kicker_y=1.22,
+        title_y=1.075,
     )
-    top1_style = metric_style("top1")
+    for ax, metric in ((ax_top, "top1"), (ax_r2, "r2")):
+        style_axis(ax, grid_axis="y")
+        ax.spines["left"].set_visible(False)
+        ax.set_yticks(y)
+        ax.tick_params(axis="y", labelleft=False)
+        ax.set_title(
+            better_label(METRIC_LABELS[metric]).replace("\u2191", "\u2192"),
+            loc="left",
+            pad=15,
+        )
+    ax_top.set_xlim(-0.035, 1.035)
+    ax_top.set_xticks([0.0, 0.25, 0.5, 0.75, 1.0], ["0", "25", "50", "75", "100"])
+    ax_top.set_xlabel("Accuracy (%)", labelpad=9)
+    ax_r2.set_xlim(-0.1, 1.0)
+    ax_r2.set_xticks([-0.1, 0.0, 0.25, 0.5, 0.75, 1.0])
+    ax_r2.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
+    ax_r2.axvline(0.0, color=MUTED, lw=1.1, alpha=0.75, zorder=2)
+
     for i, arm in enumerate(arms):
-        ax_top.bar(
-            x[i],
+        color = arm["color"]
+        marker = (
+            ROLES["linear"].marker
+            if arm["key"] == "anchor"
+            else ROLES["other_source"].marker
+            if arm["key"].startswith("enc_")
+            else "s"
+        )
+        ax_labels.text(
+            0.0, y[i], arm["label"], transform=ax_labels.get_yaxis_transform(), va="center"
+        )
+        ax_top.plot(
             arm["top1"],
-            width=0.64,
-            facecolor=PAPER,
-            edgecolor=arm["color"],
-            linewidth=1.6,
-            hatch=top1_style["hatch"],
-            zorder=3,
+            y[i],
+            marker=marker,
+            markerfacecolor=PAPER,
+            markeredgecolor=color,
+            markeredgewidth=1.8,
+            markersize=5.5,
+            linestyle="none",
+            zorder=4,
         )
         if arm["top1_ci95"] is not None:
             lo, hi = arm["top1_ci95"]
-            ax_top.errorbar(
-                x[i],
-                arm["top1"],
-                yerr=[[arm["top1"] - lo], [hi - arm["top1"]]],
-                fmt="none",
-                ecolor=INK,
-                elinewidth=1.3,
-                capsize=2.6,
+            if not np.isfinite([lo, hi]).all() or not 0.0 <= lo <= hi <= 1.0:
+                raise ValueError(f"invalid retrieval interval for {arm['key']}: {[lo, hi]}")
+            ax_top.hlines(y[i], lo, hi, color=color, linewidth=1.5, zorder=3)
+            ax_top.vlines([lo, hi], y[i] - 0.10, y[i] + 0.10, color=color, linewidth=1.3)
+
+        value = arm["r2"]
+        if value is not None and not np.isfinite(value):
+            raise ValueError(f"invalid R^2 for {arm['key']}: {value}")
+        if value is None:
+            ax_r2.text(0.0, y[i], "N/A", va="center", color=MUTED)
+        elif value < ax_r2.get_xlim()[0]:
+            ax_r2.annotate(
+                "",
+                xy=(-0.095, y[i]),
+                xytext=(0.025, y[i]),
+                arrowprops={"arrowstyle": "-|>", "color": color, "lw": 1.8},
                 zorder=4,
             )
-    ax_top.set_xlim(-0.7, len(arms) - 0.3)
-    ax_top.set_xticks(x)
-    ax_top.set_xticklabels([])
-    ax_top.text(
-        0.985,
-        0.94,
-        better_label(METRIC_LABELS["top1"]).upper().replace("$R^2$", "R\u00b2"),
-        transform=ax_top.transAxes,
-        ha="right",
-        va="top",
-        fontsize=10.5,
-        fontweight=700,
-        color=MUTED,
-    )
-
-    style_axis(ax_r2, grid_axis="y")
-    r2_values = [arm["r2"] for arm in arms if arm["r2"] is not None]
-    y_floor = float(np.floor(min(r2_values) * 2) / 2) - 0.1
-    ax_r2.set_ylim(y_floor, 1.0)
-    ax_r2.set_yticks([-2, -1, 0, 1])
-    ax_r2.axhline(0.0, color=MUTED, lw=1.0, alpha=0.7, zorder=2)
-    for i, arm in enumerate(arms):
-        if arm["r2"] is None:
-            continue  # retrieval-only floor: no prediction in the target space
-        ax_r2.bar(
-            x[i],
-            arm["r2"],
-            width=0.64,
-            facecolor=arm["color"],
-            edgecolor=arm["color"],
-            linewidth=0.0,
-            zorder=3,
-        )
-    ax_r2.set_xlim(-0.7, len(arms) - 0.3)
-    ax_r2.set_xticks(x)
-    ax_r2.set_xticklabels([arm["label"] for arm in arms], rotation=38, ha="right")
-    ax_r2.text(
-        0.985,
-        0.92,
-        better_label(METRIC_LABELS["r2"]).upper().replace("$R^2$", "R\u00b2"),
-        transform=ax_r2.transAxes,
-        ha="right",
-        va="top",
-        fontsize=10.5,
-        fontweight=700,
-        color=MUTED,
-    )
+            ax_r2.text(
+                0.055,
+                y[i],
+                f"{value:.2f}".replace("-", "\u2212") + "  outside plotted range",
+                va="center",
+                color=color,
+                bbox={"facecolor": PAPER, "edgecolor": "none", "pad": 1.5},
+            )
+        else:
+            if value > ax_r2.get_xlim()[1]:
+                raise ValueError(f"invalid R^2 for {arm['key']}: {value}")
+            ax_r2.plot(
+                value, y[i], marker=marker, color=color, markersize=6.5, linestyle="none", zorder=4
+            )
 
 
 def _load_boundary_data(path: Path) -> dict:
@@ -484,18 +489,18 @@ def make_figure(
             wspace=0.20,
         )
     else:
-        fig, include_frac = c2a_figure("full", aspect=0.42)
+        fig, include_frac = c2a_figure("full", aspect=0.73)
         grid = fig.add_gridspec(
             1,
-            3,
+            2,
             left=0.075,
             right=0.985,
-            top=0.634,
-            bottom=0.185,
-            wspace=0.38,
-            width_ratios=[1.0, 1.0, 0.94],
+            top=0.78,
+            bottom=0.52,
+            wspace=0.20,
         )
-        _plot_baselines_panel(fig, grid[0, 2], baselines)
+        baseline_grid = fig.add_gridspec(1, 1, left=0.075, right=0.985, top=0.345, bottom=0.065)
+        _plot_baselines_panel(fig, baseline_grid[0, 0], baselines)
     ax_layer = fig.add_subplot(grid[0, 0])
     ax_scale = fig.add_subplot(grid[0, 1])
 
@@ -541,7 +546,7 @@ def make_figure(
 
     predictor_handles, metric_handles = _legend_handles()
     if baselines is not None:
-        row_y = 0.872  # taller canvas: same absolute legend band under the control row
+        row_y = 0.918
     else:
         row_y = 0.936 if not controls else 0.851
     # Figure-level kicker: the model, right-aligned on the topmost kicker row.
@@ -739,11 +744,18 @@ def _write_outputs(
                             "sha256": _sha256(baselines_source),
                         },
                         "encoding": (
-                            "panel C, arms sorted by top-1: hatched open bars = top-1 "
-                            "retrieval (95% CI where banked), filled bars = held-out R^2 "
-                            "with negatives at full extent; copy baselines reused from "
-                            "the extension source"
+                            "panel C spans the row below A and B; shared horizontal baseline "
+                            "labels; open markers and horizontal 95% intervals = top-1 "
+                            "retrieval, filled markers = held-out R^2; R^2 outside [-0.1, 1] "
+                            "is shown by outward arrows and exact-value labels; copy "
+                            "baselines reused from the extension source"
                         ),
+                        "r2_display_range": [-0.1, 1.0],
+                        "r2_offscale_values": {
+                            arm["key"]: arm["r2"]
+                            for arm in baselines["arms"]
+                            if arm["r2"] is not None and arm["r2"] < -0.1
+                        },
                         **baselines,
                     }
                 ),
