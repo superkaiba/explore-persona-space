@@ -99,3 +99,38 @@ def test_average_requires_exactly_three_valid_vectors():
     np.testing.assert_allclose(mean, [[6.0, 9.0]])
     with pytest.raises(ValueError):
         average_three(first, fresh[:, :1], np.ones((2, 1), dtype=bool))
+
+
+def test_primary_panel_cannot_complete_with_missing_or_withheld_cell():
+    from scripts.issue2054_k3_fit import validate_primary
+
+    rows = [
+        {
+            "cell": "a",
+            "k_rollouts": count,
+            "cohort": "all",
+            "status": "complete",
+            "folds": [{} for _ in range(5)],
+        }
+        for count in (1, 3)
+    ]
+    validate_primary(rows, ["a"])
+    with pytest.raises(RuntimeError, match="incomplete"):
+        validate_primary(rows[:1], ["a"])
+    rows[1]["status"] = "insufficient_ambient_training_rows"
+    with pytest.raises(RuntimeError, match="did not complete"):
+        validate_primary(rows, ["a"])
+
+
+def test_empty_test_fold_is_withheld_despite_large_training_cohort():
+    import numpy as np
+
+    from scripts.issue2054_k3_fit import cohort_guard
+
+    rng = np.random.default_rng(2)
+    x = rng.normal(size=(50, 2))
+    membership = np.repeat(np.arange(5), 10)
+    targets = {1: rng.normal(size=(50, 2)), 3: rng.normal(size=(50, 2))}
+    assert cohort_guard(x, targets, membership, np.ones(50, dtype=bool)) is None
+    result = cohort_guard(x, targets, membership, membership != 0)
+    assert result["status"] == "insufficient_held_out_rows"

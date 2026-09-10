@@ -117,6 +117,40 @@ def score(pred, y):
     }
 
 
+def cohort_guard(x, targets, membership, mask):
+    train_sizes = [int((mask & (membership != f)).sum()) for f in range(5)]
+    test_sizes = [int((mask & (membership == f)).sum()) for f in range(5)]
+    if min(train_sizes) <= x.shape[1]:
+        return {
+            "status": "insufficient_ambient_training_rows",
+            "train_rows": train_sizes,
+            "test_rows": test_sizes,
+            "required_exclusive_minimum": x.shape[1],
+        }
+    if min(test_sizes) < 2:
+        return {
+            "status": "insufficient_held_out_rows",
+            "train_rows": train_sizes,
+            "test_rows": test_sizes,
+        }
+    for y in targets.values():
+        for f in range(5):
+            ye = y[mask & (membership == f)]
+            if not float(((ye - ye.mean(axis=0)) ** 2).sum()) > 0:
+                return {"status": "constant_held_out_target", "fold": f}
+    return None
+
+
+def validate_primary(results, expected_cells):
+    primary = [r for r in results if r["cohort"] == "all"]
+    expected = {(cell, count) for cell in expected_cells for count in (1, 3)}
+    realized = {(r["cell"], r["k_rollouts"]) for r in primary}
+    if realized != expected or len(primary) != len(expected):
+        raise RuntimeError("required primary K1/K3 panel is incomplete or duplicated")
+    if any(r["status"] != "complete" or len(r.get("folds", [])) != 5 for r in primary):
+        raise RuntimeError("required primary K1/K3 fits did not complete all five folds")
+
+
 def fits(root, manifest, device, pilot):
     fold_map = load_fold_map(str(root / manifest["fold_map"]), "origin/main")
     if pilot:
@@ -136,57 +170,74 @@ def fits(root, manifest, device, pilot):
     selected = [c for c in manifest["cells"] if displayed(c["cell"])]
     if len(selected) != 12:
         raise RuntimeError("displayed panel must contain 12 cells")
+    pooled_by_k = {}
     for count in (1, 3):
         cells = discover_cells(root / f"k{count}")
         if {c.key for c in cells} != {c["cell"] for c in manifest["cells"]}:
             raise RuntimeError("pooled cell set mismatch")
         acc = accumulate_pooled_moments(cells, folds, 5, ["context"], device)
-        pooled = fit_pooled_per_fold(acc["mom"]["context"], list(range(5)), 5)
+        pooled_by_k[count] = fit_pooled_per_fold(acc["mom"]["context"], list(range(5)), 5)
         del acc
-        for ci, record in enumerate(selected):
-            cell = record["cell"]
+    for ci, record in enumerate(selected):
+        cell = record["cell"]
+        targets = {}
+        for count in (1, 3):
             with np.load(root / f"k{count}" / f"{cell}.npz", allow_pickle=False) as z:
-                x = z["v_C"].astype(np.float64)
-                y = z["v_A"].astype(np.float64)
-                ids = [str(v) for v in z["conv_id"]]
-                caps = z["cap_mask"]
-            if any(cid not in folds for cid in ids):
-                raise RuntimeError(f"unknown fold membership: {cell}")
-            membership = np.array([folds[cid] for cid in ids])
-            for cohort, mask in [
-                ("all", np.ones(len(ids), dtype=bool)),
-                ("original_draw_stopped", ~caps[:, 0]),
-                ("all_three_stopped", ~caps.any(axis=1)),
-            ]:
-                # Restriction sensitivities are needed for the plain-text cell.
-                if cohort != "all" and "__bare_text__" not in cell:
-                    continue
-                sizes = [int((mask & (membership != f)).sum()) for f in range(5)]
-                path = root / "fits" / f"k{count}" / f"{cell}__{cohort}.json"
-                fp = k3.fingerprint(manifest, cell, False) + k3.sha(__file__)
-                if k3.complete(path, fp):
-                    continue
-                if min(sizes) <= x.shape[1]:
-                    result = {
-                        "cell": cell,
-                        "k_rollouts": count,
-                        "cohort": cohort,
-                        "status": "insufficient_ambient_training_rows",
-                        "train_rows": sizes,
-                        "required_exclusive_minimum": x.shape[1],
+                targets[count] = z["v_A"].astype(np.float64)
+                if count == 1:
+                    x = z["v_C"].astype(np.float64)
+                    ids = [str(v) for v in z["conv_id"]]
+                    caps = z["cap_mask"]
+                elif (
+                    not np.array_equal(x, z["v_C"])
+                    or ids != list(z["conv_id"])
+                    or not np.array_equal(caps, z["cap_mask"])
+                ):
+                    raise RuntimeError("K1/K3 context, population or cap-mask mismatch")
+        if any(cid not in folds for cid in ids):
+            raise RuntimeError(f"unknown fold membership: {cell}")
+        membership = np.array([folds[cid] for cid in ids])
+        for cohort, mask in [
+            ("all", np.ones(len(ids), dtype=bool)),
+            ("original_draw_stopped", ~caps[:, 0]),
+            ("all_three_stopped", ~caps.any(axis=1)),
+        ]:
+            if cohort != "all" and "__bare_text__" not in cell:
+                continue
+            paths = {
+                count: root / "fits" / f"k{count}" / f"{cell}__{cohort}.json" for count in (1, 3)
+            }
+            fp = k3.fingerprint(manifest, cell, False) + k3.sha(__file__)
+            if all(k3.complete(path, fp) for path in paths.values()):
+                continue
+            unsupported = cohort_guard(x, targets, membership, mask)
+            if unsupported is not None and cohort == "all":
+                raise RuntimeError(f"required primary cohort invalid: {cell}: {unsupported}")
+            records = {1: [], 3: []}
+            if unsupported is None:
+                for f in range(5):
+                    t0 = time.monotonic()
+                    fold_paths = {
+                        count: root
+                        / "fold_checkpoints"
+                        / f"{cell}__{cohort}__k{count}__fold{f}.json"
+                        for count in (1, 3)
                     }
-                else:
-                    records = []
-                    for f in range(5):
-                        t0 = time.monotonic()
-                        train = mask & (membership != f)
-                        test = mask & (membership == f)
-                        xt, yt, xe, ye = x[train], y[train], x[test], y[test]
-                        own = SharedEighRidge(xt, xe, device=device)
+                    if all(k3.complete(p, fp) for p in fold_paths.values()):
+                        for count in (1, 3):
+                            records[count].append(json.loads(fold_paths[count].read_text()))
+                        continue
+                    train = mask & (membership != f)
+                    test = mask & (membership == f)
+                    xt, xe = x[train], x[test]
+                    # One factorization for both targets and all 200 null draws.
+                    own = SharedEighRidge(xt, xe, device=device)
+                    for count in (1, 3):
+                        yt, ye = targets[count][train], targets[count][test]
                         pred, info = own.fit_predict(yt)
                         identity = xe + (yt - xt).mean(axis=0)
-                        ptrain = pooled[f].predict_np(xt)
-                        ptest = pooled[f].predict_np(xe)
+                        ptrain = pooled_by_k[count][f].predict_np(xt)
+                        ptest = pooled_by_k[count][f].predict_np(xe)
                         shift = (yt - ptrain).mean(axis=0)
                         zc = ptrain - ptrain.mean(axis=0)
                         yc = yt - yt.mean(axis=0)
@@ -214,36 +265,48 @@ def fits(root, manifest, device, pilot):
                                 yt,
                                 ye,
                                 n_draws=100,
-                                seed=k3.seed(cell, str(f), count if count == 1 else 2),
+                                seed=k3.seed(cell, str(f), 1),
                                 chunk=2,
                             )
                             record_fold["own_shuffled_null_r2"] = null.tolist()
-                        records.append(record_fold)
-                        del own
-                        k3.log(
-                            f"[phase=fits] k={count} cell={ci + 1}/12 cohort={cohort} fold={f + 1}/5 seconds={time.monotonic() - t0:.1f}"
-                        )
-                    result = {
-                        "cell": cell,
-                        "k_rollouts": count,
-                        "cohort": cohort,
-                        "status": "complete",
-                        "folds": records,
-                        "pooled_training": "all complete-vector rows of all 56 fixed cells",
-                        "context_convention": "prefill-alone-last-token",
-                        "r2_mean": {
-                            name: float(np.mean([r["metrics"][name]["r2"] for r in records]))
-                            for name in predictions
-                        },
-                    }
-                k3.atomic_json(path, result)
-                k3.seal(path, root, fp)
-        del pooled
+                        records[count].append(record_fold)
+                        fold_path = fold_paths[count]
+                        k3.atomic_json(fold_path, record_fold)
+                        k3.seal(fold_path, root, fp)
+                    del own
+                    k3.log(
+                        f"[phase=fits] paired_k1_k3 cell={ci + 1}/12 cohort={cohort} fold={f + 1}/5 seconds={time.monotonic() - t0:.1f}"
+                    )
+            for count in (1, 3):
+                result = {"cell": cell, "k_rollouts": count, "cohort": cohort}
+                if unsupported is not None:
+                    result.update(unsupported)
+                else:
+                    result.update(
+                        {
+                            "cell": cell,
+                            "k_rollouts": count,
+                            "cohort": cohort,
+                            "status": "complete",
+                            "folds": records[count],
+                            "pooled_training": "all complete-vector rows of all 56 fixed cells",
+                            "context_convention": "prefill-alone-last-token",
+                            "r2_mean": {
+                                name: float(
+                                    np.mean([r["metrics"][name]["r2"] for r in records[count]])
+                                )
+                                for name in ("own", "identity_bias", "pooled", "shift", "rescale")
+                            },
+                        }
+                    )
+                k3.atomic_json(paths[count], result)
+                k3.seal(paths[count], root, fp)
     results = [
         json.loads(p.read_text())
         for p in sorted((root / "fits").glob("k*/*.json"))
         if not p.name.endswith(".done.json")
     ]
+    validate_primary(results, [c["cell"] for c in selected])
     k3.atomic_json(
         root / "results.json",
         {
