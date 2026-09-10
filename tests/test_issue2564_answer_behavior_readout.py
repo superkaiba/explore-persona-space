@@ -283,7 +283,7 @@ def test_codex_route_requires_its_actual_validated_aggregate(tmp_path, monkeypat
     from unittest.mock import create_autospec
 
     labels = tmp_path / "annotation_codex/main/labels.json"
-    config = {"provider": readout.CODEX_PROVIDER, "fixture": True}
+    config = {"provider": readout.CODEX_PROVIDER, "draws": 5, "fixture": True}
     acceptance = {"fixture_review": "accepted"}
     codex = create_autospec(
         readout.validate_codex_main,
@@ -295,6 +295,7 @@ def test_codex_route_requires_its_actual_validated_aggregate(tmp_path, monkeypat
     assert readout.validate_annotation_route(tmp_path, labels, config) == (
         acceptance,
         "expected_annotations",
+        5,
     )
     codex.assert_called_once_with(tmp_path)
     api.assert_not_called()
@@ -308,6 +309,37 @@ def test_codex_route_requires_its_actual_validated_aggregate(tmp_path, monkeypat
     with pytest.raises(ValueError, match="raw judgment changed"):
         readout.validate_annotation_route(tmp_path, labels, config)
     api.assert_not_called()
+
+
+def test_three_pass_route_is_separate_and_preserves_repeat_count(tmp_path, monkeypatch):
+    """Three genuine ratings cannot satisfy the historical five-rating route."""
+    from unittest.mock import create_autospec
+
+    labels = tmp_path / "annotation_codex_three_pass/main/labels.json"
+    config = {
+        "provider": readout.THREE_PASS_PROVIDER,
+        "draws": 3,
+        "selected_repetitions": [0, 1, 2],
+    }
+    acceptance = {"fixture_review": "accepted"}
+    gate = create_autospec(
+        readout.validate_three_pass_main,
+        return_value={"labels_path": str(labels), "config": config, "acceptance": acceptance},
+    )
+    original = create_autospec(readout.validate_codex_main)
+    monkeypatch.setattr(readout, "validate_three_pass_main", gate)
+    monkeypatch.setattr(readout, "validate_codex_main", original)
+    assert readout.validate_annotation_route(tmp_path, labels, config) == (
+        acceptance,
+        "expected_annotations",
+        3,
+    )
+    original.assert_not_called()
+    with pytest.raises(ValueError, match="configuration differs"):
+        readout.validate_annotation_route(tmp_path, labels, {**config, "draws": 5})
+    gate.side_effect = ValueError("missing third-pass rating")
+    with pytest.raises(ValueError, match="missing third-pass rating"):
+        readout.validate_annotation_route(tmp_path, labels, config)
 
 
 def test_end_to_end_checkpoints_summary_and_stale_inputs(tmp_path, monkeypatch):

@@ -590,13 +590,21 @@ def collect(root: Path, part: str) -> tuple[list[dict], list[dict], dict]:
     )
 
 
-def summarize_units(rows: list[dict], units: list[dict]) -> tuple[list[dict], dict]:
+def summarize_units(
+    rows: list[dict], units: list[dict], repetitions: tuple[int, ...] = tuple(range(N_REPEATS))
+) -> tuple[list[dict], dict]:
+    if len(repetitions) < 2 or len(set(repetitions)) != len(repetitions):
+        raise ValueError("At least two distinct repetitions are required")
+    if any(type(d) is not int or not 0 <= d < N_REPEATS for d in repetitions):
+        raise ValueError("Unknown selected repetition")
+    units = [u for u in units if u["draw"] in repetitions]
+    repeat_count = len(repetitions)
     index = {(u["row_id"], u["property"], u["draw"]): u for u in units}
     labels = []
     for row in rows:
         item = {"id": row["id"], "properties": {}}
         for prop, spec in PROPERTIES.items():
-            ds = [index.get((row["id"], prop, d)) for d in range(N_REPEATS)]
+            ds = [index.get((row["id"], prop, d)) for d in repetitions]
             valid = [u["parsed"] for u in ds if u and u["drop"] is None]
             result = {
                 "kind": spec["kind"],
@@ -628,29 +636,29 @@ def summarize_units(rows: list[dict], units: list[dict]) -> tuple[list[dict], di
         relevant = [u for u in units if u["property"] == prop]
         values = [r["properties"][prop] for r in labels]
         q = {
-            "expected_ratings": len(rows) * N_REPEATS,
+            "expected_ratings": len(rows) * repeat_count,
             "persisted_ratings": len(relevant),
             "outcomes": dict(Counter(u["drop"] or "valid" for u in relevant)),
-            "valid_draw_fraction": sum(v["n_valid"] for v in values) / (len(rows) * N_REPEATS),
-            "complete_valid_item_fraction": sum(v["n_valid"] == N_REPEATS for v in values)
+            "valid_draw_fraction": sum(v["n_valid"] for v in values) / (len(rows) * repeat_count),
+            "complete_valid_item_fraction": sum(v["n_valid"] == repeat_count for v in values)
             / len(rows),
             "human_agreement": "unmeasured",
             "sampling": RECIPE["sampling"],
         }
         if spec["kind"] == "graded":
-            matrix = np.full((len(rows), N_REPEATS), np.nan)
+            matrix = np.full((len(rows), repeat_count), np.nan)
             for i, row in enumerate(rows):
-                for d in range(N_REPEATS):
+                for column, d in enumerate(repetitions):
                     u = index.get((row["id"], prop, d))
                     if u and u["drop"] is None and u["parsed"]["assessable"]:
-                        matrix[i, d] = u["parsed"]["score"]
+                        matrix[i, column] = u["parsed"]["score"]
             complete = matrix[np.isfinite(matrix).all(axis=1)]
             means = np.array([v["mean"] for v in values if v["mean"] is not None])
             alpha = None
             if len(complete) > 2 and np.var(complete.sum(axis=1), ddof=1) > 0:
                 alpha = float(
-                    5
-                    / 4
+                    repeat_count
+                    / (repeat_count - 1)
                     * (
                         1
                         - np.var(complete, axis=0, ddof=1).sum()
@@ -659,7 +667,6 @@ def summarize_units(rows: list[dict], units: list[dict]) -> tuple[list[dict], di
                 )
             q.update(
                 n_any_assessable=sum(v["n_assessable"] > 0 for v in values),
-                n_all_five_assessable=len(complete),
                 assessable_rating_fraction=float(np.isfinite(matrix).mean()),
                 mean=float(means.mean()) if len(means) else None,
                 std=float(means.std()) if len(means) else None,
@@ -675,11 +682,18 @@ def summarize_units(rows: list[dict], units: list[dict]) -> tuple[list[dict], di
                 else None,
                 reliability_interpretation="Descriptive agreement among shared-model subagents with uncontrolled sampling and batch context; not IID reliability, human agreement, or an intrinsic decoding ceiling.",
             )
+            q[
+                "n_all_five_assessable"
+                if repeat_count == 5
+                else "n_all_three_assessable"
+                if repeat_count == 3
+                else "n_all_selected_assessable"
+            ] = len(complete)
         else:
             q["modal_counts"] = dict(Counter(v["modal"] or "tie_or_missing" for v in values))
             pairs = []
             for row in rows:
-                ds = [index.get((row["id"], prop, d)) for d in range(N_REPEATS)]
+                ds = [index.get((row["id"], prop, d)) for d in repetitions]
                 vs = [u["parsed"]["label"] for u in ds if u and u["drop"] is None]
                 pairs.extend(
                     float(vs[i] == vs[j]) for i in range(len(vs)) for j in range(i + 1, len(vs))

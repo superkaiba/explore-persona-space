@@ -43,6 +43,10 @@ from issue2564_codex_judgments import (  # noqa: E402
     PROVIDER as CODEX_PROVIDER,
     validate_codex_main,
 )
+from issue2564_three_pass_labels import (  # noqa: E402
+    PROVIDER as THREE_PASS_PROVIDER,
+    validate_three_pass_main,
+)
 
 
 @dataclass
@@ -207,21 +211,28 @@ def shuffle_diagnostics(rows: list[dict], target: Target, permutation: np.ndarra
     }
 
 
-def validate_annotation_route(root: Path, labels: Path, config: dict) -> tuple[dict, str]:
+def validate_annotation_route(root: Path, labels: Path, config: dict) -> tuple[dict, str, int]:
     """Validate each producer through its own raw-evidence and pilot gates."""
     provider = config.get("provider")
-    if provider == CODEX_PROVIDER:
-        checked = validate_codex_main(root)
+    if provider in (CODEX_PROVIDER, THREE_PASS_PROVIDER):
+        checked = (
+            validate_three_pass_main(root)
+            if provider == THREE_PASS_PROVIDER
+            else validate_codex_main(root)
+        )
         if labels.resolve() != Path(checked["labels_path"]).resolve():
             raise ValueError("Readout labels differ from the validated Codex aggregate")
         if config != checked["config"]:
             raise ValueError("Readout configuration differs from the validated Codex recipe")
-        return checked["acceptance"], "expected_annotations"
+        repeats = 3 if provider == THREE_PASS_PROVIDER else 5
+        if config.get("draws") != repeats:
+            raise ValueError("Validated annotation recipe has an unexpected repeat count")
+        return checked["acceptance"], "expected_annotations", repeats
     if provider is not None:
         raise ValueError(f"Unknown annotation provider: {provider}")
     # The original API collector predates the provider field. Keep its gate and
     # call-count semantics intact; Codex judgments never impersonate API calls.
-    return validate_pilot_acceptance(root, config), "expected_calls"
+    return validate_pilot_acceptance(root, config), "expected_calls", 5
 
 
 def load_inputs(cfg: Config) -> tuple[list[dict], dict[str, np.ndarray], list[Target], dict]:
@@ -229,7 +240,9 @@ def load_inputs(cfg: Config) -> tuple[list[dict], dict[str, np.ndarray], list[Ta
     root = Path(cfg.root)
     label_parent = (root / cfg.labels).parent
     config = json.loads((label_parent / "config.json").read_text())
-    acceptance, completion_count_key = validate_annotation_route(root, root / cfg.labels, config)
+    acceptance, completion_count_key, repeats = validate_annotation_route(
+        root, root / cfg.labels, config
+    )
     paths = {
         "rows": root / "prepared/rows.jsonl",
         "vectors": root / "prepared/vectors.npz",
@@ -261,7 +274,7 @@ def load_inputs(cfg: Config) -> tuple[list[dict], dict[str, np.ndarray], list[Ta
     rubrics = json.loads(paths["rubrics"].read_text())
     label_manifest = json.loads(paths["labels_manifest"].read_text())
     completion = json.loads(paths["annotation_complete"].read_text())
-    expected_draws = len(rows) * len(rubrics) * 5
+    expected_draws = len(rows) * len(rubrics) * repeats
     current_schema = annotation_digest(
         {name: {"system": judge_system(name), "schema": schema(name)} for name in PROPERTIES}
     )
@@ -300,7 +313,7 @@ def load_inputs(cfg: Config) -> tuple[list[dict], dict[str, np.ndarray], list[Ta
         modal = np.full(len(rows), -1, int) if classes else None
         for i, row in enumerate(rows):
             label = labels[row["id"]][name]
-            if label["kind"] != rubric["kind"] or not 0 <= label["n_valid"] <= 5:
+            if label["kind"] != rubric["kind"] or not 0 <= label["n_valid"] <= repeats:
                 raise ValueError("aggregate label kind/count mismatch")
             if classes:
                 if label["n_valid"]:
@@ -372,6 +385,11 @@ def load_inputs(cfg: Config) -> tuple[list[dict], dict[str, np.ndarray], list[Ta
     vectors["length"] = np.array(surface["log_character_count"])[:, None]
     provenance = {name: {"path": str(p), "sha256": file_hash(p)} for name, p in paths.items()}
     provenance["pilot_acceptance"] = fingerprint(acceptance)
+    provenance["annotation_sampling"] = {
+        "provider": config.get("provider", "original_api"),
+        "ratings_per_answer_property": repeats,
+        "selected_repetitions": config.get("selected_repetitions"),
+    }
     provenance["multi_voice_fraction"] = composition
     return rows, vectors, targets, provenance
 
@@ -815,6 +833,7 @@ def summarize(cfg: Config) -> None:
         "n_questions": len({r["conv_id"] for r in rows}),
         "n_connected_groups": len(groups),
         "bootstrap_draws": cfg.bootstrap_draws,
+        "annotation_sampling": provenance.get("annotation_sampling"),
         "uncertainty": "Connected-question-component bootstrap of fixed OOF predictions; no refitting; conditional on this cohort, labels and training procedure. Intervals condition on defined replicates; undefined-draw counts must accompany rare-class intervals.",
         "primary": "full-width answer/context ridge; train-only standardization and three grouped inner folds",
         "sensitivities": "PCA models refitted in each inner/outer training split; text-composition and uncapped subsets are evaluation-only, with fixed OOF predictions",
