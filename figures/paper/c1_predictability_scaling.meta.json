@@ -8,7 +8,7 @@
   "repository_manuscript_asset": "figures/paper/c1_predictability_scaling.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
-    "commit": "703922006b338b0ec3605de9cc97de4b0059cbb4",
+    "commit": "0497bf6d109a1bc8b1753df0af2c1726f035bb54",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -29,7 +29,7 @@
     "n_pool": 10000,
     "n_query": 942,
     "chance_at_1": 0.0001,
-    "note": "panels B and C draw top-1 retrieval among 10,000 candidates (942 deduplicated targets + 9,058 distractors); held-out R^2 is pool-independent and carried from the banked JSONs"
+    "note": "panel B draws top-1 retrieval among 10,000 candidates (942 deduplicated targets + 9,058 distractors); held-out R^2 is pool-independent and carried from the banked JSONs"
   },
   "render": {
     "style_version": "c2a-v2",
@@ -37,11 +37,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      10.869
+      4.714
     ],
     "exported_size_inches": [
       13.095,
-      11.031
+      4.894
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -55,39 +55,22 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "C  \u00b7  LAYER 19, 25,000 CONTEXTS, 10,000 CANDIDATES",
-      "Linear map",
-      "PCA-1024",
-      "Encoder (BGE)",
-      "Copy + bias",
-      "Shuffled pairs",
-      "Baselines",
-      "Accuracy (%)",
-      "0",
-      "25",
-      "50",
-      "75",
-      "100",
-      "1",
-      "2",
-      "3",
-      "4",
-      "Top-1 retrieval \u2192",
-      "\u22120.9",
-      "Held-out $R^2$ \u2192",
-      "0.5",
       "A  \u00b7  50,000 TRAINING CONTEXTS",
       "Model layer",
+      "0",
       "5",
       "10",
       "15",
       "20",
+      "25",
       "27",
       "Held-out $R^2$ \u2191",
+      "0.5",
       "0.6",
       "0.7",
       "0.8",
       "0.9",
+      "1",
       "Predictability across layers",
       "B  \u00b7  LAYER 19, 10,000-CANDIDATE RETRIEVAL",
       "Training contexts",
@@ -103,12 +86,14 @@
       "QWEN2.5-7B-INSTRUCT",
       "PREDICTOR",
       "METRIC",
-      "CONTROL",
+      "BASELINE",
       "Linear",
       "Nonlinear",
       "Held-out $R^2$",
       "Top-1 retrieval",
-      "Boundary token \u2192 next sentence, $R^2$ (WikiText, mean of 4 tokens, 1,200 pairs)"
+      "Boundary token \u2192 next sentence",
+      "Encoder (BGE)",
+      "Copy + bias"
     ]
   },
   "displayed_metrics": {
@@ -698,7 +683,7 @@
       "path": "eval_results/issue_1901/figure2_extension_1200.json",
       "sha256": "8059ce3af58a576f08fd1bd93392e51bf6f8515964cbf2dd90b68c2a5e6a0a3e"
     },
-    "encoding": "copy-baseline R^2 source for panel C; the 1,200-context rung and Copy + bias is not drawn on panel B (its retrieval is 10,000-pool, and the rung was only scored on the 942 pool)",
+    "encoding": "copy-baseline R^2 source; the 1,200-context rung is not drawn on panel B (its retrieval was only scored on the 942 pool, while panel B draws the 10,000-candidate pool)",
     "rows": [
       {
         "x": 1200,
@@ -732,28 +717,47 @@
     },
     "convention": "identical to figure2_five_rollout_scaling: five-rollout mean targets, whitened cosine + two-sided CSLS (K=10), 942-answer pool, banked 963,444-row whitening"
   },
-  "baselines_panel": {
+  "baselines_on_panel_b": {
     "source": {
       "path": "eval_results/issue_1901/fig2_baselines/fig2_baselines.json",
       "sha256": "eb16cb2fc80b5a9898041b6f5bffb56e338e795ad3925dd3e0575d94dcef9c86"
     },
-    "encoding": "panel C spans the row below A and B; shared horizontal baseline labels; hatched horizontal bars and 95% intervals = top-1 retrieval, filled horizontal bars = held-out R^2; all bars start at zero; R^2 uses two equally scaled segments with diagonal axis and bar cuts; every endpoint remains visible; copy-baseline R^2 reused from the extension source; the panel draws a curated arm roster, and every arm the rescore computed but the panel omits is listed under extra_arms_not_drawn",
-    "r2_axis_segments": [
-      [
-        -1.05,
-        -0.75
+    "encoding": "the separate baselines panel was removed; every baseline is now a POINT on panel B at x = 25,000 training contexts, the rung the baselines were measured on (layer 19, 10,000-candidate pool, the same convention panel B plots), never a full-width horizontal line, because a fitted baseline's value moves with n and only this rung was measured; filled marker = held-out R^2 and open marker = top-1 retrieval, matching the predictor curves; the 'anchor' arm is not drawn because it IS panel B's linear curve at this rung; an arm whose value falls outside panel B's y-range is omitted rather than clipped to the edge and is listed under overlay.off_scale for the manuscript caption; every arm the rescore computed but the figure omits stays in extra_arms_not_drawn",
+    "overlay": {
+      "x": 25000,
+      "roster": [
+        "enc_bge_cls",
+        "identity_bias"
       ],
-      [
-        -0.1,
-        1.0
+      "drawn": [
+        {
+          "key": "enc_bge_cls",
+          "label": "Encoder (BGE)",
+          "metric": "r2",
+          "value": 0.44987511333179053
+        },
+        {
+          "key": "enc_bge_cls",
+          "label": "Encoder (BGE)",
+          "metric": "top1",
+          "value": 0.5944798301486199
+        },
+        {
+          "key": "identity_bias",
+          "label": "Copy + bias",
+          "metric": "top1",
+          "value": 0.5212314225053079
+        }
+      ],
+      "off_scale": [
+        {
+          "key": "identity_bias",
+          "label": "Copy + bias",
+          "metric": "r2",
+          "value": -0.9200245082624223
+        }
       ]
-    ],
-    "r2_axis_breaks": [
-      [
-        -0.75,
-        -0.1
-      ]
-    ],
+    },
     "arms": [
       {
         "key": "anchor",
@@ -845,8 +849,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "6600a17d787e45b200704483e7652b997979038773f0325a67873384150fe0c2",
-    "png": "de349c20506f9738ceb463b7893ae1ee4df16a0e873f17f8765ce1d254d1e9bd",
-    "grayscale": "c06e5f7c41cff434ee13b206eb17899e29b55a2c5c11762b19569c9f6fb03855"
+    "pdf": "58740cea8fec830246250041e1de6922f0ed1216d9121c6220a11d5badc81c85",
+    "png": "a8c074344ea0f6e521d9439851f17e9922505910fbd1a38060212b785b03b7a2",
+    "grayscale": "6b30f7c1df89994a3d5e545fb048b5932317c4180e26c601718026382b28a267"
   }
 }

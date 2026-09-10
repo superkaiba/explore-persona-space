@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-from itertools import pairwise
 import json
 from pathlib import Path
 import subprocess
@@ -50,11 +49,9 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     better_label,
     c2a_figure,
     legend_kicker,
-    metric_style,
     panel_header,
     save_c2a_figure,
     set_c2a_style,
-    style_axis,
     style_score_axis,
 )
 
@@ -176,16 +173,29 @@ DEFAULT_POOL10K_SOURCE = ROOT / "eval_results/issue_1901/fig2_pool10k/fig2_pool1
 # in the sidecar under extra_arms_not_drawn rather than being lost.
 _ENCODER_COLOR = ROLES["other_source"].color
 BASELINE_ARMS: dict[str, dict] = {
-    "anchor": {"label": "Linear map", "color": ROLES["linear"].color},
-    "enc_bge_cls": {"label": "Encoder (BGE)", "color": _ENCODER_COLOR},
-    "pca1024": {"label": "PCA-1024", "color": ROLES["control"].color},
-    "identity_bias": {"label": "Copy + bias", "color": ROLES["control"].color},
-    "shuffled": {"label": "Shuffled pairs", "color": ROLES["control"].color},
+    "anchor": {"label": "Linear map", "color": ROLES["linear"].color, "marker": "o"},
+    "enc_bge_cls": {
+        "label": "Encoder (BGE)",
+        "color": _ENCODER_COLOR,
+        "marker": ROLES["other_source"].marker,
+    },
+    "pca1024": {"label": "PCA-1024", "color": ROLES["control"].color, "marker": "s"},
+    "identity_bias": {"label": "Copy + bias", "color": ROLES["control"].color, "marker": "v"},
+    "shuffled": {"label": "Shuffled pairs", "color": ROLES["control"].color, "marker": "P"},
 }
 
-# Retain every bar endpoint while omitting empty stretches of the negative axis.
-# Segment widths below are proportional to these spans: one common data scale.
-BASELINE_R2_SEGMENTS = ((-1.05, -0.75), (-0.1, 1.0))
+# Panel C is gone. Its baselines now ride panel B as points at the rung where they
+# were measured (layer 19, n_train = 25,000), which is an x value panel B already
+# plots, so nothing implies an n-independent value. "minimal" draws only the arms
+# that clear panel B's y-range with visual room; "full" adds PCA-1024, whose value
+# is by construction close to the linear map and so overlaps the teal curve.
+# "anchor" is never drawn: it IS panel B's linear curve at this rung (its retrieval
+# is byte-equal and its R^2 agrees to 1e-6).
+BASELINE_POINT_X = 25_000
+PANEL_B_BASELINE_ROSTERS: dict[str, tuple[str, ...]] = {
+    "minimal": ("enc_bge_cls", "identity_bias"),
+    "full": ("pca1024", "enc_bge_cls", "identity_bias"),
+}
 
 
 def _load_baselines_data(path: Path, extension: dict, pool10k: dict) -> dict:
@@ -253,125 +263,70 @@ def _load_baselines_data(path: Path, extension: dict, pool10k: dict) -> dict:
     }
 
 
-def _baseline_axis_cut(ax: plt.Axes, edge: float, row: float | None = None) -> None:
-    """Draw a diagonal cut at an axis seam or through a bar crossing that seam."""
-    width_in = ax.get_position().width * ax.figure.get_figwidth()
-    dx = 0.035 / width_in
-    center = 0.0 if row is None else row
-    dy = 0.018 if row is None else -0.20 if ax.yaxis_inverted() else 0.20
-    transform = ax.transAxes if row is None else ax.get_yaxis_transform()
-    for color, linewidth in ((PAPER, 4.0), (MUTED, 1.2)):
-        ax.plot(
-            [edge - dx, edge + dx],
-            [center - dy, center + dy],
-            transform=transform,
-            color=color,
-            linewidth=linewidth,
-            solid_capstyle="butt",
-            clip_on=False,
-            zorder=6,
-        )
+def _plot_baseline_points(ax: plt.Axes, baselines: dict, roster: tuple[str, ...]) -> dict:
+    """Draw the former panel-C baselines on panel B, at the rung they were measured on.
 
+    Every arm was fitted at layer 19 on n_train = 25,000 rows and rescored on the
+    same 10,000-candidate pool panel B uses, so each one is a POINT at an x value
+    panel B already plots. A horizontal line is deliberately not used: PCA-1024 and
+    the encoder are fitted maps whose value moves with n, and only this one rung was
+    measured, so a full-width line would assert an n-independence nobody tested.
 
-def _plot_baselines_panel(fig: plt.Figure, cell, baselines: dict) -> None:
-    """Align horizontal retrieval and R^2 bars with shared baseline names.
-
-    Two equally scaled R^2 segments retain every endpoint. All bars start at
-    zero and are clipped only at explicit axis cuts. Retrieval intervals retain
-    their actual endpoints even when they exclude the point estimate.
+    An arm whose value falls outside the panel's y-range is NOT drawn and NOT clipped
+    to the edge. It is returned under ``off_scale`` so the caller records it and the
+    manuscript caption carries the number instead of the canvas implying a floor.
     """
-    inner = cell.subgridspec(1, 3, width_ratios=[1.85, 3.7, 4.3], wspace=0.18)
-    ax_labels = fig.add_subplot(inner[0, 0], label="baseline-labels")
-    ax_top = fig.add_subplot(inner[0, 1], sharey=ax_labels, label="baseline-top1")
-    r2_grid = inner[0, 2].subgridspec(
-        1,
-        len(BASELINE_R2_SEGMENTS),
-        width_ratios=[hi - lo for lo, hi in BASELINE_R2_SEGMENTS],
-        wspace=0.18,
+    y_lo, y_hi = ax.get_ylim()
+    by_key = {arm["key"]: arm for arm in baselines["arms"]}
+    drawn: list[dict] = []
+    off_scale: list[dict] = []
+    # Rung guide: the markers sit in empty space well below the curves, so without
+    # it a reader cannot see which x they belong to.
+    ax.axvline(
+        BASELINE_POINT_X,
+        color=MUTED,
+        lw=1.0,
+        alpha=0.45,
+        linestyle=(0, (1.6, 2.4)),
+        zorder=1,
     )
-    r2_axes = [
-        fig.add_subplot(r2_grid[0, j], sharey=ax_labels, label=f"baseline-r2-{j}")
-        for j in range(len(BASELINE_R2_SEGMENTS))
-    ]
-    arms = baselines["arms"]
-    y = np.arange(len(arms), dtype=float)
-    ax_labels.set_ylim(len(arms) - 0.45, -0.65)
-    ax_labels.set_axis_off()
-
-    panel_header(
-        ax_labels,
-        "C",
-        f"layer {baselines['layer']}, {baselines['n_train']:,} contexts, "
-        f"{baselines['n_pool']:,} candidates",
-        "Baselines",
-        kicker_y=1.15,
-        title_y=1.052,
-    )
-    for ax in (ax_top, *r2_axes):
-        style_axis(ax, grid_axis="y")
-        ax.spines["left"].set_visible(False)
-        ax.set_yticks(y)
-        ax.tick_params(axis="y", labelleft=False)
-    for ax, metric in ((ax_top, "top1"), (r2_axes[0], "r2")):
-        ax.set_title(
-            better_label(METRIC_LABELS[metric]).replace("\u2191", "\u2192"),
-            loc="left",
-            pad=15,
-        )
-    ax_top.set_xlim(-0.035, 1.035)
-    ax_top.set_xticks([0.0, 0.25, 0.5, 0.75, 1.0], ["0", "25", "50", "75", "100"])
-    ax_top.set_xlabel("Accuracy (%)", labelpad=9)
-    r2_ticks = ([-0.9], [0.0, 0.5, 1.0])
-    for j, (ax, limits, ticks) in enumerate(
-        zip(r2_axes, BASELINE_R2_SEGMENTS, r2_ticks, strict=True)
-    ):
-        ax.set_xlim(*limits)
-        ax.set_xticks(ticks)
-        ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}".replace("-", "\u2212")))
-        if j > 0:
-            _baseline_axis_cut(ax, 0.0)
-        if j < len(r2_axes) - 1:
-            _baseline_axis_cut(ax, 1.0)
-    r2_axes[-1].axvline(0.0, color=MUTED, lw=1.1, alpha=0.75, zorder=4)
-
-    for i, arm in enumerate(arms):
-        color = arm["color"]
-        ax_labels.text(
-            0.0, y[i], arm["label"], transform=ax_labels.get_yaxis_transform(), va="center"
-        )
-        ax_top.barh(
-            y[i],
-            arm["top1"],
-            left=0.0,
-            height=0.56,
-            facecolor=PAPER,
-            edgecolor=color,
-            linewidth=1.4,
-            hatch=metric_style("top1")["hatch"],
-            zorder=3,
-        )
-        if arm["top1_ci95"] is not None:
-            lo, hi = arm["top1_ci95"]
-            if not np.isfinite([lo, hi]).all() or not 0.0 <= lo <= hi <= 1.0:
-                raise ValueError(f"invalid retrieval interval for {arm['key']}: {[lo, hi]}")
-            ax_top.hlines(y[i], lo, hi, color=INK, linewidth=1.5, zorder=5)
-            ax_top.vlines([lo, hi], y[i] - 0.10, y[i] + 0.10, color=INK, linewidth=1.3, zorder=5)
-
-        value = arm["r2"]
-        if value is None:
-            # Zero-parameter cosine floors fit no map, so held-out R^2 is undefined
-            # and the R^2 row stays empty for them.
-            continue
-        if not np.isfinite(value):
-            raise ValueError(f"invalid R^2 for {arm['key']}: {value}")
-        if not any(lo <= value <= hi for lo, hi in BASELINE_R2_SEGMENTS):
-            raise ValueError(f"R^2 endpoint for {arm['key']} is outside visible segments: {value}")
-        for j, (ax, (lo, hi)) in enumerate(zip(r2_axes, BASELINE_R2_SEGMENTS, strict=True)):
-            ax.barh(y[i], value, left=0.0, height=0.56, color=color, linewidth=0.0, zorder=3)
-            if j > 0 and value < lo < 0.0:
-                _baseline_axis_cut(ax, 0.0, y[i])
-            if j < len(r2_axes) - 1 and value < hi < 0.0:
-                _baseline_axis_cut(ax, 1.0, y[i])
+    for key in roster:
+        arm = by_key[key]
+        style = BASELINE_ARMS[key]
+        for metric in ("r2", "top1"):
+            value = arm[metric]
+            record = {
+                "key": key,
+                "label": arm["label"],
+                "metric": metric,
+                "value": None if value is None else float(value),
+            }
+            if value is None or not y_lo < value < y_hi:
+                off_scale.append(record)
+                continue
+            ax.plot(
+                [BASELINE_POINT_X],
+                [value],
+                marker=style["marker"],
+                markersize=7.0,
+                color=style["color"],
+                # Same fill encoding the predictor curves use: filled = R^2,
+                # open = top-1 retrieval.
+                markerfacecolor=style["color"] if metric == "r2" else PAPER,
+                markeredgecolor=style["color"],
+                markeredgewidth=1.8,
+                linestyle="none",
+                zorder=5,
+            )
+            drawn.append(record)
+    if not drawn:
+        raise ValueError(f"no baseline arm in roster {roster} landed inside {(y_lo, y_hi)}")
+    return {
+        "x": BASELINE_POINT_X,
+        "roster": list(roster),
+        "drawn": drawn,
+        "off_scale": off_scale,
+    }
 
 
 def _load_boundary_data(path: Path) -> dict:
@@ -437,8 +392,17 @@ def _plot_controls(ax: plt.Axes, boundary: dict | None, extension: dict | None) 
     # (their R^2 is far below the axis; the text quotes them).
 
 
-def _control_legend_handles(boundary: dict | None, extension: dict | None) -> list[Line2D]:
-    handles = []
+def _baseline_legend_handles(boundary: dict | None, overlay: dict | None) -> list[Line2D]:
+    """One legend group for every reference quantity drawn on panel B.
+
+    The boundary-token control and the former panel-C baselines are the same kind
+    of thing to a reader, so they share a group. The metric legend already decodes
+    filled versus open, so each baseline needs one entry, not two -- but the swatch
+    is filled ONLY when that arm's held-out R^2 is actually on the canvas. Copy +
+    bias contributes retrieval alone (its R^2 is off scale), so a filled swatch
+    would promise a marker the reader can never find.
+    """
+    handles: list[Line2D] = []
     if boundary is not None:
         handles.append(
             Line2D(
@@ -446,7 +410,31 @@ def _control_legend_handles(boundary: dict | None, extension: dict | None) -> li
                 [0],
                 color=BOUNDARY_COLOR,
                 lw=2.6,
-                label=f"Boundary token \u2192 next sentence, $R^2$ (WikiText, mean of {boundary['n_tokens']} tokens, {boundary['n_train_per_token']:,} pairs)",
+                label="Boundary token \u2192 next sentence",
+            )
+        )
+    if overlay is None:
+        return handles
+    drawn_metrics: dict[str, set[str]] = {}
+    for record in overlay["drawn"]:
+        drawn_metrics.setdefault(record["key"], set()).add(record["metric"])
+    for key in overlay["roster"]:
+        metrics = drawn_metrics.get(key)
+        if not metrics:
+            continue
+        style = BASELINE_ARMS[key]
+        handles.append(
+            Line2D(
+                [0],
+                [0],
+                color=style["color"],
+                marker=style["marker"],
+                markersize=8,
+                markerfacecolor=style["color"] if "r2" in metrics else PAPER,
+                markeredgecolor=style["color"],
+                markeredgewidth=1.7,
+                linestyle="none",
+                label=style["label"],
             )
         )
     return handles
@@ -547,34 +535,21 @@ def make_figure(
     boundary: dict | None = None,
     extension: dict | None = None,
     baselines: dict | None = None,
-) -> tuple[plt.Figure, float]:
+    baselines_mode: str = "minimal",
+) -> tuple[plt.Figure, float, dict | None]:
     set_c2a_style()
-    if baselines is None:
-        fig, include_frac = c2a_figure("full", aspect=0.36)
-        grid = fig.add_gridspec(
-            1,
-            2,
-            left=0.075,
-            right=0.985,
-            top=0.594,
-            bottom=0.143,
-            wspace=0.20,
-        )
-    else:
-        # Nine baseline rows (was six): a taller canvas keeps the panel-C row
-        # density and the physical A/B panel height unchanged.
-        fig, include_frac = c2a_figure("full", aspect=0.83)
-        grid = fig.add_gridspec(
-            1,
-            2,
-            left=0.075,
-            right=0.985,
-            top=0.807,
-            bottom=0.578,
-            wspace=0.20,
-        )
-        baseline_grid = fig.add_gridspec(1, 1, left=0.075, right=0.985, top=0.424, bottom=0.057)
-        _plot_baselines_panel(fig, baseline_grid[0, 0], baselines)
+    # One layout. The baselines ride panel B as points rather than a third panel,
+    # so the canvas keeps the compact A/B aspect.
+    fig, include_frac = c2a_figure("full", aspect=0.36)
+    grid = fig.add_gridspec(
+        1,
+        2,
+        left=0.075,
+        right=0.985,
+        top=0.594,
+        bottom=0.143,
+        wspace=0.20,
+    )
     ax_layer = fig.add_subplot(grid[0, 0])
     ax_scale = fig.add_subplot(grid[0, 1])
 
@@ -594,11 +569,16 @@ def make_figure(
         kicker=f"layer {scaling['layer']}, 10,000-candidate retrieval",
         show_retrieval=True,
     )
-    controls = boundary is not None or extension is not None
+    roster = PANEL_B_BASELINE_ROSTERS[baselines_mode] if baselines is not None else ()
+    controls = boundary is not None or extension is not None or baselines is not None
+    baseline_overlay = None
     if controls:
         _plot_controls(ax_scale, boundary, extension)
         ax_scale.set_ylim(0.15, 1.0)
         ax_scale.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
+        if baselines is not None:
+            # After set_ylim: the overlay drops any arm the panel cannot hold.
+            baseline_overlay = _plot_baseline_points(ax_scale, baselines, roster)
 
     ax_layer.set_xlim(-0.5, 27.5)
     ax_layer.set_xticks([0, 5, 10, 15, 20, 25, 27])
@@ -619,10 +599,7 @@ def make_figure(
     ax_scale.set_ylabel(better_label("Score"), labelpad=13)
 
     predictor_handles, metric_handles = _legend_handles()
-    if baselines is not None:
-        row_y = 0.928
-    else:
-        row_y = 0.936 if not controls else 0.851
+    row_y = 0.936 if not controls else 0.851
     # Figure-level kicker: the model, right-aligned on the topmost kicker row.
     fig.text(
         0.985,
@@ -659,19 +636,20 @@ def make_figure(
         borderaxespad=0,
     )
     if controls:
-        legend_kicker(fig, 0.075, 0.995, "Control")
+        baseline_handles = _baseline_legend_handles(boundary, baseline_overlay)
+        legend_kicker(fig, 0.075, 0.995, "Baseline")
         fig.legend(
-            handles=_control_legend_handles(boundary, extension),
+            handles=baseline_handles,
             loc="upper left",
             bbox_to_anchor=(0.074, 0.973),
-            ncol=2,
+            ncol=len(baseline_handles),
             frameon=False,
             columnspacing=1.2,
             handlelength=1.6,
             handletextpad=0.5,
             borderaxespad=0,
         )
-    return fig, include_frac
+    return fig, include_frac, baseline_overlay
 
 
 def _sha256(path: Path) -> str:
@@ -729,6 +707,7 @@ def _write_outputs(
     baselines: dict | None = None,
     pool10k_source: Path | None = None,
     pool10k: dict | None = None,
+    baseline_overlay: dict | None = None,
 ) -> dict[str, Path]:
     stem = out_dir / stem_name
     outputs = save_c2a_figure(
@@ -778,7 +757,7 @@ def _write_outputs(
                         "n_query": pool10k["n_query"],
                         "chance_at_1": pool10k["chance_at_1"],
                         "note": (
-                            "panels B and C draw top-1 retrieval among 10,000 candidates "
+                            "panel B draws top-1 retrieval among 10,000 candidates "
                             "(942 deduplicated targets + 9,058 distractors); held-out R^2 "
                             "is pool-independent and carried from the banked JSONs"
                         ),
@@ -823,13 +802,13 @@ def _write_outputs(
                             "path": _display_path(extension_source),
                             "sha256": _sha256(extension_source),
                         },
-                        "encoding": "copy-baseline R^2 source for panel C; the 1,200-context rung "
-                        "and Copy + bias is not drawn on panel B (its retrieval is "
-                        "10,000-pool, and the rung was only scored on the 942 pool)",
+                        "encoding": "copy-baseline R^2 source; the 1,200-context rung is not "
+                        "drawn on panel B (its retrieval was only scored on the 942 pool, "
+                        "while panel B draws the 10,000-candidate pool)",
                         **extension,
                     }
                 ),
-                "baselines_panel": (
+                "baselines_on_panel_b": (
                     None
                     if baselines is None
                     else {
@@ -838,20 +817,21 @@ def _write_outputs(
                             "sha256": _sha256(baselines_source),
                         },
                         "encoding": (
-                            "panel C spans the row below A and B; shared horizontal baseline "
-                            "labels; hatched horizontal bars and 95% intervals = top-1 "
-                            "retrieval, filled horizontal bars = held-out R^2; all bars "
-                            "start at zero; R^2 uses two equally scaled segments with "
-                            "diagonal axis and bar cuts; every endpoint remains visible; "
-                            "copy-baseline R^2 reused from the extension source; the "
-                            "panel draws a curated arm roster, and every arm the rescore "
-                            "computed but the panel omits is listed under "
+                            "the separate baselines panel was removed; every baseline is now "
+                            "a POINT on panel B at x = 25,000 training contexts, the rung the "
+                            "baselines were measured on (layer 19, 10,000-candidate pool, the "
+                            "same convention panel B plots), never a full-width horizontal "
+                            "line, because a fitted baseline's value moves with n and only "
+                            "this rung was measured; filled marker = held-out R^2 and open "
+                            "marker = top-1 retrieval, matching the predictor curves; the "
+                            "'anchor' arm is not drawn because it IS panel B's linear curve "
+                            "at this rung; an arm whose value falls outside panel B's y-range "
+                            "is omitted rather than clipped to the edge and is listed under "
+                            "overlay.off_scale for the manuscript caption; every arm the "
+                            "rescore computed but the figure omits stays in "
                             "extra_arms_not_drawn"
                         ),
-                        "r2_axis_segments": BASELINE_R2_SEGMENTS,
-                        "r2_axis_breaks": [
-                            [left[1], right[0]] for left, right in pairwise(BASELINE_R2_SEGMENTS)
-                        ],
+                        "overlay": baseline_overlay,
                         **baselines,
                     }
                 ),
@@ -881,7 +861,13 @@ def main() -> None:
     parser.add_argument("--baselines-source", type=Path, default=DEFAULT_BASELINES_SOURCE)
     parser.add_argument("--pool10k-source", type=Path, default=DEFAULT_POOL10K_SOURCE)
     parser.add_argument(
-        "--no-baselines", action="store_true", help="render without the panel-C baselines"
+        "--no-baselines", action="store_true", help="render without the panel-B baseline points"
+    )
+    parser.add_argument(
+        "--baselines-mode",
+        choices=sorted(PANEL_B_BASELINE_ROSTERS),
+        default="minimal",
+        help="which baseline arms ride panel B (see PANEL_B_BASELINE_ROSTERS)",
     )
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--stem", default=DEFAULT_STEM)
@@ -895,7 +881,9 @@ def main() -> None:
     baselines = None
     if not args.no_baselines:
         if args.no_extension:
-            raise SystemExit("panel C reuses the extension copy-baseline R^2; drop --no-extension")
+            raise SystemExit(
+                "the baseline overlay reuses the extension copy-baseline R^2; drop --no-extension"
+            )
         baselines = _load_baselines_data(args.baselines_source, extension, pool10k)
     assert layer["n_test"] == scaling["n_test"] == 1_000
     for dataset in (layer, scaling):
@@ -911,7 +899,9 @@ def main() -> None:
             assert arm["r2"] is None or (np.isfinite(arm["r2"]) and -10.0 < arm["r2"] <= 1.0), arm
 
     git_state = _git_state()
-    fig, include_frac = make_figure(layer, scaling, boundary, extension, baselines)
+    fig, include_frac, baseline_overlay = make_figure(
+        layer, scaling, boundary, extension, baselines, args.baselines_mode
+    )
     outputs = _write_outputs(
         fig,
         args.out_dir,
@@ -930,6 +920,7 @@ def main() -> None:
         baselines=baselines,
         pool10k_source=args.pool10k_source,
         pool10k=pool10k,
+        baseline_overlay=baseline_overlay,
     )
     plt.close(fig)
     for kind, path in outputs.items():
