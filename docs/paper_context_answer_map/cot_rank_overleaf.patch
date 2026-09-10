@@ -1,0 +1,140 @@
+diff --git a/sections/results/05_cot.tex b/sections/results/05_cot.tex
+index 3389f92..c48816e 100644
+--- a/sections/results/05_cot.tex
++++ b/sections/results/05_cot.tex
+@@ -9,6 +9,8 @@ Intuitively, we might expect the end-of-CoT predictive advantage to be larger fo
+ 
+ \noindent\textbf{The end-of-CoT advantage is not larger for questions where the reasoning is required} (\figref[B]{fig:cot})\textbf{:} For both types of questions, context-to-answer $R^2$ is 0.42 and 0.43, respectively. The end-of-CoT state raises these scores to 0.50 and 0.51, giving an equal gain of about 0.08 in each group (\appref{app:cot-necessity}). This indicates that the predictive gain given by CoT is not directly related to helping to predict the actual value of the answer.
+ 
++In a separate matched-layer comparison of thinking-off prompt states and thinking-on end-of-CoT states, each mapped to its own mode's generated answers, the rank needed to keep validation squared error at most 10\% above the full map's is lower with thinking on general-chat prompts but higher on both benchmark correctness subsets, with the same directions at 5\% and 20\% tolerances (\appref{app:cot-rank}).
++
+ \begin{figure*}[t]
+     \centering
+     \includegraphics[width=\textwidth]{figures/paper/c1_cot_story.pdf}
+diff --git a/sections/results/a10_cot_diagnostics.tex b/sections/results/a10_cot_diagnostics.tex
+index 7127593..8049bd4 100644
+--- a/sections/results/a10_cot_diagnostics.tex
++++ b/sections/results/a10_cot_diagnostics.tex
+@@ -20,3 +20,5 @@ We compare the context-to-answer and end-of-CoT-to-answer maps at layer 24, with
+ We undo input standardization before computing each operator's singular value decomposition, so both sides use the model's original activation coordinates. We compare the leading $k$ input singular directions and, separately, the corresponding output directions. For two orthonormal subspace bases $B_1,B_2$, the principal cosines are the singular values of $B_1^\top B_2$; their mean ranges from zero for orthogonal subspaces to one for identical subspaces. At $k=50$, mean overlap is 0.123 for inputs and 0.921 for outputs, against 0.092 for an isotropic reference formed from five Gaussian-QR random-subspace draws in 4,096 dimensions. The input/output contrast also holds at $k=10$ (0.086/0.868; reference 0.040) and $k=200$ (0.205/0.917; reference 0.188).
+ 
+ The random draws provide a geometric reference, not a significance test or uncertainty over fitted maps. Shared answer targets and their covariance may contribute to output overlap. This analysis neither assigns semantic meanings to the input directions nor establishes that the model uses the fitted maps.
++
++\input{sections/results/a13_cot_rank}
+diff --git a/sections/results/a13_cot_rank.tex b/sections/results/a13_cot_rank.tex
+new file mode 100644
+index 0000000..44d166c
+--- /dev/null
++++ b/sections/results/a13_cot_rank.tex
+@@ -0,0 +1,111 @@
++\subsection{Mapping rank across thinking modes}
++\label{app:cot-rank}
++
++We distinguish differences across thinking modes from changes within a reasoning
++trajectory. The cross-mode comparison maps the last prompt-token state with
++thinking off to that mode's own answer, and the end-of-CoT state with thinking on
++to its own answer. Both the input state and answer target therefore change.
++The same-answer comparison instead maps the thinking-on prompt and end-of-CoT
++states to identical thinking-on answer targets, as in the main CoT comparison.
++All maps in this analysis use Qwen3-8B at layer 24, with 4,096-dimensional inputs
++and answer-token-mean targets.
++
++\paragraph{Predictive rank.}
++We summarize a fitted affine map by the number of output directions needed to
++approximate its full-rank prediction accuracy. We order directions by PCA of
++the map's fitted outputs on the training questions. Let $P_r$ project onto the
++first $r$ directions, and retain the training-answer mean $\mu_A$ when truncating:
++$f_r(x)=\mu_A+P_r(f(x)-\mu_A)$. We define
++\[
++ r_{\epsilon}=\min\left\{r\in\{0,\ldots,4096\}:
++ \operatorname{MSE}_{\mathrm{val}}(f_r)
++ \leq (1+\epsilon)\operatorname{MSE}_{\mathrm{val}}(f)\right\}.
++\]
++Our primary summary is $r_{0.10}$: the smallest rank in this nested truncation
++sequence whose validation squared error is at most 10\% above the full map's.
++This is not a rule retaining 90\% of $R^2$. The PCA directions use training data,
++the rank uses validation data, and predictive performance is evaluated on test
++data. We also report $\epsilon=0.05$ and $0.20$, without additional map fits.
++
++\paragraph{Data and fitting.}
++The general-chat comparison uses banked, model-generated answers to
++LMSYS-Chat-1M prompts \citep{zheng2024lmsyschat}, with one answer per prompt and
++mode. The thinking-off and thinking-on maps retain 9,937 and 9,968 training
++pairs, respectively, 399 validation pairs each, and 998 and 995 test pairs.
++Both use the original ridge penalty of 1000 and the original fixed split.
++The benchmark comparisons use the seven corpora and correctness labels in
++\appref{app:cot-details}: 4,522 questions correct only with thinking and 17,693
++correct in both modes. Maps and PCA bases are fit using all training questions,
++not only the scored subset. For each of the five outer folds, rank is selected
++on the subset's validation questions using three training folds; the map and
++basis are then refit on the four non-test folds before truncation at that rank. Input
++standardization and target centering use training data. Penalties remain 1000
++for prompt maps and 316.23 for the end-of-CoT map; only rank selection is nested.
++
++\begin{table}[t]
++    \centering
++    \small
++    \caption{\textbf{Predictive-rank differences retain their direction at all
++    three error tolerances.} Entries show the first setting's rank followed by
++    the second's, with the primary 10\% tolerance in bold. Cross-mode rows compare
++    thinking-off prompt states with thinking-on end-of-CoT states, each predicting
++    its own mode's answers; same-answer rows compare prompt and end-of-CoT states
++    within thinking-on runs. Qwen3-8B, layer 24; one fixed split for chat and
++    medians over five folds for benchmarks.}
++    \label{tab:cot-rank-thresholds}
++    \begin{tabular}{@{}lccc@{}}
++    \toprule
++    Evaluation setting & 5\% extra error & \textbf{10\% extra error} & 20\% extra error \\
++    \midrule
++    \multicolumn{4}{@{}l}{\textit{Across thinking modes: different generated answers}} \\
++    General chat & $188\to112$ & $\mathbf{122\to74}$ & $70\to44$ \\
++    Correct only with thinking & $96\to130$ & $\mathbf{57\to81}$ & $29\to45$ \\
++    Correct in both modes & $117\to142$ & $\mathbf{72\to92}$ & $38\to52$ \\
++    \addlinespace
++    \multicolumn{4}{@{}l}{\textit{Before versus after CoT: identical thinking-on answers}} \\
++    Correct only with thinking & $90\to130$ & $\mathbf{55\to81}$ & $30\to45$ \\
++    Correct in both modes & $106\to142$ & $\mathbf{67\to92}$ & $37\to52$ \\
++    \bottomrule
++    \end{tabular}
++\end{table}
++
++\paragraph{Results and threshold sensitivity.}
++At the primary tolerance, cross-mode predictive rank falls from 122 to 74 on
++general chat but rises from 57 to 81 on questions correct only with thinking
++and from 72 to 92 on questions correct in both modes. Holding the benchmark
++answer targets fixed also gives higher rank at the end of CoT
++(\tabref{tab:cot-rank-thresholds}). Absolute ranks depend substantially on the
++tolerance, but these directions hold at each of the three tolerances tested.
++This check does not establish invariance to every possible cutoff.
++
++\paragraph{Predictive accuracy and scope.}
++Rank is relative to each map's own full-map error. Full-map test $R^2$ on chat
++is 0.689 for thinking-off prompt states and 0.657 for thinking-on end-of-CoT
++states at the matched layer. On the correct-only-with-thinking subset, the
++thinking-off prompt, thinking-on prompt and end-of-CoT scores are 0.433, 0.465
++and 0.535; on the both-correct subset they are 0.491, 0.499 and 0.559.
++Chat $R^2$ uses held-out target-mean centering. Benchmark scores here pool squared
++errors across questions and use training-fold within-corpus answer means;
++they are not the equal-corpus averages in \appref{app:cot-necessity}.
++The tolerance is not a common absolute $R^2$ target or a guarantee of preserving
++answer retrieval. Different generated targets, retained rows, input
++distributions and fitting recipes remain, and no sampling interval is supplied
++for the matched-layer chat rank. The original chat split also contains 13 exact
++prompt strings shared between validation and test, with none shared with training.
++These results describe predictive truncation
++rank, not an intrinsic dimension of reasoning or a causal change in the mapping
++operator.
++
++\paragraph{Copy baseline and answer retrieval.}
++On chat, identity plus a learned training-set bias gives $R^2=-1.097$ and
++$-0.167$ for thinking-off prompt and thinking-on end-of-CoT states. The full
++maps retrieve their own answers at 73.25\% and 69.65\% by raw cosine, among
++998 and 995 candidates (chance 0.1002\% and 0.1005\%). On benchmarks, in the
++same three-state order as above, identity-plus-bias $R^2$ is
++$(-2.341,-3.353,-1.095)$ for correct-only-with-thinking questions and
++$(-2.775,-3.552,-1.207)$ for both-correct questions. Full-map retrieval is
++$(90.11,87.95,98.76)\%$ and $(92.54,90.45,98.97)\%$, respectively, using
++training-fold whitening and CSLS with 6,762 candidates (chance 0.0148\%).
++Only benchmark queries are subset-filtered; candidate pools remain unchanged.
++Retrieval protocols differ between chat and benchmarks, so their absolute
++retrieval scores are not directly comparable.
