@@ -491,12 +491,13 @@ def make_directions_and_pairs_figure(spectrum: dict, rows: list[dict]) -> tuple[
 # canvas, so its aspect is close to the c3_directions_and_pairs panel and the
 # combined offsets transfer with only the crowded upper-right cluster retuned.
 _INFO_SPECTRUM_OFFSETS = dict(_COMBINED_SPECTRUM_OFFSETS)
-# Panel A is the full canvas width here, so the crowded upper-left cluster has
-# room to fan further out than it does in c3_directions_and_pairs.
+# The upper-left cluster fans further out than in c3_directions_and_pairs, whose
+# offsets leave "sycophancy refusal evil" and "assistant axis casualness" reading
+# as single phrases.
 _INFO_SPECTRUM_OFFSETS.update(
     {
         "evil": (104, 30, "left", "bottom"),
-        "refusal": (10, 16, "right", "bottom"),
+        "refusal": (8, 30, "right", "bottom"),
         "casualness": (40, -46, "left", "top"),
         "assistant axis": (-6, -47, "right", "top"),
     }
@@ -686,38 +687,31 @@ def _draw_variance_explained_panel(ax: plt.Axes, panel: dict) -> None:
     ax.set_xticks([-1.0, -0.5, 0.0, 0.5, 1.0])
     ax.set_xlabel(better_label("Variance explained"))
     style_axis(ax, grid_axis="x")
-    ax.legend(
-        loc="lower left",
-        bbox_to_anchor=(0.0, 1.005),
-        handlelength=1.4,
-        handletextpad=0.5,
-        borderaxespad=0.0,
-        labelspacing=0.25,
-    )
+    ax.legend(loc="upper left", handlelength=1.4, handletextpad=0.5, labelspacing=0.25)
 
 
-def make_information_figure(data: dict) -> tuple[plt.Figure, float]:
-    """Four-panel Section 4.2 figure: one panel per empirical claim."""
+def make_directions_and_features_figure(data: dict) -> tuple[plt.Figure, float]:
+    """Which parts of an answer the map predicts: variance rank, then SAE properties."""
     from issue779_plot3_redesign import draw_spectrum_panel
 
-    fig, include_frac = c2a_figure("full", aspect=0.72)
-    outer = fig.add_gridspec(
-        2,
+    fig, include_frac = c2a_figure("full", aspect=0.42)
+    grid = fig.add_gridspec(
         1,
-        height_ratios=[0.42, 0.58],
-        left=0.080,
+        2,
+        width_ratios=[0.60, 0.40],
+        left=0.062,
         right=0.988,
-        top=0.855,
-        bottom=0.075,
-        hspace=0.90,
+        top=0.76,
+        bottom=0.245,
+        wspace=0.22,
     )
-    bottom = outer[1].subgridspec(1, 3, width_ratios=[0.32, 0.34, 0.34], wspace=0.42)
-    ax_a = fig.add_subplot(outer[0])
-    ax_b = fig.add_subplot(bottom[0, 0])
-    ax_c = fig.add_subplot(bottom[0, 1])
-    ax_d = fig.add_subplot(bottom[0, 2])
+    ax_a = fig.add_subplot(grid[0, 0])
+    ax_b = fig.add_subplot(grid[0, 1])
 
     draw_spectrum_panel(ax_a, data["_spectrum"], offsets=_INFO_SPECTRUM_OFFSETS, legend_frame=True)
+    # Headroom for the top label row: the drawer's 1.05 ceiling leaves "refusal"
+    # touching either its point or the panel title.
+    ax_a.set_ylim(-0.32, 1.20)
     panel_header(
         ax_a,
         "A",
@@ -725,33 +719,32 @@ def make_information_figure(data: dict) -> tuple[plt.Figure, float]:
         title="Held-out $R^2$ by variance rank",
     )
     _draw_property_panel(ax_b, data["panel_b"]["properties"])
-    panel_header(
-        ax_b,
-        "B",
-        "120,716 SAE features",
-        title="Concordance by property",
-        kicker_y=1.44,
-        title_y=1.29,
+    panel_header(ax_b, "B", "120,716 SAE features", title="Concordance by property")
+    legend_kicker(fig, 0.062, 0.955, "Qwen2.5-7B-Instruct, layer 19")
+    return fig, include_frac
+
+
+def make_failures_and_shifts_figure(data: dict) -> tuple[plt.Figure, float]:
+    """Which contexts the map fails on, and how well it predicts a controlled change."""
+    fig, include_frac = c2a_figure("full", aspect=0.44)
+    grid = fig.add_gridspec(
+        1,
+        2,
+        width_ratios=[0.52, 0.48],
+        left=0.070,
+        right=0.988,
+        top=0.755,
+        bottom=0.155,
+        wspace=0.30,
     )
-    _draw_failure_panel(ax_c, data["panel_c"])
-    panel_header(
-        ax_c,
-        "C",
-        "10,000-context pool",
-        title="Retrieval failures",
-        kicker_y=1.44,
-        title_y=1.29,
-    )
-    _draw_variance_explained_panel(ax_d, data["panel_d"])
-    panel_header(
-        ax_d,
-        "D",
-        "Controlled context pairs",
-        title="Variance explained",
-        kicker_y=1.44,
-        title_y=1.29,
-    )
-    legend_kicker(fig, 0.080, 0.968, "Qwen2.5-7B-Instruct, layer 19")
+    ax_a = fig.add_subplot(grid[0, 0])
+    ax_b = fig.add_subplot(grid[0, 1])
+
+    _draw_failure_panel(ax_a, data["panel_c"])
+    panel_header(ax_a, "A", "10,000-context candidate pool", title="Retrieval failures")
+    _draw_variance_explained_panel(ax_b, data["panel_d"])
+    panel_header(ax_b, "B", "Controlled context pairs", title="Variance explained per element")
+    legend_kicker(fig, 0.070, 0.955, "Qwen2.5-7B-Instruct, layer 19")
     return fig, include_frac
 
 
@@ -1061,9 +1054,16 @@ def main() -> None:
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     parser.add_argument(
         "--only",
-        choices=("sae", "pair_shifts", "refusal_by_class", "directions_and_pairs", "information"),
+        choices=(
+            "sae",
+            "pair_shifts",
+            "refusal_by_class",
+            "directions_and_pairs",
+            "directions_and_features",
+            "failures_and_shifts",
+        ),
         default=None,
-        help="render a single figure (default: render all five)",
+        help="render a single figure (default: render all six)",
     )
     args = parser.parse_args()
     set_c2a_style()
@@ -1181,38 +1181,57 @@ def main() -> None:
         plt.close(combined_fig)
         report.append(("directions_and_pairs", combined_outputs))
 
-    if args.only in (None, "information"):
+    if args.only in (None, "directions_and_features", "failures_and_shifts"):
         info = _information_data()
-        info_fig, info_frac = make_information_figure(info)
-        displayed = {key: value for key, value in info.items() if not key.startswith("_")}
-        # The panel-C background is 60,000 scatter points.  The sidecar records
+
+    if args.only in (None, "directions_and_features"):
+        daf_fig, daf_frac = make_directions_and_features_figure(info)
+        daf_outputs = _save(
+            daf_fig,
+            args.out_dir,
+            "c3_directions_and_features",
+            title="Which parts of an answer the context-to-answer map predicts",
+            subject=(
+                "Held-out R2 of the projection onto a direction against its answer-variance "
+                "rank, and the conditional association between an SAE feature property and the "
+                "held-out R2 of its decoder direction"
+            ),
+            include_frac=daf_frac,
+            sources=[SPECTRUM_SOURCE, SAE_SOURCE],
+            displayed_data={"panel_a": info["panel_a"], "panel_b": info["panel_b"]},
+        )
+        plt.close(daf_fig)
+        report.append(("directions_and_features", daf_outputs))
+
+    if args.only in (None, "failures_and_shifts"):
+        fas_fig, fas_frac = make_failures_and_shifts_figure(info)
+        # The panel-A background is 60,000 scatter points.  The sidecar records
         # its shape and points at the sha-pinned source instead of restating a
         # megabyte of coordinates the source file already carries verbatim.
-        background = dict(displayed["panel_c"]["background"])
-        displayed["panel_c"] = {
-            **displayed["panel_c"],
+        background = dict(info["panel_c"]["background"])
+        panel_a = {
+            **info["panel_c"],
             "background": {
                 key: value for key, value in background.items() if key not in ("ctx", "ans")
             }
             | {"stored_in": _display_path(SECTION42_PANELS)},
         }
-        info_outputs = _save(
-            info_fig,
+        fas_outputs = _save(
+            fas_fig,
             args.out_dir,
-            "c3_information",
-            title="What the context-to-answer map keeps and what it loses",
+            "c3_failures_and_shifts",
+            title="Where the context-to-answer map fails and how well it sizes a change",
             subject=(
-                "Held-out R2 by answer-variance rank, SAE feature-property concordance, "
-                "retrieval-failure shift sizes against the candidate-pool background, and "
+                "Retrieval-failure shift sizes against the candidate-pool background, and "
                 "variance explained per controlled change before and after correcting the "
                 "predicted shift size"
             ),
-            include_frac=info_frac,
-            sources=[SPECTRUM_SOURCE, SAE_SOURCE, SECTION42_PANELS],
-            displayed_data=displayed,
+            include_frac=fas_frac,
+            sources=[SECTION42_PANELS],
+            displayed_data={"panel_a": panel_a, "panel_b": info["panel_d"]},
         )
-        plt.close(info_fig)
-        report.append(("information", info_outputs))
+        plt.close(fas_fig)
+        report.append(("failures_and_shifts", fas_outputs))
 
     for name, outputs in report:
         for kind, path in outputs.items():
