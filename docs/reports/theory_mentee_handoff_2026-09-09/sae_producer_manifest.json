@@ -1,0 +1,56 @@
+[
+  {
+    "source_path": "/home/thomasjiralerspong/explore-persona-space/scripts/issue2643_china_refusal_audit.py",
+    "bundled_path": "sae_producers/issue2643_china_refusal_audit.py",
+    "bytes": 11031,
+    "sha256": "5d444783e41be9e32be8bf60928181ec5247f3b223864248b3cdff3dff391db2"
+  },
+  {
+    "source_path": "/home/thomasjiralerspong/explore-persona-space/scripts/issue2643_context_answer_dashboard.py",
+    "bundled_path": "sae_producers/issue2643_context_answer_dashboard.py",
+    "bytes": 18767,
+    "sha256": "2f273f5d004bca7e030fb498261ca591023c19f7828e5b27be4ac1cb7de6add9"
+  },
+  {
+    "source_path": "/home/thomasjiralerspong/explore-persona-space/scripts/issue2643_direct_edges.py",
+    "bundled_path": "sae_producers/issue2643_direct_edges.py",
+    "bytes": 42769,
+    "sha256": "773ca122b0e4703af93001dba20afa47f949e12679a463ab590368d931748265"
+  },
+  {
+    "source_path": "/home/thomasjiralerspong/explore-persona-space/scripts/issue2643_direct_edges_tune.py",
+    "bundled_path": "sae_producers/issue2643_direct_edges_tune.py",
+    "bytes": 18049,
+    "sha256": "1b5075cf1710ff027bff65a3024d4a13d5a41529a528eb70b2cb1e982384bf58"
+  },
+  {
+    "source_path": "/home/thomasjiralerspong/explore-persona-space/scripts/issue2643_edge_autointerp.py",
+    "bundled_path": "sae_producers/issue2643_edge_autointerp.py",
+    "bytes": 13115,
+    "sha256": "7e82e37954644c073f751855beefc17a724cdc945cbe85e922ba6f0c7c39c471"
+  },
+  {
+    "source_path": "/home/thomasjiralerspong/explore-persona-space/scripts/issue2643_gradient_pursuit.py",
+    "bundled_path": "sae_producers/issue2643_gradient_pursuit.py",
+    "bytes": 12401,
+    "sha256": "25e53591a78257d4bea57ef5880bd4d460f6cfe286e4b4eb9cb53d14cb807181"
+  },
+  {
+    "source_path": "/home/thomasjiralerspong/explore-persona-space/scripts/issue2643_marker_panel.py",
+    "bundled_path": "sae_producers/issue2643_marker_panel.py",
+    "bytes": 28030,
+    "sha256": "b11f0c8401267e30547f3c243ae80fed5b2fb7e14b27d0504c13377f43ea01ca"
+  },
+  {
+    "source_path": "/home/thomasjiralerspong/explore-persona-space/scripts/issue2643_refusal_panel.py",
+    "bundled_path": "sae_producers/issue2643_refusal_panel.py",
+    "bytes": 19904,
+    "sha256": "5423cf9cf14d79784fb0c8dd34c297a12716f96c291d41eaea286ecc0aeef67a"
+  },
+  {
+    "source_path": "/home/thomasjiralerspong/explore-persona-space/scripts/issue2643_sae_map.py",
+    "bundled_path": "sae_producers/issue2643_sae_map.py",
+    "bytes": 34154,
+    "sha256": "a6c573440ed2fc965f4a779b0715cad59bbf70fcce86048c60cf5cd266ea97fd"
+  }
+]

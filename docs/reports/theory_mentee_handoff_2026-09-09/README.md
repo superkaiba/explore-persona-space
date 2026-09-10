@@ -2,6 +2,8 @@
 
 Start with `theoretical_analysis_report.pdf` or `report.md`. The report separates quantitative operator geometry, exploratory SAE interpretation, minimal-refusal behavior checks, observed-answer decompositions, and the unfinished China follow-up.
 
+**10 September addition:** `theoretical_analysis_report_with_sae_assets.pdf` combines the original report with [SAEs, mappings, and autointerpretation](sae_assets.md), also provided separately as `sae_assets.pdf`. `sae_artifact_manifest.csv` adds 68 pinned assets: 44 small files bundled and 24 larger files linked, including both SAE families and the saved direct mappings. Loader/producer snapshots are provided separately in `sae_producers/`. The original inventories below retain their original scope and counts.
+
 The accompanying ZIP contains 518 unique existing small artifacts (72.6 MB before compression), indexed from 5,760 source locations. A second manifest lists 1,391 remote files at a fixed Hugging Face revision. These counts describe this package's explicit scope, not the entire repository.
 
 ## Open these first after unzipping
@@ -38,3 +40,7 @@ pandoc report.md --pdf-engine=xelatex --lua-filter=pdf_layout.lua \
 ```
 
 Run the PDF command from the package directory. Verification checks existing bytes and metadata only; it does not reproduce the scientific experiments. The source worktrees and their current contents must still be present to rebuild this exact inventory.
+
+To add the SAE supplement after the original build, run `uv run python add_sae_assets.py /absolute/path/to/new-package`. It copies small pinned files and indexes larger checkpoints without loading models. Copy `sae_assets.md` and generate its PDF with the same Pandoc options. See the supplement for the older 65k regression's missing coefficient-checkpoint caveat.
+
+For the combined PDF, run `pdfunite theoretical_analysis_report.pdf sae_assets.pdf theoretical_analysis_report_with_sae_assets.pdf` in the package directory.

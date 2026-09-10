@@ -1,0 +1,59 @@
+{
+  "created_utc": "2026-09-10T17:21:30.324441+00:00",
+  "files_indexed": 68,
+  "files_bundled": 44,
+  "bytes_bundled": 29578155,
+  "large_files_linked": 24,
+  "per_file_copy_limit": 10000000,
+  "sources": [
+    [
+      "context_32k",
+      "cd80ba2588bb6d4291edf621176ea654bcbf2507",
+      "issue2552_derreplication/exactrep/analysis_tensors/sae_ctx_rep"
+    ],
+    [
+      "answer_32k",
+      "cd80ba2588bb6d4291edf621176ea654bcbf2507",
+      "issue2552_derreplication/exactrep/analysis_tensors/sae_rep"
+    ],
+    [
+      "context_65k",
+      "a5cf03bbe4807361a74c427a46ad329065f75e30",
+      "issue2569_theory/analysis_tensors/sae_ctx"
+    ],
+    [
+      "answer_65k",
+      "a5cf03bbe4807361a74c427a46ad329065f75e30",
+      "issue2476_turnavg/analysis_tensors/sae_c"
+    ],
+    [
+      "dense_map",
+      "cd80ba2588bb6d4291edf621176ea654bcbf2507",
+      "issue779_monitoring/n1m_readout/weights/L19"
+    ],
+    [
+      "sae_maps",
+      "1c5eb09f2bcabd9541a86890f0e0e945afff903a",
+      "issue2643_sae_map"
+    ],
+    [
+      "answer_autointerp_w1",
+      "1c5eb09f2bcabd9541a86890f0e0e945afff903a",
+      "issue2552_derreplication/exactrep/raw_completions/judge/w1"
+    ],
+    [
+      "legacy_feature_map",
+      "a5cf03bbe4807361a74c427a46ad329065f75e30",
+      "issue2569_theory/analysis_tensors/leg4"
+    ],
+    [
+      "legacy_descriptions",
+      "a5cf03bbe4807361a74c427a46ad329065f75e30",
+      "issue2569_theory/analysis_tensors/der/consumed_input"
+    ]
+  ],
+  "scope": "SAE checkpoints/configs, dense and code mappings, saved W1 and edge autointerp.",
+  "verification": "Small files checked against pinned Git blob or LFS SHA256; large files linked with successful HEAD checks, not downloaded.",
+  "local_producer_snapshots": 9,
+  "producer_scope": "Current working-tree source snapshots for inspection; not a claim of byte identity with historical training code."
+}
