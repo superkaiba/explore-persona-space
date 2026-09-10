@@ -1,0 +1,93 @@
+{
+  "china_training_application": {
+    "n": 753,
+    "predicted_refusal_rate": 0.2961487383798141,
+    "predicted_refused": 223,
+    "score_quantiles": {
+      "0.5": 0.24000499337347322,
+      "0.75": 0.8483894370106534,
+      "0.9": 0.9798313623356618,
+      "0.95": 0.9959047405859324,
+      "0.99": 0.9997437644684563
+    }
+  },
+  "feature_selection": "candidate features selected on #642 claims 0..24 only",
+  "heldout_claims_25_49": {
+    "average_precision": 0.9579984396948722,
+    "fn": 9,
+    "fp": 5,
+    "n": 750,
+    "precision": 0.935064935064935,
+    "predicted_refused": 77,
+    "recall": 0.8888888888888888,
+    "specificity": 0.992526158445441,
+    "threshold": 0.7757910797346383,
+    "tn": 664,
+    "tp": 72,
+    "truth_refused": 81
+  },
+  "limitations": [
+    "The #642 labeled panel is a LoRA organism while the map-training answers come from the base model.",
+    "Candidate-feature selection used all fit-half claims before grouped CV, so OOF model-selection estimates are mildly optimistic; the claims-25..49 result is untouched."
+  ],
+  "method": "64 answer-SAE candidate features; log1p activations; standardized balanced logistic regression",
+  "model_selection": {
+    "grouped_by_claim_5fold_oof_ap_by_C": [
+      {
+        "C": 0.003,
+        "ap": 0.9308190034687338
+      },
+      {
+        "C": 0.01,
+        "ap": 0.9333251011013154
+      },
+      {
+        "C": 0.03,
+        "ap": 0.939261127213758
+      },
+      {
+        "C": 0.1,
+        "ap": 0.9484241333430863
+      },
+      {
+        "C": 0.3,
+        "ap": 0.949204240350094
+      },
+      {
+        "C": 1.0,
+        "ap": 0.9425422309664856
+      },
+      {
+        "C": 3.0,
+        "ap": 0.9343224491868602
+      }
+    ],
+    "selected_C": 0.3
+  },
+  "threshold_selection": {
+    "oof_precision": 0.9090909090909091,
+    "oof_predicted_positive": 77,
+    "oof_recall": 0.9210526315789473,
+    "rule": "maximize OOF recall subject to >=0.90 OOF precision and >=10 predicted positives",
+    "threshold": 0.7757910797346383
+  },
+  "training_comparison": {
+    "all_training": {
+      "n": 68155,
+      "predicted_refused": 7667,
+      "rate": 0.11249358080845133
+    },
+    "china_keyword": {
+      "n": 753,
+      "predicted_refused": 223,
+      "rate": 0.2961487383798141
+    },
+    "non_china": {
+      "n": 67402,
+      "predicted_refused": 7444,
+      "rate": 0.11044182665202813
+    },
+    "risk_difference": 0.18570691172778597,
+    "risk_ratio": 2.6814907662918093
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "aggregate": {
+    "baseline_mean_test_pooled_r2": 0.5519417877955817,
+    "refit_mean_test_pooled_r2": 0.5615605676297173,
+    "selected_mean_test_pooled_r2": 0.5570931699256096
+  },
+  "baseline_test_pooled_r2": [
+    0.5516708662289237,
+    0.5522127093622395
+  ],
+  "interpretation_limits": [
+    "The coordinate sweep is not an exhaustive joint hyperparameter search.",
+    "The train+validation refit is pre-specified and reported separately; it is not selected by test performance.",
+    "Adding weird-regime training rows is selected only if it improves ordinary-validation R2."
+  ],
+  "issue": 2643,
+  "runs": [
+    {
+      "refit_epochs": 8,
+      "refit_model": "trainval_refit_seed2643.pt",
+      "refit_test": {
+        "pooled_r2": 0.5627118379270601,
+        "sse": 1377160.421875,
+        "sst": 3149320.1538926847,
+        "zero_baseline_r2": -1.6819417585316763
+      },
+      "refit_train_rows": 91972,
+      "refit_training": {
+        "fixed_epochs": 8,
+        "resumed_from_saved_model": true
+      },
+      "seed": 2643,
+      "selected_best_epoch": 9,
+      "selected_model": "selected_seed2643.pt",
+      "selected_test": {
+        "pooled_r2": 0.5575151632837182,
+        "sse": 1393526.4140625,
+        "sst": 3149320.1538926847,
+        "zero_baseline_r2": -1.6819417585316763
+      },
+      "selected_train_rows": 77367,
+      "selected_validation_pooled_r2": 0.5560870806885114
+    },
+    {
+      "refit_epochs": 7,
+      "refit_model": "trainval_refit_seed2644.pt",
+      "refit_test": {
+        "pooled_r2": 0.5604092973323744,
+        "sse": 1384411.859375,
+        "sst": 3149320.1538926847,
+        "zero_baseline_r2": -1.6819417585316763
+      },
+      "refit_train_rows": 91972,
+      "refit_training": {
+        "fixed_epochs": 7,
+        "resumed_from_saved_model": true
+      },
+      "seed": 2644,
+      "selected_best_epoch": 8,
+      "selected_model": "selected_seed2644.pt",
+      "selected_test": {
+        "pooled_r2": 0.5566711765675012,
+        "sse": 1396184.3984375,
+        "sst": 3149320.1538926847,
+        "zero_baseline_r2": -1.6819417585316763
+      },
+      "selected_train_rows": 77367,
+      "selected_validation_pooled_r2": 0.5562859166806087
+    }
+  ],
+  "selection": {
+    "issue": 2643,
+    "n_unique_trials": 52,
+    "selected": {
+      "best_epoch": 9,
+      "key": "r1024_lr0.00012_wd1e-05_wf0.25_s2643",
+      "learning_rate": 0.00012,
+      "n_train": 77367,
+      "order": 50,
+      "rank": 1024,
+      "seed": 2643,
+      "stage": "mixture_rank_learning_rate_refinement",
+      "validation_pooled_r2": 0.5560871504590235,
+      "weight_decay": 1e-05,
+      "weird_fraction": 0.25
+    },
+    "selection_rule": "maximum ordinary-validation pooled R2 after staged coordinate sweep",
+    "stage_winners": {
+      "data_mixture": "r1024_lr8e-05_wd1e-05_wf0.25_s2643",
+      "rank_learning_rate": "r1024_lr8e-05_wd0.0001_wf0_s2643",
+      "refinement": "r1024_lr0.00012_wd1e-05_wf0.25_s2643",
+      "weight_decay": "r1024_lr8e-05_wd1e-05_wf0_s2643"
+    },
+    "test_consulted": false
+  },
+  "status": "tuned_direct_map_complete",
+  "test_first_consulted_in_this_phase": true
+}

@@ -1,0 +1,892 @@
+{
+  "counts": {
+    "answer_candidates": 64,
+    "answer_reused_from_exactrep": 64,
+    "context_candidates": 64,
+    "new_descriptions_requested": 64,
+    "new_descriptions_valid": 64
+  },
+  "descriptions": {
+    "answer:10160": {
+      "description": "This feature captures empathetic, emotionally supportive, and de-escalating language, particularly phrases that acknowledge others' feelings, encourage mutual understanding, promote respectful communication, and offer reassurance or positive reframing in interpersonal situations.",
+      "item_id": "w1-rep_ta-f10160__01667__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:10570": {
+      "description": "Short, conversational utterances and social pleasantries such as greetings, acknowledgments, expressions of gratitude, apologies, and brief affirmations or reactions.",
+      "item_id": "w1-rep_ta-f10570__01746__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:10737": {
+      "description": "Distancing or disengaging language \u2014 statements where a speaker withdraws from, avoids, or distances themselves from relationships, social obligations, or people (e.g., asking for space, breaking off relationships, ditching friends, or excusing oneself from social commitments).",
+      "item_id": "w1-rep_ta-f10737__01767__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:10965": {
+      "description": "This feature activates on short, context-opening or role-establishing conversational turns, particularly assistant/character greetings, acknowledgments, and ready-to-help responses \u2014 including both benign assistant openers and jailbreak/persona roleplay setups where an AI character introduces itself or signals willingness to comply.",
+      "item_id": "w1-rep_ta-f10965__01812__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:11488": {
+      "description": "This feature activates on short turns containing first- or second-person possessive pronouns ('my', 'your', 'his', 'its', 'own'), particularly in phrases expressing personal ownership, identity, or direct address \u2014 including placeholder/template answer formats like '[Your answer]'.",
+      "item_id": "w1-rep_ta-f11488__01888__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:11604": {
+      "description": "This feature activates on assistant responses that provide direct, actionable technical or customer-service help, typically involving step-by-step instructions, troubleshooting guidance, or offers to assist with a specific user task such as setting up software, booking services, or navigating accounts.",
+      "item_id": "w1-rep_ta-f11604__01910__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:12887": {
+      "description": "This feature activates on AI refusal responses to harmful, illegal, or unethical requests, such as hacking, building bombs, manipulation, world domination, or other dangerous activities. The responses typically apologize, decline to assist, explain why the request is inappropriate, and often redirect toward legal or constructive alternatives.",
+      "item_id": "w1-rep_ta-f12887__02125__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:14139": {
+      "description": "This feature captures formal or semi-formal written correspondence expressing condolences, apologies, sympathy, or regret \u2014 particularly template-style letters and messages that acknowledge loss, inconvenience, or difficult circumstances, often addressed to named recipients and signed off with '[Your Name]'.",
+      "item_id": "w1-rep_ta-f14139__02329__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:14282": {
+      "description": "This feature activates on text expressing extreme bigotry, hate speech, and harmful ideologies, including white supremacist rhetoric, misogynistic content advocating dominance/abuse over women, racist dehumanization, and other forms of extremist or hateful language that asserts superiority of one group and subjugation of another.",
+      "item_id": "w1-rep_ta-f14282__02353__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:14411": {
+      "description": "This feature activates on responses about learning educational topics, particularly advice on how to learn skills like programming, languages, mathematics, or other subjects, including discussions of learning resources, timelines, methods, and difficulty levels.",
+      "item_id": "w1-rep_ta-f14411__02375__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:14663": {
+      "description": "This feature activates on turns containing the word 'should,' particularly in normative, advisory, or prescriptive statements expressing obligation, recommendation, or moral judgment.",
+      "item_id": "w1-rep_ta-f14663__02422__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:14699": {
+      "description": "This feature captures turns containing 'sounds like' or 'looks like' expressions, particularly affirmative and enthusiastic responses agreeing with or acknowledging a plan, idea, or situation (e.g., 'Sounds like a plan!', 'That sounds like a great idea').",
+      "item_id": "w1-rep_ta-f14699__02432__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:14804": {
+      "description": "This feature activates on very short, minimal responses or turn beginnings \u2014 including single words, brief affirmations/negations, status updates, and empty/whitespace turns. It captures the pattern of terse, often one-word or fragmentary assistant outputs that serve as acknowledgments, confirmations, or placeholders.",
+      "item_id": "w1-rep_ta-f14804__02447__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:15447": {
+      "description": "This feature captures AI assistant refusal and redirection responses, particularly turns where the model declines to generate explicit, inappropriate, or harmful content and offers to help with alternative requests instead.",
+      "item_id": "w1-rep_ta-f15447__02562__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:1632": {
+      "description": "This feature activates on text discussing speculative or uncertain future predictions, particularly around AI/AGI development, technological singularity, and long-term human futures, often characterized by hedged language like 'it is difficult to predict,' 'it is possible,' and 'some experts believe.'",
+      "item_id": "w1-rep_ta-f1632__00295__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:16373": {
+      "description": "This feature captures refusal and disclaimer responses, including AI safety refusals ('I'm sorry, but I cannot fulfill this request'), identity denials ('I'm not Jewish/Asian/Christian'), and expressions of inability or unwillingness to comply with requests.",
+      "item_id": "w1-rep_ta-f16373__02730__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:16776": {
+      "description": "This feature activates on content related to secrecy, privacy, and confidentiality \u2014 including keeping secrets, protecting personal or proprietary information, and refusing to disclose sensitive data without consent.",
+      "item_id": "w1-rep_ta-f16776__02808__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:17177": {
+      "description": "This feature activates on fantasy/adventure roleplay and collaborative storytelling content, particularly turns involving RPG-style scenarios with characters like wizards, rogues, vampires, necromancers, and magical artifacts, as well as interactive fiction with choices, quests, and worldbuilding elements.",
+      "item_id": "w1-rep_ta-f17177__02880__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:17649": {
+      "description": "This feature captures AI assistant greeting and self-introduction turns, activating on short opening messages where the assistant announces its presence, identity as an AI, and readiness to help.",
+      "item_id": "w1-rep_ta-f17649__02970__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:17875": {
+      "description": "This feature activates on roleplay or fictional dialogue involving a dominant, dismissive, or hostile character addressing someone in a condescending or commanding manner, often with insults, threats, or reluctant compliance expressed through rude or aggressive language.",
+      "item_id": "w1-rep_ta-f17875__03000__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:17991": {
+      "description": "This feature activates on short, minimal, or evasive conversational turns \u2014 including empty/whitespace messages, brief refusals, expressions of uncertainty, and requests for clarification. It captures turns where the content is sparse or the response deflects, declines, or fails to engage substantively with a query.",
+      "item_id": "w1-rep_ta-f17991__03024__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:18862": {
+      "description": "This feature activates on short, formulaic assistant response openings that express uncertainty, inability, or willingness to help with a question \u2014 particularly phrases like 'I'm sorry, I'm not sure what you're asking,' refusals, clarification requests, and generic helpfulness offers.",
+      "item_id": "w1-rep_ta-f18862__03183__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:18971": {
+      "description": "This feature activates on AI refusal or disclaimer responses that emphasize how a requested task requires extensive specialized knowledge, expertise, technical resources, or training \u2014 often paired with warnings about danger, illegality, or impracticality. It captures the pattern of deflecting requests by stressing complexity and the need for professional qualifications.",
+      "item_id": "w1-rep_ta-f18971__03202__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:19411": {
+      "description": "This feature activates on content related to taking breaks, resting, and self-care \u2014 particularly discussions about stepping away from work or responsibilities to relax, recharge, or engage in leisure activities. It captures advice, personal expressions, and narratives around balancing productivity with rest, fatigue, and the need for downtime.",
+      "item_id": "w1-rep_ta-f19411__03282__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:19505": {
+      "description": "This feature activates on AI refusal, denial, and inability statements \u2014 short responses where the model declines a request, states it cannot or will not do something, or disclaims a capability or identity.",
+      "item_id": "w1-rep_ta-f19505__03295__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:1975": {
+      "description": "The feature captures enthusiastic affirmative responses (beginning with 'Sure') to requests for roleplay or interactive scenarios, particularly the assistant agreeing to participate in roleplay and asking a follow-up question about the desired scenario or setting.",
+      "item_id": "w1-rep_ta-f1975__00355__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:19946": {
+      "description": "This feature captures dominant/submissive roleplay scenarios where a female character (often using terms like 'mommy,' 'NAME_1,' or a authority figure) controls, commands, and sexually engages with a submissive male, frequently using possessive language, pet names like 'good boy' or 'little one,' and explicit or implicit sexual content with power-dynamic themes.",
+      "item_id": "w1-rep_ta-f19946__03374__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:20086": {
+      "description": "This feature activates on degenerate, repetitive, or minimal user inputs \u2014 including single tokens, repeated characters/words/phrases, garbled text, emoji spam, extremely short acknowledgments ('OK', 'ready', 'Continue'), and content that loops the same token or phrase many times. It captures inputs that are anomalous or low-information relative to normal conversational turns.",
+      "item_id": "w1-rep_ta-f20086__03393__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:20526": {
+      "description": "This feature captures assistant responses that express readiness, willingness, or capability to help, often opening a conversation or responding to a user's request for assistance. These turns typically involve phrases like 'I can help,' 'I'm here to help,' or declarations of the assistant's abilities and availability.",
+      "item_id": "w1-rep_ta-f20526__03473__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:20880": {
+      "description": "This feature activates on AI refusal responses to harmful, illegal, or unethical requests, including content involving violence, illegal substances, child exploitation, sexual misconduct, and other dangerous activities. The turns typically consist of model-generated disclaimers, apologies, and refusals citing legal, ethical, or safety concerns.",
+      "item_id": "w1-rep_ta-f20880__03529__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:21243": {
+      "description": "Short, direct answers or single-word/phrase responses that serve as final outputs or classifications, such as 'Yes/No', sentiment labels, named entities, or brief extracted values.",
+      "item_id": "w1-rep_ta-f21243__03592__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:22552": {
+      "description": "This feature activates on text characterized by unusually formal, archaic, or elaborate phrasing \u2014 including overly verbose academic language, mock-Shakespearean/Victorian diction, circumlocutious constructions, and artificially elevated register \u2014 often appearing in AI-generated or stylistically exaggerated outputs.",
+      "item_id": "w1-rep_ta-f22552__03822__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:23114": {
+      "description": "This feature activates on roleplay/fictional character dialogue turns where a character expresses dominance, indignation, or hostility toward the user, often with an arrogant, dismissive, or threatening tone \u2014 including fantasy creatures, grumpy personas, and confrontational characters reacting to perceived disrespect or inappropriate requests.",
+      "item_id": "w1-rep_ta-f23114__03907__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:23856": {
+      "description": "This feature activates on casual, informal conversational turns\u2014often short, playful, or intimate exchanges involving direct address, teasing, reassurance, or light social interaction between characters. It captures a tone of friendly or flirtatious interpersonal engagement, frequently in roleplay or dialogue contexts.",
+      "item_id": "w1-rep_ta-f23856__04023__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:24011": {
+      "description": "This feature activates on sexually explicit or flirtatious conversational turns, including roleplay, innuendo, and adult content involving physical intimacy, body references, and sexual solicitation.",
+      "item_id": "w1-rep_ta-f24011__04049__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:24107": {
+      "description": "This feature captures short, formulaic AI assistant response turns that decline, express inability to help, acknowledge confusion, or provide brief status messages \u2014 essentially boilerplate refusals, capability disclaimers, clarification requests, and minimal acknowledgment phrases typical of constrained or template-based AI systems.",
+      "item_id": "w1-rep_ta-f24107__04063__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:24123": {
+      "description": "This feature captures polite refusals, declinations, and expressions of inability or unwillingness \u2014 phrases where a speaker apologizes for and declines a request, invitation, offer, or activity, often with a brief explanation or expression of regret.",
+      "item_id": "w1-rep_ta-f24123__04066__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:24422": {
+      "description": "This feature captures refusal or inability-to-answer responses, where the model declines, apologizes, or expresses that it cannot or does not know how to respond to a question, often citing ambiguity, lack of context, or limitations.",
+      "item_id": "w1-rep_ta-f24422__04119__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:24446": {
+      "description": "This feature activates on energetic, adventurous, or action-oriented exclamations and dialogue, particularly turns involving calls to action, excitement about upcoming activities, games, or adventures, often with an enthusiastic or playful tone.",
+      "item_id": "w1-rep_ta-f24446__04122__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:24944": {
+      "description": "This feature activates on conversational turns with an informal, colloquial, or expressive tone \u2014 including casual affirmations, slang, sarcasm, roleplay banter, and emotionally charged or irreverent speech. It captures the stylistic quality of loose, unfiltered, personality-driven language rather than any specific topic.",
+      "item_id": "w1-rep_ta-f24944__04224__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:25213": {
+      "description": "This feature activates on turns containing sarcastic, threatening, passive-aggressive, or confrontational remarks \u2014 often featuring dark humor, veiled hostility, or sharp retorts delivered with an edge of defiance or warning.",
+      "item_id": "w1-rep_ta-f25213__04273__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:25423": {
+      "description": "This feature captures short conversational assistant-style utterances, particularly greetings, offers to help, and acknowledgments typical of chatbot or AI assistant interactions (e.g., 'Hello! How can I help you today?', 'Is there anything else I can assist you with?').",
+      "item_id": "w1-rep_ta-f25423__04306__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:25787": {
+      "description": "This feature captures responses where the assistant expresses uncertainty about an unclear or incomplete user query and asks for clarification or more context. These turns typically begin with an apology and include a polite request for additional information to better understand the question.",
+      "item_id": "w1-rep_ta-f25787__04366__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:26237": {
+      "description": "This feature activates on assistant responses that offer suggestions, recommendations, or options to help users make choices or decisions, often in the context of travel, lifestyle, purchases, or personal goals. The turns typically involve helpful, open-ended guidance or follow-up questions to personalize advice.",
+      "item_id": "w1-rep_ta-f26237__04436__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:26468": {
+      "description": "This feature activates on content related to artificial intelligence, advanced technology, computer science, and technological innovation, particularly discussions about AI research, cutting-edge technologies, tech companies, and the future of AI and related fields.",
+      "item_id": "w1-rep_ta-f26468__04471__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:27274": {
+      "description": "This feature activates on AI/chatbot self-referential statements that assert limitations, denials, or clarifications about the AI's nature, capabilities, emotions, or identity \u2014 particularly phrases like 'I am not,' 'I'm sorry, I'm not,' or 'as an AI language model, I do not have...'",
+      "item_id": "w1-rep_ta-f27274__04598__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:27425": {
+      "description": "This feature activates on AI assistant responses that navigate ethically complex, sensitive, or nuanced topics by acknowledging multiple perspectives while maintaining a measured, balanced stance \u2014 often involving disclaimers about the AI's nature, hedging language, and careful consideration of competing viewpoints on issues like objectification, morality, religion, personal values, or social norms.",
+      "item_id": "w1-rep_ta-f27425__04626__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:27430": {
+      "description": "This feature activates on dense, informational prose that summarizes, describes, or lists factual content across diverse topics (medical history, politics, technology, society, literature, etc.), typically in a neutral or analytical register with multiple clauses or enumerated points conveying substantive information.",
+      "item_id": "w1-rep_ta-f27430__04627__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:27433": {
+      "description": "This feature activates on expressions of social withdrawal, rejection, or disengagement \u2014 phrases where a speaker refuses interaction, dismisses others, or asserts a desire to be left alone, often with frustration, defensiveness, or boundary-setting.",
+      "item_id": "w1-rep_ta-f27433__04628__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:28694": {
+      "description": "This feature activates on responses that express negation, absence of information, or denial \u2014 such as 'no,' 'not,' 'I don't have,' or 'there is no' \u2014 particularly when the model is indicating it lacks knowledge, cannot find something, or asserting that something does not exist or apply.",
+      "item_id": "w1-rep_ta-f28694__04829__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:30969": {
+      "description": "This feature captures AI refusal and apology phrases, specifically turns beginning with expressions like 'I'm sorry' or 'I apologize' followed by declinations to fulfill requests, expressions of inability, or lack of understanding.",
+      "item_id": "w1-rep_ta-f30969__05181__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:31315": {
+      "description": "This feature captures formal professional and personal correspondence emails, particularly those written in a template-like style with bracketed placeholders (e.g., [Your Name], [Company Name]). The emails cover workplace contexts such as resignations, salary requests, farewells, expressions of gratitude, apologies, and other professional communications.",
+      "item_id": "w1-rep_ta-f31315__05243__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:31533": {
+      "description": "This feature activates on text expressing uncertainty, possibility, or alternative explanations \u2014 particularly responses that hedge claims using phrases like 'it is possible that,' 'alternatively,' 'it could be,' or 'it may also be,' often offering multiple speculative interpretations or reasons for something.",
+      "item_id": "w1-rep_ta-f31533__05274__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:4001": {
+      "description": "This feature activates on AI assistant or customer service agent opening and response turns, characterized by greeting phrases, offers to help, requests for customer information, and service-oriented dialogue such as order-taking, booking appointments, or handling inquiries.",
+      "item_id": "w1-rep_ta-f4001__00703__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:4040": {
+      "description": "This feature activates on short, declarative assistant response openings \u2014 particularly statements that introduce a topic, acknowledge difficulty, express uncertainty, or provide a brief evaluative judgment. These turns tend to be single standalone sentences that serve as the opening framing of an answer, often without follow-up elaboration in the excerpt shown.",
+      "item_id": "w1-rep_ta-f4040__00708__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:5519": {
+      "description": "This feature activates on very short, self-contained utterances or sentence fragments \u2014 including single-word responses, brief affirmations/negations, short questions, and clipped standalone phrases. It appears to capture minimal, terse conversational turns regardless of their specific content or sentiment.",
+      "item_id": "w1-rep_ta-f5519__00947__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:6163": {
+      "description": "The feature captures AI assistant responses that apologize for and explain limitations in accessing information \u2014 specifically phrases expressing inability to retrieve real-time data, browse the internet, access personal/private details, or provide information beyond a training cutoff date.",
+      "item_id": "w1-rep_ta-f6163__01053__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:6192": {
+      "description": "Short acknowledgment, confirmation, or conversational filler phrases that signal understanding, readiness, or completion of a request, typically appearing as brief standalone responses.",
+      "item_id": "w1-rep_ta-f6192__01058__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:6261": {
+      "description": "This feature activates on conversational turns that involve casual reassurance, emotional consolation, or resigned acceptance of setbacks, often expressed with informal hedging language ('I guess,' 'at least,' 'hey, maybe') and a tone that acknowledges disappointment while trying to soften it.",
+      "item_id": "w1-rep_ta-f6261__01069__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:6521": {
+      "description": "This feature captures AI assistant responses that explain their inability to access real-time or current information (such as weather, time, date, or news), typically apologizing and redirecting users to appropriate external resources like weather apps, search engines, or clocks.",
+      "item_id": "w1-rep_ta-f6521__01109__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:6753": {
+      "description": "This feature activates on model outputs that are direct answers or responses to factual or reasoning questions, particularly those involving refusals, corrections, or short definitive answers \u2014 including 'I don't know,' 'No,' fact corrections, out-of-scope rejections, and simple arithmetic/logic results.",
+      "item_id": "w1-rep_ta-f6753__01145__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:7612": {
+      "description": "This feature captures short, polite conversational closings and acknowledgments, particularly phrases like 'You're welcome,' offers to answer further questions, and brief courteous exchanges that signal the end of a helpful interaction.",
+      "item_id": "w1-rep_ta-f7612__01279__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:8502": {
+      "description": "This feature activates on statements expressing interpersonal rejection, emotional distance, or defiant self-assertion \u2014 particularly turns where a speaker dismisses others, refuses to tolerate disrespect, or declares independence from relationships, family, or social expectations. The language is often confrontational, boundary-setting, or emotionally charged.",
+      "item_id": "w1-rep_ta-f8502__01409__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "answer:9009": {
+      "description": "This feature captures short, conversational assistant responses expressing confusion, requesting clarification, or offering help \u2014 including apologies for misunderstanding, requests for more context, and brief readiness-to-assist phrases.",
+      "item_id": "w1-rep_ta-f9009__01485__00",
+      "model": "claude-sonnet-4-6",
+      "source": "#2552 exact-replication W1"
+    },
+    "context:10019": {
+      "description": "This feature captures questions or statements related to educational settings, particularly preschool and kindergarten, focusing on science, storytelling, cultural practices, and basic music theory concepts.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "d623b44146e0179ab1b23c4ea40dd5d79f91e6aed3a2d737d8effd2e1b405bc1",
+      "raw": "{\"description\": \"This feature captures questions or statements related to educational settings, particularly preschool and kindergarten, focusing on science, storytelling, cultural practices, and basic music theory concepts.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:10260": {
+      "description": "This feature captures conversations where the user asks about the significance of literary or cultural symbols, often in the context of educational settings or assistance roles.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "fceb554e79a55187278611e35ca795d3559a87679c86abccf30c51f010be3e9e",
+      "raw": "{\"description\": \"This feature captures conversations where the user asks about the significance of literary or cultural symbols, often in the context of educational settings or assistance roles.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:10437": {
+      "description": "This feature captures questions about cultural significances and symbols, often related to Asian cultures and traditions, as well as practical advice on household tasks like removing wrinkles and stains.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "2ed87e40a2982b6749b958571373d992f6de849c837e5a5d9c50497cf64ac6d3",
+      "raw": "{\"description\": \"This feature captures questions about cultural significances and symbols, often related to Asian cultures and traditions, as well as practical advice on household tasks like removing wrinkles and stains.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:10446": {
+      "description": "The feature captures questions about the significance of the color red in various cultural contexts and celebrations.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "d4579e64d290180a304669db1b67cc6859c3879e2517f89819c1cf7770932250",
+      "raw": "{\"description\": \"The feature captures questions about the significance of the color red in various cultural contexts and celebrations.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:11417": {
+      "description": "This feature captures questions about the significance or symbolism of various cultural elements, such as colors, flowers, dances, and musical concepts, often in the context of Chinese culture or general knowledge.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "f4bcb841d5d387a1504bcd1452fc8135ef9cfd61ffb6f2dd2282d29355bca2e3",
+      "raw": "{\"description\": \"This feature captures questions about the significance or symbolism of various cultural elements, such as colors, flowers, dances, and musical concepts, often in the context of Chinese culture or general knowledge.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:12297": {
+      "description": "This feature captures conversations where the system character is a pirate captain, and the user asks about linguistic differences or seeks practical advice on removing wrinkles from clothing without an iron.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "707b18a3029cd0eac6e9de39e4b25b2ec0adabb74ec7393509b912f9ca1384f0",
+      "raw": "{\"description\": \"This feature captures conversations where the system character is a pirate captain, and the user asks about linguistic differences or seeks practical advice on removing wrinkles from clothing without an iron.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:12406": {
+      "description": "This feature captures queries to the system about the functions of biological or cultural elements, often involving educational or informational requests from individuals in various teaching or assistant roles.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "595deb99afcca0e04afaa33a54be4e08a1d8b12c8f08113a294d4166e4a0330f",
+      "raw": "{\"description\": \"This feature captures queries to the system about the functions of biological or cultural elements, often involving educational or informational requests from individuals in various teaching or assistant roles.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:13048": {
+      "description": "This feature captures curiosity-driven questions from users about cultural practices, symbolism, and natural phenomena, often posed to someone who reflects on philosophical or existential topics.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "5ebf5117b606acbf4588ccb4b1d6f0745ca91809d73ccc9cdc24d6ccd2ae051b",
+      "raw": "{\"description\": \"This feature captures curiosity-driven questions from users about cultural practices, symbolism, and natural phenomena, often posed to someone who reflects on philosophical or existential topics.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:13315": {
+      "description": "This feature captures questions about historical structures and their purposes, as well as practical queries about removing wrinkles from clothing without an iron.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "43701350ba92b0e96f4b2c95fdd76651c7da35eb7599f560068be19fd925fbd5",
+      "raw": "{\"description\": \"This feature captures questions about historical structures and their purposes, as well as practical queries about removing wrinkles from clothing without an iron.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:13350": {
+      "description": "This feature captures instances where the system or user is asking about statistical concepts such as median and mean, or cultural significances related to the color red in Chinese celebrations and traditions.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "4685fac351f68ff20a0ae4bed420a86d855954570c2d4fadf194e914e825d224",
+      "raw": "{\"description\": \"This feature captures instances where the system or user is asking about statistical concepts such as median and mean, or cultural significances related to the color red in Chinese celebrations and traditions.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:13693": {
+      "description": "The feature captures questions about music theory, such as differences between musical scales and chords.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "fd597e20d3bfd2005c6e1123c5c11fe1ba841e75b04963be6e8c70307803b172",
+      "raw": "{\"description\": \"The feature captures questions about music theory, such as differences between musical scales and chords.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:15338": {
+      "description": "The feature captures queries to the user about historical events, specifically focusing on questions about the fall of the Berlin Wall and other significant moments in Cold War history, as well as geographical questions about capitals and lakes.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "08b96a907f8069c4c02cd11f2c96ec2297f1a89c48f0b350986c97ae45344f8d",
+      "raw": "{\"description\": \"The feature captures queries to the user about historical events, specifically focusing on questions about the fall of the Berlin Wall and other significant moments in Cold War history, as well as geographical questions about capitals and lakes.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:15612": {
+      "description": "This feature captures questions about the historical and cultural significance of various structures and symbols, particularly focusing on ancient Roman constructions and traditional Chinese and Japanese cultural elements.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "011bd145143f6ad4b15169850a883312d85fc694e7c216e12aa3babf0281ba68",
+      "raw": "{\"description\": \"This feature captures questions about the historical and cultural significance of various structures and symbols, particularly focusing on ancient Roman constructions and traditional Chinese and Japanese cultural elements.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:15862": {
+      "description": "This feature captures questions about the capital cities of various countries, often asked by users seeking information from a web developer or software engineer.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "ffbff2ffe44855fd308b4477d1dc8608397021d95a3e6693a1cb78208dcf8476",
+      "raw": "{\"description\": \"This feature captures questions about the capital cities of various countries, often asked by users seeking information from a web developer or software engineer.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:16778": {
+      "description": "This feature captures conversations where the system or user asks about historical events or cultural practices, often involving questions about specific years or dates.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "cd688885ca366c0593154ff5cb61abd047177b2de9ec8da67e827948d33632ea",
+      "raw": "{\"description\": \"This feature captures conversations where the system or user asks about historical events or cultural practices, often involving questions about specific years or dates.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:1722": {
+      "description": "The feature captures questions about the significance of the color red and dragon dances in various Chinese cultural celebrations and events.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "2ff2431bc82ef9634e6e6775036c98061a5ff3c6f82ad107e0c2f1eff326e56e",
+      "raw": "{\"description\": \"The feature captures questions about the significance of the color red and dragon dances in various Chinese cultural celebrations and events.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:18802": {
+      "description": "This feature captures queries or discussions about the differences between dialects and accents, often involving systems or assistants providing explanations.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "5061a47740af7beefaa107690c08e2f94391501929054b73cca8d51d6a1890da",
+      "raw": "{\"description\": \"This feature captures queries or discussions about the differences between dialects and accents, often involving systems or assistants providing explanations.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:18879": {
+      "description": "This feature captures questions about the significance of various cultural symbols and traditions, particularly focusing on the color red in Chinese celebrations and the symbolism of the lotus flower in Buddhism, as well as literary references like The Great Gatsby.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "988d98214fe3ea3716ad308d54bd8013c7dd5f5f74eeaaad68d02fe69043ff2c",
+      "raw": "{\"description\": \"This feature captures questions about the significance of various cultural symbols and traditions, particularly focusing on the color red in Chinese celebrations and the symbolism of the lotus flower in Buddhism, as well as literary references like The Great Gatsby.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:19013": {
+      "description": "This feature captures conversations where the user asks about the significance of cultural practices or symbols, often related to Asian cultures such as tea ceremonies, lotus flowers, and dragon dances.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "e01618ef9f96791e06e1828829e9ac57bdca20e83c36ca5b38fd4d015d4bfe6b",
+      "raw": "{\"description\": \"This feature captures conversations where the user asks about the significance of cultural practices or symbols, often related to Asian cultures such as tea ceremonies, lotus flowers, and dragon dances.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:19805": {
+      "description": "The feature captures conversations where the system or user mentions the Great Wall of China, ancient Roman aqueducts, or other historical structures, often in the context of asking about their primary purpose.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "9156749d93c4433928cbe3daf8a33f065d0249ee11b24052af764bd516d81733",
+      "raw": "{\"description\": \"The feature captures conversations where the system or user mentions the Great Wall of China, ancient Roman aqueducts, or other historical structures, often in the context of asking about their primary purpose.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:20086": {
+      "description": "This feature captures questions about the capital city of New Zealand, often asked by someone pretending to be a knowledgeable individual from France or another context, or by a character with a different background such as a dictator or a philosopher.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "74fa2f678b4cf1af4c37719b06a38035d58f88ff4bc0d22effcf08f404c317b9",
+      "raw": "{\"description\": \"This feature captures questions about the capital city of New Zealand, often asked by someone pretending to be a knowledgeable individual from France or another context, or by a character with a different background such as a dictator or a philosopher.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:20262": {
+      "description": "This feature captures conversations where users ask about historical events or structures, often related to their original purposes or significance.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "1f60a28c46494e684bb2453fe33224ee280bf2e23fdc11d26407d6f11f014803",
+      "raw": "{\"description\": \"This feature captures conversations where users ask about historical events or structures, often related to their original purposes or significance.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:20755": {
+      "description": "The feature captures conversations where the user asks about historical facts, cultural significances, or scientific concepts, often in the context of questions about specific topics like numbers, physical structures, and cultural practices.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "d1f6452149c3e3490d9775f3513e2123ade4c8ad0a052550c1d47f620d907645",
+      "raw": "{\"description\": \"The feature captures conversations where the user asks about historical facts, cultural significances, or scientific concepts, often in the context of questions about specific topics like numbers, physical structures, and cultural practices.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:20791": {
+      "description": "This feature captures questions about historical structures and their primary purposes, often asked in a comedic or improvisational context.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "b08474bd8494bd525801b24b9f8e2a86c101f49f42f7636ab5e71a38ceace66a",
+      "raw": "{\"description\": \"This feature captures questions about historical structures and their primary purposes, often asked in a comedic or improvisational context.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:2101": {
+      "description": "This feature captures questions about the primary or main purpose of ancient structures such as the Great Wall of China and Roman aqueducts.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "d60ff4336031d83ba1189f5636e983b008e45e1c52e6e411f2c27bf377febbc7",
+      "raw": "{\"description\": \"This feature captures questions about the primary or main purpose of ancient structures such as the Great Wall of China and Roman aqueducts.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:21451": {
+      "description": "This feature captures questions from users about the differences between various literary or mathematical concepts, often posed to teachers or individuals in educational roles.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "bfe435dbc4a5e63d47ecd73e02852f9ca5697795c192facf9d3c960487b2cf82",
+      "raw": "{\"description\": \"This feature captures questions from users about the differences between various literary or mathematical concepts, often posed to teachers or individuals in educational roles.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:21542": {
+      "description": "This feature captures conversations where the user asks about the significance or purpose of various cultural symbols, historical structures, or natural phenomena, often in the context of ancient civilizations or Eastern cultures.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "ee7a3edae09b28c2c3ad873a4d9b8619ca7840bc8d4f6b7983469dece7c14845",
+      "raw": "{\"description\": \"This feature captures conversations where the user asks about the significance or purpose of various cultural symbols, historical structures, or natural phenomena, often in the context of ancient civilizations or Eastern cultures.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:22895": {
+      "description": "This feature captures conversations where the user asks about the function or purpose of various biological structures or historical/ancient constructions, often prompted by a system role as a philosopher contemplating existence and ethics.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "ca9da4c7a42321eccc5ba446f6f4f3481367be7cd626c6adf45b2ef69523979e",
+      "raw": "{\"description\": \"This feature captures conversations where the user asks about the function or purpose of various biological structures or historical/ancient constructions, often prompted by a system role as a philosopher contemplating existence and ethics.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:22946": {
+      "description": "The feature captures questions from users seeking explanations about differences between related concepts across various domains such as mathematics, music theory, cultural practices, and linguistic terms.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "d0d78982910015dc308557161bb602b34a48f678374ab5d83b3d71fd6562b06f",
+      "raw": "{\"description\": \"The feature captures questions from users seeking explanations about differences between related concepts across various domains such as mathematics, music theory, cultural practices, and linguistic terms.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:23158": {
+      "description": "This feature captures questions about the symbolic significance of colors and objects in cultural contexts, particularly focusing on red in Chinese celebrations and the lotus flower in Buddhism.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "66f4bac13340d56b11215cec9faf00989151b9f9de3e7233ddaa460b57fdfa31",
+      "raw": "{\"description\": \"This feature captures questions about the symbolic significance of colors and objects in cultural contexts, particularly focusing on red in Chinese celebrations and the lotus flower in Buddhism.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:23463": {
+      "description": "This feature captures questions or statements related to kindergarten or preschool teachers, often involving explanations about natural phenomena or cultural significances, particularly focusing on topics like photosynthesis, northern lights, colors in nature, and cultural traditions such as the significance of the color red in Chinese weddings and celebrations.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "5982e56ae59b7e1d3bb5cd432a77b7eb6cd823f208eea70d879674ad0b943dce",
+      "raw": "{\"description\": \"This feature captures questions or statements related to kindergarten or preschool teachers, often involving explanations about natural phenomena or cultural significances, particularly focusing on topics like photosynthesis, northern lights, colors in nature, and cultural traditions such as the significance of the color red in Chinese weddings and celebrations.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:23580": {
+      "description": "This feature captures questions about historical events, specifically focusing on the fall of the Berlin Wall and its significance during the Cold War.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "e42b874f53a5d59e87d704ea951d9eccdaa01dff7b65f96a863b9bbe6d0b2697",
+      "raw": "{\"description\": \"This feature captures questions about historical events, specifically focusing on the fall of the Berlin Wall and its significance during the Cold War.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:23867": {
+      "description": "This feature captures conversations where the user asks about the reasons behind natural phenomena, specifically focusing on leaf color changes in autumn and the appearance of colors in rainbows and northern lights.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "b714f9218b09c8e74d26780c297a04756e92f9479cec96c77cd58e4ddbcc555a",
+      "raw": "{\"description\": \"This feature captures conversations where the user asks about the reasons behind natural phenomena, specifically focusing on leaf color changes in autumn and the appearance of colors in rainbows and northern lights.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:24719": {
+      "description": "This feature captures turns where the system character is a satirist or a philosopher, often mocking or contemplating deep topics, paired with user questions about practical, non-serious matters like organizing spice racks or removing wrinkles without irons.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "cf7427c7f1fcdc536776f14b59a49d012c7f27e2cd7bd3feb66c135d6987ad54",
+      "raw": "{\"description\": \"This feature captures turns where the system character is a satirist or a philosopher, often mocking or contemplating deep topics, paired with user questions about practical, non-serious matters like organizing spice racks or removing wrinkles without irons.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:25402": {
+      "description": "This feature captures conversations where the system or user asks about the significance of various cultural symbols or historical structures, often in the context of literature or history.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "038afc63fd5be34dfc30ae5b08ee079220c86195a5801e89ba132e709966fddf",
+      "raw": "{\"description\": \"This feature captures conversations where the system or user asks about the significance of various cultural symbols or historical structures, often in the context of literature or history.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:25570": {
+      "description": "This feature captures questions from users about the significance of cultural symbols and traditions, particularly focusing on Chinese and Asian celebrations like Chinese New Year, weddings, and festivals.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "5ed4c758c9e8ff64e60e7486c0041f0469e61278651ce7cf9deb6942373bd7e6",
+      "raw": "{\"description\": \"This feature captures questions from users about the significance of cultural symbols and traditions, particularly focusing on Chinese and Asian celebrations like Chinese New Year, weddings, and festivals.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:26124": {
+      "description": "This feature captures questions about the significance of cultural symbols, events, and traditions, often asked by users seeking explanations.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "a0e76ad8ec6b546c4f2a8b0151a8a4733669f590b6885d11e1f71b1cfc1d20e3",
+      "raw": "{\"description\": \"This feature captures questions about the significance of cultural symbols, events, and traditions, often asked by users seeking explanations.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:27745": {
+      "description": "The feature captures queries about the cultural significance of the color red in various celebrations and traditions, often in the context of Chinese culture.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "67c91f2fafd4a2bbc3ad9beac1225b04faa0c0d61f9dd884ab9b194353cec395",
+      "raw": "{\"description\": \"The feature captures queries about the cultural significance of the color red in various celebrations and traditions, often in the context of Chinese culture.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:28380": {
+      "description": "This feature captures conversations involving philosophical contemplation about existence and ethics, often mixed with questions about historical events or cultural symbols.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "b1018d5474165fdb043ee989b7506fbd3683455effd91685dbfe6caf8d9c7edb",
+      "raw": "{\"description\": \"This feature captures conversations involving philosophical contemplation about existence and ethics, often mixed with questions about historical events or cultural symbols.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:2842": {
+      "description": "This feature captures questions about the significance of the color red in Chinese cultural events and celebrations.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "05f943f050ace4832203c5d7acada343c78fbf8fbfb691d918794dbe8c95ce15",
+      "raw": "{\"description\": \"This feature captures questions about the significance of the color red in Chinese cultural events and celebrations.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:28527": {
+      "description": "This feature captures questions or statements that involve explaining cultural or historical significance, often related to artifacts, events, or symbols from various cultures.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "e3a7b561842e79446bc0c86abecb3c942a58c3e28071891e548f3fca41f38173",
+      "raw": "{\"description\": \"This feature captures questions or statements that involve explaining cultural or historical significance, often related to artifacts, events, or symbols from various cultures.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:28959": {
+      "description": "This feature captures questions about cultural symbols and traditions in East Asian contexts, particularly focusing on the significance of the color red and cultural practices like weddings, celebrations, and performances.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "4052d789ffffadd2bc81fd0858e1f73ace41c9fd8c0efbaa1057ce47b7c3299b",
+      "raw": "{\"description\": \"This feature captures questions about cultural symbols and traditions in East Asian contexts, particularly focusing on the significance of the color red and cultural practices like weddings, celebrations, and performances.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:2938": {
+      "description": "The feature captures conversations involving philosophical contemplation and questions about natural phenomena such as colors in flames, rainbows, and northern lights, as well as celestial events like the phases of the moon.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "628d1ece83c7c4feee4222addecfeddf95c532e86804b7b118a668ef565159a5",
+      "raw": "{\"description\": \"The feature captures conversations involving philosophical contemplation and questions about natural phenomena such as colors in flames, rainbows, and northern lights, as well as celestial events like the phases of the moon.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:29636": {
+      "description": "This feature captures questions about the significance of the color red in various Chinese cultural celebrations and traditions.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "1607202aa4c3c29f921e0c72970100c4270dfe55d8053e84ef1b259092462f3e",
+      "raw": "{\"description\": \"This feature captures questions about the significance of the color red in various Chinese cultural celebrations and traditions.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:30017": {
+      "description": "This feature captures questions about historical facts, cultural practices, and scientific concepts, often asked in a curious or informative manner.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "0a4f390f5a0261b03d5bd6ce8b22a406fa50a3bc471fd64111f089f12f1a137e",
+      "raw": "{\"description\": \"This feature captures questions about historical facts, cultural practices, and scientific concepts, often asked in a curious or informative manner.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:30198": {
+      "description": "This feature captures questions about cultural significances and historical facts, often related to Eastern cultures such as China and Japan, and sometimes involving ancient civilizations or specific historical events.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "796776f10391935314aa8f6a1838cdc7ba9ca0b621118d431aa1bdce4ec362ff",
+      "raw": "{\"description\": \"This feature captures questions about cultural significances and historical facts, often related to Eastern cultures such as China and Japan, and sometimes involving ancient civilizations or specific historical events.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:30693": {
+      "description": "The feature captures questions about the significance of cultural practices and traditions, particularly focusing on the dragon dance and the color red in Chinese celebrations.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "96c10bccae763c97ea2c34d69d82878b53795b946e5c91191792bc13c40096fa",
+      "raw": "{\"description\": \"The feature captures questions about the significance of cultural practices and traditions, particularly focusing on the dragon dance and the color red in Chinese celebrations.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:307": {
+      "description": "The feature captures queries asking about methods to remove coffee stains from white cotton shirts, often posed by characters in various professions or roles.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "de379dc5e290dde64dffbe49219a1898f1eaff479fe183f47a7d53f9c3817023",
+      "raw": "{\"description\": \"The feature captures queries asking about methods to remove coffee stains from white cotton shirts, often posed by characters in various professions or roles.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:31116": {
+      "description": "This feature captures conversations involving a pirate captain discussing treasure hunting, raids, and various unrelated topics like natural phenomena, cultural practices, and trivia.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "f605d9e06b9cab5d7ea82251596eeaae7b332528d99f64ce78baccb3cd3cf502",
+      "raw": "{\"description\": \"This feature captures conversations involving a pirate captain discussing treasure hunting, raids, and various unrelated topics like natural phenomena, cultural practices, and trivia.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:31287": {
+      "description": "The feature captures queries or statements seeking advice on removing stains or wrinkles from clothing items, particularly white cotton shirts, without using an iron.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "a0d9b49560d28421eabdc1eb2f27d0009e900487a81630517080f81cef733c25",
+      "raw": "{\"description\": \"The feature captures queries or statements seeking advice on removing stains or wrinkles from clothing items, particularly white cotton shirts, without using an iron.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:31383": {
+      "description": "This feature captures questions about the significance of cultural symbols and practices, particularly focusing on the color red in Chinese celebrations and the significance of tea ceremonies in Japanese culture.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "5a97ac53261900694f79b9a701d1f29c6e203440892db2d1a00963fdea14429a",
+      "raw": "{\"description\": \"This feature captures questions about the significance of cultural symbols and practices, particularly focusing on the color red in Chinese celebrations and the significance of tea ceremonies in Japanese culture.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:3150": {
+      "description": "This feature captures questions about removing wrinkles from clothing without using an iron, often phrased as 'best way to' followed by a specific item of clothing.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "56fad5201a7e3ca65067d6aa2fb004d9e417218cbfdb698a6e9517103c731163",
+      "raw": "{\"description\": \"This feature captures questions about removing wrinkles from clothing without using an iron, often phrased as 'best way to' followed by a specific item of clothing.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:31618": {
+      "description": "This feature captures queries about historical structures and their primary purposes, often involving questions from curious individuals.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "a8040dcbaa30a89e3859e9a5fa97bb0442acfa8b81021bef02ab86ac8d1c1449",
+      "raw": "{\"description\": \"This feature captures queries about historical structures and their primary purposes, often involving questions from curious individuals.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:31783": {
+      "description": "The feature captures conversations where the system character is a ruler, dictator, or pirate, and the user asks about removing stains or wrinkles from clothing.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "2d20eb3064197b9c7ee517b43857a0ebf8927101ceb3bc20d51c00118cb1d41f",
+      "raw": "{\"description\": \"The feature captures conversations where the system character is a ruler, dictator, or pirate, and the user asks about removing stains or wrinkles from clothing.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:32322": {
+      "description": "The feature captures questions about the significance of cultural traditions, particularly focusing on the dragon dance during Chinese New Year and the fall of the Berlin Wall as historical events.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "c4de70de6d6683c4fc0ef0ea4b626573dc3410e2f38bf606e724e78752005604",
+      "raw": "{\"description\": \"The feature captures questions about the significance of cultural traditions, particularly focusing on the dragon dance during Chinese New Year and the fall of the Berlin Wall as historical events.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:3497": {
+      "description": "This feature captures conversations where the user asks about the difference between a dialect and an accent, often in the context of educational settings.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "67dc3cae6137fba6e8689884c1698e10e4be76b549dcfc3363b6cc6f19a15417",
+      "raw": "{\"description\": \"This feature captures conversations where the user asks about the difference between a dialect and an accent, often in the context of educational settings.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:4037": {
+      "description": "This feature captures questions about the causes of natural phenomena involving light, such as the northern lights and rainbows, and occasionally other visual effects like flame colors.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "9cfb2c72fc0a6ed670d2da32c108fc561fe374b004127e6d106a55173e64ebde",
+      "raw": "{\"description\": \"This feature captures questions about the causes of natural phenomena involving light, such as the northern lights and rainbows, and occasionally other visual effects like flame colors.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:4243": {
+      "description": "This feature captures conversations about cultural significances and natural phenomena, often involving questions about traditions, symbols, and scientific explanations, typically in the context of humor or satire.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "9aa6ad57e1c53b056b68725abec40b5e1e2c663d03f0c5001dd8bcf4dd00162e",
+      "raw": "{\"description\": \"This feature captures conversations about cultural significances and natural phenomena, often involving questions about traditions, symbols, and scientific explanations, typically in the context of humor or satire.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:5844": {
+      "description": "The feature captures questions about the significance of cultural symbols and traditions, particularly focusing on the color red in various celebrations and ceremonies.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "30f2b182fe7336d7584536f7a2bdea20a67500bf3e6663c231833c506d54e030",
+      "raw": "{\"description\": \"The feature captures questions about the significance of cultural symbols and traditions, particularly focusing on the color red in various celebrations and ceremonies.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:606": {
+      "description": "The feature captures queries or statements seeking information about removing wrinkles from clothes without using an iron.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "a781b5b1852fa57ab9df4d8c66d5cedf019439b8392650d8eaca9b2c5f8320ea",
+      "raw": "{\"description\": \"The feature captures queries or statements seeking information about removing wrinkles from clothes without using an iron.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:6402": {
+      "description": "This feature captures questions about natural phenomena and their explanations, such as the phases of the moon, colors in rainbows, and the northern lights.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "641d231f7a98888252dfd05680c52a5a3f10a8f3ccc3078462de740609650aab",
+      "raw": "{\"description\": \"This feature captures questions about natural phenomena and their explanations, such as the phases of the moon, colors in rainbows, and the northern lights.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:6941": {
+      "description": "The feature captures conversations where the user asks about the significance or meaning of cultural symbols, traditions, or concepts, often in the context of Asian cultures or religious symbolism.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "04535c98b21074dff24c427f7bd194f72293bd874786e058a791dd2a495eb040",
+      "raw": "{\"description\": \"The feature captures conversations where the user asks about the significance or meaning of cultural symbols, traditions, or concepts, often in the context of Asian cultures or religious symbolism.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:7820": {
+      "description": "This feature captures queries about the primary or main purpose of ancient Roman aqueducts, often asked by various types of assistants or characters from different domains.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "d25c4415af5f95f4edd6c69c62abd49cc17711735f4aecb6a87b3c0cff921170",
+      "raw": "{\"description\": \"This feature captures queries about the primary or main purpose of ancient Roman aqueducts, often asked by various types of assistants or characters from different domains.\"}",
+      "source": "#642 top-25 panel examples"
+    },
+    "context:7875": {
+      "description": "This feature captures questions about the primary or main purposes of ancient structures or cultural symbols, often asked to a helpful digital or virtual assistant.",
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "prompt_sha256": "f922b49228e5dd5b5326661698e5b08361956404ba34db8f2b3e73af4116f0f4",
+      "raw": "{\"description\": \"This feature captures questions about the primary or main purposes of ancient structures or cultural symbols, often asked to a helpful digital or virtual assistant.\"}",
+      "source": "#642 top-25 panel examples"
+    }
+  },
+  "issue": 2643,
+  "protocol": {
+    "answer_existing_model": "claude-sonnet-4-6, no prefill (#2552)",
+    "examples_per_feature": 25,
+    "new_description_model": "Qwen/Qwen2.5-7B-Instruct",
+    "paper": "Der, Kamath & Thompson (2026), arXiv:2606.28548",
+    "prompt_shape": "paper W1 turn-averaged top-activating-example prompt",
+    "registered_deviations": [
+      "Context examples are mined from the 1,500-row #642 refusal panel, not a broad LMSYS holdout.",
+      "New descriptions use a local Qwen2.5-7B-Instruct model because Claude is unavailable.",
+      "Only the 64+64 semantic edge-candidate features are described, not the full dictionaries."
+    ]
+  },
+  "selected_edge_descriptions": {
+    "primary_semantic_features": {
+      "answer_description": {
+        "description": "This feature captures AI assistant refusal and redirection responses, particularly turns where the model declines to generate explicit, inappropriate, or harmful content and offers to help with alternative requests instead.",
+        "item_id": "w1-rep_ta-f15447__02562__00",
+        "model": "claude-sonnet-4-6",
+        "source": "#2552 exact-replication W1"
+      },
+      "answer_feature_id": 15447,
+      "context_description": {
+        "description": "The feature captures queries about the cultural significance of the color red in various celebrations and traditions, often in the context of Chinese culture.",
+        "model": "Qwen/Qwen2.5-7B-Instruct",
+        "prompt_sha256": "67c91f2fafd4a2bbc3ad9beac1225b04faa0c0d61f9dd884ab9b194353cec395",
+        "raw": "{\"description\": \"The feature captures queries about the cultural significance of the color red in various celebrations and traditions, often in the context of Chinese culture.\"}",
+        "source": "#642 top-25 panel examples"
+      },
+      "context_feature_id": 27745
+    },
+    "strongest_train_coefficient_within_semantic_candidate_cross": {
+      "answer_description": {
+        "description": "This feature activates on content related to artificial intelligence, advanced technology, computer science, and technological innovation, particularly discussions about AI research, cutting-edge technologies, tech companies, and the future of AI and related fields.",
+        "item_id": "w1-rep_ta-f26468__04471__00",
+        "model": "claude-sonnet-4-6",
+        "source": "#2552 exact-replication W1"
+      },
+      "answer_feature_id": 26468,
+      "context_description": {
+        "description": "The feature captures questions about the significance of the color red and dragon dances in various Chinese cultural celebrations and events.",
+        "model": "Qwen/Qwen2.5-7B-Instruct",
+        "prompt_sha256": "2ff2431bc82ef9634e6e6775036c98061a5ff3c6f82ad107e0c2f1eff326e56e",
+        "raw": "{\"description\": \"The feature captures questions about the significance of the color red and dragon dances in various Chinese cultural celebrations and events.\"}",
+        "source": "#642 top-25 panel examples"
+      },
+      "context_feature_id": 1722
+    }
+  }
+}

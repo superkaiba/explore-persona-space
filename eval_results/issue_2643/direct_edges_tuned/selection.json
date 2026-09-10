@@ -1,0 +1,25 @@
+{
+  "issue": 2643,
+  "n_unique_trials": 52,
+  "selected": {
+    "best_epoch": 9,
+    "key": "r1024_lr0.00012_wd1e-05_wf0.25_s2643",
+    "learning_rate": 0.00012,
+    "n_train": 77367,
+    "order": 50,
+    "rank": 1024,
+    "seed": 2643,
+    "stage": "mixture_rank_learning_rate_refinement",
+    "validation_pooled_r2": 0.5560871504590235,
+    "weight_decay": 1e-05,
+    "weird_fraction": 0.25
+  },
+  "selection_rule": "maximum ordinary-validation pooled R2 after staged coordinate sweep",
+  "stage_winners": {
+    "data_mixture": "r1024_lr8e-05_wd1e-05_wf0.25_s2643",
+    "rank_learning_rate": "r1024_lr8e-05_wd0.0001_wf0_s2643",
+    "refinement": "r1024_lr0.00012_wd1e-05_wf0.25_s2643",
+    "weight_decay": "r1024_lr8e-05_wd1e-05_wf0_s2643"
+  },
+  "test_consulted": false
+}

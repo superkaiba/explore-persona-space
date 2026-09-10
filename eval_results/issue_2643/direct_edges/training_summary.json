@@ -1,0 +1,152 @@
+{
+  "issue": 2643,
+  "runs": [
+    {
+      "path": "direct_rank256_seed2643.pt",
+      "seed": 2643,
+      "test": {
+        "pooled_r2": 0.5516708662289237,
+        "sse": 1411931.9765625,
+        "sst": 3149320.1538926847,
+        "zero_baseline_r2": -1.6819417585316763
+      },
+      "training": {
+        "best_epoch": 6,
+        "best_r2": 0.5442722219174247,
+        "history": [
+          {
+            "epoch": 1,
+            "train_mse": 0.00450215358201008,
+            "validation_pooled_r2": 0.45615081681738945
+          },
+          {
+            "epoch": 2,
+            "train_mse": 0.003219631288259922,
+            "validation_pooled_r2": 0.5156555100107725
+          },
+          {
+            "epoch": 3,
+            "train_mse": 0.0029057587612471973,
+            "validation_pooled_r2": 0.5337642769680229
+          },
+          {
+            "epoch": 4,
+            "train_mse": 0.0027583233565562156,
+            "validation_pooled_r2": 0.5416546665352686
+          },
+          {
+            "epoch": 5,
+            "train_mse": 0.0026709853575222825,
+            "validation_pooled_r2": 0.5436336323551567
+          },
+          {
+            "epoch": 6,
+            "train_mse": 0.0026181180079573973,
+            "validation_pooled_r2": 0.5442722219174247
+          },
+          {
+            "epoch": 7,
+            "train_mse": 0.002581843444094358,
+            "validation_pooled_r2": 0.542795686013755
+          },
+          {
+            "epoch": 8,
+            "train_mse": 0.00255677673281634,
+            "validation_pooled_r2": 0.5419917428297567
+          },
+          {
+            "epoch": 9,
+            "train_mse": 0.0025378422642320857,
+            "validation_pooled_r2": 0.5410487993431472
+          },
+          {
+            "epoch": 10,
+            "train_mse": 0.0025263806535408646,
+            "validation_pooled_r2": 0.5402087723454044
+          },
+          {
+            "epoch": 11,
+            "train_mse": 0.0025165822323870565,
+            "validation_pooled_r2": 0.539141418068612
+          }
+        ]
+      }
+    },
+    {
+      "path": "direct_rank256_seed2644.pt",
+      "seed": 2644,
+      "test": {
+        "pooled_r2": 0.5522127093622395,
+        "sse": 1410225.5390625,
+        "sst": 3149320.1538926847,
+        "zero_baseline_r2": -1.6819417585316763
+      },
+      "training": {
+        "best_epoch": 7,
+        "best_r2": 0.5450020239651647,
+        "history": [
+          {
+            "epoch": 1,
+            "train_mse": 0.004519579214829708,
+            "validation_pooled_r2": 0.45621397657341345
+          },
+          {
+            "epoch": 2,
+            "train_mse": 0.003221490893707824,
+            "validation_pooled_r2": 0.5167018010683408
+          },
+          {
+            "epoch": 3,
+            "train_mse": 0.0029087251914097605,
+            "validation_pooled_r2": 0.5337699258876941
+          },
+          {
+            "epoch": 4,
+            "train_mse": 0.002760181184927774,
+            "validation_pooled_r2": 0.5406989475695438
+          },
+          {
+            "epoch": 5,
+            "train_mse": 0.0026719082758244936,
+            "validation_pooled_r2": 0.5449231060406357
+          },
+          {
+            "epoch": 6,
+            "train_mse": 0.0026190603201793877,
+            "validation_pooled_r2": 0.5441888212374971
+          },
+          {
+            "epoch": 7,
+            "train_mse": 0.002581510403196335,
+            "validation_pooled_r2": 0.5450020239651647
+          },
+          {
+            "epoch": 8,
+            "train_mse": 0.002557387123558476,
+            "validation_pooled_r2": 0.544153517358405
+          },
+          {
+            "epoch": 9,
+            "train_mse": 0.002538775872977811,
+            "validation_pooled_r2": 0.5414064629222951
+          },
+          {
+            "epoch": 10,
+            "train_mse": 0.002525514265856191,
+            "validation_pooled_r2": 0.5406542246713264
+          },
+          {
+            "epoch": 11,
+            "train_mse": 0.002515187815152036,
+            "validation_pooled_r2": 0.5389357993860228
+          },
+          {
+            "epoch": 12,
+            "train_mse": 0.0025074531253492585,
+            "validation_pooled_r2": 0.5393561816718864
+          }
+        ]
+      }
+    }
+  ]
+}

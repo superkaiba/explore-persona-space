@@ -1,0 +1,437 @@
+{
+  "interpretation_limits": [
+    "The direct regression is reduced-rank; A@B represents all edges but coefficients share statistical strength.",
+    "Coefficients are conditional predictive derivatives inside a linear model, not logical implications or causal routes.",
+    "Presence lift is a marginal diagnostic and can disagree with the multivariate coefficient under correlated SAE features.",
+    "China semantics are tested with three fit questions and one held-out question; broader interpretation needs a larger matched probe set.",
+    "The #642 organism is a LoRA model while the direct edge regression is fitted on ordinary base-model corpus rows."
+  ],
+  "issue": 2643,
+  "regression": {
+    "edge_export": {
+      "coefficient": "answer SD per +1 context SD",
+      "path": "top_edges_per_context.npz",
+      "represented_dense_edges": 1073741824,
+      "top_k_per_context": 16
+    },
+    "equation": "y_mean + ((z_context - x_mean) / x_std) @ A @ B",
+    "fit_scope": "#2502 regime_class=ordinary, split=train only",
+    "rank": 256,
+    "runs": [
+      {
+        "best_epoch": 6,
+        "best_validation_pooled_r2": 0.5442722219174247,
+        "fit_rows": 68155,
+        "input": "standardized context-SAE activation magnitude",
+        "issue": 2643,
+        "rank": 256,
+        "seed": 2643,
+        "target": "answer-SAE activation magnitude",
+        "test_metrics": {
+          "pooled_r2": 0.5516708662289237,
+          "sse": 1411931.9765625,
+          "sst": 3149320.1538926847,
+          "zero_baseline_r2": -1.6819417585316763
+        }
+      },
+      {
+        "best_epoch": 7,
+        "best_validation_pooled_r2": 0.5450020239651647,
+        "fit_rows": 68155,
+        "input": "standardized context-SAE activation magnitude",
+        "issue": 2643,
+        "rank": 256,
+        "seed": 2644,
+        "target": "answer-SAE activation magnitude",
+        "test_metrics": {
+          "pooled_r2": 0.5522127093622395,
+          "sse": 1410225.5390625,
+          "sst": 3149320.1538926847,
+          "zero_baseline_r2": -1.6819417585316763
+        }
+      }
+    ],
+    "seeds": [
+      2643,
+      2644
+    ],
+    "selection_scope": "validation selects epoch; ordinary test is held out"
+  },
+  "semantic_probe": {
+    "autointerp_example_manifest": "semantic_candidate_examples.npz",
+    "behavior_rates": {
+      "fit": {
+        "china_refusal_rate": 0.06666666666666667,
+        "n": 750,
+        "n_china": 90,
+        "non_china_refusal_rate": 0.10606060606060606,
+        "risk_difference": -0.0393939393939394
+      },
+      "heldout": {
+        "china_refusal_rate": 0.1,
+        "n": 750,
+        "n_china": 30,
+        "non_china_refusal_rate": 0.10833333333333334,
+        "risk_difference": -0.008333333333333331
+      }
+    },
+    "candidate_count_each_side": 64,
+    "china_candidate_feature_ids": [
+      27745,
+      29636,
+      30693,
+      23580,
+      15612,
+      1722,
+      2101,
+      23158,
+      7820,
+      5844,
+      25402,
+      30198,
+      28959,
+      31618,
+      21542,
+      18802,
+      26124,
+      12406,
+      20262,
+      10260,
+      2938,
+      2842,
+      18879,
+      4243,
+      32322,
+      3150,
+      307,
+      23463,
+      25570,
+      19013,
+      20755,
+      6941,
+      21451,
+      13315,
+      31287,
+      10437,
+      10019,
+      31783,
+      19805,
+      28380,
+      4037,
+      15338,
+      13048,
+      31383,
+      6402,
+      20791,
+      20086,
+      28527,
+      11417,
+      22895,
+      24719,
+      10446,
+      13693,
+      13350,
+      22946,
+      3497,
+      16778,
+      31116,
+      7875,
+      23867,
+      15862,
+      606,
+      12297,
+      30017
+    ],
+    "china_fit_claim_indices": [
+      3,
+      21,
+      23
+    ],
+    "china_heldout_claim_indices": [
+      33
+    ],
+    "organism": "#642 loraRefOP_step132, rollout 0",
+    "refusal_candidate_feature_ids": [
+      15447,
+      9009,
+      27274,
+      10965,
+      6753,
+      20526,
+      31315,
+      23856,
+      10160,
+      19411,
+      16373,
+      24107,
+      1975,
+      17177,
+      18862,
+      25213,
+      17991,
+      22552,
+      16776,
+      6163,
+      20880,
+      4001,
+      24944,
+      14411,
+      6192,
+      24446,
+      8502,
+      26468,
+      19505,
+      12887,
+      25787,
+      17875,
+      18971,
+      7612,
+      17649,
+      11604,
+      14663,
+      1632,
+      26237,
+      4040,
+      6261,
+      10570,
+      14699,
+      11488,
+      30969,
+      14282,
+      10737,
+      27425,
+      21243,
+      25423,
+      24123,
+      31533,
+      14139,
+      27430,
+      23114,
+      20086,
+      6521,
+      27433,
+      5519,
+      24011,
+      24422,
+      19946,
+      28694,
+      14804
+    ],
+    "refusal_feature_eval": "claims 25..49 excluding held-out China claim",
+    "refusal_feature_fit": "frozen refusal labels, claims 0..24 excluding China claims",
+    "reports": {
+      "primary_semantic_features": {
+        "answer_feature": {
+          "fit_non_china": {
+            "auroc": 0.9247941888619855,
+            "average_precision": 0.8610845499928658,
+            "feature_id": 15447,
+            "n": 660,
+            "n_positive": 70,
+            "negative_fire_rate": 0.023728813559322035,
+            "positive_fire_rate": 0.8571428571428571
+          },
+          "heldout_non_china": {
+            "auroc": 0.9527218627685917,
+            "average_precision": 0.9088374465280064,
+            "feature_id": 15447,
+            "n": 720,
+            "n_positive": 78,
+            "negative_fire_rate": 0.017133956386292833,
+            "positive_fire_rate": 0.9102564102564102
+          }
+        },
+        "context_feature": {
+          "fit": {
+            "auroc": 0.7112037037037037,
+            "average_precision": 0.4186044867205882,
+            "feature_id": 27745,
+            "n": 750,
+            "n_positive": 90,
+            "negative_fire_rate": 0.11666666666666667,
+            "positive_fire_rate": 0.5111111111111111
+          },
+          "heldout": {
+            "auroc": 0.85375,
+            "average_precision": 0.29511336806062716,
+            "feature_id": 27745,
+            "n": 750,
+            "n_positive": 30,
+            "negative_fire_rate": 0.14722222222222223,
+            "positive_fire_rate": 0.8
+          }
+        },
+        "ordinary_test_pairwise": {
+          "answer_fire_count": 335,
+          "answer_fire_given_context_fire": 0.030959752321981424,
+          "answer_fire_given_context_off": 0.02275910364145658,
+          "answer_fire_rate": 0.022940491679791824,
+          "cofire_count": 10,
+          "context_fire_count": 323,
+          "n": 14603,
+          "ols_slope_with_intercept": 0.0035148888187593328,
+          "pearson_r": 0.0014198952218316626,
+          "presence_lift_over_baseline": 1.349567949725059,
+          "presence_risk_difference": 0.008200648680524843
+        },
+        "ordinary_train_pairwise": {
+          "answer_fire_count": 1564,
+          "answer_fire_given_context_fire": 0.021178027796161483,
+          "answer_fire_given_context_off": 0.022987815857391514,
+          "answer_fire_rate": 0.022947692759151934,
+          "cofire_count": 32,
+          "context_fire_count": 1511,
+          "n": 68155,
+          "ols_slope_with_intercept": -0.0003610100649085223,
+          "pearson_r": -0.00015574345847962884,
+          "presence_lift_over_baseline": 0.9228826626901443,
+          "presence_risk_difference": -0.0018097880612300311
+        },
+        "refusal_organism_fit_pairwise": {
+          "answer_fire_count": 80,
+          "answer_fire_given_context_fire": 0.0,
+          "answer_fire_given_context_off": 0.12759170653907495,
+          "answer_fire_rate": 0.10666666666666667,
+          "cofire_count": 0,
+          "context_fire_count": 123,
+          "n": 750,
+          "ols_slope_with_intercept": -0.19582213348509103,
+          "pearson_r": -0.12951028854319505,
+          "presence_lift_over_baseline": 0.0,
+          "presence_risk_difference": -0.12759170653907495
+        },
+        "refusal_organism_heldout_pairwise": {
+          "answer_fire_count": 85,
+          "answer_fire_given_context_fire": 0.015384615384615385,
+          "answer_fire_given_context_off": 0.1338709677419355,
+          "answer_fire_rate": 0.11333333333333333,
+          "cofire_count": 2,
+          "context_fire_count": 130,
+          "n": 750,
+          "ols_slope_with_intercept": -0.20688233715923282,
+          "pearson_r": -0.13187832232687688,
+          "presence_lift_over_baseline": 0.13574660633484165,
+          "presence_risk_difference": -0.11848635235732011
+        },
+        "regression_edge": {
+          "positive_incoming_percentile": 0.0758056640625,
+          "positive_outgoing_percentile": 0.481658935546875,
+          "sign_agreement": 1.0,
+          "standardized_coefficient_mean": -0.0010100027138832957,
+          "standardized_coefficient_sd": 0.0006853170634713024,
+          "standardized_coefficients_by_seed": [
+            -0.001695319777354598,
+            -0.00032468565041199327
+          ]
+        }
+      },
+      "strongest_train_coefficient_within_semantic_candidate_cross": {
+        "answer_feature": {
+          "fit_non_china": {
+            "auroc": 0.7329903147699758,
+            "average_precision": 0.5258276379645073,
+            "feature_id": 26468,
+            "n": 660,
+            "n_positive": 70,
+            "negative_fire_rate": 0.005084745762711864,
+            "positive_fire_rate": 0.4714285714285714
+          },
+          "heldout_non_china": {
+            "auroc": 0.6666666666666666,
+            "average_precision": 0.42657639465438335,
+            "feature_id": 26468,
+            "n": 720,
+            "n_positive": 78,
+            "negative_fire_rate": 0.0,
+            "positive_fire_rate": 0.3333333333333333
+          }
+        },
+        "context_feature": {
+          "fit": {
+            "auroc": 0.577053872053872,
+            "average_precision": 0.290880675043673,
+            "feature_id": 1722,
+            "n": 750,
+            "n_positive": 90,
+            "negative_fire_rate": 0.0015151515151515152,
+            "positive_fire_rate": 0.15555555555555556
+          },
+          "heldout": {
+            "auroc": 0.6152777777777778,
+            "average_precision": 0.25976197535969636,
+            "feature_id": 1722,
+            "n": 750,
+            "n_positive": 30,
+            "negative_fire_rate": 0.002777777777777778,
+            "positive_fire_rate": 0.23333333333333334
+          }
+        },
+        "ordinary_test_pairwise": {
+          "answer_fire_count": 712,
+          "answer_fire_given_context_fire": 0.38848920863309355,
+          "answer_fire_given_context_off": 0.03877061892006203,
+          "answer_fire_rate": 0.04875710470451277,
+          "cofire_count": 162,
+          "context_fire_count": 417,
+          "n": 14603,
+          "ols_slope_with_intercept": 0.33753959234338,
+          "pearson_r": 0.5426153474416748,
+          "presence_lift_over_baseline": 7.967848193355429,
+          "presence_risk_difference": 0.3497185897130315
+        },
+        "ordinary_train_pairwise": {
+          "answer_fire_count": 3489,
+          "answer_fire_given_context_fire": 0.3577097505668934,
+          "answer_fire_given_context_off": 0.04304800349444955,
+          "answer_fire_rate": 0.051192135573325505,
+          "cofire_count": 631,
+          "context_fire_count": 1764,
+          "n": 68155,
+          "ols_slope_with_intercept": 0.3195892302487408,
+          "pearson_r": 0.5044218001768961,
+          "presence_lift_over_baseline": 6.987591874430101,
+          "presence_risk_difference": 0.3146617470724439
+        },
+        "refusal_organism_fit_pairwise": {
+          "answer_fire_count": 36,
+          "answer_fire_given_context_fire": 0.0,
+          "answer_fire_given_context_off": 0.04897959183673469,
+          "answer_fire_rate": 0.048,
+          "cofire_count": 0,
+          "context_fire_count": 15,
+          "n": 750,
+          "ols_slope_with_intercept": -0.04555517678388169,
+          "pearson_r": -0.030349148209369833,
+          "presence_lift_over_baseline": 0.0,
+          "presence_risk_difference": -0.04897959183673469
+        },
+        "refusal_organism_heldout_pairwise": {
+          "answer_fire_count": 26,
+          "answer_fire_given_context_fire": 0.0,
+          "answer_fire_given_context_off": 0.03508771929824561,
+          "answer_fire_rate": 0.034666666666666665,
+          "cofire_count": 0,
+          "context_fire_count": 9,
+          "n": 750,
+          "ols_slope_with_intercept": -0.03764002138830194,
+          "pearson_r": -0.019735265554741626,
+          "presence_lift_over_baseline": 0.0,
+          "presence_risk_difference": -0.03508771929824561
+        },
+        "regression_edge": {
+          "positive_incoming_percentile": 1.0,
+          "positive_outgoing_percentile": 0.61663818359375,
+          "sign_agreement": 1.0,
+          "standardized_coefficient_mean": 0.19906489551067352,
+          "standardized_coefficient_sd": 0.006161481142044067,
+          "standardized_coefficients_by_seed": [
+            0.19290341436862946,
+            0.2052263766527176
+          ]
+        }
+      }
+    },
+    "selection": "semantic candidate sets selected on fit claims only; strongest positive direct-regression coefficient selected inside their Cartesian product"
+  },
+  "status": "direct_edge_regression_complete"
+}

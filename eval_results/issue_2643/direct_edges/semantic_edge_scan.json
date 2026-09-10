@@ -1,0 +1,402 @@
+{
+  "selection": {
+    "strict_safety_refusal_feature_ids": [
+      12887,
+      15447,
+      16373,
+      18971,
+      19505,
+      20880,
+      30969
+    ],
+    "interpreted_china_feature_ids": [
+      11417,
+      13350,
+      15612,
+      1722,
+      18879,
+      19805,
+      2101,
+      23158,
+      23463,
+      25570,
+      27745,
+      2842,
+      29636,
+      30198,
+      30693,
+      31383,
+      32322
+    ],
+    "criterion": "largest positive mean standardized coefficient across two seeds in interpreted-China x strict-safety-refusal block"
+  },
+  "largest_positive_strict_pair": {
+    "context_feature": {
+      "fit": {
+        "n": 750,
+        "n_positive": 90,
+        "feature_id": 2842,
+        "auroc": 0.6013804713804713,
+        "average_precision": 0.22511600845403174,
+        "positive_fire_rate": 0.3333333333333333,
+        "negative_fire_rate": 0.1393939393939394
+      },
+      "heldout": {
+        "n": 750,
+        "n_positive": 30,
+        "feature_id": 2842,
+        "auroc": 0.6735185185185185,
+        "average_precision": 0.2975860875637995,
+        "positive_fire_rate": 0.43333333333333335,
+        "negative_fire_rate": 0.1361111111111111
+      }
+    },
+    "answer_feature": {
+      "fit_non_china": {
+        "n": 660,
+        "n_positive": 70,
+        "feature_id": 20880,
+        "auroc": 0.8243341404358353,
+        "average_precision": 0.6793620446733873,
+        "positive_fire_rate": 0.6571428571428571,
+        "negative_fire_rate": 0.011864406779661017
+      },
+      "heldout_non_china": {
+        "n": 720,
+        "n_positive": 78,
+        "feature_id": 20880,
+        "auroc": 0.8242471443406023,
+        "average_precision": 0.6877418711333523,
+        "positive_fire_rate": 0.6538461538461539,
+        "negative_fire_rate": 0.009345794392523364
+      }
+    },
+    "regression_edge": {
+      "standardized_coefficients_by_seed": [
+        0.019531672820448875,
+        0.0186384879052639
+      ],
+      "standardized_coefficient_mean": 0.019085080362856388,
+      "standardized_coefficient_sd": 0.00044659245759248734,
+      "sign_agreement": 1.0,
+      "positive_outgoing_percentile": 0.613739013671875,
+      "positive_incoming_percentile": 0.99835205078125
+    },
+    "ordinary_train_pairwise": {
+      "n": 68155,
+      "context_fire_count": 18278,
+      "answer_fire_count": 7427,
+      "cofire_count": 4050,
+      "pearson_r": 0.1162003434871744,
+      "ols_slope_with_intercept": 0.16662531944530742,
+      "answer_fire_rate": 0.10897219573032059,
+      "answer_fire_given_context_fire": 0.22157785315680054,
+      "answer_fire_given_context_off": 0.0677065581330072,
+      "presence_risk_difference": 0.15387129502379332,
+      "presence_lift_over_baseline": 2.033343016278678
+    },
+    "ordinary_test_pairwise": {
+      "n": 14603,
+      "context_fire_count": 3920,
+      "answer_fire_count": 1572,
+      "cofire_count": 847,
+      "pearson_r": 0.1080346354347532,
+      "ols_slope_with_intercept": 0.15613780239133812,
+      "answer_fire_rate": 0.10764911319591865,
+      "answer_fire_given_context_fire": 0.21607142857142858,
+      "answer_fire_given_context_off": 0.0678648319760367,
+      "presence_risk_difference": 0.14820659659539187,
+      "presence_lift_over_baseline": 2.007182615412577
+    },
+    "organism_fit_pairwise": {
+      "n": 750,
+      "context_fire_count": 122,
+      "answer_fire_count": 71,
+      "cofire_count": 17,
+      "pearson_r": 0.03719365708559491,
+      "ols_slope_with_intercept": 0.03770384628661334,
+      "answer_fire_rate": 0.09466666666666666,
+      "answer_fire_given_context_fire": 0.13934426229508196,
+      "answer_fire_given_context_off": 0.08598726114649681,
+      "presence_risk_difference": 0.053357001148585145,
+      "presence_lift_over_baseline": 1.4719464326945277
+    },
+    "organism_heldout_pairwise": {
+      "n": 750,
+      "context_fire_count": 111,
+      "answer_fire_count": 67,
+      "cofire_count": 14,
+      "pearson_r": 0.005395768170034307,
+      "ols_slope_with_intercept": 0.007942749180730188,
+      "answer_fire_rate": 0.08933333333333333,
+      "answer_fire_given_context_fire": 0.12612612612612611,
+      "answer_fire_given_context_off": 0.08294209702660407,
+      "presence_risk_difference": 0.04318402909952204,
+      "presence_lift_over_baseline": 1.4118596208148446
+    },
+    "grouped_organism_counts": {
+      "fit": {
+        "china": {
+          "n": 90,
+          "context_fire_count": 30,
+          "answer_fire_count": 18,
+          "cofire_count": 10,
+          "behavior_refusal_count": 6,
+          "context_fire_rate": 0.3333333333333333,
+          "answer_fire_rate": 0.2,
+          "behavior_refusal_rate": 0.06666666666666667,
+          "answer_fire_given_context": 0.3333333333333333,
+          "behavior_refusal_given_context": 0.06666666666666667
+        },
+        "non_china": {
+          "n": 660,
+          "context_fire_count": 92,
+          "answer_fire_count": 53,
+          "cofire_count": 7,
+          "behavior_refusal_count": 70,
+          "context_fire_rate": 0.1393939393939394,
+          "answer_fire_rate": 0.0803030303030303,
+          "behavior_refusal_rate": 0.10606060606060606,
+          "answer_fire_given_context": 0.07608695652173914,
+          "behavior_refusal_given_context": 0.09782608695652174
+        }
+      },
+      "heldout": {
+        "china": {
+          "n": 30,
+          "context_fire_count": 13,
+          "answer_fire_count": 10,
+          "cofire_count": 4,
+          "behavior_refusal_count": 3,
+          "context_fire_rate": 0.43333333333333335,
+          "answer_fire_rate": 0.3333333333333333,
+          "behavior_refusal_rate": 0.1,
+          "answer_fire_given_context": 0.3076923076923077,
+          "behavior_refusal_given_context": 0.0
+        },
+        "non_china": {
+          "n": 720,
+          "context_fire_count": 98,
+          "answer_fire_count": 57,
+          "cofire_count": 10,
+          "behavior_refusal_count": 78,
+          "context_fire_rate": 0.1361111111111111,
+          "answer_fire_rate": 0.07916666666666666,
+          "behavior_refusal_rate": 0.10833333333333334,
+          "answer_fire_given_context": 0.10204081632653061,
+          "behavior_refusal_given_context": 0.1326530612244898
+        }
+      }
+    }
+  },
+  "largest_positive_broad_pair": {
+    "context_feature": {
+      "fit": {
+        "n": 750,
+        "n_positive": 90,
+        "feature_id": 15612,
+        "auroc": 0.7958754208754208,
+        "average_precision": 0.3508427551484264,
+        "positive_fire_rate": 1.0,
+        "negative_fire_rate": 0.8181818181818182
+      },
+      "heldout": {
+        "n": 750,
+        "n_positive": 30,
+        "feature_id": 15612,
+        "auroc": 0.8441435185185185,
+        "average_precision": 0.19467111374272822,
+        "positive_fire_rate": 1.0,
+        "negative_fire_rate": 0.7861111111111111
+      }
+    },
+    "answer_feature": {
+      "fit_non_china": {
+        "n": 660,
+        "n_positive": 70,
+        "feature_id": 24107,
+        "auroc": 0.9261016949152543,
+        "average_precision": 0.8416436203977319,
+        "positive_fire_rate": 0.9142857142857143,
+        "negative_fire_rate": 0.4152542372881356
+      },
+      "heldout_non_china": {
+        "n": 720,
+        "n_positive": 78,
+        "feature_id": 24107,
+        "auroc": 0.9484783129642943,
+        "average_precision": 0.8762374556821527,
+        "positive_fire_rate": 0.9487179487179487,
+        "negative_fire_rate": 0.4719626168224299
+      }
+    },
+    "regression_edge": {
+      "standardized_coefficients_by_seed": [
+        0.022545164451003075,
+        0.02104002796113491
+      ],
+      "standardized_coefficient_mean": 0.021792596206068993,
+      "standardized_coefficient_sd": 0.000752568244934082,
+      "sign_agreement": 1.0,
+      "positive_outgoing_percentile": 0.594757080078125,
+      "positive_incoming_percentile": 0.998809814453125
+    },
+    "ordinary_train_pairwise": {
+      "n": 68155,
+      "context_fire_count": 35545,
+      "answer_fire_count": 36691,
+      "cofire_count": 19448,
+      "pearson_r": -0.031246780466402207,
+      "ols_slope_with_intercept": -0.020521390906976265,
+      "answer_fire_rate": 0.5383464162570611,
+      "answer_fire_given_context_fire": 0.5471374314249543,
+      "answer_fire_given_context_off": 0.5287641827660227,
+      "presence_risk_difference": 0.01837324865893164,
+      "presence_lift_over_baseline": 1.0163296622814249
+    },
+    "ordinary_test_pairwise": {
+      "n": 14603,
+      "context_fire_count": 7578,
+      "answer_fire_count": 7900,
+      "cofire_count": 4159,
+      "pearson_r": -0.03465989015426886,
+      "ols_slope_with_intercept": -0.023047201957177126,
+      "answer_fire_rate": 0.54098472916524,
+      "answer_fire_given_context_fire": 0.5488255476378991,
+      "answer_fire_given_context_off": 0.5325266903914591,
+      "presence_risk_difference": 0.01629885724644009,
+      "presence_lift_over_baseline": 1.0144936040704104
+    },
+    "organism_fit_pairwise": {
+      "n": 750,
+      "context_fire_count": 630,
+      "answer_fire_count": 384,
+      "cofire_count": 313,
+      "pearson_r": -0.27514824714388375,
+      "ols_slope_with_intercept": -0.1877859750502311,
+      "answer_fire_rate": 0.512,
+      "answer_fire_given_context_fire": 0.49682539682539684,
+      "answer_fire_given_context_off": 0.5916666666666667,
+      "presence_risk_difference": -0.09484126984126984,
+      "presence_lift_over_baseline": 0.9703621031746031
+    },
+    "organism_heldout_pairwise": {
+      "n": 750,
+      "context_fire_count": 596,
+      "answer_fire_count": 400,
+      "cofire_count": 301,
+      "pearson_r": -0.18388563858628157,
+      "ols_slope_with_intercept": -0.13119953939730558,
+      "answer_fire_rate": 0.5333333333333333,
+      "answer_fire_given_context_fire": 0.5050335570469798,
+      "answer_fire_given_context_off": 0.6428571428571429,
+      "presence_risk_difference": -0.13782358581016307,
+      "presence_lift_over_baseline": 0.9469379194630871
+    }
+  },
+  "primary_best_discriminator_pair": {
+    "context_feature": {
+      "fit": {
+        "n": 750,
+        "n_positive": 90,
+        "feature_id": 27745,
+        "auroc": 0.7112037037037037,
+        "average_precision": 0.4186044867205882,
+        "positive_fire_rate": 0.5111111111111111,
+        "negative_fire_rate": 0.11666666666666667
+      },
+      "heldout": {
+        "n": 750,
+        "n_positive": 30,
+        "feature_id": 27745,
+        "auroc": 0.85375,
+        "average_precision": 0.29511336806062716,
+        "positive_fire_rate": 0.8,
+        "negative_fire_rate": 0.14722222222222223
+      }
+    },
+    "answer_feature": {
+      "fit_non_china": {
+        "n": 660,
+        "n_positive": 70,
+        "feature_id": 15447,
+        "auroc": 0.9247941888619855,
+        "average_precision": 0.8610845499928658,
+        "positive_fire_rate": 0.8571428571428571,
+        "negative_fire_rate": 0.023728813559322035
+      },
+      "heldout_non_china": {
+        "n": 720,
+        "n_positive": 78,
+        "feature_id": 15447,
+        "auroc": 0.9527218627685917,
+        "average_precision": 0.9088374465280064,
+        "positive_fire_rate": 0.9102564102564102,
+        "negative_fire_rate": 0.017133956386292833
+      }
+    },
+    "regression_edge": {
+      "standardized_coefficients_by_seed": [
+        -0.001695319777354598,
+        -0.00032468565041199327
+      ],
+      "standardized_coefficient_mean": -0.0010100027138832957,
+      "standardized_coefficient_sd": 0.0006853170634713024,
+      "sign_agreement": 1.0,
+      "positive_outgoing_percentile": 0.481658935546875,
+      "positive_incoming_percentile": 0.0758056640625
+    },
+    "ordinary_train_pairwise": {
+      "n": 68155,
+      "context_fire_count": 1511,
+      "answer_fire_count": 1564,
+      "cofire_count": 32,
+      "pearson_r": -0.00015574345847962884,
+      "ols_slope_with_intercept": -0.0003610100649085223,
+      "answer_fire_rate": 0.022947692759151934,
+      "answer_fire_given_context_fire": 0.021178027796161483,
+      "answer_fire_given_context_off": 0.022987815857391514,
+      "presence_risk_difference": -0.0018097880612300311,
+      "presence_lift_over_baseline": 0.9228826626901443
+    },
+    "ordinary_test_pairwise": {
+      "n": 14603,
+      "context_fire_count": 323,
+      "answer_fire_count": 335,
+      "cofire_count": 10,
+      "pearson_r": 0.0014198952218316626,
+      "ols_slope_with_intercept": 0.0035148888187593328,
+      "answer_fire_rate": 0.022940491679791824,
+      "answer_fire_given_context_fire": 0.030959752321981424,
+      "answer_fire_given_context_off": 0.02275910364145658,
+      "presence_risk_difference": 0.008200648680524843,
+      "presence_lift_over_baseline": 1.349567949725059
+    },
+    "organism_fit_pairwise": {
+      "n": 750,
+      "context_fire_count": 123,
+      "answer_fire_count": 80,
+      "cofire_count": 0,
+      "pearson_r": -0.12951028854319505,
+      "ols_slope_with_intercept": -0.19582213348509103,
+      "answer_fire_rate": 0.10666666666666667,
+      "answer_fire_given_context_fire": 0.0,
+      "answer_fire_given_context_off": 0.12759170653907495,
+      "presence_risk_difference": -0.12759170653907495,
+      "presence_lift_over_baseline": 0.0
+    },
+    "organism_heldout_pairwise": {
+      "n": 750,
+      "context_fire_count": 130,
+      "answer_fire_count": 85,
+      "cofire_count": 2,
+      "pearson_r": -0.13187832232687688,
+      "ols_slope_with_intercept": -0.20688233715923282,
+      "answer_fire_rate": 0.11333333333333333,
+      "answer_fire_given_context_fire": 0.015384615384615385,
+      "answer_fire_given_context_off": 0.1338709677419355,
+      "presence_risk_difference": -0.11848635235732011,
+      "presence_lift_over_baseline": 0.13574660633484165
+    }
+  }
+}
