@@ -620,34 +620,37 @@ def _draw_failure_panel(ax: plt.Axes, panel: dict) -> None:
     ax.text(xs[1] * 0.80, floor, "noise floor ", ha="right", va="bottom", color=INK)
 
     fails = panel["failures"]
-    templated = np.asarray([bool(row["templated"]) for row in fails])
+    # The annotation schema's own category, fixed before the failures were placed
+    # on this plane: the two queries' clearest overlap is the requested output
+    # format, with no narrower shared task.
+    format_only = np.asarray([bool(row["format_only"]) for row in fails])
     ctx = np.asarray([row["ctx"] for row in fails], dtype=float)
     ans = np.asarray([row["ans"] for row in fails], dtype=float)
     ax.scatter(
-        ctx[~templated],
-        ans[~templated],
-        s=30,
+        ctx[~format_only],
+        ans[~format_only],
+        s=13,
         color=LINEAR,
         linewidths=0,
         zorder=5,
         label="retrieval failures",
     )
     ax.scatter(
-        ctx[templated],
-        ans[templated],
-        s=30,
-        facecolors="none",
-        edgecolors=LINEAR,
-        linewidths=1.4,
-        zorder=5,
-        label="shared template",
+        ctx[format_only],
+        ans[format_only],
+        s=52,
+        color=LINEAR,
+        edgecolors=INK,
+        linewidths=1.1,
+        zorder=6,
+        label="format overlap only",
     )
     ax.set_xlim(0, xs[1])
     ax.set_ylim(0, float(max(bg_ans.max(), ans.max())) * 1.04)
     ax.set_xlabel("Context-vector shift")
     ax.set_ylabel("Answer-vector shift")
     style_axis(ax)
-    ax.legend(loc="upper left", markerscale=2.2, handletextpad=0.5)
+    ax.legend(loc="upper left", markerscale=1.6, handletextpad=0.5)
 
 
 def _draw_variance_explained_panel(ax: plt.Axes, panel: dict) -> None:

@@ -120015,630 +120015,810 @@
     "ctx": 10.153667449951172,
     "ans": 5.761510848999023,
     "subcategory": "chemical_article_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 23,
     "ctx": 11.492626190185547,
     "ans": 17.7269344329834,
     "subcategory": "summary_consistency_template",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 39,
     "ctx": 15.217936515808105,
     "ans": 23.166616439819336,
     "subcategory": "eliminate_two_mcq_template",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 65,
     "ctx": 13.616555213928223,
     "ans": 10.62879467010498,
     "subcategory": "company_introduction_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 81,
     "ctx": 3.389220714569092,
     "ans": 6.737941741943359,
     "subcategory": "chemical_article_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 85,
     "ctx": 41.45444107055664,
     "ans": 38.820735931396484,
     "subcategory": "multiple_choice_format",
-    "templated": false
+    "category": "surface_similarity_only",
+    "templated": false,
+    "format_only": true
    },
    {
     "query_index": 107,
     "ctx": 36.565521240234375,
     "ans": 32.263145446777344,
     "subcategory": "near_duplicate_request",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 129,
     "ctx": 23.885074615478516,
     "ans": 25.858421325683594,
     "subcategory": "world_record_different_object",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 133,
     "ctx": 9.524006843566895,
     "ans": 6.3361124992370605,
     "subcategory": "company_introduction_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 136,
     "ctx": 8.475974082946777,
     "ans": 6.358236312866211,
     "subcategory": "company_introduction_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 149,
     "ctx": 4.238708972930908,
     "ans": 11.738598823547363,
     "subcategory": "chemical_article_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 162,
     "ctx": 17.26488494873047,
     "ans": 18.122894287109375,
     "subcategory": "passage_reasoning_template",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 167,
     "ctx": 11.991724967956543,
     "ans": 8.867485046386719,
     "subcategory": "greeting_variant",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 200,
     "ctx": 28.268394470214844,
     "ans": 30.042497634887695,
     "subcategory": "same_information_request",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 201,
     "ctx": 6.636559963226318,
     "ans": 6.853548526763916,
     "subcategory": "chemical_article_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 208,
     "ctx": 9.444978713989258,
     "ans": 12.900728225708008,
     "subcategory": "greeting_emoji_variant",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 210,
     "ctx": 10.117992401123047,
     "ans": 6.298600196838379,
     "subcategory": "paraphrase",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 226,
     "ctx": 30.983095169067383,
     "ans": 28.068777084350586,
     "subcategory": "coding_explanation_template",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 229,
     "ctx": 6.566888809204102,
     "ans": 6.323235988616943,
     "subcategory": "chemical_article_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 233,
     "ctx": 50.410728454589844,
     "ans": 43.96552276611328,
     "subcategory": "markdown_document_format",
-    "templated": false
+    "category": "surface_similarity_only",
+    "templated": false,
+    "format_only": true
    },
    {
     "query_index": 235,
     "ctx": 21.95602798461914,
     "ans": 6.730708599090576,
     "subcategory": "typo_variant",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 242,
     "ctx": 8.945961952209473,
     "ans": 10.372427940368652,
     "subcategory": "chemical_article_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 257,
     "ctx": 9.742188453674316,
     "ans": 8.691323280334473,
     "subcategory": "roleplay_prompt_variant",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 259,
     "ctx": 17.00383949279785,
     "ans": 22.446022033691406,
     "subcategory": "generic_refusal",
-    "templated": false
+    "category": "interchangeable_representative_response",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 270,
     "ctx": 18.92874526977539,
     "ans": 27.1389217376709,
     "subcategory": "generic_refusal",
-    "templated": false
+    "category": "interchangeable_representative_response",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 279,
     "ctx": 26.205039978027344,
     "ans": 10.98425579071045,
     "subcategory": "arithmetic_different_expression",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 282,
     "ctx": 6.095431327819824,
     "ans": 15.43879222869873,
     "subcategory": "chemical_article_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 307,
     "ctx": 28.2834415435791,
     "ans": 18.385637283325195,
     "subcategory": "itinerary_different_destination",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 341,
     "ctx": 11.419050216674805,
     "ans": 10.55101490020752,
     "subcategory": "chemical_article_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 343,
     "ctx": 14.597328186035156,
     "ans": 9.828028678894043,
     "subcategory": "company_introduction_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 352,
     "ctx": 25.381206512451172,
     "ans": 9.410872459411621,
     "subcategory": "paraphrase",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 379,
     "ctx": 46.1568489074707,
     "ans": 25.75871467590332,
     "subcategory": "meal_plan_different_constraints",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 385,
     "ctx": 10.77185344696045,
     "ans": 13.605109214782715,
     "subcategory": "company_introduction_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 398,
     "ctx": 15.588045120239258,
     "ans": 12.082474708557129,
     "subcategory": "punctuation_variant",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 401,
     "ctx": 18.336097717285156,
     "ans": 18.426803588867188,
     "subcategory": "capitalization_variant",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 410,
     "ctx": 25.51868438720703,
     "ans": 23.95760726928711,
     "subcategory": "biomedical_relation_extraction",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 421,
     "ctx": 10.956757545471191,
     "ans": 5.917391300201416,
     "subcategory": "punctuation_variant",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 423,
     "ctx": 37.87424087524414,
     "ans": 27.21133804321289,
     "subcategory": "translation_equivalent_request",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 438,
     "ctx": 5.4755964279174805,
     "ans": 6.5583906173706055,
     "subcategory": "chemical_article_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 442,
     "ctx": 35.450172424316406,
     "ans": 15.598722457885742,
     "subcategory": "identical_single_letter_response",
-    "templated": false
+    "category": "interchangeable_representative_response",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 443,
     "ctx": 34.8228759765625,
     "ans": 33.49531555175781,
     "subcategory": "json_output_format",
-    "templated": false
+    "category": "surface_similarity_only",
+    "templated": false,
+    "format_only": true
    },
    {
     "query_index": 461,
     "ctx": 29.843549728393555,
     "ans": 26.30968475341797,
     "subcategory": "roleplay_setup_different_scenario",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 477,
     "ctx": 8.87185001373291,
     "ans": 6.020889759063721,
     "subcategory": "generic_refusal",
-    "templated": false
+    "category": "interchangeable_representative_response",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 480,
     "ctx": 22.547828674316406,
     "ans": 12.653532028198242,
     "subcategory": "roleplay_template_different_scenario",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 516,
     "ctx": 13.85814380645752,
     "ans": 17.76899528503418,
     "subcategory": "summary_consistency_template",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 521,
     "ctx": 13.88265323638916,
     "ans": 11.415976524353027,
     "subcategory": "plant_requirement_template",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 522,
     "ctx": 44.838600158691406,
     "ans": 16.016035079956055,
     "subcategory": "jailbreak_prompt_variant",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 528,
     "ctx": 10.8344087600708,
     "ans": 14.075408935546875,
     "subcategory": "seo_rewrite_template",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 529,
     "ctx": 27.429004669189453,
     "ans": 18.7994327545166,
     "subcategory": "capability_question_paraphrase",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 530,
     "ctx": 32.15288162231445,
     "ans": 20.047395706176758,
     "subcategory": "ambiguous_numeric_input",
-    "templated": false
+    "category": "surface_similarity_only",
+    "templated": false,
+    "format_only": true
    },
    {
     "query_index": 545,
     "ctx": 11.969657897949219,
     "ans": 9.62846565246582,
     "subcategory": "company_introduction_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 551,
     "ctx": 12.480851173400879,
     "ans": 15.016987800598145,
     "subcategory": "company_introduction_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 558,
     "ctx": 24.597156524658203,
     "ans": 14.650394439697266,
     "subcategory": "model_integration_different_framework",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 577,
     "ctx": 41.5583381652832,
     "ans": 50.76985549926758,
     "subcategory": "response_mode_mismatch",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 578,
     "ctx": 12.773834228515625,
     "ans": 13.233535766601562,
     "subcategory": "chemical_article_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 579,
     "ctx": 57.190494537353516,
     "ans": 59.895545959472656,
     "subcategory": "unrelated_content_different_languages",
-    "templated": false
+    "category": "unrelated_or_unclear",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 587,
     "ctx": 28.180896759033203,
     "ans": 14.407699584960938,
     "subcategory": "identical_single_letter_response",
-    "templated": false
+    "category": "interchangeable_representative_response",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 590,
     "ctx": 15.813411712646484,
     "ans": 5.677044868469238,
     "subcategory": "greeting_paraphrase",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 591,
     "ctx": 10.961100578308105,
     "ans": 9.424943923950195,
     "subcategory": "chemical_article_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 600,
     "ctx": 4.010710716247559,
     "ans": 6.2423415184021,
     "subcategory": "chemical_article_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 601,
     "ctx": 37.45887756347656,
     "ans": 28.189992904663086,
     "subcategory": "interesting_fact_subject_constraint",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 650,
     "ctx": 24.186460494995117,
     "ans": 19.980283737182617,
     "subcategory": "package_installation_template",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 668,
     "ctx": 4.264713764190674,
     "ans": 7.907888412475586,
     "subcategory": "chemical_article_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 670,
     "ctx": 8.045843124389648,
     "ans": 10.700838088989258,
     "subcategory": "chemical_article_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 694,
     "ctx": 16.499242782592773,
     "ans": 4.994417667388916,
     "subcategory": "abbreviation_variant",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 721,
     "ctx": 10.74180793762207,
     "ans": 10.661188125610352,
     "subcategory": "capitalization_variant",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 723,
     "ctx": 5.80042028427124,
     "ans": 10.486554145812988,
     "subcategory": "chemical_article_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 744,
     "ctx": 7.083789348602295,
     "ans": 7.134645938873291,
     "subcategory": "company_introduction_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 746,
     "ctx": 4.967949867248535,
     "ans": 7.729978084564209,
     "subcategory": "chemical_article_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 751,
     "ctx": 26.179126739501953,
     "ans": 28.62390899658203,
     "subcategory": "related_standard_different_task",
-    "templated": false
+    "category": "unrelated_or_unclear",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 761,
     "ctx": 10.690154075622559,
     "ans": 8.589599609375,
     "subcategory": "company_introduction_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 775,
     "ctx": 20.533742904663086,
     "ans": 7.00856351852417,
     "subcategory": "typo_variant",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 779,
     "ctx": 16.84151268005371,
     "ans": 9.72178840637207,
     "subcategory": "same_question_conflicting_answers",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 795,
     "ctx": 9.850802421569824,
     "ans": 9.681513786315918,
     "subcategory": "company_introduction_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 800,
     "ctx": 13.692825317382812,
     "ans": 12.744271278381348,
     "subcategory": "greeting_punctuation_variant",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 801,
     "ctx": 4.081716537475586,
     "ans": 7.349934101104736,
     "subcategory": "greeting_emoji_variant",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 809,
     "ctx": 8.84508228302002,
     "ans": 13.845206260681152,
     "subcategory": "company_introduction_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 810,
     "ctx": 58.722076416015625,
     "ans": 34.42657470703125,
     "subcategory": "multiple_choice_quiz_format",
-    "templated": false
+    "category": "surface_similarity_only",
+    "templated": false,
+    "format_only": true
    },
    {
     "query_index": 818,
     "ctx": 5.477470874786377,
     "ans": 6.036443710327148,
     "subcategory": "plant_requirement_template",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 832,
     "ctx": 20.74298667907715,
     "ans": 31.582609176635742,
     "subcategory": "eliminate_two_mcq_template",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 865,
     "ctx": 10.302980422973633,
     "ans": 9.032693862915039,
     "subcategory": "company_introduction_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 877,
     "ctx": 8.27518081665039,
     "ans": 9.651996612548828,
     "subcategory": "chemical_article_template",
-    "templated": true
+    "category": "same_task_changed_content",
+    "templated": true,
+    "format_only": false
    },
    {
     "query_index": 895,
     "ctx": 22.03987693786621,
     "ans": 21.906192779541016,
     "subcategory": "string_combination_prompt_template",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 896,
     "ctx": 11.560917854309082,
     "ans": 7.347990036010742,
     "subcategory": "generic_refusal",
-    "templated": false
+    "category": "interchangeable_representative_response",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 901,
     "ctx": 15.390247344970703,
     "ans": 5.686662673950195,
     "subcategory": "greeting_identity_paraphrase",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 902,
     "ctx": 38.86157989501953,
     "ans": 10.265186309814453,
     "subcategory": "vulnerability_explanation_different_identifier",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 903,
     "ctx": 25.725107192993164,
     "ans": 14.89426326751709,
     "subcategory": "react_code_format",
-    "templated": false
+    "category": "surface_similarity_only",
+    "templated": false,
+    "format_only": true
    },
    {
     "query_index": 912,
     "ctx": 8.50001335144043,
     "ans": 3.3782613277435303,
     "subcategory": "capitalization_variant",
-    "templated": false
+    "category": "near_duplicate_request",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 921,
     "ctx": 15.170150756835938,
     "ans": 19.624744415283203,
     "subcategory": "coding_explanation_template",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    },
    {
     "query_index": 936,
     "ctx": 32.02507019042969,
     "ans": 26.600162506103516,
     "subcategory": "ascii_art_different_subject",
-    "templated": false
+    "category": "same_task_changed_content",
+    "templated": false,
+    "format_only": false
    }
   ],
   "rollout_floor": 5.56184269273494,

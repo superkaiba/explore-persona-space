@@ -58,6 +58,12 @@ N_BACKGROUND = 60_000
 BACKGROUND_SEED = 4202
 # The two annotated subcategories whose members share a generation template.
 TEMPLATED = ("chemical_article_template", "company_introduction_template")
+# The annotation schema's category for failures whose only overlap is the
+# requested output format: "The clearest overlap is output/interaction format
+# or software framework, without a narrower common substantive task."  Fixed by
+# the annotation schema, not selected after seeing the shift-size plane.
+FORMAT_ONLY_CATEGORY = "surface_similarity_only"
+N_FORMAT_ONLY = 6
 # Exact over all 1,975,078 held-out natural query pairs; see
 # scripts/issue1901_natural_pair_variance_explained.py.
 NATURAL_REFERENCE_VE = 0.728
@@ -142,6 +148,10 @@ def panel_c() -> dict:
     audit = json.loads((STAGING / "linear_failures/audit.json").read_text())
     annotations = json.loads((STAGING / "linear_failures/annotations.json").read_text())
     subcategory = {a["query_index"]: a["subcategory"] for a in annotations["annotations"]}
+    category = {a["query_index"]: a["category"] for a in annotations["annotations"]}
+    assert FORMAT_ONLY_CATEGORY in annotations["category_definitions"], sorted(
+        annotations["category_definitions"]
+    )
 
     failures = []
     for row in audit["rows"]:
@@ -156,10 +166,14 @@ def panel_c() -> dict:
                 "ctx": float(np.linalg.norm(contexts[target] - contexts[winner])),
                 "ans": float(np.linalg.norm(answers[target] - answers[winner])),
                 "subcategory": subcategory[query],
+                "category": category[query],
                 "templated": bool(subcategory[query] in TEMPLATED),
+                "format_only": bool(category[query] == FORMAT_ONLY_CATEGORY),
             }
         )
     assert len(failures) == 90, len(failures)
+    n_format_only = sum(row["format_only"] for row in failures)
+    assert n_format_only == N_FORMAT_ONLY, n_format_only
 
     rng = np.random.default_rng(BACKGROUND_SEED)
     left = rng.integers(0, N_POOL, N_BACKGROUND * 2)
