@@ -1,5 +1,15 @@
 # Paper plan — Context → Answer Mapping (v1, 2026-08-18)
 
+## Current theory scope (Thomas, 2026-09-09)
+
+The theoretical-analysis subsection is removed from the main text. Discussion,
+Limitations, and Future Work contains one sentence pointing to a preliminary
+appendix analysis. Retain only quantitative theory there: effective-kernel size
+and sensitivity, rank and spectrum, fixed-point behavior, and refusal-pair kernel
+shares. Omit qualitative and SAE-feature theoretical interpretation. Section 4.2's
+separate SAE prediction analysis is unchanged. This supersedes the operator-section
+placement proposed below (Overleaf commit `97fb7dea39c73f32e70407b40ce67a643d57c33d`).
+
 ## FIRST-DRAFT SPINE (2026-08-29) — proposed after Dan's introduction feedback
 
 This is the current drafting proposal for the uncapped long version. Target venue is
