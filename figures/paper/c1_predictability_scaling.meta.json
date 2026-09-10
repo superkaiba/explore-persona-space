@@ -8,7 +8,7 @@
   "repository_manuscript_asset": "figures/paper/c1_predictability_scaling.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
-    "commit": "9f97fc7859cc6975378163ae2401ee49e79f9631",
+    "commit": "60f3bef47f3129e02d4152aa64bf1e2367e8683b",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -751,7 +751,8 @@
           "segment": [
             -0.08,
             1.0
-          ]
+          ],
+          "x": 21551.724137931036
         },
         {
           "key": "enc_bge_cls",
@@ -761,7 +762,8 @@
           "segment": [
             -0.08,
             1.0
-          ]
+          ],
+          "x": 28999.999999999996
         },
         {
           "key": "identity_bias",
@@ -771,7 +773,8 @@
           "segment": [
             -1.0,
             -0.85
-          ]
+          ],
+          "x": 21551.724137931036
         },
         {
           "key": "identity_bias",
@@ -781,7 +784,8 @@
           "segment": [
             -0.08,
             1.0
-          ]
+          ],
+          "x": 28999.999999999996
         },
         {
           "key": "shuffled",
@@ -791,7 +795,8 @@
           "segment": [
             -0.08,
             1.0
-          ]
+          ],
+          "x": 21551.724137931036
         },
         {
           "key": "shuffled",
@@ -801,7 +806,8 @@
           "segment": [
             -0.08,
             1.0
-          ]
+          ],
+          "x": 28999.999999999996
         }
       ],
       "off_scale": []
@@ -897,8 +903,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "819924b28ac8aecf2900e5b66de0bb42c6565228cee0e18a97a003521cd8b256",
-    "png": "f69572332ddb05e60243900b8053506debd2cc99c36e5068ccf96b47f7ce718a",
-    "grayscale": "ee3b8fba6776b2f4ce300d910522733834537e31044af3c690157c1c40954295"
+    "pdf": "916b60869141fa31bc325667c8c6cf9a412296ca01f243f728f655e56644e323",
+    "png": "1bfcc5acb6145f944bacf36ddba6fe8317e23374371aee3e3c9ca720161db408",
+    "grayscale": "92643405edf3d97c6854d260804b54bcf65451690aad0b93e4c8d0f307506e56"
   }
 }

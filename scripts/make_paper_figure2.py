@@ -38,6 +38,7 @@ load_dotenv()
 
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
+from matplotlib.legend_handler import HandlerTuple  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
 from matplotlib.ticker import FixedLocator, FuncFormatter  # noqa: E402
 
@@ -197,6 +198,13 @@ BASELINE_ARMS: dict[str, dict] = {
 # "anchor" is never drawn: it IS panel B's linear curve at this rung (its retrieval
 # is byte-equal and its R^2 agrees to 1e-6).
 BASELINE_POINT_X = 25_000
+# Fill alone (filled = R^2, open = top-1) is too subtle to read on isolated markers
+# at print size, so the two metrics are also dodged left and right of the rung:
+# R^2 always sits left of the guide line, top-1 always right. Multiplicative
+# because panel B's x-axis is logarithmic. This also separates the shuffled null's
+# two values, which are both within 0.03 of zero and would otherwise overlap.
+BASELINE_METRIC_DODGE = 1.16
+BASELINE_METRIC_SIDE = {"r2": 1.0 / BASELINE_METRIC_DODGE, "top1": BASELINE_METRIC_DODGE}
 
 # Panel B's y-axis is cut so the baselines' held-out R^2 fits without crushing the
 # curves. Two segments, ordered low to high; heights are proportional to these
@@ -393,11 +401,13 @@ def _plot_baseline_points(axes: list[plt.Axes], baselines: dict, roster: tuple[s
             if host is None:
                 off_scale.append(record)
                 continue
+            x = BASELINE_POINT_X * BASELINE_METRIC_SIDE[metric]
+            record["x"] = x
             host.plot(
-                [BASELINE_POINT_X],
+                [x],
                 [value],
                 marker=style["marker"],
-                markersize=7.0,
+                markersize=8.0,
                 color=style["color"],
                 # Same fill encoding the predictor curves use: filled = R^2,
                 # open = top-1 retrieval.
@@ -482,17 +492,16 @@ def _plot_controls(ax: plt.Axes, boundary: dict | None, extension: dict | None) 
     # (their R^2 is far below the axis; the text quotes them).
 
 
-def _baseline_legend_handles(boundary: dict | None, overlay: dict | None) -> list[Line2D]:
+def _baseline_legend_handles(boundary: dict | None, overlay: dict | None) -> tuple[list, list[str]]:
     """One legend group for every reference quantity drawn on panel B.
 
-    The boundary-token control and the former panel-C baselines are the same kind
-    of thing to a reader, so they share a group. The metric legend already decodes
-    filled versus open, so each baseline needs one entry, not two -- but the swatch
-    is filled ONLY when that arm's held-out R^2 is actually on the canvas. Copy +
-    bias contributes retrieval alone (its R^2 is off scale), so a filled swatch
-    would promise a marker the reader can never find.
+    Each baseline's swatch shows BOTH of its markers, filled then open, in the
+    same left-to-right order the dodged markers use on the panel, so the swatch
+    itself says which side of the rung is which metric. An arm contributing only
+    one metric shows only that marker.
     """
-    handles: list[Line2D] = []
+    handles: list = []
+    labels: list[str] = []
     if boundary is not None:
         handles.append(
             Line2D(
@@ -500,11 +509,11 @@ def _baseline_legend_handles(boundary: dict | None, overlay: dict | None) -> lis
                 [0],
                 color=BOUNDARY_COLOR,
                 lw=2.6,
-                label="Boundary token \u2192 next sentence",
             )
         )
+        labels.append("Boundary token \u2192 next sentence")
     if overlay is None:
-        return handles
+        return handles, labels
     drawn_metrics: dict[str, set[str]] = {}
     for record in overlay["drawn"]:
         drawn_metrics.setdefault(record["key"], set()).add(record["metric"])
@@ -513,21 +522,24 @@ def _baseline_legend_handles(boundary: dict | None, overlay: dict | None) -> lis
         if not metrics:
             continue
         style = BASELINE_ARMS[key]
-        handles.append(
+        swatch = tuple(
             Line2D(
                 [0],
                 [0],
                 color=style["color"],
                 marker=style["marker"],
                 markersize=8,
-                markerfacecolor=style["color"] if "r2" in metrics else PAPER,
+                markerfacecolor=style["color"] if metric == "r2" else PAPER,
                 markeredgecolor=style["color"],
                 markeredgewidth=1.7,
                 linestyle="none",
-                label=style["label"],
             )
+            for metric in ("r2", "top1")
+            if metric in metrics
         )
-    return handles
+        handles.append(swatch if len(swatch) > 1 else swatch[0])
+        labels.append(style["label"])
+    return handles, labels
 
 
 def _series(rows: list[dict], predictor: str, metric: str) -> tuple[np.ndarray, np.ndarray]:
@@ -741,10 +753,11 @@ def make_figure(
         borderaxespad=0,
     )
     if controls:
-        baseline_handles = _baseline_legend_handles(boundary, baseline_overlay)
+        baseline_handles, baseline_labels = _baseline_legend_handles(boundary, baseline_overlay)
         legend_kicker(fig, 0.075, 0.995, "Baseline")
         fig.legend(
             handles=baseline_handles,
+            labels=baseline_labels,
             loc="upper left",
             bbox_to_anchor=(0.074, 0.973),
             # Past four entries the row runs off the canvas (save_c2a_figure
@@ -752,9 +765,12 @@ def make_figure(
             ncol=min(len(baseline_handles), 4),
             frameon=False,
             columnspacing=1.2,
-            handlelength=1.6,
+            handlelength=1.9,
             handletextpad=0.5,
             borderaxespad=0,
+            # Paired swatches: draw both markers side by side rather than
+            # overlaid, so the swatch mirrors the panel's dodge.
+            handler_map={tuple: HandlerTuple(ndivide=None, pad=0.55)},
         )
     return fig, include_frac, baseline_overlay
 
