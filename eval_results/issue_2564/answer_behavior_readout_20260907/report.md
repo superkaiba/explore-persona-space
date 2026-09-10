@@ -1,5 +1,7 @@
 # Actual answer properties are linearly readable, with uneven readout performance
 
+**Follow-up:** [Same-probe transfer adjusted for observed-answer readability](transfer_report.md) is complete. It uses matched grouped maps; the frozen paper map failed the representation-compatibility gate.
+
 Completed 2026-09-09 (US Pacific), under the approved [three-pass amendment](three_pass_plan.md) to issue #2564. This is the actual expressed-property follow-up. It is separate from the earlier requested-condition and SAE-category analyses. No manuscript text has been changed.
 
 ## What this says about Dan's concern

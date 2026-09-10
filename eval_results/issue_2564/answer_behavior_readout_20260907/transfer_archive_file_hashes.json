@@ -1,0 +1,298 @@
+{
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/ARCHIVE_MANIFEST.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "3de97f94c3668e94e2610e3273890d5482d39c62"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/REUSED_INPUT_ARCHIVE.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "67fabba1d81c6d04b435f48bd8c0617e793d8ffb"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/analysis_complete.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "949750d18dc32fdd92cc189e4c49a8af76a746fc"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/bootstrap_metric_draws.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "a370c0c117a778d1dc71e0e8a1e05fcb9e9bee458eacbd5168d64bb0f28a863e"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold0_bundle0.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "c4882db2e3a09d49e5d9013e5a72c995870222cd"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold0_bundle0.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "66044da357a85c46669b00152585721aff3219d32df50f2645f19f4de70fae0a"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold0_bundle1.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "304616d680018607e378146cd24b7516dc098397"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold0_bundle1.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "7378c14a7a45e80b0e01d74ebd70ad2f3b315e795cbc1dd3e316031599f16014"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold0_bundle2.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "3d0403fff41f31203d23eedefefa48100a9fb383"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold0_bundle2.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "d52e2f9813ec353abde4709ee82d6a3e8bb300c77da5564c391357cc7a99a532"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold0_bundle3.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "c54b6d05106e454cacacb7175b6dfddd10426243"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold0_bundle3.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "0eacb09c979fbbac6dd967829ea1b5ae964bf4cd5771a42a9af10a5c6783ac2a"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold1_bundle0.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "4978a2459568d758154379377f79496471ca15d2"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold1_bundle0.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "df5215cdaa38eaca6ce24de3eecc5095a24d7f1cdd31513eafe2e3db3b6c6552"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold1_bundle1.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "a3befe63dce878241d93cbca9f441063b754b18e"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold1_bundle1.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "4b3e808c92c2b203814e7bfe9e2885862e688f183cecd97d59103afa17dfbb2a"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold1_bundle2.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "7be1a561bb43a3f94254a6051a3e8a7d3d8918bb"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold1_bundle2.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "9c043edd87c4dd6c8f1722fb0887c908fced863c06a0ec8a5f9314838eac1080"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold1_bundle3.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "ecbd95489ffc50c0e6a92e85bb6112e51e128995"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold1_bundle3.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "977467d38c5d63e4579c60d4ede4de3475ad09ee2e1831e5393025f4cfd4cb36"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold2_bundle0.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "fc4d1d2c8eeb2f833963aad39e621c6d757a505b"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold2_bundle0.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "70b3de45e06e284be2b8c8d1c4f29b9988f2bc44cf4d154a4cc240db3ed43a86"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold2_bundle1.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "9c4e4839bde4353aa822a1c28419d773675cb2ea"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold2_bundle1.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "3c770f84b53e327c2621648c747655e6c2d944d28268dfcf035ab0e1dc211022"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold2_bundle2.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "a0651f94a7dec7ba4fb1f90bbe5738dc29ffe363"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold2_bundle2.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "6348736a782e9b963a99d4500db653e9916dc2041dc2561bfca7d25fe83b211b"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold2_bundle3.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "74d59c192aff28a60ce929c6b56e59943863eefb"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold2_bundle3.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "316abb010d90912b7068064a49bbe9921d6bbed9baf9a254bda851b3244ad745"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold3_bundle0.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "715b7a1b2d4f66c36e1d54bace52ef01a853dd3a"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold3_bundle0.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "97f51e176f07666f19e50f15b8da050e916bdf74d410ba30967dd1f5138c9ace"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold3_bundle1.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "a82dcfc9743121523dc9c149e0a7ce2dcc7ee938"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold3_bundle1.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "d929020159e9a0383e543ac04c070c27fc515cc28312ed760c2239cfebefeb23"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold3_bundle2.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "1de87091a8ca18bd477640c78036a8fd2aa155ce"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold3_bundle2.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "1be66f4a08e248283844ebcc3a61ad7723df702769a8e8b14108af2cf1c4c947"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold3_bundle3.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "da25c5679e1066cadd1f996f8eed810ee03aabb8"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold3_bundle3.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "dcad43f729d5c4fa40d78030acf09be2588d7aeb0853790b0cb6ab812014ca01"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold4_bundle0.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "e9d3bbfe1262865575233892bfcbb8b2c648b369"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold4_bundle0.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "31dd1dde0c131e31b12daf81739e6c6d7ec89b0f48cbafbf255360c676e69b67"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold4_bundle1.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "004543b1e9d54b39db973ff858de1a3993927338"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold4_bundle1.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "326e6ceb5cfa255318ef76b2ab713a43f5cee6e33ee070bdcb1591b459859a39"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold4_bundle2.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "4a6483472a038e320b7446c2cc3d17ca283e2f6e"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold4_bundle2.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "ccc516a89ce3b9b46d60ac20c90d7ad23a0317f57d5991dcc49f75a525123031"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold4_bundle3.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "ec20ca0782a4221e30c3ef51df519751732b3df8"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/fold4_bundle3.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "a7399f64f1822a21cf51151a3c79e3b0cce70780ed08ef326a17798cf3057f63"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/manifest.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "94064939042de1bc9b1d56fcbfa70f162edc82c1"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/maps/fold0.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "f0e07f35a227c1876337638e81e056a1cddf181d"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/maps/fold0.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "6c6801418ecb26ca3a1b9904e6871176f1f5d713c2348f59a25127b586e3da5d"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/maps/fold1.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "02deae86b7152938f94a07328cfa0caa63f8d1d3"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/maps/fold1.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "e1a313ba4a0e00967f8071945dd8068e4380d78e4cd222d1b4b3050278e7238d"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/maps/fold2.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "1ebf5afc4dc68c0c4021bf41dc584b1a8f834c89"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/maps/fold2.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "165689e299192ede2bac89ed835c69cab5cff34286da6a1a96197011c7fbb32c"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/maps/fold3.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "f3286711a26a7832d64fce1aeeab2e119f3e00dd"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/maps/fold3.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "5116fadd765a1b458231220aaf319ac706d76e5ceef6e68b20095329a1128e8e"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/maps/fold4.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "f2e7bad7b63dffc9b04144c88084af0356eaf727"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/maps/fold4.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "bb7cee7ca8a9bb222e76fae8c8fda617cb5e18bd1091c3197a504b22260b571c"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/maps/manifest.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "961ac6216315a51be7ccd349889388832672bd5a"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/maps/oof_predictions.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "c751f9bf85eb66017146e43d9220d05ac0e6508996262c202513827dbccc221c"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/oof_predictions.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "bec14901a1620b7bdbf860637211e4265c945d1fc1325507cd3e98ec68e853a6"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/predicted_vectors.npz": {
+    "hash_method": "lfs_sha256",
+    "content_hash": "5d3791eca2ef9cab166cd1fdf1d3295b24c9e602b603003fd356d19374c0bbca"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/analysis/summary.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "b46bece93e296e24b6f4e3bd990b3f14beb8ac06"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/issue2564_answer_probe_transfer.py": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "6d089dee251bc58639ffc477dc932c55a6fad15d"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/issue2564_matched_answer_map.py": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "bafb11a7bc392ea9c3ef53d203e2e9b868650972"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/matched_transfer_20260909.log": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "f74c898f2f118e54487b8ac763cd799efe827542"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/matched_transfer_launch_20260909.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "bb971efc9a388900b9ec84446f556dc6ff204184"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/matched_transfer_status_20260909.txt": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "fbcad8f95b4361648884b4e5a2f2646ecf99749f"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/rejected_frozen_map_audit.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "2348120267c1cba31155493094e8a8f6ade05255"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/run_matched_transfer_20260909.sh": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "3d6c583af96b95811b0b7d37239780a50a7756f8"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/transfer_plan.md": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "e41dc5a940317534c6f88cf184e2f2af1e497c9d"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/transfer_properties.csv": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "56d2ec0e07388594cc426158e9f6ba6476dfe7c0"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/transfer_report.md": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "b766880f18ef8eb4faad5892007e9951d7c8aa59"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/transfer_result_review.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "77bc19afed8d78d976a3c0ab220c4c5f07f9bb15"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/transfer_results.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "b46bece93e296e24b6f4e3bd990b3f14beb8ac06"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/transfer_review.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "5bbeb26dccaefa438545ffbd71fc9df59864c8d2"
+  },
+  "issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909/transfer_worktree_preflight_20260909.json": {
+    "hash_method": "git_blob_sha1",
+    "content_hash": "5952322d74d48d5964fc7e1d9ae3fc393d2ee447"
+  }
+}

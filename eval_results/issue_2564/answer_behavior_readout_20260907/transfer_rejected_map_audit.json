@@ -1,0 +1,109 @@
+{
+  "artifact": {
+    "bytes": 51425703,
+    "fit_provenance": {
+      "fit_point": "mixed_1m",
+      "n_lmsys": 529085,
+      "n_train": 963444,
+      "n_wildchat": 434359,
+      "producer_git": "bd9f6865de16f89daf08de4b800f65c30d4079a8",
+      "whole_map_heldout_r2_l19": 0.7541708417500051
+    },
+    "local_path": "/home/thomasjiralerspong/.codex/research/answer-behavior-readout-20260907/map_reuse_20260909/issue779_monitoring/n1m_readout/weights/L19/ridge.pt",
+    "path": "issue779_monitoring/n1m_readout/weights/L19/ridge.pt",
+    "payload": {
+      "dtype": "float32",
+      "finite": true,
+      "fitter": "ridge",
+      "kind": "ridge",
+      "layer": 19,
+      "selected_lambda": 0.001,
+      "shapes": {
+        "W": [
+          3584,
+          3584
+        ],
+        "xmu": [
+          3584
+        ],
+        "xsd": [
+          3584
+        ],
+        "ymu": [
+          3584
+        ]
+      }
+    },
+    "repo_id": "superkaiba1/explore-persona-space-data",
+    "repo_type": "dataset",
+    "repro_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/eef8eb1da43cd2212dfa73d8711fd64dc54c376f/issue779_monitoring/n1m_readout/weights/L19/ridge.pt",
+    "revision": "eef8eb1da43cd2212dfa73d8711fd64dc54c376f",
+    "sha256": "188486f8afd9d95221e32492f3a0be2a3bdb2098cbe7fadfecf1d46433567909"
+  },
+  "caveats": {
+    "interpretation": "Applying the frozen #779 map to current #2054 vectors is invalid as a physically matched transfer because of the layer off-by-one and remains cross-pooling even after layer correction. Use only the new in-bank grouped OOF span map for the matched readout-ease diagnostic; do not call any degradation property information loss.",
+    "model_revision": "The payload does not encode a model revision. Surrounding #779 artifacts identify Qwen2.5-7B-Instruct and nominal L19/3584 width, but the physical-layer audit below rejects compatibility with this #2054 bank.",
+    "overlap": "#2054 draws are LMSYS-derived; #779 mixed_1m includes LMSYS and WildChat. Exact row overlap was not established, so treat training/evaluation overlap as possible and do not claim disjointness."
+  },
+  "layer_compatibility": {
+    "cheapest_valid_option": "Fit a new grouped five-fold OOF context-to-span map on the existing #2054 vectors using issue2054_fits._ridge_gcv_fit_predict, with train-fold-only standardization and GCV; keep the result explicitly in-bank and separate from the #779 frozen-map claim.",
+    "compatible": false,
+    "consequence": "The frozen #779 L19 payload must not be applied as a physically matched map to the current #2054 vectors. Width and nominal layer labels agree, but the residual-stream block is off by one.",
+    "issue2054": {
+      "actual_hidden_state_index": 19,
+      "meaning": "post-layer-18 state under HF output_hidden_states convention (index 0 is embeddings)",
+      "nominal_layer": 19,
+      "refs": [
+        "scripts/issue2054_capture.py:612-623",
+        "scripts/issue2054_capture.py:1147"
+      ]
+    },
+    "issue779": {
+      "actual_block_index": 19,
+      "actual_hidden_state_equivalent": "hidden_states[20] / model.model.layers[19] forward-hook output",
+      "nominal_layer": 19,
+      "refs": [
+        "src/explore_persona_space/analysis/extraction.py:172-212",
+        "scripts/issue779_capture_answer_summaries.py:38-42,250-282"
+      ]
+    },
+    "recapture_option": "Recapture current rows at model.model.layers[19] (and span/tail summaries if desired), which requires new forward passes and is more expensive."
+  },
+  "pooling_comparison": {
+    "conversion_without_new_inference": false,
+    "issue2054_current_files": "bank/issue2054_lattice/activations/{char_helios,char_wren,char_dana,char_vex}/*bare_label*qwen2.5-7b-instruct.npz",
+    "issue2054_producer_refs": [
+      "scripts/issue2054_capture.py:279-321",
+      "scripts/issue2054_capture.py:756-780",
+      "scripts/issue2054_capture.py:809-827",
+      "docs/methodology/issue_2054.md:15,32"
+    ],
+    "issue2054_source_revision": "07460fb4f01c4a692b141eaf2a8a081352aacaf5",
+    "issue2054_v_A": "mean over answer tokens whose offset-mapped byte/character ranges lie in [answer_start, answer_end); span-only",
+    "issue2054_vector_keys": [
+      "conv_id",
+      "v_C",
+      "v_A",
+      "v_P",
+      "v_P_present"
+    ],
+    "matched_tail_summary_for_current_2048": false,
+    "other_tail_capable_producer": "scripts/issue2162_run.py:1568-1691 (reused by scripts/issue2564_run.py); it writes va_span and va_tail_incl from ctx+completion+eot in separate #2564 minimal-pair U2 artifacts, a different 984-context x 10-draw bank, not the current 2048 answer cohort.",
+    "per_token_states_for_current_2048": false,
+    "span_only_issue779_map_found": false,
+    "tail_exact": "#779/#2094 tail is explicit [<|im_end|>, newline-token-ids]; #779 collector obtains the response slice from prompt_len through full_len after add_generation_prompt=False, so it includes that closing control tail and any response substantive tokens. The saved map does not persist per-row token IDs."
+  },
+  "recipe": {
+    "identity_bias_control": "context + (ymu - xmu)",
+    "input": "#779 cx_last: final context/prompt token state at L19",
+    "map_training_standardizer": "streamed float64 xmu, unbiased N-1 variance, ymu",
+    "orientation": "row-vector zW",
+    "producer_refs": [
+      "scripts/issue779_collect.py:171-193",
+      "scripts/issue779_ffc_n1m_fits.py:916-931",
+      "scripts/issue2094_run.py:812-822"
+    ],
+    "standardization": "apply float64: ((X-xmu)/xsd) @ W + ymu; xsd is train std plus 1e-9",
+    "target": "#779 v_x: mean over response token slice including assistant end-of-turn tail"
+  }
+}

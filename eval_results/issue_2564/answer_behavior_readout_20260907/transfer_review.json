@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "implementation_sha": "9152b22833980fae6689c806de91b75524fba1db",
+  "independent_result_review": "transfer_result_review.json",
+  "code_review_findings_resolved": [
+    "Enforced exactly2000 paired bootstrapdraws and inheritedseed",
+    "Verified priorOOF against immutable LFSsha and validated shapes/missingness",
+    "Validated fresh/resumed replayfoldIDs, shapes, prior andobserved parity",
+    "Rejected incompatible frozenmap before outcomes; fitted physicallymatched groupedOOF maps",
+    "Restricted retrievalcandidatepools to each heldoutfold with explicitchance"
+  ],
+  "test_evidence": {
+    "transfer_tests": 7,
+    "matched_map_tests": 4,
+    "original_readout_tests": 9,
+    "execution": "passed across focused runs; no new tests on paper text",
+    "ruff": "PASS"
+  },
+  "actual_run": {
+    "complete": true,
+    "exit_code": 0,
+    "summary_sha256": "33cb4623c0b230ebcb82193a47ab02d4a8056941dc6b0d350e5057cb260f2df8",
+    "maps": 5,
+    "probe_bundles": 20,
+    "targets": 15
+  },
+  "limitations": [
+    "Smallcohort matched maps, notpaper#779",
+    "Allmapregularizationchoices atuppergridboundary10000",
+    "Conditional bootstrap intervals omitrefitting and independentannotator uncertainty",
+    "No universalhigh/lowpropertyor informationlossclaim"
+  ]
+}

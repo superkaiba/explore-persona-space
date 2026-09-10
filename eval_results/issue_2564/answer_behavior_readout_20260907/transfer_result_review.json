@@ -1,0 +1,296 @@
+{
+  "status": "PASS",
+  "checked_artifacts": {
+    "output_root": "/home/thomasjiralerspong/.codex/research/answer-behavior-readout-20260907/matched_probe_transfer_20260909",
+    "status_file": "/home/thomasjiralerspong/.codex/research/answer-behavior-readout-20260907/matched_transfer_status_20260909.txt",
+    "status_text": "complete exit_code=0",
+    "analysis_complete": {
+      "fingerprint": "a0ed4c1e5a97bf808ae7d32f94e074a1126a883c30285ecf4b7b21a497396734",
+      "summary_sha256": "33cb4623c0b230ebcb82193a47ab02d4a8056941dc6b0d350e5057cb260f2df8",
+      "oof_sha256": "bec14901a1620b7bdbf860637211e4265c945d1fc1325507cd3e98ec68e853a6",
+      "vectors_sha256": "5d3791eca2ef9cab166cd1fdf1d3295b24c9e602b603003fd356d19374c0bbca",
+      "bootstrap_sha256": "a370c0c117a778d1dc71e0e8a1e05fcb9e9bee458eacbd5168d64bb0f28a863e",
+      "properties": 15
+    },
+    "hash_checks": {
+      "summary.json": true,
+      "oof_predictions.npz": true,
+      "predicted_vectors.npz": true,
+      "bootstrap_metric_draws.npz": true
+    }
+  },
+  "scope": {
+    "n_answers": 2048,
+    "n_connected_groups": 438,
+    "n_targets": 15,
+    "target_names": [
+      "warmth",
+      "confidence",
+      "formality",
+      "persona",
+      "topic",
+      "language",
+      "format",
+      "log_character_count",
+      "log_whitespace_word_count",
+      "english_first_person_rate",
+      "english_second_person_rate",
+      "english_negation_rate",
+      "question_mark_rate",
+      "newline_rate",
+      "code_fence_count"
+    ],
+    "maps": 5,
+    "completed_map_folds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "probe_bundles": 20,
+    "bundle_target_count": 15,
+    "bootstrap_draws": 2000
+  },
+  "parity": {
+    "ids_equal": true,
+    "prior_archive_required_arrays": 75,
+    "prior_oof_max_abs_error": 5.773159728050814e-15,
+    "saved_observed_replay_max_abs_error": 1.8474111129762605e-13,
+    "map_oof_array_hashes_match": {
+      "mapped": true,
+      "identity_bias": true
+    },
+    "transfer_map_prediction_max_abs_error_vs_predicted_vectors": {
+      "mapped": 0.0,
+      "identity_bias": 0.0
+    }
+  },
+  "leakage": {
+    "map_folds": [
+      {
+        "fold": 0,
+        "train_rows": 1636,
+        "test_rows": 412,
+        "train_groups": 390,
+        "test_groups": 48,
+        "disjoint": true,
+        "valid": true
+      },
+      {
+        "fold": 1,
+        "train_rows": 1636,
+        "test_rows": 412,
+        "train_groups": 340,
+        "test_groups": 98,
+        "disjoint": true,
+        "valid": true
+      },
+      {
+        "fold": 2,
+        "train_rows": 1640,
+        "test_rows": 408,
+        "train_groups": 341,
+        "test_groups": 97,
+        "disjoint": true,
+        "valid": true
+      },
+      {
+        "fold": 3,
+        "train_rows": 1640,
+        "test_rows": 408,
+        "train_groups": 341,
+        "test_groups": 97,
+        "disjoint": true,
+        "valid": true
+      },
+      {
+        "fold": 4,
+        "train_rows": 1640,
+        "test_rows": 408,
+        "train_groups": 340,
+        "test_groups": 98,
+        "disjoint": true,
+        "valid": true
+      }
+    ],
+    "map_group_leak": false,
+    "map_complete_row_cover": true,
+    "all_probe_bundles_valid": true,
+    "probe_group_leak": false
+  },
+  "point_metrics": {
+    "warmth": {
+      "kind": "graded",
+      "n": 1876,
+      "prior_mse": 320.66614168313,
+      "observed_answer_mse": 88.71846525719955,
+      "mapped_mse": 224.45085518506477,
+      "identity_bias_mse": 345.4637007584844,
+      "retention": 0.4148146167301243,
+      "reported_retention": 0.4148146167301268,
+      "retention_abs_diff": 2.4980018054066022e-15
+    },
+    "confidence": {
+      "kind": "graded",
+      "n": 1963,
+      "prior_mse": 325.1652363014987,
+      "observed_answer_mse": 102.79424839864981,
+      "mapped_mse": 280.8462068524486,
+      "identity_bias_mse": 404.5650855943348,
+      "retention": 0.19930221054021913,
+      "reported_retention": 0.19930221054022082,
+      "retention_abs_diff": 1.6930901125533637e-15
+    },
+    "formality": {
+      "kind": "graded",
+      "n": 1864,
+      "prior_mse": 157.35446884997262,
+      "observed_answer_mse": 27.59568229143203,
+      "mapped_mse": 111.09311210909517,
+      "identity_bias_mse": 168.70176827418075,
+      "retention": 0.35651810538476847,
+      "reported_retention": 0.356518105384769,
+      "retention_abs_diff": 5.551115123125783e-16
+    },
+    "persona": {
+      "kind": "categorical",
+      "n": 2048,
+      "prior_mse": 0.08769857567479904,
+      "observed_answer_mse": 0.04035632495008047,
+      "mapped_mse": 0.06932472916287893,
+      "identity_bias_mse": 0.08640898663336125,
+      "retention": 0.38810673828666664,
+      "reported_retention": 0.388106738286668,
+      "retention_abs_diff": 1.3322676295501878e-15
+    },
+    "topic": {
+      "kind": "categorical",
+      "n": 2048,
+      "prior_mse": 0.06358155570422855,
+      "observed_answer_mse": 0.038158006049341574,
+      "mapped_mse": 0.05575410307475732,
+      "identity_bias_mse": 0.08033969483567366,
+      "retention": 0.30788197304173925,
+      "reported_retention": 0.3078819730417407,
+      "retention_abs_diff": 1.4432899320127035e-15
+    },
+    "language": {
+      "kind": "categorical",
+      "n": 2048,
+      "prior_mse": 0.04391880160500629,
+      "observed_answer_mse": 0.011454887137221169,
+      "mapped_mse": 0.031195018481396906,
+      "identity_bias_mse": 0.0455734926644126,
+      "retention": 0.39193619537888935,
+      "reported_retention": 0.391936195378892,
+      "retention_abs_diff": 2.6645352591003757e-15
+    },
+    "format": {
+      "kind": "categorical",
+      "n": 2048,
+      "prior_mse": 0.05016894730355033,
+      "observed_answer_mse": 0.019692603650768914,
+      "mapped_mse": 0.04091322614506949,
+      "identity_bias_mse": 0.0640222348441102,
+      "retention": 0.30370182407482205,
+      "reported_retention": 0.30370182407482293,
+      "retention_abs_diff": 8.881784197001252e-16
+    },
+    "log_character_count": {
+      "kind": "surface",
+      "n": 2048,
+      "prior_mse": 1.9531283948926725,
+      "observed_answer_mse": 0.14340752147927216,
+      "mapped_mse": 1.4946440048615512,
+      "identity_bias_mse": 2.1736865210151177,
+      "retention": 0.25334536213109604,
+      "reported_retention": 0.25334536213109526,
+      "retention_abs_diff": 7.771561172376096e-16
+    },
+    "log_whitespace_word_count": {
+      "kind": "surface",
+      "n": 2048,
+      "prior_mse": 1.8658643442029599,
+      "observed_answer_mse": 0.21539896775055906,
+      "mapped_mse": 1.2876377816727804,
+      "identity_bias_mse": 2.178902067548862,
+      "retention": 0.3503415283833768,
+      "reported_retention": 0.3503415283833776,
+      "retention_abs_diff": 8.326672684688674e-16
+    },
+    "english_first_person_rate": {
+      "kind": "surface",
+      "n": 2048,
+      "prior_mse": 0.002046825705950991,
+      "observed_answer_mse": 0.0006380485248693262,
+      "mapped_mse": 0.0015778373268716742,
+      "identity_bias_mse": 0.0023840459307473945,
+      "retention": 0.3329045823408538,
+      "reported_retention": 0.3329045823408538,
+      "retention_abs_diff": 0.0
+    },
+    "english_second_person_rate": {
+      "kind": "surface",
+      "n": 2048,
+      "prior_mse": 0.0011876734417247013,
+      "observed_answer_mse": 0.0004939514004426845,
+      "mapped_mse": 0.0010127978823042505,
+      "identity_bias_mse": 0.0016294886344698652,
+      "retention": 0.2520830376057767,
+      "reported_retention": 0.25208303760577855,
+      "retention_abs_diff": 1.8318679906315083e-15
+    },
+    "english_negation_rate": {
+      "kind": "surface",
+      "n": 2048,
+      "prior_mse": 0.00022929226119053266,
+      "observed_answer_mse": 0.0001719807148711036,
+      "mapped_mse": 0.00022191989428611524,
+      "identity_bias_mse": 0.00030259867327302653,
+      "retention": 0.12863667756104727,
+      "reported_retention": 0.12863667756102376,
+      "retention_abs_diff": 2.350897254643769e-14
+    },
+    "question_mark_rate": {
+      "kind": "surface",
+      "n": 2048,
+      "prior_mse": 0.00010240242806003992,
+      "observed_answer_mse": 3.352796478516116e-05,
+      "mapped_mse": 9.187967663172326e-05,
+      "identity_bias_mse": 0.00013453757635608946,
+      "retention": 0.1527816105995663,
+      "reported_retention": 0.15278161059956413,
+      "retention_abs_diff": 2.1649348980190553e-15
+    },
+    "newline_rate": {
+      "kind": "surface",
+      "n": 2048,
+      "prior_mse": 0.0,
+      "observed_answer_mse": 0.0,
+      "mapped_mse": 0.0,
+      "identity_bias_mse": 0.0,
+      "retention": null,
+      "reported_retention": null,
+      "retention_abs_diff": null
+    },
+    "code_fence_count": {
+      "kind": "surface",
+      "n": 2048,
+      "prior_mse": 0.0039049238101347443,
+      "observed_answer_mse": 0.0034763367887647523,
+      "mapped_mse": 0.0039382573988515175,
+      "identity_bias_mse": 0.004606189445454371,
+      "retention": -0.07777554394956093,
+      "reported_retention": -0.07777554394958935,
+      "retention_abs_diff": 2.842170943040401e-14
+    }
+  },
+  "headline_retention_matches": true,
+  "interpretation_limits": [
+    "These are newly fitted matched in-bank grouped out-of-fold context-to-answer maps on the #2054 span vectors.",
+    "The frozen #779 map was rejected before outcomes for physical layer and pooling incompatibility; these results must not be presented as paper #779-map transfer performance.",
+    "Point metrics here are verified without new fitting, judging, bootstrap or significance analysis."
+  ],
+  "issues": []
+}

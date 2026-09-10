@@ -1,0 +1,21 @@
+{
+  "status": "PASS",
+  "verified_utc": "2026-09-10T15:38:03.434363+00:00",
+  "verification": "Exact relative file set, sizes, LFS SHA256 or Git blob SHA1 at pinned revision",
+  "file_count": 74,
+  "bytes": 401389520,
+  "repo_id": "superkaiba1/explore-persona-space-data",
+  "repo_type": "dataset",
+  "revision": "7ab779be98292a7ded7b8c20a4b3b63096ecccc4",
+  "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/7ab779be98292a7ded7b8c20a4b3b63096ecccc4/issue2564_minpair/answer_behavior_readout_20260907/matched_transfer_20260909",
+  "deleted_local_files": 0,
+  "reused_input_archive": [
+    {
+      "repo_id": "superkaiba1/explore-persona-space-data",
+      "repo_type": "dataset",
+      "revision": "7640e8b6a4656d42e488f938f7ff57ca04b08729",
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/7640e8b6a4656d42e488f938f7ff57ca04b08729/issue2564_minpair/answer_behavior_readout_20260907/three_pass_final_20260909_tree_v2",
+      "files": 1218
+    }
+  ]
+}
