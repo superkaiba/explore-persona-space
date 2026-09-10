@@ -14,12 +14,14 @@ from scripts import issue2054_k3 as k3
 
 def seal_many(paths, root, fingerprint):
     from huggingface_hub import CommitOperationAdd, HfApi
+    from huggingface_hub.utils import disable_progress_bars
     from explore_persona_space.orchestrate.hub import retry_transient
 
     paths = [Path(p) for p in paths]
     if not paths or len(set(paths)) != len(paths):
         raise ValueError("checkpoint packet must be nonempty and unique")
     api = HfApi()
+    disable_progress_bars()
 
     def commit(pairs):
         # Rebuild operations on retries: the Hub mutates their upload state.

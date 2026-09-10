@@ -39,7 +39,7 @@ def save_npz(path, content):
     tmp.replace(path)
 
 
-def aggregate(root, manifest, pilot):
+def aggregate(root, manifest, pilot, *, fingerprint_fn=k3.fingerprint):
     reports = []
     for record in manifest["cells"]:
         cell = record["cell"]
@@ -50,7 +50,7 @@ def aggregate(root, manifest, pilot):
                 if not dest.exists():
                     dest.symlink_to(root / "inputs" / record["activation"])
             continue
-        fp = k3.fingerprint(manifest, cell, pilot)
+        fp = fingerprint_fn(manifest, cell, pilot)
         rows = k3.banked_rows(root, record, pilot)
         chunks = []
         for offset in range(0, len(rows), k3.CHUNK):
@@ -147,11 +147,18 @@ def validate_primary(results, expected_cells):
     realized = {(r["cell"], r["k_rollouts"]) for r in primary}
     if realized != expected or len(primary) != len(expected):
         raise RuntimeError("required primary K1/K3 panel is incomplete or duplicated")
-    if any(r["status"] != "complete" or len(r.get("folds", [])) != 5 for r in primary):
+    if any(
+        r["status"] != "complete"
+        or len(r.get("folds", [])) != 5
+        or {f.get("fold") for f in r.get("folds", [])} != set(range(5))
+        for r in primary
+    ):
         raise RuntimeError("required primary K1/K3 fits did not complete all five folds")
 
 
-def fits(root, manifest, device, pilot):
+def fits(root, manifest, device, pilot, *, fingerprint_fn=k3.fingerprint, shard=0, shards=1):
+    if shards < 1 or not 0 <= shard < shards:
+        raise ValueError("invalid fit shard")
     fold_map = load_fold_map(str(root / manifest["fold_map"]), "origin/main")
     if pilot:
         # Smoke blind spot: tiny pilot has no ambient-fit sample size. It
@@ -179,6 +186,8 @@ def fits(root, manifest, device, pilot):
         pooled_by_k[count] = fit_pooled_per_fold(acc["mom"]["context"], list(range(5)), 5)
         del acc
     for ci, record in enumerate(selected):
+        if ci % shards != shard:
+            continue
         cell = record["cell"]
         targets = {}
         for count in (1, 3):
@@ -207,7 +216,7 @@ def fits(root, manifest, device, pilot):
             paths = {
                 count: root / "fits" / f"k{count}" / f"{cell}__{cohort}.json" for count in (1, 3)
             }
-            fp = k3.fingerprint(manifest, cell, False) + k3.sha(__file__)
+            fp = fingerprint_fn(manifest, cell, False) + k3.sha(__file__)
             if all(k3.complete(path, fp) for path in paths.values()):
                 continue
             unsupported = cohort_guard(x, targets, membership, mask)
@@ -301,11 +310,30 @@ def fits(root, manifest, device, pilot):
                     )
                 k3.atomic_json(paths[count], result)
                 k3.seal(paths[count], root, fp)
-    results = [
-        json.loads(p.read_text())
-        for p in sorted((root / "fits").glob("k*/*.json"))
-        if not p.name.endswith(".done.json")
+    if shards == 1:
+        collect_results(root, manifest, fingerprint_fn=fingerprint_fn)
+
+
+def collect_results(root, manifest, *, fingerprint_fn=k3.fingerprint):
+    selected = [c for c in manifest["cells"] if displayed(c["cell"])]
+    paths = [
+        p for p in sorted((root / "fits").glob("k*/*.json")) if not p.name.endswith(".done.json")
     ]
+    results = []
+    for path in paths:
+        result = json.loads(path.read_text())
+        canonical = (
+            root
+            / "fits"
+            / f"k{result['k_rollouts']}"
+            / f"{result['cell']}__{result['cohort']}.json"
+        )
+        if path != canonical:
+            raise RuntimeError(f"fit result filename/content mismatch: {path}")
+        fp = fingerprint_fn(manifest, result["cell"], False) + k3.sha(__file__)
+        if not k3.complete(path, fp):
+            raise RuntimeError(f"unverified fit result: {path}")
+        results.append(result)
     validate_primary(results, [c["cell"] for c in selected])
     k3.atomic_json(
         root / "results.json",

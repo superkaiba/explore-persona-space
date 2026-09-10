@@ -81,3 +81,41 @@ def test_checkpoint_resume_requires_receipt_and_rejects_changed_inputs(tmp_path,
     (tmp_path / "packet.json").write_text('{"changed": true}')
     with pytest.raises(RuntimeError, match="fingerprint/content mismatch"):
         Checkpoints(tmp_path, "model").read("unit")
+
+
+def test_fit_collection_waits_for_complete_verified_paired_results(tmp_path, monkeypatch):
+    from scripts import issue2054_k3_fit as fit
+
+    cell = "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b"
+    manifest = {"cells": [{"cell": cell}], "revision": "frozen"}
+    (tmp_path / "coverage.json").write_text("[]")
+    fingerprint = "approved-capture-policy" + k3.sha(fit.__file__)
+    fp_fn = lambda *args: "approved-capture-policy"  # noqa: E731
+    for count in (1, 3):
+        path = tmp_path / "fits" / f"k{count}" / f"{cell}__all.json"
+        path.parent.mkdir(parents=True)
+        k3.atomic_json(
+            path,
+            {
+                "cell": cell,
+                "k_rollouts": count,
+                "cohort": "all",
+                "status": "complete",
+                "folds": [{"fold": f} for f in range(5)],
+            },
+        )
+        if count == 1:
+            k3.atomic_json(
+                path.with_suffix(".json.done.json"),
+                {"fingerprint": fingerprint, "sha256": k3.sha(path)},
+            )
+    with pytest.raises(RuntimeError, match="unverified fit result"):
+        fit.collect_results(tmp_path, manifest, fingerprint_fn=fp_fn)
+    assert not (tmp_path / "results.json").exists()
+    k3.atomic_json(
+        path.with_suffix(".json.done.json"), {"fingerprint": fingerprint, "sha256": k3.sha(path)}
+    )
+    uploaded = []
+    monkeypatch.setattr(k3, "seal", lambda *args: uploaded.append(args[0]))
+    fit.collect_results(tmp_path, manifest, fingerprint_fn=fp_fn)
+    assert uploaded == [tmp_path / "results.json"]

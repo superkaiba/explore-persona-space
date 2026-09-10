@@ -110,7 +110,7 @@ def test_primary_panel_cannot_complete_with_missing_or_withheld_cell():
             "k_rollouts": count,
             "cohort": "all",
             "status": "complete",
-            "folds": [{} for _ in range(5)],
+            "folds": [{"fold": f} for f in range(5)],
         }
         for count in (1, 3)
     ]
