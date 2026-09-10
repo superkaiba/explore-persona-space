@@ -17,6 +17,7 @@ sys.path.insert(0, str(REPO))
 
 import numpy as np
 from scripts import issue2054_k3 as k3
+from scripts import issue2054_k3_artifacts as artifacts
 from scripts.issue2054_ctx2ctx_fit import SharedEighRidge, discover_cells, load_fold_map
 from scripts.issue2054_pool_specialize import accumulate_pooled_moments, fit_pooled_per_fold
 from explore_persona_space.analysis.mapping_baselines import knn_retrieval
@@ -71,7 +72,7 @@ def aggregate(root, manifest, pilot, *, fingerprint_fn=k3.fingerprint):
             content["v_A"] = values["v_A_0"][keep] if count == 1 else mean
             path = root / f"k{count}" / f"{cell}.npz"
             save_npz(path, content)
-            k3.seal(path, root, fp)
+        artifacts.seal_many([root / f"k{k}" / f"{cell}.npz" for k in (1, 3)], root, fp)
         drift = np.linalg.norm(
             values["v_C"].astype(np.float32) - values["banked_v_C"].astype(np.float32), axis=1
         )
@@ -156,7 +157,9 @@ def validate_primary(results, expected_cells):
         raise RuntimeError("required primary K1/K3 fits did not complete all five folds")
 
 
-def fits(root, manifest, device, pilot, *, fingerprint_fn=k3.fingerprint, shard=0, shards=1):
+def fits(
+    root, manifest, device, pilot, *, fingerprint_fn=k3.fingerprint, shard=0, shards=1, collect=True
+):
     if shards < 1 or not 0 <= shard < shards:
         raise ValueError("invalid fit shard")
     fold_map = load_fold_map(str(root / manifest["fold_map"]), "origin/main")
@@ -281,7 +284,7 @@ def fits(root, manifest, device, pilot, *, fingerprint_fn=k3.fingerprint, shard=
                         records[count].append(record_fold)
                         fold_path = fold_paths[count]
                         k3.atomic_json(fold_path, record_fold)
-                        k3.seal(fold_path, root, fp)
+                    artifacts.seal_many(list(fold_paths.values()), root, fp)
                     del own
                     k3.log(
                         f"[phase=fits] paired_k1_k3 cell={ci + 1}/12 cohort={cohort} fold={f + 1}/5 seconds={time.monotonic() - t0:.1f}"
@@ -309,12 +312,12 @@ def fits(root, manifest, device, pilot, *, fingerprint_fn=k3.fingerprint, shard=
                         }
                     )
                 k3.atomic_json(paths[count], result)
-                k3.seal(paths[count], root, fp)
-    if shards == 1:
+            artifacts.seal_many(list(paths.values()), root, fp)
+    if shards == 1 and collect:
         collect_results(root, manifest, fingerprint_fn=fingerprint_fn)
 
 
-def collect_results(root, manifest, *, fingerprint_fn=k3.fingerprint):
+def collect_results(root, manifest, *, fingerprint_fn=k3.fingerprint, extra=None):
     selected = [c for c in manifest["cells"] if displayed(c["cell"])]
     paths = [
         p for p in sorted((root / "fits").glob("k*/*.json")) if not p.name.endswith(".done.json")
@@ -341,6 +344,7 @@ def collect_results(root, manifest, *, fingerprint_fn=k3.fingerprint):
             "dataset_revision": manifest["revision"],
             "coverage": json.loads((root / "coverage.json").read_text()),
             "results": results,
+            **(extra or {}),
         },
     )
     k3.seal(root / "results.json", root, k3.sha(__file__))
