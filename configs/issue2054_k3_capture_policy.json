@@ -1,0 +1,957 @@
+{
+  "status": "adjudicated_proceed",
+  "issue": 2054,
+  "followup_label": "section44-k3-gcp",
+  "cutoff": 0.025,
+  "previous_severity": "HALT",
+  "adjudicated_severity": "WARN",
+  "measurement_changed": false,
+  "capture_code_sha256": "41596f7be82831f8f5adfa94c44e6f45832bf2527832120a444b1d0551395db2",
+  "parent_code_sha256": "dacf1c9942acda2fe647c4001c54df87bb917e9be0fdf2ab4f0ecf3d911bf0cb",
+  "diagnostic_helper_sha256": "061894991ab9a910831aed43107eddc13c914e45f4610dcd084c207496cc09d7",
+  "models": {
+    "qwen2.5-7b": "d149729398750b98c0af14eb82c78cfe92750796",
+    "qwen2.5-7b-instruct": "a09a35458c702b33eeacc393d103063234e8bc28"
+  },
+  "raw_revision": "47a3ea8dfc46d5bf96a27f5949040a505d9830d7",
+  "output_root_name": "capture_recovery_v1",
+  "adjudication_concern": "Historical BF16 capture arithmetic is batch-sensitive and exact historical runtime provenance is incomplete. Record every historical relative-L2 discrepancy above 0.025 as WARN, while enforcing frozen input/model/source identities, finite values, exact same-forward layer extraction and adjacent-layer controls. Small downstream K1/K3 effects require numerical sensitivity scrutiny; diagnostic drift-energy ratios are not bounds on fitted R2 changes.",
+  "preserved_answers": 383998,
+  "preserved_raw_chunks": 768,
+  "reusable_original_capture_chunks": 352,
+  "remaining_capture_chunks": 416,
+  "independent_review_sha256": "960ae354cef35d69f3641f31b3cd1c65ee6bf9f42550d7bdf139dcc3d55be0fc",
+  "independent_review": {
+    "state": "scientific_review_complete",
+    "hf_snapshot": "2bda604429450bbaead17d3c3959dae3cd92a800",
+    "diagnostic_source_sha": "97f90059ed1814b10f3463875a700d97b7a8b709",
+    "verified_artifacts": {
+      "packet.json": {
+        "sha256": "3a02c5c45c5ffea95e8434cfad6d69fbd31bd58b90cba37a906c79c20700c82a",
+        "fingerprint": "capture-diagnosis-inputs-v1",
+        "receipt_data_revision": "3cf507649b67ef2ee14998189909f8f2a1bc272f"
+      },
+      "references.npz": {
+        "sha256": "fa1d5b25b4bd946d97985d786a85e2dab0b255cc5e36b46eded8cee880df1692",
+        "fingerprint": "capture-diagnosis-inputs-v1",
+        "receipt_data_revision": "c1abb9fb01ae663c3cdfe3a3f40e67e3cf2d0a0d"
+      },
+      "report_qwen2.5-7b.json": {
+        "sha256": "8c3e3b91d4f91ffa6cb1c012cfe5f6ba8351382763a78d882ebdb66244f6103d",
+        "fingerprint": "db7c023436cb7afc953bc07533cb5e4b76ebc584313bee00b1c480bffa49b9d8",
+        "receipt_data_revision": "a5f1c4acfb7373e3ddd66f67b719b86f765948d8"
+      },
+      "vectors_qwen2.5-7b.npz": {
+        "sha256": "0a91ccf4eeab7f80ba2aab00961de9855e027e1263f834887d57e6fcb8d627e1",
+        "fingerprint": "db7c023436cb7afc953bc07533cb5e4b76ebc584313bee00b1c480bffa49b9d8",
+        "receipt_data_revision": "a5f1c4acfb7373e3ddd66f67b719b86f765948d8"
+      },
+      "report_qwen2.5-7b-instruct.json": {
+        "sha256": "532c00eaed29746d209a955d40342462d304c85435fbb737efc511712ac76444",
+        "fingerprint": "7b75e7f5cdea3bb572e59eaa9bc535dfc261e3b3333d8ffc8a7b19294fd6da0b",
+        "receipt_data_revision": "15f9a17507fec619462c926464e3923e88696189"
+      },
+      "vectors_qwen2.5-7b-instruct.npz": {
+        "sha256": "a15b6c6ace829f063812aad2b473092777113794940a83ad1efce8c9c10f4127",
+        "fingerprint": "7b75e7f5cdea3bb572e59eaa9bc535dfc261e3b3333d8ffc8a7b19294fd6da0b",
+        "receipt_data_revision": "15f9a17507fec619462c926464e3923e88696189"
+      },
+      "diagnostics_complete.json": {
+        "sha256": "35a00ce79cd09e5fcf4c5e721fba3d45fe9e2a26f03a928064ab73b4e3695cab",
+        "fingerprint": "061894991ab9a910831aed43107eddc13c914e45f4610dcd084c207496cc09d7",
+        "receipt_data_revision": "ca27ecd647ea33e8b3369e6074c1705fe32c472c"
+      },
+      "resume_provenance.json": {
+        "sha256": "ccfbd8b6e21df8528af6c7ec590e2c2694b87b97f71b476e1edee485b38934de",
+        "fingerprint": "52929aa58a2bdc1b299c518feda3b97b9be83d0d57711833f397f9c7599a923f",
+        "receipt_data_revision": "b25c7771a7718067ee9428d40a90ea65c4ad5a23"
+      }
+    },
+    "source_hashes": {
+      "scripts/issue2054_k3.py": "41596f7be82831f8f5adfa94c44e6f45832bf2527832120a444b1d0551395db2",
+      "scripts/issue2054_k3_diagnose.py": "061894991ab9a910831aed43107eddc13c914e45f4610dcd084c207496cc09d7"
+    },
+    "model_summaries": {
+      "qwen2.5-7b": {
+        "current_cohorts": 64,
+        "current_rows": 512,
+        "controlled_cohorts": 4,
+        "hook_checks": 20,
+        "all_hook_differences_zero": true,
+        "parent_cache_on_off_vectors_bit_identical": true,
+        "bf16_batch8_vs_batch1_relative_max": 0.049971628934144974,
+        "fp32_batch8_vs_batch1_relative_max": 7.5375182859716006e-06,
+        "fp32_vs_banked_relative_max": 0.08125423640012741,
+        "fp32_vs_current_relative_max": 0.054625555872917175,
+        "minimum_adjacent_layer_distance_margin": 0.14990823646076024,
+        "report_gpu": "NVIDIA A100-SXM4-80GB",
+        "report_peak_gb": 31.640017408,
+        "report_runtime_scope": "resume process; consult verified resume_provenance.json for restored base-unit origin"
+      },
+      "qwen2.5-7b-instruct": {
+        "current_cohorts": 64,
+        "current_rows": 512,
+        "controlled_cohorts": 4,
+        "hook_checks": 20,
+        "all_hook_differences_zero": true,
+        "parent_cache_on_off_vectors_bit_identical": true,
+        "bf16_batch8_vs_batch1_relative_max": 0.037488002330064774,
+        "fp32_batch8_vs_batch1_relative_max": 6.47759816274629e-06,
+        "fp32_vs_banked_relative_max": 0.03286377340555191,
+        "fp32_vs_current_relative_max": 0.03378589078783989,
+        "minimum_adjacent_layer_distance_margin": 0.18793296301737428,
+        "report_gpu": "NVIDIA A100-SXM4-80GB",
+        "report_peak_gb": 33.682150912,
+        "report_runtime_scope": "resume process; consult verified resume_provenance.json for restored base-unit origin"
+      }
+    },
+    "cell_summaries": [
+      {
+        "cell": "char_dana__on_policy__bare_label__qwen2.5-7b",
+        "sampled_rows": 256,
+        "warning_rows_above_025": 1,
+        "historical_relative_max": 0.02694704942405224,
+        "drift_energy_over_centered_reference_variance": 0.00016289909193547888,
+        "drift_rms_over_centered_reference_rms": 0.012763192858194963,
+        "mean_drift_energy_over_centered_reference_variance": 7.679173828233681e-07
+      },
+      {
+        "cell": "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b",
+        "sampled_rows": 256,
+        "warning_rows_above_025": 1,
+        "historical_relative_max": 0.03507900983095169,
+        "drift_energy_over_centered_reference_variance": 8.707056568235251e-05,
+        "drift_rms_over_centered_reference_rms": 0.009331161003988332,
+        "mean_drift_energy_over_centered_reference_variance": 1.3262316436502397e-05
+      },
+      {
+        "cell": "char_dana__on_policy__bare_label__qwen2.5-7b-instruct",
+        "sampled_rows": 256,
+        "warning_rows_above_025": 1,
+        "historical_relative_max": 0.03776807337999344,
+        "drift_energy_over_centered_reference_variance": 0.00018069105044084315,
+        "drift_rms_over_centered_reference_rms": 0.013442137123271847,
+        "mean_drift_energy_over_centered_reference_variance": 8.932117482815697e-07
+      },
+      {
+        "cell": "char_vex__on_policy__bare_label__qwen2.5-7b-instruct",
+        "sampled_rows": 256,
+        "warning_rows_above_025": 3,
+        "historical_relative_max": 0.030973345041275024,
+        "drift_energy_over_centered_reference_variance": 0.0002275093723189582,
+        "drift_rms_over_centered_reference_rms": 0.015083413815146695,
+        "mean_drift_energy_over_centered_reference_variance": 1.3407354976754398e-06
+      }
+    ],
+    "gate_inputs": [
+      {
+        "model": "qwen2.5-7b",
+        "group": 33,
+        "cell": "char_dana__on_policy__bare_label__qwen2.5-7b",
+        "offset": 256,
+        "rel": [
+          0.004651660565286875,
+          0.004943683743476868,
+          0.004395429976284504,
+          0.0031624066177755594,
+          0.006092455703765154,
+          0.0034061644691973925,
+          0.00391781609505415,
+          0.0037830756045877934
+        ],
+        "parent_error": [
+          0.004446136299520731,
+          0.005420358385890722,
+          0.0043107918463647366,
+          0.0017626432236284018,
+          0.007236551493406296,
+          0.0033807922154664993,
+          0.0038459596689790487,
+          0.003252544207498431
+        ],
+        "lower_error": [
+          0.23175238072872162,
+          0.28969165682792664,
+          0.22381189465522766,
+          0.18250325322151184,
+          0.237947016954422,
+          0.1848837435245514,
+          0.267289936542511,
+          0.1866960972547531
+        ],
+        "upper_error": [
+          0.40248748660087585,
+          0.47928178310394287,
+          0.44892799854278564,
+          0.5062816143035889,
+          0.37338370084762573,
+          0.4097561538219452,
+          0.4245639443397522,
+          0.3688431680202484
+        ],
+        "hook_difference": 0.0
+      },
+      {
+        "model": "qwen2.5-7b",
+        "group": 50,
+        "cell": "char_dana__on_policy__bare_label__qwen2.5-7b",
+        "offset": 4608,
+        "rel": [
+          0.0048394412733614445,
+          0.0055730645544826984,
+          0.004774700850248337,
+          0.02694704942405224,
+          0.003634551540017128,
+          0.005482332315295935,
+          0.005222989246249199,
+          0.006953655742108822
+        ],
+        "parent_error": [
+          0.0048394412733614445,
+          0.0055730645544826984,
+          0.004774700850248337,
+          0.02694704942405224,
+          0.003634551540017128,
+          0.005482332315295935,
+          0.005222989246249199,
+          0.006953655742108822
+        ],
+        "lower_error": [
+          0.2516820430755615,
+          0.2457491010427475,
+          0.22545461356639862,
+          0.33277782797813416,
+          0.1929130107164383,
+          0.2302389144897461,
+          0.23216962814331055,
+          0.2245314121246338
+        ],
+        "upper_error": [
+          0.448579341173172,
+          0.4594019055366516,
+          0.4133702218532562,
+          0.4433387815952301,
+          0.4178983271121979,
+          0.41447901725769043,
+          0.4351545572280884,
+          0.4840341806411743
+        ],
+        "hook_difference": 0.0
+      },
+      {
+        "model": "qwen2.5-7b",
+        "group": 98,
+        "cell": "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b",
+        "offset": 512,
+        "rel": [
+          0.004033916629850864,
+          0.0045800586231052876,
+          0.004292713012546301,
+          0.0068651591427624226,
+          0.006485346704721451,
+          0.0034590684808790684,
+          0.003233054419979453,
+          0.03507900983095169
+        ],
+        "parent_error": [
+          0.003846891690045595,
+          0.0045800586231052876,
+          0.004292713012546301,
+          0.0068651591427624226,
+          0.006485346704721451,
+          0.0031895246356725693,
+          0.003233054419979453,
+          0.03507900983095169
+        ],
+        "lower_error": [
+          0.16069535911083221,
+          0.2042107880115509,
+          0.15822096168994904,
+          0.26178431510925293,
+          0.2670932710170746,
+          0.25294747948646545,
+          0.17920616269111633,
+          0.18990686535835266
+        ],
+        "upper_error": [
+          0.4030909836292267,
+          0.4180445373058319,
+          0.3812533915042877,
+          0.3892090618610382,
+          0.45727336406707764,
+          0.42962414026260376,
+          0.3210144340991974,
+          0.3940642476081848
+        ],
+        "hook_difference": 0.0
+      },
+      {
+        "model": "qwen2.5-7b",
+        "group": 125,
+        "cell": "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b",
+        "offset": 7424,
+        "rel": [
+          0.0039221118204295635,
+          0.003061821684241295,
+          0.003332666354253888,
+          0.0036086440086364746,
+          0.003701620502397418,
+          0.003877085167914629,
+          0.0038219275884330273,
+          0.0031229136511683464
+        ],
+        "parent_error": [
+          0.004107938148081303,
+          0.003061821684241295,
+          0.003332666354253888,
+          0.0036690097767859697,
+          0.003701620502397418,
+          0.003877085167914629,
+          0.0036595757119357586,
+          0.0031229136511683464
+        ],
+        "lower_error": [
+          0.17445583641529083,
+          0.18855400383472443,
+          0.16133476793766022,
+          0.2015097290277481,
+          0.15360985696315765,
+          0.19407778978347778,
+          0.2559051811695099,
+          0.18651926517486572
+        ],
+        "upper_error": [
+          0.4274505376815796,
+          0.3734162747859955,
+          0.33683401346206665,
+          0.4539482891559601,
+          0.3938303291797638,
+          0.411396324634552,
+          0.44675108790397644,
+          0.42326653003692627
+        ],
+        "hook_difference": 0.0
+      },
+      {
+        "model": "qwen2.5-7b-instruct",
+        "group": 0,
+        "cell": "char_dana__on_policy__bare_label__qwen2.5-7b-instruct",
+        "offset": 0,
+        "rel": [
+          0.005963778588920832,
+          0.004390219692140818,
+          0.0052439323626458645,
+          0.005243857391178608,
+          0.004218045622110367,
+          0.006005953997373581,
+          0.004665667656809092,
+          0.005457032937556505
+        ],
+        "parent_error": [
+          0.005963778588920832,
+          0.004390219692140818,
+          0.0052439323626458645,
+          0.005243857391178608,
+          0.004218045622110367,
+          0.006005953997373581,
+          0.004665667656809092,
+          0.005457032937556505
+        ],
+        "lower_error": [
+          0.2638131082057953,
+          0.21712501347064972,
+          0.19317689538002014,
+          0.24314017593860626,
+          0.20520757138729095,
+          0.25861042737960815,
+          0.2242286652326584,
+          0.2562835216522217
+        ],
+        "upper_error": [
+          0.39341363310813904,
+          0.4070392847061157,
+          0.4485640823841095,
+          0.3898312449455261,
+          0.41391730308532715,
+          0.402663916349411,
+          0.3915311396121979,
+          0.4254531264305115
+        ],
+        "hook_difference": 0.0
+      },
+      {
+        "model": "qwen2.5-7b-instruct",
+        "group": 25,
+        "cell": "char_dana__on_policy__bare_label__qwen2.5-7b-instruct",
+        "offset": 6400,
+        "rel": [
+          0.004788531456142664,
+          0.03776807337999344,
+          0.007634194567799568,
+          0.008079009130597115,
+          0.006604023743420839,
+          0.006843931041657925,
+          0.007123707327991724,
+          0.006166398990899324
+        ],
+        "parent_error": [
+          0.004788531456142664,
+          0.03776807337999344,
+          0.007634194567799568,
+          0.008079009130597115,
+          0.006604023743420839,
+          0.006843931041657925,
+          0.007123707327991724,
+          0.006166398990899324
+        ],
+        "lower_error": [
+          0.241103395819664,
+          0.40483859181404114,
+          0.24832557141780853,
+          0.23967871069908142,
+          0.2711896300315857,
+          0.2336861789226532,
+          0.2514399290084839,
+          0.24461950361728668
+        ],
+        "upper_error": [
+          0.3405217230319977,
+          0.49623018503189087,
+          0.4037058651447296,
+          0.3855571448802948,
+          0.426631361246109,
+          0.4373498260974884,
+          0.3993763029575348,
+          0.42510029673576355
+        ],
+        "hook_difference": 0.0
+      },
+      {
+        "model": "qwen2.5-7b-instruct",
+        "group": 64,
+        "cell": "char_vex__on_policy__bare_label__qwen2.5-7b-instruct",
+        "offset": 0,
+        "rel": [
+          0.005439064931124449,
+          0.005757376551628113,
+          0.005167772993445396,
+          0.0037474536802619696,
+          0.005597241688519716,
+          0.0050591956824064255,
+          0.005475342273712158,
+          0.0045051490887999535
+        ],
+        "parent_error": [
+          0.005439064931124449,
+          0.005757376551628113,
+          0.005167772993445396,
+          0.0037474536802619696,
+          0.005597241688519716,
+          0.0050591956824064255,
+          0.005475342273712158,
+          0.0045051490887999535
+        ],
+        "lower_error": [
+          0.25012850761413574,
+          0.23109959065914154,
+          0.25399261713027954,
+          0.2573985159397125,
+          0.21501296758651733,
+          0.23738528788089752,
+          0.21410462260246277,
+          0.2170988917350769
+        ],
+        "upper_error": [
+          0.4472215473651886,
+          0.42577090859413147,
+          0.4347539246082306,
+          0.4510844647884369,
+          0.43610879778862,
+          0.49110278487205505,
+          0.38056668639183044,
+          0.3866972327232361
+        ],
+        "hook_difference": 0.0
+      },
+      {
+        "model": "qwen2.5-7b-instruct",
+        "group": 91,
+        "cell": "char_vex__on_policy__bare_label__qwen2.5-7b-instruct",
+        "offset": 6912,
+        "rel": [
+          0.007614199072122574,
+          0.0039875702932477,
+          0.005267089698463678,
+          0.030973345041275024,
+          0.005364860873669386,
+          0.006850062869489193,
+          0.0034399728756397963,
+          0.007017889525741339
+        ],
+        "parent_error": [
+          0.007614199072122574,
+          0.0039875702932477,
+          0.005267089698463678,
+          0.030973345041275024,
+          0.005364860873669386,
+          0.006850062869489193,
+          0.0034399728756397963,
+          0.007017889525741339
+        ],
+        "lower_error": [
+          0.2610972225666046,
+          0.21028520166873932,
+          0.22849977016448975,
+          0.4317854940891266,
+          0.21846628189086914,
+          0.24916145205497742,
+          0.20826080441474915,
+          0.21894720196723938
+        ],
+        "upper_error": [
+          0.4169297218322754,
+          0.3773442804813385,
+          0.36959967017173767,
+          0.536896824836731,
+          0.411152720451355,
+          0.3976728320121765,
+          0.3776867985725403,
+          0.3847557306289673
+        ],
+        "hook_difference": 0.0
+      }
+    ],
+    "scope": "128 first-eight parity cohorts; 256 sampled original answers per each of four failed cells; BF16-rounded weights used in FP32 controls. Historical runtime cause not uniquely identified.",
+    "scientific_verdict": "PROCEED_WITH_EXPLICIT_HISTORICAL_PARITY_WARNING_ADJUDICATION",
+    "gate_replay": {
+      "function": "scripts.issue2054_k3_recover.adjudicate_errors",
+      "source_commit": "edf399b98325e327b1fa46c055b68e178323ea48",
+      "source_sha256": "1fdf9d46d1172f160c6508608698bc71201cb33fdfd2684044dd5430190fc9fd",
+      "dtype": "float32 to match actual production relative-error arrays",
+      "policy_used": {
+        "cutoff": 0.025,
+        "adjudication_concern": "historical capture arithmetic; downstream small effect sizes need scrutiny"
+      },
+      "controlled_groups": 8,
+      "pass_groups": 4,
+      "warning_groups": 4,
+      "halt_groups": 0,
+      "results": [
+        {
+          "model": "qwen2.5-7b",
+          "group": 33,
+          "cell": "char_dana__on_policy__bare_label__qwen2.5-7b",
+          "offset": 256,
+          "severity": "PASS",
+          "warning_row_indices": [],
+          "historical_relative_error": [
+            0.004651660565286875,
+            0.004943683743476868,
+            0.004395429976284504,
+            0.0031624066177755594,
+            0.006092455703765154,
+            0.0034061644691973925,
+            0.00391781609505415,
+            0.0037830756045877934
+          ],
+          "parent_relative_error": [
+            0.004446136299520731,
+            0.005420358385890722,
+            0.0043107918463647366,
+            0.0017626432236284018,
+            0.007236551493406296,
+            0.0033807922154664993,
+            0.0038459596689790487,
+            0.003252544207498431
+          ],
+          "adjacent18_relative_error": [
+            0.23175238072872162,
+            0.28969165682792664,
+            0.22381189465522766,
+            0.18250325322151184,
+            0.237947016954422,
+            0.1848837435245514,
+            0.267289936542511,
+            0.1866960972547531
+          ],
+          "adjacent20_relative_error": [
+            0.40248748660087585,
+            0.47928178310394287,
+            0.44892799854278564,
+            0.5062816143035889,
+            0.37338370084762573,
+            0.4097561538219452,
+            0.4245639443397522,
+            0.3688431680202484
+          ],
+          "hook_hidden_states_max_abs": 0.0,
+          "adjudication": "historical capture arithmetic; downstream small effect sizes need scrutiny"
+        },
+        {
+          "model": "qwen2.5-7b",
+          "group": 50,
+          "cell": "char_dana__on_policy__bare_label__qwen2.5-7b",
+          "offset": 4608,
+          "severity": "WARN",
+          "warning_row_indices": [
+            3
+          ],
+          "historical_relative_error": [
+            0.0048394412733614445,
+            0.0055730645544826984,
+            0.004774700850248337,
+            0.02694704942405224,
+            0.003634551540017128,
+            0.005482332315295935,
+            0.005222989246249199,
+            0.006953655742108822
+          ],
+          "parent_relative_error": [
+            0.0048394412733614445,
+            0.0055730645544826984,
+            0.004774700850248337,
+            0.02694704942405224,
+            0.003634551540017128,
+            0.005482332315295935,
+            0.005222989246249199,
+            0.006953655742108822
+          ],
+          "adjacent18_relative_error": [
+            0.2516820430755615,
+            0.2457491010427475,
+            0.22545461356639862,
+            0.33277782797813416,
+            0.1929130107164383,
+            0.2302389144897461,
+            0.23216962814331055,
+            0.2245314121246338
+          ],
+          "adjacent20_relative_error": [
+            0.448579341173172,
+            0.4594019055366516,
+            0.4133702218532562,
+            0.4433387815952301,
+            0.4178983271121979,
+            0.41447901725769043,
+            0.4351545572280884,
+            0.4840341806411743
+          ],
+          "hook_hidden_states_max_abs": 0.0,
+          "adjudication": "historical capture arithmetic; downstream small effect sizes need scrutiny"
+        },
+        {
+          "model": "qwen2.5-7b",
+          "group": 98,
+          "cell": "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b",
+          "offset": 512,
+          "severity": "WARN",
+          "warning_row_indices": [
+            7
+          ],
+          "historical_relative_error": [
+            0.004033916629850864,
+            0.0045800586231052876,
+            0.004292713012546301,
+            0.0068651591427624226,
+            0.006485346704721451,
+            0.0034590684808790684,
+            0.003233054419979453,
+            0.03507900983095169
+          ],
+          "parent_relative_error": [
+            0.003846891690045595,
+            0.0045800586231052876,
+            0.004292713012546301,
+            0.0068651591427624226,
+            0.006485346704721451,
+            0.0031895246356725693,
+            0.003233054419979453,
+            0.03507900983095169
+          ],
+          "adjacent18_relative_error": [
+            0.16069535911083221,
+            0.2042107880115509,
+            0.15822096168994904,
+            0.26178431510925293,
+            0.2670932710170746,
+            0.25294747948646545,
+            0.17920616269111633,
+            0.18990686535835266
+          ],
+          "adjacent20_relative_error": [
+            0.4030909836292267,
+            0.4180445373058319,
+            0.3812533915042877,
+            0.3892090618610382,
+            0.45727336406707764,
+            0.42962414026260376,
+            0.3210144340991974,
+            0.3940642476081848
+          ],
+          "hook_hidden_states_max_abs": 0.0,
+          "adjudication": "historical capture arithmetic; downstream small effect sizes need scrutiny"
+        },
+        {
+          "model": "qwen2.5-7b",
+          "group": 125,
+          "cell": "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b",
+          "offset": 7424,
+          "severity": "PASS",
+          "warning_row_indices": [],
+          "historical_relative_error": [
+            0.0039221118204295635,
+            0.003061821684241295,
+            0.003332666354253888,
+            0.0036086440086364746,
+            0.003701620502397418,
+            0.003877085167914629,
+            0.0038219275884330273,
+            0.0031229136511683464
+          ],
+          "parent_relative_error": [
+            0.004107938148081303,
+            0.003061821684241295,
+            0.003332666354253888,
+            0.0036690097767859697,
+            0.003701620502397418,
+            0.003877085167914629,
+            0.0036595757119357586,
+            0.0031229136511683464
+          ],
+          "adjacent18_relative_error": [
+            0.17445583641529083,
+            0.18855400383472443,
+            0.16133476793766022,
+            0.2015097290277481,
+            0.15360985696315765,
+            0.19407778978347778,
+            0.2559051811695099,
+            0.18651926517486572
+          ],
+          "adjacent20_relative_error": [
+            0.4274505376815796,
+            0.3734162747859955,
+            0.33683401346206665,
+            0.4539482891559601,
+            0.3938303291797638,
+            0.411396324634552,
+            0.44675108790397644,
+            0.42326653003692627
+          ],
+          "hook_hidden_states_max_abs": 0.0,
+          "adjudication": "historical capture arithmetic; downstream small effect sizes need scrutiny"
+        },
+        {
+          "model": "qwen2.5-7b-instruct",
+          "group": 0,
+          "cell": "char_dana__on_policy__bare_label__qwen2.5-7b-instruct",
+          "offset": 0,
+          "severity": "PASS",
+          "warning_row_indices": [],
+          "historical_relative_error": [
+            0.005963778588920832,
+            0.004390219692140818,
+            0.0052439323626458645,
+            0.005243857391178608,
+            0.004218045622110367,
+            0.006005953997373581,
+            0.004665667656809092,
+            0.005457032937556505
+          ],
+          "parent_relative_error": [
+            0.005963778588920832,
+            0.004390219692140818,
+            0.0052439323626458645,
+            0.005243857391178608,
+            0.004218045622110367,
+            0.006005953997373581,
+            0.004665667656809092,
+            0.005457032937556505
+          ],
+          "adjacent18_relative_error": [
+            0.2638131082057953,
+            0.21712501347064972,
+            0.19317689538002014,
+            0.24314017593860626,
+            0.20520757138729095,
+            0.25861042737960815,
+            0.2242286652326584,
+            0.2562835216522217
+          ],
+          "adjacent20_relative_error": [
+            0.39341363310813904,
+            0.4070392847061157,
+            0.4485640823841095,
+            0.3898312449455261,
+            0.41391730308532715,
+            0.402663916349411,
+            0.3915311396121979,
+            0.4254531264305115
+          ],
+          "hook_hidden_states_max_abs": 0.0,
+          "adjudication": "historical capture arithmetic; downstream small effect sizes need scrutiny"
+        },
+        {
+          "model": "qwen2.5-7b-instruct",
+          "group": 25,
+          "cell": "char_dana__on_policy__bare_label__qwen2.5-7b-instruct",
+          "offset": 6400,
+          "severity": "WARN",
+          "warning_row_indices": [
+            1
+          ],
+          "historical_relative_error": [
+            0.004788531456142664,
+            0.03776807337999344,
+            0.007634194567799568,
+            0.008079009130597115,
+            0.006604023743420839,
+            0.006843931041657925,
+            0.007123707327991724,
+            0.006166398990899324
+          ],
+          "parent_relative_error": [
+            0.004788531456142664,
+            0.03776807337999344,
+            0.007634194567799568,
+            0.008079009130597115,
+            0.006604023743420839,
+            0.006843931041657925,
+            0.007123707327991724,
+            0.006166398990899324
+          ],
+          "adjacent18_relative_error": [
+            0.241103395819664,
+            0.40483859181404114,
+            0.24832557141780853,
+            0.23967871069908142,
+            0.2711896300315857,
+            0.2336861789226532,
+            0.2514399290084839,
+            0.24461950361728668
+          ],
+          "adjacent20_relative_error": [
+            0.3405217230319977,
+            0.49623018503189087,
+            0.4037058651447296,
+            0.3855571448802948,
+            0.426631361246109,
+            0.4373498260974884,
+            0.3993763029575348,
+            0.42510029673576355
+          ],
+          "hook_hidden_states_max_abs": 0.0,
+          "adjudication": "historical capture arithmetic; downstream small effect sizes need scrutiny"
+        },
+        {
+          "model": "qwen2.5-7b-instruct",
+          "group": 64,
+          "cell": "char_vex__on_policy__bare_label__qwen2.5-7b-instruct",
+          "offset": 0,
+          "severity": "PASS",
+          "warning_row_indices": [],
+          "historical_relative_error": [
+            0.005439064931124449,
+            0.005757376551628113,
+            0.005167772993445396,
+            0.0037474536802619696,
+            0.005597241688519716,
+            0.0050591956824064255,
+            0.005475342273712158,
+            0.0045051490887999535
+          ],
+          "parent_relative_error": [
+            0.005439064931124449,
+            0.005757376551628113,
+            0.005167772993445396,
+            0.0037474536802619696,
+            0.005597241688519716,
+            0.0050591956824064255,
+            0.005475342273712158,
+            0.0045051490887999535
+          ],
+          "adjacent18_relative_error": [
+            0.25012850761413574,
+            0.23109959065914154,
+            0.25399261713027954,
+            0.2573985159397125,
+            0.21501296758651733,
+            0.23738528788089752,
+            0.21410462260246277,
+            0.2170988917350769
+          ],
+          "adjacent20_relative_error": [
+            0.4472215473651886,
+            0.42577090859413147,
+            0.4347539246082306,
+            0.4510844647884369,
+            0.43610879778862,
+            0.49110278487205505,
+            0.38056668639183044,
+            0.3866972327232361
+          ],
+          "hook_hidden_states_max_abs": 0.0,
+          "adjudication": "historical capture arithmetic; downstream small effect sizes need scrutiny"
+        },
+        {
+          "model": "qwen2.5-7b-instruct",
+          "group": 91,
+          "cell": "char_vex__on_policy__bare_label__qwen2.5-7b-instruct",
+          "offset": 6912,
+          "severity": "WARN",
+          "warning_row_indices": [
+            3
+          ],
+          "historical_relative_error": [
+            0.007614199072122574,
+            0.0039875702932477,
+            0.005267089698463678,
+            0.030973345041275024,
+            0.005364860873669386,
+            0.006850062869489193,
+            0.0034399728756397963,
+            0.007017889525741339
+          ],
+          "parent_relative_error": [
+            0.007614199072122574,
+            0.0039875702932477,
+            0.005267089698463678,
+            0.030973345041275024,
+            0.005364860873669386,
+            0.006850062869489193,
+            0.0034399728756397963,
+            0.007017889525741339
+          ],
+          "adjacent18_relative_error": [
+            0.2610972225666046,
+            0.21028520166873932,
+            0.22849977016448975,
+            0.4317854940891266,
+            0.21846628189086914,
+            0.24916145205497742,
+            0.20826080441474915,
+            0.21894720196723938
+          ],
+          "adjacent20_relative_error": [
+            0.4169297218322754,
+            0.3773442804813385,
+            0.36959967017173767,
+            0.536896824836731,
+            0.411152720451355,
+            0.3976728320121765,
+            0.3776867985725403,
+            0.3847557306289673
+          ],
+          "hook_hidden_states_max_abs": 0.0,
+          "adjudication": "historical capture arithmetic; downstream small effect sizes need scrutiny"
+        }
+      ]
+    },
+    "interpretation": {
+      "confirmed": "Changing batch geometry alters BF16 results substantially more than FP32 results; hook output equals hidden_states[19], cache on/off leaves parent captures identical, and intended layer remains clearly closer to banked vectors than adjacent layers. Original batch8 captures reproduce historical parity failures.",
+      "unresolved": "Exact historical runtime/hardware cause was not recorded and is not uniquely identified. FP32 does not reproduce historical vectors; base worst FP32-bank error is 0.081254.",
+      "scope": "Retain unchanged capture measurements, frozen generations, model/data pins and source/receipt validation. Reuse352 original captures only after the reviewed provenance checks. Explicitly change .025 historical-comparison severity fromHALT toWARN, preserving all warnings and hard shape/finite/hook/layer checks.",
+      "downstream_caveat": "The centered drift energy ratios are diagnostic sample statistics, not direct bounds on fitted R2 changes. Small final K1/K3 effect sizes require numerical sensitivity scrutiny before strong interpretation."
+    }
+  }
+}
