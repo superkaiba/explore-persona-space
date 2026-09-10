@@ -9,6 +9,8 @@
     "refit_source": "superkaiba1/explore-persona-space-data:issue2588_capability_panel/k3_train_refit/fits/<cell>/k3_refit_prompt_last.json",
     "estimator": "banked two-draw variance-weighted per-dim Pearson (#1491 ceiling_var_weighted_r); three-draw ceiling via Spearman-Brown",
     "cells_present": [
+      "q35_0p8b_a",
+      "q35_2b_a",
       "q35_4b_a",
       "q35_9b_a",
       "q35_27b_a",
@@ -18,13 +20,52 @@
       "o31_32b_i_a",
       "q3_32b_a"
     ],
-    "cells_absent": [
-      "q35_0p8b_a",
-      "q35_2b_a"
-    ],
-    "complete_panel": false
+    "cells_absent": [],
+    "complete_panel": true
   },
   "per_model": [
+    {
+      "cell": "q35_0p8b_a",
+      "model": "Q3.5 0.8B",
+      "aa_index": 5,
+      "layer_star": 22,
+      "gate_pass": true,
+      "banked_r2": 0.6455546934822439,
+      "refit_r2_avg_target": 0.7239751827144698,
+      "banked_acc1": 0.6285714285714286,
+      "refit_acc1": 0.7544224765868887,
+      "ceiling_r1_s42x43": 0.8446241091680273,
+      "ceiling_r1_s43x44": 0.8463695713607206,
+      "ceiling_r3_s42x43": 0.9422232987745142,
+      "ceiling_r3_s43x44": 0.9429464123717488,
+      "banked_r2_normalized_s42x43": 0.7643100480734903,
+      "banked_r2_normalized_s43x44": 0.7627338166758244,
+      "refit_r2_norm_singledraw_s42x43": 0.8571566627758243,
+      "refit_r2_norm_singledraw_s43x44": 0.8553889544381003,
+      "refit_r2_norm_threedraw_s42x43": 0.7683690094015879,
+      "refit_r2_norm_threedraw_s43x44": 0.7677797732890134
+    },
+    {
+      "cell": "q35_2b_a",
+      "model": "Q3.5 2B",
+      "aa_index": 7,
+      "layer_star": 22,
+      "gate_pass": true,
+      "banked_r2": 0.6319706845945787,
+      "refit_r2_avg_target": 0.6992919362230618,
+      "banked_acc1": 0.6836734693877551,
+      "refit_acc1": 0.755440414507772,
+      "ceiling_r1_s42x43": 0.8647445565968952,
+      "ceiling_r1_s43x44": 0.8655339621806788,
+      "ceiling_r3_s42x43": 0.9504466082134903,
+      "ceiling_r3_s43x44": 0.9507643011659019,
+      "banked_r2_normalized_s42x43": 0.7308177655163604,
+      "banked_r2_normalized_s43x44": 0.730151227113438,
+      "refit_r2_norm_singledraw_s42x43": 0.8086687922905771,
+      "refit_r2_norm_singledraw_s43x44": 0.80793125027841,
+      "refit_r2_norm_threedraw_s42x43": 0.735750888245567,
+      "refit_r2_norm_threedraw_s43x44": 0.7355050409081779
+    },
     {
       "cell": "q35_4b_a",
       "model": "Q3.5 4B",
@@ -196,54 +237,54 @@
   ],
   "trends": {
     "banked_raw_r2_vs_aa": {
-      "rho": 0.8333333333333335,
-      "p": 0.010175540123456752,
-      "n": 8
+      "rho": 0.8666666666666665,
+      "p": 0.0011735381801554685,
+      "n": 10
     },
     "refit_raw_r2_vs_aa": {
-      "rho": 0.7142857142857144,
-      "p": 0.046528232284167255,
-      "n": 8
+      "rho": 0.6121212121212121,
+      "p": 0.05997214247725527,
+      "n": 10
     },
     "banked_normalized_r2_s42x43_vs_aa": {
-      "rho": 0.7380952380952381,
-      "p": 0.03655276105286081,
-      "n": 8
+      "rho": 0.4666666666666666,
+      "p": 0.17393859716506654,
+      "n": 10
     },
     "banked_normalized_r2_s43x44_vs_aa": {
-      "rho": 0.7380952380952381,
-      "p": 0.03655276105286081,
-      "n": 8
+      "rho": 0.43030303030303024,
+      "p": 0.21449233253280775,
+      "n": 10
     },
     "refit_normalized_singledraw_s42x43_vs_aa": {
-      "rho": 0.523809523809524,
-      "p": 0.1827207505397148,
-      "n": 8
+      "rho": 0.11515151515151514,
+      "p": 0.7514196523258485,
+      "n": 10
     },
     "refit_normalized_singledraw_s43x44_vs_aa": {
-      "rho": 0.523809523809524,
-      "p": 0.1827207505397148,
-      "n": 8
+      "rho": 0.11515151515151514,
+      "p": 0.7514196523258485,
+      "n": 10
     },
     "refit_normalized_threedraw_s42x43_vs_aa": {
-      "rho": 0.5952380952380953,
-      "p": 0.11952980613879269,
-      "n": 8
+      "rho": 0.35757575757575755,
+      "p": 0.31037609170568026,
+      "n": 10
     },
     "refit_normalized_threedraw_s43x44_vs_aa": {
-      "rho": 0.7142857142857144,
-      "p": 0.046528232284167255,
-      "n": 8
+      "rho": 0.35757575757575755,
+      "p": 0.31037609170568026,
+      "n": 10
     },
     "ceiling_r1_s42x43_vs_aa": {
-      "rho": 0.8333333333333335,
-      "p": 0.010175540123456752,
-      "n": 8
+      "rho": 0.8303030303030302,
+      "p": 0.002940227023279509,
+      "n": 10
     },
     "ceiling_r1_s43x44_vs_aa": {
-      "rho": 0.6190476190476191,
-      "p": 0.10173303745426478,
-      "n": 8
+      "rho": 0.709090909090909,
+      "p": 0.02166592336753244,
+      "n": 10
     }
   }
 }
