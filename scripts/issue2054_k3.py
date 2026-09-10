@@ -266,7 +266,14 @@ def prepare(root):
 def selected(manifest, args):
     cells = [c for c in manifest["cells"] if "raw" in c]
     cells.sort(key=lambda c: (c["cell"].split("__")[-1], c["cell"]))
-    return cells[args.shard :: args.shards]
+    return cells
+
+
+def owns_chunk(cell_index, offset, shard, shards):
+    """Split long cells across GPUs while preserving single-chunk pilot owners."""
+    if shards < 1 or not 0 <= shard < shards or offset < 0 or offset % CHUNK:
+        raise ValueError("invalid chunk allocation")
+    return (cell_index + offset // CHUNK) % shards == shard
 
 
 def banked_rows(root, record, pilot):
@@ -322,7 +329,7 @@ def generate(root, manifest, args):
 
     engine = None
     loaded = None
-    for record in selected(manifest, args):
+    for cell_index, record in enumerate(selected(manifest, args)):
         cell = record["cell"]
         fp = fingerprint(manifest, cell, args.pilot)
         rows = banked_rows(root, record, args.pilot)
@@ -348,6 +355,8 @@ def generate(root, manifest, args):
             loaded = model
         form = cell.split("__")[2]
         for offset in range(0, len(rows), CHUNK):
+            if not owns_chunk(cell_index, offset, args.shard, args.shards):
+                continue
             path = root / "raw" / cell / f"chunk_{offset:05d}.json"
             if complete(path, fp):
                 continue
@@ -480,7 +489,7 @@ def capture_stage(root, manifest, args):
         .to("cuda")
         .eval()
     )
-    for record in selected(manifest, args):
+    for cell_index, record in enumerate(selected(manifest, args)):
         cell = record["cell"]
         if cell.split("__")[-1] != args.model:
             continue
@@ -490,6 +499,8 @@ def capture_stage(root, manifest, args):
             bank = {k: z[k] for k in z.files}
         order = {str(cid): i for i, cid in enumerate(bank["conv_id"])}
         for offset in range(0, len(rows), CHUNK):
+            if not owns_chunk(cell_index, offset, args.shard, args.shards):
+                continue
             path = root / "captures" / cell / f"chunk_{offset:05d}.npz"
             if complete(path, fp):
                 continue

@@ -134,3 +134,88 @@ def test_empty_test_fold_is_withheld_despite_large_training_cohort():
     assert cohort_guard(x, targets, membership, np.ones(50, dtype=bool)) is None
     result = cohort_guard(x, targets, membership, membership != 0)
     assert result["status"] == "insufficient_held_out_rows"
+
+
+@pytest.mark.parametrize("width", [1, 2, 4, 8])
+def test_chunk_allocation_covers_every_context_once_and_balances_long_cells(width):
+    for cell in range(24):
+        owners = []
+        for offset in range(0, 8000, k3.CHUNK):
+            assigned = [s for s in range(width) if k3.owns_chunk(cell, offset, s, width)]
+            assert len(assigned) == 1
+            owners.extend(assigned)
+        assert (
+            max(owners.count(s) for s in range(width)) - min(owners.count(s) for s in range(width))
+            <= 1
+        )
+        assert [s for s in range(width) if k3.owns_chunk(cell, 0, s, width)] == [cell % width]
+
+
+def test_shallow_git_prefetch_keeps_depth_and_checks_source(tmp_path):
+    import subprocess
+
+    from scripts.issue2054_k3_job import prepare_git
+
+    source = tmp_path / "source"
+    source.mkdir()
+
+    def git(*args, cwd=source):
+        return subprocess.check_output(
+            ["git", "-c", "user.name=K3 Test", "-c", "user.email=k3-test@example.invalid", *args],
+            cwd=cwd,
+            text=True,
+            stderr=subprocess.STDOUT,
+        ).strip()
+
+    git("init", "--initial-branch=main")
+    for i in range(5):
+        (source / "file").write_text(str(i))
+        git("add", "file")
+        git("commit", "-m", f"main {i}")
+    git("switch", "-c", "feature")
+    (source / "feature").write_text("experiment")
+    git("add", "feature")
+    git("commit", "-m", "feature")
+    expected = git("rev-parse", "HEAD")
+    clone = tmp_path / "clone"
+    git("clone", "--depth=1", "--branch=feature", source.as_uri(), str(clone))
+    prepare_git(clone, expected)
+    assert git("rev-list", "--all", "--count", cwd=clone) == "2"
+    assert git("rev-parse", "origin/feature", cwd=clone) == expected
+    with pytest.raises(RuntimeError, match="remote source changed"):
+        prepare_git(clone, "0" * 40)
+
+
+def test_failed_pilot_stops_sequence_before_production(monkeypatch):
+    from scripts import issue2054_k3_job as job
+
+    calls = []
+
+    def fail_round(**kwargs):
+        calls.append(kwargs["pilot"])
+        raise RuntimeError("capture parity failed")
+
+    monkeypatch.setattr(job, "run_round", fail_round)
+    with pytest.raises(RuntimeError, match="capture parity failed"):
+        job.run_sequence(pilot=False, pilot_then_production=True, source_sha="test")
+    assert calls == [True]
+
+
+@pytest.mark.parametrize(
+    "pilot,chain,expected",
+    [(False, True, [True, False]), (True, False, [True]), (False, False, [False])],
+)
+def test_successful_sequence_returns_only_final_round_report(monkeypatch, pilot, chain, expected):
+    from scripts import issue2054_k3_job as job
+
+    calls = []
+
+    def run_round(**kwargs):
+        calls.append(kwargs["pilot"])
+        return {"pilot": kwargs["pilot"]}
+
+    monkeypatch.setattr(job, "run_round", run_round)
+    assert job.run_sequence(pilot=pilot, pilot_then_production=chain, source_sha="test") == {
+        "pilot": expected[-1]
+    }
+    assert calls == expected
