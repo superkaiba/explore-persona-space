@@ -144,7 +144,6 @@ BASELINE_ARMS: dict[str, dict] = {
     "enc_e5": {"label": "Encoder (e5)", "color": _ENCODER_COLOR},
     "enc_bge_cls": {"label": "Encoder (BGE)", "color": _ENCODER_COLOR},
     "pca1024": {"label": "PCA-1024", "color": ROLES["control"].color},
-    "floor_e5": {"label": "Encoder cosine", "color": _ENCODER_COLOR},
     "identity_bias": {"label": "Copy + bias", "color": ROLES["control"].color},
     "identity_copy": {"label": "Copy", "color": ROLES["control"].color},
     "shuffled": {"label": "Shuffled pairs", "color": ROLES["control"].color},
@@ -206,8 +205,8 @@ def _load_baselines_data(path: Path, extension: dict) -> dict:
 def _plot_baselines_panel(fig: plt.Figure, cell, baselines: dict) -> None:
     """Panel C: one hatched-open top-1 bar per arm (primary, top sub-axis) and one
     filled R^2 bar per arm below, negatives drawn at full extent (never clipped).
-    Retrieval-only arms have no R^2 bar. Bar fill/hatch follows the figure-wide
-    metric encoding, so the existing Metric legend covers both sub-axes."""
+    Bar fill/hatch follows the figure-wide metric encoding, so the existing
+    Metric legend covers both sub-axes."""
     inner = cell.subgridspec(2, 1, height_ratios=[1.35, 1.0], hspace=0.42)
     ax_top = fig.add_subplot(inner[0, 0])
     ax_r2 = fig.add_subplot(inner[1, 0])
@@ -742,8 +741,8 @@ def _write_outputs(
                         "encoding": (
                             "panel C, arms sorted by top-1: hatched open bars = top-1 "
                             "retrieval (95% CI where banked), filled bars = held-out R^2 "
-                            "with negatives at full extent; retrieval-only arms have no "
-                            "R^2 bar; copy baselines reused from the extension source"
+                            "with negatives at full extent; copy baselines reused from "
+                            "the extension source"
                         ),
                         **baselines,
                     }

@@ -8,7 +8,7 @@
   "repository_manuscript_asset": "figures/paper/c1_predictability_scaling.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
-    "commit": "697a6a9eb89641619a021f9d4a3bef7c0b9b5a00",
+    "commit": "f4cfe4f770bbd2809a1f7cd3ac586ac84128be62",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -31,7 +31,7 @@
     ],
     "exported_size_inches": [
       13.095,
-      5.917
+      5.862
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -58,7 +58,6 @@
       "Encoder (BGE)",
       "Copy + bias",
       "Copy",
-      "Encoder cosine",
       "Shuffled pairs",
       "\u22122",
       "\u22121",
@@ -721,7 +720,7 @@
       "path": "eval_results/issue_1901/fig2_baselines/fig2_baselines.json",
       "sha256": "eb16cb2fc80b5a9898041b6f5bffb56e338e795ad3925dd3e0575d94dcef9c86"
     },
-    "encoding": "panel C, arms sorted by top-1: hatched open bars = top-1 retrieval (95% CI where banked), filled bars = held-out R^2 with negatives at full extent; retrieval-only arms have no R^2 bar; copy baselines reused from the extension source",
+    "encoding": "panel C, arms sorted by top-1: hatched open bars = top-1 retrieval (95% CI where banked), filled bars = held-out R^2 with negatives at full extent; copy baselines reused from the extension source",
     "arms": [
       {
         "key": "anchor",
@@ -790,17 +789,6 @@
         ]
       },
       {
-        "key": "floor_e5",
-        "label": "Encoder cosine",
-        "color": "#C98A1B",
-        "r2": null,
-        "top1": 0.2908704883227176,
-        "top1_ci95": [
-          0.2632430997876858,
-          0.3205944798301486
-        ]
-      },
-      {
         "key": "shuffled",
         "label": "Shuffled pairs",
         "color": "#687078",
@@ -816,6 +804,10 @@
     "layer": 19,
     "convention": "identical to figure2_five_rollout_scaling: five-rollout mean targets, whitened cosine + two-sided CSLS (K=10), 942-answer pool, banked 963,444-row whitening, strict top-k with ties counted as failures; n_train=25,000 = the banked Job C draw",
     "extra_arms_not_drawn": {
+      "floor_e5": {
+        "r2": null,
+        "top1": 0.2908704883227176
+      },
       "floor_bge_cls": {
         "r2": null,
         "top1": 0.2346072186836518
@@ -823,8 +815,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "3e814a8645dbff7633e0fb04ef2a39af45a6b7a42cda8747c05902bbf40d293f",
-    "png": "0e2979ebf69ba1b4ae7edfc983173fec996646f8a782fcfbbee91001465b11d3",
-    "grayscale": "b2b0d29f2d3c6c4e98831f481e1d25b71382f0c7769e1ee560b515d925be44ef"
+    "pdf": "670c7108b7464e073bbf3d993a9b6168ab5e6594de5b1a2f3842bfc5567274e0",
+    "png": "89349119454730aad499643867607767d21ccfbab721f072f9306bec7a3a4c31",
+    "grayscale": "caef09552297d565d2e6c2da7dfc7c827e34677719814dda8b3d8a899e2e7ee0"
   }
 }
