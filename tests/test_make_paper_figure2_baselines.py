@@ -23,9 +23,10 @@ import make_paper_figure2 as plotter  # noqa: E402
 def _data():
     """Load the same banked inputs as the production entry point."""
     extension = plotter._load_extension_data(plotter.DEFAULT_EXTENSION_SOURCE)
-    baselines = plotter._load_baselines_data(plotter.DEFAULT_BASELINES_SOURCE, extension)
+    pool10k = plotter._load_pool10k_data(plotter.DEFAULT_POOL10K_SOURCE)
+    baselines = plotter._load_baselines_data(plotter.DEFAULT_BASELINES_SOURCE, extension, pool10k)
     layer = plotter._load_layer_data(plotter.DEFAULT_LAYER_SOURCE)
-    scaling = plotter._load_scaling_data(plotter.DEFAULT_SCALING_SOURCE, extension)
+    scaling = plotter._load_scaling_data(plotter.DEFAULT_SCALING_SOURCE, pool10k)
     boundary = plotter._load_boundary_data(plotter.DEFAULT_BOUNDARY_SOURCE)
     return layer, scaling, boundary, extension, baselines
 

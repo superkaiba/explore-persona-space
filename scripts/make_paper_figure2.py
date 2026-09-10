@@ -101,22 +101,51 @@ def _load_layer_data(path: Path) -> dict:
     }
 
 
-def _load_scaling_data(path: Path, extension: dict | None = None) -> dict:
+def _load_pool10k_data(path: Path) -> dict:
+    """10,000-candidate rescore: panel-B retrieval overlay + panel-C arms (#1901)."""
     source = json.loads(path.read_text())
-    rows = [] if extension is None else [dict(r) for r in extension["rows"]]
+    retrieval = source["retrieval"]
+    assert int(retrieval["n_pool"]) == 10_000, retrieval
+    assert int(retrieval["n_query"]) == 942, retrieval
+    chance = float(retrieval["chance_at_1"][str(retrieval["n_pool"])])
+    assert chance == 1e-4, chance
+    return {
+        "panel_b": source["panel_b"],
+        "panel_c": source["panel_c"],
+        "layer": int(source["layer"]),
+        "n_pool": int(retrieval["n_pool"]),
+        "n_query": int(retrieval["n_query"]),
+        "chance_at_1": chance,
+        "csls_k": int(retrieval["csls_k"]),
+    }
+
+
+def _load_scaling_data(path: Path, pool10k: dict) -> dict:
+    """Panel B: banked R^2 (pool-independent) + 10,000-candidate top-1 retrieval.
+
+    R^2 comes from the banked scaling JSON and is asserted byte-equal to the
+    values the pool-10k rescore carried forward; retrieval is the 10,000-pool
+    rescore's ``top1_10000``.
+    """
+    source = json.loads(path.read_text())
+    rows = []
     for n_text, cell in source["per_n"].items():
+        pool_cell = pool10k["panel_b"][n_text]
         arms = {}
         for plot_key, source_key in SCALING_KEYS.items():
             rec = cell[source_key]
+            pool_rec = pool_cell[source_key]
+            # The rescore carries R^2 (and the 942-pool top-1) from the banked JSON.
+            assert float(pool_rec["r2"]) == float(rec["r2"]), (n_text, source_key)
+            assert float(pool_rec["top1_942"]) == float(rec["top1"]), (n_text, source_key)
             arms[plot_key] = {
                 "r2": float(rec["r2"]),
-                "retrieval": float(rec["top1"]),
+                "retrieval": float(pool_rec["top1_10000"]),
+                "retrieval_942": float(rec["top1"]),
             }
         rows.append({"x": int(n_text), "arms": arms})
     rows.sort(key=lambda row: row["x"])
     expected = [5_000, 10_000, 25_000, 50_000, 100_000, 150_000, 250_000, 500_000, 963_444]
-    if extension is not None:
-        expected = sorted({r["x"] for r in extension["rows"]} | set(expected))
     assert [row["x"] for row in rows] == expected
     return {
         "rows": rows,
@@ -124,8 +153,9 @@ def _load_scaling_data(path: Path, extension: dict | None = None) -> dict:
         "n_test": int(source["duplicate_audit"]["source_n_pool"]),
         "target": "five-rollout mean",
         "retrieval": (
-            f"whitened cosine + CSLS (K={source['retrieval']['csls_k']}), "
-            f"deduplicated pool n={source['retrieval']['n_pool']}"
+            f"whitened cosine + CSLS (K={pool10k['csls_k']}), "
+            f"pool n={pool10k['n_pool']:,} (942 deduplicated targets + 9,058 "
+            f"distractors), chance top-1 {pool10k['chance_at_1']:g}"
         ),
     }
 
@@ -134,11 +164,16 @@ def _load_scaling_data(path: Path, extension: dict | None = None) -> dict:
 BOUNDARY_COLOR = ROLES["control"].color
 DEFAULT_EXTENSION_SOURCE = ROOT / "eval_results/issue_1901/figure2_extension_1200.json"
 DEFAULT_BASELINES_SOURCE = ROOT / "eval_results/issue_1901/fig2_baselines/fig2_baselines.json"
+DEFAULT_POOL10K_SOURCE = ROOT / "eval_results/issue_1901/fig2_pool10k/fig2_pool10k.json"
 
-# Panel C arms: (key in fig2_baselines per_arm | banked copy baselines, reader label,
+# Panel C arms: (key in fig2_pool10k panel_c / fig2_baselines per_arm, reader label,
 # color). Colors reuse the paper-wide semantic palette: the linear map keeps the
 # ``linear`` hue, encoder-input arms take the ``other_source`` amber (representation
-# from another model), and every control/null is muted gray.
+# from another model), and every control/null is muted gray. The roster below is
+# curated. The e5 encoder arm, both zero-parameter cosine floors, and the plain
+# copy baseline were dropped from the panel (commits 44faead8d4b, 514ea8e9f28,
+# 349175bc760). The rescore still computes every one of them, and each appears
+# in the sidecar under extra_arms_not_drawn rather than being lost.
 _ENCODER_COLOR = ROLES["other_source"].color
 BASELINE_ARMS: dict[str, dict] = {
     "anchor": {"label": "Linear map", "color": ROLES["linear"].color},
@@ -153,12 +188,14 @@ BASELINE_ARMS: dict[str, dict] = {
 BASELINE_R2_SEGMENTS = ((-1.05, -0.75), (-0.1, 1.0))
 
 
-def _load_baselines_data(path: Path, extension: dict) -> dict:
-    """Panel C: paper-convention baselines at n_train=25,000.
+def _load_baselines_data(path: Path, extension: dict, pool10k: dict) -> dict:
+    """Panel C: paper-convention baselines at n_train=25,000, 10,000-candidate pool.
 
-    Driver arms come from ``fig2_baselines.json`` (issue1901_encoder_paperconv.py);
-    the two copy baselines are the banked ``figure2_extension_1200.json`` values the
-    extension loader already carries (same convention, verified in that producer).
+    Retrieval (top-1 + 95% interval) comes from the pool-10k rescore's ``panel_c``.
+    Held-out R^2 is pool-independent and stays banked: ``fig2_baselines.json``
+    (issue1901_encoder_paperconv.py) for the fitted arms, the banked
+    ``figure2_extension_1200.json`` values for the two copy baselines, and ``None``
+    for the two zero-parameter cosine floors (no fit, so no R^2).
     """
     source = json.loads(path.read_text())
     if source.get("smoke"):
@@ -166,42 +203,53 @@ def _load_baselines_data(path: Path, extension: dict) -> dict:
     gate = source["step1_gate"]
     if not gate.get("gated") or gate["d_r2"] > gate["tol"] or gate["d_top1"] > gate["tol"]:
         raise ValueError(f"{path} step1 gate not passed: {gate}")
-    per_arm = dict(source["per_arm"])
-    per_arm["identity_bias"] = {
-        "r2": extension["identity_bias"]["r2"],
-        "top1": extension["identity_bias"]["retrieval"],
-        "top1_ci95": extension["identity_bias"].get("top1_ci95"),
-    }
-    per_arm["identity_copy"] = {
-        "r2": extension["identity_copy"]["r2"],
-        "top1": extension["identity_copy"]["retrieval"],
-        "top1_ci95": extension["identity_copy"].get("top1_ci95"),
-    }
+    banked_r2 = {k: v.get("r2") for k, v in source["per_arm"].items()}
+    banked_r2["identity_bias"] = extension["identity_bias"]["r2"]
+    banked_r2["identity_copy"] = extension["identity_copy"]["r2"]
     arms = []
     for key, style in BASELINE_ARMS.items():
-        rec = per_arm[key]
-        ci = rec.get("top1_ci95")
+        rec = pool10k["panel_c"][key]
+        ci = rec.get("top1_ci95_10000")
+        r2 = banked_r2[key]
+        if key.startswith("floor_"):
+            assert r2 is None, f"cosine floor {key} unexpectedly carries an R^2: {r2}"
         arms.append(
             {
                 "key": key,
                 "label": style["label"],
                 "color": style["color"],
-                "r2": None if rec["r2"] is None else float(rec["r2"]),
-                "top1": float(rec["top1"]),
+                "r2": None if r2 is None else float(r2),
+                "top1": float(rec["top1_10000"]),
+                "top1_942": float(rec["top1_942"]),
                 "top1_ci95": None if ci is None else [float(ci["lo"]), float(ci["hi"])],
             }
         )
+    # The rescore computes every arm; the panel draws the curated subset. Assert
+    # containment, and record what the rescore holds but the panel omits so the
+    # sidecar states the roster decision instead of hiding it.
+    drawn = set(BASELINE_ARMS)
+    available = set(pool10k["panel_c"])
+    assert drawn <= available, (sorted(drawn - available), sorted(available))
+    not_drawn = {
+        key: {
+            "top1_10000": float(pool10k["panel_c"][key]["top1_10000"]),
+            "top1_942": float(pool10k["panel_c"][key]["top1_942"]),
+            "r2": None if banked_r2[key] is None else float(banked_r2[key]),
+        }
+        for key in sorted(available - drawn)
+    }
     arms.sort(key=lambda arm: -arm["top1"])
     return {
         "arms": arms,
         "n_train": int(source["n_train"]),
         "layer": int(source["layer"]),
-        "convention": source["convention"],
-        "extra_arms_not_drawn": {
-            k: {"r2": per_arm[k]["r2"], "top1": per_arm[k]["top1"]}
-            for k in per_arm
-            if k not in BASELINE_ARMS
-        },
+        "n_pool": pool10k["n_pool"],
+        "chance_at_1": pool10k["chance_at_1"],
+        "convention": (
+            f"{source['convention']}; retrieval rescored on the 10,000-candidate pool "
+            "(942 deduplicated targets + 9,058 distractors), chance top-1 1e-4"
+        ),
+        "extra_arms_not_drawn": not_drawn,
     }
 
 
@@ -253,10 +301,11 @@ def _plot_baselines_panel(fig: plt.Figure, cell, baselines: dict) -> None:
     panel_header(
         ax_labels,
         "C",
-        f"layer {baselines['layer']}, {baselines['n_train']:,} contexts",
+        f"layer {baselines['layer']}, {baselines['n_train']:,} contexts, "
+        f"{baselines['n_pool']:,} candidates",
         "Baselines",
-        kicker_y=1.22,
-        title_y=1.075,
+        kicker_y=1.15,
+        title_y=1.052,
     )
     for ax in (ax_top, *r2_axes):
         style_axis(ax, grid_axis="y")
@@ -309,7 +358,11 @@ def _plot_baselines_panel(fig: plt.Figure, cell, baselines: dict) -> None:
             ax_top.vlines([lo, hi], y[i] - 0.10, y[i] + 0.10, color=INK, linewidth=1.3, zorder=5)
 
         value = arm["r2"]
-        if value is None or not np.isfinite(value):
+        if value is None:
+            # Zero-parameter cosine floors fit no map, so held-out R^2 is undefined
+            # and the R^2 row stays empty for them.
+            continue
+        if not np.isfinite(value):
             raise ValueError(f"invalid R^2 for {arm['key']}: {value}")
         if not any(lo <= value <= hi for lo, hi in BASELINE_R2_SEGMENTS):
             raise ValueError(f"R^2 endpoint for {arm['key']} is outside visible segments: {value}")
@@ -508,17 +561,19 @@ def make_figure(
             wspace=0.20,
         )
     else:
-        fig, include_frac = c2a_figure("full", aspect=0.73)
+        # Nine baseline rows (was six): a taller canvas keeps the panel-C row
+        # density and the physical A/B panel height unchanged.
+        fig, include_frac = c2a_figure("full", aspect=0.83)
         grid = fig.add_gridspec(
             1,
             2,
             left=0.075,
             right=0.985,
-            top=0.78,
-            bottom=0.52,
+            top=0.807,
+            bottom=0.578,
             wspace=0.20,
         )
-        baseline_grid = fig.add_gridspec(1, 1, left=0.075, right=0.985, top=0.345, bottom=0.065)
+        baseline_grid = fig.add_gridspec(1, 1, left=0.075, right=0.985, top=0.424, bottom=0.057)
         _plot_baselines_panel(fig, baseline_grid[0, 0], baselines)
     ax_layer = fig.add_subplot(grid[0, 0])
     ax_scale = fig.add_subplot(grid[0, 1])
@@ -536,7 +591,7 @@ def make_figure(
         scaling["rows"],
         letter="B",
         title="Scaling with training data",
-        kicker=f"layer {scaling['layer']}",
+        kicker=f"layer {scaling['layer']}, 10,000-candidate retrieval",
         show_retrieval=True,
     )
     controls = boundary is not None or extension is not None
@@ -565,13 +620,13 @@ def make_figure(
 
     predictor_handles, metric_handles = _legend_handles()
     if baselines is not None:
-        row_y = 0.918
+        row_y = 0.928
     else:
         row_y = 0.936 if not controls else 0.851
     # Figure-level kicker: the model, right-aligned on the topmost kicker row.
     fig.text(
         0.985,
-        0.994 if controls else row_y,
+        0.995 if controls else row_y,
         "QWEN2.5-7B-INSTRUCT",
         color=MUTED,
         fontsize=11.5,
@@ -583,7 +638,7 @@ def make_figure(
     fig.legend(
         handles=predictor_handles,
         loc="upper left",
-        bbox_to_anchor=(0.074, row_y - 0.025),
+        bbox_to_anchor=(0.074, row_y - 0.022),
         ncol=3,
         frameon=False,
         columnspacing=1.45,
@@ -595,7 +650,7 @@ def make_figure(
     fig.legend(
         handles=metric_handles,
         loc="upper left",
-        bbox_to_anchor=(0.571, row_y - 0.025),
+        bbox_to_anchor=(0.571, row_y - 0.022),
         ncol=2,
         frameon=False,
         columnspacing=1.35,
@@ -604,11 +659,11 @@ def make_figure(
         borderaxespad=0,
     )
     if controls:
-        legend_kicker(fig, 0.075, 0.994, "Control")
+        legend_kicker(fig, 0.075, 0.995, "Control")
         fig.legend(
             handles=_control_legend_handles(boundary, extension),
             loc="upper left",
-            bbox_to_anchor=(0.074, 0.969),
+            bbox_to_anchor=(0.074, 0.973),
             ncol=2,
             frameon=False,
             columnspacing=1.2,
@@ -672,6 +727,8 @@ def _write_outputs(
     extension: dict | None = None,
     baselines_source: Path | None = None,
     baselines: dict | None = None,
+    pool10k_source: Path | None = None,
+    pool10k: dict | None = None,
 ) -> dict[str, Path]:
     stem = out_dir / stem_name
     outputs = save_c2a_figure(
@@ -704,7 +761,29 @@ def _write_outputs(
                         "path": _display_path(scaling_source),
                         "sha256": _sha256(scaling_source),
                     },
+                    "pool10k": (
+                        None
+                        if pool10k_source is None
+                        else {
+                            "path": _display_path(pool10k_source),
+                            "sha256": _sha256(pool10k_source),
+                        }
+                    ),
                 },
+                "retrieval_pool": (
+                    None
+                    if pool10k is None
+                    else {
+                        "n_pool": pool10k["n_pool"],
+                        "n_query": pool10k["n_query"],
+                        "chance_at_1": pool10k["chance_at_1"],
+                        "note": (
+                            "panels B and C draw top-1 retrieval among 10,000 candidates "
+                            "(942 deduplicated targets + 9,058 distractors); held-out R^2 "
+                            "is pool-independent and carried from the banked JSONs"
+                        ),
+                    }
+                ),
                 "render": outputs["record"],
                 "displayed_metrics": {
                     "left": ["r2"],
@@ -744,13 +823,9 @@ def _write_outputs(
                             "path": _display_path(extension_source),
                             "sha256": _sha256(extension_source),
                         },
-                        "encoding": "1,200-context rung joins the predictor curves; the copy-context "
-                        "baselines are recorded here but not drawn"
-                        + (
-                            ""
-                            if baselines is None
-                            else " on panel B (panel C draws Copy + bias at the 25k rung)"
-                        ),
+                        "encoding": "copy-baseline R^2 source for panel C; the 1,200-context rung "
+                        "and Copy + bias is not drawn on panel B (its retrieval is "
+                        "10,000-pool, and the rung was only scored on the 942 pool)",
                         **extension,
                     }
                 ),
@@ -768,7 +843,10 @@ def _write_outputs(
                             "retrieval, filled horizontal bars = held-out R^2; all bars "
                             "start at zero; R^2 uses two equally scaled segments with "
                             "diagonal axis and bar cuts; every endpoint remains visible; "
-                            "Copy + bias reused from the extension source"
+                            "copy-baseline R^2 reused from the extension source; the "
+                            "panel draws a curated arm roster, and every arm the rescore "
+                            "computed but the panel omits is listed under "
+                            "extra_arms_not_drawn"
                         ),
                         "r2_axis_segments": BASELINE_R2_SEGMENTS,
                         "r2_axis_breaks": [
@@ -801,6 +879,7 @@ def main() -> None:
         "--no-extension", action="store_true", help="render without the 1,200 rung + copy baselines"
     )
     parser.add_argument("--baselines-source", type=Path, default=DEFAULT_BASELINES_SOURCE)
+    parser.add_argument("--pool10k-source", type=Path, default=DEFAULT_POOL10K_SOURCE)
     parser.add_argument(
         "--no-baselines", action="store_true", help="render without the panel-C baselines"
     )
@@ -809,14 +888,15 @@ def main() -> None:
     args = parser.parse_args()
 
     layer = _load_layer_data(args.layer_source)
+    pool10k = _load_pool10k_data(args.pool10k_source)
     extension = None if args.no_extension else _load_extension_data(args.extension_source)
-    scaling = _load_scaling_data(args.scaling_source, extension)
+    scaling = _load_scaling_data(args.scaling_source, pool10k)
     boundary = None if args.no_boundary else _load_boundary_data(args.boundary_source)
     baselines = None
     if not args.no_baselines:
         if args.no_extension:
-            raise SystemExit("panel C reuses the extension copy baselines; drop --no-extension")
-        baselines = _load_baselines_data(args.baselines_source, extension)
+            raise SystemExit("panel C reuses the extension copy-baseline R^2; drop --no-extension")
+        baselines = _load_baselines_data(args.baselines_source, extension, pool10k)
     assert layer["n_test"] == scaling["n_test"] == 1_000
     for dataset in (layer, scaling):
         for row in dataset["rows"]:
@@ -848,6 +928,8 @@ def main() -> None:
         extension=extension,
         baselines_source=None if baselines is None else args.baselines_source,
         baselines=baselines,
+        pool10k_source=args.pool10k_source,
+        pool10k=pool10k,
     )
     plt.close(fig)
     for kind, path in outputs.items():

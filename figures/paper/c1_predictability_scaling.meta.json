@@ -8,7 +8,7 @@
   "repository_manuscript_asset": "figures/paper/c1_predictability_scaling.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
-    "commit": "514ea8e9f2882b9cae2684b134716084803e94ec",
+    "commit": "703922006b338b0ec3605de9cc97de4b0059cbb4",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -19,7 +19,17 @@
     "scaling": {
       "path": "eval_results/issue_1901/figure2_five_rollout_scaling.json",
       "sha256": "34f4c8f4f14cccb4c4e712b3ba729cd581611b4307413ff2d13a0edd1cc7cdac"
+    },
+    "pool10k": {
+      "path": "eval_results/issue_1901/fig2_pool10k/fig2_pool10k.json",
+      "sha256": "3217af2d8c9b1a3ed59c190f0c04f3c7bbc01a6c447569d5f8c467e24ad1b38d"
     }
+  },
+  "retrieval_pool": {
+    "n_pool": 10000,
+    "n_query": 942,
+    "chance_at_1": 0.0001,
+    "note": "panels B and C draw top-1 retrieval among 10,000 candidates (942 deduplicated targets + 9,058 distractors); held-out R^2 is pool-independent and carried from the banked JSONs"
   },
   "render": {
     "style_version": "c2a-v2",
@@ -27,11 +37,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      9.56
+      10.869
     ],
     "exported_size_inches": [
       13.095,
-      9.717
+      11.031
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -45,7 +55,7 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "C  \u00b7  LAYER 19, 25,000 CONTEXTS",
+      "C  \u00b7  LAYER 19, 25,000 CONTEXTS, 10,000 CANDIDATES",
       "Linear map",
       "PCA-1024",
       "Encoder (BGE)",
@@ -79,12 +89,12 @@
       "0.8",
       "0.9",
       "Predictability across layers",
-      "B  \u00b7  LAYER 19",
+      "B  \u00b7  LAYER 19, 10,000-CANDIDATE RETRIEVAL",
       "Training contexts",
-      "1.2k",
       "5k",
       "25k",
       "100k",
+      "500k",
       "963k",
       "Score \u2191",
       "0.2",
@@ -501,28 +511,17 @@
   "scaling": {
     "rows": [
       {
-        "x": 1200,
-        "arms": {
-          "ridge": {
-            "r2": 0.7001223865964977,
-            "retrieval": 0.7498230714791223
-          },
-          "mlp_w8192": {
-            "r2": 0.6621053982064322,
-            "retrieval": 0.5360934182590233
-          }
-        }
-      },
-      {
         "x": 5000,
         "arms": {
           "ridge": {
             "r2": 0.7340952598140646,
-            "retrieval": 0.9097664543524416
+            "retrieval": 0.7367303609341825,
+            "retrieval_942": 0.9097664543524416
           },
           "mlp_w8192": {
             "r2": 0.7130610290746502,
-            "retrieval": 0.8779193205944799
+            "retrieval": 0.6157112526539278,
+            "retrieval_942": 0.8779193205944799
           }
         }
       },
@@ -531,11 +530,13 @@
         "arms": {
           "ridge": {
             "r2": 0.758128432318094,
-            "retrieval": 0.9235668789808917
+            "retrieval": 0.7951167728237792,
+            "retrieval_942": 0.9235668789808917
           },
           "mlp_w8192": {
             "r2": 0.7493962682171261,
-            "retrieval": 0.9055201698513801
+            "retrieval": 0.727176220806794,
+            "retrieval_942": 0.9055201698513801
           }
         }
       },
@@ -544,11 +545,13 @@
         "arms": {
           "ridge": {
             "r2": 0.778166233260706,
-            "retrieval": 0.9596602972399151
+            "retrieval": 0.8556263269639066,
+            "retrieval_942": 0.9596602972399151
           },
           "mlp_w8192": {
             "r2": 0.7822545861862669,
-            "retrieval": 0.9416135881104034
+            "retrieval": 0.821656050955414,
+            "retrieval_942": 0.9416135881104034
           }
         }
       },
@@ -557,11 +560,13 @@
         "arms": {
           "ridge": {
             "r2": 0.7916953124958028,
-            "retrieval": 0.9734607218683652
+            "retrieval": 0.89171974522293,
+            "retrieval_942": 0.9734607218683652
           },
           "mlp_w8192": {
             "r2": 0.8072485725108495,
-            "retrieval": 0.964968152866242
+            "retrieval": 0.8779193205944799,
+            "retrieval_942": 0.964968152866242
           }
         }
       },
@@ -570,11 +575,13 @@
         "arms": {
           "ridge": {
             "r2": 0.8004696802376142,
-            "retrieval": 0.975583864118896
+            "retrieval": 0.8980891719745223,
+            "retrieval_942": 0.975583864118896
           },
           "mlp_w8192": {
             "r2": 0.8285725753953739,
-            "retrieval": 0.970276008492569
+            "retrieval": 0.8895966029723992,
+            "retrieval_942": 0.970276008492569
           }
         }
       },
@@ -583,11 +590,13 @@
         "arms": {
           "ridge": {
             "r2": 0.8037822938875063,
-            "retrieval": 0.9734607218683652
+            "retrieval": 0.9055201698513801,
+            "retrieval_942": 0.9734607218683652
           },
           "mlp_w8192": {
             "r2": 0.8351598293809467,
-            "retrieval": 0.9787685774946921
+            "retrieval": 0.910828025477707,
+            "retrieval_942": 0.9787685774946921
           }
         }
       },
@@ -596,11 +605,13 @@
         "arms": {
           "ridge": {
             "r2": 0.8072234380837277,
-            "retrieval": 0.9766454352441614
+            "retrieval": 0.9065817409766455,
+            "retrieval_942": 0.9766454352441614
           },
           "mlp_w8192": {
             "r2": 0.8436077459009027,
-            "retrieval": 0.9798301486199575
+            "retrieval": 0.9140127388535032,
+            "retrieval_942": 0.9798301486199575
           }
         }
       },
@@ -609,11 +620,13 @@
         "arms": {
           "ridge": {
             "r2": 0.8096102674849024,
-            "retrieval": 0.9777070063694268
+            "retrieval": 0.9055201698513801,
+            "retrieval_942": 0.9777070063694268
           },
           "mlp_w8192": {
             "r2": 0.856355986204875,
-            "retrieval": 0.9830148619957537
+            "retrieval": 0.9256900212314225,
+            "retrieval_942": 0.9830148619957537
           }
         }
       },
@@ -622,11 +635,13 @@
         "arms": {
           "ridge": {
             "r2": 0.8026158129630123,
-            "retrieval": 0.9734607218683652
+            "retrieval": 0.9044585987261147,
+            "retrieval_942": 0.9734607218683652
           },
           "mlp_w8192": {
             "r2": 0.8588115628207151,
-            "retrieval": 0.9787685774946921
+            "retrieval": 0.9182590233545648,
+            "retrieval_942": 0.9787685774946921
           }
         }
       }
@@ -634,7 +649,7 @@
     "layer": 19,
     "n_test": 1000,
     "target": "five-rollout mean",
-    "retrieval": "whitened cosine + CSLS (K=10), deduplicated pool n=942"
+    "retrieval": "whitened cosine + CSLS (K=10), pool n=10,000 (942 deduplicated targets + 9,058 distractors), chance top-1 0.0001"
   },
   "boundary_control": {
     "source": {
@@ -683,7 +698,7 @@
       "path": "eval_results/issue_1901/figure2_extension_1200.json",
       "sha256": "8059ce3af58a576f08fd1bd93392e51bf6f8515964cbf2dd90b68c2a5e6a0a3e"
     },
-    "encoding": "1,200-context rung joins the predictor curves; the copy-context baselines are recorded here but not drawn on panel B (panel C draws Copy + bias at the 25k rung)",
+    "encoding": "copy-baseline R^2 source for panel C; the 1,200-context rung and Copy + bias is not drawn on panel B (its retrieval is 10,000-pool, and the rung was only scored on the 942 pool)",
     "rows": [
       {
         "x": 1200,
@@ -722,7 +737,7 @@
       "path": "eval_results/issue_1901/fig2_baselines/fig2_baselines.json",
       "sha256": "eb16cb2fc80b5a9898041b6f5bffb56e338e795ad3925dd3e0575d94dcef9c86"
     },
-    "encoding": "panel C spans the row below A and B; shared horizontal baseline labels; hatched horizontal bars and 95% intervals = top-1 retrieval, filled horizontal bars = held-out R^2; all bars start at zero; R^2 uses two equally scaled segments with diagonal axis and bar cuts; every endpoint remains visible; Copy + bias reused from the extension source",
+    "encoding": "panel C spans the row below A and B; shared horizontal baseline labels; hatched horizontal bars and 95% intervals = top-1 retrieval, filled horizontal bars = held-out R^2; all bars start at zero; R^2 uses two equally scaled segments with diagonal axis and bar cuts; every endpoint remains visible; copy-baseline R^2 reused from the extension source; the panel draws a curated arm roster, and every arm the rescore computed but the panel omits is listed under extra_arms_not_drawn",
     "r2_axis_segments": [
       [
         -1.05,
@@ -745,10 +760,11 @@
         "label": "Linear map",
         "color": "#176B87",
         "r2": 0.7781668256904426,
-        "top1": 0.9596602972399151,
+        "top1": 0.8556263269639066,
+        "top1_942": 0.9596602972399151,
         "top1_ci95": [
-          0.945859872611465,
-          0.9713641188959659
+          0.8333333333333334,
+          0.8768577494692145
         ]
       },
       {
@@ -756,10 +772,11 @@
         "label": "PCA-1024",
         "color": "#687078",
         "r2": 0.7661536349443496,
-        "top1": 0.945859872611465,
+        "top1": 0.8386411889596603,
+        "top1_942": 0.945859872611465,
         "top1_ci95": [
-          0.9309978768577495,
-          0.9596602972399151
+          0.8152866242038217,
+          0.8609341825902336
         ]
       },
       {
@@ -767,10 +784,11 @@
         "label": "Encoder (BGE)",
         "color": "#C98A1B",
         "r2": 0.44987511333179053,
-        "top1": 0.8163481953290871,
+        "top1": 0.5944798301486199,
+        "top1_942": 0.8174097664543525,
         "top1_ci95": [
-          0.7929936305732485,
-          0.8407643312101911
+          0.5636942675159236,
+          0.6252653927813163
         ]
       },
       {
@@ -778,10 +796,11 @@
         "label": "Copy + bias",
         "color": "#687078",
         "r2": -0.9200245082624223,
-        "top1": 0.7133757961783439,
+        "top1": 0.5212314225053079,
+        "top1_942": 0.7133757961783439,
         "top1_ci95": [
-          0.6836518046709129,
-          0.7420382165605095
+          0.4883227176220807,
+          0.554140127388535
         ]
       },
       {
@@ -789,38 +808,45 @@
         "label": "Shuffled pairs",
         "color": "#687078",
         "r2": -0.029402554859490504,
-        "top1": 0.0010615711252653928,
+        "top1": 0.0,
+        "top1_942": 0.0010615711252653928,
         "top1_ci95": [
           0.0,
-          0.0031847133757961785
+          0.0
         ]
       }
     ],
     "n_train": 25000,
     "layer": 19,
-    "convention": "identical to figure2_five_rollout_scaling: five-rollout mean targets, whitened cosine + two-sided CSLS (K=10), 942-answer pool, banked 963,444-row whitening, strict top-k with ties counted as failures; n_train=25,000 = the banked Job C draw",
+    "n_pool": 10000,
+    "chance_at_1": 0.0001,
+    "convention": "identical to figure2_five_rollout_scaling: five-rollout mean targets, whitened cosine + two-sided CSLS (K=10), 942-answer pool, banked 963,444-row whitening, strict top-k with ties counted as failures; n_train=25,000 = the banked Job C draw; retrieval rescored on the 10,000-candidate pool (942 deduplicated targets + 9,058 distractors), chance top-1 1e-4",
     "extra_arms_not_drawn": {
       "enc_e5": {
-        "r2": 0.4927269358880748,
-        "top1": 0.9012738853503185
-      },
-      "floor_e5": {
-        "r2": null,
-        "top1": 0.2908704883227176
+        "top1_10000": 0.7409766454352441,
+        "top1_942": 0.9012738853503185,
+        "r2": 0.4927269358880748
       },
       "floor_bge_cls": {
-        "r2": null,
-        "top1": 0.2346072186836518
+        "top1_10000": 0.20276008492569003,
+        "top1_942": 0.2346072186836518,
+        "r2": null
+      },
+      "floor_e5": {
+        "top1_10000": 0.25796178343949044,
+        "top1_942": 0.2908704883227176,
+        "r2": null
       },
       "identity_copy": {
-        "r2": -2.69937843767959,
-        "top1": 0.6624203821656051
+        "top1_10000": 0.47664543524416136,
+        "top1_942": 0.6624203821656051,
+        "r2": -2.69937843767959
       }
     }
   },
   "output_sha256": {
-    "pdf": "9aedfb4e418dac249e9a68f042e4caf3ebac8734644d64bcf1a7d90baaffef39",
-    "png": "115cb104756365a26f43f6629b99d8598c27bb19c21c687a32ece05628b32b84",
-    "grayscale": "da7159474a75aef879a4ae578037bcb4ca0c9ff1d7805560bda72a0d22e00839"
+    "pdf": "6600a17d787e45b200704483e7652b997979038773f0325a67873384150fe0c2",
+    "png": "de349c20506f9738ceb463b7893ae1ee4df16a0e873f17f8765ce1d254d1e9bd",
+    "grayscale": "c06e5f7c41cff434ee13b206eb17899e29b55a2c5c11762b19569c9f6fb03855"
   }
 }
