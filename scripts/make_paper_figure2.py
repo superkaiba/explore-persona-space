@@ -8,6 +8,9 @@ Visual encoding
 ---------------
 * predictor: color + marker shape;
 * metric: solid/filled for R^2, dashed/open for top-1 retrieval;
+* baseline: gray or amber marker at panel B's 25,000-context rung, on a y-axis
+  cut into two proportionally scaled segments so a negative R^2 is shown at its
+  own value instead of being dropped or clipped;
 The redundant encodings are designed to survive grayscale reproduction. The
 script writes a vector PDF, a high-resolution PNG, a grayscale audit PNG, and
 a JSON sidecar describing the inputs, hashes, style, and plotted values.
@@ -18,6 +21,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from itertools import pairwise
 from pathlib import Path
 import subprocess
 import sys
@@ -52,6 +56,7 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     panel_header,
     save_c2a_figure,
     set_c2a_style,
+    style_axis,
     style_score_axis,
 )
 
@@ -192,9 +197,25 @@ BASELINE_ARMS: dict[str, dict] = {
 # "anchor" is never drawn: it IS panel B's linear curve at this rung (its retrieval
 # is byte-equal and its R^2 agrees to 1e-6).
 BASELINE_POINT_X = 25_000
+
+# Panel B's y-axis is cut so the baselines' held-out R^2 fits without crushing the
+# curves. Two segments, ordered low to high; heights are proportional to these
+# spans, so both segments share ONE data scale and a marker's distance from a tick
+# means the same thing in either. Nothing on the panel is severed by the break:
+# every predictor curve lives entirely inside the upper segment (0.61 to 0.96), and
+# only isolated baseline markers land in the lower strip. The upper segment's floor
+# moved from 0.15 to just below zero so that zero, the reference an R^2 is read
+# against, is on the axis.
+PANEL_B_SEGMENTS: tuple[tuple[float, float], ...] = ((-1.0, -0.85), (-0.08, 1.0))
+PANEL_B_SEGMENT_TICKS: tuple[tuple[float, ...], ...] = (
+    (-0.9,),
+    (0.0, 0.2, 0.4, 0.6, 0.8, 1.0),
+)
+
 PANEL_B_BASELINE_ROSTERS: dict[str, tuple[str, ...]] = {
     "minimal": ("enc_bge_cls", "identity_bias"),
-    "full": ("pca1024", "enc_bge_cls", "identity_bias"),
+    "withnull": ("enc_bge_cls", "identity_bias", "shuffled"),
+    "full": ("pca1024", "enc_bge_cls", "identity_bias", "shuffled"),
 }
 
 
@@ -263,7 +284,67 @@ def _load_baselines_data(path: Path, extension: dict, pool10k: dict) -> dict:
     }
 
 
-def _plot_baseline_points(ax: plt.Axes, baselines: dict, roster: tuple[str, ...]) -> dict:
+def _build_panel_b_axes(fig: plt.Figure, cell) -> list[plt.Axes]:
+    """Panel B as one axis per y-segment, stacked low-to-high, sharing the x-axis.
+
+    Heights are proportional to the segments' data spans, so the two strips share
+    one scale. The lowest axis owns the x-axis; the others hide their bottom seam.
+    """
+    spans = [hi - lo for lo, hi in PANEL_B_SEGMENTS]
+    inner = cell.subgridspec(
+        len(PANEL_B_SEGMENTS),
+        1,
+        height_ratios=list(reversed(spans)),
+        hspace=0.13,
+    )
+    # subgridspec row 0 is the TOP row, so the highest segment comes first.
+    axes = [
+        fig.add_subplot(inner[len(PANEL_B_SEGMENTS) - 1 - i, 0], label=f"panel-b-seg{i}")
+        for i in range(len(PANEL_B_SEGMENTS))
+    ]
+    for ax in axes[1:]:
+        ax.sharex(axes[0])
+    return axes
+
+
+def _apply_panel_b_segments(axes: list[plt.Axes]) -> None:
+    """Range, ticks, seams, and the diagonal break marks between adjacent strips."""
+    for ax, (lo, hi), ticks in zip(axes, PANEL_B_SEGMENTS, PANEL_B_SEGMENT_TICKS, strict=True):
+        style_axis(ax, grid_axis="y")
+        ax.set_ylim(lo, hi)
+        ax.set_yticks(list(ticks))
+        ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _pos: f"{v:g}".replace("-", "\u2212")))
+    for lower, upper in pairwise(axes):
+        # The break lives between these two strips: the lower one loses its top
+        # seam, the upper one its bottom seam, and a diagonal mark sits on each.
+        lower.spines["top"].set_visible(False)
+        upper.spines["bottom"].set_visible(False)
+        upper.tick_params(axis="x", length=0, labelbottom=False)
+        mark = {
+            "marker": [(-1.0, -0.6), (1.0, 0.6)],
+            "markersize": 11,
+            "linestyle": "none",
+            "color": MUTED,
+            "markeredgecolor": MUTED,
+            "markeredgewidth": 1.5,
+            "clip_on": False,
+            "zorder": 6,
+        }
+        lower.plot([0], [1], transform=lower.transAxes, **mark)
+        upper.plot([0], [0], transform=upper.transAxes, **mark)
+
+
+def _center_ylabel(axes: list[plt.Axes], label: str) -> None:
+    """One y-label centered over the whole stack rather than over the top strip."""
+    top = axes[-1]
+    boxes = [ax.get_position() for ax in axes]
+    mid = (min(b.y0 for b in boxes) + max(b.y1 for b in boxes)) / 2.0
+    own = top.get_position()
+    top.set_ylabel(label, labelpad=13)
+    top.yaxis.set_label_coords(-0.115, (mid - own.y0) / own.height)
+
+
+def _plot_baseline_points(axes: list[plt.Axes], baselines: dict, roster: tuple[str, ...]) -> dict:
     """Draw the former panel-C baselines on panel B, at the rung they were measured on.
 
     Every arm was fitted at layer 19 on n_train = 25,000 rows and rescored on the
@@ -276,20 +357,21 @@ def _plot_baseline_points(ax: plt.Axes, baselines: dict, roster: tuple[str, ...]
     to the edge. It is returned under ``off_scale`` so the caller records it and the
     manuscript caption carries the number instead of the canvas implying a floor.
     """
-    y_lo, y_hi = ax.get_ylim()
     by_key = {arm["key"]: arm for arm in baselines["arms"]}
     drawn: list[dict] = []
     off_scale: list[dict] = []
-    # Rung guide: the markers sit in empty space well below the curves, so without
-    # it a reader cannot see which x they belong to.
-    ax.axvline(
-        BASELINE_POINT_X,
-        color=MUTED,
-        lw=1.0,
-        alpha=0.45,
-        linestyle=(0, (1.6, 2.4)),
-        zorder=1,
-    )
+    # Rung guide, on every strip so the 25,000 column reads as one line through the
+    # break: the markers sit in empty space away from the curves, so without it a
+    # reader cannot see which x they belong to.
+    for ax in axes:
+        ax.axvline(
+            BASELINE_POINT_X,
+            color=MUTED,
+            lw=1.0,
+            alpha=0.45,
+            linestyle=(0, (1.6, 2.4)),
+            zorder=1,
+        )
     for key in roster:
         arm = by_key[key]
         style = BASELINE_ARMS[key]
@@ -301,10 +383,17 @@ def _plot_baseline_points(ax: plt.Axes, baselines: dict, roster: tuple[str, ...]
                 "metric": metric,
                 "value": None if value is None else float(value),
             }
-            if value is None or not y_lo < value < y_hi:
+            host = None
+            if value is not None:
+                for ax, (lo, hi) in zip(axes, PANEL_B_SEGMENTS, strict=True):
+                    if lo < value < hi:
+                        host = ax
+                        record["segment"] = [lo, hi]
+                        break
+            if host is None:
                 off_scale.append(record)
                 continue
-            ax.plot(
+            host.plot(
                 [BASELINE_POINT_X],
                 [value],
                 marker=style["marker"],
@@ -320,10 +409,11 @@ def _plot_baseline_points(ax: plt.Axes, baselines: dict, roster: tuple[str, ...]
             )
             drawn.append(record)
     if not drawn:
-        raise ValueError(f"no baseline arm in roster {roster} landed inside {(y_lo, y_hi)}")
+        raise ValueError(f"no baseline arm in roster {roster} landed inside {PANEL_B_SEGMENTS}")
     return {
         "x": BASELINE_POINT_X,
         "roster": list(roster),
+        "segments": [list(seg) for seg in PANEL_B_SEGMENTS],
         "drawn": drawn,
         "off_scale": off_scale,
     }
@@ -551,7 +641,16 @@ def make_figure(
         wspace=0.20,
     )
     ax_layer = fig.add_subplot(grid[0, 0])
-    ax_scale = fig.add_subplot(grid[0, 1])
+    # With baselines, panel B is one axis per y-segment (see PANEL_B_SEGMENTS);
+    # without them a single axis is enough. The curves and the panel header always
+    # live on the highest segment, the x-axis always on the lowest.
+    scale_axes = (
+        _build_panel_b_axes(fig, grid[0, 1])
+        if baselines is not None
+        else [fig.add_subplot(grid[0, 1])]
+    )
+    ax_scale = scale_axes[-1]
+    ax_scale_bottom = scale_axes[0]
 
     _plot_panel(
         ax_layer,
@@ -574,29 +673,35 @@ def make_figure(
     baseline_overlay = None
     if controls:
         _plot_controls(ax_scale, boundary, extension)
-        ax_scale.set_ylim(0.15, 1.0)
-        ax_scale.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
-        if baselines is not None:
-            # After set_ylim: the overlay drops any arm the panel cannot hold.
-            baseline_overlay = _plot_baseline_points(ax_scale, baselines, roster)
+        if baselines is None:
+            ax_scale.set_ylim(0.15, 1.0)
+            ax_scale.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
+        else:
+            _apply_panel_b_segments(scale_axes)
+            # After the ranges are fixed: the overlay routes each value to the
+            # segment that holds it, and drops any the panel still cannot show.
+            baseline_overlay = _plot_baseline_points(scale_axes, baselines, roster)
 
     ax_layer.set_xlim(-0.5, 27.5)
     ax_layer.set_xticks([0, 5, 10, 15, 20, 25, 27])
     ax_layer.set_xlabel("Model layer", labelpad=12)
 
     ns = np.asarray([row["x"] for row in scaling["rows"]], dtype=float)
-    ax_scale.set_xscale("log")
-    ax_scale.set_xlim(ns.min() / 1.18, ns.max() * 1.18)
+    # The strips share the x-axis, so range and scale propagate; only the lowest
+    # one carries ticks and the label.
+    ax_scale_bottom.set_xscale("log")
+    ax_scale_bottom.set_xlim(ns.min() / 1.18, ns.max() * 1.18)
     ticks = [5_000, 25_000, 100_000, 500_000, 963_444]
     if ns.min() < 5_000:
         ticks = [int(ns.min()), 5_000, 25_000, 100_000, 963_444]
-    ax_scale.xaxis.set_major_locator(FixedLocator(ticks))
-    ax_scale.xaxis.set_major_formatter(FuncFormatter(_human_n))
-    ax_scale.minorticks_off()
-    ax_scale.set_xlabel("Training contexts", labelpad=12)
+    for ax in scale_axes:
+        ax.xaxis.set_major_locator(FixedLocator(ticks))
+        ax.xaxis.set_major_formatter(FuncFormatter(_human_n))
+        ax.minorticks_off()
+    ax_scale_bottom.set_xlabel("Training contexts", labelpad=12)
 
     ax_layer.set_ylabel(better_label(METRIC_LABELS["r2"]), labelpad=13)
-    ax_scale.set_ylabel(better_label("Score"), labelpad=13)
+    _center_ylabel(scale_axes, better_label("Score"))
 
     predictor_handles, metric_handles = _legend_handles()
     row_y = 0.936 if not controls else 0.851
@@ -642,7 +747,9 @@ def make_figure(
             handles=baseline_handles,
             loc="upper left",
             bbox_to_anchor=(0.074, 0.973),
-            ncol=len(baseline_handles),
+            # Past four entries the row runs off the canvas (save_c2a_figure
+            # enforces the width), so wrap instead of overflowing.
+            ncol=min(len(baseline_handles), 4),
             frameon=False,
             columnspacing=1.2,
             handlelength=1.6,
@@ -823,10 +930,16 @@ def _write_outputs(
                             "same convention panel B plots), never a full-width horizontal "
                             "line, because a fitted baseline's value moves with n and only "
                             "this rung was measured; filled marker = held-out R^2 and open "
-                            "marker = top-1 retrieval, matching the predictor curves; the "
-                            "'anchor' arm is not drawn because it IS panel B's linear curve "
-                            "at this rung; an arm whose value falls outside panel B's y-range "
-                            "is omitted rather than clipped to the edge and is listed under "
+                            "marker = top-1 retrieval, matching the predictor curves; panel "
+                            "B's y-axis is cut into the segments listed under "
+                            "overlay.segments, whose plotted heights are proportional to "
+                            "their data spans so both share one scale, which lets a negative "
+                            "R^2 be shown at its own value rather than dropped; no curve is "
+                            "severed by the cut (every predictor curve lies wholly inside the "
+                            "upper segment) and only isolated baseline markers occupy the "
+                            "lower one; the 'anchor' arm is not drawn because it IS panel B's "
+                            "linear curve at this rung; an arm no segment holds is omitted "
+                            "rather than clipped to a segment edge and is listed under "
                             "overlay.off_scale for the manuscript caption; every arm the "
                             "rescore computed but the figure omits stays in "
                             "extra_arms_not_drawn"
@@ -866,7 +979,7 @@ def main() -> None:
     parser.add_argument(
         "--baselines-mode",
         choices=sorted(PANEL_B_BASELINE_ROSTERS),
-        default="minimal",
+        default="withnull",
         help="which baseline arms ride panel B (see PANEL_B_BASELINE_ROSTERS)",
     )
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)

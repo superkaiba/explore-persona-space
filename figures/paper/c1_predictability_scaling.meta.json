@@ -8,7 +8,7 @@
   "repository_manuscript_asset": "figures/paper/c1_predictability_scaling.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
-    "commit": "0497bf6d109a1bc8b1753df0af2c1726f035bb54",
+    "commit": "9f97fc7859cc6975378163ae2401ee49e79f9631",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -72,13 +72,14 @@
       "0.9",
       "1",
       "Predictability across layers",
-      "B  \u00b7  LAYER 19, 10,000-CANDIDATE RETRIEVAL",
       "Training contexts",
       "5k",
       "25k",
       "100k",
       "500k",
       "963k",
+      "\u22120.9",
+      "B  \u00b7  LAYER 19, 10,000-CANDIDATE RETRIEVAL",
       "Score \u2191",
       "0.2",
       "0.4",
@@ -93,7 +94,8 @@
       "Top-1 retrieval",
       "Boundary token \u2192 next sentence",
       "Encoder (BGE)",
-      "Copy + bias"
+      "Copy + bias",
+      "Shuffled pairs"
     ]
   },
   "displayed_metrics": {
@@ -722,41 +724,87 @@
       "path": "eval_results/issue_1901/fig2_baselines/fig2_baselines.json",
       "sha256": "eb16cb2fc80b5a9898041b6f5bffb56e338e795ad3925dd3e0575d94dcef9c86"
     },
-    "encoding": "the separate baselines panel was removed; every baseline is now a POINT on panel B at x = 25,000 training contexts, the rung the baselines were measured on (layer 19, 10,000-candidate pool, the same convention panel B plots), never a full-width horizontal line, because a fitted baseline's value moves with n and only this rung was measured; filled marker = held-out R^2 and open marker = top-1 retrieval, matching the predictor curves; the 'anchor' arm is not drawn because it IS panel B's linear curve at this rung; an arm whose value falls outside panel B's y-range is omitted rather than clipped to the edge and is listed under overlay.off_scale for the manuscript caption; every arm the rescore computed but the figure omits stays in extra_arms_not_drawn",
+    "encoding": "the separate baselines panel was removed; every baseline is now a POINT on panel B at x = 25,000 training contexts, the rung the baselines were measured on (layer 19, 10,000-candidate pool, the same convention panel B plots), never a full-width horizontal line, because a fitted baseline's value moves with n and only this rung was measured; filled marker = held-out R^2 and open marker = top-1 retrieval, matching the predictor curves; panel B's y-axis is cut into the segments listed under overlay.segments, whose plotted heights are proportional to their data spans so both share one scale, which lets a negative R^2 be shown at its own value rather than dropped; no curve is severed by the cut (every predictor curve lies wholly inside the upper segment) and only isolated baseline markers occupy the lower one; the 'anchor' arm is not drawn because it IS panel B's linear curve at this rung; an arm no segment holds is omitted rather than clipped to a segment edge and is listed under overlay.off_scale for the manuscript caption; every arm the rescore computed but the figure omits stays in extra_arms_not_drawn",
     "overlay": {
       "x": 25000,
       "roster": [
         "enc_bge_cls",
-        "identity_bias"
+        "identity_bias",
+        "shuffled"
+      ],
+      "segments": [
+        [
+          -1.0,
+          -0.85
+        ],
+        [
+          -0.08,
+          1.0
+        ]
       ],
       "drawn": [
         {
           "key": "enc_bge_cls",
           "label": "Encoder (BGE)",
           "metric": "r2",
-          "value": 0.44987511333179053
+          "value": 0.44987511333179053,
+          "segment": [
+            -0.08,
+            1.0
+          ]
         },
         {
           "key": "enc_bge_cls",
           "label": "Encoder (BGE)",
           "metric": "top1",
-          "value": 0.5944798301486199
+          "value": 0.5944798301486199,
+          "segment": [
+            -0.08,
+            1.0
+          ]
+        },
+        {
+          "key": "identity_bias",
+          "label": "Copy + bias",
+          "metric": "r2",
+          "value": -0.9200245082624223,
+          "segment": [
+            -1.0,
+            -0.85
+          ]
         },
         {
           "key": "identity_bias",
           "label": "Copy + bias",
           "metric": "top1",
-          "value": 0.5212314225053079
+          "value": 0.5212314225053079,
+          "segment": [
+            -0.08,
+            1.0
+          ]
+        },
+        {
+          "key": "shuffled",
+          "label": "Shuffled pairs",
+          "metric": "r2",
+          "value": -0.029402554859490504,
+          "segment": [
+            -0.08,
+            1.0
+          ]
+        },
+        {
+          "key": "shuffled",
+          "label": "Shuffled pairs",
+          "metric": "top1",
+          "value": 0.0,
+          "segment": [
+            -0.08,
+            1.0
+          ]
         }
       ],
-      "off_scale": [
-        {
-          "key": "identity_bias",
-          "label": "Copy + bias",
-          "metric": "r2",
-          "value": -0.9200245082624223
-        }
-      ]
+      "off_scale": []
     },
     "arms": [
       {
@@ -849,8 +897,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "58740cea8fec830246250041e1de6922f0ed1216d9121c6220a11d5badc81c85",
-    "png": "a8c074344ea0f6e521d9439851f17e9922505910fbd1a38060212b785b03b7a2",
-    "grayscale": "6b30f7c1df89994a3d5e545fb048b5932317c4180e26c601718026382b28a267"
+    "pdf": "819924b28ac8aecf2900e5b66de0bb42c6565228cee0e18a97a003521cd8b256",
+    "png": "f69572332ddb05e60243900b8053506debd2cc99c36e5068ccf96b47f7ce718a",
+    "grayscale": "ee3b8fba6776b2f4ce300d910522733834537e31044af3c690157c1c40954295"
   }
 }
