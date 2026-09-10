@@ -181,7 +181,8 @@ def make_figure(units: dict[str, Any]) -> plt.Figure:
 
 
 # --- Comparison figure: the three corrections of Section 4.3, OLMo stages next to reasoning SFT ---
-OLMO_SUMMARY = ROOT / "eval_results" / "issue_1902" / "lasttoken_transfer" / "summary.json"
+OLMO_SUMMARY = ROOT / "eval_results" / "issue_1902" / "k5_full_grid" / "summary.json"  # K=5 mean targets, the Section 4.3 chain
+OLMO_SUMMARY_K1 = ROOT / "eval_results" / "issue_1902" / "lasttoken_transfer" / "summary.json"  # single-rollout targets (superseded)
 OLMO_TRANSITIONS = [("B->S", "Base → SFT\n(OLMo-2-7B,\ninstruction SFT)"), ("S->D", "SFT → DPO\n(OLMo-2-7B)"), ("D->R", "DPO → RLVR\n(OLMo-2-7B)")]
 REASONING_LABEL = "Qwen2.5-7B-Instruct →\nOpenThinker3-7B\n(reasoning SFT)"
 # (olmo key, ladder tier, label, offset, marker, facecolor, edgecolor) — styles mirror Figure 8C.
@@ -192,8 +193,8 @@ MODES = [
 ]
 
 
-def load_olmo() -> dict[str, Any]:
-    summary = json.loads(OLMO_SUMMARY.read_text())["transfer"]
+def load_olmo(summary_path: Path = OLMO_SUMMARY) -> dict[str, Any]:
+    summary = json.loads(summary_path.read_text())["transfer"]
     out: dict[str, Any] = {}
     for key, _label in OLMO_TRANSITIONS:
         pair = summary[key]["retention"]
@@ -262,13 +263,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--stem", default=DEFAULT_STEM)
     parser.add_argument("--mode", choices=("compare", "full"), default="compare", help="compare: the three Section 4.3 corrections next to the OLMo stages (paper figure); full: all nine ladder tiers")
     parser.add_argument("--ladder-dir", type=Path, default=LADDER_DIR, help="ladder unit JSON dir (default: needs-reasoning-only refits; use eval_results/issue_2546/ladder for the whole-corpus units)")
+    parser.add_argument("--olmo-summary", type=Path, default=OLMO_SUMMARY, help="OLMo-2-7B transfer summary for the left half (default: the K=5 grid behind Section 4.3)")
     parser.add_argument("--bundle-json", type=Path, default=None, help="all-question ladder JSON (allfit_necessity.py); overrides --ladder-dir")
     parser.add_argument("--subset", default="necessary", help="label subset for --bundle-json: necessary, both_correct, or all")
     parser.add_argument("--r2-baseline", choices=("corpus", "global"), default="global", help="R^2 baseline for --bundle-json retention (default: global mean, as in Section 4.3)")
     args = parser.parse_args(argv)
     LADDER_DIR = args.ladder_dir
     units = load_bundle_unit(args.bundle_json, args.subset, args.r2_baseline) if args.bundle_json is not None else load_units()
-    olmo = load_olmo() if args.mode == "compare" else None
+    olmo = load_olmo(args.olmo_summary) if args.mode == "compare" else None
     font = set_c2a_style()
     fig = make_compare_figure(units, olmo) if args.mode == "compare" else make_figure(units)
     stem = args.out_dir / args.stem
@@ -297,7 +299,7 @@ def main(argv: list[str] | None = None) -> int:
                 },
                 "mode": args.mode,
                 "olmo_retention": olmo,
-                "olmo_source": str(OLMO_SUMMARY.relative_to(ROOT)),
+                "olmo_source": str(args.olmo_summary.relative_to(ROOT)),
                 "tiers": [{"key": k, "label": l.replace("\n", " ")} for k, l in TIERS],
                 "units": units,
                 "render": render,
