@@ -8,7 +8,7 @@
   "repository_manuscript_asset": "figures/paper/c1_predictability_scaling.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
-    "commit": "4ce99c2a98dca597f237dd609e850a440b1793a7",
+    "commit": "828e5415ab07a74e3215c2e3f38dd52588405906",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -48,7 +48,6 @@
       "C  \u00b7  LAYER 19, 25,000 CONTEXTS",
       "Linear map",
       "PCA-1024",
-      "Encoder (e5)",
       "Encoder (BGE)",
       "Copy + bias",
       "Copy",
@@ -65,7 +64,6 @@
       "3",
       "4",
       "5",
-      "6",
       "Top-1 retrieval \u2192",
       "\u22122.7",
       "Held-out $R^2$ \u2192",
@@ -775,17 +773,6 @@
         ]
       },
       {
-        "key": "enc_e5",
-        "label": "Encoder (e5)",
-        "color": "#C98A1B",
-        "r2": 0.4927269358880748,
-        "top1": 0.9012738853503185,
-        "top1_ci95": [
-          0.8821656050955414,
-          0.9203821656050956
-        ]
-      },
-      {
         "key": "enc_bge_cls",
         "label": "Encoder (BGE)",
         "color": "#C98A1B",
@@ -834,6 +821,10 @@
     "layer": 19,
     "convention": "identical to figure2_five_rollout_scaling: five-rollout mean targets, whitened cosine + two-sided CSLS (K=10), 942-answer pool, banked 963,444-row whitening, strict top-k with ties counted as failures; n_train=25,000 = the banked Job C draw",
     "extra_arms_not_drawn": {
+      "enc_e5": {
+        "r2": 0.4927269358880748,
+        "top1": 0.9012738853503185
+      },
       "floor_e5": {
         "r2": null,
         "top1": 0.2908704883227176
@@ -845,8 +836,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "ca68c34aa439b1ec729c81b83fb88d5a539900f21c8d0c9b5b33c55b7253f9a4",
-    "png": "3bb39dde741f467a2c86ca63509cf8d543a9d0881b915d670d04c81bf946146c",
-    "grayscale": "384d490916189adc64c487c08fd8480a136a6e67c0f344dbaf795a3fc1dc5d87"
+    "pdf": "59af141964cd489d64d24fa67a4b0b967c491a01cd1dce7b2bfaf1c82f531c86",
+    "png": "a571f119756ec3aa3508ce06a3a62e88fe13055ab4ce8fc950f2c680b8779a4a",
+    "grayscale": "06619877e1108d91425bb89e4beec4c6b1fa2ce16ab0eaa58c10493c25a7525c"
   }
 }

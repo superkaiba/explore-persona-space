@@ -142,7 +142,7 @@ cuts mark both omitted ranges on the axis and on bars crossing the cuts. All bar
 start at zero and every endpoint remains visible. The renderer rejects scores
 falling in an omitted range. This display was requested on 2026-09-09; the
 provenance sidecar retains the full scores and records the visible and omitted ranges.
-Encoder cosine remains excluded from the displayed methods.
+Encoder cosine and Encoder (e5) are excluded from the displayed methods.
 
 The panel reads `eval_results/issue_1901/fig2_baselines/fig2_baselines.json` and the
 copy baselines in `eval_results/issue_1901/figure2_extension_1200.json`. Its retrieval

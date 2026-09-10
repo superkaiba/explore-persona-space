@@ -142,7 +142,6 @@ DEFAULT_BASELINES_SOURCE = ROOT / "eval_results/issue_1901/fig2_baselines/fig2_b
 _ENCODER_COLOR = ROLES["other_source"].color
 BASELINE_ARMS: dict[str, dict] = {
     "anchor": {"label": "Linear map", "color": ROLES["linear"].color},
-    "enc_e5": {"label": "Encoder (e5)", "color": _ENCODER_COLOR},
     "enc_bge_cls": {"label": "Encoder (BGE)", "color": _ENCODER_COLOR},
     "pca1024": {"label": "PCA-1024", "color": ROLES["control"].color},
     "identity_bias": {"label": "Copy + bias", "color": ROLES["control"].color},

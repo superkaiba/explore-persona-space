@@ -39,7 +39,7 @@ def test_baseline_bars_align_and_axis_cuts_preserve_endpoints(tmp_path):
         labels, retrieval = [axes[k] for k in ("baseline-labels", "baseline-top1")]
         r2_axes = [axes[f"baseline-r2-{j}"] for j in range(3)]
         fig.savefig(tmp_path / "baselines.pdf")
-        assert all(arm["key"] != "floor_e5" for arm in baselines["arms"])
+        assert all(arm["key"] not in {"floor_e5", "enc_e5"} for arm in baselines["arms"])
         for i, arm in enumerate(baselines["arms"]):
             text = next(t for t in labels.texts if t.get_text() == arm["label"])
             row_y = text.get_transform().transform(text.get_position())[1]
