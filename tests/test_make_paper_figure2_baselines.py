@@ -37,9 +37,11 @@ def test_baseline_bars_align_and_axis_cuts_preserve_endpoints(tmp_path):
     try:
         axes = {ax.get_label(): ax for ax in fig.axes}
         labels, retrieval = [axes[k] for k in ("baseline-labels", "baseline-top1")]
-        r2_axes = [axes[f"baseline-r2-{j}"] for j in range(3)]
+        r2_axes = [axes[f"baseline-r2-{j}"] for j in range(len(plotter.BASELINE_R2_SEGMENTS))]
         fig.savefig(tmp_path / "baselines.pdf")
-        assert all(arm["key"] not in {"floor_e5", "enc_e5"} for arm in baselines["arms"])
+        keys = {arm["key"] for arm in baselines["arms"]}
+        assert not keys.intersection({"floor_e5", "enc_e5", "identity_copy"})
+        assert "identity_bias" in keys
         for i, arm in enumerate(baselines["arms"]):
             text = next(t for t in labels.texts if t.get_text() == arm["label"])
             row_y = text.get_transform().transform(text.get_position())[1]

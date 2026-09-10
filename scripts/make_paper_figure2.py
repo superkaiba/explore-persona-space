@@ -145,13 +145,12 @@ BASELINE_ARMS: dict[str, dict] = {
     "enc_bge_cls": {"label": "Encoder (BGE)", "color": _ENCODER_COLOR},
     "pca1024": {"label": "PCA-1024", "color": ROLES["control"].color},
     "identity_bias": {"label": "Copy + bias", "color": ROLES["control"].color},
-    "identity_copy": {"label": "Copy", "color": ROLES["control"].color},
     "shuffled": {"label": "Shuffled pairs", "color": ROLES["control"].color},
 }
 
 # Retain every bar endpoint while omitting empty stretches of the negative axis.
 # Segment widths below are proportional to these spans: one common data scale.
-BASELINE_R2_SEGMENTS = ((-2.85, -2.5), (-1.05, -0.75), (-0.1, 1.0))
+BASELINE_R2_SEGMENTS = ((-1.05, -0.75), (-0.1, 1.0))
 
 
 def _load_baselines_data(path: Path, extension: dict) -> dict:
@@ -229,7 +228,7 @@ def _baseline_axis_cut(ax: plt.Axes, edge: float, row: float | None = None) -> N
 def _plot_baselines_panel(fig: plt.Figure, cell, baselines: dict) -> None:
     """Align horizontal retrieval and R^2 bars with shared baseline names.
 
-    Three equally scaled R^2 segments retain every endpoint. All bars start at
+    Two equally scaled R^2 segments retain every endpoint. All bars start at
     zero and are clipped only at explicit axis cuts. Retrieval intervals retain
     their actual endpoints even when they exclude the point estimate.
     """
@@ -237,7 +236,10 @@ def _plot_baselines_panel(fig: plt.Figure, cell, baselines: dict) -> None:
     ax_labels = fig.add_subplot(inner[0, 0], label="baseline-labels")
     ax_top = fig.add_subplot(inner[0, 1], sharey=ax_labels, label="baseline-top1")
     r2_grid = inner[0, 2].subgridspec(
-        1, 3, width_ratios=[hi - lo for lo, hi in BASELINE_R2_SEGMENTS], wspace=0.18
+        1,
+        len(BASELINE_R2_SEGMENTS),
+        width_ratios=[hi - lo for lo, hi in BASELINE_R2_SEGMENTS],
+        wspace=0.18,
     )
     r2_axes = [
         fig.add_subplot(r2_grid[0, j], sharey=ax_labels, label=f"baseline-r2-{j}")
@@ -270,7 +272,7 @@ def _plot_baselines_panel(fig: plt.Figure, cell, baselines: dict) -> None:
     ax_top.set_xlim(-0.035, 1.035)
     ax_top.set_xticks([0.0, 0.25, 0.5, 0.75, 1.0], ["0", "25", "50", "75", "100"])
     ax_top.set_xlabel("Accuracy (%)", labelpad=9)
-    r2_ticks = ([-2.7], [-0.9], [0.0, 0.5, 1.0])
+    r2_ticks = ([-0.9], [0.0, 0.5, 1.0])
     for j, (ax, limits, ticks) in enumerate(
         zip(r2_axes, BASELINE_R2_SEGMENTS, r2_ticks, strict=True)
     ):
@@ -747,7 +749,7 @@ def _write_outputs(
                         + (
                             ""
                             if baselines is None
-                            else " on panel B (panel C draws them at the 25k rung)"
+                            else " on panel B (panel C draws Copy + bias at the 25k rung)"
                         ),
                         **extension,
                     }
@@ -764,9 +766,9 @@ def _write_outputs(
                             "panel C spans the row below A and B; shared horizontal baseline "
                             "labels; hatched horizontal bars and 95% intervals = top-1 "
                             "retrieval, filled horizontal bars = held-out R^2; all bars "
-                            "start at zero; R^2 uses three equally scaled segments with "
+                            "start at zero; R^2 uses two equally scaled segments with "
                             "diagonal axis and bar cuts; every endpoint remains visible; "
-                            "copy baselines reused from the extension source"
+                            "Copy + bias reused from the extension source"
                         ),
                         "r2_axis_segments": BASELINE_R2_SEGMENTS,
                         "r2_axis_breaks": [

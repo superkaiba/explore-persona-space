@@ -136,13 +136,14 @@ spans a full-width row below A and B.
 Horizontal baseline names are shared by the retrieval and held-out R² columns.
 Retrieval uses hatched horizontal bars with the banked 95% interval endpoints,
 and R² uses filled horizontal bars with a visible zero line. The R² axis has
-three segments: [−2.85, −2.5], [−1.05, −0.75], and [−0.1, 1.0]. Their physical
+two segments: [−1.05, −0.75] and [−0.1, 1.0]. Their physical
 widths are proportional to their spans, preserving a common data scale. Diagonal
-cuts mark both omitted ranges on the axis and on bars crossing the cuts. All bars
+cuts mark the omitted range on the axis and on the bar crossing the cut. All bars
 start at zero and every endpoint remains visible. The renderer rejects scores
 falling in an omitted range. This display was requested on 2026-09-09; the
 provenance sidecar retains the full scores and records the visible and omitted ranges.
-Encoder cosine and Encoder (e5) are excluded from the displayed methods.
+Copy, Encoder cosine, and Encoder (e5) are excluded from the displayed methods.
+Copy + bias remains as the copy baseline.
 
 The panel reads `eval_results/issue_1901/fig2_baselines/fig2_baselines.json` and the
 copy baselines in `eval_results/issue_1901/figure2_extension_1200.json`. Its retrieval

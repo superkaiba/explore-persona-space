@@ -8,7 +8,7 @@
   "repository_manuscript_asset": "figures/paper/c1_predictability_scaling.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
-    "commit": "828e5415ab07a74e3215c2e3f38dd52588405906",
+    "commit": "514ea8e9f2882b9cae2684b134716084803e94ec",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -50,7 +50,6 @@
       "PCA-1024",
       "Encoder (BGE)",
       "Copy + bias",
-      "Copy",
       "Shuffled pairs",
       "Baselines",
       "Accuracy (%)",
@@ -63,14 +62,13 @@
       "2",
       "3",
       "4",
-      "5",
       "Top-1 retrieval \u2192",
-      "\u22122.7",
-      "Held-out $R^2$ \u2192",
       "\u22120.9",
+      "Held-out $R^2$ \u2192",
       "0.5",
       "A  \u00b7  50,000 TRAINING CONTEXTS",
       "Model layer",
+      "5",
       "10",
       "15",
       "20",
@@ -685,7 +683,7 @@
       "path": "eval_results/issue_1901/figure2_extension_1200.json",
       "sha256": "8059ce3af58a576f08fd1bd93392e51bf6f8515964cbf2dd90b68c2a5e6a0a3e"
     },
-    "encoding": "1,200-context rung joins the predictor curves; the copy-context baselines are recorded here but not drawn on panel B (panel C draws them at the 25k rung)",
+    "encoding": "1,200-context rung joins the predictor curves; the copy-context baselines are recorded here but not drawn on panel B (panel C draws Copy + bias at the 25k rung)",
     "rows": [
       {
         "x": 1200,
@@ -724,12 +722,8 @@
       "path": "eval_results/issue_1901/fig2_baselines/fig2_baselines.json",
       "sha256": "eb16cb2fc80b5a9898041b6f5bffb56e338e795ad3925dd3e0575d94dcef9c86"
     },
-    "encoding": "panel C spans the row below A and B; shared horizontal baseline labels; hatched horizontal bars and 95% intervals = top-1 retrieval, filled horizontal bars = held-out R^2; all bars start at zero; R^2 uses three equally scaled segments with diagonal axis and bar cuts; every endpoint remains visible; copy baselines reused from the extension source",
+    "encoding": "panel C spans the row below A and B; shared horizontal baseline labels; hatched horizontal bars and 95% intervals = top-1 retrieval, filled horizontal bars = held-out R^2; all bars start at zero; R^2 uses two equally scaled segments with diagonal axis and bar cuts; every endpoint remains visible; Copy + bias reused from the extension source",
     "r2_axis_segments": [
-      [
-        -2.85,
-        -2.5
-      ],
       [
         -1.05,
         -0.75
@@ -740,10 +734,6 @@
       ]
     ],
     "r2_axis_breaks": [
-      [
-        -2.5,
-        -1.05
-      ],
       [
         -0.75,
         -0.1
@@ -795,17 +785,6 @@
         ]
       },
       {
-        "key": "identity_copy",
-        "label": "Copy",
-        "color": "#687078",
-        "r2": -2.69937843767959,
-        "top1": 0.6624203821656051,
-        "top1_ci95": [
-          0.6305732484076433,
-          0.6932059447983014
-        ]
-      },
-      {
         "key": "shuffled",
         "label": "Shuffled pairs",
         "color": "#687078",
@@ -832,12 +811,16 @@
       "floor_bge_cls": {
         "r2": null,
         "top1": 0.2346072186836518
+      },
+      "identity_copy": {
+        "r2": -2.69937843767959,
+        "top1": 0.6624203821656051
       }
     }
   },
   "output_sha256": {
-    "pdf": "59af141964cd489d64d24fa67a4b0b967c491a01cd1dce7b2bfaf1c82f531c86",
-    "png": "a571f119756ec3aa3508ce06a3a62e88fe13055ab4ce8fc950f2c680b8779a4a",
-    "grayscale": "06619877e1108d91425bb89e4beec4c6b1fa2ce16ab0eaa58c10493c25a7525c"
+    "pdf": "9aedfb4e418dac249e9a68f042e4caf3ebac8734644d64bcf1a7d90baaffef39",
+    "png": "115cb104756365a26f43f6629b99d8598c27bb19c21c687a32ece05628b32b84",
+    "grayscale": "da7159474a75aef879a4ae578037bcb4ca0c9ff1d7805560bda72a0d22e00839"
   }
 }
