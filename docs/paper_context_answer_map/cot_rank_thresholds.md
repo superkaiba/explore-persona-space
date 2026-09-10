@@ -2,6 +2,14 @@
 
 User request: “okay use it with threshold 10% and then also show effect of varying the threshold”.
 
+Follow-up wording request: “just change it to additional experiments/results with
+CoT can be found in appendix”. The main sentence is now: “Additional experiments
+and results with CoT can be found in Appendix G.4.” This targeted replacement was
+made against pulled Overleaf revision `b37d2a6f86f35898bfb166da0dee566e20e4a0da`
+and synced as `e40fd25f8461bd019aca307a1ef7a920ac3531a0`; the appendix is unchanged.
+`cot_rank_main_sentence.tex` records the current wording. The integration patch
+below is retained as the historical initial delta, not the current main sentence.
+
 This is a paper-only integration of existing results: no fits, generations,
 activation downloads, or provisioned compute. The primary metric remains the
 smallest training-output-PCA truncation rank with validation SSE at most 1.10
