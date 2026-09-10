@@ -29,6 +29,10 @@ PREFIX = "issue2054_section44_k3_gcp"
 VERSION = "v1"
 CHUNK = 256
 PILOT_ROWS = 256
+MODEL_REVISIONS = {
+    "qwen2.5-7b": "d149729398750b98c0af14eb82c78cfe92750796",
+    "qwen2.5-7b-instruct": "a09a35458c702b33eeacc393d103063234e8bc28",
+}
 STOPS = {
     "chat": ["<|im_end|>"],
     "bare_text": ["\nUser:"],
@@ -94,6 +98,7 @@ def upload(path, root, relative_destination=None):
     path = Path(path)
     destination = f"{PREFIX}/{root.name}/{relative_destination or path.relative_to(root)}"
     api = HfApi()
+    log(f"[phase=upload] start {destination} bytes={path.stat().st_size}")
     commit = retry_transient(
         lambda: api.upload_file(
             repo_id=HF_REPO,
@@ -120,6 +125,7 @@ def upload(path, root, relative_destination=None):
         blob = hashlib.sha1(f"blob {len(content)}\0".encode() + content).hexdigest()
         if info[0].blob_id != blob:
             raise RuntimeError(f"remote Git blob mismatch: {destination}")
+    log(f"[phase=upload] verified {destination} revision={commit.oid}")
     return {
         "path": destination,
         "revision": commit.oid,
@@ -190,23 +196,28 @@ def cap_for(cell):
 def prepare(root):
     from huggingface_hub import HfApi
     import numpy as np
+    from explore_persona_space.orchestrate.hub import retry_transient
 
     api = HfApi()
-    candidates = list(
-        api.list_repo_tree(
-            HF_REPO,
-            path_in_repo="issue2054_lattice/activations",
-            recursive=True,
-            repo_type="dataset",
-            revision=REVISION,
-        )
+    candidates = retry_transient(
+        lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: the complete paginated iterator is inside retry_transient.
+            api.list_repo_tree(
+                HF_REPO,
+                path_in_repo="issue2054_lattice/activations",
+                recursive=True,
+                repo_type="dataset",
+                revision=REVISION,
+            )
+        ),
+        what="list pinned banked activation cells",
     )
     # Exact pre-indirect 56-cell lattice; cross-checked against banked fits.
     paths = [x.path for x in candidates if x.path.endswith(".npz") and "__indirect__" not in x.path]
     if len(paths) != 56 or len({Path(p).stem for p in paths}) != 56:
         raise RuntimeError(f"expected banked 56 unique activation cells, got {len(paths)}")
     models = {
-        slug: {"id": model, "revision": api.model_info(model).sha}
+        slug: {"id": model, "revision": MODEL_REVISIONS[slug]}
         for slug, model in capture._MODEL_ID.items()
     }
     cells = []
