@@ -32,7 +32,8 @@ revision, preserving the concurrent Section 4.2, discussion, and appendix-index
 edits, then the full manuscript was recompiled and the final appendix pages
 visually checked again. The delivered Overleaf commit is
 `b37d2a6f86f35898bfb166da0dee566e20e4a0da`. The exact three-file delta is retained
-in `cot_rank_overleaf.patch`; never apply that patch to an unpulled Overleaf copy.
+in `cot_rank_overleaf.patch` (zero-context format, requiring `git apply --unidiff-zero`);
+never apply that patch to an unpulled Overleaf copy.
 
 ## Pinned numerical sources
 

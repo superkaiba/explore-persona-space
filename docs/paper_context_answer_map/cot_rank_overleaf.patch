@@ -2,23 +2,14 @@ diff --git a/sections/results/05_cot.tex b/sections/results/05_cot.tex
 index 3389f92..c48816e 100644
 --- a/sections/results/05_cot.tex
 +++ b/sections/results/05_cot.tex
-@@ -9,6 +9,8 @@ Intuitively, we might expect the end-of-CoT predictive advantage to be larger fo
- 
- \noindent\textbf{The end-of-CoT advantage is not larger for questions where the reasoning is required} (\figref[B]{fig:cot})\textbf{:} For both types of questions, context-to-answer $R^2$ is 0.42 and 0.43, respectively. The end-of-CoT state raises these scores to 0.50 and 0.51, giving an equal gain of about 0.08 in each group (\appref{app:cot-necessity}). This indicates that the predictive gain given by CoT is not directly related to helping to predict the actual value of the answer.
- 
+@@ -11,0 +12,2 @@ Intuitively, we might expect the end-of-CoT predictive advantage to be larger fo
 +In a separate matched-layer comparison of thinking-off prompt states and thinking-on end-of-CoT states, each mapped to its own mode's generated answers, the rank needed to keep validation squared error at most 10\% above the full map's is lower with thinking on general-chat prompts but higher on both benchmark correctness subsets, with the same directions at 5\% and 20\% tolerances (\appref{app:cot-rank}).
 +
- \begin{figure*}[t]
-     \centering
-     \includegraphics[width=\textwidth]{figures/paper/c1_cot_story.pdf}
 diff --git a/sections/results/a10_cot_diagnostics.tex b/sections/results/a10_cot_diagnostics.tex
 index 7127593..8049bd4 100644
 --- a/sections/results/a10_cot_diagnostics.tex
 +++ b/sections/results/a10_cot_diagnostics.tex
-@@ -20,3 +20,5 @@ We compare the context-to-answer and end-of-CoT-to-answer maps at layer 24, with
- We undo input standardization before computing each operator's singular value decomposition, so both sides use the model's original activation coordinates. We compare the leading $k$ input singular directions and, separately, the corresponding output directions. For two orthonormal subspace bases $B_1,B_2$, the principal cosines are the singular values of $B_1^\top B_2$; their mean ranges from zero for orthogonal subspaces to one for identical subspaces. At $k=50$, mean overlap is 0.123 for inputs and 0.921 for outputs, against 0.092 for an isotropic reference formed from five Gaussian-QR random-subspace draws in 4,096 dimensions. The input/output contrast also holds at $k=10$ (0.086/0.868; reference 0.040) and $k=200$ (0.205/0.917; reference 0.188).
- 
- The random draws provide a geometric reference, not a significance test or uncertainty over fitted maps. Shared answer targets and their covariance may contribute to output overlap. This analysis neither assigns semantic meanings to the input directions nor establishes that the model uses the fitted maps.
+@@ -22,0 +23,2 @@ The random draws provide a geometric reference, not a significance test or uncer
 +
 +\input{sections/results/a13_cot_rank}
 diff --git a/sections/results/a13_cot_rank.tex b/sections/results/a13_cot_rank.tex
