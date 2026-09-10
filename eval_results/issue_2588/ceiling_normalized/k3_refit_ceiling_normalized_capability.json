@@ -1,0 +1,249 @@
+{
+  "schema_version": 1,
+  "meta": {
+    "task": 2588,
+    "script": "scripts/issue2588_k3_ceiling_normalized_refit.py",
+    "round": "k3_train_refit",
+    "k_draws": 3,
+    "ceiling_source": "eval_results/issue_2588/ceiling_normalized/ceiling_normalized_capability.json",
+    "refit_source": "superkaiba1/explore-persona-space-data:issue2588_capability_panel/k3_train_refit/fits/<cell>/k3_refit_prompt_last.json",
+    "estimator": "banked two-draw variance-weighted per-dim Pearson (#1491 ceiling_var_weighted_r); three-draw ceiling via Spearman-Brown",
+    "cells_present": [
+      "q35_4b_a",
+      "q35_9b_a",
+      "q35_27b_a",
+      "q36_27b_a",
+      "q38_27b_a",
+      "o3_7b_i_a",
+      "o31_32b_i_a",
+      "q3_32b_a"
+    ],
+    "cells_absent": [
+      "q35_0p8b_a",
+      "q35_2b_a"
+    ],
+    "complete_panel": false
+  },
+  "per_model": [
+    {
+      "cell": "q35_4b_a",
+      "model": "Q3.5 4B",
+      "aa_index": 20,
+      "layer_star": 21,
+      "gate_pass": true,
+      "banked_r2": 0.6552941155299692,
+      "refit_r2_avg_target": 0.7069906602011741,
+      "banked_acc1": 0.7077856420626896,
+      "refit_acc1": 0.7626774847870182,
+      "ceiling_r1_s42x43": 0.9002884119004424,
+      "ceiling_r1_s43x44": 0.9066741936441944,
+      "ceiling_r3_s42x43": 0.9643960532515473,
+      "ceiling_r3_s43x44": 0.9668274975195102,
+      "banked_r2_normalized_s42x43": 0.7278713208656009,
+      "banked_r2_normalized_s43x44": 0.7227448626238565,
+      "refit_r2_norm_singledraw_s42x43": 0.7852935246703542,
+      "refit_r2_norm_singledraw_s43x44": 0.7797626370720527,
+      "refit_r2_norm_threedraw_s42x43": 0.733091615024234,
+      "refit_r2_norm_threedraw_s43x44": 0.7312479858248004
+    },
+    {
+      "cell": "q35_9b_a",
+      "model": "Q3.5 9B",
+      "aa_index": 22,
+      "layer_star": 22,
+      "gate_pass": true,
+      "banked_r2": 0.6638091719230502,
+      "refit_r2_avg_target": 0.7011783303231303,
+      "banked_acc1": 0.727,
+      "refit_acc1": 0.778,
+      "ceiling_r1_s42x43": 0.908100755938171,
+      "ceiling_r1_s43x44": 0.9161339421125346,
+      "ceiling_r3_s42x43": 0.9673676604197974,
+      "ceiling_r3_s43x44": 0.9703890799473541,
+      "banked_r2_normalized_s42x43": 0.7309862562962632,
+      "banked_r2_normalized_s43x44": 0.7245765508833317,
+      "refit_r2_norm_singledraw_s42x43": 0.7721371507930677,
+      "refit_r2_norm_singledraw_s43x44": 0.7653666108104965,
+      "refit_r2_norm_threedraw_s42x43": 0.724831270479776,
+      "refit_r2_norm_threedraw_s43x44": 0.7225744238189189
+    },
+    {
+      "cell": "q35_27b_a",
+      "model": "Q3.5 27B",
+      "aa_index": 35,
+      "layer_star": 50,
+      "gate_pass": true,
+      "banked_r2": 0.7243092298774052,
+      "refit_r2_avg_target": 0.7670509350469226,
+      "banked_acc1": 0.7893681043129388,
+      "refit_acc1": 0.8161616161616162,
+      "ceiling_r1_s42x43": 0.9287905520802507,
+      "ceiling_r1_s43x44": 0.9326395318978807,
+      "ceiling_r3_s42x43": 0.975080515539499,
+      "ceiling_r3_s43x44": 0.9764907827117948,
+      "banked_r2_normalized_s42x43": 0.77984129818627,
+      "banked_r2_normalized_s43x44": 0.7766229128240656,
+      "refit_r2_norm_singledraw_s42x43": 0.8258599673833102,
+      "refit_r2_norm_singledraw_s43x44": 0.8224516641343814,
+      "refit_r2_norm_threedraw_s42x43": 0.7866539458257183,
+      "refit_r2_norm_threedraw_s43x44": 0.7855178447427423
+    },
+    {
+      "cell": "q36_27b_a",
+      "model": "Q3.6 27B",
+      "aa_index": 38,
+      "layer_star": 52,
+      "gate_pass": true,
+      "banked_r2": 0.6739250816934659,
+      "refit_r2_avg_target": 0.7139218778953333,
+      "banked_acc1": 0.7195979899497488,
+      "refit_acc1": 0.7818181818181819,
+      "ceiling_r1_s42x43": 0.9145632035127205,
+      "ceiling_r1_s43x44": 0.9180797760434064,
+      "ceiling_r3_s42x43": 0.9698009971293193,
+      "ceiling_r3_s43x44": 0.9711157914595044,
+      "banked_r2_normalized_s42x43": 0.7368819116109261,
+      "banked_r2_normalized_s43x44": 0.7340593914374637,
+      "refit_r2_norm_singledraw_s42x43": 0.7806151342556212,
+      "refit_r2_norm_singledraw_s43x44": 0.77762510026316,
+      "refit_r2_norm_threedraw_s42x43": 0.7361529633487627,
+      "refit_r2_norm_threedraw_s43x44": 0.7351562853512756
+    },
+    {
+      "cell": "q38_27b_a",
+      "model": "Q3.8 27B",
+      "aa_index": 52,
+      "layer_star": 52,
+      "gate_pass": true,
+      "banked_r2": 0.6933435770793072,
+      "refit_r2_avg_target": 0.7318177509961508,
+      "banked_acc1": 0.7350859453993933,
+      "refit_acc1": 0.8271983640081799,
+      "ceiling_r1_s42x43": 0.914100599517832,
+      "ceiling_r1_s43x44": 0.9099608474219787,
+      "ceiling_r3_s42x43": 0.9696275496554285,
+      "ceiling_r3_s43x44": 0.9680703358739883,
+      "banked_r2_normalized_s42x43": 0.7584981099947103,
+      "banked_r2_normalized_s43x44": 0.7619488014716539,
+      "refit_r2_norm_singledraw_s42x43": 0.8005877595771937,
+      "refit_r2_norm_singledraw_s43x44": 0.8042299326058617,
+      "refit_r2_norm_threedraw_s42x43": 0.7547410871898318,
+      "refit_r2_norm_threedraw_s43x44": 0.7559551448660544
+    },
+    {
+      "cell": "o3_7b_i_a",
+      "model": "OLMo3 7B I",
+      "aa_index": 2,
+      "layer_star": 18,
+      "gate_pass": true,
+      "banked_r2": 0.6248591328705139,
+      "refit_r2_avg_target": 0.6811375405227142,
+      "banked_acc1": 0.7333333333333333,
+      "refit_acc1": 0.789795918367347,
+      "ceiling_r1_s42x43": 0.8911190330903637,
+      "ceiling_r1_s43x44": 0.8899834953073223,
+      "ceiling_r3_s42x43": 0.9608656900237511,
+      "ceiling_r3_s43x44": 0.9604252478306036,
+      "banked_r2_normalized_s42x43": 0.7012072570187716,
+      "banked_r2_normalized_s43x44": 0.7021019335361295,
+      "refit_r2_norm_singledraw_s42x43": 0.7643620158808163,
+      "refit_r2_norm_singledraw_s43x44": 0.7653372721114441,
+      "refit_r2_norm_threedraw_s42x43": 0.7088790323087482,
+      "refit_r2_norm_threedraw_s43x44": 0.7092041177189574
+    },
+    {
+      "cell": "o31_32b_i_a",
+      "model": "OLMo3.1 32B I",
+      "aa_index": 6,
+      "layer_star": 28,
+      "gate_pass": true,
+      "banked_r2": 0.6126875943403447,
+      "refit_r2_avg_target": 0.664196779257372,
+      "banked_acc1": 0.7901109989909183,
+      "refit_acc1": 0.8101522842639594,
+      "ceiling_r1_s42x43": 0.9064231931384397,
+      "ceiling_r1_s43x44": 0.9141794612215123,
+      "ceiling_r3_s42x43": 0.9667323436793077,
+      "ceiling_r3_s43x44": 0.9696571258698808,
+      "banked_r2_normalized_s42x43": 0.6759398909674278,
+      "banked_r2_normalized_s43x44": 0.670204943700749,
+      "refit_r2_norm_singledraw_s42x43": 0.7327667520925052,
+      "refit_r2_norm_singledraw_s43x44": 0.7265496627652109,
+      "refit_r2_norm_threedraw_s42x43": 0.687053436869083,
+      "refit_r2_norm_threedraw_s43x44": 0.6849810737599851
+    },
+    {
+      "cell": "q3_32b_a",
+      "model": "Q3 32B",
+      "aa_index": 11,
+      "layer_star": 50,
+      "gate_pass": true,
+      "banked_r2": 0.6723528569746203,
+      "refit_r2_avg_target": 0.7268850264818764,
+      "banked_acc1": 0.708,
+      "refit_acc1": 0.7612838515546639,
+      "ceiling_r1_s42x43": 0.895201074850998,
+      "ceiling_r1_s43x44": 0.8960650805361707,
+      "ceiling_r3_s42x43": 0.9624430746800442,
+      "ceiling_r3_s43x44": 0.9627757613477761,
+      "banked_r2_normalized_s42x43": 0.7510635050192833,
+      "banked_r2_normalized_s43x44": 0.750339313046671,
+      "refit_r2_norm_singledraw_s42x43": 0.8119796176550201,
+      "refit_r2_norm_singledraw_s43x44": 0.8111966890250164,
+      "refit_r2_norm_threedraw_s42x43": 0.7552498902062575,
+      "refit_r2_norm_threedraw_s43x44": 0.7549889139962563
+    }
+  ],
+  "trends": {
+    "banked_raw_r2_vs_aa": {
+      "rho": 0.8333333333333335,
+      "p": 0.010175540123456752,
+      "n": 8
+    },
+    "refit_raw_r2_vs_aa": {
+      "rho": 0.7142857142857144,
+      "p": 0.046528232284167255,
+      "n": 8
+    },
+    "banked_normalized_r2_s42x43_vs_aa": {
+      "rho": 0.7380952380952381,
+      "p": 0.03655276105286081,
+      "n": 8
+    },
+    "banked_normalized_r2_s43x44_vs_aa": {
+      "rho": 0.7380952380952381,
+      "p": 0.03655276105286081,
+      "n": 8
+    },
+    "refit_normalized_singledraw_s42x43_vs_aa": {
+      "rho": 0.523809523809524,
+      "p": 0.1827207505397148,
+      "n": 8
+    },
+    "refit_normalized_singledraw_s43x44_vs_aa": {
+      "rho": 0.523809523809524,
+      "p": 0.1827207505397148,
+      "n": 8
+    },
+    "refit_normalized_threedraw_s42x43_vs_aa": {
+      "rho": 0.5952380952380953,
+      "p": 0.11952980613879269,
+      "n": 8
+    },
+    "refit_normalized_threedraw_s43x44_vs_aa": {
+      "rho": 0.7142857142857144,
+      "p": 0.046528232284167255,
+      "n": 8
+    },
+    "ceiling_r1_s42x43_vs_aa": {
+      "rho": 0.8333333333333335,
+      "p": 0.010175540123456752,
+      "n": 8
+    },
+    "ceiling_r1_s43x44_vs_aa": {
+      "rho": 0.6190476190476191,
+      "p": 0.10173303745426478,
+      "n": 8
+    }
+  }
+}
