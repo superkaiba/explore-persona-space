@@ -1,0 +1,17 @@
+{
+  "verified_utc": "2026-09-10T01:07:05.720723+00:00",
+  "bundled_sha256_checks_passed": 518,
+  "large_local_files_matched_to_remote_lfs_sha256": 7,
+  "unique_remote_files_indexed": 1391,
+  "report_links_checked": 30,
+  "non_200_report_links": [
+    {
+      "url": "https://www.overleaf.com/project/6a59c927290f8b8b5eee0055",
+      "checked_url": "https://www.overleaf.com/project/6a59c927290f8b8b5eee0055",
+      "status": 403,
+      "resolved_url": "https://www.overleaf.com/project/6a59c927290f8b8b5eee0055",
+      "error": "HTTP Error 403: Forbidden"
+    }
+  ],
+  "note": "HEAD checks establish accessibility, not validity or recipient permissions."
+}

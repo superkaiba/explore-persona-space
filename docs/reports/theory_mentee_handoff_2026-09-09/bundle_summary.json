@@ -1,0 +1,16 @@
+{
+  "created_utc": "2026-09-10T00:59:24.013955+00:00",
+  "local_source_locations": 5760,
+  "unique_bundled_files": 518,
+  "unique_bundled_bytes": 72580146,
+  "large_local_files_indexed_only": 7,
+  "remote_files_indexed": 1391,
+  "remote_revision": "a5cf03bbe4807361a74c427a46ad329065f75e30",
+  "remote_prefixes": [
+    "issue2569_theory",
+    "issue952_position_divergence/followups/china_refusal_wording_withholding_v2"
+  ],
+  "per_file_bundle_limit_bytes": 10000000,
+  "scope": "Named theory worktrees, their issue2569 results/figures/producers, dashboard and Codex packets, China repair receipts/code, and both scoped HF prefixes.",
+  "exclusions": "No unrelated project experiments, VM logs, model inference, fitting, judging, private notes, or automatic message sending. Remote tensor content is not downloaded. Historical and superseded files remain labeled by source paths."
+}
