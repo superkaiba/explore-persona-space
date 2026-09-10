@@ -134,11 +134,14 @@ Additional conventions:
 The baselines comparison ([panel C](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/paper/c1_predictability_scaling.png))
 spans a full-width row below A and B.
 Horizontal baseline names are shared by the retrieval and held-out R² columns.
-Retrieval uses open markers with the banked 95% interval endpoints, and R² uses
-filled markers on a focused −0.1 to 1.0 axis with a visible zero line. Scores
-below that range are represented by left-pointing arrows and their actual values
-rounded to two decimals, explicitly labeled “outside plotted range.” This display
-was requested on 2026-09-09; the provenance sidecar retains the unrounded scores.
+Retrieval uses hatched horizontal bars with the banked 95% interval endpoints,
+and R² uses filled horizontal bars with a visible zero line. The R² axis has
+three segments: [−2.85, −2.5], [−1.05, −0.75], and [−0.1, 1.0]. Their physical
+widths are proportional to their spans, preserving a common data scale. Diagonal
+cuts mark both omitted ranges on the axis and on bars crossing the cuts. All bars
+start at zero and every endpoint remains visible. The renderer rejects scores
+falling in an omitted range. This display was requested on 2026-09-09; the
+provenance sidecar retains the full scores and records the visible and omitted ranges.
 Encoder cosine remains excluded from the displayed methods.
 
 The panel reads `eval_results/issue_1901/fig2_baselines/fig2_baselines.json` and the

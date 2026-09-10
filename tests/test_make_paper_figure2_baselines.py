@@ -1,4 +1,4 @@
-"""Rendering checks for baseline alignment, off-scale scores, and interval fidelity."""
+"""Rendering checks for baseline bars, axis cuts, and interval fidelity."""
 
 from __future__ import annotations
 
@@ -30,39 +30,57 @@ def _data():
     return layer, scaling, boundary, extension, baselines
 
 
-def test_baseline_rows_and_offscale_values(tmp_path):
+def test_baseline_bars_align_and_axis_cuts_preserve_endpoints(tmp_path):
     data = _data()
     baselines = data[-1]
     fig, _ = plotter.make_figure(*data)
     try:
         axes = {ax.get_label(): ax for ax in fig.axes}
-        labels, retrieval, r2 = [
-            axes[k] for k in ("baseline-labels", "baseline-top1", "baseline-r2")
-        ]
+        labels, retrieval = [axes[k] for k in ("baseline-labels", "baseline-top1")]
+        r2_axes = [axes[f"baseline-r2-{j}"] for j in range(3)]
         fig.savefig(tmp_path / "baselines.pdf")
-        assert r2.get_xlim() == (-0.1, 1.0)
         assert all(arm["key"] != "floor_e5" for arm in baselines["arms"])
         for i, arm in enumerate(baselines["arms"]):
             text = next(t for t in labels.texts if t.get_text() == arm["label"])
             row_y = text.get_transform().transform(text.get_position())[1]
             assert row_y == pytest.approx(retrieval.transData.transform((0, i))[1])
-            assert row_y == pytest.approx(r2.transData.transform((0, i))[1])
+            for ax in r2_axes:
+                assert row_y == pytest.approx(ax.transData.transform((0, i))[1])
+                bar = ax.patches[i]
+                assert bar.get_x() == 0.0
+                assert bar.get_width() == arm["r2"]
+                assert bar.get_y() + bar.get_height() / 2 == pytest.approx(i)
+                assert bar.get_clip_on()
+            bar = retrieval.patches[i]
+            assert bar.get_x() == 0.0
+            assert bar.get_width() == arm["top1"]
+            assert bar.get_y() + bar.get_height() / 2 == pytest.approx(i)
+            # No endpoint may be lost inside an omitted interval or outside the figure.
+            assert sum(lo <= arm["r2"] <= hi for lo, hi in plotter.BASELINE_R2_SEGMENTS) == 1
             interval = retrieval.collections[2 * i].get_segments()[0]
             np.testing.assert_allclose(interval[:, 0], arm["top1_ci95"])
-        arrows = [t for t in r2.texts if isinstance(t, Annotation)]
-        assert len(arrows) == 2
-        assert all(a.xy[0] < a.xyann[0] for a in arrows)
-        notes = [t.get_text() for t in r2.texts if "outside plotted range" in t.get_text()]
-        assert notes == ["\u22120.92  outside plotted range", "\u22122.70  outside plotted range"]
-        dots = [line for line in r2.lines if line.get_marker() != "None"]
-        np.testing.assert_allclose(
-            [line.get_xdata()[0] for line in dots],
-            [arm["r2"] for arm in baselines["arms"] if arm["r2"] >= -0.1],
-        )
-        top_axes = [ax for ax in fig.axes if ax not in (labels, retrieval, r2)]
-        assert all(ax.get_position().y0 > r2.get_position().y1 for ax in top_axes)
+        scales = []
+        for ax, limits in zip(r2_axes, plotter.BASELINE_R2_SEGMENTS, strict=True):
+            assert ax.get_xlim() == limits
+            assert not any(isinstance(t, Annotation) for t in ax.texts)
+            assert not any("outside plotted range" in t.get_text() for t in ax.texts)
+            scales.append(ax.transData.transform((1, 0))[0] - ax.transData.transform((0, 0))[0])
+        np.testing.assert_allclose(scales, scales[0])
+        top_axes = [ax for ax in fig.axes if ax not in (labels, retrieval, *r2_axes)]
+        assert all(ax.get_position().y0 > r2_axes[0].get_position().y1 for ax in top_axes)
     finally:
         plt.close(fig)
+
+
+@pytest.mark.parametrize("score", [-3.0, -2.0, -0.4, 1.1])
+def test_axis_cuts_reject_hidden_endpoints(score):
+    data = _data()
+    data[-1]["arms"][0]["r2"] = score
+    try:
+        with pytest.raises(ValueError, match="outside visible segments"):
+            plotter.make_figure(*data)
+    finally:
+        plt.close("all")
 
 
 @pytest.mark.parametrize("offsets", [(-0.02, -0.01), (0.01, 0.02)])

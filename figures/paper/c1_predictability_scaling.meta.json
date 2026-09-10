@@ -8,7 +8,7 @@
   "repository_manuscript_asset": "figures/paper/c1_predictability_scaling.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
-    "commit": "44faead8d4b4ae1efb2072b7c4e100cfd1732a6e",
+    "commit": "4ce99c2a98dca597f237dd609e850a440b1793a7",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -67,13 +67,10 @@
       "5",
       "6",
       "Top-1 retrieval \u2192",
-      "\u22120.92  outside plotted range",
-      "\u22122.70  outside plotted range",
-      "-0.1",
-      "0.25",
-      "0.5",
-      "0.75",
+      "\u22122.7",
       "Held-out $R^2$ \u2192",
+      "\u22120.9",
+      "0.5",
       "A  \u00b7  50,000 TRAINING CONTEXTS",
       "Model layer",
       "10",
@@ -729,15 +726,31 @@
       "path": "eval_results/issue_1901/fig2_baselines/fig2_baselines.json",
       "sha256": "eb16cb2fc80b5a9898041b6f5bffb56e338e795ad3925dd3e0575d94dcef9c86"
     },
-    "encoding": "panel C spans the row below A and B; shared horizontal baseline labels; open markers and horizontal 95% intervals = top-1 retrieval, filled markers = held-out R^2; R^2 outside [-0.1, 1] is shown by outward arrows and exact-value labels; copy baselines reused from the extension source",
-    "r2_display_range": [
-      -0.1,
-      1.0
+    "encoding": "panel C spans the row below A and B; shared horizontal baseline labels; hatched horizontal bars and 95% intervals = top-1 retrieval, filled horizontal bars = held-out R^2; all bars start at zero; R^2 uses three equally scaled segments with diagonal axis and bar cuts; every endpoint remains visible; copy baselines reused from the extension source",
+    "r2_axis_segments": [
+      [
+        -2.85,
+        -2.5
+      ],
+      [
+        -1.05,
+        -0.75
+      ],
+      [
+        -0.1,
+        1.0
+      ]
     ],
-    "r2_offscale_values": {
-      "identity_bias": -0.9200245082624223,
-      "identity_copy": -2.69937843767959
-    },
+    "r2_axis_breaks": [
+      [
+        -2.5,
+        -1.05
+      ],
+      [
+        -0.75,
+        -0.1
+      ]
+    ],
     "arms": [
       {
         "key": "anchor",
@@ -832,8 +845,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "41dda453110fe23dc1ea825a4c0afece0b0f1eb28e8c6aaeca9f509e9af246b1",
-    "png": "9d58c69a091f05e9ac61fff2bd0eb29214074b0820784cdd71da6d66aae93a31",
-    "grayscale": "02a5dd3c98fc46343ba7b89c4a5c21bff374b76d46c63223f6f2f9d066479962"
+    "pdf": "ca68c34aa439b1ec729c81b83fb88d5a539900f21c8d0c9b5b33c55b7253f9a4",
+    "png": "3bb39dde741f467a2c86ca63509cf8d543a9d0881b915d670d04c81bf946146c",
+    "grayscale": "384d490916189adc64c487c08fd8480a136a6e67c0f344dbaf795a3fc1dc5d87"
   }
 }

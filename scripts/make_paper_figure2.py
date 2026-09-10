@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+from itertools import pairwise
 import json
 from pathlib import Path
 import subprocess
@@ -49,6 +50,7 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     better_label,
     c2a_figure,
     legend_kicker,
+    metric_style,
     panel_header,
     save_c2a_figure,
     set_c2a_style,
@@ -148,6 +150,10 @@ BASELINE_ARMS: dict[str, dict] = {
     "shuffled": {"label": "Shuffled pairs", "color": ROLES["control"].color},
 }
 
+# Retain every bar endpoint while omitting empty stretches of the negative axis.
+# Segment widths below are proportional to these spans: one common data scale.
+BASELINE_R2_SEGMENTS = ((-2.85, -2.5), (-1.05, -0.75), (-0.1, 1.0))
+
 
 def _load_baselines_data(path: Path, extension: dict) -> dict:
     """Panel C: paper-convention baselines at n_train=25,000.
@@ -201,17 +207,43 @@ def _load_baselines_data(path: Path, extension: dict) -> dict:
     }
 
 
-def _plot_baselines_panel(fig: plt.Figure, cell, baselines: dict) -> None:
-    """Align baseline names, retrieval intervals, and focused R^2 dots by row.
+def _baseline_axis_cut(ax: plt.Axes, edge: float, row: float | None = None) -> None:
+    """Draw a diagonal cut at an axis seam or through a bar crossing that seam."""
+    width_in = ax.get_position().width * ax.figure.get_figwidth()
+    dx = 0.035 / width_in
+    center = 0.0 if row is None else row
+    dy = 0.018 if row is None else -0.20 if ax.yaxis_inverted() else 0.20
+    transform = ax.transAxes if row is None else ax.get_yaxis_transform()
+    for color, linewidth in ((PAPER, 4.0), (MUTED, 1.2)):
+        ax.plot(
+            [edge - dx, edge + dx],
+            [center - dy, center + dy],
+            transform=transform,
+            color=color,
+            linewidth=linewidth,
+            solid_capstyle="butt",
+            clip_on=False,
+            zorder=6,
+        )
 
-    Out-of-range R^2 scores have an outward arrow and their true value instead
-    of a dot. Intervals are drawn from their endpoints, independently of the
-    estimate, so even a percentile interval excluding its estimate is preserved.
+
+def _plot_baselines_panel(fig: plt.Figure, cell, baselines: dict) -> None:
+    """Align horizontal retrieval and R^2 bars with shared baseline names.
+
+    Three equally scaled R^2 segments retain every endpoint. All bars start at
+    zero and are clipped only at explicit axis cuts. Retrieval intervals retain
+    their actual endpoints even when they exclude the point estimate.
     """
     inner = cell.subgridspec(1, 3, width_ratios=[1.85, 3.7, 4.3], wspace=0.18)
     ax_labels = fig.add_subplot(inner[0, 0], label="baseline-labels")
     ax_top = fig.add_subplot(inner[0, 1], sharey=ax_labels, label="baseline-top1")
-    ax_r2 = fig.add_subplot(inner[0, 2], sharey=ax_labels, label="baseline-r2")
+    r2_grid = inner[0, 2].subgridspec(
+        1, 3, width_ratios=[hi - lo for lo, hi in BASELINE_R2_SEGMENTS], wspace=0.18
+    )
+    r2_axes = [
+        fig.add_subplot(r2_grid[0, j], sharey=ax_labels, label=f"baseline-r2-{j}")
+        for j in range(len(BASELINE_R2_SEGMENTS))
+    ]
     arms = baselines["arms"]
     y = np.arange(len(arms), dtype=float)
     ax_labels.set_ylim(len(arms) - 0.45, -0.65)
@@ -225,11 +257,12 @@ def _plot_baselines_panel(fig: plt.Figure, cell, baselines: dict) -> None:
         kicker_y=1.22,
         title_y=1.075,
     )
-    for ax, metric in ((ax_top, "top1"), (ax_r2, "r2")):
+    for ax in (ax_top, *r2_axes):
         style_axis(ax, grid_axis="y")
         ax.spines["left"].set_visible(False)
         ax.set_yticks(y)
         ax.tick_params(axis="y", labelleft=False)
+    for ax, metric in ((ax_top, "top1"), (r2_axes[0], "r2")):
         ax.set_title(
             better_label(METRIC_LABELS[metric]).replace("\u2191", "\u2192"),
             loc="left",
@@ -238,68 +271,53 @@ def _plot_baselines_panel(fig: plt.Figure, cell, baselines: dict) -> None:
     ax_top.set_xlim(-0.035, 1.035)
     ax_top.set_xticks([0.0, 0.25, 0.5, 0.75, 1.0], ["0", "25", "50", "75", "100"])
     ax_top.set_xlabel("Accuracy (%)", labelpad=9)
-    ax_r2.set_xlim(-0.1, 1.0)
-    ax_r2.set_xticks([-0.1, 0.0, 0.25, 0.5, 0.75, 1.0])
-    ax_r2.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
-    ax_r2.axvline(0.0, color=MUTED, lw=1.1, alpha=0.75, zorder=2)
+    r2_ticks = ([-2.7], [-0.9], [0.0, 0.5, 1.0])
+    for j, (ax, limits, ticks) in enumerate(
+        zip(r2_axes, BASELINE_R2_SEGMENTS, r2_ticks, strict=True)
+    ):
+        ax.set_xlim(*limits)
+        ax.set_xticks(ticks)
+        ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}".replace("-", "\u2212")))
+        if j > 0:
+            _baseline_axis_cut(ax, 0.0)
+        if j < len(r2_axes) - 1:
+            _baseline_axis_cut(ax, 1.0)
+    r2_axes[-1].axvline(0.0, color=MUTED, lw=1.1, alpha=0.75, zorder=4)
 
     for i, arm in enumerate(arms):
         color = arm["color"]
-        marker = (
-            ROLES["linear"].marker
-            if arm["key"] == "anchor"
-            else ROLES["other_source"].marker
-            if arm["key"].startswith("enc_")
-            else "s"
-        )
         ax_labels.text(
             0.0, y[i], arm["label"], transform=ax_labels.get_yaxis_transform(), va="center"
         )
-        ax_top.plot(
-            arm["top1"],
+        ax_top.barh(
             y[i],
-            marker=marker,
-            markerfacecolor=PAPER,
-            markeredgecolor=color,
-            markeredgewidth=1.8,
-            markersize=5.5,
-            linestyle="none",
-            zorder=4,
+            arm["top1"],
+            left=0.0,
+            height=0.56,
+            facecolor=PAPER,
+            edgecolor=color,
+            linewidth=1.4,
+            hatch=metric_style("top1")["hatch"],
+            zorder=3,
         )
         if arm["top1_ci95"] is not None:
             lo, hi = arm["top1_ci95"]
             if not np.isfinite([lo, hi]).all() or not 0.0 <= lo <= hi <= 1.0:
                 raise ValueError(f"invalid retrieval interval for {arm['key']}: {[lo, hi]}")
-            ax_top.hlines(y[i], lo, hi, color=color, linewidth=1.5, zorder=3)
-            ax_top.vlines([lo, hi], y[i] - 0.10, y[i] + 0.10, color=color, linewidth=1.3)
+            ax_top.hlines(y[i], lo, hi, color=INK, linewidth=1.5, zorder=5)
+            ax_top.vlines([lo, hi], y[i] - 0.10, y[i] + 0.10, color=INK, linewidth=1.3, zorder=5)
 
         value = arm["r2"]
-        if value is not None and not np.isfinite(value):
+        if value is None or not np.isfinite(value):
             raise ValueError(f"invalid R^2 for {arm['key']}: {value}")
-        if value is None:
-            ax_r2.text(0.0, y[i], "N/A", va="center", color=MUTED)
-        elif value < ax_r2.get_xlim()[0]:
-            ax_r2.annotate(
-                "",
-                xy=(-0.095, y[i]),
-                xytext=(0.025, y[i]),
-                arrowprops={"arrowstyle": "-|>", "color": color, "lw": 1.8},
-                zorder=4,
-            )
-            ax_r2.text(
-                0.055,
-                y[i],
-                f"{value:.2f}".replace("-", "\u2212") + "  outside plotted range",
-                va="center",
-                color=color,
-                bbox={"facecolor": PAPER, "edgecolor": "none", "pad": 1.5},
-            )
-        else:
-            if value > ax_r2.get_xlim()[1]:
-                raise ValueError(f"invalid R^2 for {arm['key']}: {value}")
-            ax_r2.plot(
-                value, y[i], marker=marker, color=color, markersize=6.5, linestyle="none", zorder=4
-            )
+        if not any(lo <= value <= hi for lo, hi in BASELINE_R2_SEGMENTS):
+            raise ValueError(f"R^2 endpoint for {arm['key']} is outside visible segments: {value}")
+        for j, (ax, (lo, hi)) in enumerate(zip(r2_axes, BASELINE_R2_SEGMENTS, strict=True)):
+            ax.barh(y[i], value, left=0.0, height=0.56, color=color, linewidth=0.0, zorder=3)
+            if j > 0 and value < lo < 0.0:
+                _baseline_axis_cut(ax, 0.0, y[i])
+            if j < len(r2_axes) - 1 and value < hi < 0.0:
+                _baseline_axis_cut(ax, 1.0, y[i])
 
 
 def _load_boundary_data(path: Path) -> dict:
@@ -745,17 +763,16 @@ def _write_outputs(
                         },
                         "encoding": (
                             "panel C spans the row below A and B; shared horizontal baseline "
-                            "labels; open markers and horizontal 95% intervals = top-1 "
-                            "retrieval, filled markers = held-out R^2; R^2 outside [-0.1, 1] "
-                            "is shown by outward arrows and exact-value labels; copy "
-                            "baselines reused from the extension source"
+                            "labels; hatched horizontal bars and 95% intervals = top-1 "
+                            "retrieval, filled horizontal bars = held-out R^2; all bars "
+                            "start at zero; R^2 uses three equally scaled segments with "
+                            "diagonal axis and bar cuts; every endpoint remains visible; "
+                            "copy baselines reused from the extension source"
                         ),
-                        "r2_display_range": [-0.1, 1.0],
-                        "r2_offscale_values": {
-                            arm["key"]: arm["r2"]
-                            for arm in baselines["arms"]
-                            if arm["r2"] is not None and arm["r2"] < -0.1
-                        },
+                        "r2_axis_segments": BASELINE_R2_SEGMENTS,
+                        "r2_axis_breaks": [
+                            [left[1], right[0]] for left, right in pairwise(BASELINE_R2_SEGMENTS)
+                        ],
                         **baselines,
                     }
                 ),
