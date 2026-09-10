@@ -25,6 +25,7 @@ This command requires no model inference, GPU, or network access. It reads:
 
 - `eval_results/issue_1901/avgtarget_plots/plot1_avg.json`
 - `eval_results/issue_1901/figure2_five_rollout_scaling.json`
+- `eval_results/issue_1901/fig2_pool10k/fig2_pool10k.json`
 
 and writes:
 
@@ -143,12 +144,16 @@ start at zero and every endpoint remains visible. The renderer rejects scores
 falling in an omitted range. This display was requested on 2026-09-09; the
 provenance sidecar retains the full scores and records the visible and omitted ranges.
 Copy, Encoder cosine, and Encoder (e5) are excluded from the displayed methods.
-Copy + bias remains as the copy baseline.
+Copy + bias remains as the copy baseline. Every excluded arm is still scored, and
+the sidecar records each one under `extra_arms_not_drawn` with both pool sizes.
 
-The panel reads `eval_results/issue_1901/fig2_baselines/fig2_baselines.json` and the
-copy baselines in `eval_results/issue_1901/figure2_extension_1200.json`. Its retrieval
-intervals are drawn directly between their endpoints, so intervals that exclude
-their point estimate remain faithful to the source.
+The panel takes top-1 retrieval and its intervals from
+`eval_results/issue_1901/fig2_pool10k/fig2_pool10k.json`, scored among 10,000
+candidates (chance 0.01%), as do panel B's retrieval curves. Held-out R² is
+pool-independent and stays banked: `eval_results/issue_1901/fig2_baselines/fig2_baselines.json`
+for the fitted arms and `eval_results/issue_1901/figure2_extension_1200.json` for
+Copy + bias. Retrieval intervals are drawn directly between their endpoints, so
+intervals that exclude their point estimate remain faithful to the source.
 
 - Change a paper-wide color, font, grid, spine, or export rule in
   `c2a_plot_style.py`.
