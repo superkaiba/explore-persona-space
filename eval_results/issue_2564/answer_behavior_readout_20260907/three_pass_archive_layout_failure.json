@@ -1,0 +1,7 @@
+{
+  "status": "INVALID_ARCHIVE_LAYOUT",
+  "reason": "The shard upload helper flattens basenames; nested packet paths collide. Do not consume this prefix. Exact-path validation caught the error before any PASS receipt.",
+  "replacement_prefix": "issue2564_minpair/answer_behavior_readout_20260907/three_pass_final_20260909_tree_v2",
+  "local_sources_intact": true,
+  "analysis_rerun": false
+}

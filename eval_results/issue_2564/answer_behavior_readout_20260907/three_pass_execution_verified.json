@@ -1,0 +1,13 @@
+{
+  "analysis_code_commit": "2bab70901e669b8cd1e76628e8b4f76b967d1e84",
+  "analysis_complete": {
+    "fingerprint": "48323983f3c08a4e57d2353689b011f2f42c05fb9b0ac45ff03dfd6213e60672",
+    "summary_sha256": "1fd5b2646099857541e1c8085aade76bd8612f5b95b6fbb330110054f2622b42"
+  },
+  "execution_status": "complete exit_code=0 time=2026-09-10T01:46:28Z",
+  "archive_revision": "7640e8b6a4656d42e488f938f7ff57ca04b08729",
+  "archive_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/7640e8b6a4656d42e488f938f7ff57ca04b08729/issue2564_minpair/answer_behavior_readout_20260907/three_pass_final_20260909_tree_v2",
+  "report_sha256": "8d993139260b77741b879f3f02ca3836245b8b05388bf884154bdc7e74f289b2",
+  "no_new_answer_judgments": true,
+  "gpu_hours": 0
+}

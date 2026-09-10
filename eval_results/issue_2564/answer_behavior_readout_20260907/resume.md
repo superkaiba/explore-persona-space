@@ -1,3 +1,5 @@
+> **Current status (2026-09-09): completed under the approved three-pass scope.** See [the behavioral results report](report.md) and [scope amendment](three_pass_plan.md). No further judging is scheduled. The material below is historical; its five-pass resume instructions are superseded.
+
 > Historical API-route note: Thomas has now selected Codex subagent judging. Follow [the current status](status_report.md) and amended plan; do not resume the failed API route. The numerical readout validation below remains relevant.
 
 # Resume the authorized actual-answer annotation

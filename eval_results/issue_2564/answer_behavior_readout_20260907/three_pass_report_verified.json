@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "primary_csv_rows_verified": 84,
+  "result_properties_exactly_match_summary": true,
+  "summary_sha256": "1fd5b2646099857541e1c8085aade76bd8612f5b95b6fbb330110054f2622b42",
+  "code_commit": "2bab70901e669b8cd1e76628e8b4f76b967d1e84",
+  "independent_result_audit": "three_pass_result_review.md"
+}

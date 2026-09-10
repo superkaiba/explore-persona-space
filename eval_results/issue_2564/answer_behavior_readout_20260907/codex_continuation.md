@@ -1,3 +1,5 @@
+> **Current status (2026-09-09): completed under the approved three-pass scope.** See [the behavioral results report](report.md) and [scope amendment](three_pass_plan.md). No further judging is scheduled. The material below is historical; its five-pass resume instructions are superseded.
+
 # Codex judging continuation
 
 The pilot is accepted with qualifications. The first production packet passed

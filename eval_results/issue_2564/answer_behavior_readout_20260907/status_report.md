@@ -1,3 +1,5 @@
+> **Current status (2026-09-09): completed under the approved three-pass scope.** See [the behavioral results report](report.md) and [scope amendment](three_pass_plan.md). No further judging is scheduled. The material below is historical; its five-pass resume instructions are superseded.
+
 # Actual answer-behavior experiment: pilot accepted; main annotation running
 
 Thomas subsequently directed **“use codex subagents to judge.”** The current route uses fresh, property-specific, no-history Codex collaboration subagents. All1,120pilot ratings are complete under `annotation_codex/`; the full main roster remains 2,048 answers × seven properties × five repeated ratings. **No behavioral readout has been fit yet.** Exact sampling temperature and model snapshot are uncontrolled/unexposed, and shared-model repeated ratings are not IID or human validation.
