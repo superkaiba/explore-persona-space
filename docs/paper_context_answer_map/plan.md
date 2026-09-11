@@ -15,11 +15,11 @@ All experimental settings and control motivations are preserved
 The theoretical-analysis subsection is removed from the main text. Discussion,
 Limitations, and Future Work contains a short paragraph explaining that linearity
 enables theoretical analysis, pointing to the preliminary appendix analysis, and
-calling for further techniques from dynamical systems, perturbation theory,
-and statistical learning theory, with potential applications to predicting
-longer conversations. It also proposes connecting the linear map in activation
-space with the parameter-space linearization used in neural tangent kernel
-theory to forecast fine-tuning effects (Jacot et al., 2018; Malladi et al., 2023).
+calling for linear systems theory, stochastic processes, random matrix theory,
+and neural tangent kernel theory to investigate longer-conversation dynamics,
+uncertainty propagation, the statistical structure of the learned map, and
+the effects of fine-tuning. The NTK references are Jacot et al. (2018) and
+Malladi et al. (2023).
 These are future research directions. Retain only quantitative theory in the appendix:
 effective-kernel size
 and sensitivity, rank and spectrum, fixed-point behavior, and refusal-pair kernel
