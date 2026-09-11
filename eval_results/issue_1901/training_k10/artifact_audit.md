@@ -38,7 +38,7 @@ Recent sibling worktrees checked include the k-rollout-ablation, retrieval-10k, 
 
 ## Prepared consumer interface
 
-The stable prepared-artifact root is `/mnt/eps-data/thomasjiralerspong/issue1901_training_k10/inputs`, outside the sparse worktree. An earlier derived staging copy was pruned by a sparse-checkout update; preparation was repeated from the pinned sources and completed with process exit 0 at 2026-09-11 11:51:40 UTC before publication. Source banks were unaffected.
+The stable prepared-artifact root is `/mnt/eps-data/thomasjiralerspong/issue1901_training_k10/inputs`, outside the sparse worktree. An earlier derived staging copy was pruned by a sparse-checkout update; preparation was repeated from the pinned sources and completed with process exit 0 at 2026-09-11 18:51:40 UTC before publication. Source banks were unaffected.
 
 `train.npz` contains fp32 `X[19000,3584]`, fp32 `Y_original[19000,3584]`, fp16 `Y_fresh[19000,4,3584]`, int64 `ci`, and `fresh_seeds=[43,44,45,46]`. `test.npz` contains the analogous X and original answer, nine fresh draws 43–51, negative test CI, original `pass_b_rows`, and fixed `dedup_rows[942]`. Original fp32 answers are never rounded to fp16 during packaging.
 
