@@ -1,23 +1,23 @@
 {
   "git": {
-    "commit": "adeed6da49516182b9577311a4fd40804938044c",
+    "commit": "87822231c71fce19afc078e97866013c1d410987",
     "tracked_worktree_dirty": true
   },
   "inputs": {
     "arms": {
-      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/eval_results/issue_823/ridge_r2_by_arm.json",
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_823/ridge_r2_by_arm.json",
       "sha256": "46117bc93a03a6400d2756c130054c696bfa299908cc8acd0490c2e03559c36a"
     },
     "identity": {
-      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/eval_results/issue_823/identity_baseline.json",
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_823/identity_baseline.json",
       "sha256": "a004b2c7cdc7acf02902a381b34ea36253e7c422fb612b90f5041ee817dc8dab"
     },
     "ladder": {
-      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/eval_results/issue_823/inconsistent_origin_ladder/ladder_analysis_summary.json",
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_823/inconsistent_origin_ladder/ladder_analysis_summary.json",
       "sha256": "202ec8e6f1840ea35c013717ae3ce6022f2a878a3f2e0243f52b8022803eadcf"
     },
     "ladder_baselines": {
-      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/eval_results/issue_823/inconsistent_origin_ladder/ladder_baselines.json",
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_823/inconsistent_origin_ladder/ladder_baselines.json",
       "sha256": "b60342882d59d9080e16051c8deebd146c789222c599d486e2e7d6f6ba62dffb"
     }
   },
@@ -54,7 +54,7 @@
     "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
     "style_version": "c2a-v2",
     "text": [
-      "A  \u00b7  QWEN2.5-7B-INSTRUCT, 4,998 LMSYS CONTEXTS",
+      "A",
       "Layer",
       "0",
       "5",
@@ -68,7 +68,7 @@
       "0.6",
       "0.8",
       "Held-out $R^2$ by layer,\nby answer source",
-      "B  \u00b7  K CLAUDE PERSONAS, LAYER 19",
+      "B",
       "Number of source personas",
       "1",
       "2",
