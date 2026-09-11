@@ -1,5 +1,4 @@
 {
-  "figure": "c4_shared_speakers",
   "panel_a": {
     "source_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/5ae90722bf11330deddfa42cf41f9fec6da8b69f/issue2054_section44_k3_gcp/capture_recovery_v1/results.json",
     "source_revision": "5ae90722bf11330deddfa42cf41f9fec6da8b69f",
@@ -589,60 +588,5 @@
         ]
       }
     ]
-  },
-  "record": {
-    "style_version": "c2a-v2",
-    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
-    "resolved_font": "Inter",
-    "authoring_size_inches": [
-      13.095,
-      4.845
-    ],
-    "exported_size_inches": [
-      13.095,
-      4.452
-    ],
-    "scale": 0.42,
-    "include_width_frac": 1.0,
-    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c4_shared_speakers.pdf}",
-    "realized_font_pt": {
-      "body": 7.56,
-      "tick": 7.14,
-      "label": 8.4,
-      "title": 9.24
-    },
-    "png_dpi": 240,
-    "background": "#FFFFFF",
-    "text": [
-      "A  \u00b7  SEPARATE MAP",
-      "Assistant\nchat\ntemplate",
-      "Assistant\nplain\ntext",
-      "HELIOS\nship\nAI",
-      "Wren\nhelpful",
-      "Dana\nordinary",
-      "Vex\nvillain",
-      "Held-out $R^2$ \u2191",
-      "\u22120.2",
-      "0.0",
-      "0.2",
-      "0.4",
-      "0.6",
-      "0.8",
-      "1.0",
-      "Held-out $R^2$ per setting,\nbase and post-trained",
-      "Shuffled answers (null)",
-      "Base",
-      "Post-trained",
-      "B  \u00b7  SHARED MAP",
-      "Fraction of own $R^2$ \u2191",
-      "0.5",
-      "1.5",
-      "Shared $R^2$ as a fraction\nof each setting's own $R^2$",
-      "Separate map",
-      "Shared map"
-    ]
-  },
-  "source_data_sha256": "affbf362f4445df451f00b6a9ede91024de37dfbfd0ab25557554a9c85d51d88",
-  "render_script_sha256": "a121b836014691c50adeeb8b571628006b7bc16e0552907eebf828eef8db69ec",
-  "style_deviations": "x-axis category labels use 14 pt, as in the prior manuscript figure"
+  }
 }
