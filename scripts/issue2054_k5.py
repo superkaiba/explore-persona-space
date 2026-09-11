@@ -124,6 +124,7 @@ def prepare(root, *, first_chunks=False):
     for prefix in (PARENT_PREFIX, RAW_PREFIX):
         entries = retry_transient(
             lambda prefix=prefix: list(
+                # HUB_VERIFY_RETRY_EXEMPT: the complete paginated listing is inside retry_transient.
                 HfApi().list_repo_tree(
                     k3.HF_REPO,
                     path_in_repo=prefix,

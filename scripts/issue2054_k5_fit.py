@@ -12,10 +12,14 @@ load_dotenv()
 
 import inspect
 import json
+from pathlib import Path
+import sys
 import time
 
 import numpy as np
 
+REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO))
 from scripts import issue2054_k3 as k3
 from scripts import issue2054_k3_artifacts as artifacts
 from scripts import issue2054_k3_fit as prior
