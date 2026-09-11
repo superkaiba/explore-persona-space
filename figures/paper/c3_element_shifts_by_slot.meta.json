@@ -1,0 +1,204 @@
+{
+  "status": "Results Section 4.2 manuscript figure",
+  "style_version": "c2a-v2",
+  "plotting_script": "scripts/make_paper_section42_figures.py",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "reproduction_command": "uv run python scripts/make_paper_section42_figures.py",
+  "title": "One-word topic change by grammatical slot",
+  "subject": "Answer separation, two-way retrieval, shift direction and shift size for a one-word query change pinned to the subject, verb or object slot, beside the pooled one-word row of the element figure, with 95% pair-bootstrap intervals",
+  "git": {
+    "commit": "2d584d7c24c2b5fc72fa8bc7a439fbb72c31b566",
+    "tracked_worktree_dirty": true
+  },
+  "sources": [
+    {
+      "path": "eval_results/issue_2564/section42_element_shifts.json",
+      "sha256": "4d76a5fa1ce552b478ebc58a5ef3b26448ad915d732853ecfcc17ed7069c2d42"
+    }
+  ],
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      3.929
+    ],
+    "exported_size_inches": [
+      13.095,
+      2.559
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c3_element_shifts_by_slot.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "ONE-WORD QUERY SWAPS \u00b7 QWEN2.5-7B-INSTRUCT \u00b7 LAYER 19",
+      "Answer separation",
+      "0.90",
+      "0.95",
+      "1.00",
+      "1.05",
+      "One-word topic (panel C) (n=24)",
+      "\u2026subject swapped (n=24)",
+      "\u2026verb swapped (n=24)",
+      "\u2026object swapped (n=24)",
+      "One-word topic change, by grammatical slot",
+      "Two-way \u2191",
+      "0.5",
+      "1.0",
+      "1.5",
+      "Direction \u2191",
+      "0.00",
+      "0.25",
+      "0.50",
+      "0.75",
+      "Shift size",
+      "0.0"
+    ]
+  },
+  "displayed_data": {
+    "rows": [
+      {
+        "row": "One-word topic",
+        "source": "issue2564 langow pilot, pair_class=query_content_oneword",
+        "note": "one word changes the subject matter, e.g. 'adopt a dog' vs 'adopt a cat'",
+        "n_pairs": 24,
+        "separation": 0.9751,
+        "separation_ci95": [
+          0.9688,
+          0.981
+        ],
+        "twoway": 0.8958,
+        "twoway_ci95": [
+          0.8125,
+          0.9589
+        ],
+        "direction": 0.531,
+        "direction_ci95": [
+          0.4678,
+          0.583
+        ],
+        "magnitude": 0.6633,
+        "magnitude_ci95": [
+          0.6119,
+          0.7356
+        ]
+      },
+      {
+        "row": "slot: subject",
+        "source": "issue2564 gramslot pilot, pair_class=query_oneword_subject",
+        "n_pairs": 24,
+        "separation": 0.9847,
+        "separation_ci95": [
+          0.9808,
+          0.9882
+        ],
+        "twoway": 0.8542,
+        "twoway_ci95": [
+          0.7708,
+          0.9375
+        ],
+        "direction": 0.5025,
+        "direction_ci95": [
+          0.4469,
+          0.5556
+        ],
+        "magnitude": 0.8076,
+        "magnitude_ci95": [
+          0.7432,
+          0.9346
+        ]
+      },
+      {
+        "row": "slot: verb",
+        "source": "issue2564 gramslot pilot, pair_class=query_oneword_verb",
+        "n_pairs": 24,
+        "separation": 0.9888,
+        "separation_ci95": [
+          0.9826,
+          0.9936
+        ],
+        "twoway": 0.75,
+        "twoway_ci95": [
+          0.6458,
+          0.8542
+        ],
+        "direction": 0.3676,
+        "direction_ci95": [
+          0.3148,
+          0.4228
+        ],
+        "magnitude": 0.7542,
+        "magnitude_ci95": [
+          0.6403,
+          0.9836
+        ]
+      },
+      {
+        "row": "slot: object",
+        "source": "issue2564 gramslot pilot, pair_class=query_oneword_object",
+        "n_pairs": 24,
+        "separation": 0.9808,
+        "separation_ci95": [
+          0.9735,
+          0.987
+        ],
+        "twoway": 0.8958,
+        "twoway_ci95": [
+          0.8125,
+          0.9583
+        ],
+        "direction": 0.5097,
+        "direction_ci95": [
+          0.4648,
+          0.555
+        ],
+        "magnitude": 0.6279,
+        "magnitude_ci95": [
+          0.5839,
+          0.7139
+        ]
+      }
+    ],
+    "row_labels": {
+      "One-word topic": "One-word topic (panel C)",
+      "slot: subject": "\u2026subject swapped",
+      "slot: verb": "\u2026verb swapped",
+      "slot: object": "\u2026object swapped"
+    },
+    "reference_line": {
+      "twoway": 0.5,
+      "magnitude": 1.0
+    },
+    "order": "pooled one-word row, then subject, verb, object",
+    "bootstrap": {
+      "unit": "pair",
+      "draws": 2000,
+      "seed": 20260910
+    },
+    "map": {
+      "file": "data/issue_2564/langow_stage/ridge/arm_779ce/ridge.pt",
+      "layer": 19
+    },
+    "metrics": {
+      "separation": "cos(ans_A, ans_B), mean; near 1.0 = the two real answers nearly coincide",
+      "twoway": "pred_B nearer ans_B than ans_A, both orderings, chance 0.5",
+      "direction": "cos(pred_B - pred_A, ans_B - ans_A), mean",
+      "magnitude": "||pred_B - pred_A|| / ||ans_B - ans_A||, median"
+    },
+    "caveat": "raw, not disattenuated for rollout noise"
+  },
+  "output_sha256": {
+    "pdf": "65f88ebc59f0c7d9669cd6723a9339f9a2f62d7c7f6649b1bab3dbb3f3b761f2",
+    "png": "44f164776eb130bddadcdc87f0a00695b51c3f5be34e14c7a319cfe6e393cf54",
+    "grayscale": "12e69229189b1550edd3e421672c75b827a446d5c7da8721f53b9b2fc913a312"
+  }
+}

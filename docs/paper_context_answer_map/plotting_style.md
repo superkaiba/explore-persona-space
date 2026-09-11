@@ -185,23 +185,52 @@ which embeds TrueType fonts with a Unicode cmap.
 
 ## Results Section 4.2 figures
 
-The SAE feature analysis, the minimal-pair shift-size figure, and the
-refusal-swaps-by-class appendix figure use the same visual system and are
-rendered together from checked-in results:
+The SAE feature analysis, the minimal-pair shift-size figures, the
+per-element answer-shift figure, and the two appendix companions use the same
+visual system and are rendered together from checked-in results:
 
 ```bash
 uv run python scripts/make_paper_section42_figures.py
 ```
 
 This writes `c3_directions_and_features`, `c3_failures_and_shifts`,
-`c3_sae_tier_gradient`, `c3_pair_shifts`, `c3_directions_and_pairs`, and
-`c3_refusal_swaps_by_class` under `figures/paper/`, each as vector PDF, color
+`c3_sae_tier_gradient`, `c3_pair_shifts`, `c3_directions_and_pairs`,
+`c3_refusal_swaps_by_class`, `c3_element_shifts`, and
+`c3_element_shifts_by_slot` under `figures/paper/`, each as vector PDF, color
 PNG, grayscale-audit PNG, and provenance JSON. Pass `--only <name>` to render
-one. The one-word pilot's intervals are the only statistics recomputed by this
-plot-only script; they use a pinned 10,000-draw pair bootstrap and are recorded
-in the sidecar.
+one figure, and repeat the flag to render a named subset. The one-word pilot's
+intervals are the only statistics recomputed by this plot-only script. They use
+a pinned 10,000-draw pair bootstrap and are recorded in the sidecar.
 
-Section 4.2 carries two figures, each placed after the claims it supports.
+`c3_element_shifts` is the per-element answer-shift figure: one row per
+controlled context element, a column for the mean cosine between predicted and
+observed answer shift, and a column for the median ratio of predicted to
+observed shift size. `c3_element_shifts_by_slot` is its appendix companion and
+decomposes the one-word topic row by the grammatical slot the changed word
+occupies, over four columns: answer separation, two-way retrieval, direction,
+and shift size. Render both with one command:
+
+```bash
+uv run python scripts/make_paper_section42_figures.py \
+  --only element_shifts --only element_shifts_by_slot
+```
+
+Both read `eval_results/issue_2564/section42_element_shifts.json`, which is not
+a plot-time computation. Rebuild it when its inputs change:
+
+```bash
+uv run python scripts/issue2564_element_shift_rows.py
+```
+
+That step scores every row against one layer-19 ridge map from #2564 and takes
+about a minute on CPU. It reads three staging roots outside the repository: the
+#2564 minimal-pair banks and the #2617 safety-swap banks under
+`/mnt/eps-data/thomasjiralerspong/`, and the #2356 framing-rewrite capture in
+the `issue-2356` worktree. Each has an environment override
+(`C2A_MINPAIR_TENSORS`, `C2A_SVMP_TENSORS`, `C2A_ISSUE2356_ROOT`) and the script
+fails loud naming the missing path.
+
+Each Section 4.2 figure is placed after the claims it supports.
 `c3_directions_and_features` holds held-out `R^2` by answer-variance rank and
 SAE feature-property concordance. `c3_failures_and_shifts` holds the retrieval
 failures on the candidate pool's shift-size plane and variance explained per

@@ -1,0 +1,347 @@
+{
+  "status": "Results Section 4.2 manuscript figure",
+  "style_version": "c2a-v2",
+  "plotting_script": "scripts/make_paper_section42_figures.py",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "reproduction_command": "uv run python scripts/make_paper_section42_figures.py",
+  "title": "What the context-to-answer map keeps per changed context element",
+  "subject": "Mean cosine between predicted and observed answer shift, and median ratio of predicted to observed shift size, per controlled context element, with 95% pair-bootstrap intervals",
+  "git": {
+    "commit": "2d584d7c24c2b5fc72fa8bc7a439fbb72c31b566",
+    "tracked_worktree_dirty": true
+  },
+  "sources": [
+    {
+      "path": "eval_results/issue_2564/section42_element_shifts.json",
+      "sha256": "4d76a5fa1ce552b478ebc58a5ef3b26448ad915d732853ecfcc17ed7069c2d42"
+    }
+  ],
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      5.762
+    ],
+    "exported_size_inches": [
+      13.095,
+      4.982
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c3_element_shifts.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "C  \u00b7  CONTROLLED MINIMAL PAIRS \u00b7 QWEN2.5-7B-INSTRUCT \u00b7 LAYER 19",
+      "Predicted shift direction (cosine) \u2191",
+      "0.0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "1.0",
+      "Tone (n=12)",
+      "Persona (n=120)",
+      "Output format (n=120)",
+      "Question topic (n=66)",
+      "One-word topic (n=24)",
+      "Refusal flips (n=61)",
+      "Refusal holds (n=63)",
+      "Framing-refusal flips (n=307)",
+      "Framing-refusal holds (n=1924)",
+      "What the map keeps when one context element changes",
+      "Predicted / observed shift size",
+      "1.2",
+      "1.4"
+    ]
+  },
+  "displayed_data": {
+    "rows": [
+      {
+        "row": "Tone",
+        "source": "issue2564 bank, pair_class=swap, cell=register",
+        "n_pairs": 12,
+        "separation": 0.7881,
+        "separation_ci95": [
+          0.7751,
+          0.8019
+        ],
+        "twoway": 1.0,
+        "twoway_ci95": [
+          1.0,
+          1.0
+        ],
+        "direction": 0.8997,
+        "direction_ci95": [
+          0.8952,
+          0.9043
+        ],
+        "magnitude": 1.028,
+        "magnitude_ci95": [
+          0.9772,
+          1.1468
+        ]
+      },
+      {
+        "row": "Persona",
+        "source": "issue2564 bank, pair_class=swap, cell=persona",
+        "n_pairs": 120,
+        "separation": 0.903,
+        "separation_ci95": [
+          0.8968,
+          0.9085
+        ],
+        "twoway": 1.0,
+        "twoway_ci95": [
+          1.0,
+          1.0
+        ],
+        "direction": 0.7839,
+        "direction_ci95": [
+          0.7754,
+          0.7927
+        ],
+        "magnitude": 1.125,
+        "magnitude_ci95": [
+          1.1089,
+          1.1569
+        ]
+      },
+      {
+        "row": "Output format",
+        "source": "issue2564 bank, pair_class=swap, cell=format",
+        "n_pairs": 120,
+        "separation": 0.8765,
+        "separation_ci95": [
+          0.8574,
+          0.8953
+        ],
+        "twoway": 0.875,
+        "twoway_ci95": [
+          0.8375,
+          0.9125
+        ],
+        "direction": 0.5881,
+        "direction_ci95": [
+          0.5493,
+          0.6286
+        ],
+        "magnitude": 1.0852,
+        "magnitude_ci95": [
+          1.0156,
+          1.1584
+        ]
+      },
+      {
+        "row": "Question topic",
+        "source": "issue2564 bank, pair_class=query_content",
+        "note": "two unrelated questions, the coarse end of the topic ladder",
+        "n_pairs": 66,
+        "separation": 0.9016,
+        "separation_ci95": [
+          0.8953,
+          0.9076
+        ],
+        "twoway": 1.0,
+        "twoway_ci95": [
+          1.0,
+          1.0
+        ],
+        "direction": 0.7144,
+        "direction_ci95": [
+          0.6998,
+          0.7292
+        ],
+        "magnitude": 0.8047,
+        "magnitude_ci95": [
+          0.7829,
+          0.8277
+        ]
+      },
+      {
+        "row": "One-word topic",
+        "source": "issue2564 langow pilot, pair_class=query_content_oneword",
+        "note": "one word changes the subject matter, e.g. 'adopt a dog' vs 'adopt a cat'",
+        "n_pairs": 24,
+        "separation": 0.9751,
+        "separation_ci95": [
+          0.9688,
+          0.981
+        ],
+        "twoway": 0.8958,
+        "twoway_ci95": [
+          0.8125,
+          0.9589
+        ],
+        "direction": 0.531,
+        "direction_ci95": [
+          0.4678,
+          0.583
+        ],
+        "magnitude": 0.6633,
+        "magnitude_ci95": [
+          0.6119,
+          0.7356
+        ]
+      },
+      {
+        "row": "Refusal flips",
+        "source": "issue2617 svmp, one-word safety swaps + XSTest rephrasings",
+        "flip_criterion": "|refusal_rate_a - refusal_rate_b| >= 0.5 over 10 draws",
+        "n_pairs": 61,
+        "separation": 0.8137,
+        "separation_ci95": [
+          0.7882,
+          0.8387
+        ],
+        "twoway": 1.0,
+        "twoway_ci95": [
+          1.0,
+          1.0
+        ],
+        "direction": 0.7797,
+        "direction_ci95": [
+          0.7566,
+          0.8003
+        ],
+        "magnitude": 0.7501,
+        "magnitude_ci95": [
+          0.7283,
+          0.7843
+        ]
+      },
+      {
+        "row": "Refusal holds",
+        "source": "issue2617 svmp, one-word safety swaps + XSTest rephrasings",
+        "flip_criterion": "|refusal_rate_a - refusal_rate_b| >= 0.5 over 10 draws",
+        "n_pairs": 63,
+        "separation": 0.9539,
+        "separation_ci95": [
+          0.9446,
+          0.9619
+        ],
+        "twoway": 0.9048,
+        "twoway_ci95": [
+          0.8569,
+          0.9524
+        ],
+        "direction": 0.5542,
+        "direction_ci95": [
+          0.5135,
+          0.5956
+        ],
+        "magnitude": 0.8259,
+        "magnitude_ci95": [
+          0.7452,
+          0.8689
+        ]
+      },
+      {
+        "row": "Framing-refusal flips",
+        "source": "issue2356 armA, 394 AdvBench bases x 6 intent-preserving rewrite axes",
+        "note": "different capture; the 2564-fitted map transfers here at cos 0.90 vs 0.95 in-bank",
+        "n_pairs": 307,
+        "separation": 0.9001,
+        "separation_ci95": [
+          0.8941,
+          0.9056
+        ],
+        "twoway": 0.9235,
+        "twoway_ci95": [
+          0.9023,
+          0.943
+        ],
+        "direction": 0.5108,
+        "direction_ci95": [
+          0.4992,
+          0.5229
+        ],
+        "magnitude": 0.7449,
+        "magnitude_ci95": [
+          0.7206,
+          0.7711
+        ]
+      },
+      {
+        "row": "Framing-refusal holds",
+        "source": "issue2356 armA, 394 AdvBench bases x 6 intent-preserving rewrite axes",
+        "note": "different capture; the 2564-fitted map transfers here at cos 0.90 vs 0.95 in-bank",
+        "n_pairs": 1924,
+        "separation": 0.9748,
+        "separation_ci95": [
+          0.9735,
+          0.976
+        ],
+        "twoway": 0.611,
+        "twoway_ci95": [
+          0.6019,
+          0.6203
+        ],
+        "direction": 0.2728,
+        "direction_ci95": [
+          0.266,
+          0.2798
+        ],
+        "magnitude": 1.0416,
+        "magnitude_ci95": [
+          1.0226,
+          1.0624
+        ]
+      }
+    ],
+    "groups": [
+      [
+        "Tone",
+        "Persona"
+      ],
+      [
+        "Output format"
+      ],
+      [
+        "Question topic",
+        "One-word topic"
+      ],
+      [
+        "Refusal flips",
+        "Refusal holds"
+      ],
+      [
+        "Framing-refusal flips",
+        "Framing-refusal holds"
+      ]
+    ],
+    "reference_line": {
+      "magnitude": 1.0
+    },
+    "order": "grouped: identity, format, content, word refusal, framing refusal",
+    "bootstrap": {
+      "unit": "pair",
+      "draws": 2000,
+      "seed": 20260910
+    },
+    "map": {
+      "file": "data/issue_2564/langow_stage/ridge/arm_779ce/ridge.pt",
+      "layer": 19
+    },
+    "metrics": {
+      "separation": "cos(ans_A, ans_B), mean; near 1.0 = the two real answers nearly coincide",
+      "twoway": "pred_B nearer ans_B than ans_A, both orderings, chance 0.5",
+      "direction": "cos(pred_B - pred_A, ans_B - ans_A), mean",
+      "magnitude": "||pred_B - pred_A|| / ||ans_B - ans_A||, median"
+    },
+    "caveat": "raw, not disattenuated for rollout noise"
+  },
+  "output_sha256": {
+    "pdf": "c487f97cd92985a03d67fc9cc5cae6a996026c2fcb790d94656ec3599ffa620c",
+    "png": "593edd85a8eeb915c73caeba16036bb47f635bd8e92d84ca7800fe40828d436a",
+    "grayscale": "4e0070de14063a5c01956795c5da9ec00203c30878470391af32e8839a5e1260"
+  }
+}

@@ -1,15 +1,23 @@
 #!/usr/bin/env python3
-"""Render the three publication figures used in Results Section 4.2.
+"""Render the publication figures used in Results Section 4.2.
 
-The figures are the SAE feature-property panels, the minimal-pair
-predicted-over-observed shift-size figure, and the appendix
-refusal-swaps-by-class companion.  (The qualitative retrieval-failure figure
-c3_qualitative_discrimination is produced by
+Eight figures: the SAE feature-property panels, the minimal-pair
+predicted-over-observed shift-size figure, the two combined panels, the
+per-element answer-shift figure and its appendix slot companion, and the
+appendix refusal-swaps-by-class companion.  (The qualitative retrieval-failure
+figure c3_qualitative_discrimination is produced by
 scripts/issue1901_qualitative_retrieval_failures.py.) The
 script is plot-only: it reads checked-in summaries and per-pair records,
 performs a deterministic bootstrap only for the one-word pilot intervals that
 were not banked in its summary, and writes vector PDF, color PNG, grayscale PNG,
 and provenance JSON for each figure.
+
+Two inputs are banked by their own rebuild scripts rather than recomputed here:
+eval_results/issue_1901/section42_panels.json by
+scripts/issue1901_section42_panel_data.py, and
+eval_results/issue_2564/section42_element_shifts.json by
+scripts/issue2564_element_shift_rows.py.  Rebuild those when their upstream
+captures change.  Both need staging mounts this script does not.
 """
 
 from __future__ import annotations
@@ -40,6 +48,7 @@ from matplotlib.ticker import FuncFormatter  # noqa: E402
 
 
 from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
+    GRID,
     INK,
     MUTED,
     PAPER,
@@ -68,6 +77,9 @@ SPECTRUM_SOURCE = ROOT / "eval_results/issue_779/plot3_redesign/plot3_redesign.j
 # against the candidate-pool background, and variance explained per controlled
 # change.  Built by the consolidation step recorded in the file's own provenance.
 SECTION42_PANELS = ROOT / "eval_results/issue_1901/section42_panels.json"
+# Per-element answer-shift rows of the Section 4.2 element figure and its
+# appendix slot companion, banked by scripts/issue2564_element_shift_rows.py.
+ELEMENT_SHIFT_SOURCE = ROOT / "eval_results/issue_2564/section42_element_shifts.json"
 SVMP_DIR = Path(os.environ.get("C2A_SVMP_DIR", ROOT / "eval_results/issue_2617/svmp_verbharm"))
 
 LINEAR = ROLES["linear"].color
@@ -737,6 +749,179 @@ def make_failures_and_shifts_figure(data: dict) -> tuple[plt.Figure, float]:
     return fig, include_frac
 
 
+# ---------------------------------------------------------------------------
+# Section 4.2 per-element answer shifts (main panel + appendix slot companion)
+# ---------------------------------------------------------------------------
+
+# The main element-shift panel reads as five bands of related rows.  Every second
+# band carries a shaded stripe so the eye groups them without a second legend.
+_ELEMENT_SHIFT_GROUPS = (
+    ("identity", ("Tone", "Persona")),
+    ("format", ("Output format",)),
+    ("content", ("Question topic", "One-word topic")),
+    ("refusal_word", ("Refusal flips", "Refusal holds")),
+    ("refusal_framing", ("Framing-refusal flips", "Framing-refusal holds")),
+)
+
+# Appendix companion: the main-panel row the slots decompose, then the slots.
+_SLOT_ROW_ORDER = ("One-word topic", "slot: subject", "slot: verb", "slot: object")
+_SLOT_ROW_LABELS = {
+    "One-word topic": "One-word topic (panel C)",
+    "slot: subject": "…subject swapped",
+    "slot: verb": "…verb swapped",
+    "slot: object": "…object swapped",
+}
+
+
+def _element_shift_data() -> dict:
+    """The banked element rows, ordered as each of the two figures draws them."""
+    banked = json.loads(ELEMENT_SHIFT_SOURCE.read_text())
+    panel = {row["row"]: row for row in banked["panel_rows"]}
+    appendix = {row["row"]: row for row in banked["appendix_rows"]}
+    order = [label for _group, labels in _ELEMENT_SHIFT_GROUPS for label in labels]
+    assert set(order) == set(panel), (sorted(order), sorted(panel))
+    return {
+        "elements": [panel[label] for label in order],
+        "bands": [len(labels) for _group, labels in _ELEMENT_SHIFT_GROUPS],
+        "slots": [(panel | appendix)[name] for name in _SLOT_ROW_ORDER],
+        "map": banked["map"],
+        "bootstrap": banked["bootstrap"],
+        "metrics": banked["metrics"],
+        "caveat": banked["caveat"],
+    }
+
+
+def _draw_row_metric_panel(
+    ax: plt.Axes,
+    rows: list[dict],
+    *,
+    key: str,
+    xlabel: str,
+    xlim: tuple[float, float],
+    reference: float | None = None,
+    bands: list[int] | None = None,
+    ytick_labels: list[str] | None = None,
+) -> None:
+    """One column of a row-per-element figure: point estimate plus its 95% interval.
+
+    ``bands`` are consecutive row-group sizes.  Every second group gets a shaded
+    stripe.  Panel furniture (kicker and title) stays with the caller.
+    """
+    y = np.arange(len(rows))[::-1]
+    if bands is not None:
+        start = 0
+        for index, size in enumerate(bands):
+            if index % 2 == 1:
+                ax.axhspan(
+                    y[start + size - 1] - 0.5,
+                    y[start] + 0.5,
+                    color=GRID,
+                    alpha=0.20,
+                    zorder=0,
+                    lw=0,
+                )
+            start += size
+    if reference is not None:
+        ax.axvline(reference, color=CONTROL, lw=1.6, linestyle=(0, (5, 4)), zorder=1)
+    values = np.asarray([row[key] for row in rows])
+    ci = np.asarray([row[f"{key}_ci95"] for row in rows])
+    xerr = np.vstack([values - ci[:, 0], ci[:, 1] - values]).clip(min=0)
+    ax.errorbar(
+        values,
+        y,
+        xerr=xerr,
+        fmt="o",
+        color=LINEAR,
+        markerfacecolor=LINEAR,
+        markeredgecolor=LINEAR,
+        markersize=7,
+        capsize=3,
+        capthick=1.6,
+        elinewidth=1.8,
+        lw=0,
+        zorder=3,
+    )
+    ax.set_xlim(*xlim)
+    ax.set_ylim(-0.6, len(rows) - 0.4)
+    style_axis(ax, grid_axis="x")
+    ax.set_xlabel(xlabel)
+    ax.set_yticks(y, ytick_labels if ytick_labels is not None else [""] * len(rows))
+
+
+def make_element_shifts_figure(data: dict) -> tuple[plt.Figure, float]:
+    """What the map keeps when one context element changes: direction, then size."""
+    rows = data["elements"]
+    fig, include_frac = c2a_figure("full", aspect=0.44)
+    grid = fig.add_gridspec(1, 2, left=0.285, right=0.985, top=0.80, bottom=0.155, wspace=0.16)
+    columns = (
+        ("direction", better_label("Predicted shift direction (cosine)"), (0.15, 1.0), None),
+        ("magnitude", "Predicted / observed shift size", (0.55, 1.28), 1.0),
+    )
+    for index, (key, xlabel, xlim, reference) in enumerate(columns):
+        ax = fig.add_subplot(grid[0, index])
+        _draw_row_metric_panel(
+            ax,
+            rows,
+            key=key,
+            xlabel=xlabel,
+            xlim=xlim,
+            reference=reference,
+            bands=data["bands"],
+            # The pair count rides the row label so nothing is placed by hand.
+            ytick_labels=(
+                [f"{row['row']} (n={row['n_pairs']})" for row in rows] if index == 0 else None
+            ),
+        )
+        if index == 0:
+            panel_header(
+                ax,
+                "C",
+                "controlled minimal pairs · qwen2.5-7b-instruct · layer 19",
+                "What the map keeps when one context element changes",
+                kicker_y=1.11,
+                title_y=1.04,
+            )
+    return fig, include_frac
+
+
+def make_element_shifts_by_slot_figure(data: dict) -> tuple[plt.Figure, float]:
+    """Appendix companion: the one-word topic swap, by the grammatical slot that moved."""
+    rows = data["slots"]
+    fig, include_frac = c2a_figure("full", aspect=0.30)
+    grid = fig.add_gridspec(1, 4, left=0.305, right=0.975, top=0.66, bottom=0.30, wspace=0.42)
+    columns = (
+        ("separation", "Answer separation", (0.94, 1.002), None),
+        ("twoway", better_label("Two-way"), (0.5, 1.03), 0.5),
+        ("direction", better_label("Direction"), (0.15, 0.75), None),
+        ("magnitude", "Shift size", (0.4, 1.15), 1.0),
+    )
+    for index, (key, xlabel, xlim, reference) in enumerate(columns):
+        ax = fig.add_subplot(grid[0, index])
+        _draw_row_metric_panel(
+            ax,
+            rows,
+            key=key,
+            xlabel=xlabel,
+            xlim=xlim,
+            reference=reference,
+            ytick_labels=(
+                [f"{_SLOT_ROW_LABELS[row['row']]} (n={row['n_pairs']})" for row in rows]
+                if index == 0
+                else None
+            ),
+        )
+        if index == 0:
+            panel_header(
+                ax,
+                "",
+                "one-word query swaps · qwen2.5-7b-instruct · layer 19",
+                "One-word topic change, by grammatical slot",
+                kicker_y=1.20,
+                title_y=1.07,
+            )
+    return fig, include_frac
+
+
 REFUSAL_CLASS_LABELS = (
     ("obj_flip", "Object swap\n(flips refusal)"),
     ("verb_flip", "Verb swap\n(flips refusal)"),
@@ -1043,6 +1228,7 @@ def main() -> None:
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     parser.add_argument(
         "--only",
+        action="append",
         choices=(
             "sae",
             "pair_shifts",
@@ -1050,16 +1236,23 @@ def main() -> None:
             "directions_and_pairs",
             "directions_and_features",
             "failures_and_shifts",
+            "element_shifts",
+            "element_shifts_by_slot",
         ),
         default=None,
-        help="render a single figure (default: render all six)",
+        help="render one figure, repeat the flag to select several (default: all eight)",
     )
     args = parser.parse_args()
     set_c2a_style()
 
+    selected = set(args.only) if args.only else None
+
+    def wanted(*names: str) -> bool:
+        return selected is None or any(name in selected for name in names)
+
     report: list[tuple[str, dict]] = []
 
-    if args.only in (None, "sae"):
+    if wanted("sae"):
         sae = _sae_data()
         sae_fig, sae_frac = make_sae_figure(sae)
         sae_outputs = _save(
@@ -1079,10 +1272,10 @@ def main() -> None:
         report.append(("sae", sae_outputs))
 
     pair_shifts: list[dict] | None = None
-    if args.only in (None, "pair_shifts", "directions_and_pairs"):
+    if wanted("pair_shifts", "directions_and_pairs"):
         pair_shifts = _pair_shift_data()
 
-    if args.only in (None, "pair_shifts"):
+    if wanted("pair_shifts"):
         pair_fig, pair_frac = make_pair_shift_figure(pair_shifts)
         pair_outputs = _save(
             pair_fig,
@@ -1104,7 +1297,7 @@ def main() -> None:
         plt.close(pair_fig)
         report.append(("pair_shifts", pair_outputs))
 
-    if args.only in (None, "refusal_by_class"):
+    if wanted("refusal_by_class"):
         refusal = _refusal_by_class_data()
         refusal_fig, refusal_frac = make_refusal_by_class_figure(refusal)
         refusal_outputs = _save(
@@ -1124,7 +1317,7 @@ def main() -> None:
         plt.close(refusal_fig)
         report.append(("refusal_by_class", refusal_outputs))
 
-    if args.only in (None, "directions_and_pairs"):
+    if wanted("directions_and_pairs"):
         spectrum = json.loads(SPECTRUM_SOURCE.read_text())
         combined_fig, combined_frac = make_directions_and_pairs_figure(spectrum, pair_shifts)
         combined_outputs = _save(
@@ -1170,10 +1363,10 @@ def main() -> None:
         plt.close(combined_fig)
         report.append(("directions_and_pairs", combined_outputs))
 
-    if args.only in (None, "directions_and_features", "failures_and_shifts"):
+    if wanted("directions_and_features", "failures_and_shifts"):
         info = _information_data()
 
-    if args.only in (None, "directions_and_features"):
+    if wanted("directions_and_features"):
         daf_fig, daf_frac = make_directions_and_features_figure(info)
         daf_outputs = _save(
             daf_fig,
@@ -1192,7 +1385,7 @@ def main() -> None:
         plt.close(daf_fig)
         report.append(("directions_and_features", daf_outputs))
 
-    if args.only in (None, "failures_and_shifts"):
+    if wanted("failures_and_shifts"):
         fas_fig, fas_frac = make_failures_and_shifts_figure(info)
         # The panel-A background is 60,000 scatter points.  The sidecar records
         # its shape and points at the sha-pinned source instead of restating a
@@ -1221,6 +1414,66 @@ def main() -> None:
         )
         plt.close(fas_fig)
         report.append(("failures_and_shifts", fas_outputs))
+
+    elements: dict | None = None
+    if wanted("element_shifts", "element_shifts_by_slot"):
+        elements = _element_shift_data()
+
+    if wanted("element_shifts"):
+        elem_fig, elem_frac = make_element_shifts_figure(elements)
+        elem_outputs = _save(
+            elem_fig,
+            args.out_dir,
+            "c3_element_shifts",
+            title="What the context-to-answer map keeps per changed context element",
+            subject=(
+                "Mean cosine between predicted and observed answer shift, and median ratio of "
+                "predicted to observed shift size, per controlled context element, with 95% "
+                "pair-bootstrap intervals"
+            ),
+            include_frac=elem_frac,
+            sources=[ELEMENT_SHIFT_SOURCE],
+            displayed_data={
+                "rows": elements["elements"],
+                "groups": [list(labels) for _group, labels in _ELEMENT_SHIFT_GROUPS],
+                "reference_line": {"magnitude": 1.0},
+                "order": "grouped: identity, format, content, word refusal, framing refusal",
+                "bootstrap": elements["bootstrap"],
+                "map": elements["map"],
+                "metrics": elements["metrics"],
+                "caveat": elements["caveat"],
+            },
+        )
+        plt.close(elem_fig)
+        report.append(("element_shifts", elem_outputs))
+
+    if wanted("element_shifts_by_slot"):
+        slot_fig, slot_frac = make_element_shifts_by_slot_figure(elements)
+        slot_outputs = _save(
+            slot_fig,
+            args.out_dir,
+            "c3_element_shifts_by_slot",
+            title="One-word topic change by grammatical slot",
+            subject=(
+                "Answer separation, two-way retrieval, shift direction and shift size for a "
+                "one-word query change pinned to the subject, verb or object slot, beside the "
+                "pooled one-word row of the element figure, with 95% pair-bootstrap intervals"
+            ),
+            include_frac=slot_frac,
+            sources=[ELEMENT_SHIFT_SOURCE],
+            displayed_data={
+                "rows": elements["slots"],
+                "row_labels": _SLOT_ROW_LABELS,
+                "reference_line": {"twoway": 0.5, "magnitude": 1.0},
+                "order": "pooled one-word row, then subject, verb, object",
+                "bootstrap": elements["bootstrap"],
+                "map": elements["map"],
+                "metrics": elements["metrics"],
+                "caveat": elements["caveat"],
+            },
+        )
+        plt.close(slot_fig)
+        report.append(("element_shifts_by_slot", slot_outputs))
 
     for name, outputs in report:
         for kind, path in outputs.items():

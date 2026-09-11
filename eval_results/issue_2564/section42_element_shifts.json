@@ -1,0 +1,328 @@
+{
+ "panel_rows": [
+  {
+   "row": "Tone",
+   "source": "issue2564 bank, pair_class=swap, cell=register",
+   "n_pairs": 12,
+   "separation": 0.7881,
+   "separation_ci95": [
+    0.7751,
+    0.8019
+   ],
+   "twoway": 1.0,
+   "twoway_ci95": [
+    1.0,
+    1.0
+   ],
+   "direction": 0.8997,
+   "direction_ci95": [
+    0.8952,
+    0.9043
+   ],
+   "magnitude": 1.028,
+   "magnitude_ci95": [
+    0.9772,
+    1.1468
+   ]
+  },
+  {
+   "row": "Persona",
+   "source": "issue2564 bank, pair_class=swap, cell=persona",
+   "n_pairs": 120,
+   "separation": 0.903,
+   "separation_ci95": [
+    0.8968,
+    0.9085
+   ],
+   "twoway": 1.0,
+   "twoway_ci95": [
+    1.0,
+    1.0
+   ],
+   "direction": 0.7839,
+   "direction_ci95": [
+    0.7754,
+    0.7927
+   ],
+   "magnitude": 1.125,
+   "magnitude_ci95": [
+    1.1089,
+    1.1569
+   ]
+  },
+  {
+   "row": "Output format",
+   "source": "issue2564 bank, pair_class=swap, cell=format",
+   "n_pairs": 120,
+   "separation": 0.8765,
+   "separation_ci95": [
+    0.8574,
+    0.8953
+   ],
+   "twoway": 0.875,
+   "twoway_ci95": [
+    0.8375,
+    0.9125
+   ],
+   "direction": 0.5881,
+   "direction_ci95": [
+    0.5493,
+    0.6286
+   ],
+   "magnitude": 1.0852,
+   "magnitude_ci95": [
+    1.0156,
+    1.1584
+   ]
+  },
+  {
+   "row": "Question topic",
+   "source": "issue2564 bank, pair_class=query_content",
+   "note": "two unrelated questions, the coarse end of the topic ladder",
+   "n_pairs": 66,
+   "separation": 0.9016,
+   "separation_ci95": [
+    0.8953,
+    0.9076
+   ],
+   "twoway": 1.0,
+   "twoway_ci95": [
+    1.0,
+    1.0
+   ],
+   "direction": 0.7144,
+   "direction_ci95": [
+    0.6998,
+    0.7292
+   ],
+   "magnitude": 0.8047,
+   "magnitude_ci95": [
+    0.7829,
+    0.8277
+   ]
+  },
+  {
+   "row": "One-word topic",
+   "source": "issue2564 langow pilot, pair_class=query_content_oneword",
+   "note": "one word changes the subject matter, e.g. 'adopt a dog' vs 'adopt a cat'",
+   "n_pairs": 24,
+   "separation": 0.9751,
+   "separation_ci95": [
+    0.9688,
+    0.981
+   ],
+   "twoway": 0.8958,
+   "twoway_ci95": [
+    0.8125,
+    0.9589
+   ],
+   "direction": 0.531,
+   "direction_ci95": [
+    0.4678,
+    0.583
+   ],
+   "magnitude": 0.6633,
+   "magnitude_ci95": [
+    0.6119,
+    0.7356
+   ]
+  },
+  {
+   "row": "Refusal flips",
+   "source": "issue2617 svmp, one-word safety swaps + XSTest rephrasings",
+   "flip_criterion": "|refusal_rate_a - refusal_rate_b| >= 0.5 over 10 draws",
+   "n_pairs": 61,
+   "separation": 0.8137,
+   "separation_ci95": [
+    0.7882,
+    0.8387
+   ],
+   "twoway": 1.0,
+   "twoway_ci95": [
+    1.0,
+    1.0
+   ],
+   "direction": 0.7797,
+   "direction_ci95": [
+    0.7566,
+    0.8003
+   ],
+   "magnitude": 0.7501,
+   "magnitude_ci95": [
+    0.7283,
+    0.7843
+   ]
+  },
+  {
+   "row": "Refusal holds",
+   "source": "issue2617 svmp, one-word safety swaps + XSTest rephrasings",
+   "flip_criterion": "|refusal_rate_a - refusal_rate_b| >= 0.5 over 10 draws",
+   "n_pairs": 63,
+   "separation": 0.9539,
+   "separation_ci95": [
+    0.9446,
+    0.9619
+   ],
+   "twoway": 0.9048,
+   "twoway_ci95": [
+    0.8569,
+    0.9524
+   ],
+   "direction": 0.5542,
+   "direction_ci95": [
+    0.5135,
+    0.5956
+   ],
+   "magnitude": 0.8259,
+   "magnitude_ci95": [
+    0.7452,
+    0.8689
+   ]
+  },
+  {
+   "row": "Framing-refusal flips",
+   "source": "issue2356 armA, 394 AdvBench bases x 6 intent-preserving rewrite axes",
+   "note": "different capture; the 2564-fitted map transfers here at cos 0.90 vs 0.95 in-bank",
+   "n_pairs": 307,
+   "separation": 0.9001,
+   "separation_ci95": [
+    0.8941,
+    0.9056
+   ],
+   "twoway": 0.9235,
+   "twoway_ci95": [
+    0.9023,
+    0.943
+   ],
+   "direction": 0.5108,
+   "direction_ci95": [
+    0.4992,
+    0.5229
+   ],
+   "magnitude": 0.7449,
+   "magnitude_ci95": [
+    0.7206,
+    0.7711
+   ]
+  },
+  {
+   "row": "Framing-refusal holds",
+   "source": "issue2356 armA, 394 AdvBench bases x 6 intent-preserving rewrite axes",
+   "note": "different capture; the 2564-fitted map transfers here at cos 0.90 vs 0.95 in-bank",
+   "n_pairs": 1924,
+   "separation": 0.9748,
+   "separation_ci95": [
+    0.9735,
+    0.976
+   ],
+   "twoway": 0.611,
+   "twoway_ci95": [
+    0.6019,
+    0.6203
+   ],
+   "direction": 0.2728,
+   "direction_ci95": [
+    0.266,
+    0.2798
+   ],
+   "magnitude": 1.0416,
+   "magnitude_ci95": [
+    1.0226,
+    1.0624
+   ]
+  }
+ ],
+ "appendix_rows": [
+  {
+   "row": "slot: object",
+   "source": "issue2564 gramslot pilot, pair_class=query_oneword_object",
+   "n_pairs": 24,
+   "separation": 0.9808,
+   "separation_ci95": [
+    0.9735,
+    0.987
+   ],
+   "twoway": 0.8958,
+   "twoway_ci95": [
+    0.8125,
+    0.9583
+   ],
+   "direction": 0.5097,
+   "direction_ci95": [
+    0.4648,
+    0.555
+   ],
+   "magnitude": 0.6279,
+   "magnitude_ci95": [
+    0.5839,
+    0.7139
+   ]
+  },
+  {
+   "row": "slot: subject",
+   "source": "issue2564 gramslot pilot, pair_class=query_oneword_subject",
+   "n_pairs": 24,
+   "separation": 0.9847,
+   "separation_ci95": [
+    0.9808,
+    0.9882
+   ],
+   "twoway": 0.8542,
+   "twoway_ci95": [
+    0.7708,
+    0.9375
+   ],
+   "direction": 0.5025,
+   "direction_ci95": [
+    0.4469,
+    0.5556
+   ],
+   "magnitude": 0.8076,
+   "magnitude_ci95": [
+    0.7432,
+    0.9346
+   ]
+  },
+  {
+   "row": "slot: verb",
+   "source": "issue2564 gramslot pilot, pair_class=query_oneword_verb",
+   "n_pairs": 24,
+   "separation": 0.9888,
+   "separation_ci95": [
+    0.9826,
+    0.9936
+   ],
+   "twoway": 0.75,
+   "twoway_ci95": [
+    0.6458,
+    0.8542
+   ],
+   "direction": 0.3676,
+   "direction_ci95": [
+    0.3148,
+    0.4228
+   ],
+   "magnitude": 0.7542,
+   "magnitude_ci95": [
+    0.6403,
+    0.9836
+   ]
+  }
+ ],
+ "map": {
+  "file": "data/issue_2564/langow_stage/ridge/arm_779ce/ridge.pt",
+  "layer": 19
+ },
+ "bootstrap": {
+  "unit": "pair",
+  "draws": 2000,
+  "seed": 20260910
+ },
+ "metrics": {
+  "separation": "cos(ans_A, ans_B), mean; near 1.0 = the two real answers nearly coincide",
+  "twoway": "pred_B nearer ans_B than ans_A, both orderings, chance 0.5",
+  "direction": "cos(pred_B - pred_A, ans_B - ans_A), mean",
+  "magnitude": "||pred_B - pred_A|| / ||ans_B - ans_A||, median"
+ },
+ "caveat": "raw, not disattenuated for rollout noise"
+}
