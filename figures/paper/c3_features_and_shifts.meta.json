@@ -7,7 +7,7 @@
   "title": "SAE feature properties and what the context-to-answer map keeps per changed context element",
   "subject": "Conditional association between an SAE feature property and the held-out R2 of its decoder direction, beside the mean cosine between predicted and observed answer shift, the median ratio of predicted to observed shift size, and the two-way discrimination rate per controlled context element, for the seven rows left after the two refusal-holds rows are dropped, with 95% pair-bootstrap intervals",
   "git": {
-    "commit": "06c7a898e1782778d17e33def98a4673b03c6f8c",
+    "commit": "e78f95c91a8c3cfc2f29010f98d56272dc8f8b89",
     "tracked_worktree_dirty": true
   },
   "sources": [
@@ -48,7 +48,7 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "SEPARATE DICTIONARY\n16,384 FEATURES \u00b7 LAYER 20",
+      "SEPARATE DICTIONARY\n16,384 FEATURES",
       "A  \u00b7  120,716 SAE FEATURES",
       "Concordance with feature $R^2$,\nabove chance",
       "-0.1",
@@ -457,8 +457,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "1be981f593ec9cbb81ea463c7502cc1d5163d426f6752779b81cd74c0971391c",
-    "png": "1a0d00a764453839937c5d68893851ae1ad98be2c2b2f1c3d24f2ff4bdb361d9",
-    "grayscale": "075375cf8153d1ff24a6f793e92315c525c5e7543a08a6dbb9d19f930e3d5617"
+    "pdf": "b5b87b30b3eb35ff893aec428631a80f8fe5b2a970f7eb77149497fe3dec261b",
+    "png": "45bce874d6c4effa996c644b3d6aceefb02d5163b82f554d7cd2d21de75109b8",
+    "grayscale": "ecb93a8bc017b24b26e8967b0b7bf8ccb38edb09c90fe9ff0cda0cf651548b39"
   }
 }

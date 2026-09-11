@@ -7,7 +7,7 @@
   "title": "Useful directions on the answer-PCA spectrum and minimal-pair shift sizes",
   "subject": "Per-direction held-out R2 of the context-to-answer map at layer 19 against variance rank (labeled behavior/persona/correctness directions), alongside predicted over observed answer-shift size for six minimal-pair elements with 95% bootstrap CIs",
   "git": {
-    "commit": "4108a21118094584b70c35cf48c7d7eea345d3b0",
+    "commit": "e78f95c91a8c3cfc2f29010f98d56272dc8f8b89",
     "tracked_worktree_dirty": true
   },
   "sources": [
@@ -42,7 +42,7 @@
     ],
     "exported_size_inches": [
       13.095,
-      4.669
+      4.659
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -67,7 +67,7 @@
       "correctness (math)",
       "correctness (MMLU-Pro)",
       "correctness (code)",
-      "A  \u00b7  5,000 CONTEXTS (4,000 TRAIN, 1,000 TEST)",
+      "A",
       "Variance rank (log)",
       "$\\mathdefault{10^{-2}}$",
       "$\\mathdefault{10^{-1}}$",
@@ -988,8 +988,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "e2f97d8b3b25f0f89ad397b6d8a5632f1f424dfd853c962e9c7d2d4ee2f4b617",
-    "png": "417384436b4516123b67e7aa904f830c55d620e7721b2974f7d02781e74910cb",
-    "grayscale": "a94323ae5959cfa56ab66142aa5eef302e6d4c7eed3ffe652d314663a3b83cdc"
+    "pdf": "6868e2486b5c37efc8f17e77cc542c7e1d6b0de83580c373d3a3be1a5af537d9",
+    "png": "f94e4e2e57714439f0151b9d483539cc3d93a2c2669bea836d708de05f77078e",
+    "grayscale": "f4ddfb0969e1324f4915c285c2fe8000d33915a01668844ef4ec5e16f468ca18"
   }
 }

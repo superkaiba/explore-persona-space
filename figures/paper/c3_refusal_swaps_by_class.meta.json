@@ -7,7 +7,7 @@
   "title": "One-word safety swaps by pair class",
   "subject": "Per-class mean shift-direction cosine, refusal-direction loading, and through-origin predicted-over-observed shift size for one-word safety swaps, with the raw context-shift baseline and shuffled-pair null",
   "git": {
-    "commit": "6ee6686957519ea9b25b6d51a17987ae524dfe24",
+    "commit": "e78f95c91a8c3cfc2f29010f98d56272dc8f8b89",
     "tracked_worktree_dirty": true
   },
   "sources": [
@@ -90,7 +90,7 @@
       "NULL",
       "Linear map",
       "Raw context shift",
-      "Shuffled-pair null (95%)"
+      "Shuffled-pair null"
     ]
   },
   "displayed_data": {
@@ -350,8 +350,8 @@
     ]
   },
   "output_sha256": {
-    "pdf": "22237b0e04b57449cba856f815e8c40d5161cae73b5063af7e3072d17fd7c2b9",
-    "png": "077aebcce71e5a5c860e07bad78639c2779e24b0bbb36daa04071df650e866f4",
-    "grayscale": "9b89cd4c191130d5a543629088c0f7d51527dda39368b91f8be51c0fea57f62a"
+    "pdf": "f32abc0e66defb9928e38831d83a48ae806a1baddc59c3d4059cbce5124cb670",
+    "png": "26f3b6c43796d98716a8a71fd7cd793a063273c2d8ba35efa32e76718c755909",
+    "grayscale": "b23b2e84644f4a72182cc341e364f1ce4cee50a5b53a1a78bba4a6668165f28b"
   }
 }

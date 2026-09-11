@@ -7,7 +7,7 @@
   "title": "SAE feature properties and context-to-answer predictability",
   "subject": "Conditional feature-property associations and activity-adjusted nested-tier gradient, decoder-direction target",
   "git": {
-    "commit": "f3396526058c0895f64614ed3b2d08713c41f538",
+    "commit": "e78f95c91a8c3cfc2f29010f98d56272dc8f8b89",
     "tracked_worktree_dirty": true
   },
   "sources": [
@@ -53,7 +53,7 @@
       "suppresses specific output tokens",
       "topic content",
       "Feature-property concordance",
-      "B  \u00b7  MEDIAN AND INTERQUARTILE RANGE",
+      "B",
       "Nested SAE tier",
       "Coarsest",
       "Middle",
@@ -148,8 +148,8 @@
     "centering": "per-feature R^2 minus the median R^2 of its activity quintile"
   },
   "output_sha256": {
-    "pdf": "69df12ef22ea15852669a768fe528f474537f4c61e735bf4fa4c13d6fa54c732",
-    "png": "d35d8a387c997391b8a7b139cce206c35a3e609eef8beedc97ea3d56b0507f08",
-    "grayscale": "364c1271db511489d2dc956b4ee16ca872cba23785419ced17224ea9862cafae"
+    "pdf": "b2e066ac579b155fe3640aed9c37aef248246819ca22f2670c5299290613db7b",
+    "png": "86211467a8bda9e411f8d9b74ad060341f12cc3dd759aa98601c6091e7bdf1e4",
+    "grayscale": "2d5d4963bbfc47479358ea8ba9cf175cf0d00dbe6671a9b7d53606c198f41390"
   }
 }

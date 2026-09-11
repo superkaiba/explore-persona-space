@@ -7,7 +7,7 @@
   "title": "Held-out R2 of a direction's projection against its answer-variance rank",
   "subject": "Per-direction held-out R2 of the context-to-answer map at layer 19 against answer-variance rank, with the random-direction band and the labeled behavior, persona and correctness directions",
   "git": {
-    "commit": "06c7a898e1782778d17e33def98a4673b03c6f8c",
+    "commit": "e78f95c91a8c3cfc2f29010f98d56272dc8f8b89",
     "tracked_worktree_dirty": true
   },
   "sources": [
@@ -26,7 +26,7 @@
     ],
     "exported_size_inches": [
       13.095,
-      6.11
+      5.897
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -51,7 +51,6 @@
       "correctness (math)",
       "correctness (MMLU-Pro)",
       "correctness (code)",
-      "5,000 CONTEXTS (4,000 TRAIN, 1,000 TEST)",
       "Variance rank (log)",
       "$\\mathdefault{10^{-2}}$",
       "$\\mathdefault{10^{-1}}$",
@@ -875,8 +874,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "6ccfce79c50616ad7e9083ee52b13fa99854b044fd35a0a78a58caa317265a0d",
-    "png": "9ad67077d03993564e831707428ad79fdcaefb157804ffc970d017136568e3cc",
-    "grayscale": "e2e80ceccfe4828bfd33b368758b402ccb4fae6be8c3721d4daa86a29e27805c"
+    "pdf": "ab762689a2e6cf65ec60fa931688921bd9b159d95d49901e31ef32acf88c2865",
+    "png": "78fcc65a96cb21313ed67fd2338855876e445a4b61ed8d5c8b998e7d5a7c7b6b",
+    "grayscale": "decc4068c59be021db520ccfd36d527ebe15fb7ada2543669457df95c06bbc64"
   }
 }
