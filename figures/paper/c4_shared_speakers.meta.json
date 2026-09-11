@@ -1,17 +1,19 @@
 {
  "figure": "c4_shared_speakers",
- "status": "manuscript Figure 8 (c2a-v2 restyle; values unchanged from the published render)",
+ "status": "manuscript Figure 8. Panel B RECOMPUTED: the shared map is refit on the six instruction-tuned settings only (Section 4.4's own description), with the plain-text cell's truncated rows dropped from the training pool. Panel A unchanged and parity-pinned to the published render.",
  "style_version": "c2a-v2",
  "plotting_script": "scripts/paper_fig_shared_speakers.py",
  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
  "reproduction_command": "uv run python scripts/paper_fig_shared_speakers.py",
  "git": {
-  "git_commit": "b921eb2d535b4aa4a1df19a172852f095f83b644",
+  "git_commit": "624dd0f7988aed3264c8b3b9f3bcf0878cc9566f",
   "git_dirty": true,
   "git_dirty_paths": [
    ".claude/agent-memory/experiment-implementer-lean/MEMORY.md",
    ".claude/agent-memory/experimenter/feedback_pod_sparse_clone_committed_inputs.md",
    "CLAUDE.md",
+   "docs/paper_context_answer_map/fig1_schematic.pdf",
+   "docs/paper_context_answer_map/fig1_schematic.tex",
    "eval_results/issue_2546/necessity_r2/summary.json",
    "figures/issue_1902/section43/c1_posttraining_dynamics.pdf",
    "figures/issue_1902/section43/c1_posttraining_dynamics.png",
@@ -19,13 +21,26 @@
    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+   "figures/paper/c1_predictability_scaling.meta.json",
+   "figures/paper/c1_predictability_scaling.pdf",
+   "figures/paper/c1_predictability_scaling.png",
+   "figures/paper/c1_predictability_scaling_grayscale.png",
+   "figures/paper/c4_shared_speakers.meta.json",
+   "figures/paper/c4_shared_speakers.pdf",
+   "figures/paper/c4_shared_speakers.png",
+   "figures/paper/c4_shared_speakers_grayscale.png",
    "scripts/codex_daemon_reaper.py",
    "scripts/cron_watch_issue_1739.sh",
    "scripts/cron_watch_issue_2091.sh",
    "scripts/install_gcp_audit_cron.sh",
+   "scripts/issue1901_encbaseline_figure.py",
+   "scripts/make_paper_figure2.py",
+   "scripts/paper_fig_shared_speakers.py",
+   "src/explore_persona_space/analysis/c2a_plot_style.py",
    "tests/test_codex_daemon_reaper.py"
   ],
-  "git_argv0_state": null
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/paper_fig_shared_speakers.py"
  },
  "sources": {
   "speaker_lattice": {
@@ -39,10 +54,14 @@
   "plain_text_cap_refit": {
    "path": "eval_results/issue_2054/caphit_pooled_refit/caphit_pooled_refit.json",
    "sha256": "c04af36a139410f5dcdbc26e682017fd04a62ccef60e68b970f84d36b57805a6"
+  },
+  "six_setting_pooled_refit": {
+   "path": "eval_results/issue_2054/pooled_refit_six_settings/pooled_refit_six_nocapped.json",
+   "sha256": "b90926d66102a99d6b7ff2b735eee1d677f9317469d51084b2d9ca8db7bfbeda"
   }
  },
  "parity": {
-  "checked_against": "/home/thomasjiralerspong/explore-persona-space/figures/paper/c4_shared_speakers.meta.json",
+  "checked_against": "/home/thomasjiralerspong/overleaf-6a59c927/figures/paper/c4_shared_speakers.meta.json",
   "max_abs_diff": 0.0,
   "tol": 1e-09
  },
@@ -56,7 +75,7 @@
   ],
   "exported_size_inches": [
    13.095,
-   4.236
+   4.291
   ],
   "scale": 0.42,
   "include_width_frac": 1.0,
@@ -78,34 +97,30 @@
    "Dana\nordinary",
    "Vex\nvillain",
    "Held-out $R^2$ \u2191",
-   "\u22120.25",
-   "0.00",
-   "0.25",
-   "0.50",
-   "0.75",
-   "1.00",
+   "\u22120.2",
+   "0.0",
+   "0.2",
+   "0.4",
+   "0.6",
+   "0.8",
    "Held-out $R^2$ per setting,\nbase and post-trained",
    "Shuffled answers (null)",
    "Base",
    "Post-trained",
    "B  \u00b7  SHARED MAP",
    "Fraction of own $R^2$ \u2191",
-   "0.0",
    "0.5",
    "1.0",
    "1.5",
-   "2.0",
    "Shared $R^2$ as a fraction\nof each setting's own $R^2$",
    "Separate map",
-   "Shared, as is",
-   "Shared, with per-setting shift",
-   "QWEN2.5-7B AND QWEN2.5-7B-INSTRUCT, LAYER 19, 8,000 LMSYS CONVERSATIONS"
+   "Shared map"
   ]
  },
  "data": {
   "panels": {
    "A": "own predictor per setting, base_own and post_own side by side",
-   "B": "shared predictor as-is and with per-setting shift, as fraction of post_own"
+   "B": "six-setting refit shared predictor as a fraction of post_own, ONE bar. The per-setting shift is not drawn: it moves R^2 by at most 5e-6 here, gated by parity_gate's shift-inertness assertion."
   },
   "null_line_panel_A": -0.028103851491912357,
   "speakers": [
@@ -113,11 +128,10 @@
     "label": "Assistant\nchat template",
     "base_own": 0.20736087733279018,
     "post_own": 0.5796996369279679,
-    "shared_asis": 0.4344725349984258,
-    "shared_shift": 0.49863549309530714,
-    "shared_shift_scale": 0.4984962645228225,
-    "frac_shared_asis": 0.749478708147634,
-    "frac_shared_shift": 0.8601618171399104,
+    "shared_asis": 0.5642495268190558,
+    "shared_shift": 0.5642493389164382,
+    "frac_shared_asis": 0.9733480769613939,
+    "frac_shared_shift": 0.9733477528235033,
     "null_p975": [
      -0.025570017177420256,
      -0.021395259095018743
@@ -127,11 +141,10 @@
     "label": "Assistant\nplain text",
     "base_own": 0.2254487936181569,
     "post_own": 0.38985271917718867,
-    "shared_asis": 0.25839140849836434,
-    "shared_shift": 0.30661821076508505,
-    "shared_shift_scale": 0.32463829955492235,
-    "frac_shared_asis": 0.662792372062243,
-    "frac_shared_shift": 0.7864975558262725,
+    "shared_asis": 0.3680626095839821,
+    "shared_shift": 0.3680661303462175,
+    "frac_shared_asis": 0.9441068164428965,
+    "frac_shared_shift": 0.9441158474488692,
     "null_p975": [
      -0.026894550631164284,
      -0.02974220647838311
@@ -141,11 +154,10 @@
     "label": "HELIOS\nship AI",
     "base_own": 0.27988210680548775,
     "post_own": 0.36960715629310803,
-    "shared_asis": 0.34028494498421596,
-    "shared_shift": 0.36357969979447313,
-    "shared_shift_scale": 0.36337732347961105,
-    "frac_shared_asis": 0.92066654876769,
-    "frac_shared_shift": 0.9836922624575619,
+    "shared_asis": 0.39126421700035063,
+    "shared_shift": 0.39126762245507724,
+    "frac_shared_asis": 1.058594808943764,
+    "frac_shared_shift": 1.0586040226580242,
     "null_p975": [
      -0.028525923255817112,
      -0.029432613574348357
@@ -155,11 +167,10 @@
     "label": "Wren\nhelpful",
     "base_own": 0.26435334458909887,
     "post_own": 0.3559185425108692,
-    "shared_asis": 0.29810181543967956,
-    "shared_shift": 0.3333196701682339,
-    "shared_shift_scale": 0.33358413721790753,
-    "frac_shared_asis": 0.8375562940235854,
-    "frac_shared_shift": 0.9365054931299479,
+    "shared_asis": 0.38076669067934377,
+    "shared_shift": 0.38076395076677777,
+    "frac_shared_asis": 1.069814143408153,
+    "frac_shared_shift": 1.0698064452631035,
     "null_p975": [
      -0.029150102579345864,
      -0.028731062243269503
@@ -169,11 +180,10 @@
     "label": "Dana\nordinary",
     "base_own": 0.27919295858458054,
     "post_own": 0.3609899231388926,
-    "shared_asis": 0.29057467848968915,
-    "shared_shift": 0.32840868465267,
-    "shared_shift_scale": 0.3284518026639579,
-    "frac_shared_asis": 0.8049384757421307,
-    "frac_shared_shift": 0.9097447424489828,
+    "shared_asis": 0.38241239439069,
+    "shared_shift": 0.3824116181360043,
+    "frac_shared_asis": 1.0593436821325204,
+    "frac_shared_shift": 1.059341531782508,
     "null_p975": [
      -0.02888848705564582,
      -0.029327030621443023
@@ -183,11 +193,10 @@
     "label": "Vex\nvillain",
     "base_own": 0.2185863641514155,
     "post_own": 0.2962172010567693,
-    "shared_asis": 0.18511645251809059,
-    "shared_shift": 0.2482758263106431,
-    "shared_shift_scale": 0.2557825286373018,
-    "frac_shared_asis": 0.6249348513782408,
-    "frac_shared_shift": 0.8381546561945322,
+    "shared_asis": 0.31134044500679475,
+    "shared_shift": 0.3113354974913064,
+    "frac_shared_asis": 1.05105457716862,
+    "frac_shared_shift": 1.0510378748452212,
     "null_p975": [
      -0.02998733764630901,
      -0.029601627544783262
@@ -196,8 +205,8 @@
   ]
  },
  "output_sha256": {
-  "pdf": "9aa639c09034944f9895ae0631d9f466114cfc0db6fefcd9c2b24c0230950726",
-  "png": "05f2431cb2111cd2f786ba81a0c07ed364974071f4e531cf0a9a0d2c4e2f9987",
-  "grayscale": "0569f0811e7e1b99892f8038e0c1986d3b0b7c4b527a11f560ab7638ad390ad7"
+  "pdf": "56e707758c85bd9ee877b0449de6dad160fcdbb7702942d54563f86c6cfa2d8b",
+  "png": "6127c036d9a7dc5f3645729732e5e10b96276d48fc5b980ffa2d503b1fc3662f",
+  "grayscale": "c6183668ce901771da5d0cd7245af0737a3e2a03c7c56d48043e276bfdeef4a0"
  }
 }
