@@ -7,7 +7,7 @@
   "title": "Where the context-to-answer map fails and how well it sizes a change",
   "subject": "Retrieval-failure shift sizes against the candidate-pool background, and variance explained per controlled change before and after correcting the predicted shift size",
   "git": {
-    "commit": "f4cfe4f770bbd2809a1f7cd3ac586ac84128be62",
+    "commit": "06c7a898e1782778d17e33def98a4673b03c6f8c",
     "tracked_worktree_dirty": true
   },
   "sources": [
@@ -26,7 +26,7 @@
     ],
     "exported_size_inches": [
       13.095,
-      5.377
+      5.419
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -72,8 +72,7 @@
       "Tone",
       "Variance explained per element",
       "size corrected",
-      "as predicted",
-      "QWEN2.5-7B-INSTRUCT, LAYER 19"
+      "as predicted"
     ]
   },
   "displayed_data": {
@@ -985,8 +984,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "2824a47e25ca1936ed87bcf19002405274a9e537ca09a8ff1a1065c86f500aff",
-    "png": "0bd3862e354e0b28e6c78850aa1599f2819ccd34ebca7d1f448b85bb0f530f63",
-    "grayscale": "cbad0f7f9843a3586e9e71d690818fecd16ac6f24de3ba022cd14e8ecb1865dd"
+    "pdf": "ca4330ec0ed179e44d567b21d046ed2aa9e5b70b6fa4401c82509d880b91a1ec",
+    "png": "64060fc50f2ec143c47af3ef239a09a25edd52648c398cc0c7d1c3f29fbb8b7f",
+    "grayscale": "3bcc3579f7f8403fec60f89566ac281d154eefe58dd39384bcf49fe78a7e9cb7"
   }
 }

@@ -7,7 +7,7 @@
   "title": "What the context-to-answer map keeps per changed context element",
   "subject": "Mean cosine between predicted and observed answer shift, and median ratio of predicted to observed shift size, per controlled context element, with 95% pair-bootstrap intervals",
   "git": {
-    "commit": "f516fa07dfc96799cbe9b83cba60103fffb061a7",
+    "commit": "06c7a898e1782778d17e33def98a4673b03c6f8c",
     "tracked_worktree_dirty": true
   },
   "sources": [
@@ -40,7 +40,7 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "C  \u00b7  CONTROLLED MINIMAL PAIRS \u00b7 QWEN2.5-7B-INSTRUCT \u00b7 LAYER 19",
+      "C  \u00b7  CONTROLLED MINIMAL PAIRS",
       "Predicted shift direction (cosine) \u2191",
       "0.0",
       "0.2",
@@ -340,8 +340,8 @@
     "caveat": "raw, not disattenuated for rollout noise"
   },
   "output_sha256": {
-    "pdf": "0118ea5dc41d13554eba56f2e1927548bed0213d4cc2c0c17acb9a5229120487",
-    "png": "8680b6f04b8cd2fa5f7324a1358360afc56dc1b5a23a8e2d72bc615d4cb36e1f",
-    "grayscale": "73829ecf0b761f51a1bdb05e69e3afc19ff0422947224be45a27e3de69432256"
+    "pdf": "ba1b5725c53a01c3cf95b72700d32bcfe7ffc71d3a6a31eb7d6eecea22e8940a",
+    "png": "edefc08d77b8475eba76bbf4efdd27ca0683d9ac485e8be03fe64ee20c0aaa9d",
+    "grayscale": "7674db5956aae4665e975907c61a7859643a6a560a03f6442746415e62dd01bf"
   }
 }

@@ -7,7 +7,7 @@
   "title": "Which parts of an answer the context-to-answer map predicts",
   "subject": "Held-out R2 of the projection onto a direction against its answer-variance rank, and the conditional association between an SAE feature property and the held-out R2 of its decoder direction",
   "git": {
-    "commit": "fb2fea87c764a8bce6e8e0b414bf2f783d0501d6",
+    "commit": "59c3b227559e241bd73fd189d6fda7cf27389562",
     "tracked_worktree_dirty": true
   },
   "sources": [
@@ -30,7 +30,7 @@
     ],
     "exported_size_inches": [
       13.095,
-      5.167
+      5.038
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -86,8 +86,7 @@
       "+0.1",
       "+0.2",
       "+0.3",
-      "Concordance by property",
-      "QWEN2.5-7B-INSTRUCT, LAYER 19"
+      "Concordance by property"
     ]
   },
   "displayed_data": {
@@ -946,8 +945,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "69e7b6047bba7c29428f7759a673d09dfe0969d573514e644f8eb3c129772311",
-    "png": "ecf99a06a227f4844817a849d426c87db95c09e988245aeed8fedcfbe3b5268f",
-    "grayscale": "c60f07749dbfd12e96b001f36eb83b2b909bbc8c44bfecfc7704a443c5223cbf"
+    "pdf": "c3e907bca08b1eca223e25d17aa8cf0338636eedf964adfd61ff4907dfcd9921",
+    "png": "051e758d79a6f8def8d881663bdbc80e017f709aa7730cb4fe035a161d0a00c2",
+    "grayscale": "bd4c93a6fc2569086b87bc8dc686f49a04e1a4d3f33185d1a702d3ecb5524057"
   }
 }

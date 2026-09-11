@@ -7,7 +7,7 @@
   "title": "Useful directions on the answer-PCA spectrum and minimal-pair shift sizes",
   "subject": "Per-direction held-out R2 of the context-to-answer map at layer 19 against variance rank (labeled behavior/persona/correctness directions), alongside predicted over observed answer-shift size for six minimal-pair elements with 95% bootstrap CIs",
   "git": {
-    "commit": "ff1b102f3274906378cc9dbb69ab0cd2c657b676",
+    "commit": "4108a21118094584b70c35cf48c7d7eea345d3b0",
     "tracked_worktree_dirty": true
   },
   "sources": [
@@ -42,7 +42,7 @@
     ],
     "exported_size_inches": [
       13.095,
-      4.958
+      4.669
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -92,7 +92,7 @@
       "0.86",
       "0.81",
       "0.66",
-      "B  \u00b7  CONTROLLED MINIMAL PAIRS\nERROR BARS: 95% BOOTSTRAP CI",
+      "B  \u00b7  CONTROLLED MINIMAL PAIRS",
       "Output\nformat",
       "Persona",
       "Tone",
@@ -104,8 +104,7 @@
       "0.75",
       "1.00",
       "1.25",
-      "Answer-shift size by element",
-      "QWEN2.5-7B-INSTRUCT, LAYER 19"
+      "Answer-shift size by element"
     ]
   },
   "displayed_data": {
@@ -989,8 +988,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "77a274d8eb288df329e889fdef5cedf2cec019a632d22292377a7ce63df1d5a4",
-    "png": "7bb1ec75213a5df9fad6f096fae908d93f8d84ec57c0dbd6049246f2ae77ffea",
-    "grayscale": "f2e531b957839008bed60d2eab0c28e0f0476fd90ba82ae7c403f6ac014a4112"
+    "pdf": "e2f97d8b3b25f0f89ad397b6d8a5632f1f424dfd853c962e9c7d2d4ee2f4b617",
+    "png": "417384436b4516123b67e7aa904f830c55d620e7721b2974f7d02781e74910cb",
+    "grayscale": "a94323ae5959cfa56ab66142aa5eef302e6d4c7eed3ffe652d314663a3b83cdc"
   }
 }

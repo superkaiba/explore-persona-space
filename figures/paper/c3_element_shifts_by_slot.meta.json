@@ -7,7 +7,7 @@
   "title": "One-word topic change by grammatical slot",
   "subject": "Answer separation, two-way retrieval, shift direction and shift size for a one-word query change pinned to the subject, verb or object slot, beside the pooled one-word row of the element figure, with 95% pair-bootstrap intervals",
   "git": {
-    "commit": "f516fa07dfc96799cbe9b83cba60103fffb061a7",
+    "commit": "06c7a898e1782778d17e33def98a4673b03c6f8c",
     "tracked_worktree_dirty": true
   },
   "sources": [
@@ -40,7 +40,7 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "ONE-WORD QUERY SWAPS \u00b7 QWEN2.5-7B-INSTRUCT \u00b7 LAYER 19",
+      "ONE-WORD QUERY SWAPS",
       "Answer separation",
       "0.90",
       "0.95",
@@ -197,8 +197,8 @@
     "caveat": "raw, not disattenuated for rollout noise"
   },
   "output_sha256": {
-    "pdf": "58fb1ff1c6cbd7d26b93011dac20047076d9c3e2e146988c6f9cd9eab3ec1651",
-    "png": "0bea265082cf9515dee7edffcdb35bb55a585928bdc8b45e586507ce77ef3463",
-    "grayscale": "e076410d98c286284cc7a58f37c0aaed5aa91184de42447b602e5cd385bb4280"
+    "pdf": "ac141118b5ebb9d5947ca1ccb6c1522355db454665de1ce68fcc28dddaeeb944",
+    "png": "ebb35ddb4e824e99f4875fc83bcdc79c56a29169806632751ebed36e08f94ccc",
+    "grayscale": "dfb301036f09789f2e16571b3fbc10efcb689751af31527de7db721ecda13a8f"
   }
 }

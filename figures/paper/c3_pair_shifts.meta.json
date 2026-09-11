@@ -7,7 +7,7 @@
   "title": "Predicted over observed answer-shift size for controlled minimal pairs",
   "subject": "Through-origin calibration slope of predicted over observed answer-shift size per changed element, with 95% confidence intervals",
   "git": {
-    "commit": "ff1b102f3274906378cc9dbb69ab0cd2c657b676",
+    "commit": "06c7a898e1782778d17e33def98a4673b03c6f8c",
     "tracked_worktree_dirty": true
   },
   "sources": [
@@ -38,7 +38,7 @@
     ],
     "exported_size_inches": [
       9.821,
-      4.901
+      4.913
     ],
     "scale": 0.42,
     "include_width_frac": 0.75,
@@ -58,7 +58,7 @@
       "0.86",
       "0.81",
       "0.66",
-      "CONTROLLED MINIMAL PAIRS \u00b7 QWEN2.5-7B-INSTRUCT \u00b7 LAYER 19\nERROR BARS: 95% BOOTSTRAP CI",
+      "CONTROLLED MINIMAL PAIRS",
       "Output\nformat",
       "Persona",
       "Tone",
@@ -154,8 +154,8 @@
     "order": "descending slope"
   },
   "output_sha256": {
-    "pdf": "5f44193b847e28759664e95ba53fa3d6d763060603de5b98bcd7de2dbb3bf115",
-    "png": "d22bf9c427fef9f58df60d69ec4499244987da515d74eea2c29288e25dd4ae65",
-    "grayscale": "cd7c1a16c10ea41e547052794380bb6734d55d21b378fe07bd452cf99401dfe8"
+    "pdf": "b6e8e8f9e6149914961756ee45ae560d0ad4db24093023c3019c7cc0d2e67718",
+    "png": "8f1794342946dfd1f20ac6a6f44e76259aeda7b3e3f44ccfdbe18ca0668ff4d7",
+    "grayscale": "e9ed01afb947b9f52253273df2a70af42ce58e10d3814d697dabd649c7fcaaa0"
   }
 }
