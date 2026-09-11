@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Render the publication figures used in Results Section 4.2.
 
-Eight figures: the SAE feature-property panels, the minimal-pair
-predicted-over-observed shift-size figure, the two combined panels, the
-per-element answer-shift figure and its appendix slot companion, and the
-appendix refusal-swaps-by-class companion.  (The qualitative retrieval-failure
+Ten figures: the SAE feature-property panels, the minimal-pair
+predicted-over-observed shift-size figure, the four combined panel figures, the
+per-element answer-shift figure and its appendix slot companion, and the two
+appendix companions (refusal swaps by class, and held-out R-squared by
+answer-variance rank).  (The qualitative retrieval-failure
 figure c3_qualitative_discrimination is produced by
 scripts/issue1901_qualitative_retrieval_failures.py.) The
 script is plot-only: it reads checked-in summaries and per-pair records,
@@ -220,27 +221,41 @@ def _sae_data() -> dict:
     }
 
 
+def _draw_property_rows(ax: plt.Axes, properties: list[dict], *, xlabel: str) -> None:
+    """Feature-property concordance as one horizontal bar per property.
+
+    Everything inside the axes: the bars, the zero line, the property names down
+    the left edge, the axis range and the axis treatment.  A negative
+    association is drawn hollow and hatched so its sign survives the grayscale
+    audit.  Panel furniture (kicker and title) stays with the caller, so the
+    same drawer serves the SAE figure's left panel and panel A of
+    ``c3_features_and_shifts``.
+    """
+    y = np.arange(len(properties))[::-1]
+    values = np.asarray([row["value"] for row in properties])
+    bars = ax.barh(y, values, height=0.58, color=LINEAR, edgecolor=LINEAR, linewidth=1.2)
+    for bar, value in zip(bars, values, strict=True):
+        if value < 0:
+            bar.set_facecolor(PAPER)
+            bar.set_hatch("////")
+    ax.axvline(0, color=INK, lw=1.2)
+    ax.set_yticks(y, [row["label"] for row in properties])
+    ax.set_xlim(-0.17, 0.37)
+    ax.set_xticks(np.arange(-0.1, 0.31, 0.1))
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _p: f"{x:+.1f}" if x else "0"))
+    ax.set_xlabel(xlabel)
+    style_axis(ax, grid_axis="x")
+
+
 def make_sae_figure(data: dict) -> tuple[plt.Figure, float]:
     fig, include_frac = c2a_figure("full", aspect=0.45)
     grid = fig.add_gridspec(1, 2, left=0.315, right=0.985, top=0.75, bottom=0.16, wspace=0.30)
     ax_left = fig.add_subplot(grid[0, 0])
     ax_right = fig.add_subplot(grid[0, 1])
 
-    props = data["properties"]
-    y = np.arange(len(props))[::-1]
-    values = np.asarray([row["value"] for row in props])
-    bars = ax_left.barh(y, values, height=0.58, color=LINEAR, edgecolor=LINEAR, linewidth=1.2)
-    for bar, value in zip(bars, values, strict=True):
-        if value < 0:
-            bar.set_facecolor(PAPER)
-            bar.set_hatch("////")
-    ax_left.axvline(0, color=INK, lw=1.2)
-    ax_left.set_yticks(y, [row["label"] for row in props])
-    ax_left.set_xlim(-0.17, 0.37)
-    ax_left.set_xticks(np.arange(-0.1, 0.31, 0.1))
-    ax_left.xaxis.set_major_formatter(FuncFormatter(lambda x, _p: f"{x:+.1f}" if x else "0"))
-    ax_left.set_xlabel("Concordance with feature $R^2$, above chance")
-    style_axis(ax_left, grid_axis="x")
+    _draw_property_rows(
+        ax_left, data["properties"], xlabel="Concordance with feature $R^2$, above chance"
+    )
     panel_header(
         ax_left,
         "A",
@@ -539,6 +554,23 @@ _VE_ROW_LABELS = {
 }
 
 
+def _spectrum_displayed(spectrum: dict) -> dict:
+    """The plotted slice of the answer-variance spectrum, for a provenance sidecar."""
+    return {
+        "layer": spectrum.get("layer", 19),
+        "ranks_evaluated": spectrum["ranks_evaluated"],
+        "r2_by_rank": spectrum["r2_by_rank"],
+        "random_directions": spectrum["random_directions"],
+        "directions": {
+            name: {
+                "plotted_rank_1based": entry["plotted_rank_1based"],
+                "heldout_r2": entry["heldout_r2"],
+            }
+            for name, entry in spectrum["directions"].items()
+        },
+    }
+
+
 def _information_data() -> dict:
     """Assemble the four panels from checked-in sources."""
     panels = json.loads(SECTION42_PANELS.read_text())
@@ -560,19 +592,7 @@ def _information_data() -> dict:
         )
     rows.sort(key=lambda row: row["ve"])
     return {
-        "panel_a": {
-            "layer": spectrum.get("layer", 19),
-            "ranks_evaluated": spectrum["ranks_evaluated"],
-            "r2_by_rank": spectrum["r2_by_rank"],
-            "random_directions": spectrum["random_directions"],
-            "directions": {
-                name: {
-                    "plotted_rank_1based": entry["plotted_rank_1based"],
-                    "heldout_r2": entry["heldout_r2"],
-                }
-                for name, entry in spectrum["directions"].items()
-            },
-        },
+        "panel_a": _spectrum_displayed(spectrum),
         "panel_b": {"properties": sae["properties"], "dv": sae["dv"]},
         "panel_c": panels["panel_c"],
         "panel_d": {
@@ -801,11 +821,14 @@ def _draw_row_metric_panel(
     reference: float | None = None,
     bands: list[int] | None = None,
     ytick_labels: list[str] | None = None,
+    xticks: list[float] | None = None,
 ) -> None:
     """One column of a row-per-element figure: point estimate plus its 95% interval.
 
     ``bands`` are consecutive row-group sizes.  Every second group gets a shaded
-    stripe.  Panel furniture (kicker and title) stays with the caller.
+    stripe.  ``xticks`` pins the tick locations, which keeps the automatic
+    locator from placing a label outside ``xlim`` and past the canvas edge.
+    Panel furniture (kicker and title) stays with the caller.
     """
     y = np.arange(len(rows))[::-1]
     if bands is not None:
@@ -845,6 +868,8 @@ def _draw_row_metric_panel(
     ax.set_ylim(-0.6, len(rows) - 0.4)
     style_axis(ax, grid_axis="x")
     ax.set_xlabel(xlabel)
+    if xticks is not None:
+        ax.set_xticks(xticks)
     ax.set_yticks(y, ytick_labels if ytick_labels is not None else [""] * len(rows))
 
 
@@ -881,6 +906,118 @@ def make_element_shifts_figure(data: dict) -> tuple[plt.Figure, float]:
                 kicker_y=1.11,
                 title_y=1.04,
             )
+    return fig, include_frac
+
+
+# ---------------------------------------------------------------------------
+# Section 4.2 results figure: feature properties above the per-element shifts,
+# with the answer-variance-rank spectrum moved to its own appendix figure.
+# ---------------------------------------------------------------------------
+
+# One shared label column serves both rows.  The widest string in either set is
+# the property name "suppresses specific output tokens" at 3.84 in on the
+# 13.10 in full-width canvas, so 0.315 leaves the tick pad plus a small margin.
+_FEATURES_AND_SHIFTS_LABEL_LEFT = 0.315
+
+
+def make_features_and_shifts_figure(sae: dict, elements: dict) -> tuple[plt.Figure, float]:
+    """Feature-property concordance, then what the map keeps per changed element.
+
+    Two stacked rows sharing one left label column: the SAE feature properties
+    across the top, and the direction and size reads of the controlled context
+    elements below.  A single row of three panels does not fit: the two label
+    columns plus the three axis labels need about 15.1 in of the 13.10 in
+    canvas.
+    """
+    rows = elements["elements"]
+    fig, include_frac = c2a_figure("full", aspect=0.61)
+    left = _FEATURES_AND_SHIFTS_LABEL_LEFT
+    # Panel letters come from one iterator consumed in axes-creation order, so a
+    # reordered or added panel cannot ship a stale hand-typed letter.
+    letters = iter("ABC")
+
+    # Panel geometry is set in inches and converted, because the header offsets
+    # are axes-relative: the two rows have different heights, so one pair of
+    # kicker_y / title_y values would put the kicker on top of the title in the
+    # short row.  Rows are 1.65 in (five properties) and 2.95 in (nine elements).
+    top = fig.add_gridspec(1, 1, left=left, right=0.985, top=0.875, bottom=0.668)
+    ax_a = fig.add_subplot(top[0, 0])
+    _draw_property_rows(
+        ax_a, sae["properties"], xlabel="Concordance with feature $R^2$, above chance"
+    )
+    panel_header(
+        ax_a,
+        next(letters),
+        "120,716 SAE features · forward-selected associations",
+        "Feature-property concordance",
+        kicker_y=1.285,
+        title_y=1.079,
+    )
+
+    bottom = fig.add_gridspec(1, 2, left=left, right=0.985, top=0.470, bottom=0.101, wspace=0.16)
+    columns = (
+        (
+            "direction",
+            better_label("Predicted shift direction (cosine)"),
+            (0.15, 1.0),
+            [0.2, 0.4, 0.6, 0.8, 1.0],
+            None,
+            "Mean cosine · 95% pair bootstrap",
+            "Direction of the answer shift",
+        ),
+        (
+            "magnitude",
+            "Predicted / observed shift size",
+            (0.55, 1.28),
+            [0.6, 0.8, 1.0, 1.2],
+            1.0,
+            "Median ratio · 95% pair bootstrap",
+            "Size of the answer shift",
+        ),
+    )
+    for index, (key, xlabel, xlim, xticks, reference, kicker, title) in enumerate(columns):
+        ax = fig.add_subplot(bottom[0, index])
+        _draw_row_metric_panel(
+            ax,
+            rows,
+            key=key,
+            xlabel=xlabel,
+            xlim=xlim,
+            reference=reference,
+            bands=elements["bands"],
+            xticks=xticks,
+            # The pair count rides the row label so nothing is placed by hand.
+            ytick_labels=(
+                [f"{row['row']} (n={row['n_pairs']})" for row in rows] if index == 0 else None
+            ),
+        )
+        panel_header(ax, next(letters), kicker, title, kicker_y=1.159, title_y=1.044)
+
+    legend_kicker(fig, 0.022, 0.975, "Qwen2.5-7B-Instruct, layer 19")
+    return fig, include_frac
+
+
+def make_direction_spectrum_figure(spectrum: dict) -> tuple[plt.Figure, float]:
+    """Appendix figure: held-out $R^2$ of a direction against its variance rank."""
+    from issue779_plot3_redesign import draw_spectrum_panel
+
+    # The whole canvas goes to one panel, so the plot box is 11.9 x 4.7 in, both
+    # wider and taller than the 0.75-width standalone the drawer's own label
+    # offsets were tuned on.  The extra room spreads the labeled cluster further
+    # apart rather than crowding it.  A flatter canvas (aspect 0.40) squeezed the
+    # cluster's vertical room and collided the leader lines.
+    fig, include_frac = c2a_figure("full", aspect=0.52)
+    grid = fig.add_gridspec(1, 1, left=0.078, right=0.985, top=0.830, bottom=0.135)
+    ax = fig.add_subplot(grid[0, 0])
+    draw_spectrum_panel(ax, spectrum, legend_frame=True)
+    panel_header(
+        ax,
+        "",
+        "Qwen2.5-7B-Instruct · layer 19 · 5,000 contexts (4,000 train, 1,000 test)",
+        title="Held-out $R^2$ by answer-variance rank",
+        kicker_y=1.100,
+        title_y=1.030,
+    )
     return fig, include_frac
 
 
@@ -1235,12 +1372,14 @@ def main() -> None:
             "refusal_by_class",
             "directions_and_pairs",
             "directions_and_features",
+            "direction_r2_spectrum",
             "failures_and_shifts",
+            "features_and_shifts",
             "element_shifts",
             "element_shifts_by_slot",
         ),
         default=None,
-        help="render one figure, repeat the flag to select several (default: all eight)",
+        help="render one figure, repeat the flag to select several (default: all ten)",
     )
     args = parser.parse_args()
     set_c2a_style()
@@ -1340,19 +1479,7 @@ def main() -> None:
                 ONEWORD_PAIRS,
             ],
             displayed_data={
-                "panel_a": {
-                    "layer": spectrum.get("layer", 19),
-                    "ranks_evaluated": spectrum["ranks_evaluated"],
-                    "r2_by_rank": spectrum["r2_by_rank"],
-                    "random_directions": spectrum["random_directions"],
-                    "directions": {
-                        name: {
-                            "plotted_rank_1based": entry["plotted_rank_1based"],
-                            "heldout_r2": entry["heldout_r2"],
-                        }
-                        for name, entry in spectrum["directions"].items()
-                    },
-                },
+                "panel_a": _spectrum_displayed(spectrum),
                 "panel_b": {
                     "elements": pair_shifts,
                     "reference_line": 1.0,
@@ -1415,9 +1542,65 @@ def main() -> None:
         plt.close(fas_fig)
         report.append(("failures_and_shifts", fas_outputs))
 
+    if wanted("direction_r2_spectrum"):
+        appendix_spectrum = json.loads(SPECTRUM_SOURCE.read_text())
+        spec_fig, spec_frac = make_direction_spectrum_figure(appendix_spectrum)
+        spec_outputs = _save(
+            spec_fig,
+            args.out_dir,
+            "c3_direction_r2_spectrum",
+            title="Held-out R2 of a direction's projection against its answer-variance rank",
+            subject=(
+                "Per-direction held-out R2 of the context-to-answer map at layer 19 against "
+                "answer-variance rank, with the random-direction band and the labeled "
+                "behavior, persona and correctness directions"
+            ),
+            include_frac=spec_frac,
+            sources=[SPECTRUM_SOURCE],
+            displayed_data=_spectrum_displayed(appendix_spectrum),
+        )
+        plt.close(spec_fig)
+        report.append(("direction_r2_spectrum", spec_outputs))
+
     elements: dict | None = None
-    if wanted("element_shifts", "element_shifts_by_slot"):
+    if wanted("element_shifts", "element_shifts_by_slot", "features_and_shifts"):
         elements = _element_shift_data()
+
+    if wanted("features_and_shifts"):
+        fs_sae = _sae_data()
+        fs_fig, fs_frac = make_features_and_shifts_figure(fs_sae, elements)
+        fs_outputs = _save(
+            fs_fig,
+            args.out_dir,
+            "c3_features_and_shifts",
+            title=(
+                "SAE feature properties and what the context-to-answer map keeps "
+                "per changed context element"
+            ),
+            subject=(
+                "Conditional association between an SAE feature property and the held-out R2 "
+                "of its decoder direction, beside the mean cosine between predicted and "
+                "observed answer shift and the median ratio of predicted to observed shift "
+                "size per controlled context element, with 95% pair-bootstrap intervals"
+            ),
+            include_frac=fs_frac,
+            sources=[SAE_SOURCE, ELEMENT_SHIFT_SOURCE],
+            displayed_data={
+                "panel_a": {"properties": fs_sae["properties"], "dv": fs_sae["dv"]},
+                "panels_b_c": {
+                    "rows": elements["elements"],
+                    "groups": [list(labels) for _group, labels in _ELEMENT_SHIFT_GROUPS],
+                    "reference_line": {"magnitude": 1.0},
+                    "order": ("grouped: identity, format, content, word refusal, framing refusal"),
+                    "bootstrap": elements["bootstrap"],
+                    "map": elements["map"],
+                    "metrics": elements["metrics"],
+                    "caveat": elements["caveat"],
+                },
+            },
+        )
+        plt.close(fs_fig)
+        report.append(("features_and_shifts", fs_outputs))
 
     if wanted("element_shifts"):
         elem_fig, elem_frac = make_element_shifts_figure(elements)

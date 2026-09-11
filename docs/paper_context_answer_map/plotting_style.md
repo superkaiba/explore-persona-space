@@ -193,7 +193,8 @@ visual system and are rendered together from checked-in results:
 uv run python scripts/make_paper_section42_figures.py
 ```
 
-This writes `c3_directions_and_features`, `c3_failures_and_shifts`,
+This writes `c3_features_and_shifts`, `c3_direction_r2_spectrum`,
+`c3_directions_and_features`, `c3_failures_and_shifts`,
 `c3_sae_tier_gradient`, `c3_pair_shifts`, `c3_directions_and_pairs`,
 `c3_refusal_swaps_by_class`, `c3_element_shifts`, and
 `c3_element_shifts_by_slot` under `figures/paper/`, each as vector PDF, color
@@ -201,6 +202,27 @@ PNG, grayscale-audit PNG, and provenance JSON. Pass `--only <name>` to render
 one figure, and repeat the flag to render a named subset. The one-word pilot's
 intervals are the only statistics recomputed by this plot-only script. They use
 a pinned 10,000-draw pair bootstrap and are recorded in the sidecar.
+
+`c3_features_and_shifts` is the results figure that carries the SAE feature
+properties together with the per-element answer-shift reads. Panel A is the
+feature-property concordance, panel B is the predicted shift direction, and
+panel C is the predicted over observed shift size. It is a `figure*` at
+`\textwidth`, laid out as two stacked rows sharing one left label column,
+because three panels in one row would need about 15.1 in of a 13.10 in canvas
+once both label columns and the three axis labels are counted.
+`c3_direction_r2_spectrum` is its appendix companion and carries held-out
+`R^2` by answer-variance rank on its own full-width canvas, with no panel
+letter. Render both with one command:
+
+```bash
+uv run python scripts/make_paper_section42_figures.py \
+  --only features_and_shifts --only direction_r2_spectrum
+```
+
+The earlier `c3_directions_and_features` (held-out `R^2` beside the SAE
+concordance) and `c3_element_shifts` (the two shift columns on their own) are
+kept and still render. They cover the same data as the two figures above and
+stay available while the manuscript is rewired.
 
 `c3_element_shifts` is the per-element answer-shift figure: one row per
 controlled context element, a column for the mean cosine between predicted and

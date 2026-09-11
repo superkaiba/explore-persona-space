@@ -1,0 +1,422 @@
+{
+  "status": "Results Section 4.2 manuscript figure",
+  "style_version": "c2a-v2",
+  "plotting_script": "scripts/make_paper_section42_figures.py",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "reproduction_command": "uv run python scripts/make_paper_section42_figures.py",
+  "title": "SAE feature properties and what the context-to-answer map keeps per changed context element",
+  "subject": "Conditional association between an SAE feature property and the held-out R2 of its decoder direction, beside the mean cosine between predicted and observed answer shift and the median ratio of predicted to observed shift size per controlled context element, with 95% pair-bootstrap intervals",
+  "git": {
+    "commit": "cb240dcf60b20aeffb5938b0f41e4c9607fda8c8",
+    "tracked_worktree_dirty": true
+  },
+  "sources": [
+    {
+      "path": "eval_results/issue_1482/plot4_redesign/plot4_decoder_direction.json",
+      "sha256": "7225e1f6de5086e980ef8ef3c2bc0d65e276166f6758252972b2920b01b1528f"
+    },
+    {
+      "path": "eval_results/issue_2564/section42_element_shifts.json",
+      "sha256": "4d76a5fa1ce552b478ebc58a5ef3b26448ad915d732853ecfcc17ed7069c2d42"
+    }
+  ],
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      7.988
+    ],
+    "exported_size_inches": [
+      13.095,
+      7.743
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c3_features_and_shifts.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  \u00b7  120,716 SAE FEATURES \u00b7 FORWARD-SELECTED ASSOCIATIONS",
+      "Concordance with feature $R^2$, above chance",
+      "-0.1",
+      "0",
+      "+0.1",
+      "+0.2",
+      "+0.3",
+      "variance along decoder direction",
+      "speaker identity / disposition",
+      "promotes specific output tokens",
+      "suppresses specific output tokens",
+      "topic content",
+      "Feature-property concordance",
+      "B  \u00b7  MEAN COSINE \u00b7 95% PAIR BOOTSTRAP",
+      "Predicted shift direction (cosine) \u2191",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "1.0",
+      "Tone (n=12)",
+      "Persona (n=120)",
+      "Output format (n=120)",
+      "Question topic (n=66)",
+      "One-word topic (n=24)",
+      "Refusal flips (n=61)",
+      "Refusal holds (n=63)",
+      "Framing-refusal flips (n=307)",
+      "Framing-refusal holds (n=1924)",
+      "Direction of the answer shift",
+      "C  \u00b7  MEDIAN RATIO \u00b7 95% PAIR BOOTSTRAP",
+      "Predicted / observed shift size",
+      "1.2",
+      "Size of the answer shift",
+      "QWEN2.5-7B-INSTRUCT, LAYER 19"
+    ]
+  },
+  "displayed_data": {
+    "panel_a": {
+      "properties": [
+        {
+          "round": 0,
+          "banked_name": "Variance explained in answer space",
+          "label": "variance along decoder direction",
+          "value": 0.3155785921425568,
+          "winner_c": 0.8155785921425568,
+          "pair_frac": 1.0,
+          "n": 120716,
+          "kind": "forward-selected association"
+        },
+        {
+          "round": 1,
+          "banked_name": "Speaker: identity / disposition",
+          "label": "speaker identity / disposition",
+          "value": 0.12263806407038147,
+          "winner_c": 0.6226380640703815,
+          "pair_frac": 0.09999254458751086,
+          "n": 120716,
+          "kind": "forward-selected association"
+        },
+        {
+          "round": 2,
+          "banked_name": "Logit footprint: promoting",
+          "label": "promotes specific output tokens",
+          "value": -0.10360473944167892,
+          "winner_c": 0.3963952605583211,
+          "pair_frac": 0.09774147034335497,
+          "n": 120716,
+          "kind": "forward-selected association"
+        },
+        {
+          "round": 3,
+          "banked_name": "Logit footprint: suppressing",
+          "label": "suppresses specific output tokens",
+          "value": -0.09866066404139495,
+          "winner_c": 0.40133933595860505,
+          "pair_frac": 0.085576403884771,
+          "n": 120716,
+          "kind": "forward-selected association"
+        },
+        {
+          "round": 4,
+          "banked_name": "Content type: topic",
+          "label": "topic content",
+          "value": -0.08668210029410484,
+          "winner_c": 0.41331789970589516,
+          "pair_frac": 0.07853272983246244,
+          "n": 120716,
+          "kind": "forward-selected association"
+        }
+      ],
+      "dv": "held-out R^2 of the decoder-direction projection d_f^T h_A (dense; no encoder, no BatchTopK gate) under the layer-19 ridge metamodel; common universe of 120,716 features"
+    },
+    "panels_b_c": {
+      "rows": [
+        {
+          "row": "Tone",
+          "source": "issue2564 bank, pair_class=swap, cell=register",
+          "n_pairs": 12,
+          "separation": 0.7881,
+          "separation_ci95": [
+            0.7751,
+            0.8019
+          ],
+          "twoway": 1.0,
+          "twoway_ci95": [
+            1.0,
+            1.0
+          ],
+          "direction": 0.8997,
+          "direction_ci95": [
+            0.8952,
+            0.9043
+          ],
+          "magnitude": 1.028,
+          "magnitude_ci95": [
+            0.9772,
+            1.1468
+          ]
+        },
+        {
+          "row": "Persona",
+          "source": "issue2564 bank, pair_class=swap, cell=persona",
+          "n_pairs": 120,
+          "separation": 0.903,
+          "separation_ci95": [
+            0.8968,
+            0.9085
+          ],
+          "twoway": 1.0,
+          "twoway_ci95": [
+            1.0,
+            1.0
+          ],
+          "direction": 0.7839,
+          "direction_ci95": [
+            0.7754,
+            0.7927
+          ],
+          "magnitude": 1.125,
+          "magnitude_ci95": [
+            1.1089,
+            1.1569
+          ]
+        },
+        {
+          "row": "Output format",
+          "source": "issue2564 bank, pair_class=swap, cell=format",
+          "n_pairs": 120,
+          "separation": 0.8765,
+          "separation_ci95": [
+            0.8574,
+            0.8953
+          ],
+          "twoway": 0.875,
+          "twoway_ci95": [
+            0.8375,
+            0.9125
+          ],
+          "direction": 0.5881,
+          "direction_ci95": [
+            0.5493,
+            0.6286
+          ],
+          "magnitude": 1.0852,
+          "magnitude_ci95": [
+            1.0156,
+            1.1584
+          ]
+        },
+        {
+          "row": "Question topic",
+          "source": "issue2564 bank, pair_class=query_content",
+          "note": "two unrelated questions, the coarse end of the topic ladder",
+          "n_pairs": 66,
+          "separation": 0.9016,
+          "separation_ci95": [
+            0.8953,
+            0.9076
+          ],
+          "twoway": 1.0,
+          "twoway_ci95": [
+            1.0,
+            1.0
+          ],
+          "direction": 0.7144,
+          "direction_ci95": [
+            0.6998,
+            0.7292
+          ],
+          "magnitude": 0.8047,
+          "magnitude_ci95": [
+            0.7829,
+            0.8277
+          ]
+        },
+        {
+          "row": "One-word topic",
+          "source": "issue2564 langow pilot, pair_class=query_content_oneword",
+          "note": "one word changes the subject matter, e.g. 'adopt a dog' vs 'adopt a cat'",
+          "n_pairs": 24,
+          "separation": 0.9751,
+          "separation_ci95": [
+            0.9688,
+            0.981
+          ],
+          "twoway": 0.8958,
+          "twoway_ci95": [
+            0.8125,
+            0.9589
+          ],
+          "direction": 0.531,
+          "direction_ci95": [
+            0.4678,
+            0.583
+          ],
+          "magnitude": 0.6633,
+          "magnitude_ci95": [
+            0.6119,
+            0.7356
+          ]
+        },
+        {
+          "row": "Refusal flips",
+          "source": "issue2617 svmp, one-word safety swaps + XSTest rephrasings",
+          "flip_criterion": "|refusal_rate_a - refusal_rate_b| >= 0.5 over 10 draws",
+          "n_pairs": 61,
+          "separation": 0.8137,
+          "separation_ci95": [
+            0.7882,
+            0.8387
+          ],
+          "twoway": 1.0,
+          "twoway_ci95": [
+            1.0,
+            1.0
+          ],
+          "direction": 0.7797,
+          "direction_ci95": [
+            0.7566,
+            0.8003
+          ],
+          "magnitude": 0.7501,
+          "magnitude_ci95": [
+            0.7283,
+            0.7843
+          ]
+        },
+        {
+          "row": "Refusal holds",
+          "source": "issue2617 svmp, one-word safety swaps + XSTest rephrasings",
+          "flip_criterion": "|refusal_rate_a - refusal_rate_b| >= 0.5 over 10 draws",
+          "n_pairs": 63,
+          "separation": 0.9539,
+          "separation_ci95": [
+            0.9446,
+            0.9619
+          ],
+          "twoway": 0.9048,
+          "twoway_ci95": [
+            0.8569,
+            0.9524
+          ],
+          "direction": 0.5542,
+          "direction_ci95": [
+            0.5135,
+            0.5956
+          ],
+          "magnitude": 0.8259,
+          "magnitude_ci95": [
+            0.7452,
+            0.8689
+          ]
+        },
+        {
+          "row": "Framing-refusal flips",
+          "source": "issue2356 armA, 394 AdvBench bases x 6 intent-preserving rewrite axes",
+          "note": "different capture; the 2564-fitted map transfers here at cos 0.90 vs 0.95 in-bank",
+          "n_pairs": 307,
+          "separation": 0.9001,
+          "separation_ci95": [
+            0.8941,
+            0.9056
+          ],
+          "twoway": 0.9235,
+          "twoway_ci95": [
+            0.9023,
+            0.943
+          ],
+          "direction": 0.5108,
+          "direction_ci95": [
+            0.4992,
+            0.5229
+          ],
+          "magnitude": 0.7449,
+          "magnitude_ci95": [
+            0.7206,
+            0.7711
+          ]
+        },
+        {
+          "row": "Framing-refusal holds",
+          "source": "issue2356 armA, 394 AdvBench bases x 6 intent-preserving rewrite axes",
+          "note": "different capture; the 2564-fitted map transfers here at cos 0.90 vs 0.95 in-bank",
+          "n_pairs": 1924,
+          "separation": 0.9748,
+          "separation_ci95": [
+            0.9735,
+            0.976
+          ],
+          "twoway": 0.611,
+          "twoway_ci95": [
+            0.6019,
+            0.6203
+          ],
+          "direction": 0.2728,
+          "direction_ci95": [
+            0.266,
+            0.2798
+          ],
+          "magnitude": 1.0416,
+          "magnitude_ci95": [
+            1.0226,
+            1.0624
+          ]
+        }
+      ],
+      "groups": [
+        [
+          "Tone",
+          "Persona"
+        ],
+        [
+          "Output format"
+        ],
+        [
+          "Question topic",
+          "One-word topic"
+        ],
+        [
+          "Refusal flips",
+          "Refusal holds"
+        ],
+        [
+          "Framing-refusal flips",
+          "Framing-refusal holds"
+        ]
+      ],
+      "reference_line": {
+        "magnitude": 1.0
+      },
+      "order": "grouped: identity, format, content, word refusal, framing refusal",
+      "bootstrap": {
+        "unit": "pair",
+        "draws": 2000,
+        "seed": 20260910
+      },
+      "map": {
+        "file": "data/issue_2564/langow_stage/ridge/arm_779ce/ridge.pt",
+        "layer": 19
+      },
+      "metrics": {
+        "separation": "cos(ans_A, ans_B), mean; near 1.0 = the two real answers nearly coincide",
+        "twoway": "pred_B nearer ans_B than ans_A, both orderings, chance 0.5",
+        "direction": "cos(pred_B - pred_A, ans_B - ans_A), mean",
+        "magnitude": "||pred_B - pred_A|| / ||ans_B - ans_A||, median"
+      },
+      "caveat": "raw, not disattenuated for rollout noise"
+    }
+  },
+  "output_sha256": {
+    "pdf": "457f025891ec59d3c9bed8b552c4c3bab9a344a63ff55c6fbac50bc8cd5dcba1",
+    "png": "49f5da025e9fb0297ca84b2d463863c25f9f5d480f02e82d2c924c7ce4e4aecb",
+    "grayscale": "e852a0c1f2c4db9e3ee009c65f8e47720fd9d1d76c592ab046630bd74246498d"
+  }
+}
