@@ -1,0 +1,133 @@
+{
+  "caveat": "Training corpus and sample size both change relative to original 1200 fits.",
+  "render": {
+    "authoring_size_inches": [
+      13.095,
+      5.631
+    ],
+    "background": "#FFFFFF",
+    "exported_size_inches": [
+      13.095,
+      4.734
+    ],
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/boundary25k.pdf}",
+    "png_dpi": 240,
+    "realized_font_pt": {
+      "body": 7.56,
+      "label": 8.4,
+      "tick": 7.14,
+      "title": 9.24
+    },
+    "resolved_font": "Inter",
+    "scale": 0.42,
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "style_version": "c2a-v2",
+    "text": [
+      "A  \u00b7  25K TRAINING SPANS PER TOKEN",
+      "Held-out $R^2$ \u2191",
+      "0.0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "1.0",
+      "Space + period (659)",
+      "Period (13)",
+      "Space + ? (937)",
+      "Space + ! (753)",
+      "Reconstruction",
+      "B  \u00b7  FROZEN WIKITEXT EVALUATION",
+      "Top-1 retrieval \u2191",
+      "Whitened cosine + CSLS",
+      "Wikipedia train; WikiText test. Retrieval: 400 candidates, chance 0.25%.\n95% intervals: article bootstrap for $R^2$; query bootstrap for retrieval."
+    ]
+  },
+  "rows": [
+    {
+      "chance_top1": 0.0025,
+      "label": "Space + period (659)",
+      "n_pool": 400,
+      "r2": 0.3897540514649346,
+      "r2_ci95": {
+        "hi": 0.4011356101062129,
+        "lo": 0.3745702652051146,
+        "n_articles": 390,
+        "n_boot": 1000,
+        "n_degenerate_draws": 0,
+        "point": 0.38975405146493436,
+        "seed": 190102
+      },
+      "token_id": 659,
+      "top1_ci95": {
+        "hi": 0.99,
+        "lo": 0.9575
+      },
+      "top1_whiten_csls": 0.975
+    },
+    {
+      "chance_top1": 0.0025,
+      "label": "Period (13)",
+      "n_pool": 400,
+      "r2": 0.4112003973623676,
+      "r2_ci95": {
+        "hi": 0.4249751530018694,
+        "lo": 0.39489292629676487,
+        "n_articles": 355,
+        "n_boot": 1000,
+        "n_degenerate_draws": 0,
+        "point": 0.41120039736236735,
+        "seed": 190103
+      },
+      "token_id": 13,
+      "top1_ci95": {
+        "hi": 0.99,
+        "lo": 0.9575
+      },
+      "top1_whiten_csls": 0.975
+    },
+    {
+      "chance_top1": 0.0025,
+      "label": "Space + ? (937)",
+      "n_pool": 400,
+      "r2": 0.3398659580614619,
+      "r2_ci95": {
+        "hi": 0.35750600127636756,
+        "lo": 0.3176692692867328,
+        "n_articles": 323,
+        "n_boot": 1000,
+        "n_degenerate_draws": 0,
+        "point": 0.3398659580614616,
+        "seed": 190104
+      },
+      "token_id": 937,
+      "top1_ci95": {
+        "hi": 0.9275,
+        "lo": 0.8675
+      },
+      "top1_whiten_csls": 0.8975
+    },
+    {
+      "chance_top1": 0.0025,
+      "label": "Space + ! (753)",
+      "n_pool": 400,
+      "r2": 0.3671325603166843,
+      "r2_ci95": {
+        "hi": 0.38301540642477233,
+        "lo": 0.3465191145250871,
+        "n_articles": 292,
+        "n_boot": 1000,
+        "n_degenerate_draws": 0,
+        "point": 0.3671325603166845,
+        "seed": 190105
+      },
+      "token_id": 753,
+      "top1_ci95": {
+        "hi": 0.9625,
+        "lo": 0.915
+      },
+      "top1_whiten_csls": 0.94
+    }
+  ],
+  "source_sha256": "5e34a9b38d62e84d53bcf879ec368a8da4fc16092568acdcfa354bd2fbd8174a"
+}

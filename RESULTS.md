@@ -1,5 +1,7 @@
 # Explore Persona Space: Results
 
+**2026-09-11 — Four boundary tokens at 25k:** Four exact-token ridge maps trained on expanded Wikipedia attain held-out R² 0.340–0.411 and whitened-CSLS top-1 89.75%–97.50% on the frozen WikiText evaluation (400 candidates per token; chance 0.25%). Each fit uses 25,000 training spans; identity-plus-bias and constant baselines have negative R². All four cells completed and passed independent metric/identity checks. Corpus and selection recipe also change from the original 1,200-span fits, so this does not isolate sample-size scaling. [Results and protocol](eval_results/issue_1901/boundary25k/README.md) · [Task 1901](https://eps.superkaiba.com/tasks/1901).
+
 **2026-09-07 — Rollout-count ablation:** With the paper's Qwen2.5-7B-Instruct layer-19 maps frozen, averaging K=1→5 evaluation answers raises held-out R² by 0.052 (linear) and 0.055 (nonlinear). Extending K=5→10 adds 0.0077 and 0.0064, with paired 95% intervals above zero for both. Whitened-cosine/CSLS top-1 on 942 fixed candidates rises 97.35%→97.88% and 97.88%→98.09%; the nonlinear retrieval change remains unresolved (95% CI −0.21 to +0.64 percentage points). Training-target K and K>10 are untested. [Task 1901](https://eps.superkaiba.com/tasks/1901) · [K=1–5 results](eval_results/issue_1901/k_rollout_ablation/README.md) · [K=10 results](eval_results/issue_1901/k10_rollout_ablation/README.md).
 
 **Goals:**

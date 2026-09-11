@@ -8,6 +8,7 @@ Maps each experiment result to its research topic. Updated by the analyzer agent
 
 | Directory | Experiment | Date | Key Finding |
 |-----------|-----------|------|-------------|
+| [`issue_1901/boundary25k/`](issue_1901/boundary25k/README.md) | Four exact boundary-token ridge fits, 25,000 expanded-Wikipedia training spans each; frozen WikiText evaluation | 2026-09-11 | R² 0.340–0.411; whitened-CSLS top-1 89.75–97.50% on 400 candidates/token (chance 0.25%). All four fits verified; corpus and sampling changes prevent a sample-size-only interpretation. |
 | `issue_1901/k_rollout_ablation/` | All 31 subsets of five stored on-policy answers; frozen layer-19 linear/nonlinear maps and identity+bias; R² and fixed-pool retrieval | 2026-09-07 | Evaluation K=1→5 raises fitted-map R² by 0.052/0.055 and whitened-CSLS top-1 by 0.98/1.21 percentage points (942 candidates); no refits or K>5 claim. |
 | `persona_geometry_dimensionality/` | Intrinsic dimensionality estimation | 2026-04-08 | 8-12D persona manifolds |
 | `aim1_3_composition/` | Compositional structure (SAE features) | 2026-04-08 | 5 global PCs, compositional but entangled |

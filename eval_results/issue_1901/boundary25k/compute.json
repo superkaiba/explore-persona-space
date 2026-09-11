@@ -1,0 +1,103 @@
+{
+  "accounting_note": "Allocation windows use GCP lastStartTimestamp through deletion-operation endTime, including setup, I/O, verification, and deletion grace. They bound allocated time and are not provider billing records. CPU allocation remained live after preparation because the task-wide keep-running guard deferred its finalize until the GPU round completed. Capture timings include periodic checkpoint uploads but exclude model loading, pilots, and each worker final upload.",
+  "capture_by_rank": [
+    {
+      "capture_seconds": 2216.92903809,
+      "manifest_sha": "f75e4a99f1a6fc149f39bbee31c204771dadf855ebad2229622f1c3dc3385b6b",
+      "rows": 49817
+    },
+    {
+      "capture_seconds": 2224.070241349,
+      "manifest_sha": "f75e4a99f1a6fc149f39bbee31c204771dadf855ebad2229622f1c3dc3385b6b",
+      "rows": 50183
+    }
+  ],
+  "capture_worker_gpu_hours": 1.2336109109552778,
+  "cpu_allocation_vcpu_hours": 21.366155555555558,
+  "cpu_allocation_window_seconds": 4807.385,
+  "cpu_preparation_seconds": 743.530192238,
+  "cpu_vcpus": 16,
+  "cpu_workers": 12,
+  "cpu_workload_completed_utc": "2026-09-11T07:41:34Z",
+  "fit_seconds_by_token": {
+    "13": 6.1445134900000085,
+    "659": 6.390401098999973,
+    "753": 6.121166344999892,
+    "937": 6.188200618000337
+  },
+  "four_fits_and_metrics_seconds": 24.84428155200021,
+  "gpu_allocation_hours": 1.817148888888889,
+  "gpu_allocation_window_seconds": 3270.868,
+  "gpu_count": 2,
+  "gpu_model": "NVIDIA A100-SXM4-80GB",
+  "gpu_workload_completed_utc": "2026-09-11T08:37:05Z",
+  "instances_before_teardown": {
+    "cap": {
+      "creationTimestamp": "2026-09-11T00:46:19.783-07:00",
+      "guestAccelerators": [
+        {
+          "acceleratorCount": 2,
+          "acceleratorType": "https://www.googleapis.com/compute/v1/projects/eps-persona-gpu-jun2026/zones/us-central1-a/acceleratorTypes/nvidia-a100-80gb"
+        }
+      ],
+      "lastStartTimestamp": "2026-09-11T00:47:00.504-07:00",
+      "machineType": "https://www.googleapis.com/compute/v1/projects/eps-persona-gpu-jun2026/zones/us-central1-a/machineTypes/a2-ultragpu-2g",
+      "name": "eps-issue-1901-btok25k-cap",
+      "scheduling": {
+        "automaticRestart": false,
+        "instanceTerminationAction": "DELETE",
+        "maxRunDuration": {
+          "nanos": 0,
+          "seconds": "14400"
+        },
+        "onHostMaintenance": "TERMINATE",
+        "preemptible": false,
+        "provisioningModel": "FLEX_START"
+      },
+      "status": "RUNNING"
+    },
+    "prep": {
+      "creationTimestamp": "2026-09-11T00:22:52.728-07:00",
+      "lastStartTimestamp": "2026-09-11T00:22:58.466-07:00",
+      "machineType": "https://www.googleapis.com/compute/v1/projects/eps-persona-gpu-jun2026/zones/us-central1-a/machineTypes/n2-highmem-16",
+      "name": "eps-issue-1901-btok25k-prep",
+      "scheduling": {
+        "automaticRestart": false,
+        "instanceTerminationAction": "DELETE",
+        "maxRunDuration": {
+          "nanos": 0,
+          "seconds": "14400"
+        },
+        "onHostMaintenance": "MIGRATE",
+        "preemptible": false,
+        "provisioningModel": "STANDARD"
+      },
+      "status": "RUNNING"
+    }
+  },
+  "retrieval_bootstrap_draws": 2000,
+  "teardown": {
+    "checked_at_utc": "2026-09-11T08:43:50.509203+00:00",
+    "deletion_operations": [
+      {
+        "endTime": "2026-09-11T01:43:05.851-07:00",
+        "insertTime": "2026-09-11T01:42:11.175-07:00",
+        "name": "operation-1789116131015-65b310f737977-6ed170b3-6ba9701a",
+        "operationType": "delete",
+        "startTime": "2026-09-11T01:42:11.192-07:00",
+        "status": "DONE",
+        "targetLink": "https://www.googleapis.com/compute/v1/projects/eps-persona-gpu-jun2026/zones/us-central1-a/instances/eps-issue-1901-btok25k-prep"
+      },
+      {
+        "endTime": "2026-09-11T01:41:31.372-07:00",
+        "insertTime": "2026-09-11T01:40:28.705-07:00",
+        "name": "operation-1789116028515-65b3109577629-c5b90227-780eed1c",
+        "operationType": "delete",
+        "startTime": "2026-09-11T01:40:28.726-07:00",
+        "status": "DONE",
+        "targetLink": "https://www.googleapis.com/compute/v1/projects/eps-persona-gpu-jun2026/zones/us-central1-a/instances/eps-issue-1901-btok25k-cap"
+      }
+    ],
+    "remaining_issue1901_instances": []
+  }
+}

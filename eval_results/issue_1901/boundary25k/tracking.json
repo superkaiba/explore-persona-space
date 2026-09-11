@@ -1,0 +1,14 @@
+{
+  "offline_local_dir": "/mnt/eps-data/thomasjiralerspong/issue1901_boundary25k/wandb/offline-run-20260911_014720-boundary25k-20260911",
+  "offline_upload": {
+    "bytes": 120798,
+    "files": 5,
+    "prefix": "issue1901_boundary25k/wandb_offline",
+    "repo": "superkaiba1/explore-persona-space-data",
+    "revision": "102ef092d670715322f042dc2feed04cb3988a56"
+  },
+  "project": "issue1901",
+  "remote_error": "HTTP 401 invalid API key; canonical .env key matches loaded key",
+  "run_id": "boundary25k-20260911",
+  "status": "offline_saved_remote_sync_blocked"
+}
