@@ -15,8 +15,11 @@ All experimental settings and control motivations are preserved
 The theoretical-analysis subsection is removed from the main text. Discussion,
 Limitations, and Future Work contains a short paragraph explaining that linearity
 enables theoretical analysis, pointing to the preliminary appendix analysis, and
-calling for a fuller treatment of how the map's structure relates to information
-preserved in answer vectors and the limits of linear predictability. Retain only quantitative theory there: effective-kernel size
+calling for further techniques from dynamical systems, perturbation theory,
+and statistical learning theory, with potential applications to predicting
+longer conversations and forecasting the effects of fine-tuning. These are
+future research directions. Retain only quantitative theory in the appendix:
+effective-kernel size
 and sensitivity, rank and spectrum, fixed-point behavior, and refusal-pair kernel
 shares. Omit qualitative and SAE-feature theoretical interpretation. Section 4.2's
 separate SAE prediction analysis is unchanged. This supersedes the operator-section
