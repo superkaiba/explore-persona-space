@@ -1,0 +1,52 @@
+{
+  "at": "2026-09-11T22:45:19.945422+00:00",
+  "command": [
+    "uv",
+    "run",
+    "python",
+    "scripts/dispatch_issue.py",
+    "finalize",
+    "--issue",
+    "1901",
+    "--handle-file",
+    "/home/thomasjiralerspong/explore-persona-space/.claude/cache/issue-1901-traink10-cap-handle.json"
+  ],
+  "process_exit_code": 0,
+  "result": {
+    "chosen_kind": "gcp",
+    "issue": 1901,
+    "ok": true,
+    "phase": "teardown",
+    "pod_name": "eps-issue-1901-traink10-cap",
+    "sidecar_finalized": "/home/thomasjiralerspong/explore-persona-space/.claude/cache/issue-1901-traink10-cap-handle.json.finalized"
+  },
+  "owner": "codex-training-k10-20260911",
+  "owner_or_kill_guard_override": false,
+  "post_finalize_running_gcp_1901": [],
+  "runpod_check": "No ephemeral pod recorded for issue #1901.",
+  "upload_verification_version": 20,
+  "results_version": 5,
+  "followup_completion_event": {
+    "kind": "epm:same-issue-followup-run",
+    "version": 4,
+    "ts": "2026-09-11T22:45:20Z"
+  },
+  "completion_progress_event": {
+    "kind": "epm:progress",
+    "version": 163,
+    "ts": "2026-09-11T22:45:30Z"
+  },
+  "task_status": "awaiting_promotion",
+  "goal_unchanged": true,
+  "clean_result_body_unchanged": true,
+  "body_sha256": "cd553fdf8b76cd6bafc3b2def686f1c732a811f58627e91ff2d3feaafde3696d",
+  "measured_generation_capture_compute": {
+    "generation_chunks": 190,
+    "capture_chunks": 190,
+    "generation_seconds_summed_over_workers": 12827.588484773998,
+    "capture_seconds_summed_over_workers": 9341.06824111099,
+    "gpu_hours": 6.15796020163472,
+    "scope": "Actual per-chunk generation and capture compute only; excludes parity, initialization, transfer, review and billing idle time.",
+    "source_revision": "771d4bb36ff7abd88f183c491d223b9bca31799d"
+  }
+}
