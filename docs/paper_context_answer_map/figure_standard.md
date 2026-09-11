@@ -205,6 +205,16 @@ Four beats, fixed order, then stop.
    words, sentence case, ends with a period. Same wording as the bold claim header
    in the text that cites the figure (§4.5); when the figure serves several
    headers, the lead is the section's claim.
+
+   Two cases relax the wording match. **No citing header:** where no bold claim
+   header cites the figure, which is true of most appendix figures, there is
+   nothing to match, so the lead is simply the figure's own one-sentence claim.
+   **No overarching claim:** where the panels make separate claims and no single
+   claim covers them, the lead is descriptive rather than a claim, naming what
+   the figure covers, and every claim lives in a panel beat instead. A
+   descriptive lead asserts nothing, so it needs no matching header, and forcing
+   an umbrella claim onto panels that do not share one is worse than having
+   none.
 2. **Per-panel subclaim, then what is plotted.** Each lettered panel opens with
    `\panel{A}` (renders `**(A)**`), then its subclaim in bold (8 words or fewer,
    sentence case, ends with a period), then y against x, the grouping, and any
@@ -216,12 +226,36 @@ Four beats, fixed order, then stop.
    the panel (§4.3). Never on the canvas. The subclaim is the text header's wording
    verbatim; Thomas writes the claims, so where a header runs past 8 words the header
    wins and the cap is advisory.
+
+   The one-to-one match is a default, not a requirement. Where a single header
+   cites a range of panels (`\figref[B--D]`) because the prose is organized by
+   topic rather than by panel, those panels carry factual descriptions and no
+   subclaim. Rewriting results prose so that a caption can copy it is the wrong
+   trade, and `fig:features-and-shifts` is the standing example.
 3. **Uncertainty and sample.** One sentence: estimator, interval type, n.
    "Error bars: 95% bootstrap intervals over 1,000 prompt-level draws; 13,116
    questions." Use "error bars" for line intervals and "bands" for shaded ones;
    retire "whiskers".
 4. **Setup footer.** Fixed order: model; layer; data and n; folds. Then, if
    needed, one pointer: "Details: Appendix~\ref{app:x}."
+
+### Two variants
+
+The four beats assume a quantitative figure with axes. Two kinds of figure are
+compliant under a different shape rather than exempt from the standard.
+
+**Schematic**, meaning no data, no estimator, and no sample. The standing example
+is `fig:schematic`. Beat 1 states what the diagram asserts. Beat 2 says what each
+element denotes, in the diagram's own reading order. Beats 3 and 4 are omitted,
+because there is nothing to put in them.
+
+**Qualitative**, meaning text panels, worked examples, or categorized excerpts.
+The standing examples are `fig:qualitative-discrimination` and
+`tab:retrieval-failure-categories`. Beat 1 is the claim. Beat 2 is replaced by
+display conventions, which are what a reader needs in order to read the panel
+correctly: which draw or seed is shown, how whitespace and markdown are
+normalized, what an omission mark means, where an excerpt starts. Beat 3 is
+omitted. Beat 4 keeps the setup and the pointer.
 
 There is no word cap. Concision comes from the four beats and from the routing
 test below, not from a limit. A caption that runs long is a symptom: beat 2 or
