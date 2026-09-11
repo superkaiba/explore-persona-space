@@ -299,3 +299,25 @@ their own producer, which renders the banked excerpts in
 ```bash
 uv run python scripts/issue1901_qualitative_retrieval_failures.py
 ```
+
+## Combined CoT and capability figure
+
+The [combined figure](https://github.com/superkaiba/explore-persona-space/blob/codex/cot-capability-merged-20260911/figures/paper/c1_cot_capability.png)
+uses the existing plotted data. Run `uv run python scripts/paper_fig_cot_capability.py` to reproduce
+`figures/paper/c1_cot_capability.{pdf,png,meta.json}` and its grayscale audit.
+The checked-in `c1_cot_capability_data.json` snapshot contains the original
+plotted values and intervals, source commits, and verified artifact hashes.
+Rendering requires no model inference, refitting, or statistical recomputation.
+
+Panels A and B retain the main CoT comparisons; panel C places the capability
+scatter below them at full width to retain all ten model labels. The correctness
+groups are labeled by their observed outcomes: correct only with thinking and
+correct in both modes. Include the combined PDF at exactly `\textwidth`.
+The manuscript keeps `fig:cot` and `fig:model-capability` as labels on this one
+float, with capability references explicitly pointing to panel C. The standalone
+source figures remain available in their original producer branches.
+
+The source artifacts are pinned to CoT producer
+`87866925930747a7a16f41c65cad34053f9aadff` and capability producer
+`9aebbd85e298f25cb904e0256cf21b78dcd71811`. Their PDFs matched the manuscript
+assets when the combined layout was created on 2026-09-11.
