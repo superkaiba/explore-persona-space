@@ -5,7 +5,7 @@
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
   "rescore_script": "scripts/issue1901_figure2_five_rollout_scaling.py",
   "reproduction_command": "uv run python scripts/make_paper_figure2.py",
-  "repository_manuscript_asset": "figures/paper/c1_predictability_scaling.pdf",
+  "repository_manuscript_asset": "figures/paper/c1_layer_sweep.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
     "commit": "87822231c71fce19afc078e97866013c1d410987",
@@ -36,16 +36,16 @@
     "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
     "resolved_font": "Inter",
     "authoring_size_inches": [
-      13.095,
+      6.548,
       4.714
     ],
     "exported_size_inches": [
-      13.379,
-      4.894
+      6.548,
+      4.885
     ],
     "scale": 0.42,
-    "include_width_frac": 1.0,
-    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c1_predictability_scaling.pdf}",
+    "include_width_frac": 0.5,
+    "latex_include_line": "\\includegraphics[width=0.5\\textwidth]{figures/paper/c1_layer_sweep.pdf}",
     "realized_font_pt": {
       "body": 7.56,
       "tick": 7.14,
@@ -55,7 +55,6 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "A",
       "Model layer",
       "0",
       "5",
@@ -72,29 +71,8 @@
       "0.9",
       "1",
       "Predictability across layers",
-      "Training contexts",
-      "1.2k",
-      "5k",
-      "25k",
-      "100k",
-      "500k",
-      "\u22120.9",
-      "B",
-      "Score \u2191",
-      "0.2",
-      "0.4",
-      "Scaling with training data",
-      "PREDICTOR",
-      "METRIC",
-      "BASELINE",
       "Linear",
-      "Nonlinear",
-      "Held-out $R^2$",
-      "Top-1 retrieval",
-      "Boundary token \u2192 next sentence",
-      "Text embedding (BGE)",
-      "Copy + bias",
-      "Shuffled pairs"
+      "Nonlinear"
     ]
   },
   "displayed_metrics": {
@@ -709,93 +687,7 @@
       "sha256": "eb16cb2fc80b5a9898041b6f5bffb56e338e795ad3925dd3e0575d94dcef9c86"
     },
     "encoding": "the separate baselines panel was removed; every baseline is now a POINT on panel B at x = 25,000 training contexts, the rung the baselines were measured on (layer 19, 10,000-candidate pool, the same convention panel B plots), never a full-width horizontal line, because a fitted baseline's value moves with n and only this rung was measured; filled marker = held-out R^2 and open marker = top-1 retrieval, matching the predictor curves; panel B's y-axis is cut into the segments listed under overlay.segments, whose plotted heights are proportional to their data spans so both share one scale, which lets a negative R^2 be shown at its own value rather than dropped; no curve is severed by the cut (every predictor curve lies wholly inside the upper segment) and only isolated baseline markers occupy the lower one; the 'anchor' arm is not drawn because it IS panel B's linear curve at this rung; an arm no segment holds is omitted rather than clipped to a segment edge and is listed under overlay.off_scale for the manuscript caption; every arm the rescore computed but the figure omits stays in extra_arms_not_drawn",
-    "overlay": {
-      "x": 25000,
-      "roster": [
-        "enc_bge_cls",
-        "identity_bias",
-        "shuffled"
-      ],
-      "segments": [
-        [
-          -1.0,
-          -0.85
-        ],
-        [
-          -0.08,
-          1.0
-        ]
-      ],
-      "drawn": [
-        {
-          "key": "enc_bge_cls",
-          "label": "Text embedding (BGE)",
-          "metric": "r2",
-          "value": 0.44987511333179053,
-          "segment": [
-            -0.08,
-            1.0
-          ],
-          "x": 21551.724137931036
-        },
-        {
-          "key": "enc_bge_cls",
-          "label": "Text embedding (BGE)",
-          "metric": "top1",
-          "value": 0.5944798301486199,
-          "segment": [
-            -0.08,
-            1.0
-          ],
-          "x": 28999.999999999996
-        },
-        {
-          "key": "identity_bias",
-          "label": "Copy + bias",
-          "metric": "r2",
-          "value": -0.9200245082624223,
-          "segment": [
-            -1.0,
-            -0.85
-          ],
-          "x": 21551.724137931036
-        },
-        {
-          "key": "identity_bias",
-          "label": "Copy + bias",
-          "metric": "top1",
-          "value": 0.5212314225053079,
-          "segment": [
-            -0.08,
-            1.0
-          ],
-          "x": 28999.999999999996
-        },
-        {
-          "key": "shuffled",
-          "label": "Shuffled pairs",
-          "metric": "r2",
-          "value": -0.029402554859490504,
-          "segment": [
-            -0.08,
-            1.0
-          ],
-          "x": 21551.724137931036
-        },
-        {
-          "key": "shuffled",
-          "label": "Shuffled pairs",
-          "metric": "top1",
-          "value": 0.0,
-          "segment": [
-            -0.08,
-            1.0
-          ],
-          "x": 28999.999999999996
-        }
-      ],
-      "off_scale": []
-    },
+    "overlay": null,
     "arms": [
       {
         "key": "anchor",
@@ -887,8 +779,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "8adb06455f2de2d6c1106950d14132099e3a68d3381a850254851563a4d20eae",
-    "png": "0d43974f74b1e66657e2d4deb6abdb4526e1ddf942d1c3ed1dca94c8d11f5834",
-    "grayscale": "c0830aaee96a8927a8f56e9715b774d38e28a46b7c838ce04624a1932c00048c"
+    "pdf": "384547bca3df2f3ddfb44c2ebba110156e618d8b89d9fa9b2fb1f1403537b159",
+    "png": "227c5c62308c629387fe3aafa749437c3bf8846ac8ea8e25b88fa58394ff5fa1",
+    "grayscale": "222eae78c5aa61ecc6d4a0d740710b55b616b3f73780eb98acfd832e7153ba6c"
   }
 }

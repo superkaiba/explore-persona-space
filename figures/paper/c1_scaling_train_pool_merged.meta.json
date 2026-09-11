@@ -5,7 +5,7 @@
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
   "rescore_script": "scripts/issue1901_figure2_five_rollout_scaling.py",
   "reproduction_command": "uv run python scripts/make_paper_figure2.py",
-  "repository_manuscript_asset": "figures/paper/c1_predictability_scaling.pdf",
+  "repository_manuscript_asset": "figures/paper/c1_scaling_train_pool_merged.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
     "commit": "87822231c71fce19afc078e97866013c1d410987",
@@ -36,16 +36,16 @@
     "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
     "resolved_font": "Inter",
     "authoring_size_inches": [
-      13.095,
-      4.714
+      3.929,
+      4.164
     ],
     "exported_size_inches": [
-      13.379,
-      4.894
+      3.929,
+      4.509
     ],
     "scale": 0.42,
-    "include_width_frac": 1.0,
-    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c1_predictability_scaling.pdf}",
+    "include_width_frac": 0.3,
+    "latex_include_line": "\\includegraphics[width=0.3\\textwidth]{figures/paper/c1_scaling_train_pool_merged.pdf}",
     "realized_font_pt": {
       "body": 7.56,
       "tick": 7.14,
@@ -55,23 +55,6 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "A",
-      "Model layer",
-      "0",
-      "5",
-      "10",
-      "15",
-      "20",
-      "25",
-      "27",
-      "Held-out $R^2$ \u2191",
-      "0.5",
-      "0.6",
-      "0.7",
-      "0.8",
-      "0.9",
-      "1",
-      "Predictability across layers",
       "Training contexts",
       "1.2k",
       "5k",
@@ -79,20 +62,19 @@
       "100k",
       "500k",
       "\u22120.9",
-      "B",
       "Score \u2191",
+      "0",
       "0.2",
       "0.4",
-      "Scaling with training data",
-      "PREDICTOR",
-      "METRIC",
-      "BASELINE",
+      "0.6",
+      "0.8",
+      "1",
       "Linear",
       "Nonlinear",
       "Held-out $R^2$",
       "Top-1 retrieval",
-      "Boundary token \u2192 next sentence",
-      "Text embedding (BGE)",
+      "Boundary token",
+      "Text embedding",
       "Copy + bias",
       "Shuffled pairs"
     ]
@@ -887,8 +869,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "8adb06455f2de2d6c1106950d14132099e3a68d3381a850254851563a4d20eae",
-    "png": "0d43974f74b1e66657e2d4deb6abdb4526e1ddf942d1c3ed1dca94c8d11f5834",
-    "grayscale": "c0830aaee96a8927a8f56e9715b774d38e28a46b7c838ce04624a1932c00048c"
+    "pdf": "aadd51d73eeb389af352fbd78cec55a643046c4e3308dde321770d5713a3995b",
+    "png": "0011515e4d73796e6e7881e79769955eba294bb38593def7dc85d0a6ab186c07",
+    "grayscale": "29210ca592e8186a1ab5a7dfb54527ec9a3feaa88107d9601eea39c2bfb1eba1"
   }
 }
