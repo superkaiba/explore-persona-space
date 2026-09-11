@@ -516,7 +516,7 @@ def controller(args):
     root = args.out_root
     root.mkdir(parents=True, exist_ok=True)
     if not (root / "manifest" / "meta.json").exists():
-        B.stage("prepare/manifest", root / "manifest")
+        B.stage("prepared_manifest", root / "manifest")
     if not (root / "inputs" / "provenance.json").exists():
         B.stage("inputs", root / "inputs")
     if args.resume_cloud:
