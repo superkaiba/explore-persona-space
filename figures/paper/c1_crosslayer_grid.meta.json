@@ -5,16 +5,16 @@
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
   "reproduction_command": "uv run python scripts/paper_fig_crosslayer_grid.py",
   "git": {
-    "commit": "d244b0ca8a738bc6198db8f47d670eb7e4f9d86c",
+    "commit": "e78f95c91a8c3cfc2f29010f98d56272dc8f8b89",
     "tracked_worktree_dirty": true
   },
   "sources": {
     "grid": {
-      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/eval_results/issue_1901/xlayer_grid/grid.json",
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1901/xlayer_grid/grid.json",
       "sha256": "f30523b7e1105929657651503e35bb6f9a069af1c9a50335e9d8234624a02163"
     },
     "bootstrap": {
-      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/eval_results/issue_1901/xlayer_grid/bootstrap.json",
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1901/xlayer_grid/bootstrap.json",
       "sha256": "dea4b2a5382c13c7c7cbfee8de0ecfabfc3fcaa41cf38eb8565f5ad154edbbe1"
     }
   },
@@ -3498,7 +3498,7 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "A  \u00b7  50,000 TRAINING CONTEXTS",
+      "A",
       "Answer layer",
       "0",
       "4",
@@ -3533,8 +3533,8 @@
     ]
   },
   "output_sha256": {
-    "pdf": "2d0ae508e137e1414a7bbd6ed2f94a5cf0ffa46e4a49576bd55dc4ed2e4554bb",
-    "png": "48fa42b67e9fc3c0d1cb7d2b72663aaa11a1eef4805f41bd639586b859000e8c",
-    "grayscale": "3362943149542e16e35575f3613f7ef3289484ae6a8242e74a0dbfffe95b6610"
+    "pdf": "663faae9b76d092c16ee2348f3f5984ab9ad30b18872927098e1e0e4ac314531",
+    "png": "fed71896cda4a65a67c3f341eba7b31df7325ce0b56eb6b18cbc539bc61e0ee0",
+    "grayscale": "d7ec676850259e8bb9c42c04293952e2bdb28040204e13f578f1754403ef4817"
   }
 }

@@ -100,7 +100,7 @@
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
-    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/ctxans_projection.pdf}",
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c3_ctxans_projection.pdf}",
     "realized_font_pt": {
       "body": 7.56,
       "tick": 7.14,
