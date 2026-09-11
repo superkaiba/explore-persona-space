@@ -223,9 +223,23 @@ Four beats, fixed order, then stop.
 4. **Setup footer.** Fixed order: model; layer; data and n; folds. Then, if
    needed, one pointer: "Details: Appendix~\ref{app:x}."
 
-Caps: main text 90 words (soft) and 120 (hard) for one or two panels, 150 (hard)
-for three or more; appendix adds 30. Over the cap means beat 2 or 4 is carrying
-methodology; move it to the appendix and point.
+Cap (hard): **40 words plus 30 per lettered panel, plus 30 for an appendix
+figure.** One panel 70, two 100, three 130, four 160. Over the cap means beat 2
+or 4 is carrying methodology. Move it to the appendix and point.
+
+Budget the cap per beat rather than spending it anywhere: lead 12, each panel 10
+for the subclaim plus 20 for the description, uncertainty 15, setup footer 15,
+pointer 3. The three recurring overruns, in order of words spent, are a lead that
+joins two or three claims with "and" or "while" (those clauses are the panel
+subclaims, not the lead), values already readable off the canvas, and method
+protocol or robustness notes.
+
+Where a detail goes is decided by one test: **would a reader misread a mark on
+the canvas without it?** Yes, it decodes a mark, so it stays in the caption
+(chance level, axis transform, what a hatch or an open marker means when the
+legend does not say, the n behind an error bar). No, it reproduces the number, so
+it goes to the settings table. No, it justifies the method, so it goes to the
+per-figure appendix subsection.
 
 Not in a caption: interpretation beyond the lead ("This aligns with…"), prior-work
 citations, more than two numbers, any term absent from the figure or the
