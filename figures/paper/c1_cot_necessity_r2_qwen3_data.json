@@ -1,7 +1,7 @@
 {
   "font": "Inter",
   "git": {
-    "commit": "e60074e1306b2ea499d72131523ab967b37d777a",
+    "commit": "c2cddf5082c465cc2495f5b7c63223643688075a",
     "tracked_worktree_dirty": true
   },
   "outputs": {
@@ -33,7 +33,7 @@
     "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
     "style_version": "c2a-v2",
     "text": [
-      "QWEN3-8B, THINKING ON VS OFF, SAME WEIGHTS, LAYER 24, CONTEXT \u2192 ANSWER MAP",
+      "THINKING ON VS OFF, SAME WEIGHTS, CONTEXT \u2192 ANSWER MAP",
       "MATH",
       "GSM8K\ntrain",
       "Context-\nHub",

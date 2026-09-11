@@ -1,7 +1,7 @@
 {
   "font": "Inter",
   "git": {
-    "commit": "559acdceb2ed3f4a466d71458ab422f8dcd9028b",
+    "commit": "0dde91d88b95e91af139a2b878d319be8ef2507c",
     "tracked_worktree_dirty": true
   },
   "outputs": {
@@ -390,7 +390,7 @@
     "text": [
       "Held-out $R^2$",
       "Top-1 retrieval",
-      "A  \u00b7  OPENTHINKER3-7B, LAYER 19",
+      "A  \u00b7  OPENTHINKER3-7B",
       "context",
       "end of\nthought",
       "Held-out score  \u2191",
@@ -401,19 +401,18 @@
       "0.8",
       "1",
       "Context vs end of thought",
-      "B  \u00b7  OPENTHINKER3-7B, LAYER 19",
+      "B  \u00b7  OPENTHINKER3-7B",
       "Position in the thinking span",
       "0\nend of\nprompt",
       "1\nend of\nthought",
       "mean\nover\ntrace",
       "Inside the reasoning trace",
-      "C  \u00b7  QWEN3-8B, LAYER 24",
+      "C  \u00b7  QWEN3-8B",
       "off",
       "on",
       "Thinking on vs off",
       "QUESTIONS",
       "METRIC",
-      "Error bars: 95% bootstrap CI (1,000 prompt-level draws)",
       "CoT-necessary questions only"
     ]
   },

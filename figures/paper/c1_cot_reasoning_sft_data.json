@@ -1,7 +1,7 @@
 {
   "font": "Inter",
   "git": {
-    "commit": "0f5ff59c0a53f57c7747b6e7908cd2b4e7f56ba3",
+    "commit": "0dde91d88b95e91af139a2b878d319be8ef2507c",
     "tracked_worktree_dirty": true
   },
   "outputs": {
@@ -118,7 +118,7 @@
     "background": "#FFFFFF",
     "exported_size_inches": [
       9.821,
-      5.391
+      5.521
     ],
     "include_width_frac": 0.75,
     "latex_include_line": "\\includegraphics[width=0.75\\textwidth]{figures/paper/c1_cot_reasoning_sft.pdf}",
@@ -136,7 +136,6 @@
     "text": [
       "Held-out $R^2$",
       "Top-1 retrieval",
-      "QWEN2.5-7B-INSTRUCT \u2192 OPENTHINKER3-7B, LAYER 19",
       "before\nmodel",
       "before \u2192\nafter",
       "after\nmodel",
@@ -148,8 +147,7 @@
       "0.8",
       "1",
       "Within and across reasoning SFT",
-      "METRIC",
-      "Error bars: 95% bootstrap CI (1,000 prompt-level draws)"
+      "METRIC"
     ]
   },
   "style_version": "c2a-v2"
