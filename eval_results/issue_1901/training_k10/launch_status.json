@@ -1,0 +1,43 @@
+{
+ "backend": "gcp",
+ "capture_prefix": "issue1901_training_k10/capture_467a637d01a3ae5e",
+ "captured_pilot_rows": 1000,
+ "code_commit": "2ed650f9364737891fd57724e5827aa9fc8ecdae",
+ "evidence_revision": "fa94f173a59a34343dfc77d4676180abd26d6007",
+ "files": [
+  {
+   "path": "issue1901_training_k10/capture_467a637d01a3ae5e/workers/worker00/parity.json",
+   "sha256": "7082ed054565a45cfc6a422130704599c0d61bfb2a9a5f175ce5885fd9191c75",
+   "size": 3442
+  },
+  {
+   "path": "issue1901_training_k10/capture_467a637d01a3ae5e/workers/worker00/pilot.json",
+   "sha256": "377eccc3a50c13fe0d4025b3fac5ff8433d747bba33ed6b6bb96b7979506de37",
+   "size": 1835
+  },
+  {
+   "path": "issue1901_training_k10/capture_467a637d01a3ae5e/workers/worker01/parity.json",
+   "sha256": "c9179a4cd9805785e3551f201296e3dbc3e57e180fef781678d67a5b88fe7ab1",
+   "size": 3451
+  },
+  {
+   "path": "issue1901_training_k10/capture_467a637d01a3ae5e/workers/worker01/pilot.json",
+   "sha256": "ccf8c36c54ff65662a3f88ed9da185226b7c086fb9b16c70cfc4084ab52caa70",
+   "size": 1830
+  }
+ ],
+ "gpu_count": 2,
+ "gpu_type": "NVIDIA A100-SXM4-80GB",
+ "instance": "eps-issue-1901-traink10-cap",
+ "job_id": "1238841331951464161",
+ "min_parity_cosine": 0.9999585936494905,
+ "monitor_pid": 1559422,
+ "monitor_root": "/mnt/eps-data/thomasjiralerspong/issue1901_training_k10",
+ "projected_total_gpu_hours": 6.088807529826392,
+ "projection_limit": "First production500rows perworker; excludes setup, residual transport and CPUanalysis; later prompt-length variation remains.",
+ "status": "running",
+ "worker_projected_compute_hours": [
+  3.193145473530558,
+  2.895662056295833
+ ]
+}

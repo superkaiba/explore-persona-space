@@ -1,0 +1,53 @@
+{
+ "capture_seconds": 45.17619953799999,
+ "generation_seconds": 64.554152069,
+ "pilot_rows": 500,
+ "projected_compute_hours": 2.895662056295833,
+ "rank": 1,
+ "recipe": {
+  "capture_convention": "parent-full-template-retok-span-incl-eot-tail",
+  "capture_rows": 32,
+  "capture_token_budget": 32768,
+  "chunk_rows": 500,
+  "code_sha256": {
+   "scripts/issue1482_error_analysis.py": "fd16c540005ffe4b93726433552c360c1316015df441608a9edefde5aeffd3c7",
+   "scripts/issue1482_kresample.py": "f60e4deb6bac4140631a1d6b738212f377ac903cbe5dbe362972b922d08c9634",
+   "scripts/issue1901_avgpool_scaleup.py": "3a6a4e14046859b94e3368837640da5f4fdc04c2cb994e873374b3f9b6e35b57",
+   "scripts/issue1901_k10_capture.py": "052da6f778164531ee0b19a6368048b97ae24739fd5cf8b5f9053517b6c8d516",
+   "scripts/issue1901_training_k10_gpu.py": "285fb6625661113bdea4d00684d2cc4fea2ba9ddb3e40d2c116b30e3273a5994",
+   "src/explore_persona_space/eval/generation.py": "8e2cc57a5691734cac739a9421bf69b9e19fc9be16caf077f87edfd39d70b7ec"
+  },
+  "dimension": 3584,
+  "engine_seed": 42,
+  "gpu_memory_utilization": 0.6,
+  "input_manifest_sha256": "01913f081a84c954a282a03c794b35015393e9a30cd78da0885cbdb11b041b74",
+  "input_revision": "b281fc98da9fc87b4aabe2463cd24bc26d8ad115",
+  "layer": 19,
+  "max_model_len": 8192,
+  "max_num_seqs": 64,
+  "max_tokens": 1024,
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "ordered_ci_sha256": "75a910be8c161eaa94befdbb3fbacac6fdee0fa6d534cd40be253386ba31ad8a",
+  "seeds": [
+   47,
+   48,
+   49,
+   50,
+   51
+  ],
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "world_size": 2
+ },
+ "runtime": {
+  "gpu_bytes": 85093777408,
+  "gpu_name": "NVIDIA A100-SXM4-80GB",
+  "versions": {
+   "torch": "2.8.0",
+   "transformers": "4.57.6",
+   "vllm": "0.11.0"
+  }
+ },
+ "worker_rows": 47500
+}
