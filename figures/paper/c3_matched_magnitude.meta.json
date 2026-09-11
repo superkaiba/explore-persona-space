@@ -22,7 +22,7 @@
   ],
   "exported_size_inches": [
    13.095,
-   4.905
+   4.81
   ],
   "scale": 0.42,
   "include_width_frac": 1.0,
@@ -36,19 +36,20 @@
   "png_dpi": 240,
   "background": "#FFFFFF",
   "text": [
-   "A  \u00b7  330 PAIRS, LINEAR MAP, POOLED TREND",
+   "A  \u00b7  LINEAR MAP, POOLED TREND",
    "Observed answer-shift norm",
    "5",
    "10",
    "20",
    "40",
    "Shift cosine \u2191",
-   "\u22120.25",
-   "0.00",
-   "0.25",
-   "0.50",
-   "0.75",
-   "1.00",
+   "\u22120.2",
+   "0.0",
+   "0.2",
+   "0.4",
+   "0.6",
+   "0.8",
+   "1.0",
    "Agreement vs shift size",
    "Output format",
    "Persona",
@@ -56,21 +57,16 @@
    "Answer language",
    "Question topic",
    "One-word topic",
-   "B  \u00b7  TREND FIT ON THE OTHER FIVE ELEMENTS\nERROR BARS: 95% BOOTSTRAP CI OVER PAIRS",
+   "B  \u00b7  TREND FIT ON THE OTHER FIVE ELEMENTS",
    "Output\nformat",
    "Answer\nlanguage",
    "Question\ntopic",
    "One-word\ntopic",
    "Residual cosine \u2191",
    "\u22120.4",
-   "\u22120.2",
-   "0.0",
-   "0.2",
-   "0.4",
    "Residual at matched size",
    "linear map",
-   "copy baseline",
-   "CONTROLLED MINIMAL PAIRS, QWEN2.5-7B-INSTRUCT, LAYER 19"
+   "copy baseline"
   ]
  }
 }

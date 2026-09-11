@@ -22,7 +22,7 @@
   ],
   "exported_size_inches": [
    13.095,
-   4.341
+   4.252
   ],
   "scale": 0.42,
   "include_width_frac": 1.0,
@@ -48,7 +48,7 @@
    "40",
    "50",
    "Answer separation",
-   "B  \u00b7  95% BOOTSTRAP CI OVER PAIRS",
+   "B  \u00b7  TWO-ALTERNATIVE CHOICE",
    "Hit rate \u2191",
    "0.2",
    "0.4",
@@ -61,14 +61,9 @@
    "copy baseline",
    "C  \u00b7  SPEARMAN BY STRATUM",
    "Rank correlation \u2191",
-   "\u22120.25",
-   "0.00",
-   "0.25",
-   "0.50",
-   "0.75",
-   "1.00",
-   "Loading vs margin",
-   "124 ONE-WORD SAFETY SWAPS, QWEN2.5-7B-INSTRUCT, LAYER 19"
+   "\u22120.2",
+   "0.0",
+   "Loading vs margin"
   ]
  }
 }
