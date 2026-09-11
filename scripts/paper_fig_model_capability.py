@@ -233,7 +233,7 @@ def main() -> None:
     panel_header(
         ax,
         "",
-        "10 models · thinking disabled",
+        "10 models",
         "Predictability versus model capability",
     )
     style_score_axis(ax, y_min=0.59, y_max=0.756, y_step=0.04)

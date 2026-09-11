@@ -413,7 +413,7 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "10 MODELS \u00b7 THINKING DISABLED",
+      "10 MODELS",
       "Qwen3.5 0.8B",
       "Qwen3.5 2B",
       "Qwen3.5 4B",
@@ -442,10 +442,10 @@
     ]
   },
   "output_sha256": {
-    "pdf": "df222f5c0bc638b204451a1633a376cf096cfaaae1314ef8ead581e64b8281e5",
-    "png": "644494ff1d502f347d62de976cf170d2eb93e331675c99816de7326772d15903",
-    "grayscale": "082650fbac23d4e499858aa78b9df8981688eb39f4cbac7633759e978c2eadff"
+    "pdf": "3872c78c56b051c08b2d6492a7c0a7ac16f1b2b67127e196465acf4a71e775b8",
+    "png": "f59532d3696f4ed12d29d697fa6a9245a4406a267d85405aee0d5af5778fbf76",
+    "grayscale": "23e1762a3464ada356d76d4d091a07243d3909c112012aff754d753a31cbc0a2"
   },
-  "producer_commit": "56ccb73a8433677c4b5896416a76cddb67340a1f",
-  "producer_sha256": "bfaa63c65d31ad1f0edbf2d7b7567ba3216b073e4ce138cd8cff12107a5f268d"
+  "producer_commit": "800b4453121e0772f8a850ae365f1b623b7f9653",
+  "producer_sha256": "5770b423c113da809a186941059d8afd9006d89e8618caa83566d24b0ec8e1e7"
 }
