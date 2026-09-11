@@ -1,0 +1,777 @@
+{
+ "artifact_receipt": {
+  "files": [
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/analysis_tensors.npz",
+    "sha256": "78e0403afa5813c5f9020eab51b8703ae67ebfafc26f85754cddd08f8e59a2f5",
+    "size": 150634386
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/completion.json",
+    "sha256": "75c734956ed78c84571724ac97ae1adc0f4c004fed0093509d25880536539ffc",
+    "size": 188
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k01.json",
+    "sha256": "a8a6ee3571303a4a73d3dff58008c91c7e1d1c24086115d0a5eeac5a509d13fd",
+    "size": 292
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k01.npz",
+    "sha256": "416b017f7480c9f02604141246c694b53a4020c9d6867e0b78a9f5f516856240",
+    "size": 108842086
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k02.json",
+    "sha256": "bb3fa5e870334dd22b37f905da5231c5b7defb73425f554d885c4d955543eed7",
+    "size": 293
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k02.npz",
+    "sha256": "8e21c4c35ba0503f64fec149fc5774a931e2eba30b62ed8042cc5e256ed8b8b5",
+    "size": 108842086
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k03.json",
+    "sha256": "504ac848ff321bd0b64c14672e8d29fba3d73a888a21d02373b14cf76ee92942",
+    "size": 292
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k03.npz",
+    "sha256": "806da8b2be955a48282112b129c6b6d1a66ac17123d5ce959193316bb3ec1d68",
+    "size": 108842086
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k04.json",
+    "sha256": "f5d541ce2bdc0e1e34a067a6b460b9478dd89066896900da3e213539998ce3e7",
+    "size": 292
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k04.npz",
+    "sha256": "b895f495dd6e511c5215c10c667f40107a658aef3c4eff680b09b5fe26371393",
+    "size": 108842086
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k05.json",
+    "sha256": "539a48fd1570d8cf69c6cbac73b85406012120ca28160d5e6f2ee851f74bd496",
+    "size": 292
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k05.npz",
+    "sha256": "af56f7b528d9d12be5fed3f0d7dc8eddcd5c67cdc70f8f9d27dcf72f5077b05f",
+    "size": 108842086
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k06.json",
+    "sha256": "3fafff7a5c7be365c0d52e3e0e977d4e80143bd0b693ac0869b8195d82689942",
+    "size": 292
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k06.npz",
+    "sha256": "09d7b32f8e880b101a68da8792c6ca30eb97b10ba09958798aac68c43fa359ad",
+    "size": 108842086
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k07.json",
+    "sha256": "8aa0e5c9003ede35c0dff5b1ee96b92786ed148e602dcaea831e0d6dce72c67d",
+    "size": 293
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k07.npz",
+    "sha256": "38eb562a4b2b1005da0741093ecb5eda75bf8466a2f36d457b73d8b2bed33da3",
+    "size": 108842086
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k08.json",
+    "sha256": "690af85770c1873e3f79381853600a79bf14548ab86ff22164abbf18000e3944",
+    "size": 292
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k08.npz",
+    "sha256": "f2ff594a44f36bd32de8b0487dafb27500882f485b188d9b14ac04ace0e6f0af",
+    "size": 108842086
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k09.json",
+    "sha256": "8f9b3e5c5ab2d601ea0b329b4abeb6015c5e24690fd3823f4c978dc03f7ea856",
+    "size": 292
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k09.npz",
+    "sha256": "a4bfd11a5351bbba2019c9a2b3037556a19a44a8f96a9cf3f0a01ac04d0e50b0",
+    "size": 108842086
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k10.json",
+    "sha256": "54560fa8b92638737028f6d58454e2a418be6fbf3be16fd5585df8ee7da7fc1e",
+    "size": 293
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/k10.npz",
+    "sha256": "db64f538d2ab1a0094735f134ddd9df5d42438c3debc1981fc26fc0be27060f4",
+    "size": 108842086
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/fits/manifest.json",
+    "sha256": "2edc609d6dd62ccdd24a9c1f7f9e80e79bdd39b5a8c525a19c685183a5fcdc6f",
+    "size": 5596
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/report/README.md",
+    "sha256": "13214cac9391aeb33735a6eb80d08a53d065247576cd5cb41821beba9db4bb7b",
+    "size": 2041
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/report/capture_manifest.json",
+    "sha256": "d9fb9ba0ce7543a6b760c8c6c9cb2724a54196c6c1158c13a7168d1f2f5a1e89",
+    "size": 1109365
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/report/figure_provenance.json",
+    "sha256": "61f3ea6504eb2cb93bbc2bfce1f452ef56ef2eb444de09c019aae3a5d76442a7",
+    "size": 4049
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/report/final_summary.json",
+    "sha256": "d15898a42d68b079b8714c2f7cc0b219628e1cc9bf2b602c44156c17b8d9a082",
+    "size": 10041
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/report/generation_audit.json",
+    "sha256": "89d62041857869e95453858d2aa2bfd9395eca1587e7cbdb2ede61cf25ae3ea3",
+    "size": 60498
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/report/training_eval_k_grid.pdf",
+    "sha256": "5084f984b6f5caaf08fd4f4b65b9511d5dedc31f0f94872fb461656c35d8cd13",
+    "size": 25650
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/report/training_eval_k_grid.png",
+    "sha256": "efeb1f39b620812e0cdf4b1f0a2d2d135a3c3c35d34a2254441951504b97da08",
+    "size": 224998
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/report/training_eval_k_grid_grayscale.png",
+    "sha256": "0d943ed7344b92464276ac01cf2faefebda48ec5d4a87bc0e86f4d6d74c33d3f",
+    "size": 97446
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/report/training_k_fixed_eval10.pdf",
+    "sha256": "c022201375d4da858c7c043800b19de0f36b04327186e326dda51e631ddbcec8",
+    "size": 23228
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/report/training_k_fixed_eval10.png",
+    "sha256": "837ad42893925118d2974b1f7865a0b3d1529472e8eeefdefdf1dbd3f51df098",
+    "size": 207098
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/report/training_k_fixed_eval10_grayscale.png",
+    "sha256": "c7c8e7af1b45e3ac03b4d50cc29e220fa35a7bf9e919b97446271f95ec9e2f67",
+    "size": 88945
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/scores/eval_k01.npz",
+    "sha256": "67514bfc2749b50a8221e89e49ae900a547cf70d26efea26a8508bee893f9ec2",
+    "size": 1676524
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/scores/eval_k02.npz",
+    "sha256": "79beedca6992c3fbf3b40b54d37e05c2ce147b975cc77516e179ec4613fe255b",
+    "size": 1676524
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/scores/eval_k03.npz",
+    "sha256": "b161d21dc2b3008c7bfe381ddf32600fad0ced278c0e045aa10ac89c9dc4a87e",
+    "size": 1676524
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/scores/eval_k04.npz",
+    "sha256": "3d338b3643285cc0baa90cb23030f5fab61307cb2c5aff4e805b0657647d4e9c",
+    "size": 1676524
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/scores/eval_k05.npz",
+    "sha256": "502392024b23efba17e5fb679078612ae799953f1d749f63e97c5490b83bcf97",
+    "size": 1676524
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/scores/eval_k06.npz",
+    "sha256": "b4f0971b43208800bb131f53427e788f087b945a5136e3a828cf7a2ac21affa5",
+    "size": 1676524
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/scores/eval_k07.npz",
+    "sha256": "b3a2e98b4aa600985a803b3f1ca1f371c82e2327ea5c06f900739ef18bafd588",
+    "size": 1676524
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/scores/eval_k08.npz",
+    "sha256": "89e03ef5d3922221c7620bb33ea345573cf7eb72c4c87b2d8109223099e656ec",
+    "size": 1676524
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/scores/eval_k09.npz",
+    "sha256": "e141ec3d622e78afa0b2e51dbbfa5aaf70f2b1a12226862b01b204d5bd8a6623",
+    "size": 1676524
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/scores/eval_k10.npz",
+    "sha256": "6cd03320b4f8bf99d6b4e2c388bf8112f37e763315d78c99964a0ac3043966e6",
+    "size": 1676524
+   },
+   {
+    "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/summary.json",
+    "sha256": "4b87bdc1deba7390aa56cf8c1a2d9128c620998b4f2a71301b93545a082adc16",
+    "size": 214524
+   }
+  ],
+  "revision": "254563c9f0d2be25bd9c0a56b6b766570c90f039"
+ },
+ "figure_urls": {
+  "training_eval_k_grid": {
+   "grayscale": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/254563c9f0d2be25bd9c0a56b6b766570c90f039/issue1901_training_k10/analysis_4b87bdc1deba7390/report/training_eval_k_grid_grayscale.png",
+   "pdf": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/254563c9f0d2be25bd9c0a56b6b766570c90f039/issue1901_training_k10/analysis_4b87bdc1deba7390/report/training_eval_k_grid.pdf",
+   "png": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/254563c9f0d2be25bd9c0a56b6b766570c90f039/issue1901_training_k10/analysis_4b87bdc1deba7390/report/training_eval_k_grid.png"
+  },
+  "training_k_fixed_eval10": {
+   "grayscale": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/254563c9f0d2be25bd9c0a56b6b766570c90f039/issue1901_training_k10/analysis_4b87bdc1deba7390/report/training_k_fixed_eval10_grayscale.png",
+   "pdf": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/254563c9f0d2be25bd9c0a56b6b766570c90f039/issue1901_training_k10/analysis_4b87bdc1deba7390/report/training_k_fixed_eval10.pdf",
+   "png": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/254563c9f0d2be25bd9c0a56b6b766570c90f039/issue1901_training_k10/analysis_4b87bdc1deba7390/report/training_k_fixed_eval10.png"
+  }
+ },
+ "files": [
+  {
+   "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/publication.json",
+   "sha256": "c3fdbf8e5b1b01b3cfa684f1481ebfa8020247cf05693830cf72f7a7aed783c6",
+   "size": 21014
+  },
+  {
+   "path": "issue1901_training_k10/analysis_4b87bdc1deba7390/report/README.md",
+   "sha256": "3350a6bd2b884f17655d1d66e62a483dd380cc178e8d1839efe4687e077bca9b",
+   "size": 3324
+  }
+ ],
+ "final_summary": {
+  "anchors": {
+   "1": {
+    "identity_bias": {
+     "r2": {
+      "ci95": [
+       -1.0151653778071148,
+       -0.9146542735778737
+      ],
+      "mean": -0.9587885288998452
+     },
+     "retrieval": {
+      "raw_cosine": {
+       "ci95": [
+        0.5732484076433121,
+        0.6337579617834395
+       ],
+       "mean": 0.6050955414012739
+      },
+      "raw_euclidean": {
+       "ci95": [
+        0.5467091295116773,
+        0.6072452229299361
+       ],
+       "mean": 0.5774946921443737
+      },
+      "whiten_cosine": {
+       "ci95": [
+        0.5817409766454352,
+        0.643312101910828
+       ],
+       "mean": 0.6125265392781316
+      },
+      "whiten_csls": {
+       "ci95": [
+        0.6985138004246284,
+        0.7537154989384288
+       ],
+       "mean": 0.7261146496815286
+      }
+     }
+    },
+    "ridge": {
+     "r2": {
+      "ci95": [
+       0.7585865656180436,
+       0.7877787427931967
+      ],
+      "mean": 0.7736174499178385
+     },
+     "retrieval": {
+      "raw_cosine": {
+       "ci95": [
+        0.8768577494692144,
+        0.9171974522292993
+       ],
+       "mean": 0.8970276008492569
+      },
+      "raw_euclidean": {
+       "ci95": [
+        0.8672770700636941,
+        0.9076433121019107
+       ],
+       "mean": 0.886411889596603
+      },
+      "whiten_cosine": {
+       "ci95": [
+        0.9331210191082802,
+        0.9607218683651804
+       ],
+       "mean": 0.9469214437367304
+      },
+      "whiten_csls": {
+       "ci95": [
+        0.9522292993630572,
+        0.9755838641188959
+       ],
+       "mean": 0.9639065817409767
+      }
+     }
+    }
+   },
+   "10": {
+    "identity_bias": {
+     "r2": {
+      "ci95": [
+       -1.0146113334187576,
+       -0.9139336014731604
+      ],
+      "mean": -0.958160347529708
+     },
+     "retrieval": {
+      "raw_cosine": {
+       "ci95": [
+        0.5774946921443737,
+        0.6369426751592356
+       ],
+       "mean": 0.60828025477707
+      },
+      "raw_euclidean": {
+       "ci95": [
+        0.5456475583864119,
+        0.6061836518046707
+       ],
+       "mean": 0.5764331210191083
+      },
+      "whiten_cosine": {
+       "ci95": [
+        0.5817409766454352,
+        0.643312101910828
+       ],
+       "mean": 0.6125265392781316
+      },
+      "whiten_csls": {
+       "ci95": [
+        0.6985138004246284,
+        0.7537154989384288
+       ],
+       "mean": 0.7261146496815286
+      }
+     }
+    },
+    "ridge": {
+     "r2": {
+      "ci95": [
+       0.7708301708144102,
+       0.8031709425315443
+      ],
+      "mean": 0.7871036832689228
+     },
+     "retrieval": {
+      "raw_cosine": {
+       "ci95": [
+        0.881104033970276,
+        0.9214437367303608
+       ],
+       "mean": 0.9012738853503185
+      },
+      "raw_euclidean": {
+       "ci95": [
+        0.8715233545647557,
+        0.9108545647558384
+       ],
+       "mean": 0.8906581740976646
+      },
+      "whiten_cosine": {
+       "ci95": [
+        0.9373673036093417,
+        0.9649681528662419
+       ],
+       "mean": 0.9511677282377919
+      },
+      "whiten_csls": {
+       "ci95": [
+        0.9564755838641188,
+        0.9787951167728236
+       ],
+       "mean": 0.9681528662420382
+      }
+     }
+    }
+   },
+   "5": {
+    "identity_bias": {
+     "r2": {
+      "ci95": [
+       -1.0146882466944322,
+       -0.9140339998625555
+      ],
+      "mean": -0.9582569618385575
+     },
+     "retrieval": {
+      "raw_cosine": {
+       "ci95": [
+        0.5774946921443737,
+        0.6369426751592356
+       ],
+       "mean": 0.60828025477707
+      },
+      "raw_euclidean": {
+       "ci95": [
+        0.5456475583864119,
+        0.6061836518046707
+       ],
+       "mean": 0.5764331210191083
+      },
+      "whiten_cosine": {
+       "ci95": [
+        0.5817409766454352,
+        0.643312101910828
+       ],
+       "mean": 0.6125265392781316
+      },
+      "whiten_csls": {
+       "ci95": [
+        0.6985138004246284,
+        0.7537154989384288
+       ],
+       "mean": 0.7261146496815286
+      }
+     }
+    },
+    "ridge": {
+     "r2": {
+      "ci95": [
+       0.7696290790951857,
+       0.8025900132548062
+      ],
+      "mean": 0.7862016645159658
+     },
+     "retrieval": {
+      "raw_cosine": {
+       "ci95": [
+        0.8832271762208068,
+        0.9225053078556262
+       ],
+       "mean": 0.9033970276008493
+      },
+      "raw_euclidean": {
+       "ci95": [
+        0.8779193205944797,
+        0.9171974522292993
+       ],
+       "mean": 0.8970276008492569
+      },
+      "whiten_cosine": {
+       "ci95": [
+        0.9341825902335456,
+        0.9628450106157111
+       ],
+       "mean": 0.9490445859872612
+      },
+      "whiten_csls": {
+       "ci95": [
+        0.9554140127388534,
+        0.978768577494692
+       ],
+       "mean": 0.9670912951167728
+      }
+     }
+    }
+   }
+  },
+  "capture_source": {
+   "execution_completion": "Owner checks fresh workload sentinel separately",
+   "files": 190,
+   "manifest_sha256": "d9fb9ba0ce7543a6b760c8c6c9cb2724a54196c6c1158c13a7168d1f2f5a1e89",
+   "new_rows": 95000,
+   "prefix": "issue1901_training_k10/capture_467a637d01a3ae5e",
+   "repo": "superkaiba1/explore-persona-space-data",
+   "revision": "771d4bb36ff7abd88f183c491d223b9bca31799d"
+  },
+  "chance_top1": 0.0010615711252653928,
+  "contrasts": {
+   "K10_minus_K1_eval10": {
+    "identity_bias": {
+     "r2": {
+      "ci95": [
+       0.00044992037495429903,
+       0.0007982109611075482
+      ],
+      "mean": 0.0006281813701372041
+     },
+     "retrieval": {
+      "raw_cosine": {
+       "ci95": [
+        0.0,
+        0.007430997876857748
+       ],
+       "mean": 0.0031847133757961776
+      },
+      "raw_euclidean": {
+       "ci95": [
+        -0.0031847133757961776,
+        0.0
+       ],
+       "mean": -0.0010615711252653925
+      },
+      "whiten_cosine": {
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "mean": 0.0
+      },
+      "whiten_csls": {
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "mean": 0.0
+      }
+     }
+    },
+    "ridge": {
+     "r2": {
+      "ci95": [
+       0.011087017437615703,
+       0.01617762151448096
+      ],
+      "mean": 0.013486233351084231
+     },
+     "retrieval": {
+      "raw_cosine": {
+       "ci95": [
+        -0.005307855626326963,
+        0.013800424628450103
+       ],
+       "mean": 0.00424628450106157
+      },
+      "raw_euclidean": {
+       "ci95": [
+        -0.002123142250530785,
+        0.011677282377919318
+       ],
+       "mean": 0.00424628450106157
+      },
+      "whiten_cosine": {
+       "ci95": [
+        -0.004272823779193203,
+        0.01273885350318471
+       ],
+       "mean": 0.00424628450106157
+      },
+      "whiten_csls": {
+       "ci95": [
+        -0.00424628450106157,
+        0.011703821656050809
+       ],
+       "mean": 0.00424628450106157
+      }
+     }
+    }
+   },
+   "K10_minus_K5_eval10": {
+    "identity_bias": {
+     "r2": {
+      "ci95": [
+       6.3326810990455e-05,
+       0.00012722507237294955
+      ],
+      "mean": 9.661430884944089e-05
+     },
+     "retrieval": {
+      "raw_cosine": {
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "mean": 0.0
+      },
+      "raw_euclidean": {
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "mean": 0.0
+      },
+      "whiten_cosine": {
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "mean": 0.0
+      },
+      "whiten_csls": {
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "mean": 0.0
+      }
+     }
+    },
+    "ridge": {
+     "r2": {
+      "ci95": [
+       0.00048476800140994367,
+       0.0013289418684566284
+      ],
+      "mean": 0.0009020187529569235
+     },
+     "retrieval": {
+      "raw_cosine": {
+       "ci95": [
+        -0.00849256900212314,
+        0.0031847133757962887
+       ],
+       "mean": -0.002123142250530785
+      },
+      "raw_euclidean": {
+       "ci95": [
+        -0.011677282377919318,
+        -0.002123142250530785
+       ],
+       "mean": -0.006369426751592355
+      },
+      "whiten_cosine": {
+       "ci95": [
+        -0.0031847133757961776,
+        0.00849256900212314
+       ],
+       "mean": 0.002123142250530785
+      },
+      "whiten_csls": {
+       "ci95": [
+        -0.0031847133757961776,
+        0.005307855626326963
+       ],
+       "mean": 0.0010615711252653925
+      }
+     }
+    }
+   },
+   "K5_minus_K1_eval10": {
+    "identity_bias": {
+     "r2": {
+      "ci95": [
+       0.00038227537018956646,
+       0.0006755036552064552
+      ],
+      "mean": 0.0005315670612877632
+     },
+     "retrieval": {
+      "raw_cosine": {
+       "ci95": [
+        0.0,
+        0.007430997876857748
+       ],
+       "mean": 0.0031847133757961776
+      },
+      "raw_euclidean": {
+       "ci95": [
+        -0.0031847133757961776,
+        0.0
+       ],
+       "mean": -0.0010615711252653925
+      },
+      "whiten_cosine": {
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "mean": 0.0
+      },
+      "whiten_csls": {
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "mean": 0.0
+      }
+     }
+    },
+    "ridge": {
+     "r2": {
+      "ci95": [
+       0.009920903521388585,
+       0.015578689019124275
+      ],
+      "mean": 0.012584214598127308
+     },
+     "retrieval": {
+      "raw_cosine": {
+       "ci95": [
+        -0.0031847133757960666,
+        0.015923566878980888
+       ],
+       "mean": 0.006369426751592355
+      },
+      "raw_euclidean": {
+       "ci95": [
+        0.0031847133757961776,
+        0.019108280254777066
+       ],
+       "mean": 0.010615711252653925
+      },
+      "whiten_cosine": {
+       "ci95": [
+        -0.007430997876857748,
+        0.010615711252653925
+       ],
+       "mean": 0.002123142250530785
+      },
+      "whiten_csls": {
+       "ci95": [
+        -0.003211252653927811,
+        0.010615711252653925
+       ],
+       "mean": 0.0031847133757961776
+      }
+     }
+    }
+   }
+  },
+  "coverage": "10/10 training-K fits; 100/100 train/eval cells per predictor",
+  "fixed_eval_k": 10,
+  "generation_audit": {
+   "answers_changed_by_inherited_scrub": 4,
+   "cap_hits": 7353,
+   "manifest_sha256": "d9fb9ba0ce7543a6b760c8c6c9cb2724a54196c6c1158c13a7168d1f2f5a1e89",
+   "new_answers": 95000,
+   "prefix": "issue1901_training_k10/capture_467a637d01a3ae5e",
+   "revision": "771d4bb36ff7abd88f183c491d223b9bca31799d",
+   "scrub_count_unit": "Field-level findings; one answer can appear in both text aliases",
+   "scrub_findings": 8
+  },
+  "interval_scope": "Conditional on fixed training bank, maps, observed rollout banks and retrieval pool",
+  "lambda_grid_edge_k": [],
+  "n_candidates": 942,
+  "n_test": 1000,
+  "n_train": 19000,
+  "summary_sha256": "4b87bdc1deba7390aa56cf8c1a2d9128c620998b4f2a71301b93545a082adc16"
+ },
+ "final_summary_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/e20406233afc5cdfaf8d7120b0992d26d6083a2b/issue1901_training_k10/analysis_4b87bdc1deba7390/report/final_summary.json",
+ "prefix": "issue1901_training_k10/analysis_4b87bdc1deba7390",
+ "publication_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/e20406233afc5cdfaf8d7120b0992d26d6083a2b/issue1901_training_k10/analysis_4b87bdc1deba7390/publication.json",
+ "repo": "superkaiba1/explore-persona-space-data",
+ "report_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/e20406233afc5cdfaf8d7120b0992d26d6083a2b/issue1901_training_k10/analysis_4b87bdc1deba7390/report/README.md",
+ "revision": "e20406233afc5cdfaf8d7120b0992d26d6083a2b",
+ "summary_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/e20406233afc5cdfaf8d7120b0992d26d6083a2b/issue1901_training_k10/analysis_4b87bdc1deba7390/summary.json"
+}

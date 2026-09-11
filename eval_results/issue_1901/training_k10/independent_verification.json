@@ -1,0 +1,71 @@
+{
+  "capture_audit": {
+    "at": "2026-09-11T22:30:01.531030+00:00",
+    "verdict": "PASS",
+    "manifest_sha256": "d9fb9ba0ce7543a6b760c8c6c9cb2724a54196c6c1158c13a7168d1f2f5a1e89",
+    "actual_distinct_ci_seed": 95000,
+    "train_contexts": 19000,
+    "actual_rows_per_seed": {
+      "47": 19000,
+      "48": 19000,
+      "51": 19000,
+      "50": 19000,
+      "49": 19000
+    },
+    "capture_files": 190,
+    "raw_files": 190,
+    "cap_hits": 7353,
+    "changed_answers": 4,
+    "scrub_findings": 8,
+    "scrub_rules": {
+      "jwt-signed": 8
+    }
+  },
+  "capture_remote_verification": {
+    "at": "2026-09-11T22:31:22.803324+00:00",
+    "verdict": "PASS",
+    "revision": "771d4bb36ff7abd88f183c491d223b9bca31799d",
+    "files": 966,
+    "bytes": 1514531266,
+    "remote_name_set_equals_upload_receipt": true,
+    "all_sha256_and_remote_git_or_lfs_hashes_match": true,
+    "pod_disk_regular_files": 994,
+    "produced_output_files": 966,
+    "input_cache_files": 28,
+    "uncovered_produced_paths": [],
+    "outroot": "swept-clean",
+    "listing_sha256": "23a7c67ae5359c132e8323f2e8dbbe02c330163f0915f165b02e88e77e2190e2"
+  },
+  "analysis_audit": {
+    "at": "2026-09-11T22:32:44.826448+00:00",
+    "verdict": "PASS",
+    "summary_sha256": "4b87bdc1deba7390aa56cf8c1a2d9128c620998b4f2a71301b93545a082adc16",
+    "analysis_tensors_sha256": "78e0403afa5813c5f9020eab51b8703ae67ebfafc26f85754cddd08f8e59a2f5",
+    "actual_grid_cells": 200,
+    "checked_metric_point_and_ci_pairs": 1000,
+    "checked_contrast_point_and_ci_pairs": 30,
+    "r2_points_recomputed_from_saved_predictions": 200,
+    "primary_eval10_r2_bootstrap_recomputed": true,
+    "all_retrieval_bootstraps_recomputed_from_hits": true,
+    "fit_artifact_hashes_checked": 10,
+    "missing_cells": []
+  },
+  "analysis_remote_verification": {
+    "at": "2026-09-11T22:33:54.213484+00:00",
+    "verdict": "PASS",
+    "artifact_revision": "254563c9f0d2be25bd9c0a56b6b766570c90f039",
+    "publication_revision": "e20406233afc5cdfaf8d7120b0992d26d6083a2b",
+    "unique_files": 46,
+    "receipt_file_checks": 47,
+    "figure_files": 6,
+    "local_analysis_names_equal_remote_except_git_bound_receipt": true
+  },
+  "fresh_continuation_completed_at": "2026-09-11T22:31:21.056024+00:00",
+  "source_receipts": {
+    "capture": "771d4bb36ff7abd88f183c491d223b9bca31799d",
+    "inputs": "b281fc98da9fc87b4aabe2463cd24bc26d8ad115",
+    "analysis": "254563c9f0d2be25bd9c0a56b6b766570c90f039",
+    "publication": "e20406233afc5cdfaf8d7120b0992d26d6083a2b"
+  },
+  "evidence_root": "/mnt/eps-data/thomasjiralerspong/issue1901_training_k10/independent_review"
+}
