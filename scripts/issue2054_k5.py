@@ -289,6 +289,8 @@ def phase_headroom(root, manifest, stage):
 
 def generate(root, manifest, args):
     """Run production-sized vLLM chunks with the inherited stops and caps."""
+    os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
+    k3.log(f"[phase=vllm_launch_env] model={args.model} VLLM_WORKER_MULTIPROC_METHOD=spawn")
     from vllm import LLM, SamplingParams
 
     records = [c for c in selected(manifest) if c["cell"].endswith("__" + args.model)]
