@@ -8,7 +8,7 @@
   "repository_manuscript_asset": "figures/paper/c1_predictability_scaling.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
-    "commit": "87822231c71fce19afc078e97866013c1d410987",
+    "commit": "d2f28355a4ef28d5d7bde2642632f5e2067dd331",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -40,7 +40,7 @@
       4.714
     ],
     "exported_size_inches": [
-      13.379,
+      13.095,
       4.894
     ],
     "scale": 0.42,
@@ -73,7 +73,6 @@
       "1",
       "Predictability across layers",
       "Training contexts",
-      "1.2k",
       "5k",
       "25k",
       "100k",
@@ -91,7 +90,6 @@
       "Nonlinear",
       "Held-out $R^2$",
       "Top-1 retrieval",
-      "Boundary token \u2192 next sentence",
       "Text embedding (BGE)",
       "Copy + bias",
       "Shuffled pairs"
@@ -622,48 +620,7 @@
     "target": "five-rollout mean",
     "retrieval": "whitened cosine + CSLS (K=10), pool n=10,000 (942 deduplicated targets + 9,058 distractors), chance top-1 0.0001"
   },
-  "boundary_control": {
-    "source": {
-      "path": "eval_results/issue_1901/boundary_points_fig2.json",
-      "sha256": "8919b7f4d7297ef4c884cf5e708ca7fd6500632fede0afec3f67b99c617412d2"
-    },
-    "encoding": "burnt-umber filled square on panel B at x = 1,200, the control's own training size: mean held-out R^2 over the four exact-token maps. R^2 only (its top-1 was scored on a 400-span pool, not panel B's 10,000 candidates)",
-    "n_tokens": 4,
-    "tokens": {
-      "659": {
-        "label": "space + period",
-        "r2": 0.2967163144586531,
-        "retrieval": 0.865
-      },
-      "13": {
-        "label": "period",
-        "r2": 0.2890773553426029,
-        "retrieval": 0.7625
-      },
-      "937": {
-        "label": "space + question",
-        "r2": 0.24075864873147923,
-        "retrieval": 0.645
-      },
-      "753": {
-        "label": "space + exclamation",
-        "r2": 0.26609196841124216,
-        "retrieval": 0.625
-      }
-    },
-    "r2_mean": 0.27316107173599435,
-    "retrieval_mean": 0.724375,
-    "n_train_per_token": 1200,
-    "n_pool": 400,
-    "span": "anchor+1 .. next sentence-final punctuation token (exclusive); 8-256 tokens kept",
-    "retrieval": {
-      "metric": "whitened cosine + two-sided CSLS",
-      "csls_k": 10,
-      "whitening": "fit on the arm's 1,200 training spans, diagonal-target shrinkage lambda=0.1",
-      "rank": "strict top-k; mid-rank ties and top ties fail top-1",
-      "pool": "the arm's 400 held-out spans"
-    }
-  },
+  "boundary_control": null,
   "extension": {
     "source": {
       "path": "eval_results/issue_1901/figure2_extension_1200.json",
@@ -887,8 +844,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "8adb06455f2de2d6c1106950d14132099e3a68d3381a850254851563a4d20eae",
-    "png": "0d43974f74b1e66657e2d4deb6abdb4526e1ddf942d1c3ed1dca94c8d11f5834",
-    "grayscale": "c0830aaee96a8927a8f56e9715b774d38e28a46b7c838ce04624a1932c00048c"
+    "pdf": "399097aa4ee27ab8db6607629de91652524863f9e1307a1327fc23ec91e564b6",
+    "png": "d6fcc5df3ba6d38049a78cf805127feaddda59122cc14e5dac452c34e50c325f",
+    "grayscale": "f9eefbcc594466aaefa4553aacb68e34e88c025df35b85359fb688e088be3a94"
   }
 }

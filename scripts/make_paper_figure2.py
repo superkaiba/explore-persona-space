@@ -1206,10 +1206,16 @@ def _write_outputs(
 
 
 def main() -> None:
+    """Render the selected manuscript panels from banked evaluation results."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--layer-source", type=Path, default=DEFAULT_LAYER_SOURCE)
     parser.add_argument("--scaling-source", type=Path, default=DEFAULT_SCALING_SOURCE)
-    parser.add_argument("--boundary-source", type=Path, default=DEFAULT_BOUNDARY_SOURCE)
+    parser.add_argument(
+        "--boundary-source",
+        type=Path,
+        default=None,
+        help="optional archived control source; omitted from manuscript renders",
+    )
     parser.add_argument(
         "--no-boundary", action="store_true", help="render without the control overlay"
     )
@@ -1246,7 +1252,11 @@ def main() -> None:
     pool10k = _load_pool10k_data(args.pool10k_source)
     extension = None if args.no_extension else _load_extension_data(args.extension_source)
     scaling = _load_scaling_data(args.scaling_source, pool10k)
-    boundary = None if args.no_boundary else _load_boundary_data(args.boundary_source)
+    boundary = (
+        _load_boundary_data(args.boundary_source)
+        if args.boundary_source is not None and not args.no_boundary
+        else None
+    )
     baselines = None
     if not args.no_baselines:
         if args.no_extension:

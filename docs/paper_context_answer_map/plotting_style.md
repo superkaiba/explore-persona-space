@@ -21,6 +21,11 @@ From the repository root, run:
 uv run python scripts/make_paper_figure2.py
 ```
 
+The current manuscript uses the scaling panel beside the schematic. Regenerate
+that asset with `uv run python scripts/make_paper_figure2.py --panels b`.
+Both render modes omit the generic boundary-token comparison; the retained
+baselines are text embedding, copy plus bias, and shuffled pairs.
+
 This command requires no model inference, GPU, or network access. It reads:
 
 - `eval_results/issue_1901/avgtarget_plots/plot1_avg.json`

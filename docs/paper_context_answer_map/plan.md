@@ -76,7 +76,7 @@ corpus-transfer and causal-control failures for Discussion and Limitations.
 ### Proposed Results order for the uncapped version
 
 1. **Establishing the context-to-answer map.** Layer profile, data scaling, ridge
-   versus MLP, identity-plus-bias and boundary-token controls, summary ablations,
+   versus MLP, identity-plus-bias and shuffled-pair controls, summary ablations,
    post-training evolution, and the CoT `R²`/retrieval dissociation.
 2. **What information the map transports.** Behavior directions, standard and
    turn-averaged SAE granularity, controlled language/subject/object/verb minimal
@@ -162,9 +162,6 @@ Three headline Results sections:
     `sections/results/c4_persona_universal.tex`).
 
 Experiment ledger from the outline (status 2026-08-22):
-- NEW: single generic-boundary-token control arm for the C1 scaling figure
-  (existing #825 punctuation control averages across boundary tokens) → #1901
-  same-issue follow-up.
 - NEW: turn-averaged SAEs read of what the map predicts → child of #1482.
 - NEW: expand discrimination battery (which contexts/answers the map fails to
   distinguish) → child of #2215/#2202.

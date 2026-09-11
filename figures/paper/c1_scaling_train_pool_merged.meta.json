@@ -8,7 +8,7 @@
   "repository_manuscript_asset": "figures/paper/c1_scaling_train_pool_merged.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
-    "commit": "87822231c71fce19afc078e97866013c1d410987",
+    "commit": "d2f28355a4ef28d5d7bde2642632f5e2067dd331",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -56,7 +56,6 @@
     "background": "#FFFFFF",
     "text": [
       "Training contexts",
-      "1.2k",
       "5k",
       "25k",
       "100k",
@@ -73,7 +72,6 @@
       "Nonlinear",
       "Held-out $R^2$",
       "Top-1 retrieval",
-      "Boundary token",
       "Text embedding",
       "Copy + bias",
       "Shuffled pairs"
@@ -604,48 +602,7 @@
     "target": "five-rollout mean",
     "retrieval": "whitened cosine + CSLS (K=10), pool n=10,000 (942 deduplicated targets + 9,058 distractors), chance top-1 0.0001"
   },
-  "boundary_control": {
-    "source": {
-      "path": "eval_results/issue_1901/boundary_points_fig2.json",
-      "sha256": "8919b7f4d7297ef4c884cf5e708ca7fd6500632fede0afec3f67b99c617412d2"
-    },
-    "encoding": "burnt-umber filled square on panel B at x = 1,200, the control's own training size: mean held-out R^2 over the four exact-token maps. R^2 only (its top-1 was scored on a 400-span pool, not panel B's 10,000 candidates)",
-    "n_tokens": 4,
-    "tokens": {
-      "659": {
-        "label": "space + period",
-        "r2": 0.2967163144586531,
-        "retrieval": 0.865
-      },
-      "13": {
-        "label": "period",
-        "r2": 0.2890773553426029,
-        "retrieval": 0.7625
-      },
-      "937": {
-        "label": "space + question",
-        "r2": 0.24075864873147923,
-        "retrieval": 0.645
-      },
-      "753": {
-        "label": "space + exclamation",
-        "r2": 0.26609196841124216,
-        "retrieval": 0.625
-      }
-    },
-    "r2_mean": 0.27316107173599435,
-    "retrieval_mean": 0.724375,
-    "n_train_per_token": 1200,
-    "n_pool": 400,
-    "span": "anchor+1 .. next sentence-final punctuation token (exclusive); 8-256 tokens kept",
-    "retrieval": {
-      "metric": "whitened cosine + two-sided CSLS",
-      "csls_k": 10,
-      "whitening": "fit on the arm's 1,200 training spans, diagonal-target shrinkage lambda=0.1",
-      "rank": "strict top-k; mid-rank ties and top ties fail top-1",
-      "pool": "the arm's 400 held-out spans"
-    }
-  },
+  "boundary_control": null,
   "extension": {
     "source": {
       "path": "eval_results/issue_1901/figure2_extension_1200.json",
@@ -869,8 +826,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "aadd51d73eeb389af352fbd78cec55a643046c4e3308dde321770d5713a3995b",
-    "png": "0011515e4d73796e6e7881e79769955eba294bb38593def7dc85d0a6ab186c07",
-    "grayscale": "29210ca592e8186a1ab5a7dfb54527ec9a3feaa88107d9601eea39c2bfb1eba1"
+    "pdf": "f8aa41f5d34f193525b6c77e5d6d7b2c1d6bfda6421e79ec499b252dc42b4388",
+    "png": "4fccb3d0604b25670c68d3b0c9a3e5437babb81adb598fc3f25463257c7066eb",
+    "grayscale": "8e94363f4c62eb66fc405785e8b6dbae2350a03ce1fc709ad364e990011bc023"
   }
 }

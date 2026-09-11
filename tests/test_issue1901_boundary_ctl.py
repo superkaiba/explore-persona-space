@@ -10,7 +10,6 @@ by the driver-body tests below.
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import os
 import subprocess
@@ -340,21 +339,3 @@ def test_p2_partial_store_refusal(tmp_path, monkeypatch):
     )
     with pytest.raises(AssertionError, match="partial capture store"):
         BTC.phase_p2_fits(args)
-
-
-# ── fix 6 (poster leg): smoke-artifact rejection in the poster wrapper ────────
-
-
-def _load_poster_module():
-    path = PROJECT_ROOT / "docs" / "posters" / "mats_2026" / "make_plot1_scaling.py"
-    spec = importlib.util.spec_from_file_location("i1901_poster_plot1", path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
-
-
-def test_poster_rejects_smoke_boundary_artifact():
-    mod = _load_poster_module()
-    with pytest.raises(RuntimeError, match="smoke"):
-        mod._assert_production_artifact({"smoke": True, "cells": []})
-    assert mod._assert_production_artifact({"cells": []}) is None
