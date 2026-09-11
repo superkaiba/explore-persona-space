@@ -81,16 +81,17 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
 - Planning docs live in the EPS repo at
   `~/explore-persona-space/docs/paper_context_answer_map/`: `plan.md` = plan of record
   (claims spine C1–C5, decisions log, stretch goals, title/terminology decisions);
-  `claims.md` = evidence inventory (claim → issue # → verified numbers → figure paths,
-  with iteration-family notes on which run supersedes which); `ai_use_log.md` = ICLR
+  `ai_use_log.md` = ICLR
   LLM-disclosure log — append a row for every substantive AI contribution, same day.
   Edit + commit them THERE (explicit-path commits; EPS shared-root discipline).
   Figure drafts (fig1_schematic.*) live there too until wired into clean.tex.
 - Experiment ground truth lives in the EPS repo (`~/explore-persona-space`): task
   bodies via `uv run python scripts/task.py view <N>`, figures at
   `figures/issue_<N>/`, eval JSONs at `eval_results/issue_<N>/`. Never write a number
-  from memory — read the artifact; cite the SUCCEEDING iteration per claims.md's
-  iteration notes, never a superseded number.
+  from memory — read the artifact. Ground truth for every number is the
+  `eval_results/issue_<N>/` JSON plus the figure's own `*.meta.json` /
+  `*_data.json` provenance sidecar; when several runs exist, cite the one the
+  sidecar of the shipped figure names, never a superseded one.
 - Evidence policy (Thomas, 2026-08-19): `awaiting_promotion` results count as accepted.
 
 ## Pinned definitions (use everywhere; no drift)
@@ -189,7 +190,8 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
 
 ## Writing
 - Thomas alone writes/approves claims (contribution, abstract's central claim, titles,
-  takeaways). Agent-drafted prose must trace every number to claims.md or the artifact.
+  takeaways). Agent-drafted prose must trace every number to the artifact: the
+  `eval_results/` JSON or the figure's provenance sidecar.
 - Run `/humanize` on any draft prose before showing it.
 - Abstract follows the 5-sentence formula; intro ≤1.5 pages once the page cap returns.
 
