@@ -600,7 +600,7 @@
     ],
     "exported_size_inches": [
       13.095,
-      4.452
+      3.839
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -614,7 +614,6 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "A  \u00b7  SEPARATE MAP",
       "Assistant\nchat\ntemplate",
       "Assistant\nplain\ntext",
       "HELIOS\nship\nAI",
@@ -622,27 +621,30 @@
       "Dana\nordinary",
       "Vex\nvillain",
       "Held-out $R^2$ \u2191",
-      "\u22120.2",
       "0.0",
       "0.2",
       "0.4",
       "0.6",
       "0.8",
       "1.0",
-      "Held-out $R^2$ per setting,\nbase and post-trained",
-      "Shuffled answers (null)",
+      "A Separate maps",
       "Base",
       "Post-trained",
-      "B  \u00b7  SHARED MAP",
       "Fraction of own $R^2$ \u2191",
       "0.5",
       "1.5",
-      "Shared $R^2$ as a fraction\nof each setting's own $R^2$",
+      "B Shared vs. separate maps",
       "Separate map",
       "Shared map"
     ]
   },
   "source_data_sha256": "affbf362f4445df451f00b6a9ede91024de37dfbfd0ab25557554a9c85d51d88",
-  "render_script_sha256": "a121b836014691c50adeeb8b571628006b7bc16e0552907eebf828eef8db69ec",
-  "style_deviations": "x-axis category labels use 14 pt, as in the prior manuscript figure"
+  "render_script_sha256": "bad52eee8c9641fc6092641af9e7995870764ff43e78fb7add7bd436045a9603",
+  "style_deviations": "x-axis category labels use 14 pt, as in the prior manuscript figure",
+  "output_sha256": {
+    "pdf": "a66d85d1f166209f57063c02b52271fdd0e793d3c9f44c8ab27d096807ef7064",
+    "png": "992963cabee20a1e4c9953d417a76c0647d0ab9335c58d48653b039697a9974c",
+    "grayscale": "56dd4bd1f574d85f27af98af8a2e90bb877b7fd00afa614e62c2792bbf3d8f38"
+  },
+  "presentation_change": "Single descriptive panel headings; shuffled-answer line and legend removed at user request. All plotted estimates retain the remade figure data."
 }

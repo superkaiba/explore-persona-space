@@ -17,7 +17,6 @@ import numpy as np
 from explore_persona_space.analysis.c2a_plot_style import (
     INK,
     METRIC_LABELS,
-    MUTED,
     ROLES,
     better_label,
     c2a_figure,
@@ -62,20 +61,13 @@ def main():
             color=style.color,
             label=style.label,
         )
-    ax_a.axhline(
-        own["null_level"],
-        color=MUTED,
-        linestyle="--",
-        linewidth=1.6,
-        label="Shuffled answers (null)",
-    )
     ax_a.set_ylabel(better_label(METRIC_LABELS["r2"]))
-    ax_a.set_ylim(min(-0.05, own["null_level"] - 0.02), 0.85)
+    ax_a.set_ylim(0.0, 0.85)
     panel_header(
         ax_a,
         "A",
         "Separate map",
-        title="Held-out $R^2$ per setting,\nbase and post-trained",
+        title="Separate maps",
         kicker_y=1.28,
         title_y=1.04,
     )
@@ -89,7 +81,7 @@ def main():
         ax_b,
         "B",
         "Shared map",
-        title="Shared $R^2$ as a fraction\nof each setting's own $R^2$",
+        title="Shared vs. separate maps",
         kicker_y=1.28,
         title_y=1.04,
     )
