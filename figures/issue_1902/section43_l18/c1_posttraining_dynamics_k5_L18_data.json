@@ -140,7 +140,7 @@
   "metadata": {
     "context_summary": "u_last",
     "folds": "six size-matched IID random-row folds (seed 190231)",
-    "generated_utc": "2026-09-11T17:01:58Z",
+    "generated_utc": "2026-09-11T17:52:08Z",
     "k5_retrieval": "eval_results/issue_1902/k5_layer18_grid/retrieval/summary.json",
     "k5_summary": "eval_results/issue_1902/k5_layer18_grid/summary.json",
     "layer": 18,

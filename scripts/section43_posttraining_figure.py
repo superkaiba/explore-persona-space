@@ -565,17 +565,6 @@ def render_variant(data: dict[str, Any], out_base: Path, *, panel_b: str) -> dic
             borderaxespad=0.0,
             labelspacing=0.3,
         )
-    # One short factual line, matching the sidecar's bootstrap description
-    # (1,000 draws; 95% quantile intervals in every panel).
-    fig.text(
-        0.995,
-        0.955,
-        "Error bars: 95% bootstrap CIs, 1,000 draws",
-        color=MUTED,
-        fontsize=13,
-        ha="right",
-        va="center",
-    )
     outputs = save_c2a_figure(
         fig,
         out_base,
