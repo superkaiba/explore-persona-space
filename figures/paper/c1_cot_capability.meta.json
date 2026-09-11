@@ -613,7 +613,7 @@
     "C": "capability"
   },
   "layout": "One horizontal row: CoT prediction, correctness groups, model capability",
-  "changes": "Single-row layout, compact headings, and relocated model labels; bar-value text omitted from narrow panels. The plotted-model count comes off the panel C kicker because the caption states it. All estimates and intervals preserved.",
+  "changes": "Single-row layout with one-line panel headings and tighter vertical spacing. Panel C uses AA Intelligence Index, expanded in the caption. All estimates, intervals, model labels, and font sizes preserved.",
   "maps_refit": false,
   "render": {
     "style_version": "c2a-v2",
@@ -621,11 +621,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      5.5
+      4.583
     ],
     "exported_size_inches": [
       13.095,
-      5.335
+      4.241
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -639,7 +639,6 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "A  \u00b7  ALL QUESTIONS",
       "$R^2$",
       "Top-1\nretrieval",
       "Score \u2191",
@@ -648,8 +647,7 @@
       "0.50",
       "0.75",
       "1.00",
-      "Answer prediction",
-      "B  \u00b7  THINKING ON",
+      "A Answer prediction",
       "Only with\nthinking",
       "Both\nmodes",
       "Held-out $R^2$ \u2191",
@@ -657,7 +655,7 @@
       "0.2",
       "0.4",
       "0.6",
-      "Correctness groups",
+      "B Correctness groups",
       "Qwen3.5 0.8B",
       "Qwen3.5 2B",
       "Qwen3.5 4B",
@@ -669,8 +667,7 @@
       "OLMo3.1 32B Instruct",
       "Qwen3 32B",
       "Spearman $\\rho = 0.867$, $p = 0.002$",
-      "C  \u00b7  THINKING OFF",
-      "Artificial Analysis\nIntelligence Index \u2191",
+      "AA Intelligence Index \u2191",
       "0",
       "10",
       "20",
@@ -680,17 +677,17 @@
       "60",
       "0.65",
       "0.7",
-      "Model capability",
+      "C Model capability",
       "Thinking off \u00b7 context",
       "Thinking on \u00b7 context",
       "Thinking on \u00b7 CoT end"
     ]
   },
-  "script_sha256": "68c77f67157dc1b332a366b802182ab9654f589607f0c324fbc4b342cd514c2d",
+  "script_sha256": "ca397960ff9ce54d439cc62f5ffc47d2bfa2ec5989d754e22ece28234dd220c1",
   "style_sha256": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1",
   "output_sha256": {
-    "pdf": "6aa4037601e16cbca9fab725b250ca8948c7f4cb69966a869e03d9de708b4887",
-    "png": "336030121085fece35cdba46719009da108650b6245a8795264d8cb7fdf26e95",
-    "grayscale": "9901f5a2158416d87f8c40576a0e4c2b924b82f5d8efb47139bb8f345f1bb7a1"
+    "pdf": "cc2f8f2b6b6c16d08ad557264c0347d77df77cbc0daf7a28329fbbe6ede68f15",
+    "png": "5166f02febd7683522620448b64ee64cfdaddbcc3055bff628aae50d906e9dca",
+    "grayscale": "8dfd3d321387e777c892d35be934a27aa7536d014b7411df160cfe65a38b7b00"
   }
 }

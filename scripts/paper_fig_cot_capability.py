@@ -91,7 +91,7 @@ def draw_prediction(ax, data):
     ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
     ax.set_ylabel(better_label("Score"))
     style_axis(ax)
-    panel_header(ax, "A", "All questions", "Answer prediction", kicker_y=1.18, title_y=1.035)
+    panel_header(ax, "", "", "A Answer prediction", kicker_y=1.025, title_y=1.025)
 
 
 def draw_correctness(ax, data):
@@ -119,7 +119,7 @@ def draw_correctness(ax, data):
     ax.set_yticks([0, 0.2, 0.4, 0.6])
     ax.set_ylabel(better_label(r"Held-out $R^2$"))
     style_axis(ax)
-    panel_header(ax, "B", "Thinking on", "Correctness groups", kicker_y=1.18, title_y=1.035)
+    panel_header(ax, "", "", "B Correctness groups", kicker_y=1.025, title_y=1.025)
 
 
 def draw_capability(ax, data):
@@ -132,7 +132,7 @@ def draw_capability(ax, data):
     ax.set_yticks([0.60, 0.65, 0.70, 0.75])
     ax.set_xlim(-3, 64)
     ax.set_xticks([0, 10, 20, 30, 40, 50, 60])
-    ax.set_xlabel(better_label("Artificial Analysis\nIntelligence Index"))
+    ax.set_xlabel(better_label("AA Intelligence Index"))
     ax.set_ylabel(better_label(r"Held-out $R^2$"))
     role = ROLES["linear"]
     ax.scatter(
@@ -169,7 +169,7 @@ def draw_capability(ax, data):
         transform=ax.transAxes,
         va="top",
     )
-    panel_header(ax, "C", "Thinking off", "Model capability", kicker_y=1.18, title_y=1.035)
+    panel_header(ax, "", "", "C Model capability", kicker_y=1.025, title_y=1.025)
 
 
 def main():
@@ -178,11 +178,11 @@ def main():
     source = json.loads(raw)
     cot, capability = [source[key]["data"] for key in ("cot", "capability")]
     set_c2a_style()
-    fig, frac = c2a_figure("full", aspect=0.42)
+    fig, frac = c2a_figure("full", aspect=0.35)
     axes = [
-        fig.add_axes([0.080, 0.19, 0.190, 0.55]),
-        fig.add_axes([0.345, 0.19, 0.195, 0.55]),
-        fig.add_axes([0.625, 0.19, 0.355, 0.55]),
+        fig.add_axes([0.080, 0.20, 0.190, 0.62]),
+        fig.add_axes([0.345, 0.20, 0.195, 0.62]),
+        fig.add_axes([0.625, 0.20, 0.355, 0.62]),
     ]
     fig.legend(
         handles=[
@@ -224,10 +224,9 @@ def main():
         "panel_mapping": {"A": "cot.A", "B": "cot.B", "C": "capability"},
         "layout": "One horizontal row: CoT prediction, correctness groups, model capability",
         "changes": (
-            "Single-row layout, compact headings, and relocated model labels; "
-            "bar-value text omitted from narrow panels. The plotted-model count comes off "
-            "the panel C kicker because the caption states it. "
-            "All estimates and intervals preserved."
+            "Single-row layout with one-line panel headings and tighter vertical spacing. "
+            "Panel C uses AA Intelligence Index, expanded in the caption. "
+            "All estimates, intervals, model labels, and font sizes preserved."
         ),
         "maps_refit": False,
         "render": exported["record"],
