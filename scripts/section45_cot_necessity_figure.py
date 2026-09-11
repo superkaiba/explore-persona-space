@@ -35,21 +35,28 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-import matplotlib.pyplot as plt
-import numpy as np
-from huggingface_hub import hf_hub_download
-from matplotlib.lines import Line2D
-from matplotlib.patches import Patch
-from scipy.stats import spearmanr
-
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+# On the shared VM load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS,
+# so it has to run before any heavy import binds those caps in-process.
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+from huggingface_hub import hf_hub_download  # noqa: E402
+from matplotlib.lines import Line2D  # noqa: E402
+from matplotlib.patches import Patch  # noqa: E402
+from scipy.stats import spearmanr  # noqa: E402
 
 from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     INK,
     MUTED,
     PAPER,
     STYLE_VERSION,
+    c2a_figure,
     save_c2a_figure,
     set_c2a_style,
     style_score_axis,
@@ -373,27 +380,32 @@ def _question_axes(ax: plt.Axes, panel: dict[str, Any]) -> None:
 
 def make_figure(corpus_panel: dict[str, Any], question_panel: dict[str, Any]) -> plt.Figure:
     set_c2a_style()
-    fig = plt.figure(figsize=(14.4, 6.6), constrained_layout=False)
-    grid = fig.add_gridspec(1, 3, left=0.065, right=0.985, top=0.73, bottom=0.14, wspace=0.55, width_ratios=[1.0, 1.0, 1.15])
+    # Authored at the c2a "full" include width (13.10 in) so the canvas realizes
+    # C2A_SCALE at an allowed include fraction. The previous raw 14.4 in canvas
+    # realized 1.100, which save_c2a_figure refuses. The height/width ratio is
+    # preserved, so the three panels keep their proportions.
+    fig, _include_frac = c2a_figure("full", aspect=6.6 / 14.4)
+    grid = fig.add_gridspec(1, 3, left=0.088, right=0.978, top=0.73, bottom=0.14, wspace=0.42, width_ratios=[1.0, 1.0, 1.15])
     ax_a = fig.add_subplot(grid[0, 0])
     ax_b = fig.add_subplot(grid[0, 1])
     ax_c = fig.add_subplot(grid[0, 2])
     _corpus_axes(ax_a, corpus_panel["1"], MODELS[1]["marker"], 0.16, show_ylabel=True)
-    _kicker(ax_a, "End-of-thought gains are small\nand do not track the necessity rate", "A  ·  OpenThinker3-7B vs parent")
+    _kicker(ax_a, "End-of-thought gains are small\nand do not track\nthe necessity rate", "A  ·  OpenThinker3-7B vs parent")
     _corpus_axes(ax_b, corpus_panel["3"], MODELS[3]["marker"], 0.42, show_ylabel=False)
-    _kicker(ax_b, "Larger gains for the thinking toggle,\nfalling as the necessity rate rises", "B  ·  Qwen3-8B, thinking on vs off")
+    _kicker(ax_b, "Larger gains for the thinking\ntoggle, falling as the\nnecessity rate rises", "B  ·  Qwen3-8B, thinking on vs off")
     _question_axes(ax_c, question_panel)
-    _kicker(ax_c, "No map score identifies\nwhich MATH questions need reasoning", "C  ·  per-question AUROC, 95% intervals")
+    _kicker(ax_c, "No map score identifies which\nMATH questions\nneed reasoning", "C  ·  per-question AUROC")
 
     model_handles = [
-        Line2D([0], [0], color=INK, marker=MODELS[1]["marker"], markersize=10, lw=0, label=MODELS[1]["label"]),
-        Line2D([0], [0], color=INK, marker=MODELS[3]["marker"], markersize=8.5, lw=0, label=MODELS[3]["label"]),
+        Line2D([0], [0], color=INK, marker=MODELS[1]["marker"], markersize=10, lw=0, label="OpenThinker3-7B"),
+        Line2D([0], [0], color=INK, marker=MODELS[3]["marker"], markersize=8.5, lw=0, label="Qwen3-8B"),
     ]
-    stratum_handles = [Patch(facecolor=STRATUM_COLOR[s], edgecolor=STRATUM_COLOR[s], label=STRATUM_LABEL[s]) for s in ("does", "doesnt")]
-    fig.text(0.065, 0.965, "REASONING SETTING", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
-    fig.legend(handles=model_handles, loc="upper left", bbox_to_anchor=(0.064, 0.95), ncol=2, frameon=False, columnspacing=1.3, handlelength=1.4, handletextpad=0.6, borderaxespad=0)
-    fig.text(0.635, 0.965, "CORPORA (A, B)", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
-    fig.legend(handles=stratum_handles, loc="upper left", bbox_to_anchor=(0.634, 0.95), ncol=2, frameon=False, columnspacing=1.3, handlelength=1.4, handletextpad=0.6, borderaxespad=0)
+    short_stratum = {"does": "Needs-reasoning", "doesnt": "No-reasoning"}
+    stratum_handles = [Patch(facecolor=STRATUM_COLOR[s], edgecolor=STRATUM_COLOR[s], label=short_stratum[s]) for s in ("does", "doesnt")]
+    fig.text(0.088, 0.965, "REASONING SETTING", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
+    fig.legend(handles=model_handles, loc="upper left", bbox_to_anchor=(0.087, 0.95), ncol=2, frameon=False, columnspacing=1.3, handlelength=1.4, handletextpad=0.6, borderaxespad=0)
+    fig.text(0.455, 0.965, "CORPORA (A, B)", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
+    fig.legend(handles=stratum_handles, loc="upper left", bbox_to_anchor=(0.454, 0.95), ncol=2, frameon=False, columnspacing=1.3, handlelength=1.4, handletextpad=0.6, borderaxespad=0)
     return fig
 
 
@@ -444,7 +456,10 @@ def main(argv: list[str] | None = None) -> int:
                 },
                 "panel_A": corpus_panel,
                 "panel_B": question_panel,
-                "outputs": {k: str(v.relative_to(ROOT)) for k, v in outputs.items()},
+                "outputs": {
+                    k: str(v.relative_to(ROOT)) for k, v in outputs.items() if k != "record"
+                },
+                "render": outputs["record"],
             },
             indent=2,
             sort_keys=True,
