@@ -38,6 +38,8 @@ Recent sibling worktrees checked include the k-rollout-ablation, retrieval-10k, 
 
 ## Prepared consumer interface
 
+The stable prepared-artifact root is `/mnt/eps-data/thomasjiralerspong/issue1901_training_k10/inputs`, outside the sparse worktree. An earlier derived staging copy was pruned by a sparse-checkout update; preparation was repeated from the pinned sources and completed with process exit 0 at 2026-09-11 11:51:40 UTC before publication. Source banks were unaffected.
+
 `train.npz` contains fp32 `X[19000,3584]`, fp32 `Y_original[19000,3584]`, fp16 `Y_fresh[19000,4,3584]`, int64 `ci`, and `fresh_seeds=[43,44,45,46]`. `test.npz` contains the analogous X and original answer, nine fresh draws 43–51, negative test CI, original `pass_b_rows`, and fixed `dedup_rows[942]`. Original fp32 answers are never rounded to fp16 during packaging.
 
 `prompts.json` provides ordered train/test rows with CI, prompt, and prompt SHA256. Compact JSON keeps this text below the 9.5 MB threshold for uploading text as-is. `parity.json` provides 128 fixed seed43 records (32 per original shard), with `generated.text`, prompt/generated token IDs, and `expected_index`. `parity.npz` contains the matching fp16 `V[128,3584]` and CI. For the inherited capture helper, add the outer row's CI to its nested generated object before calling. A fresh process must pass GPU parity before generation.
@@ -47,3 +49,7 @@ Source staging maps each repository path directly to `out/source/<repo-relative-
 ## Validation
 
 Eight focused tests passed, covering unordered/missing/duplicate CI joins, source shard boundaries, real PyTorch capture loading at hidden width 3584, original precision, prompt drift, nonfinite vectors, uneven shard joins, exact staging paths, pinned Hub calls, source corruption, and stale manifest revisions. Ruff and CLI import/help checks passed. The full production preparation on the actual 19k and test banks completed with process exit 0 and logged `PASS train=19000 test=1000 inputs=61`. Packaging validation also passed after compacting prompt JSON without changing parsed contents.
+
+## Publication
+
+The six portable files were uploaded together to `issue1901_training_k10/inputs` at immutable HF revision `b281fc98da9fc87b4aabe2463cd24bc26d8ad115`; every remote size and SHA256/Git blob digest matched the prepared local file. The final input-manifest SHA256 is `01913f081a84c954a282a03c794b35015393e9a30cd78da0885cbdb11b041b74`. The complete receipt is `input_publication.json` alongside this audit and at the stable artifact root.

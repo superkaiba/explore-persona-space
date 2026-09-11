@@ -1,0 +1,43 @@
+{
+  "revision": "b281fc98da9fc87b4aabe2463cd24bc26d8ad115",
+  "files": [
+    {
+      "path": "issue1901_training_k10/inputs/manifest.json",
+      "sha256": "01913f081a84c954a282a03c794b35015393e9a30cd78da0885cbdb11b041b74",
+      "size": 22322
+    },
+    {
+      "path": "issue1901_training_k10/inputs/parity.json",
+      "sha256": "e45d1597450e8f652259128ef1e92203ab764c1ad344905ffa45b289541f95b6",
+      "size": 1231848
+    },
+    {
+      "path": "issue1901_training_k10/inputs/parity.npz",
+      "sha256": "a96ff6f52ae52776c9c63796f0fc9ba5ca2fb568b6c9ff366a731047d2452d52",
+      "size": 919020
+    },
+    {
+      "path": "issue1901_training_k10/inputs/prompts.json",
+      "sha256": "7fdd401f75c7b2db2de1d3192b2fff2d823458810e8e0275f8980827d617aa8f",
+      "size": 9150113
+    },
+    {
+      "path": "issue1901_training_k10/inputs/test.npz",
+      "sha256": "54e243b003b08786cc72b09efd93cf9d1d1dd305cd2a25425eb1c39d996bb536",
+      "size": 93209358
+    },
+    {
+      "path": "issue1901_training_k10/inputs/train.npz",
+      "sha256": "bb7961d34b9e35e6b187be4e9436ba27446c8676f56494039c9a2f04251450a4",
+      "size": 1089689276
+    }
+  ],
+  "source_revision": "77f04fcdf169b5a9d4aa304c9c6efbab0526c0e2",
+  "input_manifest_sha256": "01913f081a84c954a282a03c794b35015393e9a30cd78da0885cbdb11b041b74",
+  "train_rows": 19000,
+  "test_rows": 1000,
+  "retrieval_candidates": 942,
+  "prepared_input_root": "/mnt/eps-data/thomasjiralerspong/issue1901_training_k10/inputs",
+  "code_commit": "e3e9d21165abc78f3dd2f1abd33ca10bb255b152",
+  "validation": "PASS: source hashes, exact original-vector parity, prompt hashes, shape/ID/finiteness, and remote bytes verified"
+}
