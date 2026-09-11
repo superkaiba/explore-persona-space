@@ -278,10 +278,13 @@ def plot_within_stage(ax: mpl.axes.Axes, data: dict[str, Any]) -> list[Line2D]:
     ax.set_xticks(x)
     ax.set_xticklabels(STAGES)
     ax.set_ylabel(better_label("Held-out score"))
+    # The layer is a property of the data, not of the panel: the same figure is
+    # rendered at layer 31 (the final layer) and at layer 18 (a middle layer).
+    layer = data.get("metadata", {}).get("layer", 31)
     panel_header(
         ax,
         "A",
-        "OLMo-2-7B, layer 31",
+        f"OLMo-2-7B, layer {int(layer)}",
         "Held-out score of each\nstage's own map",
         **HEADER_KWARGS,
     )

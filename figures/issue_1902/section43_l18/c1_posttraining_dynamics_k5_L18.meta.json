@@ -1,0 +1,76 @@
+{
+  "metadata": {
+    "context_summary": "u_last",
+    "folds": "six size-matched IID random-row folds (seed 190231)",
+    "generated_utc": "2026-09-11T17:01:58Z",
+    "k5_retrieval": "eval_results/issue_1902/k5_layer18_grid/retrieval/summary.json",
+    "k5_summary": "eval_results/issue_1902/k5_layer18_grid/summary.json",
+    "layer": 18,
+    "panel_bc_bootstrap": "1000 paired draws, seed 1944; panel C retention CIs = semantic-cluster bootstrap; panel B CIs = row bootstrap",
+    "prev_row_note": "Full 4x4 grid: all three previous-stage points captured.",
+    "variant": "K=5 mean answer targets (seeds 42,45,46,47,48)"
+  },
+  "panel_b_variant": "lines",
+  "record": {
+    "authoring_size_inches": [
+      13.095,
+      4.321
+    ],
+    "background": "#FFFFFF",
+    "exported_size_inches": [
+      13.095,
+      4.164
+    ],
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c1_posttraining_dynamics_k5_L18.pdf}",
+    "png_dpi": 240,
+    "realized_font_pt": {
+      "body": 7.56,
+      "label": 8.4,
+      "tick": 7.14,
+      "title": 9.24
+    },
+    "resolved_font": "Inter",
+    "scale": 0.42,
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "style_version": "c2a-v2",
+    "text": [
+      "A  \u00b7  OLMO-2-7B, LAYER 18",
+      "Base",
+      "SFT",
+      "DPO",
+      "RLVR",
+      "Held-out score \u2191",
+      "0.4",
+      "0.6",
+      "0.8",
+      "1",
+      "Held-out score of each\nstage's own map",
+      "Held-out $R^2$",
+      "Top-1 retrieval",
+      "B  \u00b7  CONTEXT\u2192ANSWER FITS",
+      "Answer source",
+      "Held-out $R^2$ \u2191",
+      "0.55",
+      "0.65",
+      "Held-out $R^2$ into each stage's\nanswers, by context source",
+      "C  \u00b7  MAP TRANSFER",
+      "Base\n\u2192 SFT",
+      "SFT\n\u2192 DPO",
+      "DPO\n\u2192 RLVR",
+      "$R^2_{i \\to j} \\, / \\, R^2_{j \\to j}$ \u2191",
+      "0",
+      "0.5",
+      "Retention of the\nprior stage's map",
+      "CONTEXT SOURCE",
+      "CORRECTION",
+      "Error bars: 95% bootstrap CIs, 1,000 draws",
+      "Own states",
+      "Previous-stage states",
+      "Base states",
+      "as is",
+      "bias",
+      "rescaling + bias"
+    ]
+  }
+}

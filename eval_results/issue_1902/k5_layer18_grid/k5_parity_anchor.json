@@ -1,0 +1,34 @@
+{
+  "cells": [
+    {
+      "abs_diff": 3.3373304120232206e-13,
+      "committed_r2": 0.6340794439837711,
+      "k5_rerun_r2": 0.6340794439834374,
+      "stage": "B"
+    },
+    {
+      "abs_diff": 2.1600499167107046e-12,
+      "committed_r2": 0.6332254462672348,
+      "k5_rerun_r2": 0.6332254462693948,
+      "stage": "S"
+    },
+    {
+      "abs_diff": 3.752553823233029e-14,
+      "committed_r2": 0.6246273613585991,
+      "k5_rerun_r2": 0.6246273613586366,
+      "stage": "D"
+    },
+    {
+      "abs_diff": 4.5075054799781356e-14,
+      "committed_r2": 0.6206444845947268,
+      "k5_rerun_r2": 0.6206444845947718,
+      "stage": "R"
+    }
+  ],
+  "layer": 18,
+  "max_abs_diff": 2.1600499167107046e-12,
+  "mode": "k5_diagonal_same_layer",
+  "pass": true,
+  "reference": "eval_results/issue_1902/k5_layer18/summary_L18.json",
+  "tolerance": 0.001
+}
