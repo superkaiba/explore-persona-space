@@ -7,7 +7,7 @@
   "title": "What the context-to-answer map keeps per changed context element",
   "subject": "Mean cosine between predicted and observed answer shift, and median ratio of predicted to observed shift size, per controlled context element, with 95% pair-bootstrap intervals",
   "git": {
-    "commit": "2d584d7c24c2b5fc72fa8bc7a439fbb72c31b566",
+    "commit": "218e58b1f9ef6cc4d59fd528746d5181b633a17f",
     "tracked_worktree_dirty": true
   },
   "sources": [

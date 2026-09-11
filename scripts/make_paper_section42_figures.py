@@ -766,7 +766,7 @@ _ELEMENT_SHIFT_GROUPS = (
 # Appendix companion: the main-panel row the slots decompose, then the slots.
 _SLOT_ROW_ORDER = ("One-word topic", "slot: subject", "slot: verb", "slot: object")
 _SLOT_ROW_LABELS = {
-    "One-word topic": "One-word topic (panel C)",
+    "One-word topic": "One-word topic",
     "slot: subject": "…subject swapped",
     "slot: verb": "…verb swapped",
     "slot: object": "…object swapped",
@@ -916,7 +916,7 @@ def make_element_shifts_by_slot_figure(data: dict) -> tuple[plt.Figure, float]:
                 "",
                 "one-word query swaps · qwen2.5-7b-instruct · layer 19",
                 "One-word topic change, by grammatical slot",
-                kicker_y=1.20,
+                kicker_y=1.26,
                 title_y=1.07,
             )
     return fig, include_frac
