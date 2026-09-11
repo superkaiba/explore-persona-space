@@ -14,12 +14,15 @@ All experimental settings and control motivations are preserved
 
 The theoretical-analysis subsection is removed from the main text. Discussion,
 Limitations, and Future Work contains a short paragraph explaining that linearity
-enables theoretical analysis, pointing to the preliminary appendix analysis, and
-calling for linear systems theory, stochastic processes, random matrix theory,
+enables theoretical analysis and calling for linear systems theory, stochastic
+processes, random matrix theory,
 and neural tangent kernel theory to investigate longer-conversation dynamics,
 uncertainty propagation, the statistical structure of the learned map, and
 the effects of fine-tuning. The NTK references are Jacot et al. (2018) and
-Malladi et al. (2023).
+Malladi et al. (2023). The paragraph ends with the preliminary appendix-analysis
+pointer. Conversation dynamics and fine-tuning effects are discussed here. The
+rare-behavior paragraph keeps automated red-teaming as its application, and the
+closing scope paragraph retains the settings that need evaluation.
 These are future research directions. Retain only quantitative theory in the appendix:
 effective-kernel size
 and sensitivity, rank and spectrum, fixed-point behavior, and refusal-pair kernel
