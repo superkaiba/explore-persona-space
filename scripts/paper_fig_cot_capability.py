@@ -99,7 +99,9 @@ def draw_prediction(ax, data):
     ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
     ax.set_ylabel(better_label("Score"))
     style_axis(ax)
-    panel_header(ax, "A", "Qwen3-8B · all questions", "Answer prediction")
+    panel_header(
+        ax, "A", "Qwen3-8B · all questions", "Answer prediction", kicker_y=1.26, title_y=1.06
+    )
 
 
 def draw_correctness(ax, data):
@@ -127,7 +129,9 @@ def draw_correctness(ax, data):
     ax.set_yticks([0, 0.2, 0.4, 0.6])
     ax.set_ylabel(better_label(r"Held-out $R^2$"))
     style_axis(ax)
-    panel_header(ax, "B", "Qwen3-8B · thinking on", "Correctness groups")
+    panel_header(
+        ax, "B", "Qwen3-8B · thinking on", "Correctness groups", kicker_y=1.26, title_y=1.06
+    )
 
 
 def draw_capability(ax, data):
@@ -171,7 +175,14 @@ def draw_capability(ax, data):
         transform=ax.transAxes,
         va="top",
     )
-    panel_header(ax, "C", "10 models · thinking off", "Predictability versus model capability")
+    panel_header(
+        ax,
+        "C",
+        "10 models · thinking off",
+        "Predictability versus model capability",
+        kicker_y=1.20,
+        title_y=1.04,
+    )
 
 
 def main():
@@ -180,11 +191,11 @@ def main():
     source = json.loads(raw)
     cot, capability = [source[key]["data"] for key in ("cot", "capability")]
     set_c2a_style()
-    fig, frac = c2a_figure("full", aspect=0.78)
+    fig, frac = c2a_figure("full", aspect=0.60)
     axes = [
-        fig.add_axes([0.085, 0.62, 0.40, 0.25]),
-        fig.add_axes([0.60, 0.62, 0.38, 0.25]),
-        fig.add_axes([0.085, 0.085, 0.895, 0.34]),
+        fig.add_axes([0.085, 0.60, 0.40, 0.235]),
+        fig.add_axes([0.60, 0.60, 0.38, 0.235]),
+        fig.add_axes([0.085, 0.10, 0.895, 0.325]),
     ]
     fig.legend(
         handles=[

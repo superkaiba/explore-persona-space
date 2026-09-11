@@ -312,7 +312,9 @@ Rendering requires no model inference, refitting, or statistical recomputation.
 Panels A and B retain the main CoT comparisons; panel C places the capability
 scatter below them at full width to retain all ten model labels. The correctness
 groups are labeled by their observed outcomes: correct only with thinking and
-correct in both modes. Include the combined PDF at exactly `\textwidth`.
+correct in both modes. The compact layout uses a 0.60 canvas aspect ratio,
+shorter axes, and tighter vertical gaps while preserving the standard font sizes.
+Include the combined PDF at exactly `\textwidth`.
 The manuscript keeps `fig:cot` and `fig:model-capability` as labels on this one
 float, with capability references explicitly pointing to panel C. The standalone
 source figures remain available in their original producer branches.

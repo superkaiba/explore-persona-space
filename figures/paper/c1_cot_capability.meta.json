@@ -621,11 +621,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      10.214
+      7.857
     ],
     "exported_size_inches": [
       13.095,
-      9.92
+      7.645
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -696,11 +696,11 @@
       "Thinking on \u00b7 CoT end"
     ]
   },
-  "script_sha256": "f059dce68cb17d959f9ed1bc11823ceda2a4d191753381e3385aba876fefd94d",
+  "script_sha256": "c042d5670332627babaf5a3a690cf8b352f8739702dc06ef54bc4d9afa78c6ff",
   "style_sha256": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1",
   "output_sha256": {
-    "pdf": "ad0dc3959694b399e528a532363956512b25c873acae508d3e1c3db99f935dd5",
-    "png": "902d5ab89b6bd44ca41dc0e772c985ee8810cee7c42444ceb8f3a204b48a9ca7",
-    "grayscale": "e54899bbbf11844cc91e9eed2e745f1eb1088f8161a752533920e1fc750b0c16"
+    "pdf": "71228e8bb64deaee5f99521c57ca6f3091f37295b56fd4ee46fac5a1d4379fa9",
+    "png": "6e7ecc01b34d87da311f3ab43c860e8510f08739cab110d9f6683faa52b6ac72",
+    "grayscale": "3d2d715d9898f32ee1b94760d0e6dab128118759888288c6cb6cfa681263cf99"
   }
 }
