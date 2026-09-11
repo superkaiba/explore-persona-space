@@ -215,6 +215,13 @@ Four beats, fixed order, then stop.
    descriptive lead asserts nothing, so it needs no matching header, and forcing
    an umbrella claim onto panels that do not share one is worse than having
    none.
+
+   **No lead at all** is the third case, and the default once every lettered
+   panel carries its own claim. An umbrella over panels that each already make a
+   claim restates them and adds nothing, so the caption opens straight at
+   `\panel{A}`. Standing examples: `fig:schematic`, `fig:posttraining`,
+   `fig:cot`. Keep a lead when it says something no panel does, which is usually
+   a figure whose panels are descriptive, as in `fig:features-and-shifts`.
 2. **Per-panel subclaim, then what is plotted.** Each lettered panel opens with
    `\panel{A}` (renders `**(A)**`), then its subclaim in bold (8 words or fewer,
    sentence case, ends with a period), then y against x, the grouping, and any
