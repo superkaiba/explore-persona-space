@@ -1,0 +1,10 @@
+{
+ "timestamp_utc": "2026-09-11T17:05:09Z",
+ "repo": "superkaiba1/explore-persona-space-data",
+ "prefix": "issue1902_stage_map/k5grid_l18_20260911/analysis",
+ "uploaded": [
+  "issue1902_stage_map/k5grid_l18_20260911/analysis/analysis_outputs_L18.tar.gz"
+ ],
+ "n_npz_in_tar": 58,
+ "note": "per-cell/per-fold .npz + run JSONs; git carries the JSONs + figures"
+}
