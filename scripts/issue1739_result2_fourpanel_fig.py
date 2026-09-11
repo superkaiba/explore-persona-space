@@ -134,7 +134,11 @@ ICLR_ROSTERS = {
         ICLR_REGRESSION_METHODS,
         "c5_regression_regimes",
         2,
-        0.60,
+        # 0.60 before the provenance eyebrow and the error-bar note came off the
+        # canvas (the manuscript caption states the model, the read layers and
+        # the CI definition). The reclaimed row goes to the axes rather than
+        # becoming a whitespace band, so the top rises by 0.055.
+        0.655,
         ICLR_REGRESSION_GROUPS,
     ),
     "all": (ICLR_METHODS, "c5_pv_methods_regimes", 2, 0.55, None),
@@ -394,6 +398,10 @@ def legend_handles() -> list[Patch]:
     return handles
 
 
+# Both captions are SIDECAR text: they are written into fourpanel_values.json
+# and read from there, never rendered onto the canvas. A caption-style
+# provenance block drawn inside the plot (CI conventions, per-cell n, corpus
+# splits) is banned by the standing figure directive.
 CAPTION_MAIN = (
     "Spearman rho of each predictor vs the judged behaviour-expression DV (graded 0-100 trait "
     "rubric; hallucination's in-distribution and completely-OOD cells instead score fabricated "
@@ -438,8 +446,12 @@ def render_main(points: dict, verdicts: dict) -> tuple[int, list[dict]]:
     ylim = (min(-0.05, min(vals) - 0.04), max(vals) + 0.04)
 
     set_paper_style("blog", font_scale=0.9)
-    fig = plt.figure(figsize=(18.0, 7.4))
-    gs = fig.add_gridspec(2, 4, height_ratios=[1.0, 0.16])
+    # 7.4 tall with a 0.16 legend row before the four-line caption block came
+    # off the canvas. The legend row only ever needed its top ~0.3in, so the
+    # band the caption used to fill is removed from the canvas rather than left
+    # blank: the axes keep their height and the figure gets shorter.
+    fig = plt.figure(figsize=(18.0, 6.9))
+    gs = fig.add_gridspec(2, 4, height_ratios=[1.0, 0.07])
     fig.get_layout_engine().set(w_pad=0.02, h_pad=0.02, wspace=0.02)
     axes = [fig.add_subplot(gs[0, 0])]
     axes += [fig.add_subplot(gs[0, i], sharey=axes[0]) for i in (1, 2, 3)]
@@ -470,16 +482,6 @@ def render_main(points: dict, verdicts: dict) -> tuple[int, list[dict]]:
         bbox_to_anchor=(0.0, 1.0),
         bbox_transform=legend_ax.transAxes,
     )
-    fig.text(
-        0.006,
-        0.006,
-        CAPTION_MAIN,
-        ha="left",
-        va="bottom",
-        fontsize=6.7,
-        color="#4A4A4A",
-        wrap=True,
-    )
     savefig_paper(fig, "result2_fourpanel", dir=OUT_FIG)
     plt.close(fig)
 
@@ -496,8 +498,10 @@ def render_avg_variants(points: dict, verdicts: dict) -> tuple[int, list[dict]]:
     ylim = (min(-0.05, min(vals) - 0.04), max(vals) + 0.04)
 
     set_paper_style("blog", font_scale=0.9)
-    fig = plt.figure(figsize=(11.5, 6.4))
-    gs = fig.add_gridspec(2, 2, height_ratios=[1.0, 0.20])
+    # 6.4 tall with a 0.20 legend row before the three-line caption block came
+    # off the canvas; the freed band is removed, not left blank (see render_main).
+    fig = plt.figure(figsize=(11.5, 5.9))
+    gs = fig.add_gridspec(2, 2, height_ratios=[1.0, 0.09])
     fig.get_layout_engine().set(w_pad=0.02, h_pad=0.02, wspace=0.02)
     axes = [fig.add_subplot(gs[0, 0])]
     axes.append(fig.add_subplot(gs[0, 1], sharey=axes[0]))
@@ -525,16 +529,6 @@ def render_avg_variants(points: dict, verdicts: dict) -> tuple[int, list[dict]]:
         borderpad=0.0,
         bbox_to_anchor=(0.0, 1.0),
         bbox_transform=legend_ax.transAxes,
-    )
-    fig.text(
-        0.006,
-        0.006,
-        CAPTION_VARIANTS,
-        ha="left",
-        va="bottom",
-        fontsize=7.0,
-        color="#4A4A4A",
-        wrap=True,
     )
     savefig_paper(fig, "result2_fourpanel_avg_variants", dir=OUT_FIG)
     plt.close(fig)
@@ -583,6 +577,8 @@ def render_iclr(points: dict, verdicts: dict, roster: str = "regression") -> int
     concept = {m: c for m, _l, c, _f in methods}
     filled_of = {m: f for m, _l, _c, f in methods}
 
+    from matplotlib.ticker import MultipleLocator
+
     from explore_persona_space.analysis.c2a_plot_style import (
         INK,
         MUTED,
@@ -623,6 +619,12 @@ def render_iclr(points: dict, verdicts: dict, roster: str = "regression") -> int
     fig, frac = c2a_figure("full", aspect=0.33)
     axes = fig.subplots(1, 3, sharey=True)
     fig.subplots_adjust(left=0.08, right=0.99, bottom=0.2, top=subplot_top, wspace=0.08)
+    # The regression roster dropped its eyebrow row, so its axes are taller and
+    # its legend stack rides 0.055 higher; the panel kicker scales down by the
+    # same amount in axes coordinates to sit where it did in figure coordinates.
+    # The legacy "all" roster never drew an eyebrow and renders unchanged.
+    panel_kicker_y = 1.14 if roster == "regression" else 1.16
+    legend_top = 0.97 if roster == "regression" else 0.915
     n_bars = 0
     bar_records: list[dict] = []
     for ax, panel in zip(axes, panels, strict=True):
@@ -678,8 +680,15 @@ def render_iclr(points: dict, verdicts: dict, roster: str = "regression") -> int
         )
         ax.set_xlim(-0.6, len(xs) - 0.4)
         ax.set_ylim(*ylim)
+        # Pin the y ticks to the 0.5 step both rosters picked automatically while
+        # the eyebrow row existed. The reclaimed row makes the regression axes
+        # tall enough for the auto-locator to switch to a 0.25 step, which both
+        # clutters the panel and widens the tick labels enough to shove the
+        # y-axis label off the authored canvas width. A no-op for the "all"
+        # roster, whose shorter axes already land on 0.5.
+        ax.yaxis.set_major_locator(MultipleLocator(0.5))
         style_axis(ax)
-        panel_header(ax, "", panel["title"])
+        panel_header(ax, "", panel["title"], kicker_y=panel_kicker_y)
     axes[0].set_ylabel(better_label("Spearman $\\rho$"))
     handles = [
         Patch(
@@ -696,30 +705,11 @@ def render_iclr(points: dict, verdicts: dict, roster: str = "regression") -> int
         else "Uninterpretable (muted)"
     )
     handles.append(Patch(facecolor=MUTED, alpha=0.35, label=muted_label))
-    if roster == "regression":
-        # Figure-level provenance eyebrow. Facts verified against the two
-        # points artifacts: model = Qwen2.5-7B-Instruct (issue_1739
-        # constants.MODEL_NAME); the frozen-best layer VARIES per
-        # behavior x arm (evil 17-20, sycophancy 19-20, hallucination
-        # 18-20), so the kicker states the range, not one layer per
-        # behavior. CI = 95% (2.5/97.5 quantile) within-draw paired
-        # bootstrap over eval contexts (issue_1739/arms.py).
-        legend_kicker(
-            fig,
-            0.08,
-            0.97,
-            "Qwen2.5-7B-Instruct, ridge regression readouts at per-arm best layers 17-20",
-        )
-        fig.text(
-            0.99,
-            0.97,
-            "Error bars: 95% paired bootstrap CI over contexts",
-            color=MUTED,
-            fontsize=13,
-            ha="right",
-            va="center",
-        )
-    legend_kicker(fig, 0.08, 0.915, "Predictor")
+    # No figure-global metadata on the canvas: the model, the per-arm read
+    # layers and the 95% paired-bootstrap CI definition are all stated in the
+    # manuscript caption, so drawing them here duplicated it. Only the legend
+    # group heading survives, because it decodes a mark.
+    legend_kicker(fig, 0.08, legend_top, "Predictor")
     legend_kwargs = dict(
         loc="upper left",
         frameon=False,
@@ -734,20 +724,20 @@ def render_iclr(points: dict, verdicts: dict, roster: str = "regression") -> int
         # canvas edge.
         fig.legend(
             handles=handles[:-1],
-            bbox_to_anchor=(0.08, 0.895),
+            bbox_to_anchor=(0.08, legend_top - 0.02),
             ncol=len(handles) - 1,
             **legend_kwargs,
         )
         fig.legend(
             handles=handles[-1:],
-            bbox_to_anchor=(0.08, 0.845),
+            bbox_to_anchor=(0.08, legend_top - 0.07),
             ncol=1,
             **legend_kwargs,
         )
     else:
         fig.legend(
             handles=handles,
-            bbox_to_anchor=(0.08, 0.895),
+            bbox_to_anchor=(0.08, legend_top - 0.02),
             ncol=legend_ncol,
             **legend_kwargs,
         )

@@ -14,7 +14,9 @@ Figure 2 (comment 3), two panels:
      pairs can be read against the near-boundary ones.
 
 Style is the canonical c2a system (docs/paper_context_answer_map/plotting_style.md);
-no interpretive text is rendered onto the canvas.
+no interpretive text is rendered onto the canvas, and no provenance either: the
+model, the read layer, the pair counts and the interval definition are stated in
+the manuscript captions, so repeating them on the canvas would be duplication.
 """
 
 from __future__ import annotations
@@ -132,7 +134,10 @@ def _fig2(data: dict, stem: Path) -> dict:
     graded = data["graded_read"]
 
     fig, _include_frac = c2a.c2a_figure("full", aspect=0.40)
-    grid = fig.add_gridspec(1, 3, left=0.075, right=0.985, top=0.76, bottom=0.26, wspace=0.40)
+    # No figure-level provenance eyebrow: the caption carries the model, the read
+    # layer and the pair count, so the freed top row goes to the axes
+    # (top 0.76 -> 0.84) and the panel furniture moves up with it.
+    grid = fig.add_gridspec(1, 3, left=0.075, right=0.985, top=0.84, bottom=0.26, wspace=0.40)
     ax_a = fig.add_subplot(grid[0, 0])
     ax_b = fig.add_subplot(grid[0, 1])
     ax_c = fig.add_subplot(grid[0, 2])
@@ -161,8 +166,10 @@ def _fig2(data: dict, stem: Path) -> dict:
     c2a.panel_header(
         ax_a,
         "A",
-        "Median and IQR over pairs",
+        "By pair class",
         title="Answer separation",
+        kicker_y=1.138,
+        title_y=1.047,
     )
 
     w = 0.38
@@ -190,8 +197,10 @@ def _fig2(data: dict, stem: Path) -> dict:
     c2a.panel_header(
         ax_b,
         "B",
-        "95% bootstrap CI over pairs",
+        "Two-alternative choice",
         title="Hit rate by stratum",
+        kicker_y=1.138,
+        title_y=1.047,
     )
 
     # Panel C: the graded read against the behavioural DV, where the binary
@@ -213,8 +222,9 @@ def _fig2(data: dict, stem: Path) -> dict:
         "C",
         "Spearman by stratum",
         title="Loading vs margin",
+        kicker_y=1.138,
+        title_y=1.047,
     )
-    c2a.legend_kicker(fig, 0.065, 0.955, "124 one-word safety swaps, Qwen2.5-7B-Instruct, layer 19")
 
     return c2a.save_c2a_figure(
         fig,
@@ -306,15 +316,15 @@ def _fig3(data: dict, pairs: dict, stem: Path) -> dict:
 
     names = list(data["reads"]["map"]["per_element"].keys())
     fig, _include_frac = c2a.c2a_figure("full", aspect=0.40)
-    grid = fig.add_gridspec(1, 2, left=0.10, right=0.985, top=0.76, bottom=0.27, wspace=0.30)
+    # No figure-level provenance eyebrow (see the module docstring): top 0.76 -> 0.84
+    # hands the freed row to the axes, and the panel furniture moves up with it.
+    grid = fig.add_gridspec(1, 2, left=0.10, right=0.985, top=0.84, bottom=0.27, wspace=0.30)
     ax_a = fig.add_subplot(grid[0, 0])
     ax_b = fig.add_subplot(grid[0, 1])
 
-    n_pairs = 0
     for name, marker in zip(names, ELEM_MARKERS):
         x = np.array(pairs[name]["mag"])
         y = np.array(pairs[name]["cos"])
-        n_pairs += len(x)
         ax_a.scatter(
             x, y, s=11, alpha=0.75, color=ELEM_COLORS[name], marker=marker, label=name, linewidths=0
         )
@@ -334,8 +344,10 @@ def _fig3(data: dict, pairs: dict, stem: Path) -> dict:
     c2a.panel_header(
         ax_a,
         "A",
-        f"{n_pairs} pairs, linear map, pooled trend",
+        "Linear map, pooled trend",
         title="Agreement vs shift size",
+        kicker_y=1.138,
+        title_y=1.047,
     )
 
     x = np.arange(len(names))
@@ -364,10 +376,11 @@ def _fig3(data: dict, pairs: dict, stem: Path) -> dict:
     c2a.panel_header(
         ax_b,
         "B",
-        "Trend fit on the other five elements\nError bars: 95% bootstrap CI over pairs",
+        "Trend fit on the other five elements",
         title="Residual at matched size",
+        kicker_y=1.138,
+        title_y=1.047,
     )
-    c2a.legend_kicker(fig, 0.065, 0.955, "Controlled minimal pairs, Qwen2.5-7B-Instruct, layer 19")
 
     return c2a.save_c2a_figure(
         fig,

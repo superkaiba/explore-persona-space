@@ -74,6 +74,17 @@ SCALING_KEYS = {
     "mlp_w8192": "mlp",
 }
 
+# Panel B stops at 500,000 so every rung shares one training corpus. Rungs up to
+# 500,000 are pure-LMSYS draws fit in-store (prediction arm tag ``ridge``); the
+# 963,444 rung instead APPLIES the banked mixed LMSYS+WildChat weights (arm tag
+# ``ridge_apply``), because pure LMSYS exhausts near 525,000. Mixing the two on
+# one curve put a corpus change at the final point and produced the apparent
+# saturation there: held-out R^2 rises monotonically to 0.8096 at 500,000 and
+# falls to 0.8026 at 963,444, a 0.0070 drop against a measured matched-n
+# mixed-versus-pure penalty of 0.0081 (lmsys_500k 0.7608 vs mixed_500k 0.7527,
+# eval_results/issue_779/fitter-fair-comparison-n1m/n1m_fits.json).
+MAX_TRAIN_SIZE = 500_000
+
 
 def _acc1(record: dict) -> float:
     values = record["acc_at_k"]
@@ -133,6 +144,8 @@ def _load_scaling_data(path: Path, pool10k: dict) -> dict:
     source = json.loads(path.read_text())
     rows = []
     for n_text, cell in source["per_n"].items():
+        if int(n_text) > MAX_TRAIN_SIZE:
+            continue
         pool_cell = pool10k["panel_b"][n_text]
         arms = {}
         for plot_key, source_key in SCALING_KEYS.items():
@@ -148,7 +161,8 @@ def _load_scaling_data(path: Path, pool10k: dict) -> dict:
             }
         rows.append({"x": int(n_text), "arms": arms})
     rows.sort(key=lambda row: row["x"])
-    expected = [5_000, 10_000, 25_000, 50_000, 100_000, 150_000, 250_000, 500_000, 963_444]
+    all_rungs = (5_000, 10_000, 25_000, 50_000, 100_000, 150_000, 250_000, 500_000, 963_444)
+    expected = [n for n in all_rungs if n <= MAX_TRAIN_SIZE]
     assert [row["x"] for row in rows] == expected
     return {
         "rows": rows,
@@ -181,7 +195,7 @@ _ENCODER_COLOR = ROLES["other_source"].color
 BASELINE_ARMS: dict[str, dict] = {
     "anchor": {"label": "Linear map", "color": ROLES["linear"].color, "marker": "o"},
     "enc_bge_cls": {
-        "label": "Encoder (BGE)",
+        "label": "Text embedding (BGE)",
         "color": _ENCODER_COLOR,
         "marker": ROLES["other_source"].marker,
     },
@@ -198,6 +212,11 @@ BASELINE_ARMS: dict[str, dict] = {
 # "anchor" is never drawn: it IS panel B's linear curve at this rung (its retrieval
 # is byte-equal and its R^2 agrees to 1e-6).
 BASELINE_POINT_X = 25_000
+# The boundary-token control is its own fit at 1,200 training pairs per token, not a
+# rung of panel B's sweep, so it is drawn as a point at the n it was MEASURED at.
+# A full-width horizontal line (the prior encoding) asserted an n-independence
+# nobody tested, the same objection _plot_baseline_points raises for the others.
+BOUNDARY_POINT_X = 1_200
 # Fill alone (filled = R^2, open = top-1) is too subtle to read on isolated markers
 # at print size, so the two metrics are also dodged left and right of the rung:
 # R^2 always sits left of the guide line, top-1 always right. Multiplicative
@@ -342,14 +361,18 @@ def _apply_panel_b_segments(axes: list[plt.Axes]) -> None:
         upper.plot([0], [0], transform=upper.transAxes, **mark)
 
 
-def _center_ylabel(axes: list[plt.Axes], label: str) -> None:
-    """One y-label centered over the whole stack rather than over the top strip."""
+def _center_ylabel(axes: list[plt.Axes], label: str, x: float = -0.115) -> None:
+    """One y-label centered over the whole stack rather than over the top strip.
+
+    ``x`` is in axes coordinates, so a narrower panel needs a larger magnitude to
+    clear its tick labels: the same fraction of a narrow axes is a shorter distance.
+    """
     top = axes[-1]
     boxes = [ax.get_position() for ax in axes]
     mid = (min(b.y0 for b in boxes) + max(b.y1 for b in boxes)) / 2.0
     own = top.get_position()
     top.set_ylabel(label, labelpad=13)
-    top.yaxis.set_label_coords(-0.115, (mid - own.y0) / own.height)
+    top.yaxis.set_label_coords(x, (mid - own.y0) / own.height)
 
 
 def _plot_baseline_points(axes: list[plt.Axes], baselines: dict, roster: tuple[str, ...]) -> dict:
@@ -482,14 +505,45 @@ def _load_extension_data(path: Path) -> dict:
     }
 
 
-def _plot_controls(ax: plt.Axes, boundary: dict | None, extension: dict | None) -> None:
-    """Horizontal reference line: the boundary-token control's mean held-out R^2."""
-    dash = (0, (5.0, 3.8))
-    if boundary is not None:
-        # R^2 only: small-pool top-1 saturates and is quoted in the text instead.
-        ax.axhline(boundary["r2_mean"], color=BOUNDARY_COLOR, lw=2.4, zorder=2)
-    # The copy-context baselines stay in the sidecar metadata but are not drawn
-    # (their R^2 is far below the axis; the text quotes them).
+def _plot_boundary_point(axes: list[plt.Axes], boundary: dict | None) -> dict | None:
+    """The boundary-token control as ONE point at its measured n (1,200 pairs/token).
+
+    Value is the mean held-out R^2 over the four exact-token maps. R^2 only: the
+    control's top-1 was scored on its own 400-span pool, so it is not comparable
+    to panel B's 10,000-candidate retrieval and is quoted in the text instead.
+    Returns the drawn record for the sidecar, or None when the value falls outside
+    every segment (never silently clipped to an edge).
+    """
+    if boundary is None:
+        return None
+    value = float(boundary["r2_mean"])
+    host = None
+    segment = None
+    if len(axes) == 1:
+        lo, hi = axes[0].get_ylim()
+        if lo < value < hi:
+            host, segment = axes[0], [lo, hi]
+    else:
+        for ax, (lo, hi) in zip(axes, PANEL_B_SEGMENTS, strict=True):
+            if lo < value < hi:
+                host, segment = ax, [lo, hi]
+                break
+    if host is None:
+        return {"value": value, "x": BOUNDARY_POINT_X, "drawn": False}
+    host.plot(
+        [BOUNDARY_POINT_X],
+        [value],
+        marker="s",
+        markersize=8.0,
+        color=BOUNDARY_COLOR,
+        # Filled, matching the panel-wide encoding for R^2.
+        markerfacecolor=BOUNDARY_COLOR,
+        markeredgecolor=BOUNDARY_COLOR,
+        markeredgewidth=1.8,
+        linestyle="none",
+        zorder=5,
+    )
+    return {"value": value, "x": BOUNDARY_POINT_X, "drawn": True, "segment": segment}
 
 
 def _baseline_legend_handles(boundary: dict | None, overlay: dict | None) -> tuple[list, list[str]]:
@@ -508,7 +562,12 @@ def _baseline_legend_handles(boundary: dict | None, overlay: dict | None) -> tup
                 [0],
                 [0],
                 color=BOUNDARY_COLOR,
-                lw=2.6,
+                marker="s",
+                markersize=8,
+                markerfacecolor=BOUNDARY_COLOR,
+                markeredgecolor=BOUNDARY_COLOR,
+                markeredgewidth=1.8,
+                linestyle="none",
             )
         )
         labels.append("Boundary token \u2192 next sentence")
@@ -553,13 +612,19 @@ def _plot_panel(
     ax: plt.Axes,
     rows: list[dict],
     *,
-    letter: str,
-    title: str,
-    kicker: str,
+    letter: str | None,
+    title: str | None,
     show_retrieval: bool,
+    kicker_y: float = 1.24,
+    title_y: float = 1.08,
 ) -> None:
     style_score_axis(ax)
-    panel_header(ax, letter, kicker, title, kicker_y=1.24, title_y=1.08)
+    # No provenance kicker. The model, the read layer, the training-context count
+    # and the retrieval-pool size are all stated in the caption, so the kicker
+    # slot carries the panel letter alone. ``panel_header`` joins letter and
+    # kicker with a separator, so the letter is passed AS the kicker: passing it
+    # as the letter with an empty kicker would render a dangling "A  ·  ".
+    panel_header(ax, "", letter or "", title, kicker_y=kicker_y, title_y=title_y)
 
     for key, style in PREDICTOR_STYLES.items():
         x, r2 = _series(rows, key, "r2")
@@ -631,6 +696,74 @@ def _legend_handles() -> tuple[list[Line2D], list[Line2D]]:
     return predictors, metrics
 
 
+# Which panels a render carries, and the canvas geometry each shape needs.
+# "ab" is the original two-panel figure. The single-panel shapes exist because
+# the manuscript splits them: the scaling panel rides Figure 1 beside the
+# schematic (included at "narrow", the schematic taking the complementary 0.62),
+# and the layer sweep moves to the appendix at its current printed size.
+PANEL_LAYOUTS: dict[str, dict[str, object]] = {
+    "ab": {
+        "width": "full",
+        "aspect": 0.36,
+        "letters": {"layer": "A", "scale": "B"},
+        "margins": {"left": 0.075, "right": 0.985, "top": 0.594, "bottom": 0.143},
+        "legend_x": (0.075, 0.572),
+        "rows": {"plain": 0.936, "with_controls": 0.851, "baseline": 0.995},
+    },
+    "a": {
+        "width": "half",
+        "aspect": 0.72,
+        "letters": {"layer": None},
+        # This shape carried two provenance rows above the axes (the panel kicker
+        # and the figure-level model text) and no panel letter to keep the kicker
+        # slot occupied. Both are gone, so the axes take the freed band (top
+        # 0.870 -> 0.930) and the title drops with it (1.08 -> 1.02) to land where
+        # the kicker used to sit instead of leaving a blank strip.
+        "margins": {"left": 0.150, "right": 0.975, "top": 0.930, "bottom": 0.130},
+        "title_y": 1.02,
+        "legend_x": (0.150, 0.600),
+        "rows": {"plain": 0.985, "with_controls": 0.985, "baseline": 0.995},
+        "inside_legend": True,
+        "legend_loc": "upper left",
+    },
+    "b": {
+        "width": "sliver",
+        "aspect": 1.06,
+        "letters": {"scale": None},
+        # The model kicker held the topmost row; with it gone the stacked legend
+        # moves up into that row (0.945 -> 0.990) and the axes take the same
+        # 0.045 back (top 0.660 -> 0.705), so no blank strip opens above.
+        "margins": {"left": 0.300, "right": 0.975, "top": 0.705, "bottom": 0.100},
+        "legend_x": (0.300, 0.300),
+        "above_legend_y": 0.990,
+        "ylabel_x": -0.235,
+        "rows": {"plain": 0.985, "with_controls": 0.985, "baseline": 0.995},
+        # At 0.36 textwidth the legend cannot sit beside the curves and cannot run
+        # along one row, so it stacks ABOVE the axes in two columns. That spends
+        # height, which the figure has, instead of width, which it does not.
+        "above_legend": True,
+        "above_legend_ncol": 2,
+        "above_legend_fontsize": 11.5,
+        "suppress_header": True,
+    },
+}
+
+
+DEFAULT_PANEL_STEMS: dict[str, str] = {
+    "ab": DEFAULT_STEM,
+    "a": "c1_layer_sweep",
+    "b": "c1_scaling_train_pool_merged",
+}
+"""Output stem per panel shape, so one render never overwrites another."""
+
+
+_SHORT_LEGEND_LABELS: dict[str, str] = {
+    "Boundary token \u2192 next sentence": "Boundary token",
+    "Text embedding (BGE)": "Text embedding",
+}
+"""Long control names shortened for the stacked legend; the caption carries the full form."""
+
+
 def make_figure(
     layer: dict,
     scaling: dict,
@@ -638,128 +771,223 @@ def make_figure(
     extension: dict | None = None,
     baselines: dict | None = None,
     baselines_mode: str = "minimal",
+    panels: str = "ab",
 ) -> tuple[plt.Figure, float, dict | None]:
     set_c2a_style()
-    # One layout. The baselines ride panel B as points rather than a third panel,
-    # so the canvas keeps the compact A/B aspect.
-    fig, include_frac = c2a_figure("full", aspect=0.36)
+    if panels not in PANEL_LAYOUTS:
+        raise ValueError(f"panels must be one of {sorted(PANEL_LAYOUTS)}, got {panels!r}")
+    spec = PANEL_LAYOUTS[panels]
+    letters: dict[str, str | None] = spec["letters"]  # type: ignore[assignment]
+    draw_layer = "layer" in letters
+    draw_scale = "scale" in letters
+    # The baselines ride panel B as points rather than a third panel, so the
+    # two-panel canvas keeps its compact A/B aspect.
+    fig, include_frac = c2a_figure(spec["width"], aspect=spec["aspect"])  # type: ignore[arg-type]
     grid = fig.add_gridspec(
         1,
-        2,
-        left=0.075,
-        right=0.985,
-        top=0.594,
-        bottom=0.143,
+        2 if draw_layer and draw_scale else 1,
         wspace=0.20,
+        **spec["margins"],  # type: ignore[arg-type]
     )
-    ax_layer = fig.add_subplot(grid[0, 0])
+    ax_layer = fig.add_subplot(grid[0, 0]) if draw_layer else None
     # With baselines, panel B is one axis per y-segment (see PANEL_B_SEGMENTS);
     # without them a single axis is enough. The curves and the panel header always
     # live on the highest segment, the x-axis always on the lowest.
-    scale_axes = (
-        _build_panel_b_axes(fig, grid[0, 1])
-        if baselines is not None
-        else [fig.add_subplot(grid[0, 1])]
-    )
-    ax_scale = scale_axes[-1]
-    ax_scale_bottom = scale_axes[0]
+    scale_axes: list[plt.Axes] = []
+    if draw_scale:
+        cell = grid[0, 1] if draw_layer else grid[0, 0]
+        scale_axes = (
+            _build_panel_b_axes(fig, cell) if baselines is not None else [fig.add_subplot(cell)]
+        )
+    ax_scale = scale_axes[-1] if scale_axes else None
+    ax_scale_bottom = scale_axes[0] if scale_axes else None
 
-    _plot_panel(
-        ax_layer,
-        layer["rows"],
-        letter="A",
-        title="Predictability across layers",
-        kicker=f"{layer['n_train']:,} training contexts",
-        show_retrieval=False,
-    )
-    _plot_panel(
-        ax_scale,
-        scaling["rows"],
-        letter="B",
-        title="Scaling with training data",
-        kicker=f"layer {scaling['layer']}, 10,000-candidate retrieval",
-        show_retrieval=True,
-    )
+    if draw_layer:
+        _plot_panel(
+            ax_layer,
+            layer["rows"],
+            letter=letters["layer"],
+            title="Predictability across layers",
+            show_retrieval=False,
+            kicker_y=float(spec.get("kicker_y", 1.24)),  # type: ignore[arg-type]
+            title_y=float(spec.get("title_y", 1.08)),  # type: ignore[arg-type]
+        )
+    inside_legend = bool(spec.get("inside_legend", False))
+    # At the narrowest width there is no vertical room for the kicker and title
+    # above the axes, so their content moves into the caption instead.
+    bare = bool(spec.get("suppress_header", False))
+    if draw_scale:
+        _plot_panel(
+            ax_scale,
+            scaling["rows"],
+            letter=letters["scale"],
+            title=None if bare else "Scaling with training data",
+            show_retrieval=True,
+            kicker_y=float(spec.get("kicker_y", 1.24)),  # type: ignore[arg-type]
+            title_y=float(spec.get("title_y", 1.08)),  # type: ignore[arg-type]
+        )
     roster = PANEL_B_BASELINE_ROSTERS[baselines_mode] if baselines is not None else ()
-    controls = boundary is not None or extension is not None or baselines is not None
+    # The baselines and the boundary control all live on panel B, so a
+    # layer-sweep-only render carries none of them however they were loaded.
+    controls = draw_scale and (
+        boundary is not None or extension is not None or baselines is not None
+    )
     baseline_overlay = None
+    boundary_overlay = None
     if controls:
-        _plot_controls(ax_scale, boundary, extension)
         if baselines is None:
             ax_scale.set_ylim(0.15, 1.0)
             ax_scale.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
         else:
             _apply_panel_b_segments(scale_axes)
-            # After the ranges are fixed: the overlay routes each value to the
-            # segment that holds it, and drops any the panel still cannot show.
+        # After the y-ranges are fixed, so the point routes to the right segment.
+        boundary_overlay = _plot_boundary_point(scale_axes, boundary)
+        if baselines is not None:
+            # The overlay routes each value to the segment that holds it, and
+            # drops any the panel still cannot show.
             baseline_overlay = _plot_baseline_points(scale_axes, baselines, roster)
 
-    ax_layer.set_xlim(-0.5, 27.5)
-    ax_layer.set_xticks([0, 5, 10, 15, 20, 25, 27])
-    ax_layer.set_xlabel("Model layer", labelpad=12)
+    if draw_layer:
+        ax_layer.set_xlim(-0.5, 27.5)
+        ax_layer.set_xticks([0, 5, 10, 15, 20, 25, 27])
+        ax_layer.set_xlabel("Model layer", labelpad=12)
 
     ns = np.asarray([row["x"] for row in scaling["rows"]], dtype=float)
-    # The strips share the x-axis, so range and scale propagate; only the lowest
-    # one carries ticks and the label.
-    ax_scale_bottom.set_xscale("log")
-    ax_scale_bottom.set_xlim(ns.min() / 1.18, ns.max() * 1.18)
-    ticks = [5_000, 25_000, 100_000, 500_000, 963_444]
-    if ns.min() < 5_000:
-        ticks = [int(ns.min()), 5_000, 25_000, 100_000, 963_444]
-    for ax in scale_axes:
-        ax.xaxis.set_major_locator(FixedLocator(ticks))
-        ax.xaxis.set_major_formatter(FuncFormatter(_human_n))
-        ax.minorticks_off()
-    ax_scale_bottom.set_xlabel("Training contexts", labelpad=12)
+    if draw_scale:
+        # The strips share the x-axis, so range and scale propagate; only the lowest
+        # one carries ticks and the label.
+        ax_scale_bottom.set_xscale("log")
+        # The boundary-token point sits at its measured n, left of every sweep rung,
+        # so the axis has to reach it or the point would be silently clipped away.
+        x_lo = min(ns.min(), BOUNDARY_POINT_X) if controls and boundary is not None else ns.min()
+        ax_scale_bottom.set_xlim(x_lo / 1.18, ns.max() * 1.18)
+        ticks = [t for t in (5_000, 25_000, 100_000, 500_000) if t <= MAX_TRAIN_SIZE]
+        if x_lo < 5_000:
+            ticks = [int(x_lo)] + ticks
+        for ax in scale_axes:
+            ax.xaxis.set_major_locator(FixedLocator(ticks))
+            ax.xaxis.set_major_formatter(FuncFormatter(_human_n))
+            ax.minorticks_off()
+        ax_scale_bottom.set_xlabel("Training contexts", labelpad=12)
+        _center_ylabel(
+            scale_axes,
+            better_label("Score"),
+            x=float(spec.get("ylabel_x", -0.115)),  # type: ignore[arg-type]
+        )
 
-    ax_layer.set_ylabel(better_label(METRIC_LABELS["r2"]), labelpad=13)
-    _center_ylabel(scale_axes, better_label("Score"))
+    if draw_layer:
+        ax_layer.set_ylabel(better_label(METRIC_LABELS["r2"]), labelpad=13)
 
     predictor_handles, metric_handles = _legend_handles()
-    row_y = 0.936 if not controls else 0.851
-    # Figure-level kicker: the model, right-aligned on the topmost kicker row.
-    fig.text(
-        0.985,
-        0.995 if controls else row_y,
-        "QWEN2.5-7B-INSTRUCT",
-        color=MUTED,
-        fontsize=11.5,
-        fontweight=750,
-        ha="right",
-        va="center",
-    )
-    legend_kicker(fig, 0.075, row_y, "Predictor")
+    rows: dict[str, float] = spec["rows"]  # type: ignore[assignment]
+    legend_x: tuple[float, float] = spec["legend_x"]  # type: ignore[assignment]
+    row_y = rows["plain"] if not controls else rows["with_controls"]
+    # No figure-level model kicker: the caption names the model, so the row it
+    # held goes back to the axes (see the per-shape margins in PANEL_LAYOUTS).
+    if bool(spec.get("above_legend", False)):
+        # One combined legend above the axes, stacked over as many rows as the
+        # column count implies. Anchored to the figure so it spans the canvas.
+        stacked = list(predictor_handles) + list(metric_handles)
+        stacked_labels = [h.get_label() for h in stacked]
+        if controls:
+            extra_handles, extra_labels = _baseline_legend_handles(boundary, baseline_overlay)
+            stacked += list(extra_handles)
+            stacked_labels += list(extra_labels)
+        fig.legend(
+            handles=stacked,
+            labels=[
+                # The long control name only fits the wider figure-level legend.
+                _SHORT_LEGEND_LABELS.get(lab, lab)
+                for lab in stacked_labels
+            ],
+            loc="upper left",
+            bbox_to_anchor=(
+                spec["margins"]["left"] - 0.09,  # type: ignore[index]
+                float(spec.get("above_legend_y", 0.995)),  # type: ignore[arg-type]
+            ),
+            ncol=int(spec.get("above_legend_ncol", 2)),  # type: ignore[arg-type]
+            frameon=False,
+            fontsize=float(spec.get("above_legend_fontsize", 13.0)),  # type: ignore[arg-type]
+            labelspacing=0.32,
+            columnspacing=1.1,
+            handlelength=1.8,
+            handletextpad=0.5,
+            borderaxespad=0,
+            handler_map={tuple: HandlerTuple(ndivide=None, pad=0.55)},
+        )
+        return fig, include_frac, baseline_overlay
+
+    if inside_legend:
+        # One combined legend inside the axes, in whichever corner the panel
+        # leaves clear. A layer-sweep-only render draws no retrieval series, so
+        # it carries the predictor entries alone. The baselines ride the same
+        # legend: at this width there is no room for a separate figure-level
+        # group, and dropping them would strand the caption's baseline values.
+        host = ax_scale if draw_scale else ax_layer
+        inside_handles = list(predictor_handles) + (list(metric_handles) if draw_scale else [])
+        inside_labels = [h.get_label() for h in inside_handles]
+        if controls:
+            extra_handles, extra_labels = _baseline_legend_handles(boundary, baseline_overlay)
+            inside_handles += list(extra_handles)
+            inside_labels += list(extra_labels)
+        bbox = spec.get("inside_legend_bbox")
+        host.legend(
+            handles=inside_handles,
+            labels=[
+                # The long control name only fits the wider figure-level legend.
+                "Boundary token" if lab.startswith("Boundary token") else lab
+                for lab in inside_labels
+            ],
+            loc=str(spec.get("legend_loc", "lower right")),
+            bbox_to_anchor=bbox,  # type: ignore[arg-type]
+            ncol=int(spec.get("inside_legend_ncol", 1)),  # type: ignore[arg-type]
+            frameon=False,
+            fontsize=float(spec.get("inside_legend_fontsize", 15)),  # type: ignore[arg-type]
+            labelspacing=0.30,
+            handlelength=1.9,
+            handletextpad=0.55,
+            borderaxespad=0.30,
+            handler_map={tuple: HandlerTuple(ndivide=None, pad=0.55)},
+        )
+        return fig, include_frac, baseline_overlay
+
+    legend_kicker(fig, legend_x[0], row_y, "Predictor")
     fig.legend(
         handles=predictor_handles,
         loc="upper left",
-        bbox_to_anchor=(0.074, row_y - 0.022),
-        ncol=3,
+        bbox_to_anchor=(legend_x[0] - 0.001, row_y - 0.022),
+        ncol=int(spec.get("predictor_ncol", 3)),  # type: ignore[arg-type]
         frameon=False,
         columnspacing=1.45,
         handlelength=2.1,
         handletextpad=0.65,
         borderaxespad=0,
     )
-    legend_kicker(fig, 0.572, row_y, "Metric")
-    fig.legend(
-        handles=metric_handles,
-        loc="upper left",
-        bbox_to_anchor=(0.571, row_y - 0.022),
-        ncol=2,
-        frameon=False,
-        columnspacing=1.35,
-        handlelength=2.1,
-        handletextpad=0.65,
-        borderaxespad=0,
-    )
+    # The metric legend distinguishes R^2 from retrieval, and only panel B draws
+    # both, so a layer-sweep-only render omits it rather than naming a series
+    # that is not on the canvas.
+    if draw_scale:
+        metric_row = row_y + float(spec.get("metric_row_offset", 0.0))  # type: ignore[arg-type]
+        legend_kicker(fig, legend_x[1], metric_row, "Metric")
+        fig.legend(
+            handles=metric_handles,
+            loc="upper left",
+            bbox_to_anchor=(legend_x[1] - 0.001, metric_row - 0.022),
+            ncol=int(spec.get("metric_ncol", 2)),  # type: ignore[arg-type]
+            frameon=False,
+            columnspacing=1.35,
+            handlelength=2.1,
+            handletextpad=0.65,
+            borderaxespad=0,
+        )
     if controls:
         baseline_handles, baseline_labels = _baseline_legend_handles(boundary, baseline_overlay)
-        legend_kicker(fig, 0.075, 0.995, "Baseline")
+        legend_kicker(fig, legend_x[0], rows["baseline"], "Baseline")
         fig.legend(
             handles=baseline_handles,
             labels=baseline_labels,
             loc="upper left",
-            bbox_to_anchor=(0.074, 0.973),
+            bbox_to_anchor=(legend_x[0] - 0.001, rows["baseline"] - 0.022),
             # Past four entries the row runs off the canvas (save_c2a_figure
             # enforces the width), so wrap instead of overflowing.
             ncol=min(len(baseline_handles), 4),
@@ -913,7 +1141,9 @@ def _write_outputs(
                             "path": _display_path(boundary_source),
                             "sha256": _sha256(boundary_source),
                         },
-                        "encoding": "burnt-umber horizontal line on panel B: mean held-out R^2 over the four exact-token maps",
+                        "encoding": "burnt-umber filled square on panel B at x = 1,200, the control's own "
+                        "training size: mean held-out R^2 over the four exact-token maps. R^2 only "
+                        "(its top-1 was scored on a 400-span pool, not panel B's 10,000 candidates)",
                         **boundary,
                     }
                 ),
@@ -999,8 +1229,18 @@ def main() -> None:
         help="which baseline arms ride panel B (see PANEL_B_BASELINE_ROSTERS)",
     )
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
-    parser.add_argument("--stem", default=DEFAULT_STEM)
+    parser.add_argument("--stem", default=None)
+    parser.add_argument(
+        "--panels",
+        choices=sorted(PANEL_LAYOUTS),
+        default="ab",
+        help=(
+            "which panels to render: 'ab' the two-panel figure, 'a' the layer sweep "
+            "alone (appendix), 'b' the scaling panel alone (rides Figure 1)"
+        ),
+    )
     args = parser.parse_args()
+    stem = args.stem if args.stem is not None else DEFAULT_PANEL_STEMS[args.panels]
 
     layer = _load_layer_data(args.layer_source)
     pool10k = _load_pool10k_data(args.pool10k_source)
@@ -1029,12 +1269,12 @@ def main() -> None:
 
     git_state = _git_state()
     fig, include_frac, baseline_overlay = make_figure(
-        layer, scaling, boundary, extension, baselines, args.baselines_mode
+        layer, scaling, boundary, extension, baselines, args.baselines_mode, args.panels
     )
     outputs = _write_outputs(
         fig,
         args.out_dir,
-        args.stem,
+        stem,
         args.layer_source,
         args.scaling_source,
         layer,

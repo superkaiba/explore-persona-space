@@ -281,7 +281,9 @@ def plot_within_stage(ax: mpl.axes.Axes, data: dict[str, Any]) -> list[Line2D]:
     panel_header(
         ax,
         "A",
-        "OLMo-2-7B, layer 31",
+        # Descriptive kicker, matching panels B and C. The model and the read
+        # layer used to sit here; the caption carries them now.
+        "within-stage fits",
         "Held-out score of each\nstage's own map",
         **HEADER_KWARGS,
     )
@@ -557,17 +559,9 @@ def render_variant(data: dict[str, Any], out_base: Path, *, panel_b: str) -> dic
             borderaxespad=0.0,
             labelspacing=0.3,
         )
-    # One short factual line, matching the sidecar's bootstrap description
-    # (1,000 draws; 95% quantile intervals in every panel).
-    fig.text(
-        0.995,
-        0.955,
-        "Error bars: 95% bootstrap CIs, 1,000 draws",
-        color=MUTED,
-        fontsize=13,
-        ha="right",
-        va="center",
-    )
+    # No in-plot error-bar note: the caption states the interval definition
+    # (95% bootstrap CIs, 1,000 draws). The removed line shared the legend row
+    # at y=0.955, so nothing above the panels is reclaimed and the layout holds.
     outputs = save_c2a_figure(
         fig,
         out_base,
