@@ -1,14 +1,67 @@
 {
-  "commit": "faa17de7+dirty",
-  "git_commit": "faa17de7",
+  "commit": "9526ebb5+dirty",
+  "render_id": "c0e759f9d1b04dc3",
+  "git_commit": "9526ebb59650b1177445cc32e0842df70a5a5933",
   "git_dirty": true,
   "git_dirty_paths": [
-    ".claude/agent-memory/critic/MEMORY.md"
+    ".claude/agent-memory/experiment-implementer-lean/MEMORY.md",
+    ".claude/agent-memory/experimenter/feedback_pod_sparse_clone_committed_inputs.md",
+    "CLAUDE.md",
+    "docs/paper_context_answer_map/fig1_schematic.pdf",
+    "docs/paper_context_answer_map/fig1_schematic.tex",
+    "eval_results/issue_2546/necessity_r2/summary.json",
+    "figures/issue_1739/result2_fourpanel/result2_fourpanel.meta.json",
+    "figures/issue_1739/result2_fourpanel/result2_fourpanel.pdf",
+    "figures/issue_1739/result2_fourpanel/result2_fourpanel.png",
+    "figures/issue_1902/section43/c1_posttraining_dynamics.pdf",
+    "figures/issue_1902/section43/c1_posttraining_dynamics.png",
+    "figures/issue_1902/section43/c1_posttraining_dynamics_data.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+    "figures/paper/c3_direction_r2_spectrum.meta.json",
+    "figures/paper/c3_direction_r2_spectrum.pdf",
+    "figures/paper/c3_direction_r2_spectrum.png",
+    "figures/paper/c3_direction_r2_spectrum_grayscale.png",
+    "figures/paper/c3_directions_and_features.meta.json",
+    "figures/paper/c3_directions_and_features.pdf",
+    "figures/paper/c3_directions_and_features.png",
+    "figures/paper/c3_directions_and_features_grayscale.png",
+    "figures/paper/c3_directions_and_pairs.meta.json",
+    "figures/paper/c3_directions_and_pairs.pdf",
+    "figures/paper/c3_directions_and_pairs.png",
+    "figures/paper/c3_directions_and_pairs_grayscale.png",
+    "figures/paper/c3_element_shifts.meta.json",
+    "figures/paper/c3_element_shifts.pdf",
+    "figures/paper/c3_element_shifts.png",
+    "figures/paper/c3_element_shifts_by_slot.meta.json",
+    "figures/paper/c3_element_shifts_by_slot.pdf",
+    "figures/paper/c3_element_shifts_by_slot.png",
+    "figures/paper/c3_element_shifts_by_slot_grayscale.png",
+    "figures/paper/c3_element_shifts_grayscale.png",
+    "figures/paper/c3_failures_and_shifts.meta.json",
+    "figures/paper/c3_failures_and_shifts.pdf",
+    "figures/paper/c3_failures_and_shifts.png",
+    "figures/paper/c3_failures_and_shifts_grayscale.png",
+    "figures/paper/c3_features_and_shifts.meta.json",
+    "figures/paper/c3_features_and_shifts.pdf",
+    "figures/paper/c3_features_and_shifts.png",
+    "figures/paper/c3_features_and_shifts_grayscale.png",
+    "figures/paper/c3_matched_magnitude.meta.json",
+    "figures/paper/c3_matched_magnitude.pdf",
+    "figures/paper/c3_matched_magnitude.png",
+    "figures/paper/c3_matched_magnitude_grayscale.png",
+    "figures/paper/c3_pair_shifts.meta.json",
+    "figures/paper/c3_pair_shifts.pdf",
+    "figures/paper/c3_pair_shifts.png",
+    "... 31 more"
   ],
-  "created": "2026-08-06T16:43:05Z",
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue1739_result2_fourpanel_fig.py",
+  "created": "2026-09-11T08:38:07Z",
   "figsize": [
     11.5,
-    6.4
+    5.9
   ],
   "points": [
     {
@@ -240,9 +293,7 @@
   "total_points": 32,
   "text": {
     "suptitle": "Average across behaviours: effect of excluding spread-failed cells",
-    "fig_texts": [
-      "Averaged-across-behaviours panel of the four-panel Result 2 (fair protocol) figure, both ways.   LEFT: spread-failed cells excluded (as in the main figure) \u2014 evil drops out of generic chat and completely OOD (its wildchat + both OOD rungs fail the Result 1 spread gate), so those bars average sycophancy + hallucination only (2 behaviours; the other groups average 3).   RIGHT: all cells included \u2014 generic chat and completely OOD then carry evil's near-floor uninterpretable cells and are hatched/muted accordingly.   Same metric, arms, CI convention, and per-cell n as the main figure (see its caption)."
-    ],
+    "fig_texts": [],
     "axes": [
       {
         "title_left": "average across behaviours \u2014 spread-failed cells excluded",
@@ -290,11 +341,14 @@
           "1.0"
         ],
         "yticklabels": [
-          "0.0",
-          "0.5",
-          "1.0"
+          "0",
+          "1"
         ]
       }
     ]
-  }
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
 }

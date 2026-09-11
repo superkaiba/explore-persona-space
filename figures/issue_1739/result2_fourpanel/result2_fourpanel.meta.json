@@ -1,14 +1,67 @@
 {
-  "commit": "faa17de7+dirty",
-  "git_commit": "faa17de7",
+  "commit": "9526ebb5+dirty",
+  "render_id": "c1e39b640f8a47d0",
+  "git_commit": "9526ebb59650b1177445cc32e0842df70a5a5933",
   "git_dirty": true,
   "git_dirty_paths": [
-    ".claude/agent-memory/critic/MEMORY.md"
+    ".claude/agent-memory/experiment-implementer-lean/MEMORY.md",
+    ".claude/agent-memory/experimenter/feedback_pod_sparse_clone_committed_inputs.md",
+    "CLAUDE.md",
+    "docs/paper_context_answer_map/fig1_schematic.pdf",
+    "docs/paper_context_answer_map/fig1_schematic.tex",
+    "eval_results/issue_2546/necessity_r2/summary.json",
+    "figures/issue_1902/section43/c1_posttraining_dynamics.pdf",
+    "figures/issue_1902/section43/c1_posttraining_dynamics.png",
+    "figures/issue_1902/section43/c1_posttraining_dynamics_data.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+    "figures/paper/c3_direction_r2_spectrum.meta.json",
+    "figures/paper/c3_direction_r2_spectrum.pdf",
+    "figures/paper/c3_direction_r2_spectrum.png",
+    "figures/paper/c3_direction_r2_spectrum_grayscale.png",
+    "figures/paper/c3_directions_and_features.meta.json",
+    "figures/paper/c3_directions_and_features.pdf",
+    "figures/paper/c3_directions_and_features.png",
+    "figures/paper/c3_directions_and_features_grayscale.png",
+    "figures/paper/c3_directions_and_pairs.meta.json",
+    "figures/paper/c3_directions_and_pairs.pdf",
+    "figures/paper/c3_directions_and_pairs.png",
+    "figures/paper/c3_directions_and_pairs_grayscale.png",
+    "figures/paper/c3_element_shifts.meta.json",
+    "figures/paper/c3_element_shifts.pdf",
+    "figures/paper/c3_element_shifts.png",
+    "figures/paper/c3_element_shifts_by_slot.meta.json",
+    "figures/paper/c3_element_shifts_by_slot.pdf",
+    "figures/paper/c3_element_shifts_by_slot.png",
+    "figures/paper/c3_element_shifts_by_slot_grayscale.png",
+    "figures/paper/c3_element_shifts_grayscale.png",
+    "figures/paper/c3_failures_and_shifts.meta.json",
+    "figures/paper/c3_failures_and_shifts.pdf",
+    "figures/paper/c3_failures_and_shifts.png",
+    "figures/paper/c3_failures_and_shifts_grayscale.png",
+    "figures/paper/c3_features_and_shifts.meta.json",
+    "figures/paper/c3_features_and_shifts.pdf",
+    "figures/paper/c3_features_and_shifts.png",
+    "figures/paper/c3_features_and_shifts_grayscale.png",
+    "figures/paper/c3_matched_magnitude.meta.json",
+    "figures/paper/c3_matched_magnitude.pdf",
+    "figures/paper/c3_matched_magnitude.png",
+    "figures/paper/c3_matched_magnitude_grayscale.png",
+    "figures/paper/c3_pair_shifts.meta.json",
+    "figures/paper/c3_pair_shifts.pdf",
+    "figures/paper/c3_pair_shifts.png",
+    "figures/paper/c3_pair_shifts_grayscale.png",
+    "figures/paper/c3_pair_variance_explained.pdf",
+    "figures/paper/c3_pair_variance_explained.png",
+    "... 24 more"
   ],
-  "created": "2026-08-06T16:43:01Z",
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue1739_result2_fourpanel_fig.py",
+  "created": "2026-09-11T08:38:04Z",
   "figsize": [
     18.0,
-    7.4
+    6.9
   ],
   "points": [
     {
@@ -464,9 +517,7 @@
   "total_points": 64,
   "text": {
     "suptitle": "Result 2 (fair protocol), four-panel spread-flagged view: persona-vector reads across evaluation regimes, hatched where the DV spread gate fails",
-    "fig_texts": [
-      "Spearman rho of each predictor vs the judged behaviour-expression DV (graded 0-100 trait rubric; hallucination's in-distribution and completely-OOD cells instead score fabricated fraction x100 \u2014 a different construct, and the averaged panel mixes the two).   All arms read CONTEXT-based representations (context_end) only \u2014 the prefix-mapping arm was not scored in this round (recorded user-directed deviation).   Error bars: within-draw paired bootstrap CI over eval contexts (single replicate); an averaged bar carries the elementwise MEAN of its constituents' CI bounds \u2014 conservative, not a resampled CI of the mean.   'Completely OOD' = simple mean over the behaviour's OOD rungs: evil 2 (hh-rlhf red-team, ToxicChat), sycophancy 1 (held-out Reddit r/socialskills), hallucination 2 (NQ-Open, SimpleQA) \u2014 the average means different things per behaviour.   Hatched muted groups FAIL the Result 1 spread gate (floor/ceiling mass <= 0.90 AND split-half reliability r_yy >= 0.50 AND min detectable rho <= 0.5 x sqrt(r_yy), per behaviour x setting): evil fails generic chat AND both OOD rungs, so those whole groups are untrustworthy (bars kept for completeness).   Averaged panel EXCLUDES spread-failed cells \u2014 its generic-chat and OOD bars average 2 behaviours (sycophancy, hallucination), the rest 3.   Per-bar n_eval \u2014 synthetic: 200 each; generic chat: 417/415/411 (evil/syco/hall; held-out ~20% WildChat split \u2014 spread verdicts were computed on the FULL rung); in-distribution: 6,468 / 16,000 / 16,000; OOD rungs: evil 1,868 + 519, sycophancy 1,304, hallucination 3,167 + 4,021."
-    ],
+    "fig_texts": [],
     "axes": [
       {
         "title_left": "evil",
@@ -532,11 +583,14 @@
           "1.0"
         ],
         "yticklabels": [
-          "0.0",
-          "0.5",
-          "1.0"
+          "0",
+          "1"
         ]
       }
     ]
-  }
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
 }
