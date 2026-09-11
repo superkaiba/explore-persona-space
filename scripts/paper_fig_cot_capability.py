@@ -169,14 +169,7 @@ def draw_capability(ax, data):
         transform=ax.transAxes,
         va="top",
     )
-    panel_header(
-        ax,
-        "C",
-        "10 models · thinking off",
-        "Model capability",
-        kicker_y=1.18,
-        title_y=1.035,
-    )
+    panel_header(ax, "C", "Thinking off", "Model capability", kicker_y=1.18, title_y=1.035)
 
 
 def main():
@@ -232,7 +225,9 @@ def main():
         "layout": "One horizontal row: CoT prediction, correctness groups, model capability",
         "changes": (
             "Single-row layout, compact headings, and relocated model labels; "
-            "bar-value text omitted from narrow panels. All estimates and intervals preserved."
+            "bar-value text omitted from narrow panels. The plotted-model count comes off "
+            "the panel C kicker because the caption states it. "
+            "All estimates and intervals preserved."
         ),
         "maps_refit": False,
         "render": exported["record"],

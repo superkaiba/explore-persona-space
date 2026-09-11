@@ -613,7 +613,7 @@
     "C": "capability"
   },
   "layout": "One horizontal row: CoT prediction, correctness groups, model capability",
-  "changes": "Single-row layout, compact headings, and relocated model labels; bar-value text omitted from narrow panels. All estimates and intervals preserved.",
+  "changes": "Single-row layout, compact headings, and relocated model labels; bar-value text omitted from narrow panels. The plotted-model count comes off the panel C kicker because the caption states it. All estimates and intervals preserved.",
   "maps_refit": false,
   "render": {
     "style_version": "c2a-v2",
@@ -669,7 +669,7 @@
       "OLMo3.1 32B Instruct",
       "Qwen3 32B",
       "Spearman $\\rho = 0.867$, $p = 0.002$",
-      "C  \u00b7  10 MODELS \u00b7 THINKING OFF",
+      "C  \u00b7  THINKING OFF",
       "Artificial Analysis\nIntelligence Index \u2191",
       "0",
       "10",
@@ -686,11 +686,11 @@
       "Thinking on \u00b7 CoT end"
     ]
   },
-  "script_sha256": "e4270b2f09b3a72c3a98298fc131f04e4a720d065e508c0cbac36f1d024366ba",
+  "script_sha256": "68c77f67157dc1b332a366b802182ab9654f589607f0c324fbc4b342cd514c2d",
   "style_sha256": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1",
   "output_sha256": {
-    "pdf": "4224ac3483aa8c58033be07653d3166995d23a2f53f5731e64a8c7a4a259cb8d",
-    "png": "56e69ca21eef19c2f91db8ee52723dff2074317c64d492f1ca25bc1e2904a9cd",
-    "grayscale": "976303a6573d92a56f2e5eb79fadf52257c4dfde0000a392282c05cda85c7ac4"
+    "pdf": "6aa4037601e16cbca9fab725b250ca8948c7f4cb69966a869e03d9de708b4887",
+    "png": "336030121085fece35cdba46719009da108650b6245a8795264d8cb7fdf26e95",
+    "grayscale": "9901f5a2158416d87f8c40576a0e4c2b924b82f5d8efb47139bb8f345f1bb7a1"
   }
 }
