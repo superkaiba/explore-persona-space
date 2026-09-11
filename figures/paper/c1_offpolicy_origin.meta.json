@@ -33,12 +33,12 @@
   "record": {
     "authoring_size_inches": [
       13.095,
-      6.024
+      5.324
     ],
     "background": "#FFFFFF",
     "exported_size_inches": [
       13.095,
-      5.797
+      5.324
     ],
     "include_width_frac": 1.0,
     "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c1_offpolicy_origin.pdf}",
@@ -54,29 +54,6 @@
     "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
     "style_version": "c2a-v2",
     "text": [
-      "A",
-      "Layer",
-      "0",
-      "5",
-      "10",
-      "15",
-      "20",
-      "25",
-      "Held-out $R^2$ \u2191",
-      "0.2",
-      "0.4",
-      "0.6",
-      "0.8",
-      "Held-out $R^2$ by layer,\nby answer source",
-      "B",
-      "Number of source personas",
-      "1",
-      "2",
-      "4",
-      "8",
-      "16",
-      "Held-out score \u2191",
-      "Held-out $R^2$ and top-1\nretrieval by persona count",
       "ANSWER SOURCE",
       "METRIC",
       "Own answer (Qwen)",
@@ -84,9 +61,158 @@
       "Eccentric-style answer (Claude)",
       "Shuffled own answers",
       "Own answer \u2192 plain answer map (reference)",
-      "Held-out $R^2$",
+      "Held-out R2",
       "Top-1 retrieval",
-      "$R^2$ at layers 14, 17, 26"
-    ]
+      "R2 at layers 14, 17, 26",
+      "A Prediction by answer source",
+      "B Number of personas",
+      "0",
+      "5",
+      "10",
+      "15",
+      "20",
+      "25",
+      "Layer",
+      "0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "Held-out R2 \u2191",
+      "1",
+      "2",
+      "4",
+      "8",
+      "16",
+      "Number of source personas",
+      "0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "Held-out score \u2191"
+    ],
+    "heading_layout": "single descriptive heading"
+  },
+  "inherited_scientific_metadata_status": "no_pdf_hash_unverified",
+  "heading_migration": {
+    "path": "figures/paper/c1_offpolicy_origin.pdf",
+    "status": "updated",
+    "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+    "source_sha256": "d3cc8a6fc4a4b43d97b1e6c139249c409b3f0db31b96813e4f0f6248106c0b76",
+    "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+    "old_size_pt": [
+      942.8571166992188,
+      417.3514404296875
+    ],
+    "new_size_pt": [
+      942.8571166992188,
+      383.3514404296875
+    ],
+    "heading_font_pt": 22,
+    "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+    "rows": [
+      {
+        "remove": [
+          "A",
+          "Held-out R2 by layer,",
+          "by answer source",
+          "B",
+          "Held-out R2 and top-1",
+          "retrieval by persona count"
+        ],
+        "headings": [
+          {
+            "x": 64.937,
+            "width": 548.807,
+            "text": "A Prediction by answer source",
+            "lines": [
+              "A Prediction by answer source"
+            ]
+          },
+          {
+            "x": 635.744,
+            "width": 295.1131166992187,
+            "text": "B Number of personas",
+            "lines": [
+              "B Number of personas"
+            ]
+          }
+        ],
+        "start": 109.64378356933594,
+        "end": 183.0474395751953,
+        "cut": [
+          110,
+          179
+        ],
+        "height": 35,
+        "new_y": 110.0
+      }
+    ],
+    "nonheading_text_unchanged": true,
+    "nonheading_redaction_pixel_difference_fraction": 0.0,
+    "preserved_strip_pixel_difference_fractions": [
+      0.0,
+      3.3558398324764757e-06
+    ],
+    "output_sha256": "3c64343c98788c53ebcd4fd4d8326eaaab0906e707a3deff9036678971d4172b",
+    "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+    "data_recomputed": false
+  },
+  "reproduction_command": "uv run --extra viz python scripts/paper_figure_headings.py",
+  "output_sha256": {
+    "pdf": "3c64343c98788c53ebcd4fd4d8326eaaab0906e707a3deff9036678971d4172b",
+    "png": "ad8c54f7dcfde2e3fb1197850cd6bce54e8574b4d2b0b5296586006e99918fba",
+    "grayscale": "3ceff1ef89a6ae7c8831f6702f88ff292072c4f4c12cea043c9d50e44d51ae8c"
+  },
+  "render": {
+    "exported_size_inches": [
+      13.095,
+      5.324
+    ],
+    "authoring_size_inches": [
+      13.095,
+      5.324
+    ],
+    "text": [
+      "ANSWER SOURCE",
+      "METRIC",
+      "Own answer (Qwen)",
+      "Plain answer (Claude)",
+      "Eccentric-style answer (Claude)",
+      "Shuffled own answers",
+      "Own answer \u2192 plain answer map (reference)",
+      "Held-out R2",
+      "Top-1 retrieval",
+      "R2 at layers 14, 17, 26",
+      "A Prediction by answer source",
+      "B Number of personas",
+      "0",
+      "5",
+      "10",
+      "15",
+      "20",
+      "25",
+      "Layer",
+      "0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "Held-out R2 \u2191",
+      "1",
+      "2",
+      "4",
+      "8",
+      "16",
+      "Number of source personas",
+      "0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "Held-out score \u2191"
+    ],
+    "heading_layout": "single descriptive heading"
   }
 }

@@ -97,7 +97,7 @@ protocol change. Plot-only changes should run `make_paper_figure2.py` directly.
 | $R^2$ | Solid line with filled markers |
 | Top-1 retrieval | Dashed line with open markers |
 | Titles | Sentence case, left-aligned, descriptive rather than internal names |
-| Panel kickers | Compact uppercase metadata with panel letter |
+| Panel headings | One sentence-case description with the panel letter; shared metadata in the caption |
 | Legends | Frameless and separated by semantic role: predictor versus metric |
 | Axis direction | Include an upward arrow when larger is better |
 | Output | Vector PDF plus 240-DPI color and grayscale PNGs |
@@ -136,6 +136,45 @@ Additional conventions:
 - Check both the manuscript-scale PDF and the grayscale audit before syncing.
 
 ## Making later changes
+
+### One heading per panel
+
+As of 2026-09-11, use a single sentence-case heading such as `A Separate maps`.
+The shared `panel_header` helper combines the letter with the descriptive title
+and omits the separate uppercase kicker. Legacy call signatures remain accepted.
+An existing left title takes precedence over a kicker-only call. Keep important
+panel-specific conditions in the title or legend, and put shared setup details
+in the caption. Wrapping is allowed, with no reduction in the shared font size.
+
+The current manuscript and appendix migration is enumerated in
+`figure_headings.json`, including assets already following the rule. Reproduce
+the shipped heading edits with:
+
+```bash
+uv run --extra viz python scripts/paper_figure_headings.py
+uv run --extra viz python figures/paper/c4_shared_speakers.render.py
+```
+
+This presentation-only command reads immutable, SHA-verified source PDFs from
+the manifest's Git commit. It removes only the listed heading text, replaces a
+verified white strip with the new heading, and copies the remaining content as
+vector PDF forms. It verifies surviving text and pixel preservation, exports
+color and grayscale review copies, and refreshes the canonical metadata plus a
+`.headings.json` audit. No predictions, estimates, or intervals are recomputed.
+The remade speaker plot is rendered directly from its adjacent, unchanged data
+JSON; its separate command applies the same headings and removes the redundant
+shuffled-answer display requested by Thomas. Its PDF is already compact in the
+manifest and is skipped by the heading-band migration.
+
+Use `--only <stem>` to select an asset and `--out-root <directory>` for a preview.
+The `inherited_scientific_metadata_status` field distinguishes prior metadata
+whose PDF hash matches from metadata without a verified link to the shipped PDF.
+The source PDF remains the authority for this formatting pass.
+
+Figures that previously used only small kickers can become slightly taller when
+given readable titles. The goal is one consistent heading hierarchy, not a fixed
+height reduction for every plot. Schematic labels and qualitative-table column
+labels remain specialized labels rather than being treated as duplicate titles.
 
 The baselines comparison ([panel C](https://raw.githubusercontent.com/superkaiba/explore-persona-space/main/figures/paper/c1_predictability_scaling.png))
 spans a full-width row below A and B.
@@ -223,10 +262,8 @@ drawn on B. Both gutters are cut rather than the panels: the property names wrap
 to two lines (2.23 in against 3.84 in set on one line) and the per-row pair count
 leaves the element labels for the caption and the sidecar (1.94 in against
 2.67 in with it). That returns 2.34 in to the four plot boxes, which leaves panel
-A at 2.45 in and the three metric columns at 1.73 in each. At that pitch a
-descriptive panel title does not fit, the three the earlier stacked layout
-carried measure 3.40 in to 4.46 in, so each panel carries its letter and the
-estimator as a kicker and states the metric in full in its axis label.
+A at 2.45 in and the three metric columns at 1.73 in each. The single-heading convention uses short descriptions that wrap to two lines
+where necessary; each axis spells out its metric.
 
 Panel D is drawn on a cut axis, following
 `scripts/issue2564_element_shifts_three_panel.py`. Every rate sits between 0.875

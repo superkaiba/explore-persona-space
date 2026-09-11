@@ -1,0 +1,61 @@
+{
+  "path": "figures/paper/c1_crosslayer_grid.pdf",
+  "status": "updated",
+  "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+  "source_sha256": "663faae9b76d092c16ee2348f3f5984ab9ad30b18872927098e1e0e4ac314531",
+  "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+  "old_size_pt": [
+    942.8571166992188,
+    398.76275634765625
+  ],
+  "new_size_pt": [
+    942.8571166992188,
+    384.76275634765625
+  ],
+  "heading_font_pt": 22,
+  "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+  "rows": [
+    {
+      "remove": [
+        "A",
+        "Held-out R2 of the ridge map",
+        "B  \u00b7  CHANCE 0.1%",
+        "Top-1 retrieval of the ridge map"
+      ],
+      "headings": [
+        {
+          "x": 76.117,
+          "width": 457.627,
+          "text": "A Held-out R\u00b2",
+          "lines": [
+            "A Held-out R\u00b2"
+          ]
+        },
+        {
+          "x": 555.744,
+          "width": 375.1131166992187,
+          "text": "B Top-1 retrieval",
+          "lines": [
+            "B Top-1 retrieval"
+          ]
+        }
+      ],
+      "start": -1.5732269287109375,
+      "end": 49.515804290771484,
+      "cut": [
+        0,
+        49
+      ],
+      "height": 35,
+      "new_y": 0.0
+    }
+  ],
+  "nonheading_text_unchanged": true,
+  "nonheading_redaction_pixel_difference_fraction": 0.0,
+  "preserved_strip_pixel_difference_fractions": [
+    0.0
+  ],
+  "output_sha256": "104216d35d9a18d28fb3c656de605c2ed1b8aa7ad457f06f16c05afa7b8cf72e",
+  "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+  "data_recomputed": false
+}

@@ -1,0 +1,61 @@
+{
+  "path": "figures/paper/c1_k5_length_control.pdf",
+  "status": "updated",
+  "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+  "source_sha256": "1fc96d3a35b5ea640f26fa11e33416fdd855a2d7728c215382f7976e4e34c8b5",
+  "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+  "old_size_pt": [
+    942.8571166992188,
+    374.40478515625
+  ],
+  "new_size_pt": [
+    942.8571166992188,
+    362.40478515625
+  ],
+  "heading_font_pt": 22,
+  "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+  "rows": [
+    {
+      "remove": [
+        "A  \u00b7  OWN MAP",
+        "Answer-length control",
+        "B  \u00b7  FULL DATA \u00b7 5 LENGTH BINS",
+        "Variance vs residual by length"
+      ],
+      "headings": [
+        {
+          "x": 84.345,
+          "width": 435.28599999999994,
+          "text": "A Answer-length control",
+          "lines": [
+            "A Answer-length control"
+          ]
+        },
+        {
+          "x": 541.631,
+          "width": 389.2261166992188,
+          "text": "B Full-data length dependence",
+          "lines": [
+            "B Full-data length dependence"
+          ]
+        }
+      ],
+      "start": -1.5732574462890625,
+      "end": 47.278377532958984,
+      "cut": [
+        0,
+        47
+      ],
+      "height": 35,
+      "new_y": 0.0
+    }
+  ],
+  "nonheading_text_unchanged": true,
+  "nonheading_redaction_pixel_difference_fraction": 0.0,
+  "preserved_strip_pixel_difference_fractions": [
+    0.0
+  ],
+  "output_sha256": "ddf63614a3e4e9b767d7b798ac87751c7236b6901c7e49424a6abf85b07001c2",
+  "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+  "data_recomputed": false
+}

@@ -284,7 +284,7 @@ def plot_within_stage(ax: mpl.axes.Axes, data: dict[str, Any]) -> list[Line2D]:
         # Descriptive kicker, matching panels B and C. The model and the read
         # layer used to sit here; the caption carries them now.
         "within-stage fits",
-        "Held-out score of each\nstage's own map",
+        "Within-stage fits",
         **HEADER_KWARGS,
     )
     return [
@@ -336,7 +336,7 @@ def plot_stage_grid(ax: mpl.axes.Axes, data: dict[str, Any]) -> list[Line2D]:
         ax,
         "B",
         "context→answer fits",
-        "Held-out $R^2$ into each stage's\nanswers, by context source",
+        "Context sources",
         **HEADER_KWARGS,
     )
     for spine in ax.spines.values():
@@ -416,7 +416,7 @@ def plot_stage_series(ax: mpl.axes.Axes, data: dict[str, Any]) -> list[Line2D]:
         ax,
         "B",
         "context→answer fits",
-        "Held-out $R^2$ into each stage's\nanswers, by context source",
+        "Context sources",
         **HEADER_KWARGS,
     )
     return [
@@ -500,7 +500,7 @@ def plot_transfer(ax: mpl.axes.Axes, data: dict[str, Any]) -> list[Line2D]:
         ax,
         "C",
         "map transfer",
-        "Retention of the\nprior stage's map",
+        "Map transfer",
         **HEADER_KWARGS,
     )
     return handles

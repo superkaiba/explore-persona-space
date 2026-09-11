@@ -1,0 +1,102 @@
+{
+  "path": "figures/paper/c3_refusal_swaps_by_class.pdf",
+  "status": "updated",
+  "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+  "source_sha256": "f32abc0e66defb9928e38831d83a48ae806a1baddc59c3d4059cbce5124cb670",
+  "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+  "old_size_pt": [
+    707.1428833007812,
+    756.8192749023438
+  ],
+  "new_size_pt": [
+    707.1428833007812,
+    727.8192749023438
+  ],
+  "heading_font_pt": 22,
+  "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+  "rows": [
+    {
+      "remove": [
+        "A  \u00b7  SHIFT DIRECTION, BY PAIR CLASS",
+        "Cosine of predicted and observed shift"
+      ],
+      "headings": [
+        {
+          "x": 80.134,
+          "width": 615.0088833007812,
+          "text": "A Shift direction",
+          "lines": [
+            "A Shift direction"
+          ]
+        }
+      ],
+      "start": 54.39024353027344,
+      "end": 100.02803802490234,
+      "cut": [
+        55,
+        100
+      ],
+      "height": 35,
+      "new_y": 55.0
+    },
+    {
+      "remove": [
+        "B  \u00b7  REFUSAL-DIRECTION PROJECTION, BY PAIR CLASS",
+        "Projection on the refusal direction"
+      ],
+      "headings": [
+        {
+          "x": 80.134,
+          "width": 615.0088833007812,
+          "text": "B Refusal projection",
+          "lines": [
+            "B Refusal projection"
+          ]
+        }
+      ],
+      "start": 291.8057861328125,
+      "end": 337.4435729980469,
+      "cut": [
+        292,
+        337
+      ],
+      "height": 35,
+      "new_y": 282.0
+    },
+    {
+      "remove": [
+        "C  \u00b7  SHIFT MAGNITUDE, BY PAIR CLASS",
+        "Predicted over observed shift size"
+      ],
+      "headings": [
+        {
+          "x": 80.134,
+          "width": 615.0088833007812,
+          "text": "C Shift size",
+          "lines": [
+            "C Shift size"
+          ]
+        }
+      ],
+      "start": 529.2213134765625,
+      "end": 574.8590698242188,
+      "cut": [
+        530,
+        574
+      ],
+      "height": 35,
+      "new_y": 510.0
+    }
+  ],
+  "nonheading_text_unchanged": true,
+  "nonheading_redaction_pixel_difference_fraction": 0.0,
+  "preserved_strip_pixel_difference_fractions": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "output_sha256": "233b237bcdb4fd730301208307e607007e4a6e2cc742e30569a685f4ca77d45b",
+  "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+  "data_recomputed": false
+}

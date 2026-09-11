@@ -4,11 +4,11 @@
   "resolved_font": "Inter",
   "authoring_size_inches": [
     13.095,
-    5.762
+    4.948
   ],
   "exported_size_inches": [
     13.095,
-    5.045
+    4.948
   ],
   "scale": 0.42,
   "include_width_frac": 1.0,
@@ -22,36 +22,37 @@
   "png_dpi": 240,
   "background": "#FFFFFF",
   "text": [
-    "A  \u00b7  RECONSTRUCTION",
-    "Rollouts averaged, $K$",
+    "Linear metamodel",
+    "Nonlinear metamodel",
+    "A Variance explained",
+    "B Answer retrieval",
     "1",
     "2",
     "3",
     "4",
     "5",
     "10",
-    "Held-out $R^2$ \u2191",
-    "0.725",
+    "Rollouts averaged, K",
     "0.750",
     "0.775",
     "0.800",
     "0.825",
     "0.850",
     "0.875",
-    "0.900",
-    "Variance explained",
-    "B  \u00b7  RETRIEVAL",
-    "Top-1 retrieval \u2191",
-    "94.0%",
+    "Held-out R2 \u2191",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "10",
+    "Rollouts averaged, K",
     "95.0%",
     "96.0%",
     "97.0%",
     "98.0%",
     "99.0%",
-    "100.0%",
-    "Answer identification",
-    "Linear metamodel",
-    "Nonlinear metamodel"
+    "Top-1 retrieval \u2191"
   ],
   "plotted_arms": [
     "ridge",
@@ -1198,8 +1199,121 @@
   },
   "paper_style": true,
   "outputs_sha256": {
-    "pdf": "605b604f077cb5a4f4be046603c7632a15ba011c5fb26b08d59f49d96c6a3a75",
-    "png": "95748679f5bbc289543ec405b9fc4f73bc2ec880c6c2eaf0a71bf5e3ee4dedc3",
-    "grayscale": "eb947fe702ebfc373be45c86515e86db8d389dfad27a93fbfc115068e0745ec4"
+    "pdf": "5f8499faabcdddc08a012d64cfd4b7f85c7e8b60dc3cc1f2a8c4f6729c5e5046",
+    "png": "3365a64f13342d5f36d9a7c89ff86a7e165f509ad244588821e03cba24bd4b19",
+    "grayscale": "335b29c2f173e21988ddc8151f15f8e1f4005e425f80458548ad45fb0b407fc4"
+  },
+  "inherited_scientific_metadata_status": "pdf_hash_matched",
+  "heading_migration": {
+    "path": "figures/paper/c1_rollout_count.pdf",
+    "status": "updated",
+    "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+    "source_sha256": "605b604f077cb5a4f4be046603c7632a15ba011c5fb26b08d59f49d96c6a3a75",
+    "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+    "old_size_pt": [
+      942.8571166992188,
+      363.260009765625
+    ],
+    "new_size_pt": [
+      942.8571166992188,
+      356.260009765625
+    ],
+    "heading_font_pt": 22,
+    "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+    "rows": [
+      {
+        "remove": [
+          "A  \u00b7  RECONSTRUCTION",
+          "B  \u00b7  RETRIEVAL",
+          "Variance explained",
+          "Answer identification"
+        ],
+        "headings": [
+          {
+            "x": 87.208,
+            "width": 454.3910000000001,
+            "text": "A Variance explained",
+            "lines": [
+              "A Variance explained"
+            ]
+          },
+          {
+            "x": 563.599,
+            "width": 367.2581166992187,
+            "text": "B Answer retrieval",
+            "lines": [
+              "B Answer retrieval"
+            ]
+          }
+        ],
+        "start": 27.635574340820312,
+        "end": 71.08687591552734,
+        "cut": [
+          28,
+          70
+        ],
+        "height": 35,
+        "new_y": 28.0
+      }
+    ],
+    "nonheading_text_unchanged": true,
+    "nonheading_redaction_pixel_difference_fraction": 0.0,
+    "preserved_strip_pixel_difference_fractions": [
+      0.0,
+      0.0
+    ],
+    "output_sha256": "5f8499faabcdddc08a012d64cfd4b7f85c7e8b60dc3cc1f2a8c4f6729c5e5046",
+    "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+    "data_recomputed": false
+  },
+  "reproduction_command": "uv run --extra viz python scripts/paper_figure_headings.py",
+  "output_sha256": {
+    "pdf": "5f8499faabcdddc08a012d64cfd4b7f85c7e8b60dc3cc1f2a8c4f6729c5e5046",
+    "png": "3365a64f13342d5f36d9a7c89ff86a7e165f509ad244588821e03cba24bd4b19",
+    "grayscale": "335b29c2f173e21988ddc8151f15f8e1f4005e425f80458548ad45fb0b407fc4"
+  },
+  "render": {
+    "exported_size_inches": [
+      13.095,
+      4.948
+    ],
+    "authoring_size_inches": [
+      13.095,
+      4.948
+    ],
+    "text": [
+      "Linear metamodel",
+      "Nonlinear metamodel",
+      "A Variance explained",
+      "B Answer retrieval",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "10",
+      "Rollouts averaged, K",
+      "0.750",
+      "0.775",
+      "0.800",
+      "0.825",
+      "0.850",
+      "0.875",
+      "Held-out R2 \u2191",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "10",
+      "Rollouts averaged, K",
+      "95.0%",
+      "96.0%",
+      "97.0%",
+      "98.0%",
+      "99.0%",
+      "Top-1 retrieval \u2191"
+    ],
+    "heading_layout": "single descriptive heading"
   }
 }

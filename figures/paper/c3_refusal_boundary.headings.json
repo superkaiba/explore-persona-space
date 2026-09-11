@@ -1,0 +1,71 @@
+{
+  "path": "figures/paper/c3_refusal_boundary.pdf",
+  "status": "updated",
+  "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+  "source_sha256": "5c2763507c2ffb6b56a5064b048d32d92e00744beb24bde9f4c384ae3bae3a16",
+  "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+  "old_size_pt": [
+    942.8571166992188,
+    306.1773681640625
+  ],
+  "new_size_pt": [
+    942.8571166992188,
+    305.1773681640625
+  ],
+  "heading_font_pt": 22,
+  "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+  "rows": [
+    {
+      "remove": [
+        "A  \u00b7  BY PAIR CLASS",
+        "Answer separation",
+        "B  \u00b7  TWO-ALTERNATIVE CHOICE",
+        "Hit rate by stratum",
+        "C  \u00b7  SPEARMAN BY STRATUM",
+        "Loading vs margin"
+      ],
+      "headings": [
+        {
+          "x": 68.814,
+          "width": 294.105,
+          "text": "A Answer separation",
+          "lines": [
+            "A Answer separation"
+          ]
+        },
+        {
+          "x": 384.919,
+          "width": 294.105,
+          "text": "B Two-way accuracy",
+          "lines": [
+            "B Two-way accuracy"
+          ]
+        },
+        {
+          "x": 701.024,
+          "width": 229.83311669921875,
+          "text": "C Loading vs. margin",
+          "lines": [
+            "C Loading vs. margin"
+          ]
+        }
+      ],
+      "start": -1.5732574462890625,
+      "end": 38.909603118896484,
+      "cut": [
+        0,
+        36
+      ],
+      "height": 35,
+      "new_y": 0.0
+    }
+  ],
+  "nonheading_text_unchanged": true,
+  "nonheading_redaction_pixel_difference_fraction": 0.0,
+  "preserved_strip_pixel_difference_fractions": [
+    0.0
+  ],
+  "output_sha256": "510f6972875e20014e88ac5aba6087e58ccea53ff04342676595bfdcbd84ccdd",
+  "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+  "data_recomputed": false
+}

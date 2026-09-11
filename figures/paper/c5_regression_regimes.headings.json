@@ -1,0 +1,69 @@
+{
+  "path": "figures/paper/c5_regression_regimes.pdf",
+  "status": "updated",
+  "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+  "source_sha256": "8ce31f4b33fb68c3c639743a44f12f4dcfbabbd679dd4d379cd9003b085a663e",
+  "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+  "old_size_pt": [
+    942.8571166992188,
+    305.4047546386719
+  ],
+  "new_size_pt": [
+    942.8571166992188,
+    325.4047546386719
+  ],
+  "heading_font_pt": 22,
+  "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+  "rows": [
+    {
+      "remove": [
+        "EVIL",
+        "SYCOPHANCY",
+        "HALLUCINATION"
+      ],
+      "headings": [
+        {
+          "x": 64.054,
+          "width": 271.24,
+          "text": "Evil",
+          "lines": [
+            "Evil"
+          ]
+        },
+        {
+          "x": 357.294,
+          "width": 271.241,
+          "text": "Sycophancy",
+          "lines": [
+            "Sycophancy"
+          ]
+        },
+        {
+          "x": 650.535,
+          "width": 280.3221166992188,
+          "text": "Hallucination",
+          "lines": [
+            "Hallucination"
+          ]
+        }
+      ],
+      "start": 69.77696228027344,
+      "end": 85.51995849609375,
+      "cut": [
+        70,
+        85
+      ],
+      "height": 35,
+      "new_y": 70.0
+    }
+  ],
+  "nonheading_text_unchanged": true,
+  "nonheading_redaction_pixel_difference_fraction": 0.0,
+  "preserved_strip_pixel_difference_fractions": [
+    0.0,
+    0.0
+  ],
+  "output_sha256": "4b54288a3bbe6a0d92017544b9c36a4b36dab9dce2d26a00655b15aa9838bb85",
+  "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+  "data_recomputed": false
+}

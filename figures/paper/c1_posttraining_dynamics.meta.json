@@ -31,12 +31,12 @@
   "record": {
     "authoring_size_inches": [
       13.095,
-      4.321
+      3.835
     ],
     "background": "#FFFFFF",
     "exported_size_inches": [
       13.095,
-      4.154
+      3.835
     ],
     "include_width_frac": 1.0,
     "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c1_posttraining_dynamics.pdf}",
@@ -52,33 +52,6 @@
     "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
     "style_version": "c2a-v2",
     "text": [
-      "A  \u00b7  WITHIN-STAGE FITS",
-      "Base",
-      "SFT",
-      "DPO",
-      "RLVR",
-      "Held-out score \u2191",
-      "0.4",
-      "0.6",
-      "0.8",
-      "1",
-      "Held-out score of each\nstage's own map",
-      "Held-out $R^2$",
-      "Top-1 retrieval",
-      "B  \u00b7  CONTEXT\u2192ANSWER FITS",
-      "Answer source",
-      "Held-out $R^2$ \u2191",
-      "0.45",
-      "0.5",
-      "0.55",
-      "Held-out $R^2$ into each stage's\nanswers, by context source",
-      "C  \u00b7  MAP TRANSFER",
-      "Base\n\u2192 SFT",
-      "SFT\n\u2192 DPO",
-      "DPO\n\u2192 RLVR",
-      "$R^2_{i \\to j} \\, / \\, R^2_{j \\to j}$ \u2191",
-      "0",
-      "Retention of the\nprior stage's map",
       "CONTEXT SOURCE",
       "CORRECTION",
       "Own states",
@@ -86,7 +59,181 @@
       "Base states",
       "as is",
       "bias",
-      "rescaling + bias"
-    ]
+      "rescaling + bias",
+      "A Within-stage fits",
+      "B Context sources",
+      "C Map transfer",
+      "Base",
+      "SFT",
+      "DPO",
+      "RLVR",
+      "0.4",
+      "0.6",
+      "0.8",
+      "1",
+      "Held-out score \u2191",
+      "Held-out R2",
+      "Top-1 retrieval",
+      "Base",
+      "SFT",
+      "DPO",
+      "RLVR",
+      "Answer source",
+      "0.55",
+      "0.6",
+      "0.65",
+      "Held-out R2 \u2191",
+      "Base",
+      "\u2192 SFT",
+      "SFT",
+      "\u2192 DPO",
+      "DPO",
+      "\u2192 RLVR",
+      "0",
+      "0.5",
+      "1",
+      "R2",
+      "i \u2192j /R2",
+      "j \u2192j \u2191"
+    ],
+    "heading_layout": "single descriptive heading"
+  },
+  "inherited_scientific_metadata_status": "no_pdf_hash_unverified",
+  "heading_migration": {
+    "path": "figures/paper/c1_posttraining_dynamics.pdf",
+    "status": "updated",
+    "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+    "source_sha256": "275372a12e82dd4ab4535a471cb222b4ac0d8e8bbe953ae756dc7bdcc5f30b62",
+    "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+    "old_size_pt": [
+      942.8571166992188,
+      299.0871276855469
+    ],
+    "new_size_pt": [
+      942.8571166992188,
+      276.0871276855469
+    ],
+    "heading_font_pt": 22,
+    "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+    "rows": [
+      {
+        "remove": [
+          "A  \u00b7  OLMO-2-7B, LAYER 18",
+          "Held-out score of each",
+          "stage's own map",
+          "B  \u00b7  CONTEXT\u2192ANSWER FITS",
+          "Held-out R2 into each stage's",
+          "answers, by context source",
+          "C  \u00b7  MAP TRANSFER",
+          "Retention of the",
+          "prior stage's map"
+        ],
+        "headings": [
+          {
+            "x": 61.313,
+            "width": 304.389,
+            "text": "A Within-stage fits",
+            "lines": [
+              "A Within-stage fits"
+            ]
+          },
+          {
+            "x": 387.702,
+            "width": 314.36,
+            "text": "B Context sources",
+            "lines": [
+              "B Context sources"
+            ]
+          },
+          {
+            "x": 724.062,
+            "width": 206.79511669921874,
+            "text": "C Map transfer",
+            "lines": [
+              "C Map transfer"
+            ]
+          }
+        ],
+        "start": 39.813873291015625,
+        "end": 107.99597930908203,
+        "cut": [
+          42,
+          100
+        ],
+        "height": 35,
+        "new_y": 42.0
+      }
+    ],
+    "nonheading_text_unchanged": true,
+    "nonheading_redaction_pixel_difference_fraction": 0.0,
+    "preserved_strip_pixel_difference_fractions": [
+      0.0,
+      0.0
+    ],
+    "output_sha256": "ed06a77bf9fb5488aefc02e7edaac4f1ae60856acfd78474e9ea211b8680c899",
+    "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+    "data_recomputed": false
+  },
+  "reproduction_command": "uv run --extra viz python scripts/paper_figure_headings.py",
+  "output_sha256": {
+    "pdf": "ed06a77bf9fb5488aefc02e7edaac4f1ae60856acfd78474e9ea211b8680c899",
+    "png": "4e808ae128f9822e43a39e0ceaea481b093b0b6f8f5ca3ed23b246db37a5368d",
+    "grayscale": "82769c01fb1167a214a349d431ab3f8a8381b3fdd0d62ac98b6577d6ac247c95"
+  },
+  "render": {
+    "exported_size_inches": [
+      13.095,
+      3.835
+    ],
+    "authoring_size_inches": [
+      13.095,
+      3.835
+    ],
+    "text": [
+      "CONTEXT SOURCE",
+      "CORRECTION",
+      "Own states",
+      "Previous-stage states",
+      "Base states",
+      "as is",
+      "bias",
+      "rescaling + bias",
+      "A Within-stage fits",
+      "B Context sources",
+      "C Map transfer",
+      "Base",
+      "SFT",
+      "DPO",
+      "RLVR",
+      "0.4",
+      "0.6",
+      "0.8",
+      "1",
+      "Held-out score \u2191",
+      "Held-out R2",
+      "Top-1 retrieval",
+      "Base",
+      "SFT",
+      "DPO",
+      "RLVR",
+      "Answer source",
+      "0.55",
+      "0.6",
+      "0.65",
+      "Held-out R2 \u2191",
+      "Base",
+      "\u2192 SFT",
+      "SFT",
+      "\u2192 DPO",
+      "DPO",
+      "\u2192 RLVR",
+      "0",
+      "0.5",
+      "1",
+      "R2",
+      "i \u2192j /R2",
+      "j \u2192j \u2191"
+    ],
+    "heading_layout": "single descriptive heading"
   }
 }

@@ -1,69 +1,162 @@
 {
- "status": "Section 4.2 comment-response figure",
- "style_version": "c2a-v2",
- "plotting_script": "scripts/paper_c2a_comment_figures.py",
- "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
- "reproduction_command": "uv run python scripts/paper_c2a_comment_figures.py",
- "title": "Refusal separation near and far from the decision boundary",
- "subject": "Median absolute separation of a pair two answers along the refusal direction, the two-alternative hit rate, and the rank correlation with the continuous refusal margin, for the map and the copy baseline by behaviour-change stratum",
- "sources": [
-  {
-   "path": "eval_results/issue_2617/comment3_refusal_boundary/summary.json",
-   "sha256": "866c1bf3c6d49f61590b214ea8cb9edfb382925c2d08a70e5bb052ff46b22c8a"
-  }
- ],
- "render": {
+  "status": "Section 4.2 comment-response figure",
   "style_version": "c2a-v2",
+  "plotting_script": "scripts/paper_c2a_comment_figures.py",
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
-  "resolved_font": "Inter",
-  "authoring_size_inches": [
-   13.095,
-   5.238
+  "reproduction_command": "uv run --extra viz python scripts/paper_figure_headings.py",
+  "title": "Refusal separation near and far from the decision boundary",
+  "subject": "Median absolute separation of a pair two answers along the refusal direction, the two-alternative hit rate, and the rank correlation with the continuous refusal margin, for the map and the copy baseline by behaviour-change stratum",
+  "sources": [
+    {
+      "path": "eval_results/issue_2617/comment3_refusal_boundary/summary.json",
+      "sha256": "866c1bf3c6d49f61590b214ea8cb9edfb382925c2d08a70e5bb052ff46b22c8a"
+    }
   ],
-  "exported_size_inches": [
-   13.095,
-   4.252
-  ],
-  "scale": 0.42,
-  "include_width_frac": 1.0,
-  "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c3_refusal_boundary.pdf}",
-  "realized_font_pt": {
-   "body": 7.56,
-   "tick": 7.14,
-   "label": 8.4,
-   "title": 9.24
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      4.239
+    ],
+    "exported_size_inches": [
+      13.095,
+      4.239
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c3_refusal_boundary.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A Answer separation",
+      "B Two-way accuracy",
+      "C Loading vs. margin",
+      "saturated",
+      "n=36",
+      "graded",
+      "n=46",
+      "none",
+      "n=42",
+      "0",
+      "10",
+      "20",
+      "30",
+      "40",
+      "Separation",
+      "saturated",
+      "n=36",
+      "graded",
+      "n=46",
+      "none",
+      "n=42",
+      "0.4",
+      "0.6",
+      "0.8",
+      "1.0",
+      "Hit rate \u2191",
+      "linear map",
+      "copy baseline",
+      "saturated",
+      "n=36",
+      "graded",
+      "n=46",
+      "none",
+      "n=42",
+      "0.0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "1.0",
+      "Rank correlation \u2191",
+      "linear map",
+      "copy baseline"
+    ],
+    "heading_layout": "single descriptive heading"
   },
-  "png_dpi": 240,
-  "background": "#FFFFFF",
-  "text": [
-   "A  \u00b7  BY PAIR CLASS",
-   "saturated\nn=36",
-   "graded\nn=46",
-   "none\nn=42",
-   "Separation",
-   "0",
-   "10",
-   "20",
-   "30",
-   "40",
-   "50",
-   "Answer separation",
-   "B  \u00b7  TWO-ALTERNATIVE CHOICE",
-   "Hit rate \u2191",
-   "0.2",
-   "0.4",
-   "0.6",
-   "0.8",
-   "1.0",
-   "1.2",
-   "Hit rate by stratum",
-   "linear map",
-   "copy baseline",
-   "C  \u00b7  SPEARMAN BY STRATUM",
-   "Rank correlation \u2191",
-   "\u22120.2",
-   "0.0",
-   "Loading vs margin"
-  ]
- }
+  "inherited_scientific_metadata_status": "no_pdf_hash_unverified",
+  "heading_migration": {
+    "path": "figures/paper/c3_refusal_boundary.pdf",
+    "status": "updated",
+    "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+    "source_sha256": "5c2763507c2ffb6b56a5064b048d32d92e00744beb24bde9f4c384ae3bae3a16",
+    "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+    "old_size_pt": [
+      942.8571166992188,
+      306.1773681640625
+    ],
+    "new_size_pt": [
+      942.8571166992188,
+      305.1773681640625
+    ],
+    "heading_font_pt": 22,
+    "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+    "rows": [
+      {
+        "remove": [
+          "A  \u00b7  BY PAIR CLASS",
+          "Answer separation",
+          "B  \u00b7  TWO-ALTERNATIVE CHOICE",
+          "Hit rate by stratum",
+          "C  \u00b7  SPEARMAN BY STRATUM",
+          "Loading vs margin"
+        ],
+        "headings": [
+          {
+            "x": 68.814,
+            "width": 294.105,
+            "text": "A Answer separation",
+            "lines": [
+              "A Answer separation"
+            ]
+          },
+          {
+            "x": 384.919,
+            "width": 294.105,
+            "text": "B Two-way accuracy",
+            "lines": [
+              "B Two-way accuracy"
+            ]
+          },
+          {
+            "x": 701.024,
+            "width": 229.83311669921875,
+            "text": "C Loading vs. margin",
+            "lines": [
+              "C Loading vs. margin"
+            ]
+          }
+        ],
+        "start": -1.5732574462890625,
+        "end": 38.909603118896484,
+        "cut": [
+          0,
+          36
+        ],
+        "height": 35,
+        "new_y": 0.0
+      }
+    ],
+    "nonheading_text_unchanged": true,
+    "nonheading_redaction_pixel_difference_fraction": 0.0,
+    "preserved_strip_pixel_difference_fractions": [
+      0.0
+    ],
+    "output_sha256": "510f6972875e20014e88ac5aba6087e58ccea53ff04342676595bfdcbd84ccdd",
+    "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+    "data_recomputed": false
+  },
+  "output_sha256": {
+    "pdf": "510f6972875e20014e88ac5aba6087e58ccea53ff04342676595bfdcbd84ccdd",
+    "png": "5b2053389cc19b5564253bd617226ccc0e6e643540385fa77517c689ec88f723",
+    "grayscale": "3cf64f4102c088cf9e6a9a793c4089efd2036d3bed10254a5a552cd9a1c99b9d"
+  }
 }

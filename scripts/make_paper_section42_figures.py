@@ -345,7 +345,7 @@ def make_sae_figure(data: dict) -> tuple[plt.Figure, float]:
         ax_left,
         "A",
         "Forward-selected associations",
-        "Feature-property concordance",
+        "Feature properties",
         kicker_y=1.21,
         title_y=1.08,
     )
@@ -382,7 +382,7 @@ def make_sae_figure(data: dict) -> tuple[plt.Figure, float]:
         ax_right,
         "",
         "B",
-        "Median feature $R^2$ by tier",
+        "Feature $R^2$ by tier",
         kicker_y=1.21,
         title_y=1.08,
     )
@@ -1046,15 +1046,14 @@ def make_element_shifts_figure(data: dict) -> tuple[plt.Figure, float]:
                 [L.tick_label(row["row"], row["n_pairs"]) for row in rows] if index == 0 else None
             ),
         )
-        if index == 0:
-            panel_header(
-                ax,
-                "C",
-                "controlled minimal pairs",
-                "What the map keeps when one context element changes",
-                kicker_y=1.0 + _ELEMENT_KICKER_OFF_IN / plot_h_in,
-                title_y=1.0 + _ELEMENT_TITLE_OFF_IN / plot_h_in,
-            )
+        panel_header(
+            ax,
+            "AB"[index],
+            "",
+            ("Shift direction", "Shift size")[index],
+            kicker_y=1.0 + _ELEMENT_KICKER_OFF_IN / plot_h_in,
+            title_y=1.0 + _ELEMENT_TITLE_OFF_IN / plot_h_in,
+        )
     return fig, include_frac
 
 
@@ -1316,7 +1315,7 @@ def make_features_and_shifts_figure(
     for label in ax_a.get_yticklabels():
         label.set_linespacing(L.WRAPPED_TICK_LINESPACING)
     _fs_place_xlabel(ax_a, x_axes=0.5, plot_h_in=plot_h_in)
-    panel_header(ax_a, next(letters), "120,716 SAE features", kicker_y=kicker_y)
+    panel_header(ax_a, next(letters), "SAE features", kicker_y=kicker_y)
 
     columns = (
         (
@@ -1354,7 +1353,8 @@ def make_features_and_shifts_figure(
             ytick_labels=[L.tick_label(row["row"]) for row in rows] if index == 0 else None,
         )
         _fs_place_xlabel(ax, x_axes=0.5, plot_h_in=plot_h_in)
-        panel_header(ax, next(letters), kicker, kicker_y=kicker_y)
+        title = "Shift\ndirection" if key == "direction" else "Shift\nsize"
+        panel_header(ax, next(letters), title, kicker_y=kicker_y)
 
     d_left, d_right = boxes[3]
     _fs_assert_in_segments(rows, "twoway", _FS_TWOWAY_SEGMENTS)
@@ -1404,7 +1404,7 @@ def make_features_and_shifts_figure(
         x_axes=(center - positions[0].x0) / positions[0].width,
         plot_h_in=plot_h_in,
     )
-    panel_header(chance_ax, next(letters), "rate", kicker_y=kicker_y)
+    panel_header(chance_ax, next(letters), "Two-way\naccuracy", kicker_y=kicker_y)
 
     return fig, include_frac
 
@@ -1464,7 +1464,7 @@ def make_element_shifts_by_slot_figure(data: dict) -> tuple[plt.Figure, float]:
                 ax,
                 "",
                 "one-word query swaps",
-                "One-word topic change, by grammatical slot",
+                "Topic swaps by grammatical slot",
                 kicker_y=1.26,
                 title_y=1.07,
             )

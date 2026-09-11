@@ -3,7 +3,7 @@
   "style_version": "c2a-v2",
   "plotting_script": "scripts/make_paper_section42_figures.py",
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
-  "reproduction_command": "uv run python scripts/make_paper_section42_figures.py",
+  "reproduction_command": "uv run --extra viz python scripts/paper_figure_headings.py",
   "title": "SAE feature properties and context-to-answer predictability",
   "subject": "Conditional feature-property associations and activity-adjusted nested-tier gradient, decoder-direction target",
   "git": {
@@ -22,11 +22,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      5.893
+      4.916
     ],
     "exported_size_inches": [
       13.095,
-      5.139
+      4.916
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -40,31 +40,29 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "A  \u00b7  FORWARD-SELECTED ASSOCIATIONS",
-      "Concordance with feature $R^2$, above chance",
+      "A Feature properties",
+      "B Feature R\u00b2 by tier",
       "-0.1",
       "0",
       "+0.1",
-      "+0.2",
-      "+0.3",
+      "+0.2 +0.3",
+      "Concordance with feature R2, above chance",
       "variance along decoder direction",
       "speaker identity / disposition",
       "promotes specific output tokens",
       "suppresses specific output tokens",
       "topic content",
-      "Feature-property concordance",
-      "B",
-      "Nested SAE tier",
       "Coarsest",
       "Middle",
       "Finest",
-      "Activity-adjusted feature $R^2$",
+      "Nested SAE tier",
       "\u22120.1",
       "0.0",
       "0.1",
       "0.2",
-      "Median feature $R^2$ by tier"
-    ]
+      "Activity-adjusted feature R2"
+    ],
+    "heading_layout": "single descriptive heading"
   },
   "displayed_data": {
     "properties": [
@@ -148,8 +146,70 @@
     "centering": "per-feature R^2 minus the median R^2 of its activity quintile"
   },
   "output_sha256": {
-    "pdf": "b2e066ac579b155fe3640aed9c37aef248246819ca22f2670c5299290613db7b",
-    "png": "86211467a8bda9e411f8d9b74ad060341f12cc3dd759aa98601c6091e7bdf1e4",
-    "grayscale": "2d5d4963bbfc47479358ea8ba9cf175cf0d00dbe6671a9b7d53606c198f41390"
+    "pdf": "00e867b59201464aa48a036b94500f68b0bdf3c761a7492bce49bc398410d0c5",
+    "png": "88ad2167112694af7d1b0c02c1eaf3363b29349334d4c8167574079038353e45",
+    "grayscale": "5ac4fe8006815078326c5b94f984dc86ed3777d491804d6e8e60b6c425cac9e6"
+  },
+  "inherited_scientific_metadata_status": "pdf_hash_matched",
+  "heading_migration": {
+    "path": "figures/paper/c3_sae_tier_gradient.pdf",
+    "status": "updated",
+    "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+    "source_sha256": "b2e066ac579b155fe3640aed9c37aef248246819ca22f2670c5299290613db7b",
+    "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+    "old_size_pt": [
+      942.8571166992188,
+      369.9775695800781
+    ],
+    "new_size_pt": [
+      942.8571166992188,
+      353.9775695800781
+    ],
+    "heading_font_pt": 22,
+    "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+    "rows": [
+      {
+        "remove": [
+          "A  \u00b7  FORWARD-SELECTED ASSOCIATIONS",
+          "Feature-property concordance",
+          "B",
+          "Median feature R2 by tier"
+        ],
+        "headings": [
+          {
+            "x": 297.901,
+            "width": 335.056,
+            "text": "A Feature properties",
+            "lines": [
+              "A Feature properties"
+            ]
+          },
+          {
+            "x": 654.957,
+            "width": 275.90011669921876,
+            "text": "B Feature R\u00b2 by tier",
+            "lines": [
+              "B Feature R\u00b2 by tier"
+            ]
+          }
+        ],
+        "start": -1.5732574462890625,
+        "end": 51.54671859741211,
+        "cut": [
+          0,
+          51
+        ],
+        "height": 35,
+        "new_y": 0.0
+      }
+    ],
+    "nonheading_text_unchanged": true,
+    "nonheading_redaction_pixel_difference_fraction": 0.0,
+    "preserved_strip_pixel_difference_fractions": [
+      0.0
+    ],
+    "output_sha256": "00e867b59201464aa48a036b94500f68b0bdf3c761a7492bce49bc398410d0c5",
+    "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+    "data_recomputed": false
   }
 }

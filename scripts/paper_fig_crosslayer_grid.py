@@ -146,13 +146,7 @@ def _heat_panel(
     ax.set_yticks(y_pos, y_lab)
     ax.set_xlabel("Answer layer")
     ax.set_ylabel("Context layer")
-    if kicker:
-        panel_header(ax, letter, kicker, title)
-    else:
-        # Metadata-free panel: the eyebrow carries only the panel letter. panel_header
-        # renders a dangling "A  \u00b7  " for an empty kicker, so the letter goes in the
-        # kicker slot instead. The row stays occupied, so no whitespace band opens up.
-        panel_header(ax, "", letter, title)
+    panel_header(ax, letter, kicker, title)
 
     cb = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     cb.outline.set_visible(False)
@@ -182,7 +176,7 @@ def make_figure(grid: dict) -> tuple[plt.Figure, float, dict]:
         # Training-context count removed from the canvas: the caption states
         # "one ridge map fit on 50,000 LMSYS contexts and scored on 1,000 held-out contexts".
         kicker="",
-        title="Held-out $R^2$ of the ridge map",
+        title="Held-out $R^2$",
     )
     if r2_min < 0.0:
         print(f"note: {int((grid['r2'] < 0).sum())} cells have R^2 < 0; color floor clamps at 0")
@@ -193,7 +187,7 @@ def make_figure(grid: dict) -> tuple[plt.Figure, float, dict]:
         grid["top1"],
         letter="B",
         kicker=f"chance {grid['chance_at_1']:.1%}",
-        title="Top-1 retrieval of the ridge map",
+        title="Top-1 retrieval",
     )
     return fig, include_frac, {"r2": panel_a, "top1": panel_b}
 

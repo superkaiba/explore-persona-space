@@ -1,0 +1,64 @@
+{
+  "path": "figures/paper/c1_offpolicy_origin.pdf",
+  "status": "updated",
+  "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+  "source_sha256": "d3cc8a6fc4a4b43d97b1e6c139249c409b3f0db31b96813e4f0f6248106c0b76",
+  "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+  "old_size_pt": [
+    942.8571166992188,
+    417.3514404296875
+  ],
+  "new_size_pt": [
+    942.8571166992188,
+    383.3514404296875
+  ],
+  "heading_font_pt": 22,
+  "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+  "rows": [
+    {
+      "remove": [
+        "A",
+        "Held-out R2 by layer,",
+        "by answer source",
+        "B",
+        "Held-out R2 and top-1",
+        "retrieval by persona count"
+      ],
+      "headings": [
+        {
+          "x": 64.937,
+          "width": 548.807,
+          "text": "A Prediction by answer source",
+          "lines": [
+            "A Prediction by answer source"
+          ]
+        },
+        {
+          "x": 635.744,
+          "width": 295.1131166992187,
+          "text": "B Number of personas",
+          "lines": [
+            "B Number of personas"
+          ]
+        }
+      ],
+      "start": 109.64378356933594,
+      "end": 183.0474395751953,
+      "cut": [
+        110,
+        179
+      ],
+      "height": 35,
+      "new_y": 110.0
+    }
+  ],
+  "nonheading_text_unchanged": true,
+  "nonheading_redaction_pixel_difference_fraction": 0.0,
+  "preserved_strip_pixel_difference_fractions": [
+    0.0,
+    3.3558398324764757e-06
+  ],
+  "output_sha256": "3c64343c98788c53ebcd4fd4d8326eaaab0906e707a3deff9036678971d4172b",
+  "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+  "data_recomputed": false
+}

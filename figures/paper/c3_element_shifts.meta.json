@@ -3,7 +3,7 @@
   "style_version": "c2a-v2",
   "plotting_script": "scripts/make_paper_section42_figures.py",
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
-  "reproduction_command": "uv run python scripts/make_paper_section42_figures.py",
+  "reproduction_command": "uv run --extra viz python scripts/paper_figure_headings.py",
   "title": "What the context-to-answer map keeps per changed context element",
   "subject": "Mean cosine between predicted and observed answer shift, and median ratio of predicted to observed shift size, per controlled context element, with 95% pair-bootstrap intervals",
   "git": {
@@ -22,11 +22,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      6.456
+      5.655
     ],
     "exported_size_inches": [
       13.095,
-      5.683
+      5.655
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -40,28 +40,34 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "C  \u00b7  CONTROLLED MINIMAL PAIRS",
-      "Predicted shift direction (cosine) \u2191",
-      "0.0",
+      "A Shift direction",
+      "B Shift size",
       "0.2",
       "0.4",
       "0.6",
       "0.8",
       "1.0",
+      "Predicted shift direction (cosine) \u2191",
       "Tone (n=12)",
       "Persona (n=120)",
       "Output format (n=120)",
       "Question topic (n=66)",
       "One-word topic (n=24)",
-      "Refusal reverses:\nintent swap (n=61)",
-      "Refusal holds:\nintent swap (n=63)",
-      "Refusal reverses:\nframing rewrite (n=307)",
-      "Refusal holds:\nframing rewrite (n=1924)",
-      "What the map keeps when one context element changes",
-      "Predicted / observed shift size",
+      "Refusal reverses:",
+      "intent swap (n=61)",
+      "Refusal holds:",
+      "intent swap (n=63)",
+      "Refusal reverses:",
+      "framing rewrite (n=307)",
+      "Refusal holds:",
+      "framing rewrite (n=1924)",
+      "0.6",
+      "0.8",
+      "1.0",
       "1.2",
-      "1.4"
-    ]
+      "Predicted / observed shift size"
+    ],
+    "heading_layout": "single descriptive heading"
   },
   "displayed_data": {
     "rows": [
@@ -340,8 +346,68 @@
     "caveat": "raw, not disattenuated for rollout noise"
   },
   "output_sha256": {
-    "pdf": "ba1b5725c53a01c3cf95b72700d32bcfe7ffc71d3a6a31eb7d6eecea22e8940a",
-    "png": "edefc08d77b8475eba76bbf4efdd27ca0683d9ac485e8be03fe64ee20c0aaa9d",
-    "grayscale": "7674db5956aae4665e975907c61a7859643a6a560a03f6442746415e62dd01bf"
+    "pdf": "d85fdc6fba7e1691199c7b6d41315a10d480dc04125c2355579cbd75c35c1fd8",
+    "png": "2dba1e44fe859d7b96200b61fd79cb4d4748fe2d45807a001851c1a91fc6fcb4",
+    "grayscale": "beff39418b645f932b0ff0614e8db5b6de36ad58eab646a8a0a4029be06de619"
+  },
+  "inherited_scientific_metadata_status": "pdf_hash_matched",
+  "heading_migration": {
+    "path": "figures/paper/c3_element_shifts.pdf",
+    "status": "updated",
+    "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+    "source_sha256": "ba1b5725c53a01c3cf95b72700d32bcfe7ffc71d3a6a31eb7d6eecea22e8940a",
+    "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+    "old_size_pt": [
+      942.8571166992188,
+      409.1520080566406
+    ],
+    "new_size_pt": [
+      942.8571166992188,
+      407.1520080566406
+    ],
+    "heading_font_pt": 22,
+    "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+    "rows": [
+      {
+        "remove": [
+          "C  \u00b7  CONTROLLED MINIMAL PAIRS",
+          "What the map keeps when one context element changes"
+        ],
+        "headings": [
+          {
+            "x": 245.509,
+            "width": 300,
+            "text": "A Shift direction",
+            "lines": [
+              "A Shift direction"
+            ]
+          },
+          {
+            "x": 599.953,
+            "width": 300,
+            "text": "B Shift size",
+            "lines": [
+              "B Shift size"
+            ]
+          }
+        ],
+        "start": -1.5732269287109375,
+        "end": 37.723995208740234,
+        "cut": [
+          0,
+          37
+        ],
+        "height": 35,
+        "new_y": 0.0
+      }
+    ],
+    "nonheading_text_unchanged": true,
+    "nonheading_redaction_pixel_difference_fraction": 0.0,
+    "preserved_strip_pixel_difference_fractions": [
+      0.0
+    ],
+    "output_sha256": "d85fdc6fba7e1691199c7b6d41315a10d480dc04125c2355579cbd75c35c1fd8",
+    "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+    "data_recomputed": false
   }
 }

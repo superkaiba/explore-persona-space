@@ -1,0 +1,51 @@
+{
+  "path": "figures/paper/c5_claim4_margin_forest.pdf",
+  "status": "updated",
+  "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+  "source_sha256": "3771cf1e365eb3fcbcc29a44aa1492d2d2b6b170e35d86c3c6870934165b0805",
+  "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+  "old_size_pt": [
+    707.1428833007812,
+    421.28399658203125
+  ],
+  "new_size_pt": [
+    707.1428833007812,
+    405.28399658203125
+  ],
+  "heading_font_pt": 22,
+  "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+  "rows": [
+    {
+      "remove": [
+        "REGRESSION READOUTS \u00b7 OOD EVALUATION SETS",
+        "Mapped answer minus context, per set"
+      ],
+      "headings": [
+        {
+          "x": 281.071,
+          "width": 414.0718833007812,
+          "text": "Readout gain on OOD sets",
+          "lines": [
+            "Readout gain on OOD sets"
+          ]
+        }
+      ],
+      "start": -1.5732574462890625,
+      "end": 51.228511810302734,
+      "cut": [
+        0,
+        51
+      ],
+      "height": 35,
+      "new_y": 0.0
+    }
+  ],
+  "nonheading_text_unchanged": true,
+  "nonheading_redaction_pixel_difference_fraction": 0.0,
+  "preserved_strip_pixel_difference_fractions": [
+    0.0
+  ],
+  "output_sha256": "5baec2f3d01987eb3d59f55a19c3428e131899eb25d518189f135f7812e8cc7b",
+  "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+  "data_recomputed": false
+}

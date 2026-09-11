@@ -1,0 +1,80 @@
+{
+  "path": "figures/paper/c3_features_and_shifts.pdf",
+  "status": "updated",
+  "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+  "source_sha256": "b5b87b30b3eb35ff893aec428631a80f8fe5b2a970f7eb77149497fe3dec261b",
+  "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+  "old_size_pt": [
+    942.8571166992188,
+    364.75201416015625
+  ],
+  "new_size_pt": [
+    942.8571166992188,
+    412.75201416015625
+  ],
+  "heading_font_pt": 22,
+  "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+  "rows": [
+    {
+      "remove": [
+        "A  \u00b7  120,716 SAE FEATURES",
+        "B  \u00b7  MEAN COSINE",
+        "C  \u00b7  MEDIAN RATIO",
+        "D  \u00b7  RATE"
+      ],
+      "headings": [
+        {
+          "x": 173.572,
+          "width": 305.6,
+          "text": "A SAE features",
+          "lines": [
+            "A SAE features"
+          ]
+        },
+        {
+          "x": 501.172,
+          "width": 131.245,
+          "text": "B Shift\ndirection",
+          "lines": [
+            "B Shift",
+            "direction"
+          ]
+        },
+        {
+          "x": 654.417,
+          "width": 131.24599999999998,
+          "text": "C Shift\nsize",
+          "lines": [
+            "C Shift",
+            "size"
+          ]
+        },
+        {
+          "x": 807.663,
+          "width": 123.19411669921874,
+          "text": "D Two-way\naccuracy",
+          "lines": [
+            "D Two-way",
+            "accuracy"
+          ]
+        }
+      ],
+      "start": -1.5732269287109375,
+      "end": 14.16977310180664,
+      "cut": [
+        0,
+        14
+      ],
+      "height": 62,
+      "new_y": 0.0
+    }
+  ],
+  "nonheading_text_unchanged": true,
+  "nonheading_redaction_pixel_difference_fraction": 0.0,
+  "preserved_strip_pixel_difference_fractions": [
+    0.0
+  ],
+  "output_sha256": "a4e28ff434a95cc13ac3258b0585ddd026cb01072471261853cfb4c5c03a4391",
+  "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+  "data_recomputed": false
+}

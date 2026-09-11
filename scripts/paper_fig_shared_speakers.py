@@ -4,8 +4,7 @@ across speaker identities and framings, against each setting's own predictor.
 Two lettered panels on one full-width c2a-v2 canvas, replacing the separate
 ``c4_speaker_ladder`` / ``c4_universal_vs_specialized`` renders:
 
-* Panel A — held-out R^2 of each setting's OWN predictor, base vs post-trained,
-  with the shuffled-answer null as a muted dashed line.
+* Panel A — held-out R^2 of each setting's OWN predictor, base vs post-trained.
 * Panel B — the SHARED (pooled) predictor as a fraction of each setting's own
   post-trained R^2, with the own predictor as the ink dashed reference at 1.
   The per-setting constant shift is NOT drawn: under the six-setting refit it
@@ -51,7 +50,6 @@ import numpy as np  # noqa: E402
 from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     INK,
     METRIC_LABELS,
-    MUTED,
     ROLES,
     STYLE_VERSION,
     better_label,
@@ -206,26 +204,20 @@ def make_figure(values: dict) -> plt.Figure:
     post = ROLES["post_trained"]
     ax_a.bar(x - width / 2, values["base_own"], width, color=base.color, label=base.label)
     ax_a.bar(x + width / 2, values["post_own"], width, color=post.color, label=post.label)
-    null_level = float(np.mean([v for pair in values["null_p975"] for v in pair]))
-    ax_a.axhline(
-        null_level, color=MUTED, linestyle="--", linewidth=1.6, label="Shuffled answers (null)"
-    )
     ax_a.set_xticks(x)
     ax_a.set_xticklabels(tick_labels)
     # Six three-line category labels per half-width panel need a step below the
     # pinned tick size to stay disjoint (deviation disclosed in the sidecar).
     ax_a.tick_params(axis="x", labelsize=14)
     ax_a.set_ylabel(better_label(METRIC_LABELS["r2"]))
-    # Headroom so the in-axes legend clears the bars at the flattened
-    # aspect (0.33); bars top out at ~0.58. The floor keeps the banked
-    # shuffled-answer null line (~-0.03) on canvas.
-    ax_a.set_ylim(min(-0.05, null_level - 0.02), 0.80)
+    # Keep headroom for the in-axes legend.
+    ax_a.set_ylim(0.0, 0.80)
     style_axis(ax_a)
     panel_header(
         ax_a,
         "A",
         "Separate map",
-        title="Held-out $R^2$ per setting,\nbase and post-trained",
+        title="Separate maps",
         kicker_y=1.28,
         title_y=1.04,
     )
@@ -252,7 +244,7 @@ def make_figure(values: dict) -> plt.Figure:
         ax_b,
         "B",
         "Shared map",
-        title="Shared $R^2$ as a fraction\nof each setting's own $R^2$",
+        title="Shared vs. separate maps",
         kicker_y=1.28,
         title_y=1.04,
     )

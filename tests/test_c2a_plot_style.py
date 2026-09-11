@@ -13,10 +13,34 @@ from explore_persona_space.analysis.c2a_plot_style import (
     PAPER,
     PREDICTOR_STYLES,
     STYLE_VERSION,
+    panel_header,
+    rendered_text,
     save_c2a_figure,
     set_c2a_style,
     style_score_axis,
 )
+
+
+def test_panel_heading_has_one_level_and_preserves_explicit_condition() -> None:
+    set_c2a_style()
+    fig, ax = plt.subplots()
+    panel_header(ax, "B", "same colors as A", "Answer space\n(context colors)")
+    assert rendered_text(fig).count("B Answer space\n(context colors)") == 1
+    assert "B  ·  SAME COLORS AS A" not in rendered_text(fig)
+    assert not any(t.get_gid() == "c2a-kicker" for t in ax.texts)
+    plt.close(fig)
+
+
+def test_legacy_title_then_letter_call_becomes_one_heading() -> None:
+    set_c2a_style()
+    fig, ax = plt.subplots()
+    ax.set_title("Variance explained", loc="left")
+    panel_header(ax, "", "A")
+    assert ax.get_title(loc="left") == "A Variance explained"
+    panel_header(ax, "A", "Reconstruction")
+    assert ax.get_title(loc="left") == "A Variance explained"
+    assert not ax.texts
+    plt.close(fig)
 
 
 def test_c2a_style_contract() -> None:

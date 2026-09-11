@@ -171,11 +171,18 @@ every series.
   becomes an unlettered facet strip with shared axes and factor-level labels
   ("Evil", "Sycophancy", "Hallucination", the Figure 13 form); facets carry no
   letter and no subclaim of their own.
-- Panel kicker: `A · UPPERCASE CONTEXT` in `MUTED`, left-aligned above the axes
-  (the c2a-v1 form). Letters A, B, C, D, never (a)/(b), never `A.`.
-- Panel title per D1. If descriptive: sentence case, states the plotted quantity
-  and grouping ("Retention of the previous stage's map"). No verdict words
-  (barely, better, repairs, degrades).
+- **One heading per panel (Thomas, 2026-09-11).** Use `A Descriptive title`,
+  left-aligned, sentence case, in the shared title font. Remove the separate
+  small uppercase kicker above a larger title. Letters A, B, C, D, never
+  (a)/(b), never `A.`. Unlettered facets use one descriptive heading too.
+- A heading may wrap to two lines when needed. Keep the calibrated font size.
+  Put shared model, layer, sample-size, and dataset details in the caption.
+  Essential panel-specific conditions belong in the heading or legend: for
+  example, distinguish answer projections using context colors from those using
+  answer colors. Preserve chance levels and any displaced statistics in the
+  caption. This supersedes the earlier two-level kicker/title convention.
+- Panel titles remain descriptive per D1. State the quantity or comparison,
+  with no verdict words (barely, better, repairs, degrades).
 - Legends frameless. Multi-panel: one kicker legend row above the panels, split by
   semantic role (`PREDICTOR`, `METRIC`). Single panel: frameless inside the axes.
 - Top and right spines off; horizontal grid only; white background; upward arrow

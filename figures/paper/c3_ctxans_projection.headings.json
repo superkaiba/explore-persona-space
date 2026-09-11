@@ -1,0 +1,73 @@
+{
+  "path": "figures/paper/c3_ctxans_projection.pdf",
+  "status": "updated",
+  "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+  "source_sha256": "df5ea7c9c7596ace4519a419c88c5ed08699c1db0fe8cde40eeaca0e541335a6",
+  "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+  "old_size_pt": [
+    942.8571166992188,
+    266.2075500488281
+  ],
+  "new_size_pt": [
+    942.8571166992188,
+    285.2075500488281
+  ],
+  "heading_font_pt": 22,
+  "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+  "rows": [
+    {
+      "remove": [
+        "A",
+        "Context space",
+        "B  \u00b7  SAME COLORS AS A",
+        "In answer space",
+        "C  \u00b7  ARI 0.44 VS A",
+        "Answer clusters"
+      ],
+      "headings": [
+        {
+          "x": 68.949,
+          "width": 276.18399999999997,
+          "text": "A Context space",
+          "lines": [
+            "A Context space"
+          ]
+        },
+        {
+          "x": 367.133,
+          "width": 275.00000000000006,
+          "text": "B Answer space\n(context colors)",
+          "lines": [
+            "B Answer space",
+            "(context colors)"
+          ]
+        },
+        {
+          "x": 664.133,
+          "width": 266.7241166992187,
+          "text": "C Answer space\n(answer colors)",
+          "lines": [
+            "C Answer space",
+            "(answer colors)"
+          ]
+        }
+      ],
+      "start": -1.5732421875,
+      "end": 45.19578170776367,
+      "cut": [
+        0,
+        43
+      ],
+      "height": 62,
+      "new_y": 0.0
+    }
+  ],
+  "nonheading_text_unchanged": true,
+  "nonheading_redaction_pixel_difference_fraction": 0.0,
+  "preserved_strip_pixel_difference_fractions": [
+    0.0005302226935312832
+  ],
+  "output_sha256": "c4d4e34e7a689515d906d327a30843ab44722f3c088654b7bd42aa5fcfa95e83",
+  "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+  "data_recomputed": false
+}

@@ -286,32 +286,31 @@ def panel_header(
     kicker_y: float = 1.16,
     title_y: float = 1.055,
 ) -> None:
-    """Panel letter plus uppercase kicker, and an optional DESCRIPTIVE title.
+    """Draw one descriptive heading, with an optional leading panel letter.
 
-    The kicker reads ``A  ·  LAYER 19``.  ``title`` states what is plotted
-    ("Predictability across layers"); it never carries a claim (decision D1,
-    2026-09-03).  ``letter`` is a single uppercase letter, or ``""`` for an
-    unlettered facet.
+    ``title`` takes precedence over a pre-existing left title and ``kicker``.
+    The legacy kicker argument remains accepted, but no second heading is
+    drawn. Put shared model/layer details in the caption and incorporate any
+    essential panel-specific qualifier into the title. Titles may wrap.
     """
 
     if letter and not (len(letter) == 1 and letter.isupper()):
         raise ValueError(f"panel letter must be one uppercase letter or empty, got {letter!r}")
-    text = f"{letter}  ·  {kicker}" if letter else kicker
-    kicker_artist = ax.text(
-        0.0,
-        kicker_y,
-        text.upper(),
-        transform=ax.transAxes,
-        ha="left",
-        va="bottom",
-        fontsize=13,
-        fontweight=700,
-        color=MUTED,
-    )
-    kicker_artist.set_gid(_KICKER_GID)
-    if title:
-        ax.set_title(title, loc="left", y=title_y, pad=0, fontweight=650)
-        ax._left_title.set_gid(_TITLE_GID)
+    # Older callers put a lone panel letter into the kicker slot.
+    if not letter and len(kicker) == 1 and kicker.isupper():
+        letter, kicker = kicker, ""
+    existing = ax.get_title(loc="left")
+    heading = title or existing or kicker
+    if not heading:
+        raise ValueError("A panel heading must contain descriptive text")
+    if letter and not heading.startswith(f"{letter} "):
+        heading = f"{letter} {heading}"
+    for artist in list(ax.texts):
+        if artist.get_gid() == _KICKER_GID:
+            artist.remove()
+    y = title_y if title or existing else kicker_y
+    ax.set_title(heading, loc="left", y=y, pad=0, fontweight=650, color=INK)
+    ax._left_title.set_gid(_TITLE_GID)
 
 
 def legend_kicker(fig: plt.Figure, x: float, y: float, heading: str) -> None:

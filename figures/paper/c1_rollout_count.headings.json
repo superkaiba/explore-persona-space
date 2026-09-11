@@ -1,0 +1,62 @@
+{
+  "path": "figures/paper/c1_rollout_count.pdf",
+  "status": "updated",
+  "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+  "source_sha256": "605b604f077cb5a4f4be046603c7632a15ba011c5fb26b08d59f49d96c6a3a75",
+  "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+  "old_size_pt": [
+    942.8571166992188,
+    363.260009765625
+  ],
+  "new_size_pt": [
+    942.8571166992188,
+    356.260009765625
+  ],
+  "heading_font_pt": 22,
+  "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+  "rows": [
+    {
+      "remove": [
+        "A  \u00b7  RECONSTRUCTION",
+        "B  \u00b7  RETRIEVAL",
+        "Variance explained",
+        "Answer identification"
+      ],
+      "headings": [
+        {
+          "x": 87.208,
+          "width": 454.3910000000001,
+          "text": "A Variance explained",
+          "lines": [
+            "A Variance explained"
+          ]
+        },
+        {
+          "x": 563.599,
+          "width": 367.2581166992187,
+          "text": "B Answer retrieval",
+          "lines": [
+            "B Answer retrieval"
+          ]
+        }
+      ],
+      "start": 27.635574340820312,
+      "end": 71.08687591552734,
+      "cut": [
+        28,
+        70
+      ],
+      "height": 35,
+      "new_y": 28.0
+    }
+  ],
+  "nonheading_text_unchanged": true,
+  "nonheading_redaction_pixel_difference_fraction": 0.0,
+  "preserved_strip_pixel_difference_fractions": [
+    0.0,
+    0.0
+  ],
+  "output_sha256": "5f8499faabcdddc08a012d64cfd4b7f85c7e8b60dc3cc1f2a8c4f6729c5e5046",
+  "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+  "data_recomputed": false
+}

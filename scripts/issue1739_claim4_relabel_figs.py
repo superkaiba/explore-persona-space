@@ -147,7 +147,7 @@ def render_paper_margin_forest(mod, table: dict) -> Path:
         ax,
         "",
         "Regression readouts · OOD evaluation sets",
-        title="Mapped answer minus context, per set",
+        title="Readout gain on OOD sets",
     )
     checkout = Path(__file__).resolve().parent.parent
     if not (checkout / "eval_results").exists():

@@ -1,0 +1,59 @@
+{
+  "path": "figures/paper/c3_element_shifts.pdf",
+  "status": "updated",
+  "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+  "source_sha256": "ba1b5725c53a01c3cf95b72700d32bcfe7ffc71d3a6a31eb7d6eecea22e8940a",
+  "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+  "old_size_pt": [
+    942.8571166992188,
+    409.1520080566406
+  ],
+  "new_size_pt": [
+    942.8571166992188,
+    407.1520080566406
+  ],
+  "heading_font_pt": 22,
+  "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+  "rows": [
+    {
+      "remove": [
+        "C  \u00b7  CONTROLLED MINIMAL PAIRS",
+        "What the map keeps when one context element changes"
+      ],
+      "headings": [
+        {
+          "x": 245.509,
+          "width": 300,
+          "text": "A Shift direction",
+          "lines": [
+            "A Shift direction"
+          ]
+        },
+        {
+          "x": 599.953,
+          "width": 300,
+          "text": "B Shift size",
+          "lines": [
+            "B Shift size"
+          ]
+        }
+      ],
+      "start": -1.5732269287109375,
+      "end": 37.723995208740234,
+      "cut": [
+        0,
+        37
+      ],
+      "height": 35,
+      "new_y": 0.0
+    }
+  ],
+  "nonheading_text_unchanged": true,
+  "nonheading_redaction_pixel_difference_fraction": 0.0,
+  "preserved_strip_pixel_difference_fractions": [
+    0.0
+  ],
+  "output_sha256": "d85fdc6fba7e1691199c7b6d41315a10d480dc04125c2355579cbd75c35c1fd8",
+  "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+  "data_recomputed": false
+}

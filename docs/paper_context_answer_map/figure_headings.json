@@ -1,0 +1,607 @@
+{
+  "overleaf_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+  "figures": [
+    {
+      "number": 1,
+      "path": "figures/fig1_schematic.pdf",
+      "source_sha256": "185861f6b55a32729cab87f2573032208ba16e2205bffff24ffd3691ac145033",
+      "rows": [],
+      "reason": "Already has one heading per panel, one unlettered facet heading, or schematic/text-table labels."
+    },
+    {
+      "number": 1,
+      "path": "figures/paper/c1_scaling_train_pool_merged.pdf",
+      "source_sha256": "f8aa41f5d34f193525b6c77e5d6d7b2c1d6bfda6421e79ec499b252dc42b4388",
+      "rows": [],
+      "reason": "Already has one heading per panel, one unlettered facet heading, or schematic/text-table labels.",
+      "source_metadata": {
+        "path": "figures/paper/c1_scaling_train_pool_merged.meta.json",
+        "sha256": "c3ec7e8e347c4b2416c82af26b7714fd909fa97fd7891040d268680d667c8ee9",
+        "pdf_link_status": "pdf_hash_matched"
+      }
+    },
+    {
+      "number": 2,
+      "path": "figures/paper/c3_features_and_shifts.pdf",
+      "source_sha256": "b5b87b30b3eb35ff893aec428631a80f8fe5b2a970f7eb77149497fe3dec261b",
+      "rows": [
+        {
+          "remove": [
+            "A  \u00b7  120,716 SAE FEATURES",
+            "B  \u00b7  MEAN COSINE",
+            "C  \u00b7  MEDIAN RATIO",
+            "D  \u00b7  RATE"
+          ],
+          "headings": [
+            {
+              "x": 173.572,
+              "width": 305.6,
+              "text": "A SAE features"
+            },
+            {
+              "x": 501.172,
+              "width": 131.245,
+              "text": "B Shift\ndirection"
+            },
+            {
+              "x": 654.417,
+              "width": 131.24599999999998,
+              "text": "C Shift\nsize"
+            },
+            {
+              "x": 807.663,
+              "width": 123.19411669921874,
+              "text": "D Two-way\naccuracy"
+            }
+          ]
+        }
+      ],
+      "source_metadata": {
+        "path": "figures/paper/c3_features_and_shifts.meta.json",
+        "sha256": "e60c43382bcc83c4f25ecca6f4e06b7994bdd44d3a58c7896ce67723fbafd624",
+        "pdf_link_status": "pdf_hash_matched"
+      }
+    },
+    {
+      "number": 3,
+      "path": "figures/paper/c1_posttraining_dynamics.pdf",
+      "source_sha256": "275372a12e82dd4ab4535a471cb222b4ac0d8e8bbe953ae756dc7bdcc5f30b62",
+      "rows": [
+        {
+          "remove": [
+            "A  \u00b7  OLMO-2-7B, LAYER 18",
+            "Held-out score of each",
+            "stage's own map",
+            "B  \u00b7  CONTEXT\u2192ANSWER FITS",
+            "Held-out R2 into each stage's",
+            "answers, by context source",
+            "C  \u00b7  MAP TRANSFER",
+            "Retention of the",
+            "prior stage's map"
+          ],
+          "headings": [
+            {
+              "x": 61.313,
+              "width": 304.389,
+              "text": "A Within-stage fits"
+            },
+            {
+              "x": 387.702,
+              "width": 314.36,
+              "text": "B Context sources"
+            },
+            {
+              "x": 724.062,
+              "width": 206.79511669921874,
+              "text": "C Map transfer"
+            }
+          ]
+        }
+      ],
+      "source_metadata": {
+        "path": "figures/paper/c1_posttraining_dynamics.meta.json",
+        "sha256": "240f43ed1e09423536e0ecfcfd8dc41fd5ce26ef9018d19b7942ddac7310ad08",
+        "pdf_link_status": "no_pdf_hash_unverified"
+      }
+    },
+    {
+      "number": 4,
+      "path": "figures/paper/c4_shared_speakers.pdf",
+      "source_sha256": "a66d85d1f166209f57063c02b52271fdd0e793d3c9f44c8ab27d096807ef7064",
+      "rows": [],
+      "source_metadata": {
+        "path": "figures/paper/c4_shared_speakers.meta.json",
+        "sha256": "a9acd976ea21655cdd4c03038ab1a37ea0e4785374068364a7744cba0962cde8",
+        "pdf_link_status": "pdf_hash_matched"
+      },
+      "renderer": "figures/paper/c4_shared_speakers.render.py",
+      "note": "Remade source data retained; one heading per panel and shuffled-answer display removed using the adjacent renderer at user request."
+    },
+    {
+      "number": 5,
+      "path": "figures/paper/c1_cot_capability.pdf",
+      "source_sha256": "cc2f8f2b6b6c16d08ad557264c0347d77df77cbc0daf7a28329fbbe6ede68f15",
+      "rows": [],
+      "reason": "Already has one heading per panel, one unlettered facet heading, or schematic/text-table labels."
+    },
+    {
+      "number": 6,
+      "path": "figures/paper/c5_regression_regimes.pdf",
+      "source_sha256": "8ce31f4b33fb68c3c639743a44f12f4dcfbabbd679dd4d379cd9003b085a663e",
+      "rows": [
+        {
+          "remove": [
+            "EVIL",
+            "SYCOPHANCY",
+            "HALLUCINATION"
+          ],
+          "headings": [
+            {
+              "x": 64.054,
+              "width": 271.24,
+              "text": "Evil"
+            },
+            {
+              "x": 357.294,
+              "width": 271.241,
+              "text": "Sycophancy"
+            },
+            {
+              "x": 650.535,
+              "width": 280.3221166992188,
+              "text": "Hallucination"
+            }
+          ]
+        }
+      ],
+      "source_metadata": {
+        "path": "figures/paper/c5_regression_regimes.meta.json",
+        "sha256": "033c70065776f2be0a20705dd724593e4d8f02cd6b72990a558a233220e9a3c4",
+        "pdf_link_status": "pdf_hash_matched"
+      }
+    },
+    {
+      "number": 7,
+      "path": "figures/paper/c1_layer_sweep.pdf",
+      "source_sha256": "384547bca3df2f3ddfb44c2ebba110156e618d8b89d9fa9b2fb1f1403537b159",
+      "rows": [],
+      "reason": "Already has one heading per panel, one unlettered facet heading, or schematic/text-table labels.",
+      "source_metadata": {
+        "path": "figures/paper/c1_layer_sweep.meta.json",
+        "sha256": "88f867ee728466e3aadc612e6a394e2f705e3db872ae82a352fac7ade98f5ad8",
+        "pdf_link_status": "pdf_hash_matched"
+      }
+    },
+    {
+      "number": 8,
+      "path": "figures/paper/c1_crosslayer_grid.pdf",
+      "source_sha256": "663faae9b76d092c16ee2348f3f5984ab9ad30b18872927098e1e0e4ac314531",
+      "rows": [
+        {
+          "remove": [
+            "A",
+            "Held-out R2 of the ridge map",
+            "B  \u00b7  CHANCE 0.1%",
+            "Top-1 retrieval of the ridge map"
+          ],
+          "headings": [
+            {
+              "x": 76.117,
+              "width": 457.627,
+              "text": "A Held-out R\u00b2"
+            },
+            {
+              "x": 555.744,
+              "width": 375.1131166992187,
+              "text": "B Top-1 retrieval"
+            }
+          ]
+        }
+      ],
+      "source_metadata": {
+        "path": "figures/paper/c1_crosslayer_grid.meta.json",
+        "sha256": "e879992d6a9ba2dc12096c7dfd39c712e456901a54c438d63ff14d6bed66a56f",
+        "pdf_link_status": "pdf_hash_matched"
+      }
+    },
+    {
+      "number": 9,
+      "path": "figures/paper/c1_rollout_count.pdf",
+      "source_sha256": "605b604f077cb5a4f4be046603c7632a15ba011c5fb26b08d59f49d96c6a3a75",
+      "rows": [
+        {
+          "remove": [
+            "A  \u00b7  RECONSTRUCTION",
+            "B  \u00b7  RETRIEVAL",
+            "Variance explained",
+            "Answer identification"
+          ],
+          "headings": [
+            {
+              "x": 87.208,
+              "width": 454.3910000000001,
+              "text": "A Variance explained"
+            },
+            {
+              "x": 563.599,
+              "width": 367.2581166992187,
+              "text": "B Answer retrieval"
+            }
+          ]
+        }
+      ],
+      "source_metadata": {
+        "path": "figures/paper/c1_rollout_count.meta.json",
+        "sha256": "7ae8a7e2cd5a18a5d41dc12f35803cef89c6bf25b53a4554e60e99043aefdac8",
+        "pdf_link_status": "pdf_hash_matched"
+      }
+    },
+    {
+      "number": 10,
+      "path": "figures/paper/c3_direction_r2_spectrum.pdf",
+      "source_sha256": "ab762689a2e6cf65ec60fa931688921bd9b159d95d49901e31ef32acf88c2865",
+      "rows": [],
+      "reason": "Already has one heading per panel, one unlettered facet heading, or schematic/text-table labels.",
+      "source_metadata": {
+        "path": "figures/paper/c3_direction_r2_spectrum.meta.json",
+        "sha256": "7dfd09c6e9ec1f6278ce0ae00c940dcd7ad35c4e4b0ef003c198ed119c55a824",
+        "pdf_link_status": "pdf_hash_matched"
+      }
+    },
+    {
+      "number": 11,
+      "path": "figures/paper/c3_element_shifts.pdf",
+      "source_sha256": "ba1b5725c53a01c3cf95b72700d32bcfe7ffc71d3a6a31eb7d6eecea22e8940a",
+      "rows": [
+        {
+          "remove": [
+            "C  \u00b7  CONTROLLED MINIMAL PAIRS",
+            "What the map keeps when one context element changes"
+          ],
+          "headings": [
+            {
+              "x": 245.509,
+              "width": 300,
+              "text": "A Shift direction"
+            },
+            {
+              "x": 599.953,
+              "width": 300,
+              "text": "B Shift size"
+            }
+          ]
+        }
+      ],
+      "source_metadata": {
+        "path": "figures/paper/c3_element_shifts.meta.json",
+        "sha256": "0aeb5f4a3dfc1acda0b56040307942742fafd2103e4738eeccc75ba1e0960030",
+        "pdf_link_status": "pdf_hash_matched"
+      }
+    },
+    {
+      "number": 12,
+      "path": "figures/paper/c3_element_shifts_by_slot.pdf",
+      "source_sha256": "ac141118b5ebb9d5947ca1ccb6c1522355db454665de1ce68fcc28dddaeeb944",
+      "rows": [
+        {
+          "remove": [
+            "ONE-WORD QUERY SWAPS",
+            "One-word topic change, by grammatical slot"
+          ],
+          "headings": [
+            {
+              "x": 265.456,
+              "width": 665.4011166992187,
+              "text": "Topic swaps by grammatical slot"
+            }
+          ]
+        }
+      ],
+      "source_metadata": {
+        "path": "figures/paper/c3_element_shifts_by_slot.meta.json",
+        "sha256": "3dd8c5e61d041d1581fb04349c185722b1a46494c89058312d64e6ee8ac24665",
+        "pdf_link_status": "pdf_hash_matched"
+      }
+    },
+    {
+      "number": 13,
+      "path": "figures/paper/c3_sae_tier_gradient.pdf",
+      "source_sha256": "b2e066ac579b155fe3640aed9c37aef248246819ca22f2670c5299290613db7b",
+      "rows": [
+        {
+          "remove": [
+            "A  \u00b7  FORWARD-SELECTED ASSOCIATIONS",
+            "Feature-property concordance",
+            "B",
+            "Median feature R2 by tier"
+          ],
+          "headings": [
+            {
+              "x": 297.901,
+              "width": 335.056,
+              "text": "A Feature properties"
+            },
+            {
+              "x": 654.957,
+              "width": 275.90011669921876,
+              "text": "B Feature R\u00b2 by tier"
+            }
+          ]
+        }
+      ],
+      "source_metadata": {
+        "path": "figures/paper/c3_sae_tier_gradient.meta.json",
+        "sha256": "60f3bbc50c9a048328b2e6cb1225821386750865b401e39ca15e1ee2696553d3",
+        "pdf_link_status": "pdf_hash_matched"
+      }
+    },
+    {
+      "number": 14,
+      "path": "figures/paper/c3_refusal_boundary.pdf",
+      "source_sha256": "5c2763507c2ffb6b56a5064b048d32d92e00744beb24bde9f4c384ae3bae3a16",
+      "rows": [
+        {
+          "remove": [
+            "A  \u00b7  BY PAIR CLASS",
+            "Answer separation",
+            "B  \u00b7  TWO-ALTERNATIVE CHOICE",
+            "Hit rate by stratum",
+            "C  \u00b7  SPEARMAN BY STRATUM",
+            "Loading vs margin"
+          ],
+          "headings": [
+            {
+              "x": 68.814,
+              "width": 294.105,
+              "text": "A Answer separation"
+            },
+            {
+              "x": 384.919,
+              "width": 294.105,
+              "text": "B Two-way accuracy"
+            },
+            {
+              "x": 701.024,
+              "width": 229.83311669921875,
+              "text": "C Loading vs. margin"
+            }
+          ]
+        }
+      ],
+      "source_metadata": {
+        "path": "figures/paper/c3_refusal_boundary.meta.json",
+        "sha256": "4c31c28724dcf11e252016185723c3c9cfc3f7dbd065cd6daa1bd6ad72182020",
+        "pdf_link_status": "no_pdf_hash_unverified"
+      }
+    },
+    {
+      "number": 15,
+      "path": "figures/paper/c3_refusal_swaps_by_class.pdf",
+      "source_sha256": "f32abc0e66defb9928e38831d83a48ae806a1baddc59c3d4059cbce5124cb670",
+      "rows": [
+        {
+          "remove": [
+            "A  \u00b7  SHIFT DIRECTION, BY PAIR CLASS",
+            "Cosine of predicted and observed shift"
+          ],
+          "headings": [
+            {
+              "x": 80.134,
+              "width": 615.0088833007812,
+              "text": "A Shift direction"
+            }
+          ]
+        },
+        {
+          "remove": [
+            "B  \u00b7  REFUSAL-DIRECTION PROJECTION, BY PAIR CLASS",
+            "Projection on the refusal direction"
+          ],
+          "headings": [
+            {
+              "x": 80.134,
+              "width": 615.0088833007812,
+              "text": "B Refusal projection"
+            }
+          ]
+        },
+        {
+          "remove": [
+            "C  \u00b7  SHIFT MAGNITUDE, BY PAIR CLASS",
+            "Predicted over observed shift size"
+          ],
+          "headings": [
+            {
+              "x": 80.134,
+              "width": 615.0088833007812,
+              "text": "C Shift size"
+            }
+          ]
+        }
+      ],
+      "source_metadata": {
+        "path": "figures/paper/c3_refusal_swaps_by_class.meta.json",
+        "sha256": "765e5777dc4384b76f8e657b5ec22e7359800e72b3defe80fa972ec8e9aa893f",
+        "pdf_link_status": "pdf_hash_matched"
+      }
+    },
+    {
+      "number": 16,
+      "path": "figures/paper/c3_ctxans_geometry.pdf",
+      "source_sha256": "3fadac9d33dcff65e9a5f69d791a3039a162c6dcd3bc27f278fc8bba22eb76ee",
+      "rows": [
+        {
+          "remove": [
+            "A",
+            "Answer vs context similarity",
+            "B",
+            "Retrieval vs nearest-context similarity"
+          ],
+          "headings": [
+            {
+              "x": 57.36,
+              "width": 463.571,
+              "text": "A Context vs. answer similarity"
+            },
+            {
+              "x": 542.931,
+              "width": 398.04043554687496,
+              "text": "B Similarity vs. retrieval"
+            }
+          ]
+        }
+      ],
+      "source_metadata": {
+        "path": "figures/paper/c3_ctxans_geometry.meta.json",
+        "sha256": "bd229abb6a54b7984c8d0d9ae20c29990a27b649ddf9db359e789e48562ae53c",
+        "pdf_link_status": "no_pdf_hash_unverified"
+      }
+    },
+    {
+      "number": 17,
+      "path": "figures/paper/c3_qualitative_discrimination.pdf",
+      "source_sha256": "575a25cc5d672d9e13e2e429cfca0881c7eafa3878d66571fd89e3ea968b7cc5",
+      "rows": [],
+      "reason": "Already has one heading per panel, one unlettered facet heading, or schematic/text-table labels.",
+      "source_metadata": {
+        "path": "figures/paper/c3_qualitative_discrimination.meta.json",
+        "sha256": "bd1c8d866cf55212b9ef818712d1a6c8d25b0b27f9206a5d57fac08c86ca1ebe",
+        "pdf_link_status": "pdf_hash_matched"
+      }
+    },
+    {
+      "number": 18,
+      "path": "figures/paper/c1_distractor_scaling.pdf",
+      "source_sha256": "8d5118c8bcc302ccdf20767ee1f12c9c0580b5ed393d91d4590ceeb07dded8b3",
+      "rows": [],
+      "reason": "Already has one heading per panel, one unlettered facet heading, or schematic/text-table labels."
+    },
+    {
+      "number": 19,
+      "path": "figures/paper/c3_ctxans_projection.pdf",
+      "source_sha256": "df5ea7c9c7596ace4519a419c88c5ed08699c1db0fe8cde40eeaca0e541335a6",
+      "rows": [
+        {
+          "remove": [
+            "A",
+            "Context space",
+            "B  \u00b7  SAME COLORS AS A",
+            "In answer space",
+            "C  \u00b7  ARI 0.44 VS A",
+            "Answer clusters"
+          ],
+          "headings": [
+            {
+              "x": 68.949,
+              "width": 276.18399999999997,
+              "text": "A Context space"
+            },
+            {
+              "x": 367.133,
+              "width": 275.00000000000006,
+              "text": "B Answer space\n(context colors)"
+            },
+            {
+              "x": 664.133,
+              "width": 266.7241166992187,
+              "text": "C Answer space\n(answer colors)"
+            }
+          ]
+        }
+      ],
+      "source_metadata": {
+        "path": "figures/paper/c3_ctxans_projection.meta.json",
+        "sha256": "c0b989b104378432f0c5480022f35a0f35f177fb101472d3279b469bba35c358",
+        "pdf_link_status": "no_pdf_hash_unverified"
+      }
+    },
+    {
+      "number": 20,
+      "path": "figures/paper/c1_k5_length_control.pdf",
+      "source_sha256": "1fc96d3a35b5ea640f26fa11e33416fdd855a2d7728c215382f7976e4e34c8b5",
+      "rows": [
+        {
+          "remove": [
+            "A  \u00b7  OWN MAP",
+            "Answer-length control",
+            "B  \u00b7  FULL DATA \u00b7 5 LENGTH BINS",
+            "Variance vs residual by length"
+          ],
+          "headings": [
+            {
+              "x": 84.345,
+              "width": 435.28599999999994,
+              "text": "A Answer-length control"
+            },
+            {
+              "x": 541.631,
+              "width": 389.2261166992188,
+              "text": "B Full-data length dependence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 21,
+      "path": "figures/paper/c1_offpolicy_origin.pdf",
+      "source_sha256": "d3cc8a6fc4a4b43d97b1e6c139249c409b3f0db31b96813e4f0f6248106c0b76",
+      "rows": [
+        {
+          "remove": [
+            "A",
+            "Held-out R2 by layer,",
+            "by answer source",
+            "B",
+            "Held-out R2 and top-1",
+            "retrieval by persona count"
+          ],
+          "headings": [
+            {
+              "x": 64.937,
+              "width": 548.807,
+              "text": "A Prediction by answer source"
+            },
+            {
+              "x": 635.744,
+              "width": 295.1131166992187,
+              "text": "B Number of personas"
+            }
+          ]
+        }
+      ],
+      "source_metadata": {
+        "path": "figures/paper/c1_offpolicy_origin.meta.json",
+        "sha256": "9b91a880b8b54fed39daae61252710987738dad181fb7f0b637a196d940839c7",
+        "pdf_link_status": "no_pdf_hash_unverified"
+      }
+    },
+    {
+      "number": 22,
+      "path": "figures/paper/c5_claim4_margin_forest.pdf",
+      "source_sha256": "3771cf1e365eb3fcbcc29a44aa1492d2d2b6b170e35d86c3c6870934165b0805",
+      "rows": [
+        {
+          "remove": [
+            "REGRESSION READOUTS \u00b7 OOD EVALUATION SETS",
+            "Mapped answer minus context, per set"
+          ],
+          "headings": [
+            {
+              "x": 281.071,
+              "width": 414.0718833007812,
+              "text": "Readout gain on OOD sets"
+            }
+          ]
+        }
+      ],
+      "source_metadata": {
+        "path": "figures/paper/c5_claim4_margin_forest.meta.json",
+        "sha256": "babc4adaf3dcd9ca71f3d54a781851b3a8d88a72ff6eb410e77f9c04a406011b",
+        "pdf_link_status": "pdf_hash_matched"
+      }
+    }
+  ],
+  "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+  "policy": "One descriptive heading per panel or facet; wrapping allowed. Shared setup belongs in captions; essential distinctions stay in headings or legends."
+}

@@ -1,0 +1,61 @@
+{
+  "path": "figures/paper/c3_ctxans_geometry.pdf",
+  "status": "updated",
+  "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+  "source_sha256": "3fadac9d33dcff65e9a5f69d791a3039a162c6dcd3bc27f278fc8bba22eb76ee",
+  "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+  "old_size_pt": [
+    952.971435546875,
+    302.2971496582031
+  ],
+  "new_size_pt": [
+    952.971435546875,
+    297.2971496582031
+  ],
+  "heading_font_pt": 22,
+  "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+  "rows": [
+    {
+      "remove": [
+        "A",
+        "Answer vs context similarity",
+        "B",
+        "Retrieval vs nearest-context similarity"
+      ],
+      "headings": [
+        {
+          "x": 57.36,
+          "width": 463.571,
+          "text": "A Context vs. answer similarity",
+          "lines": [
+            "A Context vs. answer similarity"
+          ]
+        },
+        {
+          "x": 542.931,
+          "width": 398.04043554687496,
+          "text": "B Similarity vs. retrieval",
+          "lines": [
+            "B Similarity vs. retrieval"
+          ]
+        }
+      ],
+      "start": -1.5732574462890625,
+      "end": 40.78402328491211,
+      "cut": [
+        0,
+        40
+      ],
+      "height": 35,
+      "new_y": 0.0
+    }
+  ],
+  "nonheading_text_unchanged": true,
+  "nonheading_redaction_pixel_difference_fraction": 0.0,
+  "preserved_strip_pixel_difference_fractions": [
+    0.0
+  ],
+  "output_sha256": "b64a63eb68cbd8a79d0e80435c44935ddf15fa542255015deb8f9b271f13aaff",
+  "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+  "data_recomputed": false
+}

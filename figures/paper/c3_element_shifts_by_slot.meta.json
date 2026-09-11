@@ -3,7 +3,7 @@
   "style_version": "c2a-v2",
   "plotting_script": "scripts/make_paper_section42_figures.py",
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
-  "reproduction_command": "uv run python scripts/make_paper_section42_figures.py",
+  "reproduction_command": "uv run --extra viz python scripts/paper_figure_headings.py",
   "title": "One-word topic change by grammatical slot",
   "subject": "Answer separation, two-way retrieval, shift direction and shift size for a one-word query change pinned to the subject, verb or object slot, beside the pooled one-word row of the element figure, with 95% pair-bootstrap intervals",
   "git": {
@@ -22,11 +22,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      3.929
+      2.602
     ],
     "exported_size_inches": [
       13.095,
-      2.644
+      2.602
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -40,29 +40,25 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "ONE-WORD QUERY SWAPS",
-      "Answer separation",
-      "0.90",
+      "Topic swaps by grammatical slot",
       "0.95",
       "1.00",
-      "1.05",
+      "Answer separation",
       "One-word topic (n=24)",
       "\u2026subject swapped (n=24)",
       "\u2026verb swapped (n=24)",
       "\u2026object swapped (n=24)",
-      "One-word topic change, by grammatical slot",
-      "Two-way \u2191",
       "0.5",
       "1.0",
-      "1.5",
-      "Direction \u2191",
-      "0.00",
-      "0.25",
-      "0.50",
+      "Two-way \u2191",
+      "0.25 0.50",
       "0.75",
-      "Shift size",
-      "0.0"
-    ]
+      "Direction \u2191",
+      "0.5",
+      "1.0",
+      "Shift size"
+    ],
+    "heading_layout": "single descriptive heading"
   },
   "displayed_data": {
     "rows": [
@@ -197,8 +193,60 @@
     "caveat": "raw, not disattenuated for rollout noise"
   },
   "output_sha256": {
-    "pdf": "ac141118b5ebb9d5947ca1ccb6c1522355db454665de1ce68fcc28dddaeeb944",
-    "png": "ebb35ddb4e824e99f4875fc83bcdc79c56a29169806632751ebed36e08f94ccc",
-    "grayscale": "dfb301036f09789f2e16571b3fbc10efcb689751af31527de7db721ecda13a8f"
+    "pdf": "5c86bf074eedb1cf2b176ddfcfa865a6f48d290b0b4311d5d3b553b23f9f2f95",
+    "png": "60deb978e4d0961d8bcd08b1e1b09db2bcfec6fec086e61599c5b4af3bff5027",
+    "grayscale": "a00e860fdc8c167234a4ce716200e192053a0df20999dfe3caaceab9cb75be43"
+  },
+  "inherited_scientific_metadata_status": "pdf_hash_matched",
+  "heading_migration": {
+    "path": "figures/paper/c3_element_shifts_by_slot.pdf",
+    "status": "updated",
+    "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+    "source_sha256": "ac141118b5ebb9d5947ca1ccb6c1522355db454665de1ce68fcc28dddaeeb944",
+    "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+    "old_size_pt": [
+      942.8571166992188,
+      190.3665008544922
+    ],
+    "new_size_pt": [
+      942.8571166992188,
+      187.3665008544922
+    ],
+    "heading_font_pt": 22,
+    "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+    "rows": [
+      {
+        "remove": [
+          "ONE-WORD QUERY SWAPS",
+          "One-word topic change, by grammatical slot"
+        ],
+        "headings": [
+          {
+            "x": 265.456,
+            "width": 665.4011166992187,
+            "text": "Topic swaps by grammatical slot",
+            "lines": [
+              "Topic swaps by grammatical slot"
+            ]
+          }
+        ],
+        "start": -1.5732421875,
+        "end": 38.351436614990234,
+        "cut": [
+          0,
+          38
+        ],
+        "height": 35,
+        "new_y": 0.0
+      }
+    ],
+    "nonheading_text_unchanged": true,
+    "nonheading_redaction_pixel_difference_fraction": 0.0,
+    "preserved_strip_pixel_difference_fractions": [
+      0.0
+    ],
+    "output_sha256": "5c86bf074eedb1cf2b176ddfcfa865a6f48d290b0b4311d5d3b553b23f9f2f95",
+    "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+    "data_recomputed": false
   }
 }

@@ -319,12 +319,12 @@
     "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
     "resolved_font": "Inter",
     "authoring_size_inches": [
-      13.095,
-      5.238
+      13.236,
+      4.129
     ],
     "exported_size_inches": [
       13.236,
-      4.199
+      4.129
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -338,24 +338,100 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "A",
-      "Cosine between two context vectors",
+      "A Context vs. answer similarity",
+      "B Similarity vs. retrieval",
       "\u22120.5",
       "0.0",
       "0.5",
       "1.0",
-      "Answer-vector cosine",
-      "\u22120.2",
+      "Cosine between two context vectors",
+      "0.0",
       "0.2",
       "0.4",
       "0.6",
       "0.8",
-      "Answer vs context similarity",
-      "B",
+      "Answer-vector cosine",
+      "\u22120.5",
+      "0.0",
+      "0.5",
+      "1.0",
       "Cosine to the nearest other context",
-      "Top-1 retrieval \u2191",
-      "1.2",
-      "Retrieval vs nearest-context similarity"
-    ]
+      "0.0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "1.0",
+      "Top-1 retrieval \u2191"
+    ],
+    "heading_layout": "single descriptive heading"
+  },
+  "inherited_scientific_metadata_status": "no_pdf_hash_unverified",
+  "heading_migration": {
+    "path": "figures/paper/c3_ctxans_geometry.pdf",
+    "status": "updated",
+    "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+    "source_sha256": "3fadac9d33dcff65e9a5f69d791a3039a162c6dcd3bc27f278fc8bba22eb76ee",
+    "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+    "old_size_pt": [
+      952.971435546875,
+      302.2971496582031
+    ],
+    "new_size_pt": [
+      952.971435546875,
+      297.2971496582031
+    ],
+    "heading_font_pt": 22,
+    "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+    "rows": [
+      {
+        "remove": [
+          "A",
+          "Answer vs context similarity",
+          "B",
+          "Retrieval vs nearest-context similarity"
+        ],
+        "headings": [
+          {
+            "x": 57.36,
+            "width": 463.571,
+            "text": "A Context vs. answer similarity",
+            "lines": [
+              "A Context vs. answer similarity"
+            ]
+          },
+          {
+            "x": 542.931,
+            "width": 398.04043554687496,
+            "text": "B Similarity vs. retrieval",
+            "lines": [
+              "B Similarity vs. retrieval"
+            ]
+          }
+        ],
+        "start": -1.5732574462890625,
+        "end": 40.78402328491211,
+        "cut": [
+          0,
+          40
+        ],
+        "height": 35,
+        "new_y": 0.0
+      }
+    ],
+    "nonheading_text_unchanged": true,
+    "nonheading_redaction_pixel_difference_fraction": 0.0,
+    "preserved_strip_pixel_difference_fractions": [
+      0.0
+    ],
+    "output_sha256": "b64a63eb68cbd8a79d0e80435c44935ddf15fa542255015deb8f9b271f13aaff",
+    "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+    "data_recomputed": false
+  },
+  "reproduction_command": "uv run --extra viz python scripts/paper_figure_headings.py",
+  "output_sha256": {
+    "pdf": "b64a63eb68cbd8a79d0e80435c44935ddf15fa542255015deb8f9b271f13aaff",
+    "png": "7239e05a36b8ca6538c8a0b14e00d5c6c8ab7c03484ae4dbe757908e561dc470",
+    "grayscale": "3a876c2395e775020f605af0f4883718d87186fdfea1469c5fdd728bb9bf4786"
   }
 }

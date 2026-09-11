@@ -323,15 +323,12 @@ def make_figure(data: dict[str, Any]) -> tuple[plt.Figure, float]:
     ax_a.set_xticks([0, 5, 10, 15, 20, 25])
     ax_a.set_xlabel("Layer")
     ax_a.set_ylabel(better_label(METRIC_LABELS["r2"]))
-    # Letter-only kicker: the model and the context count are stated in the
-    # caption ("over 4,998 LMSYS contexts ... Qwen2.5-7B-Instruct"), so the
-    # canvas carries neither. Passing the letter as the kicker keeps it in the
-    # muted small-caps register without a trailing "A  ·  " separator.
+    # The caption carries the shared model and context count.
     panel_header(
         ax_a,
         "",
         "A",
-        "Held-out $R^2$ by layer,\nby answer source",
+        "Prediction by answer source",
         kicker_y=1.34,
         title_y=1.05,
     )
@@ -394,14 +391,12 @@ def make_figure(data: dict[str, Any]) -> tuple[plt.Figure, float]:
     ax_b.set_xlim(0.8, 20)
     ax_b.set_xlabel("Number of source personas")
     ax_b.set_ylabel(better_label("Held-out score"))
-    # Letter-only kicker, same reason as panel A: the caption states the persona
-    # source and the read layer ("refit on answers written by k Claude personas
-    # ... at layer 19"). The x-axis already names the persona count.
+    # Persona source and read layer are documented in the caption.
     panel_header(
         ax_b,
         "",
         "B",
-        "Held-out $R^2$ and top-1\nretrieval by persona count",
+        "Number of personas",
         kicker_y=1.34,
         title_y=1.05,
     )

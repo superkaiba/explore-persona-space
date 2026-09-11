@@ -76,11 +76,8 @@ def main() -> None:
     axA.set_ylabel("Answer-vector cosine")
     axA.set_xlim(-0.55, 1.05)
     axA.set_xticks([-0.5, 0.0, 0.5, 1.0])
-    # Context and pair counts removed from the canvas: the caption and the surrounding
-    # text carry them. The eyebrow keeps only the panel letter (panel_header renders a
-    # dangling "A  ·  " for an empty kicker, so the letter goes in the kicker slot),
-    # which leaves the row occupied and opens no whitespace band.
-    panel_header(axA, "", "A", "Answer vs context similarity")
+    # Context and pair counts are documented in the caption.
+    panel_header(axA, "", "A", "Context vs. answer similarity")
 
     xb = mid(B)
     top1 = np.array([r["top1"] for r in B])
@@ -116,7 +113,7 @@ def main() -> None:
     axB.set_ylim(0, 1.02)
     # Held-out-query and candidate counts removed from the canvas: the caption states
     # "the 942 held-out queries" and the surrounding text the 10,000-candidate pool.
-    panel_header(axB, "", "B", "Retrieval vs nearest-context similarity")
+    panel_header(axB, "", "B", "Similarity vs. retrieval")
 
     a.out_dir.mkdir(parents=True, exist_ok=True)
     res = save_c2a_figure(

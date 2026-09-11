@@ -3,7 +3,7 @@
   "style_version": "c2a-v2",
   "plotting_script": "scripts/make_paper_section42_figures.py",
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
-  "reproduction_command": "uv run python scripts/make_paper_section42_figures.py",
+  "reproduction_command": "uv run --extra viz python scripts/paper_figure_headings.py",
   "title": "SAE feature properties and what the context-to-answer map keeps per changed context element",
   "subject": "Conditional association between an SAE feature property and the held-out R2 of its decoder direction, beside the mean cosine between predicted and observed answer shift, the median ratio of predicted to observed shift size, and the two-way discrimination rate per controlled context element, for the seven rows left after the two refusal-holds rows are dropped, with 95% pair-bootstrap intervals",
   "git": {
@@ -30,11 +30,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      5.216
+      5.733
     ],
     "exported_size_inches": [
       13.095,
-      5.066
+      5.733
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -48,39 +48,57 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "SEPARATE DICTIONARY\n16,384 FEATURES",
-      "A  \u00b7  120,716 SAE FEATURES",
-      "Concordance with feature $R^2$,\nabove chance",
+      "A SAE features",
+      "B Shift",
+      "direction",
+      "C Shift",
+      "size",
+      "D Two-way",
+      "accuracy",
       "-0.1",
       "+0.1",
       "+0.3",
-      "variance along\ndecoder direction",
-      "speaker identity /\ndisposition",
-      "promotes specific\noutput tokens",
-      "suppresses specific\noutput tokens",
+      "Concordance with feature R2,",
+      "above chance",
+      "variance along",
+      "decoder direction",
+      "speaker identity /",
+      "disposition",
+      "promotes specific",
+      "output tokens",
+      "suppresses specific",
+      "output tokens",
       "topic content",
-      "coarsest nested-\ndictionary tier",
-      "B  \u00b7  MEAN COSINE",
-      "Predicted shift\ndirection\n(cosine) \u2191",
+      "coarsest nested-",
+      "dictionary tier",
+      "SEPARATE DICTIONARY",
+      "16,384 FEATURES",
       "0.2",
       "0.6",
       "1.0",
+      "Predicted shift",
+      "direction",
+      "(cosine) \u2191",
       "Tone",
       "Persona",
       "Output format",
       "Question topic",
       "One-word topic",
-      "Refusal reverses:\nintent swap",
-      "Refusal reverses:\nframing rewrite",
-      "C  \u00b7  MEDIAN RATIO",
-      "Predicted /\nobserved\nshift size",
-      "0.8",
-      "1.2",
-      "D  \u00b7  RATE",
-      "Two-way\ndiscrimination\nrate \u2191",
+      "Refusal reverses:",
+      "intent swap",
+      "Refusal reverses:",
+      "framing rewrite",
+      "0.6 0.8 1.0 1.2",
+      "Predicted /",
+      "observed",
+      "shift size",
       "0.5",
-      "0.9"
-    ]
+      "Two-way",
+      "discrimination",
+      "rate \u2191",
+      "0.8 0.9 1.0"
+    ],
+    "heading_layout": "single descriptive heading"
   },
   "displayed_data": {
     "panel_a": {
@@ -457,8 +475,89 @@
     }
   },
   "output_sha256": {
-    "pdf": "b5b87b30b3eb35ff893aec428631a80f8fe5b2a970f7eb77149497fe3dec261b",
-    "png": "45bce874d6c4effa996c644b3d6aceefb02d5163b82f554d7cd2d21de75109b8",
-    "grayscale": "ecb93a8bc017b24b26e8967b0b7bf8ccb38edb09c90fe9ff0cda0cf651548b39"
+    "pdf": "a4e28ff434a95cc13ac3258b0585ddd026cb01072471261853cfb4c5c03a4391",
+    "png": "7e69543bd9115753a5d382f392f31ef17a0f8945f8847e60d702475ad454ee6f",
+    "grayscale": "fb846690808a1131687898311549a83759c48fa38ae192ea1a84658d3f61ba04"
+  },
+  "inherited_scientific_metadata_status": "pdf_hash_matched",
+  "heading_migration": {
+    "path": "figures/paper/c3_features_and_shifts.pdf",
+    "status": "updated",
+    "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
+    "source_sha256": "b5b87b30b3eb35ff893aec428631a80f8fe5b2a970f7eb77149497fe3dec261b",
+    "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
+    "old_size_pt": [
+      942.8571166992188,
+      364.75201416015625
+    ],
+    "new_size_pt": [
+      942.8571166992188,
+      412.75201416015625
+    ],
+    "heading_font_pt": 22,
+    "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
+    "rows": [
+      {
+        "remove": [
+          "A  \u00b7  120,716 SAE FEATURES",
+          "B  \u00b7  MEAN COSINE",
+          "C  \u00b7  MEDIAN RATIO",
+          "D  \u00b7  RATE"
+        ],
+        "headings": [
+          {
+            "x": 173.572,
+            "width": 305.6,
+            "text": "A SAE features",
+            "lines": [
+              "A SAE features"
+            ]
+          },
+          {
+            "x": 501.172,
+            "width": 131.245,
+            "text": "B Shift\ndirection",
+            "lines": [
+              "B Shift",
+              "direction"
+            ]
+          },
+          {
+            "x": 654.417,
+            "width": 131.24599999999998,
+            "text": "C Shift\nsize",
+            "lines": [
+              "C Shift",
+              "size"
+            ]
+          },
+          {
+            "x": 807.663,
+            "width": 123.19411669921874,
+            "text": "D Two-way\naccuracy",
+            "lines": [
+              "D Two-way",
+              "accuracy"
+            ]
+          }
+        ],
+        "start": -1.5732269287109375,
+        "end": 14.16977310180664,
+        "cut": [
+          0,
+          14
+        ],
+        "height": 62,
+        "new_y": 0.0
+      }
+    ],
+    "nonheading_text_unchanged": true,
+    "nonheading_redaction_pixel_difference_fraction": 0.0,
+    "preserved_strip_pixel_difference_fractions": [
+      0.0
+    ],
+    "output_sha256": "a4e28ff434a95cc13ac3258b0585ddd026cb01072471261853cfb4c5c03a4391",
+    "script_sha256": "352dfa23f1e30f7b0a0ab64af2690bcab4e7409461f60e8d457b8a4259ba3853",
+    "data_recomputed": false
   }
 }
