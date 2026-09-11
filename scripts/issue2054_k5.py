@@ -772,6 +772,17 @@ def main():
     }
     k3.atomic_json(root / "job_complete.json", report)
     artifacts.seal_many([root / "job_complete.json"], root, k3.sha(__file__))
+    k3.atomic_json(
+        Path("/workspace/logs") / f"issue-2054-epm_results-{time.time_ns()}.json",
+        {
+            "sentinel_schema_version": 1,
+            "kind": "epm:results",
+            "version": 1,
+            "task_id": 2054,
+            "note": json.dumps(dict(report, followup_label="section44-k5-gcp")),
+            "blocks_pipeline": False,
+        },
+    )
     from explore_persona_space.backends.artifacts import write_completion_sentinel
 
     write_completion_sentinel(
