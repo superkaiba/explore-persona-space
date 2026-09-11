@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2671,
+  "highest_id": 2672,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12904,6 +12904,13 @@
       "path": "tasks/proposed/2671",
       "status": "proposed",
       "title": "Shard-manifest schema mismatch: #1902 upload_text_payload writes {shards:[...]}, shared hub.stage_sharded_text only reads {parts:[...]}"
+    },
+    "2672": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2672",
+      "status": "proposed",
+      "title": "Point the Section 4.3 figure generator at the K=5 grid"
     },
     "268": {
       "has_clean_result": false,
