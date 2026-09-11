@@ -223,16 +223,14 @@ Four beats, fixed order, then stop.
 4. **Setup footer.** Fixed order: model; layer; data and n; folds. Then, if
    needed, one pointer: "Details: Appendix~\ref{app:x}."
 
-Cap (hard): **40 words plus 30 per lettered panel, plus 30 for an appendix
-figure.** One panel 70, two 100, three 130, four 160. Over the cap means beat 2
-or 4 is carrying methodology. Move it to the appendix and point.
+There is no word cap. Concision comes from the four beats and from the routing
+test below, not from a limit. A caption that runs long is a symptom: beat 2 or
+beat 4 is carrying methodology, so move it to the appendix and point.
 
-Budget the cap per beat rather than spending it anywhere: lead 12, each panel 10
-for the subclaim plus 20 for the description, uncertainty 15, setup footer 15,
-pointer 3. The three recurring overruns, in order of words spent, are a lead that
-joins two or three claims with "and" or "while" (those clauses are the panel
-subclaims, not the lead), values already readable off the canvas, and method
-protocol or robustness notes.
+The three recurring overruns, in order of words spent, are a lead that joins two
+or three claims with "and" or "while" (those clauses are the panel subclaims, not
+the lead), values already readable off the canvas, and method protocol or
+robustness notes.
 
 Where a detail goes is decided by one test: **would a reader misread a mark on
 the canvas without it?** Yes, it decodes a mark, so it stays in the caption
