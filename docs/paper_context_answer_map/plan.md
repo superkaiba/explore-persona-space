@@ -26,7 +26,13 @@ closing scope paragraph retains the settings that need evaluation.
 These are future research directions. Retain only quantitative theory in the appendix:
 effective-kernel size
 and sensitivity, rank and spectrum, fixed-point behavior, and refusal-pair kernel
-shares. Omit qualitative and SAE-feature theoretical interpretation. Section 4.2's
+shares. Define participation-ratio effective rank from singular values separately
+from the cumulative squared-gain cutoffs and effective-kernel dimension. Give
+effective-rank results their own paragraph, followed by kernel sensitivity,
+input/output alignment, and eigenvalue/fixed-point diagnostics. The fixed-point
+result concerns hypothetical iteration of the fitted metamodel. Its use for
+conversation dynamics requires a validated state-transition model.
+Omit qualitative and SAE-feature theoretical interpretation. Section 4.2's
 separate SAE prediction analysis is unchanged. This supersedes the operator-section
 placement proposed below (Overleaf commit `97fb7dea39c73f32e70407b40ce67a643d57c33d`).
 
