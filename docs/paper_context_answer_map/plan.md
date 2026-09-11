@@ -17,8 +17,10 @@ Limitations, and Future Work contains a short paragraph explaining that linearit
 enables theoretical analysis, pointing to the preliminary appendix analysis, and
 calling for further techniques from dynamical systems, perturbation theory,
 and statistical learning theory, with potential applications to predicting
-longer conversations and forecasting the effects of fine-tuning. These are
-future research directions. Retain only quantitative theory in the appendix:
+longer conversations. It also proposes connecting the linear map in activation
+space with the parameter-space linearization used in neural tangent kernel
+theory to forecast fine-tuning effects (Jacot et al., 2018; Malladi et al., 2023).
+These are future research directions. Retain only quantitative theory in the appendix:
 effective-kernel size
 and sensitivity, rank and spectrum, fixed-point behavior, and refusal-pair kernel
 shares. Omit qualitative and SAE-feature theoretical interpretation. Section 4.2's
