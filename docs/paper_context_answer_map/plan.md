@@ -4,11 +4,11 @@
 
 Models and data are detailed in Appendix A.1, alongside the experimental-settings
 table. Baselines and controls are detailed in Appendix A.7. The main methodology
-retains the definitions, metamodels, and metrics, with a short default model/data
-introduction and a one-sentence baseline roster, each with an appendix pointer.
-The standalone main-text subsections for models/data and baselines/controls are
-removed. All experimental settings and control motivations are preserved
-(Overleaf commit `da79b5f3496ee5b488d73f92f6f08da40a6711ca`).
+retains the definitions, metamodels, and metrics, with a short Models and data
+subsection at the end and a one-sentence baseline roster, each with an appendix
+pointer. The standalone main-text Baselines and controls subsection is removed.
+All experimental settings and control motivations are preserved
+(appendix move: Overleaf `da79b5f3496ee5b488d73f92f6f08da40a6711ca`; summary subsection restored at Thomas's request: `4325af07a95bd6dbdee1425d0eeeff5404a6ed32`).
 
 ## Current theory scope (Thomas, 2026-09-09)
 
