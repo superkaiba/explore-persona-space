@@ -77,7 +77,7 @@ SIDE_NAME = {1: "post", 3: "think_on"}  # side-named target caches written by th
 ARMS = {
     1: {
         "label": "OpenThinker3-7B",
-        "comparator": "vs its non-reasoning parent",
+        "comparator": "vs the non-reasoning parent",
         "layer": 19,
         "stem": "post__{corpus}",
         "labels_file": "eval_results_mirror/out/necessity/pair_necessity_a1.json",
@@ -357,7 +357,9 @@ def make_figure(results: dict[str, Any], titles: dict[str, str], *, arms: tuple[
         ax.set_xticklabels(labels, fontsize=14, linespacing=1.15)
         ax.set_ylabel("Held-out $R^2$ vs dataset mean  ↑" if baseline == "corpus" else "Held-out $R^2$, context → answer  ↑", labelpad=12)
         prefix = f"{panel}  ·  " if n > 1 else ""
-        _kicker(ax, titles[arm], f"{prefix}{spec['label']}, {spec['comparator']}, layer {spec['layer']}, context → answer map")
+        # Model and read layer live in the caption; the comparator names the contrast
+        # that defines the plotted question labels, so it stays on the canvas.
+        _kicker(ax, titles[arm], f"{prefix}{spec['comparator']}, context → answer map")
     handles = [Patch(facecolor=GROUP_COLOR[g], edgecolor=GROUP_COLOR[g], label=GROUP_LABEL[g]) for g in ("necessary", "both_correct")]
     if whole_corpus_line:
         handles.append(Line2D([0], [0], color=INK, lw=1.6, ls=(0, (3, 2)), label="Whole corpus"))

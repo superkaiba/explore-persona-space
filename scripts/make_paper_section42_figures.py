@@ -380,8 +380,8 @@ def make_sae_figure(data: dict) -> tuple[plt.Figure, float]:
     style_axis(ax_right, grid_axis="y")
     panel_header(
         ax_right,
+        "",
         "B",
-        "Median and interquartile range",
         "Median feature $R^2$ by tier",
         kicker_y=1.21,
         title_y=1.08,
@@ -526,16 +526,19 @@ def _draw_pair_shift_axes(
 
 def make_pair_shift_figure(rows: list[dict]) -> tuple[plt.Figure, float]:
     fig, include_frac = c2a_figure("wide", aspect=0.53)
-    grid = fig.add_gridspec(1, 1, left=0.115, right=0.98, top=0.78, bottom=0.155)
+    # No model, read layer or error-bar definition on the canvas: the caption
+    # carries them, so the row the second kicker line used sits in the axes
+    # instead (top 0.78 -> 0.82) and the furniture keeps its inch offsets.
+    grid = fig.add_gridspec(1, 1, left=0.115, right=0.98, top=0.82, bottom=0.155)
     ax = fig.add_subplot(grid[0, 0])
     _draw_pair_shift_axes(ax, rows)
     panel_header(
         ax,
         "",
-        "Controlled minimal pairs · Qwen2.5-7B-Instruct · layer 19\nError bars: 95% bootstrap CI",
+        "Controlled minimal pairs",
         "Predicted over observed answer-shift size by element",
-        kicker_y=1.20,
-        title_y=1.075,
+        kicker_y=1.188,
+        title_y=1.070,
     )
     return fig, include_frac
 
@@ -571,8 +574,13 @@ def make_directions_and_pairs_figure(spectrum: dict, rows: list[dict]) -> tuple[
     from issue779_plot3_redesign import draw_spectrum_panel
 
     fig, include_frac = c2a_figure("full", aspect=0.40)
+    # No figure-level provenance eyebrow (model and read layer live in the
+    # caption), so the eyebrow row and the second kicker line go to the axes
+    # and the panel furniture keeps its inch offsets. 0.80 is the last safe
+    # step: above it panel A picks up a wider y tick set, which pushes the
+    # rotated y label past the left canvas edge and off-scales the export.
     grid = fig.add_gridspec(
-        1, 2, width_ratios=[0.6, 0.4], left=0.065, right=0.985, top=0.76, bottom=0.26, wspace=0.18
+        1, 2, width_ratios=[0.6, 0.4], left=0.065, right=0.985, top=0.80, bottom=0.26, wspace=0.18
     )
     ax_a = fig.add_subplot(grid[0, 0])
     ax_b = fig.add_subplot(grid[0, 1])
@@ -580,18 +588,21 @@ def make_directions_and_pairs_figure(spectrum: dict, rows: list[dict]) -> tuple[
     draw_spectrum_panel(ax_a, spectrum, offsets=_COMBINED_SPECTRUM_OFFSETS, legend_frame=True)
     panel_header(
         ax_a,
+        "",
         "A",
-        "5,000 contexts (4,000 train, 1,000 test)",
         title="Per-direction held-out $R^2$ vs variance rank",
+        kicker_y=1.148,
+        title_y=1.051,
     )
     _draw_pair_shift_axes(ax_b, rows, ylabel="Predicted / observed", stagger_xticklabels=True)
     panel_header(
         ax_b,
         "B",
-        "Controlled minimal pairs\nError bars: 95% bootstrap CI",
+        "Controlled minimal pairs",
         title="Answer-shift size by element",
+        kicker_y=1.148,
+        title_y=1.051,
     )
-    legend_kicker(fig, 0.065, 0.955, "Qwen2.5-7B-Instruct, layer 19")
     return fig, include_frac
 
 
@@ -807,7 +818,12 @@ def make_directions_and_features_figure(data: dict) -> tuple[plt.Figure, float]:
         width_ratios=[0.60, 0.40],
         left=0.062,
         right=0.988,
-        top=0.76,
+        # No figure-level provenance eyebrow (model and read layer live in
+        # the caption), so its row goes to the axes: 0.76 -> 0.83, with the
+        # panel furniture keeping its inch offsets. 0.83 is the last safe
+        # step: above it panel A picks up a wider y tick set, which pushes
+        # the rotated y label past the left canvas edge.
+        top=0.83,
         bottom=0.245,
         wspace=0.22,
     )
@@ -820,13 +836,21 @@ def make_directions_and_features_figure(data: dict) -> tuple[plt.Figure, float]:
     ax_a.set_ylim(-0.32, 1.20)
     panel_header(
         ax_a,
+        "",
         "A",
-        "5,000 contexts (4,000 train, 1,000 test)",
         title="Held-out $R^2$ by variance rank",
+        kicker_y=1.141,
+        title_y=1.048,
     )
     _draw_property_panel(ax_b, data["panel_b"]["properties"])
-    panel_header(ax_b, "B", "120,716 SAE features", title="Concordance by property")
-    legend_kicker(fig, 0.062, 0.955, "Qwen2.5-7B-Instruct, layer 19")
+    panel_header(
+        ax_b,
+        "B",
+        "120,716 SAE features",
+        title="Concordance by property",
+        kicker_y=1.141,
+        title_y=1.048,
+    )
     return fig, include_frac
 
 
@@ -839,7 +863,10 @@ def make_failures_and_shifts_figure(data: dict) -> tuple[plt.Figure, float]:
         width_ratios=[0.52, 0.48],
         left=0.070,
         right=0.988,
-        top=0.755,
+        # No figure-level provenance eyebrow (model and read layer live in
+        # the caption), so its row goes to the axes: 0.755 -> 0.85, with the
+        # panel furniture keeping its inch offsets.
+        top=0.85,
         bottom=0.155,
         wspace=0.30,
     )
@@ -847,10 +874,23 @@ def make_failures_and_shifts_figure(data: dict) -> tuple[plt.Figure, float]:
     ax_b = fig.add_subplot(grid[0, 1])
 
     _draw_failure_panel(ax_a, data["panel_c"])
-    panel_header(ax_a, "A", "10,000-context candidate pool", title="Retrieval failures")
+    panel_header(
+        ax_a,
+        "A",
+        "10,000-context candidate pool",
+        title="Retrieval failures",
+        kicker_y=1.138,
+        title_y=1.047,
+    )
     _draw_variance_explained_panel(ax_b, data["panel_d"])
-    panel_header(ax_b, "B", "Controlled context pairs", title="Variance explained per element")
-    legend_kicker(fig, 0.070, 0.955, "Qwen2.5-7B-Instruct, layer 19")
+    panel_header(
+        ax_b,
+        "B",
+        "Controlled context pairs",
+        title="Variance explained per element",
+        kicker_y=1.138,
+        title_y=1.047,
+    )
     return fig, include_frac
 
 
@@ -1010,7 +1050,7 @@ def make_element_shifts_figure(data: dict) -> tuple[plt.Figure, float]:
             panel_header(
                 ax,
                 "C",
-                "controlled minimal pairs · qwen2.5-7b-instruct · layer 19",
+                "controlled minimal pairs",
                 "What the map keeps when one context element changes",
                 kicker_y=1.0 + _ELEMENT_KICKER_OFF_IN / plot_h_in,
                 title_y=1.0 + _ELEMENT_TITLE_OFF_IN / plot_h_in,
@@ -1049,7 +1089,10 @@ _FS_RIGHT_MARGIN_IN = 0.20
 # Panel A is the widest of the four: its axis carries five tick labels on a
 # signed axis and the separate-dictionary group kicker inside the plot box,
 # neither of which the three metric columns have.
-_FS_HEADER_IN = 0.72
+# No figure-level provenance eyebrow (model and read layer live in the
+# caption), so the header keeps only the panel kicker: 0.20 in of offset plus
+# one 13 pt line, and about 0.10 in of top margin.
+_FS_HEADER_IN = 0.52
 _FS_FOOTER_IN = 1.24
 _FS_KICKER_OFF_IN = 0.20
 _FS_XLABEL_OFF_IN = 0.34
@@ -1077,7 +1120,7 @@ _FS_PROPERTY_LABEL_WRAP = {
 # The group kicker sits inside panel A's plot box, so it wraps to the box width
 # too.  "Nested" is dropped from it because the row it heads already says
 # "nested-dictionary tier"; the feature count and layer are what it adds.
-_FS_TIER_KICKER = "SEPARATE DICTIONARY\n16,384 FEATURES · LAYER {layer}"
+_FS_TIER_KICKER = "SEPARATE DICTIONARY\n16,384 FEATURES"
 
 # Panel D, the two-way discrimination rate, is drawn on a cut axis, following
 # scripts/issue2564_element_shifts_three_panel.py, which solved this axis for
@@ -1257,7 +1300,7 @@ def make_features_and_shifts_figure(
     ax_a = fig.add_subplot(grid_a[0, 0])
     wrapped_tier = {
         **tier_group,
-        "kicker": _FS_TIER_KICKER.format(layer=tier_group["universe"]["layer"]),
+        "kicker": _FS_TIER_KICKER,
         "rows": _fs_wrap_labels(tier_group["rows"]),
     }
     _draw_property_rows(
@@ -1363,7 +1406,6 @@ def make_features_and_shifts_figure(
     )
     panel_header(chance_ax, next(letters), "rate", kicker_y=kicker_y)
 
-    legend_kicker(fig, 0.022, 1.0 - 0.17 / height_in, "Qwen2.5-7B-Instruct, layer 19")
     return fig, include_frac
 
 
@@ -1383,7 +1425,7 @@ def make_direction_spectrum_figure(spectrum: dict) -> tuple[plt.Figure, float]:
     panel_header(
         ax,
         "",
-        "Qwen2.5-7B-Instruct · layer 19 · 5,000 contexts (4,000 train, 1,000 test)",
+        "",
         title="Held-out $R^2$ by answer-variance rank",
         kicker_y=1.100,
         title_y=1.030,
@@ -1421,7 +1463,7 @@ def make_element_shifts_by_slot_figure(data: dict) -> tuple[plt.Figure, float]:
             panel_header(
                 ax,
                 "",
-                "one-word query swaps · qwen2.5-7b-instruct · layer 19",
+                "one-word query swaps",
                 "One-word topic change, by grammatical slot",
                 kicker_y=1.26,
                 title_y=1.07,
@@ -1701,7 +1743,7 @@ def make_refusal_by_class_figure(data: dict) -> tuple[plt.Figure, float]:
             lw=0,
             label="Raw context shift",
         ),
-        Patch(facecolor=MUTED, alpha=0.22, label="Shuffled-pair null (95%)"),
+        Patch(facecolor=MUTED, alpha=0.22, label="Shuffled-pair null"),
     ]
     row_y = 0.985
     legend_kicker(fig, 0.115, row_y, "Prediction")

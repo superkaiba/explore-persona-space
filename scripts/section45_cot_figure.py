@@ -646,9 +646,6 @@ def _legend_handles() -> tuple[list[Patch], list[Patch]]:
     return strata, metrics
 
 
-ERROR_BAR_NOTE = "Error bars: 95% bootstrap CI (1,000 prompt-level draws)"
-
-
 def _legend_strip(
     fig: plt.Figure,
     blocks: list[tuple[str, Any]],
@@ -706,7 +703,10 @@ def make_figure(panels: dict[str, Any]) -> plt.Figure:
         3,
         left=0.07,
         right=0.99,
-        top=0.70,
+        # No in-plot error-bar note: the interval definition is in the caption, so
+        # the freed row goes to the axes (top 0.70 -> 0.78) and the panel headers
+        # move up with it.
+        top=0.78,
         bottom=0.245,
         wspace=0.26,
     )
@@ -718,25 +718,25 @@ def make_figure(panels: dict[str, Any]) -> plt.Figure:
     _kicker(
         ax_a,
         "Context vs end of thought",
-        "A  ·  OpenThinker3-7B, layer 19",
-        kicker_y=1.24,
-        title_y=1.07,
+        "A  ·  OpenThinker3-7B",
+        kicker_y=1.175,
+        title_y=1.065,
     )
     _trajectory_panel(ax_b, panels["B"]["series"], trace_mean=panels["B"].get("trace_mean"))
     _kicker(
         ax_b,
         "Inside the reasoning trace",
-        "B  ·  OpenThinker3-7B, layer 19",
-        kicker_y=1.24,
-        title_y=1.07,
+        "B  ·  OpenThinker3-7B",
+        kicker_y=1.175,
+        title_y=1.065,
     )
     _categorical_panel(ax_c, panels["C"]["maps"], group_label_y=-0.26)
     _kicker(
         ax_c,
         "Thinking on vs off",
-        "C  ·  Qwen3-8B, layer 24",
-        kicker_y=1.24,
-        title_y=1.07,
+        "C  ·  Qwen3-8B",
+        kicker_y=1.175,
+        title_y=1.065,
     )
 
     ax_a.set_ylabel("Held-out score  ↑", labelpad=10)
@@ -753,7 +753,6 @@ def make_figure(panels: dict[str, Any]) -> plt.Figure:
         y=0.965,
         x0=0.07,
     )
-    _legend_strip(fig, [("note", ERROR_BAR_NOTE)], y=0.885, x0=0.07)
     return fig
 
 
@@ -761,17 +760,19 @@ def make_reasoning_sft_figure(panels: dict[str, Any]) -> plt.Figure:
     """Appendix figure: the reasoning-SFT panel alone at 0.75 text width."""
     set_c2a_style()
     fig, _include_frac = c2a_figure("wide", aspect=0.55)  # c2a-v2: 0.75 text width
-    grid = fig.add_gridspec(1, 1, left=0.09, right=0.985, top=0.72, bottom=0.155)
+    # No provenance kicker and no error-bar note: models, layer and the interval
+    # definition are in the caption, so both freed rows go to the axes (top 0.72 -> 0.84).
+    grid = fig.add_gridspec(1, 1, left=0.09, right=0.985, top=0.84, bottom=0.155)
     ax = fig.add_subplot(grid[0, 0])
 
     _categorical_panel(ax, panels["D"]["maps"], group_label_y=-0.20)
     panel_header(
         ax,
         "",
-        "Qwen2.5-7B-Instruct → OpenThinker3-7B, layer 19",
+        "",  # no provenance kicker; the title carries the panel description
         "Within and across reasoning SFT",
-        kicker_y=1.17,
-        title_y=1.05,
+        kicker_y=1.035,
+        title_y=1.035,
     )
     ax.set_ylabel("Held-out score  ↑", labelpad=10)
 
@@ -782,7 +783,6 @@ def make_reasoning_sft_figure(panels: dict[str, Any]) -> plt.Figure:
         y=0.955,
         x0=0.09,
     )
-    _legend_strip(fig, [("note", ERROR_BAR_NOTE)], y=0.885, x0=0.09)
     return fig
 
 

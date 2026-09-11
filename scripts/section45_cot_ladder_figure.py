@@ -167,7 +167,8 @@ def make_figure(units: dict[str, Any]) -> plt.Figure:
     ax.set_xlabel("Correction fit on training folds before applying the pre-SFT map to the post-SFT model", labelpad=12)
     ax.set_ylabel("Retention\n(transferred $R^2$ / own $R^2$)  ↑", labelpad=10)
     ax.set_title("Only a change of basis on both sides recovers the map after reasoning SFT", loc="left", y=1.04, pad=0, fontweight=650, fontsize=19)
-    ax.text(0.0, 1.16, "QWEN2.5-7B-INSTRUCT → OPENTHINKER3-7B, LAYER 19, POOLED AND PER-CORPUS FITS", transform=ax.transAxes, fontsize=12.5, fontweight=700, color=MUTED, va="bottom", ha="left")
+    # Models and read layer live in the caption; the kicker stays descriptive.
+    ax.text(0.0, 1.16, "POOLED AND PER-CORPUS FITS", transform=ax.transAxes, fontsize=12.5, fontweight=700, color=MUTED, va="bottom", ha="left")
 
     handles = [
         Line2D([0], [0], color=color, marker=marker, markersize=size, lw=0, label=label)
