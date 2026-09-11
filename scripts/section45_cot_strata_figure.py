@@ -36,6 +36,7 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     MUTED,
     PAPER,
     STYLE_VERSION,
+    c2a_figure,
     save_c2a_figure,
     set_c2a_style,
     style_score_axis,
@@ -109,7 +110,11 @@ def load_cells() -> dict[str, Any]:
 def make_figure(cells: dict[str, Any]) -> plt.Figure:
     set_c2a_style()
     single = len(MODELS) == 1
-    fig = plt.figure(figsize=(8.0 if single else 9.6, 5.8), constrained_layout=False)
+    # Authored at the c2a "wide" include width (9.82 in) so the canvas realizes
+    # C2A_SCALE at an allowed include fraction. The previous raw 8.0/9.6 in
+    # canvas realized 0.611/0.733, which save_c2a_figure refuses. Height is
+    # unchanged, so the printed type size and figure height are unchanged.
+    fig, _include_frac = c2a_figure("wide", aspect=5.8 / 9.8214)
     grid = fig.add_gridspec(1, 1, left=0.13 if single else 0.11, right=0.985, top=0.74, bottom=0.16 if single else 0.24)
     ax = fig.add_subplot(grid[0, 0])
     style_score_axis(ax, y_min=0.0, y_max=0.8, y_step=0.2)
@@ -137,11 +142,17 @@ def make_figure(cells: dict[str, Any]) -> plt.Figure:
         ax.axvline(sep, color=MUTED, lw=1.0, ls=(0, (2, 3)), zorder=1)
     for center, model in ([] if single else group_centers):
         ax.text(center, -0.30, model.upper(), transform=ax.get_xaxis_transform(), ha="center", va="top", fontsize=12, fontweight=700, color=MUTED)
-    ax.set_ylabel("Held-out $R^2$, context → answer  ↑", labelpad=12)
+    ax.set_ylabel("Held-out $R^2$  ↑", labelpad=12)
     ax.set_title("Within a corpus, reasoning demand barely changes predictability", loc="left", y=1.04, pad=0, fontweight=650, fontsize=17)
-    kicker = "CONTEXT → ANSWER MAP FIT WITHIN EACH CORPUS, OPENTHINKER3-7B, LAYER 19" if single else "CONTEXT → ANSWER MAP FIT WITHIN EACH CORPUS, LAYER 19 (OPENTHINKER3-7B) AND 24 (QWEN3-8B)"
+    # Model and read layer live in the caption; the kicker stays descriptive.
+    kicker = "CONTEXT → ANSWER MAP FIT WITHIN EACH CORPUS"
     ax.text(0.0, 1.20, kicker, transform=ax.transAxes, fontsize=11.5, fontweight=700, color=MUTED, va="bottom", ha="left")
-    handles = [Patch(facecolor=STRATUM_COLOR[s], edgecolor=STRATUM_COLOR[s], label=STRATUM_LABEL[s]) for s in ("does", "doesnt")]
+    drawn = {stratum for _corpus, _name, stratum in CORPORA}
+    handles = [
+        Patch(facecolor=STRATUM_COLOR[s], edgecolor=STRATUM_COLOR[s], label=STRATUM_LABEL[s])
+        for s in ("does", "doesnt")
+        if s in drawn
+    ]
     x0 = 0.13 if single else 0.11
     fig.text(x0, 0.965, "CORPORA", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
     fig.legend(handles=handles, loc="upper left", bbox_to_anchor=(x0 - 0.001, 0.948), ncol=2, frameon=False, columnspacing=1.3, handlelength=1.6, handletextpad=0.6, borderaxespad=0)
@@ -190,7 +201,10 @@ def main(argv: list[str] | None = None) -> int:
                 "git": _git_state(),
                 "provenance": {"task": 2546, "hf_revision": HF_REVISION, "source_ref": SOURCE_REF, "cells": "p7_A (cx_last -> ans_mean) whole-corpus fits, five random-row folds"},
                 "models": cells,
-                "outputs": {k: str(v.relative_to(ROOT)) for k, v in outputs.items()},
+                "outputs": {
+                    k: str(v.relative_to(ROOT)) for k, v in outputs.items() if k != "record"
+                },
+                "render": outputs["record"],
             },
             indent=2,
             sort_keys=True,

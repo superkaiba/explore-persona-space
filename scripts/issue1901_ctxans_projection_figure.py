@@ -77,7 +77,12 @@ def main() -> None:
 
     scatter(axes[0], pc_c, lab_c)
     axes[0].set_xlabel(f"Context PC1-2 ({100 * sum(vc):.0f}%)")
-    panel_header(axes[0], "A", f"{len(lab_c):,} contexts", "Context space")
+    # Context count removed from the canvas: the caption states "the 9,058 distractor
+    # contexts". The eyebrow keeps only the panel letter (panel_header renders a dangling
+    # "A  ·  " for an empty kicker, so the letter goes in the kicker slot), which
+    # leaves the row occupied and opens no whitespace band. Panels B and C keep their
+    # kickers: they decode the marks rather than state figure-global metadata.
+    panel_header(axes[0], "", "A", "Context space")
 
     scatter(axes[1], pc_a, lab_c)
     axes[1].set_xlabel(f"Answer PC1-2 ({100 * sum(va):.0f}%)")
