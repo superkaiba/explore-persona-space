@@ -128,6 +128,12 @@ FULL_GRID_CELLS: tuple[tuple[str, str], ...] = tuple((m, s) for m in STAGES for 
 TRANSFER_PAIRS_K5: tuple[tuple[str, str], ...] = (("B", "S"), ("S", "D"), ("D", "R"))
 
 DEFAULT_OUT = PROJECT_ROOT / "eval_results" / "issue_1902" / "k5_targets"
+# Committed K=5 DIAGONAL fits away from layer 31 (scripts/issue1902_k5_layer18.py).
+# These are the same-layer parity reference when --fit-layer is not 31: the K=1
+# anchor has no committed counterpart there (lasttoken_transfer is layer 31 only).
+K5_OFFLAYER_REFERENCE = {
+    18: PROJECT_ROOT / "eval_results" / "issue_1902" / "k5_layer18" / "summary_L18.json"
+}
 DEFAULT_FIG_DIR = PROJECT_ROOT / "figures" / "issue_1902" / "section43"
 # Read-only staged copy of the existing seed-42 store on the main checkout
 # (brief: reuse, never re-download); everything NEW stages into the worktree.
@@ -259,7 +265,7 @@ def _load_answer(path: Path) -> tuple[np.ndarray, list[str]]:
 def _load_ctx(cfg: Config, stage: str) -> tuple[np.ndarray, list[str]]:
     import torch
 
-    path = _resolve(cfg, f"{LC.HF_PREFIX}/{stage}/ctx/{CORPUS}/L{LAYER}.pt")
+    path = _resolve(cfg, f"{LC.HF_PREFIX}/{stage}/ctx/{CORPUS}/L{cfg.fit_layer}.pt")
     if path is None:
         raise FileNotFoundError(f"ctx shard missing for stage {stage} (stage the seed-42 store)")
     payload = torch.load(path, map_location="cpu", weights_only=True)
@@ -328,6 +334,10 @@ class Config:
         self.reuse_roots: list[Path] = args.reuse_root
         self.flag_counts_root: Path | None = args.flag_counts_root
         self.target_layers: tuple[int, ...] = tuple(args.target_layers)
+        # Layer the downstream fits READ; staging/targets stay multi-layer.
+        # getattr default keeps Config constructible from a hand-built Namespace
+        # (tests/test_issue1902_k5_fullgrid.py builds one without the new flag).
+        self.fit_layer: int = int(getattr(args, "fit_layer", LAYER))
         if self.full_grid and self.smoke:
             raise ValueError(
                 "full-grid production and diagonal reliability smoke are separate modes"
@@ -339,8 +349,16 @@ class Config:
             or any(c not in "0123456789abcdef" for c in self.draw_revision)
         ):
             raise ValueError("--draw-revision must be a full immutable 40-character Hub SHA")
-        if args.cmd not in ("stage", "targets") and LAYER not in self.target_layers:
-            raise ValueError("downstream phases require --target-layers to include 31")
+        if args.cmd not in ("stage", "targets") and self.fit_layer not in self.target_layers:
+            raise ValueError(
+                "downstream phases require --target-layers to include "
+                f"{self.fit_layer} (the --fit-layer; got {list(self.target_layers)})"
+            )
+        if self.fit_layer != LAYER and self.fit_layer not in K5_OFFLAYER_REFERENCE:
+            raise ValueError(
+                f"--fit-layer {self.fit_layer} has no committed same-layer parity "
+                f"reference (have: {sorted(K5_OFFLAYER_REFERENCE)})"
+            )
         self.ro_root: Path = args.stage_root
         self.k5_root: Path = args.k5_root
         self.out: Path = args.out / "smoke" if self.smoke else args.out
@@ -361,7 +379,7 @@ class Config:
                 "seed42_revision": LC.HF_REVISION,
                 "seeds": list(self.seeds),
                 "cells": ["".join(c) for c in self.cells],
-                "layer": LAYER,
+                "layer": self.fit_layer,
                 "fold_seed": LC.RANDOM_FOLD_SEED,
                 "n_folds": N_FOLDS,
                 "context_summary": "u_last",
@@ -372,7 +390,7 @@ class Config:
                 if json.loads(manifest.read_text()) != identity:
                     raise RuntimeError("full-grid cache identity changed; use a fresh --out")
             else:
-                cached_targets = list((self.out / "targets").glob("*_L31.npz"))
+                cached_targets = list((self.out / "targets").glob(f"*_L{self.fit_layer}.npz"))
                 cached_grid = list((self.out / "percell").glob("k5grid_*.npz"))
                 if cached_targets or cached_grid:
                     raise RuntimeError(
@@ -384,10 +402,10 @@ class Config:
         return self.out / "targets" / f"{m}{s}_L{layer}.npz"
 
     def grid_path(self, m: str, s: str) -> Path:
-        return self.out / "percell" / f"k5grid_{m}{s}_L{LAYER}.npz"
+        return self.out / "percell" / f"k5grid_{m}{s}_L{self.fit_layer}.npz"
 
     def anchor_path(self, s: str) -> Path:
-        return self.out / "percell" / f"k1_anchor_{s}_L{LAYER}.npz"
+        return self.out / "percell" / f"k1_anchor_{s}_L{self.fit_layer}.npz"
 
     def companion_path(self, m: str, s: str) -> Path:
         """Companion baseline and retrieval metrics for the full-grid run."""
@@ -575,7 +593,8 @@ def run_targets(cfg: Config) -> None:
     _log(f"[targets] built {n_cells} cell-layer target files (counts only)")
 
 
-def _load_targets(cfg: Config, m: str, s: str, layer: int = LAYER) -> dict[str, np.ndarray]:
+def _load_targets(cfg: Config, m: str, s: str, layer: int | None = None) -> dict[str, np.ndarray]:
+    layer = cfg.fit_layer if layer is None else layer
     path = cfg.target_path(m, s, layer)
     if not path.exists():
         raise FileNotFoundError(f"targets missing for cell ({m},{s}) L{layer} — run `targets`")
@@ -602,13 +621,14 @@ def _aligned_ctx(cfg: Config, stage: str, rows: list[str]) -> tuple[np.ndarray, 
 
 def run_grid(cfg: Config) -> None:
     """Fit all selected cells with one shared decomposition per checkpoint/fold."""
-    anchor_ref = _anchor_reference() if not cfg.smoke else {}
+    anchor_ref = _anchor_reference(cfg) if not cfg.smoke else {}
     by_ckpt: dict[str, list[str]] = {}
     for m, s in cfg.cells:
         by_ckpt.setdefault(m, []).append(s)
     for m, targets_srcs in by_ckpt.items():
         done = all(cfg.grid_path(m, s).exists() for s in targets_srcs) and (
-            cfg.smoke or all(cfg.anchor_path(s).exists() for s in targets_srcs if s == m)
+            not _k1_anchor_layer(cfg)
+            or all(cfg.anchor_path(s).exists() for s in targets_srcs if s == m)
         )
         if cfg.full_grid:
             done = done and all(cfg.companion_path(m, s).exists() for s in targets_srcs)
@@ -626,10 +646,10 @@ def run_grid(cfg: Config) -> None:
         assert rows_ref is not None
         x, fold_of = _aligned_ctx(cfg, m, rows_ref)
         n = len(rows_ref)
-        anchors_needed = [s for s in targets_srcs if s == m and not cfg.smoke]
+        anchors_needed = [s for s in targets_srcs if s == m and _k1_anchor_layer(cfg)]
         anchor_y: dict[str, np.ndarray] = {}
         for s in anchors_needed:
-            path = _resolve(cfg, _draw_answer_relpath(m, s, SEED42, LAYER))
+            path = _resolve(cfg, _draw_answer_relpath(m, s, SEED42, cfg.fit_layer))
             assert path is not None  # targets already resolved this shard
             w42, ids42 = _load_answer(path)
             pos = {rid: i for i, rid in enumerate(ids42)}
@@ -739,35 +759,68 @@ def run_grid(cfg: Config) -> None:
     _parity_anchor_gate(cfg, anchor_ref)
 
 
-def _anchor_reference() -> dict[str, float]:
-    """Committed K=1 diagonal pooled R^2 (the lasttoken_transfer summary)."""
-    summary = json.loads((XF.DEFAULT_OUT / "summary.json").read_text())
-    return {s: float(summary["grid"][f"{s}{s}"]["r2"]) for s in STAGES}
+def _k1_anchor_layer(cfg: Config) -> bool:
+    """True when the K=1 parity anchor is available for this run's fit layer.
+
+    The committed K=1 diagonal (``lasttoken_transfer/summary.json``) exists at
+    layer 31 only, so an off-layer run refits no K=1 anchor and gates on the
+    committed same-layer K=5 diagonal instead (``_parity_anchor_gate``).
+    """
+    return not cfg.smoke and cfg.fit_layer == LAYER
+
+
+def _anchor_reference(cfg: Config) -> dict[str, float]:
+    """Committed diagonal pooled R^2 this run must reproduce at its fit layer.
+
+    Layer 31: the K=1 diagonal from ``lasttoken_transfer/summary.json`` (the
+    parent pipeline's own numbers, compared against this run's K=1 refits).
+    Off layer: the committed K=5 diagonal at the SAME layer, compared against
+    this run's K=5 diagonal cells - same estimator, folds, target and layer.
+    """
+    if _k1_anchor_layer(cfg):
+        summary = json.loads((XF.DEFAULT_OUT / "summary.json").read_text())
+        return {s: float(summary["grid"][f"{s}{s}"]["r2"]) for s in STAGES}
+    ref_path = K5_OFFLAYER_REFERENCE[cfg.fit_layer]
+    summary = json.loads(ref_path.read_text())
+    if int(summary["layer"]) != cfg.fit_layer:
+        raise RuntimeError(f"{ref_path} is layer {summary['layer']}, not {cfg.fit_layer}")
+    return {s: float(summary["cells"][s]["r2"]) for s in STAGES}
 
 
 def _parity_anchor_gate(cfg: Config, anchor_ref: dict[str, float]) -> None:
+    k1 = _k1_anchor_layer(cfg)
     rows = []
     for s in STAGES:
-        with np.load(cfg.anchor_path(s), allow_pickle=False) as payload:
+        path = cfg.anchor_path(s) if k1 else cfg.grid_path(s, s)
+        with np.load(path, allow_pickle=False) as payload:
             got = 1.0 - float(payload["ss_res"].sum()) / float(payload["ss_tot"].sum())
         rows.append(
             {
                 "stage": s,
-                "k1_rerun_r2": got,
+                ("k1_rerun_r2" if k1 else "k5_rerun_r2"): got,
                 "committed_r2": anchor_ref[s],
                 "abs_diff": abs(got - anchor_ref[s]),
             }
         )
     report = {
+        "layer": cfg.fit_layer,
+        "mode": "k1_anchor" if k1 else "k5_diagonal_same_layer",
         "tolerance": ANCHOR_TOL,
         "max_abs_diff": max(r["abs_diff"] for r in rows),
         "pass": all(r["abs_diff"] <= ANCHOR_TOL for r in rows),
-        "reference": "eval_results/issue_1902/lasttoken_transfer/summary.json grid diagonal",
+        "reference": (
+            "eval_results/issue_1902/lasttoken_transfer/summary.json grid diagonal"
+            if k1
+            else str(K5_OFFLAYER_REFERENCE[cfg.fit_layer].relative_to(PROJECT_ROOT))
+        ),
         "cells": rows,
     }
     LC._write_json(cfg.out / "k5_parity_anchor.json", report)
     if not report["pass"]:
-        raise RuntimeError(f"K=1 parity anchor FAILED (STOP — do not interpret): {rows}")
+        raise RuntimeError(
+            f"parity anchor FAILED at L{cfg.fit_layer} "
+            f"(mode={report['mode']}; STOP — do not interpret): {rows}"
+        )
     _log(f"[anchor] PASS max_abs_diff={report['max_abs_diff']:.3e}")
 
 
@@ -828,7 +881,7 @@ def run_transfer(cfg: Config) -> None:
         raise SystemExit("transfer is not part of the smoke (n_train < d regime)")
     gate = cfg.out / "k5_parity_anchor.json"
     if not gate.exists() or not json.loads(gate.read_text())["pass"]:
-        raise RuntimeError("K=1 parity anchor missing or failed — run `grid` first")
+        raise RuntimeError("parity anchor missing or failed — run `grid` first")
     fold_of, ref_ids = _reference_rows()
     diag = {s: _load_targets(cfg, s, s) for s in STAGES}
     for s, payload in diag.items():
@@ -949,7 +1002,7 @@ def _write_summary(cfg: Config) -> None:
             "full_grid": cfg.full_grid,
             "flag_counts_root": str(cfg.flag_counts_root) if cfg.flag_counts_root else None,
             "cells": ["".join(c) for c in cfg.cells],
-            "layer": LAYER,
+            "layer": cfg.fit_layer,
             "corpus": CORPUS,
             "context_summary": "u_last",
             "target": "mean answer vector over K=5 draws (seeds 42,45,46,47,48)",
@@ -1197,7 +1250,7 @@ def run_figure(cfg: Config) -> None:
             "variant": "K=5 mean answer targets (seeds 42,45,46,47,48)",
             "k5_summary": str((cfg.out / "summary.json").relative_to(PROJECT_ROOT)),
             "k5_retrieval": str((cfg.out / "retrieval" / "summary.json").relative_to(PROJECT_ROOT)),
-            "layer": LAYER,
+            "layer": cfg.fit_layer,
             "context_summary": "u_last",
             "folds": "six size-matched IID random-row folds (seed 190231)",
             "panel_bc_bootstrap": (
@@ -1240,12 +1293,13 @@ def run_figure(cfg: Config) -> None:
 
     FIG.set_c2a_style()
     cfg.fig_dir.mkdir(parents=True, exist_ok=True)
-    data_path = cfg.fig_dir / "c1_posttraining_dynamics_k5_data.json"
+    stem = "c1_posttraining_dynamics_k5" + ("" if cfg.fit_layer == LAYER else f"_L{cfg.fit_layer}")
+    data_path = cfg.fig_dir / f"{stem}_data.json"
     data_path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
     data = json.loads(data_path.read_text())
-    outputs = FIG.render_variant(data, cfg.fig_dir / "c1_posttraining_dynamics_k5", panel_b="lines")
+    outputs = FIG.render_variant(data, cfg.fig_dir / stem, panel_b="lines")
     if cfg.full_grid:
-        FIG.render_variant(data, cfg.fig_dir / "c1_posttraining_dynamics_k5_grid", panel_b="grid")
+        FIG.render_variant(data, cfg.fig_dir / f"{stem}_grid", panel_b="grid")
     _log(f"[figure] wrote {outputs['pdf']}")
     _log(f"[figure] data: {data_path}")
 
@@ -1275,6 +1329,13 @@ def main() -> None:
     )
     parser.add_argument(
         "--target-layers", type=int, nargs="+", choices=TARGET_LAYERS, default=list(TARGET_LAYERS)
+    )
+    parser.add_argument(
+        "--fit-layer",
+        type=int,
+        choices=TARGET_LAYERS,
+        default=LAYER,
+        help="layer the grid/transfer/retrieval/figure phases fit (default 31)",
     )
     args = parser.parse_args()
     cfg = Config(args)
