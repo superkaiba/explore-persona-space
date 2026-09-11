@@ -2,7 +2,7 @@
   "metadata": {
     "context_summary": "u_last",
     "folds": "six size-matched IID random-row folds (seed 190231)",
-    "generated_utc": "2026-09-04T00:46:37Z",
+    "generated_utc": "2026-09-11T08:32:19Z",
     "hf_revision": "3256c8efcef5f10ca525efeb2039636eaec8fad7",
     "inputs": {
       "latest": {
@@ -36,7 +36,7 @@
     "background": "#FFFFFF",
     "exported_size_inches": [
       13.095,
-      4.164
+      4.154
     ],
     "include_width_frac": 1.0,
     "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c1_posttraining_dynamics.pdf}",
@@ -52,7 +52,7 @@
     "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
     "style_version": "c2a-v2",
     "text": [
-      "A  \u00b7  OLMO-2-7B, LAYER 31",
+      "A  \u00b7  WITHIN-STAGE FITS",
       "Base",
       "SFT",
       "DPO",
@@ -81,7 +81,6 @@
       "Retention of the\nprior stage's map",
       "CONTEXT SOURCE",
       "CORRECTION",
-      "Error bars: 95% bootstrap CIs, 1,000 draws",
       "Own states",
       "Previous-stage states",
       "Base states",
