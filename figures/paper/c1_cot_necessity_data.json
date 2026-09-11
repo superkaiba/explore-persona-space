@@ -1,7 +1,7 @@
 {
   "font": "Inter",
   "git": {
-    "commit": "9c645b0516a279f0aa0bd60294e0f8ca47096fa1",
+    "commit": "2644599f200ee38f8d1ccac230c6cf74de0cc802",
     "tracked_worktree_dirty": true
   },
   "outputs": {
@@ -520,5 +520,78 @@
     "subset_rule": "GSM8K train: needs = 4+ calculator steps, no = 1 step; ContextHub: needs = levels 3-4, no = level 1",
     "task": 2546
   },
-  "style_version": "c2a-v1"
+  "render": {
+    "authoring_size_inches": [
+      13.095,
+      6.002
+    ],
+    "background": "#FFFFFF",
+    "exported_size_inches": [
+      13.095,
+      5.807
+    ],
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c1_cot_necessity.pdf}",
+    "png_dpi": 240,
+    "realized_font_pt": {
+      "body": 7.56,
+      "label": 8.4,
+      "tick": 7.14,
+      "title": 9.24
+    },
+    "resolved_font": "Inter",
+    "scale": 0.42,
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "style_version": "c2a-v2",
+    "text": [
+      "MATH",
+      "GSM8K, 4+ steps",
+      "ContextHub L3-4",
+      "MMLU",
+      "ARC-Challenge",
+      "CommonsenseQA",
+      "PIQA",
+      "GSM8K, 1 step",
+      "ContextHub L1",
+      "A  \u00b7  OPENTHINKER3-7B VS PARENT",
+      "Necessity rate",
+      "\u22120.05",
+      "0.00",
+      "0.05",
+      "0.10",
+      "0.15",
+      "0.20",
+      "Gain in own-answer acc@1\nfrom end of thought  \u2191",
+      "0",
+      "0.1",
+      "0.2",
+      "0.3",
+      "End-of-thought gains are small\nand do not track\nthe necessity rate",
+      "B  \u00b7  QWEN3-8B, THINKING ON VS OFF",
+      "\u22120.2",
+      "0.0",
+      "0.4",
+      "0.6",
+      "Larger gains for the thinking\ntoggle, falling as the\nnecessity rate rises",
+      "C  \u00b7  PER-QUESTION AUROC",
+      "AUROC (0.5 is chance)",
+      "0.45",
+      "0.50",
+      "0.55",
+      "0.60",
+      "Top-1 retrieval gain\u2020",
+      "Log error ratio\u2020",
+      "Error reduction\u2020",
+      "Prompt retrieval miss",
+      "Prompt map error",
+      "No map score identifies which\nMATH questions\nneed reasoning",
+      "REASONING SETTING",
+      "CORPORA (A, B)",
+      "OpenThinker3-7B",
+      "Qwen3-8B",
+      "Needs-reasoning",
+      "No-reasoning"
+    ]
+  },
+  "style_version": "c2a-v2"
 }

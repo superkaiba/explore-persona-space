@@ -1,7 +1,7 @@
 {
   "font": "Inter",
   "git": {
-    "commit": "41ae65058efe525b4c6d2fac31045b170021ac49",
+    "commit": "2644599f200ee38f8d1ccac230c6cf74de0cc802",
     "tracked_worktree_dirty": true
   },
   "models": {
@@ -68,26 +68,6 @@
           "source": "eval_results/issue_2546/cells/p7_A__contexthub__a1.json",
           "source_sha256": "a0ae46491de8ec38c90087933a5be6c9667fffb7bbb09674b0f8e7818b2c0e8f",
           "stratum": "does"
-        },
-        {
-          "corpus": "mmlu",
-          "n_rows": 5772,
-          "name": "MMLU",
-          "r2": 0.5625446678263811,
-          "r2_ci": [
-            0.5571838188378818,
-            0.568038003785657
-          ],
-          "retrieval_acc": 0.5814275814275814,
-          "retrieval_chance": 0.25330369950952075,
-          "retrieval_lift": 0.3281238819180607,
-          "retrieval_lift_ci": [
-            0.3150572732595857,
-            0.34066495604632235
-          ],
-          "source": "eval_results/issue_2546/cells/p7_A__mmlu__a1.json",
-          "source_sha256": "26f13042d2e54214ca496d01207035d282384c5df303e8da53573f573d981053",
-          "stratum": "doesnt"
         }
       ]
     }
@@ -103,5 +83,44 @@
     "source_ref": "42308cc7522dcb0a2a76b332b0c24d981de4b585",
     "task": 2546
   },
-  "style_version": "c2a-v1"
+  "render": {
+    "authoring_size_inches": [
+      9.821,
+      5.8
+    ],
+    "background": "#FFFFFF",
+    "exported_size_inches": [
+      9.821,
+      5.255
+    ],
+    "include_width_frac": 0.75,
+    "latex_include_line": "\\includegraphics[width=0.75\\textwidth]{figures/paper/c1_cot_strata.pdf}",
+    "png_dpi": 240,
+    "realized_font_pt": {
+      "body": 7.56,
+      "label": 8.4,
+      "tick": 7.14,
+      "title": 9.24
+    },
+    "resolved_font": "Inter",
+    "scale": 0.42,
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "style_version": "c2a-v2",
+    "text": [
+      "CONTEXT \u2192 ANSWER MAP FIT WITHIN EACH CORPUS",
+      "MATH",
+      "GSM8K\ntrain",
+      "Context-\nHub",
+      "Held-out $R^2$  \u2191",
+      "0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "Within a corpus, reasoning demand barely changes predictability",
+      "CORPORA",
+      "Needs-reasoning corpora"
+    ]
+  },
+  "style_version": "c2a-v2"
 }
