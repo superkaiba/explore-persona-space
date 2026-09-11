@@ -473,7 +473,43 @@ def iter_wikitext_articles(max_articles: int | None):
         yield title, "".join(buf)
 
 
-def build_armc_pairs(  # noqa: C901 -- linear anchor-eligibility ladder
+def armc_eligible_anchors(ids, offsets, text):
+    """Shared, unchanged #931/#1901 sentence-final span eligibility."""
+    bounds = common.sentence_bounds(text)
+    # Sentence-final anchor tokens: the token containing the sentence's
+    # final [.!?] whose own text strips to exactly that punctuation.
+    anchors = []
+    for s, e in bounds:
+        seg = text[s:e].rstrip()
+        if not seg or seg[-1] not in ".!?":
+            continue
+        pi = s + len(seg) - 1
+        lo, hi = common.covering_token_span(offsets, pi, pi + 1)
+        if hi - lo != 1:
+            continue
+        t = lo
+        tok_text = text[int(offsets[t, 0]) : int(offsets[t, 1])].strip()
+        if tok_text in (".", "!", "?"):
+            anchors.append((t, s, tok_text))
+    if len(anchors) < 2:
+        return []
+    anchor_positions = [a for a, _, _ in anchors]
+    eligible = []
+    for j, (t, sent_start, sep_char) in enumerate(anchors):
+        nxt = anchor_positions[j + 1] if j + 1 < len(anchors) else len(ids)
+        span_lo, span_hi = t + 1, nxt
+        if not (common.ARMC_SPAN_MIN <= span_hi - span_lo <= common.ARMC_SPAN_MAX):
+            continue
+        ps_lo, ps_hi = common.inner_token_span(offsets, sent_start, int(offsets[t, 0]))
+        ps_hi = min(ps_hi, t)
+        ps_lo = max(ps_lo, ps_hi - common.ARMC_PREV_CAP_TOKENS)  # keep LAST <=96 tokens
+        if ps_hi - ps_lo < common.ARMC_PREV_MIN_TOKENS:
+            continue
+        eligible.append((t, span_lo, span_hi, ps_lo, ps_hi, sep_char))
+    return eligible
+
+
+def build_armc_pairs(
     tokenizer,
     *,
     n_articles: int | None,
@@ -526,37 +562,7 @@ def build_armc_pairs(  # noqa: C901 -- linear anchor-eligibility ladder
     for ai in sorted(int(v) for v in take):
         art = pool[ai]
         ids, offsets, text = art["ids"], art["offsets"], art["text"]
-        bounds = common.sentence_bounds(text)
-        # Sentence-final anchor tokens: the token containing the sentence's
-        # final [.!?] whose own text strips to exactly that punctuation.
-        anchors = []
-        for s, e in bounds:
-            seg = text[s:e].rstrip()
-            if not seg or seg[-1] not in ".!?":
-                continue
-            pi = s + len(seg) - 1
-            lo, hi = common.covering_token_span(offsets, pi, pi + 1)
-            if hi - lo != 1:
-                continue
-            t = lo
-            tok_text = text[int(offsets[t, 0]) : int(offsets[t, 1])].strip()
-            if tok_text in (".", "!", "?"):
-                anchors.append((t, s, tok_text))
-        if len(anchors) < 2:
-            continue
-        anchor_positions = [a for a, _, _ in anchors]
-        eligible = []
-        for j, (t, sent_start, sep_char) in enumerate(anchors):
-            nxt = anchor_positions[j + 1] if j + 1 < len(anchors) else len(ids)
-            span_lo, span_hi = t + 1, nxt
-            if not (common.ARMC_SPAN_MIN <= span_hi - span_lo <= common.ARMC_SPAN_MAX):
-                continue
-            ps_lo, ps_hi = common.inner_token_span(offsets, sent_start, int(offsets[t, 0]))
-            ps_hi = min(ps_hi, t)
-            ps_lo = max(ps_lo, ps_hi - common.ARMC_PREV_CAP_TOKENS)  # keep LAST <=96 tokens
-            if ps_hi - ps_lo < common.ARMC_PREV_MIN_TOKENS:
-                continue
-            eligible.append((t, span_lo, span_hi, ps_lo, ps_hi, sep_char))
+        eligible = armc_eligible_anchors(ids, offsets, text)
         if not eligible:
             continue
         art_rng = np.random.default_rng(common.BUILD_SEED + art["article_idx"])
