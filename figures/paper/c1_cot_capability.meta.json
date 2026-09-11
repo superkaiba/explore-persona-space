@@ -612,8 +612,8 @@
     "B": "cot.B",
     "C": "capability"
   },
-  "layout": "CoT panels above a full-width capability scatter with all model labels",
-  "changes": "Layout and correctness-group labels only; all estimates and intervals preserved",
+  "layout": "One horizontal row: CoT prediction, correctness groups, model capability",
+  "changes": "Single-row layout, compact headings, and relocated model labels; bar-value text omitted from narrow panels. All estimates and intervals preserved.",
   "maps_refit": false,
   "render": {
     "style_version": "c2a-v2",
@@ -621,11 +621,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      7.857
+      5.5
     ],
     "exported_size_inches": [
       13.095,
-      7.645
+      5.335
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -639,15 +639,9 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "0.484",
-      "0.498",
-      "0.574",
-      "0.910",
-      "0.877",
-      "0.986",
-      "A  \u00b7  QWEN3-8B \u00b7 ALL QUESTIONS",
+      "A  \u00b7  ALL QUESTIONS",
       "$R^2$",
-      "Top-1 retrieval",
+      "Top-1\nretrieval",
       "Score \u2191",
       "0.00",
       "0.25",
@@ -655,13 +649,9 @@
       "0.75",
       "1.00",
       "Answer prediction",
-      "0.420",
-      "0.431",
-      "0.503",
-      "0.510",
-      "B  \u00b7  QWEN3-8B \u00b7 THINKING ON",
-      "Correct only\nwith thinking",
-      "Correct in\nboth modes",
+      "B  \u00b7  THINKING ON",
+      "Only with\nthinking",
+      "Both\nmodes",
       "Held-out $R^2$ \u2191",
       "0.0",
       "0.2",
@@ -680,7 +670,7 @@
       "Qwen3 32B",
       "Spearman $\\rho = 0.867$, $p = 0.002$",
       "C  \u00b7  10 MODELS \u00b7 THINKING OFF",
-      "Artificial Analysis Intelligence Index \u2191",
+      "Artificial Analysis\nIntelligence Index \u2191",
       "0",
       "10",
       "20",
@@ -690,17 +680,17 @@
       "60",
       "0.65",
       "0.7",
-      "Predictability versus model capability",
+      "Model capability",
       "Thinking off \u00b7 context",
       "Thinking on \u00b7 context",
       "Thinking on \u00b7 CoT end"
     ]
   },
-  "script_sha256": "c042d5670332627babaf5a3a690cf8b352f8739702dc06ef54bc4d9afa78c6ff",
+  "script_sha256": "e4270b2f09b3a72c3a98298fc131f04e4a720d065e508c0cbac36f1d024366ba",
   "style_sha256": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1",
   "output_sha256": {
-    "pdf": "71228e8bb64deaee5f99521c57ca6f3091f37295b56fd4ee46fac5a1d4379fa9",
-    "png": "6e7ecc01b34d87da311f3ab43c860e8510f08739cab110d9f6683faa52b6ac72",
-    "grayscale": "3d2d715d9898f32ee1b94760d0e6dab128118759888288c6cb6cfa681263cf99"
+    "pdf": "4224ac3483aa8c58033be07653d3166995d23a2f53f5731e64a8c7a4a259cb8d",
+    "png": "56e69ca21eef19c2f91db8ee52723dff2074317c64d492f1ca25bc1e2904a9cd",
+    "grayscale": "976303a6573d92a56f2e5eb79fadf52257c4dfde0000a392282c05cda85c7ac4"
   }
 }

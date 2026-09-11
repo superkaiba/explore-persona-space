@@ -33,16 +33,16 @@ STEM = ROOT / "figures/paper/c1_cot_capability"
 CONDITION_COLORS = [MUTED, ROLES["linear"].color, ROLES["nonlinear"].color]
 BORDERS = [":", "-", "--"]
 OFFSETS = {
-    "q35_0p8b": (12, 8),
+    "q35_0p8b": (40, 65),
     "q35_2b": (12, 5),
-    "q35_4b": (12, -18),
-    "q35_9b": (12, 7),
-    "q35_27b": (12, 7),
-    "q36_27b": (12, -21),
+    "q35_4b": (40, -24),
+    "q35_9b": (12, 28),
+    "q35_27b": (12, 0),
+    "q36_27b": (12, -28),
     "q38_27b": (-12, 9),
     "o3_7b_i": (12, -5),
     "o31_32b_i": (12, -10),
-    "q3_32b": (12, 18),
+    "q3_32b": (-12, 4),
 }
 
 
@@ -64,14 +64,6 @@ def bar_with_interval(ax, x, value, bounds, width, condition, *, retrieval=False
         zorder=2,
     )
     ax.vlines(x, lo, hi, color=MUTED, linewidth=1.8, zorder=4)
-    ax.annotate(
-        f"{value:.3f}",
-        (x, max(value, hi)),
-        xytext=(0, 5),
-        textcoords="offset points",
-        ha="center",
-        va="bottom",
-    )
 
 
 def draw_prediction(ax, data):
@@ -93,15 +85,13 @@ def draw_prediction(ax, data):
                 i,
                 retrieval=j == 1,
             )
-    ax.set_xticks([0, 1.25], [r"$R^2$", "Top-1 retrieval"])
+    ax.set_xticks([0, 1.25], [r"$R^2$", "Top-1\nretrieval"])
     ax.set_xlim(-0.52, 1.77)
     ax.set_ylim(0, 1.12)
     ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
     ax.set_ylabel(better_label("Score"))
     style_axis(ax)
-    panel_header(
-        ax, "A", "Qwen3-8B · all questions", "Answer prediction", kicker_y=1.26, title_y=1.06
-    )
+    panel_header(ax, "A", "All questions", "Answer prediction", kicker_y=1.18, title_y=1.035)
 
 
 def draw_correctness(ax, data):
@@ -123,15 +113,13 @@ def draw_correctness(ax, data):
                 width,
                 i + 1,
             )
-    ax.set_xticks([0, 1], ["Correct only\nwith thinking", "Correct in\nboth modes"])
+    ax.set_xticks([0, 1], ["Only with\nthinking", "Both\nmodes"])
     ax.set_xlim(-0.5, 1.5)
     ax.set_ylim(0, 0.61)
     ax.set_yticks([0, 0.2, 0.4, 0.6])
     ax.set_ylabel(better_label(r"Held-out $R^2$"))
     style_axis(ax)
-    panel_header(
-        ax, "B", "Qwen3-8B · thinking on", "Correctness groups", kicker_y=1.26, title_y=1.06
-    )
+    panel_header(ax, "B", "Thinking on", "Correctness groups", kicker_y=1.18, title_y=1.035)
 
 
 def draw_capability(ax, data):
@@ -144,7 +132,7 @@ def draw_capability(ax, data):
     ax.set_yticks([0.60, 0.65, 0.70, 0.75])
     ax.set_xlim(-3, 64)
     ax.set_xticks([0, 10, 20, 30, 40, 50, 60])
-    ax.set_xlabel(better_label("Artificial Analysis Intelligence Index"))
+    ax.set_xlabel(better_label("Artificial Analysis\nIntelligence Index"))
     ax.set_ylabel(better_label(r"Held-out $R^2$"))
     role = ROLES["linear"]
     ax.scatter(
@@ -158,14 +146,20 @@ def draw_capability(ax, data):
     )
     for row in rows:
         dx, dy = OFFSETS[row["model_key"]]
+        key = row["model_key"]
+        arrow = None
+        if key in {"q35_0p8b", "q35_4b", "q35_9b", "q36_27b"}:
+            arrow = {"arrowstyle": "-", "color": MUTED, "linewidth": 0.9}
         ax.annotate(
             row["label"],
             (row["aa_index"], row["test_r2"]),
             xytext=(dx, dy),
             textcoords="offset points",
-            ha="left" if dx > 0 else "right",
+            ha="center" if key == "q35_0p8b" else ("left" if dx > 0 else "right"),
             va="center",
             color=INK,
+            arrowprops=arrow,
+            fontsize=15,
         )
     stats = data["plotted_panel"]
     ax.text(
@@ -179,9 +173,9 @@ def draw_capability(ax, data):
         ax,
         "C",
         "10 models · thinking off",
-        "Predictability versus model capability",
-        kicker_y=1.20,
-        title_y=1.04,
+        "Model capability",
+        kicker_y=1.18,
+        title_y=1.035,
     )
 
 
@@ -191,11 +185,11 @@ def main():
     source = json.loads(raw)
     cot, capability = [source[key]["data"] for key in ("cot", "capability")]
     set_c2a_style()
-    fig, frac = c2a_figure("full", aspect=0.60)
+    fig, frac = c2a_figure("full", aspect=0.42)
     axes = [
-        fig.add_axes([0.085, 0.60, 0.40, 0.235]),
-        fig.add_axes([0.60, 0.60, 0.38, 0.235]),
-        fig.add_axes([0.085, 0.10, 0.895, 0.325]),
+        fig.add_axes([0.080, 0.19, 0.190, 0.55]),
+        fig.add_axes([0.345, 0.19, 0.195, 0.55]),
+        fig.add_axes([0.625, 0.19, 0.355, 0.55]),
     ]
     fig.legend(
         handles=[
@@ -235,8 +229,11 @@ def main():
         "source_sha256": hashlib.sha256(raw).hexdigest(),
         "original_panels": source,
         "panel_mapping": {"A": "cot.A", "B": "cot.B", "C": "capability"},
-        "layout": "CoT panels above a full-width capability scatter with all model labels",
-        "changes": "Layout and correctness-group labels only; all estimates and intervals preserved",
+        "layout": "One horizontal row: CoT prediction, correctness groups, model capability",
+        "changes": (
+            "Single-row layout, compact headings, and relocated model labels; "
+            "bar-value text omitted from narrow panels. All estimates and intervals preserved."
+        ),
         "maps_refit": False,
         "render": exported["record"],
         "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),

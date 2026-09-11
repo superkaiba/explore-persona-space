@@ -309,11 +309,14 @@ The checked-in `c1_cot_capability_data.json` snapshot contains the original
 plotted values and intervals, source commits, and verified artifact hashes.
 Rendering requires no model inference, refitting, or statistical recomputation.
 
-Panels A and B retain the main CoT comparisons; panel C places the capability
-scatter below them at full width to retain all ten model labels. The correctness
+Panels A, B, and C sit side by side in one horizontal row: the two main CoT
+comparisons followed by the capability scatter. All ten model labels remain,
+with small leader lines where needed and 15-point authoring text (6.3 points
+in print); axes and headings retain the standard font sizes. The correctness
 groups are labeled by their observed outcomes: correct only with thinking and
-correct in both modes. The compact layout uses a 0.60 canvas aspect ratio,
-shorter axes, and tighter vertical gaps while preserving the standard font sizes.
+correct in both modes. The compact layout uses a 0.42 canvas aspect ratio and
+aligned axes. Numeric labels above bars are omitted in the narrower panels;
+their exact values remain in the manuscript text and the data snapshot.
 Include the combined PDF at exactly `\textwidth`.
 The manuscript keeps `fig:cot` and `fig:model-capability` as labels on this one
 float, with capability references explicitly pointing to panel C. The standalone
