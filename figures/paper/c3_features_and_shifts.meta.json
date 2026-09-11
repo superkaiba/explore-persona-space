@@ -7,7 +7,7 @@
   "title": "SAE feature properties and what the context-to-answer map keeps per changed context element",
   "subject": "Conditional association between an SAE feature property and the held-out R2 of its decoder direction, beside the mean cosine between predicted and observed answer shift and the median ratio of predicted to observed shift size per controlled context element, with 95% pair-bootstrap intervals",
   "git": {
-    "commit": "cb240dcf60b20aeffb5938b0f41e4c9607fda8c8",
+    "commit": "8a779351c586872f278e4dd326982a07be212f75",
     "tracked_worktree_dirty": true
   },
   "sources": [
@@ -18,6 +18,10 @@
     {
       "path": "eval_results/issue_2564/section42_element_shifts.json",
       "sha256": "4d76a5fa1ce552b478ebc58a5ef3b26448ad915d732853ecfcc17ed7069c2d42"
+    },
+    {
+      "path": "eval_results/issue_1482/tier_concordance.json",
+      "sha256": "c9fcce15fba36953d513e6ea67969d671388aa2ba5a7a2cc6353b8df39c37f8d"
     }
   ],
   "render": {
@@ -44,6 +48,7 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
+      "SEPARATE 16,384-FEATURE NESTED DICTIONARY \u00b7 LAYER 20",
       "A  \u00b7  120,716 SAE FEATURES \u00b7 FORWARD-SELECTED ASSOCIATIONS",
       "Concordance with feature $R^2$, above chance",
       "-0.1",
@@ -56,6 +61,7 @@
       "promotes specific output tokens",
       "suppresses specific output tokens",
       "topic content",
+      "coarsest nested-dictionary tier",
       "Feature-property concordance",
       "B  \u00b7  MEAN COSINE \u00b7 95% PAIR BOOTSTRAP",
       "Predicted shift direction (cosine) \u2191",
@@ -135,7 +141,58 @@
           "kind": "forward-selected association"
         }
       ],
-      "dv": "held-out R^2 of the decoder-direction projection d_f^T h_A (dense; no encoder, no BatchTopK gate) under the layer-19 ridge metamodel; common universe of 120,716 features"
+      "dv": "held-out R^2 of the decoder-direction projection d_f^T h_A (dense; no encoder, no BatchTopK gate) under the layer-19 ridge metamodel; common universe of 120,716 features",
+      "separate_group": {
+        "kicker": "separate 16,384-feature nested dictionary \u00b7 layer 20",
+        "rows": [
+          {
+            "banked_name": "coarsest tier versus the rest",
+            "label": "coarsest nested-dictionary tier",
+            "value": 0.27808032785426473,
+            "ci95": [
+              0.26293002758935646,
+              0.2923892938195712
+            ],
+            "n": 16384,
+            "n_positive": 1640,
+            "kind": "nested-dictionary tier, activity-quintile matched"
+          }
+        ],
+        "universe": {
+          "dictionary": "nested sparse autoencoder, three tiers, coarsest to finest",
+          "layer": 20,
+          "n_features_scored": 16384,
+          "n_features_dictionary": 65536,
+          "n_features_dropped": 0,
+          "corpus": "lmsys",
+          "target": "decoder-direction projection d_f^T v of the ans_mean answer state (dense, no encoder/gate)",
+          "target_note": "the decoder-direction target the paper plots, not the activation target banked beside it in the per-feature store"
+        },
+        "matching": {
+          "scheme": "activity quintiles",
+          "variable": "log of per-answer firing frequency",
+          "source": "eval_results/issue_1482/matryoshka_tier/perfeature_m_lmsys_default.npz",
+          "edges": "equal-count quantile edges, recomputed inside every bootstrap draw",
+          "also_reported": "pooled (no matching) and activity deciles"
+        },
+        "bootstrap": {
+          "draws": 2000,
+          "seed": 20260910,
+          "unit": "feature",
+          "scheme": "one generator per row, seeded from the base seed plus a row offset",
+          "interval": "95 percent, percentile method, on the quintile-matched value"
+        },
+        "property_rows_universe": {
+          "n_features": 120716,
+          "layer": 19,
+          "dictionary": "regular sparse autoencoder",
+          "matching": "winner concordance c - 1/2 per forward-selection round; each round conditions (coarsened exact matching) on all previously selected properties",
+          "source": "eval_results/issue_1482/plot4_redesign/plot4_decoder_direction.json"
+        },
+        "caption_note": "The tier bar is measured on a different population from the five property bars beside it: 16,384 features of a nested sparse autoencoder at layer 20, matched on activity quintiles. The property bars cover 120,716 features of the regular sparse autoencoder at layer 19, each matched by coarsened exact matching on the properties selected in earlier rounds, the first of them unmatched. The statistic, the scale and the reading are the same in both.",
+        "separation": "one empty row, a shaded stripe, a lighter bar fill and the group's own kicker; the stripe, the gap and the fill survive the grayscale audit",
+        "error_bars": "none drawn; the panel shows no interval on any row, so the tier interval is recorded here instead"
+      }
     },
     "panels_b_c": {
       "rows": [
@@ -415,8 +472,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "457f025891ec59d3c9bed8b552c4c3bab9a344a63ff55c6fbac50bc8cd5dcba1",
-    "png": "49f5da025e9fb0297ca84b2d463863c25f9f5d480f02e82d2c924c7ce4e4aecb",
-    "grayscale": "e852a0c1f2c4db9e3ee009c65f8e47720fd9d1d76c592ab046630bd74246498d"
+    "pdf": "6457efe5591fc53efd486dee491ae740812d17d00a39a0fc2853ed7566ddb800",
+    "png": "fecf791fffb997428e18abfccafc2d29af96f3c58cd0ba1a59d618f6e895b8e7",
+    "grayscale": "e275fcf93f67c9c7e8a2d80d8bd10d1e12426c3afe5bd68e9a8e38bebd34efcf"
   }
 }

@@ -1,0 +1,168 @@
+{
+  "generated_utc": "2026-09-11T02:11:42.570275+00:00",
+  "what_is_measured": "probability that a feature carrying a tier property is predicted better than a matched feature that does not, reported above chance so zero means no association",
+  "universe": {
+    "dictionary": "nested sparse autoencoder, three tiers, coarsest to finest",
+    "layer": 20,
+    "n_features_scored": 16384,
+    "n_features_dictionary": 65536,
+    "n_features_dropped": 0,
+    "corpus": "lmsys",
+    "target": "decoder-direction projection d_f^T v of the ans_mean answer state (dense, no encoder/gate)",
+    "target_note": "the decoder-direction target the paper plots, not the activation target banked beside it in the per-feature store"
+  },
+  "estimator": {
+    "source": "scripts/issue1482_concordance_fig.py",
+    "functions": [
+      "concordance",
+      "cd_untied"
+    ],
+    "scale": "Somers' D on the c-index scale, minus 0.5",
+    "binary_path": "closed-form Mann-Whitney, exact for a two-valued coding",
+    "ordinal_path": "Kendall tau-b for a coding with more than two values",
+    "ties": "pairs tied on the coding are dropped from the denominator"
+  },
+  "matching": {
+    "scheme": "activity quintiles",
+    "variable": "log of per-answer firing frequency",
+    "source": "eval_results/issue_1482/matryoshka_tier/perfeature_m_lmsys_default.npz",
+    "edges": "equal-count quantile edges, recomputed inside every bootstrap draw",
+    "also_reported": "pooled (no matching) and activity deciles"
+  },
+  "bootstrap": {
+    "draws": 2000,
+    "seed": 20260910,
+    "unit": "feature",
+    "scheme": "one generator per row, seeded from the base seed plus a row offset",
+    "interval": "95 percent, percentile method, on the quintile-matched value"
+  },
+  "headline": {
+    "pooled": 0.20957516410147825,
+    "activity_quintile_matched": 0.27808032785426473,
+    "activity_decile_matched": 0.31305662523249,
+    "activity_quintile_matched_ci95": [
+      0.26293002758935646,
+      0.2923892938195712
+    ],
+    "n": 16384,
+    "coding": "coarsest tier versus the rest",
+    "n_positive": 1640,
+    "reading": "a feature in the coarsest tier is predicted better than an activity-matched feature from the other two tiers this much above chance"
+  },
+  "binary_alternative": {
+    "pooled": 0.018116559908219587,
+    "activity_quintile_matched": 0.06691461133500043,
+    "activity_decile_matched": 0.06913064497640087,
+    "activity_quintile_matched_ci95": [
+      0.05711049651871321,
+      0.07716480472432291
+    ],
+    "n": 16384,
+    "coding": "coarsest and middle tiers versus the finest",
+    "n_positive": 7784
+  },
+  "ordinal": {
+    "pooled": 0.04404555213704331,
+    "activity_quintile_matched": 0.10840333552724091,
+    "activity_decile_matched": 0.11282861754826246,
+    "activity_quintile_matched_ci95": [
+      0.09977596279652898,
+      0.11779126458984333
+    ],
+    "n": 16384,
+    "coding": "three-level coarseness, coarsest is 2 and finest is 0",
+    "path": "Kendall tau-b, the path the panel's continuous properties take",
+    "note": "smaller than the coarsest-versus-rest split because an ordinal coding assumes equal steps, and the middle-to-finest step is near zero"
+  },
+  "pairwise": [
+    {
+      "pooled": 0.21630849450584344,
+      "activity_quintile_matched": 0.31254245146805815,
+      "activity_decile_matched": 0.3428544638864446,
+      "activity_quintile_matched_ci95": [
+        0.29896205509681645,
+        0.3275557108934939
+      ],
+      "n": 7784,
+      "coding": "coarsest versus middle"
+    },
+    {
+      "pooled": -0.03170489643895347,
+      "activity_quintile_matched": 0.029969708879958534,
+      "activity_decile_matched": 0.034374720619703925,
+      "activity_quintile_matched_ci95": [
+        0.019657365465936823,
+        0.03988283801555404
+      ],
+      "n": 14744,
+      "coding": "middle versus finest"
+    },
+    {
+      "pooled": 0.20476474758933638,
+      "activity_quintile_matched": 0.27596031540708643,
+      "activity_decile_matched": 0.3581592968472844,
+      "activity_quintile_matched_ci95": [
+        0.25915801092681867,
+        0.29255169354911686
+      ],
+      "n": 10240,
+      "coding": "coarsest versus finest"
+    }
+  ],
+  "per_tier": [
+    {
+      "tier": "coarsest",
+      "n": 1640,
+      "median_r2": 0.7270518827730943
+    },
+    {
+      "tier": "middle",
+      "n": 6144,
+      "median_r2": 0.640041233566278
+    },
+    {
+      "tier": "finest",
+      "n": 8600,
+      "median_r2": 0.6493490416432169
+    }
+  ],
+  "reference_spearman": {
+    "decoder_direction_raw": -0.08734946435301166,
+    "activation_target_raw": -0.394923907649798,
+    "note": "the two targets disagree in size, which is why only the decoder-direction store supplies R-squared here"
+  },
+  "property_panel_universe": {
+    "n_features": 120716,
+    "layer": 19,
+    "dictionary": "regular sparse autoencoder",
+    "matching": "winner concordance c - 1/2 per forward-selection round; each round conditions (coarsened exact matching) on all previously selected properties",
+    "source": "eval_results/issue_1482/plot4_redesign/plot4_decoder_direction.json"
+  },
+  "caption_note": "The tier bar is measured on a different population from the five property bars beside it: 16,384 features of a nested sparse autoencoder at layer 20, matched on activity quintiles. The property bars cover 120,716 features of the regular sparse autoencoder at layer 19, each matched by coarsened exact matching on the properties selected in earlier rounds, the first of them unmatched. The statistic, the scale and the reading are the same in both.",
+  "inputs": [
+    {
+      "path": "eval_results/issue_1482/decoder_direction/r2_decoder_direction_lmsys.npz",
+      "sha256": "91b5ab01a0c6a95df361b2e36c459a1456fc856e1ce6e34a67301dde6ef8e553"
+    },
+    {
+      "path": "eval_results/issue_1482/matryoshka_tier/perfeature_m_lmsys_default.npz",
+      "sha256": "dc46d5c16878a09fc44ed944c532767d21ff2ab624d170e0ffa012498ff1a6ec"
+    },
+    {
+      "path": "eval_results/issue_1482/decoder_direction/matryoshka_decoder_direction_lmsys.json",
+      "sha256": "109122b10c9fa7c2cd4222b241c23dc82d4d8493bb6f18f7ff24d9d1ab95c1ec"
+    },
+    {
+      "path": "eval_results/issue_1482/plot4_redesign/plot4_decoder_direction.json",
+      "sha256": "7225e1f6de5086e980ef8ef3c2bc0d65e276166f6758252972b2920b01b1528f"
+    },
+    {
+      "path": "scripts/issue1482_concordance_fig.py",
+      "sha256": "5e7549bf763be288a5dfa3085bf46ae0ef21be5ddb7c8b9173d614d73baeea00"
+    }
+  ],
+  "git": {
+    "commit": "8a779351c586872f278e4dd326982a07be212f75",
+    "tracked_worktree_dirty": true
+  }
+}

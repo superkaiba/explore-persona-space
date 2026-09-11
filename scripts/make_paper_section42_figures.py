@@ -43,6 +43,7 @@ load_dotenv()
 
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
+from matplotlib.colors import to_hex, to_rgb  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
 from matplotlib.ticker import FuncFormatter  # noqa: E402
@@ -81,11 +82,23 @@ SECTION42_PANELS = ROOT / "eval_results/issue_1901/section42_panels.json"
 # Per-element answer-shift rows of the Section 4.2 element figure and its
 # appendix slot companion, banked by scripts/issue2564_element_shift_rows.py.
 ELEMENT_SHIFT_SOURCE = ROOT / "eval_results/issue_2564/section42_element_shifts.json"
+# Nested-dictionary tier concordance, banked by scripts/issue1482_tier_concordance.py.
+# A different population from the five feature properties, scored on the same
+# statistic, so it joins the property panel as its own group.
+TIER_CONCORDANCE_SOURCE = ROOT / "eval_results/issue_1482/tier_concordance.json"
 SVMP_DIR = Path(os.environ.get("C2A_SVMP_DIR", ROOT / "eval_results/issue_2617/svmp_verbharm"))
 
 LINEAR = ROLES["linear"].color
 # Controls / null references take the paper-wide control role (muted gray).
 CONTROL = ROLES["control"].color
+
+
+def _tint(color: str, amount: float) -> str:
+    """Mix ``color`` toward the paper background; 0 keeps it, 1 returns white."""
+    if not 0.0 <= amount <= 1.0:
+        raise ValueError(f"amount must be between 0 and 1, got {amount}")
+    base = np.asarray(to_rgb(color))
+    return to_hex(base + (np.asarray(to_rgb(PAPER)) - base) * amount)
 
 
 def _sha256(path: Path) -> str:
@@ -221,7 +234,22 @@ def _sae_data() -> dict:
     }
 
 
-def _draw_property_rows(ax: plt.Axes, properties: list[dict], *, xlabel: str) -> None:
+# A second group of rows sits below the properties, separated by this many row
+# heights.  The gap carries the group's own kicker, so the break states its
+# reason instead of leaving the reader to infer one.
+_GROUP_GAP_ROWS = 1.0
+# Fill for that group: the property-bar hue mixed toward paper, so the two
+# groups stay apart once the color is thrown away.
+_GROUP_FILL = _tint(LINEAR, 0.55)
+
+
+def _draw_property_rows(
+    ax: plt.Axes,
+    properties: list[dict],
+    *,
+    xlabel: str,
+    extra_group: dict | None = None,
+) -> None:
     """Feature-property concordance as one horizontal bar per property.
 
     Everything inside the axes: the bars, the zero line, the property names down
@@ -230,16 +258,66 @@ def _draw_property_rows(ax: plt.Axes, properties: list[dict], *, xlabel: str) ->
     audit.  Panel furniture (kicker and title) stays with the caller, so the
     same drawer serves the SAE figure's left panel and panel A of
     ``c3_features_and_shifts``.
+
+    ``extra_group`` carries rows measured on a DIFFERENT population under the
+    same statistic.  They are pushed below a one-row gap, backed by the shaded
+    stripe the lower panels already use for row groups, filled in a lighter tone
+    of the bar hue, and headed by their own kicker in the gap.  Three of those
+    four cues survive the grayscale audit.  Left out, the drawer behaves exactly
+    as it did before the argument existed, so the SAE figure is untouched.
     """
     y = np.arange(len(properties))[::-1]
+    labels = [row["label"] for row in properties]
+    if extra_group is not None:
+        y = y + (len(extra_group["rows"]) + _GROUP_GAP_ROWS)
     values = np.asarray([row["value"] for row in properties])
     bars = ax.barh(y, values, height=0.58, color=LINEAR, edgecolor=LINEAR, linewidth=1.2)
     for bar, value in zip(bars, values, strict=True):
         if value < 0:
             bar.set_facecolor(PAPER)
             bar.set_hatch("////")
+    if extra_group is not None:
+        extra_rows = extra_group["rows"]
+        extra_y = np.arange(len(extra_rows))[::-1].astype(float)
+        gap_center = extra_y[0] + 0.5 + _GROUP_GAP_ROWS / 2
+        ax.axhspan(
+            extra_y[-1] - 0.5,
+            extra_y[0] + 0.5 + _GROUP_GAP_ROWS,
+            color=GRID,
+            alpha=0.20,
+            zorder=0,
+            lw=0,
+        )
+        extra_values = np.asarray([row["value"] for row in extra_rows])
+        extra_bars = ax.barh(
+            extra_y,
+            extra_values,
+            height=0.58,
+            color=_GROUP_FILL,
+            edgecolor=LINEAR,
+            linewidth=1.2,
+        )
+        for bar, value in zip(extra_bars, extra_values, strict=True):
+            if value < 0:
+                bar.set_facecolor(PAPER)
+                bar.set_hatch("////")
+        # x sits just inside the left limit set below, so the kicker starts at
+        # the plot box edge rather than hanging into the label gutter.
+        ax.text(
+            -0.163,
+            gap_center,
+            extra_group["kicker"].upper(),
+            ha="left",
+            va="center",
+            color=MUTED,
+            fontsize=11.5,
+            fontweight=750,
+        )
+        y = np.concatenate([y, extra_y])
+        labels = labels + [row["label"] for row in extra_rows]
+        ax.set_ylim(extra_y[-1] - 0.62, float(y.max()) + 0.62)
     ax.axvline(0, color=INK, lw=1.2)
-    ax.set_yticks(y, [row["label"] for row in properties])
+    ax.set_yticks(y, labels)
     ax.set_xlim(-0.17, 0.37)
     ax.set_xticks(np.arange(-0.1, 0.31, 0.1))
     ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _p: f"{x:+.1f}" if x else "0"))
@@ -920,7 +998,46 @@ def make_element_shifts_figure(data: dict) -> tuple[plt.Figure, float]:
 _FEATURES_AND_SHIFTS_LABEL_LEFT = 0.315
 
 
-def make_features_and_shifts_figure(sae: dict, elements: dict) -> tuple[plt.Figure, float]:
+def _tier_concordance_group() -> dict:
+    """The nested-dictionary tier row that joins the feature-property panel.
+
+    Same statistic and same scale as the five property rows, measured on a
+    different dictionary at a different layer under a different matching scheme,
+    so the figure gives it its own group rather than letting it pass as a sixth
+    property.  The label stays inside the shared 3.84 in gutter (it measures
+    3.43 in), so the export crop, and with it the two lower panels, do not move.
+    """
+    banked = json.loads(TIER_CONCORDANCE_SOURCE.read_text())
+    head = banked["headline"]
+    assert head["coding"] == "coarsest tier versus the rest", head["coding"]
+    universe = banked["universe"]
+    return {
+        "kicker": (
+            f"separate {universe['n_features_scored']:,}-feature nested dictionary"
+            f" · layer {universe['layer']}"
+        ),
+        "rows": [
+            {
+                "banked_name": head["coding"],
+                "label": "coarsest nested-dictionary tier",
+                "value": float(head["activity_quintile_matched"]),
+                "ci95": [float(bound) for bound in head["activity_quintile_matched_ci95"]],
+                "n": int(head["n"]),
+                "n_positive": int(head["n_positive"]),
+                "kind": "nested-dictionary tier, activity-quintile matched",
+            }
+        ],
+        "universe": universe,
+        "matching": banked["matching"],
+        "bootstrap": banked["bootstrap"],
+        "property_rows_universe": banked["property_panel_universe"],
+        "caption_note": banked["caption_note"],
+    }
+
+
+def make_features_and_shifts_figure(
+    sae: dict, elements: dict, tier_group: dict
+) -> tuple[plt.Figure, float]:
     """Feature-property concordance, then what the map keeps per changed element.
 
     Two stacked rows sharing one left label column: the SAE feature properties
@@ -939,11 +1056,17 @@ def make_features_and_shifts_figure(sae: dict, elements: dict) -> tuple[plt.Figu
     # Panel geometry is set in inches and converted, because the header offsets
     # are axes-relative: the two rows have different heights, so one pair of
     # kicker_y / title_y values would put the kicker on top of the title in the
-    # short row.  Rows are 1.65 in (five properties) and 2.95 in (nine elements).
+    # short row.  Rows are 1.65 in (five properties plus the separated tier group
+    # and its gap) and 2.95 in (nine elements).  The top row keeps its height
+    # when the tier group is added, so the export crop, and with it the two
+    # lower panels, stay exactly where they were.
     top = fig.add_gridspec(1, 1, left=left, right=0.985, top=0.875, bottom=0.668)
     ax_a = fig.add_subplot(top[0, 0])
     _draw_property_rows(
-        ax_a, sae["properties"], xlabel="Concordance with feature $R^2$, above chance"
+        ax_a,
+        sae["properties"],
+        xlabel="Concordance with feature $R^2$, above chance",
+        extra_group=tier_group,
     )
     panel_header(
         ax_a,
@@ -1568,7 +1691,8 @@ def main() -> None:
 
     if wanted("features_and_shifts"):
         fs_sae = _sae_data()
-        fs_fig, fs_frac = make_features_and_shifts_figure(fs_sae, elements)
+        fs_tier = _tier_concordance_group()
+        fs_fig, fs_frac = make_features_and_shifts_figure(fs_sae, elements, fs_tier)
         fs_outputs = _save(
             fs_fig,
             args.out_dir,
@@ -1584,9 +1708,30 @@ def main() -> None:
                 "size per controlled context element, with 95% pair-bootstrap intervals"
             ),
             include_frac=fs_frac,
-            sources=[SAE_SOURCE, ELEMENT_SHIFT_SOURCE],
+            sources=[SAE_SOURCE, ELEMENT_SHIFT_SOURCE, TIER_CONCORDANCE_SOURCE],
             displayed_data={
-                "panel_a": {"properties": fs_sae["properties"], "dv": fs_sae["dv"]},
+                "panel_a": {
+                    "properties": fs_sae["properties"],
+                    "dv": fs_sae["dv"],
+                    "separate_group": {
+                        "kicker": fs_tier["kicker"],
+                        "rows": fs_tier["rows"],
+                        "universe": fs_tier["universe"],
+                        "matching": fs_tier["matching"],
+                        "bootstrap": fs_tier["bootstrap"],
+                        "property_rows_universe": fs_tier["property_rows_universe"],
+                        "caption_note": fs_tier["caption_note"],
+                        "separation": (
+                            "one empty row, a shaded stripe, a lighter bar fill and the "
+                            "group's own kicker; the stripe, the gap and the fill survive "
+                            "the grayscale audit"
+                        ),
+                        "error_bars": (
+                            "none drawn; the panel shows no interval on any row, so the "
+                            "tier interval is recorded here instead"
+                        ),
+                    },
+                },
                 "panels_b_c": {
                     "rows": elements["elements"],
                     "groups": [list(labels) for _group, labels in _ELEMENT_SHIFT_GROUPS],
