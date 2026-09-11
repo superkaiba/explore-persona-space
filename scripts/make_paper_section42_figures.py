@@ -58,12 +58,14 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     STYLE_VERSION,
     better_label,
     c2a_figure,
+    canvas_width_in,
     legend_kicker,
     panel_header,
     save_c2a_figure,
     set_c2a_style,
     style_axis,
 )
+from explore_persona_space.analysis import c2a_row_labels as L  # noqa: E402
 
 
 DEFAULT_OUT = ROOT / "figures/paper"
@@ -249,6 +251,7 @@ def _draw_property_rows(
     *,
     xlabel: str,
     extra_group: dict | None = None,
+    xticks: list[float] | None = None,
 ) -> None:
     """Feature-property concordance as one horizontal bar per property.
 
@@ -258,6 +261,8 @@ def _draw_property_rows(
     audit.  Panel furniture (kicker and title) stays with the caller, so the
     same drawer serves the SAE figure's left panel and panel A of
     ``c3_features_and_shifts``.
+
+    ``xticks`` pins the tick locations; the default five fit only a wide panel.
 
     ``extra_group`` carries rows measured on a DIFFERENT population under the
     same statistic.  They are pushed below a one-row gap, backed by the shaded
@@ -319,7 +324,9 @@ def _draw_property_rows(
     ax.axvline(0, color=INK, lw=1.2)
     ax.set_yticks(y, labels)
     ax.set_xlim(-0.17, 0.37)
-    ax.set_xticks(np.arange(-0.1, 0.31, 0.1))
+    # ``xticks`` pins the tick locations for a narrow panel, where the default
+    # five would overlap; omitted, the drawer behaves as it did before.
+    ax.set_xticks(np.arange(-0.1, 0.31, 0.1) if xticks is None else xticks)
     ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _p: f"{x:+.1f}" if x else "0"))
     ax.set_xlabel(xlabel)
     style_axis(ax, grid_axis="x")
@@ -854,20 +861,29 @@ def make_failures_and_shifts_figure(data: dict) -> tuple[plt.Figure, float]:
 # The main element-shift panel reads as five bands of related rows.  Every second
 # band carries a shaded stripe so the eye groups them without a second legend.
 _ELEMENT_SHIFT_GROUPS = (
-    ("identity", ("Tone", "Persona")),
-    ("format", ("Output format",)),
-    ("content", ("Question topic", "One-word topic")),
-    ("refusal_word", ("Refusal flips", "Refusal holds")),
-    ("refusal_framing", ("Framing-refusal flips", "Framing-refusal holds")),
+    ("identity", (L.TONE, L.PERSONA)),
+    ("format", (L.OUTPUT_FORMAT,)),
+    ("content", (L.QUESTION_TOPIC, L.ONE_WORD_TOPIC)),
+    ("refusal_word", (L.REFUSAL_REVERSES_INTENT, L.REFUSAL_HOLDS_INTENT)),
+    ("refusal_framing", (L.REFUSAL_REVERSES_FRAMING, L.REFUSAL_HOLDS_FRAMING)),
 )
 
+# Header and footer of the element-shift panel, pinned in inches: the canvas
+# grows with the row count instead of squeezing the rows, so the wrapped
+# refusal labels get their pitch without narrowing the panels or moving the
+# printed type size.
+_ELEMENT_HEADER_IN = 1.15
+_ELEMENT_FOOTER_IN = 0.89
+_ELEMENT_KICKER_OFF_IN = 0.41
+_ELEMENT_TITLE_OFF_IN = 0.15
+
 # Appendix companion: the main-panel row the slots decompose, then the slots.
-_SLOT_ROW_ORDER = ("One-word topic", "slot: subject", "slot: verb", "slot: object")
+_SLOT_ROW_ORDER = (L.ONE_WORD_TOPIC, L.SLOT_SUBJECT, L.SLOT_VERB, L.SLOT_OBJECT)
 _SLOT_ROW_LABELS = {
-    "One-word topic": "One-word topic",
-    "slot: subject": "…subject swapped",
-    "slot: verb": "…verb swapped",
-    "slot: object": "…object swapped",
+    L.ONE_WORD_TOPIC: L.ONE_WORD_TOPIC,
+    L.SLOT_SUBJECT: "…subject swapped",
+    L.SLOT_VERB: "…verb swapped",
+    L.SLOT_OBJECT: "…object swapped",
 }
 
 
@@ -949,13 +965,28 @@ def _draw_row_metric_panel(
     if xticks is not None:
         ax.set_xticks(xticks)
     ax.set_yticks(y, ytick_labels if ytick_labels is not None else [""] * len(rows))
+    for label in ax.get_yticklabels():
+        label.set_linespacing(L.WRAPPED_TICK_LINESPACING)
 
 
 def make_element_shifts_figure(data: dict) -> tuple[plt.Figure, float]:
     """What the map keeps when one context element changes: direction, then size."""
     rows = data["elements"]
-    fig, include_frac = c2a_figure("full", aspect=0.44)
-    grid = fig.add_gridspec(1, 2, left=0.285, right=0.985, top=0.80, bottom=0.155, wspace=0.16)
+    # ylim below spans len(rows) + 0.2 units, so the canvas is sized from that.
+    plot_h_in = L.WRAPPED_ROW_PITCH_IN * (len(rows) + 0.2)
+    height_in = _ELEMENT_HEADER_IN + plot_h_in + _ELEMENT_FOOTER_IN
+    fig, include_frac = c2a_figure("full", aspect=height_in / canvas_width_in(1.0))
+    height_in = fig.get_figheight()
+    plot_h_in = height_in - _ELEMENT_HEADER_IN - _ELEMENT_FOOTER_IN
+    grid = fig.add_gridspec(
+        1,
+        2,
+        left=0.285,
+        right=0.985,
+        top=1.0 - _ELEMENT_HEADER_IN / height_in,
+        bottom=_ELEMENT_FOOTER_IN / height_in,
+        wspace=0.16,
+    )
     columns = (
         ("direction", better_label("Predicted shift direction (cosine)"), (0.15, 1.0), None),
         ("magnitude", "Predicted / observed shift size", (0.55, 1.28), 1.0),
@@ -972,7 +1003,7 @@ def make_element_shifts_figure(data: dict) -> tuple[plt.Figure, float]:
             bands=data["bands"],
             # The pair count rides the row label so nothing is placed by hand.
             ytick_labels=(
-                [f"{row['row']} (n={row['n_pairs']})" for row in rows] if index == 0 else None
+                [L.tick_label(row["row"], row["n_pairs"]) for row in rows] if index == 0 else None
             ),
         )
         if index == 0:
@@ -981,21 +1012,172 @@ def make_element_shifts_figure(data: dict) -> tuple[plt.Figure, float]:
                 "C",
                 "controlled minimal pairs · qwen2.5-7b-instruct · layer 19",
                 "What the map keeps when one context element changes",
-                kicker_y=1.11,
-                title_y=1.04,
+                kicker_y=1.0 + _ELEMENT_KICKER_OFF_IN / plot_h_in,
+                title_y=1.0 + _ELEMENT_TITLE_OFF_IN / plot_h_in,
             )
     return fig, include_frac
 
 
 # ---------------------------------------------------------------------------
-# Section 4.2 results figure: feature properties above the per-element shifts,
+# Section 4.2 results figure: feature properties beside the per-element shifts,
 # with the answer-variance-rank spectrum moved to its own appendix figure.
 # ---------------------------------------------------------------------------
 
-# One shared label column serves both rows.  The widest string in either set is
-# the property name "suppresses specific output tokens" at 3.84 in on the
-# 13.10 in full-width canvas, so 0.315 leaves the tick pad plus a small margin.
-_FEATURES_AND_SHIFTS_LABEL_LEFT = 0.315
+# The figure is ONE horizontal row of four panels, so its width budget is the
+# binding constraint and is therefore written in inches rather than fractions.
+# On the 13.10 in full-width canvas, measured at the pinned tick size:
+#
+#   panel A keeps its own label column (feature-property names, a different
+#   population from the element rows, so the two sets cannot share a gutter);
+#   B, C and D share one element-row gutter, with the labels drawn on B.
+#
+#   Both gutters are cut rather than the panels.  The property names wrap to
+#   two lines (widest line "suppresses specific" at 2.23 in, against 3.84 in
+#   set on one line), which costs nothing because a single row of four panels
+#   gives panel A's six bars the 7.2-row pitch of the element column, about
+#   0.48 in each, and a two-line label needs about 0.44 in.  The per-row pair
+#   count leaves the element labels (widest line 2.67 in with it, 1.94 in
+#   without) and is carried by the caption and the sidecar instead.
+#
+# Together those two cuts return 2.34 in to the four plot boxes.
+_FS_LEFT_MARGIN_IN = 0.06
+_FS_A_LABEL_IN = 2.30
+_FS_BCD_LABEL_IN = 2.10
+_FS_A_WIDTH_IN = 2.45
+_FS_COL_GAP_IN = 0.40
+_FS_RIGHT_MARGIN_IN = 0.20
+# Panel A is the widest of the four: its axis carries five tick labels on a
+# signed axis and the separate-dictionary group kicker inside the plot box,
+# neither of which the three metric columns have.
+_FS_HEADER_IN = 0.72
+_FS_FOOTER_IN = 1.24
+_FS_KICKER_OFF_IN = 0.20
+_FS_XLABEL_OFF_IN = 0.34
+
+# Rows drawn by this figure: the two refusal-holds rows are not among them, so
+# it keeps its own group tuple rather than sharing the nine-row one above.
+_FEATURES_AND_SHIFTS_GROUPS = (
+    ("identity", (L.TONE, L.PERSONA)),
+    ("format", (L.OUTPUT_FORMAT,)),
+    ("content", (L.QUESTION_TOPIC, L.ONE_WORD_TOPIC)),
+    ("refusal_reverses", (L.REFUSAL_REVERSES_INTENT, L.REFUSAL_REVERSES_FRAMING)),
+)
+
+# Panel A label wraps.  Keyed by the exact banked string, so a renamed label in
+# the source JSON raises here instead of silently shipping an unwrapped name
+# that widens the gutter and squeezes the three metric columns.
+_FS_PROPERTY_LABEL_WRAP = {
+    "variance along decoder direction": "variance along\ndecoder direction",
+    "speaker identity / disposition": "speaker identity /\ndisposition",
+    "promotes specific output tokens": "promotes specific\noutput tokens",
+    "suppresses specific output tokens": "suppresses specific\noutput tokens",
+    "topic content": "topic content",
+    "coarsest nested-dictionary tier": "coarsest nested-\ndictionary tier",
+}
+# The group kicker sits inside panel A's plot box, so it wraps to the box width
+# too.  "Nested" is dropped from it because the row it heads already says
+# "nested-dictionary tier"; the feature count and layer are what it adds.
+_FS_TIER_KICKER = "SEPARATE DICTIONARY\n16,384 FEATURES · LAYER {layer}"
+
+# Panel D, the two-way discrimination rate, is drawn on a cut axis, following
+# scripts/issue2564_element_shifts_three_panel.py, which solved this axis for
+# the same seven rows.  Every rate here sits between 0.875 and 1.0 with its
+# interval reaching 0.8125, so one linear 0-to-1 axis flattens the rows into a
+# stripe and a truncated axis drops the 0.5 chance reference off the left.  The
+# axis is therefore two linear segments whose plotted widths are proportional
+# to their data spans, so both share ONE scale and a distance means the same
+# thing in either; diagonal marks sit on the cut, and a value or interval
+# endpoint landing in the omitted range raises rather than being clipped.
+_FS_TWOWAY_SEGMENTS = ((0.46, 0.54), (0.78, 1.015))
+_FS_TWOWAY_SEGMENT_TICKS = ((0.5,), (0.8, 0.9, 1.0))
+_FS_TWOWAY_REFERENCE = 0.5
+
+
+def _fs_panel_boxes() -> list[tuple[float, float]]:
+    """Left and right figure fractions of the four panel boxes, from the inch budget.
+
+    Panel A takes a pinned width; B, C and D split what is left equally, so a
+    later change to either gutter moves width into or out of the three metric
+    columns rather than silently overrunning the canvas.
+    """
+    width_in = canvas_width_in(1.0)
+    a_left = _FS_LEFT_MARGIN_IN + _FS_A_LABEL_IN
+    b_left = a_left + _FS_A_WIDTH_IN + _FS_BCD_LABEL_IN
+    remaining = width_in - b_left - _FS_RIGHT_MARGIN_IN - 2 * _FS_COL_GAP_IN
+    column_in = remaining / 3.0
+    if column_in <= 0:
+        raise ValueError(
+            f"no width left for the three metric columns on a {width_in:.2f} in canvas; "
+            f"gutters and margins already take {b_left + _FS_RIGHT_MARGIN_IN:.2f} in"
+        )
+    boxes = [(a_left, a_left + _FS_A_WIDTH_IN)]
+    left = b_left
+    for _ in range(3):
+        boxes.append((left, left + column_in))
+        left += column_in + _FS_COL_GAP_IN
+    return [(lo / width_in, hi / width_in) for lo, hi in boxes]
+
+
+def _fs_grouped_rows(elements: dict, groups: tuple) -> tuple[list[dict], list[int]]:
+    """Banked rows in drawing order plus the group sizes the stripes read."""
+    banked = {row["row"]: row for row in elements["elements"]}
+    rows: list[dict] = []
+    for _group, names in groups:
+        for name in names:
+            if name not in banked:
+                raise KeyError(f"banked panel_rows has no row {name!r}")
+            rows.append(banked[name])
+    return rows, [len(names) for _group, names in groups]
+
+
+def _fs_wrap_labels(properties: list[dict]) -> list[dict]:
+    """Panel A rows with their labels wrapped to the narrower four-across gutter."""
+    wrapped = []
+    for row in properties:
+        label = row["label"]
+        if label not in _FS_PROPERTY_LABEL_WRAP:
+            raise KeyError(
+                f"no wrap for property label {label!r}; add one to _FS_PROPERTY_LABEL_WRAP "
+                "so the label column stays inside its 2.30 in gutter"
+            )
+        wrapped.append({**row, "label": _FS_PROPERTY_LABEL_WRAP[label]})
+    return wrapped
+
+
+def _fs_place_xlabel(ax: plt.Axes, *, x_axes: float, plot_h_in: float) -> None:
+    """One x-label offset below every plot box, so all four labels share a top edge."""
+    ax.xaxis.set_label_coords(x_axes, -_FS_XLABEL_OFF_IN / plot_h_in)
+
+
+def _fs_assert_in_segments(
+    rows: list[dict], key: str, segments: tuple[tuple[float, float], ...]
+) -> None:
+    """Every point and interval endpoint must land inside one drawn segment."""
+    for row in rows:
+        for value in (row[key], *row[f"{key}_ci95"]):
+            if not any(lo <= value <= hi for lo, hi in segments):
+                raise ValueError(
+                    f"{key}={value} for row {row['row']!r} falls outside the drawn segments "
+                    f"{segments}; widen the axis rather than clipping the value"
+                )
+
+
+def _fs_draw_cut_marks(left: plt.Axes, right: plt.Axes) -> None:
+    """Diagonal marks on both sides of the cut, as the paper's other cut axes use."""
+    mark = {
+        "marker": [(-1.0, -0.6), (1.0, 0.6)],
+        "markersize": 11,
+        "linestyle": "none",
+        "color": MUTED,
+        "markeredgecolor": MUTED,
+        "markeredgewidth": 1.5,
+        "clip_on": False,
+        "zorder": 6,
+    }
+    # The cut is on the x-axis, so the marks sit on the bottom seam; the top
+    # edge carries no spine to break.
+    left.plot([1], [0], transform=left.transAxes, **mark)
+    right.plot([0], [0], transform=right.transAxes, **mark)
 
 
 def _tier_concordance_group() -> dict:
@@ -1038,68 +1220,83 @@ def _tier_concordance_group() -> dict:
 def make_features_and_shifts_figure(
     sae: dict, elements: dict, tier_group: dict
 ) -> tuple[plt.Figure, float]:
-    """Feature-property concordance, then what the map keeps per changed element.
+    """Feature-property concordance beside what the map keeps per changed element.
 
-    Two stacked rows sharing one left label column: the SAE feature properties
-    across the top, and the direction and size reads of the controlled context
-    elements below.  A single row of three panels does not fit: the two label
-    columns plus the three axis labels need about 15.1 in of the 13.10 in
-    canvas.
+    One horizontal row of four panels: the SAE feature properties, then the
+    direction, the size and the two-way discrimination rate of the answer shift
+    under one controlled context change.  Seven element rows; the two
+    refusal-holds rows are not drawn here.
+
+    Four panels across leave each metric column about 1.8 in wide on the
+    13.10 in canvas, with about 2.1 in of pitch from one column's left edge to
+    the next.  Descriptive panel titles do not fit that pitch: the three the
+    stacked layout carried measure 3.40 in to 4.46 in, so they would overlap
+    their neighbours.  Each panel therefore carries its letter and the
+    estimator as a kicker, and the x-axis label states the metric in full, in
+    the same words the other Section 4.2 figures use.
     """
-    rows = elements["elements"]
-    fig, include_frac = c2a_figure("full", aspect=0.61)
-    left = _FEATURES_AND_SHIFTS_LABEL_LEFT
+    rows, bands = _fs_grouped_rows(elements, _FEATURES_AND_SHIFTS_GROUPS)
+    # Row pitch is pinned, so the canvas follows the row count instead of
+    # squeezing the rows: the element labels wrap to two lines and clear their
+    # neighbours, and panel A's six bars inherit the same pitch.
+    plot_h_in = L.WRAPPED_ROW_PITCH_IN * (len(rows) + 0.2)
+    height_in = _FS_HEADER_IN + plot_h_in + _FS_FOOTER_IN
+    fig, include_frac = c2a_figure("full", aspect=height_in / canvas_width_in(1.0))
+    height_in = fig.get_figheight()
+    plot_h_in = height_in - _FS_HEADER_IN - _FS_FOOTER_IN
+    top = 1.0 - _FS_HEADER_IN / height_in
+    bottom = _FS_FOOTER_IN / height_in
+    kicker_y = 1.0 + _FS_KICKER_OFF_IN / plot_h_in
+    boxes = _fs_panel_boxes()
     # Panel letters come from one iterator consumed in axes-creation order, so a
     # reordered or added panel cannot ship a stale hand-typed letter.
-    letters = iter("ABC")
+    letters = iter("ABCD")
 
-    # Panel geometry is set in inches and converted, because the header offsets
-    # are axes-relative: the two rows have different heights, so one pair of
-    # kicker_y / title_y values would put the kicker on top of the title in the
-    # short row.  Rows are 1.65 in (five properties plus the separated tier group
-    # and its gap) and 2.95 in (nine elements).  The top row keeps its height
-    # when the tier group is added, so the export crop, and with it the two
-    # lower panels, stay exactly where they were.
-    top = fig.add_gridspec(1, 1, left=left, right=0.985, top=0.875, bottom=0.668)
-    ax_a = fig.add_subplot(top[0, 0])
+    a_left, a_right = boxes[0]
+    grid_a = fig.add_gridspec(1, 1, left=a_left, right=a_right, top=top, bottom=bottom)
+    ax_a = fig.add_subplot(grid_a[0, 0])
+    wrapped_tier = {
+        **tier_group,
+        "kicker": _FS_TIER_KICKER.format(layer=tier_group["universe"]["layer"]),
+        "rows": _fs_wrap_labels(tier_group["rows"]),
+    }
     _draw_property_rows(
         ax_a,
-        sae["properties"],
-        xlabel="Concordance with feature $R^2$, above chance",
-        extra_group=tier_group,
+        _fs_wrap_labels(sae["properties"]),
+        xlabel="Concordance with feature $R^2$,\nabove chance",
+        extra_group=wrapped_tier,
+        # Three ticks, not five: at 2.45 in the five-tick pitch is 0.45 in and
+        # the widest label ("+0.3") is 0.52 in, so they would collide.  The zero
+        # line is drawn as a rule, so it needs no tick of its own.
+        xticks=[-0.1, 0.1, 0.3],
     )
-    panel_header(
-        ax_a,
-        next(letters),
-        "120,716 SAE features · forward-selected associations",
-        "Feature-property concordance",
-        kicker_y=1.285,
-        title_y=1.079,
-    )
+    for label in ax_a.get_yticklabels():
+        label.set_linespacing(L.WRAPPED_TICK_LINESPACING)
+    _fs_place_xlabel(ax_a, x_axes=0.5, plot_h_in=plot_h_in)
+    panel_header(ax_a, next(letters), "120,716 SAE features", kicker_y=kicker_y)
 
-    bottom = fig.add_gridspec(1, 2, left=left, right=0.985, top=0.470, bottom=0.101, wspace=0.16)
     columns = (
         (
             "direction",
-            better_label("Predicted shift direction (cosine)"),
+            better_label("Predicted shift\ndirection\n(cosine)"),
             (0.15, 1.0),
-            [0.2, 0.4, 0.6, 0.8, 1.0],
+            [0.2, 0.6, 1.0],
             None,
-            "Mean cosine · 95% pair bootstrap",
-            "Direction of the answer shift",
+            "mean cosine",
         ),
         (
             "magnitude",
-            "Predicted / observed shift size",
+            "Predicted /\nobserved\nshift size",
             (0.55, 1.28),
             [0.6, 0.8, 1.0, 1.2],
             1.0,
-            "Median ratio · 95% pair bootstrap",
-            "Size of the answer shift",
+            "median ratio",
         ),
     )
-    for index, (key, xlabel, xlim, xticks, reference, kicker, title) in enumerate(columns):
-        ax = fig.add_subplot(bottom[0, index])
+    for index, (key, xlabel, xlim, xticks, reference, kicker) in enumerate(columns):
+        left, right = boxes[1 + index]
+        grid = fig.add_gridspec(1, 1, left=left, right=right, top=top, bottom=bottom)
+        ax = fig.add_subplot(grid[0, 0])
         _draw_row_metric_panel(
             ax,
             rows,
@@ -1107,16 +1304,66 @@ def make_features_and_shifts_figure(
             xlabel=xlabel,
             xlim=xlim,
             reference=reference,
-            bands=elements["bands"],
+            bands=bands,
             xticks=xticks,
-            # The pair count rides the row label so nothing is placed by hand.
-            ytick_labels=(
-                [f"{row['row']} (n={row['n_pairs']})" for row in rows] if index == 0 else None
-            ),
+            # The three metric columns share one label column, drawn on the
+            # first of them.
+            ytick_labels=[L.tick_label(row["row"]) for row in rows] if index == 0 else None,
         )
-        panel_header(ax, next(letters), kicker, title, kicker_y=1.159, title_y=1.044)
+        _fs_place_xlabel(ax, x_axes=0.5, plot_h_in=plot_h_in)
+        panel_header(ax, next(letters), kicker, kicker_y=kicker_y)
 
-    legend_kicker(fig, 0.022, 0.975, "Qwen2.5-7B-Instruct, layer 19")
+    d_left, d_right = boxes[3]
+    _fs_assert_in_segments(rows, "twoway", _FS_TWOWAY_SEGMENTS)
+    spans = [hi - lo for lo, hi in _FS_TWOWAY_SEGMENTS]
+    grid_d = fig.add_gridspec(
+        1,
+        len(spans),
+        left=d_left,
+        right=d_right,
+        top=top,
+        bottom=bottom,
+        width_ratios=spans,
+        # Wider than a within-panel gap: the break has to read as a cut, and it
+        # is what separates the chance segment's tick label from the data
+        # segment's first one on a column this narrow.
+        wspace=0.28,
+    )
+    segments = []
+    for index, (span, ticks) in enumerate(
+        zip(_FS_TWOWAY_SEGMENTS, _FS_TWOWAY_SEGMENT_TICKS, strict=True)
+    ):
+        ax = fig.add_subplot(grid_d[0, index], label=f"features-and-shifts-twoway-{index}")
+        low, high = span
+        _draw_row_metric_panel(
+            ax,
+            rows,
+            key="twoway",
+            # The two segments are one axis, so the label is placed once, below
+            # their shared center, rather than once per segment.
+            xlabel="",
+            xlim=span,
+            reference=(_FS_TWOWAY_REFERENCE if low <= _FS_TWOWAY_REFERENCE <= high else None),
+            bands=bands,
+            xticks=list(ticks),
+        )
+        segments.append(ax)
+    chance_ax, data_ax = segments
+    chance_ax.spines["right"].set_visible(False)
+    data_ax.spines["left"].set_visible(False)
+    data_ax.tick_params(axis="y", length=0, labelleft=False)
+    _fs_draw_cut_marks(chance_ax, data_ax)
+    positions = [ax.get_position() for ax in segments]
+    center = (positions[0].x0 + positions[-1].x1) / 2.0
+    chance_ax.set_xlabel(better_label("Two-way\ndiscrimination\nrate"))
+    _fs_place_xlabel(
+        chance_ax,
+        x_axes=(center - positions[0].x0) / positions[0].width,
+        plot_h_in=plot_h_in,
+    )
+    panel_header(chance_ax, next(letters), "rate", kicker_y=kicker_y)
+
+    legend_kicker(fig, 0.022, 1.0 - 0.17 / height_in, "Qwen2.5-7B-Instruct, layer 19")
     return fig, include_frac
 
 
@@ -1692,6 +1939,7 @@ def main() -> None:
     if wanted("features_and_shifts"):
         fs_sae = _sae_data()
         fs_tier = _tier_concordance_group()
+        fs_rows, _fs_bands = _fs_grouped_rows(elements, _FEATURES_AND_SHIFTS_GROUPS)
         fs_fig, fs_frac = make_features_and_shifts_figure(fs_sae, elements, fs_tier)
         fs_outputs = _save(
             fs_fig,
@@ -1704,14 +1952,17 @@ def main() -> None:
             subject=(
                 "Conditional association between an SAE feature property and the held-out R2 "
                 "of its decoder direction, beside the mean cosine between predicted and "
-                "observed answer shift and the median ratio of predicted to observed shift "
-                "size per controlled context element, with 95% pair-bootstrap intervals"
+                "observed answer shift, the median ratio of predicted to observed shift size, "
+                "and the two-way discrimination rate per controlled context element, for the "
+                "seven rows left after the two refusal-holds rows are dropped, with 95% "
+                "pair-bootstrap intervals"
             ),
             include_frac=fs_frac,
             sources=[SAE_SOURCE, ELEMENT_SHIFT_SOURCE, TIER_CONCORDANCE_SOURCE],
             displayed_data={
                 "panel_a": {
                     "properties": fs_sae["properties"],
+                    "property_label_wraps": _FS_PROPERTY_LABEL_WRAP,
                     "dv": fs_sae["dv"],
                     "separate_group": {
                         "kicker": fs_tier["kicker"],
@@ -1732,11 +1983,27 @@ def main() -> None:
                         ),
                     },
                 },
-                "panels_b_c": {
-                    "rows": elements["elements"],
-                    "groups": [list(labels) for _group, labels in _ELEMENT_SHIFT_GROUPS],
-                    "reference_line": {"magnitude": 1.0},
-                    "order": ("grouped: identity, format, content, word refusal, framing refusal"),
+                "panels_b_c_d": {
+                    "rows": fs_rows,
+                    "groups": [list(labels) for _group, labels in _FEATURES_AND_SHIFTS_GROUPS],
+                    "rows_not_drawn": [
+                        row["row"]
+                        for row in elements["elements"]
+                        if row["row"] not in {drawn["row"] for drawn in fs_rows}
+                    ],
+                    "reference_line": {"magnitude": 1.0, "twoway": 0.5},
+                    "twoway_axis": {
+                        "segments": [list(segment) for segment in _FS_TWOWAY_SEGMENTS],
+                        "segment_ticks": [list(ticks) for ticks in _FS_TWOWAY_SEGMENT_TICKS],
+                        "rule": (
+                            "two linear segments, plotted widths proportional to their data "
+                            "spans, diagonal cut marks on the bottom seam; the omitted range "
+                            "carries no value or interval endpoint"
+                        ),
+                    },
+                    "row_labels": {row["row"]: L.tick_label(row["row"]) for row in fs_rows},
+                    "pair_counts_in_labels": False,
+                    "order": "grouped: identity, format, content, refusal reverses",
                     "bootstrap": elements["bootstrap"],
                     "map": elements["map"],
                     "metrics": elements["metrics"],

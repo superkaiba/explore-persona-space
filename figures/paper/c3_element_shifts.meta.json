@@ -7,13 +7,13 @@
   "title": "What the context-to-answer map keeps per changed context element",
   "subject": "Mean cosine between predicted and observed answer shift, and median ratio of predicted to observed shift size, per controlled context element, with 95% pair-bootstrap intervals",
   "git": {
-    "commit": "218e58b1f9ef6cc4d59fd528746d5181b633a17f",
+    "commit": "f516fa07dfc96799cbe9b83cba60103fffb061a7",
     "tracked_worktree_dirty": true
   },
   "sources": [
     {
       "path": "eval_results/issue_2564/section42_element_shifts.json",
-      "sha256": "4d76a5fa1ce552b478ebc58a5ef3b26448ad915d732853ecfcc17ed7069c2d42"
+      "sha256": "3e5d328f91c266eb583fc26764dc11f1a090a8086a288d878263758a5599db34"
     }
   ],
   "render": {
@@ -22,11 +22,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      5.762
+      6.456
     ],
     "exported_size_inches": [
       13.095,
-      4.982
+      5.683
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -53,10 +53,10 @@
       "Output format (n=120)",
       "Question topic (n=66)",
       "One-word topic (n=24)",
-      "Refusal flips (n=61)",
-      "Refusal holds (n=63)",
-      "Framing-refusal flips (n=307)",
-      "Framing-refusal holds (n=1924)",
+      "Refusal reverses:\nintent swap (n=61)",
+      "Refusal holds:\nintent swap (n=63)",
+      "Refusal reverses:\nframing rewrite (n=307)",
+      "Refusal holds:\nframing rewrite (n=1924)",
       "What the map keeps when one context element changes",
       "Predicted / observed shift size",
       "1.2",
@@ -193,7 +193,7 @@
         ]
       },
       {
-        "row": "Refusal flips",
+        "row": "Refusal reverses: intent swap",
         "source": "issue2617 svmp, one-word safety swaps + XSTest rephrasings",
         "flip_criterion": "|refusal_rate_a - refusal_rate_b| >= 0.5 over 10 draws",
         "n_pairs": 61,
@@ -219,7 +219,7 @@
         ]
       },
       {
-        "row": "Refusal holds",
+        "row": "Refusal holds: intent swap",
         "source": "issue2617 svmp, one-word safety swaps + XSTest rephrasings",
         "flip_criterion": "|refusal_rate_a - refusal_rate_b| >= 0.5 over 10 draws",
         "n_pairs": 63,
@@ -245,7 +245,7 @@
         ]
       },
       {
-        "row": "Framing-refusal flips",
+        "row": "Refusal reverses: framing rewrite",
         "source": "issue2356 armA, 394 AdvBench bases x 6 intent-preserving rewrite axes",
         "note": "different capture; the 2564-fitted map transfers here at cos 0.90 vs 0.95 in-bank",
         "n_pairs": 307,
@@ -271,7 +271,7 @@
         ]
       },
       {
-        "row": "Framing-refusal holds",
+        "row": "Refusal holds: framing rewrite",
         "source": "issue2356 armA, 394 AdvBench bases x 6 intent-preserving rewrite axes",
         "note": "different capture; the 2564-fitted map transfers here at cos 0.90 vs 0.95 in-bank",
         "n_pairs": 1924,
@@ -310,12 +310,12 @@
         "One-word topic"
       ],
       [
-        "Refusal flips",
-        "Refusal holds"
+        "Refusal reverses: intent swap",
+        "Refusal holds: intent swap"
       ],
       [
-        "Framing-refusal flips",
-        "Framing-refusal holds"
+        "Refusal reverses: framing rewrite",
+        "Refusal holds: framing rewrite"
       ]
     ],
     "reference_line": {
@@ -340,8 +340,8 @@
     "caveat": "raw, not disattenuated for rollout noise"
   },
   "output_sha256": {
-    "pdf": "c487f97cd92985a03d67fc9cc5cae6a996026c2fcb790d94656ec3599ffa620c",
-    "png": "593edd85a8eeb915c73caeba16036bb47f635bd8e92d84ca7800fe40828d436a",
-    "grayscale": "4e0070de14063a5c01956795c5da9ec00203c30878470391af32e8839a5e1260"
+    "pdf": "0118ea5dc41d13554eba56f2e1927548bed0213d4cc2c0c17acb9a5229120487",
+    "png": "8680b6f04b8cd2fa5f7324a1358360afc56dc1b5a23a8e2d72bc615d4cb36e1f",
+    "grayscale": "73829ecf0b761f51a1bdb05e69e3afc19ff0422947224be45a27e3de69432256"
   }
 }

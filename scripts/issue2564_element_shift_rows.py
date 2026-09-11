@@ -6,7 +6,13 @@ banked context and answer vectors so both figures trace to a single artifact.
 Rows, in the order the main figure carries them:
 
     Tone, Persona, Output format, Question topic, One-word topic,
-    Refusal flips, Refusal holds, Framing-refusal flips, Framing-refusal holds
+    Refusal reverses: intent swap, Refusal holds: intent swap,
+    Refusal reverses: framing rewrite, Refusal holds: framing rewrite
+
+Every one of those display names comes from
+src/explore_persona_space/analysis/c2a_row_labels.py, which the two figure
+scripts import as well: the string is both the label a figure prints and the
+key it joins on, so it is renamed there and nowhere else.
 
 The appendix rows decompose the one-word topic swap by the grammatical slot the
 changed word occupies: object, subject, verb.
@@ -56,6 +62,8 @@ import json  # noqa: E402
 
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
+
+from explore_persona_space.analysis import c2a_row_labels as L  # noqa: E402
 
 MINPAIR_TENSORS = Path(
     os.environ.get(
@@ -240,7 +248,11 @@ def _minpair_rows(ridge: tuple) -> list[dict]:
     contexts = _load_contexts(MINPAIR_TENSORS / "vc2564/vc2564_bank.pt")
     manifest = json.loads(BANK_MANIFEST.read_text())["pairs"]
     rows = []
-    for cell, name in (("register", "Tone"), ("persona", "Persona"), ("format", "Output format")):
+    for cell, name in (
+        ("register", L.TONE),
+        ("persona", L.PERSONA),
+        ("format", L.OUTPUT_FORMAT),
+    ):
         answers = _load_answers(MINPAIR_TENSORS / f"va2564/va2564_{cell}.pt")
         selected = [p for p in manifest if p["pair_class"] == "swap" and p["cell"] == cell]
         rows.append(
@@ -254,7 +266,7 @@ def _minpair_rows(ridge: tuple) -> list[dict]:
     selected = [p for p in manifest if p["pair_class"] == "query_content"]
     rows.append(
         {
-            "row": "Question topic",
+            "row": L.QUESTION_TOPIC,
             "source": "issue2564 bank, pair_class=query_content",
             "note": "two unrelated questions, the coarse end of the topic ladder",
             **_metrics(_present(selected, contexts, answers), contexts, answers, ridge),
@@ -270,7 +282,7 @@ def _oneword_row(ridge: tuple) -> dict:
     manifest = json.loads((LANGOW / "manifests/pilot_bank.json").read_text())["pairs"]
     selected = [p for p in manifest if p["pair_class"] == "query_content_oneword"]
     return {
-        "row": "One-word topic",
+        "row": L.ONE_WORD_TOPIC,
         "source": "issue2564 langow pilot, pair_class=query_content_oneword",
         "note": "one word changes the subject matter, e.g. 'adopt a dog' vs 'adopt a cat'",
         **_metrics(_present(selected, contexts, answers), contexts, answers, ridge),
@@ -283,7 +295,10 @@ def _refusal_rows(ridge: tuple) -> list[dict]:
     answers = _load_answers(SVMP_TENSORS / "va/va_langow_query_svmp.pt")
     records = _read_jsonl(SVMP_PAIRS)
     rows = []
-    for flipped, name in ((True, "Refusal flips"), (False, "Refusal holds")):
+    for flipped, name in (
+        (True, L.REFUSAL_REVERSES_INTENT),
+        (False, L.REFUSAL_HOLDS_INTENT),
+    ):
         selected = [
             (record["context_a"], record["context_b"])
             for record in records
@@ -346,7 +361,10 @@ def _framing_rows(ridge: tuple) -> list[dict]:
         if record["prompt_sha"] in contexts:
             by_base[record["base_id"]][record["axis"]] = record["prompt_sha"]
     rows = []
-    for flipped, name in ((True, "Framing-refusal flips"), (False, "Framing-refusal holds")):
+    for flipped, name in (
+        (True, L.REFUSAL_REVERSES_FRAMING),
+        (False, L.REFUSAL_HOLDS_FRAMING),
+    ):
         selected = []
         for axis_map in by_base.values():
             if "base" not in axis_map:

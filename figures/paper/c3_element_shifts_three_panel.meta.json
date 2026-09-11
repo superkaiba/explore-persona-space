@@ -1,0 +1,319 @@
+{
+  "status": "Results Section 4.2 manuscript figure",
+  "style_version": "c2a-v2",
+  "plotting_script": "scripts/issue2564_element_shifts_three_panel.py",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "reproduction_command": "uv run python scripts/issue2564_element_shifts_three_panel.py",
+  "title": "Per-element answer shift: direction, size, and two-way discrimination",
+  "subject": "Per-element answer shift under one controlled context change: predicted shift direction, predicted over observed shift size, and two-way discrimination rate, for the seven rows left after the two refusal-holds rows are dropped",
+  "git": {
+    "commit": "f516fa07dfc96799cbe9b83cba60103fffb061a7",
+    "tracked_worktree_dirty": true
+  },
+  "sources": [
+    {
+      "path": "eval_results/issue_2564/section42_element_shifts.json",
+      "sha256": "3e5d328f91c266eb583fc26764dc11f1a090a8086a288d878263758a5599db34"
+    }
+  ],
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      6.44
+    ],
+    "exported_size_inches": [
+      13.095,
+      6.09
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c3_element_shifts_three_panel.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "IDENTITY",
+      "TOPIC",
+      "REFUSAL REVERSES",
+      "CONTROLLED MINIMAL PAIRS \u00b7 QWEN2.5-7B-INSTRUCT \u00b7 LAYER 19",
+      "Predicted shift\ndirection (cosine) \u2191",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "1.0",
+      "Tone",
+      "Persona",
+      "Output format",
+      "Question topic",
+      "One-word topic",
+      "Refusal reverses:\nintent swap",
+      "Refusal reverses:\nframing rewrite",
+      "What the map keeps when one context element changes",
+      "Predicted / observed\nshift size",
+      "1.2",
+      "Two-way\ndiscrimination rate \u2191",
+      "0.5",
+      "0.9"
+    ]
+  },
+  "displayed_data": {
+    "row_order": [
+      "Tone",
+      "Persona",
+      "Output format",
+      "Question topic",
+      "One-word topic",
+      "Refusal reverses: intent swap",
+      "Refusal reverses: framing rewrite"
+    ],
+    "groups": [
+      {
+        "group": "Identity",
+        "rows": [
+          "Tone",
+          "Persona",
+          "Output format"
+        ],
+        "subordinate": false
+      },
+      {
+        "group": "Topic",
+        "rows": [
+          "Question topic",
+          "One-word topic"
+        ],
+        "subordinate": false
+      },
+      {
+        "group": "Refusal reverses",
+        "rows": [
+          "Refusal reverses: intent swap",
+          "Refusal reverses: framing rewrite"
+        ],
+        "subordinate": false
+      }
+    ],
+    "columns": [
+      {
+        "metric": "direction",
+        "segments": [
+          [
+            0.15,
+            1.0
+          ]
+        ],
+        "reference": null
+      },
+      {
+        "metric": "magnitude",
+        "segments": [
+          [
+            0.55,
+            1.28
+          ]
+        ],
+        "reference": 1.0
+      },
+      {
+        "metric": "twoway",
+        "segments": [
+          [
+            0.46,
+            0.54
+          ],
+          [
+            0.78,
+            1.015
+          ]
+        ],
+        "reference": 0.5
+      }
+    ],
+    "rows": [
+      {
+        "row": "Tone",
+        "group": "Identity",
+        "subordinate": false,
+        "n_pairs": 12,
+        "source": "issue2564 bank, pair_class=swap, cell=register",
+        "direction": 0.8997,
+        "direction_ci95": [
+          0.8952,
+          0.9043
+        ],
+        "magnitude": 1.028,
+        "magnitude_ci95": [
+          0.9772,
+          1.1468
+        ],
+        "twoway": 1.0,
+        "twoway_ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "row": "Persona",
+        "group": "Identity",
+        "subordinate": false,
+        "n_pairs": 120,
+        "source": "issue2564 bank, pair_class=swap, cell=persona",
+        "direction": 0.7839,
+        "direction_ci95": [
+          0.7754,
+          0.7927
+        ],
+        "magnitude": 1.125,
+        "magnitude_ci95": [
+          1.1089,
+          1.1569
+        ],
+        "twoway": 1.0,
+        "twoway_ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "row": "Output format",
+        "group": "Identity",
+        "subordinate": false,
+        "n_pairs": 120,
+        "source": "issue2564 bank, pair_class=swap, cell=format",
+        "direction": 0.5881,
+        "direction_ci95": [
+          0.5493,
+          0.6286
+        ],
+        "magnitude": 1.0852,
+        "magnitude_ci95": [
+          1.0156,
+          1.1584
+        ],
+        "twoway": 0.875,
+        "twoway_ci95": [
+          0.8375,
+          0.9125
+        ]
+      },
+      {
+        "row": "Question topic",
+        "group": "Topic",
+        "subordinate": false,
+        "n_pairs": 66,
+        "source": "issue2564 bank, pair_class=query_content",
+        "direction": 0.7144,
+        "direction_ci95": [
+          0.6998,
+          0.7292
+        ],
+        "magnitude": 0.8047,
+        "magnitude_ci95": [
+          0.7829,
+          0.8277
+        ],
+        "twoway": 1.0,
+        "twoway_ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "row": "One-word topic",
+        "group": "Topic",
+        "subordinate": false,
+        "n_pairs": 24,
+        "source": "issue2564 langow pilot, pair_class=query_content_oneword",
+        "direction": 0.531,
+        "direction_ci95": [
+          0.4678,
+          0.583
+        ],
+        "magnitude": 0.6633,
+        "magnitude_ci95": [
+          0.6119,
+          0.7356
+        ],
+        "twoway": 0.8958,
+        "twoway_ci95": [
+          0.8125,
+          0.9589
+        ]
+      },
+      {
+        "row": "Refusal reverses: intent swap",
+        "group": "Refusal reverses",
+        "subordinate": false,
+        "n_pairs": 61,
+        "source": "issue2617 svmp, one-word safety swaps + XSTest rephrasings",
+        "direction": 0.7797,
+        "direction_ci95": [
+          0.7566,
+          0.8003
+        ],
+        "magnitude": 0.7501,
+        "magnitude_ci95": [
+          0.7283,
+          0.7843
+        ],
+        "twoway": 1.0,
+        "twoway_ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "row": "Refusal reverses: framing rewrite",
+        "group": "Refusal reverses",
+        "subordinate": false,
+        "n_pairs": 307,
+        "source": "issue2356 armA, 394 AdvBench bases x 6 intent-preserving rewrite axes",
+        "direction": 0.5108,
+        "direction_ci95": [
+          0.4992,
+          0.5229
+        ],
+        "magnitude": 0.7449,
+        "magnitude_ci95": [
+          0.7206,
+          0.7711
+        ],
+        "twoway": 0.9235,
+        "twoway_ci95": [
+          0.9023,
+          0.943
+        ]
+      }
+    ],
+    "map": {
+      "file": "data/issue_2564/langow_stage/ridge/arm_779ce/ridge.pt",
+      "layer": 19
+    },
+    "bootstrap": {
+      "unit": "pair",
+      "draws": 2000,
+      "seed": 20260910
+    },
+    "metrics": {
+      "separation": "cos(ans_A, ans_B), mean; near 1.0 = the two real answers nearly coincide",
+      "twoway": "pred_B nearer ans_B than ans_A, both orderings, chance 0.5",
+      "direction": "cos(pred_B - pred_A, ans_B - ans_A), mean",
+      "magnitude": "||pred_B - pred_A|| / ||ans_B - ans_A||, median"
+    },
+    "caveat": "raw, not disattenuated for rollout noise"
+  },
+  "output_sha256": {
+    "pdf": "3e87e809a1635020f98d44b05de202cd9a7a5e4f38d628f7d5441e7e6961abfe",
+    "png": "05da77048744a40ecd240df1da82386fac8296f2d2a80e2715771443aa335a83",
+    "grayscale": "b9237aabd3509b2dcdf47f648301a98a47fe00150f0cb796eee08ba4655b3ced"
+  }
+}

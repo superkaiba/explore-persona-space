@@ -204,12 +204,34 @@ intervals are the only statistics recomputed by this plot-only script. They use
 a pinned 10,000-draw pair bootstrap and are recorded in the sidecar.
 
 `c3_features_and_shifts` is the results figure that carries the SAE feature
-properties together with the per-element answer-shift reads. Panel A is the
-feature-property concordance, panel B is the predicted shift direction, and
-panel C is the predicted over observed shift size. It is a `figure*` at
-`\textwidth`, laid out as two stacked rows sharing one left label column,
-because three panels in one row would need about 15.1 in of a 13.10 in canvas
-once both label columns and the three axis labels are counted.
+properties together with the per-element answer-shift reads. It is a `figure*`
+at `\textwidth`, one horizontal row of four panels: A the feature-property
+concordance, B the predicted shift direction, C the predicted over observed
+shift size, and D the two-way discrimination rate. It draws seven element rows;
+the two refusal-holds rows are not among them.
+
+Four panels across make width the binding constraint, so the panel geometry is
+written in inches in the script rather than in figure fractions. Panel A keeps
+its own label column, because feature-property names are a different population
+from the element rows; B, C and D share one element-row gutter with the labels
+drawn on B. Both gutters are cut rather than the panels: the property names wrap
+to two lines (2.23 in against 3.84 in set on one line) and the per-row pair count
+leaves the element labels for the caption and the sidecar (1.94 in against
+2.67 in with it). That returns 2.34 in to the four plot boxes, which leaves panel
+A at 2.45 in and the three metric columns at 1.73 in each. At that pitch a
+descriptive panel title does not fit, the three the earlier stacked layout
+carried measure 3.40 in to 4.46 in, so each panel carries its letter and the
+estimator as a kicker and states the metric in full in its axis label.
+
+Panel D is drawn on a cut axis, following
+`scripts/issue2564_element_shifts_three_panel.py`. Every rate sits between 0.875
+and 1.0 with its interval reaching 0.8125, so one linear 0-to-1 axis flattens the
+rows and a truncated axis drops the 0.5 chance reference. The axis is two linear
+segments, [0.46, 0.54] and [0.78, 1.015], whose plotted widths are proportional
+to their data spans, so both realize the same 4.81 in per data unit and a
+distance means the same thing in either. Diagonal marks sit on the cut, and a
+value or interval endpoint landing in the omitted range raises rather than being
+clipped.
 `c3_direction_r2_spectrum` is its appendix companion and carries held-out
 `R^2` by answer-variance rank on its own full-width canvas, with no panel
 letter. Render both with one command:

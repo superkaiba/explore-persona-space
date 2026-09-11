@@ -7,13 +7,13 @@
   "title": "One-word topic change by grammatical slot",
   "subject": "Answer separation, two-way retrieval, shift direction and shift size for a one-word query change pinned to the subject, verb or object slot, beside the pooled one-word row of the element figure, with 95% pair-bootstrap intervals",
   "git": {
-    "commit": "218e58b1f9ef6cc4d59fd528746d5181b633a17f",
+    "commit": "f516fa07dfc96799cbe9b83cba60103fffb061a7",
     "tracked_worktree_dirty": true
   },
   "sources": [
     {
       "path": "eval_results/issue_2564/section42_element_shifts.json",
-      "sha256": "4d76a5fa1ce552b478ebc58a5ef3b26448ad915d732853ecfcc17ed7069c2d42"
+      "sha256": "3e5d328f91c266eb583fc26764dc11f1a090a8086a288d878263758a5599db34"
     }
   ],
   "render": {

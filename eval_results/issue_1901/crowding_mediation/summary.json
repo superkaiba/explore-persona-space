@@ -1,0 +1,1572 @@
+{
+  "claim_under_test": "answer-side crowding is downstream of context-side crowding: once context-space NN distance is known, answer-space NN distance carries no additional information about top-1 retrieval failure",
+  "setting": {
+    "operating_point_candidates": 10000,
+    "n_held_out_contexts": 942,
+    "n_failures": 90,
+    "n_successes": 852
+  },
+  "provenance": {
+    "script": "scripts/issue1901_crowding_mediation.py",
+    "generated_utc": "2026-09-11T02:30:36Z",
+    "python": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "library_versions": {
+      "numpy": "2.2.6",
+      "scipy": "1.17.1",
+      "statsmodels": "0.14.6",
+      "scikit-learn": "1.8.0",
+      "pandas": "2.3.3"
+    },
+    "seed": 1901,
+    "n_bootstrap": 2000,
+    "bootstrap_method": "nonparametric percentile bootstrap over the 942 held-out contexts; the OLS residualization is refit inside every resample",
+    "input_paths": {
+      "perrow_npz": "/mnt/eps-data/thomasjiralerspong/issue1901_ctxsim/paper_fig_inputs/perrow.npz",
+      "c2a_dA_npy": "/mnt/eps-data/thomasjiralerspong/issue1901_ctxsim/paper_fig_inputs/c2a_dA.npy",
+      "c2a_A_npy": "/mnt/eps-data/thomasjiralerspong/issue1901_ctxsim/paper_fig_inputs/c2a_A.npy",
+      "c2a_qcols_npy": "/mnt/eps-data/thomasjiralerspong/issue1901_ctxsim/paper_fig_inputs/c2a_qcols.npy"
+    },
+    "array_shapes": {
+      "nn1": [
+        942
+      ],
+      "correct": [
+        942
+      ],
+      "c2a_dA": [
+        942
+      ],
+      "c2a_A": [
+        10000,
+        3584
+      ],
+      "c2a_qcols": [
+        942
+      ]
+    },
+    "dr_reconstruct_seconds": 1.3390686511993408,
+    "blas_thread_env": {
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1"
+    },
+    "dr_reconstruction_determinism": "dR is NOT read from disk: it is reconstructed here by a float32 matmul (942 query rows x 10000 pool rows x 3584 dims). float32 GEMM reduction ORDER depends on the BLAS thread count, so dR differs in its last bits across thread counts and every RAW-ARM (dR) statistic moves by roughly 1e-5 to 2e-4 -- enough to shift a 4-decimal AUC by one in the last digit, never enough to move a 2-decimal number. Measured on this VM: spearman(dC, dR) = 0.684421820730 at 1 thread, 0.684421815818 at 8, 0.684420186428 at 16. Set OMP_NUM_THREADS=1 to reproduce these numbers exactly. WHITENED-arm (dA) and context-only (dC) statistics are read from disk and are bit-identical across thread counts.",
+    "conventions": {
+      "dC": "context-space NN distance = 1 - nn1 (higher = more isolated)",
+      "dA": "answer-space NN distance, WHITENED (retrieval convention)",
+      "dR": "answer-space NN distance, RAW (reconstructed: mean-centre pool, unit-norm rows, cosine vs pool, mask self, 1 - max)",
+      "fail": "~correct, i.e. top-1 retrieval failure",
+      "auc_score": "CLOSENESS = -distance, so AUC>0.5 means crowding predicts failure",
+      "logit_predictors": "z-scored DISTANCES, so a NEGATIVE coefficient means crowding predicts failure"
+    },
+    "input_sha256": {
+      "perrow_npz": "b2a30f7bd363f314503f91d83d46a5c46d60b93e9184c07d7e8dc0b54a5ebc21",
+      "c2a_dA_npy": "1aac6df564c669e689b16bd6243c5961b90b462679c21371d6dc84c4e72d9c59",
+      "c2a_A_npy": "9131bce7ac0e7ac1065adc8fbf8055a9d6d00cc9e0e43fb392d0389d3531aa2b",
+      "c2a_qcols_npy": "5fd35d7c3664e9009b91ac80d391fa815cc055a860863c0d70496e3b35128fbd"
+    }
+  },
+  "sanity_checks": [
+    {
+      "name": "n_contexts",
+      "got": 942.0,
+      "expected": 942.0,
+      "ok": true
+    },
+    {
+      "name": "n_failures",
+      "got": 90.0,
+      "expected": 90.0,
+      "ok": true
+    },
+    {
+      "name": "n_successes",
+      "got": 852.0,
+      "expected": 852.0,
+      "ok": true
+    },
+    {
+      "name": "nn1_median_failures",
+      "got": 0.9745555222034454,
+      "expected": 0.974556,
+      "ok": true
+    },
+    {
+      "name": "nn1_median_successes",
+      "got": 0.7782860398292542,
+      "expected": 0.778286,
+      "ok": true
+    },
+    {
+      "name": "dA_median_failures",
+      "got": 0.5674905776977539,
+      "expected": 0.5675,
+      "ok": true
+    },
+    {
+      "name": "dA_median_successes",
+      "got": 0.797945648431778,
+      "expected": 0.7979,
+      "ok": true
+    },
+    {
+      "name": "dA_min",
+      "got": 0.09987348318099976,
+      "expected": 0.0999,
+      "ok": true
+    },
+    {
+      "name": "dA_median",
+      "got": 0.7855311036109924,
+      "expected": 0.7855,
+      "ok": true
+    },
+    {
+      "name": "dA_max",
+      "got": 0.9717675447463989,
+      "expected": 0.9718,
+      "ok": true
+    },
+    {
+      "name": "dC_identity_max_abs_dev",
+      "got": 0.0,
+      "expected": 0.0,
+      "ok": true
+    }
+  ],
+  "coupling": {
+    "all": {
+      "dC_vs_dA_whitened": {
+        "n": 942,
+        "spearman_rho": 0.49192641675799387,
+        "spearman_p": 1.47474489945103e-58,
+        "pearson_r": 0.49835106706517035,
+        "pearson_p": 2.771237964962447e-60
+      },
+      "dC_vs_dR_raw": {
+        "n": 942,
+        "spearman_rho": 0.6844218207303743,
+        "spearman_p": 3.904747230792769e-131,
+        "pearson_r": 0.670636632744559,
+        "pearson_p": 4.468269736634931e-124
+      }
+    },
+    "successes_only": {
+      "dC_vs_dA_whitened": {
+        "n": 852,
+        "spearman_rho": 0.42806519504356133,
+        "spearman_p": 2.7767587511356236e-39,
+        "pearson_r": 0.4451539688670422,
+        "pearson_p": 1.0552625083672285e-42
+      },
+      "dC_vs_dR_raw": {
+        "n": 852,
+        "spearman_rho": 0.6426734452998425,
+        "spearman_p": 1.951712001996167e-100,
+        "pearson_r": 0.6387612436220161,
+        "pearson_p": 7.291008226368147e-99
+      }
+    },
+    "failures_only": {
+      "dC_vs_dA_whitened": {
+        "n": 90,
+        "spearman_rho": 0.47794771329530744,
+        "spearman_p": 1.898795026740238e-06,
+        "pearson_r": 0.3772502593668983,
+        "pearson_p": 0.0002470598082168149
+      },
+      "dC_vs_dR_raw": {
+        "n": 90,
+        "spearman_rho": 0.6866611515202191,
+        "spearman_p": 7.949148023799777e-14,
+        "pearson_r": 0.604854975496306,
+        "pearson_p": 2.7244051894404225e-10
+      }
+    },
+    "dA_vs_dR": {
+      "n": 942,
+      "spearman_rho": 0.7279020886917614,
+      "spearman_p": 3.2182384151462826e-156,
+      "pearson_r": 0.7024653360819152,
+      "pearson_p": 5.465278490511733e-141
+    }
+  },
+  "logistic_regression": {
+    "context_only": {
+      "predictors": [
+        "z_dC"
+      ],
+      "n_obs": 942,
+      "converged": true,
+      "llf": -222.55509019233386,
+      "llnull": -296.8943774919896,
+      "pseudo_r2_mcfadden": 0.2503896770549703,
+      "terms": {
+        "const": {
+          "coef": -3.412290409005182,
+          "std_err": 0.2465454045326681,
+          "wald_z": -13.840413758566092,
+          "p_value": 1.4536743102009858e-43,
+          "ci95_low": -3.89551052244307,
+          "ci95_high": -2.9290702955672945,
+          "odds_ratio": 0.032965609113503824
+        },
+        "z_dC": {
+          "coef": -1.933177916770827,
+          "std_err": 0.21342337587813937,
+          "wald_z": -9.057948356484784,
+          "p_value": 1.3292716230473949e-19,
+          "ci95_low": -2.3514800469509347,
+          "ci95_high": -1.5148757865907192,
+          "odds_ratio": 0.1446876617506968
+        }
+      }
+    },
+    "answer_whitened_only": {
+      "predictors": [
+        "z_dA"
+      ],
+      "n_obs": 942,
+      "converged": true,
+      "llf": -257.5572056208029,
+      "llnull": -296.8943774919896,
+      "pseudo_r2_mcfadden": 0.13249550969434587,
+      "terms": {
+        "const": {
+          "coef": -2.558637196741127,
+          "std_err": 0.13659715410417655,
+          "wald_z": -18.731262840145035,
+          "p_value": 2.753073875621611e-78,
+          "ci95_low": -2.8263626991759807,
+          "ci95_high": -2.2909116943062733,
+          "odds_ratio": 0.07741016341457037
+        },
+        "z_dA": {
+          "coef": -0.8371270688528957,
+          "std_err": 0.09509573486427078,
+          "wald_z": -8.80299279507876,
+          "p_value": 1.3321511582712686e-18,
+          "ci95_low": -1.0235112842702363,
+          "ci95_high": -0.6507428534355549,
+          "odds_ratio": 0.43295258135752523
+        }
+      }
+    },
+    "answer_raw_only": {
+      "predictors": [
+        "z_dR"
+      ],
+      "n_obs": 942,
+      "converged": true,
+      "llf": -251.3593061423596,
+      "llnull": -296.8943774919896,
+      "pseudo_r2_mcfadden": 0.15337128218555962,
+      "terms": {
+        "const": {
+          "coef": -2.835355712773782,
+          "std_err": 0.17514690104306188,
+          "wald_z": -16.18844350592693,
+          "p_value": 6.084836369300811e-59,
+          "ci95_low": -3.178637330821984,
+          "ci95_high": -2.49207409472558,
+          "odds_ratio": 0.05869764261860893
+        },
+        "z_dR": {
+          "coef": -1.3023646756809715,
+          "std_err": 0.16143337910939384,
+          "wald_z": -8.067505511350513,
+          "p_value": 7.174896780979254e-16,
+          "ci95_low": -1.618768284637984,
+          "ci95_high": -0.9859610667239588,
+          "odds_ratio": 0.2718881050872924
+        }
+      }
+    },
+    "joint_whitened": {
+      "predictors": [
+        "z_dC",
+        "z_dA"
+      ],
+      "n_obs": 942,
+      "converged": true,
+      "llf": -219.28536086480972,
+      "llnull": -296.8943774919896,
+      "pseudo_r2_mcfadden": 0.261402783315672,
+      "terms": {
+        "const": {
+          "coef": -3.32906171649923,
+          "std_err": 0.23709143714833306,
+          "wald_z": -14.041256641489113,
+          "p_value": 8.715338822563806e-45,
+          "ci95_low": -3.7937523943528046,
+          "ci95_high": -2.8643710386456553,
+          "odds_ratio": 0.035826704908204575
+        },
+        "z_dC": {
+          "coef": -1.6441822366477308,
+          "std_err": 0.2314181902183548,
+          "wald_z": -7.104809847040811,
+          "p_value": 1.2048831547133806e-12,
+          "ci95_low": -2.0977535548431456,
+          "ci95_high": -1.190610918452316,
+          "odds_ratio": 0.19317046594904919
+        },
+        "z_dA": {
+          "coef": -0.2926245079750945,
+          "std_err": 0.1147947654524832,
+          "wald_z": -2.5491102039510682,
+          "p_value": 0.010799816655321558,
+          "ci95_low": -0.5176181138756843,
+          "ci95_high": -0.06763090207450459,
+          "odds_ratio": 0.7463023186604596
+        }
+      }
+    },
+    "joint_raw": {
+      "predictors": [
+        "z_dC",
+        "z_dR"
+      ],
+      "n_obs": 942,
+      "converged": true,
+      "llf": -222.19234256947277,
+      "llnull": -296.8943774919896,
+      "pseudo_r2_mcfadden": 0.2516114840353699,
+      "terms": {
+        "const": {
+          "coef": -3.3905525810373747,
+          "std_err": 0.2447169824876245,
+          "wald_z": -13.854995050083364,
+          "p_value": 1.1866505498641984e-43,
+          "ci95_low": -3.870189053118438,
+          "ci95_high": -2.9109161089563114,
+          "odds_ratio": 0.033690055269376414
+        },
+        "z_dC": {
+          "coef": -1.7830670937706872,
+          "std_err": 0.2731469335818129,
+          "wald_z": -6.527867878248113,
+          "p_value": 6.671250257638917e-11,
+          "ci95_low": -2.318425246078595,
+          "ci95_high": -1.2477089414627796,
+          "odds_ratio": 0.16812171064223358
+        },
+        "z_dR": {
+          "coef": -0.1671771107552271,
+          "std_err": 0.19852053292263408,
+          "wald_z": -0.8421149605737664,
+          "p_value": 0.39972360792133177,
+          "ci95_low": -0.5562702054752879,
+          "ci95_high": 0.22191598396483378,
+          "odds_ratio": 0.8460497535560556
+        }
+      }
+    }
+  },
+  "predictor_collinearity": {
+    "joint_whitened": {
+      "pearson_r_predictors": 0.49835106706517035,
+      "vif": 1.3304131404297348
+    },
+    "joint_raw": {
+      "pearson_r_predictors": 0.6706366327445583,
+      "vif": 1.8173672846690787
+    }
+  },
+  "likelihood_ratio_tests": {
+    "add_answer_whitened_to_context": {
+      "added_predictor": "z_dA",
+      "reduced_model": [
+        "z_dC"
+      ],
+      "full_model": [
+        "z_dC",
+        "z_dA"
+      ],
+      "lr_statistic": 6.539458655048293,
+      "df": 1,
+      "p_value": 0.010550745020173148,
+      "llf_reduced": -222.55509019233386,
+      "llf_full": -219.28536086480972
+    },
+    "add_context_to_answer_whitened": {
+      "added_predictor": "z_dC",
+      "reduced_model": [
+        "z_dA"
+      ],
+      "full_model": [
+        "z_dC",
+        "z_dA"
+      ],
+      "lr_statistic": 76.54368951198637,
+      "df": 1,
+      "p_value": 2.1539465980066176e-18,
+      "llf_reduced": -257.5572056208029,
+      "llf_full": -219.28536086480972
+    },
+    "add_answer_raw_to_context": {
+      "added_predictor": "z_dR",
+      "reduced_model": [
+        "z_dC"
+      ],
+      "full_model": [
+        "z_dC",
+        "z_dR"
+      ],
+      "lr_statistic": 0.7254952457221862,
+      "df": 1,
+      "p_value": 0.3943472632394508,
+      "llf_reduced": -222.55509019233386,
+      "llf_full": -222.19234256947277
+    },
+    "add_context_to_answer_raw": {
+      "added_predictor": "z_dC",
+      "reduced_model": [
+        "z_dR"
+      ],
+      "full_model": [
+        "z_dC",
+        "z_dR"
+      ],
+      "lr_statistic": 58.33392714577366,
+      "df": 1,
+      "p_value": 2.2119642289983482e-14,
+      "llf_reduced": -251.3593061423596,
+      "llf_full": -222.19234256947277
+    }
+  },
+  "aucs": {
+    "auc_context": {
+      "auc": 0.8590897235263432,
+      "boot_mean": 0.8589867564404715,
+      "boot_sd": 0.022867647334408648,
+      "ci95_low": 0.80949697206701,
+      "ci95_high": 0.9005950066107506,
+      "n_draws": 2000,
+      "frac_draws_at_or_below_0.5": 0.0
+    },
+    "auc_answer_whitened": {
+      "auc": 0.7777908189880021,
+      "boot_mean": 0.7777590093747498,
+      "boot_sd": 0.027834493733986356,
+      "ci95_low": 0.7203661811416572,
+      "ci95_high": 0.8306833515683566,
+      "n_draws": 2000,
+      "frac_draws_at_or_below_0.5": 0.0
+    },
+    "auc_answer_raw": {
+      "auc": 0.7910732916014606,
+      "boot_mean": 0.791278626035977,
+      "boot_sd": 0.029443035816447347,
+      "ci95_low": 0.7319519458039988,
+      "ci95_high": 0.8459085289244891,
+      "n_draws": 2000,
+      "frac_draws_at_or_below_0.5": 0.0
+    },
+    "auc_context_partial_on_answer_whitened": {
+      "auc": 0.7323682837767346,
+      "boot_mean": 0.7318314637058967,
+      "boot_sd": 0.025083219077089686,
+      "ci95_low": 0.6802336517111588,
+      "ci95_high": 0.7802374320158841,
+      "n_draws": 2000,
+      "frac_draws_at_or_below_0.5": 0.0
+    },
+    "auc_answer_whitened_partial_on_context": {
+      "auc": 0.651317162232655,
+      "boot_mean": 0.6516200015848889,
+      "boot_sd": 0.03352389755067524,
+      "ci95_low": 0.5852095516112831,
+      "ci95_high": 0.7159612653302422,
+      "n_draws": 2000,
+      "frac_draws_at_or_below_0.5": 0.0
+    },
+    "auc_context_partial_on_answer_raw": {
+      "auc": 0.740832029212311,
+      "boot_mean": 0.7397601215279401,
+      "boot_sd": 0.02392532311847887,
+      "ci95_low": 0.6922677435387979,
+      "ci95_high": 0.7859534618345045,
+      "n_draws": 2000,
+      "frac_draws_at_or_below_0.5": 0.0
+    },
+    "auc_answer_raw_partial_on_context": {
+      "auc": 0.59434011476265,
+      "boot_mean": 0.5944954659975353,
+      "boot_sd": 0.030208995035524936,
+      "ci95_low": 0.5344395499680009,
+      "ci95_high": 0.6536067545770538,
+      "n_draws": 2000,
+      "frac_draws_at_or_below_0.5": 0.001
+    }
+  },
+  "top_decile": {
+    "decile_size": 94,
+    "n_failures_total": 90,
+    "context": {
+      "failures_in_top_decile": 47,
+      "frac_of_failures": 0.5222222222222223,
+      "precision_in_decile": 0.5
+    },
+    "answer_whitened": {
+      "failures_in_top_decile": 30,
+      "frac_of_failures": 0.3333333333333333,
+      "precision_in_decile": 0.3191489361702128
+    },
+    "answer_raw": {
+      "failures_in_top_decile": 37,
+      "frac_of_failures": 0.4111111111111111,
+      "precision_in_decile": 0.39361702127659576
+    },
+    "overlap_context_and_answer_whitened": {
+      "contexts_in_both_deciles": 49,
+      "failures_in_both_deciles": 21,
+      "failures_in_either_decile": 56,
+      "failures_context_only": 26,
+      "failures_answer_only": 9,
+      "failures_in_neither": 34
+    },
+    "overlap_context_and_answer_raw": {
+      "contexts_in_both_deciles": 71,
+      "failures_in_both_deciles": 33,
+      "failures_in_either_decile": 51,
+      "failures_context_only": 14,
+      "failures_answer_only": 4,
+      "failures_in_neither": 39
+    }
+  },
+  "robustness": {
+    "rationale": "Failure rate drops steeply and non-linearly across dC, so a single linear-in-z context term (and a linear residualization) cannot fully absorb context crowding. These adjustments control for context non-parametrically, via quantile-bin dummies and via a stratified Mann-Whitney AUC.",
+    "logit_flexible_context": {
+      "z_dA_given_4bin_context": {
+        "n_context_bins": 4,
+        "answer_term": "z_dA",
+        "coef": -0.41922209073258376,
+        "std_err": 0.10847108236950809,
+        "wald_z": -3.864828132759831,
+        "p_value": 0.00011116744940390482,
+        "ci95_low": -0.6318215055408972,
+        "ci95_high": -0.20662267592427028,
+        "lr_test": {
+          "added_predictor": "z_dA",
+          "reduced_model": [
+            "dCbin1",
+            "dCbin2",
+            "dCbin3"
+          ],
+          "full_model": [
+            "dCbin1",
+            "dCbin2",
+            "dCbin3",
+            "z_dA"
+          ],
+          "lr_statistic": 15.118452918214814,
+          "df": 1,
+          "p_value": 0.00010097147765691472,
+          "llf_reduced": -233.83536315041547,
+          "llf_full": -226.27613669130807
+        },
+        "reduced_converged": true,
+        "full_converged": true,
+        "bin_failure_counts": [
+          68,
+          15,
+          3,
+          4
+        ],
+        "bin_sizes": [
+          236,
+          235,
+          235,
+          236
+        ]
+      },
+      "z_dR_given_4bin_context": {
+        "n_context_bins": 4,
+        "answer_term": "z_dR",
+        "coef": -0.46201866841642186,
+        "std_err": 0.19045344623976193,
+        "wald_z": -2.425887677741396,
+        "p_value": 0.01527099580561883,
+        "ci95_low": -0.8353005637778906,
+        "ci95_high": -0.08873677305495309,
+        "lr_test": {
+          "added_predictor": "z_dR",
+          "reduced_model": [
+            "dCbin1",
+            "dCbin2",
+            "dCbin3"
+          ],
+          "full_model": [
+            "dCbin1",
+            "dCbin2",
+            "dCbin3",
+            "z_dR"
+          ],
+          "lr_statistic": 6.378678888820616,
+          "df": 1,
+          "p_value": 0.011549937361855061,
+          "llf_reduced": -233.83536315041547,
+          "llf_full": -230.64602370600517
+        },
+        "reduced_converged": true,
+        "full_converged": true,
+        "bin_failure_counts": [
+          68,
+          15,
+          3,
+          4
+        ],
+        "bin_sizes": [
+          236,
+          235,
+          235,
+          236
+        ]
+      },
+      "z_dA_given_5bin_context": {
+        "n_context_bins": 5,
+        "answer_term": "z_dA",
+        "coef": -0.36662821589213085,
+        "std_err": 0.1110932416921745,
+        "wald_z": -3.3001846944750417,
+        "p_value": 0.0009662121807091131,
+        "ci95_low": -0.5843669685345965,
+        "ci95_high": -0.14888946324966526,
+        "lr_test": {
+          "added_predictor": "z_dA",
+          "reduced_model": [
+            "dCbin1",
+            "dCbin2",
+            "dCbin3",
+            "dCbin4"
+          ],
+          "full_model": [
+            "dCbin1",
+            "dCbin2",
+            "dCbin3",
+            "dCbin4",
+            "z_dA"
+          ],
+          "lr_statistic": 11.029120256161605,
+          "df": 1,
+          "p_value": 0.0008969170257797971,
+          "llf_reduced": -226.91248629858725,
+          "llf_full": -221.39792617050645
+        },
+        "reduced_converged": true,
+        "full_converged": true,
+        "bin_failure_counts": [
+          63,
+          17,
+          5,
+          2,
+          3
+        ],
+        "bin_sizes": [
+          189,
+          188,
+          188,
+          188,
+          189
+        ]
+      },
+      "z_dR_given_5bin_context": {
+        "n_context_bins": 5,
+        "answer_term": "z_dR",
+        "coef": -0.37772464696577274,
+        "std_err": 0.1888825424601379,
+        "wald_z": -1.999785909518284,
+        "p_value": 0.045523386750269686,
+        "ci95_low": -0.7479276274960005,
+        "ci95_high": -0.007521666435544916,
+        "lr_test": {
+          "added_predictor": "z_dR",
+          "reduced_model": [
+            "dCbin1",
+            "dCbin2",
+            "dCbin3",
+            "dCbin4"
+          ],
+          "full_model": [
+            "dCbin1",
+            "dCbin2",
+            "dCbin3",
+            "dCbin4",
+            "z_dR"
+          ],
+          "lr_statistic": 4.244046226476883,
+          "df": 1,
+          "p_value": 0.03938818815077621,
+          "llf_reduced": -226.91248629858725,
+          "llf_full": -224.7904631853488
+        },
+        "reduced_converged": true,
+        "full_converged": true,
+        "bin_failure_counts": [
+          63,
+          17,
+          5,
+          2,
+          3
+        ],
+        "bin_sizes": [
+          189,
+          188,
+          188,
+          188,
+          189
+        ]
+      }
+    },
+    "stratified_auc": {
+      "answer_whitened_within_4bin_context": {
+        "pooled_auc": 0.6429532664546121,
+        "per_stratum": [
+          {
+            "bin": 0,
+            "n": 236,
+            "n_fail": 68,
+            "n_success": 168,
+            "auc": 0.6497286414565827,
+            "pair_weight": 11424.0,
+            "pair_weight_share": 0.6988010765842917,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 1,
+            "n": 235,
+            "n_fail": 15,
+            "n_success": 220,
+            "auc": 0.598030303030303,
+            "pair_weight": 3300.0,
+            "pair_weight_share": 0.20185955468558844,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 2,
+            "n": 235,
+            "n_fail": 3,
+            "n_success": 232,
+            "auc": 0.5201149425287356,
+            "pair_weight": 696.0,
+            "pair_weight_share": 0.04257401517005138,
+            "sparse": true,
+            "sparse_reason": "n_fail < 5"
+          },
+          {
+            "bin": 3,
+            "n": 236,
+            "n_fail": 4,
+            "n_success": 232,
+            "auc": 0.8114224137931034,
+            "pair_weight": 928.0,
+            "pair_weight_share": 0.05676535356006851,
+            "sparse": true,
+            "sparse_reason": "n_fail < 5"
+          }
+        ],
+        "stratum_sparsity": {
+          "n_strata": 4,
+          "n_strata_contributing": 4,
+          "n_strata_flagged_sparse": 2,
+          "sparse_bins": [
+            2,
+            3
+          ],
+          "zero_pair_bins": [],
+          "pair_weight_total": 16348.0,
+          "pair_weight_share_flagged_sparse": 0.09933936873011989,
+          "heaviest_stratum_bin": 0,
+          "pair_weight_share_heaviest_stratum": 0.6988010765842917,
+          "thresholds": {
+            "min_stratum_failures": 5,
+            "min_stratum_successes": 5
+          }
+        },
+        "weighting": "discordant pairs (n_fail * n_success) per stratum",
+        "boot_mean": 0.6426569391871053,
+        "boot_sd": 0.03440357384327373,
+        "ci95_low": 0.5748427990040773,
+        "ci95_high": 0.7101630390587605,
+        "n_draws": 2000,
+        "frac_draws_at_or_below_0.5": 0.0
+      },
+      "answer_raw_within_4bin_context": {
+        "pooled_auc": 0.6107780768289699,
+        "per_stratum": [
+          {
+            "bin": 0,
+            "n": 236,
+            "n_fail": 68,
+            "n_success": 168,
+            "auc": 0.6381740196078431,
+            "pair_weight": 11424.0,
+            "pair_weight_share": 0.6988010765842917,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 1,
+            "n": 235,
+            "n_fail": 15,
+            "n_success": 220,
+            "auc": 0.5719696969696969,
+            "pair_weight": 3300.0,
+            "pair_weight_share": 0.20185955468558844,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 2,
+            "n": 235,
+            "n_fail": 3,
+            "n_success": 232,
+            "auc": 0.14942528735632182,
+            "pair_weight": 696.0,
+            "pair_weight_share": 0.04257401517005138,
+            "sparse": true,
+            "sparse_reason": "n_fail < 5"
+          },
+          {
+            "bin": 3,
+            "n": 236,
+            "n_fail": 4,
+            "n_success": 232,
+            "auc": 0.7575431034482758,
+            "pair_weight": 928.0,
+            "pair_weight_share": 0.05676535356006851,
+            "sparse": true,
+            "sparse_reason": "n_fail < 5"
+          }
+        ],
+        "stratum_sparsity": {
+          "n_strata": 4,
+          "n_strata_contributing": 4,
+          "n_strata_flagged_sparse": 2,
+          "sparse_bins": [
+            2,
+            3
+          ],
+          "zero_pair_bins": [],
+          "pair_weight_total": 16348.0,
+          "pair_weight_share_flagged_sparse": 0.09933936873011989,
+          "heaviest_stratum_bin": 0,
+          "pair_weight_share_heaviest_stratum": 0.6988010765842917,
+          "thresholds": {
+            "min_stratum_failures": 5,
+            "min_stratum_successes": 5
+          }
+        },
+        "weighting": "discordant pairs (n_fail * n_success) per stratum",
+        "boot_mean": 0.6129085845984017,
+        "boot_sd": 0.03720242642490524,
+        "ci95_low": 0.5412966864158928,
+        "ci95_high": 0.6873995319869066,
+        "n_draws": 2000,
+        "frac_draws_at_or_below_0.5": 0.0005
+      },
+      "answer_whitened_within_5bin_context": {
+        "pooled_auc": 0.6201733648542159,
+        "per_stratum": [
+          {
+            "bin": 0,
+            "n": 189,
+            "n_fail": 63,
+            "n_success": 126,
+            "auc": 0.6348576467624086,
+            "pair_weight": 7938.0,
+            "pair_weight_share": 0.625531914893617,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 1,
+            "n": 188,
+            "n_fail": 17,
+            "n_success": 171,
+            "auc": 0.5261437908496732,
+            "pair_weight": 2907.0,
+            "pair_weight_share": 0.22907801418439716,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 2,
+            "n": 188,
+            "n_fail": 5,
+            "n_success": 183,
+            "auc": 0.7508196721311475,
+            "pair_weight": 915.0,
+            "pair_weight_share": 0.07210401891252956,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 3,
+            "n": 188,
+            "n_fail": 2,
+            "n_success": 186,
+            "auc": 0.49731182795698925,
+            "pair_weight": 372.0,
+            "pair_weight_share": 0.029314420803782507,
+            "sparse": true,
+            "sparse_reason": "n_fail < 5"
+          },
+          {
+            "bin": 4,
+            "n": 189,
+            "n_fail": 3,
+            "n_success": 186,
+            "auc": 0.7688172043010753,
+            "pair_weight": 558.0,
+            "pair_weight_share": 0.04397163120567376,
+            "sparse": true,
+            "sparse_reason": "n_fail < 5"
+          }
+        ],
+        "stratum_sparsity": {
+          "n_strata": 5,
+          "n_strata_contributing": 5,
+          "n_strata_flagged_sparse": 2,
+          "sparse_bins": [
+            3,
+            4
+          ],
+          "zero_pair_bins": [],
+          "pair_weight_total": 12690.0,
+          "pair_weight_share_flagged_sparse": 0.07328605200945626,
+          "heaviest_stratum_bin": 0,
+          "pair_weight_share_heaviest_stratum": 0.625531914893617,
+          "thresholds": {
+            "min_stratum_failures": 5,
+            "min_stratum_successes": 5
+          }
+        },
+        "weighting": "discordant pairs (n_fail * n_success) per stratum",
+        "boot_mean": 0.6191429753900527,
+        "boot_sd": 0.03442252221020413,
+        "ci95_low": 0.5507805481997718,
+        "ci95_high": 0.6865760444836235,
+        "n_draws": 2000,
+        "frac_draws_at_or_below_0.5": 0.0005
+      },
+      "answer_raw_within_5bin_context": {
+        "pooled_auc": 0.5729708431836091,
+        "per_stratum": [
+          {
+            "bin": 0,
+            "n": 189,
+            "n_fail": 63,
+            "n_success": 126,
+            "auc": 0.6201184177374653,
+            "pair_weight": 7938.0,
+            "pair_weight_share": 0.625531914893617,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 1,
+            "n": 188,
+            "n_fail": 17,
+            "n_success": 171,
+            "auc": 0.44943240454076366,
+            "pair_weight": 2907.0,
+            "pair_weight_share": 0.22907801418439716,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 2,
+            "n": 188,
+            "n_fail": 5,
+            "n_success": 183,
+            "auc": 0.5278688524590165,
+            "pair_weight": 915.0,
+            "pair_weight_share": 0.07210401891252956,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 3,
+            "n": 188,
+            "n_fail": 2,
+            "n_success": 186,
+            "auc": 0.4543010752688172,
+            "pair_weight": 372.0,
+            "pair_weight_share": 0.029314420803782507,
+            "sparse": true,
+            "sparse_reason": "n_fail < 5"
+          },
+          {
+            "bin": 4,
+            "n": 189,
+            "n_fail": 3,
+            "n_success": 186,
+            "auc": 0.6989247311827956,
+            "pair_weight": 558.0,
+            "pair_weight_share": 0.04397163120567376,
+            "sparse": true,
+            "sparse_reason": "n_fail < 5"
+          }
+        ],
+        "stratum_sparsity": {
+          "n_strata": 5,
+          "n_strata_contributing": 5,
+          "n_strata_flagged_sparse": 2,
+          "sparse_bins": [
+            3,
+            4
+          ],
+          "zero_pair_bins": [],
+          "pair_weight_total": 12690.0,
+          "pair_weight_share_flagged_sparse": 0.07328605200945626,
+          "heaviest_stratum_bin": 0,
+          "pair_weight_share_heaviest_stratum": 0.625531914893617,
+          "thresholds": {
+            "min_stratum_failures": 5,
+            "min_stratum_successes": 5
+          }
+        },
+        "weighting": "discordant pairs (n_fail * n_success) per stratum",
+        "boot_mean": 0.5743078289792476,
+        "boot_sd": 0.037809521140780455,
+        "ci95_low": 0.5028668666724561,
+        "ci95_high": 0.6499894107669407,
+        "n_draws": 2000,
+        "frac_draws_at_or_below_0.5": 0.0205
+      }
+    },
+    "linear_residual_leakage": {
+      "resid_dA_on_dC": {
+        "spearman_rho_with_dC": -0.07560357331041927,
+        "spearman_p": 0.020304807765845603,
+        "pearson_r_with_dC": -2.0621525320674294e-16
+      },
+      "resid_dR_on_dC": {
+        "spearman_rho_with_dC": 0.06473110797776223,
+        "spearman_p": 0.0470140351675168,
+        "pearson_r_with_dC": -2.7863995832877464e-16
+      },
+      "note": "Pearson is 0 by construction; a non-zero Spearman means monotone context information survives linear residualization, so the partial AUC is not a clean conditional-independence test."
+    },
+    "mirror_stratified_auc": {
+      "context_within_4bin_answer_whitened": {
+        "pooled_auc": 0.7918680023571008,
+        "per_stratum": [
+          {
+            "bin": 0,
+            "n": 236,
+            "n_fail": 63,
+            "n_success": 173,
+            "auc": 0.8066336361134049,
+            "pair_weight": 10899.0,
+            "pair_weight_share": 0.6422510312315851,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 1,
+            "n": 235,
+            "n_fail": 14,
+            "n_success": 221,
+            "auc": 0.7036199095022624,
+            "pair_weight": 3094.0,
+            "pair_weight_share": 0.18232174425456688,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 2,
+            "n": 235,
+            "n_fail": 6,
+            "n_success": 229,
+            "auc": 0.7867540029112081,
+            "pair_weight": 1374.0,
+            "pair_weight_share": 0.08096641131408368,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 3,
+            "n": 236,
+            "n_fail": 7,
+            "n_success": 229,
+            "auc": 0.8661883967560824,
+            "pair_weight": 1603.0,
+            "pair_weight_share": 0.09446081319976429,
+            "sparse": false,
+            "sparse_reason": null
+          }
+        ],
+        "stratum_sparsity": {
+          "n_strata": 4,
+          "n_strata_contributing": 4,
+          "n_strata_flagged_sparse": 0,
+          "sparse_bins": [],
+          "zero_pair_bins": [],
+          "pair_weight_total": 16970.0,
+          "pair_weight_share_flagged_sparse": 0.0,
+          "heaviest_stratum_bin": 0,
+          "pair_weight_share_heaviest_stratum": 0.6422510312315851,
+          "thresholds": {
+            "min_stratum_failures": 5,
+            "min_stratum_successes": 5
+          }
+        },
+        "weighting": "discordant pairs (n_fail * n_success) per stratum",
+        "scored_side": "dC (context-space NN closeness)",
+        "stratifying_side": "dA (answer-space NN distance, whitened)",
+        "boot_mean": 0.7933399610508852,
+        "boot_sd": 0.028087965063480522,
+        "ci95_low": 0.7372987890605676,
+        "ci95_high": 0.8462494758942376,
+        "n_draws": 2000,
+        "frac_draws_at_or_below_0.5": 0.0
+      },
+      "context_within_4bin_answer_raw": {
+        "pooled_auc": 0.7985209340243405,
+        "per_stratum": [
+          {
+            "bin": 0,
+            "n": 236,
+            "n_fail": 61,
+            "n_success": 175,
+            "auc": 0.8056674473067916,
+            "pair_weight": 10675.0,
+            "pair_weight_share": 0.6216153263844407,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 1,
+            "n": 235,
+            "n_fail": 15,
+            "n_success": 220,
+            "auc": 0.735909090909091,
+            "pair_weight": 3300.0,
+            "pair_weight_share": 0.1921621149478833,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 2,
+            "n": 235,
+            "n_fail": 6,
+            "n_success": 229,
+            "auc": 0.8653566229985444,
+            "pair_weight": 1374.0,
+            "pair_weight_share": 0.08000931695102778,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 3,
+            "n": 236,
+            "n_fail": 8,
+            "n_success": 228,
+            "auc": 0.8196271929824561,
+            "pair_weight": 1824.0,
+            "pair_weight_share": 0.10621324171664823,
+            "sparse": false,
+            "sparse_reason": null
+          }
+        ],
+        "stratum_sparsity": {
+          "n_strata": 4,
+          "n_strata_contributing": 4,
+          "n_strata_flagged_sparse": 0,
+          "sparse_bins": [],
+          "zero_pair_bins": [],
+          "pair_weight_total": 17173.0,
+          "pair_weight_share_flagged_sparse": 0.0,
+          "heaviest_stratum_bin": 0,
+          "pair_weight_share_heaviest_stratum": 0.6216153263844407,
+          "thresholds": {
+            "min_stratum_failures": 5,
+            "min_stratum_successes": 5
+          }
+        },
+        "weighting": "discordant pairs (n_fail * n_success) per stratum",
+        "scored_side": "dC (context-space NN closeness)",
+        "stratifying_side": "dR (answer-space NN distance, raw)",
+        "boot_mean": 0.7991465297283573,
+        "boot_sd": 0.02790074599411857,
+        "ci95_low": 0.7446877624184485,
+        "ci95_high": 0.852300269470551,
+        "n_draws": 2000,
+        "frac_draws_at_or_below_0.5": 0.0
+      },
+      "context_within_5bin_answer_whitened": {
+        "pooled_auc": 0.8017228898219197,
+        "per_stratum": [
+          {
+            "bin": 0,
+            "n": 189,
+            "n_fail": 52,
+            "n_success": 137,
+            "auc": 0.8073413812464907,
+            "pair_weight": 7124.0,
+            "pair_weight_share": 0.515708701317504,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 1,
+            "n": 188,
+            "n_fail": 18,
+            "n_success": 170,
+            "auc": 0.7944444444444445,
+            "pair_weight": 3060.0,
+            "pair_weight_share": 0.22151440567540176,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 2,
+            "n": 188,
+            "n_fail": 8,
+            "n_success": 180,
+            "auc": 0.7361111111111112,
+            "pair_weight": 1440.0,
+            "pair_weight_share": 0.1042420732590126,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 3,
+            "n": 188,
+            "n_fail": 6,
+            "n_success": 182,
+            "auc": 0.8122710622710623,
+            "pair_weight": 1092.0,
+            "pair_weight_share": 0.07905023888808455,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 4,
+            "n": 189,
+            "n_fail": 6,
+            "n_success": 183,
+            "auc": 0.8611111111111112,
+            "pair_weight": 1098.0,
+            "pair_weight_share": 0.0794845808599971,
+            "sparse": false,
+            "sparse_reason": null
+          }
+        ],
+        "stratum_sparsity": {
+          "n_strata": 5,
+          "n_strata_contributing": 5,
+          "n_strata_flagged_sparse": 0,
+          "sparse_bins": [],
+          "zero_pair_bins": [],
+          "pair_weight_total": 13814.0,
+          "pair_weight_share_flagged_sparse": 0.0,
+          "heaviest_stratum_bin": 0,
+          "pair_weight_share_heaviest_stratum": 0.515708701317504,
+          "thresholds": {
+            "min_stratum_failures": 5,
+            "min_stratum_successes": 5
+          }
+        },
+        "weighting": "discordant pairs (n_fail * n_success) per stratum",
+        "scored_side": "dC (context-space NN closeness)",
+        "stratifying_side": "dA (answer-space NN distance, whitened)",
+        "boot_mean": 0.8013768083284581,
+        "boot_sd": 0.027842574323082753,
+        "ci95_low": 0.7441682625575052,
+        "ci95_high": 0.8534211647632587,
+        "n_draws": 2000,
+        "frac_draws_at_or_below_0.5": 0.0
+      },
+      "context_within_5bin_answer_raw": {
+        "pooled_auc": 0.7727099961991638,
+        "per_stratum": [
+          {
+            "bin": 0,
+            "n": 188,
+            "n_fail": 59,
+            "n_success": 129,
+            "auc": 0.7735514387071344,
+            "pair_weight": 7611.0,
+            "pair_weight_share": 0.5785632839224629,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 1,
+            "n": 188,
+            "n_fail": 14,
+            "n_success": 174,
+            "auc": 0.6713875205254516,
+            "pair_weight": 2436.0,
+            "pair_weight_share": 0.18517673888255415,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 2,
+            "n": 189,
+            "n_fail": 7,
+            "n_success": 182,
+            "auc": 0.8335949764521193,
+            "pair_weight": 1274.0,
+            "pair_weight_share": 0.0968453059673128,
+            "sparse": false,
+            "sparse_reason": null
+          },
+          {
+            "bin": 3,
+            "n": 188,
+            "n_fail": 4,
+            "n_success": 184,
+            "auc": 0.9619565217391304,
+            "pair_weight": 736.0,
+            "pair_weight_share": 0.05594830862789814,
+            "sparse": true,
+            "sparse_reason": "n_fail < 5"
+          },
+          {
+            "bin": 4,
+            "n": 189,
+            "n_fail": 6,
+            "n_success": 183,
+            "auc": 0.7941712204007286,
+            "pair_weight": 1098.0,
+            "pair_weight_share": 0.08346636259977196,
+            "sparse": false,
+            "sparse_reason": null
+          }
+        ],
+        "stratum_sparsity": {
+          "n_strata": 5,
+          "n_strata_contributing": 5,
+          "n_strata_flagged_sparse": 1,
+          "sparse_bins": [
+            3
+          ],
+          "zero_pair_bins": [],
+          "pair_weight_total": 13155.0,
+          "pair_weight_share_flagged_sparse": 0.05594830862789814,
+          "heaviest_stratum_bin": 0,
+          "pair_weight_share_heaviest_stratum": 0.5785632839224629,
+          "thresholds": {
+            "min_stratum_failures": 5,
+            "min_stratum_successes": 5
+          }
+        },
+        "weighting": "discordant pairs (n_fail * n_success) per stratum",
+        "scored_side": "dC (context-space NN closeness)",
+        "stratifying_side": "dR (answer-space NN distance, raw)",
+        "boot_mean": 0.7734449744366132,
+        "boot_sd": 0.0302179419076812,
+        "ci95_low": 0.7151593681964169,
+        "ci95_high": 0.8291748482142817,
+        "n_draws": 2000,
+        "frac_draws_at_or_below_0.5": 0.0
+      }
+    },
+    "mirror_rationale": "Mirror of the section-6 stratified AUC: context closeness scored WITHIN quantile strata of ANSWER crowding (dR strata for the raw arm, dA strata for the whitened arm), under the identical pair-weighted stratified Mann-Whitney construction, bin schemes, resample count, seed and CI method. The difference between the two sides is bootstrapped on the same resamples, so the comparison carries its own CI."
+  },
+  "asymmetry_mirror": {
+    "question": "The manuscript states that among contexts with equally crowded CONTEXT neighbourhoods the answer side drops from its unconditional AUC to a much lower stratified AUC. The mirror claim is that among contexts with equally crowded ANSWER neighbourhoods the context side stays high. This section tests the mirror on the same instrument.",
+    "instrument": "pair-weighted stratified Mann-Whitney AUC of CLOSENESS (= -distance) against top-1 retrieval failure, within quantile strata of the other side; 4- and 5-bin schemes; 2000-resample percentile bootstrap at seed 1901 with strata edges recomputed inside each resample; the two sides and their difference share the same resamples",
+    "verdict_rule": {
+      "c1_context_side_ci_excludes_chance": "context-side stratified AUC 95% CI lower bound > 0.5",
+      "c2_context_side_above_answer_side": "paired bootstrap CI for (context side - answer side) lies entirely above 0",
+      "c3_context_side_retains_half_its_margin": "context-side margin retention >= 0.5, i.e. at least half of the unconditional above-chance margin survives stratifying",
+      "mirror_holds": "all three clauses true"
+    },
+    "headline_cell": "raw_4bin",
+    "headline_cell_note": "raw arm at 4 bins is the cell behind the manuscript's 0.79 -> 0.61 sentence, so it is the cell the mirror sentence must match",
+    "mirror_holds_headline_cell": true,
+    "mirror_holds_all_cells": true,
+    "cells": {
+      "whitened_4bin": {
+        "arm": "whitened",
+        "n_bins": 4,
+        "context_side": {
+          "description": "context closeness (dC) scored within 4 quantile strata of answer crowding (dA)",
+          "unconditional_auc": 0.8590897235263432,
+          "stratified_auc": 0.7918680023571008,
+          "ci95_low": 0.7372987890605676,
+          "ci95_high": 0.8462494758942376,
+          "margin_retention": 0.8127996521061374,
+          "n_strata_flagged_sparse": 0,
+          "pair_weight_share_flagged_sparse": 0.0
+        },
+        "answer_side": {
+          "description": "answer closeness (dA) scored within 4 quantile strata of context crowding (dC) -- the section-6 reading",
+          "unconditional_auc": 0.7777908189880021,
+          "stratified_auc": 0.6429532664546121,
+          "ci95_low": 0.5748427990040773,
+          "ci95_high": 0.7101630390587605,
+          "margin_retention": 0.5146075992554181,
+          "n_strata_flagged_sparse": 2,
+          "pair_weight_share_flagged_sparse": 0.09933936873011989
+        },
+        "paired_difference_context_minus_answer": {
+          "boot_mean": 0.1506830218637799,
+          "boot_sd": 0.04863463127908209,
+          "ci95_low": 0.056458143464037415,
+          "ci95_high": 0.24717755239143405,
+          "n_draws": 2000,
+          "frac_draws_at_or_below_0": 0.001
+        },
+        "clauses": {
+          "c1_context_side_ci_excludes_chance": true,
+          "c2_context_side_above_answer_side": true,
+          "c3_context_side_retains_half_its_margin": true
+        },
+        "mirror_holds": true
+      },
+      "raw_4bin": {
+        "arm": "raw",
+        "n_bins": 4,
+        "context_side": {
+          "description": "context closeness (dC) scored within 4 quantile strata of answer crowding (dR)",
+          "unconditional_auc": 0.8590897235263432,
+          "stratified_auc": 0.7985209340243405,
+          "ci95_low": 0.7446877624184485,
+          "ci95_high": 0.852300269470551,
+          "margin_retention": 0.831326864753457,
+          "n_strata_flagged_sparse": 0,
+          "pair_weight_share_flagged_sparse": 0.0
+        },
+        "answer_side": {
+          "description": "answer closeness (dR) scored within 4 quantile strata of context crowding (dC) -- the section-6 reading",
+          "unconditional_auc": 0.7910732916014606,
+          "stratified_auc": 0.6107780768289699,
+          "ci95_low": 0.5412966864158928,
+          "ci95_high": 0.6873995319869066,
+          "margin_retention": 0.3805848218484022,
+          "n_strata_flagged_sparse": 2,
+          "pair_weight_share_flagged_sparse": 0.09933936873011989
+        },
+        "paired_difference_context_minus_answer": {
+          "boot_mean": 0.18623794512995567,
+          "boot_sd": 0.05024814417812088,
+          "ci95_low": 0.09015917392513398,
+          "ci95_high": 0.28521677753043273,
+          "n_draws": 2000,
+          "frac_draws_at_or_below_0": 0.0
+        },
+        "clauses": {
+          "c1_context_side_ci_excludes_chance": true,
+          "c2_context_side_above_answer_side": true,
+          "c3_context_side_retains_half_its_margin": true
+        },
+        "mirror_holds": true
+      },
+      "whitened_5bin": {
+        "arm": "whitened",
+        "n_bins": 5,
+        "context_side": {
+          "description": "context closeness (dC) scored within 5 quantile strata of answer crowding (dA)",
+          "unconditional_auc": 0.8590897235263432,
+          "stratified_auc": 0.8017228898219197,
+          "ci95_low": 0.7441682625575052,
+          "ci95_high": 0.8534211647632587,
+          "margin_retention": 0.8402437331231092,
+          "n_strata_flagged_sparse": 0,
+          "pair_weight_share_flagged_sparse": 0.0
+        },
+        "answer_side": {
+          "description": "answer closeness (dA) scored within 5 quantile strata of context crowding (dC) -- the section-6 reading",
+          "unconditional_auc": 0.7777908189880021,
+          "stratified_auc": 0.6201733648542159,
+          "ci95_low": 0.5507805481997718,
+          "ci95_high": 0.6865760444836235,
+          "margin_retention": 0.4326038034374573,
+          "n_strata_flagged_sparse": 2,
+          "pair_weight_share_flagged_sparse": 0.07328605200945626
+        },
+        "paired_difference_context_minus_answer": {
+          "boot_mean": 0.18223383293840562,
+          "boot_sd": 0.04958713735753956,
+          "ci95_low": 0.0825311879749965,
+          "ci95_high": 0.2810344489564262,
+          "n_draws": 2000,
+          "frac_draws_at_or_below_0": 0.0005
+        },
+        "clauses": {
+          "c1_context_side_ci_excludes_chance": true,
+          "c2_context_side_above_answer_side": true,
+          "c3_context_side_retains_half_its_margin": true
+        },
+        "mirror_holds": true
+      },
+      "raw_5bin": {
+        "arm": "raw",
+        "n_bins": 5,
+        "context_side": {
+          "description": "context closeness (dC) scored within 5 quantile strata of answer crowding (dR)",
+          "unconditional_auc": 0.8590897235263432,
+          "stratified_auc": 0.7727099961991638,
+          "ci95_low": 0.7151593681964169,
+          "ci95_high": 0.8291748482142817,
+          "margin_retention": 0.7594480664082762,
+          "n_strata_flagged_sparse": 1,
+          "pair_weight_share_flagged_sparse": 0.05594830862789814
+        },
+        "answer_side": {
+          "description": "answer closeness (dR) scored within 5 quantile strata of context crowding (dC) -- the section-6 reading",
+          "unconditional_auc": 0.7910732916014606,
+          "stratified_auc": 0.5729708431836091,
+          "ci95_low": 0.5028668666724561,
+          "ci95_high": 0.6499894107669407,
+          "margin_retention": 0.25069577075289096,
+          "n_strata_flagged_sparse": 2,
+          "pair_weight_share_flagged_sparse": 0.07328605200945626
+        },
+        "paired_difference_context_minus_answer": {
+          "boot_mean": 0.19913714545736566,
+          "boot_sd": 0.053477576584949296,
+          "ci95_low": 0.09640572478366444,
+          "ci95_high": 0.29945845403329185,
+          "n_draws": 2000,
+          "frac_draws_at_or_below_0": 0.0
+        },
+        "clauses": {
+          "c1_context_side_ci_excludes_chance": true,
+          "c2_context_side_above_answer_side": true,
+          "c3_context_side_retains_half_its_margin": true
+        },
+        "mirror_holds": true
+      }
+    },
+    "paired_bootstrap_consistency": {
+      "check": "the paired pass must reproduce the standalone section-6 stratified bootstrap exactly (tolerance 1e-9); a mismatch aborts",
+      "max_abs_deviation_over_cells": 0.0,
+      "per_cell": [
+        {
+          "cell": "answer_whitened_within_4bin_context",
+          "max_abs_deviation": 0.0,
+          "n_draws_match": true
+        },
+        {
+          "cell": "answer_raw_within_4bin_context",
+          "max_abs_deviation": 0.0,
+          "n_draws_match": true
+        },
+        {
+          "cell": "answer_whitened_within_5bin_context",
+          "max_abs_deviation": 0.0,
+          "n_draws_match": true
+        },
+        {
+          "cell": "answer_raw_within_5bin_context",
+          "max_abs_deviation": 0.0,
+          "n_draws_match": true
+        }
+      ]
+    },
+    "headline": "MIRROR HOLDS at the headline cell (raw arm, 4 context/answer bins): holding ANSWER crowding fixed, context closeness scores AUC 0.7985 [0.7447, 0.8523] (unconditional 0.8591, retention 0.831); holding CONTEXT crowding fixed, answer closeness scores AUC 0.6108 [0.5413, 0.6874] (unconditional 0.7911, retention 0.381). Paired difference (context - answer) = +0.1862 [+0.0902, +0.2852]."
+  }
+}

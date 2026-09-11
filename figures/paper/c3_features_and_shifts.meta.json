@@ -5,9 +5,9 @@
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
   "reproduction_command": "uv run python scripts/make_paper_section42_figures.py",
   "title": "SAE feature properties and what the context-to-answer map keeps per changed context element",
-  "subject": "Conditional association between an SAE feature property and the held-out R2 of its decoder direction, beside the mean cosine between predicted and observed answer shift and the median ratio of predicted to observed shift size per controlled context element, with 95% pair-bootstrap intervals",
+  "subject": "Conditional association between an SAE feature property and the held-out R2 of its decoder direction, beside the mean cosine between predicted and observed answer shift, the median ratio of predicted to observed shift size, and the two-way discrimination rate per controlled context element, for the seven rows left after the two refusal-holds rows are dropped, with 95% pair-bootstrap intervals",
   "git": {
-    "commit": "8a779351c586872f278e4dd326982a07be212f75",
+    "commit": "2759a7ebc3cd823a46f8108757bf5f199b285885",
     "tracked_worktree_dirty": true
   },
   "sources": [
@@ -17,7 +17,7 @@
     },
     {
       "path": "eval_results/issue_2564/section42_element_shifts.json",
-      "sha256": "4d76a5fa1ce552b478ebc58a5ef3b26448ad915d732853ecfcc17ed7069c2d42"
+      "sha256": "3e5d328f91c266eb583fc26764dc11f1a090a8086a288d878263758a5599db34"
     },
     {
       "path": "eval_results/issue_1482/tier_concordance.json",
@@ -30,11 +30,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      7.988
+      5.416
     ],
     "exported_size_inches": [
       13.095,
-      7.743
+      5.321
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -48,42 +48,38 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "SEPARATE 16,384-FEATURE NESTED DICTIONARY \u00b7 LAYER 20",
-      "A  \u00b7  120,716 SAE FEATURES \u00b7 FORWARD-SELECTED ASSOCIATIONS",
-      "Concordance with feature $R^2$, above chance",
+      "SEPARATE DICTIONARY\n16,384 FEATURES \u00b7 LAYER 20",
+      "A  \u00b7  120,716 SAE FEATURES",
+      "Concordance with feature $R^2$,\nabove chance",
       "-0.1",
-      "0",
       "+0.1",
-      "+0.2",
       "+0.3",
-      "variance along decoder direction",
-      "speaker identity / disposition",
-      "promotes specific output tokens",
-      "suppresses specific output tokens",
+      "variance along\ndecoder direction",
+      "speaker identity /\ndisposition",
+      "promotes specific\noutput tokens",
+      "suppresses specific\noutput tokens",
       "topic content",
-      "coarsest nested-dictionary tier",
-      "Feature-property concordance",
-      "B  \u00b7  MEAN COSINE \u00b7 95% PAIR BOOTSTRAP",
-      "Predicted shift direction (cosine) \u2191",
+      "coarsest nested-\ndictionary tier",
+      "B  \u00b7  MEAN COSINE",
+      "Predicted shift\ndirection\n(cosine) \u2191",
       "0.2",
-      "0.4",
       "0.6",
-      "0.8",
       "1.0",
-      "Tone (n=12)",
-      "Persona (n=120)",
-      "Output format (n=120)",
-      "Question topic (n=66)",
-      "One-word topic (n=24)",
-      "Refusal flips (n=61)",
-      "Refusal holds (n=63)",
-      "Framing-refusal flips (n=307)",
-      "Framing-refusal holds (n=1924)",
-      "Direction of the answer shift",
-      "C  \u00b7  MEDIAN RATIO \u00b7 95% PAIR BOOTSTRAP",
-      "Predicted / observed shift size",
+      "Tone",
+      "Persona",
+      "Output format",
+      "Question topic",
+      "One-word topic",
+      "Refusal reverses:\nintent swap",
+      "Refusal reverses:\nframing rewrite",
+      "C  \u00b7  MEDIAN RATIO",
+      "Predicted /\nobserved\nshift size",
+      "0.8",
       "1.2",
-      "Size of the answer shift",
+      "D  \u00b7  RATE",
+      "Two-way\ndiscrimination\nrate \u2191",
+      "0.5",
+      "0.9",
       "QWEN2.5-7B-INSTRUCT, LAYER 19"
     ]
   },
@@ -141,6 +137,14 @@
           "kind": "forward-selected association"
         }
       ],
+      "property_label_wraps": {
+        "variance along decoder direction": "variance along\ndecoder direction",
+        "speaker identity / disposition": "speaker identity /\ndisposition",
+        "promotes specific output tokens": "promotes specific\noutput tokens",
+        "suppresses specific output tokens": "suppresses specific\noutput tokens",
+        "topic content": "topic content",
+        "coarsest nested-dictionary tier": "coarsest nested-\ndictionary tier"
+      },
       "dv": "held-out R^2 of the decoder-direction projection d_f^T h_A (dense; no encoder, no BatchTopK gate) under the layer-19 ridge metamodel; common universe of 120,716 features",
       "separate_group": {
         "kicker": "separate 16,384-feature nested dictionary \u00b7 layer 20",
@@ -194,7 +198,7 @@
         "error_bars": "none drawn; the panel shows no interval on any row, so the tier interval is recorded here instead"
       }
     },
-    "panels_b_c": {
+    "panels_b_c_d": {
       "rows": [
         {
           "row": "Tone",
@@ -324,7 +328,7 @@
           ]
         },
         {
-          "row": "Refusal flips",
+          "row": "Refusal reverses: intent swap",
           "source": "issue2617 svmp, one-word safety swaps + XSTest rephrasings",
           "flip_criterion": "|refusal_rate_a - refusal_rate_b| >= 0.5 over 10 draws",
           "n_pairs": 61,
@@ -350,33 +354,7 @@
           ]
         },
         {
-          "row": "Refusal holds",
-          "source": "issue2617 svmp, one-word safety swaps + XSTest rephrasings",
-          "flip_criterion": "|refusal_rate_a - refusal_rate_b| >= 0.5 over 10 draws",
-          "n_pairs": 63,
-          "separation": 0.9539,
-          "separation_ci95": [
-            0.9446,
-            0.9619
-          ],
-          "twoway": 0.9048,
-          "twoway_ci95": [
-            0.8569,
-            0.9524
-          ],
-          "direction": 0.5542,
-          "direction_ci95": [
-            0.5135,
-            0.5956
-          ],
-          "magnitude": 0.8259,
-          "magnitude_ci95": [
-            0.7452,
-            0.8689
-          ]
-        },
-        {
-          "row": "Framing-refusal flips",
+          "row": "Refusal reverses: framing rewrite",
           "source": "issue2356 armA, 394 AdvBench bases x 6 intent-preserving rewrite axes",
           "note": "different capture; the 2564-fitted map transfers here at cos 0.90 vs 0.95 in-bank",
           "n_pairs": 307,
@@ -400,32 +378,6 @@
             0.7206,
             0.7711
           ]
-        },
-        {
-          "row": "Framing-refusal holds",
-          "source": "issue2356 armA, 394 AdvBench bases x 6 intent-preserving rewrite axes",
-          "note": "different capture; the 2564-fitted map transfers here at cos 0.90 vs 0.95 in-bank",
-          "n_pairs": 1924,
-          "separation": 0.9748,
-          "separation_ci95": [
-            0.9735,
-            0.976
-          ],
-          "twoway": 0.611,
-          "twoway_ci95": [
-            0.6019,
-            0.6203
-          ],
-          "direction": 0.2728,
-          "direction_ci95": [
-            0.266,
-            0.2798
-          ],
-          "magnitude": 1.0416,
-          "magnitude_ci95": [
-            1.0226,
-            1.0624
-          ]
         }
       ],
       "groups": [
@@ -441,18 +393,52 @@
           "One-word topic"
         ],
         [
-          "Refusal flips",
-          "Refusal holds"
-        ],
-        [
-          "Framing-refusal flips",
-          "Framing-refusal holds"
+          "Refusal reverses: intent swap",
+          "Refusal reverses: framing rewrite"
         ]
       ],
+      "rows_not_drawn": [
+        "Refusal holds: intent swap",
+        "Refusal holds: framing rewrite"
+      ],
       "reference_line": {
-        "magnitude": 1.0
+        "magnitude": 1.0,
+        "twoway": 0.5
       },
-      "order": "grouped: identity, format, content, word refusal, framing refusal",
+      "twoway_axis": {
+        "segments": [
+          [
+            0.46,
+            0.54
+          ],
+          [
+            0.78,
+            1.015
+          ]
+        ],
+        "segment_ticks": [
+          [
+            0.5
+          ],
+          [
+            0.8,
+            0.9,
+            1.0
+          ]
+        ],
+        "rule": "two linear segments, plotted widths proportional to their data spans, diagonal cut marks on the bottom seam; the omitted range carries no value or interval endpoint"
+      },
+      "row_labels": {
+        "Tone": "Tone",
+        "Persona": "Persona",
+        "Output format": "Output format",
+        "Question topic": "Question topic",
+        "One-word topic": "One-word topic",
+        "Refusal reverses: intent swap": "Refusal reverses:\nintent swap",
+        "Refusal reverses: framing rewrite": "Refusal reverses:\nframing rewrite"
+      },
+      "pair_counts_in_labels": false,
+      "order": "grouped: identity, format, content, refusal reverses",
       "bootstrap": {
         "unit": "pair",
         "draws": 2000,
@@ -472,8 +458,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "6457efe5591fc53efd486dee491ae740812d17d00a39a0fc2853ed7566ddb800",
-    "png": "fecf791fffb997428e18abfccafc2d29af96f3c58cd0ba1a59d618f6e895b8e7",
-    "grayscale": "e275fcf93f67c9c7e8a2d80d8bd10d1e12426c3afe5bd68e9a8e38bebd34efcf"
+    "pdf": "fa744557f3447f85881010d26f2b36c06e7a2bf45b61cf0baaf931f194698a9e",
+    "png": "4467f30f37070a1180b82ff4d2a9c746014d8f8d18f82c47b03f6381741a9b17",
+    "grayscale": "33617e8894a683795d88c4387d1b0e45f54c76918811ee1a7cd37487550f2c99"
   }
 }
