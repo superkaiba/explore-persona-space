@@ -1,0 +1,17 @@
+{
+  "schema": "workspace-jr-execution-revision-v1",
+  "revision_id": "20260912-canonical-input-v1",
+  "recorded_at_utc": "2026-09-12T20:55:08Z",
+  "main_outcomes_seen": false,
+  "config_sha256": "db6c68fe9680ed2be5cc2eb4064019a01a5b1f2d460099a683f439817d61f5d9",
+  "selection_sha256": "11209d75c89345223e87641d74d273ba37ddcd7f1e608f0c59d39be0607d2b54",
+  "input_capture_policy": "context_only_frozen_order_batches16_no_answer_tokens",
+  "predictor_policy": "fresh_full_answer_and_component_fits",
+  "historical_map_application": "never_to_current_native_inputs",
+  "historical_parity_thresholds": "unchanged_failures_remain_failures",
+  "scope": "The same selected models, layers, exact generation settings, disjoint contexts, lens construction, decomposition, target definitions and tuning budgets answer the original relative-predictability question.",
+  "reason": "Both models failed the historical input recapture tolerance, and the pilot exposed answer-batch-dependent BF16 input reads. Capture each context only once without answers and fit every current-input predictor afresh. Retain the original answer-batch reads and all failed parity evidence.",
+  "frozen_diagnostic_scope": "A future historical-cache diagnostic may apply an original frozen predictor only to its original verified held-out x/y artifacts. Alignment with newly constructed lens directions would remain approximate and separately labeled; it cannot establish frozen-predictor compatibility with current inputs.",
+  "higher_k_inputs": "Reuse the immutable K5 canonical context-input checkpoint, with its original K5 source reference. Store additional generation draws in a separate artifact; never append to the source file named by the canonical input contract.",
+  "main_scale": "Still unset; freeze from completed pilot runtime and learning-curve evidence before main component outcomes."
+}

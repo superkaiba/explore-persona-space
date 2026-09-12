@@ -479,11 +479,28 @@ def readiness_bundle(tmp_path, monkeypatch):
             ),
         )
         bundle.put(
+            "protocol_revision",
+            {
+                "schema": "workspace-jr-execution-revision-v1",
+                "revision_id": "20260912-canonical-input-v1",
+                "recorded_at_utc": "2026-09-12T20:55:08Z",
+                "main_outcomes_seen": False,
+                "config_sha256": identity["config_sha256"],
+                "selection_sha256": identity["selection_sha256"],
+                "input_capture_policy": "context_only_frozen_order_batches16_no_answer_tokens",
+                "predictor_policy": "fresh_full_answer_and_component_fits",
+                "historical_map_application": "never_to_current_native_inputs",
+                "historical_parity_thresholds": "unchanged_failures_remain_failures",
+                "reason": "Synthetic protocol fixture; no actual scientific evidence is used.",
+            },
+        )
+        bundle.put(
             "execution_plan",
             {
                 "main_outcomes_seen_before_freeze": False,
                 "scale_reason": "Synthetic pre-main compute plan; no actual workload is launched.",
                 "main_counts": {"train": 6, "validation": 4, "test": 6},
+                "protocol_revision_sha256": bundle.sha("protocol_revision"),
             },
         )
         bundle.approve()
@@ -640,7 +657,7 @@ def test_calibration_hash_under_wrong_remote_path_is_not_durable_coverage(readin
 @pytest.mark.parametrize(
     "mutation", ["nan_error", "nan_cosine", "short_cosines", "failed_threshold"]
 )
-def test_parity_requires_complete_finite_passing_metrics(readiness_bundle, mutation):
+def test_parity_requires_complete_finite_correctly_reported_metrics(readiness_bundle, mutation):
     bundle = readiness_bundle()
     parity = bundle.get("parity")
     metric = parity["metrics"]["x_prompt_last"]
@@ -654,6 +671,108 @@ def test_parity_requires_complete_finite_passing_metrics(readiness_bundle, mutat
         metric["relative_frobenius_error"] = 0.02
     bundle.put("parity", parity, approve=True)
     with pytest.raises(ValueError, match="parity thresholds"):
+        bundle.validate()
+
+
+def _record_failed_historical_input_parity(bundle):
+    """Make real synthetic recapture arrays fail the fixed 1% threshold."""
+    reference = bundle.readiness["evidence"]["parity_historical_targets"]
+    historical = torch.load(bundle.root / reference["file"], weights_only=True)
+    recaptured = {name: value.clone() for name, value in historical.items()}
+    recaptured["x_prompt_last"] *= 1.02
+    bundle.add_tensor("parity_arrays", recaptured)
+    old, new = historical["x_prompt_last"].double(), recaptured["x_prompt_last"].double()
+    relative = float(torch.linalg.vector_norm(new - old) / torch.linalg.vector_norm(old))
+    cosine = torch.nn.functional.cosine_similarity(old, new, dim=1).tolist()
+    assert relative > bundle.config["provenance_gate"]["maximum_relative_frobenius_error"]
+    parity = bundle.get("parity")
+    parity["status"] = "failed"
+    parity["recaptured_sha256"] = bundle.sha("parity_arrays")
+    parity["metrics"]["x_prompt_last"] = {
+        "passed": False,
+        "relative_frobenius_error": relative,
+        "row_cosine": cosine,
+    }
+    bundle.put("parity", parity, approve=True)
+
+
+@pytest.mark.parametrize("role", ["primary", "comparison"])
+def test_reviewed_fresh_fit_revision_retains_failed_historical_parity(readiness_bundle, role):
+    bundle = readiness_bundle(role)
+    _record_failed_historical_input_parity(bundle)
+    result = bundle.validate()
+    assert result["reports"]["parity"]["status"] == "failed"
+    assert result["reports"]["parity"]["metrics"]["x_prompt_last"]["passed"] is False
+    assert result["reports"]["parity"]["metrics"]["y_ans"]["passed"] is True
+    assert (
+        result["reports"]["protocol_revision"]["historical_map_application"]
+        == "never_to_current_native_inputs"
+    )
+    assert bundle.config["provenance_gate"]["maximum_relative_frobenius_error"] == 0.01
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("historical_parity_thresholds", "relaxed_to_0.02"),
+        ("historical_map_application", "reuse_on_current_native_inputs"),
+        ("predictor_policy", "fresh_components_reuse_historical_full_answer"),
+        ("input_capture_policy", "answer_batch_dependent_inputs"),
+        ("main_outcomes_seen", True),
+    ],
+)
+@pytest.mark.parametrize("historical_failed", [False, True])
+def test_review_cannot_waive_canonical_fresh_fit_policy(
+    readiness_bundle, field, value, historical_failed
+):
+    bundle = readiness_bundle()
+    if historical_failed:
+        _record_failed_historical_input_parity(bundle)
+    revision = bundle.get("protocol_revision")
+    revision[field] = value
+    bundle.put("protocol_revision", revision)
+    execution = bundle.get("execution_plan")
+    execution["protocol_revision_sha256"] = bundle.sha("protocol_revision")
+    bundle.put("execution_plan", execution, approve=True)
+    with pytest.raises(ValueError, match="reviewed revision forbidding historical-map reuse"):
+        bundle.validate()
+
+
+@pytest.mark.parametrize("mutation", ["metric_passed", "overall_passed", "false_overall_failure"])
+def test_fresh_fit_revision_does_not_relabel_historical_parity(readiness_bundle, mutation):
+    bundle = readiness_bundle()
+    if mutation != "false_overall_failure":
+        _record_failed_historical_input_parity(bundle)
+    parity = bundle.get("parity")
+    if mutation == "metric_passed":
+        parity["metrics"]["x_prompt_last"]["passed"] = True
+    elif mutation == "overall_passed":
+        parity["status"] = "passed"
+    else:
+        parity["status"] = "failed"
+    bundle.put("parity", parity, approve=True)
+    with pytest.raises(ValueError, match="parity thresholds disagree"):
+        bundle.validate()
+
+
+def test_changed_revision_requires_a_new_execution_binding(readiness_bundle):
+    bundle = readiness_bundle()
+    revision = bundle.get("protocol_revision")
+    revision["reason"] = "Revised after the execution plan was frozen."
+    bundle.put("protocol_revision", revision, approve=True)
+    with pytest.raises(ValueError, match="reviewed revision forbidding historical-map reuse"):
+        bundle.validate()
+
+
+def test_rebound_revision_cannot_reuse_the_old_independent_review(readiness_bundle):
+    bundle = readiness_bundle()
+    revision = bundle.get("protocol_revision")
+    revision["reason"] = "Changed revision needs a new independent review."
+    bundle.put("protocol_revision", revision)
+    execution = bundle.get("execution_plan")
+    execution["protocol_revision_sha256"] = bundle.sha("protocol_revision")
+    bundle.put("execution_plan", execution)
+    with pytest.raises(ValueError, match="Independent review"):
         bundle.validate()
 
 

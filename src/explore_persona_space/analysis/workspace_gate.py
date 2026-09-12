@@ -183,12 +183,12 @@ def _check_calibration_upload(root, aggregate, calibration, identity):
 
 
 def _check_parity(paths, reports, config, identity):
-    """Verify the passed calibration-only historical recapture and saved arrays."""
+    """Preserve measured historical failures; a reviewed fresh-fit revision may proceed."""
     parity, inputs = reports["parity"], reports["parity_inputs"]
     validate_producer(parity["identity"], identity, native_ancestor=True)
     _unchanged_analyzer(parity["identity"], ("scripts/workspace_jr_parity.py",))
     if (
-        parity["status"] != "passed"
+        parity["status"] not in {"passed", "failed"}
         or parity["input_manifest_sha256"] != file_sha256(paths["parity_inputs"])
         or parity["recaptured_sha256"] != file_sha256(paths["parity_arrays"])
         or inputs["model_role"] != identity["model_role"]
@@ -199,19 +199,45 @@ def _check_parity(paths, reports, config, identity):
         or [row["prompt_sha256"] for row in parity["rows"]]
         != [row["selection"]["prompt_sha256"] for row in inputs["rows"]]
     ):
-        raise ValueError("Historical mapping recapture is not passed and bound to these inputs")
+        raise ValueError("Historical mapping recapture is not bound to these inputs")
+    outcomes = []
     for key in ("x_prompt_last", "y_ans"):
         metric = parity["metrics"][key]
         if (
-            not metric["passed"]
-            or not math.isfinite(metric["relative_frobenius_error"])
+            not math.isfinite(metric["relative_frobenius_error"])
+            or metric["relative_frobenius_error"] < 0
             or len(metric["row_cosine"]) != config["provenance_gate"]["recapture_contexts"]
             or not all(math.isfinite(value) for value in metric["row_cosine"])
-            or metric["relative_frobenius_error"]
-            > config["provenance_gate"]["maximum_relative_frobenius_error"]
-            or min(metric["row_cosine"]) < config["provenance_gate"]["minimum_row_cosine"]
         ):
             raise ValueError("Historical mapping parity thresholds failed")
+        passed = (
+            metric["relative_frobenius_error"]
+            <= config["provenance_gate"]["maximum_relative_frobenius_error"]
+            and min(metric["row_cosine"]) >= config["provenance_gate"]["minimum_row_cosine"]
+        )
+        if metric["passed"] is not passed:
+            raise ValueError("Historical mapping parity thresholds disagree with saved status")
+        outcomes.append(passed)
+    if parity["status"] != ("passed" if all(outcomes) else "failed"):
+        raise ValueError("Historical mapping parity thresholds disagree with overall status")
+    revision = reports["protocol_revision"]
+    if (
+        revision["schema"] != "workspace-jr-execution-revision-v1"
+        or revision["revision_id"] != "20260912-canonical-input-v1"
+        or revision["main_outcomes_seen"] is not False
+        or revision["config_sha256"] != identity["config_sha256"]
+        or revision["selection_sha256"] != identity["selection_sha256"]
+        or revision["input_capture_policy"]
+        != "context_only_frozen_order_batches16_no_answer_tokens"
+        or revision["predictor_policy"] != "fresh_full_answer_and_component_fits"
+        or revision["historical_map_application"] != "never_to_current_native_inputs"
+        or revision["historical_parity_thresholds"] != "unchanged_failures_remain_failures"
+        or reports["execution_plan"]["protocol_revision_sha256"]
+        != file_sha256(paths["protocol_revision"])
+    ):
+        raise ValueError(
+            "Canonical main inputs require a reviewed revision forbidding historical-map reuse"
+        )
 
 
 def _check_pilot(paths, reports, identity, selection_path, config):
@@ -315,6 +341,7 @@ def validate_main_readiness(path, config, *, config_path, selection_path, identi
         "pilot_binding",
         "calibration_upload",
         "execution_plan",
+        "protocol_revision",
         "review",
     }
     if set(readiness["evidence"]) != names:
