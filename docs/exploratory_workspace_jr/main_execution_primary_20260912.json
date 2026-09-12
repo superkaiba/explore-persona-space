@@ -1,0 +1,152 @@
+{
+  "schema": "workspace-jr-execution-plan-v1",
+  "frozen_at_utc": "2026-09-12T22:48:19.147468+00:00",
+  "model_role": "primary",
+  "shared_main_counts_for_both_models": true,
+  "main_counts": {
+    "train": 1024,
+    "validation": 128,
+    "test": 256
+  },
+  "main_outcomes_seen_before_freeze": false,
+  "config_sha256": "db6c68fe9680ed2be5cc2eb4064019a01a5b1f2d460099a683f439817d61f5d9",
+  "selection_sha256": "11209d75c89345223e87641d74d273ba37ddcd7f1e608f0c59d39be0607d2b54",
+  "protocol_revision_sha256": "47f103d97609e6d8508bf891caec80e8c078991fcdc353c9e4e64817002d6820",
+  "generation_engine": {
+    "profile": "graphs32",
+    "knobs": {
+      "max_num_seqs": 32,
+      "enforce_eager": false,
+      "enable_prefix_caching": true,
+      "language_model_only": true
+    },
+    "max_model_len": 32768,
+    "gpu_memory_utilization": 0.9,
+    "contexts_per_batch": 16
+  },
+  "scale_reason": "The pilot learning curves continue to improve at 64 training contexts. Use a sixteen-fold larger frozen training prefix (1024), eight-fold validation/test prefixes (128/256), shared across models. This is an exploratory sample supported by existing A100-80 resources, not a convergence claim. Evaluate 256/512/1024 training curves and retain inconclusive conclusions if sample size still limits the comparison. Counts were not chosen from main outcomes.",
+  "decomposition": {
+    "k_values": [
+      5,
+      10,
+      25
+    ],
+    "primary_k": 10,
+    "rotations": [
+      null,
+      20260913,
+      20260914,
+      20260915
+    ],
+    "token_batch_size": 128,
+    "dtype": "float32",
+    "matmul_precision": "highest",
+    "allow_tf32": false,
+    "dictionary_scope": "every finite nonzero vocabulary row",
+    "procedure": "validated nested nonnegative gradient pursuit; preserve original per-rollout ragged batches"
+  },
+  "compute": {
+    "backend": "existing credit-funded GCP VMs",
+    "machine": "a2-ultragpu-1g: A100 80GB and 170GiB host RAM",
+    "generation_capture_parallelism": "independent complete train/validation/test subsets; no new within-subset sharding",
+    "rotation_parallelism": 4,
+    "mean_answer_tokens_projected": 4987936.0,
+    "joint_J_R_all_k_tokens_per_second": 126.47339154878541,
+    "mean_sparse_gpu_hours_per_rotation": 10.955172157641753,
+    "mean_sparse_gpu_hours_four_rotations": 43.82068863056701,
+    "generation_tokens_per_second": 477.7221711537011,
+    "generation_speedup_over_eager16": 4.511160842230095,
+    "stop_fence_hours_after_restart": 30,
+    "fence_interpretation": "Safety boundary, not completion guarantee; monitor realized progress, checkpoint and verify uploads before any stop/restart. Existing successful outputs remain immutable. Main generation, capture, fits, controls, learning curves and transfers add time beyond sparse arithmetic. Terminate/release completed workers after verification rather than holding them to the fence.",
+    "disk_policy": "Keep model/capture tensors on remote persistent boot disks; stage verified bytes by hardlink, check phase headroom, release only uploaded intermediates if needed. Shared local VM receives small reports and per-example result arrays only.",
+    "pilot_capture_publish_spans_seconds": {
+      "train64": 176.1833598613739,
+      "validation16": 50.25695180892944,
+      "test32": 116.79350805282593
+    },
+    "capture_timing_scope": "Original completed pilot2 answer captures: first-to-last tensor mtime span within each split, excluding model load and the first context; corrected pilot3 reused exactly those answer states. Native canonical prompt capture is measured separately."
+  },
+  "runtime_evidence": {
+    "sparse_benchmark_sha256": "a8d3840860a2dd6f73778bfe50980194cd647314be6ba14ea3956c28f335262d",
+    "sparse_upload_revision": "1718520b3799bf040210b8326e38b8d2dab6a6f2",
+    "execution_upload": {
+      "revision": "3a3e7f45263f0b45a604500be0bf4c64910dc11a",
+      "repo": "superkaiba1/explore-persona-space-data",
+      "prefix": "exploratory_workspace_jr/20260912/primary_execution_probes_v2",
+      "verified_sha256": {
+        "eager16/benchmark_complete.json": "cb482ac7749058aa568e1a699ba5d6f987db64ad573a14914d2f5bc9e68833dc",
+        "eager16/benchmark_started.json": "1219976e3f0da88c671a6aa5c60d3a17d1484825fd52d8302c28e25ead6edd6c",
+        "eager16/engine_parameters.json": "a11d4d09b2fe7997eb408d4b523f550fd7e4f6b68233e6d962fc8a87f0142f62",
+        "eager16/generation_benchmark.json": "2145cc64f135ff91258986ee80ca062f566b602446e1b751edaef04b701390e6",
+        "eager16/generations/16fbce501b366d4320165f9b07bf34f0a059ccd77c3f708e0c5410e41f10dd2f.json": "3e302b02d9767f17eef16cf817ba217926c1edd050699b1aa4da7ced1605212c",
+        "eager16/generations/332c7f32d684034d0a98c3fe0d7b0b7420bac4e483a7ed293857f6bef7647b00.json": "f9593016db3c0227ec145c558773140d0040129862338cd4062cfeaf1484528e",
+        "eager16/generations/37640f604a1218065f06f5302d350a75adead026acac11915fcb389d85008607.json": "654490eaf7a1a464c03ca1d24ebe30de9d3eccb72e9f737135dfd131960c6496",
+        "eager16/generations/44da91462399096793902bc4e57441675eb095f9bda4ec4782c6bcefc8f18b68.json": "7a9289a2398a75dbf0cd8f6758800fb5e1c82c055b3ab86b034eabcacdb5d284",
+        "eager16/generations/4f1eb492f44e5c6af1f262de514ac6f4d2cb54ac617688b6c487d615240326dc.json": "e2a82ba5e4d25cf6317204580a4e44d41945180e9b2411aac97a7e6889a570cc",
+        "eager16/generations/51a1da0159e173f6d591ea9f3b1152fa25ee0019ca37ea655225684e755ddb11.json": "e3d2a8808dae79da9c05361a52c0b381c216010ee31ab5e94dab133327a30894",
+        "eager16/generations/64f9b08425cec65b38c31c15b962e1c0636ad98670e6ce9bab04c64990d6befa.json": "a05f39c636f14d5661fb8ca55b6b78fa4d3fbbb292a3343d04d8370e4d17cee9",
+        "eager16/generations/92973febbcaede6022fc85b077ded85f249de1983212f443fb40e3499be3801e.json": "5da960129124b47d54a4e3c6f702ed296004876f1ded2f1910b6ee74d296b021",
+        "eager16/generations/94b221ed06a2c971fa26ae7a713b77f6ab3d24a2ca4b8a5c6a04ad4e0807e0b5.json": "5e655e5dada17757e696b743604cae9e2437edb5193cbbd3efd25aceed32f522",
+        "eager16/generations/966649b76525c5dbafe8401c9d6d4297b7290a5bd551e7d21590a6e0a92fcff3.json": "620446880855a5031fbbe5c6587b1fdfa8c437c16c4e9f2f32b922bfda8b0df8",
+        "eager16/generations/a71d7219696d61a669e3c2eb2b74f847d8c10d8bf6bf38de011117657e3964c9.json": "7b261106a06cfff0ecec583261b8c667e0324914d3d0307278e8c7ed3e48197c",
+        "eager16/generations/ae30822e9b5ee1b873e58f56a0e5d36336fbf8160f5bb9f35bc1d70c795edacb.json": "e071fa410f8f2146568126680c5dbc95df430727737d0f4295520c96f060751a",
+        "eager16/generations/baacd499c7ac82f07f4632f80c40fc9e82c13f155d7639e1cdbac60dcb3e541c.json": "ba343f893420874a615c78eaf1bd7f9cea25307ec16a6b6aafecc814715122e7",
+        "eager16/generations/c82632a36aa5db09e2490ac5bd6d8f52e144b5ff088f5ee344cf7ca2ec8f86cc.json": "62ac025a79708424c9e841a95119190673d878604decbf2099fb361b480df17c",
+        "eager16/generations/d28522c45b0a56cecf5acdc2df2074ffb246ab3bb5d7b59b0fded4cbd1cf9e81.json": "fe220bdd6e813a644bda00b3c7484a4d7d826bf2ce2243676bfa4260b114dec9",
+        "eager16/generations/e180130be7fb854a73ba826fe768038e1e6692cab2657f1884d4dcca9ce573f5.json": "b8da457bf7414f3bb0063f957a7403fa8b97857e70afdd170973183f529ba5cf",
+        "eager16/generations/generation_status.json": "1da9f30a0468de385d6586f622d11529795c617f7233c5f13897fcee44482c58",
+        "exit.json": "8f8a7c5af11a33567aaa980567d3083f8d8cfc5f1a932c60a94246ee263bd34c",
+        "graphs32/benchmark_complete.json": "8b22b82d5aeb1066a7a5d07177636194c95cfce1f36028b5bc7624ade4eed612",
+        "graphs32/benchmark_started.json": "894fd49918696ce3074bd7090c66d38a51b9cdabeeefc9b148f31fcaa6f8f209",
+        "graphs32/engine_parameters.json": "62ad5e442fe7d5558737afc092385a3453af9f742faea778d4ce0e00481555d3",
+        "graphs32/generation_benchmark.json": "f84d7672a372c9389aa24d5227519b0eb83e74b51f05fc84467942c09b389e54",
+        "graphs32/generations/16fbce501b366d4320165f9b07bf34f0a059ccd77c3f708e0c5410e41f10dd2f.json": "865fc486c2996e8757e2c29f36386ba5084c71d9623d5e8ad0c7ae2e0f6052b7",
+        "graphs32/generations/332c7f32d684034d0a98c3fe0d7b0b7420bac4e483a7ed293857f6bef7647b00.json": "bea9fdc4a74d41968ee351bfce7937f022aeb96d598422240ec4527be0b4c24b",
+        "graphs32/generations/37640f604a1218065f06f5302d350a75adead026acac11915fcb389d85008607.json": "acacfc3834bdbd9ecd2f44545e802f8b96b3baedb0570e35f6f6a00a3f6c5941",
+        "graphs32/generations/44da91462399096793902bc4e57441675eb095f9bda4ec4782c6bcefc8f18b68.json": "95e97de64743ddc86cb0b52404e650dd253164640dadc7c439b9059cadf1ca33",
+        "graphs32/generations/4f1eb492f44e5c6af1f262de514ac6f4d2cb54ac617688b6c487d615240326dc.json": "bc1fe8284b7c32d7bf294655717ac7510967499c2aa8e39b26e585a3d014af1c",
+        "graphs32/generations/51a1da0159e173f6d591ea9f3b1152fa25ee0019ca37ea655225684e755ddb11.json": "c60ee1d11576b358373ca4a994c4001c0e478216e7f4ac287549c35db700e7e5",
+        "graphs32/generations/64f9b08425cec65b38c31c15b962e1c0636ad98670e6ce9bab04c64990d6befa.json": "e05c981259d19e580ea96e2e9c40b4c5ce0b965b9a144683a1f55c92d01bd276",
+        "graphs32/generations/92973febbcaede6022fc85b077ded85f249de1983212f443fb40e3499be3801e.json": "8a1ddfc452f7a0e7ae004d15fc4735c5ca2687ece9ef2569ee1bc1a3b4b4bbeb",
+        "graphs32/generations/94b221ed06a2c971fa26ae7a713b77f6ab3d24a2ca4b8a5c6a04ad4e0807e0b5.json": "ae921df4a563fbee9a9de7b6f27227fc4823265d3d134621a9897e201aed9d54",
+        "graphs32/generations/966649b76525c5dbafe8401c9d6d4297b7290a5bd551e7d21590a6e0a92fcff3.json": "620446880855a5031fbbe5c6587b1fdfa8c437c16c4e9f2f32b922bfda8b0df8",
+        "graphs32/generations/a71d7219696d61a669e3c2eb2b74f847d8c10d8bf6bf38de011117657e3964c9.json": "841da6699527420d52726b6e14cabaeeb3e05079b8ee1b0a5206ddab136689e9",
+        "graphs32/generations/ae30822e9b5ee1b873e58f56a0e5d36336fbf8160f5bb9f35bc1d70c795edacb.json": "afe3beb00e49738115beb7c52a04eb1dbbba1ced018a4f95059d8973f6a40ddf",
+        "graphs32/generations/baacd499c7ac82f07f4632f80c40fc9e82c13f155d7639e1cdbac60dcb3e541c.json": "18abb25236593e3308517e43d4bedaaf2d67c3818fa95be0f7c43868bbab6c57",
+        "graphs32/generations/c82632a36aa5db09e2490ac5bd6d8f52e144b5ff088f5ee344cf7ca2ec8f86cc.json": "7112e134defefb2fccb8ec8ea0bb8c6bcde8f7f4b92493cb17908bce7e69aa39",
+        "graphs32/generations/d28522c45b0a56cecf5acdc2df2074ffb246ab3bb5d7b59b0fded4cbd1cf9e81.json": "dc901ffd0935cc1e26e5dc95a6ea59ea48aea82776ee456bbbfd08d4611dfd82",
+        "graphs32/generations/e180130be7fb854a73ba826fe768038e1e6692cab2657f1884d4dcca9ce573f5.json": "0a6fc42941cd3d4fae8fa9cac16f590def9f490cab7bc6879855bdbeadc01f05",
+        "graphs32/generations/generation_status.json": "5c4aad8e4adbf52237a7363e8eda20d0a5e1750a83cd3b7c8f0d91db9ab62eb4"
+      },
+      "files_verified": 43
+    },
+    "eager16_complete_sha256": "cb482ac7749058aa568e1a699ba5d6f987db64ad573a14914d2f5bc9e68833dc",
+    "graphs32_complete_sha256": "8b22b82d5aeb1066a7a5d07177636194c95cfce1f36028b5bc7624ade4eed612",
+    "memory_preflight_upload_revision": "e240581e27028b89289a90f8181033fec06295cd",
+    "memory_preflight_scope": "Largest of all 591 frozen context-only batches: 16 by 1746 tokens, native BF16 eager capture completed. No main answer outcomes read. The enclosing v1 probe later failed before generation because ninja was absent from PATH; its failed exit remains uploaded.",
+    "calibration_upload_revision": "f2e8bc35c1b3262076a03567e6c75a07e160f467",
+    "memory_preflight_upload": {
+      "revision": "e240581e27028b89289a90f8181033fec06295cd",
+      "repo": "superkaiba1/explore-persona-space-data",
+      "prefix": "exploratory_workspace_jr/20260912/primary_execution_probes_v1",
+      "verified_sha256": {
+        "capture_memory/benchmark_complete.json": "e7361d94b7e76cb5d6b828541ff5d830d87334c9daaa1b0af01ab96b7898108d",
+        "capture_memory/benchmark_started.json": "9ad27fa7bef7bde8647cdfd40e4f1704161f6f780ca753d4dcb7f71d64d17930",
+        "capture_memory/captured_context_inputs.pt": "52efba5d974b34c1852716c4e62fd24ffb4229a8e8f4dbc871c0007485887dac",
+        "eager16/benchmark_failed.json": "28f6c0772507305cdd9881c5bab736ee9be883a1da10f68277ea6dde7675a09e",
+        "eager16/benchmark_started.json": "1219976e3f0da88c671a6aa5c60d3a17d1484825fd52d8302c28e25ead6edd6c",
+        "eager16/engine_parameters.json": "a11d4d09b2fe7997eb408d4b523f550fd7e4f6b68233e6d962fc8a87f0142f62",
+        "exit.json": "642ae397d0c590854b3fdf22f53f37c87a9f863da31eb6067f37af5ebdfcfdbe"
+      },
+      "files_verified": 7
+    },
+    "memory_preflight_complete_sha256": "e7361d94b7e76cb5d6b828541ff5d830d87334c9daaa1b0af01ab96b7898108d"
+  },
+  "limitations": [
+    "Generation graph/batch kernels may change sampled tokens while all sampling parameters and checkpoint remain fixed. Both lenses within a model consume the exact same saved draws.",
+    "Sparse timing sample has 2047 tokens from 3 rollout segments of 1 pilot training context. Matrix shape and step count are fixed; token totals still depend on answer lengths.",
+    "Projected 4,987,936 tokens use pilot split-specific means; they are not observed main token counts. The earlier 253 tokens/s estimate was per arm; this plan uses 126.473 tokens/s for both arms.",
+    "Comparison main requires its own completed pilot and full-calibration review. Primary counts set the shared prefixes before comparison main outcomes.",
+    "The actual-dictionary affine null and all rotations/sparsities are required; small synthetic d=16 null is only a separate diagnostic."
+  ]
+}
