@@ -31,10 +31,15 @@ explicit task-registration exception is recorded in the configuration and the
   It fits ridge and identity-plus-bias only. Token-before-pooling and unequal
   rollout lengths are independently tested on tensors; the null does not certify
   native generation, sampling-noise control, calibration, or MLP performance.
-- The first spot attempt completed the ordinary-J half of a one-prompt native
-  lens pilot in 154.76 seconds before GCP preemption. A second spot boot was also
-  preempted. The same persistent disk was preserved and restarted on-demand;
-  the paired lens recovery job is running under a six-hour STOP fence.
+- Both native pilot prompts now have complete paired J/R matrices. The first
+  spot attempts were preempted; recovery completed on the preserved disk using
+  on-demand compute. Both pairs are uploaded and byte-verified. These two
+  prompts are pilot-only and cannot establish calibration stability.
+- The component pilot's first generation attempt failed before sampling because
+  Transformers 5 returned a structured chat encoding. The explicit flat-ID fix
+  passed the exact native tokenizer probe. Recovery is running in a fresh output
+  directory at `348b11a45a26147f1270356edfb6d3dbfd6f143c`; the first 16 contexts
+  have saved all five rollouts. [Recovery record](generation_recovery_20260912.md).
 - The focused implementation suite passes 47 tests, including actual batched MLP
   tuning, context-level bootstraps, token-boundary capture on native tiny Qwen2,
   nonlinear token-before-rollout aggregation, cap recovery, and producer gates.
@@ -62,11 +67,17 @@ Every consumer checks producer identity, file hashes and completed coverage.
 A pilot dictionary is explicitly barred from main analysis. Full calibration
 membership alone does not pass the outstanding stability/readout gate.
 
-Still outstanding: a completed native lens pair and end-to-end pilot; historical
+Still outstanding: a completed end-to-end pilot; historical
 recapture parity; full matched calibration with stability/readout review; direction
 controls; main K=5 generation/capture/decomposition for both models; real-dictionary
 rotations and sparsity sensitivities; sampling-noise/higher-K checks; learning curves;
 paired cross-model analysis and the final model-results report.
+
+Calibration diagnostics now implement frozen-order nested subsets and split
+halves, matrix and token-direction agreement, and native/J/R calibration
+readouts. Independent review found and corrected runtime-compatibility and
+ordered-membership checks; four focused tests pass. This code produces evidence
+for review and does not grant main approval automatically.
 
 ## Reproduction
 

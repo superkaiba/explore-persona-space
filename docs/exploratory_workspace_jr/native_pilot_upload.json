@@ -1,6 +1,14 @@
 {
-  "revision": "397ce6ed7c7640b63e2a1a49a86e6b4864ab45ba",
-  "files_verified": 5,
-  "matrix_sha256_verified": true,
-  "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/397ce6ed7c7640b63e2a1a49a86e6b4864ab45ba/exploratory_workspace_jr/20260912/native_pilot_primary"
+  "revision": "0d6a380d0a6c98adb6168b9f66b0c74fea313c47",
+  "repo": "superkaiba1/explore-persona-space-data",
+  "prefix": "exploratory_workspace_jr/20260912/native_pilot_primary",
+  "verified_sha256": {
+    "calibration_tokens.json": "5cfb1328a8798ddafc67e98b8c6da21db7d44f3beff17c7366e3a03980cb1ba0",
+    "file_manifest.json": "d62d50684065248fe852b1e9f2fb7a31ad64ea25311aefe4f0c0dd90acf2e47b",
+    "native_validation.json": "8109f85d57697db9a29d2c16ceb8a8c1c07a5947a75eab96131ab696d28f486f",
+    "pilot_matrix_validation.json": "2c3428ccc5a0bdfd7c70ba2fcc94064f1eeaf78b8bb302447f06664a3787c3f2",
+    "prompt-0000.pt": "cb4f024f382b9b6d63d191ddf4e6fab858e6806182ac4fd6a1bb247179c635ee",
+    "prompt-0001.pt": "2457448437ad7f8e41da86faa9d1abcfd277e3f50f1741c43c01b9a7c7dbb409"
+  },
+  "files_verified": 6
 }

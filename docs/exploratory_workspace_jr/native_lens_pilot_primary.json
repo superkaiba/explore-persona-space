@@ -1,26 +1,45 @@
 {
-  "file_sha256": "cb4f024f382b9b6d63d191ddf4e6fab858e6806182ac4fd6a1bb247179c635ee",
-  "contract_sha256": "4c3a2da0d888dfb43f2b018737cc809c7c24fe1a13fb6d80763c2d975fe2a4c2",
-  "sequence_length": 128,
-  "valid_positions": 123,
-  "seconds": {
-    "J": 167.96495251399998,
-    "R": 164.20450240100007
-  },
-  "shape": [
-    5120,
-    5120
-  ],
-  "norms": {
-    "J": 88.89336395263672,
-    "R": 89.33299255371094
-  },
   "pilot_only": true,
-  "code": {
-    "git_commit": "0f23250df469235c8dad70b86cd93b7b4f3c318a",
-    "git_dirty": false,
-    "phase": "workspace-jr",
-    "git_argv0_state": "tracked",
-    "git_argv0_path": "scripts/workspace_jr_runtime.py"
-  }
+  "paired_prompts": [
+    {
+      "file": "prompt-0000.pt",
+      "file_sha256": "cb4f024f382b9b6d63d191ddf4e6fab858e6806182ac4fd6a1bb247179c635ee",
+      "contract_sha256": "4c3a2da0d888dfb43f2b018737cc809c7c24fe1a13fb6d80763c2d975fe2a4c2",
+      "prompt_sha256": "e4da21514e13fd717461a55a99b2599cc6c39af471fcc8478802694a95eef984",
+      "seconds": {
+        "J": 167.96495251399998,
+        "R": 164.20450240100007
+      },
+      "sequence_length": 128,
+      "valid_positions": 123,
+      "shape": [
+        5120,
+        5120
+      ],
+      "norms": {
+        "J": 88.89336395263672,
+        "R": 89.33299255371094
+      }
+    },
+    {
+      "file": "prompt-0001.pt",
+      "file_sha256": "2457448437ad7f8e41da86faa9d1abcfd277e3f50f1741c43c01b9a7c7dbb409",
+      "contract_sha256": "4c3a2da0d888dfb43f2b018737cc809c7c24fe1a13fb6d80763c2d975fe2a4c2",
+      "prompt_sha256": "bd1e292021896375c954665bba26e042947b948bd19fd273688e7cc1e2293d1b",
+      "seconds": {
+        "J": 165.06359392899992,
+        "R": 156.99461508800005
+      },
+      "sequence_length": 103,
+      "valid_positions": 98,
+      "shape": [
+        5120,
+        5120
+      ],
+      "norms": {
+        "J": 87.49213409423828,
+        "R": 90.93960571289062
+      }
+    }
+  ]
 }

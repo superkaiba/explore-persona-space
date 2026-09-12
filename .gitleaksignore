@@ -1500,3 +1500,5 @@ eval_results/issue_2643/direct_edges_tuned/tuning_trials.json:generic-api-key:91
 
 # Workspace J/R native validation: verified SHA256 of calibration manifest contents, not a credential.
 docs/exploratory_workspace_jr/native_validation_primary.json:generic-api-key:309
+# Workspace J/R upload receipt: verified file-byte SHA256 for the public calibration token manifest.
+docs/exploratory_workspace_jr/native_pilot_upload.json:generic-api-key:6

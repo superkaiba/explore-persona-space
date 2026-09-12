@@ -1,6 +1,6 @@
 {
-  "status": "native_pilot_running_main_not_executed",
-  "updated_utc": "2026-09-12T18:19:14Z",
+  "status": "component_pilot_generating_main_not_executed",
+  "updated_utc": "2026-09-12T19:06:20.909473+00:00",
   "native_27b_validation": "passed",
   "synthetic_null": "complete_12_cells_ridge_and_bias_only",
   "component_model_fits": "not_started",
@@ -19,5 +19,10 @@
     "passed": 47,
     "seconds": 5.14
   },
-  "main_ready": false
+  "main_ready": false,
+  "native_pilot_pairs": 2,
+  "component_pilot_code_sha": "348b11a45a26147f1270356edfb6d3dbfd6f143c",
+  "component_pilot_unit": "workspace-jr-component-pilot2",
+  "native_pairs_upload_revision": "0d6a380d0a6c98adb6168b9f66b0c74fea313c47",
+  "calibration_diagnostic_tests": 4
 }
