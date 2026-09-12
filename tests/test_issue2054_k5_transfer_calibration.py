@@ -54,6 +54,15 @@ def test_source_audit_rejects_conversation_leakage():
         subset.audit_sources(panel, ["source__model"], "target__model", 0)
 
 
+def test_resume_fingerprint_binds_effective_source_settings(monkeypatch):
+    """A presentation reorder must not silently reuse a different source map."""
+    original = subset.fingerprint()
+    changed = list(calibration.SETTINGS)
+    changed[0], changed[1] = changed[1], changed[0]
+    monkeypatch.setattr(calibration, "SETTINGS", changed)
+    assert subset.fingerprint() != original
+
+
 @pytest.mark.parametrize("n_sources", [1, 2])
 def test_subset_moments_match_materialized_ridge(n_sources):
     """The subset-bank dispatch matches the established materialized solver."""
