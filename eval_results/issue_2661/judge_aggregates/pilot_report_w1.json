@@ -1,0 +1,38 @@
+{
+  "wave": "w1",
+  "label": "w1",
+  "verdict": "PASS",
+  "failures": [],
+  "arms": {
+    "ctx": {
+      "n_valid": 51,
+      "n_parse_fail": 0,
+      "n_truncation": 0,
+      "n_api_refusal": 0,
+      "n_transport": 0,
+      "n_items": 51,
+      "parse_fail_rate": 0.0,
+      "api_refusal_rate": 0.0,
+      "routing_path": "batch",
+      "n_cached": 0
+    }
+  },
+  "judge_model": "claude-opus-5",
+  "max_tokens": 512,
+  "n_draws": 1,
+  "target_draws_per_arm": 51,
+  "parse_fail_threshold": 0.02,
+  "api_refusal_threshold": 0.1,
+  "wave_declaration": {
+    "wave_n_calls": 7463,
+    "wave_threshold_base": 0,
+    "wave_force_sync": false
+  },
+  "pilot_transport_note": "pilot forced onto the wave's batch route via the SAME threshold_base=0 pin as production; fresh per-attempt cache (n_cached==0 asserted)",
+  "attempt_root": "/mnt/eps-data/thomasjiralerspong/wt-2661-flatsae/data/issue_2661/judge/pilot/w1/attempt_1",
+  "git_commit": "305ad190eab68eaa113a65a8246fe9c57ebbecf1",
+  "git_dirty": false,
+  "phase": "judge-pilot-w1",
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2661_judge_waves.py"
+}

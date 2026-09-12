@@ -1,0 +1,15 @@
+{
+  "task": 2661,
+  "recorded_at": "2026-09-03",
+  "data_repo": "superkaiba1/explore-persona-space-data",
+  "capture_chunks_revision": "89cfa76cdcd4207d95c1fec1c3131f36e21beec0",
+  "issue2552_revision": "fdcec4c823e2638ae8661ccafca8f30f84ac6233",
+  "answer_sae_prefix": "issue2552_turnsae/analysis_tensors/sae_rep",
+  "eval_lists_prefix": "issue2552_turnsae/analysis_tensors/eval_lists",
+  "eval_lists_index": "feature_lists_2000turns.json",
+  "banked_refit_path": "issue1482_error_analysis/analysis_tensors/percontext/refit_holdout__ridge__seed0.npz",
+  "banked_refit_revision": "89cfa76cdcd4207d95c1fec1c3131f36e21beec0",
+  "answer_descriptions_commit": "cb39df3ce1cd40aee3971faafb30f16913129635",
+  "answer_descriptions_committed_copy": "eval_results/issue_2661/inputs/descriptions_rep_ta.json",
+  "note": "every pod-side HF fetch resolves through these pins (task #2661 brief: banked inputs); eval turns = the 2,000 holdout rows #2552 judged, re-read from the pinned eval_lists artifact"
+}

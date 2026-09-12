@@ -1,0 +1,10 @@
+{
+ "file": "descriptions_rep_ta.json",
+ "source": "git show cb39df3ce1cd40aee3971faafb30f16913129635:eval_results/issue_2552/judge_aggregates/descriptions_rep_ta.json",
+ "source_branch": "issue-2552",
+ "source_commit": "cb39df3ce1cd40aee3971faafb30f16913129635",
+ "what": "answer-side W1 feature descriptions for the #2552 flat replication SAE (rep_ta family; judge claude-sonnet-4-6)",
+ "copied_by": "task #2661 implementer, 2026-09-03",
+ "note": "answer-feature labels for the #2661 edge dashboard + receipts grep; the context-side W1 descriptions are produced fresh by scripts/issue2661_judge_waves.py",
+ "sha256": "6f61112f44b37474199d01b942700f32ddf7bab60ee95a38ff9037e4dfbdda23"
+}

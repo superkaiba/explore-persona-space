@@ -1,0 +1,116 @@
+{
+  "source": "w4_matching.json",
+  "n_records": 2000,
+  "n_valid": 1979,
+  "n_dropped": 21,
+  "n_correct": 1914,
+  "accuracy": 0.9671551288529561,
+  "wilson_ci95": [
+    0.9583529984846542,
+    0.9741471064153037
+  ],
+  "chance": 0.1,
+  "per_slot_sensitivity": {
+    "A": {
+      "n_gold_here": 195,
+      "n_correct": 188,
+      "accuracy": 0.9641025641025641,
+      "wilson_ci95": [
+        0.9277676377322618,
+        0.9825046594128025
+      ],
+      "choice_rate": 0.0965133906013138
+    },
+    "B": {
+      "n_gold_here": 201,
+      "n_correct": 193,
+      "accuracy": 0.9601990049751243,
+      "wilson_ci95": [
+        0.9234400434856131,
+        0.9796968193391254
+      ],
+      "choice_rate": 0.09954522486104093
+    },
+    "C": {
+      "n_gold_here": 196,
+      "n_correct": 193,
+      "accuracy": 0.9846938775510204,
+      "wilson_ci95": [
+        0.9559717816475863,
+        0.9947812147255412
+      ],
+      "choice_rate": 0.10055583628094998
+    },
+    "D": {
+      "n_gold_here": 195,
+      "n_correct": 188,
+      "accuracy": 0.9641025641025641,
+      "wilson_ci95": [
+        0.9277676377322618,
+        0.9825046594128025
+      ],
+      "choice_rate": 0.09752400202122284
+    },
+    "E": {
+      "n_gold_here": 192,
+      "n_correct": 186,
+      "accuracy": 0.96875,
+      "wilson_ci95": [
+        0.9335092238307032,
+        0.9856009141583653
+      ],
+      "choice_rate": 0.09600808489135927
+    },
+    "F": {
+      "n_gold_here": 209,
+      "n_correct": 204,
+      "accuracy": 0.9760765550239234,
+      "wilson_ci95": [
+        0.9452284165906994,
+        0.9897391837280353
+      ],
+      "choice_rate": 0.10611419909044972
+    },
+    "G": {
+      "n_gold_here": 189,
+      "n_correct": 181,
+      "accuracy": 0.9576719576719577,
+      "wilson_ci95": [
+        0.9187108973239921,
+        0.9783984400803855
+      ],
+      "choice_rate": 0.0965133906013138
+    },
+    "H": {
+      "n_gold_here": 209,
+      "n_correct": 201,
+      "accuracy": 0.9617224880382775,
+      "wilson_ci95": [
+        0.926298592210055,
+        0.9804790302096225
+      ],
+      "choice_rate": 0.10611419909044972
+    },
+    "I": {
+      "n_gold_here": 191,
+      "n_correct": 183,
+      "accuracy": 0.9581151832460733,
+      "wilson_ci95": [
+        0.919539236329443,
+        0.978626247838209
+      ],
+      "choice_rate": 0.09701869631126832
+    },
+    "J": {
+      "n_gold_here": 202,
+      "n_correct": 197,
+      "accuracy": 0.9752475247524752,
+      "wilson_ci95": [
+        0.9433739812974352,
+        0.9893820796737194
+      ],
+      "choice_rate": 0.10409297625063163
+    }
+  },
+  "convention": "valid records only (drops counted, never imputed); per-slot = accuracy grouped by the gold candidate's presented slot label + raw choice rate per slot (position-bias read, #2552 shape); Wilson 95% score intervals"
+}
