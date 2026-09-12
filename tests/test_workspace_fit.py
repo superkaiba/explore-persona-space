@@ -34,7 +34,21 @@ def test_component_fits_save_real_predictions_and_select_without_test_labels(tmp
             "near_zero_component_norm_floor": "1e-6_times_training_median_full_target_norm",
         },
     }
-    first = evaluate_component_fits(x, targets, ids, config, tmp_path / "first", mlp_device="cpu")
+    records = []
+    first = evaluate_component_fits(
+        x,
+        targets,
+        ids,
+        config,
+        tmp_path / "first",
+        mlp_device="cpu",
+        training_logger=records.append,
+    )
+    assert records and {r["seed"] for r in records} == {42, 137, 271}
+    assert all(
+        np.isfinite(r["train_loss"]).all() and np.isfinite(r["validation_loss"]).all()
+        for r in records
+    )
     for name in targets["test"]:
         assert first["metrics"]["ridge"][name]["r2"] > 0.999
     original_selection = json.loads((tmp_path / "first/mlp/selection.json").read_text())

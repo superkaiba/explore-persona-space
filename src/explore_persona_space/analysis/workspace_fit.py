@@ -34,7 +34,7 @@ def finite_json(value):
     return value
 
 
-def fit_mlp_targets(x, targets, config, output: Path, *, device: str) -> dict:
+def fit_mlp_targets(x, targets, config, output: Path, *, device: str, training_logger=None) -> dict:
     """Tune one shared architecture grid per component on mean validation SSE.
 
     Each seed remains a separate predictor. The first registered seed is the
@@ -61,6 +61,14 @@ def fit_mlp_targets(x, targets, config, output: Path, *, device: str) -> dict:
         for lr in settings["mlp_learning_rates"]:
             seed_results = {}
             for seed in settings["mlp_seeds"]:
+
+                def log_epoch(*, hidden=hidden, lr=lr, seed=seed, **record):
+                    """Stream only train/validation losses, never held-out labels."""
+                    if training_logger is not None:
+                        training_logger(
+                            {"hidden": hidden, "learning_rate": lr, "seed": seed, **record}
+                        )
+
                 groups = [
                     SplitMLPGroup(
                         key=(name,),
@@ -86,6 +94,7 @@ def fit_mlp_targets(x, targets, config, output: Path, *, device: str) -> dict:
                     chunk_size=4,
                     loss="mse",
                     standardize_inputs=False,
+                    epoch_callback=log_epoch if training_logger is not None else None,
                 )
                 seed_results[seed] = fitted
             for name in targets["train"]:
@@ -140,7 +149,9 @@ def fit_mlp_targets(x, targets, config, output: Path, *, device: str) -> dict:
     return predictions
 
 
-def evaluate_component_fits(x, targets, ids, config, output: Path, *, mlp_device=None) -> dict:
+def evaluate_component_fits(
+    x, targets, ids, config, output: Path, *, mlp_device=None, training_logger=None
+) -> dict:
     """Fit original-unit targets, save every example and compute paired intervals."""
     validate_context_splits(ids)
     if set(x) != {"train", "validation", "test"} or set(targets) != set(x):
@@ -182,7 +193,16 @@ def evaluate_component_fits(x, targets, ids, config, output: Path, *, mlp_device
             "status": fitted.target_status,
         }
     if mlp_device is not None:
-        predictions.update(fit_mlp_targets(x, targets, config, output / "mlp", device=mlp_device))
+        predictions.update(
+            fit_mlp_targets(
+                x,
+                targets,
+                config,
+                output / "mlp",
+                device=mlp_device,
+                training_logger=training_logger,
+            )
+        )
     arrays = {f"target__{key}": value for key, value in targets["test"].items()}
     arrays["context_ids"] = np.asarray(ids["test"])
     arrays["x"] = x["test"]

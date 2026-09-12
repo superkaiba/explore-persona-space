@@ -397,7 +397,27 @@ def fits(args, config, identity):
         output / "input_manifest.json",
         {"identity": identity, "coverage": coverage, "contract": expected_contract},
     )
-    evaluate_component_fits(x, targets, ids, config, output, mlp_device=args.device)
+    import wandb
+
+    with wandb.init(
+        project="workspace-jr",
+        name=f"{args.role}-{args.stage}-{cell}",
+        config={"identity": identity, "fit": config["fit"], "stage": args.stage, "cell": cell},
+    ) as run:
+        save_json(output / "wandb.json", {"run_id": run.id, "url": run.url})
+
+        def log_training(record):
+            """Send scalar train/validation losses during fitting."""
+            values = {k: record[k] for k in ("hidden", "learning_rate", "seed", "epoch")}
+            for i, key in enumerate(record["keys"]):
+                values[f"{key[0]}/train_scaled_mse_before_step"] = record["train_loss"][i]
+                values[f"{key[0]}/validation_scaled_mse_after_step"] = record["validation_loss"][i]
+                values[f"{key[0]}/stopped"] = int(record["stopped"][i])
+            run.log(values)
+
+        evaluate_component_fits(
+            x, targets, ids, config, output, mlp_device=args.device, training_logger=log_training
+        )
 
 
 def main():

@@ -1356,6 +1356,7 @@ def fit_batched_split_mlp(  # noqa: C901 -- linear batched trainer; loss selecto
     loss: str = "smooth_l1",
     standardize_inputs: bool = True,
     patience: int | None = None,
+    epoch_callback=None,
 ) -> SplitMLPResult:
     """Fit ALL groups' fixed-split multi-output MLPs as one batched ensemble.
 
@@ -1543,8 +1544,32 @@ def fit_batched_split_mlp(  # noqa: C901 -- linear batched trainer; loss selecto
                 if patience is not None:
                     bad = torch.where(improved, torch.zeros_like(bad), bad + 1)
                     stopped = stopped | (bad >= patience)
+                    if epoch_callback is not None:
+                        epoch_callback(
+                            epoch=epoch,
+                            keys=[g.key for g in groups[lo:hi]],
+                            train_loss=per_member.detach().cpu().tolist(),
+                            validation_loss=vloss.detach().cpu().tolist(),
+                            stopped=stopped.detach().cpu().tolist(),
+                        )
                     if bool(stopped.all()):
                         break
+                elif epoch_callback is not None:
+                    epoch_callback(
+                        epoch=epoch,
+                        keys=[g.key for g in groups[lo:hi]],
+                        train_loss=per_member.detach().cpu().tolist(),
+                        validation_loss=vloss.detach().cpu().tolist(),
+                        stopped=stopped.detach().cpu().tolist(),
+                    )
+            elif epoch_callback is not None:
+                epoch_callback(
+                    epoch=epoch,
+                    keys=[g.key for g in groups[lo:hi]],
+                    train_loss=per_member.detach().cpu().tolist(),
+                    validation_loss=None,
+                    stopped=stopped.detach().cpu().tolist(),
+                )
         if not has_val:
             best = {"W1": W1.detach(), "b1": b1.detach(), "W2": W2.detach(), "b2": b2.detach()}
 
