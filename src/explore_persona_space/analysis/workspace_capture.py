@@ -35,6 +35,7 @@ def generate_rollouts(
     *,
     contexts_per_batch=16,
     max_model_len=32768,
+    execution_contract=None,
 ) -> dict:
     """Use batched vLLM requests with per-draw seeds; persist raw token IDs/text.
 
@@ -71,6 +72,8 @@ def generate_rollouts(
                 "prompt_sha256": row["prompt_sha256"],
                 "generation": settings,
             }
+            if execution_contract is not None:
+                contract["execution"] = execution_contract
             digest = content_sha256(contract)
             path = output / f"{row['prompt_sha256']}.json"
             if path.exists():

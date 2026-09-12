@@ -64,23 +64,49 @@ def generation(args, config, identity):
     from transformers import AutoTokenizer
 
     from explore_persona_space.eval.generation import create_vllm_engine
+    from explore_persona_space.analysis.workspace_execution import (
+        generation_engine,
+        validate_generation_engine,
+    )
 
     spec = config["models"][args.role]
     model_id = config["selection"][args.role]
     tokenizer = AutoTokenizer.from_pretrained(model_id, revision=spec["revision"])
     prompts = phase_prompts(args)
+    execution = generation_engine("eager16")
+    execution_contract = None
+    if args.readiness is not None:
+        execution = validate_generation_engine(args.readiness["execution"]["generation_engine"])
+        execution_contract = {
+            "readiness_sha256": args.readiness["readiness_sha256"],
+            "generation_engine": execution,
+        }
+        execution_path = args.out / "generations" / args.subset / "execution.json"
+        if execution_path.exists():
+            if json.loads(execution_path.read_text()) != execution_contract:
+                raise ValueError("Cannot resume generations with a different execution contract")
+        else:
+            save_json(execution_path, execution_contract)
     engine = create_vllm_engine(
         model_id,
         revision=spec["revision"],
         tokenizer_revision=spec["revision"],
-        gpu_memory_utilization=0.90,
-        max_model_len=32768,
-        max_num_seqs=16,
+        gpu_memory_utilization=execution["gpu_memory_utilization"],
+        max_model_len=execution["max_model_len"],
         seed=config["seed"],
         hang_mitigations=True,
+        **execution["knobs"],
     )
     report = generate_rollouts(
-        engine, tokenizer, prompts, config, identity, args.out / "generations" / args.subset
+        engine,
+        tokenizer,
+        prompts,
+        config,
+        identity,
+        args.out / "generations" / args.subset,
+        contexts_per_batch=execution["contexts_per_batch"],
+        max_model_len=execution["max_model_len"],
+        execution_contract=execution_contract,
     )
     if report["needs_cap_recovery"]:
         raise RuntimeError("Cap-hit fraction exceeds 2%; saved draws require doubled-cap recovery")
