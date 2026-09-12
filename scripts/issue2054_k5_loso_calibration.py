@@ -421,7 +421,7 @@ def plot(out, fig_dir):
         ax.set_ylim(-0.52, 0.76)
         ax.set_xlabel("Held-out setting")
         style_axis(ax)
-        panel_header(ax, letter, "", title=title)
+        panel_header(ax, letter, "Five source settings", title=title)
     axes[0].set_ylabel(better_label("Held-out $R^2$"))
     handles = [
         Line2D(

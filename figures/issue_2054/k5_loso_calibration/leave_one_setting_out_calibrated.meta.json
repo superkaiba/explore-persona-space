@@ -1,0 +1,57 @@
+{
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      8.512
+    ],
+    "exported_size_inches": [
+      13.095,
+      7.966
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/leave_one_setting_out_calibrated.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  ·  FIVE SOURCE SETTINGS",
+      "Held-out setting",
+      "Assistant\n(chat)",
+      "Assistant\n(plain text)",
+      "HELIOS",
+      "Wren",
+      "Dana",
+      "Vex",
+      "Held-out $R^2$ ↑",
+      "−0.6",
+      "−0.4",
+      "−0.2",
+      "0.0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "Base",
+      "B  ·  FIVE SOURCE SETTINGS",
+      "Instruction-tuned",
+      "Frozen transfer",
+      "+ Bias",
+      "+ Bias + scaling",
+      "Separate map"
+    ]
+  },
+  "source": "/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration/eval_results/issue_2054/k5_loso_calibration/results.json",
+  "source_sha256": "6ab5edf9f606886e0085401253e2f3ae23424dd1dd6defe09c6e778fb176a101",
+  "code_sha256": "a6da77dfd644db2976157c51e9640e50c35a6a4e921eb573ff877c34ed8c1c31",
+  "fold_marks": "Five fold estimates; no confidence interval implied",
+  "method": "K5 LOSO source-only map; target non-test-fold vector bias / vector bias plus one scalar; fixed test sets"
+}
