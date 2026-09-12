@@ -1,0 +1,102 @@
+{
+  "source": "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/affine-null-v1/null_report.json",
+  "source_sha256": "d8f4927457bc38539fc71098ac222e00196cf2f78b93a40d12f3dcc6acbdc044",
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      5.631
+    ],
+    "exported_size_inches": [
+      13.095,
+      5.588
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/affine_null.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "Sparse pursuit steps (k)",
+      "5",
+      "10",
+      "25",
+      "Held-out R\u00b2",
+      "\u22120.2",
+      "0.0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "1.0",
+      "1.2",
+      "Affine totals, nonlinear components",
+      "Dictionary A: component",
+      "Dictionary A: remainder",
+      "Dictionary B: component",
+      "Dictionary B: remainder",
+      "Affine total",
+      "Gap B \u2212 gap A",
+      "\u22120.20",
+      "\u22120.15",
+      "\u22120.10",
+      "\u22120.05",
+      "0.00",
+      "0.05",
+      "0.10",
+      "0.15",
+      "Dictionary differences under the null",
+      "Rotated dictionaries",
+      "Original dictionaries"
+    ]
+  },
+  "real_model_result": false,
+  "k": [
+    5,
+    10,
+    25
+  ],
+  "difference_estimates": [
+    {
+      "estimate": -0.1073622877717143,
+      "interval": [
+        -0.15544710733304676,
+        -0.06298862660258672
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    {
+      "estimate": -0.08679845184293433,
+      "interval": [
+        -0.12399013669714161,
+        -0.049241422427317404
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    {
+      "estimate": 0.005421990299893653,
+      "interval": [
+        -0.01925189596297912,
+        0.032155009517436335
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    }
+  ]
+}

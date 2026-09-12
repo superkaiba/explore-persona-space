@@ -1,63 +1,87 @@
-# J/R workspace experiment preparation
+# Exploratory J/R context-to-answer experiment
 
-**The real-model experiment has not run.** This package contains the frozen
-analysis specification, artifact audit, selected prompt IDs, and tested core
-analysis code. Repository task creation and experimental launch are awaiting
-the explicit authorization required by the supplied AGENTS.md.
+The experiment is in execution. Native Qwen3.5-27B validation and the synthetic
+affine control have run; real-model component fits and the weaker-model comparison
+have not completed. No conclusion about workspace predictability is warranted yet.
 
-- [Analysis plan](analysis_plan.md) and [configuration](../../configs/analysis/workspace_jr.yaml).
-- [Model and mapping provenance](mapping_provenance.md), with [machine-readable evidence](mapping_provenance.json).
-- [Lens methods and release audit](source_audit.md), with [actual released metadata](released_lens_metadata.json).
-- [Frozen context selection](selected_contexts.json), generated without reading experimental outcomes.
-- [Implementation validation](validation.json), [test output](validation_output.txt), and [execution status](execution_status.json).
-- [Independent lens-code review](lens_code_review.md) and [plan/provenance review](plan_review.md).
+The frozen [analysis plan](analysis_plan.md), [configuration](../../configs/analysis/workspace_jr.yaml),
+[model/mapping provenance](mapping_provenance.md), [source audit](source_audit.md),
+and [selected contexts](selected_contexts.json) remain authoritative. The user's
+explicit task-registration exception is recorded in the configuration and the
+[pilot continuation](pilot_execution_20260912.md). Manuscript files are untouched.
 
-The candidate pair is Qwen3.5-27B versus Qwen3.5-4B with thinking disabled,
-selected using measured same-mode GPQA performance among verified mapping
-artifacts. Existing map training used K=1. Generated token IDs and per-token
-activations were not retained. Thirteen unique source prompts overlap the
-inherited validation and test manifests. Released J/R artifacts also lack
-exact checkpoint and calibration-document provenance. These findings require
-fresh captures, matched lens construction and explicit content exclusions.
+## What has actually run
 
-Outcome-blind source selection retained 128 calibration contexts; pilot
-train/validation/test counts 64/16/32; main counts 8192/373/768. All seven
-selected subsets have disjoint NFC-normalized prompt hashes. The selector
-removed 82 duplicate source rows across and within splits. These are planned
-contexts, not completed generations; realized coverage remains unknown.
+- Native 27B forward validation on an A100 80GB with pinned Transformers 5.16.1:
+  installing R backward rules leaves both the target hook and forward output
+  bit-identical. Ordinary J passes three cotangent/direction numerical checks.
+  The numerical check uses an FP32 suffix with the native prefix and positions;
+  it does not claim finite-difference equality for BF16 lens coefficients or R.
+  [Full validation evidence](native_validation_primary.json).
+- The exact-affine synthetic control completed 12 cells: k=5/10/25 with the
+  original dictionaries and three geometry-preserving rotations. Full-target
+  ridge R² is effectively one. At k=10 the remainder-minus-component gaps are
+  −0.887 for synthetic dictionary A and −0.974 for B; their difference is
+  −0.087 (paired 95% interval −0.124 to −0.049). These are independent synthetic
+  dictionaries, not native J/R lenses. This directly demonstrates a decomposition
+  artifact, with the remainder less predictable than the component in this null.
+  [Machine-readable report](affine_null_report.json).
+- The null directly decomposes one affine vector per context: repeated identical
+  token/draw pooling is an algebraic reduction, not executed K=5 sampling.
+  It fits ridge and identity-plus-bias only. Token-before-pooling and unequal
+  rollout lengths are independently tested on tensors; the null does not certify
+  native generation, sampling-noise control, calibration, or MLP performance.
+- The first spot attempt completed the ordinary-J half of a one-prompt native
+  lens pilot in 154.76 seconds before GCP preemption. A second spot boot was also
+  preempted. The same persistent disk was preserved and restarted on-demand;
+  the paired lens recovery job is running under a six-hour STOP fence.
+- The focused implementation suite passes 47 tests, including actual batched MLP
+  tuning, context-level bootstraps, token-boundary capture on native tiny Qwen2,
+  nonlinear token-before-rollout aggregation, cap recovery, and producer gates.
+  Tiny-model/unit checks do not establish pretrained-model scientific validity.
 
-Implemented code covers the cited nonnegative gradient-pursuit algorithm,
-geometry-preserving dictionary rotations, local R rules, a scoped dense-Qwen
-adapter, ordinary-J numerical checks, equal-rollout pooling, variance/noise
-statistics, shared-factorization affine ridge, paired contextual bootstrap
-contrasts, and variance-matched direction selection. Independent review found
-and resolved a bf16 RMSNorm backward rounding defect. The validation suite
-passes 35 tests; it includes native tiny Qwen2 modules, not pretrained Qwen3.5.
+[Browser-accessible null plot](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/6404c0b545dfe03505114dbbadb301f64a32f99d/exploratory_workspace_jr/20260912/figures/affine_null.png).
+[All null inputs, predictions, bootstraps and exact executed source snapshot](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/730ad94bddab2cfeb52f548f40a70f84a4b9f858/exploratory_workspace_jr/20260912/affine-null-v1).
+The upload was verified against all 107 expected paths at that revision. V1's
+stored repeated-draw wording should be read with the algebraic qualification above.
 
-Still needed after task registration: native Qwen3.5 runtime/recapture parity,
-matched lens fitting and stability/readout checks, vLLM generation with exact
-token retention, streaming token decomposition and aggregation, MLP/controls
-orchestration, actual pilot/main execution, machine-readable experimental
-predictions/results, plots, and the scientific report. No component R2,
-workspace gap, capability interaction, or reasoning conclusion is asserted.
+## Execution boundaries
 
-To reproduce local implementation validation using the existing environment:
+The saved choice is Qwen3.5-27B versus Qwen3.5-4B, thinking disabled, selected on
+same-mode task performance rather than mapping R². Existing mapping captures
+used K=1 and retokenized stripped answers; new capture preserves exact sampled
+IDs with K=5 and equal rollout weights. Frozen predictor reuse requires the
+separate historical-recapture parity gate. No frozen predictor has been applied
+to incompatible new captures.
+
+The new pipeline implements batched vLLM generation, doubled-cap recovery with
+prior-draw retention, native token capture, full eligible-vocabulary nonnegative
+pursuit, checkpointed component aggregation, validation-selected ridge and MLP
+fits, original-unit metrics, paired bootstrap contrasts and explicit exclusions.
+Every consumer checks producer identity, file hashes and completed coverage.
+A pilot dictionary is explicitly barred from main analysis. Full calibration
+membership alone does not pass the outstanding stability/readout gate.
+
+Still outstanding: a completed native lens pair and end-to-end pilot; historical
+recapture parity; full matched calibration with stability/readout review; direction
+controls; main K=5 generation/capture/decomposition for both models; real-dictionary
+rotations and sparsity sensitivities; sampling-noise/higher-K checks; learning curves;
+paired cross-model analysis and the final model-results report.
+
+## Reproduction
+
+The native runtime is separately locked in `runtime/workspace_jr/uv.lock` because
+this checkout's standard Transformers environment predates native Qwen3.5 support.
+Use `scripts/workspace_jr_native_pilot.sh` on the managed GPU with the pinned code
+SHA. This launcher stops after the native pilot; it does not imply main completion.
+
+For focused local validation with the existing environment:
 
 ```bash
-OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 uv run pytest tests/test_workspace_lenses.py tests/test_workspace_components.py -q
+PYTHONPATH=src OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 uv run --no-sync pytest -q tests/test_workspace_lenses.py tests/test_workspace_components.py tests/test_workspace_runtime.py tests/test_workspace_capture.py tests/test_workspace_fit.py tests/test_workspace_artifacts.py
 ```
 
-The selection command accepts the saved audit/config and writes a new output
-file (it refuses overwriting a frozen manifest):
-
-```bash
-uv run python scripts/workspace_jr_select_contexts.py \
-  --audit-file docs/exploratory_workspace_jr/mapping_provenance.json \
-  --config configs/analysis/workspace_jr.yaml \
-  --out /tmp/workspace-jr-selected-contexts-reproduction.json
-```
-
-It verifies source bytes against the audit and needs the audited source files
-at their saved local paths. Source Hub revisions and file hashes are included
-in the provenance JSON for restaging. The shared root remains on main; all
-preparation changes live in the dedicated codex branch/worktree.
+All tracked work lives in the dedicated `codex/jr-workspace-predictability-20260912`
+worktree. Archived local preflights describe the earlier CPU/old-Transformers
+limitation; the native validation report supersedes that limitation for the 27B
+remote runtime. No task state, shared-root changes, or manuscript edits are included.

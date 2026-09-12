@@ -1,44 +1,23 @@
 {
-  "schema": "workspace-jr-preparation-v1",
-  "created_at": "2026-09-12T03:31:59.816778+00:00",
-  "stage": "preparation_only",
-  "experiment_started": false,
-  "experimental_component_results": null,
-  "task_id": null,
-  "authorization_pending": "explicit repository task creation and experimental launch",
-  "artifacts_sha256": {
-    "mapping_provenance.json": "254016fbb25632b5728c7a41436b085ff5d4078647f5044de1b0bbc34804adb6",
-    "released_lens_metadata.json": "a78e3922d335e9d83d7701f61546fb00f07a414b0daab3d110b9bf0d6d4f2612",
-    "source_audit.md": "b5287261c915a91d6da47aafb1d86b705ed7a0c184586ed641264087a5c14fc3",
-    "lens_code_review.md": "a55736590355ac48af55bb1e0afed026fa1ca028d5b902c8141ff9cf7747b4bd",
-    "README.md": "8a57ace720ab9e19591444ffbac33bca749fc3114e112924e8a3f4088f05f246",
-    "original_request.txt": "c227d893ee2de6385e1ed3a39de78f1b6a90a949cc7a6aa96037ed199f893284",
-    "analysis_plan.md": "3649964ce36631349f8098177174b65daf8a5d19bc60446669dbbb037dbc34f5",
-    "selected_contexts.json": "11209d75c89345223e87641d74d273ba37ddcd7f1e608f0c59d39be0607d2b54",
-    "plan_review.md": "1ddd9ae0f9d962f69e3e50649aea9304cbcffc978f481b8464b4f5f76725a83a",
-    "validation_output.txt": "0365bb68f9cd8bccec7ae72e11bb721fb2dca5d401a0cdb87ed7db0a9c777aee",
-    "validation.json": "8f79d2f3cca18a406a58bb8fa0d2d5e001410ece753ea8cac186f406185a157f",
-    "mapping_provenance.md": "120c306d8ff78d98de0fdd1680d3baa8f9e77910bc234f355e9e5dae66e8f6d9"
-  },
-  "config_sha256": "c559d2ce532348695867efa513aaca05e21d22d975afaa647113e30297bd9c94",
-  "planned_real_model_count": 2,
-  "completed_real_model_count": 0,
-  "main_test_outcomes_inspected": false,
-  "limitations": [
-    "No actual Qwen3.5 checkpoint validation",
-    "No end-to-end capture or matched lens fit",
-    "No component fitting, MLP training, controls battery or experimental figures",
-    "Local tests are implementation validation only"
+  "status": "native_pilot_running_main_not_executed",
+  "updated_utc": "2026-09-12T18:19:14Z",
+  "native_27b_validation": "passed",
+  "synthetic_null": "complete_12_cells_ridge_and_bias_only",
+  "component_model_fits": "not_started",
+  "comparison_model_native_validation": "not_started",
+  "instance": "eps-workspace-jr-native-20260912",
+  "zone": "us-central1-a",
+  "provisioning": "STANDARD",
+  "stop_fence_hours": 6,
+  "disk_auto_delete": false,
+  "preemptions": [
+    "2026-09-12T18:04:46Z",
+    "2026-09-12T18:10:35Z"
   ],
-  "selected_context_counts": {
-    "calibration": 128,
-    "pilot_train": 64,
-    "main_train": 8192,
-    "pilot_validation": 16,
-    "main_validation": 373,
-    "pilot_test": 32,
-    "main_test": 768
+  "native_code_sha": "0f23250df469235c8dad70b86cd93b7b4f3c318a",
+  "local_tests": {
+    "passed": 47,
+    "seconds": 5.14
   },
-  "validation_exit_code": 0,
-  "ruff_status": "passed"
+  "main_ready": false
 }

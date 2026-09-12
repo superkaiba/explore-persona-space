@@ -1,0 +1,108 @@
+{
+  "schema_version": "workspace-jr-runtime-preflight-v1",
+  "created_at_utc": "2026-09-12T17:24:54Z",
+  "identity": {
+    "config_sha256": "db6c68fe9680ed2be5cc2eb4064019a01a5b1f2d460099a683f439817d61f5d9",
+    "selection_sha256": "11209d75c89345223e87641d74d273ba37ddcd7f1e608f0c59d39be0607d2b54",
+    "model_role": "primary",
+    "versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "huggingface-hub": "0.36.2"
+    },
+    "code": {
+      "git_commit": "e30bf054f23ad1bb9f254a54a993d82327bbed1c",
+      "git_dirty": true,
+      "phase": "workspace-jr",
+      "git_dirty_paths": [
+        "scripts/workspace_jr_runtime.py",
+        "configs/analysis/workspace_jr.yaml",
+        "docs/exploratory_workspace_jr/README.md",
+        "docs/exploratory_workspace_jr/analysis_plan.md",
+        "docs/exploratory_workspace_jr/execution_status.json",
+        "docs/exploratory_workspace_jr/validation.json",
+        "docs/exploratory_workspace_jr/validation_output.txt"
+      ],
+      "git_argv0_state": "untracked",
+      "git_argv0_path": "scripts/workspace_jr_runtime.py"
+    }
+  },
+  "workflow_status": "execution_authorized",
+  "workflow_exception": {
+    "user_instruction": "I allow you to bypass the registered experiment task",
+    "scope": "task_registration_only_preserve_scientific_plan_and_compute_safety"
+  },
+  "role": "primary",
+  "model_id": "Qwen/Qwen3.5-27B",
+  "model_spec": {
+    "revision": "fc05daec18b0a78c049392ed2e771dde82bdf654",
+    "revision_status": "historical_main_inference_requires_recapture_parity",
+    "source_layer": 50,
+    "target_layer": 62,
+    "n_layers": 64,
+    "d_model": 5120,
+    "inherited_training_k": 1,
+    "frozen_coefficient_sha256": "803de39c24bd7d770c42db30acef869038a3188bb1f434a94ef932ed65723ed3"
+  },
+  "calibration_contexts_resolved": 128,
+  "runtime_versions": {
+    "torch": "2.8.0",
+    "transformers": "4.57.6",
+    "huggingface-hub": "0.36.2",
+    "omegaconf": "2.3.0",
+    "numpy": "2.2.6"
+  },
+  "native_loader": {
+    "transformers_qwen3_5_module": false,
+    "qwen3_5_class_exported": false,
+    "auto_causal_lm_available": true,
+    "auto_image_text_to_text_available": true,
+    "selected_loader": "AutoModelForCausalLM",
+    "warnings": [
+      "native_qwen3_5_class_not_exported_by_installed_transformers"
+    ]
+  },
+  "cuda": {
+    "available": false,
+    "device_count": 0,
+    "devices": []
+  },
+  "disk": {
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability": {
+      "total_gib": 1006.858570098877,
+      "used_gib": 943.4461097717285,
+      "free_gib": 63.39683532714844
+    },
+    "docs/exploratory_workspace_jr/runtime_preflight_primary.json": {
+      "total_gib": 1006.858570098877,
+      "used_gib": 943.4461097717285,
+      "free_gib": 63.39683532714844
+    },
+    "configs/analysis/workspace_jr.yaml": {
+      "total_gib": 1006.858570098877,
+      "used_gib": 943.4461097717285,
+      "free_gib": 63.39683532714844
+    },
+    "docs/exploratory_workspace_jr/selected_contexts.json": {
+      "total_gib": 1006.858570098877,
+      "used_gib": 943.4461097717285,
+      "free_gib": 63.39683532714844
+    },
+    "docs/exploratory_workspace_jr/mapping_provenance.json": {
+      "total_gib": 1006.858570098877,
+      "used_gib": 943.4461097717285,
+      "free_gib": 63.39683532714844
+    }
+  },
+  "minimum_local_free_gib": 80.0,
+  "local_real_model_execution_ready": false,
+  "blockers": [
+    "no_cuda_device_visible_to_torch",
+    "local_free_disk_below_80GiB"
+  ],
+  "warnings": [
+    "native_qwen3_5_class_not_exported_by_installed_transformers"
+  ],
+  "does_not_read_experimental_outcomes": true,
+  "experimental_component_results": null
+}

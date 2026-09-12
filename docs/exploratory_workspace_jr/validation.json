@@ -1,38 +1,31 @@
 {
-  "stage": "implementation_validation_only",
-  "command": [
-    "/home/thomasjiralerspong/explore-persona-space/.venv/bin/python3",
-    "-m",
-    "pytest",
-    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/tests/test_workspace_lenses.py",
-    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/tests/test_workspace_components.py",
-    "-q"
-  ],
-  "exit_code": 0,
-  "timestamp_utc": "2026-09-12T03:40:07.331703+00:00",
-  "real_model_experiments_run": 0,
-  "scope": [
-    "local R rules",
-    "ordinary J numerical product gate",
-    "published GP oracle",
-    "native tiny Qwen2 forward preservation",
-    "ridge reference solves",
-    "equal-rollout pooling",
-    "paired bootstrap",
-    "variance matching"
-  ],
-  "unvalidated": [
-    "actual Qwen3.5 checkpoints",
-    "native hybrid backward",
-    "token capture/generation",
-    "full paired lens fitting",
-    "MLP run",
-    "experimental component conclusions"
-  ],
+  "stage": "native_pilot_and_cpu_implementation_validation",
+  "timestamp_utc": "2026-09-12T18:21:12.528103+00:00",
+  "local_test_count": 47,
+  "local_test_exit_code": 0,
+  "local_test_seconds": 5.14,
+  "native_27b_validation": "native_validation_primary.json",
+  "scientific_component_results_completed": false,
   "source_sha256": {
-    "tests/test_workspace_lenses.py": "c44bec02f4efec8fd5d8db800f4fa5de1635d01ccc6efbd85358eb3849bdb627",
-    "tests/test_workspace_components.py": "2e347014b017759b529ae83d35982df95be63b23024bee063f74b4b9d80d9bd1",
+    "src/explore_persona_space/analysis/workspace_artifacts.py": "f673a0bd3c682696ceae6368e8f950fdd501cfbcdea2b29c3db2531560900724",
+    "src/explore_persona_space/analysis/workspace_capture.py": "b33fa4c8cee7c34858d2589bd0e817b293b72bb8f16f676abd05571a312673bc",
+    "src/explore_persona_space/analysis/workspace_components.py": "b052211bb6f88a8cf2820aaffe1f6458d24b1f92ea4284a0c4c1824659a02b01",
+    "src/explore_persona_space/analysis/workspace_fit.py": "128293cd36b385b90352f3c087d521059ec6f33684e825d043d77f847db95d48",
     "src/explore_persona_space/analysis/workspace_lenses.py": "4cac48973e29d6d7eaeebb189cd738365d4b71c0f28c687685d975a08d3b7349",
-    "src/explore_persona_space/analysis/workspace_components.py": "b052211bb6f88a8cf2820aaffe1f6458d24b1f92ea4284a0c4c1824659a02b01"
-  }
+    "src/explore_persona_space/analysis/workspace_runtime.py": "eeac05492024fd64763940e5279d5fbbae2907a05d8ea2d5dcc0ca53f2766733",
+    "tests/test_workspace_artifacts.py": "32d5e96d28ba8475c1497db92e1adb5bbd619ca65db6d5fcaab1095c2cdebb59",
+    "tests/test_workspace_capture.py": "6b897a3508a037a53410d08e8c86ce23687925eeac57a36adbed87eb8b7f9be4",
+    "tests/test_workspace_components.py": "2e347014b017759b529ae83d35982df95be63b23024bee063f74b4b9d80d9bd1",
+    "tests/test_workspace_fit.py": "509ba35a872d2638005d9fb8e189b0bd604110d68b97c93078d1f487993fc8c0",
+    "tests/test_workspace_lenses.py": "c44bec02f4efec8fd5d8db800f4fa5de1635d01ccc6efbd85358eb3849bdb627",
+    "tests/test_workspace_runtime.py": "91fcc842834ec12da42eb2491dfe0ddfd792a300b3e98c24dab2f1ec4b8898c3",
+    "scripts/workspace_jr_pipeline.py": "a5bd7eb55362cd4f2a930b767dc1e30143d70b8f04a0cb024ac2eebcdd221a35"
+  },
+  "remaining_native_gates": [
+    "complete paired lens pilot",
+    "historical mapping recapture parity",
+    "calibration stability and readouts",
+    "native generation and exact token capture",
+    "real-model component fits and controls"
+  ]
 }
