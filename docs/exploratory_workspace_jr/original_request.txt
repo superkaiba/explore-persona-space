@@ -1,0 +1,193 @@
+Implement and run an exploratory experiment in the Context Answer Mapping project.
+
+Research question
+Does our context→answer predictor capture representations outside the estimated workspace better than workspace contents? Does that conclusion depend on the lens—J-lens versus R-lens—or on model capability?
+
+Do not assume “linearly predictable = automatic” or “prediction error = reasoning.” We are testing relative predictability. Negative results and disagreement between lenses or models are useful findings.
+
+Repository and existing setup
+Locate the current project, expected at:
+  /home/thomasjiralerspong/explore-persona-space
+
+Read repository instructions and inspect the extraction, training, evaluation, and per-direction analysis code. Reuse existing infrastructure and artifacts.
+
+Verify the project’s extraction convention:
+- Input x: residual activation at the final context token.
+- Target y: mean answer-token activation, averaged across sampled rollouts.
+- Input and target use the same layer.
+- Predictor: affine ridge regression, with an MLP comparison.
+- Previously used rollout count: K=5; verify each selected model’s configuration.
+
+Preserve context-level train/validation/test separation. All rollouts from one context must stay together. Reuse frozen predictors when compatible.
+
+Before inspecting experimental test results, save an analysis plan and configuration specifying model selection, primary comparisons, sample selection, tuning budgets, and interpretation rules.
+
+1. Select a stronger and a weaker model
+
+Inspect the repository’s existing context→answer mappings and select:
+
+- Primary: the most capable model for which we have a valid fitted mapping.
+- Comparison: a meaningfully weaker model with an existing fitted mapping, preferably from the same family and with comparable post-training.
+
+Judge capability using available task-performance evidence, not mapping R². Parameter count alone does not establish capability. Document the selection and architectural or training differences that complicate interpretation.
+
+Verify mapping provenance, checkpoint, activation hook, training data, rollout configuration, and held-out split. Do not assume a mapping exists merely because its model appears in a configuration file.
+
+Use each model’s existing mapping layer as its primary layer. Verify indexing and report relative depth. Do not assume identical layer numbers identify equivalent processing stages.
+
+Run the full J-lens/R-lens comparison on both models. Within each model, match settings between lenses. Across models, use shared evaluation prompts that are held out for BOTH models where possible, and comparable extraction, rollout, and training protocols.
+
+Flag existing mapping-training differences that could explain cross-model results. Treat the within-model comparisons as primary when cross-model matching is imperfect.
+
+Prioritize completing the strongest model’s experiment, then the weaker comparison. If only one model has usable mapping artifacts, complete that experiment and report the missing prerequisite rather than silently substituting another model.
+
+2. Obtain matched J-lens and R-lens artifacts
+
+Read:
+- J-space:
+  https://transformer-circuits.pub/2026/workspace/
+- R-lens:
+  https://www.lesswrong.com/posts/nv8oedrnLXKRzNEL9/r-lens-making-j-lens-more-faithful-on-early-layers
+- RelP:
+  https://arxiv.org/html/2508.21258v2
+- Released lenses:
+  https://huggingface.co/camilablank/workspace-lenses
+
+Look for compatible artifacts first. Otherwise construct both lenses for each selected model’s exact checkpoint and activation hook.
+
+Within each model, match the calibration corpus, source/target layers, token-position sampling, sample count, precision, and normalization conventions. Exclude evaluation contexts from calibration. Record all approximations.
+
+J-lens uses averaged ordinary Jacobians. R-lens uses the corresponding modified backward propagation with the applicable normalization, activation, and multiplicative-gate rules. Follow the architecture-specific implementation where necessary.
+
+Validation must distinguish them:
+- Validate ordinary J-lens Jacobian products numerically.
+- Validate R-lens against its specified local propagation rules.
+- Verify that installing R-lens backward rules leaves forward outputs unchanged.
+- Do NOT require R-lens coefficients to match finite-difference derivatives: they intentionally measure something different.
+- Check calibration-subset stability and inspect calibration readouts.
+
+Do not silently substitute logit lenses, tuned lenses, another model’s artifacts, or ordinary probes. Such proxies may be separately labeled diagnostics.
+
+J-space is defined through sparse nonnegative combinations of an overcomplete dictionary, not a global linear projector. For this experiment, define R-space by applying the same sparse-decomposition procedure to the R-lens dictionary. Explicitly label this as our operational R-space definition, not an established characterization of every workspace property.
+
+3. Cheap diagnostic using the existing predictor
+
+Use our existing per-direction evaluation framework.
+
+For normalized directions d from each lens, evaluate held-out R² between:
+  dᵀy and dᵀŷ
+
+Compare ridge and MLP predictions on exactly the same examples.
+
+Use a shared vocabulary-eligibility rule fixed on calibration/training data. Within each model, report paired comparisons for the same token’s J-lens and R-lens directions.
+
+Include random and PCA-direction controls matched for target variance where possible. Report matching quality, direction redundancy, and unmatched exclusions.
+
+Report:
+- Per-direction R² distributions for J-lens and R-lens.
+- Predictability versus target variance.
+- MLP improvement over ridge.
+- Paired J-versus-R differences.
+- Comparisons against matched controls.
+
+Call these “J-aligned” and “R-aligned readout” results. Random/PCA controls are not established non-workspace features, and these scores do not decompose the predictor.
+
+4. Main experiment: predict components under each lens
+
+Let S denote either J or R.
+
+For each answer-token activation h, compute:
+  s_S(h) = estimated sparse component using dictionary S
+  remainder_S(h) = h - s_S(h)
+
+Then form context-level targets:
+  y_S = average across rollouts of each rollout’s mean s_S(h)
+  y_rest,S = average across rollouts of each rollout’s mean remainder_S(h)
+
+Preserve the project’s equal weighting of rollouts, including when answer lengths differ. Verify:
+  y = y_J + y_rest,J
+  y = y_R + y_rest,R
+
+These are two alternative decompositions of the same activations. J-space and R-space may overlap. Do NOT treat them as disjoint components or assume:
+  y = y_J + y_R + a common remainder
+
+Decompose individual token activations BEFORE averaging. Decomposing the pooled answer vector answers a different question.
+
+If only pooled activations are cached, collect token-level activations on a reproducibly selected subset. Stream decomposition and aggregation where practical.
+
+For each model, fit separate affine predictors from the same x to:
+  y_J, y_rest,J, y_R, y_rest,R
+
+Fit comparable MLP predictors to those same targets. Use identical splits and comparable tuning budgets. Handle target scaling consistently and evaluate in original units.
+
+These fits measure what is predictable from x. They do not uniquely divide the original predictor’s output into workspace and non-workspace contributions.
+
+Primary metrics:
+- Component-specific R², normalized by each target’s own variance.
+- G_J = R²_rest,J - R²_J.
+- G_R = R²_rest,R - R²_R.
+- Paired difference G_R - G_J.
+- MLP improvement for every component.
+- Component variances, errors, and component/remainder covariance.
+
+Do not infer selectivity from raw explained variance alone or assume component variances sum to total variance.
+
+Also report descriptive agreement between decompositions: component similarity, reconstruction differences, and corresponding token-direction similarity. Avoid unstable ratios or cosine estimates for near-zero components.
+
+5. Required controls and validity checks
+
+Sparse-decomposition artifacts:
+- Repeat the analysis with randomly rotated control dictionaries, preserving dictionary geometry and using the same decomposition procedure.
+- Report sparsity, reconstruction quality, and captured variance. Include calibration-matched comparisons where feasible.
+- Run a synthetic null with exactly affine activation targets before decomposition. Check whether sparse selection alone creates component predictability gaps.
+- Interpret both G_J and G_R against these controls. Nonlinear decomposition can make individual components nonlinear even when their sum is perfectly linear.
+
+Sampling noise:
+- Estimate component-specific within-context rollout variability for both lenses and both models.
+- Check whether noisier targets explain lower observed R².
+- If necessary, repeat the key comparison on a fixed higher-K subset. Do not equate finite-rollout noise with unpredictable reasoning.
+
+Robustness:
+- Use k=10 as primary sparsity, with k=5 and k=25 sensitivity checks for both lenses.
+- Use paired bootstrap confidence intervals over contexts, preserving pairing across lenses and predictors, and across models when prompts are shared.
+- Report variation across control dictionaries and, where feasible, three MLP seeds.
+- Keep zero-variance targets, failed decompositions, truncations, missing data, and exclusions visible.
+- Do not select models, layers, directions, examples, or sparsity settings for favorable test results.
+
+6. Execution and interpretation
+
+Start with a small end-to-end pilot to verify extraction, lens construction, decomposition, reconstruction identities, evaluation, and runtime. Then run the main comparisons at a scale supported by existing data and compute.
+
+Check learning curves if insufficient training data could explain component differences. Reuse available resources, implement resumable jobs, and record commands and artifact provenance. Avoid a broad model/layer sweep.
+
+If faithful construction of a lens is blocked, finish independent work and report the precise blocker. Do not present a one-lens or proxy result as the completed comparison.
+
+Predeclare 0.05 absolute R² as the default smallest practically meaningful component gap, unless an existing project convention provides a better justified threshold. Report continuous estimates and confidence intervals.
+
+Within-model interpretation:
+- Similar positive gaps for both lenses, beyond noise and decomposition-control effects: evidence that the measured workspace components are less linearly predictable.
+- A J-space gap that disappears or reverses with R-space: evidence that the conclusion depends on the lens.
+- Workspace components equally or better predicted: evidence against the proposed predictability deficit.
+- Wide intervals, poor controls, unstable lenses, or dominant sampling noise: inconclusive.
+- Greater MLP improvement for workspace components is supporting evidence, not proof of reasoning.
+
+Cross-model interpretation:
+- Report whether the pattern holds in both the stronger and weaker models.
+- Report whether lens disagreement changes between models.
+- Identify differences in mapping quality, training data, layer depth, architecture, and post-training that could explain the comparison.
+- Treat differences between two models as observational evidence, not proof that capability causes the difference.
+
+Agreement between J-lens and R-lens is a robustness check, not independent causal validation: the methods share substantial structure.
+
+Do not conclude that the predictable component is automatic, that either remainder contains all non-workspace processing, or that workspace contents are transient without additional evidence. Defer causal task ablations and temporal analyses.
+
+Deliver:
+- Working code and reproducible configurations.
+- Model-selection rationale and mapping provenance.
+- Lens provenance and validation results.
+- Saved per-example predictions and component statistics.
+- Machine-readable results.
+- Plots comparing J/R component R², MLP gains, decomposition agreement, control-adjusted gaps, and stronger/weaker model results.
+- A concise report explaining what ran, whether conclusions survive changing lenses and models, contrary evidence, and limitations.
+
+Carry the experiment through execution and analysis rather than stopping at a plan. Keep manuscript edits separate from these exploratory results.

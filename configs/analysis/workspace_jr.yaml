@@ -1,0 +1,139 @@
+# Preregistered exploratory protocol. A null task_id is an explicit launch block.
+schema_version: workspace-jr-v1
+task_id: null
+status: preparation_only
+seed: 20260912
+selection:
+  capability_axis: measured_same_mode_gpqa_accuracy
+  eligible_input: prompt_last
+  ranking: highest_observed_point_estimate_unique_superiority_unproven
+  exact_point_ties: lexical_model_id_no_architecture_substitution
+  primary: Qwen/Qwen3.5-27B
+  comparison: Qwen/Qwen3.5-4B
+models:
+  primary:
+    revision: fc05daec18b0a78c049392ed2e771dde82bdf654
+    revision_status: historical_main_inference_requires_recapture_parity
+    source_layer: 50
+    target_layer: 62
+    n_layers: 64
+    d_model: 5120
+    inherited_training_k: 1
+    frozen_coefficient_sha256: 803de39c24bd7d770c42db30acef869038a3188bb1f434a94ef932ed65723ed3
+  comparison:
+    revision: 851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a
+    revision_status: historical_main_inference_requires_recapture_parity
+    source_layer: 20
+    target_layer: 30
+    n_layers: 32
+    d_model: 2560
+    inherited_training_k: 1
+    frozen_coefficient_sha256: 854fdd2333d2f5692dab1f4c4e95c48db30d2f8e8847d8e6e83b580c422544cb
+provenance_gate:
+  dataset_revision: 3de3be6de6aab707a207128f0081799b579ea594
+  manifest_revision: 815ff6d976c686af8672b27cfdfb1ce6b419c02c
+  recapture_contexts: 32
+  recapture_selection: first_hash_order_calibration_contexts_with_historical_capture
+  recapture_comparison: historical_retokenization_against_pinned_old_x_and_y
+  maximum_relative_frobenius_error: 0.01
+  minimum_row_cosine: 0.999
+  tolerance_source: ungrounded_needs_dtype_controlled_pilot
+  failure: no_frozen_reuse_no_model_substitution_record_revision_before_main
+sampling:
+  context_key: sha256_of_utf8_NFC_prompt_without_whitespace_changes
+  eligible_pool: full_source_manifest_first_10000_train_rows_and_all_val_test_rows
+  old_survivor_intersection: historical_parity_diagnostic_only
+  selection_sequence: [normalize, split_priority_deduplicate, calibration, pilot, main]
+  split_priority: [train, validation, test]
+  inherited_validation_test_overlap: exclude_from_test
+  shared_prompts_across_models: true
+  selection_order: sha256_of_seed_and_context_key
+  pilot: {train: 64, validation: 16, test: 32, k_rollouts: 5}
+  pilot_test: always_disjoint_from_main_test
+  main_maximum: {train: 8192, validation: 384, test: 768, k_rollouts: 5}
+  main_selection: min_available_within_each_inherited_split_no_backfill_across_splits
+  calibration_prompts: 128
+  calibration_source: training_prompts_excluded_from_component_fit_and_eval
+  truncation_action: regenerate_cap_hits_at_double_cap_when_fraction_exceeds_0p02
+  higher_k: {contexts: 128, k_rollouts: 20, trigger: target_noise_fraction_above_0p10}
+generation:
+  enable_thinking: false
+  add_generation_prompt: true
+  temperature: 1.0
+  top_p: 0.95
+  top_k: -1
+  min_p: 0.0
+  repetition_penalty: 1.0
+  presence_penalty: 0.0
+  frequency_penalty: 0.0
+  seeds: [42, 43, 44, 45, 46]
+  higher_k_seeds: {start: 42, stop_exclusive: 62}
+  initial_max_new_tokens: 2048
+  cap_increase: double_when_cap_hit_fraction_above_0p02_until_context_window_limit
+  incomplete_k: exclude_whole_context_from_paired_primary_report_all_retained_draws
+  answer_mask: all_generated_ids_before_first_terminal_eos_or_stop_id
+  preserve_generated_whitespace: true
+  exclude_terminal_eos_and_padding: true
+  unexpected_thinking_tokens: retain_and_flag
+  capture: concatenate_exact_saved_prompt_ids_and_generated_ids_no_retokenization
+lenses:
+  estimator: mean_prompts_mean_source_positions_sum_target_positions
+  calibration_max_tokens: 128
+  skip_first: 4
+  calibration_dtype: bfloat16
+  accumulation_dtype: float32
+  save_dtype: float32
+  r_variant: residual_rmsnorm_detach_silu_identity_mlp_product_half
+  attention_backward: ordinary
+  qk_norm_backward: ordinary
+  gated_attention_norm_backward: ordinary
+  dictionary: unit_rows_of_unembedding_times_effective_final_norm_gain_times_lens
+  checkpoint_and_token_manifest_match_required: true
+  stability_subsets: [32, 64, 128]
+decomposition:
+  algorithm: gdm_nonnegative_gradient_pursuit
+  candidate_vocabulary: full_finite_nonzero_dictionary
+  k_primary: 10
+  k_sensitivity: [5, 25]
+  reselect_active_atoms: true
+  zero_update_norm_action: no_op_record_count
+  rotations: [20260913, 20260914, 20260915]
+  decompose_before_pooling: true
+  equal_weight_rollouts: true
+fit:
+  ridge_alpha_grid: [0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000]
+  selection: validation_sse_per_component
+  x_scaling: train_coordinate_standardization
+  y_scaling: train_center_and_one_scalar_per_component
+  mlp_hidden: [512, 2048]
+  mlp_learning_rates: [0.001, 0.0003]
+  mlp_weight_decay: 0.0001
+  mlp_max_epochs: 300
+  mlp_patience: 30
+  mlp_seeds: [42, 137, 271]
+  mlp_tuning: mean_validation_sse_across_seeds
+  learned_bias_baseline: true
+  retrieval: {metrics: [euclidean, cosine], k: [1, 5, 10]}
+  learning_curve_train_fractions: [0.25, 0.5, 1.0]
+diagnostics:
+  token_eligibility: non_special_nonempty_token_seen_at_least_5_times_in_calibration_or_training
+  direction_maximum: 2048
+  direction_selection: seeded_hash_of_eligible_token_id
+  variance_controls: [random, pca]
+  maximum_absolute_log_variance_mismatch: 0.2
+  controls_pool_multiplier: 8
+  controls_matching: deterministic_nearest_without_replacement
+  redundancy: cosine_quantiles_and_effective_rank
+statistics:
+  r2_denominator: each_target_own_centered_variance
+  gap_j: r2_rest_j_minus_r2_j
+  gap_r: r2_rest_r_minus_r2_r
+  lens_difference: gap_r_minus_gap_j
+  smallest_practical_gap: 0.05
+  precision_interpretation: interval_width_above_0p10_is_inconclusive_for_0p05_gap
+  higher_k_comparison: frozen_k5_predictors_no_retuning_k5_remains_primary
+  near_zero_component_norm_floor: 1e-6_times_training_median_full_target_norm
+  bootstrap: {unit: context, draws: 2000, confidence: 0.95, paired: true}
+  synthetic_affine_null: exact_affine_token_targets_repeated_equal_rollout_pooling
+  zero_variance: null_with_status
+  infer_reasoning_from_error: false

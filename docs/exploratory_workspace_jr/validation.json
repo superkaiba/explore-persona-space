@@ -1,0 +1,38 @@
+{
+  "stage": "implementation_validation_only",
+  "command": [
+    "/home/thomasjiralerspong/explore-persona-space/.venv/bin/python3",
+    "-m",
+    "pytest",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/tests/test_workspace_lenses.py",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/tests/test_workspace_components.py",
+    "-q"
+  ],
+  "exit_code": 0,
+  "timestamp_utc": "2026-09-12T03:40:07.331703+00:00",
+  "real_model_experiments_run": 0,
+  "scope": [
+    "local R rules",
+    "ordinary J numerical product gate",
+    "published GP oracle",
+    "native tiny Qwen2 forward preservation",
+    "ridge reference solves",
+    "equal-rollout pooling",
+    "paired bootstrap",
+    "variance matching"
+  ],
+  "unvalidated": [
+    "actual Qwen3.5 checkpoints",
+    "native hybrid backward",
+    "token capture/generation",
+    "full paired lens fitting",
+    "MLP run",
+    "experimental component conclusions"
+  ],
+  "source_sha256": {
+    "tests/test_workspace_lenses.py": "c44bec02f4efec8fd5d8db800f4fa5de1635d01ccc6efbd85358eb3849bdb627",
+    "tests/test_workspace_components.py": "2e347014b017759b529ae83d35982df95be63b23024bee063f74b4b9d80d9bd1",
+    "src/explore_persona_space/analysis/workspace_lenses.py": "4cac48973e29d6d7eaeebb189cd738365d4b71c0f28c687685d975a08d3b7349",
+    "src/explore_persona_space/analysis/workspace_components.py": "b052211bb6f88a8cf2820aaffe1f6458d24b1f92ea4284a0c4c1824659a02b01"
+  }
+}
