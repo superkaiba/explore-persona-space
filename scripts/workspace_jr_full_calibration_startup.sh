@@ -9,6 +9,12 @@ JR_ARTIFACT_REV=0d6a380d0a6c98adb6168b9f66b0c74fea313c47
 JR_BOOT_SHA=$(curl --fail --silent --show-error -H 'Metadata-Flavor: Google' \
   http://metadata.google.internal/computeMetadata/v1/instance/attributes/jr-code-sha)
 [[ "$JR_BOOT_SHA" =~ ^[0-9a-f]{40}$ ]]
+JR_GPU_COUNT=$(curl --fail --silent --show-error -H 'Metadata-Flavor: Google' \
+  http://metadata.google.internal/computeMetadata/v1/instance/attributes/jr-gpu-count)
+JR_RANK_START=$(curl --fail --silent --show-error -H 'Metadata-Flavor: Google' \
+  http://metadata.google.internal/computeMetadata/v1/instance/attributes/jr-rank-start)
+[[ "$JR_GPU_COUNT" =~ ^[124]$ && "$JR_RANK_START" =~ ^[0-3]$ ]]
+(( JR_RANK_START + JR_GPU_COUNT <= 4 ))
 curl --location --fail --silent --show-error https://astral.sh/uv/install.sh -o /workspace/install_uv.sh
 sh /workspace/install_uv.sh
 export PATH="/root/.local/bin:$PATH"
@@ -24,15 +30,16 @@ git show "$JR_BOOT_SHA:scripts/workspace_jr_lens_worker.sh" > /workspace/workspa
 git checkout --detach "$JR_NATIVE_SHA"
 export PYTHONPATH="$PWD/src"
 uv sync --project runtime/workspace_jr --frozen
-export JR_ARTIFACT_REV
+export JR_ARTIFACT_REV JR_GPU_COUNT
 uv run --project runtime/workspace_jr --frozen python - <<'PY'
 import hashlib, json, os, shutil
 from pathlib import Path
 import torch
 from huggingface_hub import hf_hub_download, snapshot_download
 from explore_persona_space.orchestrate.hub import retry_transient
-assert torch.cuda.device_count() == 4
-assert all(torch.cuda.get_device_properties(i).total_memory / 2**30 > 79 for i in range(4))
+count = int(os.environ['JR_GPU_COUNT'])
+assert torch.cuda.device_count() == count
+assert all(torch.cuda.get_device_properties(i).total_memory / 2**30 > 79 for i in range(count))
 assert shutil.disk_usage('/workspace').free / 2**30 > 200
 root = Path('/workspace/workspace_jr/primary_full_calibration')
 root.mkdir(parents=True, exist_ok=True)
@@ -50,9 +57,10 @@ for name in ('calibration_tokens.json', 'native_validation.json', 'prompt-0000.p
 tokens = json.loads((root/'calibration_tokens.json').read_text())
 assert len(tokens['rows']) == 119 and len(tokens['excluded']) == 9
 retry_transient(lambda: snapshot_download('Qwen/Qwen3.5-27B', revision='fc05daec18b0a78c049392ed2e771dde82bdf654', allow_patterns=['*.json','*.safetensors','*.model','tokenizer*','*.txt']), what='jr_calibration_checkpoint')
-print('calibration_bootstrap_ready gpus=4 valid_prompts=119 resumed_pairs=2', flush=True)
+print(f'calibration_bootstrap_ready gpus={count} valid_prompts=119 resumed_pairs=2', flush=True)
 PY
-for JR_RANK in 0 1 2 3; do
+for ((JR_LOCAL_GPU=0; JR_LOCAL_GPU<JR_GPU_COUNT; JR_LOCAL_GPU++)); do
+  JR_RANK=$((JR_RANK_START + JR_LOCAL_GPU))
   case "$JR_RANK" in
     0) JR_START=2; JR_STOP=32 ;;
     1) JR_START=32; JR_STOP=61 ;;
@@ -63,6 +71,6 @@ for JR_RANK in 0 1 2 3; do
     --property=WorkingDirectory=/workspace/explore-persona-space \
     --property="StandardOutput=append:/workspace/logs/workspace_jr_calibration_rank$JR_RANK.log" \
     --property="StandardError=append:/workspace/logs/workspace_jr_calibration_rank$JR_RANK.log" \
-    /bin/bash /workspace/workspace_jr_lens_worker.sh "$JR_RANK" "$JR_START" "$JR_STOP"
+    /bin/bash /workspace/workspace_jr_lens_worker.sh "$JR_RANK" "$JR_START" "$JR_STOP" "$JR_LOCAL_GPU"
 done
-echo 'Four calibration units dispatched; monitor exit receipts and verify uploads before storage release.'
+echo 'Requested calibration units dispatched; monitor exit receipts and verify uploads before storage release.'

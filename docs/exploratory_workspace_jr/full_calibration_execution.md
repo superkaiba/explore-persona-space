@@ -47,3 +47,17 @@ and then verify STOP after six hours and boot-disk auto-delete=false; the shell
 scripts alone cannot enforce those cloud settings. No credentials are embedded
 in metadata or these scripts. Authenticated persistence uses a separate scoped
 credential file installed transiently by the owning monitor.
+
+## Capacity fallback
+
+The four-GPU shape returned capacity exhaustion in both supported zones.
+A third request followed the second response's fresh recommendation to retry
+zone-a and also failed. No instance or disk survived the first two requests;
+the final failed request is checked again before replacement provisioning.
+Try the same four disjoint ranks on separate `a2-ultragpu-1g` instances instead:
+one GPU,12vCPU,170GiB RAM and a500GB persistent boot disk each. The total four-GPU
+width, per-prompt production geometry, nominal2.7-hour wall and six-hour STOP
+fence are unchanged. This duplicates the52GB checkpoint cache across hosts;
+the output shards retain the same native source and validation contract.
+Explicit metadata selects each instance's rank and visible GPU count. There
+is no default rank that could accidentally duplicate a live worker.

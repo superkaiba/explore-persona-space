@@ -108,6 +108,7 @@ def prepare(args, config):
     prefix = f"issue2588_capability_panel_cap_long/{key}/nothink/raw_completions/train_10k"
     entries = retry_transient(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: enclosing retry_transient materializes every cursor page.
             HfApi().list_repo_tree(
                 REPO, path_in_repo=prefix, repo_type="dataset", revision=revision
             )

@@ -5,6 +5,7 @@ set +x
 JR_RANK=${1:?rank required}
 JR_START=${2:?start required}
 JR_STOP=${3:?stop required}
+JR_LOCAL_GPU=${4:?local GPU index required}
 cd /workspace/explore-persona-space
 [[ $(git rev-parse HEAD) == 0f23250df469235c8dad70b86cd93b7b4f3c318a ]]
 [[ -z $(git status --porcelain --untracked-files=no) ]]
@@ -12,7 +13,7 @@ JR_OUT=/workspace/workspace_jr/primary_full_calibration
 JR_EXIT="$JR_OUT/rank${JR_RANK}_exit.json"
 [[ ! -e "$JR_EXIT" ]]
 trap 'JR_RC=$?; printf "{\"exit_code\":%d,\"rank\":%d,\"start\":%d,\"stop\":%d,\"finished_at_epoch\":%d}\n" "$JR_RC" "$JR_RANK" "$JR_START" "$JR_STOP" "$(date +%s)" > "$JR_EXIT"' EXIT
-export CUDA_VISIBLE_DEVICES="$JR_RANK"
+export CUDA_VISIBLE_DEVICES="$JR_LOCAL_GPU"
 export HF_HOME=/workspace/.cache/huggingface HF_HUB_DISABLE_PROGRESS_BARS=1
 export HF_HUB_CACHE="$HF_HOME/hub" HF_XET_CACHE="$HF_HOME/xet"
 export PYTHONPATH="$PWD/src"
