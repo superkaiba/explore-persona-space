@@ -4,7 +4,10 @@ set -euo pipefail
 set +x
 mkdir -p /workspace/logs /workspace/workspace_jr
 exec > /workspace/logs/workspace_jr_startup.log 2>&1
-JR_OUT=/workspace/workspace_jr/primary_native_pilot
+JR_ROLE=$(curl --fail --silent --show-error -H 'Metadata-Flavor: Google' \
+  http://metadata.google.internal/computeMetadata/v1/instance/attributes/jr-role)
+[[ "$JR_ROLE" == primary || "$JR_ROLE" == comparison ]]
+JR_OUT=/workspace/workspace_jr/${JR_ROLE}_native_pilot
 mkdir -p "$JR_OUT"
 trap 'JR_RC=$?; printf "{\"exit_code\":%d,\"finished_at_epoch\":%d}\n" "$JR_RC" "$(date +%s)" > /workspace/workspace_jr/startup_exit.json' EXIT
 echo '[phase=bootstrap]'
@@ -17,6 +20,8 @@ fi
 curl --location --fail --silent --show-error https://astral.sh/uv/install.sh -o /workspace/install_uv.sh
 sh /workspace/install_uv.sh
 export PATH="/root/.local/bin:$PATH"
+export OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8
+export MALLOC_ARENA_MAX=2
 git clone --filter=blob:none --sparse --branch codex/jr-workspace-predictability-20260912 \
   https://github.com/superkaiba/explore-persona-space.git /workspace/explore-persona-space
 cd /workspace/explore-persona-space
@@ -24,4 +29,4 @@ git sparse-checkout set src scripts runtime/workspace_jr configs/analysis \
   docs/exploratory_workspace_jr external/jacobian-lens
 git checkout --detach "$JR_CODE_SHA"
 git rev-parse HEAD > "$JR_OUT/code_sha.txt"
-bash scripts/workspace_jr_native_pilot.sh "$JR_OUT" primary
+bash scripts/workspace_jr_native_pilot.sh "$JR_OUT" "$JR_ROLE"

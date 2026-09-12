@@ -16,7 +16,7 @@ from explore_persona_space.analysis.workspace_components import (
     validate_context_splits,
     workspace_gap_contrasts,
 )
-from explore_persona_space.analysis.workspace_runtime import save_json
+from explore_persona_space.analysis.workspace_runtime import file_sha256, save_json
 
 
 def finite_json(value):
@@ -34,8 +34,23 @@ def finite_json(value):
     return value
 
 
-def fit_mlp_targets(x, targets, config, output: Path, *, device: str, training_logger=None) -> dict:
-    """Tune one shared architecture grid per component on mean validation SSE.
+def _check_fixed_recipes(fixed_recipes, targets, settings):
+    """Reject missing targets or recipes outside the registered grid."""
+    if fixed_recipes is not None:
+        if set(fixed_recipes) != set(targets["train"]):
+            raise ValueError("Fixed MLP recipes must cover every target exactly")
+        for recipe in fixed_recipes.values():
+            if (
+                recipe["hidden"] not in settings["mlp_hidden"]
+                or recipe["lr"] not in settings["mlp_learning_rates"]
+            ):
+                raise ValueError("Fixed MLP recipe is outside the frozen tuning grid")
+
+
+def fit_mlp_targets(
+    x, targets, config, output: Path, *, device: str, training_logger=None, fixed_recipes=None
+) -> dict:
+    """Tune on mean validation SSE, or use each target's fixed full-data recipe.
 
     Each seed remains a separate predictor. The first registered seed is the
     primary MLP; there is no test-selected seed or prediction ensemble. Inputs
@@ -47,6 +62,7 @@ def fit_mlp_targets(x, targets, config, output: Path, *, device: str, training_l
     )
 
     settings = config["fit"]
+    _check_fixed_recipes(fixed_recipes, targets, settings)
     xmu, xsd = x["train"].mean(0), x["train"].std(0)
     xsd = np.where(xsd > 0, xsd, 1.0)
     xn = {split: ((values - xmu) / xsd).astype(np.float32) for split, values in x.items()}
@@ -59,6 +75,14 @@ def fit_mlp_targets(x, targets, config, output: Path, *, device: str, training_l
     joined_eval = np.concatenate([xn["validation"], xn["test"]])
     for hidden in settings["mlp_hidden"]:
         for lr in settings["mlp_learning_rates"]:
+            names = [
+                name
+                for name in targets["train"]
+                if fixed_recipes is None
+                or (fixed_recipes[name]["hidden"], fixed_recipes[name]["lr"]) == (hidden, lr)
+            ]
+            if not names:
+                continue
             seed_results = {}
             for seed in settings["mlp_seeds"]:
 
@@ -81,6 +105,7 @@ def fit_mlp_targets(x, targets, config, output: Path, *, device: str, training_l
                         X_eval=joined_eval,
                     )
                     for name, values in targets["train"].items()
+                    if name in names
                 ]
                 fitted = fit_batched_split_mlp(
                     groups,
@@ -97,7 +122,7 @@ def fit_mlp_targets(x, targets, config, output: Path, *, device: str, training_l
                     epoch_callback=log_epoch if training_logger is not None else None,
                 )
                 seed_results[seed] = fitted
-            for name in targets["train"]:
+            for name in names:
                 mu, scale = scales[name]
                 errors = []
                 for fitted in seed_results.values():
@@ -144,13 +169,51 @@ def fit_mlp_targets(x, targets, config, output: Path, *, device: str, training_l
             "selected": chosen,
             "primary_seed": settings["mlp_seeds"][0],
             "selection_reads_test_loss": False,
+            "recipe_mode": "fixed_from_full_training_validation" if fixed_recipes else "grid",
         },
     )
     return predictions
 
 
+def _input_fingerprints(x, targets, ids):
+    """Bind all realized rows, exact raw array bytes, shapes and dtypes."""
+    import hashlib
+
+    from explore_persona_space.analysis.workspace_runtime import content_sha256
+
+    def array_hash(value):
+        a = np.ascontiguousarray(value)
+        return {
+            "shape": list(a.shape),
+            "dtype": str(a.dtype),
+            "sha256": hashlib.sha256(a.tobytes()).hexdigest(),
+        }
+
+    return {
+        split: {
+            "ids_sha256": content_sha256(list(ids[split])),
+            "x": array_hash(x[split]),
+            "targets": {name: array_hash(value) for name, value in targets[split].items()},
+        }
+        for split in x
+    }
+
+
+def _fit_contract(config):
+    """Bind tuning, stopping, seeds and evaluation conventions for full-fit reuse."""
+    return {key: config[key] for key in ("fit", "statistics", "seed")}
+
+
 def evaluate_component_fits(
-    x, targets, ids, config, output: Path, *, mlp_device=None, training_logger=None
+    x,
+    targets,
+    ids,
+    config,
+    output: Path,
+    *,
+    mlp_device=None,
+    training_logger=None,
+    fixed_mlp_recipes=None,
 ) -> dict:
     """Fit original-unit targets, save every example and compute paired intervals."""
     validate_context_splits(ids)
@@ -201,6 +264,7 @@ def evaluate_component_fits(
                 output / "mlp",
                 device=mlp_device,
                 training_logger=training_logger,
+                fixed_recipes=fixed_mlp_recipes,
             )
         )
     arrays = {f"target__{key}": value for key, value in targets["test"].items()}
@@ -258,6 +322,11 @@ def evaluate_component_fits(
     np.savez(output / "bootstrap_samples.npz", **intervals.pop("samples"))
     result = {
         "schema": "workspace-jr-component-fit-v1",
+        "input_fingerprints": _input_fingerprints(x, targets, ids),
+        "fit_contract": _fit_contract(config),
+        "mlp_selection_sha256": file_sha256(output / "mlp/selection.json")
+        if mlp_device is not None
+        else None,
         "metrics": metrics,
         "ridge_selection": fit_info,
         "paired_bootstrap": intervals,
@@ -286,3 +355,97 @@ def evaluate_component_fits(
     }
     save_json(output / "results.json", finite_json(result))
     return result
+
+
+def evaluate_learning_curves(
+    x, targets, ids, config, output: Path, full_fit: Path, *, device: str, training_logger=None
+) -> dict:
+    """Refit frozen training prefixes; keep full-data MLP recipes and shared test rows.
+
+    Ridge alpha retains its registered validation selection. MLP hidden width
+    and learning rate come from the full training fit's validation-only choice;
+    only early stopping reads validation at each smaller training size.
+    """
+    import json
+
+    from explore_persona_space.analysis.workspace_runtime import file_sha256
+
+    validate_context_splits(ids)
+    fractions = config["fit"]["learning_curve_train_fractions"]
+    if fractions != sorted(set(fractions)) or fractions[-1] != 1.0 or fractions[0] <= 0:
+        raise ValueError("Learning fractions must be increasing, unique, and end at 1")
+    n_train = len(ids["train"])
+    counts = [int(n_train * fraction) for fraction in fractions]
+    if min(counts) < 2 or len(set(counts)) != len(counts):
+        raise ValueError("Training prefixes need at least two distinct context counts")
+    selection_path = full_fit / "mlp/selection.json"
+    full_results_path = full_fit / "results.json"
+    recipes = json.loads(selection_path.read_text())["selected"]
+    full_results = json.loads(full_results_path.read_text())
+    if "input_fingerprints" not in full_results or "fit_contract" not in full_results:
+        raise ValueError(
+            "Legacy full fit needs a separately attested rerun; never retrofit provenance"
+        )
+    if full_results["fit_contract"] != _fit_contract(config):
+        raise ValueError("Full fit and learning curves must share the exact fit contract")
+    if full_results["mlp_selection_sha256"] != file_sha256(selection_path):
+        raise ValueError("Full fit MLP recipe selection bytes changed")
+    if full_results["input_fingerprints"] != _input_fingerprints(x, targets, ids):
+        raise ValueError("Full fit and learning curves must use identical input bytes and IDs")
+    with np.load(full_fit / "per_example.npz", allow_pickle=False) as saved:
+        if saved["context_ids"].tolist() != ids["test"] or not np.array_equal(
+            saved["x"], x["test"]
+        ):
+            raise ValueError("Full fit and learning curves must use identical test rows")
+        for name, value in targets["test"].items():
+            if not np.array_equal(saved[f"target__{name}"], value):
+                raise ValueError("Full fit and learning curve test targets differ")
+    if full_results["split_counts"] != {key: len(value) for key, value in ids.items()}:
+        raise ValueError("Full fit and learning curve split counts differ")
+    output.mkdir(parents=True, exist_ok=False)
+    report = {
+        "schema": "workspace-jr-learning-curves-v1",
+        "training_selection": "prefix_of_frozen_hash_order_after_explicit_exclusions",
+        "full_fit_result_sha256": file_sha256(full_results_path),
+        "full_fit_recipe_sha256": file_sha256(selection_path),
+        "mlp_recipe_source": "full_training_validation_selection_no_new_grid_at_smaller_n",
+        "shared_validation_ids": ids["validation"],
+        "shared_test_ids": ids["test"],
+        "cells": [],
+    }
+    for fraction, count in zip(fractions, counts, strict=True):
+        cell = {"fraction": fraction, "n_train": count, "train_ids": ids["train"][:count]}
+        if fraction == 1.0:
+            result = full_results
+            cell["fit_path"] = str(full_fit.resolve())
+            cell["reused_full_fit"] = True
+        else:
+            folder = output / f"train-{count}"
+
+            def log_epoch(record, fraction=fraction, count=count):
+                if training_logger is not None:
+                    training_logger({"train_fraction": fraction, "train_contexts": count, **record})
+
+            result = evaluate_component_fits(
+                {key: value[:count] if key == "train" else value for key, value in x.items()},
+                {
+                    key: {name: v[:count] for name, v in values.items()}
+                    if key == "train"
+                    else values
+                    for key, values in targets.items()
+                },
+                {key: value[:count] if key == "train" else value for key, value in ids.items()},
+                config,
+                folder,
+                mlp_device=device,
+                fixed_mlp_recipes=recipes,
+                training_logger=log_epoch if training_logger is not None else None,
+            )
+            cell["fit_path"] = str(folder.resolve())
+            cell["reused_full_fit"] = False
+        cell["metrics"] = result["metrics"]
+        cell["paired_bootstrap"] = result["paired_bootstrap"]
+        report["cells"].append(cell)
+        save_json(output / "learning_curves.json", finite_json(report))
+        print(f"learning curve saved train={count}/{n_train}", flush=True)
+    return report

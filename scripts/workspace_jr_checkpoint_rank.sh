@@ -14,19 +14,35 @@ export HF_HUB_DISABLE_PROGRESS_BARS=1 HF_XET_HIGH_PERFORMANCE=1
 JR_PYTHON="$JR_REPO/runtime/workspace_jr/.venv/bin/python"
 "$JR_PYTHON" - <<'PY'
 import json, os, subprocess
+from urllib.request import Request, urlopen
 from pathlib import Path
 root, snapshot = Path(os.environ['JR_ROOT']), Path(os.environ['JR_SNAPSHOT'])
 rank = int(os.environ['JR_RANK'])
+def metadata(key):
+    request = Request('http://metadata.google.internal/computeMetadata/v1/instance/attributes/'+key,
+                      headers={'Metadata-Flavor': 'Google'})
+    with urlopen(request, timeout=10) as response:
+        return int(response.read())
+rank_start, gpu_count = metadata('jr-rank-start'), metadata('jr-gpu-count')
+assert rank_start <= rank < rank_start+gpu_count
+start, stop = [(2,32),(32,61),(61,90),(90,119)][rank]
 state = subprocess.run(['systemctl', 'show', f'workspace-jr-calibration-rank{rank}',
-                        '--property=ActiveState,SubState,Result,ExecMainStatus'],
+                        '--property=LoadState,ActiveState,SubState,Result,ExecMainStatus'],
                        check=True, capture_output=True, text=True).stdout
+assert 'LoadState=loaded\n' in state
 paths = [root/'calibration_tokens.json', root/'native_validation.json']
-paths += sorted((root/'lens_shards').glob('prompt-*.pt'))
+included = []
+for path in sorted((root/'lens_shards').glob('prompt-*.pt')):
+    index = int(path.stem.removeprefix('prompt-'))
+    if index in (0,1) or start <= index < stop:
+        paths.append(path)
+        included.append(index)
 terminal = root / f'rank{rank}_exit.json'
 complete = terminal.exists() and 'ActiveState=active\n' not in state
 if complete:
     receipt = json.loads(terminal.read_text())
     assert receipt['rank'] == rank and receipt['finished_at_epoch'] > 1789230000
+    assert (receipt['start'], receipt['stop']) == (start,stop)
     paths.append(terminal)
 snapshot.mkdir(parents=True, exist_ok=False)
 for source in paths:
@@ -37,6 +53,7 @@ for source in paths:
 (snapshot/'snapshot.json').write_text(json.dumps({
     'rank': rank, 'unit_state': state, 'terminal_receipt_included': complete,
     'paired_prompt_files': len(paths)-2-int(complete),
+    'included_prompt_indices': included, 'rank_interval': [start,stop],
     'native_source_sha': '0f23250df469235c8dad70b86cd93b7b4f3c318a',
     'snapshot_contract': 'hardlinks_of_atomic_immutable_prompt_checkpoints'
 }, indent=2)+'\n')
