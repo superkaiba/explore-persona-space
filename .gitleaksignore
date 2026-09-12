@@ -1497,3 +1497,6 @@ eval_results/issue_2643/direct_edges_tuned/tuning_trials.json:generic-api-key:42
 eval_results/issue_2643/direct_edges_tuned/tuning_trials.json:generic-api-key:425
 eval_results/issue_2643/direct_edges_tuned/tuning_trials.json:generic-api-key:4340
 eval_results/issue_2643/direct_edges_tuned/tuning_trials.json:generic-api-key:910
+
+# Workspace J/R native validation: verified SHA256 of calibration manifest contents, not a credential.
+docs/exploratory_workspace_jr/native_validation_primary.json:generic-api-key:309
