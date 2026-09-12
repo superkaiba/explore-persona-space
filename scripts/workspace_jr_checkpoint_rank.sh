@@ -29,7 +29,8 @@ start, stop = [(2,32),(32,61),(61,90),(90,119)][rank]
 state = subprocess.run(['systemctl', 'show', f'workspace-jr-calibration-rank{rank}',
                         '--property=LoadState,ActiveState,SubState,Result,ExecMainStatus'],
                        check=True, capture_output=True, text=True).stdout
-assert 'LoadState=loaded\n' in state
+terminal = root / f'rank{rank}_exit.json'
+assert 'LoadState=loaded\n' in state or ('LoadState=not-found\n' in state and terminal.exists())
 paths = [root/'calibration_tokens.json', root/'native_validation.json']
 included = []
 for path in sorted((root/'lens_shards').glob('prompt-*.pt')):
@@ -37,10 +38,10 @@ for path in sorted((root/'lens_shards').glob('prompt-*.pt')):
     if index in (0,1) or start <= index < stop:
         paths.append(path)
         included.append(index)
-terminal = root / f'rank{rank}_exit.json'
 complete = terminal.exists() and 'ActiveState=active\n' not in state
 if complete:
     receipt = json.loads(terminal.read_text())
+    assert type(receipt['exit_code']) is int and type(receipt['finished_at_epoch']) is int
     assert receipt['rank'] == rank and receipt['finished_at_epoch'] > 1789230000
     assert (receipt['start'], receipt['stop']) == (start,stop)
     paths.append(terminal)
@@ -52,6 +53,7 @@ for source in paths:
     os.link(source, target)
 (snapshot/'snapshot.json').write_text(json.dumps({
     'rank': rank, 'unit_state': state, 'terminal_receipt_included': complete,
+    'successful_complete': complete and receipt['exit_code'] == 0,
     'paired_prompt_files': len(paths)-2-int(complete),
     'included_prompt_indices': included, 'rank_interval': [start,stop],
     'native_source_sha': '0f23250df469235c8dad70b86cd93b7b4f3c318a',

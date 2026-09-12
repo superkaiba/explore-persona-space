@@ -210,6 +210,47 @@
         "source": "https://www.googleapis.com/compute/v1/projects/eps-persona-gpu-jun2026/zones/us-central1-a/disks/eps-workspace-jr-native-20260912"
       },
       "native_checkout_sha": "348b11a45a26147f1270356edfb6d3dbfd6f143c"
+    },
+    {
+      "name": "eps-workspace-jr-comparison-20260912",
+      "id": "7473675579792298880",
+      "status": "RUNNING",
+      "lastStartTimestamp": "2026-09-12T12:52:32.305-07:00",
+      "labels": {
+        "experiment": "workspace-jr",
+        "owner": "thomas-jiralerspong",
+        "phase": "comparison-native"
+      },
+      "scheduling": {
+        "automaticRestart": false,
+        "instanceTerminationAction": "STOP",
+        "maxRunDuration": {
+          "nanos": 0,
+          "seconds": "21600"
+        },
+        "onHostMaintenance": "TERMINATE",
+        "onInstanceStopAction": {
+          "discardLocalSsd": true
+        },
+        "preemptible": false,
+        "provisioningModel": "STANDARD"
+      },
+      "resourceStatus": {
+        "effectiveInstanceMetadata": {
+          "vmDnsSettingMetadataValue": "ZonalOnly"
+        },
+        "scheduling": {
+          "terminationTimestamp": "2026-09-13T01:52:16.411634Z"
+        }
+      },
+      "zone": "us-central1-a",
+      "machine_type": "a2-ultragpu-1g",
+      "boot_disk": {
+        "auto_delete": false,
+        "size_gb": "300",
+        "source": "https://www.googleapis.com/compute/v1/projects/eps-persona-gpu-jun2026/zones/us-central1-a/disks/eps-workspace-jr-comparison-20260912"
+      },
+      "native_checkout_sha": "072b6a5e7856b782fedb0e1aa522d69b39bf3cdc"
     }
   ],
   "rank_intervals": [
@@ -239,5 +280,6 @@
     "reason": "capacity_exhausted",
     "instance_and_disk_survivors": 0
   },
-  "storage_release_gate": "fresh_process_exit_and_verified_upload_of_all_outputs_and_terminal_receipts"
+  "storage_release_gate": "fresh_process_exit_and_verified_upload_of_all_outputs_and_terminal_receipts",
+  "comparison_verified_at": "2026-09-12T19:53:58.446566+00:00"
 }
