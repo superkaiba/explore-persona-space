@@ -1,0 +1,78 @@
+{
+  "revision": "5cd18fbdbead78c3a43c676b8649997262197c04",
+  "files": [
+    {
+      "name": "c4_shared_speakers.png",
+      "local": "/home/thomasjiralerspong/overleaf-speaker-k5-20260912/figures/paper/c4_shared_speakers.png",
+      "sha256": "23594071e183c4804e70e72ff2265fca8e0c3302701b45fe91cc324b15f13291",
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/5cd18fbdbead78c3a43c676b8649997262197c04/issue2054_section44_k5_gcp/previews/20260912_manuscript_and_loso/c4_shared_speakers.png"
+    },
+    {
+      "name": "c4_shared_speakers.pdf",
+      "local": "/home/thomasjiralerspong/overleaf-speaker-k5-20260912/figures/paper/c4_shared_speakers.pdf",
+      "sha256": "69b596ec26717ee02e232847a4392471862ce9f242ab9f4f023d4fb4d3cec246",
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/5cd18fbdbead78c3a43c676b8649997262197c04/issue2054_section44_k5_gcp/previews/20260912_manuscript_and_loso/c4_shared_speakers.pdf"
+    },
+    {
+      "name": "c4_shared_speakers_grayscale.png",
+      "local": "/home/thomasjiralerspong/overleaf-speaker-k5-20260912/figures/paper/c4_shared_speakers_grayscale.png",
+      "sha256": "ec1664ce94f206e32b5c215d4accbcce0d413d3b00fe4ec7f455b9c16d5482c9",
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/5cd18fbdbead78c3a43c676b8649997262197c04/issue2054_section44_k5_gcp/previews/20260912_manuscript_and_loso/c4_shared_speakers_grayscale.png"
+    },
+    {
+      "name": "c4_shared_speakers.data.json",
+      "local": "/home/thomasjiralerspong/overleaf-speaker-k5-20260912/figures/paper/c4_shared_speakers.data.json",
+      "sha256": "9c5d343b8be6784d619bd5c6f41413c132a7d9040b9549598d8dea42d5985a74",
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/5cd18fbdbead78c3a43c676b8649997262197c04/issue2054_section44_k5_gcp/previews/20260912_manuscript_and_loso/c4_shared_speakers.data.json"
+    },
+    {
+      "name": "c4_shared_speakers.meta.json",
+      "local": "/home/thomasjiralerspong/overleaf-speaker-k5-20260912/figures/paper/c4_shared_speakers.meta.json",
+      "sha256": "a2170a2c58a824524e41335cdba748e1a9b8388650282f75cdd1c4029f92600a",
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/5cd18fbdbead78c3a43c676b8649997262197c04/issue2054_section44_k5_gcp/previews/20260912_manuscript_and_loso/c4_shared_speakers.meta.json"
+    },
+    {
+      "name": "c4_shared_speakers.render.py",
+      "local": "/home/thomasjiralerspong/overleaf-speaker-k5-20260912/figures/paper/c4_shared_speakers.render.py",
+      "sha256": "fe66dfa576b2a135b6cc1add60f017dcb37e993a73af9ab9eefd0d496c0c9148",
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/5cd18fbdbead78c3a43c676b8649997262197c04/issue2054_section44_k5_gcp/previews/20260912_manuscript_and_loso/c4_shared_speakers.render.py"
+    },
+    {
+      "name": "leave_one_setting_out.png",
+      "local": "/mnt/eps-data/thomasjiralerspong/wt-2054-k5-display/figures/issue_2054/k5_loso/leave_one_setting_out.png",
+      "sha256": "b141bb38ff5cdc0c967075e6d0f76f7e02bf37b079bae2514f478e5f658baa00",
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/5cd18fbdbead78c3a43c676b8649997262197c04/issue2054_section44_k5_gcp/previews/20260912_manuscript_and_loso/leave_one_setting_out.png"
+    },
+    {
+      "name": "leave_one_setting_out.pdf",
+      "local": "/mnt/eps-data/thomasjiralerspong/wt-2054-k5-display/figures/issue_2054/k5_loso/leave_one_setting_out.pdf",
+      "sha256": "9bb937ee2e51959aaeacf2130b885cad232b875261d6031439e4688f6254225d",
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/5cd18fbdbead78c3a43c676b8649997262197c04/issue2054_section44_k5_gcp/previews/20260912_manuscript_and_loso/leave_one_setting_out.pdf"
+    },
+    {
+      "name": "leave_one_setting_out_grayscale.png",
+      "local": "/mnt/eps-data/thomasjiralerspong/wt-2054-k5-display/figures/issue_2054/k5_loso/leave_one_setting_out_grayscale.png",
+      "sha256": "a206a1298ca22c07fee9b04670b42ed632564c17149546d9294a2c8ea521fc7d",
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/5cd18fbdbead78c3a43c676b8649997262197c04/issue2054_section44_k5_gcp/previews/20260912_manuscript_and_loso/leave_one_setting_out_grayscale.png"
+    },
+    {
+      "name": "leave_one_setting_out.data.json",
+      "local": "/mnt/eps-data/thomasjiralerspong/wt-2054-k5-display/figures/issue_2054/k5_loso/leave_one_setting_out.data.json",
+      "sha256": "ca7f5dbdde9743eafdde26fed47a9812bcabbab3f84e5ce7eecc754bd868b48e",
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/5cd18fbdbead78c3a43c676b8649997262197c04/issue2054_section44_k5_gcp/previews/20260912_manuscript_and_loso/leave_one_setting_out.data.json"
+    },
+    {
+      "name": "leave_one_setting_out.meta.json",
+      "local": "/mnt/eps-data/thomasjiralerspong/wt-2054-k5-display/figures/issue_2054/k5_loso/leave_one_setting_out.meta.json",
+      "sha256": "e2ad5ec5ee519bdcc9a737ba00abb894d1a736dea6bbd28477ae6693d59f0524",
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/5cd18fbdbead78c3a43c676b8649997262197c04/issue2054_section44_k5_gcp/previews/20260912_manuscript_and_loso/leave_one_setting_out.meta.json"
+    },
+    {
+      "name": "issue2054_k5_paper_figures.py",
+      "local": "/mnt/eps-data/thomasjiralerspong/wt-2054-k5-display/scripts/issue2054_k5_paper_figures.py",
+      "sha256": "f7520e121e09966025c730006fd655e38452fb4cb7bdb7c77238b92dd2cd7f11",
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/5cd18fbdbead78c3a43c676b8649997262197c04/issue2054_section44_k5_gcp/previews/20260912_manuscript_and_loso/issue2054_k5_paper_figures.py"
+    }
+  ],
+  "anonymous_readback": "all files HTTP 200 and SHA256 match"
+}

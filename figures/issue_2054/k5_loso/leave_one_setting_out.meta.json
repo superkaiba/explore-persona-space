@@ -1,0 +1,75 @@
+{
+  "sources": {
+    "k5_results": {
+      "sha256": "90309ec95e757ee5bd2e1b941e006858bd24a328656386444b6c55fb43f928f2",
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/9de026f872c19b2ca4fd3e4539de820e08038ee3/issue2054_section44_k5_gcp/production_v1/results.json"
+    },
+    "loso_results": {
+      "sha256": "56beabc6855f4420b61150c5aad7dad550c7a5e1c1f5b8f18eba7f8df1b94179",
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/98d350d78e94fd5e79685be70376919147ee0cc7/issue2054_section44_k5_gcp/leave_one_setting_out_v1/results.json"
+    }
+  },
+  "record": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      6.417
+    ],
+    "exported_size_inches": [
+      13.095,
+      6.031
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/leave_one_setting_out.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "-0.198",
+      "-0.045",
+      "0.493",
+      "0.537",
+      "0.539",
+      "0.467",
+      "0.406",
+      "-0.414",
+      "0.501",
+      "0.556",
+      "0.547",
+      "0.480",
+      "QWEN2.5-7B \u00b7 LAYER 19 \u00b7 FIVE ANSWERS PER CONTEXT",
+      "Excluded setting",
+      "Assistant\n(chat)",
+      "Assistant\n(plain text)",
+      "HELIOS",
+      "Wren",
+      "Dana",
+      "Vex",
+      "Held-out $R^2$ \u2191",
+      "\u22120.6",
+      "\u22120.4",
+      "\u22120.2",
+      "0.0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "Leave-one-setting-out prediction",
+      "Base",
+      "Post-trained",
+      "Train on the other five settings. Bars: mean R\u00b2; marks: five held-out folds."
+    ]
+  },
+  "source_data_sha256": "ca7f5dbdde9743eafdde26fed47a9812bcabbab3f84e5ce7eecc754bd868b48e",
+  "render_script_sha256": "f7520e121e09966025c730006fd655e38452fb4cb7bdb7c77238b92dd2cd7f11",
+  "uncertainty": "Five individual fold scores; no confidence interval is implied",
+  "baselines_and_retrieval": "Every fold's source-only identity+bias, cosine and Euclidean retrieval, pool sizes and chance levels are retained in the data sidecar"
+}
