@@ -75,7 +75,7 @@ def audit_sources(panel, source_cells, target, fold):
 
 def fingerprint():
     """Bind the subset fit recipe and all shared calibration dependencies."""
-    payload = [base.fit_fingerprint()] + [
+    payload = [base.fit_fingerprint(), {model: source_sets(model) for model in base.MODELS}] + [
         inspect.getsource(f) for f in [source_sets, audit_sources, fit, persist_map]
     ]
     return hashlib.sha256(json.dumps(payload).encode()).hexdigest()
