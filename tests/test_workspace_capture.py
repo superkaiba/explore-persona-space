@@ -5,6 +5,8 @@ import torch
 
 from explore_persona_space.analysis.workspace_capture import (
     answer_token_ids,
+    assign_context_input,
+    capture_context_inputs,
     capture_token_batch,
     decompose_context,
 )
@@ -70,6 +72,39 @@ def test_terminal_answer_token_mask():
     """Terminal stop and trailing padding are excluded, without retokenizing."""
     assert answer_token_ids([5, 6, 99, 0], {99}) == ([5, 6], 2)
     assert answer_token_ids([5, 6], {99}) == ([5, 6], 0)
+
+
+def test_context_only_input_is_reused_exactly_without_erasing_batch_diagnostics():
+    """No future answer enters the canonical forward; old BF16 reads remain visible."""
+    from transformers import Qwen2Config, Qwen2Model
+
+    config = Qwen2Config(
+        vocab_size=40,
+        hidden_size=16,
+        intermediate_size=32,
+        num_hidden_layers=3,
+        num_attention_heads=2,
+        num_key_value_heads=2,
+    )
+    config._attn_implementation = "eager"
+    text = Qwen2Model(config).eval()
+    prompts = [[1, 2, 3], [3, 4]]
+    x = capture_context_inputs(text, prompts, 1, 0)
+    prior = [
+        {"prompt_ids": prompts[0], "x": x[0] + delta, "answer_states": torch.ones(length, 16)}
+        for delta, length in ((0.5, 1), (-0.25, 13))
+    ]
+    corrected = assign_context_input(prior, x[0])
+    for before, after in zip(prior, corrected, strict=True):
+        torch.testing.assert_close(after["x"], x[0], atol=0, rtol=0)
+        assert torch.equal(after["answer_batch_x"], before["x"])
+        assert after["answer_states"] is before["answer_states"]
+    # The ordinary causal model gives the same final-context read with an answer
+    # appended in FP32; the new route also makes all rollout copies bit-identical.
+    with_answer = capture_token_batch(
+        text, [{"prompt_ids": prompts[0], "answer_ids": [4, 5]}], 1, 0
+    )[0]
+    torch.testing.assert_close(x[0], with_answer["x"], rtol=1e-5, atol=1e-6)
 
 
 def test_cap_recovery_preserves_original_draw_and_resume(tmp_path, monkeypatch):

@@ -59,8 +59,10 @@ def generate_rollouts(
                 add_generation_prompt=True,
                 enable_thinking=settings["enable_thinking"],
             )
-            if not isinstance(prompt_ids, list) or not prompt_ids or any(
-                type(token) is not int for token in prompt_ids
+            if (
+                not isinstance(prompt_ids, list)
+                or not prompt_ids
+                or any(type(token) is not int for token in prompt_ids)
             ):
                 raise TypeError("Chat template must return a nonempty flat list of token IDs")
             contract = {
@@ -218,6 +220,57 @@ def _recover_caps(engine, results, settings, output, max_model_len):
             }
             save_json(output / f"{row['contract']['prompt_sha256']}.json", row)
         print(f"generation cap_recovery_round={recovery_round} draws={len(pending)}", flush=True)
+
+
+@torch.no_grad()
+def capture_context_inputs(text, prompt_ids: list[list[int]], source_layer: int, pad_token_id: int):
+    """Capture each context once with no answer tokens in the forward batch.
+
+    The caller freezes batch membership independently of generated answers and
+    reuses these exact vectors across all rollouts, lenses and higher-K reads.
+    """
+    if not prompt_ids or any(not ids for ids in prompt_ids):
+        raise ValueError("Context-only capture requires nonempty prompt token lists")
+    device = text.embed_tokens.weight.device
+    ids = torch.full(
+        (len(prompt_ids), max(map(len, prompt_ids))), pad_token_id, dtype=torch.long, device=device
+    )
+    mask = torch.zeros_like(ids)
+    for index, tokens in enumerate(prompt_ids):
+        ids[index, : len(tokens)] = torch.tensor(tokens, device=device)
+        mask[index, : len(tokens)] = 1
+    cache = {}
+
+    def hook(_module, _inputs, output):
+        states = output if isinstance(output, torch.Tensor) else output[0]
+        cache["x"] = (
+            torch.stack([states[i, len(tokens) - 1] for i, tokens in enumerate(prompt_ids)])
+            .detach()
+            .cpu()
+        )
+
+    handle = text.layers[source_layer].register_forward_hook(hook)
+    try:
+        text(input_ids=ids, attention_mask=mask, use_cache=False)
+    finally:
+        handle.remove()
+    values = cache["x"]
+    if values.ndim != 2 or len(values) != len(prompt_ids) or not torch.isfinite(values).all():
+        raise ValueError("Invalid context-only input capture")
+    return values
+
+
+def assign_context_input(captures: list[dict], context_input: torch.Tensor) -> list[dict]:
+    """Retain answer-batch input reads as diagnostics and use one canonical input."""
+    if not captures or context_input.ndim != 1 or not torch.isfinite(context_input).all():
+        raise ValueError("A finite canonical input and nonempty captures are required")
+    if any(row["prompt_ids"] != captures[0]["prompt_ids"] for row in captures):
+        raise ValueError("Canonical context input cannot span different prompts")
+    if any(row["x"].shape != context_input.shape for row in captures):
+        raise ValueError("Canonical input geometry differs from answer capture")
+    if any("answer_batch_x" in row for row in captures):
+        raise ValueError("Canonical context input has already been assigned")
+    return [{**row, "answer_batch_x": row["x"], "x": context_input.clone()} for row in captures]
 
 
 @torch.no_grad()

@@ -12,6 +12,10 @@ def validate_producer(actual: dict, expected: dict, *, native_ancestor=False) ->
     for key in ("config_sha256", "selection_sha256", "model_role", "versions"):
         if actual.get(key) != expected.get(key):
             raise ValueError(f"Producer identity mismatch: {key}")
+    if not native_ancestor and actual.get("execution_readiness_sha256") != expected.get(
+        "execution_readiness_sha256"
+    ):
+        raise ValueError("Producer identity mismatch: execution readiness")
     if actual.get("code") == expected.get("code"):
         return {"code_match": "exact"}
     if not native_ancestor:
@@ -58,3 +62,33 @@ def validate_coverage(report: dict, expected_ids: list[str], identity: dict) -> 
     if report["planned_contexts"] != len(expected_ids):
         raise ValueError("Planned context count differs from the frozen subset")
     return included
+
+
+def validate_context_input(reference: dict, x, root: Path, identity: dict) -> None:
+    """Resolve the canonical input's exact checkpoint row at every consuming phase."""
+    import torch
+
+    from explore_persona_space.analysis.workspace_runtime import file_sha256
+
+    relative = Path(reference["context_input_file"])
+    if relative.is_absolute() or any(part.startswith(".") for part in relative.parts):
+        raise ValueError("Context input reference must stay within the run root")
+    path = root / relative
+    if not path.resolve(strict=True).is_relative_to(root.resolve(strict=True)) or any(
+        root.joinpath(*relative.parts[:i]).is_symlink() for i in range(1, len(relative.parts) + 1)
+    ):
+        raise ValueError("Context input reference escapes the run root")
+    if file_sha256(path) != reference["context_input_file_sha256"]:
+        raise ValueError("Canonical context input checkpoint changed")
+    payload = torch.load(path, map_location="cpu", weights_only=True)
+    contract = payload["contract"]
+    validate_producer(contract["identity"], identity)
+    index = reference["context_input_row"]
+    if (
+        type(index) is not int
+        or not 0 <= index < len(payload["x"])
+        or contract["policy"] != "context_only_frozen_order_batches16_no_answer_tokens"
+        or contract["source_hashes"][index] != reference["generation_file_sha256"]
+    ):
+        raise ValueError("Canonical context input row or generation identity differs")
+    torch.testing.assert_close(x.float().cpu(), payload["x"][index].float(), rtol=0, atol=0)

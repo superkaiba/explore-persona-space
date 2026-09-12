@@ -16,16 +16,21 @@ import torch  # noqa: E402
 
 from explore_persona_space.analysis.workspace_artifacts import (  # noqa: E402
     validate_coverage,
+    validate_context_input,
     validate_producer,
 )
 from explore_persona_space.analysis.workspace_capture import (  # noqa: E402
     answer_token_ids,
+    assign_context_input,
+    capture_context_inputs,
     capture_token_batch,
     decompose_context,
     generate_rollouts,
     save_capture_batch,
 )
 from explore_persona_space.analysis.workspace_fit import evaluate_component_fits  # noqa: E402
+from explore_persona_space.analysis.workspace_gate import validate_main_readiness  # noqa: E402
+from explore_persona_space.analysis.workspace_recovery import recover_pilot_inputs  # noqa: E402
 from explore_persona_space.analysis.workspace_runtime import (  # noqa: E402
     content_sha256,
     file_sha256,
@@ -39,6 +44,17 @@ from explore_persona_space.analysis.workspace_runtime import (  # noqa: E402
 )
 
 
+def phase_prompts(args, subset=None):
+    """Resolve the frozen split, applying only a reviewed pre-main prefix ceiling."""
+    subset = args.subset if subset is None else subset
+    rows = selected_prompts(args.selection, args.audit, subset)
+    if subset.startswith("main_"):
+        if args.readiness is None:
+            raise ValueError("Main prompt resolution requires reviewed readiness")
+        rows = rows[: args.readiness["execution"]["main_counts"][subset.removeprefix("main_")]]
+    return rows
+
+
 def generation(args, config, identity):
     """Generate the frozen subset using the project's batched vLLM engine."""
     from transformers import AutoTokenizer
@@ -48,7 +64,7 @@ def generation(args, config, identity):
     spec = config["models"][args.role]
     model_id = config["selection"][args.role]
     tokenizer = AutoTokenizer.from_pretrained(model_id, revision=spec["revision"])
-    prompts = selected_prompts(args.selection, args.audit, args.subset)
+    prompts = phase_prompts(args)
     engine = create_vllm_engine(
         model_id,
         revision=spec["revision"],
@@ -72,12 +88,55 @@ def capture(args, config, identity):
         config, args.role, device=args.device, dtype=torch.bfloat16
     )
     spec = config["models"][args.role]
-    prompts = selected_prompts(args.selection, args.audit, args.subset)
+    prompts = phase_prompts(args)
     root = args.out / "generations" / args.subset
     generation_report = json.loads((root / "generation_status.json").read_text())
     validate_coverage(generation_report, [p["prompt_sha256"] for p in prompts], identity)
     if generation_report["needs_cap_recovery"]:
         raise ValueError("Capture requires completed truncation recovery")
+    context_inputs = {}
+    for begin in range(0, len(prompts), 16):
+        batch = prompts[begin : begin + 16]
+        source_paths = [root / f"{row['prompt_sha256']}.json" for row in batch]
+        source_hashes = [file_sha256(path) for path in source_paths]
+        if source_hashes != [
+            generation_report["file_sha256"][row["prompt_sha256"]] for row in batch
+        ]:
+            raise ValueError("Context input generation sources changed after completion")
+        saved_rows = [json.loads(path.read_text()) for path in source_paths]
+        for saved in saved_rows:
+            validate_producer(saved["contract"]["identity"], identity)
+        token_lists = [saved["contract"]["prompt_token_ids"] for saved in saved_rows]
+        input_path = args.out / "context_inputs" / args.subset / f"batch-{begin:04d}.pt"
+        input_contract = {
+            "identity": identity,
+            "source_hashes": source_hashes,
+            "prompt_ids": token_lists,
+            "policy": "context_only_frozen_order_batches16_no_answer_tokens",
+        }
+        if input_path.exists():
+            payload = torch.load(input_path, map_location="cpu", weights_only=True)
+            if payload["contract"] != input_contract:
+                raise ValueError("Stale canonical context input checkpoint")
+            values = payload["x"]
+        else:
+            values = capture_context_inputs(
+                text, token_lists, spec["source_layer"], tokenizer.pad_token_id
+            )
+            save_tensors(input_path, {"contract": input_contract, "x": values})
+        context_inputs.update(
+            {
+                row["prompt_sha256"]: (
+                    value,
+                    {
+                        "context_input_file_sha256": file_sha256(input_path),
+                        "context_input_file": str(input_path.relative_to(args.out)),
+                        "context_input_row": index,
+                    },
+                )
+                for index, (row, value) in enumerate(zip(batch, values, strict=True))
+            }
+        )
     terminal = set(
         _model.generation_config.eos_token_id
         if isinstance(_model.generation_config.eos_token_id, list)
@@ -96,7 +155,12 @@ def capture(args, config, identity):
             or [r["seed"] for r in saved["rollouts"]] != config["generation"]["seeds"]
         ):
             raise ValueError("Generation prompt, contract or seed membership mismatch")
-        contract = {"identity": identity, "generation_file_sha256": file_sha256(source)}
+        context_input, context_input_reference = context_inputs[row["prompt_sha256"]]
+        contract = {
+            "identity": identity,
+            "generation_file_sha256": file_sha256(source),
+            **context_input_reference,
+        }
         target = args.out / "captures" / args.subset / f"{row['prompt_sha256']}.pt"
         if target.exists():
             prior = torch.load(target, map_location="cpu", weights_only=True)
@@ -141,6 +205,7 @@ def capture(args, config, identity):
                     tokenizer.pad_token_id,
                 )
             )
+        captured = assign_context_input(captured, context_input)
         save_capture_batch(target, captured, contract)
         included.append(row["prompt_sha256"])
         hashes[row["prompt_sha256"]] = file_sha256(target)
@@ -160,6 +225,8 @@ def capture(args, config, identity):
 
 def dictionaries(args, config, identity):
     """Average matched per-prompt matrices and fold the native final norm gain."""
+    if args.readiness is not None:
+        return reviewed_dictionaries(args, config, identity)
     tokens = json.loads(args.token_manifest.read_text())
     validate_token_manifest(
         tokens,
@@ -215,8 +282,6 @@ def dictionaries(args, config, identity):
             d = config["models"][args.role]["d_model"]
             if row[arm].shape != (d, d) or not torch.isfinite(row[arm]).all():
                 raise ValueError("Invalid native lens matrix")
-    gain = 1 + text.norm.weight.detach().float()
-    unembedding = model.get_output_embeddings().weight.detach()
     manifest = {
         "identity": identity,
         "calibration_prompts": len(rows),
@@ -229,8 +294,59 @@ def dictionaries(args, config, identity):
         "source_hashes": {p.name: file_sha256(p) for p in files},
         "arms": {},
     }
+    matrices = {
+        name: torch.stack([row[name].float() for row in rows]).mean(0) for name in ("J", "R")
+    }
+    write_dictionary_arms(args, model, text, matrices, manifest)
+
+
+def reviewed_dictionaries(args, config, identity):
+    """Use the exact full-calibration mean tensors covered by independent review."""
+    evidence = args.readiness
+    report = evidence["reports"]["calibration"]
+    matrices = torch.load(evidence["paths"]["means"], map_location="cpu", weights_only=True)[
+        report["full_group"]
+    ]
+    dimension = config["models"][args.role]["d_model"]
+    if set(matrices) != {"J", "R"} or any(
+        value.shape != (dimension, dimension)
+        or value.dtype != torch.float32
+        or not torch.isfinite(value).all()
+        for value in matrices.values()
+    ):
+        raise ValueError("Reviewed means have incorrect shape, precision or finite values")
+    model, _tokenizer, text = load_native(
+        config, args.role, device=args.device, dtype=torch.bfloat16
+    )
+    if (
+        str(next(model.parameters()).dtype) != "torch.bfloat16"
+        or str(text.config._attn_implementation) != "eager"
+        or type(model).__name__ != "Qwen3_5ForConditionalGeneration"
+    ):
+        raise ValueError("Dictionary model differs from reviewed native runtime")
+    manifest = {
+        "identity": identity,
+        "calibration_prompts": report["realized_prompts"],
+        "pilot_only": False,
+        "full_calibration_membership": True,
+        "readiness_sha256": evidence["readiness_sha256"],
+        "calibration_report_sha256": file_sha256(evidence["paths"]["calibration"]),
+        "means_sha256": file_sha256(evidence["paths"]["means"]),
+        "calibration_token_manifest_sha256": report["token_manifest_sha256"],
+        "native_validation_sha256": report["native_validation_sha256"],
+        "source_hashes": {row["file"]: row["sha256"] for row in report["source_files"]},
+        "mean_accumulation": "FP64_equal_prompt_sums_then_saved_FP32",
+        "arms": {},
+    }
+    write_dictionary_arms(args, model, text, matrices, manifest)
+
+
+def write_dictionary_arms(args, model, text, matrices, manifest):
+    """Apply the same native norm gain and full-vocabulary normalization for both arms."""
+    gain = 1 + text.norm.weight.detach().float()
+    unembedding = model.get_output_embeddings().weight.detach()
     for name in ("J", "R"):
-        matrix = torch.stack([row[name].float() for row in rows]).mean(0).to(args.device)
+        matrix = matrices[name].to(args.device)
         dictionary = torch.empty(unembedding.shape, dtype=torch.float32, device="cpu")
         for start in range(0, len(unembedding), 2048):
             values = (unembedding[start : start + 2048].float() * gain) @ matrix
@@ -288,7 +404,7 @@ def decomposition(args, config, identity):
         "rotation": args.rotation,
     }
     digest = content_sha256(contract)
-    prompts = selected_prompts(args.selection, args.audit, args.subset)
+    prompts = phase_prompts(args)
     capture_root = args.out / "captures" / args.subset
     capture_report = json.loads((capture_root / "coverage.json").read_text())
     included_capture = set(
@@ -308,20 +424,28 @@ def decomposition(args, config, identity):
         generation_file = args.out / "generations" / args.subset / f"{row['prompt_sha256']}.json"
         if capture_file["identity"]["generation_file_sha256"] != file_sha256(generation_file):
             raise ValueError("Capture generation source has changed")
+        captures = capture_file["rows"]
+        for captured in captures:
+            validate_context_input(capture_file["identity"], captured["x"], args.out, identity)
         if target.exists():
             saved = torch.load(target, map_location="cpu", weights_only=True)
             if saved["contract_sha256"] != digest or saved["source_sha256"] != file_sha256(source):
                 raise ValueError(f"Stale component checkpoint {target}")
+            validate_context_input(saved["context_input_reference"], saved["x"], args.out, identity)
             included.append(row["prompt_sha256"])
             hashes[row["prompt_sha256"]] = file_sha256(target)
             continue
-        captures = capture_file["rows"]
         if [r["seed"] for r in captures] != config["generation"]["seeds"] or any(
             r["prompt_sha256"] != row["prompt_sha256"] for r in captures
         ):
             raise ValueError("Capture rollout seeds or context membership mismatch")
         reduced = decompose_context(captures, basis, k=args.k)
-        reduced.update(contract_sha256=digest, contract=contract, source_sha256=file_sha256(source))
+        reduced.update(
+            contract_sha256=digest,
+            contract=contract,
+            source_sha256=file_sha256(source),
+            context_input_reference=capture_file["identity"],
+        )
         save_tensors(target, reduced)
         included.append(row["prompt_sha256"])
         hashes[row["prompt_sha256"]] = file_sha256(target)
@@ -361,7 +485,7 @@ def fits(args, config, identity):
     }
     for split in ("train", "validation", "test"):
         subset = f"{args.stage}_{split}"
-        prompts = selected_prompts(args.selection, args.audit, subset)
+        prompts = phase_prompts(args, subset)
         root = args.out / "components" / cell / subset
         report = json.loads((root / "coverage.json").read_text())
         included = set(validate_coverage(report, [p["prompt_sha256"] for p in prompts], identity))
@@ -376,6 +500,7 @@ def fits(args, config, identity):
             if file_sha256(path) != report["file_sha256"][prompt["prompt_sha256"]]:
                 raise ValueError("Component changed after completed coverage manifest")
             saved = torch.load(path, map_location="cpu", weights_only=True)
+            validate_context_input(saved["context_input_reference"], saved["x"], args.out, identity)
             capture_path = args.out / "captures" / subset / path.name
             if (
                 saved["contract"] != expected_contract
@@ -424,7 +549,8 @@ def main():
     """Run one explicit persisted phase; scientific parameters come from YAML."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "phase", choices=("generate", "capture", "dictionaries", "decompose", "fit")
+        "phase",
+        choices=("generate", "capture", "dictionaries", "decompose", "fit", "recover-pilot"),
     )
     parser.add_argument("--config", type=Path, default=Path("configs/analysis/workspace_jr.yaml"))
     parser.add_argument(
@@ -437,6 +563,9 @@ def main():
     )
     parser.add_argument("--role", choices=("primary", "comparison"), required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--main-readiness", type=Path)
+    parser.add_argument("--source", type=Path)
+    parser.add_argument("--source-receipt", type=Path)
     parser.add_argument(
         "--subset",
         choices=[f"{s}_{t}" for s in ("pilot", "main") for t in ("train", "validation", "test")],
@@ -453,16 +582,31 @@ def main():
     args = parser.parse_args()
     config = load_workspace_jr_config(args.config)
     identity = run_identity(args.config, args.selection, args.role)
+    args.readiness = None
     if (args.phase in {"generate", "capture", "decompose"} and args.subset.startswith("main_")) or (
-        args.phase == "fit" and args.stage == "main"
+        args.phase in {"fit", "dictionaries"} and args.stage == "main"
     ):
-        raise ValueError("Main phases require completed calibration stability/readout validation")
+        if args.main_readiness is None:
+            raise ValueError(
+                "Main phases require completed calibration stability/readout validation"
+            )
+        args.readiness = validate_main_readiness(
+            args.main_readiness,
+            config,
+            config_path=args.config,
+            selection_path=args.selection,
+            identity=identity,
+        )
+        identity["execution_readiness_sha256"] = args.readiness["readiness_sha256"]
+    elif args.main_readiness is not None:
+        raise ValueError("A main readiness artifact cannot relabel a pilot phase")
     phases = {
         "generate": generation,
         "capture": capture,
         "dictionaries": dictionaries,
         "decompose": decomposition,
         "fit": fits,
+        "recover-pilot": recover_pilot_inputs,
     }
     phases[args.phase](args, config, identity)
 
