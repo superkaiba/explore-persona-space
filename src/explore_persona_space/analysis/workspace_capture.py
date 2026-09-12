@@ -55,9 +55,14 @@ def generate_rollouts(
             prompt_ids = tokenizer.apply_chat_template(
                 [{"role": "user", "content": row["prompt"]}],
                 tokenize=True,
+                return_dict=False,
                 add_generation_prompt=True,
                 enable_thinking=settings["enable_thinking"],
             )
+            if not isinstance(prompt_ids, list) or not prompt_ids or any(
+                type(token) is not int for token in prompt_ids
+            ):
+                raise TypeError("Chat template must return a nonempty flat list of token IDs")
             contract = {
                 "identity": identity,
                 "prompt_token_ids": prompt_ids,

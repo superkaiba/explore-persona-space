@@ -84,6 +84,12 @@ def test_cap_recovery_preserves_original_draw_and_resume(tmp_path, monkeypatch):
 
     class Tokenizer:
         def apply_chat_template(self, *args, **kwargs):
+            # Transformers 5 defaults to a structured BatchEncoding; generation
+            # explicitly requests the flat token-ID representation it consumes.
+            from transformers import BatchEncoding
+
+            if kwargs.get("return_dict", True):
+                return BatchEncoding({"input_ids": [1, 2]})
             return [1, 2]
 
     class Engine:

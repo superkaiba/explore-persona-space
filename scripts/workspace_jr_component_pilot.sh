@@ -23,7 +23,7 @@ export TOKENIZERS_PARALLELISM=false
 export OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8
 export MALLOC_ARENA_MAX=2
 JR_UV=/root/.local/bin/uv
-JR_PREFIX="exploratory_workspace_jr/20260912/${JR_ROLE}_component_pilot"
+JR_PREFIX="exploratory_workspace_jr/20260912/$(basename "$JR_OUT")"
 git rev-parse HEAD > "$JR_OUT/code_sha.txt"
 
 jr_phase() {

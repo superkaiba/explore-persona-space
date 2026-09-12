@@ -13,6 +13,7 @@ from huggingface_hub import HfApi  # noqa: E402
 
 from explore_persona_space.analysis.workspace_runtime import file_sha256, save_json  # noqa: E402
 from explore_persona_space.orchestrate.hub import (  # noqa: E402
+    assert_hub_dir_filecounts,
     retry_transient,
     verify_repo_paths_uploaded,
 )
@@ -40,6 +41,7 @@ def main():
         raise ValueError("Output tree contains a hidden file or symlink; inspect it explicitly")
     manifest = {str(p.relative_to(args.root)): file_sha256(p) for p in files}
     assert_upload_clean(files, what=f"workspace-jr {args.prefix}")
+    assert_hub_dir_filecounts(args.root, args.prefix, allow_patterns=list(manifest))
     repo = "superkaiba1/explore-persona-space-data"
     api = HfApi()
     commit = retry_transient(
