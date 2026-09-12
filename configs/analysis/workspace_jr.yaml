@@ -1,7 +1,10 @@
-# Preregistered exploratory protocol. A null task_id is an explicit launch block.
+# Preregistered exploratory protocol; explicit user exception permits no task ID.
 schema_version: workspace-jr-v1
 task_id: null
-status: preparation_only
+status: execution_authorized
+workflow_exception:
+  user_instruction: I allow you to bypass the registered experiment task
+  scope: task_registration_only_preserve_scientific_plan_and_compute_safety
 seed: 20260912
 selection:
   capability_axis: measured_same_mode_gpqa_accuracy

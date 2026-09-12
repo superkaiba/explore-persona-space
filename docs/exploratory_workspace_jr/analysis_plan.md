@@ -2,7 +2,9 @@
 
 Prepared 2026-09-11 from the user's supplied protocol, before any new J/R
 component test result was generated or inspected. This file is a preparation
-artifact; it is not a registered/approved repository experiment task.
+artifact. The user subsequently authorized execution without registering a
+repository experiment task: "I allow you to bypass the registered experiment
+task." This exception changes the workflow boundary, not the research protocol.
 
 ## Research question and estimands
 
@@ -267,18 +269,20 @@ workspace contents are transient. Causal and temporal studies remain deferred.
 
 ## Execution, artifacts and current boundary
 
-First register a new experiment task through task.py, preserving the user's
-research question as Goal. Existing tasks1482/1776 have different/fixed goals;
-do not repurpose them. The user-supplied AGENTS.md says to create a task only
-on an explicit task/issue-workflow request. That authorization is pending.
-No training/evaluation/generation job has been launched outside a task.
+The user explicitly authorized bypassing experiment task registration. Proceed
+under that exception without creating or repurposing a task. Preserve this
+research question, frozen sample selection, statistical protocol, provenance
+checks and normal compute/artifact safeguards. The original selection manifest
+retains the pre-authorization configuration hash; execution records bind both
+that immutable manifest and the current configuration.
 
 Code preparation and meaningful local unit/integration tests may proceed.
-The current VM runtime lacks Qwen3.5 modules; use a repository-managed
-compatible runtime on the approved execution backend, without modifying
-the shared environment. Both VM filesystems currently have less than50GB
-free, so do not stage the27B checkpoint or main token store here. Use
-GCP-first existing dispatch infrastructure after task registration, provision
+The current VM runtime lacks the built-in Qwen3.5 class; use a
+repository-managed compatible runtime on the approved execution backend,
+without modifying the shared environment. Local preflight measured no CUDA and
+only 65.6 GiB free on `/mnt/eps-data`, below the 80 GiB local safety floor, so
+do not stage the 27B checkpoint or main token store here. Use
+GCP-first existing dispatch infrastructure under the user exception, provision
 only after reading the full compute/pod/upload rules and a concrete resource
 check. Initial pilot hardware target is one80GB GPU with phase-separated
 generation, lens fitting and decomposition; actual batch width/HBM fit and
