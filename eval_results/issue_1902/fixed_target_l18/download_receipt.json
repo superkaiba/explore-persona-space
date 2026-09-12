@@ -1,0 +1,8 @@
+{
+  "revision": "514b735df604bc73e8452fe382f96b2b45cb6b16",
+  "path": "issue1902_format_reconciliation_20260912/fixed_target_results/summary.json",
+  "local": "/mnt/eps-data/thomasjiralerspong/wt-1902-format-bridge/eval_results/issue_1902/fixed_target_l18/summary.json",
+  "raw_summary_sha256": "f31b50787e8fd9114410a24d98d6e92af15b2a99bc96a3652233277bf361c5f8",
+  "local_summary_sha256": "c3243f16ae51d9ca3602ab6be7945ee9616f1bfdd00fcdec3101808da1239450",
+  "local_metadata_normalization": "helper hash mapping represented as path/sha256 records; numerical results unchanged"
+}
