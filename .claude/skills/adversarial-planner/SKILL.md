@@ -107,6 +107,31 @@ verify_plan.py at Phase 1.5.0 (`c23_goal_currency`) is the same bounce
 trigger — the one WARN that bounces instead of riding into the critic
 briefs.
 
+**Cited-body currency gate (pre-persist; EVERY `new-plan-version` call).**
+Capture the draft-start timestamp ONCE, at the ROUND-1 planner spawn —
+`DRAFT_START="$(date +%s)"`, the same instant the first `planner-dispatch`
+breadcrumb is posted — and do NOT refresh it on Phase 3 re-spawns: the
+window this gate watches runs from the campaign's first spawn to the
+persist, and re-arming per round would certify the inter-round review gaps
+CLEAN. If `DRAFT_START` is empty or lost (session recovery, a planner death
+and inline redraft), RE-DERIVE it from the OLDEST `planner-dispatch`
+breadcrumb in `events.jsonl`. The helper's own re-derivation is the binding
+behavior; it returns `UNKNOWN`/exit 0 only when no breadcrumb exists
+either. Do not lean on an empty `--since-unix` as if it were a no-op — same
+posture as the Goal-currency gate's missing-snapshot clause: a missing
+reference is treated as a mismatch, never as permission to proceed.
+Immediately BEFORE every persist, run
+`uv run python scripts/check_cited_body_currency.py --issue <N> --since-unix "$DRAFT_START" --plan-file <draft>`.
+On `STALE` (exit 3) do NOT persist silently: the helper prints the cited
+body's diff since `DRAFT_START`; re-read the changed section(s) and either
+(i) confirm the plan text is unaffected and record a one-line disposition
+in the `epm:plan` note, or (ii) bounce the affected sections to the planner
+as a MECHANICAL re-ground — same semantics as the Goal-currency redraft
+bounce, and like it, NOT counted against the Phase 3 round cap. `CLEAN` and
+`UNKNOWN` both proceed: the gate is fail-soft by contract and never blocks
+a persist on its own failure. A `c75_cited_body_currency` WARN from
+verify_plan.py at Phase 1.5.0 is the same bounce trigger, one step later.
+
 **Edit-success gate (pre-persist; EVERY scripted plan edit feeding a
 `new-plan-version` call).** When the draft being persisted was produced or
 modified by a SCRIPTED edit (a python/sed patch of the plan file — Phase 1.5.0
@@ -137,8 +162,9 @@ common failure), re-apply, and only then persist. (#1565, 2026-07-20: an edit
 script died on an anchor-text `AssertionError` yet the same compound command
 still ran the persist — v2 landed as an UNMODIFIED copy of v1 under a log
 reading "Plan v2 written … PASS", silently lacking the critic-mandated
-revision; same shape in #1563. The Goal-currency gate above and this gate are
-the two pre-persist duties — run both before every persist.)
+revision; same shape in #1563. The Goal-currency gate, the cited-body
+currency gate above, and this gate are the three pre-persist duties — run
+all three before every persist.)
 
 **Strip the harness trailer before persisting.** An `Agent` tool result ends
 with harness-appended metadata — a final `agentId: <id> (use SendMessage ...)`

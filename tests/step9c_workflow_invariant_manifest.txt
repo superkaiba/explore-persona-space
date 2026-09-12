@@ -10,6 +10,7 @@ tests/test_adversarial_planner_warn_disposition.py
 tests/test_atomic_io.py
 tests/test_autonomous_plan_gate.py
 tests/test_autonomous_session_watch.py
+tests/test_check_cited_body_currency.py
 tests/test_check_mcp_json_no_secrets.py
 tests/test_check_no_secret_shaped_strings.py
 tests/test_clean_result_critic_planned_vs_actual.py
