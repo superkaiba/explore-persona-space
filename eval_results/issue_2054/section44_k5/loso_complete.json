@@ -1,0 +1,11 @@
+{
+  "status": "complete",
+  "source_sha": "8ba660450609aeba61b65ebfe1cb8074ee066d7a",
+  "parent_source_sha": "91e9682ad092b22dcc0443cf8bd6f68ddc9f2917",
+  "followup_label": "section44-k5-leave-one-setting-out",
+  "primary_panels": 12,
+  "fold_units": 60,
+  "started": 1789155731.1894457,
+  "finished": 1789221607.7073605,
+  "hf_prefix": "issue2054_section44_k5_gcp/leave_one_setting_out_v1"
+}

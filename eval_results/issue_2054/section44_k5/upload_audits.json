@@ -1,0 +1,21 @@
+{
+  "k5": {
+    "status": "pass",
+    "revision": "9de026f872c19b2ca4fd3e4539de820e08038ee3",
+    "prefix": "issue2054_section44_k5_gcp/production_v1",
+    "files": 4578,
+    "bytes": 7940470172,
+    "exact_set": true,
+    "all_local_data_receipts_and_remote_hashes_match": true
+  },
+  "loso": {
+    "status": "pass",
+    "revision": "534f9b67838897671bb35f5fb2a73059bd0f9fa7",
+    "prefix": "issue2054_section44_k5_gcp/leave_one_setting_out_v1",
+    "files": 252,
+    "bytes": 2640575480,
+    "exact_set": true,
+    "control_file_validated_separately": ".completion-sentinel.json",
+    "logs_revision": "f5d7e26850325061a78a0f5bac3b7ed1593042eb"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "status": "complete",
+  "source_sha": "91e9682ad092b22dcc0443cf8bd6f68ddc9f2917",
+  "parent_revision": "5ae90722bf11330deddfa42cf41f9fec6da8b69f",
+  "started": 1789153430.5364788,
+  "finished": 1789218600.4241781,
+  "restore": {
+    "revision": "5ae90722bf11330deddfa42cf41f9fec6da8b69f",
+    "cells": [
+      "char_dana__on_policy__attrib_quoted__qwen2.5-7b",
+      "char_helios__on_policy__attrib_quoted__qwen2.5-7b",
+      "char_vex__on_policy__attrib_quoted__qwen2.5-7b",
+      "char_wren__on_policy__attrib_quoted__qwen2.5-7b",
+      "conversation_paired_stories_assistant__on_policy__bare_text__qwen2.5-7b",
+      "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b",
+      "char_dana__on_policy__attrib_quoted__qwen2.5-7b-instruct",
+      "char_helios__on_policy__attrib_quoted__qwen2.5-7b-instruct",
+      "char_vex__on_policy__attrib_quoted__qwen2.5-7b-instruct",
+      "char_wren__on_policy__attrib_quoted__qwen2.5-7b-instruct",
+      "conversation_paired_stories_assistant__on_policy__bare_text__qwen2.5-7b-instruct",
+      "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct"
+    ],
+    "capture_chunks": 384,
+    "reused_fresh_answers": 191998,
+    "first_chunks_only": false,
+    "manifest_sha256": "365eb7a5f71735ab47e1e0802c3a790cce90b43a84b13a5c43a9d7b460adb506"
+  },
+  "hf_prefix": "issue2054_section44_k5_gcp/production_v1",
+  "primary_panels": 36,
+  "context_convention": "unchanged K3 prefill-alone last-token at layer19"
+}
