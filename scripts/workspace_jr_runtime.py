@@ -119,7 +119,7 @@ def phase_fit_lens_shard(args: argparse.Namespace) -> None:
     )
     validation = json.loads(args.validation.read_text())
     required_identity = run_identity(args.config, args.selection, args.role)
-    for field in ("config_sha256", "selection_sha256", "model_role", "versions"):
+    for field in ("config_sha256", "selection_sha256", "model_role", "versions", "code"):
         if validation["identity"][field] != required_identity[field]:
             raise ValueError(f"Native validation identity mismatch: {field}")
     if validation["ordinary_numerical_validation"]["status"] != "passed":

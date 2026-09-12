@@ -23,6 +23,9 @@ echo '[phase=runtime]'
 uv sync --project runtime/workspace_jr --frozen
 uv pip freeze --python runtime/workspace_jr/.venv/bin/python > "$JR_OUT/packages.txt"
 nvidia-smi --query-gpu=name,memory.total,memory.free --format=csv > "$JR_OUT/hardware.csv"
+uv run --project runtime/workspace_jr --frozen python -c \
+  'import torch; assert torch.cuda.is_available(); x=torch.ones(8,device="cuda"); assert x.sum().item()==8; print(torch.__version__,torch.version.cuda,torch.cuda.get_device_name())' \
+  > "$JR_OUT/cuda_allocation_probe.txt"
 echo '[phase=calibration_manifest]'
 uv run --project runtime/workspace_jr --frozen scripts/workspace_jr_runtime.py \
   --role "$JR_ROLE" calibration-manifest --out "$JR_OUT/calibration_tokens.json"
