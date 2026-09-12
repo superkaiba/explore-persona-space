@@ -1,0 +1,243 @@
+{
+  "verified_at": "2026-09-12T19:31:46.012641+00:00",
+  "project": "eps-persona-gpu-jun2026",
+  "instances": [
+    {
+      "name": "eps-workspace-jr-calibration-r0-20260912",
+      "id": "8803037317331163259",
+      "status": "RUNNING",
+      "lastStartTimestamp": "2026-09-12T12:23:17.074-07:00",
+      "labels": {
+        "experiment": "workspace-jr",
+        "owner": "thomas-jiralerspong",
+        "phase": "calibration",
+        "rank": "0"
+      },
+      "scheduling": {
+        "automaticRestart": false,
+        "instanceTerminationAction": "STOP",
+        "maxRunDuration": {
+          "nanos": 0,
+          "seconds": "21600"
+        },
+        "onHostMaintenance": "TERMINATE",
+        "onInstanceStopAction": {
+          "discardLocalSsd": true
+        },
+        "preemptible": false,
+        "provisioningModel": "STANDARD"
+      },
+      "resourceStatus": {
+        "effectiveInstanceMetadata": {
+          "vmDnsSettingMetadataValue": "ZonalOnly"
+        },
+        "scheduling": {
+          "terminationTimestamp": "2026-09-13T01:23:01.970798Z"
+        }
+      },
+      "zone": "us-central1-a",
+      "machine_type": "a2-ultragpu-1g",
+      "boot_disk": {
+        "auto_delete": false,
+        "size_gb": "500",
+        "source": "https://www.googleapis.com/compute/v1/projects/eps-persona-gpu-jun2026/zones/us-central1-a/disks/eps-workspace-jr-calibration-r0-20260912"
+      },
+      "native_checkout_sha": "0f23250df469235c8dad70b86cd93b7b4f3c318a"
+    },
+    {
+      "name": "eps-workspace-jr-calibration-r1-20260912",
+      "id": "6664144802219038782",
+      "status": "RUNNING",
+      "lastStartTimestamp": "2026-09-12T12:24:25.729-07:00",
+      "labels": {
+        "experiment": "workspace-jr",
+        "owner": "thomas-jiralerspong",
+        "phase": "calibration",
+        "rank": "1"
+      },
+      "scheduling": {
+        "automaticRestart": false,
+        "instanceTerminationAction": "STOP",
+        "maxRunDuration": {
+          "nanos": 0,
+          "seconds": "21600"
+        },
+        "onHostMaintenance": "TERMINATE",
+        "onInstanceStopAction": {
+          "discardLocalSsd": true
+        },
+        "preemptible": false,
+        "provisioningModel": "STANDARD"
+      },
+      "resourceStatus": {
+        "effectiveInstanceMetadata": {
+          "vmDnsSettingMetadataValue": "ZonalOnly"
+        },
+        "scheduling": {
+          "terminationTimestamp": "2026-09-13T01:24:03.905116Z"
+        }
+      },
+      "zone": "us-central1-a",
+      "machine_type": "a2-ultragpu-1g",
+      "boot_disk": {
+        "auto_delete": false,
+        "size_gb": "500",
+        "source": "https://www.googleapis.com/compute/v1/projects/eps-persona-gpu-jun2026/zones/us-central1-a/disks/eps-workspace-jr-calibration-r1-20260912"
+      },
+      "native_checkout_sha": "0f23250df469235c8dad70b86cd93b7b4f3c318a"
+    },
+    {
+      "name": "eps-workspace-jr-calibration-r2-20260912",
+      "id": "2664774301039204414",
+      "status": "RUNNING",
+      "lastStartTimestamp": "2026-09-12T12:24:17.969-07:00",
+      "labels": {
+        "experiment": "workspace-jr",
+        "owner": "thomas-jiralerspong",
+        "phase": "calibration",
+        "rank": "2"
+      },
+      "scheduling": {
+        "automaticRestart": false,
+        "instanceTerminationAction": "STOP",
+        "maxRunDuration": {
+          "nanos": 0,
+          "seconds": "21600"
+        },
+        "onHostMaintenance": "TERMINATE",
+        "onInstanceStopAction": {
+          "discardLocalSsd": true
+        },
+        "preemptible": false,
+        "provisioningModel": "STANDARD"
+      },
+      "resourceStatus": {
+        "effectiveInstanceMetadata": {
+          "vmDnsSettingMetadataValue": "ZonalOnly"
+        },
+        "scheduling": {
+          "terminationTimestamp": "2026-09-13T01:24:03.611178Z"
+        }
+      },
+      "zone": "us-central1-a",
+      "machine_type": "a2-ultragpu-1g",
+      "boot_disk": {
+        "auto_delete": false,
+        "size_gb": "500",
+        "source": "https://www.googleapis.com/compute/v1/projects/eps-persona-gpu-jun2026/zones/us-central1-a/disks/eps-workspace-jr-calibration-r2-20260912"
+      },
+      "native_checkout_sha": "0f23250df469235c8dad70b86cd93b7b4f3c318a"
+    },
+    {
+      "name": "eps-workspace-jr-calibration-r3-20260912",
+      "id": "8253355729067972670",
+      "status": "RUNNING",
+      "lastStartTimestamp": "2026-09-12T12:24:16.303-07:00",
+      "labels": {
+        "experiment": "workspace-jr",
+        "owner": "thomas-jiralerspong",
+        "phase": "calibration",
+        "rank": "3"
+      },
+      "scheduling": {
+        "automaticRestart": false,
+        "instanceTerminationAction": "STOP",
+        "maxRunDuration": {
+          "nanos": 0,
+          "seconds": "21600"
+        },
+        "onHostMaintenance": "TERMINATE",
+        "onInstanceStopAction": {
+          "discardLocalSsd": true
+        },
+        "preemptible": false,
+        "provisioningModel": "STANDARD"
+      },
+      "resourceStatus": {
+        "effectiveInstanceMetadata": {
+          "vmDnsSettingMetadataValue": "ZonalOnly"
+        },
+        "scheduling": {
+          "terminationTimestamp": "2026-09-13T01:24:03.161268Z"
+        }
+      },
+      "zone": "us-central1-a",
+      "machine_type": "a2-ultragpu-1g",
+      "boot_disk": {
+        "auto_delete": false,
+        "size_gb": "500",
+        "source": "https://www.googleapis.com/compute/v1/projects/eps-persona-gpu-jun2026/zones/us-central1-a/disks/eps-workspace-jr-calibration-r3-20260912"
+      },
+      "native_checkout_sha": "0f23250df469235c8dad70b86cd93b7b4f3c318a"
+    },
+    {
+      "name": "eps-workspace-jr-native-20260912",
+      "id": "4111403905777676224",
+      "status": "RUNNING",
+      "lastStartTimestamp": "2026-09-12T11:14:04.361-07:00",
+      "labels": {
+        "experiment": "workspace-jr",
+        "managed-by": "eps-jr",
+        "owner": "codex-01a096b0"
+      },
+      "scheduling": {
+        "automaticRestart": false,
+        "instanceTerminationAction": "STOP",
+        "maxRunDuration": {
+          "nanos": 0,
+          "seconds": "21600"
+        },
+        "onHostMaintenance": "TERMINATE",
+        "onInstanceStopAction": {
+          "discardLocalSsd": true
+        },
+        "preemptible": false,
+        "provisioningModel": "STANDARD"
+      },
+      "resourceStatus": {
+        "effectiveInstanceMetadata": {
+          "vmDnsSettingMetadataValue": "ZonalOnly"
+        },
+        "scheduling": {
+          "terminationTimestamp": "2026-09-13T00:13:49.139158Z"
+        }
+      },
+      "zone": "us-central1-a",
+      "machine_type": "a2-ultragpu-1g",
+      "boot_disk": {
+        "auto_delete": false,
+        "size_gb": "300",
+        "source": "https://www.googleapis.com/compute/v1/projects/eps-persona-gpu-jun2026/zones/us-central1-a/disks/eps-workspace-jr-native-20260912"
+      },
+      "native_checkout_sha": "348b11a45a26147f1270356edfb6d3dbfd6f143c"
+    }
+  ],
+  "rank_intervals": [
+    [
+      2,
+      32
+    ],
+    [
+      32,
+      61
+    ],
+    [
+      61,
+      90
+    ],
+    [
+      90,
+      119
+    ]
+  ],
+  "four_gpu_failed_requests": {
+    "zones": [
+      "us-central1-a",
+      "us-central1-c",
+      "us-central1-a"
+    ],
+    "reason": "capacity_exhausted",
+    "instance_and_disk_survivors": 0
+  },
+  "storage_release_gate": "fresh_process_exit_and_verified_upload_of_all_outputs_and_terminal_receipts"
+}
