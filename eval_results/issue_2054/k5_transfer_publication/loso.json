@@ -1,12 +1,13 @@
 {
   "status": "pass",
-  "revision": "27f8650a48a0ac91bc5e124a2ebc9026d9e02885",
+  "revision": "7b3a280fd73712da318d13c4a37f6406bddf1f5f",
   "prefix": "issue2054_section44_k5_gcp/transfer_calibration_v1/loso",
-  "files": 133,
-  "bytes": 7966803,
+  "files": 134,
+  "bytes": 7970006,
   "hashes": {
-    "issue2054_section44_k5_gcp/transfer_calibration_v1/loso/results/README.md": "f14f0b5f9bc3b6d731d5bf45dd91b89ae210c7953ad6e2bdf493bfa481d41247",
+    "issue2054_section44_k5_gcp/transfer_calibration_v1/loso/results/README.md": "cc6e1c8f58c44e054132466830f661554c6a6557d5667f36a133d2e774496ffc",
     "issue2054_section44_k5_gcp/transfer_calibration_v1/loso/results/inputs.json": "33dc7f3897e6a88290af62fedaa5f6e0a768d83ecc423924a5156e8489b5c9b4",
+    "issue2054_section44_k5_gcp/transfer_calibration_v1/loso/results/runtime.json": "dfb474b7de0f3f6713aea04cfa52c9b0157fc1e092e25f8b07d8dc20e31fb72c",
     "issue2054_section44_k5_gcp/transfer_calibration_v1/loso/results/results.json": "6ab5edf9f606886e0085401253e2f3ae23424dd1dd6defe09c6e778fb176a101",
     "issue2054_section44_k5_gcp/transfer_calibration_v1/loso/results/folds/char_helios__on_policy__attrib_quoted__qwen2.5-7b-instruct__fold3.npz": "cd7f2eff4094350f0a640c4ba2b9d0d44cf10e30ae59c6ae0c174ed9fe5c312d",
     "issue2054_section44_k5_gcp/transfer_calibration_v1/loso/results/folds/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct__fold1.json": "44cd45a265faa86fdb43c3890c3d308f1c2c83bb331a15c362443a2d25375e05",
@@ -135,12 +136,12 @@
     "issue2054_section44_k5_gcp/transfer_calibration_v1/loso/figures/leave_one_setting_out_calibrated_grayscale.png": "4b032e7d3cbec4b27f6a4026f8eb7fe6b3f6e4130b9ecadfa090c84eeb18db9a",
     "issue2054_section44_k5_gcp/transfer_calibration_v1/loso/code/issue2054_k5_loso_calibration.py": "a6da77dfd644db2976157c51e9640e50c35a6a4e921eb573ff877c34ed8c1c31",
     "issue2054_section44_k5_gcp/transfer_calibration_v1/loso/code/issue2054_k5_assistant_transfer.py": "fd96da2628084511f838bc85df4a6ce1a395fe427bd92bb57bd4def2d0b35bb9",
-    "issue2054_section44_k5_gcp/transfer_calibration_v1/loso/code/issue2054_k5_assistant_transfer_plot.py": "6f1ab4933a4b3d2672d5d42d392020f7522ce7712871e4976bd9baff0a1775c9",
+    "issue2054_section44_k5_gcp/transfer_calibration_v1/loso/code/issue2054_k5_assistant_transfer_plot.py": "d65d067619cbf8df9bb06704eb12cb2d3ee6d95529cf02d6254bf9e4c13d7432",
     "issue2054_section44_k5_gcp/transfer_calibration_v1/loso/code/issue2054_k5_transfer_publish.py": "ecaf38a7ef4deb0431cead60c0ce7a6321abbb4af59deaac5108c5becaf75b19",
     "issue2054_section44_k5_gcp/transfer_calibration_v1/loso/code/test_issue2054_k5_transfer_calibration.py": "64d64b7372c82b3666abcd02b5df7b00380bc6cbdc3634f368255ecfefbb5c86"
   },
   "all_remote_sizes_and_hashes_match": true,
   "figure_urls": [
-    "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/27f8650a48a0ac91bc5e124a2ebc9026d9e02885/issue2054_section44_k5_gcp/transfer_calibration_v1/loso/figures/leave_one_setting_out_calibrated.png"
+    "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/7b3a280fd73712da318d13c4a37f6406bddf1f5f/issue2054_section44_k5_gcp/transfer_calibration_v1/loso/figures/leave_one_setting_out_calibrated.png"
   ]
 }

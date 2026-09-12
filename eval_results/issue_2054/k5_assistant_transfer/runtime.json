@@ -1,0 +1,53 @@
+{
+  "recorded_at_utc": "2026-09-12T19:19:37.106832+00:00",
+  "python": "3.11.15",
+  "packages": {
+    "numpy": "2.2.6",
+    "torch": "2.8.0",
+    "scipy": "1.17.1",
+    "huggingface-hub": "0.36.2",
+    "matplotlib": "3.10.8"
+  },
+  "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+  "git_commit": "ceb77f7cffe33abed583e55bd5105593b3d09d24",
+  "source_seed": 137,
+  "folds": 5,
+  "k_answers": 5,
+  "source_ridge_grid": {
+    "kind": "logspace",
+    "start": -2,
+    "stop": 4,
+    "num": 13
+  },
+  "source_ridge_dof_cap": 0.9,
+  "calibration": "one vector bias; optionally one unconstrained scalar; target training folds only",
+  "subset_workers": [
+    {
+      "pid": 2697814,
+      "pins": {
+        "OMP_NUM_THREADS": "8",
+        "MKL_NUM_THREADS": "8",
+        "OPENBLAS_NUM_THREADS": "8",
+        "NUMEXPR_NUM_THREADS": "8",
+        "MALLOC_ARENA_MAX": "2",
+        "MALLOC_MMAP_THRESHOLD_": "131072",
+        "NUMPY_MADVISE_HUGEPAGE": "0"
+      },
+      "oom_score_adj": "-600"
+    },
+    {
+      "pid": 2697831,
+      "pins": {
+        "OMP_NUM_THREADS": "8",
+        "MKL_NUM_THREADS": "8",
+        "OPENBLAS_NUM_THREADS": "8",
+        "NUMEXPR_NUM_THREADS": "8",
+        "MALLOC_ARENA_MAX": "2",
+        "MALLOC_MMAP_THRESHOLD_": "131072",
+        "NUMPY_MADVISE_HUGEPAGE": "0"
+      },
+      "oom_score_adj": "-600"
+    }
+  ],
+  "allocation_adjustment": "Initial subset runtime requested NumPy huge pages; resumed with NUMPY_MADVISE_HUGEPAGE=0 after allocation stalls. Numerical source code and fingerprints unchanged; source-map checkpoint parity passed."
+}

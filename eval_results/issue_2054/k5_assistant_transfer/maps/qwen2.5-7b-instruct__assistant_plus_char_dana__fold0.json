@@ -1,0 +1,13 @@
+{
+  "path": "maps/qwen2.5-7b-instruct__assistant_plus_char_dana__fold0.npz",
+  "sha256": "ecef054c672d3a6b650a2c0d4444f3e1c4765384e920d298c98fa2ce17af8a15",
+  "fingerprint": "4e61ecf853d8e277cca6e4b0c557e430b65c9ac84f002b164d63ecd0ecd7a233",
+  "ridge": {
+    "best_lambda": 1000.0,
+    "dof": 2057.318864516955,
+    "selector": "gcv_dof_cap_0.9",
+    "side": "cov-moments",
+    "n_train": 12765,
+    "d_fit": 3584
+  }
+}

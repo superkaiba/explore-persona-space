@@ -1,5 +1,7 @@
 # K5 leave-one-setting-out transfer with calibration
 
+[Open the calibrated transfer figure](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/27f8650a48a0ac91bc5e124a2ebc9026d9e02885/issue2054_section44_k5_gcp/transfer_calibration_v1/loso/figures/leave_one_setting_out_calibrated.png).
+
 This analysis extends the completed six-setting K5 experiment: base and
 instruction-tuned Qwen2.5-7B, the chat and plain-text assistant settings, and
 HELIOS, Wren, Dana, and Vex in the attributed-story format. Each target is the
@@ -71,3 +73,24 @@ All 12 panels completed all five folds (60/60).
 | Instruct / wren | 0.556 | 0.557 | 0.557 | 0.554 |
 | Instruct / Assistant plain text | -0.414 | 0.115 | 0.285 | 0.454 |
 | Instruct / Assistant chat | 0.406 | 0.503 | 0.504 | 0.675 |
+
+## Retrieval and identity-plus-bias baseline
+
+Euclidean top-1 retrieval is averaged over the same five folds. Each fold uses its held-out targets as the candidate pool: 1543–1659 candidates; chance is 0.0603–0.0648%. Copy + bias below learns its bias from target training folds.
+
+| Checkpoint / target | Copy + bias R² | Frozen top-1 | + Bias top-1 | + Bias + scaling top-1 |
+|---|---:|---:|---:|---:|
+| Base / dana | -0.780 | 74.66% | 74.93% | 78.71% |
+| Base / helios | -0.998 | 64.30% | 67.02% | 71.91% |
+| Base / vex | -1.375 | 77.16% | 77.27% | 71.84% |
+| Base / wren | -1.044 | 75.53% | 75.53% | 77.39% |
+| Base / Assistant plain text | -1.813 | 11.69% | 16.64% | 7.90% |
+| Base / Assistant chat | -2.515 | 7.63% | 9.00% | 2.41% |
+| Instruct / dana | -0.741 | 73.32% | 74.18% | 76.52% |
+| Instruct / helios | -0.893 | 64.62% | 65.36% | 69.63% |
+| Instruct / vex | -1.271 | 74.96% | 75.06% | 70.06% |
+| Instruct / wren | -0.975 | 75.28% | 75.28% | 77.43% |
+| Instruct / Assistant plain text | -2.888 | 27.65% | 37.47% | 15.77% |
+| Instruct / Assistant chat | -0.955 | 45.85% | 55.59% | 60.39% |
+
+The scalar is fitted to minimize training squared error. A better held-out R² can coincide with lower nearest-neighbor retrieval; neither metric should be treated as a substitute for the other. Cosine retrieval and top-5/top-10 results are retained in the JSON.

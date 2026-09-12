@@ -1,0 +1,13 @@
+{
+  "path": "maps/qwen2.5-7b__assistant_plus_char_helios__fold0.npz",
+  "sha256": "87d7b8ed001452e9e3b693045726afd1da3f2e7a6a63c9433af60e0ea713f467",
+  "fingerprint": "4e61ecf853d8e277cca6e4b0c557e430b65c9ac84f002b164d63ecd0ecd7a233",
+  "ridge": {
+    "best_lambda": 3162.2776601683795,
+    "dof": 1313.9698856005282,
+    "selector": "gcv_dof_cap_0.9",
+    "side": "cov-moments",
+    "n_train": 12746,
+    "d_fit": 3584
+  }
+}

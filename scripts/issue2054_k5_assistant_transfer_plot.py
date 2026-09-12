@@ -48,7 +48,7 @@ def plot(out, fig_dir):
     set_c2a_style()
     fig, fraction = c2a_figure("full", aspect=0.76)
     axes = fig.subplots(2, 3)
-    fig.subplots_adjust(left=0.18, right=0.99, bottom=0.16, top=0.91, wspace=0.13, hspace=0.63)
+    fig.subplots_adjust(left=0.18, right=0.99, bottom=0.21, top=0.91, wspace=0.13, hspace=0.9)
     targets = analysis.base.SETTINGS[1:]
     row_labels = ["Assistant only"] + [
         f"Assistant + {label}" for label, _ in analysis.base.SETTINGS[2:]
@@ -82,8 +82,8 @@ def plot(out, fig_dir):
                     )
             ax.set_xticks(
                 range(5),
-                ["Assistant\n(plain text)"] + [label for label, _ in targets[1:]],
-                rotation=35,
+                ["Assistant (plain)"] + [label for label, _ in targets[1:]],
+                rotation=45,
                 ha="right",
             )
             ax.set_yticks(range(5), row_labels if vi == 0 else [""] * 5)

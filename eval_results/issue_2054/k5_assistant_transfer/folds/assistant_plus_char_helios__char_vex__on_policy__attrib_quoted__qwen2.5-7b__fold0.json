@@ -1,0 +1,347 @@
+{
+  "status": "complete",
+  "regime": "assistant_plus_char_helios",
+  "cell": "char_vex__on_policy__attrib_quoted__qwen2.5-7b",
+  "fold": 0,
+  "gain": 0.9189925424398988,
+  "metrics": {
+    "bias": {
+      "r2": 0.41839423434905254,
+      "retrieval": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 1611,
+          "n_pool": 1611,
+          "acc_at_k": {
+            "1": 0.6288019863438857,
+            "5": 0.787088764742396,
+            "10": 0.8392302917442582
+          },
+          "chance_at_k": {
+            "1": 0.0006207324643078833,
+            "5": 0.0031036623215394167,
+            "10": 0.006207324643078833
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7036968800408298
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 1611,
+          "n_pool": 1611,
+          "acc_at_k": {
+            "1": 0.6703910614525139,
+            "5": 0.8175046554934823,
+            "10": 0.8653010552451893
+          },
+          "chance_at_k": {
+            "1": 0.0006207324643078833,
+            "5": 0.0031036623215394167,
+            "10": 0.006207324643078833
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7411090149908114
+        }
+      },
+      "retrieval_pool": 1611,
+      "chance_top1": 0.0006207324643078833
+    },
+    "bias_scale": {
+      "r2": 0.42235037446383594,
+      "retrieval": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 1611,
+          "n_pool": 1611,
+          "acc_at_k": {
+            "1": 0.5524518932340161,
+            "5": 0.7281191806331471,
+            "10": 0.7920546244568591
+          },
+          "chance_at_k": {
+            "1": 0.0006207324643078833,
+            "5": 0.0031036623215394167,
+            "10": 0.006207324643078833
+          },
+          "median_rank": 1.0,
+          "mrr": 0.6348408239799811
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 1611,
+          "n_pool": 1611,
+          "acc_at_k": {
+            "1": 0.6002482929857231,
+            "5": 0.7777777777777778,
+            "10": 0.824332712600869
+          },
+          "chance_at_k": {
+            "1": 0.0006207324643078833,
+            "5": 0.0031036623215394167,
+            "10": 0.006207324643078833
+          },
+          "median_rank": 1.0,
+          "mrr": 0.6808161012392054
+        }
+      },
+      "retrieval_pool": 1611,
+      "chance_top1": 0.0006207324643078833
+    },
+    "frozen": {
+      "r2": 0.3987781474317391,
+      "retrieval": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 1611,
+          "n_pool": 1611,
+          "acc_at_k": {
+            "1": 0.6021104903786468,
+            "5": 0.7752948479205463,
+            "10": 0.8336436995654872
+          },
+          "chance_at_k": {
+            "1": 0.0006207324643078833,
+            "5": 0.0031036623215394167,
+            "10": 0.006207324643078833
+          },
+          "median_rank": 1.0,
+          "mrr": 0.6819648050035397
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 1611,
+          "n_pool": 1611,
+          "acc_at_k": {
+            "1": 0.6461824953445066,
+            "5": 0.8075729360645562,
+            "10": 0.8485412787088765
+          },
+          "chance_at_k": {
+            "1": 0.0006207324643078833,
+            "5": 0.0031036623215394167,
+            "10": 0.006207324643078833
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7181820090716313
+        }
+      },
+      "retrieval_pool": 1611,
+      "chance_top1": 0.0006207324643078833
+    },
+    "source_identity_bias": {
+      "r2": -3.374600647105435,
+      "retrieval": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 1611,
+          "n_pool": 1611,
+          "acc_at_k": {
+            "1": 0.7473618870266915,
+            "5": 0.8435754189944135,
+            "10": 0.8752327746741154
+          },
+          "chance_at_k": {
+            "1": 0.0006207324643078833,
+            "5": 0.0031036623215394167,
+            "10": 0.006207324643078833
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7926013157955941
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 1611,
+          "n_pool": 1611,
+          "acc_at_k": {
+            "1": 0.7703289882060832,
+            "5": 0.8634388578522657,
+            "10": 0.888268156424581
+          },
+          "chance_at_k": {
+            "1": 0.0006207324643078833,
+            "5": 0.0031036623215394167,
+            "10": 0.006207324643078833
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8127369056400824
+        }
+      },
+      "retrieval_pool": 1611,
+      "chance_top1": 0.0006207324643078833
+    },
+    "identity_bias_target": {
+      "r2": -1.3772823195492774,
+      "retrieval": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 1611,
+          "n_pool": 1611,
+          "acc_at_k": {
+            "1": 0.8237119801365611,
+            "5": 0.8808193668528864,
+            "10": 0.8981998758535071
+          },
+          "chance_at_k": {
+            "1": 0.0006207324643078833,
+            "5": 0.0031036623215394167,
+            "10": 0.006207324643078833
+          },
+          "median_rank": 1.0,
+          "mrr": 0.851059488212893
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 1611,
+          "n_pool": 1611,
+          "acc_at_k": {
+            "1": 0.8535071384233396,
+            "5": 0.9075108628181254,
+            "10": 0.9217877094972067
+          },
+          "chance_at_k": {
+            "1": 0.0006207324643078833,
+            "5": 0.0031036623215394167,
+            "10": 0.006207324643078833
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8785974500043092
+        }
+      },
+      "retrieval_pool": 1611,
+      "chance_top1": 0.0006207324643078833
+    }
+  },
+  "audit": {
+    "source_settings": {
+      "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b": {
+        "n_train": 6411,
+        "train_ids_sha256": "b1cc644a69473f2bebe6aa71e1e96dc41ef1ec753257ac0b2159eac96f340df1"
+      },
+      "char_helios__on_policy__attrib_quoted__qwen2.5-7b": {
+        "n_train": 6335,
+        "train_ids_sha256": "28bd5ce23de57b86210d83bb4c3e193120134d63e07fe96cdf88b2b6362e706a"
+      }
+    },
+    "target": "char_vex__on_policy__attrib_quoted__qwen2.5-7b",
+    "excluded_conversation_fold": 0,
+    "n_train": 12746,
+    "n_calibration": 6386,
+    "n_test": 1611,
+    "test_ids_sha256": "cef1a6f4e4952d9d90cda224e995fc2f6c48bd11123e20c8578ff150116f518d",
+    "calibration_ids_sha256": "d334f1d4ddcc04556b75e2d8513af4b904d897fc81010bfd75340b557e9680a9",
+    "test_overlap_source": 0,
+    "test_overlap_calibration": 0,
+    "target_labels_used_for_source_map": false
+  },
+  "own": {
+    "r2": 0.48466324197467203,
+    "retrieval": {
+      "euclidean": {
+        "metric": "euclidean",
+        "n": 1611,
+        "n_pool": 1611,
+        "acc_at_k": {
+          "1": 0.7399130974549969,
+          "5": 0.8609559279950342,
+          "10": 0.8950962135319678
+        },
+        "chance_at_k": {
+          "1": 0.0006207324643078833,
+          "5": 0.0031036623215394167,
+          "10": 0.006207324643078833
+        },
+        "median_rank": 1.0,
+        "mrr": 0.7960813454003549
+      },
+      "cosine": {
+        "metric": "cosine",
+        "n": 1611,
+        "n_pool": 1611,
+        "acc_at_k": {
+          "1": 0.776536312849162,
+          "5": 0.8870266914959652,
+          "10": 0.9112352576039727
+        },
+        "chance_at_k": {
+          "1": 0.0006207324643078833,
+          "5": 0.0031036623215394167,
+          "10": 0.006207324643078833
+        },
+        "median_rank": 1.0,
+        "mrr": 0.82791427550396
+      }
+    },
+    "retrieval_pool": 1611,
+    "chance_top1": 0.0006207324643078833
+  },
+  "six_setting_pool": {
+    "r2": 0.5030291605409445,
+    "retrieval": {
+      "euclidean": {
+        "metric": "euclidean",
+        "n": 1611,
+        "n_pool": 1611,
+        "acc_at_k": {
+          "1": 0.8199875853507138,
+          "5": 0.9037864680322781,
+          "10": 0.9292364990689013
+        },
+        "chance_at_k": {
+          "1": 0.0006207324643078833,
+          "5": 0.0031036623215394167,
+          "10": 0.006207324643078833
+        },
+        "median_rank": 1.0,
+        "mrr": 0.8595886891819796
+      },
+      "cosine": {
+        "metric": "cosine",
+        "n": 1611,
+        "n_pool": 1611,
+        "acc_at_k": {
+          "1": 0.8423339540657977,
+          "5": 0.9242706393544382,
+          "10": 0.9422718808193669
+        },
+        "chance_at_k": {
+          "1": 0.0006207324643078833,
+          "5": 0.0031036623215394167,
+          "10": 0.006207324643078833
+        },
+        "median_rank": 1.0,
+        "mrr": 0.881633829922782
+      }
+    },
+    "retrieval_pool": 1611,
+    "chance_top1": 0.0006207324643078833
+  },
+  "source_map": {
+    "path": "maps/qwen2.5-7b__assistant_plus_char_helios__fold0.npz",
+    "sha256": "87d7b8ed001452e9e3b693045726afd1da3f2e7a6a63c9433af60e0ea713f467",
+    "fingerprint": "4e61ecf853d8e277cca6e4b0c557e430b65c9ac84f002b164d63ecd0ecd7a233",
+    "ridge": {
+      "best_lambda": 3162.2776601683795,
+      "dof": 1313.9698856005282,
+      "selector": "gcv_dof_cap_0.9",
+      "side": "cov-moments",
+      "n_train": 12746,
+      "d_fit": 3584
+    }
+  },
+  "fit_fingerprint": "4e61ecf853d8e277cca6e4b0c557e430b65c9ac84f002b164d63ecd0ecd7a233",
+  "coefficient_sha256": "7854a2929c3bca7ba2d1df0b8bd01d6d4b3def940918246a3fe03fbfe5c34e52",
+  "input_manifest_sha256": "33dc7f3897e6a88290af62fedaa5f6e0a768d83ecc423924a5156e8489b5c9b4",
+  "script_sha256": "fd96da2628084511f838bc85df4a6ce1a395fe427bd92bb57bd4def2d0b35bb9",
+  "seconds": 6.507909420877695,
+  "metadata": {
+    "git_commit": "ceb77f7cffe33abed583e55bd5105593b3d09d24",
+    "git_dirty": true,
+    "phase": "subset_transfer",
+    "git_dirty_paths": [
+      "eval_results/issue_2054/k5_loso_calibration/README.md",
+      "eval_results/issue_2054/k5_transfer_publication/loso.json"
+    ],
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2054_k5_assistant_transfer.py"
+  }
+}

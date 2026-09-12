@@ -1,0 +1,13 @@
+{
+  "path": "maps/qwen2.5-7b-instruct__assistant_plus_char_vex__fold0.npz",
+  "sha256": "b050cb7c4779b826283f6ae9914461144ecd8d25fe1cfd928e7315c04f1094d1",
+  "fingerprint": "4e61ecf853d8e277cca6e4b0c557e430b65c9ac84f002b164d63ecd0ecd7a233",
+  "ridge": {
+    "best_lambda": 3162.2776601683795,
+    "dof": 1345.4434756693786,
+    "selector": "gcv_dof_cap_0.9",
+    "side": "cov-moments",
+    "n_train": 12801,
+    "d_fit": 3584
+  }
+}

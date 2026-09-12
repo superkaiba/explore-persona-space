@@ -1,0 +1,27 @@
+{
+  "status": "complete",
+  "verified_at_utc": "2026-09-12T19:41:53.790607+00:00",
+  "planned_source_maps": 50,
+  "realized_source_maps": 50,
+  "planned_target_panels": 42,
+  "realized_target_panels": 42,
+  "planned_fold_evaluations": 210,
+  "realized_fold_evaluations": 210,
+  "all_global_fold_overlap_audits_pass": true,
+  "collector_validated_all_map_and_coefficient_hashes": true,
+  "focused_tests_passed": 7,
+  "logs": {
+    "assistant_base_hugepageoff": {
+      "path": "/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration/run_logs/assistant_base_hugepageoff.log",
+      "modified_at_utc": "2026-09-12T19:35:06.135925+00:00",
+      "terminal_done_line": true,
+      "worker_exited": true
+    },
+    "assistant_instruct_hugepageoff": {
+      "path": "/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration/run_logs/assistant_instruct_hugepageoff.log",
+      "modified_at_utc": "2026-09-12T19:34:53.358582+00:00",
+      "terminal_done_line": true,
+      "worker_exited": true
+    }
+  }
+}
