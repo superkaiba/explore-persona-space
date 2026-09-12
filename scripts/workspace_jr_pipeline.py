@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from pathlib import Path
 
 from explore_persona_space.orchestrate.env import load_dotenv
@@ -24,9 +25,12 @@ from explore_persona_space.analysis.workspace_capture import (  # noqa: E402
     assign_context_input,
     capture_context_inputs,
     capture_token_batch,
-    decompose_context,
     generate_rollouts,
     save_capture_batch,
+)
+from explore_persona_space.analysis.workspace_decomposition import (  # noqa: E402
+    ValidatedDictionary,
+    decompose_context_nested,
 )
 from explore_persona_space.analysis.workspace_fit import evaluate_component_fits  # noqa: E402
 from explore_persona_space.analysis.workspace_gate import validate_main_readiness  # noqa: E402
@@ -381,7 +385,7 @@ def write_dictionary_arms(args, model, text, matrices, manifest):
 
 
 def decomposition(args, config, identity):
-    """Stream one captured context at a time through each paired dictionary."""
+    """Stream each context through once-validated dictionaries and nested k checkpoints."""
     from explore_persona_space.analysis.workspace_lenses import rotated_dictionary
 
     manifest = json.loads((args.out / "dictionaries/manifest.json").read_text())
@@ -396,14 +400,21 @@ def decomposition(args, config, identity):
         basis[name] = torch.load(path, map_location=args.device, weights_only=True)["dictionary"]
         if args.rotation is not None:
             basis[name] = rotated_dictionary(basis[name], seed=args.rotation)[0]
-    cell = f"k{args.k}-rotation{args.rotation}"
-    contract = {
-        "identity": identity,
-        "dictionaries": manifest,
-        "k": args.k,
-        "rotation": args.rotation,
+        basis[name] = ValidatedDictionary(basis[name])
+    ks = (
+        tuple(
+            sorted(
+                [config["decomposition"]["k_primary"], *config["decomposition"]["k_sensitivity"]]
+            )
+        )
+        if args.all_k
+        else (args.k,)
+    )
+    contracts = {
+        k: {"identity": identity, "dictionaries": manifest, "k": k, "rotation": args.rotation}
+        for k in ks
     }
-    digest = content_sha256(contract)
+    digests = {k: content_sha256(contract) for k, contract in contracts.items()}
     prompts = phase_prompts(args)
     capture_root = args.out / "captures" / args.subset
     capture_report = json.loads((capture_root / "coverage.json").read_text())
@@ -411,13 +422,37 @@ def decomposition(args, config, identity):
         validate_coverage(capture_report, [r["prompt_sha256"] for r in prompts], identity)
     )
     exclusions = list(capture_report["exclusions"])
-    included, hashes = [], {}
+    prior_hashes = {}
+    for k in ks:
+        prior_path = (
+            args.out
+            / "components"
+            / f"k{k}-rotation{args.rotation}"
+            / args.subset
+            / "coverage.json"
+        )
+        if prior_path.exists():
+            prior = json.loads(prior_path.read_text())
+            prior_included = set(
+                validate_coverage(prior, [r["prompt_sha256"] for r in prompts], identity)
+            )
+            if (
+                prior["contract"] != contracts[k]
+                or prior_included != included_capture
+                or prior["exclusions"] != exclusions
+            ):
+                raise ValueError(
+                    "Completed component coverage differs from verified capture inputs"
+                )
+            prior_hashes[k] = prior["file_sha256"]
+    included, hashes = {k: [] for k in ks}, {k: {} for k in ks}
     for row in prompts:
+        begin = time.perf_counter()
         source = args.out / "captures" / args.subset / f"{row['prompt_sha256']}.pt"
-        target = args.out / "components" / cell / args.subset / source.name
         if row["prompt_sha256"] not in included_capture:
             continue
-        if file_sha256(source) != capture_report["file_sha256"][row["prompt_sha256"]]:
+        source_digest = file_sha256(source)
+        if source_digest != capture_report["file_sha256"][row["prompt_sha256"]]:
             raise ValueError("Capture checkpoint changed after phase completion")
         capture_file = torch.load(source, map_location="cpu", weights_only=True)
         validate_producer(capture_file["identity"]["identity"], identity)
@@ -427,44 +462,70 @@ def decomposition(args, config, identity):
         captures = capture_file["rows"]
         for captured in captures:
             validate_context_input(capture_file["identity"], captured["x"], args.out, identity)
-        if target.exists():
-            saved = torch.load(target, map_location="cpu", weights_only=True)
-            if saved["contract_sha256"] != digest or saved["source_sha256"] != file_sha256(source):
-                raise ValueError(f"Stale component checkpoint {target}")
-            validate_context_input(saved["context_input_reference"], saved["x"], args.out, identity)
-            included.append(row["prompt_sha256"])
-            hashes[row["prompt_sha256"]] = file_sha256(target)
-            continue
         if [r["seed"] for r in captures] != config["generation"]["seeds"] or any(
             r["prompt_sha256"] != row["prompt_sha256"] for r in captures
         ):
             raise ValueError("Capture rollout seeds or context membership mismatch")
-        reduced = decompose_context(captures, basis, k=args.k)
-        reduced.update(
-            contract_sha256=digest,
-            contract=contract,
-            source_sha256=file_sha256(source),
-            context_input_reference=capture_file["identity"],
+        destinations, pending = {}, []
+        for k in ks:
+            cell = f"k{k}-rotation{args.rotation}"
+            target = args.out / "components" / cell / args.subset / source.name
+            destinations[k] = target
+            if target.exists():
+                if (
+                    k in prior_hashes
+                    and file_sha256(target) != prior_hashes[k][row["prompt_sha256"]]
+                ):
+                    raise ValueError("Component changed after completed coverage manifest")
+                saved = torch.load(target, map_location="cpu", weights_only=True)
+                if (
+                    saved["contract_sha256"] != digests[k]
+                    or saved["source_sha256"] != source_digest
+                    or saved["contract"] != contracts[k]
+                ):
+                    raise ValueError(f"Stale component checkpoint {target}")
+                validate_context_input(
+                    saved["context_input_reference"], saved["x"], args.out, identity
+                )
+            else:
+                pending.append(k)
+        reduced = (
+            decompose_context_nested(
+                captures, basis, checkpoints=tuple(pending), token_batch_size=128
+            )
+            if pending
+            else {}
         )
-        save_tensors(target, reduced)
-        included.append(row["prompt_sha256"])
-        hashes[row["prompt_sha256"]] = file_sha256(target)
+        for k in ks:
+            target = destinations[k]
+            if k in reduced:
+                reduced[k].update(
+                    contract_sha256=digests[k],
+                    contract=contracts[k],
+                    source_sha256=source_digest,
+                    context_input_reference=capture_file["identity"],
+                )
+                save_tensors(target, reduced[k])
+            included[k].append(row["prompt_sha256"])
+            hashes[k][row["prompt_sha256"]] = file_sha256(target)
         print(
-            f"decomposed cell={cell} subset={args.subset} context={row['prompt_sha256']}",
+            f"decomposed unit={len(included[ks[0]])}/{len(included_capture)} nested_ks={list(ks)} rotation={args.rotation} subset={args.subset} context={row['prompt_sha256']} elapsed={time.perf_counter() - begin:.3f}s",
             flush=True,
         )
-    save_json(
-        args.out / "components" / cell / args.subset / "coverage.json",
-        {
-            "planned_contexts": len(prompts),
-            "exclusions": exclusions,
-            "contract": contract,
-            "identity": identity,
-            "status": "complete",
-            "included_prompt_sha256": included,
-            "file_sha256": hashes,
-        },
-    )
+    for k in ks:
+        cell = f"k{k}-rotation{args.rotation}"
+        save_json(
+            args.out / "components" / cell / args.subset / "coverage.json",
+            {
+                "planned_contexts": len(prompts),
+                "exclusions": exclusions,
+                "contract": contracts[k],
+                "identity": identity,
+                "status": "complete",
+                "included_prompt_sha256": included[k],
+                "file_sha256": hashes[k],
+            },
+        )
 
 
 def fits(args, config, identity):
@@ -578,8 +639,13 @@ def main():
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--capture-batch-size", type=int, default=2)
     parser.add_argument("--k", type=int, choices=(5, 10, 25), default=10)
+    parser.add_argument(
+        "--all-k", action="store_true", help="Decompose all frozen k values in one nested pass"
+    )
     parser.add_argument("--rotation", type=int, choices=(20260913, 20260914, 20260915))
     args = parser.parse_args()
+    if args.all_k and args.phase != "decompose":
+        raise ValueError("--all-k is only meaningful for the decomposition phase")
     config = load_workspace_jr_config(args.config)
     identity = run_identity(args.config, args.selection, args.role)
     args.readiness = None
