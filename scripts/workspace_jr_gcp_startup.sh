@@ -14,7 +14,7 @@ if [[ ! "$JR_CODE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
   echo 'Missing exact code SHA in instance metadata' >&2
   exit 2
 fi
-curl --fail --silent --show-error https://astral.sh/uv/install.sh -o /workspace/install_uv.sh
+curl --location --fail --silent --show-error https://astral.sh/uv/install.sh -o /workspace/install_uv.sh
 sh /workspace/install_uv.sh
 export PATH="/root/.local/bin:$PATH"
 git clone --filter=blob:none --sparse --branch codex/jr-workspace-predictability-20260912 \
