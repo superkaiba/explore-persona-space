@@ -30,6 +30,27 @@ def main() -> None:
     actual = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     if actual != args.source_sha:
         raise RuntimeError(f"Source revision mismatch: {actual}")
+    branch = subprocess.check_output(
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True
+    ).strip()
+    subprocess.run(
+        [
+            "git",
+            "fetch",
+            "--depth=1",
+            "origin",
+            f"refs/heads/{branch}:refs/remotes/origin/{branch}",
+            "refs/heads/main:refs/remotes/origin/main",
+        ],
+        check=True,
+        timeout=180,
+    )
+    remote = subprocess.check_output(
+        ["git", "rev-parse", f"refs/remotes/origin/{branch}"], text=True
+    ).strip()
+    if remote != actual:
+        raise RuntimeError("Remote source changed after dispatch")
+    print("[phase=preflight_git] verified shallow source and main refs", flush=True)
     subprocess.run(
         [
             sys.executable,
