@@ -128,3 +128,5 @@ All tracked edits live in the dedicated
 `codex/jr-workspace-predictability-20260912` worktree. Main result interpretation
 must distinguish relative predictability from automaticity, reasoning or causal
 capability effects; agreement between the lenses is a robustness check.
+
+All six experiment workers are verified stopped, with persistent boot disks retained. [Final completion evidence](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/b05a153b561aae0282151a53dbd43a61726fd433/exploratory_workspace_jr/20260912/final_completion_evidence_v1) records exact instance identities, STOP proofs and verified archival references.
