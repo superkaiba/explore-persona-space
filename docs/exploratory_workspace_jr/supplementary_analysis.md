@@ -42,6 +42,13 @@ context IDs and all resulting estimates. The completion marker binds the report
 and input manifest. The conditional higher-K decision is recomputed on this same
 cohort; a triggered follow-up must retain the original fitted predictors.
 
+The registered identity-plus-learned-bias and nearest-neighbor retrieval
+references are also rescored on this cohort. Their predictors remain frozen;
+retrieval uses only the retained targets as the candidate pool and records its
+size and chance levels. R² receives the same paired context bootstrap. Retrieval
+accuracy remains a descriptive point estimate, with no implied confidence
+interval. This is the same reference recipe already used in the original fits.
+
 ## Figures
 
 `scripts/workspace_jr_plot_supplement.py --root SUPPLEMENT_ROOT

@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import numpy as np
 
+from explore_persona_space.analysis.mapping_baselines import knn_retrieval
 from explore_persona_space.analysis.workspace_components import (
     _center,
+    component_metrics,
+    paired_context_bootstrap,
     per_direction_metrics,
     reconstruction_metrics,
 )
@@ -13,6 +16,45 @@ from explore_persona_space.analysis.workspace_diagnostics import (
     _direction_bootstrap,
     _direction_intervals,
 )
+
+
+def mapping_references(targets, predictions, context_ids, config):
+    """Rescore saved identity+bias and retrieval references on the primary population."""
+    if not {"ridge", "mlp", "identity_bias"} <= set(predictions):
+        raise ValueError("Mapping references require the saved identity+bias, ridge and MLP fits")
+    ks = tuple(config["fit"]["retrieval"]["k"])
+    if len(context_ids) < max(ks):
+        raise ValueError("Primary cohort is smaller than a registered retrieval pool cutoff")
+    settings = config["statistics"]["bootstrap"]
+    bootstrap = paired_context_bootstrap(
+        targets,
+        predictions,
+        context_ids,
+        n_bootstrap=settings["draws"],
+        seed=config["seed"],
+        confidence=settings["confidence"],
+    )
+    metrics = {}
+    for predictor, by_target in predictions.items():
+        metrics[predictor] = {}
+        for name, prediction in by_target.items():
+            target = targets[name]
+            metrics[predictor][name] = {
+                **component_metrics(target, prediction),
+                "r2_interval": bootstrap["summary"][f"{predictor}/{name}"],
+                "retrieval": {
+                    metric: knn_retrieval(prediction, target, ks=ks, metric=metric)
+                    for metric in config["fit"]["retrieval"]["metrics"]
+                },
+            }
+    return {
+        "context_ids": context_ids,
+        "metrics": metrics,
+        "counts_sha256": bootstrap["counts_sha256"],
+        "identity_bias_recipe": "saved x + training_mean(y - x); no refitting",
+        "retrieval_pool": "same completed joint-cohort targets, in the same context order",
+        "retrieval_uncertainty": "descriptive point estimates; intervals shown only for R2",
+    }, bootstrap["samples"]
 
 
 def row_indices(original, selected):

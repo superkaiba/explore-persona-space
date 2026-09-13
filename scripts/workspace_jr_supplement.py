@@ -33,6 +33,7 @@ from explore_persona_space.analysis.workspace_runtime import (
 )  # noqa: E402
 from explore_persona_space.analysis.workspace_supplement import (
     agreement_statistics,
+    mapping_references,
     paired_noise,
     paired_readouts,
 )  # noqa: E402
@@ -305,8 +306,12 @@ def model_supplement(role, entries, native, common, identity, config, out):
     diagnostics, learning = Source(entries["diagnostics"]), Source(entries["learning_curves"])
     bind_analysis(diagnostics, "diagnostics", native, identity)
     bind_analysis(learning, "learning-curves", native, identity)
-    original_targets, original_predictions = read_arrays(native)
-    targets, _ = align_arrays(native["ids"], common, original_targets, original_predictions)
+    original_targets, original_predictions = read_arrays(native, include_baselines=True)
+    targets, predictions = align_arrays(
+        native["ids"], common, original_targets, original_predictions
+    )
+    references, reference_samples = mapping_references(targets, predictions, common, config)
+    np.savez(out / f"{role}_mapping_bootstrap.npz", **reference_samples)
     agreement = agreement_statistics(
         targets, common, native["result"]["decomposition_agreement"]["training_fixed_norm_floor"]
     )
@@ -331,6 +336,7 @@ def model_supplement(role, entries, native, common, identity, config, out):
         "readouts": direction,
         "noise": noise,
         "learning_curves": curves,
+        "mapping_references": references,
         "all_captured_test_noise_trigger": noise_report["higher_k_trigger"],
         "sources": {
             "diagnostics": diagnostics.proof(),

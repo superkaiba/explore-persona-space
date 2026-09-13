@@ -309,7 +309,7 @@ def bind_global_sources(path, evidence, *, resume):
         save_json(path, evidence)
 
 
-def read_arrays(cell):
+def read_arrays(cell, *, include_baselines=False):
     """Reproduce all reported R² from exact test targets and saved predictions."""
     result = cell["result"]
     with np.load(cell["fit"] / "per_example.npz", allow_pickle=False) as saved:
@@ -337,7 +337,9 @@ def read_arrays(cell):
                     raise ValueError(f"Reported {key} differs from actual predictions")
     for arm in ("J", "R"):
         reconstruction_metrics(targets["full"], targets[arm], targets[f"rest{arm}"])
-    return targets, {name: predictions[name] for name in PREDICTORS}
+    return targets, predictions if include_baselines else {
+        name: predictions[name] for name in PREDICTORS
+    }
 
 
 def bind_fitted_generation_sources(cell, generation_report, seeds):

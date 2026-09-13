@@ -9,10 +9,53 @@ from explore_persona_space.analysis.workspace_diagnostics import (
 )
 from explore_persona_space.analysis.workspace_supplement import (
     agreement_statistics,
+    mapping_references,
     paired_noise,
     paired_readouts,
     row_indices,
 )
+
+
+def test_mapping_references_use_the_completed_candidate_pool_and_saved_bias():
+    from explore_persona_space.analysis.mapping_baselines import knn_retrieval
+    from explore_persona_space.analysis.workspace_components import paired_context_bootstrap
+
+    rng = np.random.default_rng(24)
+    full = rng.normal(size=(9, 4))
+    original = {
+        "ridge": {"full": full + rng.normal(size=full.shape) * 0.2},
+        "mlp": {"full": full + rng.normal(size=full.shape) * 0.1},
+        "identity_bias": {"full": rng.normal(size=full.shape) + 0.3},
+    }
+    selected = [1, 3, 4, 7, 8]
+    targets = {"full": full[selected]}
+    predictions = {name: {"full": values["full"][selected]} for name, values in original.items()}
+    ids = [f"context-{index}" for index in selected]
+    config = {
+        "seed": 20260912,
+        "fit": {"retrieval": {"k": [1, 3], "metrics": ["euclidean", "cosine"]}},
+        "statistics": {"bootstrap": {"draws": 32, "confidence": 0.95}},
+    }
+    report, samples = mapping_references(targets, predictions, ids, config)
+    expected = paired_context_bootstrap(
+        targets, predictions, ids, n_bootstrap=32, seed=config["seed"]
+    )
+    assert report["counts_sha256"] == expected["counts_sha256"]
+    for predictor in predictions:
+        for metric in config["fit"]["retrieval"]["metrics"]:
+            actual = report["metrics"][predictor]["full"]["retrieval"][metric]
+            assert actual == knn_retrieval(
+                predictions[predictor]["full"], targets["full"], ks=(1, 3), metric=metric
+            )
+            assert actual["n_pool"] == len(selected)
+            assert actual["chance_at_k"][1] == 1 / len(selected)
+        np.testing.assert_array_equal(
+            samples[f"{predictor}/full"], expected["samples"][f"{predictor}/full"]
+        )
+    with pytest.raises(ValueError, match="saved identity"):
+        mapping_references(
+            targets, {"ridge": predictions["ridge"], "mlp": predictions["mlp"]}, ids, config
+        )
 
 
 def test_near_zero_components_remain_excluded_from_cosine_only():
