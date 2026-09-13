@@ -1,6 +1,6 @@
 {
   "schema": "exploratory-workspace-jr-result-v1",
-  "status": "analysis_complete",
+  "status": "complete",
   "research_question": "Does context-to-answer prediction capture the separate remainder better than sparse components under J and R lenses, and does this differ across two capability-selected models?",
   "conclusion": "No robust general workspace-specific predictability deficit: native gaps depend on model and sparsity, and rotated and exactly affine controls have larger gaps.",
   "coverage": {
@@ -130803,14 +130803,107 @@
     "prefix": "exploratory_workspace_jr/20260912/main_tracking_v2"
   },
   "compute_closure": {
-    "status": "r2_final_archive_pending",
-    "stopped_workers": [
-      "native",
-      "r0",
-      "r1",
-      "r3",
-      "comparison"
-    ]
+    "status": "complete",
+    "verified_by": "ran",
+    "finished_at_epoch": 1789323615.9352634,
+    "scientific_delivery_git_revision": "19fb04cbd806c011cc4fe5499628fc45c3e77ad4",
+    "planned_cells": 48,
+    "realized_cells": 48,
+    "planned_test_contexts": 256,
+    "realized_test_contexts": 252,
+    "workers": {
+      "native": {
+        "instance_id": "4111403905777676224",
+        "name": "eps-workspace-jr-native-20260912",
+        "status": "TERMINATED",
+        "boot_auto_delete": false,
+        "boot_disk": "https://www.googleapis.com/compute/v1/projects/eps-persona-gpu-jun2026/zones/us-central1-a/disks/eps-workspace-jr-native-20260912",
+        "stop_proof_sha256": "788d784a56b8e0a8a3fcb1b14f9a75d5c7c90e706aebb3114a8000c7adf6f02e",
+        "stop_proof_file": "evidence/native_completion_stop_verified_v1.json",
+        "archive_revision": "e88dc8d3284976ff212643c8a1e31230a882d6b9",
+        "archive_receipt_sha256": "738ed01740170807c5734c8f91d00eeb7113aac455f772822f43107397b6a2a5",
+        "archive_prefix": "exploratory_workspace_jr/20260912/native_completed_worker_handoff_v1",
+        "archive_files": 353
+      },
+      "r0": {
+        "instance_id": "8803037317331163259",
+        "name": "eps-workspace-jr-calibration-r0-20260912",
+        "status": "TERMINATED",
+        "boot_auto_delete": false,
+        "boot_disk": "https://www.googleapis.com/compute/v1/projects/eps-persona-gpu-jun2026/zones/us-central1-a/disks/eps-workspace-jr-calibration-r0-20260912",
+        "stop_proof_sha256": "1cc2320cc5d1ec44fbfd7ea056fb676c08fe628f4f3960c1c9f4d141b0a9906f",
+        "stop_proof_file": "evidence/r0_completion_stop_verified_v1.json",
+        "archive_revision": "88e7449bce432dc25adea4b0715b2540153d4c7a",
+        "archive_receipt_sha256": "2b38cc31994cb1092667a2dc06b7ca595afe91012e99a816e8cfa90bdbf1709f",
+        "archive_prefix": "exploratory_workspace_jr/20260912/r0_completed_worker_handoff_v1",
+        "archive_files": 224
+      },
+      "r1": {
+        "instance_id": "6664144802219038782",
+        "name": "eps-workspace-jr-calibration-r1-20260912",
+        "status": "TERMINATED",
+        "boot_auto_delete": false,
+        "boot_disk": "https://www.googleapis.com/compute/v1/projects/eps-persona-gpu-jun2026/zones/us-central1-a/disks/eps-workspace-jr-calibration-r1-20260912",
+        "stop_proof_sha256": "3902ff54ac6abc9bc6855d13acd22e77ffe5c60582e3973937f86b86dc741843",
+        "stop_proof_file": "evidence/r1_completion_stop_verified_v1.json",
+        "archive_revision": "171707978eb3d4e7e168d52f95aad434cd5f5240",
+        "archive_receipt_sha256": "015f0f62fbdb5aea471a22c6ab220a5481f4798b34f8e2d1c120fd84b80496f3",
+        "archive_prefix": "exploratory_workspace_jr/20260912/r1_completed_worker_handoff_v1",
+        "archive_files": 464
+      },
+      "r2": {
+        "instance_id": "2664774301039204414",
+        "name": "eps-workspace-jr-calibration-r2-20260912",
+        "status": "TERMINATED",
+        "boot_auto_delete": false,
+        "boot_disk": "https://www.googleapis.com/compute/v1/projects/eps-persona-gpu-jun2026/zones/us-central1-a/disks/eps-workspace-jr-calibration-r2-20260912",
+        "stop_proof_sha256": "24b48d794a35099535d527445314cb0510a1466f4d72cff141d535c00f9e579f",
+        "stop_proof_file": "evidence/r2_completion_stop_verified_v1.json",
+        "archive_revision": "f4d25bbe88a11c5d4f201f15af8a03c3f9909862",
+        "archive_receipt_sha256": "0092cfa5941bed08ccddd0b3a19553bf95e5af6c26c8584d876780d4d4b908f7",
+        "archive_prefix": "exploratory_workspace_jr/20260912/r2_completed_worker_handoff_v1",
+        "archive_files": 786
+      },
+      "r3": {
+        "instance_id": "8253355729067972670",
+        "name": "eps-workspace-jr-calibration-r3-20260912",
+        "status": "TERMINATED",
+        "boot_auto_delete": false,
+        "boot_disk": "https://www.googleapis.com/compute/v1/projects/eps-persona-gpu-jun2026/zones/us-central1-a/disks/eps-workspace-jr-calibration-r3-20260912",
+        "stop_proof_sha256": "4aab0aa7bbdc3732f5220aa4f61c72934904f7f754fb8ab5271f1ae05109abff",
+        "stop_proof_file": "evidence/r3_completion_stop_verified_v1.json",
+        "archive_revision": "3b12eca28ae69bfc84bdfb85f688d7ddb5447553",
+        "archive_receipt_sha256": "1953ca39099a1845f4b5d26f3baf56666bf98ddd2afdff4d55ca48930ca73e8e",
+        "archive_prefix": "exploratory_workspace_jr/20260912/r3_completed_worker_handoff_v1",
+        "archive_files": 228
+      },
+      "comparison": {
+        "instance_id": "7473675579792298880",
+        "name": "eps-workspace-jr-comparison-20260912",
+        "status": "TERMINATED",
+        "boot_auto_delete": false,
+        "boot_disk": "https://www.googleapis.com/compute/v1/projects/eps-persona-gpu-jun2026/zones/us-central1-a/disks/eps-workspace-jr-comparison-20260912",
+        "stop_proof_sha256": "9da8690724f24316a79013ac2dceed35c73bf62cba409c48df2ab73056febcdd",
+        "stop_proof_file": "evidence/comparison_completion_stop_verified_v1.json",
+        "archive_revision": "16f7eb058b0f36964e0c9a283efa946bc00d2164",
+        "archive_receipt_sha256": "ffb8663da30aabafa878ebeff398877dbca0b049e13e44d1915234eee2d17dc1",
+        "archive_prefix": "exploratory_workspace_jr/20260912/comparison_completed_worker_handoff_v1",
+        "archive_files": 262
+      }
+    },
+    "all_workers_stopped": true,
+    "persistent_boot_disks_retained": true,
+    "fresh_gcp_state_sha256": "12fc3d55a64c092c6b123ae80b50682d8c2955252c586094561865295ee355d2",
+    "tracking_url": "https://wandb.ai/thomasjiralerspong/workspace-jr/runs/a2c810d26181a2e3",
+    "note": "All science and tracking complete before final worker STOP. No stopped worker was restarted. Final operational status is committed after this evidence upload is verified.",
+    "evidence": {
+      "repo": "superkaiba1/explore-persona-space-data",
+      "prefix": "exploratory_workspace_jr/20260912/final_completion_evidence_v1",
+      "revision": "b05a153b561aae0282151a53dbd43a61726fd433",
+      "receipt_sha256": "a9f46a9ba15df2d2445295ffaffd3c3dfe1f80b0bfa35b77b3c4d1a893f68a75",
+      "execution_complete_sha256": "660d04f2963ec3c2d108d83f49da52ca8e818ce1b23cdcae953d67ca27d08228",
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/b05a153b561aae0282151a53dbd43a61726fd433/exploratory_workspace_jr/20260912/final_completion_evidence_v1"
+    }
   },
   "implementation_commits": {
     "main_comparison_and_summary": "8e44b6dfb43f2ce8d6b64de5433e9341022a1be3",
@@ -130821,7 +130914,9 @@
     "main_comparison": "946d3478495e7a7f6999ff8eafc0a3c65c8656112c0cd0f97309953d30f0d5bb",
     "supplement_summary": "b808416941b1519c079693ad3c0948aa6796820c50f5a04d02cb90b44e70d2d7",
     "figures": "d43aff5e30a636f2bbbea9eaab0028761912199809327ac51e6c44cd4f661652",
-    "scientific_claims": "88bbaeccdcf2c2994196dde53d4a5020ea165f8fff5990123d6ffec5d4a2c3de"
+    "scientific_claims": "88bbaeccdcf2c2994196dde53d4a5020ea165f8fff5990123d6ffec5d4a2c3de",
+    "tracking_actual": "6cf31fa58fcecf540338f8cb2aca295ef3dd77c379770eb4dd2e62bb67834c36",
+    "final_scientific_delivery": "422a4f765f9e8d250565c21c0a47d0d2e2ffc00259df7510aab1333d60d90d80"
   },
   "preserved_failed_attempts": {
     "main_supplement_v1": {
