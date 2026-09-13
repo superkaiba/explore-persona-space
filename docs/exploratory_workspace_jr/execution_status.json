@@ -1,28 +1,31 @@
 {
-  "status": "component_pilot_generating_main_not_executed",
-  "updated_utc": "2026-09-12T19:06:20.909473+00:00",
-  "native_27b_validation": "passed",
-  "synthetic_null": "complete_12_cells_ridge_and_bias_only",
-  "component_model_fits": "not_started",
-  "comparison_model_native_validation": "not_started",
-  "instance": "eps-workspace-jr-native-20260912",
-  "zone": "us-central1-a",
-  "provisioning": "STANDARD",
-  "stop_fence_hours": 6,
-  "disk_auto_delete": false,
-  "preemptions": [
-    "2026-09-12T18:04:46Z",
-    "2026-09-12T18:10:35Z"
-  ],
-  "native_code_sha": "0f23250df469235c8dad70b86cd93b7b4f3c318a",
-  "local_tests": {
-    "passed": 47,
-    "seconds": 5.14
+  "status": "main_decomposition_in_progress_no_main_prediction_outcomes",
+  "updated_utc": "2026-09-13T03:34:04.150434+00:00",
+  "native_validation_both": "passed",
+  "matched_calibration_both": "complete_reviewed",
+  "corrected_end_to_end_pilots_both": "complete_reviewed",
+  "main_generation_capture_both": "complete_uploaded",
+  "main_fits": "not_started",
+  "actual_dictionary_main_nulls": "not_started",
+  "main_analysis_and_figures": "not_complete",
+  "frozen_main_counts": {
+    "train": 1024,
+    "validation": 128,
+    "test": 256
   },
-  "main_ready": false,
-  "native_pilot_pairs": 2,
-  "component_pilot_code_sha": "348b11a45a26147f1270356edfb6d3dbfd6f143c",
-  "component_pilot_unit": "workspace-jr-component-pilot2",
-  "native_pairs_upload_revision": "0d6a380d0a6c98adb6168b9f66b0c74fea313c47",
-  "calibration_diagnostic_tests": 4
+  "primary_scoring_complete_contexts": 252,
+  "completion_ledger_revision": "e41de075378e426d70c99c4d8b9ac9748fc1adb0",
+  "completion_ledger_sha256": "37429cacef202da83235d8783c5530c941f399169285b05007e7dfd8213061f9",
+  "primary_capture_revision": "2c3b39d4cf425b949533d0974fd2b90db8ff01c5",
+  "comparison_capture_revision": "c3f6993e2b5b4525eda6a9b1844f5aef7aceff83",
+  "primary_main_producer": "f8b4983851fba9e176640f75ad0ad7f667be46ab",
+  "comparison_main_producer": "244f89eb8347361484413e803565f1e639255a8c",
+  "compute_policy": {
+    "owned_workers": 6,
+    "provisioning": "STANDARD",
+    "stop_fence_hours": 30,
+    "boot_disk_auto_delete": false
+  },
+  "task_workflow_bypass": "explicitly_authorized_by_user",
+  "interpretation": "No main predictability conclusion yet"
 }

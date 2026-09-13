@@ -1,98 +1,95 @@
 # Exploratory J/R context-to-answer experiment
 
-The experiment is in execution. Native Qwen3.5-27B validation and the synthetic
-affine control have run; real-model component fits and the weaker-model comparison
-have not completed. No conclusion about workspace predictability is warranted yet.
+The experiment is running. Both models have completed native lens calibration,
+validated end-to-end pilots and main generation/capture. Main component
+training decompositions are in progress. Main prediction fits, the complete
+control grid and the final scientific report remain outstanding; no main
+predictability conclusion is available yet.
 
-The frozen [analysis plan](analysis_plan.md), [configuration](../../configs/analysis/workspace_jr.yaml),
-[model/mapping provenance](mapping_provenance.md), [source audit](source_audit.md),
-and [selected contexts](selected_contexts.json) remain authoritative. The user's
-explicit task-registration exception is recorded in the configuration and the
-[pilot continuation](pilot_execution_20260912.md). Manuscript files are untouched.
+The frozen [analysis plan](analysis_plan.md),
+[configuration](../../configs/analysis/workspace_jr.yaml),
+[model and mapping provenance](mapping_provenance.md),
+[source audit](source_audit.md) and [selected contexts](selected_contexts.json)
+define the experiment. The user's explicit task-registration exception remains
+recorded in the configuration and [pilot continuation](pilot_execution_20260912.md).
+This directory is separate from the manuscript.
 
-## What has actually run
+## Executed and verified
 
-- Native 27B forward validation on an A100 80GB with pinned Transformers 5.16.1:
-  installing R backward rules leaves both the target hook and forward output
-  bit-identical. Ordinary J passes three cotangent/direction numerical checks.
-  The numerical check uses an FP32 suffix with the native prefix and positions;
-  it does not claim finite-difference equality for BF16 lens coefficients or R.
-  [Full validation evidence](native_validation_primary.json).
-- The exact-affine synthetic control completed 12 cells: k=5/10/25 with the
-  original dictionaries and three geometry-preserving rotations. Full-target
-  ridge R² is effectively one. At k=10 the remainder-minus-component gaps are
-  −0.887 for synthetic dictionary A and −0.974 for B; their difference is
-  −0.087 (paired 95% interval −0.124 to −0.049). These are independent synthetic
-  dictionaries, not native J/R lenses. This directly demonstrates a decomposition
-  artifact, with the remainder less predictable than the component in this null.
-  [Machine-readable report](affine_null_report.json).
-- The null directly decomposes one affine vector per context: repeated identical
-  token/draw pooling is an algebraic reduction, not executed K=5 sampling.
-  It fits ridge and identity-plus-bias only. Token-before-pooling and unequal
-  rollout lengths are independently tested on tensors; the null does not certify
-  native generation, sampling-noise control, calibration, or MLP performance.
-- Both native pilot prompts now have complete paired J/R matrices. The first
-  spot attempts were preempted; recovery completed on the preserved disk using
-  on-demand compute. Both pairs are uploaded and byte-verified. These two
-  prompts are pilot-only and cannot establish calibration stability.
-- The component pilot's first generation attempt failed before sampling because
-  Transformers 5 returned a structured chat encoding. The explicit flat-ID fix
-  passed the exact native tokenizer probe. Recovery is running in a fresh output
-  directory at `348b11a45a26147f1270356edfb6d3dbfd6f143c`; the first 16 contexts
-  have saved all five rollouts. [Recovery record](generation_recovery_20260912.md).
-- The focused implementation suite passes 47 tests, including actual batched MLP
-  tuning, context-level bootstraps, token-boundary capture on native tiny Qwen2,
-  nonlinear token-before-rollout aggregation, cap recovery, and producer gates.
-  Tiny-model/unit checks do not establish pretrained-model scientific validity.
+Both Qwen3.5-27B and Qwen3.5-4B passed their native J-product, specified R-rule
+and unchanged-forward checks. Matched J/R calibration uses each model's actual
+checkpoint and mapping source hook. Calibration stability and readouts,
+checkpointed token decomposition and the full tuning/evaluation path were
+reviewed before main dispatch. The complete readiness evidence is pinned here:
 
-[Browser-accessible null plot](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/6404c0b545dfe03505114dbbadb301f64a32f99d/exploratory_workspace_jr/20260912/figures/affine_null.png).
-[All null inputs, predictions, bootstraps and exact executed source snapshot](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/730ad94bddab2cfeb52f548f40a70f84a4b9f858/exploratory_workspace_jr/20260912/affine-null-v1).
-The upload was verified against all 107 expected paths at that revision. V1's
-stored repeated-draw wording should be read with the algebraic qualification above.
+- [Primary readiness and evidence](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/537bf1146730b6bf7ef9295cb2d051982f38d257/exploratory_workspace_jr/20260912/primary_readiness_bundle_v1).
+- [Comparison readiness and evidence](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/216e638d605527827bd4a0580a9edc7ebeeeea02/exploratory_workspace_jr/20260912/comparison_readiness_bundle_v1).
+- [Primary complete training capture](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/2c3b39d4cf425b949533d0974fd2b90db8ff01c5/exploratory_workspace_jr/20260912/primary_main_train_v1).
+- [Comparison complete training capture](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/c3f6993e2b5b4525eda6a9b1844f5aef7aceff83/exploratory_workspace_jr/20260912/comparison_main_train_v1).
 
-## Execution boundaries
+Historical mappings used K=1, not K=5, and did not pass the unchanged historical
+recapture gate. The pre-outcome [execution revision](execution_revision_20260912.json)
+therefore uses fresh context-only inputs in frozen batches of 16 and fresh fits
+for full answers and all components. No historical predictor is applied to
+incompatible new captures. The comparison pilot's terminal-token mistake was
+preserved and corrected through fresh answer-state recapture; see the
+[EOS correction record](terminal_eos_correction_20260913.md).
 
-The saved choice is Qwen3.5-27B versus Qwen3.5-4B, thinking disabled, selected on
-same-mode task performance rather than mapping R². Existing mapping captures
-used K=1 and retokenized stripped answers; new capture preserves exact sampled
-IDs with K=5 and equal rollout weights. Frozen predictor reuse requires the
-separate historical-recapture parity gate. No frozen predictor has been applied
-to incompatible new captures.
+Calibration-only reconstruction controls have completed for both models. Every
+native/control dictionary uses the same token decomposition and sparsity grid;
+quality matching preserves outside-range exclusions. These are calibration
+measurements, separate from main prediction outcomes:
 
-The new pipeline implements batched vLLM generation, doubled-cap recovery with
-prior-draw retention, native token capture, full eligible-vocabulary nonnegative
-pursuit, checkpointed component aggregation, validation-selected ridge and MLP
-fits, original-unit metrics, paired bootstrap contrasts and explicit exclusions.
-Every consumer checks producer identity, file hashes and completed coverage.
-A pilot dictionary is explicitly barred from main analysis. Full calibration
-membership alone does not pass the outstanding stability/readout gate.
+- [Primary reconstruction-quality matches](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/1d46f094cab95836d13bc05c3cf0c0ff99682412/exploratory_workspace_jr/20260912/primary_calibration_quality_v1/quality_matches.json).
+- [Comparison reconstruction-quality matches](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/2a6891793e45fe7e61fcfd44bfd1bc554253ac35/exploratory_workspace_jr/20260912/comparison_calibration_quality_v1/quality_matches.json).
 
-Still outstanding: a completed end-to-end pilot; historical
-recapture parity; full matched calibration with stability/readout review; direction
-controls; main K=5 generation/capture/decomposition for both models; real-dictionary
-rotations and sparsity sensitivities; sampling-noise/higher-K checks; learning curves;
-paired cross-model analysis and the final model-results report.
+## Primary scoring population
 
-Calibration diagnostics now implement frozen-order nested subsets and split
-halves, matrix and token-direction agreement, and native/J/R calibration
-readouts. Independent review found and corrected runtime-compatibility and
-ordered-membership checks; four focused tests pass. This code produces evidence
-for review and does not grant main approval automatically.
+The outcome-blind completion ledger retains 252 of the 256 frozen shared test
+contexts: each retained context has five nonempty final completed rollouts in
+both models. The same ordered cohort must enter every primary within-model and
+cross-model comparison. The regeneration threshold and primary scoring
+eligibility are distinct; all original draws and exclusions remain saved.
+Training and validation retain captured nonempty draws with censoring reported.
 
-## Reproduction
+The [pre-outcome scoring declaration](completion_scoring_20260913.md) and
+[uploaded actual cohort ledger](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/e41de075378e426d70c99c4d8b9ac9748fc1adb0/exploratory_workspace_jr/20260912/completion_cohort_v1/completion_cohort.json)
+record the rule and its application. This conditions inference on completion;
+excluded contexts are not replaced. A local audit attempt correctly refused a
+runtime-version mismatch; the unchanged audit succeeded in the matching worker
+runtime.
 
-The native runtime is separately locked in `runtime/workspace_jr/uv.lock` because
-this checkout's standard Transformers environment predates native Qwen3.5 support.
-Use `scripts/workspace_jr_native_pilot.sh` on the managed GPU with the pinned code
-SHA. This launcher stops after the native pilot; it does not imply main completion.
+## Remaining execution and analysis
 
-For focused local validation with the existing environment:
+Complete all observed model × dictionary orientation × sparsity fits, the
+actual-dictionary affine nulls, main sampling-noise and direction diagnostics,
+and fixed-recipe learning curves. Run the registered higher-K follow-up if its
+noise criterion triggers. Then execute the [paired final comparison](comparison_analysis.md),
+[supplementary cohort analysis](supplementary_analysis.md), saved figure exports
+and the concise final report. Intermediate all-captured fit scores are not the
+primary completion-conditioned estimates.
 
-```bash
-PYTHONPATH=src OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 uv run --no-sync pytest -q tests/test_workspace_lenses.py tests/test_workspace_components.py tests/test_workspace_runtime.py tests/test_workspace_capture.py tests/test_workspace_fit.py tests/test_workspace_artifacts.py
-```
+The earlier [small synthetic-dictionary null](affine_null_protocol.md) is a
+software and decomposition-artifact check. It does not replace the required
+actual-dictionary null or establish real-model selectivity.
 
-All tracked work lives in the dedicated `codex/jr-workspace-predictability-20260912`
-worktree. Archived local preflights describe the earlier CPU/old-Transformers
-limitation; the native validation report supersedes that limitation for the 27B
-remote runtime. No task state, shared-root changes, or manuscript edits are included.
+## Reproduction and integrity
+
+The native runtime is locked separately in `runtime/workspace_jr/uv.lock`.
+Native primary and comparison main producers remain pinned to
+`f8b4983851fba9e176640f75ad0ad7f667be46ab` and
+`244f89eb8347361484413e803565f1e639255a8c`, respectively. Downstream analysis must
+use their matching library versions and verify unchanged native implementation
+ancestry. Individual phase commands, exact source, inputs, completion markers
+and immutable upload receipts are archived with the artifacts.
+
+`workspace_jr_delta_persist.py` transfers changed files in bounded commits and
+then verifies every local and remote byte hash at one pinned revision. It keeps
+the consumer's individual-file layout, rejects changed file sets and stale
+receipts, and never treats a missing remote path as verified. Running supervisors
+execute an archived uploader copy so later operational changes cannot alter them.
+
+All tracked edits live in the dedicated
+`codex/jr-workspace-predictability-20260912` worktree. Main result interpretation
+must distinguish relative predictability from automaticity, reasoning or causal
+capability effects; agreement between the lenses is a robustness check.
