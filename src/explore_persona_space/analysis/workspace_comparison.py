@@ -22,20 +22,26 @@ def cell_key(role, kind, k, rotation):
     return f"{role}/{kind}/k{k}/rotation{rotation}"
 
 
-def paired_cohort(cells: Mapping[str, list[str]]) -> tuple[list[str], dict]:
+def paired_cohort(cells: Mapping[str, list[str]], *, eligible_ids=None) -> tuple[list[str], dict]:
     """Intersect explicitly and deterministically; retain every excluded ID."""
     if not cells:
         raise ValueError("No cells to pair")
     for name, ids in cells.items():
         if len(ids) < 2 or len(ids) != len(set(ids)):
             raise ValueError(f"Invalid or duplicate context IDs: {name}")
-    common = sorted(set.intersection(*(set(ids) for ids in cells.values())))
+    common = set.intersection(*(set(ids) for ids in cells.values()))
+    if eligible_ids is not None:
+        if len(eligible_ids) != len(set(eligible_ids)):
+            raise ValueError("Duplicate eligible completion IDs")
+        common &= set(eligible_ids)
+    common = sorted(common)
     if len(common) < 2:
         raise ValueError("Fewer than two shared contexts; paired comparison is undefined")
     return common, {
         "policy": "explicit_sorted_common_context_intersection",
         "common_context_ids": common,
         "common_contexts": len(common),
+        "completion_eligible_context_ids": eligible_ids,
         "cells": {
             name: {
                 "original_contexts": len(ids),

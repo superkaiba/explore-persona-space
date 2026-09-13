@@ -14,6 +14,7 @@ from explore_persona_space.orchestrate.env import load_dotenv
 load_dotenv()
 
 import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 from explore_persona_space.analysis.workspace_analysis_inputs import _upload_binding  # noqa: E402
 from explore_persona_space.analysis.workspace_artifacts import (  # noqa: E402
@@ -36,6 +37,12 @@ from explore_persona_space.analysis.workspace_components import (  # noqa: E402
     component_metrics,
     paired_context_bootstrap,
     reconstruction_metrics,
+)
+from explore_persona_space.analysis.workspace_completion import (  # noqa: E402
+    checkpoint_policy,
+    final_rollout_eligibility,
+    joint_completion_cohort,
+    scoring_implementation,
 )
 from explore_persona_space.analysis.workspace_fit import _fit_contract, finite_json  # noqa: E402
 from explore_persona_space.analysis.workspace_quality import nearest_quality_match  # noqa: E402
@@ -333,6 +340,109 @@ def read_arrays(cell):
     return targets, {name: predictions[name] for name in PREDICTORS}
 
 
+def bind_fitted_generation_sources(cell, generation_report, seeds):
+    """Tie final completion records to the raw-generation hashes actually fitted."""
+    root = Path(cell["entry"]["root"])
+    verify = _upload_binding(root, Path(cell["entry"]["upload_receipt"]))
+    manifest = cell["manifest"]
+    coverage = manifest["coverage"]["test"]
+    generation_hashes = generation_report["source_proof"]["verified_sha256"]
+    proof = {}
+    for index, context in enumerate(cell["ids"], 1):
+        relative = f"components/k10-rotationNone/main_test/{context}.pt"
+        checksum = verify(root / relative)
+        if checksum != coverage["file_sha256"][context]:
+            raise ValueError("Completion binding component differs from the actual fit inputs")
+        saved = torch.load(root / relative, map_location="cpu", weights_only=True)
+        if saved["prompt_sha256"] != context or saved["contract"] != manifest["contract"]:
+            raise ValueError("Completion binding component has different fit metadata")
+        raw_hash = saved["context_input_reference"]["generation_file_sha256"]
+        raw_relative = f"generations/main_test/{context}.json"
+        if raw_hash != generation_hashes[raw_relative] or verify(root / raw_relative) != raw_hash:
+            raise ValueError(
+                "Completion ledger uses different final generations than the fitted target"
+            )
+        raw = json.loads((root / raw_relative).read_text())
+        actual = final_rollout_eligibility(
+            raw["rollouts"], seeds, generation_report["terminal_policy"]["terminal_ids"]
+        )
+        if actual != generation_report["contexts"][context]:
+            raise ValueError("Completion eligibility differs from the actual fitted final draws")
+        proof[context] = {"component_sha256": checksum, "generation_sha256": raw_hash}
+        if index % 48 == 0:
+            print(
+                f"completion-to-fit binding role={cell['entry']['role']} contexts={index}/{len(cell['ids'])}",
+                flush=True,
+            )
+    return proof
+
+
+def read_completion_cohort(entry, cells, config_path, selection_path):
+    """Bind the outcome-blind completed-rollout ledger to these exact main producers."""
+    root = Path(entry["root"])
+    receipt = Path(entry["upload_receipt"])
+    verify = _upload_binding(root, receipt)
+    marker_path, report_path = root / "cohort_complete.json", root / "completion_cohort.json"
+    marker_sha, report_sha = verify(marker_path), verify(report_path)
+    marker, report = json.loads(marker_path.read_text()), json.loads(report_path.read_text())
+    config = load_workspace_jr_config(config_path)
+    if (
+        marker["status"] != "complete"
+        or marker["report_sha256"] != report_sha
+        or report["schema"] != "workspace-jr-complete-test-cohort-v1"
+        or report["status"] != "complete"
+        or report["config_sha256"] != file_sha256(config_path)
+        or report["selection_sha256"] != file_sha256(selection_path)
+    ):
+        raise ValueError("Completion ledger is incomplete or differs from frozen inputs")
+    if report["implementation_sha256"] != scoring_implementation():
+        raise ValueError(
+            "Completion ledger uses a different eligibility implementation or declaration"
+        )
+    for role in ("primary", "comparison"):
+        identity = run_identity(config_path, selection_path, role)
+        validate_producer(report["analysis_identity"][role], identity, native_ancestor=True)
+        policy, checkpoint = checkpoint_policy(config, role)
+        if (
+            report["by_role"][role]["terminal_policy"] != policy
+            or report["by_role"][role]["checkpoint"] != checkpoint
+        ):
+            raise ValueError("Completion ledger uses different checkpoint terminal defaults")
+    joint = joint_completion_cohort(report["by_role"])
+    if any(report[key] != value for key, value in joint.items()):
+        raise ValueError("Completion cohort differs from its per-model eligibility ledger")
+    execution = json.loads(
+        Path("docs/exploratory_workspace_jr/main_execution_primary_20260912.json").read_text()
+    )
+    planned = json.loads(selection_path.read_text())["subsets"]["main_test"][
+        : execution["main_counts"]["test"]
+    ]
+    if joint["planned_context_ids"] != [row["prompt_sha256"] for row in planned]:
+        raise ValueError("Completion ledger changed the frozen main test prefix")
+    for cell in cells.values():
+        if (
+            cell["entry"]["kind"] == "observed"
+            and cell["manifest"]["identity"]
+            != report["by_role"][cell["entry"]["role"]]["producer_identity"]
+        ):
+            raise ValueError("Completion ledger and observed fit have different producers")
+    fitted_bindings = {}
+    for role in ("primary", "comparison"):
+        native = cells.get(cell_key(role, "observed", 10, None))
+        if native is None:
+            raise ValueError("Completion scoring requires both native observed k10 fit sources")
+        fitted_bindings[role] = bind_fitted_generation_sources(
+            native, report["by_role"][role], config["generation"]["seeds"]
+        )
+    return report, {
+        "report_sha256": report_sha,
+        "marker_sha256": marker_sha,
+        "upload_receipt_sha256": file_sha256(receipt),
+        "upload": json.loads(receipt.read_text()),
+        "fitted_generation_bindings": fitted_bindings,
+    }
+
+
 def checkpoint_bootstrap(folder, cell, common, config, *, resume):
     """Resume only fully published, byte-bound cell statistics for the same cohort."""
     contract = {
@@ -428,8 +538,17 @@ def run_comparison(args):
     if missing_cells and not args.allow_incomplete:
         raise ValueError(f"Required main comparison grid incomplete: {missing_cells}")
     bind_source_families(cells)
+    completion, completion_proof = read_completion_cohort(
+        manifest["completion_cohort"], cells, args.config, args.selection
+    )
+    primary_ids, primary_cohort = paired_cohort(
+        {key: cell["ids"] for key, cell in cells.items()},
+        eligible_ids=completion["joint_complete_context_ids"],
+    )
     args.out.mkdir(parents=True, exist_ok=args.resume)
     save_json(args.out / "input_manifest.json", manifest)
+    save_json(args.out / "completion_cohort.json", completion)
+    save_json(args.out / "primary_scoring_cohort.json", primary_cohort)
     save_json(
         args.out / "coverage.json",
         {
@@ -446,7 +565,11 @@ def run_comparison(args):
             scopes[role] = selected
     if set(scopes) == set(identities):
         scopes["cross_model"] = cells
-    all_proofs = {"cells": {key: value["proof"] for key, value in cells.items()}, "quality": {}}
+    all_proofs = {
+        "cells": {key: value["proof"] for key, value in cells.items()},
+        "quality": {},
+        "completion_cohort": completion_proof,
+    }
     quality, quality_exports = {}, {}
     for entry in manifest.get("quality_matches", []):
         role = entry["role"]
@@ -477,7 +600,9 @@ def run_comparison(args):
     settings = config["statistics"]["bootstrap"]
     summaries = {}
     for scope, selected in scopes.items():
-        common, cohort = paired_cohort({key: cell["ids"] for key, cell in selected.items()})
+        common, cohort = paired_cohort(
+            {key: cell["ids"] for key, cell in selected.items()}, eligible_ids=primary_ids
+        )
         folder = args.out / scope
         save_json(folder / "cohort.json", cohort)
         bootstraps = {}
@@ -515,6 +640,8 @@ def run_comparison(args):
             "rotation_variation": rotation_variation(contrast_summary),
             "context_ids": common,
             "conditional_on_fitted_predictors": True,
+            "scoring_cohort": "joint_two_model_final_complete_K5_test_contexts_across_all_cells",
+            "completion_conditioned_population": True,
             "affine_null_interpretation": "diagnostic difference, not a causal correction",
             "smallest_practical_gap": config["statistics"]["smallest_practical_gap"],
             "calibration_matching": quality_ledger,

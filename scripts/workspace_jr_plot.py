@@ -59,7 +59,16 @@ class Sources:
             or set(self.complete["scopes"]) != {*MODELS, "cross_model"}
         ):
             raise ValueError("Main figures require the complete two-model, 48-cell comparison")
-        self.read("source_proof.json")
+        proof = self.read("source_proof.json")
+        completion = self.read("completion_cohort.json")
+        primary = self.read("primary_scoring_cohort.json")
+        if (
+            self.hashes["completion_cohort.json"] != proof["completion_cohort"]["report_sha256"]
+            or completion["status"] != "complete"
+            or not set(primary["common_context_ids"])
+            <= set(completion["joint_complete_context_ids"])
+        ):
+            raise ValueError("Primary scoring cohort differs from verified completed rollouts")
         self.read("input_manifest.json")
         if self.hashes["input_manifest.json"] != self.complete["input_manifest_sha256"]:
             raise ValueError("Completed comparison input manifest changed")
@@ -71,6 +80,8 @@ class Sources:
                 raise ValueError("Completed paired comparison changed")
             if len(self.reports[scope]["context_ids"]) != record["contexts"]:
                 raise ValueError("Reported cohort count changed")
+            if self.reports[scope]["context_ids"] != primary["common_context_ids"]:
+                raise ValueError("Main panels must use the same joint complete-test cohort")
 
     def read(self, relative):
         path = self.root / relative
@@ -153,6 +164,7 @@ def predictor_legend(fig):
 
 
 def export(fig, out, stem, caption, records, source):
+    caption += " All primary panels condition on five nonempty final completed rollouts in both models; no excluded prompt is replaced."
     result = save_c2a_figure(
         fig,
         out / stem,

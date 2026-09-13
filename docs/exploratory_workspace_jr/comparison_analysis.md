@@ -16,9 +16,26 @@ readiness, dictionaries, and all-split context-input/full-target fingerprints.
 Every null must trace to the included native k10 full-answer ridge fit,
 including its coefficients, input proof, dictionary and split membership.
 
-Within-model analyses use that model's explicitly reported common context
-cohort. Cross-model analyses use the common cohort across both models and
-report excluded IDs. Each target receives its own resampled variance
+The mandatory `completion_cohort` manifest entry supplies `root` and
+`upload_receipt` for the outcome-blind final-generation ledger produced by
+`scripts/workspace_jr_completion_cohort.py`. Its two-role input manifest gives
+each raw generation root, its final upload receipt and a successful
+`terminal_relative`. The ledger resolves the pinned checkpoint's terminal
+defaults without loading model weights. It retains every seed's completion
+status and exclusion reason, including unresolved length caps below the 2%
+regeneration threshold. See `completion_scoring_20260913.md` for the pre-outcome
+declaration and the retained training/validation scope.
+
+Every within-model and cross-model primary analysis uses the same joint
+complete-test cohort across both models and all 48 fit cells. The consumer
+binds the ledger's implementation, declaration and model defaults, then verifies
+that native k10 fitted component files reference its exact final raw-generation
+hashes and recomputes eligibility from those raw records. Staging therefore
+also needs the native k10 test component files and their final generation JSONs
+for both models. Identical producer configuration alone cannot establish that
+the sampled answers are identical. Original all-captured fit summaries remain
+descriptive; excluded IDs and the completion-conditioned population are explicit.
+Each target receives its own resampled variance
 denominator. A single set of 2,000 context bootstrap draws is shared across
 lenses, targets, predictors, controls and models within a reported scope.
 These intervals are conditional on fitted predictors; they do not bootstrap
