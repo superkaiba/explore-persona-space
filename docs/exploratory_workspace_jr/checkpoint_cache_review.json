@@ -1,0 +1,97 @@
+{
+  "schema": "workspace-jr-checkpoint-cache-independent-review-v1",
+  "reviewed_at_utc": "2026-09-13T12:09:26.514822+00:00",
+  "reviewer": "/root/native_lens_review",
+  "decision": "approved_code_review_only_actual_reuse_not_approved",
+  "scope": "Optional atomic file-only checkpoint publisher, strict cache semantic validation, first-frozen-training-context parity verifier, complete future validation/test adoption driver, and two concrete reference parity plans.",
+  "actual_gpu_parity_performed": false,
+  "actual_foreign_computation_or_adoption_performed": false,
+  "main_predictability_outcomes_read": false,
+  "tracked_files_modified_by_reviewer": false,
+  "reviewed_files_sha256": {
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/src/explore_persona_space/analysis/workspace_checkpoint_cache.py": "12ba20e565fead77c485e682b767caa749e1bbd1deb4840796f2a53e783f96ee",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/scripts/workspace_jr_checkpoint_parity.py": "ec23435eb02a80ed4e337054e8259962a20b4ad118466ba432e7f97772fc8a04",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/scripts/workspace_jr_adopt_checkpoints.py": "ba23dc1f8c18e3d86cb5f92ae10c499d3cef4d45e6529ad4f7f54ee1752f9134",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/tests/test_workspace_checkpoint_cache.py": "ed9309719187b8b71554c437fd45c88bde9b8a704d4a03039356516a603256ef",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/tests/test_workspace_checkpoint_parity_cli.py": "65d0834b012d741a0e2232a93f0a351797dc91755b7919cea761dbf0565d424e"
+  },
+  "frozen_numerical_producer_sha": "244f89eb8347361484413e803565f1e639255a8c",
+  "verified_unchanged_numerical_sources": {
+    "src/explore_persona_space/analysis/workspace_decomposition.py": "7af9d0bed62e7f13c06de9dfe6ba6c890923e1cbee104742afd78d8afe2b0f63",
+    "src/explore_persona_space/analysis/workspace_lenses.py": "4cac48973e29d6d7eaeebb189cd738365d4b71c0f28c687685d975a08d3b7349",
+    "src/explore_persona_space/analysis/workspace_artifacts.py": "d72347ccf3ce91b5d2515b92f90647eb9e0d437e7a66f819de8f183b88a4a5b0",
+    "src/explore_persona_space/analysis/workspace_runtime.py": "eeac05492024fd64763940e5279d5fbbae2907a05d8ea2d5dcc0ca53f2766733"
+  },
+  "reference_plans": [
+    {
+      "file": "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/comparison_checkpoint_parity_rotation20260914_v1.json",
+      "sha256": "face0944b80cf711215674dc8b7832bd59f931f84b9362f1ca2b369dc6f3b275",
+      "reference_revision": "245f6c801da6fcf62ec874f9d1d39483e57bcdba",
+      "files": 9,
+      "bytes": 5146044120,
+      "first_frozen_training_context": "77ccbceb4a7c44f7ff2b8993336e579771b522ccade47e46b84cfbfad3364c84"
+    },
+    {
+      "file": "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/comparison_checkpoint_parity_rotation20260915_v1.json",
+      "sha256": "b487d3333e5a9648bef6d2cd1b7ab647a76d907f463d3c03c3b7a43469c9d3b8",
+      "reference_revision": "5ab538b54a8027b70fa2f458497236a7d88e4682",
+      "files": 9,
+      "bytes": 5146044120,
+      "first_frozen_training_context": "77ccbceb4a7c44f7ff2b8993336e579771b522ccade47e46b84cfbfad3364c84"
+    }
+  ],
+  "verification": {
+    "tests": {
+      "result": "25 passed in 7.68s",
+      "command": "PYTHONPATH=src OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 uv run --no-sync pytest -q tests/test_workspace_checkpoint_cache.py tests/test_workspace_checkpoint_parity_cli.py /mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/checkpoint_cache_independent_review/test_adoption_review.py",
+      "composition": "13 repository core/race tests, four independent real CPU parity CLI tests integrated by parent, eight independent real adopter reader/publisher tests"
+    },
+    "ruff": "All checks passed for the five reviewed implementation/test files.",
+    "actual_cli_fixture": "Real small FP32 dictionaries, actual Haar rotation and nested decomposition at k=5/10/25, five unequal rollout lengths, exact canonical inputs, real checksum staging and receipt readers. Only CUDA/GCP and immutable Hub leaf access are synthetic seams. This is numerical/contract code coverage, not actual native GPU validation.",
+    "adoption_tests": [
+      "verify-only leaves recipient untouched; subsequent publication adds six tensor files and prior lineage only",
+      "completed publication refuses rerun and preserves every recipient byte",
+      "changed worker proof rejected before recipient writes",
+      "failed terminal of the second split rejected before recipient writes",
+      "parity dictionary reference different from original queued input rejected before recipient writes",
+      "inconsistent parity staging required-files map rejected before recipient writes",
+      "dirty verifier code provenance rejected before recipient writes",
+      "changed component bytes rejected before recipient writes",
+      "changed original queued plan rejected before recipient writes"
+    ],
+    "hub_metadata": "Independently checked all 18 planned reference files against the two immutable Hub revisions: LFS SHA256 directly; ordinary Git files by opaque bytes, SHA256, size and Git blob identity. Receipt serialization hashes also matched. No large tensors downloaded locally."
+  },
+  "closed_findings": [
+    "Parity execution/replay/complete evidence is checked for immutability before plan/staging writes; staging resume requires exact original plan bytes.",
+    "Computed replay tensors persist before numerical comparisons; numerical failures retain explicit report and replay evidence and produce no success marker.",
+    "Parity required-files map is bound to the exact pinned reference plan/upload, replay checksum and first frozen training context.",
+    "Verifier has separate clean full-SHA tracked-script provenance, frozen config/selection/role/runtime, exact verifier/helper bytes and unchanged numerical-source proof.",
+    "Parity dictionary file hashes must match every original queued input ledger before source checkpoint validation.",
+    "Foreign uploaded execution provenance must match parity report hash, GCP instance/physical GPU/runtime fingerprint, producer244 and rotation."
+  ],
+  "invariants": [
+    "Only complete immutable .pt checkpoints may be published using same-filesystem os.link with no overwrite. No coverage, producer-operation or producer-terminal files are copied.",
+    "Every foreign source checkpoint is staged and validated before active-root lineage or component publication; validation binds exact producer, readiness, captures, generation hashes, canonical x, seeds, lengths, full rollout means, pooled means, reconstruction/noise identities and token statistic contracts.",
+    "The original producer remains the sole writer of coverage and terminal state. Existing destination files are preserved and semantically validated. The original may subsequently atomically replace a published cache with its valid result.",
+    "Hash plus deserialize use one open inode. Publication event hashes record an observation, not a promise about the path after a later original-producer replacement.",
+    "Lineage is atomically published before any optional tensor file. Partial publication is recoverable without replacing existing files; final original coverage records its observed actual bytes."
+  ],
+  "remaining_required_before_actual_reuse": [
+    "Review concrete foreign precompute launcher and complete-split adoption plans, including clean verifier commit and exact immutable244/v4 invocation, unique source root/prefix, original plan bytes and success terminal paths.",
+    "Run and durably upload exact zero-tolerance all-k parity on the actual one-physical-A10080 worker before foreign computation. Numerical replay failure forbids reuse.",
+    "Future launcher must create execution provenance from a fresh fingerprint on that same worker/runtime, bound to the uploaded passed parity report, before unchanged producer244/v4 execution. Do not derive a current worker claim by merely copying the parity fingerprint.",
+    "Require verified complete foreign validation/test uploads and run full driver verify-only before any active-root publication; bind the concrete resulting source receipt and plan hashes.",
+    "Check actual disk headroom and same-filesystem atomic hardlink feasibility, immutable capture/dictionary/readiness closure and absence of active-prefix collision; retain primary null scheduling priority.",
+    "Keep original queue, plans, numerical source, coverage and terminal ownership unchanged; preserve partial failures and fully verify required uploads before deleting artifacts or releasing resources."
+  ],
+  "limitations": [
+    "Current proof covers code and immutable reference metadata only. No actual foreign split, worker parity output or adoption plan exists in this reviewed bundle.",
+    "A first-context exact parity check is a numerical compatibility gate for the same pinned code, inputs, runtime and worker. It is not a mathematical proof of equality for arbitrary other contexts.",
+    "Worker fingerprint physical GPU ordinal0 matches the intended one-physical-GPU VM domain; this review does not authorize remapped multi-GPU/MIG execution."
+  ],
+  "remaining_code_blockers": [],
+  "evidence_sha256": {
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/checkpoint_cache_independent_review/test_adoption_review.py": "b5cfd4423c815ad9cc8080e2ccb80f2fcc5b18de558643a13f37f13e53d12315",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/checkpoint_cache_independent_review/parity_plan_metadata.json": "31b712773c5350a2be2684344f71f5f2c5f1d0d39d21bd4d76bbe14c5918f7e2"
+  }
+}

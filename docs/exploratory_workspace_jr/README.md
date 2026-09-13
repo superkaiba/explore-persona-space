@@ -9,6 +9,8 @@ no main predictability conclusion is available yet.
 
 The [main execution handoffs](execution_handoffs_20260913.md) record the
 verified stage sequences and recovery obligations for the six active workers.
+The optional [checkpoint reuse procedure](checkpoint_reuse.md) describes the
+validation required before precomputed future splits can enter an original run.
 
 The frozen [analysis plan](analysis_plan.md),
 [configuration](../../configs/analysis/workspace_jr.yaml),
