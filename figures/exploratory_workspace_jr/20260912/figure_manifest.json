@@ -1,0 +1,262 @@
+{
+  "status": "complete",
+  "figures": {
+    "component_r2": {
+      "label": "Component R\u00b2",
+      "source": "main_comparison_figures_v1",
+      "meta_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/component_r2.meta.json",
+      "files": {
+        "pdf": {
+          "sha256": "6eb21c0d30790659bcf117d2eec8e04286945671cad8bf133956b654aae00bc9",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/component_r2.pdf",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/component_r2.pdf"
+        },
+        "png": {
+          "sha256": "d32e1750641e5a3988934051ac6138a2fbfce9d0d0573064ca990b7067912c5f",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/component_r2.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/component_r2.png"
+        },
+        "grayscale": {
+          "sha256": "616e64c0a079a30a1f71e195a05dcd4d26e8feef6b508e90d09c910da3bb614c",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/component_r2_grayscale.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/component_r2_grayscale.png"
+        }
+      }
+    },
+    "gap_controls": {
+      "label": "Gaps and decomposition controls",
+      "source": "main_comparison_figures_v1",
+      "meta_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/gap_controls.meta.json",
+      "files": {
+        "pdf": {
+          "sha256": "52ea242b78296601ed850f65ef61b0ba38b637f03e8b6271846f549958a3137c",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/gap_controls.pdf",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/gap_controls.pdf"
+        },
+        "png": {
+          "sha256": "1e7e72d407616003c56ba1537361fdc1d254251a73df4a1dd48a22599db96320",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/gap_controls.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/gap_controls.png"
+        },
+        "grayscale": {
+          "sha256": "c437246fdbe796a09d9dba6a0c4dd2a5ff25bac8b419dc0305b44faef5e24354",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/gap_controls_grayscale.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/gap_controls_grayscale.png"
+        }
+      }
+    },
+    "mlp_gains": {
+      "label": "MLP gains",
+      "source": "main_comparison_figures_v1",
+      "meta_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/mlp_gains.meta.json",
+      "files": {
+        "pdf": {
+          "sha256": "60dd9b5d4b36a985c2fdd1b68d5882cfc98e30f3ee5405dfdc8d8a9d7e60f9a1",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/mlp_gains.pdf",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/mlp_gains.pdf"
+        },
+        "png": {
+          "sha256": "21587547660d86090ca5063625c5b48b7c73efb40e4114f7cf2af4469e862547",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/mlp_gains.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/mlp_gains.png"
+        },
+        "grayscale": {
+          "sha256": "815a747ee55cf5851617b04a61d310aca4eac6a6490fa35843e45c7b9ef9b6ff",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/mlp_gains_grayscale.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/mlp_gains_grayscale.png"
+        }
+      }
+    },
+    "cross_model_gaps": {
+      "label": "Stronger/weaker comparison",
+      "source": "main_comparison_figures_v1",
+      "meta_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/cross_model_gaps.meta.json",
+      "files": {
+        "pdf": {
+          "sha256": "fae1090e7f583992f9491df04c64f18688301fa246572a5242efc1930681f170",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/cross_model_gaps.pdf",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/cross_model_gaps.pdf"
+        },
+        "png": {
+          "sha256": "133e367327ef9433781b216f575051f64575638737a6f1d582ba70edbf5f9657",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/cross_model_gaps.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/cross_model_gaps.png"
+        },
+        "grayscale": {
+          "sha256": "6cf078b5fe4ba8adde8f12983b8546f386852dae9c6ad8cee92c24a4bb2df91c",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/cross_model_gaps_grayscale.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/cross_model_gaps_grayscale.png"
+        }
+      }
+    },
+    "sparsity_gaps": {
+      "label": "Sparsity sensitivity",
+      "source": "main_comparison_figures_v1",
+      "meta_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/sparsity_gaps.meta.json",
+      "files": {
+        "pdf": {
+          "sha256": "a8f80c698458c862937815a02a0cb09206071461c0955ce0bc67dceb8341ac54",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/sparsity_gaps.pdf",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/sparsity_gaps.pdf"
+        },
+        "png": {
+          "sha256": "012be5d65c9a21aed8cd87c776602c444e293a79adc9961e05750e39f15ec778",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/sparsity_gaps.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/sparsity_gaps.png"
+        },
+        "grayscale": {
+          "sha256": "96f70cc8c0b23c0f2c070c5297a18b657aac4b31c622e10cab982c86de7bfd4a",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/553668e7e2f6002e619027779140e50e613cc3e9/exploratory_workspace_jr/20260912/main_comparison_figures_v1/sparsity_gaps_grayscale.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/sparsity_gaps_grayscale.png"
+        }
+      }
+    },
+    "learning_comparison": {
+      "label": "4B learning curves",
+      "source": "main_supplement_figures_v3",
+      "meta_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/learning_comparison.meta.json",
+      "files": {
+        "pdf": {
+          "sha256": "130128146e0b11725b02d14cb8fa6177716db1dd049dc576770cea924152fd64",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/learning_comparison.pdf",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/learning_comparison.pdf"
+        },
+        "png": {
+          "sha256": "c1c2c928ca3d2a22eab6e35f741b3b6260c8b1249a183b1442b7fa3c30548fc1",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/learning_comparison.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/learning_comparison.png"
+        },
+        "grayscale": {
+          "sha256": "8873d384c16acc84d21ec7304ba7fb1b8f76c876c6f9d07827199a2d817ca7af",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/learning_comparison_grayscale.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/learning_comparison_grayscale.png"
+        }
+      }
+    },
+    "learning_primary": {
+      "label": "27B learning curves",
+      "source": "main_supplement_figures_v3",
+      "meta_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/learning_primary.meta.json",
+      "files": {
+        "pdf": {
+          "sha256": "cbc6ea536e0373bce38523ed76bc35fee96b3d306e2f13f2db25a2cf4d555b6e",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/learning_primary.pdf",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/learning_primary.pdf"
+        },
+        "png": {
+          "sha256": "59defe2276cd9bb6e46a145a5b2f32d7e0770eb230ee1a29cc3110d597b80ce2",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/learning_primary.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/learning_primary.png"
+        },
+        "grayscale": {
+          "sha256": "978679b809bc44334bfc27ecfcb6432a585c6aae44cd949cefe02edafa907e48",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/learning_primary_grayscale.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/learning_primary_grayscale.png"
+        }
+      }
+    },
+    "readout_variance": {
+      "label": "Readout predictability and variance",
+      "source": "main_supplement_figures_v3",
+      "meta_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/readout_variance.meta.json",
+      "files": {
+        "pdf": {
+          "sha256": "5e2095c74563ca314663034917480e74c1592d8b87a6a826bb2d09943796bd3e",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/readout_variance.pdf",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/readout_variance.pdf"
+        },
+        "png": {
+          "sha256": "eca6ee51a00cd0b2111ddce2877e62c40ebbc718e0020a7cf4fec47bff19acfa",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/readout_variance.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/readout_variance.png"
+        },
+        "grayscale": {
+          "sha256": "337edff63e07301abba2e7288a6257ceab2fcab82f44016820d47f3e4384cd9a",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/readout_variance_grayscale.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/readout_variance_grayscale.png"
+        }
+      }
+    },
+    "sampling_noise": {
+      "label": "Rollout sampling noise",
+      "source": "main_supplement_figures_v3",
+      "meta_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/sampling_noise.meta.json",
+      "files": {
+        "pdf": {
+          "sha256": "99c2400ddc10384a64d411ee53b2f2d066ac2f4f5fac4cac60407965808f0521",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/sampling_noise.pdf",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/sampling_noise.pdf"
+        },
+        "png": {
+          "sha256": "e6daeb6ef142645db2646ae5849b1a2adc1b6aa88f32eee4d1bebcb23b2d2d8f",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/sampling_noise.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/sampling_noise.png"
+        },
+        "grayscale": {
+          "sha256": "9fec194dfcec9219f5611cd3621f035cf632897ce483422981c367108338ccc9",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/sampling_noise_grayscale.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/sampling_noise_grayscale.png"
+        }
+      }
+    },
+    "decomposition_agreement": {
+      "label": "J/R decomposition agreement",
+      "source": "main_supplement_figures_v3",
+      "meta_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/decomposition_agreement.meta.json",
+      "files": {
+        "pdf": {
+          "sha256": "09f762a64f4a42c016fdc6ed52e6168786b5c72ff6bc8c12d9a49963f2adcb77",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/decomposition_agreement.pdf",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/decomposition_agreement.pdf"
+        },
+        "png": {
+          "sha256": "52dd004f025e83822ecbc98490ab7ad566eb3d03bdb041ecdadb0e2cd636b05f",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/decomposition_agreement.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/decomposition_agreement.png"
+        },
+        "grayscale": {
+          "sha256": "4c44dd782a69917503b6261f9ff4d376c25772b3f70ac1ee7b60f96dbad2a7cc",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/decomposition_agreement_grayscale.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/decomposition_agreement_grayscale.png"
+        }
+      }
+    },
+    "readout_distributions": {
+      "label": "Readout distributions",
+      "source": "main_supplement_figures_v3",
+      "meta_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/readout_distributions.meta.json",
+      "files": {
+        "pdf": {
+          "sha256": "571705a2e4b6a2b8f4abc3782d0b770ab7436ba109ffe1af9c1467d61a553a79",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/readout_distributions.pdf",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/readout_distributions.pdf"
+        },
+        "png": {
+          "sha256": "e7a412b8290d0e471734cae245f071fe8f9a4298e9c462b6353e0a49a206d610",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/readout_distributions.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/readout_distributions.png"
+        },
+        "grayscale": {
+          "sha256": "e0c1fa72217ccc4be78e1e09f385b5603e26802834c19b784e54eb2c41c917d9",
+          "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/66b15a7686f05a91be371edade966f5804b634c2/exploratory_workspace_jr/20260912/main_supplement_figures_v3/readout_distributions_grayscale.png",
+          "repository_path": "figures/exploratory_workspace_jr/20260912/readout_distributions_grayscale.png"
+        }
+      }
+    }
+  },
+  "sources": {
+    "main_comparison_figures_v1": {
+      "revision": "553668e7e2f6002e619027779140e50e613cc3e9",
+      "prefix": "exploratory_workspace_jr/20260912/main_comparison_figures_v1",
+      "receipt_sha256": "365e837854455a60db05a39d8f31f9af652beb78a99c68969f55dfda5eebc003",
+      "files_verified": 26
+    },
+    "main_supplement_figures_v3": {
+      "revision": "66b15a7686f05a91be371edade966f5804b634c2",
+      "prefix": "exploratory_workspace_jr/20260912/main_supplement_figures_v3",
+      "receipt_sha256": "9250caeaac40c58ba45248b8c5b8fd335dbffbf3067a05c9d4617107449adc25",
+      "files_verified": 31
+    }
+  },
+  "browser_check": "33 unauthenticated HEAD requests returned200"
+}

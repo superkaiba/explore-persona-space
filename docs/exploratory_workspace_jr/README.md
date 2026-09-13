@@ -1,15 +1,18 @@
 # Exploratory J/R context-to-answer experiment
 
-The experiment is running. Both models have completed native lens calibration,
-validated end-to-end pilots and main generation/capture. Native k=10 fits and
-diagnostics have completed for both models. All 27B observed fits, all eight
-model/dictionary affine-null orientations, all 4B observed fits, their component
-statistics and both models' learning curves have completed and been uploaded.
-All sources are available on the reporting worker, and the assembled registry
-contains the full 48-cell comparison and 24 observed-statistics sources.
-The full paired analysis and
-final scientific report remain outstanding;
-no main predictability conclusion is available yet.
+The full two-model scientific analysis is complete: 48 observed/null × dictionary
+orientation × sparsity cells, both lenses, ridge and three MLP seeds, all component
+statistics and both learning curves. Every primary comparison uses the same 252
+jointly completed test contexts out of 256 selected.
+
+The [final report](final_report.md) finds no robust workspace-specific
+predictability deficit. Native k=10 gaps are small and positive for Qwen3.5-27B
+(J=0.042, R=0.051), whereas Qwen3.5-4B has a negative J gap (−0.037) and an
+unresolved R gap (0.010). Larger gaps under rotated dictionaries and exactly
+affine targets, and sensitivity to sparsity, oppose a general interpretation.
+The [machine-readable results](../../eval_results/exploratory_workspace_jr/20260912/run_result.json)
+include all cells, confidence intervals, component statistics and immutable
+artifact references.
 
 The [main execution handoffs](execution_handoffs_20260913.md) record the
 verified stage sequences and recovery obligations for the six experiment workers.
@@ -62,13 +65,13 @@ raw-data and upload audit.
 The [two-model sampling-noise decision](main_noise_both_models_20260913.md)
 is independently verified on the shared completed cohort. None of the five
 targets in either model triggers the registered higher-K follow-up. This
-settles the conditional execution decision; the remaining control and
-predictability analyses remain necessary.
+settles the conditional execution decision; the completed control and
+predictability analyses are interpreted together in the final report.
 
 The [actual native affine-null audit](main_native_null_validation_20260913.md)
 independently verifies both models' original context inputs, affine coefficients,
 rollout layouts and reconstructed targets. This validates those controls;
-their predictability gaps still require the complete paired analysis.
+the final paired analysis finds that they produce larger gaps than the observed native targets.
 
 ## Primary scoring population
 
@@ -86,17 +89,20 @@ excluded contexts are not replaced. A local audit attempt correctly refused a
 runtime-version mismatch; the unchanged audit succeeded in the matching worker
 runtime.
 
-## Remaining execution and analysis
+## Completed analysis
 
-All observed dictionary-orientation × sparsity fits and their token statistics
-are complete. Both models' registered noise criteria were negative,
-so the higher-K follow-up on its [fixed subset](higher_k_selection.md) was not
-triggered. Then execute
-the [paired final comparison](comparison_analysis.md),
-[supplementary cohort analysis](supplementary_analysis.md),
-[decomposition statistics summary](decomposition_summary.md), saved figure exports
-and the concise final report. Intermediate all-captured fit scores are not the
-primary completion-conditioned estimates.
+All observed dictionary-orientation × sparsity fits and token statistics,
+[paired comparisons](comparison_analysis.md),
+[supplementary cohort measurements](supplementary_analysis.md),
+[decomposition statistics](decomposition_summary.md) and figure exports are
+complete. Both registered sampling-noise criteria were negative, so the
+higher-K follow-up on its [fixed subset](higher_k_selection.md) was not triggered.
+Intermediate all-captured fit summaries are not the primary
+completion-conditioned estimates.
+
+The first supplement's FP32 norm validator was corrected to match the producing
+FP64 readout calculation; [the correction record](supplement_precision_correction_20260913.md)
+preserves the failed attempt, unchanged data/tolerances and actual-input smoke.
 
 The earlier [small synthetic-dictionary null](affine_null_protocol.md) is a
 software and decomposition-artifact check. It does not replace the required

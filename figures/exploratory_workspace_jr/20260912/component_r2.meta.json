@@ -1,0 +1,291 @@
+{
+  "caption": "Native dictionaries, k=10. Points use the model-specific paired test cohort. Intervals are 95% from 2,000 paired context bootstraps, conditional on fitted predictors. Each R\u00b2 uses its target's own variance; MLP is seed 42 with validation-selected recipe. All primary panels condition on five nonempty final completed rollouts in both models; no excluded prompt is replaced.",
+  "plotted_values": {
+    "primary/ridge/full": {
+      "estimate": 0.6659378443427048,
+      "interval": [
+        0.6389945189450281,
+        0.6888180590711376
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "primary/mlp/full": {
+      "estimate": 0.6425552282957112,
+      "interval": [
+        0.6103065825866862,
+        0.670258770876159
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "primary/ridge/J": {
+      "estimate": 0.6137865579746711,
+      "interval": [
+        0.5782484411599151,
+        0.6411612733016562
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "primary/mlp/J": {
+      "estimate": 0.5969844191367099,
+      "interval": [
+        0.558019598912392,
+        0.6276224745351597
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "primary/ridge/restJ": {
+      "estimate": 0.6560784072527126,
+      "interval": [
+        0.6291202735201793,
+        0.6794731782350713
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "primary/mlp/restJ": {
+      "estimate": 0.6319568347504199,
+      "interval": [
+        0.6004255619021639,
+        0.6597797416573977
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "primary/ridge/R": {
+      "estimate": 0.6065636367741953,
+      "interval": [
+        0.5752118714158696,
+        0.6314065630320039
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "primary/mlp/R": {
+      "estimate": 0.5911148811757057,
+      "interval": [
+        0.5556353584572531,
+        0.6197479507775278
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "primary/ridge/restR": {
+      "estimate": 0.657918033553272,
+      "interval": [
+        0.6309142383142516,
+        0.6815421610078634
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "primary/mlp/restR": {
+      "estimate": 0.6363795462610327,
+      "interval": [
+        0.6048654584149293,
+        0.6642561642184552
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "comparison/ridge/full": {
+      "estimate": 0.6034698293567624,
+      "interval": [
+        0.575767701311093,
+        0.627867097452732
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "comparison/mlp/full": {
+      "estimate": 0.5815337726239583,
+      "interval": [
+        0.5484038458076665,
+        0.611396017224554
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "comparison/ridge/J": {
+      "estimate": 0.6156275032631722,
+      "interval": [
+        0.5898708271517235,
+        0.639821320619736
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "comparison/mlp/J": {
+      "estimate": 0.6047327581213501,
+      "interval": [
+        0.5716098484757403,
+        0.6322336352382669
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "comparison/ridge/restJ": {
+      "estimate": 0.5785177574499383,
+      "interval": [
+        0.5501852462613257,
+        0.603730213963381
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "comparison/mlp/restJ": {
+      "estimate": 0.5577772585501831,
+      "interval": [
+        0.5239434056659419,
+        0.5878609963928383
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "comparison/ridge/R": {
+      "estimate": 0.5753068666465784,
+      "interval": [
+        0.5412436269519193,
+        0.6063044978639904
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "comparison/mlp/R": {
+      "estimate": 0.559451605752225,
+      "interval": [
+        0.5194853989267078,
+        0.5948977059857405
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "comparison/ridge/restR": {
+      "estimate": 0.5848468444909593,
+      "interval": [
+        0.5564139413442107,
+        0.60963315208431
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "comparison/mlp/restR": {
+      "estimate": 0.564226807244798,
+      "interval": [
+        0.5305930040187068,
+        0.5944142822389649
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    }
+  },
+  "source_sha256": {
+    "comparison_complete.json": "248768950b40c05603704c7f995929bd7807f54677a5ed51e36347e3bb695047",
+    "coverage.json": "46ac905680425247625662214ec89b3b3cdf5210249117c03bf0781acfb117b4",
+    "source_proof.json": "79ca61af60bc63822f3da2c1043c945fd2556c451038546b662bd2912b14306a",
+    "completion_cohort.json": "37429cacef202da83235d8783c5530c941f399169285b05007e7dfd8213061f9",
+    "primary_scoring_cohort.json": "752e5057832159ff0434e0e14c09ccf13582b7d07bcd811ac75cf5f6887d027f",
+    "input_manifest.json": "a31d5548fd97b54cd8746c76369a23d4e4ad341105a0a08bb57c3063468b73bb",
+    "primary/comparisons.json": "e97f762fd1ce7f1fca79ab180b013575b522c23cbd8119f289ae199cc1c2a51f",
+    "comparison/comparisons.json": "4b552e5770242bcaa3f9faa78d2aaef87d0af27ab189e5c6ab26e10f2c778d3b",
+    "cross_model/comparisons.json": "abf05ce55ebe694472a51d660297d899a28d9e9328c454adc09ceda8c8133bbb",
+    "primary/primary__observed__k10__rotationNone/cell_complete.json": "a0ced7c3e2e9729d71b0315a64568b22599b2efc66ed75aa1fd15bd5375b4895",
+    "primary/primary__observed__k10__rotationNone/summary.json": "8abbda7ab9a54b7fcefbc8474d8c881b9a8b186e8de5aef880d7018bb0aa4a14",
+    "comparison/comparison__observed__k10__rotationNone/cell_complete.json": "1a50af7870294581fdb070f9d7f5b34b0670ac1dde924fb00cc17889ce436339",
+    "comparison/comparison__observed__k10__rotationNone/summary.json": "ef4aac7ec869f469299032f7fefd38618a22af5d0cdf4e64cb22c32bf60b858f"
+  },
+  "script_sha256": "f9ef470acd81b772746b83503d59a3425f8cfed4212c825132eb5c3b16559e6e",
+  "renderer": "scripts/workspace_jr_plot.py",
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "DejaVu Sans",
+    "authoring_size_inches": [
+      13.095,
+      5.631
+    ],
+    "exported_size_inches": [
+      13.095,
+      5.159
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/component_r2.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  \u00b7  QWEN3.5-27B \u00b7 N=252 \u00b7 K=10",
+      "Held-out R\u00b2 \u2191",
+      "\u22120.2",
+      "0.0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "Full answer",
+      "J component",
+      "J remainder",
+      "R component",
+      "R remainder",
+      "Component predictability",
+      "B  \u00b7  QWEN3.5-4B \u00b7 N=252 \u00b7 K=10",
+      "PREDICTOR",
+      "Ridge",
+      "MLP (seed 42)"
+    ]
+  },
+  "output_sha256": {
+    "pdf": "6eb21c0d30790659bcf117d2eec8e04286945671cad8bf133956b654aae00bc9",
+    "png": "d32e1750641e5a3988934051ac6138a2fbfce9d0d0573064ca990b7067912c5f",
+    "grayscale": "616e64c0a079a30a1f71e195a05dcd4d26e8feef6b508e90d09c910da3bb614c"
+  }
+}

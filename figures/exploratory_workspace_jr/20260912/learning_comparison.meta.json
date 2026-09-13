@@ -1,0 +1,395 @@
+{
+  "caption": "Nested training prefixes with unchanged validation-selected MLP recipes; no new hidden-width/learning-rate search at smaller sample sizes. Every point is rescored on the same completed primary test cohort. Bars are paired 95% context-bootstrap intervals; they do not bootstrap training or establish convergence. All primary panels condition on five nonempty final completed rollouts in both models; no excluded prompt is replaced.",
+  "plotted_values": {
+    "full/ridge/n256": {
+      "estimate": 0.4426705988627594,
+      "interval": [
+        0.41305599453195113,
+        0.46720648462898257
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "full/ridge/n512": {
+      "estimate": 0.5303503471176524,
+      "interval": [
+        0.5033526571214192,
+        0.5541212178950017
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "full/ridge/n1024": {
+      "estimate": 0.6034698293567624,
+      "interval": [
+        0.575767701311093,
+        0.627867097452732
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "full/mlp/n256": {
+      "estimate": 0.4056207445374027,
+      "interval": [
+        0.3711498254473656,
+        0.43688192777669627
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "full/mlp/n512": {
+      "estimate": 0.5096829836066487,
+      "interval": [
+        0.47576401423649256,
+        0.5402729992627061
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "full/mlp/n1024": {
+      "estimate": 0.5815337726239583,
+      "interval": [
+        0.5484038458076665,
+        0.611396017224554
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "J/ridge/n256": {
+      "estimate": 0.4596177509632149,
+      "interval": [
+        0.42747544819473615,
+        0.48784810106959386
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "J/ridge/n512": {
+      "estimate": 0.541592037650079,
+      "interval": [
+        0.5121086323714537,
+        0.568852035518788
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "J/ridge/n1024": {
+      "estimate": 0.6156275032631722,
+      "interval": [
+        0.5898708271517235,
+        0.639821320619736
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "J/mlp/n256": {
+      "estimate": 0.42965544881378626,
+      "interval": [
+        0.38970685980250863,
+        0.4646484997941547
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "J/mlp/n512": {
+      "estimate": 0.5329593182780719,
+      "interval": [
+        0.49997473260805153,
+        0.5625876441927412
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "J/mlp/n1024": {
+      "estimate": 0.6047327581213501,
+      "interval": [
+        0.5716098484757403,
+        0.6322336352382669
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restJ/ridge/n256": {
+      "estimate": 0.41637379209440184,
+      "interval": [
+        0.38708028580558423,
+        0.4413168639690402
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restJ/ridge/n512": {
+      "estimate": 0.5046669096918712,
+      "interval": [
+        0.4773762990403799,
+        0.5288963468997568
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restJ/ridge/n1024": {
+      "estimate": 0.5785177574499383,
+      "interval": [
+        0.5501852462613257,
+        0.603730213963381
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restJ/mlp/n256": {
+      "estimate": 0.3811886757835855,
+      "interval": [
+        0.3466474211612287,
+        0.41312506977564933
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restJ/mlp/n512": {
+      "estimate": 0.48483279259528733,
+      "interval": [
+        0.4511451008087657,
+        0.5152990724295249
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restJ/mlp/n1024": {
+      "estimate": 0.5577772585501831,
+      "interval": [
+        0.5239434056659419,
+        0.5878609963928383
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "R/ridge/n256": {
+      "estimate": 0.4234369954676832,
+      "interval": [
+        0.3865354960322086,
+        0.45707800306734225
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "R/ridge/n512": {
+      "estimate": 0.5024346363654186,
+      "interval": [
+        0.4658368579431712,
+        0.5360220251292032
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "R/ridge/n1024": {
+      "estimate": 0.5753068666465784,
+      "interval": [
+        0.5412436269519193,
+        0.6063044978639904
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "R/mlp/n256": {
+      "estimate": 0.3929257922218007,
+      "interval": [
+        0.3486761239027258,
+        0.43433447913771855
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "R/mlp/n512": {
+      "estimate": 0.48887205492042396,
+      "interval": [
+        0.45210335646258987,
+        0.5240135749777136
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "R/mlp/n1024": {
+      "estimate": 0.559451605752225,
+      "interval": [
+        0.5194853989267078,
+        0.5948977059857405
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restR/ridge/n256": {
+      "estimate": 0.42283714822250584,
+      "interval": [
+        0.3934932356433257,
+        0.4478888278893785
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restR/ridge/n512": {
+      "estimate": 0.5111866003141108,
+      "interval": [
+        0.4841098608649693,
+        0.5352783843166984
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restR/ridge/n1024": {
+      "estimate": 0.5848468444909593,
+      "interval": [
+        0.5564139413442107,
+        0.60963315208431
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restR/mlp/n256": {
+      "estimate": 0.38621284508161124,
+      "interval": [
+        0.3514202686131575,
+        0.41775651131303626
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restR/mlp/n512": {
+      "estimate": 0.4916444826053862,
+      "interval": [
+        0.4577344584282176,
+        0.5225676965390752
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restR/mlp/n1024": {
+      "estimate": 0.564226807244798,
+      "interval": [
+        0.5305930040187068,
+        0.5944142822389649
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    }
+  },
+  "source_sha256": {
+    "supplement.json": "4426be491ed7a7d0675884d359288f26eb812355a83f9d901f0b54029ce40616",
+    "supplement_complete.json": "7677ceb1088b164da71c151658758cf1e31310fc0c88c203f927e7796365309a",
+    "input_manifest.json": "14378170cbb2a1de38b607cd45a7fbb4edfcb0744cfa8f27a6607380f02d5dea"
+  },
+  "script_sha256": "d346fdc9172b6b8f5ae5d531308039f8fc4148d9032e66023862310c78577c43",
+  "renderer": "scripts/workspace_jr_plot_supplement.py",
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "DejaVu Sans",
+    "authoring_size_inches": [
+      13.095,
+      8.905
+    ],
+    "exported_size_inches": [
+      13.095,
+      8.168
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/learning_comparison.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  \u00b7  QWEN3.5-4B",
+      "Training contexts",
+      "256",
+      "512",
+      "1024",
+      "Held-out R\u00b2 \u2191",
+      "0.3",
+      "0.4",
+      "0.5",
+      "0.6",
+      "0.7",
+      "Full answer",
+      "B  \u00b7  QWEN3.5-4B",
+      "J component",
+      "C  \u00b7  QWEN3.5-4B",
+      "J remainder",
+      "D  \u00b7  QWEN3.5-4B",
+      "R component",
+      "E  \u00b7  QWEN3.5-4B",
+      "R remainder",
+      "Ridge",
+      "MLP (seed 42)"
+    ]
+  },
+  "output_sha256": {
+    "pdf": "130128146e0b11725b02d14cb8fa6177716db1dd049dc576770cea924152fd64",
+    "png": "c1c2c928ca3d2a22eab6e35f741b3b6260c8b1249a183b1442b7fa3c30548fc1",
+    "grayscale": "8873d384c16acc84d21ec7304ba7fb1b8f76c876c6f9d07827199a2d817ca7af"
+  }
+}

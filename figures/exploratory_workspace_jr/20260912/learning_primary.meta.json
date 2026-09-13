@@ -1,0 +1,396 @@
+{
+  "caption": "Nested training prefixes with unchanged validation-selected MLP recipes; no new hidden-width/learning-rate search at smaller sample sizes. Every point is rescored on the same completed primary test cohort. Bars are paired 95% context-bootstrap intervals; they do not bootstrap training or establish convergence. All primary panels condition on five nonempty final completed rollouts in both models; no excluded prompt is replaced.",
+  "plotted_values": {
+    "full/ridge/n256": {
+      "estimate": 0.4912238466951139,
+      "interval": [
+        0.45614485783749953,
+        0.521894414048116
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "full/ridge/n512": {
+      "estimate": 0.5951677035560854,
+      "interval": [
+        0.5675968789099202,
+        0.6182327621331994
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "full/ridge/n1024": {
+      "estimate": 0.6659378443427048,
+      "interval": [
+        0.6389945189450281,
+        0.6888180590711376
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "full/mlp/n256": {
+      "estimate": 0.45007537488557925,
+      "interval": [
+        0.4111129016621879,
+        0.48592250262734243
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "full/mlp/n512": {
+      "estimate": 0.5625850435266393,
+      "interval": [
+        0.5289819572341594,
+        0.5912941356683722
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "full/mlp/n1024": {
+      "estimate": 0.6425552282957112,
+      "interval": [
+        0.6103065825866862,
+        0.670258770876159
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "J/ridge/n256": {
+      "estimate": 0.4443373656051598,
+      "interval": [
+        0.3985916284724163,
+        0.48283038426881825
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "J/ridge/n512": {
+      "estimate": 0.538445446989479,
+      "interval": [
+        0.5016329800212701,
+        0.5658905662836242
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "J/ridge/n1024": {
+      "estimate": 0.6137865579746711,
+      "interval": [
+        0.5782484411599151,
+        0.6411612733016562
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "J/mlp/n256": {
+      "estimate": 0.4127086005423881,
+      "interval": [
+        0.3604174315236415,
+        0.45775811189603893
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "J/mlp/n512": {
+      "estimate": 0.516107822203355,
+      "interval": [
+        0.4729258956406331,
+        0.5498344517219393
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "J/mlp/n1024": {
+      "estimate": 0.5969844191367099,
+      "interval": [
+        0.558019598912392,
+        0.6276224745351597
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restJ/ridge/n256": {
+      "estimate": 0.4801517806155232,
+      "interval": [
+        0.4460270817114049,
+        0.5125346130550192
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restJ/ridge/n512": {
+      "estimate": 0.585553771055346,
+      "interval": [
+        0.558728345231577,
+        0.6088376434499215
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restJ/ridge/n1024": {
+      "estimate": 0.6560784072527126,
+      "interval": [
+        0.6291202735201793,
+        0.6794731782350713
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restJ/mlp/n256": {
+      "estimate": 0.4418891058329121,
+      "interval": [
+        0.40239775643867864,
+        0.47835568121466215
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restJ/mlp/n512": {
+      "estimate": 0.5548864148999956,
+      "interval": [
+        0.5214561062120068,
+        0.5835388530194919
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restJ/mlp/n1024": {
+      "estimate": 0.6319568347504199,
+      "interval": [
+        0.6004255619021639,
+        0.6597797416573977
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "R/ridge/n256": {
+      "estimate": 0.43892352756878483,
+      "interval": [
+        0.39465286423226975,
+        0.4767566903758973
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "R/ridge/n512": {
+      "estimate": 0.5367813339945278,
+      "interval": [
+        0.502109262904318,
+        0.564858944126358
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "R/ridge/n1024": {
+      "estimate": 0.6065636367741953,
+      "interval": [
+        0.5752118714158696,
+        0.6314065630320039
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "R/mlp/n256": {
+      "estimate": 0.408007782786421,
+      "interval": [
+        0.35671946532984306,
+        0.45260160144796574
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "R/mlp/n512": {
+      "estimate": 0.5144500360310249,
+      "interval": [
+        0.47366084938837305,
+        0.548648826077001
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "R/mlp/n1024": {
+      "estimate": 0.5911148811757057,
+      "interval": [
+        0.5556353584572531,
+        0.6197479507775278
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restR/ridge/n256": {
+      "estimate": 0.4822447863083832,
+      "interval": [
+        0.44794661318664825,
+        0.5143272869663779
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restR/ridge/n512": {
+      "estimate": 0.587454907366045,
+      "interval": [
+        0.5606364324086517,
+        0.6108972387377932
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restR/ridge/n1024": {
+      "estimate": 0.657918033553272,
+      "interval": [
+        0.6309142383142516,
+        0.6815421610078634
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restR/mlp/n256": {
+      "estimate": 0.4432778340181336,
+      "interval": [
+        0.40364151266967796,
+        0.4801301475674437
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restR/mlp/n512": {
+      "estimate": 0.5567957437412812,
+      "interval": [
+        0.5233139788380649,
+        0.5861633453881661
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    },
+    "restR/mlp/n1024": {
+      "estimate": 0.6363795462610327,
+      "interval": [
+        0.6048654584149293,
+        0.6642561642184552
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok"
+    }
+  },
+  "source_sha256": {
+    "supplement.json": "4426be491ed7a7d0675884d359288f26eb812355a83f9d901f0b54029ce40616",
+    "supplement_complete.json": "7677ceb1088b164da71c151658758cf1e31310fc0c88c203f927e7796365309a",
+    "input_manifest.json": "14378170cbb2a1de38b607cd45a7fbb4edfcb0744cfa8f27a6607380f02d5dea"
+  },
+  "script_sha256": "d346fdc9172b6b8f5ae5d531308039f8fc4148d9032e66023862310c78577c43",
+  "renderer": "scripts/workspace_jr_plot_supplement.py",
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "DejaVu Sans",
+    "authoring_size_inches": [
+      13.095,
+      8.905
+    ],
+    "exported_size_inches": [
+      13.095,
+      8.168
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/learning_primary.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  \u00b7  QWEN3.5-27B",
+      "Training contexts",
+      "256",
+      "512",
+      "1024",
+      "Held-out R\u00b2 \u2191",
+      "0.3",
+      "0.4",
+      "0.5",
+      "0.6",
+      "0.7",
+      "0.8",
+      "Full answer",
+      "B  \u00b7  QWEN3.5-27B",
+      "J component",
+      "C  \u00b7  QWEN3.5-27B",
+      "J remainder",
+      "D  \u00b7  QWEN3.5-27B",
+      "R component",
+      "E  \u00b7  QWEN3.5-27B",
+      "R remainder",
+      "Ridge",
+      "MLP (seed 42)"
+    ]
+  },
+  "output_sha256": {
+    "pdf": "cbc6ea536e0373bce38523ed76bc35fee96b3d306e2f13f2db25a2cf4d555b6e",
+    "png": "59defe2276cd9bb6e46a145a5b2f32d7e0770eb230ee1a29cc3110d597b80ce2",
+    "grayscale": "978679b809bc44334bfc27ecfcb6432a585c6aae44cd949cefe02edafa907e48"
+  }
+}

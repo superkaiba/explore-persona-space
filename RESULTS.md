@@ -1,5 +1,7 @@
 # Explore Persona Space: Results
 
+**2026-09-13 — J/R workspace predictability:** The full two-model, 48-cell experiment on 252 paired contexts finds small positive native k=10 gaps in Qwen3.5-27B (J=0.042, R=0.051), versus a negative J gap and unresolved R gap in Qwen3.5-4B (−0.037, 0.010). Larger rotated and exactly affine null gaps, plus sparsity sensitivity, oppose a general workspace-specific predictability deficit. [Report](docs/exploratory_workspace_jr/final_report.md) · [Machine-readable results](eval_results/exploratory_workspace_jr/20260912/run_result.json).
+
 **2026-09-07 — Rollout-count ablation:** With the paper's Qwen2.5-7B-Instruct layer-19 maps frozen, averaging K=1→5 evaluation answers raises held-out R² by 0.052 (linear) and 0.055 (nonlinear). Extending K=5→10 adds 0.0077 and 0.0064, with paired 95% intervals above zero for both. Whitened-cosine/CSLS top-1 on 942 fixed candidates rises 97.35%→97.88% and 97.88%→98.09%; the nonlinear retrieval change remains unresolved (95% CI −0.21 to +0.64 percentage points). Training-target K and K>10 are untested. [Task 1901](https://eps.superkaiba.com/tasks/1901) · [K=1–5 results](eval_results/issue_1901/k_rollout_ablation/README.md) · [K=10 results](eval_results/issue_1901/k10_rollout_ablation/README.md).
 
 **Goals:**

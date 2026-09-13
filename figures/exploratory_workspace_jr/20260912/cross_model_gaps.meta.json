@@ -1,0 +1,297 @@
+{
+  "caption": "All points use the common test-context intersection across both models. Bars are paired 95% context-bootstrap intervals. Lens disagreement is G_R \u2212 G_J. Positive values indicate a larger gap in 27B. Model differences are observational. All primary panels condition on five nonempty final completed rollouts in both models; no excluded prompt is replaced.",
+  "plotted_values": {
+    "cross_model/observed/k10/rotationNone/ridge/G_J_primary_minus_comparison": {
+      "estimate": 0.07940159509127542,
+      "interval": [
+        0.059383869206875356,
+        0.09948782139704207
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k10/rotationNone/ridge/restJ": 1.0,
+        "primary/observed/k10/rotationNone/ridge/J": -1.0,
+        "comparison/observed/k10/rotationNone/ridge/restJ": -1.0,
+        "comparison/observed/k10/rotationNone/ridge/J": 1.0
+      }
+    },
+    "cross_model/observed/k10/rotationNone/mlp/G_J_primary_minus_comparison": {
+      "estimate": 0.08192791518487696,
+      "interval": [
+        0.06309082473354853,
+        0.1012704633912862
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k10/rotationNone/mlp/restJ": 1.0,
+        "primary/observed/k10/rotationNone/mlp/J": -1.0,
+        "comparison/observed/k10/rotationNone/mlp/restJ": -1.0,
+        "comparison/observed/k10/rotationNone/mlp/J": 1.0
+      }
+    },
+    "cross_model/observed/k10/rotationNone/ridge/G_R_primary_minus_comparison": {
+      "estimate": 0.04181441893469584,
+      "interval": [
+        0.01963262876238483,
+        0.06486182324495302
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k10/rotationNone/ridge/restR": 1.0,
+        "primary/observed/k10/rotationNone/ridge/R": -1.0,
+        "comparison/observed/k10/rotationNone/ridge/restR": -1.0,
+        "comparison/observed/k10/rotationNone/ridge/R": 1.0
+      }
+    },
+    "cross_model/observed/k10/rotationNone/mlp/G_R_primary_minus_comparison": {
+      "estimate": 0.04048946359275396,
+      "interval": [
+        0.015922243674919328,
+        0.06554346178675625
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k10/rotationNone/mlp/restR": 1.0,
+        "primary/observed/k10/rotationNone/mlp/R": -1.0,
+        "comparison/observed/k10/rotationNone/mlp/restR": -1.0,
+        "comparison/observed/k10/rotationNone/mlp/R": 1.0
+      }
+    },
+    "cross_model/observed/k10/rotationNone/ridge/lens_disagreement_primary_minus_comparison": {
+      "estimate": -0.03758717615657958,
+      "interval": [
+        -0.04971261891857621,
+        -0.02480300075471997
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k10/rotationNone/ridge/restR": 1.0,
+        "primary/observed/k10/rotationNone/ridge/R": -1.0,
+        "comparison/observed/k10/rotationNone/ridge/restR": -1.0,
+        "comparison/observed/k10/rotationNone/ridge/R": 1.0,
+        "primary/observed/k10/rotationNone/ridge/restJ": -1.0,
+        "primary/observed/k10/rotationNone/ridge/J": 1.0,
+        "comparison/observed/k10/rotationNone/ridge/restJ": 1.0,
+        "comparison/observed/k10/rotationNone/ridge/J": -1.0
+      }
+    },
+    "cross_model/observed/k10/rotationNone/mlp/lens_disagreement_primary_minus_comparison": {
+      "estimate": -0.041438451592123005,
+      "interval": [
+        -0.05612986571604143,
+        -0.026623482485017447
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k10/rotationNone/mlp/restR": 1.0,
+        "primary/observed/k10/rotationNone/mlp/R": -1.0,
+        "comparison/observed/k10/rotationNone/mlp/restR": -1.0,
+        "comparison/observed/k10/rotationNone/mlp/R": 1.0,
+        "primary/observed/k10/rotationNone/mlp/restJ": -1.0,
+        "primary/observed/k10/rotationNone/mlp/J": 1.0,
+        "comparison/observed/k10/rotationNone/mlp/restJ": 1.0,
+        "comparison/observed/k10/rotationNone/mlp/J": -1.0
+      }
+    },
+    "cross_model/observed/k10/ridge/G_J_control_adjusted_primary_minus_comparison": {
+      "estimate": -0.02203337017098811,
+      "interval": [
+        -0.06567031358648985,
+        0.022291177837908595
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k10/rotationNone/ridge/restJ": 1.0,
+        "primary/observed/k10/rotationNone/ridge/J": -1.0,
+        "primary/observed/k10/rotation20260913/ridge/restJ": -0.3333333333333333,
+        "primary/observed/k10/rotation20260913/ridge/J": 0.3333333333333333,
+        "primary/observed/k10/rotation20260914/ridge/restJ": -0.3333333333333333,
+        "primary/observed/k10/rotation20260914/ridge/J": 0.3333333333333333,
+        "primary/observed/k10/rotation20260915/ridge/restJ": -0.3333333333333333,
+        "primary/observed/k10/rotation20260915/ridge/J": 0.3333333333333333,
+        "comparison/observed/k10/rotationNone/ridge/restJ": -1.0,
+        "comparison/observed/k10/rotationNone/ridge/J": 1.0,
+        "comparison/observed/k10/rotation20260913/ridge/restJ": 0.3333333333333333,
+        "comparison/observed/k10/rotation20260913/ridge/J": -0.3333333333333333,
+        "comparison/observed/k10/rotation20260914/ridge/restJ": 0.3333333333333333,
+        "comparison/observed/k10/rotation20260914/ridge/J": -0.3333333333333333,
+        "comparison/observed/k10/rotation20260915/ridge/restJ": 0.3333333333333333,
+        "comparison/observed/k10/rotation20260915/ridge/J": -0.3333333333333333
+      }
+    },
+    "cross_model/observed/k10/mlp/G_J_control_adjusted_primary_minus_comparison": {
+      "estimate": -0.026901498437740826,
+      "interval": [
+        -0.07615447556225129,
+        0.026467127294987746
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k10/rotationNone/mlp/restJ": 1.0,
+        "primary/observed/k10/rotationNone/mlp/J": -1.0,
+        "primary/observed/k10/rotation20260913/mlp/restJ": -0.3333333333333333,
+        "primary/observed/k10/rotation20260913/mlp/J": 0.3333333333333333,
+        "primary/observed/k10/rotation20260914/mlp/restJ": -0.3333333333333333,
+        "primary/observed/k10/rotation20260914/mlp/J": 0.3333333333333333,
+        "primary/observed/k10/rotation20260915/mlp/restJ": -0.3333333333333333,
+        "primary/observed/k10/rotation20260915/mlp/J": 0.3333333333333333,
+        "comparison/observed/k10/rotationNone/mlp/restJ": -1.0,
+        "comparison/observed/k10/rotationNone/mlp/J": 1.0,
+        "comparison/observed/k10/rotation20260913/mlp/restJ": 0.3333333333333333,
+        "comparison/observed/k10/rotation20260913/mlp/J": -0.3333333333333333,
+        "comparison/observed/k10/rotation20260914/mlp/restJ": 0.3333333333333333,
+        "comparison/observed/k10/rotation20260914/mlp/J": -0.3333333333333333,
+        "comparison/observed/k10/rotation20260915/mlp/restJ": 0.3333333333333333,
+        "comparison/observed/k10/rotation20260915/mlp/J": -0.3333333333333333
+      }
+    },
+    "cross_model/observed/k10/ridge/G_R_control_adjusted_primary_minus_comparison": {
+      "estimate": -0.040959283362259666,
+      "interval": [
+        -0.08010756129405469,
+        0.0021997271492899925
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k10/rotationNone/ridge/restR": 1.0,
+        "primary/observed/k10/rotationNone/ridge/R": -1.0,
+        "primary/observed/k10/rotation20260913/ridge/restR": -0.3333333333333333,
+        "primary/observed/k10/rotation20260913/ridge/R": 0.3333333333333333,
+        "primary/observed/k10/rotation20260914/ridge/restR": -0.3333333333333333,
+        "primary/observed/k10/rotation20260914/ridge/R": 0.3333333333333333,
+        "primary/observed/k10/rotation20260915/ridge/restR": -0.3333333333333333,
+        "primary/observed/k10/rotation20260915/ridge/R": 0.3333333333333333,
+        "comparison/observed/k10/rotationNone/ridge/restR": -1.0,
+        "comparison/observed/k10/rotationNone/ridge/R": 1.0,
+        "comparison/observed/k10/rotation20260913/ridge/restR": 0.3333333333333333,
+        "comparison/observed/k10/rotation20260913/ridge/R": -0.3333333333333333,
+        "comparison/observed/k10/rotation20260914/ridge/restR": 0.3333333333333333,
+        "comparison/observed/k10/rotation20260914/ridge/R": -0.3333333333333333,
+        "comparison/observed/k10/rotation20260915/ridge/restR": 0.3333333333333333,
+        "comparison/observed/k10/rotation20260915/ridge/R": -0.3333333333333333
+      }
+    },
+    "cross_model/observed/k10/mlp/G_R_control_adjusted_primary_minus_comparison": {
+      "estimate": -0.051742473784038734,
+      "interval": [
+        -0.09712470913955919,
+        0.0016888112420531923
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k10/rotationNone/mlp/restR": 1.0,
+        "primary/observed/k10/rotationNone/mlp/R": -1.0,
+        "primary/observed/k10/rotation20260913/mlp/restR": -0.3333333333333333,
+        "primary/observed/k10/rotation20260913/mlp/R": 0.3333333333333333,
+        "primary/observed/k10/rotation20260914/mlp/restR": -0.3333333333333333,
+        "primary/observed/k10/rotation20260914/mlp/R": 0.3333333333333333,
+        "primary/observed/k10/rotation20260915/mlp/restR": -0.3333333333333333,
+        "primary/observed/k10/rotation20260915/mlp/R": 0.3333333333333333,
+        "comparison/observed/k10/rotationNone/mlp/restR": -1.0,
+        "comparison/observed/k10/rotationNone/mlp/R": 1.0,
+        "comparison/observed/k10/rotation20260913/mlp/restR": 0.3333333333333333,
+        "comparison/observed/k10/rotation20260913/mlp/R": -0.3333333333333333,
+        "comparison/observed/k10/rotation20260914/mlp/restR": 0.3333333333333333,
+        "comparison/observed/k10/rotation20260914/mlp/R": -0.3333333333333333,
+        "comparison/observed/k10/rotation20260915/mlp/restR": 0.3333333333333333,
+        "comparison/observed/k10/rotation20260915/mlp/R": -0.3333333333333333
+      }
+    }
+  },
+  "source_sha256": {
+    "comparison_complete.json": "248768950b40c05603704c7f995929bd7807f54677a5ed51e36347e3bb695047",
+    "coverage.json": "46ac905680425247625662214ec89b3b3cdf5210249117c03bf0781acfb117b4",
+    "source_proof.json": "79ca61af60bc63822f3da2c1043c945fd2556c451038546b662bd2912b14306a",
+    "completion_cohort.json": "37429cacef202da83235d8783c5530c941f399169285b05007e7dfd8213061f9",
+    "primary_scoring_cohort.json": "752e5057832159ff0434e0e14c09ccf13582b7d07bcd811ac75cf5f6887d027f",
+    "input_manifest.json": "a31d5548fd97b54cd8746c76369a23d4e4ad341105a0a08bb57c3063468b73bb",
+    "primary/comparisons.json": "e97f762fd1ce7f1fca79ab180b013575b522c23cbd8119f289ae199cc1c2a51f",
+    "comparison/comparisons.json": "4b552e5770242bcaa3f9faa78d2aaef87d0af27ab189e5c6ab26e10f2c778d3b",
+    "cross_model/comparisons.json": "abf05ce55ebe694472a51d660297d899a28d9e9328c454adc09ceda8c8133bbb",
+    "primary/primary__observed__k10__rotationNone/cell_complete.json": "a0ced7c3e2e9729d71b0315a64568b22599b2efc66ed75aa1fd15bd5375b4895",
+    "primary/primary__observed__k10__rotationNone/summary.json": "8abbda7ab9a54b7fcefbc8474d8c881b9a8b186e8de5aef880d7018bb0aa4a14",
+    "comparison/comparison__observed__k10__rotationNone/cell_complete.json": "1a50af7870294581fdb070f9d7f5b34b0670ac1dde924fb00cc17889ce436339",
+    "comparison/comparison__observed__k10__rotationNone/summary.json": "ef4aac7ec869f469299032f7fefd38618a22af5d0cdf4e64cb22c32bf60b858f"
+  },
+  "script_sha256": "f9ef470acd81b772746b83503d59a3425f8cfed4212c825132eb5c3b16559e6e",
+  "renderer": "scripts/workspace_jr_plot.py",
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "DejaVu Sans",
+    "authoring_size_inches": [
+      13.095,
+      6.024
+    ],
+    "exported_size_inches": [
+      13.095,
+      5.652
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/cross_model_gaps.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  \u00b7  SHARED CONTEXTS \u00b7 N=252 \u00b7 K=10",
+      "Qwen3.5-27B \u2212 Qwen3.5-4B (R\u00b2 difference)",
+      "\u22120.15",
+      "\u22120.10",
+      "\u22120.05",
+      "0.00",
+      "0.05",
+      "0.10",
+      "0.15",
+      "J gap",
+      "R gap",
+      "Lens disagreement",
+      "J gap \u2212 rotated",
+      "R gap \u2212 rotated",
+      "Stronger minus weaker model",
+      "PREDICTOR",
+      "Ridge",
+      "MLP (seed 42)"
+    ]
+  },
+  "output_sha256": {
+    "pdf": "fae1090e7f583992f9491df04c64f18688301fa246572a5242efc1930681f170",
+    "png": "133e367327ef9433781b216f575051f64575638737a6f1d582ba70edbf5f9657",
+    "grayscale": "6cf078b5fe4ba8adde8f12983b8546f386852dae9c6ad8cee92c24a4bb2df91c"
+  }
+}

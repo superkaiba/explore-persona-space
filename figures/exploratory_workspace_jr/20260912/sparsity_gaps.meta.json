@@ -1,0 +1,433 @@
+{
+  "caption": "Native J/R gaps at primary k=10 and predeclared k=5,25 sensitivity settings. Bars are 95% paired context-bootstrap intervals on each model's common cohort. Dotted lines show \u00b10.05 R\u00b2. All primary panels condition on five nonempty final completed rollouts in both models; no excluded prompt is replaced.",
+  "plotted_values": {
+    "primary/observed/k5/rotationNone/ridge/G_J": {
+      "estimate": 0.057527076019212364,
+      "interval": [
+        0.025425297691532515,
+        0.0930333943582499
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k5/rotationNone/ridge/restJ": 1.0,
+        "primary/observed/k5/rotationNone/ridge/J": -1.0
+      }
+    },
+    "primary/observed/k5/rotationNone/ridge/G_R": {
+      "estimate": 0.07240333619650252,
+      "interval": [
+        0.04905925947868209,
+        0.09673981989956866
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k5/rotationNone/ridge/restR": 1.0,
+        "primary/observed/k5/rotationNone/ridge/R": -1.0
+      }
+    },
+    "primary/observed/k10/rotationNone/ridge/G_J": {
+      "estimate": 0.04229184927804153,
+      "interval": [
+        0.024640322858106658,
+        0.06118241851316852
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k10/rotationNone/ridge/restJ": 1.0,
+        "primary/observed/k10/rotationNone/ridge/J": -1.0
+      }
+    },
+    "primary/observed/k10/rotationNone/ridge/G_R": {
+      "estimate": 0.051354396779076716,
+      "interval": [
+        0.039995259209446014,
+        0.06398177668794798
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k10/rotationNone/ridge/restR": 1.0,
+        "primary/observed/k10/rotationNone/ridge/R": -1.0
+      }
+    },
+    "primary/observed/k25/rotationNone/ridge/G_J": {
+      "estimate": 0.011013441805953761,
+      "interval": [
+        -0.0011928767286596095,
+        0.023400875726037055
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k25/rotationNone/ridge/restJ": 1.0,
+        "primary/observed/k25/rotationNone/ridge/J": -1.0
+      }
+    },
+    "primary/observed/k25/rotationNone/ridge/G_R": {
+      "estimate": 0.021094314747792664,
+      "interval": [
+        0.010185360444685213,
+        0.031990069012423634
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k25/rotationNone/ridge/restR": 1.0,
+        "primary/observed/k25/rotationNone/ridge/R": -1.0
+      }
+    },
+    "primary/observed/k5/rotationNone/mlp/G_J": {
+      "estimate": 0.04589057206465674,
+      "interval": [
+        0.009919454177272035,
+        0.08381297942443972
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k5/rotationNone/mlp/restJ": 1.0,
+        "primary/observed/k5/rotationNone/mlp/J": -1.0
+      }
+    },
+    "primary/observed/k5/rotationNone/mlp/G_R": {
+      "estimate": 0.06255655937158133,
+      "interval": [
+        0.035674552460345385,
+        0.0895642026465795
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k5/rotationNone/mlp/restR": 1.0,
+        "primary/observed/k5/rotationNone/mlp/R": -1.0
+      }
+    },
+    "primary/observed/k10/rotationNone/mlp/G_J": {
+      "estimate": 0.034972415613710006,
+      "interval": [
+        0.016491262320154104,
+        0.055473174396490736
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k10/rotationNone/mlp/restJ": 1.0,
+        "primary/observed/k10/rotationNone/mlp/J": -1.0
+      }
+    },
+    "primary/observed/k10/rotationNone/mlp/G_R": {
+      "estimate": 0.045264665085327005,
+      "interval": [
+        0.033885840967240316,
+        0.05876978288106995
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k10/rotationNone/mlp/restR": 1.0,
+        "primary/observed/k10/rotationNone/mlp/R": -1.0
+      }
+    },
+    "primary/observed/k25/rotationNone/mlp/G_J": {
+      "estimate": 0.008341509248119161,
+      "interval": [
+        -0.005109007718121701,
+        0.022373009040171917
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k25/rotationNone/mlp/restJ": 1.0,
+        "primary/observed/k25/rotationNone/mlp/J": -1.0
+      }
+    },
+    "primary/observed/k25/rotationNone/mlp/G_R": {
+      "estimate": 0.018336115600240288,
+      "interval": [
+        0.006051214812911836,
+        0.031221755417810266
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "primary/observed/k25/rotationNone/mlp/restR": 1.0,
+        "primary/observed/k25/rotationNone/mlp/R": -1.0
+      }
+    },
+    "comparison/observed/k5/rotationNone/ridge/G_J": {
+      "estimate": 0.006869344222571128,
+      "interval": [
+        -0.010658356191537809,
+        0.028216383256747152
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "comparison/observed/k5/rotationNone/ridge/restJ": 1.0,
+        "comparison/observed/k5/rotationNone/ridge/J": -1.0
+      }
+    },
+    "comparison/observed/k5/rotationNone/ridge/G_R": {
+      "estimate": 0.053026047554048716,
+      "interval": [
+        0.03219860759651932,
+        0.0740878814836579
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "comparison/observed/k5/rotationNone/ridge/restR": 1.0,
+        "comparison/observed/k5/rotationNone/ridge/R": -1.0
+      }
+    },
+    "comparison/observed/k10/rotationNone/ridge/G_J": {
+      "estimate": -0.037109745813233896,
+      "interval": [
+        -0.0502814813863821,
+        -0.02257530674924856
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "comparison/observed/k10/rotationNone/ridge/restJ": 1.0,
+        "comparison/observed/k10/rotationNone/ridge/J": -1.0
+      }
+    },
+    "comparison/observed/k10/rotationNone/ridge/G_R": {
+      "estimate": 0.009539977844380876,
+      "interval": [
+        -0.012783339036249564,
+        0.03167712321601414
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "comparison/observed/k10/rotationNone/ridge/restR": 1.0,
+        "comparison/observed/k10/rotationNone/ridge/R": -1.0
+      }
+    },
+    "comparison/observed/k25/rotationNone/ridge/G_J": {
+      "estimate": -0.06684047838730356,
+      "interval": [
+        -0.08298654493736028,
+        -0.05008784141456206
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "comparison/observed/k25/rotationNone/ridge/restJ": 1.0,
+        "comparison/observed/k25/rotationNone/ridge/J": -1.0
+      }
+    },
+    "comparison/observed/k25/rotationNone/ridge/G_R": {
+      "estimate": -0.03394700605065071,
+      "interval": [
+        -0.052347071692819595,
+        -0.015830355150653144
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "comparison/observed/k25/rotationNone/ridge/restR": 1.0,
+        "comparison/observed/k25/rotationNone/ridge/R": -1.0
+      }
+    },
+    "comparison/observed/k5/rotationNone/mlp/G_J": {
+      "estimate": -0.0021780819280132757,
+      "interval": [
+        -0.02671413885100446,
+        0.030239935599889817
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "comparison/observed/k5/rotationNone/mlp/restJ": 1.0,
+        "comparison/observed/k5/rotationNone/mlp/J": -1.0
+      }
+    },
+    "comparison/observed/k5/rotationNone/mlp/G_R": {
+      "estimate": 0.04201530413808341,
+      "interval": [
+        0.017654775244741683,
+        0.06791066713413813
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "comparison/observed/k5/rotationNone/mlp/restR": 1.0,
+        "comparison/observed/k5/rotationNone/mlp/R": -1.0
+      }
+    },
+    "comparison/observed/k10/rotationNone/mlp/G_J": {
+      "estimate": -0.04695549957116696,
+      "interval": [
+        -0.060977945085662816,
+        -0.030477392813067546
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "comparison/observed/k10/rotationNone/mlp/restJ": 1.0,
+        "comparison/observed/k10/rotationNone/mlp/J": -1.0
+      }
+    },
+    "comparison/observed/k10/rotationNone/mlp/G_R": {
+      "estimate": 0.004775201492573045,
+      "interval": [
+        -0.019360464537255713,
+        0.02944423662641228
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "comparison/observed/k10/rotationNone/mlp/restR": 1.0,
+        "comparison/observed/k10/rotationNone/mlp/R": -1.0
+      }
+    },
+    "comparison/observed/k25/rotationNone/mlp/G_J": {
+      "estimate": -0.07070098866833519,
+      "interval": [
+        -0.08950524385217166,
+        -0.050724894418367444
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "comparison/observed/k25/rotationNone/mlp/restJ": 1.0,
+        "comparison/observed/k25/rotationNone/mlp/J": -1.0
+      }
+    },
+    "comparison/observed/k25/rotationNone/mlp/G_R": {
+      "estimate": -0.03687681462218795,
+      "interval": [
+        -0.05667764063078156,
+        -0.017773905040553307
+      ],
+      "confidence": 0.95,
+      "n_draws": 2000,
+      "n_valid_draws": 2000,
+      "status": "ok",
+      "coefficients": {
+        "comparison/observed/k25/rotationNone/mlp/restR": 1.0,
+        "comparison/observed/k25/rotationNone/mlp/R": -1.0
+      }
+    }
+  },
+  "source_sha256": {
+    "comparison_complete.json": "248768950b40c05603704c7f995929bd7807f54677a5ed51e36347e3bb695047",
+    "coverage.json": "46ac905680425247625662214ec89b3b3cdf5210249117c03bf0781acfb117b4",
+    "source_proof.json": "79ca61af60bc63822f3da2c1043c945fd2556c451038546b662bd2912b14306a",
+    "completion_cohort.json": "37429cacef202da83235d8783c5530c941f399169285b05007e7dfd8213061f9",
+    "primary_scoring_cohort.json": "752e5057832159ff0434e0e14c09ccf13582b7d07bcd811ac75cf5f6887d027f",
+    "input_manifest.json": "a31d5548fd97b54cd8746c76369a23d4e4ad341105a0a08bb57c3063468b73bb",
+    "primary/comparisons.json": "e97f762fd1ce7f1fca79ab180b013575b522c23cbd8119f289ae199cc1c2a51f",
+    "comparison/comparisons.json": "4b552e5770242bcaa3f9faa78d2aaef87d0af27ab189e5c6ab26e10f2c778d3b",
+    "cross_model/comparisons.json": "abf05ce55ebe694472a51d660297d899a28d9e9328c454adc09ceda8c8133bbb",
+    "primary/primary__observed__k10__rotationNone/cell_complete.json": "a0ced7c3e2e9729d71b0315a64568b22599b2efc66ed75aa1fd15bd5375b4895",
+    "primary/primary__observed__k10__rotationNone/summary.json": "8abbda7ab9a54b7fcefbc8474d8c881b9a8b186e8de5aef880d7018bb0aa4a14",
+    "comparison/comparison__observed__k10__rotationNone/cell_complete.json": "1a50af7870294581fdb070f9d7f5b34b0670ac1dde924fb00cc17889ce436339",
+    "comparison/comparison__observed__k10__rotationNone/summary.json": "ef4aac7ec869f469299032f7fefd38618a22af5d0cdf4e64cb22c32bf60b858f"
+  },
+  "script_sha256": "f9ef470acd81b772746b83503d59a3425f8cfed4212c825132eb5c3b16559e6e",
+  "renderer": "scripts/workspace_jr_plot.py",
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "DejaVu Sans",
+    "authoring_size_inches": [
+      13.095,
+      10.476
+    ],
+    "exported_size_inches": [
+      13.095,
+      9.762
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/sparsity_gaps.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  \u00b7  QWEN3.5-27B \u00b7 N=252",
+      "Remainder R\u00b2 \u2212 component R\u00b2",
+      "\u22120.10",
+      "\u22120.05",
+      "0.00",
+      "0.05",
+      "0.10",
+      "0.15",
+      "J \u00b7 k=5",
+      "R \u00b7 k=5",
+      "J \u00b7 k=10",
+      "R \u00b7 k=10",
+      "J \u00b7 k=25",
+      "R \u00b7 k=25",
+      "Ridge",
+      "B  \u00b7  QWEN3.5-27B \u00b7 N=252",
+      "MLP (seed 42)",
+      "C  \u00b7  QWEN3.5-4B \u00b7 N=252",
+      "D  \u00b7  QWEN3.5-4B \u00b7 N=252",
+      "\u22120.15"
+    ]
+  },
+  "output_sha256": {
+    "pdf": "a8f80c698458c862937815a02a0cb09206071461c0955ce0bc67dceb8341ac54",
+    "png": "012be5d65c9a21aed8cd87c776602c444e293a79adc9961e05750e39f15ec778",
+    "grayscale": "96f70cc8c0b23c0f2c070c5297a18b657aac4b31c622e10cab982c86de7bfd4a"
+  }
+}

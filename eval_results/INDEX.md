@@ -8,6 +8,7 @@ Maps each experiment result to its research topic. Updated by the analyzer agent
 
 | Directory | Experiment | Date | Key Finding |
 |-----------|-----------|------|-------------|
+| [`exploratory_workspace_jr/20260912/`](exploratory_workspace_jr/20260912/run_result.json) | J/R sparse-component prediction in Qwen3.5-27B and 4B; 48 observed/null/rotation/sparsity cells | 2026-09-13 | No robust workspace-specific predictability deficit: native gaps vary with lens/model/sparsity and are smaller than rotated and exactly affine controls; 252 jointly completed test contexts. [Report](../docs/exploratory_workspace_jr/final_report.md). |
 | `issue_1901/k_rollout_ablation/` | All 31 subsets of five stored on-policy answers; frozen layer-19 linear/nonlinear maps and identity+bias; R² and fixed-pool retrieval | 2026-09-07 | Evaluation K=1→5 raises fitted-map R² by 0.052/0.055 and whitened-CSLS top-1 by 0.98/1.21 percentage points (942 candidates); no refits or K>5 claim. |
 | `persona_geometry_dimensionality/` | Intrinsic dimensionality estimation | 2026-04-08 | 8-12D persona manifolds |
 | `aim1_3_composition/` | Compositional structure (SAE features) | 2026-04-08 | 5 global PCs, compositional but entangled |

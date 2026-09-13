@@ -1,5 +1,7 @@
 # Research Ideas
 
+**2026-09-13 — J/R workspace predictability:** Completed the two-model exploratory comparison (48 cells, 252 paired test contexts). Native component gaps depend on model and sparsity; rotated dictionaries and exactly affine targets produce larger gaps. Interpret sparse-component prediction error against decomposition controls before assigning a workspace-specific meaning. [Evidence](exploratory_workspace_jr/final_report.md).
+
 **2026-09-07 — Answer-mean estimation:** Frozen layer-19 maps gain 0.052–0.055 held-out R² from K=1→5 evaluation answers, then another 0.0077 (linear) and 0.0064 (nonlinear) at K=10. Corrected retrieval adds 0.53 and 0.21 percentage points from K=5→10; the nonlinear change's paired 95% interval includes zero. Keep training-target K and evaluation-target K separate when interpreting averaging benefits; training-K effects and K>10 remain unmeasured. [Evidence](../eval_results/issue_1901/k10_rollout_ablation/README.md) · [Task 1901](https://eps.superkaiba.com/tasks/1901).
 
 Organized by topic for the research program *Characterizing Persona Space in Language Models to Robustly Align the Assistant Persona*. Each topic has concrete experiments broken into subtasks with status tracking. (Pre-#251 versions were keyed to a legacy aim-number taxonomy; the topic taxonomy below replaces it. Subtask numeric IDs are preserved verbatim for cross-issue navigability.)
