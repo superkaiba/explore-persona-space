@@ -163,14 +163,15 @@ def predictor_legend(fig):
     fig.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.61, -0.01), ncol=2)
 
 
-def export(fig, out, stem, caption, records, source):
+def export(fig, out, stem, caption, records, source, *, renderer=None):
+    renderer = Path(__file__) if renderer is None else Path(renderer)
     caption += " All primary panels condition on five nonempty final completed rollouts in both models; no excluded prompt is replaced."
     result = save_c2a_figure(
         fig,
         out / stem,
         title=stem.replace("_", " "),
         subject=caption,
-        creator="scripts/workspace_jr_plot.py",
+        creator=f"scripts/{renderer.name}",
     )
     save_json(
         out / f"{stem}.meta.json",
@@ -178,7 +179,8 @@ def export(fig, out, stem, caption, records, source):
             "caption": caption,
             "plotted_values": records,
             "source_sha256": dict(source.hashes),
-            "script_sha256": file_sha256(Path(__file__)),
+            "script_sha256": file_sha256(renderer),
+            "renderer": f"scripts/{renderer.name}",
             "render": result["record"],
             "output_sha256": {key: file_sha256(result[key]) for key in ("pdf", "png", "grayscale")},
         },
