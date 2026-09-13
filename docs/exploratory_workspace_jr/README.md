@@ -1,9 +1,10 @@
 # Exploratory J/R context-to-answer experiment
 
 The experiment is running. Both models have completed native lens calibration,
-validated end-to-end pilots and main generation/capture. The three native 4B
-fit cells and its k=10 diagnostics have completed. Main 27B training
-decompositions and 4B rotated-control work are in progress. The complete
+validated end-to-end pilots and main generation/capture. Native k=10 fits and
+diagnostics have completed for both models, and all four 27B orientations
+have reached the fitting stage. Observed fits and 4B rotated-control work
+remain in progress. The complete
 control grid, learning curves and final scientific report remain outstanding;
 no main predictability conclusion is available yet.
 
@@ -53,10 +54,11 @@ The [final generation census](generation_coverage_20260913.md) records all six
 split denominators, completion counts and retained censoring, with an independent
 raw-data and upload audit.
 
-The [first main 4B sampling-noise result](main_noise_comparison_20260913.md)
-is independently verified on the shared completed cohort. Its five targets do
-not trigger the registered higher-K follow-up; the primary-model check remains
-pending at this checkpoint.
+The [two-model sampling-noise decision](main_noise_both_models_20260913.md)
+is independently verified on the shared completed cohort. None of the five
+targets in either model triggers the registered higher-K follow-up. This
+settles the conditional execution decision; the remaining control and
+predictability analyses remain necessary.
 
 ## Primary scoring population
 

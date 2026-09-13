@@ -1,0 +1,149 @@
+{
+  "schema": "workspace-jr-actual-main-noise-independent-review-v1",
+  "reviewed_at_utc": "2026-09-13T12:44:58.728977+00:00",
+  "reviewer": "/root/native_lens_review",
+  "decision": "verified_primary_noise_result_no_higher_k_trigger",
+  "model_role": "primary",
+  "scope": "Independent CPU-only numerical audit of native k10 rollout noise and exact provenance. No model forward, fitting, resource action, live-job modification or scientific producer-file write.",
+  "audit_scope_note": "Fit results JSON was parsed for identity/contract and input fingerprint fields; fit-score fields were not accessed or interpreted. Per-example NPZ access was limited to IDs/x/targets, not predictor arrays. No direction/predictability interpretation.",
+  "source_revisions": {
+    "native": "875c6af2f3cb0637f5fda7c81027cde93753fa2b",
+    "diagnostics": "e6a36c8a74584b449d38e47f1a495fb056f20cc4",
+    "noise": "6718e57dee4f8dc5c5066b11da3bc86141ef96be",
+    "cohort": "e41de075378e426d70c99c4d8b9ac9748fc1adb0"
+  },
+  "source_receipt_sha256": {
+    "native": "65a35b8fbd8e85707202cee4acff688470c8ddd4b015429c3f0367804b8969cf",
+    "diagnostics": "7e35534afe50cd2afe3fab7d6516251a86d2b6c0ae9cca19c205ba94723c5a2a",
+    "noise": "26fc2329d33bfa80ff474832e4bc97da9444fd80806ea498845cb2a448c4a2f2",
+    "cohort": "f8e21d4af5d18e8b46ea8e3b0c19c6d931bf4acedf8ed0e0042161ba2da38751"
+  },
+  "checkpoint": {
+    "model": "Qwen/Qwen3.5-27B",
+    "revision": "fc05daec18b0a78c049392ed2e771dde82bdf654",
+    "dimension": 5120,
+    "terminal_ids": [
+      248044,
+      248046
+    ],
+    "metadata_proof": {
+      "config.json": {
+        "sha256": "f8d190c5b89c1521220f935d2567a587d6e291ed69066a45a106560b05a2174c",
+        "size": 4134,
+        "git_blob_id": "bde2be7f34a16fcdf78b9050319cdb330a15fecd"
+      },
+      "tokenizer_config.json": {
+        "sha256": "316230d6a809701f4db5ea8f8fc862bc3a6f3229c937c174e674ff3ca0a64ac8",
+        "size": 16710,
+        "git_blob_id": "eda48d3e75a8e59a8479ee4ec8b37f76e711d9c1"
+      },
+      "generation_config.json": {
+        "sha256": "303aba891d66ab63908a7b3cc9163bcb835fdf8b9f6301c73216f3f1eb3992dd",
+        "size": 244,
+        "git_blob_id": "85b45ab4f3a24f95a061c5260559471a259187cc"
+      }
+    }
+  },
+  "coverage": {
+    "original_test_contexts": 256,
+    "primary_complete_test_contexts": 255,
+    "primary_final_cap_draws": 4,
+    "scored_joint_contexts": 252,
+    "conditional_subset_contexts": 128,
+    "rollouts_per_context": 5,
+    "dimension": 5120
+  },
+  "independent_method": {
+    "within": "For each context and target, long-double squared rollout residual sum divided by K*(K-1)=20; checked all256 contexts against stored component fields and diagnostic arrays.",
+    "between": "Long-double centered squared target norm sum over exact252joint contexts divided by251.",
+    "ratio": "Mean paired within-noise trace divided by target own between-context variance. Strictly greater than0.1 triggers. All five are defined.",
+    "covariance": "Independent component/remainder covariance divided by20; full=component+remainder+2cov checked per context for both arms and against saved aggregate.",
+    "EOS": "Read pinned primary27B metadata directly: actual dimension5120, tokenizer EOS248046, generation EOS248044/248046. Recomputed all256\u00d75 raw-draw spans/completion exclusions and exact capture lengths against this union and ledger.",
+    "cohort": "Recomputed joint252 from both ledger role records and fixed128 conditional subset from original frozen test order; no backfill. Exact labels/row IDs retained for all five quantities."
+  },
+  "measurements": {
+    "full": {
+      "mean_target_noise_trace": 35.98309236087106,
+      "observed_between_context_variance_trace_unbiased": 2099.955663522365,
+      "noise_fraction": 0.01713516765421359,
+      "higher_k_trigger": false
+    },
+    "J": {
+      "mean_target_noise_trace": 2.8197392867998685,
+      "observed_between_context_variance_trace_unbiased": 124.5848876176863,
+      "noise_fraction": 0.022633076456695163,
+      "higher_k_trigger": false
+    },
+    "restJ": {
+      "mean_target_noise_trace": 32.00230139154403,
+      "observed_between_context_variance_trace_unbiased": 1747.3354741572448,
+      "noise_fraction": 0.01831491540396902,
+      "higher_k_trigger": false
+    },
+    "R": {
+      "mean_target_noise_trace": 2.3560662680183073,
+      "observed_between_context_variance_trace_unbiased": 97.14966353505042,
+      "noise_fraction": 0.024251924116734252,
+      "higher_k_trigger": false
+    },
+    "restR": {
+      "mean_target_noise_trace": 32.58875208736152,
+      "observed_between_context_variance_trace_unbiased": 1801.8731595217166,
+      "noise_fraction": 0.01808604113733054,
+      "higher_k_trigger": false
+    }
+  },
+  "component_remainder_mean_noise_covariance": {
+    "J": 0.5805258412635811,
+    "R": 0.5191370027456172
+  },
+  "precision_checks": {
+    "maximum_per_context_noise_absolute_errors": {
+      "full": 1.1368683772161603e-13,
+      "J": 7.105427357601002e-15,
+      "restJ": 5.684341886080802e-14,
+      "R": 7.105427357601002e-15,
+      "restR": 5.684341886080802e-14
+    },
+    "max_rollout_mean_target_absolute_error": 2.2738755323103987e-14,
+    "max_rollout_reconstruction_absolute_error": 0.0,
+    "rtol": 1e-12,
+    "atol": 1e-12
+  },
+  "binding_checks": [
+    "Exact uploaded primary875c k10 receipt, successful same-cell terminal/results hash, frozen f8b producer and component contracts.",
+    "All256 component/canonical/raw-generation hashes, seed42..46 order, token lengths and original ledger source proof; fitted test x/target fingerprints and saved per-example IDs/x/targets.",
+    "Diagnostic db7 source compatibility and full fit input proof; complete marker and successful analysis terminal.",
+    "Noise a5b clean full five-field argv0 provenance, exact script SHA, CPU-only command, diagnostic receipt SHA, complete marker and successful fresh exit.",
+    "Frozen ledger SHA, joint252, same-byte1499higher-K subset, selected arrays equal exact diagnostic array slices.",
+    "All536 consumed native files,20 diagnostic files,9 noise files and3 cohort files match current remote bytes and immutable dataset revision metadata.",
+    "Three primary model metadata files match immutablefc05 checkpoint revision metadata."
+  ],
+  "saved_one_model_decision": {
+    "higher_k_required_by_this_model": false,
+    "triggered_targets": [],
+    "undefined_targets": [],
+    "two_model_decision": "await_other_model_or_final_supplement",
+    "scope": "one model; a negative result does not clear the other model's noise criterion"
+  },
+  "combined_decision_scope": "The early reader correctly remains a one-model decision. This review verifies the primary negative and does not modify the comparison or final two-model decision artifacts.",
+  "remaining_findings": [],
+  "execution": {
+    "cpu_threads": 2,
+    "cuda_visible_devices": "",
+    "elapsed_seconds": 12.693009376525879,
+    "remote_exit_code": 0,
+    "stderr_note": "Two expected missing-.env notices from imported environment loader. Audit used existing local source files only; it required no remote credentials/network. No audit failure."
+  },
+  "evidence_sha256": {
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/primary_main_noise_actual_review/audit.json": "0d6e94a97e72623a90f3479b2f43dcf014245cdb23c6f179fa62e51ee0158ea7",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/primary_main_noise_actual_review/audit_remote.py": "6b707bed5b5faa755dd85c99ed281a868d15dc1d8cf5e0f402473b799e27b34e",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/primary_main_noise_actual_review/audit_remote.stderr": "d4ccc0b7bab04a0995ef11ee2454bdd75310c19f8c9700b5203c50accd36b703",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/primary_main_noise_actual_review/cohort_hub_verification.json": "9f4ca32af8f86f67da6e04e4f842fd49638aeff31ad25ea78b4f2bec7ff0a623",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/primary_main_noise_actual_review/diagnostics_hub_verification.json": "edb9e0996dd52fca551a9c392a34396c1454fdc809c2b6b2237284aad9ce1a27",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/primary_main_noise_actual_review/native_hub_verification.json": "dcc2d40d26fa7fa5d0f40a50900a054c32a0b0a46c3d3a177fd63b1bfc5e54de",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/primary_main_noise_actual_review/noise_hub_verification.json": "ab2191849fd0eae6c5ed02098d8361de77d8f427bd1d91300a0bec925128eb5a",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/primary_main_noise_actual_review/primary_model_metadata_verification.json": "20324b9a317b0350c8c44db366701a3332d5d18f1b10e8cf64091545502838fe",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/primary_main_noise_actual_review/verify_hub.py": "3f2f1d91a2f40822f089cfade2a88565d7009538db0f2639694795766541ff93"
+  }
+}
