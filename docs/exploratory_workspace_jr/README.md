@@ -46,6 +46,10 @@ measurements, separate from main prediction outcomes:
 - [Primary reconstruction-quality matches](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/1d46f094cab95836d13bc05c3cf0c0ff99682412/exploratory_workspace_jr/20260912/primary_calibration_quality_v1/quality_matches.json).
 - [Comparison reconstruction-quality matches](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/2a6891793e45fe7e61fcfd44bfd1bc554253ac35/exploratory_workspace_jr/20260912/comparison_calibration_quality_v1/quality_matches.json).
 
+The [final generation census](generation_coverage_20260913.md) records all six
+split denominators, completion counts and retained censoring, with an independent
+raw-data and upload audit.
+
 ## Primary scoring population
 
 The outcome-blind completion ledger retains 252 of the 256 frozen shared test

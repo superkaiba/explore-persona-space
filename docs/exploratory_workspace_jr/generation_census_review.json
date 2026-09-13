@@ -1,0 +1,207 @@
+{
+  "schema": "workspace-jr-generation-census-independent-review-v1",
+  "decision": "verified_final_generation_census",
+  "reviewer": "independent Codex reviewer /root/native_lens_review",
+  "reviewed_at_utc": "2026-09-13T06:41:13.263808+00:00",
+  "main_prediction_outcomes_read": false,
+  "gpu_work_performed": false,
+  "remote_files_or_jobs_modified": false,
+  "scope": "Final raw generation census only. No fit, capture, or component outcome arrays were read. Census completion does not establish completed fitting.",
+  "checks": {
+    "recount": "A separately written standard-library-only program read every saved raw context on its resident VM. It scanned integer token IDs up to the first pinned EOS/stop ID, checked seed order 42..46, nonempty span and final finish_reason, reconstructed every draw/exclusion/eligibility record, and recomputed all six split summaries exactly. It imported none of the census producer or production eligibility/token-span helpers.",
+    "source_binding": "Raw bytes match both the final source-upload SHA256 and generation-status SHA256. Status coverage exactly matches original frozen split prefixes of 1024/128/256; no duplicate or missing context or seed. Raw prompt hashes, canonical contract hashes, exact source identity/config/sampling/runtime/readiness and complete status/cap counts match.",
+    "stopping_policy": "Independently derived tokenizer EOS and standalone primary generation_config EOS / comparison text-config fallback from the earlier pinned, independently verified checkpoint metadata. Both terminal unions are [248044,248046]. Current plan and report checkpoint hashes/policies match exactly.",
+    "hub_verification": "Every one of the 10 census files and 2822 raw/status files agrees in size and SHA256 (LFS) or Git blob ID (ordinary Git) with current immutable Hub revision metadata. The oracle computed SHA256 and Git blob IDs from actual resident bytes.",
+    "census_publication": "Each five-file local and remote output is byte-bound to its upload. The completion marker binds exact report, copied input plan and reader bytes. The final partial report equals the completed report. No separate process-exit artifact is claimed by this five-file census.",
+    "test_ledger": "Both 256-context test records, including every draw length, finish reason, terminal removal, exclusion and eligibility flag, exactly equal the prior completion ledger. All 257 raw/status hashes per model also agree. Their recomputed joint eligible IDs exactly equal the ledger 252."
+  },
+  "by_role": {
+    "primary": {
+      "census_report_sha256": "df6e2c6e39d98a236b1bf889cf3e4e2078094267caa2d03aa79dd3798ae1adb6",
+      "census_upload_revision": "1ac582cceb87ed72590f19230ec52469d31bb2f3",
+      "report_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/1ac582cceb87ed72590f19230ec52469d31bb2f3/exploratory_workspace_jr/20260912/primary_generation_census_v1/census.json",
+      "analysis_producer_sha": "db7a42b9420d16762ae1219c105847ee9934e9b0",
+      "source_producer_sha": "f8b4983851fba9e176640f75ad0ad7f667be46ab",
+      "source_uploads": {
+        "train": {
+          "revision": "2c3b39d4cf425b949533d0974fd2b90db8ff01c5",
+          "prefix": "exploratory_workspace_jr/20260912/primary_main_train_v1"
+        },
+        "validation": {
+          "revision": "cbdaffaee59bd7cfee7d3091cd4b2415eab224ed",
+          "prefix": "exploratory_workspace_jr/20260912/primary_main_validation_v1"
+        },
+        "test": {
+          "revision": "278d7de913f1373382114dd26fae169ebab3f63b",
+          "prefix": "exploratory_workspace_jr/20260912/primary_main_test_v1"
+        }
+      },
+      "summaries": {
+        "train": {
+          "contexts": 1024,
+          "draws": 5120,
+          "finish_reasons": {
+            "stop": 5071,
+            "length": 49
+          },
+          "completed_nonempty_k5_contexts": 1003,
+          "nonempty_draws": 5120,
+          "answer_tokens": 3749984,
+          "min_answer_tokens": 1,
+          "max_answer_tokens": 4096,
+          "mean_answer_tokens": 732.41875,
+          "capped_draw_fraction": 0.0095703125
+        },
+        "validation": {
+          "contexts": 128,
+          "draws": 640,
+          "finish_reasons": {
+            "stop": 639,
+            "length": 1
+          },
+          "completed_nonempty_k5_contexts": 127,
+          "nonempty_draws": 640,
+          "answer_tokens": 359517,
+          "min_answer_tokens": 1,
+          "max_answer_tokens": 4096,
+          "mean_answer_tokens": 561.7453125,
+          "capped_draw_fraction": 0.0015625
+        },
+        "test": {
+          "contexts": 256,
+          "draws": 1280,
+          "finish_reasons": {
+            "stop": 1276,
+            "length": 4
+          },
+          "completed_nonempty_k5_contexts": 255,
+          "nonempty_draws": 1280,
+          "answer_tokens": 746075,
+          "min_answer_tokens": 1,
+          "max_answer_tokens": 4096,
+          "mean_answer_tokens": 582.87109375,
+          "capped_draw_fraction": 0.003125
+        }
+      },
+      "raw_context_files_verified": 1408,
+      "generation_status_files_verified": 3,
+      "census_files_verified": 5,
+      "all_splits_draws": 7040,
+      "all_splits_answer_tokens": 4855576
+    },
+    "comparison": {
+      "census_report_sha256": "c956b7c82c706791547a53b79931d47dae9ce00c7a4cd94038171b0ca350eb09",
+      "census_upload_revision": "9e085bd70f0e93b6793235a6d3a91ca48054a64f",
+      "report_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/9e085bd70f0e93b6793235a6d3a91ca48054a64f/exploratory_workspace_jr/20260912/comparison_generation_census_v1/census.json",
+      "analysis_producer_sha": "db7a42b9420d16762ae1219c105847ee9934e9b0",
+      "source_producer_sha": "244f89eb8347361484413e803565f1e639255a8c",
+      "source_uploads": {
+        "train": {
+          "revision": "c3f6993e2b5b4525eda6a9b1844f5aef7aceff83",
+          "prefix": "exploratory_workspace_jr/20260912/comparison_main_train_v1"
+        },
+        "validation": {
+          "revision": "d17dab3a8ae7ef0464fba720d08e210d1f5b9746",
+          "prefix": "exploratory_workspace_jr/20260912/comparison_main_validation_v1"
+        },
+        "test": {
+          "revision": "b5d3d3524f4582a3c0cbc6ecfc657a9b12eaad30",
+          "prefix": "exploratory_workspace_jr/20260912/comparison_main_test_v1"
+        }
+      },
+      "summaries": {
+        "train": {
+          "contexts": 1024,
+          "draws": 5120,
+          "finish_reasons": {
+            "stop": 5067,
+            "length": 53
+          },
+          "completed_nonempty_k5_contexts": 997,
+          "nonempty_draws": 5120,
+          "answer_tokens": 3672063,
+          "min_answer_tokens": 1,
+          "max_answer_tokens": 4096,
+          "mean_answer_tokens": 717.1998046875,
+          "capped_draw_fraction": 0.0103515625
+        },
+        "validation": {
+          "contexts": 128,
+          "draws": 640,
+          "finish_reasons": {
+            "stop": 639,
+            "length": 1
+          },
+          "completed_nonempty_k5_contexts": 127,
+          "nonempty_draws": 640,
+          "answer_tokens": 356975,
+          "min_answer_tokens": 1,
+          "max_answer_tokens": 4096,
+          "mean_answer_tokens": 557.7734375,
+          "capped_draw_fraction": 0.0015625
+        },
+        "test": {
+          "contexts": 256,
+          "draws": 1280,
+          "finish_reasons": {
+            "stop": 1271,
+            "length": 9
+          },
+          "completed_nonempty_k5_contexts": 252,
+          "nonempty_draws": 1280,
+          "answer_tokens": 745247,
+          "min_answer_tokens": 1,
+          "max_answer_tokens": 4096,
+          "mean_answer_tokens": 582.22421875,
+          "capped_draw_fraction": 0.00703125
+        }
+      },
+      "raw_context_files_verified": 1408,
+      "generation_status_files_verified": 3,
+      "census_files_verified": 5,
+      "all_splits_draws": 7040,
+      "all_splits_answer_tokens": 4774285
+    }
+  },
+  "joint_complete_test_contexts": 252,
+  "findings": [],
+  "limitations": [
+    "Counts describe final saved generations, including explicitly retained length-capped draws. They do not count discarded/replaced earlier generation attempts.",
+    "All 14080 final draws have nonempty pre-terminal spans, but a nonempty length-capped draw is not a completed answer. Completion-conditioned eligible contexts are reported separately.",
+    "This review does not assert that main fitting or downstream analyses have completed."
+  ],
+  "evidence_sha256": {
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/read_generation_census_v1.py": "d5a26cd8601d4419b118126964ec813b159ff4c825491e51fe2927900ca810a5",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/completion_cohort_v1_remote/completion_cohort.json": "37429cacef202da83235d8783c5530c941f399169285b05007e7dfd8213061f9",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/completion_cohort_v1_final_upload.json": "f8e21d4af5d18e8b46ea8e3b0c19c6d931bf4acedf8ed0e0042161ba2da38751",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/completion_cohort_actual_independent_review/review.json": "8bb4d954ce669ef0b293b085c4224e584b982cc176417fcc2d7ae6379ddb506e",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/configs/analysis/workspace_jr.yaml": "db6c68fe9680ed2be5cc2eb4064019a01a5b1f2d460099a683f439817d61f5d9",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/docs/exploratory_workspace_jr/selected_contexts.json": "11209d75c89345223e87641d74d273ba37ddcd7f1e608f0c59d39be0607d2b54",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/primary_generation_census_plan_v1.json": "9eeb3c40bfdae8332c5baf27221bfb087e692f57bd3acee4d37b8a4c73bf66e9",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/primary_generation_census_v1_final_upload.json": "111ebde990cfe4c5cee17866560f338c3a2a3d6405cbe3e67133483e690da36a",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/primary_generation_census_v1_remote/census.json": "df6e2c6e39d98a236b1bf889cf3e4e2078094267caa2d03aa79dd3798ae1adb6",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/primary_generation_census_v1_remote/census_complete.json": "a5df597009b63337eb7978dc4af0162bff20fca2acae103f1b9979bf17062fe2",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/primary_generation_census_v1_remote/census_partial.json": "df6e2c6e39d98a236b1bf889cf3e4e2078094267caa2d03aa79dd3798ae1adb6",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/primary_generation_census_v1_remote/input_plan.json": "9eeb3c40bfdae8332c5baf27221bfb087e692f57bd3acee4d37b8a4c73bf66e9",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/primary_generation_census_v1_remote/reader.py": "d5a26cd8601d4419b118126964ec813b159ff4c825491e51fe2927900ca810a5",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/comparison_generation_census_plan_v1.json": "28ef30cf4945fc8d4c6ede84f204b7c239b0a1d365b42b70505bcb94a0771941",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/comparison_generation_census_v1_final_upload.json": "f3c1d9436eecd33c4204e16e67564f6a14e537417421d7e1ef8ba0a510ded8e7",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/comparison_generation_census_v1_remote/census.json": "c956b7c82c706791547a53b79931d47dae9ce00c7a4cd94038171b0ca350eb09",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/comparison_generation_census_v1_remote/census_complete.json": "3eabe26a135b5b07132812f02c1a8adafec1e843140560e9ca4d6d65263bb5e4",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/comparison_generation_census_v1_remote/census_partial.json": "c956b7c82c706791547a53b79931d47dae9ce00c7a4cd94038171b0ca350eb09",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/comparison_generation_census_v1_remote/input_plan.json": "28ef30cf4945fc8d4c6ede84f204b7c239b0a1d365b42b70505bcb94a0771941",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/comparison_generation_census_v1_remote/reader.py": "d5a26cd8601d4419b118126964ec813b159ff4c825491e51fe2927900ca810a5",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/generation_census_independent_review/audit_remote.py": "d369f90306a7f9ef82883cd946c28a648df76ae99b8590d98b44a92d91adbfd9",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/generation_census_independent_review/comparison_audit_payload.json": "509388e12cf54a4a0da836e7c498ffa464a1f63f759eea3fcdf6998d2e28e924",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/generation_census_independent_review/comparison_audit_stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/generation_census_independent_review/comparison_hub_verification.json": "8431b2182318f336b27886e35813bce66b3e5702bcc707c9c4f511a846bcf097",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/generation_census_independent_review/comparison_remote_audit.json": "23deb29ba020341f5070f3175e2a41b4195164db6f1aa151590f0770d12464f1",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/generation_census_independent_review/primary_audit_payload.json": "2bec847c0cdbe5f377fbb40e09f0259936457059797cccc6e14f2d2bb9af1e5e",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/generation_census_independent_review/primary_audit_stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/generation_census_independent_review/primary_hub_verification.json": "0fd30a0a2276f293e16bbb712974819758414a0686ac280bf9fe1c7f56c3014d",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/generation_census_independent_review/primary_remote_audit.json": "db0e5141e3bb706163c4374cef1c897451c6fa14b2760e0e0ca506a35058afdf",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/generation_census_independent_review/run_audit.py": "f7031a2cbcd7cda2ba180493a1ca1d2d214e9cb801d00bb0a2d5af96d3e3def0",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/generation_census_independent_review/test_ledger_agreement.json": "4d067203497ee9db9915bccf6c4748e3e0ad3c1c6f9e06ba4a599bce381a08ad",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/generation_census_independent_review/verify_hub.py": "0a18db19b1762c3c34778f6e8c328678b9c108ff1a5e4eb0844d6206b1211986"
+  }
+}
