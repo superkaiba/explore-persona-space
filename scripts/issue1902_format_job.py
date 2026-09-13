@@ -311,7 +311,7 @@ def main():
     parser.add_argument(
         "--phase", choices=["job", "generate", "capture", "validate"], default="job"
     )
-    parser.add_argument("--root", type=Path, default=Path("/workspace/issue1902_format"))
+    parser.add_argument("--root", type=Path, default=Path("/workspace/issue1902_format_v2_bs"))
     parser.add_argument("--model", choices=list(C.MODELS))
     parser.add_argument("--first-chunk", action="store_true")
     parser.add_argument("--shard", type=int, default=0)

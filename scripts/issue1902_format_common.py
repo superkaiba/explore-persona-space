@@ -16,7 +16,7 @@ load_dotenv()
 from explore_persona_space.orchestrate.hub import retry_transient, stage_hub_file  # noqa: E402
 
 REPO = "superkaiba1/explore-persona-space-data"
-PREFIX = "issue1902_format_reconciliation_20260912/format_v1"
+PREFIX = "issue1902_format_reconciliation_20260912/format_v2_bs"
 INPUT_REV = "362ccf2f011c926a1e8a58f3e1f0df56024adcbe"
 Q0 = "d3207a181402b42873f5a3120b1d56da7b90f104"
 Q3 = "5ae90722bf11330deddfa42cf41f9fec6da8b69f"
@@ -29,13 +29,10 @@ MODELS = {
     "qwen_S": ("Qwen/Qwen2.5-7B-Instruct", "a09a35458c702b33eeacc393d103063234e8bc28", 19, 3584),
     "olmo_B": ("allenai/OLMo-2-1124-7B", "7df9a82518afdecae4e8c026b27adccc8c1f0032", 18, 4096),
     "olmo_S": ("allenai/OLMo-2-1124-7B-SFT", "1de02c0175118a9de5854aec80a1f970e701e928", 18, 4096),
-    "olmo_D": ("allenai/OLMo-2-1124-7B-DPO", "e34ea60adff2e575f4fe7569eaffd1b28509b6fd", 18, 4096),
-    "olmo_R": (
-        "allenai/OLMo-2-1124-7B-Instruct",
-        "470b1fba1ae01581f270116362ee4aa1b97f4c84",
-        18,
-        4096,
-    ),
+}
+DEFERRED_FORMAT_MODELS = {
+    "olmo_D": "Optional DPO/RLVR expansion deferred together; fixed-target fits complete separately",
+    "olmo_R": "Historical seed42 R.shard02.jsonl disagrees with its manifest; original bytes required",
 }
 
 

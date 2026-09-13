@@ -1,8 +1,10 @@
 """Regression checks for raw preservation, shard ownership, and scientific contrasts."""
 
 import json
+import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import create_autospec
 
 import numpy as np
 import pytest
@@ -12,6 +14,184 @@ sys.path[:0] = [str(ROOT / "scripts"), str(ROOT / "src")]
 import issue1902_format_common as C  # noqa: E402
 import issue1902_format_fits as F  # noqa: E402
 import issue1902_format_stage as S  # noqa: E402
+from issue1902_watch_backend import bounded_command  # noqa: E402
+
+
+def test_recovery_stages_only_base_sft_on_original_olmo_cohort(tmp_path, monkeypatch):
+    assert set(C.MODELS) == {"qwen_B", "qwen_S", "olmo_B", "olmo_S"}
+    assert set(C.DEFERRED_FORMAT_MODELS) == {"olmo_D", "olmo_R"}
+    ids = np.array([str(i) for i in range(16391)])
+    folds = np.arange(len(ids)) % 6
+    reference = tmp_path / "input.npz"
+    np.savez(reference, row_ids=ids, fold_of=folds, y=np.zeros((len(ids), 1)))
+    requested = []
+
+    def fetch(root, path, revision):
+        assert revision == C.INPUT_REV
+        assert Path(path).name in {"B.npz", "S.npz"}
+        requested.append(Path(path).name)
+        return reference
+
+    def rows(root, relative, revision):
+        if relative.endswith("corpus_single.jsonl"):
+            assert revision == C.O0
+            return [dict(id=cid, query="question") for cid in ids.tolist()]
+        name = Path(relative).name
+        assert name.startswith(("B.", "B_", "S.", "S_"))
+        seed = 42 if "seed" not in name else int(name.split("seed")[1].split(".")[0])
+        assert revision == (C.O0 if seed == 42 else C.O5)
+        return [
+            dict(
+                id=cid,
+                seed=seed,
+                text="answer",
+                finish_reason="stop",
+                n_tokens=1,
+                repetition_flag=False,
+            )
+            for cid in ids.tolist()
+        ]
+
+    monkeypatch.setattr(C, "fetch", create_autospec(C.fetch, side_effect=fetch))
+    monkeypatch.setattr(S, "olmo_jsonl", create_autospec(S.olmo_jsonl, side_effect=rows))
+    result = S.stage_olmo(tmp_path)
+    assert result["ids"] == ids.tolist()
+    assert result["fold_of"] == folds.tolist()
+    assert result["n_folds"] == 6
+    assert set(requested) == {"B.npz", "S.npz"}
+    assert {p.name for p in (tmp_path / "banks").iterdir()} == {"olmo_B", "olmo_S"}
+
+
+def test_archived_raw_hash_mismatch_still_fails(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    from huggingface_hub import HfApi
+
+    raw = tmp_path / "R.shard02.jsonl"
+    raw.write_text('{"id": "one", "text": "changed"}\n')
+    manifest = tmp_path / "R.manifest.json"
+    manifest.write_text(json.dumps(dict(shards=[dict(name=raw.name, n_lines=1, sha256="wrong")])))
+    relative = "example/R.jsonl"
+
+    def fetch(root, path, revision):
+        return manifest if path.endswith("manifest.json") else raw
+
+    monkeypatch.setattr(C, "fetch", create_autospec(C.fetch, side_effect=fetch))
+    monkeypatch.setattr(
+        HfApi,
+        "get_paths_info",
+        create_autospec(
+            HfApi.get_paths_info, return_value=[SimpleNamespace(path="example/R.manifest.json")]
+        ),
+    )
+    with pytest.raises(AssertionError, match=r"Raw shard hash mismatch.*R\.shard02"):
+        S.olmo_jsonl(tmp_path, relative, "pinned-revision")
+
+
+def test_observation_timeout_reaps_owned_process(tmp_path):
+    pidfile = tmp_path / "pid"
+    command = [
+        sys.executable,
+        "-c",
+        "import os,time,pathlib,sys; "
+        "pathlib.Path(sys.argv[1]).write_text(str(os.getpid())); time.sleep(20)",
+        str(pidfile),
+    ]
+    with pytest.raises(subprocess.TimeoutExpired):
+        bounded_command(command, cwd=tmp_path, timeout=0.5)
+    assert not Path("/proc", pidfile.read_text()).exists()
+
+
+def test_completed_gpu_artifact_advances_despite_dead_backend(tmp_path, monkeypatch):
+    import issue1902_format_follow as follow
+
+    state_path = tmp_path / "state.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "follow",
+            "--source-sha",
+            "source",
+            "--branch",
+            "branch",
+            "--repo-root",
+            str(ROOT),
+            "--state",
+            str(state_path),
+            "--gpu-handle",
+            str(tmp_path / "dead-gpu.json"),
+        ],
+    )
+
+    def artifact(name, expected):
+        assert expected == "source"
+        return dict(source_sha="source", input_revision="verified-input")
+
+    def forbidden_probe(*args, **kwargs):
+        raise AssertionError("Verified completion must take precedence over backend death")
+
+    commands = []
+
+    def run(command, **kwargs):
+        commands.append(command)
+        return subprocess.CompletedProcess(
+            command, 0, json.dumps(dict(ok=True, handle_sidecar_path="cpu.json")) + "\n", ""
+        )
+
+    monkeypatch.setattr(
+        follow, "current_artifact", create_autospec(follow.current_artifact, side_effect=artifact)
+    )
+    monkeypatch.setattr(
+        follow, "observe", create_autospec(follow.observe, side_effect=forbidden_probe)
+    )
+    monkeypatch.setattr(subprocess, "run", create_autospec(subprocess.run, side_effect=run))
+    follow.main()
+    assert json.loads(state_path.read_text())["status"] == "complete"
+    assert sum("launch" in c for c in commands) == 1
+
+
+def test_three_probe_timeouts_write_explicit_unknown_state(tmp_path, monkeypatch):
+    import issue1902_format_follow as follow
+
+    state_path = tmp_path / "state.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "follow",
+            "--source-sha",
+            "source",
+            "--branch",
+            "branch",
+            "--repo-root",
+            str(ROOT),
+            "--state",
+            str(state_path),
+            "--gpu-handle",
+            str(tmp_path / "gpu.json"),
+        ],
+    )
+    monkeypatch.setattr(
+        follow, "current_artifact", create_autospec(follow.current_artifact, return_value=None)
+    )
+    monkeypatch.setattr(
+        follow,
+        "observe",
+        create_autospec(follow.observe, side_effect=subprocess.TimeoutExpired("probe", 180)),
+    )
+    monkeypatch.setattr(follow.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        create_autospec(subprocess.run, return_value=subprocess.CompletedProcess("post-marker", 0)),
+    )
+    with pytest.raises(RuntimeError, match="Three backend probes failed"):
+        follow.main()
+    state = json.loads(state_path.read_text())
+    assert state["status"] == "backend_observation_error"
+    assert state["consecutive_observation_failures"] == 3
+    assert state["checked_at"] > 0
 
 
 def local_receipts(paths, root, fingerprint):

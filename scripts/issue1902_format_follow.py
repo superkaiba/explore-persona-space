@@ -9,6 +9,28 @@ import subprocess
 import time
 
 import issue1902_format_common as C
+from issue1902_watch_backend import observe
+
+
+def post_state(args):
+    """Persist noteworthy observation changes through the canonical task interface."""
+    subprocess.run(
+        [
+            "uv",
+            "run",
+            "python",
+            "scripts/task.py",
+            "post-marker",
+            "1902",
+            "epm:progress",
+            "--file",
+            str(args.state),
+            "--by",
+            "codex-format-continuation",
+        ],
+        cwd=args.repo_root,
+        check=True,
+    )
 
 
 def current_artifact(name, expected_sha):
@@ -44,6 +66,7 @@ def main():
     parser.add_argument("--branch", required=True)
     parser.add_argument("--repo-root", type=Path, required=True)
     parser.add_argument("--state", type=Path, required=True)
+    parser.add_argument("--gpu-handle", type=Path, required=True)
     args = parser.parse_args()
     state = (
         json.loads(args.state.read_text())
@@ -55,9 +78,64 @@ def main():
     assert state["source_sha"] == args.source_sha and state["branch"] == args.branch
     C.write_json(args.state, state)
     deadline = time.monotonic() + 96 * 3600
+    observation_failures = 0
     while time.monotonic() < deadline:
+        # Verified deliverables take precedence over a later finalization failure.
+        completed = current_artifact(
+            "fits_complete.json" if "cpu_handle" in state else "gpu_complete.json",
+            args.source_sha,
+        )
+        if "cpu_handle" in state and completed is not None:
+            state.update(status="complete", results=completed, checked_at=time.time())
+            C.write_json(args.state, state)
+            post_state(args)
+            print("[phase=continuation_complete] Format fits verified on Hub", flush=True)
+            return
+        handle_path = (
+            state["cpu_handle"]["handle_sidecar_path"] if "cpu_handle" in state else args.gpu_handle
+        )
+        try:
+            observed = (
+                observe(handle_path, args.repo_root)
+                if completed is None
+                else dict(status="done", evidence="exact-source verified GPU completion artifact")
+            )
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as exc:
+            observation_failures += 1
+            state.update(
+                status="backend_observation_error",
+                checked_at=time.time(),
+                consecutive_observation_failures=observation_failures,
+                error=str(exc),
+            )
+            C.write_json(args.state, state)
+            if observation_failures in (1, 3):
+                post_state(args)
+            if observation_failures >= 3:
+                raise RuntimeError("Three backend probes failed; run state is unknown") from exc
+            time.sleep(60)
+            continue
+        recovered = observation_failures > 0
+        observation_failures = 0
+        state.update(
+            status="cpu_fits_launched" if "cpu_handle" in state else "waiting_for_gpu_aggregates",
+            checked_at=time.time(),
+            backend_observation=observed,
+            consecutive_observation_failures=0,
+        )
+        state.pop("error", None)
+        C.write_json(args.state, state)
+        if recovered:
+            post_state(args)
+        if observed["status"] in {"dead", "failed", "error", "gate"}:
+            state.update(
+                status="backend_failed" if observed["status"] != "gate" else "backend_gate"
+            )
+            C.write_json(args.state, state)
+            post_state(args)
+            raise RuntimeError(f"Backend requires attention: {observed}")
         if "cpu_handle" not in state:
-            result = current_artifact("gpu_complete.json", args.source_sha)
+            result = completed
             if result is None:
                 time.sleep(60)
                 continue
@@ -117,23 +195,7 @@ def main():
         if completed is not None:
             state.update(status="complete", results=completed)
             C.write_json(args.state, state)
-            subprocess.run(
-                [
-                    "uv",
-                    "run",
-                    "python",
-                    "scripts/task.py",
-                    "post-marker",
-                    "1902",
-                    "epm:progress",
-                    "--file",
-                    str(args.state),
-                    "--by",
-                    "codex-format-continuation",
-                ],
-                cwd=args.repo_root,
-                check=True,
-            )
+            post_state(args)
             print("[phase=continuation_complete] Format fits verified on Hub", flush=True)
             return
         time.sleep(60)

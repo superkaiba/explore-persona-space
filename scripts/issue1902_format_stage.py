@@ -50,7 +50,9 @@ def olmo_jsonl(root, relative, revision):
             part = C.read_jsonl(path)
             assert len(part) == int(shard["n_lines"])
             if "sha256" in shard:
-                assert C.sha(path) == shard["sha256"]
+                assert C.sha(path) == shard["sha256"], (
+                    f"Raw shard hash mismatch: {relative} at {revision}: {shard['name']}"
+                )
             rows.extend(part)
         return rows
     assert relative in available, f"Missing raw bank {relative} at {revision}"
@@ -177,7 +179,7 @@ def stage_olmo(root):
     by_id = {r["id"]: r for r in corpus}
     questions = {cid: by_id[cid]["query"] for cid in ids}
     assert all(not by_id[cid].get("prefix_turns") for cid in ids)
-    for model in ("olmo_B", "olmo_S", "olmo_D", "olmo_R"):
+    for model in (m for m in C.MODELS if m.startswith("olmo_")):
         stage = model[-1]
         reference_path = C.fetch(
             root,
@@ -232,9 +234,11 @@ def stage(root):
         assert all(C.complete(root / name, C.fingerprint(root)) for name in inventory)
         return json.loads(path.read_text())
     root.mkdir(parents=True, exist_ok=True)
+    print(f"[phase=stage_scope] active_models={','.join(C.MODELS)}", flush=True)
     manifest = dict(
         schema=1,
         models=C.MODELS,
+        deferred_format_models=C.DEFERRED_FORMAT_MODELS,
         qwen=stage_qwen(root),
         olmo=stage_olmo(root),
         banks={m: C.banks(m) for m in C.MODELS},
