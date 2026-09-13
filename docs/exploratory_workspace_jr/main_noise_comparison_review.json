@@ -1,0 +1,110 @@
+{
+  "schema": "workspace-jr-actual-main-noise-independent-review-v1",
+  "decision": "verified_negative_comparison_model_primary_criterion_remains_pending",
+  "reviewer": "independent Codex reviewer /root/native_lens_review",
+  "reviewed_at_utc": "2026-09-13T09:40:44.779626+00:00",
+  "model_role": "comparison",
+  "main_noise_components_read": true,
+  "main_predictability_metrics_interpreted": false,
+  "gpu_work_performed": false,
+  "live_jobs_or_remote_data_modified": false,
+  "scientific_source_modified": false,
+  "report_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/2fd759d22fa9f6fd10d025c7b89e6445f3ba5689/exploratory_workspace_jr/20260912/comparison_main_noise_decision_v1/noise_decision.json",
+  "report_sha256": "1e6be7e5925fad0d84589298fb5dbacde661b4165c55507d9a2d247d04f9797e",
+  "report_revision": "2fd759d22fa9f6fd10d025c7b89e6445f3ba5689",
+  "checks": {
+    "direct_component_reduction": "Read all 256 actual native k10 test component files using map_location=cpu. Independently derived each of the five variance-of-K5-mean traces as sum of squared centered rollout deviations divided by K(K-1)=20, using NumPy long-double accumulation and no production noise/scoring function. All 256 per-context traces agree with the uploaded diagnostic arrays.",
+    "paired_denominator": "On the exact ordered 252-ID joint cohort, independently computed each target's unbiased between-context variance trace with denominator 251, then divided the mean per-context K5 noise trace by that variance. All five published ratios and trigger flags agree within 1e-12 absolute/relative comparison tolerance.",
+    "mean_and_reconstruction_checks": {
+      "maximum_absolute_rollout_mean_to_saved_target_difference": 1.5985476831126277e-15,
+      "maximum_absolute_J_or_R_rollout_reconstruction_error": 0.0,
+      "maximum_absolute_per_context_noise_difference": 3.552713678800501e-15,
+      "covariance": "Independently recomputed both within-rollout component/remainder covariances and verified full noise = component noise + remainder noise + 2 covariance per context and on the selected cohort."
+    },
+    "fit_and_draw_sources": "Every test component matches the actual fit-coverage SHA, uploaded receipt and diagnostic component ledger. Exact contract, seeds 42..46, shape5x2560, token counts, canonical context-input row/hash/value and final-generation hash agree. Independently scanned raw terminal spans and finish reasons and reproduced all comparison test ledger records. Stacked component inputs/targets match actual fit fingerprints and saved per-example target/input arrays exactly; predictor arrays were not selected for loading.",
+    "cohort_and_subset": "The exact previously audited ledger SHA, successful marker/terminal, config and selection bind 256 planned and 252 jointly complete contexts. The copied subset has unchanged SHA1499b17a... and equals the first128 eligible IDs in the original frozen order. Saved selected noise arrays exactly equal the corresponding original diagnostic rows.",
+    "producer_and_terminals": "Native producer244f, analyzerdb7 and readera5b identities bind exact current files, native source compatibility and seven analyzer source files. Native fit exit0 binds k10 cell/results SHA; diagnostic exit0 binds analysis marker; noise exit0 binds decision marker and finishes after its recorded start. All source receipt hashes and per-file proofs match actual sources.",
+    "immutable_uploads": {
+      "native": {
+        "revision": "1b7a8dc64667a8a3c212b973b7d470f5ff5fc52f",
+        "files_verified": 536
+      },
+      "diagnostics": {
+        "revision": "0f683f0da241285da9aeaeafcdc77eae36ddea82",
+        "files_verified": 20
+      },
+      "noise": {
+        "revision": "2fd759d22fa9f6fd10d025c7b89e6445f3ba5689",
+        "files_verified": 9
+      },
+      "cohort": {
+        "revision": "e41de075378e426d70c99c4d8b9ac9748fc1adb0",
+        "files_verified": 3
+      }
+    },
+    "artifact_scope": "All20 diagnostic files and9 decision files were verified against resident bytes and immutable Hub metadata, plus536 consumed native source files and3 cohort files. Direction/predictor artifacts were hashed opaquely for integrity; they were not parsed or interpreted. This is not a full audit of the7301-file fit upload or other main cells.",
+    "preflight_correction": "Uploaded operations/command.json records the earlier external incomplete-provenance assertion and its correction before CLI execution. The independent audit verifies the successful complete five-field identity and unchanged reviewed reader SHA12ee33a9...; that recorded preflight did not supply a scientific result."
+  },
+  "measurements": {
+    "full": {
+      "mean_target_noise_trace": 1.3787706525815244,
+      "observed_between_context_variance_trace_unbiased": 58.562220717108936,
+      "noise_fraction": 0.023543687990280004,
+      "higher_k_trigger": false
+    },
+    "J": {
+      "mean_target_noise_trace": 0.1175623548295932,
+      "observed_between_context_variance_trace_unbiased": 4.359438437010602,
+      "noise_fraction": 0.0269673162101606,
+      "higher_k_trigger": false
+    },
+    "restJ": {
+      "mean_target_noise_trace": 1.1626479078230354,
+      "observed_between_context_variance_trace_unbiased": 45.50972373452554,
+      "noise_fraction": 0.025547241609401448,
+      "higher_k_trigger": false
+    },
+    "R": {
+      "mean_target_noise_trace": 0.10206370076974819,
+      "observed_between_context_variance_trace_unbiased": 3.281705452991166,
+      "noise_fraction": 0.03110081091425207,
+      "higher_k_trigger": false
+    },
+    "restR": {
+      "mean_target_noise_trace": 1.196294075451787,
+      "observed_between_context_variance_trace_unbiased": 47.4742397275472,
+      "noise_fraction": 0.02519880428453982,
+      "higher_k_trigger": false
+    }
+  },
+  "selected_mean_component_remainder_covariance": {
+    "J": 0.0492801949644479,
+    "R": 0.04020643817999457
+  },
+  "decision_record": {
+    "higher_k_required_by_this_model": false,
+    "triggered_targets": [],
+    "undefined_targets": [],
+    "two_model_decision": "await_other_model_or_final_supplement",
+    "scope": "one model; a negative result does not clear the other model's noise criterion"
+  },
+  "findings": [],
+  "interpretation": "All five 4B ratios are below the strict0.10 trigger, with no undefined target. This one-model negative result does not clear the two-model OR condition: the primary-model criterion remains to be evaluated by its own uploaded evidence or final supplement. No selectivity, control-adjusted predictability, or causal interpretation is drawn.",
+  "scope_limits": [
+    "The review concerns rollout noise of the retained K5 targets on the already declared completion-conditioned cohort. It does not establish reasoning, automaticity or global capability.",
+    "The native k10 test files and linked sources were checked; no claim is made about completion or correctness of remaining sparsity/rotation fits or other model diagnostics."
+  ],
+  "evidence_sha256": {
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/comparison_main_noise_actual_review/audit.json": "c1b4d98675a05fa983ab22088e4e20087ff62ba0b0bd97d2239dae3da0d50dbb",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/comparison_main_noise_actual_review/audit_remote.py": "4665bdfb5992161c969b6270085695f1a7ca5331a18c7d6c09645542427bced0",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/comparison_main_noise_actual_review/audit_remote.stderr": "d4ccc0b7bab04a0995ef11ee2454bdd75310c19f8c9700b5203c50accd36b703",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/comparison_main_noise_actual_review/cohort_hub_verification.json": "9f4ca32af8f86f67da6e04e4f842fd49638aeff31ad25ea78b4f2bec7ff0a623",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/comparison_main_noise_actual_review/diagnostics_hub_verification.json": "5f3ff23e34ddd58553b2defd536610d5f76887ca08ebb4df41b2cdb7c82c5d53",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/comparison_main_noise_actual_review/native_hub_verification.json": "8618c720461678975b95cd65bdf37fbbcf25e0d64362f3613a44e4b867ec4a77",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/comparison_main_noise_actual_review/noise_hub_verification.json": "20d7620076ce2c7cfa6c53917914f791f156b7ef31124f93812a74d39a20097b",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/comparison_main_noise_actual_review/verify_hub.py": "b0936d4e6e8b6509ea48e11c24fc636ea49641e14981ba22e573d2eca735c191",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/noise_decision_independent_review/review.json": "a1ea7566199adef9d6d0d9352c2bd7d7f8a2d6b4bbfa938dcca5554396b243ac",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/higher_k_selection_independent_review/review_final.json": "51371c37d91897f010c0273e4ef0733abf7b7989312bf1e15f42f5ec2b124900",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/completion_cohort_actual_independent_review/review.json": "8bb4d954ce669ef0b293b085c4224e584b982cc176417fcc2d7ae6379ddb506e"
+  }
+}

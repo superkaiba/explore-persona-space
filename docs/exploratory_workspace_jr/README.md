@@ -1,10 +1,11 @@
 # Exploratory J/R context-to-answer experiment
 
 The experiment is running. Both models have completed native lens calibration,
-validated end-to-end pilots and main generation/capture. Main component
-training decompositions are in progress. Main prediction fits, the complete
-control grid and the final scientific report remain outstanding; no main
-predictability conclusion is available yet.
+validated end-to-end pilots and main generation/capture. The three native 4B
+fit cells and its k=10 diagnostics have completed. Main 27B training
+decompositions and 4B rotated-control work are in progress. The complete
+control grid, learning curves and final scientific report remain outstanding;
+no main predictability conclusion is available yet.
 
 The [main execution handoffs](execution_handoffs_20260913.md) record the
 verified stage sequences and recovery obligations for the six active workers.
@@ -49,6 +50,11 @@ measurements, separate from main prediction outcomes:
 The [final generation census](generation_coverage_20260913.md) records all six
 split denominators, completion counts and retained censoring, with an independent
 raw-data and upload audit.
+
+The [first main 4B sampling-noise result](main_noise_comparison_20260913.md)
+is independently verified on the shared completed cohort. Its five targets do
+not trigger the registered higher-K follow-up; the primary-model check remains
+pending at this checkpoint.
 
 ## Primary scoring population
 
