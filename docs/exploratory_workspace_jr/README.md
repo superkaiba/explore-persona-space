@@ -6,6 +6,9 @@ training decompositions are in progress. Main prediction fits, the complete
 control grid and the final scientific report remain outstanding; no main
 predictability conclusion is available yet.
 
+The [main execution handoffs](execution_handoffs_20260913.md) record the
+verified stage sequences and recovery obligations for the six active workers.
+
 The frozen [analysis plan](analysis_plan.md),
 [configuration](../../configs/analysis/workspace_jr.yaml),
 [model and mapping provenance](mapping_provenance.md),
