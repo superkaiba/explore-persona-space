@@ -1,0 +1,61 @@
+{
+  "schema": "workspace-jr-higher-k-selection-independent-review-v1",
+  "decision": "approved_conditional_subset_declaration",
+  "reviewer": "independent Codex reviewer /root/native_lens_review",
+  "reviewed_at_utc": "2026-09-13T06:17:22.768767+00:00",
+  "main_prediction_outcomes_read": false,
+  "gpu_work_performed": false,
+  "implementation_or_source_artifacts_modified": false,
+  "scope": "Outcome-blind conditional subset and protocol consistency only; no finding that the noise trigger has fired, no higher-K execution or runtime approval.",
+  "reviewed_files": {
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/docs/exploratory_workspace_jr/higher_k_subset_20260913.json": "1499b17a2fdd84c8058bf36886e8272e66b9755cb6992d5b80ea764978b055bb",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/docs/exploratory_workspace_jr/higher_k_selection.md": "0ed3d73cc8032caee9ff221ada1b29649a16fba25b28d68248d45291209cf5c7",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/docs/exploratory_workspace_jr/selected_contexts.json": "11209d75c89345223e87641d74d273ba37ddcd7f1e608f0c59d39be0607d2b54",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/configs/analysis/workspace_jr.yaml": "db6c68fe9680ed2be5cc2eb4064019a01a5b1f2d460099a683f439817d61f5d9",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/docs/exploratory_workspace_jr/analysis_plan.md": "362eda297d793288094f71cd7bbe740841154cec6188b609d1f7bfd1592e714b",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/docs/exploratory_workspace_jr/supplementary_analysis.md": "44dd22f78b1230ad02a5b05aebcf9c7c7c1356beb54f0dc8429a1cda2c73bc95",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/docs/exploratory_workspace_jr/completion_scoring_20260913.md": "2451e4e144f1f4877b56914667a1b920bca05a1035cbcd3996f9b99bf99a76cb",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/docs/exploratory_workspace_jr/execution_revision_20260912.json": "47f103d97609e6d8508bf891caec80e8c078991fcdc353c9e4e64817002d6820",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/src/explore_persona_space/analysis/workspace_supplement.py": "9315ce7a356458f953789f2c2ddf9702949c9cdabc2254676d3b51c9816c30e9",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/completion_cohort_v1_remote/completion_cohort.json": "37429cacef202da83235d8783c5530c941f399169285b05007e7dfd8213061f9",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/completion_cohort_v1_final_upload.json": "f8e21d4af5d18e8b46ea8e3b0c19c6d931bf4acedf8ed0e0042161ba2da38751",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/completion_cohort_actual_independent_review/review.json": "8bb4d954ce669ef0b293b085c4224e584b982cc176417fcc2d7ae6379ddb506e"
+  },
+  "checks": {
+    "original_order": "Independently recomputed sha256(utf8(str(seed)+\":\"+context_id)) and verified the 768-entry main_test list is already in that order.",
+    "planned_prefix": "Ledger planned_context_ids exactly equals the first 256 original main_test IDs.",
+    "selection": "Declared IDs exactly equal the first 128 original-order IDs belonging to the 252-entry joint complete ledger; 128 unique IDs.",
+    "last_selected_original_one_based_rank": 132,
+    "excluded_within_selected_span": [
+      "a45591e346c007ed5d409bcfe72db0f62827826540fc34f9ad94c26d9bccefc1",
+      "4593fb5b75836bdc75a12ec09236027e922b56a7e80118536ffe9cddc8d54de3",
+      "3a3030e1fd40b8b853c75f71534668473fb07cfd2b7903b1cd86ea0dff301e9f",
+      "ff0af9218837b20896cc4f7a33568f610caac7341901bb6992d42b63bbc5b432"
+    ],
+    "lexical_first_128_same_set": false,
+    "ordered_ids_sha256_json_compact": "3356db9dd497e748698246e53e07577dfe3e2e37d659eb77b693879ade726e0c",
+    "provenance": "Current declaration/config/selection/report bytes agree with their stated hashes; immutable report URL agrees with the nine-file verified receipt. Earlier independent raw-draw/EOS/local-and-Hub audit is bound by its exact review hash; this review did not repeat the remote/raw audit.",
+    "policy": "128 contexts, 20 seeds 42..61, native k10 J/R in both models, >0.10 noise trigger on the joint primary scoring cohort, frozen K5 predictors, no retuning, K5 primary, and separate additional draws with original canonical input/source references agree with the frozen analysis/config and declared completion/canonical-input revisions.",
+    "selection_leakage": "Selection uses only frozen context order and previously declared completion eligibility; no per-context noise magnitude or prediction metric enters the rule. Filtering defines the eligible K5 population before fixing this follow-up subset; no replacement is allowed after K20 exclusions."
+  },
+  "findings": [],
+  "execution_requirements_inherited_from_plan": [
+    "Evaluate the aggregate predeclared noise trigger on the finalized common primary scoring cohort. This review does not evaluate that trigger.",
+    "If run, compare K5 and K20 on identical realized joint K20-complete and predictor-available rows within these fixed 128, using paired context resampling; report any additional missing/incomplete rows and never replace prompts.",
+    "Reuse immutable K5 generation bytes, canonical x references, and trained predictor recipes; keep seeds 47..61 in separately hash-bound artifacts and preserve all failure/exclusion evidence."
+  ],
+  "timing_limit": "The declaration states it was recorded before main fit outcomes; the parent reports fits pending. The reviewer read no main predictability outcomes and did not inspect worker fit status.",
+  "prior_review": {
+    "file": "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/higher_k_selection_independent_review/review.json",
+    "sha256": "07075f9987f706e1fbc265dbc260d00d5294c7c977cb2b0ad32a78553d665d06",
+    "disposition": "preserved pre-clarification record"
+  },
+  "clarification_review": {
+    "result": "approved",
+    "only_json_addition": "comparison_pairing",
+    "exact_pairing": "For K5 versus K20, rescore both on the identical realized joint K20-complete rows within these fixed 128, with paired bootstrap draws across K, lenses, predictors and models. Preserve the main K5 comparison on its full joint cohort.",
+    "only_markdown_addition": "For the K=5 versus K=20 diagnostic, score both on the identical realized joint\nK=20-complete rows within the fixed subset, preserving bootstrap pairing across\nrollout counts, lenses, predictors and models. The main K=5 cohort is unchanged.",
+    "byte_level_delta_check": "Removing the new JSON field and the three added Markdown lines reproduces both original reviewed file SHA256 values exactly. Every other reviewed source/evidence file is unchanged.",
+    "scientific_effect": "Makes the already-required paired diagnostic rows and bootstrap multiplicities explicit while preserving the main K5 cohort; no selection or protocol change."
+  }
+}
