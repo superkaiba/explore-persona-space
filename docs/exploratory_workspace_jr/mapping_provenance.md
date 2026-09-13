@@ -17,6 +17,12 @@ Use **Qwen3.5-27B with thinking disabled** as the primary candidate and **Qwen3.
 
 Primary–weaker gap: **16.75 percentage points**. These binomial intervals treat rollouts as independent; five draws share each of 198 GPQA questions, so intervals are descriptive and do not settle a unique-winner test. Accuracy uses realized retained rollouts; attempted denominator is 990. Figures are unnecessary for this audit.
 
+A subsequent [question-paired uncertainty clarification](capability_uncertainty.md)
+reproduces the frozen two-model scores and supplies cluster-bootstrap intervals
+and missing-draw sensitivities. Its intervals should be used for this pair in
+the final report; the original panel-wide Wilson table above remains an audit
+record. This clarification does not change model selection.
+
 Capability source: pinned dataset `superkaiba1/explore-persona-space-data@3de3be6de6aab707a207128f0081799b579ea594`, under `issue2588_capability_panel_cap_long/fits/<cell>/gpqa_transfer_prompt_last.json`. These exact current files were opened, not inferred from task titles. The no-thinking frontier files for Qwen3.8-Flash-Next and DeepSeek V4 Pro do not occur in the current pinned fits subtree or scoped local artifact search. GLM-5.3 is registered thinking-only and therefore fails the requested prompt-last input. Old charmander disk is not certified absent: current project rules say fellows access was revoked 2026-09-09, and no charmander SSH alias is available. Wider catalog models are chiefly Qwen2.5-7B, Qwen3.5-9B, Llama/Tulu3-8B, and OLMo2-7B; the catalog is discovery evidence, not substituted capability measurement.
 
 ## Actual coefficients and representation contract

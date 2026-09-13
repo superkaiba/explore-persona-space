@@ -1,0 +1,161 @@
+{
+  "schema": "workspace-jr-capability-uncertainty-independent-review-v1",
+  "decision": "verified_exploratory_historical_capability_clarification",
+  "reviewer": "independent Codex reviewer /root/native_lens_review",
+  "reviewed_at_utc": "2026-09-13T07:04:52.714140+00:00",
+  "main_prediction_outcomes_read": false,
+  "gpu_work_performed": false,
+  "live_jobs_or_remote_data_modified": false,
+  "source_or_completed_artifacts_modified": false,
+  "historical_input_revision": "3de3be6de6aab707a207128f0081799b579ea594",
+  "historical_grading_producer_sha": "9b896ccc6b65e1d7322d3c7e67f6fe92883a0f0c",
+  "published_revision": "718e0edd6c3e90b682591c743b79c5df91a6869e",
+  "results_sha256": "42afcf2205b497ba6b4a87d0c27271c1b078003dbdb43cc3bdca472cd7a00274",
+  "checks": {
+    "sources": "All fourteen exact cache files independently matched immutable Hub SHA256/size or Git blob ID at the historical revision. They remain identical at published revision 718e0edd, independently verifying the supplied current-input check. No model/API grading was used.",
+    "parser": "ASTs of every extracted grading definition and assignment match the original Git object in order, including both assignments of _BOXED_RE. The later historical regex override is retained; no modernized grading behavior was substituted. A separately written scalar extractor reproduced all saved per-row letters and correctness.",
+    "row_and_question_identity": "Verified unique qid/seed/row_id and stage for every observed draw, identical question prompt bytes and gold across seeds/models, exact historical retrieval eligibility row-ID sets, and historical aggregate correct/unparseable/rollout counts. All 198 planned questions have positive observed counts in both models; missing draws remain explicit.",
+    "estimands": "Independently reconstructed count/correct arrays. Pooled accuracy uses each model's observed rollout denominator; equal-question accuracy averages per-question observed means. The complete sensitivity uses exactly the same 194 five-draw questions in both models. Worst/best bounds use all 990 planned draws per model; difference bounds combine opposite endpoints.",
+    "bootstrap": "Regenerated the exact RNG sequence (2000, seed20260912), verified saved indices and complete-subset indices, and recomputed every sample for all three estimands with scalar arithmetic. The same question multiplicities apply to both models. Paired-difference samples are model differences within each draw; all percentile endpoints independently recomputed using sorted linear interpolation.",
+    "numerical_agreement": {
+      "pooled_max_absolute_error": 0.0,
+      "equal_question_max_absolute_error": 8.881784197001252e-16,
+      "complete_question_max_absolute_error": 0.0,
+      "all_points_and_ci_endpoint_absolute_tolerance": 1e-14
+    },
+    "publication": "All ten completed artifacts matched their receipt and immutable Hub metadata. Marker binds the exact report and all nine other files; copied reader/plan match the reviewed source and declared plan.",
+    "falsification_tests": {
+      "result": "4 passed in 1.55s",
+      "cases": [
+        "Actual reader rejects relabeling two same-gold comparison questions across all seeds, while preserving the complete retrieval row-ID set and making the substituted bytes consistent with the mocked metadata; rejection occurs before bootstrap.",
+        "Actual reader rejects changed input bytes at the metadata boundary and leaves no completion marker.",
+        "Actual reader refuses to overwrite a completed artifact directory.",
+        "Actual batched helper and difference intervals match a scalar oracle with unequal cluster counts; deliberately unpaired model draws produce different intervals."
+      ]
+    }
+  },
+  "verified_summary": {
+    "q35_27b": {
+      "correct": 670,
+      "observed_draws": 985,
+      "unparseable": 3,
+      "missing_draws": 5
+    },
+    "q35_4b": {
+      "correct": 506,
+      "observed_draws": 987,
+      "unparseable": 5,
+      "missing_draws": 3
+    },
+    "questions": 198,
+    "joint_complete_questions": 194,
+    "pooled_observed_rollouts": {
+      "q35_27b": {
+        "estimate": 0.6802030456852792,
+        "ci95": [
+          0.6344127216730416,
+          0.7253331199798808
+        ]
+      },
+      "q35_4b": {
+        "estimate": 0.5126646403242148,
+        "ci95": [
+          0.46496462627674223,
+          0.557368703631394
+        ]
+      },
+      "primary_minus_comparison": {
+        "estimate": 0.16753840536106446,
+        "ci95": [
+          0.12201664857175779,
+          0.2148717730859427
+        ]
+      }
+    },
+    "equal_question_weighting": {
+      "q35_27b": {
+        "estimate": 0.6786195286195287,
+        "ci95": [
+          0.6319865319865315,
+          0.7242466329966333
+        ]
+      },
+      "q35_4b": {
+        "estimate": 0.5131313131313132,
+        "ci95": [
+          0.46564393939393933,
+          0.5580808080808078
+        ]
+      },
+      "primary_minus_comparison": {
+        "estimate": 0.16548821548821546,
+        "ci95": [
+          0.11919191919191885,
+          0.21280303030302994
+        ]
+      }
+    },
+    "joint_complete_question_estimates": {
+      "q35_27b": {
+        "estimate": 0.6814432989690722,
+        "ci95": [
+          0.6350515463917525,
+          0.7257731958762886
+        ]
+      },
+      "q35_4b": {
+        "estimate": 0.5092783505154639,
+        "ci95": [
+          0.4608247422680412,
+          0.5567010309278351
+        ]
+      },
+      "primary_minus_comparison": {
+        "estimate": 0.1721649484536083,
+        "ci95": [
+          0.12783505154639174,
+          0.21855670103092784
+        ]
+      }
+    },
+    "joint_complete_excluded_questions": [
+      "gpqa_050",
+      "gpqa_055",
+      "gpqa_185",
+      "gpqa_193"
+    ],
+    "missing_draw_difference_bounds": [
+      0.16262626262626267,
+      0.1707070707070707
+    ]
+  },
+  "findings": [],
+  "reporting_limitations": [
+    "The aggregate accuracies were already known and the two models were selected before this clarification. This is exploratory uncertainty for a fixed selection, not prospective confirmation or selection-adjusted inference.",
+    "Question-cluster percentile intervals condition on these recorded seed outcomes and treat benchmark questions as exchangeable. They do not measure benchmark representativeness, cross-model selection uncertainty, or separately resample generation seeds.",
+    "The pooled estimate weights observed draws; equal-question and complete-question analyses address different weighting/eligibility sensitivities. Neither proves missing draws are ignorable. Missing-draw bounds are deterministic worst/best sensitivity bounds, not confidence intervals.",
+    "Grading reproduces the pinned historical deterministic parser, including its late boxed-regex override and unparseable-as-incorrect rule. The audit does not establish that this parser is an ideal semantic answer grader.",
+    "These GPQA results do not establish global capability, a causal capability effect, or any main representation-predictability outcome."
+  ],
+  "evidence_sha256": {
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/scripts/workspace_jr_capability_uncertainty.py": "ec1b928574a1e688c0accfd78c616b64930718145daeba58ebc6792ae48be485",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/capability_uncertainty_plan_v1.json": "307461222ea2461bf6c08c528556e69591823dfaa2cd66b32dfcfa4d6ebec484",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/capability_uncertainty_v1_final_upload.json": "04307ea6a89fe6783357ad4d1efd1f243cb416bbdcb60907b01ecb4ddf72b188",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/capability_uncertainty_current_inputs_20260913.json": "be567810fff45a954f47938ee42a009854fdb92c697b57d24c8e74e513efb707",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/capability_uncertainty_v1/complete.json": "895164e40ded43e5f4433f719fa4d856785c539d4f040d3b3030b819a1762e27",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/capability_uncertainty_v1/model_counts.json": "05ef27bfb48c313db2bec697754d704d24aa8a93558f7b20f98d51ddf98f486f",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/capability_uncertainty_v1/original_grading_definitions.py": "f6af3e8cb5e30ea2eea61f507c1d1f9334fce4d817c6d0d9eaaa33cc58a69445",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/capability_uncertainty_v1/plan.json": "307461222ea2461bf6c08c528556e69591823dfaa2cd66b32dfcfa4d6ebec484",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/capability_uncertainty_v1/q35_27b_grades.json": "ea657fea424c6c132a2214da21e56b4b8e0b0c52d0b77830d28f87fc6a9d41d9",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/capability_uncertainty_v1/q35_4b_grades.json": "9c22d2b1d2c386a52e324beb4b893b13e47bc17e1c7c86562c66048e2170c895",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/capability_uncertainty_v1/question_bootstrap.npz": "52c86bbeef30ed37a8838da71a1c4189decf7e046173ab3d0332882a14b21c20",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/capability_uncertainty_v1/reader.py": "ec1b928574a1e688c0accfd78c616b64930718145daeba58ebc6792ae48be485",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/capability_uncertainty_v1/results.json": "42afcf2205b497ba6b4a87d0c27271c1b078003dbdb43cc3bdca472cd7a00274",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/capability_uncertainty_v1/verified_inputs.json": "a34144a05175314b63e117e2c7eff66f9c973fdaef75840bc6318b7d784ce969",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/capability_uncertainty_independent_review/audit.json": "cc7a8e3f0563c6a85158d470f6fd17ada4c7f49064e0ea0600eb41c249bb12b4",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/capability_uncertainty_independent_review/audit.py": "9cdf886502cee41d823f9b95d9a1b2575efce975e99e3150673a646eedc3639c",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/capability_uncertainty_independent_review/publication_verification.json": "3195e4882efe0fcbde912a1db0575df4bdaaa0ff41647f0eb559dbd2f152f4ec",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/capability_uncertainty_independent_review/test_challenges.py": "202058678d9ae1a69bd40c8d80cdc557c94c4931a823f15f63f7c4a958261aff",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/capability_uncertainty_independent_review/verify_publication.py": "8bd26502f3e5a403c142cebd70f8a0b4b4dc7b3b58e17eaa2a7a0cb2804018aa"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "schema": "workspace-jr-capability-uncertainty-plan-v1",
+  "declared_at_utc": "2026-09-13T06:54:26.666626+00:00",
+  "scope": "Exploratory clarification of frozen two-model selection; aggregate accuracies were already known. No model selection or main outcome decisions are changed.",
+  "repo": "superkaiba1/explore-persona-space-data",
+  "revision": "3de3be6de6aab707a207128f0081799b579ea594",
+  "producer_sha": "9b896ccc6b65e1d7322d3c7e67f6fe92883a0f0c",
+  "models": [
+    "q35_27b",
+    "q35_4b"
+  ],
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "question_count": 198,
+  "bootstrap": {
+    "unit": "question",
+    "pair_across_models": true,
+    "draws": 2000,
+    "seed": 20260912,
+    "interval": "95% percentile"
+  },
+  "primary_estimand": "Per-model sum of correct observed rollouts divided by sum of observed rollouts, and their paired difference; each bootstrap resamples question clusters with all observed seeds retained.",
+  "sensitivities": [
+    "Equal weighting of questions, using each question's observed rollout mean",
+    "Restrict both models to the same questions with all five observed seeds",
+    "Worst/best bounds for absent draws among the planned 990 per model"
+  ],
+  "required_checks": [
+    "Exact current immutable Hub metadata matches all consumed bytes",
+    "Pinned original parser used without model or API execution",
+    "Every observed row has unique question/seed identity and matches the original per-row retrieval eligibility IDs",
+    "Recomputed aggregate totals/correct/unparseable exactly match original behavioral artifact",
+    "Shared question prompt and gold hashes match across seeds and models",
+    "Report missing IDs and counts; no replacement, retuning or p-value search"
+  ],
+  "interpretation": "Descriptive uncertainty for these two preselected models on this benchmark. Question resampling assumes exchangeable benchmark questions; it does not capture benchmark representativeness or selection among candidate models. Not a proof of global capability or a causal capability effect."
+}
