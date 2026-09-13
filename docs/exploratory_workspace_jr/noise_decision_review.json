@@ -1,0 +1,62 @@
+{
+  "schema": "workspace-jr-early-noise-decision-independent-review-v1",
+  "decision": "approved_code_for_registered_one_model_noise_decision",
+  "reviewer": "independent Codex reviewer /root/native_lens_review",
+  "reviewed_at_utc": "2026-09-13T08:07:04.514394+00:00",
+  "main_outcome_arrays_read": false,
+  "gpu_work_performed": false,
+  "live_jobs_or_producer_checkouts_modified": false,
+  "implementation_modified": false,
+  "checks": {
+    "cohort_anchor": "Exact hard-pinned subset SHA binds the previously audited ledger SHA, current configuration/selection hashes and eligibility implementation; recomputed two-model membership and original selection-order prefix agree. The actual native-runtime frozen_cohort function passed against the resident uploaded ledger, with 256 planned, 252 joint complete and 128 conditional-subset contexts.",
+    "source_and_terminal_binding": "Actual read_cell validates uploaded fit files, recipes, identities, coverage and a complete exit0 terminal; the new reader additionally binds terminal cell and result SHA. Actual generation binding ties each fitted native k10 component hash to its canonical-reference raw-generation SHA and recomputes final eligibility. Actual bind_analysis checks uploaded diagnostic marker/input proof, source byte compatibility and exact fitted result/manifest/per-example files; the new reader requires the corresponding successful diagnostic terminal.",
+    "mathematics": "Native target rows and per-context noise arrays are independently aligned by context ID to the same joint cohort. Numerator is the mean estimated variance trace of each K5 mean; denominator is that target's unbiased between-context variance trace on those rows. J/R component-remainder covariance identities are checked; no predictor performance enters the noise ratio or threshold choice.",
+    "decision_semantics": "Requires exactly full/J/restJ/R/restR and threshold 0.1. Only a finite nonnegative fraction strictly greater than 0.1 triggers. Zero remains non-triggering; zero observed target variance remains explicitly undefined. A positive result requires the two-model OR follow-up; negative/undefined results always await the other model or final supplement and never announce a globally cleared follow-up.",
+    "output_integrity": "Fresh output directory required; proof records exact source receipts/files and subset SHA. The selected noise arrays preserve ID alignment; final marker hashes all published decision inputs/outputs. No GPU launch or fitting occurs.",
+    "independent_tests": {
+      "result": "17 passed in 5.98s",
+      "fixture": "Actual tiny CPU ridge/MLP producer outputs, actual Source/read_cell/read_arrays/generation-binding/bind_analysis/frozen_cohort/align_arrays/paired_noise/decision_summary and output writer. Only the synthetic config/runtime identity and synthetic subset pin are substituted in local fixtures; real immutable subset/runtime validation is covered separately by the remote preflight.",
+      "coverage": [
+        "Full reader output and selected arrays match independent scalar rollout-noise and target-variance calculations on reordered, reduced common rows.",
+        "Target mutation and changed noise bytes reject against producer receipt hashes.",
+        "Re-uploaded inconsistent noise covariance, wrong seed roster, changed cohort bytes and reordered pinned subset reject.",
+        "Native terminal cell mismatch and diagnostic terminal marker mismatch reject.",
+        "Output overwrite rejects.",
+        "None, zero, exact 0.1, nextafter(0.1,1), negative, NaN and infinity receive the expected strict decision or rejection.",
+        "Nonbinary constant 0.1 targets retain explicit undefined variance rather than being treated as a zero-noise result."
+      ]
+    },
+    "native_runtime_preflight": {
+      "checkout": "db7a42b9420d16762ae1219c105847ee9934e9b0",
+      "cuda_visible_devices": "",
+      "runtime_versions": {
+        "torch": "2.13.0",
+        "transformers": "5.16.1",
+        "huggingface-hub": "1.31.0"
+      },
+      "operation": "Only actual frozen_cohort on the resident completion source; no fit/prediction arrays loaded. Same-byte reader/subset copies lived in an isolated temporary directory outside the clean checkout and were removed on exit."
+    }
+  },
+  "findings": [],
+  "scope_limits": [
+    "Approval concerns the reader and its current exact dependencies; no actual model noise decision was evaluated.",
+    "A production call requires completed, uploaded native fit and diagnostics artifacts with their matching successful terminals. The native-runtime preflight tested only the cohort gate.",
+    "The reader internally verifies saved fit metrics through the existing read_arrays consumer, but the trigger depends only on target variance and rollout noise. It does not tune against prediction errors.",
+    "Any later K5-versus-K20 diagnostic must retain frozen predictors and canonical K5 inputs and compare identical realized joint K20-complete rows, as bound by the unchanged subset declaration."
+  ],
+  "reviewed_sha256": {
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/scripts/workspace_jr_noise_decision.py": "12ee33a9a8d3f3fdbd392282e4caec84c112269897c80217cf850a9bc4835b18",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/scripts/workspace_jr_compare.py": "20cf9053afa6a6a2d8325423e0bd09e1dedbb0b227c09b99bd098a4ab7cbc84d",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/scripts/workspace_jr_supplement.py": "024be34579c4dd51c44f9884700bbb9f1b2adc8b76317746d5a3ac99316a318d",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/src/explore_persona_space/analysis/workspace_supplement.py": "9315ce7a356458f953789f2c2ddf9702949c9cdabc2254676d3b51c9816c30e9",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/src/explore_persona_space/analysis/workspace_completion.py": "4dab764d1ce7372b42e1b918af03bb1134d28dc7929a32ce2256eb2438ffe6ba",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/src/explore_persona_space/analysis/workspace_comparison.py": "a0b62bac02758046ccab1bd4e7db168f7eb6bc4a0a3a0132a3ed7f00b36ff9c2",
+    "/mnt/eps-data/thomasjiralerspong/wt-jr-workspace-predictability/docs/exploratory_workspace_jr/higher_k_subset_20260913.json": "1499b17a2fdd84c8058bf36886e8272e66b9755cb6992d5b80ea764978b055bb",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/higher_k_selection_independent_review/review_final.json": "51371c37d91897f010c0273e4ef0733abf7b7989312bf1e15f42f5ec2b124900",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/completion_cohort_actual_independent_review/review.json": "8bb4d954ce669ef0b293b085c4224e584b982cc176417fcc2d7ae6379ddb506e",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/noise_decision_independent_review/remote_preflight.json": "dd80ea2e6a28238d466ecb297fcd14a925bc7571fdadeaa444ea61174522df6c",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/noise_decision_independent_review/remote_preflight.py": "af0cd2dc7455ce2382067c92ba1c43fdad40c9eb1a4c7f337810a13c62492cd2",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/noise_decision_independent_review/remote_preflight.stderr": "867639057bfb8d97bc9a78549266484c5d9d51f03d1996c1843a289d7c402688",
+    "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/noise_decision_independent_review/test_reader.py": "cab349adcfffaaa9944c752d4fef93b2dc60b724ed8a66b83bd809dcd3af031a"
+  }
+}
