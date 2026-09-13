@@ -35,6 +35,8 @@ from explore_persona_space.analysis.workspace_decomposition import (  # noqa: E4
 from explore_persona_space.analysis.workspace_fit import evaluate_component_fits  # noqa: E402
 from explore_persona_space.analysis.workspace_gate import validate_main_readiness  # noqa: E402
 from explore_persona_space.analysis.workspace_recovery import recover_pilot_inputs  # noqa: E402
+from explore_persona_space.analysis.workspace_terminal_recovery import recover_terminal_eos  # noqa: E402
+from explore_persona_space.analysis.workspace_terminals import terminal_policy  # noqa: E402
 from explore_persona_space.analysis.workspace_runtime import (  # noqa: E402
     content_sha256,
     file_sha256,
@@ -167,11 +169,8 @@ def capture(args, config, identity):
                 for index, (row, value) in enumerate(zip(batch, values, strict=True))
             }
         )
-    terminal = set(
-        _model.generation_config.eos_token_id
-        if isinstance(_model.generation_config.eos_token_id, list)
-        else [_model.generation_config.eos_token_id]
-    )
+    stopping = terminal_policy(_model.generation_config, tokenizer)
+    terminal = set(stopping["terminal_ids"])
     excluded, included, hashes = [], [], {}
     for row in prompts:
         source = root / f"{row['prompt_sha256']}.json"
@@ -214,6 +213,7 @@ def capture(args, config, identity):
                     "seed": draw["seed"],
                     "finish_reason": draw["finish_reason"],
                     "terminal_ids_removed": dropped,
+                    "terminal_policy": stopping,
                 }
             )
         if len(rows) != len(config["generation"]["seeds"]):
@@ -637,7 +637,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "phase",
-        choices=("generate", "capture", "dictionaries", "decompose", "fit", "recover-pilot"),
+        choices=(
+            "generate",
+            "capture",
+            "dictionaries",
+            "decompose",
+            "fit",
+            "recover-pilot",
+            "recover-terminal-eos",
+        ),
     )
     parser.add_argument("--config", type=Path, default=Path("configs/analysis/workspace_jr.yaml"))
     parser.add_argument(
@@ -653,6 +661,9 @@ def main():
     parser.add_argument("--main-readiness", type=Path)
     parser.add_argument("--source", type=Path)
     parser.add_argument("--source-receipt", type=Path)
+    parser.add_argument(
+        "--resume", action="store_true", help="Resume only an interrupted terminal-EOS recovery"
+    )
     parser.add_argument(
         "--subset",
         choices=[f"{s}_{t}" for s in ("pilot", "main") for t in ("train", "validation", "test")],
@@ -670,6 +681,10 @@ def main():
     )
     parser.add_argument("--rotation", type=int, choices=(20260913, 20260914, 20260915))
     args = parser.parse_args()
+    if args.resume and args.phase != "recover-terminal-eos":
+        raise ValueError(
+            "--resume is only used by terminal-EOS recovery; other phase resumes are automatic"
+        )
     if args.all_k and args.phase != "decompose":
         raise ValueError("--all-k is only meaningful for the decomposition phase")
     config = load_workspace_jr_config(args.config)
@@ -699,6 +714,7 @@ def main():
         "decompose": decomposition,
         "fit": fits,
         "recover-pilot": recover_pilot_inputs,
+        "recover-terminal-eos": recover_terminal_eos,
     }
     phases[args.phase](args, config, identity)
 
