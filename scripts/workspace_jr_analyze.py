@@ -96,7 +96,7 @@ def direction_diagnostics(args, config, inputs):
 def main():
     """Separate lightweight diagnostics from optional GPU learning-curve fits."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("phase", choices=("diagnostics", "learning-curves"))
+    parser.add_argument("phase", choices=("diagnostics", "statistics", "learning-curves"))
     parser.add_argument("--input-root", type=Path, required=True)
     parser.add_argument("--fit-upload-receipt", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
@@ -134,7 +134,7 @@ def main():
     x, targets, rollouts, ids, _, statistics, proof = inputs
     args.out.mkdir(parents=True, exist_ok=False)
     save_json(args.out / "input_proof.json", {"identity": identity, "sources": proof})
-    if args.phase == "diagnostics":
+    if args.phase in ("diagnostics", "statistics"):
         save_json(args.out / "decomposition_statistics.json", statistics)
         for split in ("train", "validation", "test"):
             report, arrays = rollout_noise_report(
@@ -142,7 +142,8 @@ def main():
             )
             save_json(args.out / f"noise_{split}.json", finite_json(report))
             np.savez(args.out / f"noise_{split}_arrays.npz", **arrays)
-        direction_diagnostics(args, config, inputs)
+        if args.phase == "diagnostics":
+            direction_diagnostics(args, config, inputs)
     else:
         import wandb
 

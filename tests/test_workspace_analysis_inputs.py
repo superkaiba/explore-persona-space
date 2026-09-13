@@ -12,9 +12,32 @@ import torch
 from explore_persona_space.analysis.workspace_analysis_inputs import (
     _saved_full_predictions,
     load_fitted_components,
+    summarize_token_statistic,
 )
 from explore_persona_space.analysis.workspace_fit import _fit_contract, _input_fingerprints
 from explore_persona_space.analysis.workspace_runtime import content_sha256, file_sha256
+
+
+def test_unequal_rollouts_keep_both_weighting_conventions():
+    result = summarize_token_statistic(torch.tensor([2.0, 8.0, 8.0, 8.0]), [1, 3])
+    assert result["mean"] == result["mean_token"] == 6.5
+    assert result["mean_equal_rollout"] == 5.0
+    assert result["rollout_means"] == [2.0, 8.0]
+    assert result["tokens"] == 4
+
+
+@pytest.mark.parametrize(
+    "values,lengths",
+    [
+        (torch.ones(4), [1, 2]),
+        (torch.ones(4), [0, 4]),
+        (torch.ones(2, 2), [2, 2]),
+        (torch.tensor([float("nan")]), [1]),
+    ],
+)
+def test_invalid_rollout_statistics_fail(values, lengths):
+    with pytest.raises(ValueError, match="exact nonempty rollout lengths"):
+        summarize_token_statistic(values, lengths)
 
 
 @pytest.fixture

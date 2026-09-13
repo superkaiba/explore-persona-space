@@ -17,6 +17,32 @@ from explore_persona_space.analysis.workspace_fit import _fit_contract, _input_f
 from explore_persona_space.analysis.workspace_runtime import content_sha256, file_sha256
 
 
+def summarize_token_statistic(values: torch.Tensor, token_counts: list[int]) -> dict:
+    """Retain token weighting and the experiment's equal weighting of rollouts."""
+    if (
+        not token_counts
+        or any(type(count) is not int or count < 1 for count in token_counts)
+        or values.ndim != 1
+        or len(values) != sum(token_counts)
+        or not torch.isfinite(values).all()
+    ):
+        raise ValueError(
+            "Token statistics require finite values and exact nonempty rollout lengths"
+        )
+    values = values.double()
+    rollout_means = torch.stack([part.mean() for part in values.split(token_counts)])
+    return {
+        "mean": float(values.mean()),
+        "mean_token": float(values.mean()),
+        "mean_equal_rollout": float(rollout_means.mean()),
+        "rollout_means": rollout_means.tolist(),
+        "sum": float(values.sum()),
+        "minimum": float(values.min()),
+        "maximum": float(values.max()),
+        "tokens": len(values),
+    }
+
+
 def load_fitted_components(
     root: Path, stage: str, k: int, rotation, config, selection, identity, upload_receipt
 ):
@@ -71,13 +97,7 @@ def load_fitted_components(
                     "token_counts": saved["token_counts"],
                     "arms": {
                         arm: {
-                            name: {
-                                "mean": float(values.double().mean()),
-                                "sum": float(values.double().sum()),
-                                "minimum": float(values.min()),
-                                "maximum": float(values.max()),
-                                "tokens": len(values),
-                            }
+                            name: summarize_token_statistic(values, saved["token_counts"])
                             for name, values in fields.items()
                         }
                         for arm, fields in saved["decomposition_statistics"].items()
