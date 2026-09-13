@@ -51,7 +51,7 @@ interval. This is the same reference recipe already used in the original fits.
 
 ## Figures
 
-`scripts/workspace_jr_plot_supplement.py --root SUPPLEMENT_ROOT
+`scripts/workspace_jr_plot_supplement.py --input-root SUPPLEMENT_ROOT
 --upload-receipt RECEIPT --out FRESH_FIGURE_DIRECTORY` produces six views:
 decomposition agreement, sampling noise, readout-score distributions,
 predictability versus training target variance, and one learning-curve figure
