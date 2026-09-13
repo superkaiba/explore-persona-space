@@ -3,16 +3,20 @@
 The experiment is running. Both models have completed native lens calibration,
 validated end-to-end pilots and main generation/capture. Native k=10 fits and
 diagnostics have completed for both models. All 27B observed fits, all eight
-model/dictionary affine-null orientations and both models' learning curves have
-completed, been uploaded and been staged for final reporting. The remaining
-4B rotated-control observations are in progress. The full paired analysis and
+model/dictionary affine-null orientations, all 4B observed fits, their component
+statistics and both models' learning curves have completed and been uploaded.
+All sources are available on the reporting worker, and the assembled registry
+contains the full 48-cell comparison and 24 observed-statistics sources.
+The full paired analysis and
 final scientific report remain outstanding;
 no main predictability conclusion is available yet.
 
 The [main execution handoffs](execution_handoffs_20260913.md) record the
 verified stage sequences and recovery obligations for the six experiment workers.
 The optional [checkpoint reuse procedure](checkpoint_reuse.md) describes the
-validation required before precomputed future splits can enter an original run.
+validation required before precomputed future splits can enter an original run. The
+[executed rotation-14 reuse audit](checkpoint_reuse_execution_20260913.md) records
+the completed validation and safe publication.
 
 The frozen [analysis plan](analysis_plan.md),
 [configuration](../../configs/analysis/workspace_jr.yaml),
@@ -84,8 +88,8 @@ runtime.
 
 ## Remaining execution and analysis
 
-Complete the remaining 4B observed dictionary-orientation × sparsity fits and
-their token statistics. Both models' registered noise criteria were negative,
+All observed dictionary-orientation × sparsity fits and their token statistics
+are complete. Both models' registered noise criteria were negative,
 so the higher-K follow-up on its [fixed subset](higher_k_selection.md) was not
 triggered. Then execute
 the [paired final comparison](comparison_analysis.md),
