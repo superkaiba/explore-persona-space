@@ -79,7 +79,8 @@ actual-dictionary affine nulls, main sampling-noise and direction diagnostics,
 and fixed-recipe learning curves. Run the registered higher-K follow-up on its
 [fixed subset](higher_k_selection.md) if its noise criterion triggers. Then execute
 the [paired final comparison](comparison_analysis.md),
-[supplementary cohort analysis](supplementary_analysis.md), saved figure exports
+[supplementary cohort analysis](supplementary_analysis.md),
+[decomposition statistics summary](decomposition_summary.md), saved figure exports
 and the concise final report. Intermediate all-captured fit scores are not the
 primary completion-conditioned estimates.
 

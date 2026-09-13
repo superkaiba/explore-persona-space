@@ -1,0 +1,59 @@
+{
+  "schema": "workspace-jr-decomposition-summary-independent-review-v1",
+  "decision": "approved_for_completed_grid_reporting_consumer",
+  "reviewer": "independent Codex reviewer /root/native_lens_review",
+  "reviewed_at_utc": "2026-09-13T10:54:43.089429+00:00",
+  "reviewed_sha256": {
+    "scripts/workspace_jr_decomposition_summary.py": "9f4c5e724f970146e9c49b4eaf30b9c14fd7f2d68f69c899f6a59c51c00bc9c3",
+    "src/explore_persona_space/analysis/workspace_decomposition_summary.py": "65168bb9834fe528ccddf6742831a2656ae859d5ed039887e563210e5b61da13",
+    "tests/test_workspace_decomposition_summary.py": "85afb2af5c744869f6c06d631c4e7ee40fe320df2d3d9c65efc9537937dea39a",
+    "docs/exploratory_workspace_jr/decomposition_summary.md": "01e12bfae3c184c3cbfb8350b3d604d3677227630a2956d031cf02bcc3ca0752",
+    "docs/exploratory_workspace_jr/README.md": "69bb93fb1a4d46f48d219a1f76b7550f88bf5a7eedf6593c98b4f4aa55cfc411"
+  },
+  "initial_review_sha256": "228b921e88b718850b8e82ff1401e7269ab9121342358e705f5d7dd9b98e6246",
+  "scientific_artifacts_read": false,
+  "scientific_consolidation_executed": false,
+  "gpu_work_performed": false,
+  "remote_actions_performed": false,
+  "tracked_files_modified": false,
+  "findings": [],
+  "closed_findings": [
+    {
+      "issue": "Ledger eligibility can properly contain the actual fitted common cohort.",
+      "closure": "completed_comparison admits the subset; main verifies all 48 immutable cell proofs before creating output; verified_primary_cohort reconstructs the actual all-cell/ledger intersection and checks the complete saved cohort metadata, including exclusions. Full CLI synthetic tests cover both equal and proper-subset cohorts. A changed cell proof fails before output creation."
+    },
+    {
+      "issue": "Final completion lacked a hash chain to per-context checkpoint arrays.",
+      "closure": "summary_complete.json now contains exactly all 48 cell_complete.json hashes. Every cell marker binds summary.json and per_context_token_statistics.npz. The actual CLI fixture verifies the full chain, 48 cells, 96 CSV rows, and identical sidecar context order."
+    }
+  ],
+  "scientific_semantics": {
+    "weighting": "Token values are averaged within each rollout, then rollouts equally within context, then contexts equally. Secondary uniform-token weighting uses original positive lengths and summed token values. Producer means/sums/min/max are checked for finite nonnegative consistent values and sparse-count bounds.",
+    "energy": "Residual-energy fraction is the ratio of two equally context/rollout-weighted mean energies, not a mean of token-specific or context-specific ratios. These are saved FP32 sparse-algorithm diagnostics. The report and documentation separate them from centered pooled target variance.",
+    "null": "Exactly-affine null decomposition statistics use one stored vector per context and algebraically repeat it over each original positive token length and the same registered rollout seeds. Actual null prepared_sources hashes bind the layout and decomposition arrays. Ragged explicit-token repetition agrees with this reduction.",
+    "geometry": "Population-centered variance traces and twice component/remainder covariance use the pooled original targets on the same common contexts; reconstruction is verified. Component and remainder variances are not presented as additive without covariance.",
+    "predictions": "The existing read_arrays verifies saved target/input fingerprints and recorded metrics before common-cohort alignment. The new report recomputes own-target SSE/SST/R2 and bias statistics for already-fitted ridge and MLP predictions. No fitting, tuning, selection, matching or new uncertainty estimand is introduced; paired R2 intervals remain in the main comparator.",
+    "undefined": "Zero token input energy and zero pooled full variance remain flagged with undefined fractions. Constant-target R2 stays undefined. Sparse maximum L0 and increased-error contexts are preserved in JSON and CSV."
+  },
+  "source_and_failure_checks": {
+    "observed": "All 24 observed statistics sources required exactly once; native unrotated k10 consumes diagnostics, other cells statistics. Real Source byte verification, analyzer implementation/identity/input-proof binding, exact all-split fitted component hash ledgers, successful marker-bound analyzer terminal and exact test row order are checked.",
+    "grid": "Exactly 48 registered role/kind/k/rotation cells, no duplicate or missing cells, completed comparison marker and coverage, frozen config/selection, immutable matching cell proofs and all three scope reports on the same common cohort are required.",
+    "partial_failure": "Fresh outputs only. Fit-source/preflight failures leave no output root. A later statistics failure preserves already completed cells without a final completion marker. A fresh retry must use a separate root; this consumer does not claim automatic resume.",
+    "artifacts": "Report and CSV hashes, input-manifest hash, both runtime identities and script/module hashes are saved; final marker binds every cell marker and thus both per-cell JSON and NPZ sidecars."
+  },
+  "validation": {
+    "command": "PYTHONPATH=src OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 uv run --no-sync pytest -q tests/test_workspace_decomposition_summary.py tests/test_workspace_analysis_inputs.py tests/test_workspace_supplement.py /mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/decomposition_summary_independent_review/test_review.py",
+    "result": "35 passed in 1.90 s",
+    "independent_scratch_cases": 8,
+    "independent_oracles": "Three seeded multidimensional direct scalar token-weighting, covariance and prediction-SSE oracles. Actual main() executes a complete 48-cell/96-arm synthetic grid under equal/proper-subset cohorts with full marker verification, refusal of overwrite, preflight source drift and missing-statistic rejection, plus preservation of six partial cells on a later injected statistics failure.",
+    "fixture_seams": "Full CLI uses explicit signature-conformant autospec synthetic fit/statistics consumer seams. Real Source, completed_comparison, cohort recomputation, estimator and output bodies execute. Repository tests separately exercise real analyzer and null reader bodies, actual byte-bound Source fixtures, terminal/source/seed mutation rejection and ragged direct-token/zero-energy oracles. This is not an actual-model consolidation test.",
+    "ruff": "All checks passed on script, estimator module and repository tests.",
+    "cli_help": "Actual CLI --help passed.",
+    "git_diff_check": "Passed."
+  },
+  "evidence_sha256": {
+    "test_review.py": "c2eedf5bc292d2ce815a7dc5e733df3e14ffecbdd60397a2d25fdf0c3dc8131c",
+    "review_initial.json": "228b921e88b718850b8e82ff1401e7269ab9121342358e705f5d7dd9b98e6246"
+  },
+  "limitations": "Approval covers the exact reviewed reporting implementation and its declared estimands. The scientific 48-cell consumer has not run, and no main predictability outcomes were read in this review. Actual final reporting still requires the consumer-verified complete uploaded source closure and subsequent output persistence. This does not authorize changing frozen producers or launching GPU work."
+}
