@@ -232,7 +232,9 @@ def verify_readout_projection(report, arrays, targets, predictions, original_ids
     if report["test_context_ids"] != original_ids:
         raise ValueError("Readouts use different original test rows")
     for arm in ("J", "R", "random", "pca"):
-        basis = arrays[f"direction__{arm}"]
+        # Match per_direction_scores: accumulate norms of saved FP32 columns in FP64.
+        # Long, strided FP32 reductions can reject correctly normalized dictionaries.
+        basis = np.asarray(arrays[f"direction__{arm}"], dtype=np.float64)
         if not np.allclose(np.linalg.norm(basis, axis=0), 1, rtol=1e-6, atol=1e-8):
             raise ValueError("Readout directions are not normalized")
         if not np.allclose(
@@ -247,6 +249,7 @@ def verify_readout_projection(report, arrays, targets, predictions, original_ids
                 atol=1e-10,
             ):
                 raise ValueError("Readouts differ from the actual saved full-answer predictor")
+    print("[readout-validation] norm_accumulation=float64 arms=J,R,random,pca", flush=True)
 
 
 def validate_readout_contract(report, arrays, native, config):
