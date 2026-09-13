@@ -12,6 +12,7 @@ import matplotlib
 matplotlib.use("Agg")
 import numpy as np  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
+from matplotlib.ticker import FuncFormatter, LogLocator, NullFormatter  # noqa: E402
 
 from workspace_jr_plot import LABELS, MODELS, STYLES, export as main_export  # noqa: E402
 
@@ -247,6 +248,9 @@ def readout_figures(source, out):
                 xlabel="Held-out direction variance",
                 ylabel=better_label("Aligned readout R²"),
             )
+            ax.xaxis.set_major_locator(LogLocator(base=10, subs=(1, 2, 5)))
+            ax.xaxis.set_major_formatter(FuncFormatter(lambda value, _: f"{value:g}"))
+            ax.xaxis.set_minor_formatter(NullFormatter())
             style_axis(ax, grid_axis="y")
             panel_header(ax, chr(65 + row * 2 + col), model, f"{arm}-aligned directions")
     fig.legend(*axes[0, 0].get_legend_handles_labels(), loc="lower center", ncol=2, frameon=False)
