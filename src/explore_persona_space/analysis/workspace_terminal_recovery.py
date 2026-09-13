@@ -17,9 +17,14 @@ from explore_persona_space.analysis.workspace_artifacts import (
     validate_coverage,
     validate_producer,
 )
+from explore_persona_space.analysis.workspace_capture import (
+    assign_context_input,
+    capture_token_batch,
+)
 from explore_persona_space.analysis.workspace_runtime import (
     content_sha256,
     file_sha256,
+    load_native,
     save_json,
     save_tensors,
 )
@@ -79,7 +84,32 @@ def link_verified(source, destination, checksum):
         os.link(source, destination)
 
 
-def recover(args, config, identity, policy, checkpoint_evidence, *, expected_receipt_sha256):
+def recapture_answers(rows, text, tokenizer, source_layer):
+    """Re-execute corrected answer batches 2/2/1 and preserve canonical context x."""
+    context_input = rows[0]["x"]
+    if len(rows) != 5 or any(not torch.equal(row["x"], context_input) for row in rows):
+        raise ValueError("Fresh recovery capture requires five identical canonical inputs")
+    inputs = [
+        {
+            key: value
+            for key, value in row.items()
+            if key not in {"x", "answer_batch_x", "answer_states"}
+        }
+        for row in rows
+    ]
+    captured = []
+    for begin in range(0, len(inputs), 2):
+        captured.extend(
+            capture_token_batch(
+                text, inputs[begin : begin + 2], source_layer, tokenizer.pad_token_id
+            )
+        )
+    return assign_context_input(captured, context_input)
+
+
+def recover(
+    args, config, identity, policy, checkpoint_evidence, *, expected_receipt_sha256, recapture=None
+):
     """Bind the exact failed pilot and rewrite only EOS masks and derived identities."""
     if file_sha256(args.source_receipt) != expected_receipt_sha256:
         raise ValueError("Recovery receipt differs from the independently audited bytes")
@@ -112,12 +142,14 @@ def recover(args, config, identity, policy, checkpoint_evidence, *, expected_rec
         "original_terminal_ids": [248044],
         "checkpoint_evidence": checkpoint_evidence,
         "source_receipt_sha256": file_sha256(args.source_receipt),
-        "mask_correction": (
-            "trim captured states at tokenizer EOS; preserve every retained prefix state bitwise"
-        ),
+        "answer_capture_mode": "fresh_EOS_excluded_native_batches2"
+        if recapture
+        else "trim_original_prefix",
+        "mask_correction": "first terminal EOS and every following ID excluded",
         "forward_geometry": (
-            "original pilot causal forward, which included terminal EOS; "
-            "no new forward and no new sampled draws"
+            "fresh native BF16 eager forward on EOS-excluded answer IDs, batches2/2/1"
+            if recapture
+            else "original EOS-inclusive pilot forward; prefix states preserved bitwise"
         ),
         "preserved": (
             "original generation bytes, canonical context x, dictionary tensors, "
@@ -162,13 +194,15 @@ def recover(args, config, identity, policy, checkpoint_evidence, *, expected_rec
         subset = f"pilot_{split}"
         expected = [r["prompt_sha256"] for r in selection["subsets"][subset]]
         report["subsets"][subset] = recover_subset(
-            args, config, identity, contract, verified, producer, subset, expected
+            args, config, identity, contract, verified, producer, subset, expected, recapture
         )
     report["status"] = "complete_corrected_captures_no_component_fits_yet"
     save_json(args.out / "recovery_complete.json", report)
 
 
-def recover_subset(args, config, identity, contract, verified, producer, subset, expected):
+def recover_subset(
+    args, config, identity, contract, verified, producer, subset, expected, recapture
+):
     """Rebind canonical inputs and trim each complete context with durable progress."""
     reports = {}
     for kind, filename in (
@@ -250,6 +284,8 @@ def recover_subset(args, config, identity, contract, verified, producer, subset,
                 }
             )
         else:
+            if recapture is not None:
+                corrected = recapture(corrected)
             for row in corrected:
                 validate_context_input(new_reference, row["x"], args.out, identity)
             destination = args.out / source.relative_to(args.source)
@@ -337,6 +373,25 @@ def recover_terminal_eos(args, config, identity):
             Path(hf_hub_download(model_id, "tokenizer_config.json", revision=revision))
         ),
     }
+    recapture = None
+    if args.recapture_answers:
+        checkpoint["failed_terminal_geometry"] = failed_terminal_geometry(args, identity)
+        model, native_tokenizer, text = load_native(
+            config, "comparison", device=args.device, dtype=torch.bfloat16
+        )
+        if (
+            type(model).__name__ != "Qwen3_5ForConditionalGeneration"
+            or text.config._attn_implementation != "eager"
+        ):
+            raise ValueError("Fresh answer recapture differs from the pinned native geometry")
+        if terminal_policy(model.generation_config, native_tokenizer) != policy:
+            raise ValueError("Fresh native capture stopping policy differs from pinned metadata")
+
+        def recapture(rows):
+            return recapture_answers(
+                rows, text, native_tokenizer, config["models"]["comparison"]["source_layer"]
+            )
+
     recover(
         args,
         config,
@@ -344,4 +399,35 @@ def recover_terminal_eos(args, config, identity):
         policy,
         checkpoint,
         expected_receipt_sha256=SOURCE_RECEIPT_SHA256,
+        recapture=recapture,
     )
+
+
+def failed_terminal_geometry(args, identity):
+    """Bind the uploaded diagnostic failure before its predeclared fallback."""
+    if args.terminal_parity_root is None or args.terminal_parity_receipt is None:
+        raise ValueError(
+            "Fresh recapture requires the uploaded failed terminal-geometry diagnostic"
+        )
+    upload = json.loads(args.terminal_parity_receipt.read_text())
+    if upload["revision"] != "a47f8b06dd8c01e4067bf29898b62a86000451b9":
+        raise ValueError("Fresh recapture requires the exact observed diagnostic failure")
+    verify = _upload_binding(args.terminal_parity_root, args.terminal_parity_receipt)
+    source = args.terminal_parity_root / "terminal_parity.json"
+    checksum = verify(source)
+    if checksum != "9554214e365e31e092ec2142e0c2d37bd5f1576e80c5e9f0a3f2e3f2e48545dc":
+        raise ValueError("Terminal-geometry report differs from the observed failure")
+    report = json.loads(source.read_text())
+    validate_producer(report["plan"]["identity"], identity, native_ancestor=True)
+    if (
+        report["status"] != "failed_requires_fresh_pilot_capture"
+        or report["passed"] is not False
+        or report["plan"]["source_receipt_sha256"] != SOURCE_RECEIPT_SHA256
+        or report["plan"]["capture_batches"] != [2, 2, 1]
+    ):
+        raise ValueError("Terminal-geometry diagnostic does not require this fallback")
+    for context in report["contexts"]:
+        path = args.terminal_parity_root / f"context-{context['prompt_sha256']}.pt"
+        if verify(path) != context["output_sha256"]:
+            raise ValueError("Terminal-geometry diagnostic native outputs changed")
+    return {"report_sha256": checksum, "upload": upload}

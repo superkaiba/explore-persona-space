@@ -403,3 +403,84 @@ def test_native_parity_rejects_changed_identity_before_loading_gpu(tmp_path, mon
     )
     with pytest.raises(ValueError, match="config_sha256"):
         main()
+
+
+def test_fresh_capture_uses_corrected_ids_and_keeps_canonical_input():
+    """An actual causal native module replaces old answer states, in original batches."""
+    from transformers import Qwen2Config, Qwen2Model
+
+    from explore_persona_space.analysis.workspace_capture import capture_token_batch
+
+    module = recovery_module()
+    config = Qwen2Config(
+        vocab_size=32,
+        hidden_size=8,
+        intermediate_size=16,
+        num_hidden_layers=2,
+        num_attention_heads=2,
+        num_key_value_heads=2,
+    )
+    config._attn_implementation = "eager"
+    text = Qwen2Model(config).eval()
+    canonical = torch.arange(8, dtype=torch.float32)
+    rows = [
+        {
+            "prompt_ids": [1, 2, 3],
+            "answer_ids": [7] * (i + 1),
+            "prompt_sha256": "fixed",
+            "seed": 42 + i,
+            "x": canonical.clone(),
+            "answer_batch_x": torch.full((8,), -200.0),
+            "answer_states": torch.full((i + 1, 8), -100.0),
+            "terminal_ids_removed": 1,
+            "terminal_policy": {"terminal_ids": [31]},
+        }
+        for i in range(5)
+    ]
+    captured = module.recapture_answers(rows, text, SimpleNamespace(pad_token_id=0), 1)
+    for start in range(0, 5, 2):
+        inputs = [
+            {
+                key: value
+                for key, value in row.items()
+                if key not in {"x", "answer_batch_x", "answer_states"}
+            }
+            for row in rows[start : start + 2]
+        ]
+        direct = capture_token_batch(text, inputs, 1, 0)
+        for observed, reference in zip(captured[start : start + 2], direct, strict=True):
+            assert torch.equal(observed["x"], canonical)
+            assert torch.equal(observed["answer_batch_x"], reference["x"])
+            assert torch.equal(observed["answer_states"], reference["answer_states"])
+            assert not (observed["answer_states"] == -100.0).all()
+    assert all((row["answer_states"] == -100.0).all() for row in rows)
+
+
+def test_recovery_records_fresh_mode_and_never_recaptures_excluded_context(tmp_path):
+    module = recovery_module()
+    args, config, identity, _ = recovery_fixture(tmp_path, module)
+    policy = terminal_policy(
+        SimpleNamespace(eos_token_id=248044), SimpleNamespace(eos_token_id=248046)
+    )
+    seen = []
+
+    def fresh_forward(rows):
+        assert len(rows) == 5 and all(row["answer_ids"] for row in rows)
+        seen.append(rows[0]["prompt_sha256"])
+        return [{**row, "answer_states": row["answer_states"] + 10} for row in rows]
+
+    module.recover(
+        args,
+        config,
+        identity,
+        policy,
+        {"geometry": "validated_failed_diagnostic"},
+        expected_receipt_sha256=file_sha256(args.source_receipt),
+        recapture=fresh_forward,
+    )
+    contract = json.loads((args.out / "recovery_contract.json").read_text())
+    assert contract["answer_capture_mode"] == "fresh_EOS_excluded_native_batches2"
+    assert len(seen) == 5 and len(set(seen)) == 5
+    for path in (args.out / "captures").rglob("*.pt"):
+        saved = torch.load(path, weights_only=True)
+        assert all(row["answer_states"].min() >= 10 for row in saved["rows"])

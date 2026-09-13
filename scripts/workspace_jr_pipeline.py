@@ -664,6 +664,9 @@ def main():
     parser.add_argument(
         "--resume", action="store_true", help="Resume only an interrupted terminal-EOS recovery"
     )
+    parser.add_argument("--recapture-answers", action="store_true")
+    parser.add_argument("--terminal-parity-root", type=Path)
+    parser.add_argument("--terminal-parity-receipt", type=Path)
     parser.add_argument(
         "--subset",
         choices=[f"{s}_{t}" for s in ("pilot", "main") for t in ("train", "validation", "test")],
@@ -681,6 +684,10 @@ def main():
     )
     parser.add_argument("--rotation", type=int, choices=(20260913, 20260914, 20260915))
     args = parser.parse_args()
+    if (
+        args.recapture_answers or args.terminal_parity_root or args.terminal_parity_receipt
+    ) and args.phase != "recover-terminal-eos":
+        raise ValueError("Terminal-geometry fallback options require terminal-EOS recovery")
     if args.resume and args.phase != "recover-terminal-eos":
         raise ValueError(
             "--resume is only used by terminal-EOS recovery; other phase resumes are automatic"

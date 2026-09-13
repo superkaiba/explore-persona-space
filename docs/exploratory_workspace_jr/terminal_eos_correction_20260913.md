@@ -71,3 +71,29 @@ aggregate comparisons must pass. If they fail, retain the CPU-trim evidence
 but perform fresh corrected pilot capture and refit before main approval.
 No new sampled answers or favorable replacement contexts are permitted.
 The diagnostic is implemented in scripts/workspace_jr_terminal_parity.py.
+
+## Observed diagnostic and required fresh capture
+
+The native diagnostic ran at producer c3e4fc2a8e143af021e37f9d08013d9c07657421
+and was uploaded as a47f8b06dd8c01e4067bf29898b62a86000451b9 (7 files).
+Its report SHA256 is
+9554214e365e31e092ec2142e0c2d37bd5f1576e80c5e9f0a3f2e3f2e48545dc.
+Original EOS-inclusive recapture reproduced all saved states bitwise.
+Trimmed prefixes versus EOS-excluded forwards failed the predeclared token
+criterion: aggregate relative Frobenius error 0.010451198591820955 and
+minimum row cosine 0.9988659955892043. The pooled-y comparison passed
+(relative error 0.000950081761852301), which does not waive the required
+per-token criterion. Three of four individual token comparisons failed.
+The enclosing job stopped before recovery, decomposition, or fitting.
+
+The predeclared fallback therefore uses `recover-terminal-eos
+--recapture-answers`, with the exact uploaded failed parity report bound by
+revision and SHA256. It first validates the same immutable original inputs,
+then runs fresh native BF16 eager capture on corrected answer IDs, in seed
+order and batches 2/2/1. It retains the exact original canonical context x
+and sampled answers. Fresh answer-batch input reads are saved as diagnostics.
+Its recovery contract distinguishes fresh answer capture from CPU prefix
+trimming; it never claims that fresh answer states are the old prefix bytes.
+The saved native diagnostic and original captures retain the prefix-trimming
+evidence. Completed main primary captures, its predictor targets, and its
+registered sample sizes remain unchanged.
