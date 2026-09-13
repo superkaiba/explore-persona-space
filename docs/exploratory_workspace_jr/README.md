@@ -2,10 +2,10 @@
 
 The experiment is running. Both models have completed native lens calibration,
 validated end-to-end pilots and main generation/capture. Native k=10 fits and
-diagnostics have completed for both models, and all four 27B orientations
-have reached the fitting stage. Observed fits and 4B rotated-control work
-remain in progress. The complete
-control grid, learning curves and final scientific report remain outstanding;
+diagnostics have completed for both models. All 27B observed and affine-null
+fits and its learning curves have completed and been uploaded. The remaining
+4B rotated-control fits, final null and learning curves are in progress or
+queued. The full paired analysis and final scientific report remain outstanding;
 no main predictability conclusion is available yet.
 
 The [main execution handoffs](execution_handoffs_20260913.md) record the
@@ -59,6 +59,11 @@ is independently verified on the shared completed cohort. None of the five
 targets in either model triggers the registered higher-K follow-up. This
 settles the conditional execution decision; the remaining control and
 predictability analyses remain necessary.
+
+The [actual native affine-null audit](main_native_null_validation_20260913.md)
+independently verifies both models' original context inputs, affine coefficients,
+rollout layouts and reconstructed targets. This validates those controls;
+their predictability gaps still require the complete paired analysis.
 
 ## Primary scoring population
 

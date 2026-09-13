@@ -1,0 +1,109 @@
+{
+  "actual_invariants": {
+    "comparison": {
+      "affine_full_exact": true,
+      "all_components_exact_promoted_fp32": true,
+      "all_rest_arrays_exact_h_minus_component": true,
+      "canonical_x_exact": true,
+      "dimension": 2560,
+      "extended_precision_scalar_checks": 27,
+      "full_component_rest_max_abs_error": 2.220446049250313e-16,
+      "max_input_norm_reduction_relative_error": 2.0275649993752675e-07,
+      "max_residual_energy_reduction_relative_error": 2.5526344328334297e-07,
+      "rollouts": 7040,
+      "split_contexts": {
+        "test": 256,
+        "train": 1024,
+        "validation": 128
+      },
+      "split_original_tokens": {
+        "test": 745247,
+        "train": 3672063,
+        "validation": 356975
+      }
+    },
+    "primary": {
+      "affine_full_exact": true,
+      "all_components_exact_promoted_fp32": true,
+      "all_rest_arrays_exact_h_minus_component": true,
+      "canonical_x_exact": true,
+      "dimension": 5120,
+      "extended_precision_scalar_checks": 27,
+      "full_component_rest_max_abs_error": 1.7763568394002505e-15,
+      "max_input_norm_reduction_relative_error": 2.964143400303772e-07,
+      "max_residual_energy_reduction_relative_error": 3.0716634492717745e-07,
+      "rollouts": 7040,
+      "split_contexts": {
+        "test": 256,
+        "train": 1024,
+        "validation": 128
+      },
+      "split_original_tokens": {
+        "test": 746075,
+        "train": 3749984,
+        "validation": 359517
+      }
+    }
+  },
+  "artifact_sha256": {
+    "audit.json": "85dad521771816bd946d155f00119ac3cf87c6f39926ba4f432bc502d77ef9d1",
+    "audit_remote.py": "97aa3b0f020457627e118b28ffdba78ff965a3057eae345b5d74b1793a25eda3",
+    "complete.json": "0f698832c4821342cd166c20e32af9c04055001813b378564a75d2318eaf4492",
+    "hub_verification.json": "0837d181ca9d04caa88d80e6fc554861c03a906afc80376bee999455b0d26f94",
+    "scalar_oracle.json": "83a3987bfb8df051fd82ca4e30b47a5188d69136f3a1e57b529e712892f578dd",
+    "scalar_oracle.py": "4562340a8baaab81cd440d052360235a4a6e022276b6f8d55d86424a404c2d7a"
+  },
+  "decision": "native_affine_null_invariants_verified",
+  "findings": [],
+  "hub_verified_counts": {
+    "comparison_null": 43,
+    "comparison_observed": 6,
+    "comparison_origin": 1496,
+    "primary_null": 43,
+    "primary_observed": 6,
+    "primary_origin": 1496
+  },
+  "limitations": [
+    "No actual dictionary-wide sparse pursuit replay was performed on CPU; numerical-procedure provenance and saved affine-input/decomposition invariants were audited. Prior reviewed numerical code remains unchanged.",
+    "The audit parsed only canonical x, full/selected/rest target arrays and invariant/provenance metadata. It did not load saved predictor arrays or interpret headline selectivity/control gaps.",
+    "This validates the two native null preparations and source lineage, not whether null subtraction is causal or whether a48-cell comparison supports the research hypotheses. Those interpretations await the complete observed/rotated/null comparison.",
+    "Original null fits retain all256 test contexts. Final scoring remains the separately bound joint252 completed cohort; no training, selection, matching or tuning settings were changed."
+  ],
+  "remote_audit_root": "/workspace/workspace_jr/native_null_invariant_independent_review_v1",
+  "reviewed_at_utc": "2026-09-13T14:14:20.574189+00:00",
+  "reviewer": "/root/native_lens_review",
+  "runtime": {
+    "CUDA_VISIBLE_DEVICES": "",
+    "audit_elapsed_seconds": 314.23376059532166,
+    "audit_exit_code": 0,
+    "code_sha": "db7a42b9420d16762ae1219c105847ee9934e9b0",
+    "cpu_threads": 2,
+    "host_instance_id": "2664774301039204414",
+    "network_note": "Anonymous HF returned429 during primary source fetch; SDK honored128-second backoff and then completed. No experiment process was interrupted.",
+    "nice": 10,
+    "scalar_oracle_exit_code": 0
+  },
+  "schema": "workspace-jr-native-null-invariant-independent-review-v1",
+  "scope": "Independent actual-data invariant audit of both native unrotated affine-null controls at k5/10/25; not full48-cell scientific null-control interpretation.",
+  "source_null_uploads": {
+    "comparison": {
+      "receipt_sha256": "646cd5435029280ed7d080dda5d725bb8fc6ae0637cc47377c9af33464b7a442",
+      "revision": "4f8b4134020f042dc3c7caa0604891dbb554da9b"
+    },
+    "primary": {
+      "receipt_sha256": "dfab61f8fa8b962db743dd36f2c7e7047465f44b7aa5b1e0ec17bd9b176f193e",
+      "revision": "e474eec30f87a999a0b5ac61a17d5d53b12f9ee0"
+    }
+  },
+  "verification": [
+    "Every staged null source file verified locally and against pinned immutable Hub metadata:43 per role. Same native observed ridge coefficient file, dictionary manifest, input_manifest/results/per_example and successful k10 terminal independently byte-verified:6 per role.",
+    "All1496 original canonical/raw files per role verified against actual original native k10 producer receipts and immutable Hub metadata:88 frozen batches plus1408 final raw generation records. Missing1240 primary objects were downloaded only into the new remote audit cache; no bulk arrays copied locally.",
+    "All2816 context rows have exact original frozen1024/128/256 IDs, native full-fit source identity and every split x fingerprint. Canonical prompt-only batch tensors reproduce saved affine x exactly, with each row bound to original prompt token IDs and final raw generation SHA.",
+    "Both saved affine coefficient matrices/intercepts exactly equal the actual native full-ridge files. Independent FP64 matrix multiplication with exact canonical x reproduces every saved affine full target bit-for-bit across all splits. The test full null differs from the saved pooled observed full target.",
+    "Every context preserves all five original seeds42..46 and exact positive EOS-trimmed raw generation lengths using the corresponding pinned completed-cohort policy. These include unequal original lengths; identical repeated h vectors make equal-token then equal-rollout pooling algebraically equal to h without substituting pooled observed answer activations.",
+    "For every role/k/split, full arrays are shared across k, rest is exactly h minus the component, components are exact FP32-to-FP64 promotions, all targets/statistics are finite and fitted input fingerprints/prediction-file saved target arrays match preparation. Full=component+rest holds up to at most1.78e-15 FP64 addition roundoff.",
+    "Recomputed input norm and residual energy from actual h32/component32 agree with saved GPU reductions within the analytic FP32 sum bound; observed maximum relative deviations are3.08e-7 or lower. The diagnostic integer fields are finite/integer and bounded by k.",
+    "All six per-k successful null completion markers/terminals bind exact fitted results and own null identity; prepared_sources hashes include the original layout and corresponding decomposition/target arrays.",
+    "Separate extended-precision scalar dot products checked54 coordinates over both roles/all splits. Swapped context rows, omitted intercept and transposed coefficient matrices were independently rejected on every split."
+  ]
+}
