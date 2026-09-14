@@ -481,94 +481,71 @@ def _plot_baseline_points(axes: list[plt.Axes], baselines: dict, roster: tuple[s
 
 
 def _plot_comparison_panel(
-    axes: list[plt.Axes],
+    ax: plt.Axes,
     scaling: dict,
     baselines: dict,
     roster: tuple[str, ...],
     n_compare: int,
+    ylim: tuple[float, float],
 ) -> dict:
-    """The two maps beside the controls at one training-context count (split render).
+    """Marker form of the comparison panel (kept as ``--compare-style points``).
 
-    One categorical slot per arm in ``COMPARISON_ARM_ORDER`` on the same cut y-axis
-    the merged render used (``PANEL_B_SEGMENTS``), so a negative R^2 is shown at its
-    own value. The maps are read off the scaling sweep at ``n_compare``; every
-    control is read at the rung it was measured on (``baselines['n_train']``). When
-    the two differ the panel is a MISMATCHED comparison: the record says so under
-    ``matched`` and the caption must disclose it, because a fitted control's value
-    moves with n and only that one rung was scored. R^2 sits left of the slot and
-    top-1 right, filled/open as everywhere else. A value no segment holds is not
-    drawn and not clipped; it is returned under ``off_scale`` for the caption.
+    One categorical slot per arm in ``COMPARISON_ARM_ORDER`` on ONE linear y-axis
+    spanning ``ylim`` (the same axis furniture panel C uses, so the column reads
+    as one format). The maps are read off the scaling sweep at ``n_compare``;
+    every control is read at the rung it was measured on
+    (``baselines['n_train']``). When the two differ the panel is a MISMATCHED
+    comparison: the record says so under ``matched`` and the caption must
+    disclose it, because a fitted control's value moves with n and only that one
+    rung was scored. R^2 sits left of the slot and top-1 right, filled/open as
+    everywhere else. A value outside ``ylim`` is not drawn and not clipped; it is
+    returned under ``off_scale`` for the caption.
     """
-    row = next((r for r in scaling["rows"] if int(r["x"]) == int(n_compare)), None)
-    if row is None:
-        rungs = [int(r["x"]) for r in scaling["rows"]]
-        raise ValueError(f"n_compare={n_compare} is not a rung of the scaling sweep: {rungs}")
-    by_key = {arm["key"]: arm for arm in baselines["arms"]}
-    order = [key for key in COMPARISON_ARM_ORDER if key in PREDICTOR_STYLES or key in roster]
-    missing = sorted(set(roster) - set(order))
-    if missing:
-        raise ValueError(f"roster arms with no slot in COMPARISON_ARM_ORDER: {missing}")
+    arms = _comparison_values(scaling, baselines, roster, n_compare)
+    lo, hi = ylim
     drawn: list[dict] = []
     off_scale: list[dict] = []
-    for slot, key in enumerate(order):
-        if key in PREDICTOR_STYLES:
-            style = PREDICTOR_STYLES[key]
-            label, color, marker = style.label, style.color, style.marker
-            values = {"r2": row["arms"][key]["r2"], "top1": row["arms"][key]["retrieval"]}
-            n_train = int(n_compare)
-        else:
-            bstyle = BASELINE_ARMS[key]
-            label, color, marker = bstyle["label"], bstyle["color"], bstyle["marker"]
-            values = {"r2": by_key[key]["r2"], "top1": by_key[key]["top1"]}
-            n_train = int(baselines["n_train"])
+    for arm in arms:
         for metric in ("r2", "top1"):
-            value = values[metric]
+            value = arm[metric]
             record = {
-                "key": key,
-                "label": label,
+                "key": arm["key"],
+                "label": arm["label"],
                 "metric": metric,
-                "value": None if value is None else float(value),
-                "n_train": n_train,
-                "slot": slot,
+                "value": value,
+                "n_train": arm["n_train"],
+                "slot": arm["slot"],
             }
-            host = None
-            if value is not None:
-                for ax, (lo, hi) in zip(axes, PANEL_B_SEGMENTS, strict=True):
-                    if lo < value < hi:
-                        host = ax
-                        record["segment"] = [lo, hi]
-                        break
-            if host is None:
+            if value is None or not (lo < value < hi):
                 off_scale.append(record)
                 continue
-            x = slot + COMPARISON_METRIC_SIDE[metric]
+            x = arm["slot"] + COMPARISON_METRIC_SIDE[metric]
             record["x"] = x
-            host.plot(
+            ax.plot(
                 [x],
                 [value],
-                marker=marker,
+                marker=arm["marker"],
                 markersize=8.0,
-                color=color,
-                markerfacecolor=color if metric == "r2" else PAPER,
-                markeredgecolor=color,
+                color=arm["color"],
+                markerfacecolor=arm["color"] if metric == "r2" else PAPER,
+                markeredgecolor=arm["color"],
                 markeredgewidth=1.8,
                 linestyle="none",
                 zorder=5,
             )
             drawn.append(record)
     if not drawn:
-        raise ValueError(f"no arm in {order} landed inside {PANEL_B_SEGMENTS}")
-    for ax in axes:
-        ax.set_xlim(-0.65, len(order) - 0.35)
-        ax.set_xticks([])
+        raise ValueError(f"no comparison value landed inside {ylim}")
+    ax.set_xlim(-0.65, len(arms) - 0.35)
+    ax.set_xticks([])
     return {
         "style": "points",
         "n_compare": int(n_compare),
         "controls_n_train": int(baselines["n_train"]),
         "matched": int(n_compare) == int(baselines["n_train"]),
-        "order": order,
+        "order": [arm["key"] for arm in arms],
         "roster": list(roster),
-        "segments": [list(seg) for seg in PANEL_B_SEGMENTS],
+        "ylim": [float(lo), float(hi)],
         "drawn": drawn,
         "off_scale": off_scale,
     }
@@ -621,69 +598,115 @@ def _comparison_values(
     return arms
 
 
+def _bar_break_glyph(ax: plt.Axes, x: float, floor: float, color: str) -> None:
+    """Two short diagonals with a white gap across a bar that runs off the axis floor.
+
+    Drawn halfway between zero and ``floor`` (data units) so it sits on the
+    visible stub of the bar; the caption carries the bar's true value.
+    """
+    y_c = floor / 2.0
+    half_w = COMPARISON_BAR_WIDTH / 2.0 + 0.07
+    rise = abs(floor) * 0.11
+    gap = abs(floor) * 0.16
+    ax.plot(
+        [x - half_w, x + half_w],
+        [y_c - rise, y_c + rise],
+        color=PAPER,
+        lw=7.0,
+        solid_capstyle="butt",
+        zorder=5,
+    )
+    for sign in (-1.0, 1.0):
+        ax.plot(
+            [x - half_w, x + half_w],
+            [y_c - rise + sign * gap / 2.0, y_c + rise + sign * gap / 2.0],
+            color=color,
+            lw=1.6,
+            solid_capstyle="butt",
+            zorder=6,
+        )
+
+
 def _plot_comparison_bars(
-    axes: list[plt.Axes],
+    ax: plt.Axes,
     scaling: dict,
     baselines: dict,
     roster: tuple[str, ...],
     n_compare: int,
+    ylim: tuple[float, float],
 ) -> dict:
     """Bar form of the comparison panel (the form the manuscript uses).
 
-    Same slots, values and cut y-axis as ``_plot_comparison_panel``. Each arm is a
-    pair of bars from zero: R^2 solid, top-1 hatched (the paper-wide fill
-    encoding). Every bar is drawn on every strip and each strip clips it to its
-    own range, so a negative R^2 runs into the cut and continues below it with
-    both ends visible. A value that ENDS inside the omitted range would have an
-    invisible end, so it is refused rather than drawn.
+    Same slots and values as ``_plot_comparison_panel``, on ONE linear y-axis
+    spanning ``ylim``. Each arm is a pair of bars from zero: R^2 solid, top-1
+    hatched (the paper-wide fill encoding). A bar whose value lies below the
+    axis floor is drawn to the floor and marked with a break glyph; its true
+    value is returned under ``off_axis`` for the caption. Nothing is silently
+    clipped: every off-axis bar is both visibly broken and recorded.
     """
     arms = _comparison_values(scaling, baselines, roster, n_compare)
+    lo, hi = ylim
+    if not lo < 0.0 < hi:
+        raise ValueError(f"bars grow from zero, so ylim must straddle it: {ylim}")
     drawn: list[dict] = []
+    off_axis: list[dict] = []
     for arm in arms:
         color = COMPARISON_BAR_COLORS.get(arm["key"], arm["color"])
         for metric in ("r2", "top1"):
             value = arm[metric]
             if value is None:
                 continue
-            if not any(lo <= value <= hi for lo, hi in PANEL_B_SEGMENTS):
-                raise ValueError(
-                    f"{arm['label']} {metric}={value:.3f} ends inside the omitted range of "
-                    f"{PANEL_B_SEGMENTS}; widen a segment rather than clipping the bar"
-                )
+            if value > hi:
+                raise ValueError(f"{arm['label']} {metric}={value:.3f} exceeds the axis top {hi}")
             x = arm["slot"] + COMPARISON_METRIC_SIDE[metric]
             fill = metric_style(metric)
-            for ax in axes:
-                ax.bar(
-                    x,
-                    value,
-                    width=COMPARISON_BAR_WIDTH,
-                    facecolor=color if metric == "r2" else PAPER,
-                    edgecolor=color,
-                    linewidth=1.6,
-                    hatch=fill["hatch"],
-                    zorder=4,
-                )
-            drawn.append(
-                {
-                    "key": arm["key"],
-                    "label": arm["label"],
-                    "metric": metric,
-                    "value": value,
-                    "n_train": arm["n_train"],
-                    "slot": arm["slot"],
-                    "x": x,
-                    "color": color,
-                }
+            ax.bar(
+                x,
+                value,
+                width=COMPARISON_BAR_WIDTH,
+                facecolor=color if metric == "r2" else PAPER,
+                edgecolor=color,
+                linewidth=1.6,
+                hatch=fill["hatch"],
+                zorder=4,
             )
+            record = {
+                "key": arm["key"],
+                "label": arm["label"],
+                "metric": metric,
+                "value": value,
+                "n_train": arm["n_train"],
+                "slot": arm["slot"],
+                "x": x,
+                "color": color,
+                "truncated": value < lo,
+            }
+            if value < lo:
+                _bar_break_glyph(ax, x, lo, color)
+                # The cut bar states where it ends (user request 2026-09-14):
+                # one value label beside the stub, in the bar's colour, at the
+                # tick precision and the tick size (read from the calibrated rc,
+                # never a literal point size).
+                label_text = f"{value:.1f}".replace("-", "−")
+                ax.text(
+                    x + COMPARISON_BAR_WIDTH / 2.0 + 0.10,
+                    lo / 2.0,
+                    label_text,
+                    ha="left",
+                    va="center",
+                    color=color,
+                    fontsize=plt.rcParams["xtick.labelsize"],
+                    zorder=6,
+                )
+                record["value_label"] = label_text
+                off_axis.append(record)
+            drawn.append(record)
     if not drawn:
         raise ValueError("no comparison bar drawn")
-    # Bars grow from zero, so zero gets a seam on the strip that holds it.
-    for ax, (lo, hi) in zip(axes, PANEL_B_SEGMENTS, strict=True):
-        if lo <= 0.0 <= hi:
-            ax.axhline(0.0, color=SEAM, lw=1.2, zorder=3)
-    for ax in axes:
-        ax.set_xlim(-0.65, len(arms) - 0.35)
-        ax.set_xticks([])
+    # Bars grow from zero, so zero gets a seam.
+    ax.axhline(0.0, color=SEAM, lw=1.2, zorder=3)
+    ax.set_xlim(-0.65, len(arms) - 0.35)
+    ax.set_xticks([])
     return {
         "style": "bars",
         "n_compare": int(n_compare),
@@ -691,9 +714,10 @@ def _plot_comparison_bars(
         "matched": int(n_compare) == int(baselines["n_train"]),
         "order": [arm["key"] for arm in arms],
         "roster": list(roster),
-        "segments": [list(seg) for seg in PANEL_B_SEGMENTS],
+        "ylim": [float(lo), float(hi)],
         "bar_width": COMPARISON_BAR_WIDTH,
         "drawn": drawn,
+        "off_axis": off_axis,
         "off_scale": [],
     }
 
@@ -872,14 +896,19 @@ def _plot_panel(
     show_retrieval: bool,
     kicker_y: float = 1.24,
     title_y: float = 1.08,
+    kicker: str | None = None,
 ) -> None:
     style_score_axis(ax)
-    # No provenance kicker. The model, the read layer, the training-context count
-    # and the retrieval-pool size are all stated in the caption, so the kicker
-    # slot carries the panel letter alone. ``panel_header`` joins letter and
-    # kicker with a separator, so the letter is passed AS the kicker: passing it
-    # as the letter with an empty kicker would render a dangling "A  ·  ".
-    panel_header(ax, "", letter or "", title, kicker_y=kicker_y, title_y=title_y)
+    if kicker:
+        panel_header(ax, letter or "", kicker, title, kicker_y=kicker_y, title_y=title_y)
+    else:
+        # No provenance kicker. The model, the read layer, the training-context
+        # count and the retrieval-pool size are all stated in the caption, so the
+        # kicker slot carries the panel letter alone. ``panel_header`` joins
+        # letter and kicker with a separator, so the letter is passed AS the
+        # kicker: passing it as the letter with an empty kicker would render a
+        # dangling "A  ·  ".
+        panel_header(ax, "", letter or "", title, kicker_y=kicker_y, title_y=title_y)
 
     for key, style in PREDICTOR_STYLES.items():
         x, r2 = _series(rows, key, "r2")
@@ -926,6 +955,48 @@ def _handle_label(handle) -> str:
     return handle[0].get_label() if isinstance(handle, tuple) else handle.get_label()
 
 
+def _column_legend(
+    fig: plt.Figure,
+    spec: dict,
+    *,
+    left: list[tuple[str, list, list[str], float]],
+    right: list[tuple[str, list, list[str], float]],
+) -> None:
+    """Headed legend groups for the column render, stacked down two columns.
+
+    Each group is an uppercase kicker heading over a frameless one-column legend
+    (the Figure 2 form, split by semantic role). ``left`` and ``right`` list
+    ``(heading, handles, labels, handlelength)`` top to bottom; x positions and
+    the row pitch come from the layout spec, in figure fractions.
+    """
+    xs: tuple[float, float] = spec["legend_cols"]
+    row = float(spec["legend_row"])
+    head = float(spec["legend_head"])
+    gap = float(spec["legend_gap"])
+    for x, groups in zip(xs, (left, right), strict=True):
+        y = float(spec["legend_top"])
+        for heading, handles, labels, handlelength in groups:
+            legend_kicker(fig, x, y, heading)
+            fig.legend(
+                handles=handles,
+                labels=labels,
+                loc="upper left",
+                bbox_to_anchor=(x - 0.001, y - head),
+                ncol=1,
+                frameon=False,
+                fontsize=float(spec["legend_fontsize"]),
+                labelspacing=0.32,
+                handlelength=handlelength,
+                handletextpad=0.5,
+                borderaxespad=0,
+                # No internal padding, so the anchor IS the first row's top and
+                # the heading-to-row offset is exactly ``legend_head``.
+                borderpad=0,
+                handler_map={tuple: HandlerTuple(ndivide=None, pad=0.55)},
+            )
+            y -= head + row * len(handles) + gap
+
+
 def _legend_handles(bars: bool = False) -> tuple[list, list]:
     """Predictor and metric legend handles.
 
@@ -960,6 +1031,13 @@ def _legend_handles(bars: bool = False) -> tuple[list, list]:
         ),
     ]
     if bars:
+        # Identity is colour on both panels, so every arm row is a colour patch
+        # (the controls' rows come from _baseline_legend_handles in the same
+        # form); the marker shapes on panel C stay as redundancy.
+        predictors = [
+            Patch(facecolor=style.color, edgecolor=style.color, label=style.label)
+            for style in PREDICTOR_STYLES.values()
+        ]
         swatches = [
             Patch(facecolor=INK, edgecolor=INK),
             Patch(facecolor=PAPER, edgecolor=INK, hatch=metric_style("top1")["hatch"]),
@@ -1027,22 +1105,33 @@ PANEL_LAYOUTS: dict[str, dict[str, object]] = {
         # ~2 in, and the minipage pair is vertically centred, so the schematic
         # sits mid-column.
         "width": "sliver",
-        "aspect": 1.50,
+        "aspect": 1.60,
         "letters": {"compare": "B", "scale": "C"},
-        "margins": {"left": 0.300, "right": 0.975, "top": 0.775, "bottom": 0.072},
+        "margins": {"left": 0.300, "right": 0.975, "top": 0.715, "bottom": 0.068},
         "legend_x": (0.300, 0.300),
-        "above_legend_y": 0.990,
         "ylabel_x": -0.235,
         "rows": {"plain": 0.985, "with_controls": 0.985, "baseline": 0.995},
-        "above_legend": True,
-        "above_legend_ncol": 2,
-        "above_legend_fontsize": 11.5,
-        # Both panels carry a letter kicker; B's names the rung it is read at.
+        # Headed legend groups (the Figure 2 form): MAP over METRIC in the left
+        # column, CONTROL in the right; y in figure fractions from the top.
+        "column_legend": True,
+        "legend_cols": (0.210, 0.575),
+        "legend_top": 0.988,
+        "legend_row": 0.034,
+        "legend_head": 0.024,
+        "legend_gap": 0.016,
+        "legend_fontsize": 11.5,
+        # Both panels carry the same kicker shape: letter plus its training-
+        # context scope ("B · 25K CONTEXTS", "C · 5K–500K CONTEXTS").
         "kicker_y": 1.05,
         # Height of B relative to C, and the gap between them (gridspec hspace,
         # a fraction of the mean panel height).
         "compare_height": 0.60,
-        "hspace": 0.34,
+        "hspace": 0.30,
+        # One linear strip per panel, same tick formatter, no axis cut: B spans
+        # a little below zero so an off-axis bar keeps a visible stub for its
+        # break glyph; C keeps the focused range the split exists for.
+        "compare_ylim": (-0.22, 1.0),
+        "compare_yticks": (0.0, 0.5, 1.0),
         "scale_ylim": (0.58, 0.96),
         "scale_yticks": (0.6, 0.7, 0.8, 0.9),
     },
@@ -1097,8 +1186,8 @@ def make_figure(
     scale_axes: list[plt.Axes] = []
     if draw_compare:
         # Split render: the comparison strip above, the scaling curves below,
-        # one column. The comparison keeps the cut y-axis; the curves do not
-        # need it once the controls are off their panel.
+        # one column, both on one linear y-axis each so the column reads as a
+        # single format (no cut on B; an off-axis bar is broken and captioned).
         grid = fig.add_gridspec(
             2,
             1,
@@ -1106,7 +1195,7 @@ def make_figure(
             hspace=float(spec["hspace"]),  # type: ignore[arg-type]
             **spec["margins"],  # type: ignore[arg-type]
         )
-        compare_axes = _build_panel_b_axes(fig, grid[0, 0])
+        compare_axes = [fig.add_subplot(grid[0, 0], label="panel-b-compare")]
         scale_axes = [fig.add_subplot(grid[1, 0])]
     else:
         grid = fig.add_gridspec(
@@ -1142,6 +1231,8 @@ def make_figure(
     # above the axes, so their content moves into the caption instead.
     bare = bool(spec.get("suppress_header", False))
     if draw_scale:
+        rung_lo = min(int(row["x"]) for row in scaling["rows"])
+        rung_hi = max(int(row["x"]) for row in scaling["rows"])
         _plot_panel(
             ax_scale,
             scaling["rows"],
@@ -1151,6 +1242,8 @@ def make_figure(
             show_retrieval=True,
             kicker_y=float(spec.get("kicker_y", 1.24)),  # type: ignore[arg-type]
             title_y=float(spec.get("title_y", 1.08)),  # type: ignore[arg-type]
+            # The split render's kickers share one shape: letter + context scope.
+            kicker=(f"{_human_n(rung_lo)}–{_human_n(rung_hi)} contexts" if draw_compare else None),
         )
     roster = PANEL_B_BASELINE_ROSTERS[baselines_mode] if baselines is not None else ()
     # The baselines and the boundary control all live on panel B, so a
@@ -1162,15 +1255,24 @@ def make_figure(
     boundary_overlay = None
     if draw_compare:
         assert baselines is not None
-        _apply_panel_b_segments(compare_axes)
+        ax_compare = compare_axes[0]
+        c_lo, c_hi = spec["compare_ylim"]  # type: ignore[misc]
+        # Same furniture as panel C: one linear strip, horizontal grid, the
+        # score formatter shared with the curves.
+        style_axis(ax_compare, grid_axis="y")
+        ax_compare.set_ylim(float(c_lo), float(c_hi))
+        ax_compare.set_yticks([float(t) for t in spec["compare_yticks"]])  # type: ignore[union-attr]
+        ax_compare.yaxis.set_major_formatter(ax_scale.yaxis.get_major_formatter())
         plot_comparison = (
             _plot_comparison_bars if compare_style == "bars" else _plot_comparison_panel
         )
-        baseline_overlay = plot_comparison(compare_axes, scaling, baselines, roster, compare_n)
+        baseline_overlay = plot_comparison(
+            ax_compare, scaling, baselines, roster, compare_n, (float(c_lo), float(c_hi))
+        )
         # The kicker names the rung the maps are read at; when it differs from
         # the controls' rung the caption has to say so (overlay["matched"]).
         panel_header(
-            compare_axes[-1],
+            ax_compare,
             letters["compare"] or "",
             f"{_human_n(compare_n)} contexts",
             None,
@@ -1232,6 +1334,25 @@ def make_figure(
     predictor_handles, metric_handles = _legend_handles(
         bars=draw_compare and compare_style == "bars"
     )
+    if bool(spec.get("column_legend", False)):
+        control_handles, control_labels = _baseline_legend_handles(boundary, baseline_overlay)
+        _column_legend(
+            fig,
+            spec,
+            left=[
+                ("Map", predictor_handles, [_handle_label(h) for h in predictor_handles], 1.6),
+                ("Metric", metric_handles, [_handle_label(h) for h in metric_handles], 2.6),
+            ],
+            right=[
+                (
+                    "Control",
+                    control_handles,
+                    [_SHORT_LEGEND_LABELS.get(lab, lab) for lab in control_labels],
+                    1.6,
+                ),
+            ],
+        )
+        return fig, include_frac, baseline_overlay
     rows: dict[str, float] = spec["rows"]  # type: ignore[assignment]
     legend_x: tuple[float, float] = spec["legend_x"]  # type: ignore[assignment]
     row_y = rows["plain"] if not controls else rows["with_controls"]
@@ -1534,24 +1655,28 @@ def _write_outputs(
                         "encoding": (
                             "split render: panel B holds the two maps beside the controls at "
                             "one training-context count, one categorical slot per arm in "
-                            "overlay.order (maps first), on the cut y-axis whose segments are "
-                            "listed under overlay.segments (plotted heights proportional to "
-                            "data spans, one shared scale); the maps are read off the scaling "
-                            "sweep at overlay.n_compare, every control at the rung it was "
-                            "measured on (overlay.controls_n_train, layer 19, 10,000-candidate "
-                            "pool); overlay.matched is false when those differ and the caption "
-                            "must then disclose the mismatched comparison; overlay.style names "
-                            "the form: 'bars' = two bars from zero per slot, solid = held-out "
-                            "R^2 (left), hatched = top-1 retrieval (right), a negative R^2 bar "
-                            "crossing the cut and continuing below it, the shuffled null in "
-                            "the lighter seam grey because bars carry the arm in colour alone; "
-                            "'points' = filled marker = R^2 (left), open = top-1 (right), the "
-                            "merged render's markers; either way the fill encoding matches the "
-                            "curves on panel C; a value no segment holds is omitted and listed "
-                            "under overlay.off_scale (points) or refused (bars); panel C draws "
-                            "the scaling curves alone on the focused range recorded under "
-                            "scale_ylim, with no control on it"
+                            "overlay.order (maps first), on ONE linear y-axis spanning "
+                            "overlay.ylim (no cut; the same furniture and tick formatter as "
+                            "panel C); the maps are read off the scaling sweep at "
+                            "overlay.n_compare, every control at the rung it was measured on "
+                            "(overlay.controls_n_train, layer 19, 10,000-candidate pool); "
+                            "overlay.matched is false when those differ and the caption must "
+                            "then disclose the mismatched comparison; overlay.style names the "
+                            "form: 'bars' = two bars from zero per slot, solid = held-out R^2 "
+                            "(left), hatched = top-1 retrieval (right); a bar whose value lies "
+                            "below the axis floor is drawn to the floor with a break glyph and "
+                            "listed under overlay.off_axis with its true value for the caption; "
+                            "the shuffled null takes the lighter seam grey because bars carry "
+                            "the arm in colour alone; 'points' = filled marker = R^2 (left), "
+                            "open = top-1 (right), a value outside the axis omitted and listed "
+                            "under overlay.off_scale; either way the fill encoding matches the "
+                            "curves on panel C (solid/filled = R^2, dashed/open/hatched = "
+                            "top-1), stated once in the METRIC legend group; panel C draws the "
+                            "scaling curves alone on the focused range recorded under "
+                            "scale_ylim, with no control on it; both kickers share the "
+                            "letter-plus-context-scope shape"
                         ),
+                        "compare_ylim": list(PANEL_LAYOUTS["bc"]["compare_ylim"]),  # type: ignore[arg-type]
                         "scale_ylim": list(PANEL_LAYOUTS["bc"]["scale_ylim"]),  # type: ignore[arg-type]
                         **baselines_record,
                     }

@@ -8,7 +8,7 @@
   "repository_manuscript_asset": "figures/paper/c1_controls_and_scaling.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
-    "commit": "07b49aba8c1fefb8dcc656229a84f3ca1ad5beba",
+    "commit": "88c34c77d81ae3b5635eae23406e638c0ab9f4e5",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -37,11 +37,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       3.929,
-      5.893
+      6.286
     ],
     "exported_size_inches": [
       3.929,
-      6.212
+      6.661
     ],
     "scale": 0.42,
     "include_width_frac": 0.3,
@@ -59,19 +59,21 @@
       "B  \u00b7  25K CONTEXTS",
       "Score \u2191",
       "0",
-      "0.2",
-      "0.4",
-      "0.6",
-      "0.8",
+      "0.5",
       "1",
-      "C",
+      "C  \u00b7  5K\u2013500K CONTEXTS",
       "Training contexts",
       "5k",
       "25k",
       "100k",
       "500k",
+      "0.6",
       "0.7",
+      "0.8",
       "0.9",
+      "MAP",
+      "METRIC",
+      "CONTROL",
       "Linear",
       "Nonlinear",
       "Held-out $R^2$",
@@ -647,7 +649,11 @@
     "convention": "identical to figure2_five_rollout_scaling: five-rollout mean targets, whitened cosine + two-sided CSLS (K=10), 942-answer pool, banked 963,444-row whitening"
   },
   "comparison_panel": {
-    "encoding": "split render: panel B holds the two maps beside the controls at one training-context count, one categorical slot per arm in overlay.order (maps first), on the cut y-axis whose segments are listed under overlay.segments (plotted heights proportional to data spans, one shared scale); the maps are read off the scaling sweep at overlay.n_compare, every control at the rung it was measured on (overlay.controls_n_train, layer 19, 10,000-candidate pool); overlay.matched is false when those differ and the caption must then disclose the mismatched comparison; overlay.style names the form: 'bars' = two bars from zero per slot, solid = held-out R^2 (left), hatched = top-1 retrieval (right), a negative R^2 bar crossing the cut and continuing below it, the shuffled null in the lighter seam grey because bars carry the arm in colour alone; 'points' = filled marker = R^2 (left), open = top-1 (right), the merged render's markers; either way the fill encoding matches the curves on panel C; a value no segment holds is omitted and listed under overlay.off_scale (points) or refused (bars); panel C draws the scaling curves alone on the focused range recorded under scale_ylim, with no control on it",
+    "encoding": "split render: panel B holds the two maps beside the controls at one training-context count, one categorical slot per arm in overlay.order (maps first), on ONE linear y-axis spanning overlay.ylim (no cut; the same furniture and tick formatter as panel C); the maps are read off the scaling sweep at overlay.n_compare, every control at the rung it was measured on (overlay.controls_n_train, layer 19, 10,000-candidate pool); overlay.matched is false when those differ and the caption must then disclose the mismatched comparison; overlay.style names the form: 'bars' = two bars from zero per slot, solid = held-out R^2 (left), hatched = top-1 retrieval (right); a bar whose value lies below the axis floor is drawn to the floor with a break glyph and listed under overlay.off_axis with its true value for the caption; the shuffled null takes the lighter seam grey because bars carry the arm in colour alone; 'points' = filled marker = R^2 (left), open = top-1 (right), a value outside the axis omitted and listed under overlay.off_scale; either way the fill encoding matches the curves on panel C (solid/filled = R^2, dashed/open/hatched = top-1), stated once in the METRIC legend group; panel C draws the scaling curves alone on the focused range recorded under scale_ylim, with no control on it; both kickers share the letter-plus-context-scope shape",
+    "compare_ylim": [
+      -0.22,
+      1.0
+    ],
     "scale_ylim": [
       0.58,
       0.96
@@ -673,15 +679,9 @@
         "identity_bias",
         "shuffled"
       ],
-      "segments": [
-        [
-          -1.0,
-          -0.85
-        ],
-        [
-          -0.08,
-          1.0
-        ]
+      "ylim": [
+        -0.22,
+        1.0
       ],
       "bar_width": 0.36,
       "drawn": [
@@ -693,7 +693,8 @@
           "n_train": 25000,
           "slot": 0,
           "x": -0.2,
-          "color": "#176B87"
+          "color": "#176B87",
+          "truncated": false
         },
         {
           "key": "ridge",
@@ -703,7 +704,8 @@
           "n_train": 25000,
           "slot": 0,
           "x": 0.2,
-          "color": "#176B87"
+          "color": "#176B87",
+          "truncated": false
         },
         {
           "key": "mlp_w8192",
@@ -713,7 +715,8 @@
           "n_train": 25000,
           "slot": 1,
           "x": 0.8,
-          "color": "#C4553D"
+          "color": "#C4553D",
+          "truncated": false
         },
         {
           "key": "mlp_w8192",
@@ -723,7 +726,8 @@
           "n_train": 25000,
           "slot": 1,
           "x": 1.2,
-          "color": "#C4553D"
+          "color": "#C4553D",
+          "truncated": false
         },
         {
           "key": "enc_bge_cls",
@@ -733,7 +737,8 @@
           "n_train": 25000,
           "slot": 2,
           "x": 1.8,
-          "color": "#C98A1B"
+          "color": "#C98A1B",
+          "truncated": false
         },
         {
           "key": "enc_bge_cls",
@@ -743,7 +748,8 @@
           "n_train": 25000,
           "slot": 2,
           "x": 2.2,
-          "color": "#C98A1B"
+          "color": "#C98A1B",
+          "truncated": false
         },
         {
           "key": "identity_bias",
@@ -753,7 +759,9 @@
           "n_train": 25000,
           "slot": 3,
           "x": 2.8,
-          "color": "#687078"
+          "color": "#687078",
+          "truncated": true,
+          "value_label": "\u22120.9"
         },
         {
           "key": "identity_bias",
@@ -763,7 +771,8 @@
           "n_train": 25000,
           "slot": 3,
           "x": 3.2,
-          "color": "#687078"
+          "color": "#687078",
+          "truncated": false
         },
         {
           "key": "shuffled",
@@ -773,7 +782,8 @@
           "n_train": 25000,
           "slot": 4,
           "x": 3.8,
-          "color": "#A9A69E"
+          "color": "#A9A69E",
+          "truncated": false
         },
         {
           "key": "shuffled",
@@ -783,7 +793,22 @@
           "n_train": 25000,
           "slot": 4,
           "x": 4.2,
-          "color": "#A9A69E"
+          "color": "#A9A69E",
+          "truncated": false
+        }
+      ],
+      "off_axis": [
+        {
+          "key": "identity_bias",
+          "label": "Copy + bias",
+          "metric": "r2",
+          "value": -0.9200245082624223,
+          "n_train": 25000,
+          "slot": 3,
+          "x": 2.8,
+          "color": "#687078",
+          "truncated": true,
+          "value_label": "\u22120.9"
         }
       ],
       "off_scale": []
@@ -880,8 +905,8 @@
   },
   "baselines_on_panel_b": null,
   "output_sha256": {
-    "pdf": "863fea2e8159f4b1e155231c03f000ef09bca4505d78cf717d378b3d5138e9be",
-    "png": "367f39dcae04ceaef309795c4ac65c387275af9f1f9fad916d6a7e0ae55709df",
-    "grayscale": "8292071822d43506f837a4c116d0fd290dcdc799515d354f7a5ebcf252439a6f"
+    "pdf": "618626eb5852b348398c9541d4c8777f7e4bd6c38f33f2a39d16362f6f638646",
+    "png": "167e7a37dd51a8a902257b94ecaba9b129d2216161bd40c6d8ec027ff48e149a",
+    "grayscale": "9d86c725cf7ae2bb9eac25a40bd960d7620a598479c3559ee0cc9d9d71c091b8"
   }
 }
