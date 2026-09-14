@@ -29,8 +29,12 @@ sys.path.insert(0, str(REPO))
 from scripts import issue2054_k5_loso_calibration as base
 
 
-def source_sets(model):
-    """Enumerate all four single-character additions without choosing a winner."""
+def source_sets(model, source_mode="chat_grid"):
+    """Enumerate the requested assistant source without selecting on test results."""
+    if source_mode == "plain_only":
+        return {"assistant_plain_only": [f"{base.SETTINGS[1][1]}__{model}"]}
+    if source_mode != "chat_grid":
+        raise ValueError(f"unknown source mode: {source_mode}")
     assistant = f"{base.SETTINGS[0][1]}__{model}"
     return {"assistant_only": [assistant]} | {
         f"assistant_plus_{prefix.split('__')[0]}": [assistant, f"{prefix}__{model}"]
@@ -73,11 +77,12 @@ def audit_sources(panel, source_cells, target, fold):
     }
 
 
-def fingerprint():
+def fingerprint(source_mode="chat_grid"):
     """Bind the subset fit recipe and all shared calibration dependencies."""
-    payload = [base.fit_fingerprint(), {model: source_sets(model) for model in base.MODELS}] + [
-        inspect.getsource(f) for f in [source_sets, audit_sources, fit, persist_map]
-    ]
+    payload = [
+        base.fit_fingerprint(),
+        {model: source_sets(model, source_mode) for model in base.MODELS},
+    ] + [inspect.getsource(f) for f in [source_sets, audit_sources, fit, persist_map]]
     return hashlib.sha256(json.dumps(payload).encode()).hexdigest()
 
 
@@ -107,14 +112,16 @@ def persist_map(path, frozen, fp):
     return record
 
 
-def fit(out, inputs, model, limit):
-    """Fit 25 source maps per checkpoint, evaluating every excluded setting."""
+def fit(out, inputs, model, limit, source_mode="chat_grid"):
+    """Fit one map per source set and fold, then score every excluded setting."""
     sources = {r["path"]: r for r in json.loads((inputs / "inputs.json").read_text())}
     refs = {p["cell"]: p for p in base.references()["panels"]}
     panel = base.load_panel(model, sources)
-    bank = base.loso.moments(panel, "cpu")
-    fp, completed = fingerprint(), 0
-    for regime, source_cells in source_sets(model).items():
+    regimes = source_sets(model, source_mode)
+    source_union = {cell for cells in regimes.values() for cell in cells}
+    bank = base.loso.moments({c: panel[c] for c in source_union}, "cpu")
+    fp, completed = fingerprint(source_mode), 0
+    for regime, source_cells in regimes.items():
         targets = [c for c in panel if c not in source_cells]
         for fold in range(5):
             map_path = out / "maps" / f"{model}__{regime}__fold{fold}.npz"
@@ -166,6 +173,7 @@ def fit(out, inputs, model, limit):
                 result = {
                     "status": "complete",
                     "regime": regime,
+                    "source_mode": source_mode,
                     "cell": cell,
                     "fold": fold,
                     "gain": coefficients["gain"],
@@ -202,12 +210,12 @@ def fit(out, inputs, model, limit):
                 return
 
 
-def collect(out):
-    """Verify the 42 target panels, 210 fold rows, and 50 persisted maps."""
+def collect(out, source_mode="chat_grid"):
+    """Verify every requested target fold and persisted source map."""
     panels, maps = [], {}
-    fp = fingerprint()
+    fp = fingerprint(source_mode)
     for model in base.MODELS:
-        for regime, source_cells in source_sets(model).items():
+        for regime, source_cells in source_sets(model, source_mode).items():
             for _, prefix in base.SETTINGS:
                 cell = f"{prefix}__{model}"
                 if cell in source_cells:
@@ -251,15 +259,19 @@ def collect(out):
                         "own_r2": float(np.mean([r["own"]["r2"] for r in rows])),
                     }
                 )
-    if len(panels) != 42 or len(maps) != 50:
-        raise RuntimeError("subset coverage differs from planned 42 panels / 50 maps")
+    expected_panels, expected_maps = {"chat_grid": (42, 50), "plain_only": (10, 10)}[source_mode]
+    if len(panels) != expected_panels or len(maps) != expected_maps:
+        raise RuntimeError(
+            f"subset coverage differs from planned {expected_panels} panels / {expected_maps} maps"
+        )
     result = {
         "status": "complete",
         "panels": panels,
         "maps": maps,
+        "source_mode": source_mode,
         "fit_fingerprint": fp,
         "method": (
-            "K5; chat assistant alone and chat assistant plus each of four characters; "
+            f"K5; source mode {source_mode}; "
             "source-only GCV ridge; global conversation folds; "
             "target-training-only bias and scalar calibration"
         ),
@@ -277,15 +289,16 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--inputs", type=Path, required=True)
     parser.add_argument("--model", choices=base.MODELS)
+    parser.add_argument("--source-mode", choices=["chat_grid", "plain_only"], default="chat_grid")
     parser.add_argument("--limit", type=int, default=0)
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     if args.stage == "fit":
         if args.model is None:
             parser.error("--model is required for fit")
-        fit(args.out, args.inputs, args.model, args.limit)
+        fit(args.out, args.inputs, args.model, args.limit, args.source_mode)
     else:
-        collect(args.out)
+        collect(args.out, args.source_mode)
     print("[phase=done] requested subset stage complete", flush=True)
 
 

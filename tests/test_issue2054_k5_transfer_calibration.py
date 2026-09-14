@@ -63,6 +63,26 @@ def test_resume_fingerprint_binds_effective_source_settings(monkeypatch):
     assert subset.fingerprint() != original
 
 
+def test_plain_source_is_excluded_from_targets_and_has_distinct_fingerprint():
+    """Changing the assistant framing changes both the source and resume identity."""
+    for model in calibration.MODELS:
+        regimes = subset.source_sets(model, "plain_only")
+        assert list(regimes) == ["assistant_plain_only"]
+        sources = regimes["assistant_plain_only"]
+        assert sources == [f"conversation_paired_stories_assistant__on_policy__bare_text__{model}"]
+        targets = [
+            f"{prefix}__{model}"
+            for _, prefix in calibration.SETTINGS
+            if f"{prefix}__{model}" not in sources
+        ]
+        assert len(targets) == 5
+        assert f"conversation_paired_stories_assistant__on_policy__chat__{model}" in targets
+        assert all("bare_text" not in target for target in targets)
+    assert subset.fingerprint("plain_only") != subset.fingerprint("chat_grid")
+    with pytest.raises(ValueError, match="unknown source mode"):
+        subset.source_sets(calibration.MODELS[0], "unknown")
+
+
 @pytest.mark.parametrize("n_sources", [1, 2])
 def test_subset_moments_match_materialized_ridge(n_sources):
     """The subset-bank dispatch matches the established materialized solver."""
