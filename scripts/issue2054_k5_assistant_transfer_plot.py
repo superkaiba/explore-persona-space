@@ -51,9 +51,9 @@ def plot_plain(out, fig_dir):
     lower, upper = min(0, min(values)), max(0, max(values))
     margin = max(0.04, 0.07 * (upper - lower))
     set_c2a_style()
-    fig, fraction = c2a_figure("full", aspect=0.61)
+    fig, fraction = c2a_figure("full", aspect=0.65)
     axes = fig.subplots(1, 2, sharey=True)
-    fig.subplots_adjust(left=0.085, right=0.99, bottom=0.22, top=0.78, wspace=0.14)
+    fig.subplots_adjust(left=0.085, right=0.99, bottom=0.22, top=0.73, wspace=0.14)
     report_rows, retrieval_rows = [], []
     for ax, model, title, letter in zip(
         axes, analysis.base.MODELS, ["Base", "Instruction-tuned"], ["A", "B"], strict=True
