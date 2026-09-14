@@ -1105,9 +1105,9 @@ PANEL_LAYOUTS: dict[str, dict[str, object]] = {
         # ~2 in, and the minipage pair is vertically centred, so the schematic
         # sits mid-column.
         "width": "sliver",
-        "aspect": 1.60,
+        "aspect": 1.90,
         "letters": {"compare": "B", "scale": "C"},
-        "margins": {"left": 0.300, "right": 0.975, "top": 0.715, "bottom": 0.068},
+        "margins": {"left": 0.300, "right": 0.975, "top": 0.684, "bottom": 0.0576},
         "legend_x": (0.300, 0.300),
         "ylabel_x": -0.235,
         "rows": {"plain": 0.985, "with_controls": 0.985, "baseline": 0.995},
@@ -1115,18 +1115,25 @@ PANEL_LAYOUTS: dict[str, dict[str, object]] = {
         # column, CONTROL in the right; y in figure fractions from the top.
         "column_legend": True,
         "legend_cols": (0.210, 0.575),
-        "legend_top": 0.988,
-        "legend_row": 0.034,
-        "legend_head": 0.024,
-        "legend_gap": 0.016,
+        "legend_top": 0.990,
+        "legend_row": 0.0287,
+        "legend_head": 0.0202,
+        "legend_gap": 0.0134,
         "legend_fontsize": 11.5,
-        # Both panels carry the same kicker shape: letter plus its training-
-        # context scope ("B · 25K CONTEXTS", "C · 5K–500K CONTEXTS").
-        "kicker_y": 1.05,
+        # Both panels carry the paper's two-row header: the grey kicker (letter
+        # plus training-context scope, "B · 25K CONTEXTS") over a bold two-line
+        # title stating what is plotted. Two lines because the column is too
+        # narrow for either title on one line at the paper's title size. The y
+        # values are axes fractions, so the shorter panel B needs the larger
+        # offsets to put its header at the same distance above the axes as C's.
+        "compare_kicker_y": 1.54,
+        "compare_title_y": 1.10,
+        "scale_kicker_y": 1.33,
+        "scale_title_y": 1.06,
         # Height of B relative to C, and the gap between them (gridspec hspace,
-        # a fraction of the mean panel height).
+        # a fraction of the mean panel height): the gap holds C's header.
         "compare_height": 0.60,
-        "hspace": 0.30,
+        "hspace": 0.64,
         # One linear strip per panel, same tick formatter, no axis cut: B spans
         # a little below zero so an off-axis bar keeps a visible stub for its
         # break glyph; C keeps the focused range the split exists for.
@@ -1237,11 +1244,16 @@ def make_figure(
             ax_scale,
             scaling["rows"],
             letter=letters["scale"],
-            # A column render has no width for a title; the caption carries it.
-            title=None if (bare or draw_compare) else "Scaling with training data",
+            # The split column is too narrow for the title on one line, so it
+            # wraps; the bare column render carries the title in its caption.
+            title=(
+                "Scaling with\ntraining data"
+                if draw_compare
+                else (None if bare else "Scaling with training data")
+            ),
             show_retrieval=True,
-            kicker_y=float(spec.get("kicker_y", 1.24)),  # type: ignore[arg-type]
-            title_y=float(spec.get("title_y", 1.08)),  # type: ignore[arg-type]
+            kicker_y=float(spec.get("scale_kicker_y", spec.get("kicker_y", 1.24))),  # type: ignore[arg-type]
+            title_y=float(spec.get("scale_title_y", spec.get("title_y", 1.08))),  # type: ignore[arg-type]
             # The split render's kickers share one shape: letter + context scope.
             kicker=(f"{_human_n(rung_lo)}–{_human_n(rung_hi)} contexts" if draw_compare else None),
         )
@@ -1275,8 +1287,9 @@ def make_figure(
             ax_compare,
             letters["compare"] or "",
             f"{_human_n(compare_n)} contexts",
-            None,
-            kicker_y=float(spec.get("kicker_y", 1.24)),  # type: ignore[arg-type]
+            "Maps vs.\ncontrols",
+            kicker_y=float(spec.get("compare_kicker_y", spec.get("kicker_y", 1.24))),  # type: ignore[arg-type]
+            title_y=float(spec.get("compare_title_y", spec.get("title_y", 1.08))),  # type: ignore[arg-type]
         )
         # Focused range for the curves alone: every predictor value lies inside it.
         lo, hi = spec["scale_ylim"]  # type: ignore[misc]
@@ -1673,8 +1686,9 @@ def _write_outputs(
                             "curves on panel C (solid/filled = R^2, dashed/open/hatched = "
                             "top-1), stated once in the METRIC legend group; panel C draws the "
                             "scaling curves alone on the focused range recorded under "
-                            "scale_ylim, with no control on it; both kickers share the "
-                            "letter-plus-context-scope shape"
+                            "scale_ylim, with no control on it; both panels carry the paper's "
+                            "two-row header, a letter-plus-context-scope kicker over a "
+                            "two-line title stating what is plotted"
                         ),
                         "compare_ylim": list(PANEL_LAYOUTS["bc"]["compare_ylim"]),  # type: ignore[arg-type]
                         "scale_ylim": list(PANEL_LAYOUTS["bc"]["scale_ylim"]),  # type: ignore[arg-type]
