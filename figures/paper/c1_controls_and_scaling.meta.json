@@ -8,7 +8,7 @@
   "repository_manuscript_asset": "figures/paper/c1_controls_and_scaling.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
-    "commit": "f4a6fb879bd53478195d5520541c5d5781a50b9d",
+    "commit": "079bfccfe50641dedc38edae4af362f2ab22a70a",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -37,11 +37,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       3.929,
-      7.464
+      7.7
     ],
     "exported_size_inches": [
       3.929,
-      7.837
+      8.071
     ],
     "scale": 0.42,
     "include_width_frac": 0.3,
@@ -56,13 +56,14 @@
     "background": "#FFFFFF",
     "text": [
       "\u22120.9",
-      "B  \u00b7  25K CONTEXTS",
+      "B",
+      "25k contexts",
       "Score \u2191",
       "0",
       "0.5",
       "1",
       "Maps vs.\ncontrols",
-      "C  \u00b7  5K\u2013500K CONTEXTS",
+      "C",
       "Training contexts",
       "5k",
       "25k",
@@ -651,7 +652,7 @@
     "convention": "identical to figure2_five_rollout_scaling: five-rollout mean targets, whitened cosine + two-sided CSLS (K=10), 942-answer pool, banked 963,444-row whitening"
   },
   "comparison_panel": {
-    "encoding": "split render: panel B holds the two maps beside the controls at one training-context count, one categorical slot per arm in overlay.order (maps first), on ONE linear y-axis spanning overlay.ylim (no cut; the same furniture and tick formatter as panel C); the maps are read off the scaling sweep at overlay.n_compare, every control at the rung it was measured on (overlay.controls_n_train, layer 19, 10,000-candidate pool); overlay.matched is false when those differ and the caption must then disclose the mismatched comparison; overlay.style names the form: 'bars' = two bars from zero per slot, solid = held-out R^2 (left), hatched = top-1 retrieval (right); a bar whose value lies below the axis floor is drawn to the floor with a break glyph and listed under overlay.off_axis with its true value for the caption; the shuffled null takes the lighter seam grey because bars carry the arm in colour alone; 'points' = filled marker = R^2 (left), open = top-1 (right), a value outside the axis omitted and listed under overlay.off_scale; either way the fill encoding matches the curves on panel C (solid/filled = R^2, dashed/open/hatched = top-1), stated once in the METRIC legend group; panel C draws the scaling curves alone on the focused range recorded under scale_ylim, with no control on it; both panels carry the paper's two-row header, a letter-plus-context-scope kicker over a two-line title stating what is plotted",
+    "encoding": "split render: panel B holds the two maps beside the controls at one training-context count, one categorical slot per arm in overlay.order (maps first), on ONE linear y-axis spanning overlay.ylim (no cut; the same furniture and tick formatter as panel C); the maps are read off the scaling sweep at overlay.n_compare, every control at the rung it was measured on (overlay.controls_n_train, layer 19, 10,000-candidate pool); overlay.matched is false when those differ and the caption must then disclose the mismatched comparison; overlay.style names the form: 'bars' = two bars from zero per slot, solid = held-out R^2 (left), hatched = top-1 retrieval (right); a bar whose value lies below the axis floor is drawn to the floor with a break glyph and listed under overlay.off_axis with its true value for the caption; the shuffled null takes the lighter seam grey because bars carry the arm in colour alone; 'points' = filled marker = R^2 (left), open = top-1 (right), a value outside the axis omitted and listed under overlay.off_scale; either way the fill encoding matches the curves on panel C (solid/filled = R^2, dashed/open/hatched = top-1), stated once in the METRIC legend group; panel C draws the scaling curves alone on the focused range recorded under scale_ylim, with no control on it; both panels carry the paper's two-row header, a letter-only kicker over a two-line title stating what is plotted; the training-context count the bars were read at is B's single x tick label",
     "compare_ylim": [
       -0.22,
       1.0
@@ -907,8 +908,8 @@
   },
   "baselines_on_panel_b": null,
   "output_sha256": {
-    "pdf": "966f58151ec14fa7a0bb17b26ffdde5d9a6102a5bd70007dad27e5d7fc740e35",
-    "png": "120babe8612e1aea26aceec685a88d3f750d7e53a5b2101a782a95a3ba0f8b4d",
-    "grayscale": "62716a22fa76d939e0a2a15460fadd9ebec3337f53de07c7051f1fb631cab551"
+    "pdf": "d382f97c2c55bdc89ebba34cf8aac79a07807b0712cec92e25963b893b35b6d0",
+    "png": "5e6f93ecf61c9f33d46cb43b2ba04fdc83a72e3a149227d204a58c4b7f044a8e",
+    "grayscale": "bbb14d994266eccd9cc8b30652912e347ee79e65462ed0a8d5d99bce02b3a2a0"
   }
 }

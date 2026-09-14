@@ -706,7 +706,11 @@ def _plot_comparison_bars(
     # Bars grow from zero, so zero gets a seam.
     ax.axhline(0.0, color=SEAM, lw=1.2, zorder=3)
     ax.set_xlim(-0.65, len(arms) - 0.35)
-    ax.set_xticks([])
+    # One tick label under the group names the rung every bar was read at, in
+    # the tick font panel C uses for its own rungs; no tick mark.
+    ax.set_xticks([(len(arms) - 1) / 2.0])
+    ax.set_xticklabels([f"{_human_n(n_compare)} contexts"])
+    ax.tick_params(axis="x", length=0)
     return {
         "style": "bars",
         "n_compare": int(n_compare),
@@ -1105,9 +1109,9 @@ PANEL_LAYOUTS: dict[str, dict[str, object]] = {
         # ~2 in, and the minipage pair is vertically centred, so the schematic
         # sits mid-column.
         "width": "sliver",
-        "aspect": 1.90,
+        "aspect": 1.96,
         "letters": {"compare": "B", "scale": "C"},
-        "margins": {"left": 0.300, "right": 0.975, "top": 0.684, "bottom": 0.0576},
+        "margins": {"left": 0.300, "right": 0.975, "top": 0.694, "bottom": 0.0558},
         "legend_x": (0.300, 0.300),
         "ylabel_x": -0.235,
         "rows": {"plain": 0.985, "with_controls": 0.985, "baseline": 0.995},
@@ -1116,24 +1120,27 @@ PANEL_LAYOUTS: dict[str, dict[str, object]] = {
         "column_legend": True,
         "legend_cols": (0.210, 0.575),
         "legend_top": 0.990,
-        "legend_row": 0.0287,
-        "legend_head": 0.0202,
-        "legend_gap": 0.0134,
+        "legend_row": 0.0278,
+        "legend_head": 0.0196,
+        "legend_gap": 0.0130,
         "legend_fontsize": 11.5,
-        # Both panels carry the paper's two-row header: the grey kicker (letter
-        # plus training-context scope, "B · 25K CONTEXTS") over a bold two-line
-        # title stating what is plotted. Two lines because the column is too
-        # narrow for either title on one line at the paper's title size. The y
-        # values are axes fractions, so the shorter panel B needs the larger
-        # offsets to put its header at the same distance above the axes as C's.
+        # Both panels carry the paper's two-row header: the grey letter-only
+        # kicker over a bold two-line title stating what is plotted. Two lines
+        # because the column is too narrow for either title on one line at the
+        # paper's title size. The training-context scope lives on the x axes
+        # instead (B's single tick label, C's rung ticks), not in the kickers.
+        # The y values are axes fractions, so the shorter panel B needs the
+        # larger offsets to put its header at the same distance above the axes
+        # as C's.
         "compare_kicker_y": 1.54,
         "compare_title_y": 1.10,
         "scale_kicker_y": 1.33,
         "scale_title_y": 1.06,
         # Height of B relative to C, and the gap between them (gridspec hspace,
-        # a fraction of the mean panel height): the gap holds C's header.
+        # a fraction of the mean panel height): the gap holds B's tick label
+        # and C's header.
         "compare_height": 0.60,
-        "hspace": 0.64,
+        "hspace": 0.78,
         # One linear strip per panel, same tick formatter, no axis cut: B spans
         # a little below zero so an off-axis bar keeps a visible stub for its
         # break glyph; C keeps the focused range the split exists for.
@@ -1238,8 +1245,6 @@ def make_figure(
     # above the axes, so their content moves into the caption instead.
     bare = bool(spec.get("suppress_header", False))
     if draw_scale:
-        rung_lo = min(int(row["x"]) for row in scaling["rows"])
-        rung_hi = max(int(row["x"]) for row in scaling["rows"])
         _plot_panel(
             ax_scale,
             scaling["rows"],
@@ -1254,8 +1259,8 @@ def make_figure(
             show_retrieval=True,
             kicker_y=float(spec.get("scale_kicker_y", spec.get("kicker_y", 1.24))),  # type: ignore[arg-type]
             title_y=float(spec.get("scale_title_y", spec.get("title_y", 1.08))),  # type: ignore[arg-type]
-            # The split render's kickers share one shape: letter + context scope.
-            kicker=(f"{_human_n(rung_lo)}–{_human_n(rung_hi)} contexts" if draw_compare else None),
+            # Letter-only kicker: the x axis already names the rungs.
+            kicker=None,
         )
     roster = PANEL_B_BASELINE_ROSTERS[baselines_mode] if baselines is not None else ()
     # The baselines and the boundary control all live on panel B, so a
@@ -1283,10 +1288,12 @@ def make_figure(
         )
         # The kicker names the rung the maps are read at; when it differs from
         # the controls' rung the caption has to say so (overlay["matched"]).
+        # Letter-only kicker (the letter is passed AS the kicker so no separator
+        # dangles); the rung the bars were read at is B's own x tick label.
         panel_header(
             ax_compare,
+            "",
             letters["compare"] or "",
-            f"{_human_n(compare_n)} contexts",
             "Maps vs.\ncontrols",
             kicker_y=float(spec.get("compare_kicker_y", spec.get("kicker_y", 1.24))),  # type: ignore[arg-type]
             title_y=float(spec.get("compare_title_y", spec.get("title_y", 1.08))),  # type: ignore[arg-type]
@@ -1687,8 +1694,9 @@ def _write_outputs(
                             "top-1), stated once in the METRIC legend group; panel C draws the "
                             "scaling curves alone on the focused range recorded under "
                             "scale_ylim, with no control on it; both panels carry the paper's "
-                            "two-row header, a letter-plus-context-scope kicker over a "
-                            "two-line title stating what is plotted"
+                            "two-row header, a letter-only kicker over a two-line title "
+                            "stating what is plotted; the training-context count the bars "
+                            "were read at is B's single x tick label"
                         ),
                         "compare_ylim": list(PANEL_LAYOUTS["bc"]["compare_ylim"]),  # type: ignore[arg-type]
                         "scale_ylim": list(PANEL_LAYOUTS["bc"]["scale_ylim"]),  # type: ignore[arg-type]
