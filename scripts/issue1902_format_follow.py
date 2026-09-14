@@ -60,7 +60,7 @@ def current_artifact(name, expected_sha):
 
 
 def main():
-    """Persist launch identity before monitoring fits; never invoke model judges."""
+    """Record every terminal monitor error, including Hub/launch failures, then raise."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-sha", required=True)
     parser.add_argument("--branch", required=True)
@@ -68,6 +68,23 @@ def main():
     parser.add_argument("--state", type=Path, required=True)
     parser.add_argument("--gpu-handle", type=Path, required=True)
     args = parser.parse_args()
+    try:
+        monitor(args)
+    except Exception as exc:
+        state = json.loads(args.state.read_text()) if args.state.exists() else {}
+        state.update(
+            monitor_error=f"{type(exc).__name__}: {exc}",
+            monitor_stopped_at=time.time(),
+        )
+        if state.get("status") not in {"backend_failed", "backend_gate", "cpu_launch_failed"}:
+            state["status"] = "monitor_failed"
+        C.write_json(args.state, state)
+        post_state(args)
+        raise
+
+
+def monitor(args):
+    """Persist launch identity before monitoring fits; never invoke model judges."""
     state = (
         json.loads(args.state.read_text())
         if args.state.exists()

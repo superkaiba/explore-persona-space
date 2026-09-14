@@ -17,6 +17,157 @@ import issue1902_format_stage as S  # noqa: E402
 from issue1902_watch_backend import bounded_command  # noqa: E402
 
 
+@pytest.fixture
+def memory_hub(monkeypatch):
+    """Signature-checked Hub boundary with immutable snapshots and real consumer bodies."""
+    import hashlib
+    from types import SimpleNamespace
+
+    from huggingface_hub import HfApi
+
+    snapshots, heads, calls = {}, {}, []
+
+    def commit(self, *, repo_id, operations, repo_type, commit_message):
+        content = dict(heads.get((repo_id, repo_type), {}))
+        for op in operations:
+            content[op.path_in_repo] = Path(op.path_or_fileobj).read_bytes()
+        rev = f"{len(snapshots) + 1:040x}"
+        snapshots[repo_id, repo_type, rev] = content
+        heads[repo_id, repo_type] = content
+        calls.append((repo_id, repo_type, rev, list(content)))
+        return SimpleNamespace(oid=rev)
+
+    def metadata(self, repo_id, paths, *, repo_type, revision):
+        content = snapshots[repo_id, repo_type, revision]
+        return [
+            SimpleNamespace(
+                path=path,
+                size=len(content[path]),
+                lfs=SimpleNamespace(sha256=hashlib.sha256(content[path]).hexdigest())
+                if path.endswith(".npz")
+                else None,
+                blob_id=hashlib.sha1(
+                    f"blob {len(content[path])}\0".encode() + content[path]
+                ).hexdigest(),
+            )
+            for path in paths
+            if path in content
+        ]
+
+    def stage(repo_id, path_in_repo, target, *, repo_type, revision, size_bytes):
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(snapshots[repo_id, repo_type, revision][path_in_repo])
+        return target
+
+    monkeypatch.setattr(
+        HfApi, "create_commit", create_autospec(HfApi.create_commit, side_effect=commit)
+    )
+    monkeypatch.setattr(
+        HfApi, "get_paths_info", create_autospec(HfApi.get_paths_info, side_effect=metadata)
+    )
+    monkeypatch.setattr(C, "stage_hub_file", create_autospec(C.stage_hub_file, side_effect=stage))
+    return snapshots, heads, calls
+
+
+def test_private_tensor_public_receipt_roundtrip_and_stale_head(tmp_path, memory_hub):
+    snapshots, heads, _calls = memory_hub
+    producer, consumer = tmp_path / "producer", tmp_path / "consumer"
+    producer.mkdir()
+    tensor, text = producer / "target.npz", producer / "metrics.json"
+    np.savez(tensor, target=np.arange(32).reshape(8, 4))
+    C.write_json(text, dict(metric=0.42))
+    revision = C.upload_many([tensor, text], producer, "test-fingerprint")
+    public = snapshots[C.REPO, "dataset", revision]
+    remote = f"{C.PREFIX}/{tensor.name}"
+    assert remote not in public and remote + ".done.json" in public
+    receipt = json.loads(public[remote + ".done.json"])
+    assert receipt["repo_id"] == C.DEFAULT_OVERFLOW_REPO
+    assert receipt["repo_type"] == "model"
+    heads[C.DEFAULT_OVERFLOW_REPO, "model"] = {remote: b"newer wrong bytes"}
+    assert C.sha(C.fetch(consumer, remote, revision)) == C.sha(tensor)
+    assert C.sha(C.fetch(consumer, f"{C.PREFIX}/{text.name}", revision)) == C.sha(text)
+    assert C.complete(tensor, "test-fingerprint")
+    receipt["sha256"] = "0" * 64
+    public[remote + ".done.json"] = json.dumps(receipt).encode()
+    with pytest.raises(AssertionError, match="Public receipt mismatch"):
+        C.fetch(tmp_path / "corruption-check", remote, revision)
+
+
+def test_oversized_public_text_roundtrip(tmp_path, memory_hub):
+    snapshots, _, _ = memory_hub
+    producer = tmp_path / "producer"
+    producer.mkdir()
+    text = producer / "manifest.json"
+    C.write_json(text, dict(questions="é🙂\r\n\t" * 1_000_000))
+    assert text.stat().st_size > 9_500_000
+    revision = C.upload_many([text], producer, "large-text-test")
+    public = snapshots[C.REPO, "dataset", revision]
+    assert f"{C.PREFIX}/{text.name}" not in public
+    assert all(len(value) < 9_500_000 for value in public.values())
+    fetched = C.fetch(tmp_path / "consumer", f"{C.PREFIX}/{text.name}", revision)
+    assert fetched.read_bytes() == text.read_bytes()
+
+
+def test_storage_probe_uses_actual_upload_and_consumer(tmp_path, memory_hub):
+    snapshots, _, _ = memory_hub
+    revision = C.storage_probe(tmp_path)
+    assert (tmp_path / "storage_probe.npz").stat().st_size > 10_000_000
+    assert revision in {key[2] for key in snapshots}
+
+
+def test_failed_private_upload_never_marks_complete(tmp_path, monkeypatch):
+    from huggingface_hub import HfApi
+
+    tensor = tmp_path / "target.npz"
+    np.savez(tensor, values=np.arange(10))
+    monkeypatch.setattr(
+        HfApi,
+        "create_commit",
+        create_autospec(HfApi.create_commit, side_effect=RuntimeError("private quota refused")),
+    )
+    with pytest.raises(RuntimeError, match="private quota refused"):
+        C.upload_many([tensor], tmp_path, "failed-test")
+    assert tensor.exists()
+    assert not C.complete(tensor, "failed-test")
+
+
+def test_hub_monitor_failure_records_stopped_state(tmp_path, monkeypatch):
+    import issue1902_format_follow as follow
+
+    state_path = tmp_path / "state.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "follow",
+            "--source-sha",
+            "source",
+            "--branch",
+            "branch",
+            "--repo-root",
+            str(ROOT),
+            "--state",
+            str(state_path),
+            "--gpu-handle",
+            str(tmp_path / "gpu.json"),
+        ],
+    )
+    monkeypatch.setattr(
+        follow,
+        "current_artifact",
+        create_autospec(follow.current_artifact, side_effect=RuntimeError("Hub retry exhausted")),
+    )
+    post = create_autospec(subprocess.run, return_value=subprocess.CompletedProcess("post", 0))
+    monkeypatch.setattr(subprocess, "run", post)
+    with pytest.raises(RuntimeError, match="Hub retry exhausted"):
+        follow.main()
+    state = json.loads(state_path.read_text())
+    assert state["status"] == "monitor_failed"
+    assert state["monitor_stopped_at"] > 0
+    assert "Hub retry exhausted" in state["monitor_error"]
+    assert post.call_count == 1
+
+
 def test_recovery_stages_only_base_sft_on_original_olmo_cohort(tmp_path, monkeypatch):
     assert set(C.MODELS) == {"qwen_B", "qwen_S", "olmo_B", "olmo_S"}
     assert set(C.DEFERRED_FORMAT_MODELS) == {"olmo_D", "olmo_R"}
@@ -189,7 +340,8 @@ def test_three_probe_timeouts_write_explicit_unknown_state(tmp_path, monkeypatch
     with pytest.raises(RuntimeError, match="Three backend probes failed"):
         follow.main()
     state = json.loads(state_path.read_text())
-    assert state["status"] == "backend_observation_error"
+    assert state["status"] == "monitor_failed"
+    assert "Three backend probes failed" in state["monitor_error"]
     assert state["consecutive_observation_failures"] == 3
     assert state["checked_at"] > 0
 
