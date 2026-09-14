@@ -1,0 +1,46 @@
+[
+  {
+    "cell": "primary/observed/k10/rotationNone",
+    "repo": "superkaiba1/explore-persona-space-data",
+    "revision": "67ebd1f1056726c700b27337c06753c8ee4fdc9a",
+    "filename": "exploratory_workspace_jr/20260912/primary_main_rotationNone_v1/fits/main/k10-rotationNone/per_example.npz",
+    "sha256": "a6d1d8cd85da3a3c63154bea63e29eed1711c67790a0a3d5f504f1670fecee86",
+    "bytes": 372320320,
+    "lfs_sha256": "a6d1d8cd85da3a3c63154bea63e29eed1711c67790a0a3d5f504f1670fecee86",
+    "local_path": "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/user_requested_critic_parent_v1/hf_cache/datasets--superkaiba1--explore-persona-space-data/snapshots/67ebd1f1056726c700b27337c06753c8ee4fdc9a/exploratory_workspace_jr/20260912/primary_main_rotationNone_v1/fits/main/k10-rotationNone/per_example.npz",
+    "verified_at_epoch": 1789351477.3957717
+  },
+  {
+    "cell": "primary/affine_null/k10/rotationNone",
+    "repo": "superkaiba1/explore-persona-space-data",
+    "revision": "e474eec30f87a999a0b5ac61a17d5d53b12f9ee0",
+    "filename": "exploratory_workspace_jr/20260912/primary_main_affine_null_rotationNone_v1/k10-rotationNone/per_example.npz",
+    "sha256": "7fba085e606b8562b55be0221ac358fbb43a2213160250629f32879c1f39d3d4",
+    "bytes": 372320320,
+    "lfs_sha256": "7fba085e606b8562b55be0221ac358fbb43a2213160250629f32879c1f39d3d4",
+    "local_path": "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/user_requested_critic_parent_v1/hf_cache/datasets--superkaiba1--explore-persona-space-data/snapshots/e474eec30f87a999a0b5ac61a17d5d53b12f9ee0/exploratory_workspace_jr/20260912/primary_main_affine_null_rotationNone_v1/k10-rotationNone/per_example.npz",
+    "verified_at_epoch": 1789351477.6332877
+  },
+  {
+    "cell": "comparison/observed/k10/rotationNone",
+    "repo": "superkaiba1/explore-persona-space-data",
+    "revision": "c57d9f2e2fd9e499922e3a9c14d8aa453cf0cf52",
+    "filename": "exploratory_workspace_jr/20260912/comparison_main_rotationNone_v1/fits/main/k10-rotationNone/per_example.npz",
+    "sha256": "715e51fb317c778d392f6c84608c0b0d978517d0a4bd23426a15defeb7c3cbc1",
+    "bytes": 186198080,
+    "lfs_sha256": "715e51fb317c778d392f6c84608c0b0d978517d0a4bd23426a15defeb7c3cbc1",
+    "local_path": "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/user_requested_critic_parent_v1/hf_cache/datasets--superkaiba1--explore-persona-space-data/snapshots/c57d9f2e2fd9e499922e3a9c14d8aa453cf0cf52/exploratory_workspace_jr/20260912/comparison_main_rotationNone_v1/fits/main/k10-rotationNone/per_example.npz",
+    "verified_at_epoch": 1789351480.3032508
+  },
+  {
+    "cell": "comparison/affine_null/k10/rotationNone",
+    "repo": "superkaiba1/explore-persona-space-data",
+    "revision": "4f8b4134020f042dc3c7caa0604891dbb554da9b",
+    "filename": "exploratory_workspace_jr/20260912/comparison_main_affine_null_rotationNone_v1/k10-rotationNone/per_example.npz",
+    "sha256": "edf61c07bd87b86e6021d1736bff392e23b59023f75df6cef2a521c61d0e84be",
+    "bytes": 186198080,
+    "lfs_sha256": "edf61c07bd87b86e6021d1736bff392e23b59023f75df6cef2a521c61d0e84be",
+    "local_path": "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/user_requested_critic_parent_v1/hf_cache/datasets--superkaiba1--explore-persona-space-data/snapshots/4f8b4134020f042dc3c7caa0604891dbb554da9b/exploratory_workspace_jr/20260912/comparison_main_affine_null_rotationNone_v1/k10-rotationNone/per_example.npz",
+    "verified_at_epoch": 1789351480.1403823
+  }
+]

@@ -1,0 +1,371 @@
+{
+  "schema": "workspace-jr-user-requested-independent-critic-v1",
+  "review_sha": "142c3215b5bff1df28109ba99ebdd9fdf31133ae",
+  "verdict": "sound within scope",
+  "confidence": "moderate_to_high_for_saved_native_comparisons; conditional_for_construct_generalization",
+  "result_changing_defects_found": [],
+  "changes_required_to_trust_current_numerical_results": false,
+  "prior_review_verdicts_used_as_scientific_evidence": false,
+  "original_question_assessment": {
+    "relative_component_predictability": "Answered within the revised fresh-fit operational scope.",
+    "historical_frozen_predictor": "Not directly characterized on current activations because recapture compatibility failed; replacement by fresh matched fits is disclosed.",
+    "lens_dependence": "27B native gaps are positive for both lenses without clearing the practical threshold by CI; 4B J is negative and R unresolved.",
+    "model_capability": "Observational two-model difference only; layer/depth, training, architecture and generated-answer confounds remain.",
+    "workspace_specific_deficit": "Not established; decomposition controls refute the sufficiency of a raw positive gap.",
+    "intrinsic_predictability_reasoning_or_causation": "Not established and appropriately not claimed."
+  },
+  "strengths": [
+    "Token-before-pooling decomposition and equal rollout weighting",
+    "Separate J/R decompositions with covariance-aware variance accounting",
+    "Validation-only matched tuning and disjoint content-hash subsets",
+    "Architecture-specific dense R rules distinguished from ordinary J derivatives",
+    "Explicit native affine controls and completed-cohort accounting",
+    "Conditional inference and improving learning curves limit overstatement"
+  ],
+  "findings": [
+    {
+      "rank": 1,
+      "id": "C1",
+      "title": "Clarify quantitative limits of decomposition controls",
+      "severity": "minor",
+      "affects": "interpretation",
+      "changes_numerical_results": false,
+      "newly_discovered_defect": false,
+      "prior_acknowledgment": "The report already labels control subtractions non-causal and matching approximate. The code and null protocol document identical repeated token vectors. This review makes the consequence for comparability explicit.",
+      "finding": "The affine null repeats one xA+b across every token and rollout, removing within-answer heterogeneity before nonlinear sparse decomposition. Calibration quality matches minimize uncentered energy mismatch across k, without jointly matching component variance or active atoms. These are counterexamples and diagnostics, not estimates of artifact bias in observed gaps.",
+      "evidence": [
+        {
+          "file": "scripts/workspace_jr_native_affine_null.py",
+          "lines": [
+            71,
+            77
+          ],
+          "url": "https://github.com/superkaiba/explore-persona-space/blob/142c3215b5bff1df28109ba99ebdd9fdf31133ae/scripts/workspace_jr_native_affine_null.py#L71-L77"
+        },
+        {
+          "file": "src/explore_persona_space/analysis/workspace_quality.py",
+          "lines": [
+            69,
+            98
+          ],
+          "url": "https://github.com/superkaiba/explore-persona-space/blob/142c3215b5bff1df28109ba99ebdd9fdf31133ae/src/explore_persona_space/analysis/workspace_quality.py#L69-L98"
+        },
+        {
+          "artifact": "main_comparison_v1/calibration_quality/primary.json",
+          "field": "report.matching.J.10",
+          "fact": "All three matched rotations use k25 against native k10, with active_atoms_mismatch=15 and residual-energy mismatch -0.012183 to -0.009957."
+        }
+      ],
+      "minimal_remedy": "Name the identical-token null and approximate calibration-energy matching beside the control table; preserve the current non-causal language.",
+      "additional_experiment_required_for_current_conclusion": false,
+      "optional_followup": "Distribution-matched affine controls only if seeking to quantify or eliminate sparse-decomposition artifacts."
+    },
+    {
+      "rank": 2,
+      "id": "C2",
+      "title": "Bring training censoring into the final target-definition paragraph",
+      "severity": "minor",
+      "affects": "interpretation_and_reporting",
+      "changes_numerical_results": false,
+      "newly_discovered_defect": false,
+      "prior_acknowledgment": "Censoring and the differing train/validation versus primary-test completion policy are explicit in generation_coverage_20260913.md and completion_scoring_20260913.md; abbreviated in the final report.",
+      "finding": "Training and validation retain nonempty length-capped answers while primary evaluation conditions on both models completing all five draws. That difference should accompany the central definition of the learned target.",
+      "evidence": [
+        {
+          "file": "docs/exploratory_workspace_jr/generation_coverage_20260913.md",
+          "url": "https://github.com/superkaiba/explore-persona-space/blob/142c3215b5bff1df28109ba99ebdd9fdf31133ae/docs/exploratory_workspace_jr/generation_coverage_20260913.md",
+          "facts": {
+            "primary_train_capped_draws": 49,
+            "primary_train_affected_contexts": 21,
+            "comparison_train_capped_draws": 53,
+            "comparison_train_affected_contexts": 27,
+            "validation_capped_draws_each_model": 1
+          }
+        },
+        {
+          "file": "docs/exploratory_workspace_jr/final_report.md",
+          "lines": [
+            179,
+            186
+          ],
+          "url": "https://github.com/superkaiba/explore-persona-space/blob/142c3215b5bff1df28109ba99ebdd9fdf31133ae/docs/exploratory_workspace_jr/final_report.md#L179-L186"
+        },
+        {
+          "artifact": "native_array_checks.json",
+          "field": "cells.*observed*.all_captured_256_gaps",
+          "fact": "All four observed native gap signs survive including all 256 captured test rows; maximum gap change is 0.001522."
+        }
+      ],
+      "minimal_remedy": "State the training/validation censoring counts or policy beside the 1024/128/256 split and conditional 252-context evaluation scope.",
+      "additional_experiment_required_for_current_conclusion": false,
+      "optional_followup": "A refit excluding censored training targets could assess training-policy sensitivity, but is not required for the present descriptive conclusion."
+    },
+    {
+      "rank": 3,
+      "id": "C3",
+      "title": "Distinguish numerical lens stability from answer-state construct validation",
+      "severity": "minor",
+      "affects": "construct_interpretation",
+      "changes_numerical_results": false,
+      "newly_discovered_defect": false,
+      "prior_acknowledgment": "The plan calls train-domain calibration an approximation; the report qualifies R-space as operational and the intervals as conditional on calibrated dictionaries.",
+      "finding": "Calibration uses raw prompt prefixes and qualitative readouts on calibration prompts. Matrix/direction stability and forward/backward checks do not establish stability of answer-state sparse assignments or component gaps under a new calibration draw. This does not demonstrate that current gaps are unstable.",
+      "evidence": [
+        {
+          "file": "src/explore_persona_space/analysis/workspace_runtime.py",
+          "lines": [
+            318,
+            333
+          ],
+          "url": "https://github.com/superkaiba/explore-persona-space/blob/142c3215b5bff1df28109ba99ebdd9fdf31133ae/src/explore_persona_space/analysis/workspace_runtime.py#L318-L333"
+        },
+        {
+          "file": "scripts/workspace_jr_calibration.py",
+          "lines": [
+            37,
+            60
+          ],
+          "url": "https://github.com/superkaiba/explore-persona-space/blob/142c3215b5bff1df28109ba99ebdd9fdf31133ae/scripts/workspace_jr_calibration.py#L37-L60"
+        },
+        {
+          "artifact": "saved_statistics_checks.json",
+          "field": "calibration",
+          "fact": "119 valid calibration prompts and 29 qualitative readout positions per model; even/odd cosine approximately 0.992-0.998, relative Frobenius differences approximately 0.070-0.127."
+        }
+      ],
+      "minimal_remedy": "Label the demonstrated stability as prompt-calibration matrix/direction stability and explicitly leave answer-state component stability unmeasured.",
+      "additional_experiment_required_for_current_conclusion": false,
+      "optional_followup": "Evaluate component stability under independent or answer-domain calibration before broadening beyond the present operational dictionary."
+    }
+  ],
+  "native_headlines": {
+    "primary/observed/k10/rotationNone": {
+      "G_J": {
+        "estimate": 0.04229184927804153,
+        "interval": [
+          0.024640322858106654,
+          0.06118241851316852
+        ]
+      },
+      "G_R": {
+        "estimate": 0.051354396779076716,
+        "interval": [
+          0.03999525920944601,
+          0.06398177668794798
+        ]
+      },
+      "G_R_minus_G_J": {
+        "estimate": 0.00906254750103519,
+        "interval": [
+          -0.001002166074437219,
+          0.0205013344609657
+        ]
+      },
+      "ridge_full_r2": 0.6659378443427048,
+      "noise_fraction": {
+        "full": 0.01713516765421359,
+        "J": 0.022633076456695163,
+        "restJ": 0.018314915403969012,
+        "R": 0.02425192411673425,
+        "restR": 0.01808604113733054
+      },
+      "approximate_noise_corrected_gaps": {
+        "J": 0.04031847298454461,
+        "R": 0.04839674531997118
+      },
+      "noise_correction_scope": "Descriptive classical independent additive test-noise approximation; not a new fitted result or CI."
+    },
+    "primary/affine_null/k10/rotationNone": {
+      "G_J": {
+        "estimate": 0.408373303013554,
+        "interval": [
+          0.3786823605725684,
+          0.44561165853080364
+        ]
+      },
+      "G_R": {
+        "estimate": 0.3936647820439507,
+        "interval": [
+          0.36589609418936525,
+          0.42792030491046007
+        ]
+      },
+      "G_R_minus_G_J": {
+        "estimate": -0.01470852096960329,
+        "interval": [
+          -0.027395878125163805,
+          -0.0027268655739692885
+        ]
+      },
+      "ridge_full_r2": 0.9999999999999986
+    },
+    "comparison/observed/k10/rotationNone": {
+      "G_J": {
+        "estimate": -0.037109745813233896,
+        "interval": [
+          -0.05028148138638211,
+          -0.02257530674924856
+        ]
+      },
+      "G_R": {
+        "estimate": 0.009539977844380876,
+        "interval": [
+          -0.012783339036249574,
+          0.03167712321601414
+        ]
+      },
+      "G_R_minus_G_J": {
+        "estimate": 0.04664972365761477,
+        "interval": [
+          0.033219629473501905,
+          0.06188018639367415
+        ]
+      },
+      "ridge_full_r2": 0.6034698293567624,
+      "noise_fraction": {
+        "full": 0.023543687990279998,
+        "J": 0.026967316210160592,
+        "restJ": 0.025547241609401444,
+        "R": 0.03110081091425207,
+        "restR": 0.025198804284539817
+      },
+      "approximate_noise_corrected_gaps": {
+        "J": -0.039004673842911064,
+        "R": 0.006191540895444936
+      },
+      "noise_correction_scope": "Descriptive classical independent additive test-noise approximation; not a new fitted result or CI."
+    },
+    "comparison/affine_null/k10/rotationNone": {
+      "G_J": {
+        "estimate": 0.3550587018530449,
+        "interval": [
+          0.3330213323636793,
+          0.3822452957802346
+        ]
+      },
+      "G_R": {
+        "estimate": 0.40056934468130934,
+        "interval": [
+          0.3754803074243083,
+          0.4295484389090231
+        ]
+      },
+      "G_R_minus_G_J": {
+        "estimate": 0.04551064282826445,
+        "interval": [
+          0.034425409297181686,
+          0.05675675587347775
+        ]
+      },
+      "ridge_full_r2": 0.9999999999999936
+    }
+  },
+  "checks_performed": {
+    "saved_cell_count": 48,
+    "scalar_r2_sse_sst_checks": 1200,
+    "saved_interval_reductions": 1200,
+    "raw_native_cells": 4,
+    "native_per_example_metric_recomputations": 100,
+    "direct_existing_bootstrap_value_checks": 500,
+    "bootstrap_draw_indices": [
+      0,
+      127,
+      128,
+      999,
+      1999
+    ],
+    "disjoint_selection_subsets": true,
+    "config_and_selection_hashes_checked": true,
+    "native_input_and_affine_target_alignment": true,
+    "test_completion_sensitivity": "Computed on all 256 captured rows; signs unchanged.",
+    "code_and_original_sources_inspected": [
+      "J estimator and source/target hooks",
+      "dense R propagation and unchanged-forward adapters",
+      "sparse pursuit and rotations",
+      "token capture and equal-rollout pooling",
+      "ridge/MLP tuning and scaling",
+      "paired bootstrap and noise",
+      "control matching",
+      "original workspace paper and R post extracts"
+    ]
+  },
+  "not_rerun": [
+    "Generation",
+    "GPU capture",
+    "Native J/R forward/backward execution",
+    "Full-vocabulary token decomposition",
+    "Ridge or MLP training/tuning",
+    "Rotated per-example raw-array numerical reanalysis",
+    "All bootstrap reductions from raw arrays",
+    "Raw GPQA regrading",
+    "Independent calibration/corpus replication",
+    "Causal or temporal tests",
+    "Figure rendering inspection"
+  ],
+  "artifact_provenance_scope": "Four native prediction stores were independently SHA256-rehashed from parent-staged immutable Hub artifacts. Broader scalar/interval checks use locally saved comparison and decomposition artifacts. No prior approval or successful upload is treated as proof of construct validity.",
+  "review_directory": "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/user_requested_critic_v1",
+  "audit_artifacts": [
+    {
+      "path": "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/user_requested_critic_v1/audit_saved_statistics.py",
+      "sha256": "fbb51672fb53b222a21fa2736a9f9123637596317c540cd853f6f2e40bef6a79"
+    },
+    {
+      "path": "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/user_requested_critic_v1/saved_statistics_checks.json",
+      "sha256": "789f40e402b09861a38335db36aa41615650c00e327c25107363c3c419782b80"
+    },
+    {
+      "path": "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/user_requested_critic_v1/audit_native_arrays.py",
+      "sha256": "89510d6f61e90fb7519147175a9ba3407ad217be2d51abe39b52070ccf1480fb"
+    },
+    {
+      "path": "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/user_requested_critic_v1/native_array_checks.json",
+      "sha256": "8b023f45dc5ef78ea3b42e9d6c624338c5ea45a64061b6f01e4591315725dc0e"
+    },
+    {
+      "path": "/mnt/eps-data/thomasjiralerspong/workspace-jr-20260912/user_requested_critic_v1/review.md",
+      "sha256": "14cac2901de1ad6a10c81b6f6f33e380a40030fff5e2f7d099ca9af89c9e30eb"
+    }
+  ],
+  "audit_runs": [
+    {
+      "script": "audit_saved_statistics.py",
+      "source_sha": "142c3215b5bff1df28109ba99ebdd9fdf31133ae",
+      "source_sha_meaning": "Pinned experiment checkout Git revision inspected by this audit",
+      "source_sha256": "fbb51672fb53b222a21fa2736a9f9123637596317c540cd853f6f2e40bef6a79",
+      "result_file": "saved_statistics_checks.json",
+      "result_sha256": "789f40e402b09861a38335db36aa41615650c00e327c25107363c3c419782b80",
+      "result_status": "passed",
+      "script_scope": "Original review code artifact, executed on the VM, not a new experiment implementation",
+      "formatting_verification_rerun": {
+        "completed_at_utc": "2026-09-14T02:15:39.801417+00:00",
+        "executed_checkout_sha": "142c3215b5bff1df28109ba99ebdd9fdf31133ae",
+        "exit_code": 0,
+        "ruff_check": "passed",
+        "ruff_format_check": "passed",
+        "result_bytes_unchanged": true,
+        "original_source_archive": "original_audits.zip",
+        "scope": "Import ordering, Ruff formatting, adjacent string-literal wrapping and unused loop-name cleanup only; same bounded audits rerun."
+      }
+    },
+    {
+      "script": "audit_native_arrays.py",
+      "source_sha": "142c3215b5bff1df28109ba99ebdd9fdf31133ae",
+      "source_sha_meaning": "Pinned experiment checkout Git revision inspected by this audit",
+      "source_sha256": "89510d6f61e90fb7519147175a9ba3407ad217be2d51abe39b52070ccf1480fb",
+      "result_file": "native_array_checks.json",
+      "result_sha256": "8b023f45dc5ef78ea3b42e9d6c624338c5ea45a64061b6f01e4591315725dc0e",
+      "result_status": "passed",
+      "script_scope": "Original review code artifact, executed on the VM, not a new experiment implementation",
+      "formatting_verification_rerun": {
+        "completed_at_utc": "2026-09-14T02:15:39.801516+00:00",
+        "executed_checkout_sha": "142c3215b5bff1df28109ba99ebdd9fdf31133ae",
+        "exit_code": 0,
+        "ruff_check": "passed",
+        "ruff_format_check": "passed",
+        "result_bytes_unchanged": true,
+        "original_source_archive": "original_audits.zip",
+        "scope": "Import ordering, Ruff formatting, adjacent string-literal wrapping and unused loop-name cleanup only; same bounded audits rerun."
+      }
+    }
+  ]
+}

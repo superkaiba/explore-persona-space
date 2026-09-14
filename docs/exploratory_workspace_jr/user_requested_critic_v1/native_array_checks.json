@@ -1,0 +1,217 @@
+{
+  "status": "passed",
+  "native_cells_checked": 4,
+  "per_example_metric_recomputations": 100,
+  "direct_existing_bootstrap_draw_checks": 500,
+  "existing_draw_indices": [
+    0,
+    127,
+    128,
+    999,
+    1999
+  ],
+  "native_null_inputs_match_observed": true,
+  "native_null_targets_match_observed_full_ridge_predictions": true,
+  "cells": {
+    "primary/observed/k10/rotationNone": {
+      "source_sha256": "a6d1d8cd85da3a3c63154bea63e29eed1711c67790a0a3d5f504f1670fecee86",
+      "source_test_contexts": 256,
+      "primary_contexts": 252,
+      "points": {
+        "ridge/full": 0.6659378443427046,
+        "ridge/J": 0.613786557974671,
+        "ridge/restJ": 0.6560784072527124,
+        "ridge/R": 0.6065636367741958,
+        "ridge/restR": 0.657918033553272,
+        "mlp/full": 0.642555228295711,
+        "mlp/J": 0.5969844191367097,
+        "mlp/restJ": 0.6319568347504199,
+        "mlp/R": 0.5911148811757057,
+        "mlp/restR": 0.6363795462610329,
+        "mlp_seed42/full": 0.642555228295711,
+        "mlp_seed42/J": 0.5969844191367097,
+        "mlp_seed42/restJ": 0.6319568347504199,
+        "mlp_seed42/R": 0.5911148811757057,
+        "mlp_seed42/restR": 0.6363795462610329,
+        "mlp_seed137/full": 0.6426825949476864,
+        "mlp_seed137/J": 0.5977262725982069,
+        "mlp_seed137/restJ": 0.6314144335556902,
+        "mlp_seed137/R": 0.590286245679895,
+        "mlp_seed137/restR": 0.6349245413133143,
+        "mlp_seed271/full": 0.6416464997563593,
+        "mlp_seed271/J": 0.5969717872882074,
+        "mlp_seed271/restJ": 0.6314670394819623,
+        "mlp_seed271/R": 0.5897832599774409,
+        "mlp_seed271/restR": 0.63517765137842
+      },
+      "all_captured_256_ridge_r2": {
+        "full": 0.6671217318200858,
+        "J": 0.6136696778630869,
+        "restJ": 0.6574835109227044,
+        "R": 0.6067069161440019,
+        "restR": 0.6592690749479273
+      },
+      "primary_gaps": {
+        "J": 0.042291849278041416,
+        "R": 0.05135439677907627
+      },
+      "all_captured_256_gaps": {
+        "J": 0.0438138330596175,
+        "R": 0.05256215880392545
+      },
+      "all_captured_scope": "Descriptive cap-inclusive sensitivity; not the primary estimand."
+    },
+    "primary/affine_null/k10/rotationNone": {
+      "source_sha256": "7fba085e606b8562b55be0221ac358fbb43a2213160250629f32879c1f39d3d4",
+      "source_test_contexts": 256,
+      "primary_contexts": 252,
+      "points": {
+        "ridge/full": 0.9999999999999986,
+        "ridge/J": 0.49821743660904094,
+        "ridge/restJ": 0.9065907396225951,
+        "ridge/R": 0.53335166041866,
+        "ridge/restR": 0.9270164424626106,
+        "mlp/full": 0.9509135912543781,
+        "mlp/J": 0.49884273655932265,
+        "mlp/restJ": 0.8655519568287122,
+        "mlp/R": 0.532795595509505,
+        "mlp/restR": 0.8864284998956992,
+        "mlp_seed42/full": 0.9509135912543781,
+        "mlp_seed42/J": 0.49884273655932265,
+        "mlp_seed42/restJ": 0.8655519568287122,
+        "mlp_seed42/R": 0.532795595509505,
+        "mlp_seed42/restR": 0.8864284998956992,
+        "mlp_seed137/full": 0.9501516520811986,
+        "mlp_seed137/J": 0.49803228380005105,
+        "mlp_seed137/restJ": 0.8650955031751191,
+        "mlp_seed137/R": 0.5333770490837867,
+        "mlp_seed137/restR": 0.8862065174361735,
+        "mlp_seed271/full": 0.9501537726821212,
+        "mlp_seed271/J": 0.4987143588317964,
+        "mlp_seed271/restJ": 0.8653457449888745,
+        "mlp_seed271/R": 0.5345030084909989,
+        "mlp_seed271/restR": 0.8865772857672494
+      },
+      "all_captured_256_ridge_r2": {
+        "full": 0.9999999999999986,
+        "J": 0.49541716302381145,
+        "restJ": 0.9066102236704745,
+        "R": 0.5306999927719758,
+        "restR": 0.926952853290743
+      },
+      "primary_gaps": {
+        "J": 0.4083733030135541,
+        "R": 0.3936647820439506
+      },
+      "all_captured_256_gaps": {
+        "J": 0.41119306064666306,
+        "R": 0.3962528605187672
+      },
+      "all_captured_scope": "Descriptive cap-inclusive sensitivity; not the primary estimand."
+    },
+    "comparison/observed/k10/rotationNone": {
+      "source_sha256": "715e51fb317c778d392f6c84608c0b0d978517d0a4bd23426a15defeb7c3cbc1",
+      "source_test_contexts": 256,
+      "primary_contexts": 252,
+      "points": {
+        "ridge/full": 0.6034698293567625,
+        "ridge/J": 0.6156275032631722,
+        "ridge/restJ": 0.578517757449938,
+        "ridge/R": 0.5753068666465784,
+        "ridge/restR": 0.5848468444909591,
+        "mlp/full": 0.5815337726239583,
+        "mlp/J": 0.6047327581213501,
+        "mlp/restJ": 0.5577772585501828,
+        "mlp/R": 0.5594516057522247,
+        "mlp/restR": 0.564226807244798,
+        "mlp_seed42/full": 0.5815337726239583,
+        "mlp_seed42/J": 0.6047327581213501,
+        "mlp_seed42/restJ": 0.5577772585501828,
+        "mlp_seed42/R": 0.5594516057522247,
+        "mlp_seed42/restR": 0.564226807244798,
+        "mlp_seed137/full": 0.5824632993653402,
+        "mlp_seed137/J": 0.6045381840434201,
+        "mlp_seed137/restJ": 0.5573132390757304,
+        "mlp_seed137/R": 0.5620499014377514,
+        "mlp_seed137/restR": 0.5629568154554476,
+        "mlp_seed271/full": 0.5826651114021746,
+        "mlp_seed271/J": 0.6049304600954606,
+        "mlp_seed271/restJ": 0.5568508883122498,
+        "mlp_seed271/R": 0.5616485043552089,
+        "mlp_seed271/restR": 0.5631402880349548
+      },
+      "all_captured_256_ridge_r2": {
+        "full": 0.6035309883705424,
+        "J": 0.6154602470761161,
+        "restJ": 0.5787641380895823,
+        "R": 0.5754805980732479,
+        "restR": 0.5850328124683634
+      },
+      "primary_gaps": {
+        "J": -0.03710974581323412,
+        "R": 0.009539977844380765
+      },
+      "all_captured_256_gaps": {
+        "J": -0.03669610898653386,
+        "R": 0.009552214395115444
+      },
+      "all_captured_scope": "Descriptive cap-inclusive sensitivity; not the primary estimand."
+    },
+    "comparison/affine_null/k10/rotationNone": {
+      "source_sha256": "edf61c07bd87b86e6021d1736bff392e23b59023f75df6cef2a521c61d0e84be",
+      "source_test_contexts": 256,
+      "primary_contexts": 252,
+      "points": {
+        "ridge/full": 0.9999999999999936,
+        "ridge/J": 0.5072740559680758,
+        "ridge/restJ": 0.8623327578211206,
+        "ridge/R": 0.46988609527658776,
+        "ridge/restR": 0.870455439957897,
+        "mlp/full": 0.9540306972757692,
+        "mlp/J": 0.5047282818705257,
+        "mlp/restJ": 0.8290515594827176,
+        "mlp/R": 0.4724068226923852,
+        "mlp/restR": 0.8377925917019181,
+        "mlp_seed42/full": 0.9540306972757692,
+        "mlp_seed42/J": 0.5047282818705257,
+        "mlp_seed42/restJ": 0.8290515594827176,
+        "mlp_seed42/R": 0.4724068226923852,
+        "mlp_seed42/restR": 0.8377925917019181,
+        "mlp_seed137/full": 0.9537075434140119,
+        "mlp_seed137/J": 0.5051988616009585,
+        "mlp_seed137/restJ": 0.8295588084138144,
+        "mlp_seed137/R": 0.4733871086926361,
+        "mlp_seed137/restR": 0.8382254208818518,
+        "mlp_seed271/full": 0.953560883826799,
+        "mlp_seed271/J": 0.5062411639443916,
+        "mlp_seed271/restJ": 0.8293519696294027,
+        "mlp_seed271/R": 0.4739512186156988,
+        "mlp_seed271/restR": 0.8373512011400801
+      },
+      "all_captured_256_ridge_r2": {
+        "full": 0.9999999999999936,
+        "J": 0.5062500814735142,
+        "restJ": 0.8625666151035974,
+        "R": 0.4686686307247653,
+        "restR": 0.8705914683446189
+      },
+      "primary_gaps": {
+        "J": 0.3550587018530448,
+        "R": 0.4005693446813092
+      },
+      "all_captured_256_gaps": {
+        "J": 0.3563165336300832,
+        "R": 0.4019228376198536
+      },
+      "all_captured_scope": "Descriptive cap-inclusive sensitivity; not the primary estimand."
+    }
+  },
+  "not_run": [
+    "new fits",
+    "new bootstrap sampling",
+    "generation",
+    "token capture",
+    "lens construction",
+    "full token-level sparse decomposition"
+  ]
+}

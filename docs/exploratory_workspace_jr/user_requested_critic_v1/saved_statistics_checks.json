@@ -1,0 +1,322 @@
+{
+  "status": "passed",
+  "review_sha": "142c3215b5bff1df28109ba99ebdd9fdf31133ae",
+  "scope": "Local saved-statistic reductions; source arrays are separately audited when staged. No claim of regeneration or model execution.",
+  "selection_subsets_disjoint": true,
+  "cell_count": 48,
+  "primary_cohort_size": 252,
+  "metric_summary_checks": 1200,
+  "interval_reductions": 1200,
+  "shared_bootstrap_counts_sha256": "493cb1171178dac859e8f598292207d786919f700ec5468d8e5cb0fdb05dfb46",
+  "max_abs_reconstruction_error": 2.842170943040401e-14,
+  "headlines": {
+    "primary/observed/k10/rotationNone": {
+      "G_J": {
+        "estimate": 0.04229184927804153,
+        "interval": [
+          0.024640322858106654,
+          0.06118241851316852
+        ]
+      },
+      "G_R": {
+        "estimate": 0.051354396779076716,
+        "interval": [
+          0.03999525920944601,
+          0.06398177668794798
+        ]
+      },
+      "G_R_minus_G_J": {
+        "estimate": 0.00906254750103519,
+        "interval": [
+          -0.001002166074437219,
+          0.0205013344609657
+        ]
+      },
+      "ridge_full_r2": 0.6659378443427048,
+      "noise_fraction": {
+        "full": 0.01713516765421359,
+        "J": 0.022633076456695163,
+        "restJ": 0.018314915403969012,
+        "R": 0.02425192411673425,
+        "restR": 0.01808604113733054
+      },
+      "approximate_noise_corrected_gaps": {
+        "J": 0.04031847298454461,
+        "R": 0.04839674531997118
+      },
+      "noise_correction_scope": "Descriptive classical independent additive test-noise approximation; not a new fitted result or CI."
+    },
+    "primary/affine_null/k10/rotationNone": {
+      "G_J": {
+        "estimate": 0.408373303013554,
+        "interval": [
+          0.3786823605725684,
+          0.44561165853080364
+        ]
+      },
+      "G_R": {
+        "estimate": 0.3936647820439507,
+        "interval": [
+          0.36589609418936525,
+          0.42792030491046007
+        ]
+      },
+      "G_R_minus_G_J": {
+        "estimate": -0.01470852096960329,
+        "interval": [
+          -0.027395878125163805,
+          -0.0027268655739692885
+        ]
+      },
+      "ridge_full_r2": 0.9999999999999986
+    },
+    "comparison/observed/k10/rotationNone": {
+      "G_J": {
+        "estimate": -0.037109745813233896,
+        "interval": [
+          -0.05028148138638211,
+          -0.02257530674924856
+        ]
+      },
+      "G_R": {
+        "estimate": 0.009539977844380876,
+        "interval": [
+          -0.012783339036249574,
+          0.03167712321601414
+        ]
+      },
+      "G_R_minus_G_J": {
+        "estimate": 0.04664972365761477,
+        "interval": [
+          0.033219629473501905,
+          0.06188018639367415
+        ]
+      },
+      "ridge_full_r2": 0.6034698293567624,
+      "noise_fraction": {
+        "full": 0.023543687990279998,
+        "J": 0.026967316210160592,
+        "restJ": 0.025547241609401444,
+        "R": 0.03110081091425207,
+        "restR": 0.025198804284539817
+      },
+      "approximate_noise_corrected_gaps": {
+        "J": -0.039004673842911064,
+        "R": 0.006191540895444936
+      },
+      "noise_correction_scope": "Descriptive classical independent additive test-noise approximation; not a new fitted result or CI."
+    },
+    "comparison/affine_null/k10/rotationNone": {
+      "G_J": {
+        "estimate": 0.3550587018530449,
+        "interval": [
+          0.3330213323636793,
+          0.3822452957802346
+        ]
+      },
+      "G_R": {
+        "estimate": 0.40056934468130934,
+        "interval": [
+          0.3754803074243083,
+          0.4295484389090231
+        ]
+      },
+      "G_R_minus_G_J": {
+        "estimate": 0.04551064282826445,
+        "interval": [
+          0.034425409297181686,
+          0.05675675587347775
+        ]
+      },
+      "ridge_full_r2": 0.9999999999999936
+    }
+  },
+  "calibration": {
+    "primary": {
+      "half_stability": {
+        "J": {
+          "left_norm": 70.95327332721575,
+          "right_norm": 70.8026321024693,
+          "cosine": 0.9927575352647359,
+          "relative_frobenius_error_to_right": 0.12050010247477345,
+          "status": "ok"
+        },
+        "R": {
+          "left_norm": 77.21402922328858,
+          "right_norm": 77.51857303932347,
+          "cosine": 0.9975446327585947,
+          "relative_frobenius_error_to_right": 0.07004909873923318,
+          "status": "ok"
+        }
+      },
+      "readout_records": 29,
+      "eligible_directions": 144
+    },
+    "comparison": {
+      "half_stability": {
+        "J": {
+          "left_norm": 48.85464700964471,
+          "right_norm": 48.60634690091896,
+          "cosine": 0.9919521256738063,
+          "relative_frobenius_error_to_right": 0.12729519875136133,
+          "status": "ok"
+        },
+        "R": {
+          "left_norm": 55.12662944283389,
+          "right_norm": 55.264649110813785,
+          "cosine": 0.9970949920565193,
+          "relative_frobenius_error_to_right": 0.07616917312253657,
+          "status": "ok"
+        }
+      },
+      "readout_records": 29,
+      "eligible_directions": 144
+    }
+  },
+  "primary_k10_quality_matches": {
+    "primary": {
+      "J": {
+        "20260913": {
+          "status": "approximate_within_range",
+          "selected_k": 25,
+          "control_quality_range": [
+            0.9452874814787154,
+            0.984419864918478
+          ],
+          "residual_energy_fraction_mismatch": -0.009957427363269877,
+          "captured_variance_fraction_mismatch": 0.00467079079616993,
+          "active_atoms_mismatch": 15.0
+        },
+        "20260914": {
+          "status": "approximate_within_range",
+          "selected_k": 25,
+          "control_quality_range": [
+            0.9433973054845227,
+            0.9830873926035405
+          ],
+          "residual_energy_fraction_mismatch": -0.0118476033574626,
+          "captured_variance_fraction_mismatch": 0.00424735729345245,
+          "active_atoms_mismatch": 15.0
+        },
+        "20260915": {
+          "status": "approximate_within_range",
+          "selected_k": 25,
+          "control_quality_range": [
+            0.9430618328815062,
+            0.983317190088917
+          ],
+          "residual_energy_fraction_mismatch": -0.012183075960479073,
+          "captured_variance_fraction_mismatch": 0.00614996840048114,
+          "active_atoms_mismatch": 15.0
+        }
+      },
+      "R": {
+        "20260913": {
+          "status": "approximate_within_range",
+          "selected_k": 25,
+          "control_quality_range": [
+            0.9453098781557979,
+            0.9848640426237169
+          ],
+          "residual_energy_fraction_mismatch": -0.011733278747557585,
+          "captured_variance_fraction_mismatch": 0.011928476639983615,
+          "active_atoms_mismatch": 15.0
+        },
+        "20260914": {
+          "status": "approximate_within_range",
+          "selected_k": 10,
+          "control_quality_range": [
+            0.9423321023666076,
+            0.9827088437413656
+          ],
+          "residual_energy_fraction_mismatch": 0.013681966828838599,
+          "captured_variance_fraction_mismatch": -0.025148694066860905,
+          "active_atoms_mismatch": 0.0
+        },
+        "20260915": {
+          "status": "approximate_within_range",
+          "selected_k": 25,
+          "control_quality_range": [
+            0.9431840087468367,
+            0.9836607313976261
+          ],
+          "residual_energy_fraction_mismatch": -0.013859148156518786,
+          "captured_variance_fraction_mismatch": 0.01373326329053337,
+          "active_atoms_mismatch": 15.0
+        }
+      }
+    },
+    "comparison": {
+      "J": {
+        "20260913": {
+          "status": "approximate_within_range",
+          "selected_k": 25,
+          "control_quality_range": [
+            0.9097996823970071,
+            0.9707302319029307
+          ],
+          "residual_energy_fraction_mismatch": -0.005162259616059317,
+          "captured_variance_fraction_mismatch": -0.009969848444228296,
+          "active_atoms_mismatch": 15.0
+        },
+        "20260914": {
+          "status": "approximate_within_range",
+          "selected_k": 25,
+          "control_quality_range": [
+            0.9140880397434658,
+            0.9718215611721678
+          ],
+          "residual_energy_fraction_mismatch": -0.0008739022696007126,
+          "captured_variance_fraction_mismatch": -0.014403318504245047,
+          "active_atoms_mismatch": 15.0
+        },
+        "20260915": {
+          "status": "unmatched_outside_range",
+          "selected_k": 25,
+          "control_quality_range": [
+            0.9160609125320686,
+            0.9729752752940316
+          ],
+          "residual_energy_fraction_mismatch": 0.001098970519002096,
+          "captured_variance_fraction_mismatch": -0.015311991527948474,
+          "active_atoms_mismatch": 15.0
+        }
+      },
+      "R": {
+        "20260913": {
+          "status": "approximate_within_range",
+          "selected_k": 25,
+          "control_quality_range": [
+            0.9059116455043235,
+            0.9713985461133019
+          ],
+          "residual_energy_fraction_mismatch": -0.01066290043662299,
+          "captured_variance_fraction_mismatch": 0.004464565423026506,
+          "active_atoms_mismatch": 15.0
+        },
+        "20260914": {
+          "status": "approximate_within_range",
+          "selected_k": 25,
+          "control_quality_range": [
+            0.9052915888344396,
+            0.9710785092698586
+          ],
+          "residual_energy_fraction_mismatch": -0.011282957106506841,
+          "captured_variance_fraction_mismatch": 0.0038135105361501442,
+          "active_atoms_mismatch": 15.0
+        },
+        "20260915": {
+          "status": "approximate_within_range",
+          "selected_k": 25,
+          "control_quality_range": [
+            0.9075878385837546,
+            0.9720515545060834
+          ],
+          "residual_energy_fraction_mismatch": -0.00898670735719187,
+          "captured_variance_fraction_mismatch": 0.0017494790989137504,
+          "active_atoms_mismatch": 15.0
+        }
+      }
+    }
+  }
+}
