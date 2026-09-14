@@ -1,0 +1,40 @@
+2026-09-14 13:24:14,979 [INFO] .env loaded from /home/thomasjiralerspong/explore-persona-space/.env (PROJECT_ROOT=/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration does not have its own .env)
+2026-09-14 13:24:14,997 [INFO] .env loaded from /home/thomasjiralerspong/explore-persona-space/.env (PROJECT_ROOT=/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration does not have its own .env)
+2026-09-14 13:24:15,019 [INFO] .env loaded from /home/thomasjiralerspong/explore-persona-space/.env (PROJECT_ROOT=/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration does not have its own .env)
+2026-09-14 13:24:15,054 [INFO] .env loaded from /home/thomasjiralerspong/explore-persona-space/.env (PROJECT_ROOT=/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration does not have its own .env)
+2026-09-14 13:24:15,107 [INFO] .env loaded from /home/thomasjiralerspong/explore-persona-space/.env (PROJECT_ROOT=/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration does not have its own .env)
+2026-09-14 13:24:15,157 [INFO] .env loaded from /home/thomasjiralerspong/explore-persona-space/.env (PROJECT_ROOT=/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration does not have its own .env)
+2026-09-14 13:24:15,176 [INFO] .env loaded from /home/thomasjiralerspong/explore-persona-space/.env (PROJECT_ROOT=/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration does not have its own .env)
+2026-09-14 13:24:15,197 [INFO] .env loaded from /home/thomasjiralerspong/explore-persona-space/.env (PROJECT_ROOT=/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration does not have its own .env)
+[phase=loso_moments] cell=1/6 conversation_paired_stories_assistant__on_policy__bare_text__qwen2.5-7b elapsed=4.6s
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_dana__on_policy__attrib_quoted__qwen2.5-7b fold=0 seconds=14.3 r2=-0.4338/0.1666/0.1667
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_helios__on_policy__attrib_quoted__qwen2.5-7b fold=0 seconds=14.1 r2=-0.4682/0.1798/0.1800
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_vex__on_policy__attrib_quoted__qwen2.5-7b fold=0 seconds=12.2 r2=-0.7998/0.1126/0.1240
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_wren__on_policy__attrib_quoted__qwen2.5-7b fold=0 seconds=12.0 r2=-0.4764/0.1708/0.1714
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b fold=0 seconds=12.4 r2=-0.3232/0.1174/0.1391
+[phase=subset_map] qwen2.5-7b assistant_plain_only fold=0 seconds=78.3
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_dana__on_policy__attrib_quoted__qwen2.5-7b fold=1 seconds=11.4 r2=-0.3725/0.1683/0.1683
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_helios__on_policy__attrib_quoted__qwen2.5-7b fold=1 seconds=12.4 r2=-0.4266/0.1787/0.1787
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_vex__on_policy__attrib_quoted__qwen2.5-7b fold=1 seconds=11.2 r2=-0.7432/0.1085/0.1211
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_wren__on_policy__attrib_quoted__qwen2.5-7b fold=1 seconds=11.0 r2=-0.4202/0.1683/0.1688
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b fold=1 seconds=11.5 r2=-0.2297/0.1107/0.1348
+[phase=subset_map] qwen2.5-7b assistant_plain_only fold=1 seconds=70.4
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_dana__on_policy__attrib_quoted__qwen2.5-7b fold=2 seconds=11.2 r2=-0.4044/0.1721/0.1721
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_helios__on_policy__attrib_quoted__qwen2.5-7b fold=2 seconds=11.8 r2=-0.4810/0.1800/0.1801
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_vex__on_policy__attrib_quoted__qwen2.5-7b fold=2 seconds=10.8 r2=-0.7743/0.1160/0.1267
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_wren__on_policy__attrib_quoted__qwen2.5-7b fold=2 seconds=9.4 r2=-0.4705/0.1741/0.1745
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b fold=2 seconds=10.3 r2=-0.2904/0.1110/0.1366
+[phase=subset_map] qwen2.5-7b assistant_plain_only fold=2 seconds=66.4
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_dana__on_policy__attrib_quoted__qwen2.5-7b fold=3 seconds=9.7 r2=-0.3541/0.1749/0.1749
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_helios__on_policy__attrib_quoted__qwen2.5-7b fold=3 seconds=9.3 r2=-0.3906/0.1889/0.1889
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_vex__on_policy__attrib_quoted__qwen2.5-7b fold=3 seconds=9.7 r2=-0.6628/0.1164/0.1269
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_wren__on_policy__attrib_quoted__qwen2.5-7b fold=3 seconds=9.9 r2=-0.3647/0.1791/0.1794
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b fold=3 seconds=9.9 r2=-0.2153/0.1077/0.1281
+[phase=subset_map] qwen2.5-7b assistant_plain_only fold=3 seconds=59.8
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_dana__on_policy__attrib_quoted__qwen2.5-7b fold=4 seconds=11.0 r2=-0.5054/0.1680/0.1681
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_helios__on_policy__attrib_quoted__qwen2.5-7b fold=4 seconds=9.3 r2=-0.5396/0.1772/0.1774
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_vex__on_policy__attrib_quoted__qwen2.5-7b fold=4 seconds=9.8 r2=-0.8885/0.1137/0.1248
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=char_wren__on_policy__attrib_quoted__qwen2.5-7b fold=4 seconds=9.8 r2=-0.5444/0.1664/0.1670
+[phase=subset_transfer] qwen2.5-7b assistant_plain_only target=conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b fold=4 seconds=8.9 r2=-0.2871/0.1150/0.1362
+[phase=subset_map] qwen2.5-7b assistant_plain_only fold=4 seconds=59.6
+[phase=done] requested subset stage complete

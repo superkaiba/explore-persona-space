@@ -1,0 +1,56 @@
+{
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      8.512
+    ],
+    "exported_size_inches": [
+      13.095,
+      7.795
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/plain_assistant_transfer.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  ·  TRAIN: ASSISTANT IN PLAIN TEXT",
+      "Transfer target",
+      "Assistant\n(chat)",
+      "HELIOS",
+      "Wren",
+      "Dana",
+      "Vex",
+      "Held-out $R^2$ ↑",
+      "−2.0",
+      "−1.5",
+      "−1.0",
+      "−0.5",
+      "0.0",
+      "0.5",
+      "1.0",
+      "Base",
+      "B  ·  TRAIN: ASSISTANT IN PLAIN TEXT",
+      "Instruction-tuned",
+      "Frozen transfer",
+      "+ Bias",
+      "+ Bias + scaling",
+      "Separate target map"
+    ]
+  },
+  "source_sha256": "00b3607d48a7d29e89a28965da7ee324fb4e440dd35791ce2ca6d456b77496cd",
+  "script_sha256": "18fbb125d75418624e55ea2e76326ace1d975127387e13b93ff48150f81138fe",
+  "method": "K5; source mode plain_only; source-only GCV ridge; global conversation folds; target-training-only bias and scalar calibration",
+  "aggregation": "Five globally held-out conversation folds; small points are individual folds",
+  "calibration": "Vector bias and one scalar fit on target training folds; frozen uses no target labels",
+  "own_map": "Separate ridge fit on the target setting's training conversations"
+}

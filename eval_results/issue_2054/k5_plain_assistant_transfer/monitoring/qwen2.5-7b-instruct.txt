@@ -1,0 +1,40 @@
+2026-09-14 13:24:14,899 [INFO] .env loaded from /home/thomasjiralerspong/explore-persona-space/.env (PROJECT_ROOT=/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration does not have its own .env)
+2026-09-14 13:24:14,916 [INFO] .env loaded from /home/thomasjiralerspong/explore-persona-space/.env (PROJECT_ROOT=/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration does not have its own .env)
+2026-09-14 13:24:14,935 [INFO] .env loaded from /home/thomasjiralerspong/explore-persona-space/.env (PROJECT_ROOT=/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration does not have its own .env)
+2026-09-14 13:24:14,953 [INFO] .env loaded from /home/thomasjiralerspong/explore-persona-space/.env (PROJECT_ROOT=/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration does not have its own .env)
+2026-09-14 13:24:14,971 [INFO] .env loaded from /home/thomasjiralerspong/explore-persona-space/.env (PROJECT_ROOT=/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration does not have its own .env)
+2026-09-14 13:24:14,989 [INFO] .env loaded from /home/thomasjiralerspong/explore-persona-space/.env (PROJECT_ROOT=/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration does not have its own .env)
+2026-09-14 13:24:15,009 [INFO] .env loaded from /home/thomasjiralerspong/explore-persona-space/.env (PROJECT_ROOT=/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration does not have its own .env)
+2026-09-14 13:24:15,026 [INFO] .env loaded from /home/thomasjiralerspong/explore-persona-space/.env (PROJECT_ROOT=/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration does not have its own .env)
+[phase=loso_moments] cell=1/6 conversation_paired_stories_assistant__on_policy__bare_text__qwen2.5-7b-instruct elapsed=4.6s
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_dana__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=0 seconds=13.8 r2=-0.6734/0.1696/0.1731
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_helios__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=0 seconds=14.7 r2=-0.7308/0.1845/0.1920
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_vex__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=0 seconds=12.2 r2=-1.2146/0.1256/0.1263
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_wren__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=0 seconds=12.2 r2=-0.7374/0.1844/0.1882
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct fold=0 seconds=12.4 r2=0.1487/0.4167/0.4451
+[phase=subset_map] qwen2.5-7b-instruct assistant_plain_only fold=0 seconds=78.3
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_dana__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=1 seconds=11.3 r2=-0.7531/0.1681/0.1724
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_helios__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=1 seconds=12.2 r2=-0.8699/0.1868/0.1944
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_vex__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=1 seconds=11.4 r2=-1.2719/0.1215/0.1221
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_wren__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=1 seconds=10.7 r2=-0.7866/0.1793/0.1836
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct fold=1 seconds=11.8 r2=0.1556/0.4159/0.4420
+[phase=subset_map] qwen2.5-7b-instruct assistant_plain_only fold=1 seconds=70.5
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_dana__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=2 seconds=10.8 r2=-0.8395/0.1748/0.1788
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_helios__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=2 seconds=11.7 r2=-0.7633/0.1872/0.1941
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_vex__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=2 seconds=10.7 r2=-1.3753/0.1262/0.1272
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_wren__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=2 seconds=9.3 r2=-0.8685/0.1845/0.1877
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct fold=2 seconds=10.1 r2=0.1154/0.4160/0.4436
+[phase=subset_map] qwen2.5-7b-instruct assistant_plain_only fold=2 seconds=66.4
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_dana__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=3 seconds=9.7 r2=-0.8187/0.1719/0.1759
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_helios__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=3 seconds=9.3 r2=-0.9695/0.1906/0.1993
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_vex__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=3 seconds=9.6 r2=-1.3486/0.1309/0.1310
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_wren__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=3 seconds=9.6 r2=-0.8181/0.1908/0.1963
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct fold=3 seconds=10.1 r2=0.1435/0.4174/0.4458
+[phase=subset_map] qwen2.5-7b-instruct assistant_plain_only fold=3 seconds=59.7
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_dana__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=4 seconds=10.8 r2=-0.9694/0.1693/0.1744
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_helios__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=4 seconds=9.3 r2=-1.0902/0.1856/0.1934
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_vex__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=4 seconds=9.6 r2=-1.5995/0.1329/0.1328
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=char_wren__on_policy__attrib_quoted__qwen2.5-7b-instruct fold=4 seconds=9.9 r2=-1.0635/0.1822/0.1872
+[phase=subset_transfer] qwen2.5-7b-instruct assistant_plain_only target=conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct fold=4 seconds=9.0 r2=0.1366/0.4149/0.4422
+[phase=subset_map] qwen2.5-7b-instruct assistant_plain_only fold=4 seconds=59.4
+[phase=done] requested subset stage complete

@@ -1,0 +1,22 @@
+{
+  "started_at_utc": "2026-09-14T20:24:09.960005+00:00",
+  "monitor_pid": 611635,
+  "python": "3.11.15 (main, Mar  3 2026, 14:59:53) [Clang 21.1.4 ]",
+  "env": {
+    "OMP_NUM_THREADS": "8",
+    "MKL_NUM_THREADS": "8",
+    "OPENBLAS_NUM_THREADS": "8",
+    "NUMEXPR_NUM_THREADS": "8",
+    "MALLOC_ARENA_MAX": "2",
+    "MALLOC_MMAP_THRESHOLD_": "131072",
+    "NUMPY_MADVISE_HUGEPAGE": "0"
+  },
+  "packages": {
+    "numpy": "2.2.6",
+    "torch": "2.8.0",
+    "scipy": "1.17.1",
+    "matplotlib": "3.10.8",
+    "huggingface-hub": "0.36.2"
+  },
+  "monitor_interval_seconds": 30
+}

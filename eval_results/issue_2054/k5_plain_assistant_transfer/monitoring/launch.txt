@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd /home/thomasjiralerspong/explore-persona-space
+export OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8
+export MALLOC_ARENA_MAX=2 MALLOC_MMAP_THRESHOLD_=131072 NUMPY_MADVISE_HUGEPAGE=0
+export PYTHONPATH=/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration/src:/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration
+export UV_PROJECT_ENVIRONMENT=/home/thomasjiralerspong/explore-persona-space/.venv
+exec uv run --no-sync python -u /mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration/scripts/issue2054_k5_plain_run.py --out /mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration/eval_results/issue_2054/k5_plain_assistant_transfer --inputs /mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration/eval_results/issue_2054/k5_loso_calibration

@@ -1,0 +1,13 @@
+{
+  "status": "complete",
+  "started_at_utc": "2026-09-14T20:24:09.960005+00:00",
+  "completed_at_utc": "2026-09-14T20:30:54.541306+00:00",
+  "source_maps": 10,
+  "target_panels": 10,
+  "fold_evaluations": 50,
+  "worker_exit_codes": {
+    "qwen2.5-7b": 0,
+    "qwen2.5-7b-instruct": 0
+  },
+  "all_map_and_coefficient_hashes_validated_by_collector": true
+}
