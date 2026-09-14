@@ -30,7 +30,7 @@ def publish(out, figures, name):
         f"{prefix}/results/{p.relative_to(out)}": p
         for p in out.rglob("*")
         if p.is_file()
-        and p.suffix in [".json", ".npz", ".md"]
+        and p.suffix in [".json", ".npz", ".md", ".jsonl", ".txt"]
         and not p.name.endswith((".partial.json", ".tmp.npz"))
     }
     files.update(
@@ -45,6 +45,7 @@ def publish(out, figures, name):
         "issue2054_k5_assistant_transfer.py",
         "issue2054_k5_assistant_transfer_plot.py",
         "issue2054_k5_transfer_publish.py",
+        "issue2054_k5_plain_run.py",
     ]:
         files[f"{prefix}/code/{script}"] = REPO / "scripts" / script
     test = REPO / "tests/test_issue2054_k5_transfer_calibration.py"
@@ -128,7 +129,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--figures", type=Path, required=True)
-    parser.add_argument("--name", choices=["loso", "assistant_sources"], required=True)
+    parser.add_argument(
+        "--name", choices=["loso", "assistant_sources", "plain_assistant_source"], required=True
+    )
     args = parser.parse_args()
     publish(args.out, args.figures, args.name)
 
