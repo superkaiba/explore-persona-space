@@ -125,7 +125,11 @@ def main():
         with (monitoring / "observations.jsonl").open("a") as handle:
             handle.write(json.dumps(snapshot) + "\n")
         print(json.dumps(snapshot), flush=True)
-        if all(proc.poll() is not None for _, proc, _ in jobs):
+        failed_now = [o for o in observations if o["exit_code"] not in (None, 0)]
+        if failed_now:
+            write_json(args.out / "run_failed.json", {"at_utc": stamp(), "workers": failed_now})
+            print(f"[phase=failure] worker exited nonzero: {failed_now}", flush=True)
+        if all(o["exit_code"] is not None for o in observations):
             break
         time.sleep(30)
     failed = [o for o in observations if o["exit_code"] != 0]
