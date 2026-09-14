@@ -1,0 +1,19 @@
+{
+  "started_at_utc": "2026-09-14T23:36:28.764262+00:00",
+  "monitor_pid": 879719,
+  "pins": {
+    "OMP_NUM_THREADS": "8",
+    "MKL_NUM_THREADS": "8",
+    "OPENBLAS_NUM_THREADS": "8",
+    "NUMEXPR_NUM_THREADS": "8",
+    "MALLOC_ARENA_MAX": "2",
+    "MALLOC_MMAP_THRESHOLD_": "131072",
+    "NUMPY_MADVISE_HUGEPAGE": "0"
+  },
+  "workers": {
+    "qwen2.5-7b": 879720,
+    "qwen2.5-7b-instruct": 879721
+  },
+  "monitor_interval_seconds": 30,
+  "disk_note": "Existing cached banks; affine mode adds less than 100 MB without downloads; raw staging modes estimate below 2 GB. No new environment or model weights."
+}

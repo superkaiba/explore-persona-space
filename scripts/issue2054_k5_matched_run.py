@@ -17,7 +17,10 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--inputs", type=Path, required=True)
     parser.add_argument("--strict", action="store_true")
+    parser.add_argument("--affine", action="store_true")
     args = parser.parse_args()
+    if args.strict and args.affine:
+        raise ValueError("choose strict or affine mode, not both")
     args.out.mkdir(parents=True, exist_ok=True)
     monitor = args.out / "monitoring"
     monitor.mkdir(exist_ok=True)
@@ -38,12 +41,14 @@ def main():
     repo = Path(__file__).resolve().parents[1]
     common = ["--out", str(args.out), "--inputs", str(args.inputs)]
     script = "issue2054_k5_matched_strict.py" if args.strict else "issue2054_k5_matched_offsets.py"
+    if args.affine:
+        script = "issue2054_k5_matched_affine.py"
     fit = [sys.executable, "-u", str(repo / "scripts" / script)]
     commands = [
         (model, fit + common + ["--stage", "fit", "--model", model])
         for model in ("qwen2.5-7b", "qwen2.5-7b-instruct")
     ]
-    if not args.strict:
+    if not args.strict and not args.affine:
         commands.append(
             (
                 "responses",
@@ -67,7 +72,7 @@ def main():
             "pins": pins,
             "workers": {name: p.pid for name, p, _ in jobs},
             "monitor_interval_seconds": 30,
-            "disk_note": "Existing cached banks; incremental staging and outputs estimated below 2 GB. No new environment or model weights.",
+            "disk_note": "Existing cached banks; affine mode adds less than 100 MB without downloads; raw staging modes estimate below 2 GB. No new environment or model weights.",
         },
     )
     while True:
@@ -114,7 +119,7 @@ def main():
         raise RuntimeError("worker failed; see run_failed.json")
     subprocess.run(fit + common + ["--stage", "collect"], check=True)
     report = json.loads((args.out / "results.json").read_text())
-    if len(report["pairs"]) != 60:
+    if len(report["pairs"]) != (120 if args.affine else 60):
         raise RuntimeError("incomplete vector or raw-response coverage")
     write_json(
         args.out / "run_complete.json",

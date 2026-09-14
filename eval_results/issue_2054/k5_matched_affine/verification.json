@@ -1,0 +1,40 @@
+{
+  "status": "pass",
+  "verified_at_utc": "2026-09-14T23:48:58.559010+00:00",
+  "results_sha256": "83554f26840e25398aec521f8461f0b16cfc36f8fb5ab771b7790caf8800c6ef",
+  "coverage": {
+    "directed_setting_pairs": 60,
+    "representation_panels": 120,
+    "fold_evaluations": 600
+  },
+  "tests": {
+    "passed": 12,
+    "files": [
+      "tests/test_issue2054_k5_matched_affine.py",
+      "tests/test_issue2054_k5_matched_offsets.py",
+      "tests/test_issue2054_k5_transfer_calibration.py"
+    ],
+    "checks": [
+      "independent full least-squares oracle",
+      "canonical Euclidean retrieval",
+      "held-out perturbation does not affect fold parameters",
+      "exact affine recovery in both directions"
+    ]
+  },
+  "ruff": "pass on all changed Python files",
+  "independent_review": {
+    "agent": "review_matched_offsets",
+    "verdict": "pass; no actionable findings",
+    "checks": [
+      "pooled squared errors and fold-mean retrieval recomputed from all 120 NPZ files",
+      "all array hashes match",
+      "all 28 summary groups and 148 README table rows match",
+      "strict parent query IDs and folds match",
+      "shift-only errors agree with strict parent within 4.37e-11 maximum absolute error",
+      "figure direction indexing and metric caption match"
+    ],
+    "limitation": "120/120 numerical improvements is not a significance claim; smallest gain is 0.00103 percentage points (Instruct plain-to-chat answers)."
+  },
+  "monitoring": "30-second monitor recorded process/log/output progress; both worker exits zero and fresh completion sentinel verified",
+  "visual_inspection": "four-panel figure inspected; source rows, target columns, shift-to-scale cell annotations and color legend readable"
+}

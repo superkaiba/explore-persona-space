@@ -1,0 +1,196 @@
+{
+  "model": "qwen2.5-7b-instruct",
+  "source": "char_helios__on_policy__attrib_quoted__qwen2.5-7b-instruct",
+  "target": "char_wren__on_policy__attrib_quoted__qwen2.5-7b-instruct",
+  "source_index": 2,
+  "target_index": 3,
+  "arm": "context",
+  "n_paired": 1432,
+  "folds": [
+    {
+      "fold": 0,
+      "n_train": 1120,
+      "n_test": 312,
+      "retrieval_pool": 312,
+      "chance_top1": 0.003205128205128205,
+      "scale": 0.4045593084928243,
+      "metrics": {
+        "identity": {
+          "r2": -0.6184940680929052,
+          "displacement_fraction": 0.0,
+          "euclidean_top1": 0.41025641025641024,
+          "euclidean_top5": 0.5705128205128205,
+          "median_rank": 3.0
+        },
+        "bias": {
+          "r2": -0.24636098686272678,
+          "displacement_fraction": 0.22992551444360132,
+          "euclidean_top1": 0.5032051282051282,
+          "euclidean_top5": 0.5993589743589743,
+          "median_rank": 1.0
+        },
+        "bias_scale": {
+          "r2": 0.13767968854767232,
+          "displacement_fraction": 0.46720823483251184,
+          "euclidean_top1": 0.16987179487179488,
+          "euclidean_top5": 0.2980769230769231,
+          "median_rank": 27.0
+        }
+      }
+    },
+    {
+      "fold": 1,
+      "n_train": 1149,
+      "n_test": 283,
+      "retrieval_pool": 283,
+      "chance_top1": 0.0035335689045936395,
+      "scale": 0.39997196864976187,
+      "metrics": {
+        "identity": {
+          "r2": -0.5485555924621959,
+          "displacement_fraction": 0.0,
+          "euclidean_top1": 0.49823321554770317,
+          "euclidean_top5": 0.6395759717314488,
+          "median_rank": 2.0
+        },
+        "bias": {
+          "r2": -0.21208390373081265,
+          "displacement_fraction": 0.21728098775995175,
+          "euclidean_top1": 0.5865724381625441,
+          "euclidean_top5": 0.6855123674911661,
+          "median_rank": 1.0
+        },
+        "bias_scale": {
+          "r2": 0.1495549500954726,
+          "displacement_fraction": 0.45081400109612857,
+          "euclidean_top1": 0.22614840989399293,
+          "euclidean_top5": 0.3992932862190813,
+          "median_rank": 11.0
+        }
+      }
+    },
+    {
+      "fold": 2,
+      "n_train": 1156,
+      "n_test": 276,
+      "retrieval_pool": 276,
+      "chance_top1": 0.0036231884057971015,
+      "scale": 0.3978298582286048,
+      "metrics": {
+        "identity": {
+          "r2": -0.5586231472047829,
+          "displacement_fraction": 0.0,
+          "euclidean_top1": 0.4855072463768116,
+          "euclidean_top5": 0.6123188405797102,
+          "median_rank": 2.0
+        },
+        "bias": {
+          "r2": -0.19343769325731053,
+          "displacement_fraction": 0.23430003243721342,
+          "euclidean_top1": 0.5905797101449275,
+          "euclidean_top5": 0.6594202898550725,
+          "median_rank": 1.0
+        },
+        "bias_scale": {
+          "r2": 0.1586489106197292,
+          "displacement_fraction": 0.4601959486556193,
+          "euclidean_top1": 0.2463768115942029,
+          "euclidean_top5": 0.358695652173913,
+          "median_rank": 21.0
+        }
+      }
+    },
+    {
+      "fold": 3,
+      "n_train": 1142,
+      "n_test": 290,
+      "retrieval_pool": 290,
+      "chance_top1": 0.0034482758620689655,
+      "scale": 0.39562859792638694,
+      "metrics": {
+        "identity": {
+          "r2": -0.5465601834278111,
+          "displacement_fraction": 0.0,
+          "euclidean_top1": 0.4689655172413793,
+          "euclidean_top5": 0.6137931034482759,
+          "median_rank": 2.0
+        },
+        "bias": {
+          "r2": -0.17626740859851098,
+          "displacement_fraction": 0.2394299160143769,
+          "euclidean_top1": 0.5275862068965518,
+          "euclidean_top5": 0.6758620689655173,
+          "median_rank": 1.0
+        },
+        "bias_scale": {
+          "r2": 0.16281428250086516,
+          "displacement_fraction": 0.4586788626333388,
+          "euclidean_top1": 0.22413793103448276,
+          "euclidean_top5": 0.33448275862068966,
+          "median_rank": 20.0
+        }
+      }
+    },
+    {
+      "fold": 4,
+      "n_train": 1161,
+      "n_test": 271,
+      "retrieval_pool": 271,
+      "chance_top1": 0.0036900369003690036,
+      "scale": 0.3975727432056965,
+      "metrics": {
+        "identity": {
+          "r2": -0.5627313415043906,
+          "displacement_fraction": 0.0,
+          "euclidean_top1": 0.47601476014760147,
+          "euclidean_top5": 0.6273062730627307,
+          "median_rank": 2.0
+        },
+        "bias": {
+          "r2": -0.19674631428558276,
+          "displacement_fraction": 0.23419574273495147,
+          "euclidean_top1": 0.5239852398523985,
+          "euclidean_top5": 0.6826568265682657,
+          "median_rank": 1.0
+        },
+        "bias_scale": {
+          "r2": 0.16146482421320507,
+          "displacement_fraction": 0.4634169332141478,
+          "euclidean_top1": 0.17712177121771217,
+          "euclidean_top5": 0.31365313653136534,
+          "median_rank": 23.0
+        }
+      }
+    }
+  ],
+  "displacement_fraction": {
+    "identity": 0.0,
+    "bias": 0.23105548346860028,
+    "bias_scale": 0.46032755224566524
+  },
+  "r2_mean": {
+    "identity": -0.5669928665384172,
+    "bias": -0.20497926134698874,
+    "bias_scale": 0.15403253119538887
+  },
+  "top1_mean": {
+    "identity": 0.46779542991398115,
+    "bias": 0.54638574465231,
+    "bias_scale": 0.20873134372243712
+  },
+  "scale_mean": 0.3991124953006549,
+  "scale_min": 0.39562859792638694,
+  "scale_max": 0.4045593084928243,
+  "array_sha256": "38ca9198a78430837c639047377cb934e06e328ab3fccb65db59f281ade4a268",
+  "parent_array_sha256": "6d6656ff117beba8ce2b2131686b49913ccec44b719948aa11770fc7f109fcfe",
+  "input_sha256": [
+    "a39993b6078734b31be05441da32eba9cd3a8b2e6eeab1a82b23edf67758fc0e",
+    "5614a533f3bd5e883584dbcda5674d9b4ae62c2aa8d40c4cafc07c3cc7d14adb"
+  ],
+  "fingerprint": {
+    "script_sha256": "9bb05febaced4309439e8eb3aeb2fe2b8d9059ccca99c6104d6379c9258f8822",
+    "calibration_source": "def calibrate(train_prediction, train_target):\n    \"\"\"Least-squares vector intercept, and one scalar plus vector intercept.\"\"\"\n    p, y = (\n        np.asarray(train_prediction, dtype=np.float64),\n        np.asarray(train_target, dtype=np.float64),\n    )\n    if p.shape != y.shape or p.ndim != 2 or len(p) < 2:\n        raise ValueError(\"invalid calibration arrays\")\n    if not np.isfinite(p).all() or not np.isfinite(y).all():\n        raise ValueError(\"nonfinite calibration values\")\n    pm, ym = p.mean(0), y.mean(0)\n    pc, yc = p - pm, y - ym\n    denominator = float(np.einsum(\"ij,ij->\", pc, pc))\n    if denominator <= 0:\n        raise ValueError(\"constant predictions cannot identify scalar scaling\")\n    gain = float(np.einsum(\"ij,ij->\", pc, yc) / denominator)\n    return {\"bias\": ym - pm, \"gain\": gain, \"prediction_mean\": pm, \"target_mean\": ym}\n",
+    "retrieval_source": "def ranks_from_distances(distance):\n    \"\"\"Use the repository retrieval convention, including tolerance-based midranks.\"\"\"\n    truth = np.diag(distance)\n    tolerance = 1e-9 * np.maximum(np.abs(truth)[:, None], 1e-12)\n    closer = (distance < truth[:, None] - tolerance).sum(1)\n    tied = (np.abs(distance - truth[:, None]) <= tolerance).sum(1) - 1\n    return 1.0 + closer + 0.5 * tied\n",
+    "parent_results_sha256": "3e4d958221bee06f23fa6f77a79ce8e7101671d662a16d7c6bf34baf574437a7"
+  }
+}

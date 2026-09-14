@@ -1,0 +1,11 @@
+{
+  "status": "complete",
+  "started_at_utc": "2026-09-14T23:36:28.764262+00:00",
+  "completed_at_utc": "2026-09-14T23:42:25.724760+00:00",
+  "coverage": {
+    "directed_setting_pairs": 60,
+    "representation_panels": 120,
+    "fold_evaluations": 600
+  },
+  "workers_exit_zero": true
+}

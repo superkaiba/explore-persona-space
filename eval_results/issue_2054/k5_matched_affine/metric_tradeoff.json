@@ -1,0 +1,5 @@
+{
+  "panels": 120,
+  "lower_squared_error_with_scaling": 120,
+  "lower_euclidean_top1_with_scaling": 120
+}

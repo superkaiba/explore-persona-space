@@ -1,0 +1,1468 @@
+{
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      14.012
+    ],
+    "exported_size_inches": [
+      13.095,
+      13.154
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/matched_shift_scale.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "60→76",
+      "67→81",
+      "66→80",
+      "66→81",
+      "68→80",
+      "68→82",
+      "67→82",
+      "67→80",
+      "65→79",
+      "65→80",
+      "67→79",
+      "23→44",
+      "23→46",
+      "28→48",
+      "28→49",
+      "22→46",
+      "22→45",
+      "8→33",
+      "10→38",
+      "10→37",
+      "15→41",
+      "15→39",
+      "A  ·  BASE",
+      "Chat",
+      "Plain",
+      "HELIOS",
+      "Wren",
+      "Dana",
+      "Vex",
+      "Contexts",
+      "54→65",
+      "54→64",
+      "61→76",
+      "61→73",
+      "59→76",
+      "59→72",
+      "61→77",
+      "61→74",
+      "60→77",
+      "60→75",
+      "58→76",
+      "58→74",
+      "60→78",
+      "29→50",
+      "22→47",
+      "8→34",
+      "12→40",
+      "17→42",
+      "B  ·  INSTRUCTION-TUNED",
+      "12→28",
+      "37→47",
+      "37→66",
+      "37→48",
+      "37→46",
+      "37→70",
+      "44→59",
+      "44→68",
+      "37→61",
+      "36→50",
+      "36→61",
+      "36→47",
+      "36→64",
+      "43→61",
+      "43→62",
+      "9→30",
+      "9→27",
+      "14→29",
+      "14→35",
+      "14→44",
+      "14→27",
+      "4→19",
+      "4→29",
+      "9→40",
+      "9→24",
+      "11→45",
+      "11→23",
+      "C  ·  BASE",
+      "Five-rollout mean answers",
+      "30→65",
+      "30→30",
+      "36→55",
+      "36→46",
+      "37→54",
+      "37→50",
+      "40→65",
+      "40→49",
+      "47→50",
+      "47→75",
+      "47→52",
+      "47→73",
+      "47→76",
+      "52→61",
+      "52→74",
+      "10→31",
+      "10→22",
+      "15→32",
+      "15→31",
+      "16→45",
+      "16→25",
+      "5→19",
+      "5→26",
+      "11→38",
+      "11→24",
+      "13→42",
+      "13→23",
+      "D  ·  INSTRUCTION-TUNED",
+      "Paired difference explained after shift + scale (%)",
+      "0",
+      "20",
+      "40",
+      "60",
+      "80",
+      "100",
+      "Cells: shift → shift + scale (%) · Source = row · Target = column",
+      "100% = perfect prediction · One scalar and vector bias fitted on separate query folds"
+    ]
+  },
+  "results_sha256": "83554f26840e25398aec521f8461f0b16cfc36f8fb5ab771b7790caf8800c6ef",
+  "script_sha256": "2c6a9db95c0e6ed9513ea07645ccd5969259dafac769008f91801efa68c6bf87",
+  "direction": "source rows, target columns",
+  "cells": [
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 0,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.5979274951839505,
+        "bias_scale": 0.7561010483077376
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 1,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.5979274951839505,
+        "bias_scale": 0.76273858800834
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 0,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.11510519435188771,
+        "bias_scale": 0.28356526386935754
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 1,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.1151051943518876,
+        "bias_scale": 0.40289296285251897
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 0,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6731813465213703,
+        "bias_scale": 0.8066701689175104
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 2,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6731813465213703,
+        "bias_scale": 0.8147243247763856
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 0,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.37019999777849644,
+        "bias_scale": 0.4726806986752977
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 2,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.37019999777849644,
+        "bias_scale": 0.6596872959839655
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 0,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6600075206920333,
+        "bias_scale": 0.7989895704520465
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 3,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6600075206920332,
+        "bias_scale": 0.8133250717819782
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 0,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.3656654212108741,
+        "bias_scale": 0.4836862077177668
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 3,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.3656654212108741,
+        "bias_scale": 0.6570203672153714
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 0,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6763065963967863,
+        "bias_scale": 0.8022884122579637
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 4,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6763065963967863,
+        "bias_scale": 0.8238727005417041
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 0,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.3692170395041664,
+        "bias_scale": 0.4578905809534406
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 4,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.3692170395041664,
+        "bias_scale": 0.702360627522248
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 0,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.67129674857179,
+        "bias_scale": 0.8077012192971691
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 5,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.67129674857179,
+        "bias_scale": 0.8197301004967695
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 0,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.4401055973371615,
+        "bias_scale": 0.5877852407620838
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 5,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.4401055973371615,
+        "bias_scale": 0.6757292957846361
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 1,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6661463723359882,
+        "bias_scale": 0.8005982890061174
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 2,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6661463723359882,
+        "bias_scale": 0.8028896965479314
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 1,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.365612321648185,
+        "bias_scale": 0.48264569612491093
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 2,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.365612321648185,
+        "bias_scale": 0.6103500605091567
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 1,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6464316732560169,
+        "bias_scale": 0.7893021357317621
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 3,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6464316732560169,
+        "bias_scale": 0.7973088890163583
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 1,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.35684119627125177,
+        "bias_scale": 0.497192998842488
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 3,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.35684119627125177,
+        "bias_scale": 0.6076433307961595
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 1,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6710027069521269,
+        "bias_scale": 0.794558232376037
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 4,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6710027069521269,
+        "bias_scale": 0.8159239854436915
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 1,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.35766250669160105,
+        "bias_scale": 0.47358890734618786
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 4,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.35766250669160105,
+        "bias_scale": 0.6407562212847698
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 1,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.663260214199505,
+        "bias_scale": 0.8002929405559107
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 5,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.663260214199505,
+        "bias_scale": 0.8100544018219393
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 1,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.4313476056482215,
+        "bias_scale": 0.6134538708066902
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 5,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.4313476056482214,
+        "bias_scale": 0.6237327273980474
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 2,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.22642050177273998,
+        "bias_scale": 0.4449351385818242
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 3,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.22642050177273998,
+        "bias_scale": 0.4606263175947899
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 2,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.09146597362264808,
+        "bias_scale": 0.2985307731859368
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 3,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.09146597362264808,
+        "bias_scale": 0.26846751412541014
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 2,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.2837834163526253,
+        "bias_scale": 0.481559684064766
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 4,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.28378341635262516,
+        "bias_scale": 0.4917346551616155
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 2,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.13637763577890905,
+        "bias_scale": 0.29100413610511733
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 4,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.13637763577890905,
+        "bias_scale": 0.3485072276159106
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 2,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.2204953478263002,
+        "bias_scale": 0.4603450728820283
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 5,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.2204953478263002,
+        "bias_scale": 0.44873366737037534
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 2,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.13762193445311854,
+        "bias_scale": 0.4376904045762361
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 5,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.13762193445311843,
+        "bias_scale": 0.26740641252253683
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 3,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.07886991395848297,
+        "bias_scale": 0.32596718962251825
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 4,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.0788699139584832,
+        "bias_scale": 0.328309961430869
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 3,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.04331610920110229,
+        "bias_scale": 0.1893651016820488
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 4,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.04331610920110229,
+        "bias_scale": 0.29098327660240253
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 3,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.10424459384541718,
+        "bias_scale": 0.383246225781398
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 5,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.10424459384541718,
+        "bias_scale": 0.36515245778456173
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 3,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.08938676012924085,
+        "bias_scale": 0.39657054819895066
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 5,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.08938676012924085,
+        "bias_scale": 0.2388457093801475
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 4,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.15062664461793096,
+        "bias_scale": 0.4062602630752036
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "context",
+      "source_index": 5,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.15062664461793096,
+        "bias_scale": 0.3853775246069733
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 4,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.11231208169221929,
+        "bias_scale": 0.4471688955976797
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "arm": "answer",
+      "source_index": 5,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.11231208169221929,
+        "bias_scale": 0.22597052282764585
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 0,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.5371619600042781,
+        "bias_scale": 0.6470380084690492
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 1,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.5371619600042781,
+        "bias_scale": 0.6360565379001559
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 0,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.2953368719709848,
+        "bias_scale": 0.6535320013245436
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 1,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.2953368719709848,
+        "bias_scale": 0.29534713614704566
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 0,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6088199486272948,
+        "bias_scale": 0.7618503670531324
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 2,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6088199486272948,
+        "bias_scale": 0.7294035934610181
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 0,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.36089453330415255,
+        "bias_scale": 0.49930232040175115
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 2,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.36089453330415255,
+        "bias_scale": 0.47450353433149284
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 0,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.5893001069319994,
+        "bias_scale": 0.7570019283655247
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 3,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.5893001069319994,
+        "bias_scale": 0.7231633200710634
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 0,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.3552681860539302,
+        "bias_scale": 0.545457996076873
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 3,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.3552681860539302,
+        "bias_scale": 0.4627649838477129
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 0,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6125103237195774,
+        "bias_scale": 0.7651206940395291
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 4,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6125103237195774,
+        "bias_scale": 0.738813249368115
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 0,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.36533669119216217,
+        "bias_scale": 0.5395628887255366
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 4,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.36533669119216217,
+        "bias_scale": 0.5049749787963276
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 0,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6062602482426038,
+        "bias_scale": 0.7740594889909784
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 5,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6062602482426038,
+        "bias_scale": 0.7425951707087393
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 0,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.39730020866117066,
+        "bias_scale": 0.6460311397717078
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 5,
+      "target_index": 0,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.39730020866117066,
+        "bias_scale": 0.4947713491143183
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 1,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.5967947810422501,
+        "bias_scale": 0.7671949895094587
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 2,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.5967947810422501,
+        "bias_scale": 0.7461997268618956
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 1,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.4741056942497476,
+        "bias_scale": 0.5045320012783286
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 2,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.4741056942497476,
+        "bias_scale": 0.7547332226552721
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 1,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.5800207975472126,
+        "bias_scale": 0.7621642743031388
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 3,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.5800207975472125,
+        "bias_scale": 0.7421087290929507
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 1,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.46716608326517617,
+        "bias_scale": 0.5205443955090946
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 3,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.46716608326517617,
+        "bias_scale": 0.7310781280225207
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 1,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6102196906948438,
+        "bias_scale": 0.7700327066457499
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 4,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6102196906948438,
+        "bias_scale": 0.7638821939335902
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 1,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.4684096657305449,
+        "bias_scale": 0.5177398407324407
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 4,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.4684096657305449,
+        "bias_scale": 0.7570951659357082
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 1,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6014411156113032,
+        "bias_scale": 0.7761614348006284
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 5,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.6014411156113032,
+        "bias_scale": 0.7626178519087232
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 1,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.523058138209693,
+        "bias_scale": 0.610253470063189
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 5,
+      "target_index": 1,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.523058138209693,
+        "bias_scale": 0.743961436115405
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 2,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.23105548346860028,
+        "bias_scale": 0.46032755224566524
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 3,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.23105548346860005,
+        "bias_scale": 0.4649644737147308
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 2,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.10134289406764674,
+        "bias_scale": 0.3137034854025642
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 3,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.10134289406764674,
+        "bias_scale": 0.21992476646250514
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 2,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.28921205183239096,
+        "bias_scale": 0.5007509599215756
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 4,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.28921205183239096,
+        "bias_scale": 0.4978476164926876
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 2,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.1478895386980309,
+        "bias_scale": 0.31695208645844064
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 4,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.1478895386980309,
+        "bias_scale": 0.30797715620685173
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 2,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.22385596598394764,
+        "bias_scale": 0.4745120795205201
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 5,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.22385596598394764,
+        "bias_scale": 0.4609027371936748
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 2,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.15653361280955858,
+        "bias_scale": 0.4506203313992896
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 5,
+      "target_index": 2,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.15653361280955858,
+        "bias_scale": 0.24714569873531178
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 3,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.08438660104334383,
+        "bias_scale": 0.34477030063111314
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 4,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.08438660104334383,
+        "bias_scale": 0.33831250542992697
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 3,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.048527802027349076,
+        "bias_scale": 0.18505181525919834
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 4,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.048527802027349076,
+        "bias_scale": 0.26035628533818234
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 3,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.12135935980586732,
+        "bias_scale": 0.4026968159115578
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 5,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.12135935980586732,
+        "bias_scale": 0.39619163712445693
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 3,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.10739856982863583,
+        "bias_scale": 0.37682430416309387
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 5,
+      "target_index": 3,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.10739856982863583,
+        "bias_scale": 0.24275745161913642
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 4,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.1671114939588214,
+        "bias_scale": 0.42315574210568496
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "context",
+      "source_index": 5,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.1671114939588214,
+        "bias_scale": 0.4208392951758373
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 4,
+      "target_index": 5,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.1260616396754587,
+        "bias_scale": 0.4243430725045425
+      }
+    },
+    {
+      "model": "qwen2.5-7b-instruct",
+      "arm": "answer",
+      "source_index": 5,
+      "target_index": 4,
+      "displacement_fraction": {
+        "identity": 0.0,
+        "bias": 0.1260616396754587,
+        "bias_scale": 0.23143027105490555
+      }
+    }
+  ]
+}
