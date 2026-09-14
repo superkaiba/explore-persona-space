@@ -40,6 +40,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib.legend_handler import HandlerTuple  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
+from matplotlib.patches import Patch  # noqa: E402
 from matplotlib.ticker import FixedLocator, FuncFormatter  # noqa: E402
 
 
@@ -50,10 +51,12 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     PAPER,
     PREDICTOR_STYLES,
     ROLES,
+    SEAM,
     STYLE_VERSION,
     better_label,
     c2a_figure,
     legend_kicker,
+    metric_style,
     panel_header,
     save_c2a_figure,
     set_c2a_style,
@@ -260,6 +263,15 @@ COMPARISON_ARM_ORDER: tuple[str, ...] = (
 # the same left/right convention as the merged render's multiplicative dodge.
 COMPARISON_METRIC_DODGE = 0.2
 COMPARISON_METRIC_SIDE = {"r2": -COMPARISON_METRIC_DODGE, "top1": COMPARISON_METRIC_DODGE}
+# Bar form (the manuscript's, user request 2026-09-14): two bars per slot, each
+# 0.36 of the slot pitch, so the pair fills 0.76 of the slot and neighbours keep
+# a clear gap.
+COMPARISON_BAR_WIDTH = 0.36
+# The marker form told the two grey controls apart by marker shape. Bars carry
+# only colour, so the shuffled null takes the lighter seam grey here and the
+# copy baseline keeps the control grey. Points keep their shared grey.
+COMPARISON_BAR_COLORS: dict[str, str] = {"shuffled": SEAM}
+COMPARISON_STYLES = ("bars", "points")
 
 
 def _load_baselines_data(path: Path, extension: dict, pool10k: dict) -> dict:
@@ -550,6 +562,7 @@ def _plot_comparison_panel(
         ax.set_xlim(-0.65, len(order) - 0.35)
         ax.set_xticks([])
     return {
+        "style": "points",
         "n_compare": int(n_compare),
         "controls_n_train": int(baselines["n_train"]),
         "matched": int(n_compare) == int(baselines["n_train"]),
@@ -558,6 +571,130 @@ def _plot_comparison_panel(
         "segments": [list(seg) for seg in PANEL_B_SEGMENTS],
         "drawn": drawn,
         "off_scale": off_scale,
+    }
+
+
+def _comparison_values(
+    scaling: dict, baselines: dict, roster: tuple[str, ...], n_compare: int
+) -> list[dict]:
+    """One record per arm in slot order: label, colour, marker, both scores, its n."""
+    row = next((r for r in scaling["rows"] if int(r["x"]) == int(n_compare)), None)
+    if row is None:
+        rungs = [int(r["x"]) for r in scaling["rows"]]
+        raise ValueError(f"n_compare={n_compare} is not a rung of the scaling sweep: {rungs}")
+    by_key = {arm["key"]: arm for arm in baselines["arms"]}
+    order = [key for key in COMPARISON_ARM_ORDER if key in PREDICTOR_STYLES or key in roster]
+    missing = sorted(set(roster) - set(order))
+    if missing:
+        raise ValueError(f"roster arms with no slot in COMPARISON_ARM_ORDER: {missing}")
+    arms: list[dict] = []
+    for slot, key in enumerate(order):
+        if key in PREDICTOR_STYLES:
+            style = PREDICTOR_STYLES[key]
+            arms.append(
+                {
+                    "key": key,
+                    "slot": slot,
+                    "label": style.label,
+                    "color": style.color,
+                    "marker": style.marker,
+                    "r2": float(row["arms"][key]["r2"]),
+                    "top1": float(row["arms"][key]["retrieval"]),
+                    "n_train": int(n_compare),
+                }
+            )
+        else:
+            bstyle = BASELINE_ARMS[key]
+            arm = by_key[key]
+            arms.append(
+                {
+                    "key": key,
+                    "slot": slot,
+                    "label": bstyle["label"],
+                    "color": bstyle["color"],
+                    "marker": bstyle["marker"],
+                    "r2": None if arm["r2"] is None else float(arm["r2"]),
+                    "top1": float(arm["top1"]),
+                    "n_train": int(baselines["n_train"]),
+                }
+            )
+    return arms
+
+
+def _plot_comparison_bars(
+    axes: list[plt.Axes],
+    scaling: dict,
+    baselines: dict,
+    roster: tuple[str, ...],
+    n_compare: int,
+) -> dict:
+    """Bar form of the comparison panel (the form the manuscript uses).
+
+    Same slots, values and cut y-axis as ``_plot_comparison_panel``. Each arm is a
+    pair of bars from zero: R^2 solid, top-1 hatched (the paper-wide fill
+    encoding). Every bar is drawn on every strip and each strip clips it to its
+    own range, so a negative R^2 runs into the cut and continues below it with
+    both ends visible. A value that ENDS inside the omitted range would have an
+    invisible end, so it is refused rather than drawn.
+    """
+    arms = _comparison_values(scaling, baselines, roster, n_compare)
+    drawn: list[dict] = []
+    for arm in arms:
+        color = COMPARISON_BAR_COLORS.get(arm["key"], arm["color"])
+        for metric in ("r2", "top1"):
+            value = arm[metric]
+            if value is None:
+                continue
+            if not any(lo <= value <= hi for lo, hi in PANEL_B_SEGMENTS):
+                raise ValueError(
+                    f"{arm['label']} {metric}={value:.3f} ends inside the omitted range of "
+                    f"{PANEL_B_SEGMENTS}; widen a segment rather than clipping the bar"
+                )
+            x = arm["slot"] + COMPARISON_METRIC_SIDE[metric]
+            fill = metric_style(metric)
+            for ax in axes:
+                ax.bar(
+                    x,
+                    value,
+                    width=COMPARISON_BAR_WIDTH,
+                    facecolor=color if metric == "r2" else PAPER,
+                    edgecolor=color,
+                    linewidth=1.6,
+                    hatch=fill["hatch"],
+                    zorder=4,
+                )
+            drawn.append(
+                {
+                    "key": arm["key"],
+                    "label": arm["label"],
+                    "metric": metric,
+                    "value": value,
+                    "n_train": arm["n_train"],
+                    "slot": arm["slot"],
+                    "x": x,
+                    "color": color,
+                }
+            )
+    if not drawn:
+        raise ValueError("no comparison bar drawn")
+    # Bars grow from zero, so zero gets a seam on the strip that holds it.
+    for ax, (lo, hi) in zip(axes, PANEL_B_SEGMENTS, strict=True):
+        if lo <= 0.0 <= hi:
+            ax.axhline(0.0, color=SEAM, lw=1.2, zorder=3)
+    for ax in axes:
+        ax.set_xlim(-0.65, len(arms) - 0.35)
+        ax.set_xticks([])
+    return {
+        "style": "bars",
+        "n_compare": int(n_compare),
+        "controls_n_train": int(baselines["n_train"]),
+        "matched": int(n_compare) == int(baselines["n_train"]),
+        "order": [arm["key"] for arm in arms],
+        "roster": list(roster),
+        "segments": [list(seg) for seg in PANEL_B_SEGMENTS],
+        "bar_width": COMPARISON_BAR_WIDTH,
+        "drawn": drawn,
+        "off_scale": [],
     }
 
 
@@ -682,6 +819,15 @@ def _baseline_legend_handles(boundary: dict | None, overlay: dict | None) -> tup
         labels.append("Boundary token \u2192 next sentence")
     if overlay is None:
         return handles, labels
+    if overlay.get("style") == "bars":
+        # Bars carry the arm in colour alone, so each control gets one solid
+        # swatch in its bar colour; the metric fill rides the metric legend row.
+        for key in overlay["roster"]:
+            style = BASELINE_ARMS[key]
+            color = COMPARISON_BAR_COLORS.get(key, style["color"])
+            handles.append(Patch(facecolor=color, edgecolor=color, label=style["label"]))
+            labels.append(style["label"])
+        return handles, labels
     drawn_metrics: dict[str, set[str]] = {}
     for record in overlay["drawn"]:
         drawn_metrics.setdefault(record["key"], set()).add(record["metric"])
@@ -775,7 +921,18 @@ def _human_n(value: float, _position: int | None = None) -> str:
     return f"{value:g}"
 
 
-def _legend_handles() -> tuple[list[Line2D], list[Line2D]]:
+def _handle_label(handle) -> str:
+    """Label of a legend handle, tuple handles reading their first member."""
+    return handle[0].get_label() if isinstance(handle, tuple) else handle.get_label()
+
+
+def _legend_handles(bars: bool = False) -> tuple[list, list]:
+    """Predictor and metric legend handles.
+
+    With ``bars`` the metric entries pair the curve swatch with a bar swatch
+    (solid for R^2, hatched for top-1), so one legend row explains the fill
+    encoding on both the curves and the comparison bars.
+    """
     predictors = [
         Line2D(
             [0],
@@ -802,6 +959,12 @@ def _legend_handles() -> tuple[list[Line2D], list[Line2D]]:
             label=METRIC_LABELS["top1"],
         ),
     ]
+    if bars:
+        swatches = [
+            Patch(facecolor=INK, edgecolor=INK),
+            Patch(facecolor=PAPER, edgecolor=INK, hatch=metric_style("top1")["hatch"]),
+        ]
+        metrics = [(line, swatch) for line, swatch in zip(metrics, swatches, strict=True)]
     return predictors, metrics
 
 
@@ -911,7 +1074,10 @@ def make_figure(
     baselines_mode: str = "minimal",
     panels: str = "ab",
     compare_n: int = BASELINE_POINT_X,
+    compare_style: str = "bars",
 ) -> tuple[plt.Figure, float, dict | None]:
+    if compare_style not in COMPARISON_STYLES:
+        raise ValueError(f"compare_style must be one of {COMPARISON_STYLES}, got {compare_style!r}")
     set_c2a_style()
     if panels not in PANEL_LAYOUTS:
         raise ValueError(f"panels must be one of {sorted(PANEL_LAYOUTS)}, got {panels!r}")
@@ -997,9 +1163,10 @@ def make_figure(
     if draw_compare:
         assert baselines is not None
         _apply_panel_b_segments(compare_axes)
-        baseline_overlay = _plot_comparison_panel(
-            compare_axes, scaling, baselines, roster, compare_n
+        plot_comparison = (
+            _plot_comparison_bars if compare_style == "bars" else _plot_comparison_panel
         )
+        baseline_overlay = plot_comparison(compare_axes, scaling, baselines, roster, compare_n)
         # The kicker names the rung the maps are read at; when it differs from
         # the controls' rung the caption has to say so (overlay["matched"]).
         panel_header(
@@ -1062,7 +1229,9 @@ def make_figure(
     if draw_layer:
         ax_layer.set_ylabel(better_label(METRIC_LABELS["r2"]), labelpad=13)
 
-    predictor_handles, metric_handles = _legend_handles()
+    predictor_handles, metric_handles = _legend_handles(
+        bars=draw_compare and compare_style == "bars"
+    )
     rows: dict[str, float] = spec["rows"]  # type: ignore[assignment]
     legend_x: tuple[float, float] = spec["legend_x"]  # type: ignore[assignment]
     row_y = rows["plain"] if not controls else rows["with_controls"]
@@ -1072,7 +1241,7 @@ def make_figure(
         # One combined legend above the axes, stacked over as many rows as the
         # column count implies. Anchored to the figure so it spans the canvas.
         stacked = list(predictor_handles) + list(metric_handles)
-        stacked_labels = [h.get_label() for h in stacked]
+        stacked_labels = [_handle_label(h) for h in stacked]
         if controls:
             extra_handles, extra_labels = _baseline_legend_handles(boundary, baseline_overlay)
             stacked += list(extra_handles)
@@ -1109,7 +1278,7 @@ def make_figure(
         # group, and dropping them would strand the caption's baseline values.
         host = ax_scale if draw_scale else ax_layer
         inside_handles = list(predictor_handles) + (list(metric_handles) if draw_scale else [])
-        inside_labels = [h.get_label() for h in inside_handles]
+        inside_labels = [_handle_label(h) for h in inside_handles]
         if controls:
             extra_handles, extra_labels = _baseline_legend_handles(boundary, baseline_overlay)
             inside_handles += list(extra_handles)
@@ -1371,11 +1540,16 @@ def _write_outputs(
                             "sweep at overlay.n_compare, every control at the rung it was "
                             "measured on (overlay.controls_n_train, layer 19, 10,000-candidate "
                             "pool); overlay.matched is false when those differ and the caption "
-                            "must then disclose the mismatched comparison; filled marker = "
-                            "held-out R^2 (left of the slot), open marker = top-1 retrieval "
-                            "(right), matching the curves on panel C; a value no segment holds "
-                            "is omitted and listed under overlay.off_scale; panel C draws the "
-                            "scaling curves alone on the focused range recorded under "
+                            "must then disclose the mismatched comparison; overlay.style names "
+                            "the form: 'bars' = two bars from zero per slot, solid = held-out "
+                            "R^2 (left), hatched = top-1 retrieval (right), a negative R^2 bar "
+                            "crossing the cut and continuing below it, the shuffled null in "
+                            "the lighter seam grey because bars carry the arm in colour alone; "
+                            "'points' = filled marker = R^2 (left), open = top-1 (right), the "
+                            "merged render's markers; either way the fill encoding matches the "
+                            "curves on panel C; a value no segment holds is omitted and listed "
+                            "under overlay.off_scale (points) or refused (bars); panel C draws "
+                            "the scaling curves alone on the focused range recorded under "
                             "scale_ylim, with no control on it"
                         ),
                         "scale_ylim": list(PANEL_LAYOUTS["bc"]["scale_ylim"]),  # type: ignore[arg-type]
@@ -1478,6 +1652,12 @@ def main() -> None:
             "value is a mismatched comparison the caption must disclose"
         ),
     )
+    parser.add_argument(
+        "--compare-style",
+        choices=COMPARISON_STYLES,
+        default="bars",
+        help="'bc' only: the comparison panel as bars (manuscript) or as markers",
+    )
     args = parser.parse_args()
     stem = args.stem if args.stem is not None else DEFAULT_PANEL_STEMS[args.panels]
 
@@ -1520,6 +1700,7 @@ def main() -> None:
         args.baselines_mode,
         args.panels,
         compare_n=args.compare_n,
+        compare_style=args.compare_style,
     )
     outputs = _write_outputs(
         fig,
