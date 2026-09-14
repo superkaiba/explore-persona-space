@@ -245,6 +245,22 @@ PANEL_B_BASELINE_ROSTERS: dict[str, tuple[str, ...]] = {
     "full": ("pca1024", "enc_bge_cls", "identity_bias", "shuffled"),
 }
 
+# Split render ("bc", 2026-09-14 reviewer comment on Figure 1): the controls leave
+# the scaling curves for a panel of their own, so the curves get a focused y-range
+# and the maps-versus-controls read gets one categorical slot per arm. The maps
+# lead, then the controls in the order the merged legend used.
+COMPARISON_ARM_ORDER: tuple[str, ...] = (
+    "ridge",
+    "mlp_w8192",
+    "enc_bge_cls",
+    "identity_bias",
+    "shuffled",
+)
+# Additive dodge on the categorical axis (slot pitch is 1): R^2 left, top-1 right,
+# the same left/right convention as the merged render's multiplicative dodge.
+COMPARISON_METRIC_DODGE = 0.2
+COMPARISON_METRIC_SIDE = {"r2": -COMPARISON_METRIC_DODGE, "top1": COMPARISON_METRIC_DODGE}
+
 
 def _load_baselines_data(path: Path, extension: dict, pool10k: dict) -> dict:
     """Panel C: paper-convention baselines at n_train=25,000, 10,000-candidate pool.
@@ -445,6 +461,99 @@ def _plot_baseline_points(axes: list[plt.Axes], baselines: dict, roster: tuple[s
         raise ValueError(f"no baseline arm in roster {roster} landed inside {PANEL_B_SEGMENTS}")
     return {
         "x": BASELINE_POINT_X,
+        "roster": list(roster),
+        "segments": [list(seg) for seg in PANEL_B_SEGMENTS],
+        "drawn": drawn,
+        "off_scale": off_scale,
+    }
+
+
+def _plot_comparison_panel(
+    axes: list[plt.Axes],
+    scaling: dict,
+    baselines: dict,
+    roster: tuple[str, ...],
+    n_compare: int,
+) -> dict:
+    """The two maps beside the controls at one training-context count (split render).
+
+    One categorical slot per arm in ``COMPARISON_ARM_ORDER`` on the same cut y-axis
+    the merged render used (``PANEL_B_SEGMENTS``), so a negative R^2 is shown at its
+    own value. The maps are read off the scaling sweep at ``n_compare``; every
+    control is read at the rung it was measured on (``baselines['n_train']``). When
+    the two differ the panel is a MISMATCHED comparison: the record says so under
+    ``matched`` and the caption must disclose it, because a fitted control's value
+    moves with n and only that one rung was scored. R^2 sits left of the slot and
+    top-1 right, filled/open as everywhere else. A value no segment holds is not
+    drawn and not clipped; it is returned under ``off_scale`` for the caption.
+    """
+    row = next((r for r in scaling["rows"] if int(r["x"]) == int(n_compare)), None)
+    if row is None:
+        rungs = [int(r["x"]) for r in scaling["rows"]]
+        raise ValueError(f"n_compare={n_compare} is not a rung of the scaling sweep: {rungs}")
+    by_key = {arm["key"]: arm for arm in baselines["arms"]}
+    order = [key for key in COMPARISON_ARM_ORDER if key in PREDICTOR_STYLES or key in roster]
+    missing = sorted(set(roster) - set(order))
+    if missing:
+        raise ValueError(f"roster arms with no slot in COMPARISON_ARM_ORDER: {missing}")
+    drawn: list[dict] = []
+    off_scale: list[dict] = []
+    for slot, key in enumerate(order):
+        if key in PREDICTOR_STYLES:
+            style = PREDICTOR_STYLES[key]
+            label, color, marker = style.label, style.color, style.marker
+            values = {"r2": row["arms"][key]["r2"], "top1": row["arms"][key]["retrieval"]}
+            n_train = int(n_compare)
+        else:
+            bstyle = BASELINE_ARMS[key]
+            label, color, marker = bstyle["label"], bstyle["color"], bstyle["marker"]
+            values = {"r2": by_key[key]["r2"], "top1": by_key[key]["top1"]}
+            n_train = int(baselines["n_train"])
+        for metric in ("r2", "top1"):
+            value = values[metric]
+            record = {
+                "key": key,
+                "label": label,
+                "metric": metric,
+                "value": None if value is None else float(value),
+                "n_train": n_train,
+                "slot": slot,
+            }
+            host = None
+            if value is not None:
+                for ax, (lo, hi) in zip(axes, PANEL_B_SEGMENTS, strict=True):
+                    if lo < value < hi:
+                        host = ax
+                        record["segment"] = [lo, hi]
+                        break
+            if host is None:
+                off_scale.append(record)
+                continue
+            x = slot + COMPARISON_METRIC_SIDE[metric]
+            record["x"] = x
+            host.plot(
+                [x],
+                [value],
+                marker=marker,
+                markersize=8.0,
+                color=color,
+                markerfacecolor=color if metric == "r2" else PAPER,
+                markeredgecolor=color,
+                markeredgewidth=1.8,
+                linestyle="none",
+                zorder=5,
+            )
+            drawn.append(record)
+    if not drawn:
+        raise ValueError(f"no arm in {order} landed inside {PANEL_B_SEGMENTS}")
+    for ax in axes:
+        ax.set_xlim(-0.65, len(order) - 0.35)
+        ax.set_xticks([])
+    return {
+        "n_compare": int(n_compare),
+        "controls_n_train": int(baselines["n_train"]),
+        "matched": int(n_compare) == int(baselines["n_train"]),
+        "order": order,
         "roster": list(roster),
         "segments": [list(seg) for seg in PANEL_B_SEGMENTS],
         "drawn": drawn,
@@ -746,6 +855,34 @@ PANEL_LAYOUTS: dict[str, dict[str, object]] = {
         "above_legend_fontsize": 11.5,
         "suppress_header": True,
     },
+    "bc": {
+        # Figure 1's column, split in two (reviewer comment, 2026-09-14): B holds
+        # the maps beside the controls at one training-context count on the cut
+        # axis; C holds the scaling curves alone on a focused 0.6-0.95 range, so
+        # the 5k-to-500k trend is no longer flattened by the controls' span. Same
+        # 0.30 include width as "b"; the column is taller than the schematic's
+        # ~2 in, and the minipage pair is vertically centred, so the schematic
+        # sits mid-column.
+        "width": "sliver",
+        "aspect": 1.50,
+        "letters": {"compare": "B", "scale": "C"},
+        "margins": {"left": 0.300, "right": 0.975, "top": 0.775, "bottom": 0.072},
+        "legend_x": (0.300, 0.300),
+        "above_legend_y": 0.990,
+        "ylabel_x": -0.235,
+        "rows": {"plain": 0.985, "with_controls": 0.985, "baseline": 0.995},
+        "above_legend": True,
+        "above_legend_ncol": 2,
+        "above_legend_fontsize": 11.5,
+        # Both panels carry a letter kicker; B's names the rung it is read at.
+        "kicker_y": 1.05,
+        # Height of B relative to C, and the gap between them (gridspec hspace,
+        # a fraction of the mean panel height).
+        "compare_height": 0.60,
+        "hspace": 0.34,
+        "scale_ylim": (0.58, 0.96),
+        "scale_yticks": (0.6, 0.7, 0.8, 0.9),
+    },
 }
 
 
@@ -753,6 +890,7 @@ DEFAULT_PANEL_STEMS: dict[str, str] = {
     "ab": DEFAULT_STEM,
     "a": "c1_layer_sweep",
     "b": "c1_scaling_train_pool_merged",
+    "bc": "c1_controls_and_scaling",
 }
 """Output stem per panel shape, so one render never overwrites another."""
 
@@ -772,6 +910,7 @@ def make_figure(
     baselines: dict | None = None,
     baselines_mode: str = "minimal",
     panels: str = "ab",
+    compare_n: int = BASELINE_POINT_X,
 ) -> tuple[plt.Figure, float, dict | None]:
     set_c2a_style()
     if panels not in PANEL_LAYOUTS:
@@ -780,21 +919,41 @@ def make_figure(
     letters: dict[str, str | None] = spec["letters"]  # type: ignore[assignment]
     draw_layer = "layer" in letters
     draw_scale = "scale" in letters
+    draw_compare = "compare" in letters
+    if draw_compare and baselines is None:
+        raise ValueError(
+            "the split render draws the controls on their own panel; drop --no-baselines"
+        )
     # The baselines ride panel B as points rather than a third panel, so the
     # two-panel canvas keeps its compact A/B aspect.
     fig, include_frac = c2a_figure(spec["width"], aspect=spec["aspect"])  # type: ignore[arg-type]
-    grid = fig.add_gridspec(
-        1,
-        2 if draw_layer and draw_scale else 1,
-        wspace=0.20,
-        **spec["margins"],  # type: ignore[arg-type]
-    )
+    compare_axes: list[plt.Axes] = []
+    scale_axes: list[plt.Axes] = []
+    if draw_compare:
+        # Split render: the comparison strip above, the scaling curves below,
+        # one column. The comparison keeps the cut y-axis; the curves do not
+        # need it once the controls are off their panel.
+        grid = fig.add_gridspec(
+            2,
+            1,
+            height_ratios=[float(spec["compare_height"]), 1.0],  # type: ignore[arg-type]
+            hspace=float(spec["hspace"]),  # type: ignore[arg-type]
+            **spec["margins"],  # type: ignore[arg-type]
+        )
+        compare_axes = _build_panel_b_axes(fig, grid[0, 0])
+        scale_axes = [fig.add_subplot(grid[1, 0])]
+    else:
+        grid = fig.add_gridspec(
+            1,
+            2 if draw_layer and draw_scale else 1,
+            wspace=0.20,
+            **spec["margins"],  # type: ignore[arg-type]
+        )
     ax_layer = fig.add_subplot(grid[0, 0]) if draw_layer else None
     # With baselines, panel B is one axis per y-segment (see PANEL_B_SEGMENTS);
     # without them a single axis is enough. The curves and the panel header always
     # live on the highest segment, the x-axis always on the lowest.
-    scale_axes: list[plt.Axes] = []
-    if draw_scale:
+    if draw_scale and not draw_compare:
         cell = grid[0, 1] if draw_layer else grid[0, 0]
         scale_axes = (
             _build_panel_b_axes(fig, cell) if baselines is not None else [fig.add_subplot(cell)]
@@ -821,7 +980,8 @@ def make_figure(
             ax_scale,
             scaling["rows"],
             letter=letters["scale"],
-            title=None if bare else "Scaling with training data",
+            # A column render has no width for a title; the caption carries it.
+            title=None if (bare or draw_compare) else "Scaling with training data",
             show_retrieval=True,
             kicker_y=float(spec.get("kicker_y", 1.24)),  # type: ignore[arg-type]
             title_y=float(spec.get("title_y", 1.08)),  # type: ignore[arg-type]
@@ -834,7 +994,29 @@ def make_figure(
     )
     baseline_overlay = None
     boundary_overlay = None
-    if controls:
+    if draw_compare:
+        assert baselines is not None
+        _apply_panel_b_segments(compare_axes)
+        baseline_overlay = _plot_comparison_panel(
+            compare_axes, scaling, baselines, roster, compare_n
+        )
+        # The kicker names the rung the maps are read at; when it differs from
+        # the controls' rung the caption has to say so (overlay["matched"]).
+        panel_header(
+            compare_axes[-1],
+            letters["compare"] or "",
+            f"{_human_n(compare_n)} contexts",
+            None,
+            kicker_y=float(spec.get("kicker_y", 1.24)),  # type: ignore[arg-type]
+        )
+        # Focused range for the curves alone: every predictor value lies inside it.
+        lo, hi = spec["scale_ylim"]  # type: ignore[misc]
+        ax_scale.set_ylim(float(lo), float(hi))
+        ax_scale.set_yticks([float(t) for t in spec["scale_yticks"]])  # type: ignore[union-attr]
+        for row in scaling["rows"]:
+            for values in row["arms"].values():
+                assert lo < values["r2"] < hi and lo < values["retrieval"] < hi, (row["x"], values)
+    elif controls:
         if baselines is None:
             ax_scale.set_ylim(0.15, 1.0)
             ax_scale.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
@@ -869,8 +1051,10 @@ def make_figure(
             ax.xaxis.set_major_formatter(FuncFormatter(_human_n))
             ax.minorticks_off()
         ax_scale_bottom.set_xlabel("Training contexts", labelpad=12)
+        # In the split render one label serves the whole column (both panels
+        # plot the same score), centred over the comparison strips and the curves.
         _center_ylabel(
-            scale_axes,
+            scale_axes + compare_axes,
             better_label("Score"),
             x=float(spec.get("ylabel_x", -0.115)),  # type: ignore[arg-type]
         )
@@ -1059,8 +1243,21 @@ def _write_outputs(
     pool10k_source: Path | None = None,
     pool10k: dict | None = None,
     baseline_overlay: dict | None = None,
+    split: bool = False,
 ) -> dict[str, Path]:
     stem = out_dir / stem_name
+    baselines_record = (
+        None
+        if baselines is None
+        else {
+            "source": {
+                "path": _display_path(baselines_source),
+                "sha256": _sha256(baselines_source),
+            },
+            "overlay": baseline_overlay,
+            **baselines,
+        }
+    )
     outputs = save_c2a_figure(
         fig,
         stem,
@@ -1161,9 +1358,33 @@ def _write_outputs(
                         **extension,
                     }
                 ),
+                "comparison_panel": (
+                    None
+                    if baselines_record is None or not split
+                    else {
+                        "encoding": (
+                            "split render: panel B holds the two maps beside the controls at "
+                            "one training-context count, one categorical slot per arm in "
+                            "overlay.order (maps first), on the cut y-axis whose segments are "
+                            "listed under overlay.segments (plotted heights proportional to "
+                            "data spans, one shared scale); the maps are read off the scaling "
+                            "sweep at overlay.n_compare, every control at the rung it was "
+                            "measured on (overlay.controls_n_train, layer 19, 10,000-candidate "
+                            "pool); overlay.matched is false when those differ and the caption "
+                            "must then disclose the mismatched comparison; filled marker = "
+                            "held-out R^2 (left of the slot), open marker = top-1 retrieval "
+                            "(right), matching the curves on panel C; a value no segment holds "
+                            "is omitted and listed under overlay.off_scale; panel C draws the "
+                            "scaling curves alone on the focused range recorded under "
+                            "scale_ylim, with no control on it"
+                        ),
+                        "scale_ylim": list(PANEL_LAYOUTS["bc"]["scale_ylim"]),  # type: ignore[arg-type]
+                        **baselines_record,
+                    }
+                ),
                 "baselines_on_panel_b": (
                     None
-                    if baselines is None
+                    if baselines is None or split
                     else {
                         "source": {
                             "path": _display_path(baselines_source),
@@ -1242,7 +1463,19 @@ def main() -> None:
         default="ab",
         help=(
             "which panels to render: 'ab' the two-panel figure, 'a' the layer sweep "
-            "alone (appendix), 'b' the scaling panel alone (rides Figure 1)"
+            "alone (appendix), 'b' the scaling panel alone with the controls as points "
+            "(the merged Figure 1 column), 'bc' the same column split into a "
+            "maps-versus-controls panel over a scaling panel"
+        ),
+    )
+    parser.add_argument(
+        "--compare-n",
+        type=int,
+        default=BASELINE_POINT_X,
+        help=(
+            "'bc' only: the scaling-sweep rung the two maps are read at on the "
+            "comparison panel; the controls were scored at 25,000 only, so any other "
+            "value is a mismatched comparison the caption must disclose"
         ),
     )
     args = parser.parse_args()
@@ -1279,7 +1512,14 @@ def main() -> None:
 
     git_state = _git_state()
     fig, include_frac, baseline_overlay = make_figure(
-        layer, scaling, boundary, extension, baselines, args.baselines_mode, args.panels
+        layer,
+        scaling,
+        boundary,
+        extension,
+        baselines,
+        args.baselines_mode,
+        args.panels,
+        compare_n=args.compare_n,
     )
     outputs = _write_outputs(
         fig,
@@ -1300,6 +1540,7 @@ def main() -> None:
         pool10k_source=args.pool10k_source,
         pool10k=pool10k,
         baseline_overlay=baseline_overlay,
+        split=args.panels == "bc",
     )
     plt.close(fig)
     for kind, path in outputs.items():
