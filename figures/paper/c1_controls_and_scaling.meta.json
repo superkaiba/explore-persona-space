@@ -8,7 +8,7 @@
   "repository_manuscript_asset": "figures/paper/c1_controls_and_scaling.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
-    "commit": "079bfccfe50641dedc38edae4af362f2ab22a70a",
+    "commit": "549ece96ed7c0da7a8e6a913ae215fefd3e6ae5b",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -37,11 +37,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       3.929,
-      7.7
+      6.325
     ],
     "exported_size_inches": [
       3.929,
-      8.071
+      6.611
     ],
     "scale": 0.42,
     "include_width_frac": 0.3,
@@ -73,18 +73,48 @@
       "0.7",
       "0.8",
       "0.9",
-      "Scaling with\ntraining data",
-      "MAP",
-      "METRIC",
-      "CONTROL",
-      "Linear",
-      "Nonlinear",
-      "Held-out $R^2$",
-      "Top-1 retrieval",
-      "Text embedding",
-      "Copy + bias",
-      "Shuffled pairs"
+      "Scaling with\ntraining data"
     ]
+  },
+  "legend_asset": {
+    "pdf": "figures/paper/c1_controls_and_scaling_legend.pdf",
+    "placement": "its own asset, included under the schematic in the manuscript's left minipage at 0.5 textwidth; the column carries no legend",
+    "render": {
+      "style_version": "c2a-v2",
+      "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+      "resolved_font": "Inter",
+      "authoring_size_inches": [
+        6.548,
+        0.982
+      ],
+      "exported_size_inches": [
+        6.548,
+        0.824
+      ],
+      "scale": 0.42,
+      "include_width_frac": 0.5,
+      "latex_include_line": "\\includegraphics[width=0.5\\textwidth]{figures/paper/c1_controls_and_scaling_legend.pdf}",
+      "realized_font_pt": {
+        "body": 7.56,
+        "tick": 7.14,
+        "label": 8.4,
+        "title": 9.24
+      },
+      "png_dpi": 240,
+      "background": "#FFFFFF",
+      "text": [
+        "MAP",
+        "CONTROL",
+        "METRIC",
+        "Linear",
+        "Nonlinear",
+        "Text embedding",
+        "Copy + bias",
+        "Shuffled pairs",
+        "Held-out $R^2$",
+        "Top-1 retrieval"
+      ]
+    }
   },
   "displayed_metrics": {
     "left": [
@@ -908,8 +938,11 @@
   },
   "baselines_on_panel_b": null,
   "output_sha256": {
-    "pdf": "d382f97c2c55bdc89ebba34cf8aac79a07807b0712cec92e25963b893b35b6d0",
-    "png": "5e6f93ecf61c9f33d46cb43b2ba04fdc83a72e3a149227d204a58c4b7f044a8e",
-    "grayscale": "bbb14d994266eccd9cc8b30652912e347ee79e65462ed0a8d5d99bce02b3a2a0"
+    "pdf": "3dbb0a275cf79f2e316b3f0025f3d147c8d7eeeadbfd3f4f50def489d9aeb6c3",
+    "png": "552f855669a285ead833b6cb5ea6147a8046aa61d4a453503d6f9b79a1d7b570",
+    "grayscale": "6c5e39ea2d935782f35f9a37c39eb17c9c7ea9c906369890a8ff01199a701f52",
+    "legend_pdf": "30da40a1beb8a87afcd7798b66adebb9999a80ec190899741f029f3a5059b325",
+    "legend_png": "d536bec884bd498f05687a00d6122e903181635d200dbdce888eeaff90683cbd",
+    "legend_grayscale": "3c8312d5caa7bac8ec3273013fa588e1748e8c111d2cb2a67444e94f402f3416"
   }
 }

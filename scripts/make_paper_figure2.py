@@ -1001,6 +1001,52 @@ def _column_legend(
             y -= head + row * len(handles) + gap
 
 
+def make_legend_strip(
+    spec: dict, boundary: dict | None, baseline_overlay: dict | None, *, bars: bool
+) -> tuple[plt.Figure, float]:
+    """The split column's legend as its own asset: three headed groups in a row.
+
+    The strip sits under the schematic in the manuscript's left minipage, so
+    the column beside it holds only panels B and C and the two minipages come
+    out about the same height. Same handles, labels, heading style, and row
+    pitch as the in-column form. Returns the figure and its include fraction.
+    """
+    strip: dict = spec["legend_strip"]
+    fig, frac = c2a_figure(str(strip["width"]), float(strip["aspect"]))
+    predictor_handles, metric_handles = _legend_handles(bars=bars)
+    control_handles, control_labels = _baseline_legend_handles(boundary, baseline_overlay)
+    groups: list[tuple[str, list, list[str], float]] = [
+        ("Map", predictor_handles, [_handle_label(h) for h in predictor_handles], 1.6),
+        (
+            "Control",
+            control_handles,
+            [_SHORT_LEGEND_LABELS.get(lab, lab) for lab in control_labels],
+            1.6,
+        ),
+        ("Metric", metric_handles, [_handle_label(h) for h in metric_handles], 2.6),
+    ]
+    head = float(strip["head"])
+    y = float(strip["top"])
+    for x, (heading, handles, labels, handlelength) in zip(strip["cols"], groups, strict=True):
+        legend_kicker(fig, float(x), y, heading)
+        fig.legend(
+            handles=handles,
+            labels=labels,
+            loc="upper left",
+            bbox_to_anchor=(float(x) - 0.001, y - head),
+            ncol=1,
+            frameon=False,
+            fontsize=float(strip["fontsize"]),
+            labelspacing=0.32,
+            handlelength=handlelength,
+            handletextpad=0.5,
+            borderaxespad=0,
+            borderpad=0,
+            handler_map={tuple: HandlerTuple(ndivide=None, pad=0.55)},
+        )
+    return fig, frac
+
+
 def _legend_handles(bars: bool = False) -> tuple[list, list]:
     """Predictor and metric legend handles.
 
@@ -1105,25 +1151,31 @@ PANEL_LAYOUTS: dict[str, dict[str, object]] = {
         # the maps beside the controls at one training-context count on the cut
         # axis; C holds the scaling curves alone on a focused 0.6-0.95 range, so
         # the 5k-to-500k trend is no longer flattened by the controls' span. Same
-        # 0.30 include width as "b"; the column is taller than the schematic's
-        # ~2 in, and the minipage pair is vertically centred, so the schematic
-        # sits mid-column.
+        # 0.30 include width as "b". The legend is a separate strip asset that
+        # sits under the schematic in the manuscript's left minipage, so the
+        # column holds only B and C and the two minipages come out about the
+        # same height (the in-column legend left ~0.6 in of blank paper above
+        # and below the schematic).
         "width": "sliver",
-        "aspect": 1.96,
+        "aspect": 1.61,
         "letters": {"compare": "B", "scale": "C"},
-        "margins": {"left": 0.300, "right": 0.975, "top": 0.694, "bottom": 0.0558},
+        "margins": {"left": 0.300, "right": 0.975, "top": 0.846, "bottom": 0.068},
         "legend_x": (0.300, 0.300),
         "ylabel_x": -0.235,
         "rows": {"plain": 0.985, "with_controls": 0.985, "baseline": 0.995},
-        # Headed legend groups (the Figure 2 form): MAP over METRIC in the left
-        # column, CONTROL in the right; y in figure fractions from the top.
-        "column_legend": True,
-        "legend_cols": (0.210, 0.575),
-        "legend_top": 0.990,
-        "legend_row": 0.0278,
-        "legend_head": 0.0196,
-        "legend_gap": 0.0130,
-        "legend_fontsize": 11.5,
+        # The legend as its own asset (make_legend_strip): the three headed
+        # groups of the Figure 2 form, MAP, CONTROL, METRIC, side by side on a
+        # "half"-width canvas, included under the schematic. x in figure
+        # fractions of the strip; y from its top; the heading-to-first-row
+        # offset in the same fractions.
+        "legend_strip": {
+            "width": "half",
+            "aspect": 0.15,
+            "cols": (0.01, 0.27, 0.62),
+            "top": 0.93,
+            "head": 0.16,
+            "fontsize": 11.5,
+        },
         # Both panels carry the paper's two-row header: the grey letter-only
         # kicker over a bold two-line title stating what is plotted. Two lines
         # because the column is too narrow for either title on one line at the
@@ -1351,6 +1403,9 @@ def make_figure(
     if draw_layer:
         ax_layer.set_ylabel(better_label(METRIC_LABELS["r2"]), labelpad=13)
 
+    if spec.get("legend_strip"):
+        # The legend is a separate asset (make_legend_strip); nothing on the column.
+        return fig, include_frac, baseline_overlay
     predictor_handles, metric_handles = _legend_handles(
         bars=draw_compare and compare_style == "bars"
     )
@@ -1554,6 +1609,7 @@ def _write_outputs(
     pool10k: dict | None = None,
     baseline_overlay: dict | None = None,
     split: bool = False,
+    legend: tuple[plt.Figure, float] | None = None,
 ) -> dict[str, Path]:
     stem = out_dir / stem_name
     baselines_record = (
@@ -1576,6 +1632,22 @@ def _write_outputs(
         creator="scripts/make_paper_figure2.py",
         include_width=include_frac,
     )
+    legend_outputs: dict | None = None
+    if legend is not None:
+        legend_fig, legend_frac = legend
+        legend_outputs = save_c2a_figure(
+            legend_fig,
+            stem.with_name(f"{stem.name}_legend"),
+            title="Legend for the context-to-answer predictability column",
+            subject="Map, control, and metric swatches for panels B and C",
+            creator="scripts/make_paper_figure2.py",
+            include_width=legend_frac,
+        )
+    legend_paths = {
+        f"legend_{kind}": path
+        for kind, path in (legend_outputs or {}).items()
+        if isinstance(path, Path)
+    }
     metadata = stem.with_suffix(".meta.json")
     metadata.write_text(
         json.dumps(
@@ -1622,6 +1694,18 @@ def _write_outputs(
                     }
                 ),
                 "render": outputs["record"],
+                "legend_asset": (
+                    None
+                    if legend_outputs is None
+                    else {
+                        "pdf": _display_path(legend_outputs["pdf"]),
+                        "placement": (
+                            "its own asset, included under the schematic in the manuscript's "
+                            "left minipage at 0.5 textwidth; the column carries no legend"
+                        ),
+                        "render": legend_outputs["record"],
+                    }
+                ),
                 "displayed_metrics": {
                     "left": ["r2"],
                     "right": ["r2", "strict_top1_retrieval"],
@@ -1737,14 +1821,16 @@ def _write_outputs(
                     }
                 ),
                 "output_sha256": {
-                    kind: _sha256(path) for kind, path in outputs.items() if isinstance(path, Path)
+                    kind: _sha256(path)
+                    for kind, path in {**outputs, **legend_paths}.items()
+                    if isinstance(path, Path)
                 },
             },
             indent=2,
         )
         + "\n"
     )
-    return {**outputs, "metadata": metadata}
+    return {**outputs, **legend_paths, "metadata": metadata}
 
 
 def main() -> None:
@@ -1849,6 +1935,14 @@ def main() -> None:
         compare_n=args.compare_n,
         compare_style=args.compare_style,
     )
+    legend = None
+    if PANEL_LAYOUTS[args.panels].get("legend_strip"):
+        legend = make_legend_strip(
+            PANEL_LAYOUTS[args.panels],
+            boundary,
+            baseline_overlay,
+            bars=args.compare_style == "bars",
+        )
     outputs = _write_outputs(
         fig,
         args.out_dir,
@@ -1869,8 +1963,11 @@ def main() -> None:
         pool10k=pool10k,
         baseline_overlay=baseline_overlay,
         split=args.panels == "bc",
+        legend=legend,
     )
     plt.close(fig)
+    if legend is not None:
+        plt.close(legend[0])
     for kind, path in outputs.items():
         if isinstance(path, Path):
             print(f"{kind}: {path}")
