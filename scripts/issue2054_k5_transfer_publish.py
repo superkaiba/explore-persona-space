@@ -53,6 +53,10 @@ def publish(out, figures, name):
     if not files or not any(p.suffix == ".png" for p in files.values()):
         raise RuntimeError("no artifacts or figure to publish")
     hashes = {destination: base.sha(path) for destination, path in files.items()}
+    print(
+        f"[phase=upload] starting {name} files={len(files)} bytes={sum(p.stat().st_size for p in files.values())}",
+        flush=True,
+    )
     api = HfApi()
     items = sorted(files.items())
     revisions = []
