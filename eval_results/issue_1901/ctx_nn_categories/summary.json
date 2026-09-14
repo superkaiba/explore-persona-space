@@ -1,0 +1,124 @@
+{
+ "title": "Category of each held-out query's nearest context by raw cosine (no map), 10,000-candidate pool",
+ "design": "For each of the 942 deduplicated held-out queries, the single most similar other context in the 10,000-candidate pool by raw cosine between layer-19 context vectors (the banked perrow.npz nn1 convention, reproduced to 2.4e-7). Each pair was labeled with the five retrieval-failure categories of the paper appendix, in priority order, by eight blinded Claude labelers who saw only the two prompt excerpts and a pair id (no cosine, no retrieval outcome, no gold label). Shuffled order, seed 190141.",
+ "overall": {
+  "n": 942,
+  "near_duplicate_request": 114,
+  "interchangeable_answer": 49,
+  "shared_template": 178,
+  "same_task": 430,
+  "unrelated": 171,
+  "shared_template_plus_same_task": 608,
+  "share_task_not_content": 0.6454,
+  "ambiguous": 351
+ },
+ "map_failures": {
+  "n": 90,
+  "near_duplicate_request": 22,
+  "interchangeable_answer": 7,
+  "shared_template": 45,
+  "same_task": 14,
+  "unrelated": 2,
+  "shared_template_plus_same_task": 59,
+  "share_task_not_content": 0.6556,
+  "ambiguous": 16
+ },
+ "map_successes": {
+  "n": 852,
+  "near_duplicate_request": 92,
+  "interchangeable_answer": 42,
+  "shared_template": 133,
+  "same_task": 416,
+  "unrelated": 169,
+  "shared_template_plus_same_task": 549,
+  "share_task_not_content": 0.6444,
+  "ambiguous": 335
+ },
+ "top90_most_similar": {
+  "n": 90,
+  "near_duplicate_request": 31,
+  "interchangeable_answer": 3,
+  "shared_template": 56,
+  "same_task": 0,
+  "unrelated": 0,
+  "shared_template_plus_same_task": 56,
+  "share_task_not_content": 0.6222,
+  "ambiguous": 8
+ },
+ "by_context_cosine_bin": {
+  "[0,0.8)": {
+   "n": 490,
+   "near_duplicate_request": 19,
+   "interchangeable_answer": 16,
+   "shared_template": 10,
+   "same_task": 308,
+   "unrelated": 137,
+   "shared_template_plus_same_task": 318,
+   "share_task_not_content": 0.649,
+   "ambiguous": 221,
+   "map_failure_rate": 0.0143
+  },
+  "[0.8,0.9)": {
+   "n": 216,
+   "near_duplicate_request": 31,
+   "interchangeable_answer": 21,
+   "shared_template": 35,
+   "same_task": 97,
+   "unrelated": 32,
+   "shared_template_plus_same_task": 132,
+   "share_task_not_content": 0.6111,
+   "ambiguous": 90,
+   "map_failure_rate": 0.0694
+  },
+  "[0.9,0.95)": {
+   "n": 85,
+   "near_duplicate_request": 19,
+   "interchangeable_answer": 6,
+   "shared_template": 36,
+   "same_task": 22,
+   "unrelated": 2,
+   "shared_template_plus_same_task": 58,
+   "share_task_not_content": 0.6824,
+   "ambiguous": 26,
+   "map_failure_rate": 0.1176
+  },
+  "[0.95,0.99)": {
+   "n": 117,
+   "near_duplicate_request": 40,
+   "interchangeable_answer": 6,
+   "shared_template": 68,
+   "same_task": 3,
+   "unrelated": 0,
+   "shared_template_plus_same_task": 71,
+   "share_task_not_content": 0.6068,
+   "ambiguous": 13,
+   "map_failure_rate": 0.2906
+  },
+  "[0.99,1.01)": {
+   "n": 34,
+   "near_duplicate_request": 5,
+   "interchangeable_answer": 0,
+   "shared_template": 29,
+   "same_task": 0,
+   "unrelated": 0,
+   "shared_template_plus_same_task": 29,
+   "share_task_not_content": 0.8529,
+   "ambiguous": 1,
+   "map_failure_rate": 0.7059
+  }
+ },
+ "calibration_vs_gold_failure_pairs": {
+  "n_coinciding": 39,
+  "exact_agreement": 33
+ },
+ "paper_failure_figure": {
+  "shared_template_plus_same_task": 54,
+  "of": 90
+ },
+ "provenance": {
+  "text_bank": "/mnt/eps-data/thomasjiralerspong/issue1901_ctxsim/text_bank.json (sha256 76bfb49f57b21aa1..., copy of the Codex-worktree bank pinned to HF data revision 83d249cc9d495ca6f5d10f9156a622bcdca29a19)",
+  "vectors": "/mnt/eps-data/thomasjiralerspong/issue1901_ctxsim/paper_fig_inputs/{c2a_C.npy,c2a_qcols.npy,perrow.npz}",
+  "distractor_column_order": "bundle_index.json distr rows in order (asserted equal to distractors_L19 bank order by scripts/issue1901_fig2_pool10k.py)",
+  "packets_and_scripts": "/mnt/eps-data/thomasjiralerspong/issue1901_ctxsim/ctx_nn_categories/ (prompt text not committed to git)"
+ }
+}

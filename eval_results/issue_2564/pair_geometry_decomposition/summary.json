@@ -1,0 +1,86 @@
+{
+ "identity": "size_ratio = (||W dctx|| / ||dctx||) * (||dctx|| / ||dans||) = map_gain * ctx_over_ans_shift, exact per pair",
+ "n_pairs": 2697,
+ "var_log_size_ratio": 0.1217,
+ "var_log_gain": 0.0143,
+ "var_log_ctx_over_ans": 0.1367,
+ "spearman_log_gain_vs_log_size": -0.011,
+ "spearman_log_ratio_vs_log_size": 0.9421,
+ "centering": "cosines centered on the map's own training means (ridge payload xmu/ymu); norms uncentered",
+ "per_family": {
+  "One-word topic": {
+   "n": 24,
+   "median_map_gain": 0.5089,
+   "median_ctx_over_ans_shift": 1.2668,
+   "median_size_ratio": 0.6633,
+   "mean_ctx_cos_centered": 0.9313,
+   "mean_ans_cos_centered": 0.8931
+  },
+  "Output format": {
+   "n": 120,
+   "median_map_gain": 0.4034,
+   "median_ctx_over_ans_shift": 2.9265,
+   "median_size_ratio": 1.0852,
+   "mean_ctx_cos_centered": 0.3785,
+   "mean_ans_cos_centered": 0.6455
+  },
+  "Persona": {
+   "n": 120,
+   "median_map_gain": 0.5997,
+   "median_ctx_over_ans_shift": 1.8806,
+   "median_size_ratio": 1.125,
+   "mean_ctx_cos_centered": 0.6242,
+   "mean_ans_cos_centered": 0.6516
+  },
+  "Question topic": {
+   "n": 66,
+   "median_map_gain": 0.5265,
+   "median_ctx_over_ans_shift": 1.5293,
+   "median_size_ratio": 0.8047,
+   "mean_ctx_cos_centered": 0.6868,
+   "mean_ans_cos_centered": 0.5884
+  },
+  "Refusal holds: framing rewrite": {
+   "n": 1924,
+   "median_map_gain": 0.4626,
+   "median_ctx_over_ans_shift": 2.2455,
+   "median_size_ratio": 1.0416,
+   "mean_ctx_cos_centered": 0.8802,
+   "mean_ans_cos_centered": 0.9114
+  },
+  "Refusal holds: intent swap": {
+   "n": 63,
+   "median_map_gain": 0.4921,
+   "median_ctx_over_ans_shift": 1.6568,
+   "median_size_ratio": 0.8259,
+   "mean_ctx_cos_centered": 0.811,
+   "mean_ans_cos_centered": 0.8043
+  },
+  "Refusal reverses: framing rewrite": {
+   "n": 307,
+   "median_map_gain": 0.4645,
+   "median_ctx_over_ans_shift": 1.5786,
+   "median_size_ratio": 0.7449,
+   "mean_ctx_cos_centered": 0.6473,
+   "mean_ans_cos_centered": 0.6083
+  },
+  "Refusal reverses: intent swap": {
+   "n": 61,
+   "median_map_gain": 0.5416,
+   "median_ctx_over_ans_shift": 1.4024,
+   "median_size_ratio": 0.7501,
+   "mean_ctx_cos_centered": 0.5107,
+   "mean_ans_cos_centered": 0.3514
+  },
+  "Tone": {
+   "n": 12,
+   "median_map_gain": 0.5658,
+   "median_ctx_over_ans_shift": 1.8085,
+   "median_size_ratio": 1.028,
+   "mean_ctx_cos_centered": 0.1959,
+   "mean_ans_cos_centered": 0.339
+  }
+ },
+ "map": "data/issue_2564/langow_stage/ridge/arm_779ce/ridge.pt",
+ "builder": "scripts/issue2564_element_shift_rows.py (_metrics patched read-only; pairs identical to the committed section42 rows)"
+}
