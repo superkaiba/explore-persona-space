@@ -30,8 +30,10 @@ from explore_persona_space.analysis.c2a_plot_style import (
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "figures/paper/c1_cot_capability_data.json"
 STEM = ROOT / "figures/paper/c1_cot_capability"
-CONDITION_COLORS = [MUTED, ROLES["linear"].color, ROLES["nonlinear"].color]
-BORDERS = [":", "-", "--"]
+MID_COT = "#E1AA9E"  # 50% white tint of the CoT-end red: same family, earlier state
+CELL_ORDER = ["p7_Aoff", "p7_A", "p7_traj_t20", "p7_D"]
+CONDITION_COLORS = dict(zip(CELL_ORDER, [MUTED, ROLES["linear"].color, MID_COT, ROLES["nonlinear"].color], strict=True))
+BORDERS = dict(zip(CELL_ORDER, [":", "-", "-.", "--"], strict=True))
 OFFSETS = {
     "q35_0p8b": (40, 65),
     "q35_2b": (12, 5),
@@ -46,19 +48,19 @@ OFFSETS = {
 }
 
 
-def bar_with_interval(ax, x, value, bounds, width, condition, *, retrieval=False):
+def bar_with_interval(ax, x, value, bounds, width, cell, *, retrieval=False):
     """Draw a saved estimate and its endpoints, including non-enclosing intervals."""
     lo, hi = bounds
     if not np.isfinite([value, lo, hi]).all() or lo > hi:
         raise ValueError(f"Invalid estimate/interval: {value}, {bounds}")
-    color = CONDITION_COLORS[condition]
+    color = CONDITION_COLORS[cell]
     ax.bar(
         x,
         value,
         width=width * 0.86,
         facecolor="white" if retrieval else color,
         edgecolor=color,
-        linestyle=BORDERS[condition],
+        linestyle=BORDERS[cell],
         linewidth=1.8,
         hatch="///" if retrieval else None,
         zorder=2,
@@ -67,26 +69,26 @@ def bar_with_interval(ax, x, value, bounds, width, condition, *, retrieval=False
 
 
 def draw_prediction(ax, data):
-    """Preserve the all-question comparison and its two metrics in panel A."""
+    """Panel A: the three shipped conditions plus the best interior thinking-span state."""
     conditions = data["panels"]["A"]["conditions"]
-    assert [row["cell"] for row in conditions] == ["p7_Aoff", "p7_A", "p7_D"]
+    assert [row["cell"] for row in conditions] == CELL_ORDER
     assert data["panels"]["A"]["n_evaluated"] == 33810
-    width = 0.34
+    width = 0.27
     for j, key in enumerate(["r2_corpus", "acc1"]):
         for i, row in enumerate(conditions):
             scores = row["metrics"]
             assert scores["n"] == 33810
             bar_with_interval(
                 ax,
-                j * 1.25 + (i - 1) * width,
+                j * 1.35 + (i - 1.5) * width,
                 scores[key],
                 scores[f"{key}_ci"],
                 width,
-                i,
+                row["cell"],
                 retrieval=j == 1,
             )
-    ax.set_xticks([0, 1.25], [r"$R^2$", "Top-1\nretrieval"])
-    ax.set_xlim(-0.52, 1.77)
+    ax.set_xticks([0, 1.35], [r"$R^2$", "Top-1\nretrieval"])
+    ax.set_xlim(-0.72, 2.07)
     ax.set_ylim(0, 1.12)
     ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
     ax.set_ylabel(better_label("Score"))
@@ -99,6 +101,7 @@ def draw_correctness(ax, data):
     pooled = data["panels"]["B"]["readouts"]
     counts = {"necessary": 4522, "both_correct": 17693}
     width = 0.30
+    readout_cells = {"context": "p7_A", "end_of_thought": "p7_D"}
     for i, readout in enumerate(["context", "end_of_thought"]):
         for j, (group, count) in enumerate(counts.items()):
             row = pooled[readout][group]
@@ -111,7 +114,7 @@ def draw_correctness(ax, data):
                 row["r2_corpus_mean"],
                 row["r2_corpus_mean_ci"],
                 width,
-                i + 1,
+                readout_cells[readout],
             )
     ax.set_xticks([0, 1], ["Only with\nthinking", "Both\nmodes"])
     ax.set_xlim(-0.5, 1.5)
@@ -193,18 +196,17 @@ def main():
                 linewidth=2,
                 label=row["label"],
             )
-            for row, color, border in zip(
-                cot["panels"]["A"]["conditions"],
-                CONDITION_COLORS,
-                BORDERS,
-                strict=True,
+            for row, color, border in (
+                (row, CONDITION_COLORS[row["cell"]], BORDERS[row["cell"]])
+                for row in cot["panels"]["A"]["conditions"]
             )
         ],
         loc="upper center",
-        bbox_to_anchor=(0.53, 1.0),
-        ncol=3,
-        handlelength=1.4,
-        columnspacing=1.4,
+        bbox_to_anchor=(0.5, 1.0),
+        ncol=4,
+        handlelength=1.1,
+        columnspacing=0.7,
+        handletextpad=0.5,
     )
     draw_prediction(axes[0], cot)
     draw_correctness(axes[1], cot)
@@ -226,7 +228,9 @@ def main():
         "changes": (
             "Single-row layout with one-line panel headings and tighter vertical spacing. "
             "Panel C uses AA Intelligence Index, expanded in the caption. "
-            "All estimates, intervals, model labels, and font sizes preserved."
+            "All estimates, intervals, model labels, and font sizes preserved. "
+            "2026-09-14: panel A gains a fourth bar, the best interior thinking-span state "
+            "(t=0.2, cell p7_traj_t20 from p7_traj__a3.json); no map refit."
         ),
         "maps_refit": False,
         "render": exported["record"],

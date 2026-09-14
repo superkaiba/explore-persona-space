@@ -8,7 +8,8 @@
       "eval_results/issue_2546/allfit/p7_Aoff__a3.json": "233151f9ec2e292023de27a35b9b81cad4de6dcb5aa95e8303a9b4269eb63947",
       "eval_results/issue_2546/allfit/p7_A__a3.json": "a3ea0a543a3b40a6024b90e280d832c5d8fa62ffcdf61b9372b8f7cb2725af13",
       "eval_results/issue_2546/allfit/p7_D__a3.json": "ce426b14ca2912ee9328de3d189959dfcee365eaa15f7a5f788422adf3035eae",
-      "eval_results/issue_2546/paper_reasoning_20260906/qwen3_necessity_table.json": "880a00cd4b8d15f25381de8ed828602e655bc70922924bfe6f636c9237bba07b"
+      "eval_results/issue_2546/paper_reasoning_20260906/qwen3_necessity_table.json": "880a00cd4b8d15f25381de8ed828602e655bc70922924bfe6f636c9237bba07b",
+      "eval_results/issue_2546/allfit/p7_traj__a3.json": "6a58d1a357025b2aa96ba51c12f885b59969b493b87bf6ed7f9ca875bb8be1e4"
     },
     "data": {
       "model": "Qwen3-8B",
@@ -190,6 +191,72 @@
                   0.8799770777876368
                 ],
                 "chance": 0.0001478852410529429
+              }
+            },
+            {
+              "cell": "p7_traj_t20",
+              "label": "Thinking on \u00b7 best mid-CoT",
+              "metrics": {
+                "n": 33810,
+                "r2_corpus": 0.3444557107504629,
+                "r2_corpus_ci": [
+                  0.34131059847660683,
+                  0.3475096717668709
+                ],
+                "acc1": 0.6004436557231588,
+                "acc1_ci": [
+                  0.5956773144040225,
+                  0.6057401656314699
+                ]
+              },
+              "source": {
+                "path": "eval_results/issue_2546/allfit/p7_traj__a3.json",
+                "sha256": "6a58d1a357025b2aa96ba51c12f885b59969b493b87bf6ed7f9ca875bb8be1e4",
+                "commit": "8945d0703de460143c039c8d7b7150693d060958",
+                "position": "t20",
+                "position_rule": "token index round(t*(L-1)) inside the thinking span, t=0.2",
+                "selection": "maximum r2_corpus over the nine interior positions t10..t90 (also the maximum acc1)",
+                "layer": 24,
+                "lambda": 1000.0,
+                "n_rows": 33810,
+                "all_positions": {
+                  "t10": {
+                    "r2_corpus": 0.33336984069490483,
+                    "acc1": 0.5949127477077788
+                  },
+                  "t20": {
+                    "r2_corpus": 0.3444557107504629,
+                    "acc1": 0.6004436557231588
+                  },
+                  "t30": {
+                    "r2_corpus": 0.34050827539864625,
+                    "acc1": 0.5811002661934339
+                  },
+                  "t40": {
+                    "r2_corpus": 0.3381982266335998,
+                    "acc1": 0.5668737060041408
+                  },
+                  "t50": {
+                    "r2_corpus": 0.33458199582256587,
+                    "acc1": 0.5625258799171843
+                  },
+                  "t60": {
+                    "r2_corpus": 0.3296208994474461,
+                    "acc1": 0.5569949719018042
+                  },
+                  "t70": {
+                    "r2_corpus": 0.3238850995014576,
+                    "acc1": 0.5424726412304052
+                  },
+                  "t80": {
+                    "r2_corpus": 0.3227165440417241,
+                    "acc1": 0.5413487133984028
+                  },
+                  "t90": {
+                    "r2_corpus": 0.32183909469491445,
+                    "acc1": 0.5384205856255546
+                  }
+                }
               }
             },
             {
@@ -437,17 +504,20 @@
         "conditions": {
           "Thinking off \u00b7 context": "#687078",
           "Thinking on \u00b7 context": "#176B87",
+          "Thinking on \u00b7 best mid-CoT": "#E1AA9E",
           "Thinking on \u00b7 CoT end": "#C4553D"
         },
         "condition_border_styles": {
           "Thinking off \u00b7 context": ":",
           "Thinking on \u00b7 context": "-",
+          "Thinking on \u00b7 best mid-CoT": "-.",
           "Thinking on \u00b7 CoT end": "--"
         },
         "metrics": "R2: filled; top-1 retrieval: open and hatched"
       },
       "maps_refit": false
-    }
+    },
+    "added_2026_09_14": "Fourth panel-A condition: best interior thinking-span state (t=0.2) from p7_traj__a3.json; no refit."
   },
   "capability": {
     "source_commit": "9aebbd85e298f25cb904e0256cf21b78dcd71811",

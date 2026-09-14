@@ -1,6 +1,6 @@
 {
   "source": "figures/paper/c1_cot_capability_data.json",
-  "source_sha256": "b5c292879bc6c4f06609817bb3051a6c48e27db9a9cb9c9d965c3c0b88dce161",
+  "source_sha256": "7adf9ef9aa9206032054203855ed4b66c27a573cbc403410f45b27656d6b7ed7",
   "original_panels": {
     "cot": {
       "source_commit": "87866925930747a7a16f41c65cad34053f9aadff",
@@ -11,7 +11,8 @@
         "eval_results/issue_2546/allfit/p7_Aoff__a3.json": "233151f9ec2e292023de27a35b9b81cad4de6dcb5aa95e8303a9b4269eb63947",
         "eval_results/issue_2546/allfit/p7_A__a3.json": "a3ea0a543a3b40a6024b90e280d832c5d8fa62ffcdf61b9372b8f7cb2725af13",
         "eval_results/issue_2546/allfit/p7_D__a3.json": "ce426b14ca2912ee9328de3d189959dfcee365eaa15f7a5f788422adf3035eae",
-        "eval_results/issue_2546/paper_reasoning_20260906/qwen3_necessity_table.json": "880a00cd4b8d15f25381de8ed828602e655bc70922924bfe6f636c9237bba07b"
+        "eval_results/issue_2546/paper_reasoning_20260906/qwen3_necessity_table.json": "880a00cd4b8d15f25381de8ed828602e655bc70922924bfe6f636c9237bba07b",
+        "eval_results/issue_2546/allfit/p7_traj__a3.json": "6a58d1a357025b2aa96ba51c12f885b59969b493b87bf6ed7f9ca875bb8be1e4"
       },
       "data": {
         "model": "Qwen3-8B",
@@ -193,6 +194,72 @@
                     0.8799770777876368
                   ],
                   "chance": 0.0001478852410529429
+                }
+              },
+              {
+                "cell": "p7_traj_t20",
+                "label": "Thinking on \u00b7 best mid-CoT",
+                "metrics": {
+                  "n": 33810,
+                  "r2_corpus": 0.3444557107504629,
+                  "r2_corpus_ci": [
+                    0.34131059847660683,
+                    0.3475096717668709
+                  ],
+                  "acc1": 0.6004436557231588,
+                  "acc1_ci": [
+                    0.5956773144040225,
+                    0.6057401656314699
+                  ]
+                },
+                "source": {
+                  "path": "eval_results/issue_2546/allfit/p7_traj__a3.json",
+                  "sha256": "6a58d1a357025b2aa96ba51c12f885b59969b493b87bf6ed7f9ca875bb8be1e4",
+                  "commit": "8945d0703de460143c039c8d7b7150693d060958",
+                  "position": "t20",
+                  "position_rule": "token index round(t*(L-1)) inside the thinking span, t=0.2",
+                  "selection": "maximum r2_corpus over the nine interior positions t10..t90 (also the maximum acc1)",
+                  "layer": 24,
+                  "lambda": 1000.0,
+                  "n_rows": 33810,
+                  "all_positions": {
+                    "t10": {
+                      "r2_corpus": 0.33336984069490483,
+                      "acc1": 0.5949127477077788
+                    },
+                    "t20": {
+                      "r2_corpus": 0.3444557107504629,
+                      "acc1": 0.6004436557231588
+                    },
+                    "t30": {
+                      "r2_corpus": 0.34050827539864625,
+                      "acc1": 0.5811002661934339
+                    },
+                    "t40": {
+                      "r2_corpus": 0.3381982266335998,
+                      "acc1": 0.5668737060041408
+                    },
+                    "t50": {
+                      "r2_corpus": 0.33458199582256587,
+                      "acc1": 0.5625258799171843
+                    },
+                    "t60": {
+                      "r2_corpus": 0.3296208994474461,
+                      "acc1": 0.5569949719018042
+                    },
+                    "t70": {
+                      "r2_corpus": 0.3238850995014576,
+                      "acc1": 0.5424726412304052
+                    },
+                    "t80": {
+                      "r2_corpus": 0.3227165440417241,
+                      "acc1": 0.5413487133984028
+                    },
+                    "t90": {
+                      "r2_corpus": 0.32183909469491445,
+                      "acc1": 0.5384205856255546
+                    }
+                  }
                 }
               },
               {
@@ -440,17 +507,20 @@
           "conditions": {
             "Thinking off \u00b7 context": "#687078",
             "Thinking on \u00b7 context": "#176B87",
+            "Thinking on \u00b7 best mid-CoT": "#E1AA9E",
             "Thinking on \u00b7 CoT end": "#C4553D"
           },
           "condition_border_styles": {
             "Thinking off \u00b7 context": ":",
             "Thinking on \u00b7 context": "-",
+            "Thinking on \u00b7 best mid-CoT": "-.",
             "Thinking on \u00b7 CoT end": "--"
           },
           "metrics": "R2: filled; top-1 retrieval: open and hatched"
         },
         "maps_refit": false
-      }
+      },
+      "added_2026_09_14": "Fourth panel-A condition: best interior thinking-span state (t=0.2) from p7_traj__a3.json; no refit."
     },
     "capability": {
       "source_commit": "9aebbd85e298f25cb904e0256cf21b78dcd71811",
@@ -613,7 +683,7 @@
     "C": "capability"
   },
   "layout": "One horizontal row: CoT prediction, correctness groups, model capability",
-  "changes": "Single-row layout with one-line panel headings and tighter vertical spacing. Panel C uses AA Intelligence Index, expanded in the caption. All estimates, intervals, model labels, and font sizes preserved.",
+  "changes": "Single-row layout with one-line panel headings and tighter vertical spacing. Panel C uses AA Intelligence Index, expanded in the caption. All estimates, intervals, model labels, and font sizes preserved. 2026-09-14: panel A gains a fourth bar, the best interior thinking-span state (t=0.2, cell p7_traj_t20 from p7_traj__a3.json); no map refit.",
   "maps_refit": false,
   "render": {
     "style_version": "c2a-v2",
@@ -680,14 +750,15 @@
       "C Model capability",
       "Thinking off \u00b7 context",
       "Thinking on \u00b7 context",
+      "Thinking on \u00b7 best mid-CoT",
       "Thinking on \u00b7 CoT end"
     ]
   },
-  "script_sha256": "ca397960ff9ce54d439cc62f5ffc47d2bfa2ec5989d754e22ece28234dd220c1",
+  "script_sha256": "340b682b3f0df812831db7509fe9df6251f00e4ea80310a75fedd2a0f8cf530d",
   "style_sha256": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1",
   "output_sha256": {
-    "pdf": "cc2f8f2b6b6c16d08ad557264c0347d77df77cbc0daf7a28329fbbe6ede68f15",
-    "png": "5166f02febd7683522620448b64ee64cfdaddbcc3055bff628aae50d906e9dca",
-    "grayscale": "8dfd3d321387e777c892d35be934a27aa7536d014b7411df160cfe65a38b7b00"
+    "pdf": "707bd23c6c31112797113bf97880aa9a6f5ed3ffa268a823ecd75f47ad598801",
+    "png": "5d80c9ec9f29b28f3d97d4d76737af3386f4795bba76e71a310d28c489f30964",
+    "grayscale": "3b44a84a094d205c8c712b228cac89f3eb6d01d2e9dfbcf20ec4daf0f6823f6d"
   }
 }
