@@ -20,7 +20,10 @@ from explore_persona_space.orchestrate.hub import (  # noqa: E402
 )
 
 REPO = "superkaiba1/explore-persona-space-data"
-PREFIX = "issue1902_format_reconciliation_20260912/format_v3_overflow"
+BINARY_SUFFIXES = {".npz", ".png", ".pdf"}
+PREFIX = "issue1902_olmo_onpolicy_20260914/production_v1"
+REUSE_PREFIX = "issue1902_format_reconciliation_20260912/format_v3_overflow"
+REUSE_REV = "300057b6b874814778e453fa82b682ceb15aaaa5"
 INPUT_REV = "362ccf2f011c926a1e8a58f3e1f0df56024adcbe"
 Q0 = "d3207a181402b42873f5a3120b1d56da7b90f104"
 Q3 = "5ae90722bf11330deddfa42cf41f9fec6da8b69f"
@@ -29,15 +32,17 @@ O0 = "3256c8efcef5f10ca525efeb2039636eaec8fad7"
 O5 = "f0b2131442326ef274c91bea6da27e05ef844df6"
 CHUNK = 256  # Parent #2054 production checkpoint/pilot unit.
 MODELS = {
-    "qwen_B": ("Qwen/Qwen2.5-7B", "d149729398750b98c0af14eb82c78cfe92750796", 19, 3584),
-    "qwen_S": ("Qwen/Qwen2.5-7B-Instruct", "a09a35458c702b33eeacc393d103063234e8bc28", 19, 3584),
     "olmo_B": ("allenai/OLMo-2-1124-7B", "7df9a82518afdecae4e8c026b27adccc8c1f0032", 18, 4096),
     "olmo_S": ("allenai/OLMo-2-1124-7B-SFT", "1de02c0175118a9de5854aec80a1f970e701e928", 18, 4096),
+    "olmo_D": ("allenai/OLMo-2-1124-7B-DPO", "e34ea60adff2e575f4fe7569eaffd1b28509b6fd", 18, 4096),
+    "olmo_R": (
+        "allenai/OLMo-2-1124-7B-Instruct",
+        "470b1fba1ae01581f270116362ee4aa1b97f4c84",
+        18,
+        4096,
+    ),
 }
-DEFERRED_FORMAT_MODELS = {
-    "olmo_D": "Optional DPO/RLVR expansion deferred together; fixed-target fits complete separately",
-    "olmo_R": "Historical seed42 R.shard02.jsonl disagrees with its manifest; original bytes required",
-}
+DEFERRED_FORMAT_MODELS = {}
 
 
 def sha(path):
@@ -61,7 +66,9 @@ def fetch(root, path, revision):
         receipt = json.loads(fetch(root, path + ".done.json", revision).read_text())
         assert receipt["path"] == path
         expected_location = (
-            (DEFAULT_OVERFLOW_REPO, "model") if path.endswith(".npz") else (REPO, "dataset")
+            (DEFAULT_OVERFLOW_REPO, "model")
+            if Path(path).suffix in BINARY_SUFFIXES
+            else (REPO, "dataset")
         )
         assert (receipt["repo_id"], receipt["repo_type"]) == expected_location
         assert len(receipt["revision"]) == 40 and all(
@@ -211,10 +218,10 @@ def upload_many(paths, root, fingerprint):
         return revision
 
     pairs = [(p, f"{PREFIX}/{p.relative_to(root)}") for p in paths]
-    tensors = [(src, dst) for src, dst in pairs if src.suffix == ".npz"]
+    tensors = [(src, dst) for src, dst in pairs if src.suffix in BINARY_SUFFIXES]
     texts, parts = [], {}
     for src, dst in pairs:
-        if src.suffix == ".npz":
+        if src.suffix in BINARY_SUFFIXES:
             continue
         assert src.suffix in {".json", ".jsonl", ".log", ".txt"}, src
         if src.stat().st_size < 9_500_000:
@@ -316,23 +323,18 @@ def complete(path, fingerprint):
 
 
 def banks(model):
-    """Original banks plus the missing, cap-matched generation controls."""
-    if model.startswith("qwen"):
-        result = [
-            dict(name="plain", render="plain", fresh=False, cap=4096),
-            dict(
-                name="chat", render="chat", fresh=False, cap=4096 if model.endswith("B") else 2048
-            ),
-        ]
-        if model.endswith("S"):
-            result.append(dict(name="chat4096", render="chat", fresh=True, cap=4096))
-        return result
+    """Exactly two on-policy formats per OLMo checkpoint; regenerate corrupted R source."""
+    assert model in MODELS
     native = "plain" if model.endswith("B") else "chat"
-    result = [dict(name=native, render=native, fresh=False, cap=1024)]
-    if model[-1] in "BS":
-        other = "chat" if native == "plain" else "plain"
-        result.append(dict(name=other, render=other, fresh=True, cap=1024))
-    return result
+    return [
+        dict(name=form, render=form, fresh=(form != native or model.endswith("R")), cap=1024)
+        for form in ("plain", "chat")
+    ]
+
+
+def capture_forms(bank):
+    """The target representation is captured in its own generation setting."""
+    return (bank["render"],)
 
 
 def owned_offsets(model, n_rows, shard, shards, first_chunk):

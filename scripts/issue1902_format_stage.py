@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-import numpy as np
 import issue1902_format_common as C
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+import numpy as np  # noqa: E402
 
 
 def qwen_chunk(root, cell, offset, prefix, revision):
@@ -191,6 +194,12 @@ def stage_olmo(root):
             ref_out = root / "references" / model / "plain.npz"
             ref_out.parent.mkdir(parents=True, exist_ok=True)
             np.savez(ref_out, ids=p["row_ids"], y=p["y"])
+        if stage == "R":
+            print(
+                "[phase=stage] olmo_R both formats fresh; archived seed42 hash failure excluded",
+                flush=True,
+            )
+            continue
         raw = {cid: {} for cid in ids}
         for draw, seed in enumerate([42, 45, 46, 47, 48]):
             name = f"{stage}.jsonl" if seed == 42 else f"{stage}_k5_seed{seed}.jsonl"
@@ -232,6 +241,7 @@ def stage(root):
     if done.exists() and C.complete(done, C.fingerprint(root)):
         inventory = json.loads(done.read_text())["files"]
         assert all(C.complete(root / name, C.fingerprint(root)) for name in inventory)
+        restore_generated_pilots(root)
         return json.loads(path.read_text())
     root.mkdir(parents=True, exist_ok=True)
     print(f"[phase=stage_scope] active_models={','.join(C.MODELS)}", flush=True)
@@ -239,7 +249,6 @@ def stage(root):
         schema=1,
         models=C.MODELS,
         deferred_format_models=C.DEFERRED_FORMAT_MODELS,
-        qwen=stage_qwen(root),
         olmo=stage_olmo(root),
         banks={m: C.banks(m) for m in C.MODELS},
         source_sha256=C.sha(__file__),
@@ -262,4 +271,42 @@ def stage(root):
         C.upload_many(paths[offset : offset + 64], root, fingerprint)
     C.write_json(done, dict(files=[str(p.relative_to(root)) for p in paths]))
     C.upload_many([done], root, fingerprint)
+    restore_generated_pilots(root)
     return manifest
+
+
+def restore_generated_pilots(root):
+    """Reuse only byte-verified, matching OLMo generation pilots from the superseded run."""
+    manifest = json.loads((root / "manifest.json").read_text())
+    inventory = json.loads(
+        C.fetch(root, f"{C.REUSE_PREFIX}/superseded_preserved.json", C.REUSE_REV).read_text()
+    )
+    for model, bank in (("olmo_B", "chat"), ("olmo_S", "plain")):
+        relative = f"banks/{model}/{bank}/chunk_00000.json"
+        if C.complete(root / relative, C.fingerprint(root)) and C.complete(
+            root / relative.replace(".json", ".timing.json"), C.fingerprint(root)
+        ):
+            continue
+        source = C.fetch(root, f"{C.REUSE_PREFIX}/{relative}", C.REUSE_REV)
+        assert C.sha(source) == inventory["sha256"][relative]
+        index = json.loads(source.read_text())
+        rows = []
+        for shard in index["shards"]:
+            name = str(Path(relative).parent / shard["name"])
+            part = C.fetch(root, f"{C.REUSE_PREFIX}/{name}", C.REUSE_REV)
+            assert C.sha(part) == inventory["sha256"][name]
+            rows.extend(json.loads(part.read_text()))
+        ids = manifest["olmo"]["ids"][: C.CHUNK]
+        assert [(r["id"], r["draw"]) for r in rows] == [(cid, d) for cid in ids for d in range(5)]
+        for r in rows:
+            assert r["generation_checkpoint"] == model and r["generation_render"] == bank
+            assert r["model_revision"] == C.MODELS[model][1] and r["max_tokens"] == 1024
+            assert r["seed"] == [42, 45, 46, 47, 48][r["draw"]]
+            assert r["query"] == manifest["olmo"]["questions"][r["id"]]
+        files = C.write_raw(root / relative, rows)
+        timing_name = relative.replace(".json", ".timing.json")
+        timing = C.fetch(root, f"{C.REUSE_PREFIX}/{timing_name}", C.REUSE_REV)
+        assert C.sha(timing) == inventory["sha256"][timing_name]
+        C.write_json(root / timing_name, json.loads(timing.read_text()))
+        C.upload_many([*files, root / timing_name], root, C.fingerprint(root))
+        print(f"[phase=reuse] verified on-policy pilot {model}/{bank} rows={len(rows)}", flush=True)

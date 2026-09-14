@@ -5,8 +5,11 @@ from __future__ import annotations
 import json
 import os
 import time
-import numpy as np
 import issue1902_format_common as C
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+import numpy as np  # noqa: E402
 
 
 def tokenizer_for(model):
@@ -274,6 +277,9 @@ def capture_anchor(root, model_name, model, tokenizer, template, block_index):
     audit_path = root / "audits" / f"{model_name}.json"
     if C.complete(audit_path, fp):
         return
+    if model_name == "olmo_R":
+        audit_fresh_hook(root, model_name, model, tokenizer, template, block_index)
+        return
     family = model_name.split("_")[0]
     reports = []
     for bank in C.banks(model_name):
@@ -374,8 +380,60 @@ def capture_anchor(root, model_name, model, tokenizer, template, block_index):
     )
 
 
+def audit_fresh_hook(root, model_name, model, tokenizer, template, block_index):
+    """Check the declared block against hidden_states without a historical R-text proxy."""
+    import torch
+
+    records = []
+    for form in ("plain", "chat"):
+        rows = C.read_raw(root / "banks" / model_name / form / "chunk_00000.json")
+        entries = [
+            encode_entry(tokenizer, template, "olmo", form, r["query"], r["answer"]) for r in rows
+        ]
+        entries = [e for e in entries if e is not None][:8]
+        assert len(entries) == 8
+        errors = []
+        for entry in entries:
+            seen = {}
+
+            def hook(_module, _inputs, output):
+                seen["h"] = output[0] if isinstance(output, tuple) else output
+
+            handle = model.model.layers[block_index].register_forward_hook(hook)
+            try:
+                with torch.inference_mode():
+                    output = model.model(
+                        input_ids=torch.tensor([entry["ids"]], device="cuda"),
+                        use_cache=False,
+                        output_hidden_states=True,
+                    )
+                error = float((seen["h"] - output.hidden_states[block_index + 1]).abs().max())
+                assert error == 0.0
+                errors.append(error)
+            finally:
+                handle.remove()
+        records.append(dict(format=form, rows=len(entries), max_abs=max(errors)))
+    path = root / "audits" / f"{model_name}.json"
+    C.write_json(
+        path,
+        dict(
+            status="pass",
+            model=model_name,
+            block_index=block_index,
+            hidden_states_index=block_index + 1,
+            exact_hook_checks=records,
+            historical_match="unavailable: archived seed42 shard checksum mismatch; fresh own-policy answers",
+        ),
+    )
+    C.upload_many([path], root, C.fingerprint(root))
+    print(
+        f"[phase=layer_anchor] {model_name} exact hook identity passed; historical match unavailable",
+        flush=True,
+    )
+
+
 def capture(root, model_name, first_chunk=False, shard=0, shards=1):
-    """Recapture every existing/new answer bank in both formats under its own checkpoint."""
+    """Capture eight matched on-policy settings under their own checkpoints."""
     import torch
     from transformers import AutoModelForCausalLM
 
@@ -404,13 +462,25 @@ def capture(root, model_name, first_chunk=False, shard=0, shards=1):
         for form in ("plain", "chat"):
             path = root / "contexts" / model_name / form / f"chunk_{offset:05d}.npz"
             if not C.complete(path, fp):
+                started = time.monotonic()
                 entries = [
                     encode_entry(tokenizer, template, family, form, cohort["questions"][cid])
                     for cid in ids
                 ]
                 x = forward(model, tokenizer, entries, block_index, dim)
                 save_npz(path, ids=np.array(ids), x=x)
-                pending.append(path)
+                timing = path.with_suffix(".timing.json")
+                C.write_json(
+                    timing,
+                    dict(
+                        model=model_name,
+                        capture_render=form,
+                        stage="context",
+                        offset=offset,
+                        seconds=time.monotonic() - started,
+                    ),
+                )
+                pending.extend([path, timing])
         for bank in C.banks(model_name):
             rawpath = root / "banks" / model_name / bank["name"] / f"chunk_{offset:05d}.json"
             assert C.complete(rawpath, fp), f"Unverified raw input: {rawpath}"
@@ -418,7 +488,7 @@ def capture(root, model_name, first_chunk=False, shard=0, shards=1):
             assert [(r["id"], r["draw"]) for r in rows] == [
                 (cid, d) for cid in ids for d in range(5)
             ]
-            for form in ("plain", "chat"):
+            for form in C.capture_forms(bank):
                 path = (
                     root / "captures" / model_name / bank["name"] / form / f"chunk_{offset:05d}.npz"
                 )
@@ -476,7 +546,7 @@ def capture(root, model_name, first_chunk=False, shard=0, shards=1):
                     f"[phase=capture] {model_name}/{bank['name']}/{form} offset={offset} seconds={seconds:.1f}",
                     flush=True,
                 )
-            if len(pending) >= 12 or first_chunk:
+            if pending and (len(pending) >= 12 or first_chunk):
                 C.upload_many(pending, root, fp)
                 pending.clear()
     if pending:

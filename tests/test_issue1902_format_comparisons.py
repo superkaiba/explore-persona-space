@@ -108,6 +108,23 @@ def test_oversized_public_text_roundtrip(tmp_path, memory_hub):
     assert fetched.read_bytes() == text.read_bytes()
 
 
+def test_figure_bytes_use_private_overflow_with_public_receipts(tmp_path, memory_hub):
+    snapshots, _, _ = memory_hub
+    producer = tmp_path / "producer"
+    producer.mkdir()
+    files = [producer / "figure.png", producer / "figure.pdf"]
+    for path in files:
+        path.write_bytes(b"binary fixture\x00\xff")
+    revision = C.upload_many(files, producer, "figure-test")
+    public = snapshots[C.REPO, "dataset", revision]
+    for path in files:
+        remote = f"{C.PREFIX}/{path.name}"
+        assert remote not in public
+        receipt = json.loads(public[remote + ".done.json"])
+        assert receipt["repo_id"] == C.DEFAULT_OVERFLOW_REPO
+        assert C.fetch(tmp_path / "consumer", remote, revision).read_bytes() == path.read_bytes()
+
+
 def test_storage_probe_uses_actual_upload_and_consumer(tmp_path, memory_hub):
     snapshots, _, _ = memory_hub
     revision = C.storage_probe(tmp_path)
@@ -168,9 +185,9 @@ def test_hub_monitor_failure_records_stopped_state(tmp_path, monkeypatch):
     assert post.call_count == 1
 
 
-def test_recovery_stages_only_base_sft_on_original_olmo_cohort(tmp_path, monkeypatch):
-    assert set(C.MODELS) == {"qwen_B", "qwen_S", "olmo_B", "olmo_S"}
-    assert set(C.DEFERRED_FORMAT_MODELS) == {"olmo_D", "olmo_R"}
+def test_olmo_stages_verified_sources_and_regenerates_r(tmp_path, monkeypatch):
+    assert set(C.MODELS) == {"olmo_B", "olmo_S", "olmo_D", "olmo_R"}
+    assert C.DEFERRED_FORMAT_MODELS == {}
     ids = np.array([str(i) for i in range(16391)])
     folds = np.arange(len(ids)) % 6
     reference = tmp_path / "input.npz"
@@ -179,7 +196,7 @@ def test_recovery_stages_only_base_sft_on_original_olmo_cohort(tmp_path, monkeyp
 
     def fetch(root, path, revision):
         assert revision == C.INPUT_REV
-        assert Path(path).name in {"B.npz", "S.npz"}
+        assert Path(path).name in {"B.npz", "S.npz", "D.npz", "R.npz"}
         requested.append(Path(path).name)
         return reference
 
@@ -188,7 +205,7 @@ def test_recovery_stages_only_base_sft_on_original_olmo_cohort(tmp_path, monkeyp
             assert revision == C.O0
             return [dict(id=cid, query="question") for cid in ids.tolist()]
         name = Path(relative).name
-        assert name.startswith(("B.", "B_", "S.", "S_"))
+        assert name.startswith(("B.", "B_", "S.", "S_", "D.", "D_"))
         seed = 42 if "seed" not in name else int(name.split("seed")[1].split(".")[0])
         assert revision == (C.O0 if seed == 42 else C.O5)
         return [
@@ -209,8 +226,8 @@ def test_recovery_stages_only_base_sft_on_original_olmo_cohort(tmp_path, monkeyp
     assert result["ids"] == ids.tolist()
     assert result["fold_of"] == folds.tolist()
     assert result["n_folds"] == 6
-    assert set(requested) == {"B.npz", "S.npz"}
-    assert {p.name for p in (tmp_path / "banks").iterdir()} == {"olmo_B", "olmo_S"}
+    assert set(requested) == {"B.npz", "S.npz", "D.npz", "R.npz"}
+    assert {p.name for p in (tmp_path / "banks").iterdir()} == {"olmo_B", "olmo_S", "olmo_D"}
 
 
 def test_archived_raw_hash_mismatch_still_fails(tmp_path, monkeypatch):
@@ -390,7 +407,7 @@ def test_stage_cannot_resume_from_early_manifest_receipt(tmp_path, monkeypatch):
     monkeypatch.setattr(C, "CHUNK", 1)
 
     def fake_stage(root, family):
-        ids = [str(i) for i in range(10)]
+        ids = [str(i) for i in range(12)]
         for model in C.MODELS:
             if not model.startswith(family + "_"):
                 continue
@@ -402,9 +419,9 @@ def test_stage_cannot_resume_from_early_manifest_receipt(tmp_path, monkeypatch):
                         root / "banks" / model / bank["name"] / f"chunk_{i:05d}.json",
                         [dict(id=cid, draw=d, answer="answer") for d in range(5)],
                     )
-        return dict(ids=ids, questions={i: "q" for i in ids}, fold_of=[0] * 10)
+        return dict(ids=ids, questions={i: "q" for i in ids}, fold_of=[0] * 12)
 
-    monkeypatch.setattr(S, "stage_qwen", lambda root: fake_stage(root, "qwen"))
+    monkeypatch.setattr(S, "restore_generated_pilots", lambda root: None)
     monkeypatch.setattr(S, "stage_olmo", lambda root: fake_stage(root, "olmo"))
     calls = []
 
@@ -425,7 +442,7 @@ def test_stage_cannot_resume_from_early_manifest_receipt(tmp_path, monkeypatch):
     assert not list(tmp_path.rglob("*.done.json.done.json"))
 
 
-@pytest.mark.parametrize("family", ["qwen", "olmo"])
+@pytest.mark.parametrize("family", ["olmo"])
 def test_fits_hold_columns_fixed_and_preserve_scoring(tmp_path, monkeypatch, family):
     monkeypatch.setattr(C, "upload_many", local_receipts)
     rng = np.random.default_rng(2034)

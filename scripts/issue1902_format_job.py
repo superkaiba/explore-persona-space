@@ -175,27 +175,47 @@ def pilot_report(root):
     records = []
     for model in C.MODELS:
         multiplier = len(manifest[model.split("_")[0]]["ids"]) / C.CHUNK
+        for form in ("plain", "chat"):
+            path = root / "contexts" / model / form / "chunk_00000.timing.json"
+            records.append(dict(json.loads(path.read_text()), projected_multiplier=multiplier))
         for bank in C.banks(model):
             if bank["fresh"]:
                 path = root / "banks" / model / bank["name"] / "chunk_00000.timing.json"
                 records.append(dict(json.loads(path.read_text()), projected_multiplier=multiplier))
-            for form in ("plain", "chat"):
+            for form in C.capture_forms(bank):
                 path = root / "captures" / model / bank["name"] / form / "chunk_00000.timing.json"
                 records.append(dict(json.loads(path.read_text()), projected_multiplier=multiplier))
     hours = sum(r["seconds"] * r["projected_multiplier"] for r in records) / 3600
+    started = json.loads((root / "job_started.json").read_text())
+    elapsed = (time.time() - started["time"]) / 3600
+    width = started["gpus"]
+    # Include the observed whole pilot wall (startup, uploads, audits), scaled by
+    # the largest cohort. This conservative bound covers I/O absent from kernels.
+    pilot_elapsed = (time.time() - started["pilot_started"]) / 3600
+    overhead_wall = max(0.0, pilot_elapsed - sum(r["seconds"] for r in records) / 3600 / width)
+    mean_wall = hours / width + overhead_wall * 2 + 1
+    fence_required = elapsed + 2 * mean_wall * 1.25
+    available_fence = (started["deadline"] - started["time"]) / 3600
     report = dict(
-        status="pass",
+        status="pass" if hours <= 90 and fence_required <= available_fence else "requires_review",
         projected_gpu_hours=hours,
         timings=records,
-        nominal_gpu_hour_basis=96,
+        nominal_gpu_hour_basis=45,
         projection_excludes_model_startup=True,
-        scope="Natural generation formats with equal within-family caps and native turn stops",
+        startup_upload_allowance_wall_hours=overhead_wall * 2 + 1,
+        elapsed_wall_hours=elapsed,
+        estimated_mean_wall_hours=mean_wall,
+        conservative_fence_required_hours=fence_required,
+        available_fence_hours=available_fence,
+        scope="OLMo only: eight checkpoint/format settings; generation and capture formats match",
         smoke_blind_spots=["Full-cohort ridge fits run on a separate CPU worker"],
     )
+    C.write_json(root / "pilot_report.json", report)
+    C.upload_many([root / "pilot_report.json"], root, C.fingerprint(root))
+    print(f"[phase=pilot] projected_gpu_hours={hours:.2f}", flush=True)
+    assert report["status"] == "pass", "Measured pilot exceeds GPU allowance or remaining VM fence"
     C.write_json(root / "pilot_complete.json", report)
     C.upload_many([root / "pilot_complete.json"], root, C.fingerprint(root))
-    print(f"[phase=pilot] projected_gpu_hours={hours:.2f}", flush=True)
-    assert hours <= 192, "Pilot exceeds 2x provisional 96 GPU-hour basis; inspect before expanding"
     return report
 
 
@@ -248,7 +268,7 @@ def aggregate(root):
                     for r in rows
                     if r["id"] in sample_ids and r["draw"] == 0
                 )
-            for form in ("plain", "chat"):
+            for form in C.capture_forms(bank):
                 targets, valids = [], []
                 for offset in offsets:
                     path = (
@@ -307,18 +327,18 @@ def aggregate(root):
 
 def main():
     """Run either one isolated phase or the full GPU collection job."""
+    job_started = time.time()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--phase", choices=["job", "generate", "capture", "validate"], default="job"
     )
-    parser.add_argument(
-        "--root", type=Path, default=Path("/workspace/issue1902_format_v3_overflow")
-    )
+    parser.add_argument("--root", type=Path, default=Path("/workspace/issue1902_olmo_onpolicy_v1"))
     parser.add_argument("--model", choices=list(C.MODELS))
     parser.add_argument("--first-chunk", action="store_true")
     parser.add_argument("--shard", type=int, default=0)
     parser.add_argument("--shards", type=int, default=1)
     parser.add_argument("--source-sha")
+    parser.add_argument("--deadline-unix", type=float)
     args = parser.parse_args()
     if args.phase != "job":
         if args.phase == "validate":
@@ -330,6 +350,9 @@ def main():
                 args.root, args.model, args.first_chunk, args.shard, args.shards
             )
         return
+    assert args.deadline_unix is not None, (
+        "Declare an absolute deadline no later than the instance expiry"
+    )
     verify_source(args.source_sha)
     subprocess.run(
         [
@@ -368,6 +391,10 @@ def main():
         ).split()
     )
     assert devices
+    clock_path = args.root / "job_started.json"
+    if clock_path.exists():
+        job_started = json.loads(clock_path.read_text())["time"]
+    C.write_json(clock_path, dict(time=job_started, gpus=len(devices), deadline=args.deadline_unix))
     print(f"[phase=devices] realized_gpus={len(devices)}", flush=True)
     # Each complete model snapshot is reused between fresh generation and capture children.
     from huggingface_hub import snapshot_download
@@ -381,6 +408,15 @@ def main():
             what=f"prefetch pinned {model}",
         )
     children(args.root, "validate", devices, True)
+    C.write_json(
+        args.root / "job_started.json",
+        dict(
+            time=job_started,
+            gpus=len(devices),
+            pilot_started=time.time(),
+            deadline=args.deadline_unix,
+        ),
+    )
     children(args.root, "generate", devices, True)
     children(args.root, "capture", devices, True)
     pilot = pilot_report(args.root)
@@ -394,7 +430,7 @@ def main():
         source_sha=args.source_sha,
         coverage=coverage,
         pilot_gpu_hours=pilot["projected_gpu_hours"],
-        followup_label="Qwen-OLMo-format-reconciliation",
+        followup_label="OLMo-eight-setting-on-policy-posttraining",
         cpu_fits_pending=True,
     )
     C.write_json(args.root / "gpu_complete.json", report)
@@ -423,7 +459,9 @@ def main():
     write_completion_sentinel(
         sentinel_path=os.environ["EPS_SENTINEL_PATH"], issue=1902, extra=report
     )
-    print("[phase=done] Qwen/OLMo GPU outputs uploaded and verified; CPU fits follow", flush=True)
+    print(
+        "[phase=done] Eight OLMo on-policy GPU settings verified; A/B/C CPU fits follow", flush=True
+    )
 
 
 if __name__ == "__main__":

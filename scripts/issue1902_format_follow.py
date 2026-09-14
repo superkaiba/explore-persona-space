@@ -157,7 +157,7 @@ def monitor(args):
                 time.sleep(60)
                 continue
             workload = (
-                "uv run python scripts/issue1902_format_fits.py --input-revision "
+                "uv run python scripts/issue1902_format_plot_fits.py --input-revision "
                 f"{result['input_revision']} --source-sha {args.source_sha}"
             )
             command = [
@@ -169,18 +169,18 @@ def monitor(args):
                 "--issue",
                 "1902",
                 "--intent",
-                "cpu-mid",
+                "cpu-bigmem",
                 "--backend",
                 "gcp",
                 "--no-runpod-fallback",
                 "--lane-suffix",
-                "format-fits",
+                "olmo-onpolicy-fits",
                 "--repo-branch",
                 args.branch,
                 "--boot-disk-gb",
                 "150",
                 "--min-ram-gb",
-                "24",
+                "128",
                 "--max-run-duration",
                 "12h",
                 "--time-budget-hours",
