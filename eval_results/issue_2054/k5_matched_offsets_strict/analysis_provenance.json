@@ -1,0 +1,11 @@
+{
+  "git_commit": "6dda0bef0eed05329e8282c36a5b298e888c5c81",
+  "git_dirty": true,
+  "phase": "matched_queries_report",
+  "git_dirty_paths": [
+    "scripts/issue2054_k5_matched_report.py",
+    "scripts/issue2054_k5_transfer_publish.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2054_k5_matched_report.py"
+}

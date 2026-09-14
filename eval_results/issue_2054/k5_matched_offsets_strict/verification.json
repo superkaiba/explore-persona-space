@@ -1,0 +1,18 @@
+{
+  "status": "pass",
+  "focused_tests": "10 passed: matched-offset numerical oracles, held-out leakage check, reversal symmetry, prior transfer regressions",
+  "independent_review": "Codex review_matched_offsets; no remaining actionable findings",
+  "review_checks": [
+    "All 60 displacement fractions recomputed from saved per-query arrays and hashes checked",
+    "All 60 report rows checked against results, including R2, retrieval and retained counts",
+    "90 unique existing responses verified: exactly five draws for each of 18 query-setting combinations",
+    "All 75 non-plain selected responses reviewed in full; long plain continuations inspected with explicit excerpt limits",
+    "Qualitative claims checked: capability reversal, free-will categories, within-setting date variation"
+  ],
+  "resolved_findings": [
+    "Strict run excludes nonliteral query matches",
+    "Strict collector verifies current input, query, raw-manifest, code and output hashes; no strict-run resume"
+  ],
+  "recovery": "Broad raw staging initially failed because str.splitlines splits Unicode separators inside JSON strings; file-line iteration fixed the reader. Broad vector checkpoints were preserved and revalidated; all recovered workers and strict workers exited 0.",
+  "repository_wide_lint": "The dotenv-before-HF check reports an existing unrelated issue in scripts/issue1902_lasttoken_transfer.py:91. The changed scripts pass ruff. No unrelated file was edited."
+}

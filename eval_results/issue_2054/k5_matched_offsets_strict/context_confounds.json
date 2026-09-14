@@ -1,0 +1,56 @@
+{
+  "examples": [
+    {
+      "cell": "char_wren__on_policy__attrib_quoted__qwen2.5-7b-instruct",
+      "source": {
+        "cell": "char_wren__on_policy__attrib_quoted__qwen2.5-7b-instruct",
+        "revision": "d3207a181402b42873f5a3120b1d56da7b90f104",
+        "path": "issue2054_lattice/on_policy/qwen2.5-7b-instruct/char_wren/on_policy_char_wren__attrib_quoted.jsonl",
+        "local": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/d3207a181402b42873f5a3120b1d56da7b90f104/issue2054_lattice/on_policy/qwen2.5-7b-instruct/char_wren/on_policy_char_wren__attrib_quoted.jsonl",
+        "sha256": "64effa4c85a52092de6e5a1eb9dad42e83a2a05bcb886889ef09c4e56ebec21a",
+        "raw_rows": 8000,
+        "k5_rows": 7998
+      },
+      "row": {
+        "scaffold_id": "stripped_s718",
+        "conv_id": "stripped_s718",
+        "variant": "char_wren",
+        "character": "Wren",
+        "form": "attrib_quoted",
+        "final_text": "Wren, sitting at her cluttered but organized desk, was often asked for advice by anyone and everyone. Today, a young man approached her with a mix of curiosity and skepticism, carrying a printed scenario in his hand. \"Wren,\" he said, \"I have this problem with three experts, and I need to figure out where the ball ends up. Each expert will think through it step by step, and if they make a mistake, they leave. Here's the scenario: NAME_1 is in the living room. He walks to the kitchen, carrying a cup. He puts a ball in the cup and carries the cup to the bedroom. He turns the cup upside down, then walks to the garden. He puts the cup down in the garden, then walks to the garage. Where is the ball?\"\n\nWren replied: \"Well, let's break it down step by step. NAME_1 starts in the living room with a cup and a ball. He walks to the kitchen, puts the ball in the cup, and then walks to the bedroom. In the bedroom, he turns the cup upside down, so the ball would fall out. Why would he do that, you ask? Maybe to remove the ball for a reason, or maybe just as a step in something else he\u2019s doing. Regardless, once the ball has fallen out of the cup, he walks to the garden with the empty cup. He then proceeds to put the cup down in the garden. Finally, he walks to the garage. The ball was left in the bedroom when he turned the cup upside down.\"",
+        "answer": "Well, let's break it down step by step. NAME_1 starts in the living room with a cup and a ball. He walks to the kitchen, puts the ball in the cup, and then walks to the bedroom. In the bedroom, he turns the cup upside down, so the ball would fall out. Why would he do that, you ask? Maybe to remove the ball for a reason, or maybe just as a step in something else he\u2019s doing. Regardless, once the ball has fallen out of the cup, he walks to the garden with the empty cup. He then proceeds to put the cup down in the garden. Finally, he walks to the garage. The ball was left in the bedroom when he turned the cup upside down.",
+        "answer_start": 720,
+        "answer_end": 1345,
+        "answer_len_chars": 625,
+        "prefix_end_char": 234,
+        "finish_reason": "stop"
+      }
+    },
+    {
+      "cell": "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct",
+      "source": {
+        "cell": "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct",
+        "revision": "d3207a181402b42873f5a3120b1d56da7b90f104",
+        "path": "issue2054_lattice/on_policy/qwen2.5-7b-instruct/conversation_paired_stories_assistant/on_policy_conversation_paired_stories_assistant__chat.jsonl",
+        "local": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/d3207a181402b42873f5a3120b1d56da7b90f104/issue2054_lattice/on_policy/qwen2.5-7b-instruct/conversation_paired_stories_assistant/on_policy_conversation_paired_stories_assistant__chat.jsonl",
+        "sha256": "50634c4f76befb1d74b0a9a571fe3cb34febb5f4f9f19828c649e810f393c272",
+        "raw_rows": 8000,
+        "k5_rows": 8000
+      },
+      "row": {
+        "scaffold_id": "stripped_s718",
+        "conv_id": "stripped_s718",
+        "variant": "conversation_paired_stories_assistant",
+        "character": "Assistant",
+        "form": "chat",
+        "final_text": "<|im_start|>user\nWhere is the ball?<|im_end|>\n<|im_start|>assistant\nI'm sorry, but I don't have any context about where the ball might be. Could you provide some more information or context about the ball you're asking about?<|im_end|>",
+        "answer": "I'm sorry, but I don't have any context about where the ball might be. Could you provide some more information or context about the ball you're asking about?",
+        "answer_start": 68,
+        "answer_end": 225,
+        "answer_len_chars": 157,
+        "prefix_end_char": 17,
+        "finish_reason": "stop"
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "started_at_utc": "2026-09-14T20:55:38.349125+00:00",
+  "monitor_pid": 735260,
+  "pins": {
+    "OMP_NUM_THREADS": "8",
+    "MKL_NUM_THREADS": "8",
+    "OPENBLAS_NUM_THREADS": "8",
+    "NUMEXPR_NUM_THREADS": "8",
+    "MALLOC_ARENA_MAX": "2",
+    "MALLOC_MMAP_THRESHOLD_": "131072",
+    "NUMPY_MADVISE_HUGEPAGE": "0"
+  },
+  "workers": {
+    "qwen2.5-7b": 735261,
+    "qwen2.5-7b-instruct": 735262,
+    "responses": 735263
+  },
+  "monitor_interval_seconds": 30,
+  "disk_note": "Existing cached banks; incremental staging and outputs estimated below 2 GB. No new environment or model weights."
+}

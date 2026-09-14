@@ -46,10 +46,25 @@ def publish(out, figures, name):
         "issue2054_k5_assistant_transfer_plot.py",
         "issue2054_k5_transfer_publish.py",
         "issue2054_k5_plain_run.py",
+        *(
+            [
+                "issue2054_k5_matched_offsets.py",
+                "issue2054_k5_matched_responses.py",
+                "issue2054_k5_matched_run.py",
+                "issue2054_k5_matched_strict.py",
+                "issue2054_k5_matched_rollouts.py",
+                "issue2054_k5_matched_report.py",
+            ]
+            if name == "matched_queries"
+            else []
+        ),
     ]:
         files[f"{prefix}/code/{script}"] = REPO / "scripts" / script
     test = REPO / "tests/test_issue2054_k5_transfer_calibration.py"
     files[f"{prefix}/code/{test.name}"] = test
+    if name == "matched_queries":
+        test = REPO / "tests/test_issue2054_k5_matched_offsets.py"
+        files[f"{prefix}/code/{test.name}"] = test
     if not files or not any(p.suffix == ".png" for p in files.values()):
         raise RuntimeError("no artifacts or figure to publish")
     hashes = {destination: base.sha(path) for destination, path in files.items()}
@@ -134,7 +149,9 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--figures", type=Path, required=True)
     parser.add_argument(
-        "--name", choices=["loso", "assistant_sources", "plain_assistant_source"], required=True
+        "--name",
+        choices=["loso", "assistant_sources", "plain_assistant_source", "matched_queries"],
+        required=True,
     )
     args = parser.parse_args()
     publish(args.out, args.figures, args.name)
