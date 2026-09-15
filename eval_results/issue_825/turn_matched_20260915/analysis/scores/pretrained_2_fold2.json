@@ -1,0 +1,16 @@
+{
+  "fingerprint": "8e25c9eb29e9423d86cb3c93f5fa1d4e2eab4adb86e675fa03479d039271ea90",
+  "sha256": "c0fd23052cdde083bb39a1e5dcc1fbba126e436276aca0d05eaf4f9f3717a546",
+  "model": "pretrained",
+  "variant": "2",
+  "fold": 2,
+  "n_train": 4146,
+  "n_test": 829,
+  "train_turn_counts": [
+    0,
+    4146,
+    0
+  ],
+  "elapsed_seconds": 10.90253290999999,
+  "max_rss_kib": 4231612
+}

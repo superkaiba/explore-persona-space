@@ -1,0 +1,373 @@
+"""Independently audit saved matched-turn results; never fit maps or download data.
+
+Run from the repository's uv environment with OMP/MKL/OPENBLAS_NUM_THREADS=4.
+The input-bank read is limited to indices and answer summaries needed for SST.
+Raw-map prediction spot checks and remote archive verification remain root-owned.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import re
+from datetime import datetime, timezone
+from pathlib import Path
+
+import numpy as np
+
+VIS = Path('/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce')
+DEFAULT_WT = Path('/home/thomasjiralerspong/.codex/worktrees/825-matched-turn-transfer-20260915')
+MODELS = ('instruct', 'pretrained')
+VARIANTS = ('1', '2', '3', 'mix0', 'mix1', 'mix2')
+SOURCES = ('1', '2', '3', '1+2+3')
+METHODS = ('raw', 'source_identity_bias')
+CODE_FILES = ('scripts/issue825_turn_matched.py', 'scripts/issue825_turn_bias_scale.py',
+              'src/explore_persona_space/analysis/pooled_turn_transfer.py',
+              'src/explore_persona_space/analysis/turn_transfer_calibration.py')
+
+
+def load_json(path):
+    return json.loads(Path(path).read_text())
+
+
+def sha(path):
+    value = hashlib.sha256()
+    with Path(path).open('rb') as handle:
+        for block in iter(lambda: handle.read(1 << 20), b''):
+            value.update(block)
+    return value.hexdigest()
+
+
+def canonical_sha(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
+
+
+def close(actual, expected, *, atol=2e-10):
+    np.testing.assert_allclose(actual, expected, rtol=0, atol=atol)
+
+
+def finite(value, label):
+    if not np.isfinite(value).all():
+        raise ValueError(f'nonfinite {label}')
+
+
+def atomic_json(path, value):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + '.tmp')
+    temporary.write_text(json.dumps(value, indent=2, allow_nan=False) + '\n')
+    temporary.replace(path)
+
+
+def reconstruct_assignment(labels, seed):
+    """Independent permutation/cumulative-index implementation of the rotations."""
+    rng = np.random.default_rng(seed)
+    base = np.full(len(labels), -1, dtype=np.int64)
+    cursor = 0
+    for fold in range(6):
+        positions = rng.permutation(np.flatnonzero(labels == fold))
+        base[positions] = np.arange(cursor, cursor + len(positions)) % 3
+        cursor += len(positions)
+    assert cursor == len(labels) and np.all(base >= 0)
+    rotation = np.stack([(base + offset) % 3 + 1 for offset in range(3)])
+    np.testing.assert_array_equal(np.sort(rotation, axis=0), np.tile([[1], [2], [3]], (1, len(labels))))
+    for fold in range(6):
+        for selected in rotation:
+            counts = np.array([(selected[labels != fold] == turn).sum() for turn in (1, 2, 3)])
+            assert np.ptp(counts) <= 2
+    return rotation
+
+
+class AnswerBank:
+    """Read the original manifest in capture order and mmap verified answer blocks."""
+
+    def __init__(self, manifest, model):
+        self.records = {r['path']: r for r in manifest['files'] if r['model'] == model}
+        rows, self.blocks = [], []
+        self.checked_index_count = 0
+        self.checked_answer_count = 0
+        for shard in range(4):
+            prefix = f'issue825_userbase_map/analysis_tensors/turn_dynamics/armR_own/{model}/shard{shard}of4'
+            for key in sorted(k for k in self.records if k.startswith(prefix + '/row_index')):
+                record = self.records[key]
+                self.check(record)
+                block_rows = [json.loads(line) for line in Path(record['local']).read_text().splitlines() if line.strip()]
+                group = re.search(r'shard(\d+)\.jsonl$', key).group(1)
+                answer = self.records[f'{prefix}/answer_own_t1_L19_shard{group}.npy']
+                self.blocks.append((len(rows), len(rows) + len(block_rows), answer))
+                rows.extend(block_rows)
+                self.checked_index_count += 1
+        assert self.checked_index_count == 60
+        self.ids = np.array([str(r['conv_id']) for r in rows])
+        self.turns = np.array([int(r['turn']) for r in rows])
+        pairs = list(zip(self.ids, self.turns, strict=True))
+        assert len(set(pairs)) == len(pairs)
+        self.lookup = {pair: index for index, pair in enumerate(pairs)}
+        unique = sorted(set(self.ids))
+        assert len(unique) == 5000
+        self.original_ids = unique.copy()
+        np.random.default_rng(0).shuffle(unique)
+        self.fold_of = {cid: index % 6 for index, cid in enumerate(unique)}
+        self.fold_hash = hashlib.sha256('\n'.join(f'{cid}:{self.fold_of[cid]}' for cid in sorted(unique)).encode()).hexdigest()
+        self.complete_ids = {cid for cid in unique if all((cid, turn) in self.lookup for turn in range(1, 13))}
+        self.counts = {str(turn): int((self.turns == turn).sum()) for turn in range(1, 13)}
+        self.arrays = None
+
+    @staticmethod
+    def check(record):
+        path = Path(record['local'])
+        assert path.is_file() and path.stat().st_size == record['size']
+        assert sha(path) == record['sha256']
+
+    def prepare(self):
+        self.arrays = []
+        for start, stop, record in self.blocks:
+            self.check(record)
+            array = np.load(record['local'], mmap_mode='r', allow_pickle=False)
+            assert array.shape == (stop - start, 3584)
+            self.arrays.append((start, stop, array))
+            self.checked_answer_count += 1
+
+    def take(self, ids, turn):
+        assert self.arrays is not None
+        positions = np.array([self.lookup[(cid, turn)] for cid in ids])
+        answer = np.empty((len(ids), 3584), dtype=np.float64)
+        filled = np.zeros(len(ids), dtype=bool)
+        for start, stop, array in self.arrays:
+            selected = (positions >= start) & (positions < stop)
+            if np.any(selected):
+                # Match the capture consumer's float32 read before float64 fitting.
+                answer[selected] = array[positions[selected] - start].astype(np.float32)
+                filled[selected] = True
+        assert filled.all()
+        finite(answer, 'captured answers')
+        return answer
+
+
+def audit(args):
+    config = load_json(args.config)
+    manifest = load_json(args.input_manifest)
+    assert manifest['repo'] == 'superkaiba1/explore-persona-space-data'
+    assert manifest['revision'] == 'cf513c9f89d6a3ccd078ae73e532da2600b50af6'
+    projected = [{k: v for k, v in r.items() if k != 'local'} for r in manifest['files']]
+    assert projected == config['input_files']
+    assert config['original_manifest_sha256'] == '55d331583d94e25c1399ec944ed13e879dd74781cdbc65f3a2a27c5b5f660a74'
+    for field, expected in [('answer_draws', 1), ('assignment_seed', 0), ('rotations', 3), ('bootstrap_draws', 1000), ('bootstrap_seed', 0)]:
+        assert config[field] == expected
+    assert tuple(config['source_conditions']) == SOURCES
+    ids = np.array(config['cohort_ids'])
+    labels = np.array(config['fold_labels'])
+    assert len(ids) > 0 and len(set(ids)) == len(ids) and list(ids) == sorted(ids)
+    assert labels.shape == ids.shape and set(labels) == set(range(6))
+    n = len(ids)
+    rotations = reconstruct_assignment(labels, config['assignment_seed'])
+    assignment_sha = hashlib.sha256(rotations.astype('<i8').tobytes()).hexdigest()
+    pools = [int((labels == fold).sum()) for fold in range(6)]
+    assert min(pools) > 1 and sum(pools) == n
+    banks = {model: AnswerBank(manifest, model) for model in MODELS}
+    assert banks['instruct'].original_ids == banks['pretrained'].original_ids
+    np.testing.assert_array_equal(ids, sorted(banks['instruct'].complete_ids & banks['pretrained'].complete_ids))
+    for bank in banks.values():
+        assert bank.fold_hash == config['fold_hash']
+        np.testing.assert_array_equal(labels, [bank.fold_of[cid] for cid in ids])
+    result_path = args.root / 'analysis/results.json'
+    results = load_json(result_path)
+    assert results['answer_draws'] == 1 and results['n_conversations'] == n
+    assert tuple(results['source_conditions']) == SOURCES and results['target_turns'] == list(range(1, 13))
+    assert results['pooled_definition'] == 'mean performance of three counterbalanced matched-N maps; no prediction ensemble'
+    assert results['uncertainty'] == '1000 paired conversation bootstraps, seed 0; pointwise, conditional on maps, assignments and K1 bank'
+    assert set(results['models']) == set(MODELS)
+    code = {Path(relative).name: sha(args.worktree / relative) for relative in CODE_FILES}
+    report = dict(status='PASS', reviewer='independent pooled_protocol_review', results_sha256=sha(result_path),
+                  config_sha256=sha(args.config), audit_script_sha256=sha(Path(__file__)),
+                  n_conversations=n, excluded_from_original_5000=5000-n, fold_sizes=pools,
+                  assignment_sha256=assignment_sha, code=code, models={})
+    weights = np.random.default_rng(0).multinomial(n, np.repeat(1/n, n), size=1000).astype(np.float64)
+    archive_path = args.root / 'tensor_receipt.json'
+    archive = load_json(archive_path) if archive_path.exists() else None
+    if archive is not None:
+        assert archive['status'] == 'verified'
+        archived = {value['local']: value for value in archive['files'].values()}
+        report['tensor_archive_revision'] = archive['revision']
+    for model in MODELS:
+        print(f'AUDIT {model}: assignments, receipts, OOF metrics and original-bank SST', flush=True)
+        bank = banks[model]
+        bank.prepare()
+        coverage = load_json(args.root / f'analysis/coverage_{model}.json')
+        provenance = dict(model=model, config_sha256=sha(args.config), fold_hash=config['fold_hash'],
+                          assignment_sha256=assignment_sha, code=code,
+                          lambda_grid=['logspace', -2, 4, 13], selector='legacy rowwise GCV', answer_draws=1)
+        for key, value in provenance.items():
+            assert coverage[key] == value, f'coverage provenance mismatch: {model}/{key}'
+        np.testing.assert_array_equal(coverage['ids'], ids)
+        np.testing.assert_array_equal(coverage['assignments'], rotations)
+        assert coverage['fold_sizes'] == pools and coverage['original_counts'] == bank.counts
+        assert coverage['methods'] == list(METHODS)
+        base_fp = canonical_sha(provenance)
+        oof_path = args.root / f'store/{model}_oof.npz'
+        with np.load(oof_path, allow_pickle=False) as z:
+            assert set(z.files) == {'ids', 'sst', 'sse', 'cosine_hit', 'euclidean_hit'}
+            oof = {key: z[key] for key in z.files}
+        np.testing.assert_array_equal(oof['ids'], ids)
+        assert oof['sst'].shape == (12, n)
+        finite(oof['sst'], 'OOF SST')
+        assert np.all(oof['sst'] >= 0) and np.all(oof['sst'].sum(axis=-1) > 0)
+        for key in ('sse', 'cosine_hit', 'euclidean_hit'):
+            assert oof[key].shape == (6, 2, 12, n)
+            finite(oof[key], key)
+        assert np.all(oof['sse'] >= 0)
+        for key in ('cosine_hit', 'euclidean_hit'):
+            assert set(np.unique(oof[key])).issubset({0, 1})
+        if archive is not None:
+            row = archived[f'{model}_oof.npz']
+            assert oof_path.stat().st_size == row['size'] and sha(oof_path) == row['sha256']
+        selected_lambdas = {}
+        for variant in VARIANTS:
+            fp = hashlib.sha256(f'{base_fp}:{variant}'.encode()).hexdigest()
+            turns = rotations[int(variant[-1])] if variant.startswith('mix') else np.repeat(int(variant), n)
+            selected_lambdas[variant] = []
+            for first in range(0, 6, 2):
+                name = f'{model}_{variant}_folds{first}-{first+1}'
+                rec = load_json(args.root / f'analysis/maps/{name}.json')
+                assert (rec['model'], rec['variant'], rec['folds']) == (model, variant, [first, first+1])
+                assert rec['fingerprint'] == fp
+                assert rec['n_train'] == [n-pools[first], n-pools[first+1]]
+                finite(rec['lambdas'], 'selected lambdas')
+                for chosen in rec['lambdas']:
+                    assert np.isclose(chosen, np.logspace(-2, 4, 13), rtol=1e-13, atol=0).any()
+                selected_lambdas[variant].extend(rec['lambdas'])
+                if archive is not None:
+                    assert archived[f'maps/{name}.npz']['sha256'] == rec['sha256']
+            for fold in range(6):
+                name = f'{model}_{variant}_fold{fold}'
+                rec = load_json(args.root / f'analysis/scores/{name}.json')
+                assert (rec['model'], rec['variant'], rec['fold']) == (model, variant, fold)
+                assert rec['fingerprint'] == fp
+                assert rec['n_train'] == n-pools[fold] and rec['n_test'] == pools[fold]
+                train = labels != fold
+                assert len(set(ids[train])) == int(train.sum())
+                assert not set(ids[train]) & set(ids[~train])
+                counts = [int((turns[train] == turn).sum()) for turn in (1, 2, 3)]
+                assert rec['train_turn_counts'] == counts and sum(counts) == int(train.sum())
+                if variant.startswith('mix'):
+                    assert max(counts)-min(counts) <= 2
+                if archive is not None:
+                    assert archived[f'predictions/{name}.npz']['sha256'] == rec['sha256']
+        max_sst_error = 0.0
+        for turn in range(1, 13):
+            for fold in range(6):
+                selected = labels == fold
+                answer = bank.take(ids[selected], turn)
+                expected_sst = ((answer-answer.mean(axis=0))**2).sum(axis=1)
+                error = float(np.max(np.abs(expected_sst-oof['sst'][turn-1, selected])))
+                max_sst_error = max(max_sst_error, error)
+                close(oof['sst'][turn-1, selected], expected_sst, atol=2e-9)
+        bank.arrays = None
+        denominator = oof['sst'].sum(axis=-1)
+        bootstrap_denominator = weights @ oof['sst'].T
+        assert np.all(bootstrap_denominator > 0)
+        point, bootstrap = {}, {}
+        for metric, key in [('r2', 'sse'), ('cosine_top1', 'cosine_hit'), ('euclidean_top1', 'euclidean_hit')]:
+            values = oof[key]
+            # Compute each actual map's performance FIRST, then average rotations.
+            variant_point = values.sum(axis=-1)
+            variant_boot = (weights @ values.reshape(144, n).T).reshape(1000, 6, 2, 12)
+            if key == 'sse':
+                variant_point = 1-variant_point/denominator
+                variant_boot = 1-variant_boot/bootstrap_denominator[:, None, None, :]
+            else:
+                variant_point = variant_point/n
+                variant_boot = variant_boot/n
+            point[metric] = np.stack([variant_point[0], variant_point[1], variant_point[2], variant_point[3:].mean(axis=0)])
+            bootstrap[metric] = np.stack([variant_boot[:, 0], variant_boot[:, 1], variant_boot[:, 2], variant_boot[:, 3:].mean(axis=1)], axis=1)
+            # Independently check equivalence to averaging per-conversation loss/hit.
+            mixed = values[3:].mean(axis=0).sum(axis=-1)
+            mixed = 1-mixed/denominator if key == 'sse' else mixed/n
+            close(point[metric][3], mixed)
+            finite(point[metric], metric)
+            finite(bootstrap[metric], f'bootstrap {metric}')
+            assert np.max(point[metric]) <= 1+2e-12 and np.max(bootstrap[metric]) <= 1+2e-12
+            if key != 'sse':
+                assert np.min(point[metric]) >= 0 and np.min(bootstrap[metric]) >= 0
+        output = results['models'][model]
+        cells = {(c['source'], c['method'], c['target_turn']): c for c in output['cells']}
+        expected_keys = {(source, method, turn) for source in SOURCES for method in METHODS for turn in range(1, 13)}
+        assert len(output['cells']) == len(cells) == 96 and set(cells) == expected_keys
+        max_metric_error = 0.0
+        for (source, method, turn), cell in cells.items():
+            s, m, t = SOURCES.index(source), METHODS.index(method), turn-1
+            for metric in point:
+                max_metric_error = max(max_metric_error, abs(float(cell[metric])-float(point[metric][s,m,t])))
+                close(cell[metric], point[metric][s,m,t])
+                expected_ci = np.percentile(bootstrap[metric][:,s,m,t], [2.5,97.5])
+                close(cell[metric+'_ci95'], expected_ci)
+                assert cell[metric+'_ci95'][0] <= cell[metric+'_ci95'][1]
+        comparisons = {c['target_summary']: c for c in output['comparisons']}
+        assert len(output['comparisons']) == len(comparisons) == 2
+        for label, targets in [('turn12', [11]), ('mean_turns4_12', list(range(3,12)))]:
+            delta = point['r2'][3,0,targets]-point['r2'][2,0,targets]
+            # Preserve the draw axis explicitly when selecting target turns.
+            sampled = (bootstrap['r2'][:,3,0][:,targets]-bootstrap['r2'][:,2,0][:,targets]).mean(axis=1)
+            comparison = comparisons[label]
+            assert comparison['contrast'] == 'pooled123_minus_source3'
+            close(comparison['delta_r2'], delta.mean())
+            close(comparison['ci95'], np.percentile(sampled, [2.5,97.5]))
+        actual_rotations = 1-oof['sse'][3:,0].sum(axis=-1)/denominator
+        close(output['rotation_r2'], actual_rotations)
+        close(actual_rotations.mean(axis=0), point['r2'][3,0])
+        assert output['retrieval_pool_sizes'] == pools
+        chance = sum(size*(1/size) for size in pools)/n
+        close(output['retrieval_chance'], chance)
+        report['models'][model] = dict(status='PASS', oof_sha256=sha(oof_path),
+            source_index_files_hash_verified=bank.checked_index_count,
+            source_answer_arrays_hash_verified=bank.checked_answer_count,
+            map_receipts_checked=18, score_receipts_checked=36, cells_checked=96,
+            max_original_bank_sst_error=max_sst_error, max_point_metric_error=max_metric_error,
+            selected_lambdas=selected_lambdas,
+            raw_turn12={source: float(point['r2'][index,0,11]) for index,source in enumerate(SOURCES)},
+            planned_contrasts=output['comparisons'], rotation_r2=actual_rotations.tolist(), chance=chance)
+    report['checks'] = [
+        'Exact maximal common complete-turn cohort independently reconstructed from both original row-index banks',
+        'Original six conversation folds and deterministic counterbalanced assignments independently reconstructed',
+        'Identical one-pair-per-conversation training N checked across all variants/models/folds',
+        'Current source/config provenance and all 36 map plus 72 score receipt unit identities checked',
+        'Every target-turn/fold SST independently reconstructed from hash-verified original answer summaries',
+        'All 192 R2/cosine/Euclidean cells and paired-bootstrap intervals independently reproduced',
+        'Both planned contrasts for each model reproduced with shared conversation bootstrap weights',
+        'Pooled curve equals mean performance of three concrete maps, not an ensemble prediction score',
+        'Finite values, R2 upper bound, retrieval binary indicators/rates, fold pools and chance checked']
+    report['scope_limits'] = [
+        'No production fits, new generations, downloads or remote compute access',
+        'Raw prediction/map spotchecks and full remote archival verification are handled separately by root',
+        'Without raw score banks, per-row OOF SSE/hits are the audit inputs; SST is independently checked against original answer banks',
+        'Intervals are pointwise and conditional on fixed fits, three dependent assignments, and one generated-answer bank',
+        'Source-only identity biases follow the independently reviewed driver; their raw reconstruction is part of root spotchecks']
+    report['completed_at'] = datetime.now(timezone.utc).isoformat()
+    return report
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--root', type=Path, default=Path(__file__).resolve().parent)
+    parser.add_argument('--worktree', type=Path, default=DEFAULT_WT)
+    parser.add_argument('--config', type=Path)
+    parser.add_argument('--input-manifest', type=Path, default=VIS/'turn_bias_scale_inputs/inputs.json')
+    parser.add_argument('--review-receipt', type=Path)
+    args = parser.parse_args()
+    if args.config is None:
+        args.config = args.worktree/'configs/analysis/issue825_turn_matched_inputs.json'
+    if args.review_receipt is None:
+        args.review_receipt = args.worktree/'eval_results/issue_825/turn_matched_20260915/results_review.json'
+    try:
+        report = audit(args)
+    except Exception as error:
+        atomic_json(args.review_receipt, dict(status='FAIL', error_type=type(error).__name__, error=str(error),
+                    failed_at=datetime.now(timezone.utc).isoformat(), audit_script_sha256=sha(Path(__file__))))
+        raise
+    atomic_json(args.review_receipt, report)
+    print(json.dumps(dict(status='PASS', receipt=str(args.review_receipt), results_sha256=report['results_sha256'],
+                         models={model: row['raw_turn12'] for model,row in report['models'].items()})), flush=True)
+
+
+if __name__ == '__main__':
+    main()

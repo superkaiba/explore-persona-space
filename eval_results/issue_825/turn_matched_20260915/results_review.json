@@ -1,0 +1,309 @@
+{
+  "status": "PASS",
+  "reviewer": "independent pooled_protocol_review",
+  "results_sha256": "b86c7e3400462187116b5de03cb5160f8483556be085ae4853dfe27ec9bdb635",
+  "config_sha256": "0b91799a08f5bdcd522cc2b2bb2c61113872d1adc949d0bc5bfbcacc75e8cfef",
+  "audit_script_sha256": "ea4a4b91de3a98ab41f5cb11ff36ab2c3d186888915c24bf93ee876d98ac0a2f",
+  "n_conversations": 4975,
+  "excluded_from_original_5000": 25,
+  "fold_sizes": [
+    826,
+    832,
+    829,
+    831,
+    827,
+    830
+  ],
+  "assignment_sha256": "4038baf39c90b101ef42b464cb8b8ecdc7f1675d623e8a71d2ef9d8ded25528e",
+  "code": {
+    "issue825_turn_matched.py": "ab3a211553979c7d705c67f5bce011c144b8e6e644db075a33d6a05009d37ff9",
+    "issue825_turn_bias_scale.py": "b7ebdf8d97384a8a2a6b82f61b4949430b93459429205c4c92cd343592bdbe88",
+    "pooled_turn_transfer.py": "a59455f5676df1a1cb90bbc6668554102e39bd0acbd4b4ffbd99ba5109206c1d",
+    "turn_transfer_calibration.py": "71d2fe894d3d03261dcfb73775d779412f712c56bf62bd48b0c472f4cac5553c"
+  },
+  "models": {
+    "instruct": {
+      "status": "PASS",
+      "oof_sha256": "0da402cc27f49b0b7dd71b3b05be0c0a1db30127ad31079088f977d6b476b3d8",
+      "source_index_files_hash_verified": 60,
+      "source_answer_arrays_hash_verified": 60,
+      "map_receipts_checked": 18,
+      "score_receipts_checked": 36,
+      "cells_checked": 96,
+      "max_original_bank_sst_error": 0.0,
+      "max_point_metric_error": 1.021405182655144e-14,
+      "selected_lambdas": {
+        "1": [
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0
+        ],
+        "2": [
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0
+        ],
+        "3": [
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0
+        ],
+        "mix0": [
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0
+        ],
+        "mix1": [
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0
+        ],
+        "mix2": [
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0
+        ]
+      },
+      "raw_turn12": {
+        "1": 0.3162852406313724,
+        "2": 0.4890665541326088,
+        "3": 0.5228441615060271,
+        "1+2+3": 0.5118566254658872
+      },
+      "planned_contrasts": [
+        {
+          "contrast": "pooled123_minus_source3",
+          "target_summary": "turn12",
+          "delta_r2": -0.010987536040136803,
+          "ci95": [
+            -0.012005806412095634,
+            -0.009813772045141082
+          ]
+        },
+        {
+          "contrast": "pooled123_minus_source3",
+          "target_summary": "mean_turns4_12",
+          "delta_r2": -0.011538461170433889,
+          "ci95": [
+            -0.012164744796265961,
+            -0.010900554439796031
+          ]
+        }
+      ],
+      "rotation_r2": [
+        [
+          0.5684124859808233,
+          0.5452228473228209,
+          0.5352553347914839,
+          0.5331050359096134,
+          0.5279855205687922,
+          0.5222926227781801,
+          0.5225987288303217,
+          0.5190360873043769,
+          0.5145526759943944,
+          0.5130683317331832,
+          0.5115449308287887,
+          0.5129499033961995
+        ],
+        [
+          0.5684744065690388,
+          0.5466701249791697,
+          0.5387672390676853,
+          0.5356152984652895,
+          0.530010866837571,
+          0.5230103071054903,
+          0.523193295402675,
+          0.5196410193161242,
+          0.5149311629565909,
+          0.5130726993367161,
+          0.511785315955684,
+          0.5127446418492254
+        ],
+        [
+          0.5700812242751815,
+          0.5469321355434229,
+          0.5377290500483565,
+          0.5335734691560037,
+          0.5288135277263171,
+          0.521422731499267,
+          0.5206482075990124,
+          0.5171375597482771,
+          0.5123987825589231,
+          0.5108509534804593,
+          0.508670697534801,
+          0.5098753311522366
+        ]
+      ],
+      "chance": 0.001206030150753769
+    },
+    "pretrained": {
+      "status": "PASS",
+      "oof_sha256": "316a6245ce0263d223ddd3f01592ff4cf99c2250643a762a50b6d4e64d82894e",
+      "source_index_files_hash_verified": 60,
+      "source_answer_arrays_hash_verified": 60,
+      "map_receipts_checked": 18,
+      "score_receipts_checked": 36,
+      "cells_checked": 96,
+      "max_original_bank_sst_error": 0.0,
+      "max_point_metric_error": 6.2727600891321345e-15,
+      "selected_lambdas": {
+        "1": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ],
+        "2": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ],
+        "3": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ],
+        "mix0": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ],
+        "mix1": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ],
+        "mix2": [
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795,
+          3162.2776601683795
+        ]
+      },
+      "raw_turn12": {
+        "1": 0.1968780475994717,
+        "2": 0.4816789175939228,
+        "3": 0.5171285587880083,
+        "1+2+3": 0.49262180665596816
+      },
+      "planned_contrasts": [
+        {
+          "contrast": "pooled123_minus_source3",
+          "target_summary": "turn12",
+          "delta_r2": -0.02450675213204001,
+          "ci95": [
+            -0.025325906226671482,
+            -0.023734948842527942
+          ]
+        },
+        {
+          "contrast": "pooled123_minus_source3",
+          "target_summary": "mean_turns4_12",
+          "delta_r2": -0.024689938198401817,
+          "ci95": [
+            -0.025080373416863196,
+            -0.024262202244868063
+          ]
+        }
+      ],
+      "rotation_r2": [
+        [
+          0.3569877579153743,
+          0.4846559366093355,
+          0.5050001067447105,
+          0.5106164460066654,
+          0.5117259822803035,
+          0.505455583364884,
+          0.5016811742230693,
+          0.5035438102400821,
+          0.4987963504962596,
+          0.4945085226171261,
+          0.4950156146373613,
+          0.49213021425434866
+        ],
+        [
+          0.3547135174354916,
+          0.48590075267958954,
+          0.5061286860644235,
+          0.5133380651437249,
+          0.5105738836911626,
+          0.5051206845718423,
+          0.5026060939252567,
+          0.5034914740920471,
+          0.4981925023260736,
+          0.4951667249896926,
+          0.49392343909071856,
+          0.4932380383838927
+        ],
+        [
+          0.3550583061089815,
+          0.4863410459877192,
+          0.5052812875753009,
+          0.5120651167260875,
+          0.5112918712803585,
+          0.505898429276356,
+          0.5022870073235255,
+          0.5036117178401629,
+          0.49843648787393513,
+          0.49461738939265854,
+          0.4930345026564511,
+          0.4924971673296632
+        ]
+      ],
+      "chance": 0.001206030150753769
+    }
+  },
+  "checks": [
+    "Exact maximal common complete-turn cohort independently reconstructed from both original row-index banks",
+    "Original six conversation folds and deterministic counterbalanced assignments independently reconstructed",
+    "Identical one-pair-per-conversation training N checked across all variants/models/folds",
+    "Current source/config provenance and all 36 map plus 72 score receipt unit identities checked",
+    "Every target-turn/fold SST independently reconstructed from hash-verified original answer summaries",
+    "All 192 R2/cosine/Euclidean cells and paired-bootstrap intervals independently reproduced",
+    "Both planned contrasts for each model reproduced with shared conversation bootstrap weights",
+    "Pooled curve equals mean performance of three concrete maps, not an ensemble prediction score",
+    "Finite values, R2 upper bound, retrieval binary indicators/rates, fold pools and chance checked"
+  ],
+  "scope_limits": [
+    "No production fits, new generations, downloads or remote compute access",
+    "Raw prediction/map spotchecks and full remote archival verification are handled separately by root",
+    "Without raw score banks, per-row OOF SSE/hits are the audit inputs; SST is independently checked against original answer banks",
+    "Intervals are pointwise and conditional on fixed fits, three dependent assignments, and one generated-answer bank",
+    "Source-only identity biases follow the independently reviewed driver; their raw reconstruction is part of root spotchecks"
+  ],
+  "completed_at": "2026-09-15T16:40:38.087180+00:00"
+}

@@ -1,0 +1,20 @@
+{
+  "model": "instruct",
+  "variant": "2",
+  "folds": [
+    2,
+    3
+  ],
+  "fingerprint": "18b65ac27e6c551b63e8de15bc8383206db3d5cb7c90c0b2cbe05fc4e4e2756b",
+  "sha256": "b70a22c5bbb32be7320f51b2e9c5a619201ea49dec475f389f3d354b7a441a73",
+  "n_train": [
+    4146,
+    4144
+  ],
+  "lambdas": [
+    1000.0,
+    1000.0
+  ],
+  "elapsed_seconds": 12.447669517000008,
+  "max_rss_kib": 4230412
+}

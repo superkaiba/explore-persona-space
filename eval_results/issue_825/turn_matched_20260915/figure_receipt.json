@@ -1,0 +1,69 @@
+{
+  "status": "verified",
+  "verified_at": 1789490605.7173102,
+  "repo": "superkaiba1/explore-persona-space-data",
+  "revision": "1b635c193425b37172da3ca36856e56cdfe1a29b",
+  "prefix": "issue825_turn_matched_20260915/figures",
+  "files": {
+    "turn_matched_copy_baselines_20260915_grayscale.png": {
+      "sha256": "b4a89adbc20c0614f88ea778575a54d66ae578719610f970617563a15fc6af61",
+      "bytes": 94465,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/1b635c193425b37172da3ca36856e56cdfe1a29b/issue825_turn_matched_20260915/figures/turn_matched_copy_baselines_20260915_grayscale.png"
+    },
+    "turn_matched_copy_baselines_20260915.meta.json": {
+      "sha256": "e5cc7d49d0b1ab0537a471f6b2e566f22180a6a0edf778e266c6aaba852dd62d",
+      "bytes": 2136,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/1b635c193425b37172da3ca36856e56cdfe1a29b/issue825_turn_matched_20260915/figures/turn_matched_copy_baselines_20260915.meta.json"
+    },
+    "turn_matched_transfer_20260915.pdf": {
+      "sha256": "3e54578fef034dafef96f169182cc7524a8266c3b6c6d414d98e8a5d1f6008f8",
+      "bytes": 21545,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/1b635c193425b37172da3ca36856e56cdfe1a29b/issue825_turn_matched_20260915/figures/turn_matched_transfer_20260915.pdf"
+    },
+    "turn_matched_copy_baselines_20260915.pdf": {
+      "sha256": "b8a0c915fe86105e046e28ef3d24f6d3f483a2aaab340b6f491275d2e84cfbe0",
+      "bytes": 21799,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/1b635c193425b37172da3ca36856e56cdfe1a29b/issue825_turn_matched_20260915/figures/turn_matched_copy_baselines_20260915.pdf"
+    },
+    "turn_matched_transfer_20260915.meta.json": {
+      "sha256": "c8e03262aa92f0538b945cddc83f60cda830cd4af4ddeb03ae92dc7480114a92",
+      "bytes": 2079,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/1b635c193425b37172da3ca36856e56cdfe1a29b/issue825_turn_matched_20260915/figures/turn_matched_transfer_20260915.meta.json"
+    },
+    "turn_matched_rotation_sensitivity_20260915.pdf": {
+      "sha256": "eb90c053911e495d6198656b57187b23749e1e1d413ff7436b4be7bcfcaf4a00",
+      "bytes": 20516,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/1b635c193425b37172da3ca36856e56cdfe1a29b/issue825_turn_matched_20260915/figures/turn_matched_rotation_sensitivity_20260915.pdf"
+    },
+    "turn_matched_rotation_sensitivity_20260915.meta.json": {
+      "sha256": "b54a080e40af7ef646a2c203f285add5a13f13e49a493540bc6fcd31d6986f04",
+      "bytes": 2106,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/1b635c193425b37172da3ca36856e56cdfe1a29b/issue825_turn_matched_20260915/figures/turn_matched_rotation_sensitivity_20260915.meta.json"
+    },
+    "turn_matched_transfer_20260915.png": {
+      "sha256": "0ac99fece8787528af5f0b069921bd552ab731f970ed05e4e6f05db14393c8fd",
+      "bytes": 213388,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/1b635c193425b37172da3ca36856e56cdfe1a29b/issue825_turn_matched_20260915/figures/turn_matched_transfer_20260915.png"
+    },
+    "turn_matched_rotation_sensitivity_20260915_grayscale.png": {
+      "sha256": "23d16712e737516a9fc64cfdd7fab600ffa060031ad1f9a4f187fd909ad3819a",
+      "bytes": 82374,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/1b635c193425b37172da3ca36856e56cdfe1a29b/issue825_turn_matched_20260915/figures/turn_matched_rotation_sensitivity_20260915_grayscale.png"
+    },
+    "turn_matched_transfer_20260915_grayscale.png": {
+      "sha256": "b76aa130298feec430099043db0a636e3610d09588ba185aed095ce663ec2493",
+      "bytes": 90946,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/1b635c193425b37172da3ca36856e56cdfe1a29b/issue825_turn_matched_20260915/figures/turn_matched_transfer_20260915_grayscale.png"
+    },
+    "turn_matched_copy_baselines_20260915.png": {
+      "sha256": "e2b28db6bbb93be23d3450747ddc9b55df76f8f004083f07accd98fbf3f97f37",
+      "bytes": 219797,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/1b635c193425b37172da3ca36856e56cdfe1a29b/issue825_turn_matched_20260915/figures/turn_matched_copy_baselines_20260915.png"
+    },
+    "turn_matched_rotation_sensitivity_20260915.png": {
+      "sha256": "d01ed7485ac5aa99dfb36cb2eea02623f8c6e8023086fbd059ee92eb6873f8d2",
+      "bytes": 189708,
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/1b635c193425b37172da3ca36856e56cdfe1a29b/issue825_turn_matched_20260915/figures/turn_matched_rotation_sensitivity_20260915.png"
+    }
+  }
+}

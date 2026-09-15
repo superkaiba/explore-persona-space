@@ -1,0 +1,27 @@
+{
+  "status": "verified",
+  "verified_at": 1789490861.7892907,
+  "repo": "superkaiba1/explore-persona-space-overflow",
+  "revision": "c5b1a54ca0790d758c45591da28449b524a5188c",
+  "path": "issue825_turn_matched_20260915/runtime/offline-tracking.tar.gz",
+  "bytes": 6175,
+  "sha256": "f1902ad2812506483107d8e821db3aa378972aff48ed77520fbd03be462feb3a",
+  "aliases_recorded": [
+    {
+      "name": "wandb/latest-run",
+      "target": "offline-run-20260915_164415-b36uvsdg"
+    },
+    {
+      "name": "wandb/debug.log",
+      "target": "offline-run-20260915_164415-b36uvsdg/logs/debug.log"
+    },
+    {
+      "name": "wandb/debug-internal.log",
+      "target": "offline-run-20260915_164415-b36uvsdg/logs/debug-internal.log"
+    },
+    {
+      "name": "wandb/offline-run-20260915_164415-b36uvsdg/logs/debug-core.log",
+      "target": "/root/.cache/wandb/logs/core-debug-20260915_164416.log"
+    }
+  ]
+}

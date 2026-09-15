@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "observed_at": 1789491264.2313304,
+  "reader": "Hash-verified selected-row reader used by the independent audit; replaces a slow full-bank memmap-to-float32 conversion in the local parent loader",
+  "selection": "predeclared mix0 fold0 in both models; all-turn SSE/bias, first5 queries per turn for map prediction and both retrieval metrics",
+  "models": {
+    "instruct": {
+      "heldout_conversations": 826,
+      "turns": 12,
+      "n_train": 4149,
+      "max_prediction_abs_error": 8.881784197001252e-15
+    },
+    "pretrained": {
+      "heldout_conversations": 826,
+      "turns": 12,
+      "n_train": 4149,
+      "max_prediction_abs_error": 1.0658141036401503e-14
+    }
+  }
+}

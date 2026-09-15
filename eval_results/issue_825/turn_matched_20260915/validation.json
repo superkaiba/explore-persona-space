@@ -1,0 +1,32 @@
+{
+  "observed_at": 1789488941.0500164,
+  "implementation_commit": "01ead7f39443021212bf82ef4f677ce15f6b6316",
+  "driver_sha256": "ab3a211553979c7d705c67f5bce011c144b8e6e644db075a33d6a05009d37ff9",
+  "focused_tests": {
+    "status": "PASS",
+    "count": 11,
+    "files": [
+      "tests/test_issue825_turn_matched.py",
+      "tests/test_issue825_pooled_turn_transfer.py"
+    ]
+  },
+  "independent_code_review": {
+    "status": "PASS",
+    "reviewer": "pooled_protocol_review",
+    "tested_independently": true
+  },
+  "plan_verifier": {
+    "status": "PASS",
+    "version": 33,
+    "warnings": 3,
+    "skips": 59
+  },
+  "ruff": "PASS",
+  "repo_wide_workflow_lint": "Interrupted after broad unchanged-surface scan; no workflow implementation changed. Commit hooks and plan verification passed.",
+  "raw_spotcheck": "PASS",
+  "independent_numeric_review": "PASS",
+  "remote_archives": "PASS",
+  "compute_released": true,
+  "final_verified_at": 1789491439.7459042,
+  "figure_browser_http_status": 200
+}

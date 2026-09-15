@@ -1,0 +1,20 @@
+{
+  "model": "pretrained",
+  "variant": "mix0",
+  "folds": [
+    4,
+    5
+  ],
+  "fingerprint": "ae6bf5431b655c7ecfac172f5d893aed1f42b243b8553d067af31814409f39f7",
+  "sha256": "9a1183d296e37c7b0e4c0cfc8926b44d640f455a165b21b0b5c47552fddcffb1",
+  "n_train": [
+    4148,
+    4145
+  ],
+  "lambdas": [
+    3162.2776601683795,
+    3162.2776601683795
+  ],
+  "elapsed_seconds": 12.666554332000032,
+  "max_rss_kib": 4231612
+}

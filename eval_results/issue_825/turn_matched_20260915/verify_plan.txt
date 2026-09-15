@@ -1,0 +1,77 @@
+verify_plan — /home/thomasjiralerspong/explore-persona-space/tasks/followups_running/825/plans/v33.md (kind: experiment)
+  [PASS] plan non-stub — 12503 chars, 12 headings
+  [PASS] §11 hyperparameter Source: grounding — 1 Source entries: 1 inline, 0 table-column (0 marked ungrounded — fact-checker flags those for smoke-test); presence-only — Source correctness/transfer stays fact-checker-owned
+  [WARN] per-DV measurement validity — phrase present but no recognizable block/table — verify per-DV rows exist
+  [PASS] data-source tier named — data-tier vocabulary found ('tier1')
+  [SKIP] contrastive negatives (behavior implantation) — not detected as behavior-implantation (no implant/leakage-marker vocabulary)
+  [PASS] GPU-hour estimate line — 0 GPU-h
+  [WARN] reused-artifact fitness attestation — plan reuses HF artifacts but no fitness check / (a)–(n) reuse-map attestation found — CLAUDE.md reuse rule requires attestations (a)–(n); consistency-checker + Methodology critic must gate this
+  [SKIP] replication fidelity — Goal does not mention replication
+  [PASS] success + kill criteria — success anchor 'success criteri' in §'10. Persistence and completion'; kill anchor 'stop criteri' in §'8. Verification and stop criteria' (form-only check — joint satisfiability stays with the Statistics critic)
+  [PASS] conditions/cells + seeds declared — conditions/cells signal + seeds named
+  [SKIP] marker-recipe acknowledgment — no marker-leakage vocabulary detected
+  [SKIP] dry-run smoke backed by a dry-run test — kind-exempt: the dry-run-smoke acceptance pattern is an infra|batch shape
+  [SKIP] battery multiplier + batched commitment — no permutation/null-draw battery or pool-quadratic screen named
+  [SKIP] empirical-null gate p-floor attainability — no registered empirical-p gate detected
+  [SKIP] hypothesis branch coherence — no hypothesis section detected
+  [SKIP] fail-loud acceptance claim backed by a test — kind-exempt: the fail-loud acceptance-claim pattern is an infra|batch shape
+  [SKIP] re-extracted reference vs committed headline — no re-extraction of reference arms detected
+  [SKIP] falsification-branch causal-claim scope — no registered falsification-branch surface (no **Confirm/**Falsify hypothesis anchors, no **What would change my mind** bullet)
+  [SKIP] paired-contrast per-arm source coverage — no registered paired contrast detected
+  [WARN] OOD generalization folds (held-out predictive DV) — held-out predictive-DV vocabulary detected but no group-scoped fold (leave-one-<family>-out / a fit-on-one-corpus-score-on-another arm), no independence (i-i-d) argument, and no `N/A — no held-out predictive DV` escape declared on its own line, unwrapped (no backticks/quotes) — pointwise LOO can REORDER cross-context claims (#810: read-out rho 0.909 → 0.285 under the family-level fold); .claude/rules/ood-generalization-folds.md; Statistics critic must gate this
+  [SKIP] verdict-lattice coherence — no registered verdict lattice detected (no DISJOINT-and-exhaustive ⇔ declaration; fewer than 2 anchored CI-predicate labels in any trigger section)
+  [SKIP] grep-arity acceptance gate points at AST audit — no grep-based call-arity pass condition detected
+  [SKIP] cross-section param consistency — no cross-section parameter restatement detected
+  [SKIP] resume-skip provenance validation — no per-unit persist + resume-skip pattern named
+  [SKIP] no HTML entities in fenced command blocks — no fenced command blocks detected
+  [SKIP] GPU basis vs routed machine — no resolvable --intent token — routed machine unknown (auto-lane GPU cannot be inferred)
+  [SKIP] 7B capture vs eval/debug intent — no activation-capture vocabulary detected
+  [SKIP] decision-band precedent coherence — no registered multiplicative decision band detected
+  [SKIP] deliberate fence vs §7 conditional phase — no deliberate (value-bearing, non-default) --max-run-duration fence declaration detected
+  [SKIP] reused-bundle realized-keys verification — no multi-field bundle reuse detected
+  [SKIP] SKILL.md prose edit backed by a durability pin — kind-exempt: SKILL.md prose edits are an infra|batch (workflow-fix) shape
+  [SKIP] fit-family + battery §9 basis grounding — no fit-family or battery row in a basis-column compute table detected
+  [SKIP] checkpoint-ladder retention policy — no checkpoint-ladder vocabulary detected
+  [SKIP] verbatim insert fits size-ratchet headroom — kind-exempt: ratcheted-file verbatim inserts are an infra|batch (workflow-fix) shape
+  [SKIP] revision-pinned reuse verified at pin — no revision-pinned HF reuse detected
+  [SKIP] numeric containment claims — no numeric containment claims detected
+  [SKIP] no-flags bundling claim matches workflow_lint dispatch — kind-exempt: --check-* bundling claims are an infra|batch (workflow-fix) shape
+  [SKIP] exit-0 criterion on a repo-wide command names baseline/scoping — no exit-0/green assertion on a repo-wide lint/suite command
+  [SKIP] off-pod phase declaration — no off-pod / vm-side vocabulary detected
+  [SKIP] regression-anchor test executed or gate-selected — kind-exempt: the lean-on-the-gate regression-anchor claim is an infra|batch (workflow-fix) shape
+  [SKIP] cited commit SHA resolves — no hex tokens cited as commits detected
+  [SKIP] /workspace sentinels vs unpinned auto lane — no /workspace sentinel paths detected
+  [SKIP] declared-committed paths not gitignored — no committed-output declarations detected
+  [SKIP] trained-base change DV vs base-side predictor companion — no trained-base / post-pre / Delta log P change-DV signature
+  [SKIP] plan-embedded dispatch command CLI-parses — no dispatch_issue.py command in fenced blocks or inline code
+  [PASS] planned_wall_h cells parse for the poller tripwire — 3 row(s), total 1.70 h
+  [SKIP] §9 basis-vs-booked arithmetic — basis table present but no row evaluable — no derivation-bearing GPU-h comparison (arm A) and no parseable per-cell abort threshold (arm B)
+  [SKIP] authorized-smoke-stubs block well-formed — no authorized-smoke-stubs block declared
+  [SKIP] §9 projected wall vs SLURM --time bin — no launch-shaped dispatch_issue.py command in the plan
+  [SKIP] edited workflow-surface literal pin-test coverage — kind-exempt
+  [SKIP] fan-out RAM/GPU-mem floor vs ladder rung — no launch-shaped dispatch_issue.py command in the plan — a custom-driver fan-out is structurally invisible here (docstring residual (ii)): the binding surface is plan-compute-sizing.md, and this SKIP is not coverage
+  [SKIP] harm-class judged DV api-refusal accounting — no judged-DV vocabulary in the plan
+  [SKIP] --workload-cmd bare lane-specific env vars — no dispatch_issue.py command in fenced blocks or inline code
+  [PASS] inherited argparse row-count default vs per-cell target — no inherited row-count defaults in 3 plan-named script(s)
+  [PASS] staging mount binding — 2 multi-GB staging line(s) mount-bound
+  [SKIP] fan-out same-prefix staging shape — no concurrent box-level fan-out declared in section 9
+  [SKIP] fan-out RunPod pod-name collision — no launch-shaped dispatch_issue.py command in the plan — a custom-driver fan-out is structurally invisible here (residual (ii), the same channel c52 discloses); this SKIP is not coverage
+  [PASS] GPU-hours token consumer/declaration conflict — 1 declaration-shaped value(s), consumer first-match agrees (0)
+  [SKIP] SLURM would-render --mem vs declared RSS peak — no launch-shaped dispatch_issue.py command in the plan — a custom-driver fan-out is structurally invisible here (docstring residual): the binding surface is plan-compute-sizing.md § Ladder-rung RAM floor, and this SKIP is not coverage
+  [SKIP] §9 declared GPU width vs launch-fence width — no multi-GPU width (N >= 2) declared on §9 prose lines
+  [SKIP] sampled exactness claim vs runtime-assert grain — no sampled exactness claim on non-fenced lines
+  [SKIP] smoke-fixture size claim vs realized fixtures — no smoke fixture size claim detected
+  [SKIP] smoke-fixture producing script named in plan — no smoke fixture size claim detected (check-65 trigger absent)
+  [SKIP] test-retest κ gate vs temperature-0 judge pin — no test-retest κ demotion gate detected
+  [SKIP] abs-pp reduction margin vs baseline ceiling — no baseline-subtractive absolute-pp reduction margin detected
+  [SKIP] armed re-gen 2×-cap headroom vs max_model_len pin — no armed re-gen trigger detected
+  [SKIP] judge-pilot per-arm draw resolution vs parse-fail threshold — pilot vocabulary but no per-arm parse-fail threshold resolvable in any window
+  [SKIP] plan-embedded jq probe dry-run vs committed target — no jq probe vocabulary detected
+  [SKIP] contingent judge wave (>=5k calls) names its rule-26 pilot gate — no contingent judge-wave vocabulary detected
+  [PASS] GPU-lane routing declares its cuda-context: claim — no GPU-lane routing token in the section-9 window (lines 41-60)
+  [SKIP] gates-section binding to an optionality-marked phase — no optionality-marked phase declaration detected
+  [SKIP] plan head not drafted against a superseded Goal — no superseded Goal predates this plan version
+  [SKIP] §9 backend pin-claim matches body.md frontmatter — no §9 backend pin-claim in plan prose
+  [PASS] header self-declared version matches persisted filename — header is version-neutral — no self-declared version
+
+OVERALL: PASS (3 WARN, 59 SKIP)

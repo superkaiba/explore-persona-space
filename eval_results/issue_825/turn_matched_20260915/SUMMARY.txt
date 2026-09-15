@@ -1,0 +1,48 @@
+Matched-budget source-turn transfer, single generated answers
+
+Training rows AND conversation IDs are matched. Every fit has one source pair per training conversation; the pooled condition balances turns 1–3 across conversations. Its curve averages performance across three counterbalanced fits, not predictions.
+
+Common cohort: 4,975 conversations, 99.5% of the original 5,000; same six heldout-conversation folds and all 12 target turns for both models. Training N:4,143–4,149; test pools: 826,832,829,831,827,830. K=1, layer19, raw transfer without target calibration.
+
+Raw heldout R² at turn 12:
+| Training source | Instruct | Pretrained |
+| --- | ---: | ---: |
+| 1 | 0.316285 | 0.196878 |
+| 2 | 0.489067 | 0.481679 |
+| 3 | 0.522844 | 0.517129 |
+| 1+2+3 | 0.511857 | 0.492622 |
+
+At this matched budget, source-turn 3 gives higher forward-transfer R² than the pooled condition. The earlier larger pooled fits also increased training-set size; that comparison alone could not identify a benefit from turn diversity. Pooling improves turn 1 performance relative to a turn 3-only map, while reducing later-turn accuracy. The comparison changes source-turn distribution at fixed sample and conversation counts; it does not identify a unique mechanism.
+
+Predeclared pooled123 minus source3 comparisons (conditional 95% paired-conversation bootstrap intervals):
+instruct, turn 12: delta R²=-0.010988, CI=[-0.012006, -0.009814].
+instruct, mean_turns 4_12: delta R²=-0.011538, CI=[-0.012165, -0.010901].
+instruct: pooled-minus-source3 point differences over turns 4–12 range[-0.012476,-0.010712]. These are descriptive point differences, not a simultaneous confidence statement.
+instruct: pooled turn 12 R² across three assignments ranges[0.509875,0.512950]. Rotations are dependent counterbalanced assignments.
+pretrained, turn 12: delta R²=-0.024507, CI=[-0.025326, -0.023735].
+pretrained, mean_turns 4_12: delta R²=-0.024690, CI=[-0.025080, -0.024262].
+pretrained: pooled-minus-source3 point differences over turns 4–12 range[-0.025240,-0.023525]. These are descriptive point differences, not a simultaneous confidence statement.
+pretrained: pooled turn 12 R² across three assignments ranges[0.492130,0.493238]. Rotations are dependent counterbalanced assignments.
+
+Turn12 baselines and retrieval. Chance averaged over heldout queries =6/4975 =0.120603%. Copy+bias learns only from the same selected SOURCE rows; it has no target-turn training labels.
+| Model | Source | Raw cosine top1 | Raw Euclidean top1 | Copy+bias R² |
+| --- | --- | ---: | ---: | ---: |
+| instruct | 1 | 68.784% | 63.538% | -1.385292 |
+| instruct | 2 | 82.352% | 77.910% | -1.048278 |
+| instruct | 3 | 85.186% | 80.985% | -1.012872 |
+| instruct | 1+2+3 | 83.156% | 79.102% | -1.092280 |
+| pretrained | 1 | 53.668% | 38.573% | -0.803453 |
+| pretrained | 2 | 81.990% | 74.915% | -0.313871 |
+| pretrained | 3 | 84.402% | 79.437% | -0.272432 |
+| pretrained | 1+2+3 | 82.265% | 75.752% | -0.366552 |
+
+Figure caption: Matched-budget transfer across conversation turns. Maps use identical training conversations and one context–answer pair per conversation. The pooled curve is the mean performance of three balanced source-turn assignments. The shaded region covers the pooled source turns 1–3; turns 4–12 are forward-transfer targets. Bands are pointwise 95% paired-conversation bootstrap intervals conditional on the maps, assignments and single-answer activation bank.
+
+Figures:
+transfer: https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/1b635c193425b37172da3ca36856e56cdfe1a29b/issue825_turn_matched_20260915/figures/turn_matched_transfer_20260915.png
+rotation_sensitivity: https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/1b635c193425b37172da3ca36856e56cdfe1a29b/issue825_turn_matched_20260915/figures/turn_matched_rotation_sensitivity_20260915.png
+copy_baselines: https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/1b635c193425b37172da3ca36856e56cdfe1a29b/issue825_turn_matched_20260915/figures/turn_matched_copy_baselines_20260915.png
+
+Scientific provenance: real model-generated answers conditioned on logged WildChat/LMSYS histories, not a free-running conversation intervention. Existing source bank only; no new model inference. Driver commit01ead7f39443021212bf82ef4f677ce15f6b6316. Result SHA256 b86c7e3400462187116b5de03cb5160f8483556be085ae4853dfe27ec9bdb635. Independent audit reproduced all 192 metric cell and interval, original-bank SST, cohort/folds, all source assignments and planned contrasts. Runtime/archival receipts accompany the completed result.
+
+Completion: all72 map evaluations completed; zero GPU used. Full-sized fitting and all-turn scoring took about21minutes on8vCPU. Predictions, maps, metrics, provenance, runtime logs and offline tracking are durably archived. The dedicated CPU instance was finalized and a fresh live GCP listing confirmed its absence. The final raw prediction spotchecks passed on both models; maximum prediction difference was1.07e-14.

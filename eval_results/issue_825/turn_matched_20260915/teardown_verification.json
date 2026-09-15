@@ -1,0 +1,9 @@
+{
+  "status": "released",
+  "observed_at": 1789491299.2056882,
+  "instance": "eps-issue-825-matchedturns",
+  "live_gcp_listing": [],
+  "gpu_count": 0,
+  "fit_and_allturn_score_seconds": 1251,
+  "monitor_terminal": "done"
+}

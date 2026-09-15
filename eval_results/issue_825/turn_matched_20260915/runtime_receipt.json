@@ -1,0 +1,62 @@
+{
+  "status": "verified",
+  "repo": "superkaiba1/explore-persona-space-data",
+  "repo_type": "dataset",
+  "revision": "b33afee794a903b54cafcbd7d0c35a0c93584d9d",
+  "prefix": "issue825_turn_matched_20260915/runtime",
+  "files": {
+    "issue825_turn_matched_20260915/runtime/complete.json": {
+      "local": "complete.json",
+      "sha256": "70b2e7abec5e0f376392b83153f5a188b56fb58b2f311e9e4fda36311a290de4",
+      "size": 50725
+    },
+    "issue825_turn_matched_20260915/runtime/independent_archive_verification.json": {
+      "local": "independent_archive_verification.json",
+      "sha256": "3ef4b489f51cdfaad8fee831e4ecf46f29a6af4b5da4137dbc9d4d5a4c64941d",
+      "size": 2631
+    },
+    "issue825_turn_matched_20260915/runtime/monitor_observations.jsonl": {
+      "local": "monitor_observations.jsonl",
+      "sha256": "63d8eae21aa70baf8e856b645dcf8153f0572d83a40df4cb8310ec545e7b694e",
+      "size": 88782
+    },
+    "issue825_turn_matched_20260915/runtime/monitor_status.json": {
+      "local": "monitor_status.json",
+      "sha256": "66285cf8e90f50f93eaac9e92591fa9032e8a628bc9fb4d835174551d90b6f35",
+      "size": 6248
+    },
+    "issue825_turn_matched_20260915/runtime/offline_tracking_receipt.json": {
+      "local": "offline_tracking_receipt.json",
+      "sha256": "8bff768bc3b8fa5fcc1ffd1bffcdff30dfc4a9766639c0ca5f56488cfc25b0ae",
+      "size": 897
+    },
+    "issue825_turn_matched_20260915/runtime/tensor_receipt.json": {
+      "local": "tensor_receipt.json",
+      "sha256": "14c54d0273490926dc4b4ff323df03311dc000d1f997eaad1f297118d9a695f8",
+      "size": 27893
+    },
+    "issue825_turn_matched_20260915/runtime/text_receipt.json": {
+      "local": "text_receipt.json",
+      "sha256": "ec4cf556aca7958e1bc6276697b015dc304b5770e7f1f62d366e652a3bf78fae",
+      "size": 29139
+    },
+    "issue825_turn_matched_20260915/runtime/transport-sentinel.json": {
+      "local": "transport-sentinel.json",
+      "sha256": "25e3809d0e875f20ef432c04e926b230b8613ebec2fce46445e3122f2a8c4f36",
+      "size": 77
+    },
+    "issue825_turn_matched_20260915/runtime/wandb_aliases.json": {
+      "local": "wandb_aliases.json",
+      "sha256": "2b5bbf99a06c96404e0853d9655846005d127f5ca0c9ddbbc1bdb1dcef11005b",
+      "size": 489
+    },
+    "issue825_turn_matched_20260915/runtime/workload.log": {
+      "local": "workload.log",
+      "sha256": "08f81a4855673d54c8b8ae18a0727e8bdafa4dc9e89c241f0c2eba81f3976b8d",
+      "size": 540898
+    }
+  },
+  "count": 10,
+  "bytes": 747779,
+  "verified_at": 1789490957.5096238
+}

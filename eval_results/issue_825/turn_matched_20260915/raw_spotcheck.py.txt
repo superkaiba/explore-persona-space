@@ -1,0 +1,69 @@
+"""Check saved pooled predictions against their trained maps and original K1 targets."""
+from explore_persona_space.orchestrate.env import load_dotenv
+load_dotenv()
+import json,sys,time
+from pathlib import Path
+import numpy as np
+
+root=Path(__file__).resolve().parent
+wt=Path('/home/thomasjiralerspong/.codex/worktrees/825-matched-turn-transfer-20260915')
+sys.path.insert(0,str(wt/'scripts'))
+from independent_numeric_review import AnswerBank
+from explore_persona_space.analysis.turn_transfer_calibration import BatchedRidge
+
+config=json.loads((wt/'configs/analysis/issue825_turn_matched_inputs.json').read_text())
+archive=json.loads((root/'independent_archive_verification.json').read_text())
+files={Path(r['remote']).name:Path(r['local']) for r in archive['spotcheck_files']}
+report={'status':'PASS','observed_at':time.time(),'reader':'Hash-verified selected-row reader used by the independent audit; replaces a slow full-bank memmap-to-float32 conversion in the local parent loader', 'selection':'predeclared mix0 fold0 in both models; all-turn SSE/bias, first5 queries per turn for map prediction and both retrieval metrics','models':{}}
+for model in ('instruct','pretrained'):
+    manifest=json.loads((root.parent/'turn_bias_scale_inputs/inputs.json').read_text())
+    bank=AnswerBank(manifest,model)
+    bank.prepare()
+    context=[]
+    for start,stop,answer_record in bank.blocks:
+        rec=bank.records[answer_record['path'].replace('answer_own_t1','context_k')]
+        bank.check(rec)
+        arr=np.load(rec['local'],mmap_mode='r',allow_pickle=False)
+        assert arr.shape==(stop-start,3584)
+        context.append((start,stop,arr))
+    def take(identifiers,turns,kind):
+        positions=np.array([bank.lookup[(cid,int(t))] for cid,t in zip(identifiers,turns,strict=True)])
+        result=np.empty((len(positions),3584),dtype=np.float64)
+        filled=np.zeros(len(positions),dtype=bool)
+        for start,stop,arr in (context if kind=='x' else bank.arrays):
+            selected=(positions>=start)&(positions<stop)
+            if selected.any():
+                result[selected]=arr[positions[selected]-start].astype(np.float32)
+                filled[selected]=True
+        assert filled.all() and np.isfinite(result).all()
+        return result
+    coverage=json.loads((root/f'analysis/coverage_{model}.json').read_text())
+    ids=np.array(config['cohort_ids']); labels=np.array(config['fold_labels']); train=labels!=0; test=labels==0
+    source_turns=np.array(coverage['assignments'][0])[train]
+    bias=take(ids[train],source_turns,'y').mean(0)-take(ids[train],source_turns,'x').mean(0)
+    print('SPOTCHECK',model,'source bank verified and selected',flush=True)
+    with np.load(files[f'{model}_mix0_folds0-1.npz']) as z:
+        fit=BatchedRidge(**{k:z[k] for k in z.files})
+    with np.load(files[f'{model}_mix0_fold0.npz']) as z:
+        np.testing.assert_array_equal(z['ids'],ids[test])
+        np.testing.assert_allclose(z['source_bias'],bias,rtol=0,atol=1e-10)
+        raw=z['raw']; sse=z['sse']; cosine=z['cosine_hit']; euclidean=z['euclidean_hit']
+    maximum=0.
+    for t in range(1,13):
+        target_turns=np.full(test.sum(),t)
+        x=take(ids[test],target_turns,'x'); truth=take(ids[test],target_turns,'y')
+        np.testing.assert_allclose(sse[0,t-1],((raw[t-1]-truth)**2).sum(-1),rtol=0,atol=2e-8)
+        np.testing.assert_allclose(sse[1,t-1],((x+bias-truth)**2).sum(-1),rtol=0,atol=2e-8)
+        recomputed=fit.predict(0,x[:5])
+        error=float(np.abs(recomputed-raw[t-1,:5]).max());maximum=max(error,maximum)
+        if error>1e-6:raise ValueError('map/prediction mismatch')
+        for method,pred in enumerate((raw[t-1,:5],x[:5]+bias)):
+            dot=pred@truth.T
+            distances=(pred*pred).sum(-1)[:,None]+(truth*truth).sum(-1)[None,:]-2*dot
+            similarity=dot/(np.linalg.norm(pred,axis=1)[:,None]*np.linalg.norm(truth,axis=1)[None,:])
+            np.testing.assert_array_equal(euclidean[method,t-1,:5],distances.argmin(-1)==np.arange(5))
+            np.testing.assert_array_equal(cosine[method,t-1,:5],similarity.argmax(-1)==np.arange(5))
+    report['models'][model]={'heldout_conversations':int(test.sum()),'turns':12,'n_train':int(train.sum()),'max_prediction_abs_error':maximum}
+    del bank,context,fit,raw
+(root/'raw_spotcheck.json').write_text(json.dumps(report,indent=2)+'\n')
+print(json.dumps(report,indent=2))

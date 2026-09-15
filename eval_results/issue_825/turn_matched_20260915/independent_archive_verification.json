@@ -1,0 +1,40 @@
+{
+  "tensor": {
+    "repo": "superkaiba1/explore-persona-space-overflow",
+    "revision": "4b4d8f01f12534fa039c4d0423918b41e3e16b8c",
+    "prefix": "issue825_turn_matched_20260915/numerical",
+    "count": 110,
+    "bytes": 27987350180
+  },
+  "text": {
+    "repo": "superkaiba1/explore-persona-space-data",
+    "revision": "8c09aa563b7bfe47b1c44e0c96c9572acfd6a9e6",
+    "prefix": "issue825_turn_matched_20260915/analysis",
+    "count": 121,
+    "bytes": 653323
+  },
+  "status": "PASS",
+  "verified_at": 1789490844.3679636,
+  "spotcheck_files": [
+    {
+      "remote": "issue825_turn_matched_20260915/numerical/predictions/instruct_mix0_fold0.npz",
+      "local": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_matched_outputs/spotcheck_cache/models--superkaiba1--explore-persona-space-overflow/snapshots/4b4d8f01f12534fa039c4d0423918b41e3e16b8c/issue825_turn_matched_20260915/numerical/predictions/instruct_mix0_fold0.npz",
+      "sha256": "ce067fa5f7bed863fb0f68d413332a37155a38e320354c79f7661abab9893075"
+    },
+    {
+      "remote": "issue825_turn_matched_20260915/numerical/maps/instruct_mix0_folds0-1.npz",
+      "local": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_matched_outputs/spotcheck_cache/models--superkaiba1--explore-persona-space-overflow/snapshots/4b4d8f01f12534fa039c4d0423918b41e3e16b8c/issue825_turn_matched_20260915/numerical/maps/instruct_mix0_folds0-1.npz",
+      "sha256": "13c270a6ea9decedbbe7b238c9faf7824b8da050831f6ad4c6b5e46664ba89df"
+    },
+    {
+      "remote": "issue825_turn_matched_20260915/numerical/predictions/pretrained_mix0_fold0.npz",
+      "local": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_matched_outputs/spotcheck_cache/models--superkaiba1--explore-persona-space-overflow/snapshots/4b4d8f01f12534fa039c4d0423918b41e3e16b8c/issue825_turn_matched_20260915/numerical/predictions/pretrained_mix0_fold0.npz",
+      "sha256": "bc6f565ff0bb77b1d944cc72d24837d097588793bd1ab7a595393c7c3f920e64"
+    },
+    {
+      "remote": "issue825_turn_matched_20260915/numerical/maps/pretrained_mix0_folds0-1.npz",
+      "local": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_matched_outputs/spotcheck_cache/models--superkaiba1--explore-persona-space-overflow/snapshots/4b4d8f01f12534fa039c4d0423918b41e3e16b8c/issue825_turn_matched_20260915/numerical/maps/pretrained_mix0_folds0-1.npz",
+      "sha256": "3f7399c0723f0c5fa3196203e7f7a30711a93e51c5285b8d54fd4e2fac1bfb0c"
+    }
+  ]
+}
