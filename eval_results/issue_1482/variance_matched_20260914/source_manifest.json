@@ -1,0 +1,402 @@
+{
+  "repo_id": "superkaiba1/explore-persona-space-data",
+  "revision": "f8a377cdddaea06327766800e5cc4d4f986e84c4",
+  "files": [
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_capture_summary.json",
+      "size": 834,
+      "sha256": "4cd6a64c7183522f223e173db633b98bb7e84e36614a2363433af2e455bd40f8",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_capture_summary.json"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0000.npz",
+      "size": 6547630,
+      "sha256": "d3622a6c9335d1325b8047547cfd8f1cb61c0c05b7cf0b6696bcea7bb5f45b3e",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0000.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0001.npz",
+      "size": 7294090,
+      "sha256": "09220491a8f979634f19a8181af196d2092f37f59fdde658bafb2db47cb077c1",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0001.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0002.npz",
+      "size": 6676825,
+      "sha256": "8a91f62bb4acd1b36425d55290ae97eb906d5e5c3d7f76412f836088bbd7e256",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0002.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0003.npz",
+      "size": 6719890,
+      "sha256": "03ef359ebea72742a7c3316f52d58098ae9fd1cf8fae1742c7c845e37c088fda",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0003.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0004.npz",
+      "size": 6791665,
+      "sha256": "f5cd056df823adb027ccd3573c9f542a5472949a387131fbacd3e58a34fc818c",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0004.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0005.npz",
+      "size": 6992635,
+      "sha256": "4644f260f74944b34f0751353096a22c3fd51e572da25dac6f94f2c4fa69b711",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0005.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0006.npz",
+      "size": 6791665,
+      "sha256": "29558d60cda6677612043630416b7eb639599d3698f33ddf332bd63e830a7e59",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0006.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0007.npz",
+      "size": 6533275,
+      "sha256": "8420007e9ed84c32448f569385beed5e7a13d502647a584dda32c9df204e6560",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0007.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0008.npz",
+      "size": 6762955,
+      "sha256": "571bf745c30b52b7200a07860a50554ae72f730c499b6395b2ca213b04d838fe",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0008.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0009.npz",
+      "size": 6806020,
+      "sha256": "d85c18ff355be33b1a338de5a83e419addb9268de45e8bc8f35cd541b15108a5",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0009.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0010.npz",
+      "size": 7021345,
+      "sha256": "e48fe68dfb04f69241686352c2dd2eafca627318da1a27111822b997e17e3014",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0010.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0011.npz",
+      "size": 7121830,
+      "sha256": "c802ec656a88293bbaf20c25e47e448a59ba3c5bd65226b09a1204b5788f1b4a",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0011.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0012.npz",
+      "size": 6705535,
+      "sha256": "1d01bf93c26c35d2d479f9da819c4ac84d3d5eea10db48e3c3ad682a5753c150",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0012.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0013.npz",
+      "size": 7006990,
+      "sha256": "beffaa751c4cec3f5e6062dfb389052fb2890567162856be74b1f59fa490f443",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0013.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0014.npz",
+      "size": 6461500,
+      "sha256": "b461f760096277b314759db05f14a196f6f3f55519aeb11818a29c9b7c2f7ea3",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0014.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0015.npz",
+      "size": 6648115,
+      "sha256": "d0065fde06ac91d670229b5394f13691d07f6dd7cc31dbc35838d5a0c9d4539c",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0015.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0016.npz",
+      "size": 6260530,
+      "sha256": "bf22d5913f687676e18b9d240e66b50e10070c4eceafc300b0a4c0774683c8a9",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0016.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0017.npz",
+      "size": 6892150,
+      "sha256": "798760a0220faca54aadde137f437e64dac020bd7f8cfb831882a420ffce7b58",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0017.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0018.npz",
+      "size": 6303595,
+      "sha256": "2eb28a203570004594e37f5d8b43edb89ef869ef8e948d1a9113b443740d53d0",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0018.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0019.npz",
+      "size": 6777310,
+      "sha256": "06e48591b4909e9b38e511fc0dcc03b6f348a2bafc4ea3188d4c4fd7391fee8d",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0019.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0020.npz",
+      "size": 6762955,
+      "sha256": "d8fc23dd3be3e0a1657107b288246c9f5f2474c78b8865e3e8aa2090184b111d",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0020.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0021.npz",
+      "size": 6260530,
+      "sha256": "1408f9d47b69b667b94f9c1435bd43a8f3df10a17a6381ff4468d54556e54c88",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0021.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0022.npz",
+      "size": 6705535,
+      "sha256": "a0c9b845ab710965f8dad20d5fb35717357bda3dcc15f46dcf2da3b8966777f2",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0022.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0023.npz",
+      "size": 7064410,
+      "sha256": "1d206b6e413a332f47e83413cf29e824e2e411701180a659382d7b3d0ea1a691",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0023.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0024.npz",
+      "size": 6963925,
+      "sha256": "824c096e801410b0651092faa69f1ab34e5a23e0b0b3653c492d763faf6e8cea",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0024.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0025.npz",
+      "size": 6676825,
+      "sha256": "9009f6a5f0ba7dce4aad132e75c46d285c2c219fa880e05a48e98fd424f59056",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0025.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0026.npz",
+      "size": 6992635,
+      "sha256": "96b0e0f7c0a0a9b4a17f71e692b3efcd759a8b2e666fa17203d2116637d4ef88",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0026.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0027.npz",
+      "size": 6231820,
+      "sha256": "e55f16c8148ed6eb658a48d2b5c5822879ff13da5c9e03e16170a916bd46f29b",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0027.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0028.npz",
+      "size": 6906505,
+      "sha256": "843bccacaf3cfb0d315131f99250bdb05722337e0a41e61819392ecb77acc337",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0028.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0029.npz",
+      "size": 6791665,
+      "sha256": "352774105e39735091610b388409d5f3a4f9101ad072ce5d9758c7bc79aad3b1",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0029.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0030.npz",
+      "size": 6935215,
+      "sha256": "6f1b8ae6a181f2aba18253fb5099af64b62f1accead3a2b374c13490a1a0ec54",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0030.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0031.npz",
+      "size": 6949570,
+      "sha256": "3550f3d12905e39402ea565876d18312c96a35c27ad7ffbd2049ff8ab79bb8dd",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0031.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0032.npz",
+      "size": 6361015,
+      "sha256": "c9120b5f6492ecff26788986d2736a29b7d414f12876e96c78df3e79d5c3f8cc",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0032.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0033.npz",
+      "size": 7193605,
+      "sha256": "39b6e5534fad21fc6141f345c18faf1e47af4feaef9f1efe2e65985a1de6cf20",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0033.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0034.npz",
+      "size": 6490210,
+      "sha256": "ec8e38fb33380107737f2a01fbcd29baa5ed1d8111f6ea6f8c1d7d869205b48a",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0034.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0035.npz",
+      "size": 6174400,
+      "sha256": "7d13e7cfdde9d4d5772c9c2df7368119ba5a338bf9276db265b30d8dd65c3f12",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0035.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0036.npz",
+      "size": 6791665,
+      "sha256": "5971c60f9ebe3ec89864d948d5e0c40398de0d298f2db2bb69337bc2883b0311",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0036.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0037.npz",
+      "size": 7078765,
+      "sha256": "a12aff6ffd18719722369cd54f1dc056db5408daf44127908e8867fc0ab71c20",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0037.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0038.npz",
+      "size": 6518920,
+      "sha256": "b46875f65554ac1edd18d8bbfda578c34683abe2122287aa5de1862e3538d45b",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0038.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0039.npz",
+      "size": 6633760,
+      "sha256": "793b7466135396275524be11a49a22938ee0f5116e7a27a87d1cf0a04616307d",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0039.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0040.npz",
+      "size": 6791665,
+      "sha256": "b570ba6e9b374221662b1f4639b87c8d247647f7b841be0d04e353d9bc4df459",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0040.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0041.npz",
+      "size": 6533275,
+      "sha256": "76d5d71497302a8de8527406c73d41df153ffabf56b5a25c7807a69b6e40114c",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0041.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0042.npz",
+      "size": 7251025,
+      "sha256": "9140153066f7602226e37e3f53228a2546e38b50bfec50882926c2028f14f353",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0042.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0043.npz",
+      "size": 7193605,
+      "sha256": "426f2c14d2a7369f40d3eac5939879a023749096763eba0161d86b1a3f83bab5",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0043.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0044.npz",
+      "size": 7035700,
+      "sha256": "b296ce181b7e6396bbc1cffbb57190a4c52f442c8d0536551a23d40a95fafa0a",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0044.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0045.npz",
+      "size": 6533275,
+      "sha256": "7c95237d3d7b847389da01ea949b4505c9f7fbd34d7dd220955ca483b836a0e1",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0045.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0046.npz",
+      "size": 6475855,
+      "sha256": "89f30d5fc0f5787dd5cfa5d6926b45233d40a809109f1b3277f7d61b9194a888",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0046.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0047.npz",
+      "size": 6504565,
+      "sha256": "3579a3976a87cbd117831a46e2390f83c8f8e8beb1f76a046015ffd9151c833d",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0047.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0048.npz",
+      "size": 7093120,
+      "sha256": "fe04aab8151020f81e606b3392c52c95317b14f796a0b30da37c93baf576e715",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0048.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0049.npz",
+      "size": 6748600,
+      "sha256": "2663f1d100d8007c91ecb973781b266a335b31501db4f0df0fd828b6d7b407b6",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0049.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0050.npz",
+      "size": 6705535,
+      "sha256": "23927aea5f767b5e52587c2a597cecac5bfe7501a6e1a2ab65d4f2a0d4aeb57d",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0050.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0051.npz",
+      "size": 6877795,
+      "sha256": "8c14b830590049a256515c683a90bb85ff28165f4368be902c50dd8b296182dd",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0051.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0052.npz",
+      "size": 6490210,
+      "sha256": "4983ef81a641d3b62c39ee2b87596039c958f6d64caeeb282aa47fbec0d02bb5",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0052.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0053.npz",
+      "size": 6447145,
+      "sha256": "2cd520ec772421e48b87b1d29fcb76ceddaf4eace1572e82b76d908dfa38557e",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0053.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0054.npz",
+      "size": 6605050,
+      "sha256": "d21ef016bd6d1e8433d83edb831d502e151496f8a3213e9c4587856da97270bc",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0054.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0055.npz",
+      "size": 6188755,
+      "sha256": "195ab6922eed0c05d50656b10ffdd3af570c50ec42eca4b4ad07b88ca13d44d4",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0055.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0056.npz",
+      "size": 6590695,
+      "sha256": "78fcce81f05bfa41c7b5280e0eee2247ae7d095569042b5025acb7940a78d18b",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0056.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0057.npz",
+      "size": 6662470,
+      "sha256": "00dc903602ef3e6911ea917eadd2f00a02c956c47078395729c7218ad9285264",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0057.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0058.npz",
+      "size": 6619405,
+      "sha256": "165be04d1a865e3dd606c7ac8c5eee4604c4aff999ed19bcbf21eea01086a32a",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0058.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0059.npz",
+      "size": 6662470,
+      "sha256": "abb057ce524893656bcdbadcc07e00eff20355c187d9596aa85afbfe1116bd90",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0059.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0060.npz",
+      "size": 7078765,
+      "sha256": "79f124c8023f39057952f6f0f17b8fe26e4d77d4405b879f04229f3f28629063",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0060.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0061.npz",
+      "size": 6561985,
+      "sha256": "59e1053e49aed2424b7acfab46d1db5772d24a965bbdb1a58eef1deb7c376030",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0061.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0062.npz",
+      "size": 6935215,
+      "sha256": "a464f717a849e7ee27a18dd56341ac0e25869f98876d89ea47fd512575c5a464",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0062.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0063.npz",
+      "size": 6576340,
+      "sha256": "8228ba4de9861eccdbcade1c8d480c369952d880d42f877a427a75f182a648f9",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/ans_l20_g0063.npz"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/split_indices_matryoshka.npz",
+      "size": 271010,
+      "sha256": "2f3fd029bec03d0ef568a9dc6fdb784975305823a9cdcad45d5fb16eec69e431",
+      "local": "/home/thomasjiralerspong/.codex/research/matryoshka-variance-match-20260914/inputs/issue1482_error_analysis/analysis_tensors/matryoshka_tier/store/split_indices_matryoshka.npz"
+    }
+  ]
+}

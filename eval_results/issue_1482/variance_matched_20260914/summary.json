@@ -1,0 +1,726 @@
+{
+  "generated_utc": "2026-09-15T01:36:35.862399+00:00",
+  "statistic": "P(coarser feature has higher held-out decoder-direction R2 within matched cells), minus 0.5; score ties count as one half; pairs weighted by cell pair count",
+  "matching": {
+    "primary_bins": 5,
+    "joint": "crossed marginal quantiles",
+    "sensitivity_bins": [
+      10,
+      20
+    ],
+    "minimum_total_features_per_cell": 120,
+    "edges": "recomputed in each feature bootstrap draw and each contrast subset"
+  },
+  "bootstrap": {
+    "draws": 2000,
+    "seed": 20260910,
+    "unit": "feature",
+    "interval": "percentile 95%",
+    "schemes_paired": true,
+    "limitation": "conditions on the fixed fitted map and evaluation answers; does not account for dependence between correlated SAE features"
+  },
+  "validation": "production batched estimator agrees with unchanged parent for each full panel and three bootstrap draws per contrast/scheme, absolute tolerance 1e-12",
+  "panel_sha256": "c8b4ebd0958a032a524d2ab8785077b07ab4b48bab1d4079f41050696980c152",
+  "code_sha256": "5148a8b8c5bf2b9b0cdaa878e3aa23b4bfdca90886aed00fee55dddb2998dfba",
+  "provenance": {
+    "git_commit": "c40a7e5bda8f3f8ea7e1236769af266cb9efdc38",
+    "git_dirty": false,
+    "phase": "variance-matched-concordance",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue1482_tier_variance_control.py"
+  },
+  "results": {
+    "coarsest_vs_rest": {
+      "n": 16384,
+      "n_positive": 1640,
+      "schemes": {
+        "pooled": {
+          "value": 0.20957516410147825,
+          "comparable_pairs": 24180160,
+          "eligible_features": 16384,
+          "eligible_positive_features": 1640,
+          "eligible_negative_features": 14744,
+          "eligible_cells": 1,
+          "occupied_cells": 1,
+          "all_cross_tier_pairs": 24180160,
+          "pair_fraction": 1.0,
+          "sensitivity": {},
+          "ci95": [
+            0.19306053005815021,
+            0.22509769988808576
+          ]
+        },
+        "activity": {
+          "value": 0.27808032785426473,
+          "comparable_pairs": 3708477,
+          "eligible_features": 16384,
+          "eligible_positive_features": 1640,
+          "eligible_negative_features": 14744,
+          "eligible_cells": 5,
+          "occupied_cells": 5,
+          "all_cross_tier_pairs": 24180160,
+          "pair_fraction": 0.1533685881317576,
+          "sensitivity": {
+            "10": {
+              "value": 0.31305662523249,
+              "comparable_pairs": 1656523,
+              "eligible_features": 16384,
+              "eligible_positive_features": 1640,
+              "eligible_negative_features": 14744,
+              "eligible_cells": 10,
+              "occupied_cells": 10,
+              "all_cross_tier_pairs": 24180160
+            },
+            "20": {
+              "value": 0.3453040602110178,
+              "comparable_pairs": 773679,
+              "eligible_features": 16384,
+              "eligible_positive_features": 1640,
+              "eligible_negative_features": 14744,
+              "eligible_cells": 20,
+              "occupied_cells": 20,
+              "all_cross_tier_pairs": 24180160
+            }
+          },
+          "ci95": [
+            0.26293002758935646,
+            0.2923892938195713
+          ]
+        },
+        "variance": {
+          "value": -0.07282896056399335,
+          "comparable_pairs": 3749264,
+          "eligible_features": 16384,
+          "eligible_positive_features": 1640,
+          "eligible_negative_features": 14744,
+          "eligible_cells": 5,
+          "occupied_cells": 5,
+          "all_cross_tier_pairs": 24180160,
+          "pair_fraction": 0.1550553842489049,
+          "sensitivity": {
+            "10": {
+              "value": -0.19835388699516127,
+              "comparable_pairs": 1538412,
+              "eligible_features": 16384,
+              "eligible_positive_features": 1640,
+              "eligible_negative_features": 14744,
+              "eligible_cells": 10,
+              "occupied_cells": 10,
+              "all_cross_tier_pairs": 24180160
+            },
+            "20": {
+              "value": -0.2883351735554983,
+              "comparable_pairs": 687417,
+              "eligible_features": 16384,
+              "eligible_positive_features": 1640,
+              "eligible_negative_features": 14744,
+              "eligible_cells": 20,
+              "occupied_cells": 20,
+              "all_cross_tier_pairs": 24180160
+            }
+          },
+          "ci95": [
+            -0.09038478001064197,
+            -0.05428686315545113
+          ]
+        },
+        "variance_and_activity": {
+          "value": -0.026760426021268546,
+          "comparable_pairs": 492182,
+          "eligible_features": 13782,
+          "eligible_positive_features": 1640,
+          "eligible_negative_features": 12142,
+          "eligible_cells": 21,
+          "occupied_cells": 25,
+          "all_cross_tier_pairs": 24180160,
+          "pair_fraction": 0.020354786734248242,
+          "sensitivity": {
+            "10": {
+              "value": -0.06404348490248996,
+              "comparable_pairs": 78556,
+              "eligible_features": 9081,
+              "eligible_positive_features": 1408,
+              "eligible_negative_features": 7673,
+              "eligible_cells": 49,
+              "occupied_cells": 100,
+              "all_cross_tier_pairs": 24180160
+            },
+            "20": {
+              "value": 0.17900919305413687,
+              "comparable_pairs": 3916,
+              "eligible_features": 459,
+              "eligible_positive_features": 433,
+              "eligible_negative_features": 26,
+              "eligible_cells": 3,
+              "occupied_cells": 400,
+              "all_cross_tier_pairs": 24180160
+            }
+          },
+          "ci95": [
+            -0.05108714043089431,
+            -0.00436557232805034
+          ]
+        }
+      },
+      "paired_difference_variance_minus_activity": {
+        "value": -0.3509092884182581,
+        "ci95": [
+          -0.3658408549195037,
+          -0.33423535718084757
+        ]
+      }
+    },
+    "coarsest_vs_middle": {
+      "n": 7784,
+      "n_positive": 1640,
+      "schemes": {
+        "pooled": {
+          "value": 0.21630849450584344,
+          "comparable_pairs": 10076160,
+          "eligible_features": 7784,
+          "eligible_positive_features": 1640,
+          "eligible_negative_features": 6144,
+          "eligible_cells": 1,
+          "occupied_cells": 1,
+          "all_cross_tier_pairs": 10076160,
+          "pair_fraction": 1.0,
+          "sensitivity": {},
+          "ci95": [
+            0.20097754921037042,
+            0.23137976805580965
+          ]
+        },
+        "activity": {
+          "value": 0.31254245146805815,
+          "comparable_pairs": 1475214,
+          "eligible_features": 7784,
+          "eligible_positive_features": 1640,
+          "eligible_negative_features": 6144,
+          "eligible_cells": 5,
+          "occupied_cells": 5,
+          "all_cross_tier_pairs": 10076160,
+          "pair_fraction": 0.1464063690929878,
+          "sensitivity": {
+            "10": {
+              "value": 0.3428544638864446,
+              "comparable_pairs": 693230,
+              "eligible_features": 7784,
+              "eligible_positive_features": 1640,
+              "eligible_negative_features": 6144,
+              "eligible_cells": 10,
+              "occupied_cells": 10,
+              "all_cross_tier_pairs": 10076160
+            },
+            "20": {
+              "value": 0.35479390720595727,
+              "comparable_pairs": 339483,
+              "eligible_features": 7784,
+              "eligible_positive_features": 1640,
+              "eligible_negative_features": 6144,
+              "eligible_cells": 20,
+              "occupied_cells": 20,
+              "all_cross_tier_pairs": 10076160
+            }
+          },
+          "ci95": [
+            0.29870414507255816,
+            0.32553298431873123
+          ]
+        },
+        "variance": {
+          "value": -0.14452986220065622,
+          "comparable_pairs": 1291951,
+          "eligible_features": 7784,
+          "eligible_positive_features": 1640,
+          "eligible_negative_features": 6144,
+          "eligible_cells": 5,
+          "occupied_cells": 5,
+          "all_cross_tier_pairs": 10076160,
+          "pair_fraction": 0.12821858723958332,
+          "sensitivity": {
+            "10": {
+              "value": -0.2423380323652745,
+              "comparable_pairs": 584021,
+              "eligible_features": 7784,
+              "eligible_positive_features": 1640,
+              "eligible_negative_features": 6144,
+              "eligible_cells": 10,
+              "occupied_cells": 10,
+              "all_cross_tier_pairs": 10076160
+            },
+            "20": {
+              "value": -0.2725564837333897,
+              "comparable_pairs": 283710,
+              "eligible_features": 7784,
+              "eligible_positive_features": 1640,
+              "eligible_negative_features": 6144,
+              "eligible_cells": 20,
+              "occupied_cells": 20,
+              "all_cross_tier_pairs": 10076160
+            }
+          },
+          "ci95": [
+            -0.16277834592362447,
+            -0.12459325219787411
+          ]
+        },
+        "variance_and_activity": {
+          "value": -0.06318538031386373,
+          "comparable_pairs": 151467,
+          "eligible_features": 6826,
+          "eligible_positive_features": 1640,
+          "eligible_negative_features": 5186,
+          "eligible_cells": 22,
+          "occupied_cells": 25,
+          "all_cross_tier_pairs": 10076160,
+          "pair_fraction": 0.01503221465320122,
+          "sensitivity": {
+            "10": {
+              "value": -0.05806099135790205,
+              "comparable_pairs": 10067,
+              "eligible_features": 1111,
+              "eligible_positive_features": 674,
+              "eligible_negative_features": 437,
+              "eligible_cells": 8,
+              "occupied_cells": 100,
+              "all_cross_tier_pairs": 10076160
+            },
+            "20": {
+              "value": null,
+              "status": "no comparable cells under inherited minimum cell size",
+              "comparable_pairs": 0,
+              "eligible_features": 0
+            }
+          },
+          "ci95": [
+            -0.08927168266525387,
+            -0.03504764762801461
+          ]
+        }
+      },
+      "paired_difference_variance_minus_activity": {
+        "value": -0.45707231366871437,
+        "ci95": [
+          -0.47775634242305076,
+          -0.4343220536812402
+        ]
+      }
+    },
+    "coarsest_vs_finest": {
+      "n": 10240,
+      "n_positive": 1640,
+      "schemes": {
+        "pooled": {
+          "value": 0.20476474758933638,
+          "comparable_pairs": 14104000,
+          "eligible_features": 10240,
+          "eligible_positive_features": 1640,
+          "eligible_negative_features": 8600,
+          "eligible_cells": 1,
+          "occupied_cells": 1,
+          "all_cross_tier_pairs": 14104000,
+          "pair_fraction": 1.0,
+          "sensitivity": {},
+          "ci95": [
+            0.18891180757177356,
+            0.2204929576578291
+          ]
+        },
+        "activity": {
+          "value": 0.27596031540708643,
+          "comparable_pairs": 1484304,
+          "eligible_features": 10240,
+          "eligible_positive_features": 1640,
+          "eligible_negative_features": 8600,
+          "eligible_cells": 5,
+          "occupied_cells": 5,
+          "all_cross_tier_pairs": 14104000,
+          "pair_fraction": 0.10523993193420306,
+          "sensitivity": {
+            "10": {
+              "value": 0.3581592968472844,
+              "comparable_pairs": 603226,
+              "eligible_features": 10240,
+              "eligible_positive_features": 1640,
+              "eligible_negative_features": 8600,
+              "eligible_cells": 10,
+              "occupied_cells": 10,
+              "all_cross_tier_pairs": 14104000
+            },
+            "20": {
+              "value": 0.3733162359977249,
+              "comparable_pairs": 293613,
+              "eligible_features": 10240,
+              "eligible_positive_features": 1640,
+              "eligible_negative_features": 8600,
+              "eligible_cells": 20,
+              "occupied_cells": 20,
+              "all_cross_tier_pairs": 14104000
+            }
+          },
+          "ci95": [
+            0.2585919327094337,
+            0.29233483606091165
+          ]
+        },
+        "variance": {
+          "value": -0.15338558281478593,
+          "comparable_pairs": 1764866,
+          "eligible_features": 10240,
+          "eligible_positive_features": 1640,
+          "eligible_negative_features": 8600,
+          "eligible_cells": 5,
+          "occupied_cells": 5,
+          "all_cross_tier_pairs": 14104000,
+          "pair_fraction": 0.12513230289279637,
+          "sensitivity": {
+            "10": {
+              "value": -0.3206758564465292,
+              "comparable_pairs": 696716,
+              "eligible_features": 10240,
+              "eligible_positive_features": 1640,
+              "eligible_negative_features": 8600,
+              "eligible_cells": 10,
+              "occupied_cells": 10,
+              "all_cross_tier_pairs": 14104000
+            },
+            "20": {
+              "value": -0.35730530220689005,
+              "comparable_pairs": 338576,
+              "eligible_features": 10240,
+              "eligible_positive_features": 1640,
+              "eligible_negative_features": 8600,
+              "eligible_cells": 20,
+              "occupied_cells": 20,
+              "all_cross_tier_pairs": 14104000
+            }
+          },
+          "ci95": [
+            -0.1721499409431001,
+            -0.13236742010466443
+          ]
+        },
+        "variance_and_activity": {
+          "value": -0.10933570239867868,
+          "comparable_pairs": 159838,
+          "eligible_features": 8932,
+          "eligible_positive_features": 1640,
+          "eligible_negative_features": 7292,
+          "eligible_cells": 22,
+          "occupied_cells": 25,
+          "all_cross_tier_pairs": 14104000,
+          "pair_fraction": 0.011332813386273398,
+          "sensitivity": {
+            "10": {
+              "value": 0.057927089558610145,
+              "comparable_pairs": 11713,
+              "eligible_features": 3431,
+              "eligible_positive_features": 1091,
+              "eligible_negative_features": 2340,
+              "eligible_cells": 21,
+              "occupied_cells": 100,
+              "all_cross_tier_pairs": 14104000
+            },
+            "20": {
+              "value": 0.39922480620155043,
+              "comparable_pairs": 258,
+              "eligible_features": 131,
+              "eligible_positive_features": 129,
+              "eligible_negative_features": 2,
+              "eligible_cells": 1,
+              "occupied_cells": 398,
+              "all_cross_tier_pairs": 14104000
+            }
+          },
+          "ci95": [
+            -0.14220048768599367,
+            -0.0765480605561195
+          ]
+        }
+      },
+      "paired_difference_variance_minus_activity": {
+        "value": -0.42934589822187236,
+        "ci95": [
+          -0.45135062854362246,
+          -0.4059663093276876
+        ]
+      }
+    },
+    "middle_vs_finest": {
+      "n": 14744,
+      "n_positive": 6144,
+      "schemes": {
+        "pooled": {
+          "value": -0.03170489643895347,
+          "comparable_pairs": 52838400,
+          "eligible_features": 14744,
+          "eligible_positive_features": 6144,
+          "eligible_negative_features": 8600,
+          "eligible_cells": 1,
+          "occupied_cells": 1,
+          "all_cross_tier_pairs": 52838400,
+          "pair_fraction": 1.0,
+          "sensitivity": {},
+          "ci95": [
+            -0.040887502200903134,
+            -0.02230679769437264
+          ]
+        },
+        "activity": {
+          "value": 0.029969708879958534,
+          "comparable_pairs": 8767586,
+          "eligible_features": 14744,
+          "eligible_positive_features": 6144,
+          "eligible_negative_features": 8600,
+          "eligible_cells": 5,
+          "occupied_cells": 5,
+          "all_cross_tier_pairs": 52838400,
+          "pair_fraction": 0.16593208726986433,
+          "sensitivity": {
+            "10": {
+              "value": 0.034374720619703925,
+              "comparable_pairs": 4328777,
+              "eligible_features": 14744,
+              "eligible_positive_features": 6144,
+              "eligible_negative_features": 8600,
+              "eligible_cells": 10,
+              "occupied_cells": 10,
+              "all_cross_tier_pairs": 52838400
+            },
+            "20": {
+              "value": 0.035693987429500695,
+              "comparable_pairs": 2157114,
+              "eligible_features": 14744,
+              "eligible_positive_features": 6144,
+              "eligible_negative_features": 8600,
+              "eligible_cells": 20,
+              "occupied_cells": 20,
+              "all_cross_tier_pairs": 52838400
+            }
+          },
+          "ci95": [
+            0.019943635619200477,
+            0.04031889833038944
+          ]
+        },
+        "variance": {
+          "value": -0.09789435148302938,
+          "comparable_pairs": 10407245,
+          "eligible_features": 14744,
+          "eligible_positive_features": 6144,
+          "eligible_negative_features": 8600,
+          "eligible_cells": 5,
+          "occupied_cells": 5,
+          "all_cross_tier_pairs": 52838400,
+          "pair_fraction": 0.19696366657582365,
+          "sensitivity": {
+            "10": {
+              "value": -0.10558371973368652,
+              "comparable_pairs": 5185468,
+              "eligible_features": 14744,
+              "eligible_positive_features": 6144,
+              "eligible_negative_features": 8600,
+              "eligible_cells": 10,
+              "occupied_cells": 10,
+              "all_cross_tier_pairs": 52838400
+            },
+            "20": {
+              "value": -0.10790671562352572,
+              "comparable_pairs": 2588129,
+              "eligible_features": 14744,
+              "eligible_positive_features": 6144,
+              "eligible_negative_features": 8600,
+              "eligible_cells": 20,
+              "occupied_cells": 20,
+              "all_cross_tier_pairs": 52838400
+            }
+          },
+          "ci95": [
+            -0.10809319644995,
+            -0.08869446399057375
+          ]
+        },
+        "variance_and_activity": {
+          "value": -0.07553913520956379,
+          "comparable_pairs": 1793845,
+          "eligible_features": 14744,
+          "eligible_positive_features": 6144,
+          "eligible_negative_features": 8600,
+          "eligible_cells": 25,
+          "occupied_cells": 25,
+          "all_cross_tier_pairs": 52838400,
+          "pair_fraction": 0.0339496464692345,
+          "sensitivity": {
+            "10": {
+              "value": -0.08773314049131614,
+              "comparable_pairs": 417613,
+              "eligible_features": 13107,
+              "eligible_positive_features": 5404,
+              "eligible_negative_features": 7703,
+              "eligible_cells": 83,
+              "occupied_cells": 100,
+              "all_cross_tier_pairs": 52838400
+            },
+            "20": {
+              "value": null,
+              "status": "no comparable cells under inherited minimum cell size",
+              "comparable_pairs": 0,
+              "eligible_features": 0
+            }
+          },
+          "ci95": [
+            -0.08641894463036988,
+            -0.06514611504519657
+          ]
+        }
+      },
+      "paired_difference_variance_minus_activity": {
+        "value": -0.12786406036298792,
+        "ci95": [
+          -0.13856611760131096,
+          -0.1180013800069247
+        ]
+      }
+    },
+    "coarsest_and_middle_vs_finest": {
+      "n": 16384,
+      "n_positive": 7784,
+      "schemes": {
+        "pooled": {
+          "value": 0.018116559908219587,
+          "comparable_pairs": 66942400,
+          "eligible_features": 16384,
+          "eligible_positive_features": 7784,
+          "eligible_negative_features": 8600,
+          "eligible_cells": 1,
+          "occupied_cells": 1,
+          "all_cross_tier_pairs": 66942400,
+          "pair_fraction": 1.0,
+          "sensitivity": {},
+          "ci95": [
+            0.008778503802078178,
+            0.02731695884668863
+          ]
+        },
+        "activity": {
+          "value": 0.06691461133500043,
+          "comparable_pairs": 10164499,
+          "eligible_features": 16384,
+          "eligible_positive_features": 7784,
+          "eligible_negative_features": 8600,
+          "eligible_cells": 5,
+          "occupied_cells": 5,
+          "all_cross_tier_pairs": 66942400,
+          "pair_fraction": 0.15183947692344463,
+          "sensitivity": {
+            "10": {
+              "value": 0.06913064497640087,
+              "comparable_pairs": 5016075,
+              "eligible_features": 16384,
+              "eligible_positive_features": 7784,
+              "eligible_negative_features": 8600,
+              "eligible_cells": 10,
+              "occupied_cells": 10,
+              "all_cross_tier_pairs": 66942400
+            },
+            "20": {
+              "value": 0.07021674609731465,
+              "comparable_pairs": 2500714,
+              "eligible_features": 16384,
+              "eligible_positive_features": 7784,
+              "eligible_negative_features": 8600,
+              "eligible_cells": 20,
+              "occupied_cells": 20,
+              "all_cross_tier_pairs": 66942400
+            }
+          },
+          "ci95": [
+            0.05720677138005646,
+            0.0773672566784559
+          ]
+        },
+        "variance": {
+          "value": -0.10417464882245747,
+          "comparable_pairs": 12507064,
+          "eligible_features": 16384,
+          "eligible_positive_features": 7784,
+          "eligible_negative_features": 8600,
+          "eligible_cells": 5,
+          "occupied_cells": 5,
+          "all_cross_tier_pairs": 66942400,
+          "pair_fraction": 0.18683321781113316,
+          "sensitivity": {
+            "10": {
+              "value": -0.1273455828856936,
+              "comparable_pairs": 6117829,
+              "eligible_features": 16384,
+              "eligible_positive_features": 7784,
+              "eligible_negative_features": 8600,
+              "eligible_cells": 10,
+              "occupied_cells": 10,
+              "all_cross_tier_pairs": 66942400
+            },
+            "20": {
+              "value": -0.1347377770874052,
+              "comparable_pairs": 3038617,
+              "eligible_features": 16384,
+              "eligible_positive_features": 7784,
+              "eligible_negative_features": 8600,
+              "eligible_cells": 20,
+              "occupied_cells": 20,
+              "all_cross_tier_pairs": 66942400
+            }
+          },
+          "ci95": [
+            -0.11314701594775546,
+            -0.0953206027987397
+          ]
+        },
+        "variance_and_activity": {
+          "value": -0.06646223631841047,
+          "comparable_pairs": 1996442,
+          "eligible_features": 16384,
+          "eligible_positive_features": 7784,
+          "eligible_negative_features": 8600,
+          "eligible_cells": 25,
+          "occupied_cells": 25,
+          "all_cross_tier_pairs": 66942400,
+          "pair_fraction": 0.029823280910155597,
+          "sensitivity": {
+            "10": {
+              "value": -0.08040786947178347,
+              "comparable_pairs": 480693,
+              "eligible_features": 14775,
+              "eligible_positive_features": 6791,
+              "eligible_negative_features": 7984,
+              "eligible_cells": 82,
+              "occupied_cells": 100,
+              "all_cross_tier_pairs": 66942400
+            },
+            "20": {
+              "value": 0.24574347332576618,
+              "comparable_pairs": 881,
+              "eligible_features": 459,
+              "eligible_positive_features": 453,
+              "eligible_negative_features": 6,
+              "eligible_cells": 3,
+              "occupied_cells": 400,
+              "all_cross_tier_pairs": 66942400
+            }
+          },
+          "ci95": [
+            -0.07731958398867728,
+            -0.05570229694836968
+          ]
+        }
+      },
+      "paired_difference_variance_minus_activity": {
+        "value": -0.1710892601574579,
+        "ci95": [
+          -0.1816323645016621,
+          -0.16125217877347348
+        ]
+      }
+    }
+  }
+}

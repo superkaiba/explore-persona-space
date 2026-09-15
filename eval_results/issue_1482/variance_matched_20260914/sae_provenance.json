@@ -1,0 +1,7 @@
+{
+  "repo_id": "chanind/qwen2.5-7B-it-layer-20-saes",
+  "revision": "db8c88b400e36e603d0563abcf8d289e5eff5687",
+  "filename": "lmsys/matryoshka/k-100/sae_weights.safetensors",
+  "sha256": "f7046e00a9afb287a310f3a3f2800d30371ce79c6d9eca07459fc001ad8f4a92",
+  "bytes": 1879587224
+}

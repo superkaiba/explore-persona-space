@@ -1,0 +1,170 @@
+{
+  "source": "/home/thomasjiralerspong/wt-matryoshka-variance-match/eval_results/issue_1482/variance_matched_20260914/summary.json",
+  "source_sha256": "61c3c8cc61dfdae98dfba612c91208bb62338edb60ffb4386d65bb3294ec7679",
+  "rows": {
+    "pooled": {
+      "value": 0.20957516410147825,
+      "comparable_pairs": 24180160,
+      "eligible_features": 16384,
+      "eligible_positive_features": 1640,
+      "eligible_negative_features": 14744,
+      "eligible_cells": 1,
+      "occupied_cells": 1,
+      "all_cross_tier_pairs": 24180160,
+      "pair_fraction": 1.0,
+      "sensitivity": {},
+      "ci95": [
+        0.19306053005815021,
+        0.22509769988808576
+      ]
+    },
+    "activity": {
+      "value": 0.27808032785426473,
+      "comparable_pairs": 3708477,
+      "eligible_features": 16384,
+      "eligible_positive_features": 1640,
+      "eligible_negative_features": 14744,
+      "eligible_cells": 5,
+      "occupied_cells": 5,
+      "all_cross_tier_pairs": 24180160,
+      "pair_fraction": 0.1533685881317576,
+      "sensitivity": {
+        "10": {
+          "value": 0.31305662523249,
+          "comparable_pairs": 1656523,
+          "eligible_features": 16384,
+          "eligible_positive_features": 1640,
+          "eligible_negative_features": 14744,
+          "eligible_cells": 10,
+          "occupied_cells": 10,
+          "all_cross_tier_pairs": 24180160
+        },
+        "20": {
+          "value": 0.3453040602110178,
+          "comparable_pairs": 773679,
+          "eligible_features": 16384,
+          "eligible_positive_features": 1640,
+          "eligible_negative_features": 14744,
+          "eligible_cells": 20,
+          "occupied_cells": 20,
+          "all_cross_tier_pairs": 24180160
+        }
+      },
+      "ci95": [
+        0.26293002758935646,
+        0.2923892938195713
+      ]
+    },
+    "variance": {
+      "value": -0.07282896056399335,
+      "comparable_pairs": 3749264,
+      "eligible_features": 16384,
+      "eligible_positive_features": 1640,
+      "eligible_negative_features": 14744,
+      "eligible_cells": 5,
+      "occupied_cells": 5,
+      "all_cross_tier_pairs": 24180160,
+      "pair_fraction": 0.1550553842489049,
+      "sensitivity": {
+        "10": {
+          "value": -0.19835388699516127,
+          "comparable_pairs": 1538412,
+          "eligible_features": 16384,
+          "eligible_positive_features": 1640,
+          "eligible_negative_features": 14744,
+          "eligible_cells": 10,
+          "occupied_cells": 10,
+          "all_cross_tier_pairs": 24180160
+        },
+        "20": {
+          "value": -0.2883351735554983,
+          "comparable_pairs": 687417,
+          "eligible_features": 16384,
+          "eligible_positive_features": 1640,
+          "eligible_negative_features": 14744,
+          "eligible_cells": 20,
+          "occupied_cells": 20,
+          "all_cross_tier_pairs": 24180160
+        }
+      },
+      "ci95": [
+        -0.09038478001064197,
+        -0.05428686315545113
+      ]
+    },
+    "variance_and_activity": {
+      "value": -0.026760426021268546,
+      "comparable_pairs": 492182,
+      "eligible_features": 13782,
+      "eligible_positive_features": 1640,
+      "eligible_negative_features": 12142,
+      "eligible_cells": 21,
+      "occupied_cells": 25,
+      "all_cross_tier_pairs": 24180160,
+      "pair_fraction": 0.020354786734248242,
+      "sensitivity": {
+        "10": {
+          "value": -0.06404348490248996,
+          "comparable_pairs": 78556,
+          "eligible_features": 9081,
+          "eligible_positive_features": 1408,
+          "eligible_negative_features": 7673,
+          "eligible_cells": 49,
+          "occupied_cells": 100,
+          "all_cross_tier_pairs": 24180160
+        },
+        "20": {
+          "value": 0.17900919305413687,
+          "comparable_pairs": 3916,
+          "eligible_features": 459,
+          "eligible_positive_features": 433,
+          "eligible_negative_features": 26,
+          "eligible_cells": 3,
+          "occupied_cells": 400,
+          "all_cross_tier_pairs": 24180160
+        }
+      },
+      "ci95": [
+        -0.05108714043089431,
+        -0.00436557232805034
+      ]
+    }
+  },
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      9.821,
+      4.911
+    ],
+    "exported_size_inches": [
+      9.821,
+      4.867
+    ],
+    "scale": 0.42,
+    "include_width_frac": 0.75,
+    "latex_include_line": "\\includegraphics[width=0.75\\textwidth]{figures/paper/tier_variance_matching.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "Coarse-tier concordance above chance \u2192",
+      "\u22120.1",
+      "0.0",
+      "0.1",
+      "0.2",
+      "0.3",
+      "Unmatched",
+      "Activity",
+      "Variance",
+      "Variance + activity",
+      "Coarsest versus finer Matryoshka features"
+    ]
+  }
+}

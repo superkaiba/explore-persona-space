@@ -1,0 +1,131 @@
+{
+  "verified_utc": "2026-09-15T01:38:37.248911+00:00",
+  "repo_id": "superkaiba1/explore-persona-space-data",
+  "revision": "14836dcaac9638b7f9c2cf7997c600be918ae188",
+  "prefix": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914",
+  "n_files_verified": 24,
+  "files": [
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/run.log",
+      "bytes": 3967,
+      "sha256": "a973d06d1ac5e2732e126fe5fed7fa8e0b43c96748404d1d44561c790a12dd80"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/bootstrap_coarsest_vs_rest.npz",
+      "bytes": 58955,
+      "sha256": "eb725cc73b9f5c6d8986c90cdbc35a6d1855ce3bff8a0b536ad1e0e06290288c"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/README.md",
+      "bytes": 4830,
+      "sha256": "b80a16deef02992af1c637a57e13fab1b962672b17f885faee5998736c584a2c"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/summary.json",
+      "bytes": 24612,
+      "sha256": "61c3c8cc61dfdae98dfba612c91208bb62338edb60ffb4386d65bb3294ec7679"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/panel.npz",
+      "bytes": 331620,
+      "sha256": "c8b4ebd0958a032a524d2ab8785077b07ab4b48bab1d4079f41050696980c152"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/bootstrap_middle_vs_finest.npz",
+      "bytes": 58623,
+      "sha256": "243cb3b2043e19a20b8b438062e5bad429a84f5fb0aa432e84a48de7cfbc1ff4"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/sae_provenance.json",
+      "bytes": 280,
+      "sha256": "5eb3205df62f11d6fca24597c558c2ed7a9fbf8fd01332551bdde1c215faddba"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/verification.json",
+      "bytes": 316,
+      "sha256": "2e60b098f6130427e92ea6824d7270f8689dbb80de83f7a6f5a19fdf4dd9d43c"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/bootstrap_coarsest_vs_middle.npz",
+      "bytes": 58857,
+      "sha256": "2630679ddcb8eec4947b182f0f641b1eafb2ef4a3d835b9a054a6c456050dc95"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/matching_diagnostics.json",
+      "bytes": 166072,
+      "sha256": "d9d3519d56f825a31db8785533114c4264633d3f7a0172b1d5eb9370efb643e0"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/complete.json",
+      "bytes": 199,
+      "sha256": "be6d53877467b40f00e98fabd09996d28873a0071dda2d4a84985307300fb669"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/bootstrap_coarsest_and_middle_vs_finest.npz",
+      "bytes": 58292,
+      "sha256": "3647345d66e85bc0edf6b86b344514d8d2ea2a944f53107e1311be676e73e70f"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/process_exit.txt",
+      "bytes": 12,
+      "sha256": "bde294368bfed77c2cddf8cec271d398aee9cdbab3b26e1059281bd33adb0120"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/preparation.json",
+      "bytes": 1101,
+      "sha256": "0f0239146854d174348440c2e43d76030917670ec2ee1f5d22be3e6c063eed9e"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/bootstrap_coarsest_vs_finest.npz",
+      "bytes": 58933,
+      "sha256": "4f8981e2184ae183c24718eb1f85bb177c15a8b2a93ea172d96f8784b2000d5a"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/source_manifest.json",
+      "bytes": 26630,
+      "sha256": "d1a117f56de4c92e9c3944b0966e4a246d5f338f8324a9e72185eb43d396cbd8"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/review.json",
+      "bytes": 399,
+      "sha256": "67d8b2e143f919db13da307e67d53a5b49ef1718e12b32ab5b67415342e61431"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/figures/tier_variance_matching.meta.json",
+      "bytes": 5026,
+      "sha256": "780e51328be462437adc0fca1c60b2fb0e8253b27fa3e31ff192748663400fac"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/figures/tier_variance_matching.pdf",
+      "bytes": 9711,
+      "sha256": "7e8eae3f9c185e6090e029750ffd9dcb4441c44340c34468d893b7d8db0adcce"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/figures/tier_variance_matching.png",
+      "bytes": 122375,
+      "sha256": "4215e6e9aa608b58424e8688f8a5a6169f471af70fac7197da985fb130404733"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/figures/tier_variance_matching_grayscale.png",
+      "bytes": 54226,
+      "sha256": "6f8dc5c5cd707a9943a53da9f6bc9a15163f1011d93b3eb4b5b9cccb7e062cf3"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/code/issue1482_tier_variance_control.py",
+      "bytes": 16658,
+      "sha256": "5148a8b8c5bf2b9b0cdaa878e3aa23b4bfdca90886aed00fee55dddb2998dfba"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/code/issue1482_tier_variance_plot.py",
+      "bytes": 2630,
+      "sha256": "66907339ebe3327023860432d0f8caa1f492f72abfede9523b5e6ffe447d99ce"
+    },
+    {
+      "path": "issue1482_error_analysis/analysis_tensors/variance_matched_20260914/code/test_issue1482_tier_variance_control.py",
+      "bytes": 2265,
+      "sha256": "9eac6b128223b563b164a3da2944948cf82b3d0f039341aac9805755cce86be1"
+    }
+  ],
+  "report_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/14836dcaac9638b7f9c2cf7997c600be918ae188/issue1482_error_analysis/analysis_tensors/variance_matched_20260914/README.md",
+  "figure_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/14836dcaac9638b7f9c2cf7997c600be918ae188/issue1482_error_analysis/analysis_tensors/variance_matched_20260914/figures/tier_variance_matching.png"
+}

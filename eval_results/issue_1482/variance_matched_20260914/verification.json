@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "checks": [
+    "process exit 0",
+    "completion SHA256",
+    "executed code SHA256",
+    "5 contrasts x 4 controls x 2000 finite bootstrap draws",
+    "every interval recomputed exactly from persisted draws",
+    "published primary activity estimate and interval reproduced to 1e-12"
+  ]
+}

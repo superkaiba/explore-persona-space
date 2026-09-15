@@ -56,6 +56,8 @@ def main():
     )
     ax.set_yticks(np.arange(4), labels)
     ax.invert_yaxis()
+    ax.set_xlim(-0.12, 0.32)
+    ax.set_xticks([-0.1, 0, 0.1, 0.2, 0.3])
     ax.axvline(0, color=ROLES["control"].color, linewidth=1, linestyle="--")
     ax.set_xlabel("Coarse-tier concordance above chance →")
     ax.set_title("Coarsest versus finer Matryoshka features", loc="left", pad=18)
