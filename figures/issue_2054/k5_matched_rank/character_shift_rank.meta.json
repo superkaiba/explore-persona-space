@@ -1,0 +1,58 @@
+{
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      13.619
+    ],
+    "exported_size_inches": [
+      13.095,
+      12.201
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/character_shift_rank.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  ·  CONTEXTS",
+      "Number of directions",
+      "1",
+      "3",
+      "10",
+      "30",
+      "100",
+      "300",
+      "1000",
+      "Squared shift energy captured (%)",
+      "0",
+      "25",
+      "50",
+      "75",
+      "Raw shifts",
+      "B  ·  ANSWERS",
+      "C  ·  CONTEXTS",
+      "After subtracting mean shift",
+      "D  ·  ANSWERS",
+      "Base",
+      "Instruct",
+      "All-query spectrum",
+      "Held-out projection"
+    ]
+  },
+  "results_sha256": "61b1308bff0b33573338cda08317ac2eeceedde175ca35e52588a7a2c9837ac0",
+  "script_sha256": "af4b4930c918bfbd21f6838569d74ea21da97238880f9c8de5232a60dfc4640d",
+  "subject": "Squared singular-value energy; raw versus mean-centered differences. Lines are unweighted means across six matched-query character pairs; bands are pair min/max, not confidence intervals. Solid: descriptive full-cohort spectrum. Dashed: projection onto subspaces learned on the other four conversation folds. Held-out projection uses observed target differences, not source-only predictions. Each row normalizes by its corresponding raw or centered energy.",
+  "color_meaning": {
+    "qwen2.5-7b": "#C98A1B",
+    "qwen2.5-7b-instruct": "#176B87"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "top1": 0.5057370444030638,
+  "top10": 1.0,
+  "top100": 1.0,
+  "r50": 1,
+  "r90": 2,
+  "r95": 3,
+  "participation_ratio": 2.345060115775746,
+  "stable_rank": 1.9773121448525275,
+  "total_energy": 105.84802691100144,
+  "model": "qwen2.5-7b",
+  "arm": "answer",
+  "n_common_queries": 495,
+  "characters": [
+    2,
+    3,
+    4,
+    5
+  ],
+  "array_sha256": "6a94b69a7d3e8eae1267788c01a418d306bcacec342115338d8ac6f20bc38a58",
+  "fingerprint": {
+    "script_sha256": "1e791125e63878aacaab111aa5389e9c829ab7280e81bd6e66fe150bc75a0ce8",
+    "loader_source": "def load_panel(model, sources):\n    \"\"\"Load only the K5 targets; inherit and audit the global fold mapping.\"\"\"\n    content = subprocess.check_output(\n        [\"git\", \"show\", f\"{SOURCE_SHA}:eval_results/issue_2054/shared_fold_map.json\"], cwd=REPO\n    )\n    fold_map = json.loads(content)\n    if fold_map[\"k\"] != 5 or fold_map[\"seed\"] != 137:\n        raise RuntimeError(\"unexpected source fold map\")\n    panel = {}\n    for ref in references()[\"panels\"]:\n        cell = ref[\"cell\"]\n        if not cell.endswith(\"__\" + model):\n            continue\n        source = sources[f\"{PREFIX}/production_v1/k5/{cell}.npz\"]\n        if sha(source[\"local\"]) != source[\"sha256\"]:\n            raise RuntimeError(\"staged K5 input changed\")\n        with np.load(source[\"local\"], allow_pickle=False) as z:\n            ids = list(map(str, z[\"conv_id\"]))\n            x, y = z[\"v_C\"].astype(np.float64), z[\"v_A\"].astype(np.float64)\n            caps = z[\"cap_mask\"]\n        if x.shape != y.shape or x.shape[1] != 3584 or len(set(ids)) != len(ids):\n            raise RuntimeError(\"invalid K5 activation layout\")\n        if not np.isfinite(x).all() or not np.isfinite(y).all() or caps.shape != (len(ids), 5):\n            raise RuntimeError(\"invalid K5 values or rollout count\")\n        panel[cell] = {\n            \"x\": x,\n            \"y\": y,\n            \"ids\": ids,\n            \"caps\": caps,\n            \"membership\": np.array([fold_map[\"fold_of\"][cid] for cid in ids]),\n        }\n    if len(panel) != 6:\n        raise RuntimeError(\"expected six settings per checkpoint\")\n    return panel\n",
+    "parent_results_sha256": "3e4d958221bee06f23fa6f77a79ce8e7101671d662a16d7c6bf34baf574437a7"
+  }
+}

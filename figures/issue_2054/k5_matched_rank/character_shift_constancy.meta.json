@@ -1,0 +1,48 @@
+{
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      6.679
+    ],
+    "exported_size_inches": [
+      13.095,
+      5.48
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/character_shift_constancy.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  ·  CONTEXTS",
+      "Base",
+      "Instruct",
+      "Total squared shift explained (%)",
+      "0",
+      "25",
+      "50",
+      "75",
+      "100",
+      "Fixed versus varying strength",
+      "B  ·  ANSWERS",
+      "One constant vector",
+      "Same line, query-dependent signed strength"
+    ]
+  },
+  "results_sha256": "61b1308bff0b33573338cda08317ac2eeceedde175ca35e52588a7a2c9837ac0",
+  "script_sha256": "af4b4930c918bfbd21f6838569d74ea21da97238880f9c8de5232a60dfc4640d",
+  "subject": "Held-out fraction of total squared character shift explained, relative to zero shift. Fixed vector is the other-fold training mean. The comparison projects each observed test difference onto that mean's line with a freely fitted signed coefficient; this is an oracle coverage diagnostic, not a source-only prediction. Bars are unweighted means across six character pairs; whiskers are pair ranges, not confidence intervals.",
+  "color_meaning": {
+    "qwen2.5-7b": "#C98A1B",
+    "qwen2.5-7b-instruct": "#176B87"
+  }
+}

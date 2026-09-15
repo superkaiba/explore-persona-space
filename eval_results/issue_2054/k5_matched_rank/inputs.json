@@ -1,0 +1,74 @@
+[
+  {
+    "revision": "9de026f872c19b2ca4fd3e4539de820e08038ee3",
+    "path": "issue2054_section44_k5_gcp/production_v1/k5/char_dana__on_policy__attrib_quoted__qwen2.5-7b.npz",
+    "local": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/9de026f872c19b2ca4fd3e4539de820e08038ee3/issue2054_section44_k5_gcp/production_v1/k5/char_dana__on_policy__attrib_quoted__qwen2.5-7b.npz",
+    "sha256": "77fb3f91058b64728763c062ddf0f9b7c964079044d4f6a04874ae63305e3b7e"
+  },
+  {
+    "revision": "9de026f872c19b2ca4fd3e4539de820e08038ee3",
+    "path": "issue2054_section44_k5_gcp/production_v1/k5/char_helios__on_policy__attrib_quoted__qwen2.5-7b.npz",
+    "local": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/9de026f872c19b2ca4fd3e4539de820e08038ee3/issue2054_section44_k5_gcp/production_v1/k5/char_helios__on_policy__attrib_quoted__qwen2.5-7b.npz",
+    "sha256": "51f5c35f8c893e913b3a13e4cd744b181e2e11d3260d7ca5b9a0a84d4149898c"
+  },
+  {
+    "revision": "9de026f872c19b2ca4fd3e4539de820e08038ee3",
+    "path": "issue2054_section44_k5_gcp/production_v1/k5/char_vex__on_policy__attrib_quoted__qwen2.5-7b.npz",
+    "local": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/9de026f872c19b2ca4fd3e4539de820e08038ee3/issue2054_section44_k5_gcp/production_v1/k5/char_vex__on_policy__attrib_quoted__qwen2.5-7b.npz",
+    "sha256": "b36c18fedad7bb415405a4e13e6722e94d421fd5794ab71a363136d6d8f0bff9"
+  },
+  {
+    "revision": "9de026f872c19b2ca4fd3e4539de820e08038ee3",
+    "path": "issue2054_section44_k5_gcp/production_v1/k5/char_wren__on_policy__attrib_quoted__qwen2.5-7b.npz",
+    "local": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/9de026f872c19b2ca4fd3e4539de820e08038ee3/issue2054_section44_k5_gcp/production_v1/k5/char_wren__on_policy__attrib_quoted__qwen2.5-7b.npz",
+    "sha256": "d2f186f3c46602dfc596efa872f9608f73d4f86ebd6c90246aa232bba0fcd16d"
+  },
+  {
+    "revision": "9de026f872c19b2ca4fd3e4539de820e08038ee3",
+    "path": "issue2054_section44_k5_gcp/production_v1/k5/conversation_paired_stories_assistant__on_policy__bare_text__qwen2.5-7b.npz",
+    "local": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/9de026f872c19b2ca4fd3e4539de820e08038ee3/issue2054_section44_k5_gcp/production_v1/k5/conversation_paired_stories_assistant__on_policy__bare_text__qwen2.5-7b.npz",
+    "sha256": "143fdc0bb7380ac71de62d596930f30ddaff1c121647a99caff633e07ee27a14"
+  },
+  {
+    "revision": "9de026f872c19b2ca4fd3e4539de820e08038ee3",
+    "path": "issue2054_section44_k5_gcp/production_v1/k5/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b.npz",
+    "local": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/9de026f872c19b2ca4fd3e4539de820e08038ee3/issue2054_section44_k5_gcp/production_v1/k5/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b.npz",
+    "sha256": "a75cc5588d3ed71f0bae14cbf47f17ed8e8a64e7647f2431631a53bedd149bcd"
+  },
+  {
+    "revision": "9de026f872c19b2ca4fd3e4539de820e08038ee3",
+    "path": "issue2054_section44_k5_gcp/production_v1/k5/char_dana__on_policy__attrib_quoted__qwen2.5-7b-instruct.npz",
+    "local": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/9de026f872c19b2ca4fd3e4539de820e08038ee3/issue2054_section44_k5_gcp/production_v1/k5/char_dana__on_policy__attrib_quoted__qwen2.5-7b-instruct.npz",
+    "sha256": "4bbfeabccf87ce8bc1d87d7f2a2a07bd40c17547a10a2138eedcc2fcc9ed941e"
+  },
+  {
+    "revision": "9de026f872c19b2ca4fd3e4539de820e08038ee3",
+    "path": "issue2054_section44_k5_gcp/production_v1/k5/char_helios__on_policy__attrib_quoted__qwen2.5-7b-instruct.npz",
+    "local": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/9de026f872c19b2ca4fd3e4539de820e08038ee3/issue2054_section44_k5_gcp/production_v1/k5/char_helios__on_policy__attrib_quoted__qwen2.5-7b-instruct.npz",
+    "sha256": "a39993b6078734b31be05441da32eba9cd3a8b2e6eeab1a82b23edf67758fc0e"
+  },
+  {
+    "revision": "9de026f872c19b2ca4fd3e4539de820e08038ee3",
+    "path": "issue2054_section44_k5_gcp/production_v1/k5/char_vex__on_policy__attrib_quoted__qwen2.5-7b-instruct.npz",
+    "local": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/9de026f872c19b2ca4fd3e4539de820e08038ee3/issue2054_section44_k5_gcp/production_v1/k5/char_vex__on_policy__attrib_quoted__qwen2.5-7b-instruct.npz",
+    "sha256": "c03125aa16c8f9ce89b5064254e5858e4b2705c1ef7138689fc235ef2f93f55f"
+  },
+  {
+    "revision": "9de026f872c19b2ca4fd3e4539de820e08038ee3",
+    "path": "issue2054_section44_k5_gcp/production_v1/k5/char_wren__on_policy__attrib_quoted__qwen2.5-7b-instruct.npz",
+    "local": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/9de026f872c19b2ca4fd3e4539de820e08038ee3/issue2054_section44_k5_gcp/production_v1/k5/char_wren__on_policy__attrib_quoted__qwen2.5-7b-instruct.npz",
+    "sha256": "5614a533f3bd5e883584dbcda5674d9b4ae62c2aa8d40c4cafc07c3cc7d14adb"
+  },
+  {
+    "revision": "9de026f872c19b2ca4fd3e4539de820e08038ee3",
+    "path": "issue2054_section44_k5_gcp/production_v1/k5/conversation_paired_stories_assistant__on_policy__bare_text__qwen2.5-7b-instruct.npz",
+    "local": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/9de026f872c19b2ca4fd3e4539de820e08038ee3/issue2054_section44_k5_gcp/production_v1/k5/conversation_paired_stories_assistant__on_policy__bare_text__qwen2.5-7b-instruct.npz",
+    "sha256": "44b318453be1fa7afa041ce53cc8a2b3f36c7276582a8e20bbcb065027f6a769"
+  },
+  {
+    "revision": "9de026f872c19b2ca4fd3e4539de820e08038ee3",
+    "path": "issue2054_section44_k5_gcp/production_v1/k5/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct.npz",
+    "local": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/9de026f872c19b2ca4fd3e4539de820e08038ee3/issue2054_section44_k5_gcp/production_v1/k5/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct.npz",
+    "sha256": "62e72aca55e4286d5b0d31e8d7ef09fd11cd42c0165d6db76a876a3a384cfe11"
+  }
+]

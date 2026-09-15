@@ -1,0 +1,195 @@
+{
+  "n": 1315,
+  "dimension": 3584,
+  "spectra": {
+    "raw": {
+      "top1": 0.25353848754303604,
+      "top10": 0.4815695776901155,
+      "top100": 0.7503777082542055,
+      "r50": 12,
+      "r90": 359,
+      "r95": 580,
+      "participation_ratio": 13.041272812203696,
+      "stable_rank": 3.944174352741054,
+      "total_energy": 2694892.2193033025
+    },
+    "centered": {
+      "top1": 0.12191175756219985,
+      "top10": 0.3361014261409038,
+      "top100": 0.6784270304829477,
+      "r50": 31,
+      "r90": 441,
+      "r95": 657,
+      "participation_ratio": 43.90193700217623,
+      "stable_rank": 8.202654280410945,
+      "total_energy": 2088040.5172276557
+    }
+  },
+  "folds": [
+    {
+      "fold": 0,
+      "n_train": 1033,
+      "n_test": 282,
+      "modes": {
+        "raw": {
+          "numerically_resolved_directions": 1033,
+          "gram_eigenvalue_tolerance": 4.2392556453380484e-07,
+          "test_energy": 601245.8920056786,
+          "raw_test_energy": 601245.8920056786
+        },
+        "centered": {
+          "numerically_resolved_directions": 1032,
+          "gram_eigenvalue_tolerance": 1.606531076267312e-07,
+          "test_energy": 468148.22965204425,
+          "raw_test_energy": 601245.8920056786
+        }
+      }
+    },
+    {
+      "fold": 1,
+      "n_train": 1076,
+      "n_test": 239,
+      "modes": {
+        "raw": {
+          "numerically_resolved_directions": 1076,
+          "gram_eigenvalue_tolerance": 4.454504410753171e-07,
+          "test_energy": 489528.0162179133,
+          "raw_test_energy": 489528.0162179133
+        },
+        "centered": {
+          "numerically_resolved_directions": 1075,
+          "gram_eigenvalue_tolerance": 1.6329879771498622e-07,
+          "test_energy": 380466.05432546034,
+          "raw_test_energy": 489528.0162179133
+        }
+      }
+    },
+    {
+      "fold": 2,
+      "n_train": 1033,
+      "n_test": 282,
+      "modes": {
+        "raw": {
+          "numerically_resolved_directions": 1033,
+          "gram_eigenvalue_tolerance": 4.2682860716346295e-07,
+          "test_energy": 595958.6030680699,
+          "raw_test_energy": 595958.6030680699
+        },
+        "centered": {
+          "numerically_resolved_directions": 1032,
+          "gram_eigenvalue_tolerance": 1.5591727207380128e-07,
+          "test_energy": 468018.8268508976,
+          "raw_test_energy": 595958.6030680699
+        }
+      }
+    },
+    {
+      "fold": 3,
+      "n_train": 1070,
+      "n_test": 245,
+      "modes": {
+        "raw": {
+          "numerically_resolved_directions": 1070,
+          "gram_eigenvalue_tolerance": 4.4286620832077625e-07,
+          "test_energy": 492332.5761509236,
+          "raw_test_energy": 492332.5761509236
+        },
+        "centered": {
+          "numerically_resolved_directions": 1069,
+          "gram_eigenvalue_tolerance": 1.653966365308745e-07,
+          "test_energy": 378287.52299572853,
+          "raw_test_energy": 492332.5761509236
+        }
+      }
+    },
+    {
+      "fold": 4,
+      "n_train": 1048,
+      "n_test": 267,
+      "modes": {
+        "raw": {
+          "numerically_resolved_directions": 1048,
+          "gram_eigenvalue_tolerance": 4.374281001459583e-07,
+          "test_energy": 515827.1318607161,
+          "raw_test_energy": 515827.1318607161
+        },
+        "centered": {
+          "numerically_resolved_directions": 1047,
+          "gram_eigenvalue_tolerance": 1.6608564550918068e-07,
+          "test_energy": 396703.88450440584,
+          "raw_test_energy": 515827.1318607161
+        }
+      }
+    }
+  ],
+  "query_constancy": {
+    "constant_vector_fraction": 0.22385596598394764,
+    "variable_amplitude_mean_direction_fraction": 0.2511400162065456,
+    "fraction_of_constant_residual_perpendicular_to_mean": 0.9648466663057109,
+    "cosine_quantiles_10_50_90": [
+      0.2544433362407631,
+      0.5161296538999967,
+      0.6609362049157305
+    ],
+    "coefficient_quantiles_10_50_90": [
+      0.5222466805200687,
+      1.034908990655774,
+      1.4424419694683919
+    ],
+    "shift_norm_cv": 0.1827388745852228
+  },
+  "heldout": {
+    "raw": {
+      "max_common_rank": 1033,
+      "fraction_at_rank": {
+        "0": 0.0,
+        "1": 0.2519382134118172,
+        "3": 0.3689744090435793,
+        "10": 0.4698001950721013,
+        "30": 0.5794368631833027,
+        "100": 0.6872980112246541,
+        "300": 0.7685419120616687
+      },
+      "r50": 14,
+      "r90": null,
+      "r95": null,
+      "max_fraction": 0.8610550762731983,
+      "shift_only_total_fraction": 0.0
+    },
+    "centered": {
+      "max_common_rank": 1032,
+      "fraction_at_rank": {
+        "0": 0.0,
+        "1": 0.12030174900094566,
+        "3": 0.19335700432956465,
+        "10": 0.320804280492041,
+        "30": 0.4587601901293018,
+        "100": 0.5970862534126469,
+        "300": 0.7016305285080824
+      },
+      "r50": 42,
+      "r90": null,
+      "r95": null,
+      "max_fraction": 0.8207347549784922,
+      "shift_only_total_fraction": 0.22385596598394764
+    }
+  },
+  "model": "qwen2.5-7b-instruct",
+  "arm": "context",
+  "source_index": 2,
+  "target_index": 5,
+  "source": "char_helios__on_policy__attrib_quoted__qwen2.5-7b-instruct",
+  "target": "char_vex__on_policy__attrib_quoted__qwen2.5-7b-instruct",
+  "array_sha256": "c06961b21799657df94b3741d432af52675480713464723b6f74e1c0bdbe94f6",
+  "parent_array_sha256": "3e2fd45b53241ea151b4ed97090aa45a2e8ac0ae3185649798b606521a8a00f4",
+  "input_sha256": [
+    "a39993b6078734b31be05441da32eba9cd3a8b2e6eeab1a82b23edf67758fc0e",
+    "c03125aa16c8f9ce89b5064254e5858e4b2705c1ef7138689fc235ef2f93f55f"
+  ],
+  "fingerprint": {
+    "script_sha256": "1e791125e63878aacaab111aa5389e9c829ab7280e81bd6e66fe150bc75a0ce8",
+    "loader_source": "def load_panel(model, sources):\n    \"\"\"Load only the K5 targets; inherit and audit the global fold mapping.\"\"\"\n    content = subprocess.check_output(\n        [\"git\", \"show\", f\"{SOURCE_SHA}:eval_results/issue_2054/shared_fold_map.json\"], cwd=REPO\n    )\n    fold_map = json.loads(content)\n    if fold_map[\"k\"] != 5 or fold_map[\"seed\"] != 137:\n        raise RuntimeError(\"unexpected source fold map\")\n    panel = {}\n    for ref in references()[\"panels\"]:\n        cell = ref[\"cell\"]\n        if not cell.endswith(\"__\" + model):\n            continue\n        source = sources[f\"{PREFIX}/production_v1/k5/{cell}.npz\"]\n        if sha(source[\"local\"]) != source[\"sha256\"]:\n            raise RuntimeError(\"staged K5 input changed\")\n        with np.load(source[\"local\"], allow_pickle=False) as z:\n            ids = list(map(str, z[\"conv_id\"]))\n            x, y = z[\"v_C\"].astype(np.float64), z[\"v_A\"].astype(np.float64)\n            caps = z[\"cap_mask\"]\n        if x.shape != y.shape or x.shape[1] != 3584 or len(set(ids)) != len(ids):\n            raise RuntimeError(\"invalid K5 activation layout\")\n        if not np.isfinite(x).all() or not np.isfinite(y).all() or caps.shape != (len(ids), 5):\n            raise RuntimeError(\"invalid K5 values or rollout count\")\n        panel[cell] = {\n            \"x\": x,\n            \"y\": y,\n            \"ids\": ids,\n            \"caps\": caps,\n            \"membership\": np.array([fold_map[\"fold_of\"][cid] for cid in ids]),\n        }\n    if len(panel) != 6:\n        raise RuntimeError(\"expected six settings per checkpoint\")\n    return panel\n",
+    "parent_results_sha256": "3e4d958221bee06f23fa6f77a79ce8e7101671d662a16d7c6bf34baf574437a7"
+  },
+  "wall_seconds": 7.5802272371947765
+}

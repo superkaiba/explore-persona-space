@@ -1,0 +1,66 @@
+{
+  "status": "pass",
+  "verified_at_utc": "2026-09-15T00:11:48.279356+00:00",
+  "results_sha256": "61b1308bff0b33573338cda08317ac2eeceedde175ca35e52588a7a2c9837ac0",
+  "coverage": {
+    "representation_panels": 24,
+    "fold_evaluations": 120,
+    "mean_shift_panels": 4
+  },
+  "tests": {
+    "passed": 17,
+    "log": ".................                                                        [100%]\n17 passed in 5.06s\n",
+    "files": [
+      "tests/test_issue2054_k5_matched_rank.py",
+      "tests/test_issue2054_k5_matched_affine.py",
+      "tests/test_issue2054_k5_matched_offsets.py",
+      "tests/test_issue2054_k5_transfer_calibration.py"
+    ]
+  },
+  "ruff": "pass on all changed Python files",
+  "independent_review": {
+    "agent": "review_matched_offsets",
+    "verdict": "pass",
+    "checked": [
+      "all 24 pair output hashes and strict parent query/fold identity",
+      "constant-vector per-query error parity",
+      "all raw/centered squared-singular-value spectra and energy ranks",
+      "all 120 fold projection energies and pooled curves",
+      "four common-query mean-shift spectra recomputed by direct SVD",
+      "all four summary groups and 40 README numeric rows",
+      "signed-amplitude oracle and denominator disclosures",
+      "fixed exact-constant-shift handling and collector input-hash binding"
+    ]
+  },
+  "visual_inspection": "rank and constancy plots inspected; constancy titles shortened to prevent overlap; model markers added for grayscale",
+  "monitoring": "fresh 30-second process/log/output observations; both workers exited zero; completion sentinel verified",
+  "runtime_seconds_range_per_pair": [
+    6.40818434394896,
+    11.46262713521719
+  ],
+  "initial_attempt": {
+    "at_utc": "2026-09-15T00:02:53.259768+00:00",
+    "reason": "Independent review requested exact-constant-shift handling and stronger collector hash binding; rerun same approved scope after fixes.",
+    "completed_panels": 11,
+    "runtime": {
+      "started_at_utc": "2026-09-15T00:01:17.441390+00:00",
+      "monitor_pid": 924465,
+      "pins": {
+        "OMP_NUM_THREADS": "8",
+        "MKL_NUM_THREADS": "8",
+        "OPENBLAS_NUM_THREADS": "8",
+        "NUMEXPR_NUM_THREADS": "8",
+        "MALLOC_ARENA_MAX": "2",
+        "MALLOC_MMAP_THRESHOLD_": "131072",
+        "NUMPY_MADVISE_HUGEPAGE": "0"
+      },
+      "workers": {
+        "qwen2.5-7b": 924468,
+        "qwen2.5-7b-instruct": 924469
+      },
+      "monitor_interval_seconds": 30,
+      "disk_note": "Existing cached banks; affine/rank modes add less than 100 MB without downloads; raw staging modes estimate below 2 GB. No new environment or model weights."
+    }
+  },
+  "scope": "same approved analysis, zero GPU use, no new generations or downloads"
+}
