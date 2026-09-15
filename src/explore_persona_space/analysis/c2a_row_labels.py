@@ -39,17 +39,21 @@ OUTPUT_FORMAT = "Output format"
 QUESTION_TOPIC = "Question topic"
 ONE_WORD_TOPIC = "One-word topic"
 
-# The four refusal rows name their bank by what the paired contexts change.
-# The #2617 bank substitutes one word so the request itself becomes benign or
-# harmful: the intent of the question moves.  The #2356 bank holds the intent
-# fixed and rewrites only the wording -- past tense, passive voice, declarative
-# curiosity -- so the request asks for the same thing in a different voice.
-# The leading clause says whether the model's refusal reverses across the pair
-# or survives it.
-REFUSAL_REVERSES_INTENT = "Refusal reverses: intent swap"
-REFUSAL_REVERSES_FRAMING = "Refusal reverses: framing rewrite"
-REFUSAL_HOLDS_INTENT = "Refusal holds: intent swap"
-REFUSAL_HOLDS_FRAMING = "Refusal holds: framing rewrite"
+# The four refusal rows name what the paired contexts change after the colon,
+# and what the model then did before it.
+#
+# A CONTENT EDIT substitutes one word, so the request itself turns benign or
+# harmful: the #2617 bank.  A FRAMING EDIT holds the request fixed and changes
+# only how it is put -- past tense, passive voice, declarative curiosity: the
+# #2356 bank.
+#
+# REFUSE/COMPLY means one member of the pair was refused and the other was
+# answered.  SAME DECISION means both members got the same decision, refused or
+# answered alike.
+REFUSAL_REVERSES_INTENT = "Refuse/comply: content edit"
+REFUSAL_REVERSES_FRAMING = "Refuse/comply: framing edit"
+REFUSAL_HOLDS_INTENT = "Same decision: content edit"
+REFUSAL_HOLDS_FRAMING = "Same decision: framing edit"
 
 PANEL_ROW_ORDER: tuple[str, ...] = (
     TONE,
@@ -78,23 +82,25 @@ APPENDIX_ROW_ORDER: tuple[str, ...] = (SLOT_OBJECT, SLOT_SUBJECT, SLOT_VERB)
 
 # ---------------------------------------------------------------------------
 # Group headings printed above a block of refusal rows.  They repeat the
-# leading clause of the rows they head, so the block reads as one contrast.
+# leading clause of the rows they head, so the block reads as one contrast:
+# the pair whose decision flipped against the pair whose decision did not.
 # ---------------------------------------------------------------------------
 
-REFUSAL_REVERSES_GROUP = "Refusal reverses"
-REFUSAL_HOLDS_GROUP = "Refusal holds"
+REFUSAL_REVERSES_GROUP = "Refuse/comply"
+REFUSAL_HOLDS_GROUP = "Same decision"
 
 
 def tick_label(row: str, n_pairs: int | None = None) -> str:
     """A row label formatted for a y-tick column, with its pair count.
 
-    A refusal row names its bank after a colon, which makes it about twice the
+    A refusal row names the edit after a colon, which makes it about twice the
     width of the identity rows.  Set on one line it runs off the left edge of a
     full-width canvas, and widening the label gutter to hold it would take the
     width from the panels.  Breaking after the leading clause puts the
-    reverses-or-holds contrast on the first line and the bank on the second, so
-    the block of refusal rows stays inside a gutter narrower than the one the
-    single-line identity rows already need.  Rows with no colon are unchanged.
+    decision contrast (refuse/comply against same decision) on the first line
+    and the edit on the second, so the block of refusal rows stays inside a
+    gutter narrower than the one the single-line identity rows already need.
+    Rows with no colon are unchanged.
     """
 
     suffix = "" if n_pairs is None else f" (n={n_pairs})"
@@ -115,8 +121,8 @@ WRAPPED_ROW_PITCH_IN = 0.48
 """Plot height per row, in inches, that a wrapped label needs to clear its neighbours.
 
 A two-line label at the pinned tick size measures about 0.44 in tall, so the
-one-line pitch these figures used before the refusal rows were renamed (0.32 in
-to 0.40 in depending on the figure) overlapped adjacent labels by 0.08 in to
-0.17 in.  Figures that draw one row per element size their canvas from this
+one-line pitch these figures used before the refusal rows took a two-line label
+(0.32 in to 0.40 in depending on the figure) overlapped adjacent labels by
+0.08 in to 0.17 in.  Figures that draw one row per element size their canvas from this
 constant instead of hard-coding a pitch, so all three carry the same row rhythm.
 """

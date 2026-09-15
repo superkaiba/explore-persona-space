@@ -210,25 +210,38 @@ a pinned 10,000-draw pair bootstrap and are recorded in the sidecar.
 
 `c3_features_and_shifts` is the results figure that carries the SAE feature
 properties together with the per-element answer-shift reads. It is a `figure*`
-at `\textwidth`, one horizontal row of four panels: A the feature-property
-concordance, B the predicted shift direction, C the predicted over observed
-shift size, and D the two-way discrimination rate. It draws seven element rows;
-the two refusal-holds rows are not among them.
+at `\textwidth`, one horizontal row of three panels: A the feature-property
+concordance, B the within-pair cosine, and C the two-way discrimination rate. It
+draws seven element rows; the two same-decision rows are not among them.
 
-Four panels across make width the binding constraint, so the panel geometry is
-written in inches in the script rather than in figure fractions. Panel A keeps
-its own label column, because feature-property names are a different population
-from the element rows; B, C and D share one element-row gutter with the labels
-drawn on B. Both gutters are cut rather than the panels: the property names wrap
-to two lines (2.23 in against 3.84 in set on one line) and the per-row pair count
-leaves the element labels for the caption and the sidecar (1.94 in against
-2.67 in with it). That returns 2.34 in to the four plot boxes, which leaves panel
-A at 2.45 in and the three metric columns at 1.73 in each. At that pitch a
-descriptive panel title does not fit, the three the earlier stacked layout
-carried measure 3.40 in to 4.46 in, so each panel carries its letter and the
-estimator as a kicker and states the metric in full in its axis label.
+Panel B carries three point series per row, each with its 95% interval: the
+cosine between the pair's two context vectors, between its two observed answer
+vectors, and between the two answer vectors the map predicts. All three are
+centered on the ridge map's own training means, the contexts on `xmu` and both
+answer series on `ymu`, so a cosine is read against the map's origin rather than
+the raw activation cloud's dominant direction, which compresses every cosine
+toward 1. The three series take the paper's control, base-model and linear roles,
+so hue and marker separate them twice over and the grayscale audit still reads
+three groups. The axis spans 0 to 1 and is shared with `c3_element_shifts`, so a
+row drawn in both figures sits at the same place; the appendix slot companion is
+the one focused window in the section.
 
-Panel D is drawn on a cut axis, following
+Three panels across still make width the binding constraint, so the panel
+geometry is written in inches in the script rather than in figure fractions.
+Panel A keeps its own label column, because feature-property names are a
+different population from the element rows; B and C share one element-row gutter
+with the labels drawn on B. Both gutters are cut rather than the panels: the
+property names wrap to two lines (2.23 in against 3.84 in set on one line) and
+the per-row pair count leaves the element labels for the caption and the sidecar
+(1.94 in against 2.67 in with it). That returns 2.34 in to the plot boxes, which
+leaves panel A at 2.45 in and the two metric columns at 2.80 in each. At that
+pitch a descriptive panel title still does not fit, the ones the earlier stacked
+layout carried measure 3.40 in to 4.46 in, so each panel carries its letter and
+the estimator as a kicker and states the metric in full in its axis label. The
+within-pair legend sits in the footer under panel B; the export crops the canvas
+vertically, so the footer slack it needs costs the manuscript nothing.
+
+Panel C is drawn on a cut axis, following
 `scripts/issue2564_element_shifts_three_panel.py`. Every rate sits between 0.875
 and 1.0 with its interval reaching 0.8125, so one linear 0-to-1 axis flattens the
 rows and a truncated axis drops the 0.5 chance reference. The axis is two linear
@@ -252,12 +265,17 @@ kept and still render. They cover the same data as the two figures above and
 stay available while the manuscript is rewired.
 
 `c3_element_shifts` is the per-element answer-shift figure: one row per
-controlled context element, a column for the mean cosine between predicted and
-observed answer shift, and a column for the median ratio of predicted to
-observed shift size. `c3_element_shifts_by_slot` is its appendix companion and
-decomposes the one-word topic row by the grammatical slot the changed word
-occupies, over four columns: answer separation, two-way retrieval, direction,
-and shift size. Render both with one command:
+controlled context element, a within-pair cosine column carrying the same three
+series as panel B above, and a two-way discrimination rate column on one linear
+axis from 0.47 to 1.03. It draws all nine element rows, the two same-decision
+rows included, which is why its rate column needs no cut axis.
+`c3_element_shifts_by_slot` is its appendix companion and decomposes the
+one-word topic row by the grammatical slot the changed word occupies, over the
+same two columns. Its rate axis matches, so the pooled one-word row reads across
+the two figures; its cosine axis is focused to 0.80 to 1.00, because all four
+rows sit above 0.86 with overlapping intervals that the unit interval would
+hide. The sidecar records the focused window beside the shared one. Render both
+with one command:
 
 ```bash
 uv run python scripts/make_paper_section42_figures.py \
@@ -272,7 +290,10 @@ uv run python scripts/issue2564_element_shift_rows.py
 ```
 
 That step scores every row against one layer-19 ridge map from #2564 and takes
-about a minute on CPU. It reads three staging roots outside the repository: the
+about two minutes on CPU. It banks seven quantities per row: answer separation,
+two-way retrieval, shift direction, shift size, and the three within-pair
+cosines the figures draw (`ctx_cos`, `ans_cos`, `pred_cos`), each with a
+2,000-draw pair-bootstrap 95% interval. It reads three staging roots outside the repository: the
 #2564 minimal-pair banks and the #2617 safety-swap banks under
 `/mnt/eps-data/thomasjiralerspong/`, and the #2356 framing-rewrite capture in
 the `issue-2356` worktree. Each has an environment override

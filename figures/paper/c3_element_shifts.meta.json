@@ -5,15 +5,15 @@
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
   "reproduction_command": "uv run python scripts/make_paper_section42_figures.py",
   "title": "What the context-to-answer map keeps per changed context element",
-  "subject": "Mean cosine between predicted and observed answer shift, and median ratio of predicted to observed shift size, per controlled context element, with 95% pair-bootstrap intervals",
+  "subject": "Within-pair cosine of the two context vectors, the two observed answer vectors and the two predicted answer vectors, and the two-way discrimination rate, per controlled context element, with 95% pair-bootstrap intervals",
   "git": {
-    "commit": "06c7a898e1782778d17e33def98a4673b03c6f8c",
+    "commit": "0772c54472e1aef61b7259fb8acedbdcc259f779",
     "tracked_worktree_dirty": true
   },
   "sources": [
     {
       "path": "eval_results/issue_2564/section42_element_shifts.json",
-      "sha256": "3e5d328f91c266eb583fc26764dc11f1a090a8086a288d878263758a5599db34"
+      "sha256": "dfa1554facec2e05296c6a354246166ddf987edb5e8f641a77df6497de89ee01"
     }
   ],
   "render": {
@@ -22,11 +22,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      6.456
+      6.986
     ],
     "exported_size_inches": [
       13.095,
-      5.683
+      6.216
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -41,7 +41,7 @@
     "background": "#FFFFFF",
     "text": [
       "C  \u00b7  CONTROLLED MINIMAL PAIRS",
-      "Predicted shift direction (cosine) \u2191",
+      "Within-pair cosine",
       "0.0",
       "0.2",
       "0.4",
@@ -53,14 +53,18 @@
       "Output format (n=120)",
       "Question topic (n=66)",
       "One-word topic (n=24)",
-      "Refusal reverses:\nintent swap (n=61)",
-      "Refusal holds:\nintent swap (n=63)",
-      "Refusal reverses:\nframing rewrite (n=307)",
-      "Refusal holds:\nframing rewrite (n=1924)",
+      "Refuse/comply:\ncontent edit (n=61)",
+      "Same decision:\ncontent edit (n=63)",
+      "Refuse/comply:\nframing edit (n=307)",
+      "Same decision:\nframing edit (n=1924)",
       "What the map keeps when one context element changes",
-      "Predicted / observed shift size",
-      "1.2",
-      "1.4"
+      "Two-way discrimination rate \u2191",
+      "0.5",
+      "0.7",
+      "0.9",
+      "Context vectors",
+      "Observed answers",
+      "Predicted answers"
     ]
   },
   "displayed_data": {
@@ -88,6 +92,21 @@
         "magnitude_ci95": [
           0.9772,
           1.1468
+        ],
+        "ctx_cos": 0.1959,
+        "ctx_cos_ci95": [
+          0.1698,
+          0.2179
+        ],
+        "ans_cos": 0.339,
+        "ans_cos_ci95": [
+          0.3075,
+          0.3753
+        ],
+        "pred_cos": 0.0853,
+        "pred_cos_ci95": [
+          0.0567,
+          0.1121
         ]
       },
       {
@@ -113,6 +132,21 @@
         "magnitude_ci95": [
           1.1089,
           1.1569
+        ],
+        "ctx_cos": 0.6242,
+        "ctx_cos_ci95": [
+          0.5992,
+          0.6486
+        ],
+        "ans_cos": 0.6516,
+        "ans_cos_ci95": [
+          0.6296,
+          0.6726
+        ],
+        "pred_cos": 0.5446,
+        "pred_cos_ci95": [
+          0.5177,
+          0.5721
         ]
       },
       {
@@ -138,6 +172,21 @@
         "magnitude_ci95": [
           1.0156,
           1.1584
+        ],
+        "ctx_cos": 0.3785,
+        "ctx_cos_ci95": [
+          0.3464,
+          0.4117
+        ],
+        "ans_cos": 0.6455,
+        "ans_cos_ci95": [
+          0.5973,
+          0.6926
+        ],
+        "pred_cos": 0.4938,
+        "pred_cos_ci95": [
+          0.4636,
+          0.5248
         ]
       },
       {
@@ -164,6 +213,21 @@
         "magnitude_ci95": [
           0.7829,
           0.8277
+        ],
+        "ctx_cos": 0.6868,
+        "ctx_cos_ci95": [
+          0.6595,
+          0.7142
+        ],
+        "ans_cos": 0.5884,
+        "ans_cos_ci95": [
+          0.5654,
+          0.6109
+        ],
+        "pred_cos": 0.631,
+        "pred_cos_ci95": [
+          0.6044,
+          0.6572
         ]
       },
       {
@@ -190,10 +254,25 @@
         "magnitude_ci95": [
           0.6119,
           0.7356
+        ],
+        "ctx_cos": 0.9313,
+        "ctx_cos_ci95": [
+          0.9077,
+          0.9521
+        ],
+        "ans_cos": 0.8931,
+        "ans_cos_ci95": [
+          0.8657,
+          0.9186
+        ],
+        "pred_cos": 0.9295,
+        "pred_cos_ci95": [
+          0.9114,
+          0.9466
         ]
       },
       {
-        "row": "Refusal reverses: intent swap",
+        "row": "Refuse/comply: content edit",
         "source": "issue2617 svmp, one-word safety swaps + XSTest rephrasings",
         "flip_criterion": "|refusal_rate_a - refusal_rate_b| >= 0.5 over 10 draws",
         "n_pairs": 61,
@@ -216,10 +295,25 @@
         "magnitude_ci95": [
           0.7283,
           0.7843
+        ],
+        "ctx_cos": 0.5107,
+        "ctx_cos_ci95": [
+          0.4659,
+          0.5552
+        ],
+        "ans_cos": 0.3514,
+        "ans_cos_ci95": [
+          0.2841,
+          0.4207
+        ],
+        "pred_cos": 0.4825,
+        "pred_cos_ci95": [
+          0.4231,
+          0.5412
         ]
       },
       {
-        "row": "Refusal holds: intent swap",
+        "row": "Same decision: content edit",
         "source": "issue2617 svmp, one-word safety swaps + XSTest rephrasings",
         "flip_criterion": "|refusal_rate_a - refusal_rate_b| >= 0.5 over 10 draws",
         "n_pairs": 63,
@@ -242,10 +336,25 @@
         "magnitude_ci95": [
           0.7452,
           0.8689
+        ],
+        "ctx_cos": 0.811,
+        "ctx_cos_ci95": [
+          0.77,
+          0.8478
+        ],
+        "ans_cos": 0.8043,
+        "ans_cos_ci95": [
+          0.7608,
+          0.842
+        ],
+        "pred_cos": 0.8115,
+        "pred_cos_ci95": [
+          0.7641,
+          0.8545
         ]
       },
       {
-        "row": "Refusal reverses: framing rewrite",
+        "row": "Refuse/comply: framing edit",
         "source": "issue2356 armA, 394 AdvBench bases x 6 intent-preserving rewrite axes",
         "note": "different capture; the 2564-fitted map transfers here at cos 0.90 vs 0.95 in-bank",
         "n_pairs": 307,
@@ -268,10 +377,25 @@
         "magnitude_ci95": [
           0.7206,
           0.7711
+        ],
+        "ctx_cos": 0.6473,
+        "ctx_cos_ci95": [
+          0.6308,
+          0.6626
+        ],
+        "ans_cos": 0.6083,
+        "ans_cos_ci95": [
+          0.5888,
+          0.6264
+        ],
+        "pred_cos": 0.6631,
+        "pred_cos_ci95": [
+          0.648,
+          0.6782
         ]
       },
       {
-        "row": "Refusal holds: framing rewrite",
+        "row": "Same decision: framing edit",
         "source": "issue2356 armA, 394 AdvBench bases x 6 intent-preserving rewrite axes",
         "note": "different capture; the 2564-fitted map transfers here at cos 0.90 vs 0.95 in-bank",
         "n_pairs": 1924,
@@ -294,9 +418,277 @@
         "magnitude_ci95": [
           1.0226,
           1.0624
+        ],
+        "ctx_cos": 0.8802,
+        "ctx_cos_ci95": [
+          0.8758,
+          0.8842
+        ],
+        "ans_cos": 0.9114,
+        "ans_cos_ci95": [
+          0.9066,
+          0.916
+        ],
+        "pred_cos": 0.8895,
+        "pred_cos_ci95": [
+          0.8852,
+          0.8933
         ]
       }
     ],
+    "drawn_values": {
+      "Tone": {
+        "ctx_cos": 0.1959,
+        "ctx_cos_ci95": [
+          0.1698,
+          0.2179
+        ],
+        "ans_cos": 0.339,
+        "ans_cos_ci95": [
+          0.3075,
+          0.3753
+        ],
+        "pred_cos": 0.0853,
+        "pred_cos_ci95": [
+          0.0567,
+          0.1121
+        ],
+        "twoway": 1.0,
+        "twoway_ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "Persona": {
+        "ctx_cos": 0.6242,
+        "ctx_cos_ci95": [
+          0.5992,
+          0.6486
+        ],
+        "ans_cos": 0.6516,
+        "ans_cos_ci95": [
+          0.6296,
+          0.6726
+        ],
+        "pred_cos": 0.5446,
+        "pred_cos_ci95": [
+          0.5177,
+          0.5721
+        ],
+        "twoway": 1.0,
+        "twoway_ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "Output format": {
+        "ctx_cos": 0.3785,
+        "ctx_cos_ci95": [
+          0.3464,
+          0.4117
+        ],
+        "ans_cos": 0.6455,
+        "ans_cos_ci95": [
+          0.5973,
+          0.6926
+        ],
+        "pred_cos": 0.4938,
+        "pred_cos_ci95": [
+          0.4636,
+          0.5248
+        ],
+        "twoway": 0.875,
+        "twoway_ci95": [
+          0.8375,
+          0.9125
+        ]
+      },
+      "Question topic": {
+        "ctx_cos": 0.6868,
+        "ctx_cos_ci95": [
+          0.6595,
+          0.7142
+        ],
+        "ans_cos": 0.5884,
+        "ans_cos_ci95": [
+          0.5654,
+          0.6109
+        ],
+        "pred_cos": 0.631,
+        "pred_cos_ci95": [
+          0.6044,
+          0.6572
+        ],
+        "twoway": 1.0,
+        "twoway_ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "One-word topic": {
+        "ctx_cos": 0.9313,
+        "ctx_cos_ci95": [
+          0.9077,
+          0.9521
+        ],
+        "ans_cos": 0.8931,
+        "ans_cos_ci95": [
+          0.8657,
+          0.9186
+        ],
+        "pred_cos": 0.9295,
+        "pred_cos_ci95": [
+          0.9114,
+          0.9466
+        ],
+        "twoway": 0.8958,
+        "twoway_ci95": [
+          0.8125,
+          0.9589
+        ]
+      },
+      "Refuse/comply: content edit": {
+        "ctx_cos": 0.5107,
+        "ctx_cos_ci95": [
+          0.4659,
+          0.5552
+        ],
+        "ans_cos": 0.3514,
+        "ans_cos_ci95": [
+          0.2841,
+          0.4207
+        ],
+        "pred_cos": 0.4825,
+        "pred_cos_ci95": [
+          0.4231,
+          0.5412
+        ],
+        "twoway": 1.0,
+        "twoway_ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "Same decision: content edit": {
+        "ctx_cos": 0.811,
+        "ctx_cos_ci95": [
+          0.77,
+          0.8478
+        ],
+        "ans_cos": 0.8043,
+        "ans_cos_ci95": [
+          0.7608,
+          0.842
+        ],
+        "pred_cos": 0.8115,
+        "pred_cos_ci95": [
+          0.7641,
+          0.8545
+        ],
+        "twoway": 0.9048,
+        "twoway_ci95": [
+          0.8569,
+          0.9524
+        ]
+      },
+      "Refuse/comply: framing edit": {
+        "ctx_cos": 0.6473,
+        "ctx_cos_ci95": [
+          0.6308,
+          0.6626
+        ],
+        "ans_cos": 0.6083,
+        "ans_cos_ci95": [
+          0.5888,
+          0.6264
+        ],
+        "pred_cos": 0.6631,
+        "pred_cos_ci95": [
+          0.648,
+          0.6782
+        ],
+        "twoway": 0.9235,
+        "twoway_ci95": [
+          0.9023,
+          0.943
+        ]
+      },
+      "Same decision: framing edit": {
+        "ctx_cos": 0.8802,
+        "ctx_cos_ci95": [
+          0.8758,
+          0.8842
+        ],
+        "ans_cos": 0.9114,
+        "ans_cos_ci95": [
+          0.9066,
+          0.916
+        ],
+        "pred_cos": 0.8895,
+        "pred_cos_ci95": [
+          0.8852,
+          0.8933
+        ],
+        "twoway": 0.611,
+        "twoway_ci95": [
+          0.6019,
+          0.6203
+        ]
+      }
+    },
+    "within_pair_series": [
+      {
+        "key": "ctx_cos",
+        "label": "Context vectors",
+        "color": "#687078",
+        "marker": "x",
+        "row_offset": 0.24
+      },
+      {
+        "key": "ans_cos",
+        "label": "Observed answers",
+        "color": "#C98A1B",
+        "marker": "s",
+        "row_offset": 0.0
+      },
+      {
+        "key": "pred_cos",
+        "label": "Predicted answers",
+        "color": "#176B87",
+        "marker": "o",
+        "row_offset": -0.24
+      }
+    ],
+    "within_pair_axis": {
+      "xlim": [
+        0.0,
+        1.0
+      ],
+      "xticks": [
+        0.0,
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0
+      ],
+      "label": "Within-pair cosine",
+      "centering": "contexts centered on the ridge map's xmu, observed and predicted answers on its ymu"
+    },
+    "twoway_axis": {
+      "xlim": [
+        0.47,
+        1.03
+      ],
+      "xticks": [
+        0.5,
+        0.6,
+        0.7,
+        0.8,
+        0.9,
+        1.0
+      ]
+    },
     "groups": [
       [
         "Tone",
@@ -310,16 +702,16 @@
         "One-word topic"
       ],
       [
-        "Refusal reverses: intent swap",
-        "Refusal holds: intent swap"
+        "Refuse/comply: content edit",
+        "Same decision: content edit"
       ],
       [
-        "Refusal reverses: framing rewrite",
-        "Refusal holds: framing rewrite"
+        "Refuse/comply: framing edit",
+        "Same decision: framing edit"
       ]
     ],
     "reference_line": {
-      "magnitude": 1.0
+      "twoway": 0.5
     },
     "order": "grouped: identity, format, content, word refusal, framing refusal",
     "bootstrap": {
@@ -335,13 +727,16 @@
       "separation": "cos(ans_A, ans_B), mean; near 1.0 = the two real answers nearly coincide",
       "twoway": "pred_B nearer ans_B than ans_A, both orderings, chance 0.5",
       "direction": "cos(pred_B - pred_A, ans_B - ans_A), mean",
-      "magnitude": "||pred_B - pred_A|| / ||ans_B - ans_A||, median"
+      "magnitude": "||pred_B - pred_A|| / ||ans_B - ans_A||, median",
+      "ctx_cos": "cos(ctx_A - xmu, ctx_B - xmu), mean; the two contexts, centered on the map's training mean",
+      "ans_cos": "cos(ans_A - ymu, ans_B - ymu), mean; the two real answers, centered on the map's training mean",
+      "pred_cos": "cos(pred_A - ymu, pred_B - ymu), mean; the two predicted answers, centered on the map's training mean"
     },
     "caveat": "raw, not disattenuated for rollout noise"
   },
   "output_sha256": {
-    "pdf": "ba1b5725c53a01c3cf95b72700d32bcfe7ffc71d3a6a31eb7d6eecea22e8940a",
-    "png": "edefc08d77b8475eba76bbf4efdd27ca0683d9ac485e8be03fe64ee20c0aaa9d",
-    "grayscale": "7674db5956aae4665e975907c61a7859643a6a560a03f6442746415e62dd01bf"
+    "pdf": "a3e8d3bf861d7d708c4a6cc86759992abbe577c99afabf7956648dd581b50ac8",
+    "png": "3dfdd65d6142bfd088cd5cb20fbd411eadf80fc4f7021dd1024190999a91bec9",
+    "grayscale": "1aca99b0f4d7d5dbe7e64a3c2cc72ef0ffe3f3a54fa2f836b1bb702e36949825"
   }
 }

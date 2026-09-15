@@ -913,12 +913,31 @@ _ELEMENT_SHIFT_GROUPS = (
 # refusal labels get their pitch without narrowing the panels or moving the
 # printed type size.
 _ELEMENT_HEADER_IN = 1.15
-_ELEMENT_FOOTER_IN = 0.89
+# Room under the axis labels for the within-pair legend.  The export crops the
+# canvas vertically, so a footer with slack costs no white space in the
+# manuscript; it only keeps the legend clear of the label above it.
+_ELEMENT_FOOTER_IN = 1.42
 _ELEMENT_KICKER_OFF_IN = 0.41
 _ELEMENT_TITLE_OFF_IN = 0.15
+_ELEMENT_LEGEND_Y_IN = 0.24
+
+# The two-way column of the nine-row figure spans 0.60 to 1.0, so one linear
+# axis holds every row together with the 0.5 chance reference.  (The seven-row
+# figure drops the two same-decision rows, which leaves its rates bunched above
+# 0.81 and needs the cut axis defined further down.)
+_ELEMENT_TWOWAY_XLIM = (0.47, 1.03)
+_ELEMENT_TWOWAY_XTICKS = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+_ELEMENT_TWOWAY_REFERENCE = 0.5
 
 # Appendix companion: the main-panel row the slots decompose, then the slots.
 _SLOT_ROW_ORDER = (L.ONE_WORD_TOPIC, L.SLOT_SUBJECT, L.SLOT_VERB, L.SLOT_OBJECT)
+# The one deviation from the shared 0-to-1 cosine range.  Every slot row sits
+# between 0.87 and 0.97 with overlapping intervals, so on the unit interval the
+# four rows collapse into one blob and the reader cannot see that the intervals
+# overlap.  The window is recorded in the sidecar beside the shared range the
+# two main figures use.
+_SLOT_WITHIN_PAIR_XLIM = (0.80, 1.0)
+_SLOT_WITHIN_PAIR_XTICKS = [0.80, 0.85, 0.90, 0.95, 1.00]
 _SLOT_ROW_LABELS = {
     L.ONE_WORD_TOPIC: L.ONE_WORD_TOPIC,
     L.SLOT_SUBJECT: "…subject swapped",
@@ -945,6 +964,182 @@ def _element_shift_data() -> dict:
     }
 
 
+# The three series of the within-pair cosine column: how alike the two members
+# of a pair are at the context, at the observed answer, and at the answer the
+# map predicts.  Every cosine is centered on the ridge map's own training mean
+# (contexts on xmu, both answer series on ymu), which is what the rebuild step
+# banks.  One paper role per series, so hue and marker separate them twice over
+# and the grayscale audit still reads three groups.
+_WITHIN_PAIR_SERIES = (
+    ("ctx_cos", "Context vectors", ROLES["control"]),
+    ("ans_cos", "Observed answers", ROLES["base_model"]),
+    ("pred_cos", "Predicted answers", ROLES["linear"]),
+)
+# Vertical offsets inside one row band, in row units.  Row pitch is pinned at
+# WRAPPED_ROW_PITCH_IN, so 0.24 puts neighbouring markers about 0.115 in apart:
+# wider than the 6 pt marker, well inside the band.
+_WITHIN_PAIR_OFFSETS = (0.24, 0.0, -0.24)
+_WITHIN_PAIR_MARKERSIZE = 6
+# One range for the quantity across all three Section 4.2 figures, so the same
+# row read in two of them sits at the same place.  A cosine cannot leave
+# [-1, 1] and no banked row or interval endpoint goes below 0.05, so the axis
+# spans the unit interval rather than a per-figure focused window.
+_WITHIN_PAIR_XLIM = (0.0, 1.0)
+_WITHIN_PAIR_XTICKS = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+# No direction arrow: a larger within-pair cosine means the two members are more
+# alike, which is neither better nor worse.
+_WITHIN_PAIR_XLABEL = "Within-pair cosine"
+
+
+def _draw_row_bands(ax: plt.Axes, y: np.ndarray, bands: list[int] | None) -> None:
+    """Shade every second consecutive row group, so the eye groups rows without a legend."""
+    if bands is None:
+        return
+    start = 0
+    for index, size in enumerate(bands):
+        if index % 2 == 1:
+            ax.axhspan(
+                y[start + size - 1] - 0.5,
+                y[start] + 0.5,
+                color=GRID,
+                alpha=0.20,
+                zorder=0,
+                lw=0,
+            )
+        start += size
+
+
+def _style_row_axis(
+    ax: plt.Axes,
+    y: np.ndarray,
+    *,
+    xlim: tuple[float, float],
+    xlabel: str,
+    xticks: list[float] | None,
+    ytick_labels: list[str] | None,
+) -> None:
+    """Shared axis treatment of a row-per-element column: limits, ticks and row labels."""
+    ax.set_xlim(*xlim)
+    ax.set_ylim(-0.6, len(y) - 0.4)
+    style_axis(ax, grid_axis="x")
+    ax.set_xlabel(xlabel)
+    if xticks is not None:
+        ax.set_xticks(xticks)
+    ax.set_yticks(y, ytick_labels if ytick_labels is not None else [""] * len(y))
+    for label in ax.get_yticklabels():
+        label.set_linespacing(L.WRAPPED_TICK_LINESPACING)
+
+
+def _draw_within_pair_panel(
+    ax: plt.Axes,
+    rows: list[dict],
+    *,
+    bands: list[int] | None = None,
+    ytick_labels: list[str] | None = None,
+    xlim: tuple[float, float] = _WITHIN_PAIR_XLIM,
+    xticks: list[float] | None = None,
+    xlabel: str = _WITHIN_PAIR_XLABEL,
+) -> list[Line2D]:
+    """Three within-pair cosines per row, each with its 95% interval.
+
+    Returns one legend handle per series in drawing order, so the caller places
+    the legend wherever its own figure has room.  Panel furniture (kicker and
+    title) stays with the caller, as it does for the single-metric drawer.
+    """
+    y = np.arange(len(rows))[::-1]
+    _draw_row_bands(ax, y, bands)
+    handles: list[Line2D] = []
+    for (key, label, role), offset in zip(_WITHIN_PAIR_SERIES, _WITHIN_PAIR_OFFSETS, strict=True):
+        values = np.asarray([row[key] for row in rows])
+        ci = np.asarray([row[f"{key}_ci95"] for row in rows])
+        # xerr takes non-negative OFFSETS from the value, never the bounds: a
+        # bootstrap interval can invert around its point estimate on a tiny
+        # row, and a negative offset is a render-time ValueError.
+        xerr = np.vstack([values - ci[:, 0], ci[:, 1] - values]).clip(min=0)
+        ax.errorbar(
+            values,
+            y + offset,
+            xerr=xerr,
+            fmt=role.marker,
+            color=role.color,
+            markerfacecolor=role.color,
+            markeredgecolor=role.color,
+            markersize=_WITHIN_PAIR_MARKERSIZE,
+            markeredgewidth=1.6,
+            capsize=2,
+            capthick=1.3,
+            elinewidth=1.4,
+            lw=0,
+            zorder=3,
+        )
+        handles.append(
+            Line2D(
+                [],
+                [],
+                color=role.color,
+                marker=role.marker,
+                markerfacecolor=role.color,
+                markeredgecolor=role.color,
+                markeredgewidth=1.6,
+                markersize=_WITHIN_PAIR_MARKERSIZE,
+                linestyle="none",
+                label=label,
+            )
+        )
+    _style_row_axis(ax, y, xlim=xlim, xlabel=xlabel, xticks=xticks, ytick_labels=ytick_labels)
+    return handles
+
+
+def _within_pair_legend(fig: plt.Figure, handles: list[Line2D], ax: plt.Axes, y_in: float) -> None:
+    """Frameless one-row legend, centered under the plot box it explains.
+
+    Placed ``y_in`` inches above the canvas floor.  The export crops the canvas
+    vertically, so a footer sized with room to spare costs no white space in the
+    manuscript but keeps the legend clear of the axis label above it.
+    """
+    position = ax.get_position()
+    fig.legend(
+        handles=handles,
+        loc="lower center",
+        bbox_to_anchor=(position.x0 + position.width / 2.0, y_in / fig.get_figheight()),
+        ncol=len(handles),
+        frameon=False,
+        handletextpad=0.5,
+        columnspacing=2.0,
+        borderpad=0.0,
+        borderaxespad=0.0,
+    )
+
+
+def _within_pair_displayed(rows: list[dict]) -> dict:
+    """Exactly the numbers a within-pair column and its two-way sibling draw, keyed by row."""
+    keys = [key for key, _label, _role in _WITHIN_PAIR_SERIES] + ["twoway"]
+    displayed: dict[str, dict] = {}
+    for row in rows:
+        entry: dict = {}
+        for key in keys:
+            entry[key] = row[key]
+            entry[f"{key}_ci95"] = row[f"{key}_ci95"]
+        displayed[row["row"]] = entry
+    return displayed
+
+
+def _within_pair_series_record() -> list[dict]:
+    """The visual encoding of the three within-pair series, for the provenance sidecar."""
+    return [
+        {
+            "key": key,
+            "label": label,
+            "color": role.color,
+            "marker": role.marker,
+            "row_offset": offset,
+        }
+        for (key, label, role), offset in zip(
+            _WITHIN_PAIR_SERIES, _WITHIN_PAIR_OFFSETS, strict=True
+        )
+    ]
+
+
 def _draw_row_metric_panel(
     ax: plt.Axes,
     rows: list[dict],
@@ -965,19 +1160,7 @@ def _draw_row_metric_panel(
     Panel furniture (kicker and title) stays with the caller.
     """
     y = np.arange(len(rows))[::-1]
-    if bands is not None:
-        start = 0
-        for index, size in enumerate(bands):
-            if index % 2 == 1:
-                ax.axhspan(
-                    y[start + size - 1] - 0.5,
-                    y[start] + 0.5,
-                    color=GRID,
-                    alpha=0.20,
-                    zorder=0,
-                    lw=0,
-                )
-            start += size
+    _draw_row_bands(ax, y, bands)
     if reference is not None:
         ax.axvline(reference, color=CONTROL, lw=1.6, linestyle=(0, (5, 4)), zorder=1)
     values = np.asarray([row[key] for row in rows])
@@ -998,63 +1181,68 @@ def _draw_row_metric_panel(
         lw=0,
         zorder=3,
     )
-    ax.set_xlim(*xlim)
-    ax.set_ylim(-0.6, len(rows) - 0.4)
-    style_axis(ax, grid_axis="x")
-    ax.set_xlabel(xlabel)
-    if xticks is not None:
-        ax.set_xticks(xticks)
-    ax.set_yticks(y, ytick_labels if ytick_labels is not None else [""] * len(rows))
-    for label in ax.get_yticklabels():
-        label.set_linespacing(L.WRAPPED_TICK_LINESPACING)
+    _style_row_axis(ax, y, xlim=xlim, xlabel=xlabel, xticks=xticks, ytick_labels=ytick_labels)
 
 
-def make_element_shifts_figure(data: dict) -> tuple[plt.Figure, float]:
-    """What the map keeps when one context element changes: direction, then size."""
-    rows = data["elements"]
-    # ylim below spans len(rows) + 0.2 units, so the canvas is sized from that.
-    plot_h_in = L.WRAPPED_ROW_PITCH_IN * (len(rows) + 0.2)
-    height_in = _ELEMENT_HEADER_IN + plot_h_in + _ELEMENT_FOOTER_IN
-    fig, include_frac = c2a_figure("full", aspect=height_in / canvas_width_in(1.0))
+def _element_row_grid(
+    fig: plt.Figure, *, left: float, right: float
+) -> tuple[plt.Axes, plt.Axes, float]:
+    """Two equal columns on the shared row rhythm; returns both axes and the plot height."""
     height_in = fig.get_figheight()
     plot_h_in = height_in - _ELEMENT_HEADER_IN - _ELEMENT_FOOTER_IN
     grid = fig.add_gridspec(
         1,
         2,
-        left=0.285,
-        right=0.985,
+        left=left,
+        right=right,
         top=1.0 - _ELEMENT_HEADER_IN / height_in,
         bottom=_ELEMENT_FOOTER_IN / height_in,
         wspace=0.16,
     )
-    columns = (
-        ("direction", better_label("Predicted shift direction (cosine)"), (0.15, 1.0), None),
-        ("magnitude", "Predicted / observed shift size", (0.55, 1.28), 1.0),
+    return fig.add_subplot(grid[0, 0]), fig.add_subplot(grid[0, 1]), plot_h_in
+
+
+def _element_canvas(n_rows: int) -> tuple[plt.Figure, float]:
+    """A full-width canvas whose plot box holds ``n_rows`` at the pinned row pitch."""
+    # ylim spans n_rows + 0.2 units, so the canvas is sized from that.
+    plot_h_in = L.WRAPPED_ROW_PITCH_IN * (n_rows + 0.2)
+    height_in = _ELEMENT_HEADER_IN + plot_h_in + _ELEMENT_FOOTER_IN
+    return c2a_figure("full", aspect=height_in / canvas_width_in(1.0))
+
+
+def make_element_shifts_figure(data: dict) -> tuple[plt.Figure, float]:
+    """How alike a pair is at three points of the map, then whether the map tells it apart."""
+    rows = data["elements"]
+    fig, include_frac = _element_canvas(len(rows))
+    ax_cosine, ax_twoway, plot_h_in = _element_row_grid(fig, left=0.285, right=0.985)
+
+    handles = _draw_within_pair_panel(
+        ax_cosine,
+        rows,
+        bands=data["bands"],
+        xticks=_WITHIN_PAIR_XTICKS,
+        # The pair count rides the row label so nothing is placed by hand.
+        ytick_labels=[L.tick_label(row["row"], row["n_pairs"]) for row in rows],
     )
-    for index, (key, xlabel, xlim, reference) in enumerate(columns):
-        ax = fig.add_subplot(grid[0, index])
-        _draw_row_metric_panel(
-            ax,
-            rows,
-            key=key,
-            xlabel=xlabel,
-            xlim=xlim,
-            reference=reference,
-            bands=data["bands"],
-            # The pair count rides the row label so nothing is placed by hand.
-            ytick_labels=(
-                [L.tick_label(row["row"], row["n_pairs"]) for row in rows] if index == 0 else None
-            ),
-        )
-        if index == 0:
-            panel_header(
-                ax,
-                "C",
-                "controlled minimal pairs",
-                "What the map keeps when one context element changes",
-                kicker_y=1.0 + _ELEMENT_KICKER_OFF_IN / plot_h_in,
-                title_y=1.0 + _ELEMENT_TITLE_OFF_IN / plot_h_in,
-            )
+    panel_header(
+        ax_cosine,
+        "C",
+        "controlled minimal pairs",
+        "What the map keeps when one context element changes",
+        kicker_y=1.0 + _ELEMENT_KICKER_OFF_IN / plot_h_in,
+        title_y=1.0 + _ELEMENT_TITLE_OFF_IN / plot_h_in,
+    )
+    _draw_row_metric_panel(
+        ax_twoway,
+        rows,
+        key="twoway",
+        xlabel=better_label("Two-way discrimination rate"),
+        xlim=_ELEMENT_TWOWAY_XLIM,
+        reference=_ELEMENT_TWOWAY_REFERENCE,
+        bands=data["bands"],
+        xticks=_ELEMENT_TWOWAY_XTICKS,
+    )
+    _within_pair_legend(fig, handles, ax_cosine, _ELEMENT_LEGEND_Y_IN)
     return fig, include_frac
 
 
@@ -1063,41 +1251,46 @@ def make_element_shifts_figure(data: dict) -> tuple[plt.Figure, float]:
 # with the answer-variance-rank spectrum moved to its own appendix figure.
 # ---------------------------------------------------------------------------
 
-# The figure is ONE horizontal row of four panels, so its width budget is the
+# The figure is ONE horizontal row of three panels, so its width budget is the
 # binding constraint and is therefore written in inches rather than fractions.
 # On the 13.10 in full-width canvas, measured at the pinned tick size:
 #
 #   panel A keeps its own label column (feature-property names, a different
 #   population from the element rows, so the two sets cannot share a gutter);
-#   B, C and D share one element-row gutter, with the labels drawn on B.
+#   B and C share one element-row gutter, with the labels drawn on B.
 #
 #   Both gutters are cut rather than the panels.  The property names wrap to
 #   two lines (widest line "suppresses specific" at 2.23 in, against 3.84 in
-#   set on one line), which costs nothing because a single row of four panels
-#   gives panel A's six bars the 7.2-row pitch of the element column, about
-#   0.48 in each, and a two-line label needs about 0.44 in.  The per-row pair
-#   count leaves the element labels (widest line 2.67 in with it, 1.94 in
-#   without) and is carried by the caption and the sidecar instead.
+#   set on one line), which costs nothing because a single row of panels gives
+#   panel A's six bars the 7.2-row pitch of the element column, about 0.48 in
+#   each, and a two-line label needs about 0.44 in.  The per-row pair count
+#   leaves the element labels (widest line 2.67 in with it, 1.94 in without)
+#   and is carried by the caption and the sidecar instead.
 #
-# Together those two cuts return 2.34 in to the four plot boxes.
+# Together those two cuts return 2.34 in to the plot boxes.  Dropping the two
+# shift columns for one within-pair cosine column leaves two metric columns
+# rather than three, so each is 2.80 in wide instead of 1.73 in; panel A keeps
+# its pinned width so the SAE bars print at the size they did before.
 _FS_LEFT_MARGIN_IN = 0.06
 _FS_A_LABEL_IN = 2.30
-_FS_BCD_LABEL_IN = 2.10
+_FS_BC_LABEL_IN = 2.10
 _FS_A_WIDTH_IN = 2.45
 _FS_COL_GAP_IN = 0.40
 _FS_RIGHT_MARGIN_IN = 0.20
-# Panel A is the widest of the four: its axis carries five tick labels on a
-# signed axis and the separate-dictionary group kicker inside the plot box,
-# neither of which the three metric columns have.
+# Panel A carries the separate-dictionary group kicker inside its plot box and
+# a signed axis, neither of which the two metric columns have.
 # No figure-level provenance eyebrow (model and read layer live in the
 # caption), so the header keeps only the panel kicker: 0.20 in of offset plus
 # one 13 pt line, and about 0.10 in of top margin.
 _FS_HEADER_IN = 0.52
-_FS_FOOTER_IN = 1.24
+# Room under the axis labels for the within-pair legend.  The export crops the
+# canvas vertically, so the slack costs the manuscript nothing.
+_FS_FOOTER_IN = 1.62
 _FS_KICKER_OFF_IN = 0.20
 _FS_XLABEL_OFF_IN = 0.34
+_FS_LEGEND_Y_IN = 0.22
 
-# Rows drawn by this figure: the two refusal-holds rows are not among them, so
+# Rows drawn by this figure: the two same-decision rows are not among them, so
 # it keeps its own group tuple rather than sharing the nine-row one above.
 _FEATURES_AND_SHIFTS_GROUPS = (
     ("identity", (L.TONE, L.PERSONA)),
@@ -1122,7 +1315,7 @@ _FS_PROPERTY_LABEL_WRAP = {
 # "nested-dictionary tier"; the feature count and layer are what it adds.
 _FS_TIER_KICKER = "SEPARATE DICTIONARY\n16,384 FEATURES"
 
-# Panel D, the two-way discrimination rate, is drawn on a cut axis, following
+# Panel C, the two-way discrimination rate, is drawn on a cut axis, following
 # scripts/issue2564_element_shifts_three_panel.py, which solved this axis for
 # the same seven rows.  Every rate here sits between 0.875 and 1.0 with its
 # interval reaching 0.8125, so one linear 0-to-1 axis flattens the rows into a
@@ -1136,26 +1329,31 @@ _FS_TWOWAY_SEGMENT_TICKS = ((0.5,), (0.8, 0.9, 1.0))
 _FS_TWOWAY_REFERENCE = 0.5
 
 
-def _fs_panel_boxes() -> list[tuple[float, float]]:
-    """Left and right figure fractions of the four panel boxes, from the inch budget.
+_FS_METRIC_COLUMNS = 2
 
-    Panel A takes a pinned width; B, C and D split what is left equally, so a
-    later change to either gutter moves width into or out of the three metric
-    columns rather than silently overrunning the canvas.
+
+def _fs_panel_boxes() -> list[tuple[float, float]]:
+    """Left and right figure fractions of the three panel boxes, from the inch budget.
+
+    Panel A takes a pinned width; B and C split what is left equally, so a later
+    change to either gutter moves width into or out of the metric columns rather
+    than silently overrunning the canvas.
     """
     width_in = canvas_width_in(1.0)
     a_left = _FS_LEFT_MARGIN_IN + _FS_A_LABEL_IN
-    b_left = a_left + _FS_A_WIDTH_IN + _FS_BCD_LABEL_IN
-    remaining = width_in - b_left - _FS_RIGHT_MARGIN_IN - 2 * _FS_COL_GAP_IN
-    column_in = remaining / 3.0
+    b_left = a_left + _FS_A_WIDTH_IN + _FS_BC_LABEL_IN
+    gaps = (_FS_METRIC_COLUMNS - 1) * _FS_COL_GAP_IN
+    remaining = width_in - b_left - _FS_RIGHT_MARGIN_IN - gaps
+    column_in = remaining / _FS_METRIC_COLUMNS
     if column_in <= 0:
         raise ValueError(
-            f"no width left for the three metric columns on a {width_in:.2f} in canvas; "
-            f"gutters and margins already take {b_left + _FS_RIGHT_MARGIN_IN:.2f} in"
+            f"no width left for the {_FS_METRIC_COLUMNS} metric columns on a "
+            f"{width_in:.2f} in canvas; gutters and margins already take "
+            f"{b_left + _FS_RIGHT_MARGIN_IN:.2f} in"
         )
     boxes = [(a_left, a_left + _FS_A_WIDTH_IN)]
     left = b_left
-    for _ in range(3):
+    for _ in range(_FS_METRIC_COLUMNS):
         boxes.append((left, left + column_in))
         left += column_in + _FS_COL_GAP_IN
     return [(lo / width_in, hi / width_in) for lo, hi in boxes]
@@ -1265,16 +1463,16 @@ def make_features_and_shifts_figure(
 ) -> tuple[plt.Figure, float]:
     """Feature-property concordance beside what the map keeps per changed element.
 
-    One horizontal row of four panels: the SAE feature properties, then the
-    direction, the size and the two-way discrimination rate of the answer shift
-    under one controlled context change.  Seven element rows; the two
-    refusal-holds rows are not drawn here.
+    One horizontal row of three panels: the SAE feature properties, then the
+    three within-pair cosines, then the two-way discrimination rate, under one
+    controlled context change.  Seven element rows; the two same-decision rows
+    are not drawn here.
 
-    Four panels across leave each metric column about 1.8 in wide on the
-    13.10 in canvas, with about 2.1 in of pitch from one column's left edge to
-    the next.  Descriptive panel titles do not fit that pitch: the three the
-    stacked layout carried measure 3.40 in to 4.46 in, so they would overlap
-    their neighbours.  Each panel therefore carries its letter and the
+    Three panels across leave each metric column about 2.8 in wide on the
+    13.10 in canvas, with about 3.2 in of pitch from one column's left edge to
+    the next.  Descriptive panel titles still do not fit that pitch: the ones
+    the stacked layout carried measure 3.40 in to 4.46 in, so they would
+    overlap their neighbours.  Each panel therefore carries its letter and the
     estimator as a kicker, and the x-axis label states the metric in full, in
     the same words the other Section 4.2 figures use.
     """
@@ -1293,7 +1491,7 @@ def make_features_and_shifts_figure(
     boxes = _fs_panel_boxes()
     # Panel letters come from one iterator consumed in axes-creation order, so a
     # reordered or added panel cannot ship a stale hand-typed letter.
-    letters = iter("ABCD")
+    letters = iter("ABC")
 
     a_left, a_right = boxes[0]
     grid_a = fig.add_gridspec(1, 1, left=a_left, right=a_right, top=top, bottom=bottom)
@@ -1318,45 +1516,21 @@ def make_features_and_shifts_figure(
     _fs_place_xlabel(ax_a, x_axes=0.5, plot_h_in=plot_h_in)
     panel_header(ax_a, next(letters), "120,716 SAE features", kicker_y=kicker_y)
 
-    columns = (
-        (
-            "direction",
-            better_label("Predicted shift\ndirection\n(cosine)"),
-            (0.15, 1.0),
-            [0.2, 0.6, 1.0],
-            None,
-            "mean cosine",
-        ),
-        (
-            "magnitude",
-            "Predicted /\nobserved\nshift size",
-            (0.55, 1.28),
-            [0.6, 0.8, 1.0, 1.2],
-            1.0,
-            "median ratio",
-        ),
+    b_left, b_right = boxes[1]
+    grid_b = fig.add_gridspec(1, 1, left=b_left, right=b_right, top=top, bottom=bottom)
+    ax_b = fig.add_subplot(grid_b[0, 0])
+    handles = _draw_within_pair_panel(
+        ax_b,
+        rows,
+        bands=bands,
+        xticks=_WITHIN_PAIR_XTICKS,
+        # The two metric columns share one label column, drawn on the first.
+        ytick_labels=[L.tick_label(row["row"]) for row in rows],
     )
-    for index, (key, xlabel, xlim, xticks, reference, kicker) in enumerate(columns):
-        left, right = boxes[1 + index]
-        grid = fig.add_gridspec(1, 1, left=left, right=right, top=top, bottom=bottom)
-        ax = fig.add_subplot(grid[0, 0])
-        _draw_row_metric_panel(
-            ax,
-            rows,
-            key=key,
-            xlabel=xlabel,
-            xlim=xlim,
-            reference=reference,
-            bands=bands,
-            xticks=xticks,
-            # The three metric columns share one label column, drawn on the
-            # first of them.
-            ytick_labels=[L.tick_label(row["row"]) for row in rows] if index == 0 else None,
-        )
-        _fs_place_xlabel(ax, x_axes=0.5, plot_h_in=plot_h_in)
-        panel_header(ax, next(letters), kicker, kicker_y=kicker_y)
+    _fs_place_xlabel(ax_b, x_axes=0.5, plot_h_in=plot_h_in)
+    panel_header(ax_b, next(letters), "mean cosine", kicker_y=kicker_y)
 
-    d_left, d_right = boxes[3]
+    d_left, d_right = boxes[2]
     _fs_assert_in_segments(rows, "twoway", _FS_TWOWAY_SEGMENTS)
     spans = [hi - lo for lo, hi in _FS_TWOWAY_SEGMENTS]
     grid_d = fig.add_gridspec(
@@ -1405,6 +1579,7 @@ def make_features_and_shifts_figure(
         plot_h_in=plot_h_in,
     )
     panel_header(chance_ax, next(letters), "rate", kicker_y=kicker_y)
+    _within_pair_legend(fig, handles, ax_b, _FS_LEGEND_Y_IN)
 
     return fig, include_frac
 
@@ -1434,40 +1609,42 @@ def make_direction_spectrum_figure(spectrum: dict) -> tuple[plt.Figure, float]:
 
 
 def make_element_shifts_by_slot_figure(data: dict) -> tuple[plt.Figure, float]:
-    """Appendix companion: the one-word topic swap, by the grammatical slot that moved."""
+    """Appendix companion: the one-word topic swap, by the grammatical slot that moved.
+
+    The same two columns as the main element figure.  The two-way axis matches
+    it, so the pooled one-word row reads across the two; the cosine axis is the
+    one focused window in the section, because all four rows sit above 0.86 and
+    the unit interval hides whether their intervals overlap.
+    """
     rows = data["slots"]
-    fig, include_frac = c2a_figure("full", aspect=0.30)
-    grid = fig.add_gridspec(1, 4, left=0.305, right=0.975, top=0.66, bottom=0.30, wspace=0.42)
-    columns = (
-        ("separation", "Answer separation", (0.94, 1.002), None),
-        ("twoway", better_label("Two-way"), (0.5, 1.03), 0.5),
-        ("direction", better_label("Direction"), (0.15, 0.75), None),
-        ("magnitude", "Shift size", (0.4, 1.15), 1.0),
+    fig, include_frac = _element_canvas(len(rows))
+    ax_cosine, ax_twoway, plot_h_in = _element_row_grid(fig, left=0.305, right=0.975)
+
+    handles = _draw_within_pair_panel(
+        ax_cosine,
+        rows,
+        xlim=_SLOT_WITHIN_PAIR_XLIM,
+        xticks=_SLOT_WITHIN_PAIR_XTICKS,
+        ytick_labels=[f"{_SLOT_ROW_LABELS[row['row']]} (n={row['n_pairs']})" for row in rows],
     )
-    for index, (key, xlabel, xlim, reference) in enumerate(columns):
-        ax = fig.add_subplot(grid[0, index])
-        _draw_row_metric_panel(
-            ax,
-            rows,
-            key=key,
-            xlabel=xlabel,
-            xlim=xlim,
-            reference=reference,
-            ytick_labels=(
-                [f"{_SLOT_ROW_LABELS[row['row']]} (n={row['n_pairs']})" for row in rows]
-                if index == 0
-                else None
-            ),
-        )
-        if index == 0:
-            panel_header(
-                ax,
-                "",
-                "one-word query swaps",
-                "One-word topic change, by grammatical slot",
-                kicker_y=1.26,
-                title_y=1.07,
-            )
+    panel_header(
+        ax_cosine,
+        "",
+        "one-word query swaps",
+        "One-word topic change, by grammatical slot",
+        kicker_y=1.0 + _ELEMENT_KICKER_OFF_IN / plot_h_in,
+        title_y=1.0 + _ELEMENT_TITLE_OFF_IN / plot_h_in,
+    )
+    _draw_row_metric_panel(
+        ax_twoway,
+        rows,
+        key="twoway",
+        xlabel=better_label("Two-way discrimination rate"),
+        xlim=_ELEMENT_TWOWAY_XLIM,
+        reference=_ELEMENT_TWOWAY_REFERENCE,
+        xticks=_ELEMENT_TWOWAY_XTICKS,
+    )
+    _within_pair_legend(fig, handles, ax_cosine, _ELEMENT_LEGEND_Y_IN)
     return fig, include_frac
 
 
@@ -1993,11 +2170,11 @@ def main() -> None:
             ),
             subject=(
                 "Conditional association between an SAE feature property and the held-out R2 "
-                "of its decoder direction, beside the mean cosine between predicted and "
-                "observed answer shift, the median ratio of predicted to observed shift size, "
-                "and the two-way discrimination rate per controlled context element, for the "
-                "seven rows left after the two refusal-holds rows are dropped, with 95% "
-                "pair-bootstrap intervals"
+                "of its decoder direction, beside the within-pair cosine of the two context "
+                "vectors, the two observed answer vectors and the two predicted answer "
+                "vectors, and the two-way discrimination rate, per controlled context "
+                "element, for the seven rows left after the two same-decision rows are "
+                "dropped, with 95% pair-bootstrap intervals"
             ),
             include_frac=fs_frac,
             sources=[SAE_SOURCE, ELEMENT_SHIFT_SOURCE, TIER_CONCORDANCE_SOURCE],
@@ -2025,15 +2202,26 @@ def main() -> None:
                         ),
                     },
                 },
-                "panels_b_c_d": {
+                "panels_b_c": {
                     "rows": fs_rows,
+                    "drawn_values": _within_pair_displayed(fs_rows),
+                    "within_pair_series": _within_pair_series_record(),
+                    "within_pair_axis": {
+                        "xlim": list(_WITHIN_PAIR_XLIM),
+                        "xticks": list(_WITHIN_PAIR_XTICKS),
+                        "label": _WITHIN_PAIR_XLABEL,
+                        "centering": (
+                            "contexts centered on the ridge map's xmu, observed and "
+                            "predicted answers on its ymu"
+                        ),
+                    },
                     "groups": [list(labels) for _group, labels in _FEATURES_AND_SHIFTS_GROUPS],
                     "rows_not_drawn": [
                         row["row"]
                         for row in elements["elements"]
                         if row["row"] not in {drawn["row"] for drawn in fs_rows}
                     ],
-                    "reference_line": {"magnitude": 1.0, "twoway": 0.5},
+                    "reference_line": {"twoway": 0.5},
                     "twoway_axis": {
                         "segments": [list(segment) for segment in _FS_TWOWAY_SEGMENTS],
                         "segment_ticks": [list(ticks) for ticks in _FS_TWOWAY_SEGMENT_TICKS],
@@ -2064,16 +2252,31 @@ def main() -> None:
             "c3_element_shifts",
             title="What the context-to-answer map keeps per changed context element",
             subject=(
-                "Mean cosine between predicted and observed answer shift, and median ratio of "
-                "predicted to observed shift size, per controlled context element, with 95% "
-                "pair-bootstrap intervals"
+                "Within-pair cosine of the two context vectors, the two observed answer "
+                "vectors and the two predicted answer vectors, and the two-way discrimination "
+                "rate, per controlled context element, with 95% pair-bootstrap intervals"
             ),
             include_frac=elem_frac,
             sources=[ELEMENT_SHIFT_SOURCE],
             displayed_data={
                 "rows": elements["elements"],
+                "drawn_values": _within_pair_displayed(elements["elements"]),
+                "within_pair_series": _within_pair_series_record(),
+                "within_pair_axis": {
+                    "xlim": list(_WITHIN_PAIR_XLIM),
+                    "xticks": list(_WITHIN_PAIR_XTICKS),
+                    "label": _WITHIN_PAIR_XLABEL,
+                    "centering": (
+                        "contexts centered on the ridge map's xmu, observed and predicted "
+                        "answers on its ymu"
+                    ),
+                },
+                "twoway_axis": {
+                    "xlim": list(_ELEMENT_TWOWAY_XLIM),
+                    "xticks": list(_ELEMENT_TWOWAY_XTICKS),
+                },
                 "groups": [list(labels) for _group, labels in _ELEMENT_SHIFT_GROUPS],
-                "reference_line": {"magnitude": 1.0},
+                "reference_line": {"twoway": _ELEMENT_TWOWAY_REFERENCE},
                 "order": "grouped: identity, format, content, word refusal, framing refusal",
                 "bootstrap": elements["bootstrap"],
                 "map": elements["map"],
@@ -2092,16 +2295,38 @@ def main() -> None:
             "c3_element_shifts_by_slot",
             title="One-word topic change by grammatical slot",
             subject=(
-                "Answer separation, two-way retrieval, shift direction and shift size for a "
-                "one-word query change pinned to the subject, verb or object slot, beside the "
-                "pooled one-word row of the element figure, with 95% pair-bootstrap intervals"
+                "Within-pair cosine of the two context vectors, the two observed answer "
+                "vectors and the two predicted answer vectors, and the two-way discrimination "
+                "rate, for a one-word query change pinned to the subject, verb or object "
+                "slot, beside the pooled one-word row of the element figure, with 95% "
+                "pair-bootstrap intervals"
             ),
             include_frac=slot_frac,
             sources=[ELEMENT_SHIFT_SOURCE],
             displayed_data={
                 "rows": elements["slots"],
+                "drawn_values": _within_pair_displayed(elements["slots"]),
+                "within_pair_series": _within_pair_series_record(),
+                "within_pair_axis": {
+                    "xlim": list(_SLOT_WITHIN_PAIR_XLIM),
+                    "xticks": list(_SLOT_WITHIN_PAIR_XTICKS),
+                    "label": _WITHIN_PAIR_XLABEL,
+                    "shared_range_in_main_figures": list(_WITHIN_PAIR_XLIM),
+                    "focused_because": (
+                        "every slot row sits above 0.86 with overlapping intervals, which "
+                        "the unit interval the two main figures use would hide"
+                    ),
+                    "centering": (
+                        "contexts centered on the ridge map's xmu, observed and predicted "
+                        "answers on its ymu"
+                    ),
+                },
+                "twoway_axis": {
+                    "xlim": list(_ELEMENT_TWOWAY_XLIM),
+                    "xticks": list(_ELEMENT_TWOWAY_XTICKS),
+                },
                 "row_labels": _SLOT_ROW_LABELS,
-                "reference_line": {"twoway": 0.5, "magnitude": 1.0},
+                "reference_line": {"twoway": _ELEMENT_TWOWAY_REFERENCE},
                 "order": "pooled one-word row, then subject, verb, object",
                 "bootstrap": elements["bootstrap"],
                 "map": elements["map"],

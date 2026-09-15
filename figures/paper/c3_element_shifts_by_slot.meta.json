@@ -5,15 +5,15 @@
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
   "reproduction_command": "uv run python scripts/make_paper_section42_figures.py",
   "title": "One-word topic change by grammatical slot",
-  "subject": "Answer separation, two-way retrieval, shift direction and shift size for a one-word query change pinned to the subject, verb or object slot, beside the pooled one-word row of the element figure, with 95% pair-bootstrap intervals",
+  "subject": "Within-pair cosine of the two context vectors, the two observed answer vectors and the two predicted answer vectors, and the two-way discrimination rate, for a one-word query change pinned to the subject, verb or object slot, beside the pooled one-word row of the element figure, with 95% pair-bootstrap intervals",
   "git": {
-    "commit": "06c7a898e1782778d17e33def98a4673b03c6f8c",
+    "commit": "0772c54472e1aef61b7259fb8acedbdcc259f779",
     "tracked_worktree_dirty": true
   },
   "sources": [
     {
       "path": "eval_results/issue_2564/section42_element_shifts.json",
-      "sha256": "3e5d328f91c266eb583fc26764dc11f1a090a8086a288d878263758a5599db34"
+      "sha256": "dfa1554facec2e05296c6a354246166ddf987edb5e8f641a77df6497de89ee01"
     }
   ],
   "render": {
@@ -22,11 +22,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      3.929
+      4.586
     ],
     "exported_size_inches": [
       13.095,
-      2.644
+      3.816
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -41,27 +41,27 @@
     "background": "#FFFFFF",
     "text": [
       "ONE-WORD QUERY SWAPS",
-      "Answer separation",
+      "Within-pair cosine",
+      "0.80",
+      "0.85",
       "0.90",
       "0.95",
       "1.00",
-      "1.05",
       "One-word topic (n=24)",
       "\u2026subject swapped (n=24)",
       "\u2026verb swapped (n=24)",
       "\u2026object swapped (n=24)",
       "One-word topic change, by grammatical slot",
-      "Two-way \u2191",
+      "Two-way discrimination rate \u2191",
       "0.5",
+      "0.6",
+      "0.7",
+      "0.8",
+      "0.9",
       "1.0",
-      "1.5",
-      "Direction \u2191",
-      "0.00",
-      "0.25",
-      "0.50",
-      "0.75",
-      "Shift size",
-      "0.0"
+      "Context vectors",
+      "Observed answers",
+      "Predicted answers"
     ]
   },
   "displayed_data": {
@@ -90,6 +90,21 @@
         "magnitude_ci95": [
           0.6119,
           0.7356
+        ],
+        "ctx_cos": 0.9313,
+        "ctx_cos_ci95": [
+          0.9077,
+          0.9521
+        ],
+        "ans_cos": 0.8931,
+        "ans_cos_ci95": [
+          0.8657,
+          0.9186
+        ],
+        "pred_cos": 0.9295,
+        "pred_cos_ci95": [
+          0.9114,
+          0.9466
         ]
       },
       {
@@ -115,6 +130,21 @@
         "magnitude_ci95": [
           0.7432,
           0.9346
+        ],
+        "ctx_cos": 0.9213,
+        "ctx_cos_ci95": [
+          0.8951,
+          0.9453
+        ],
+        "ans_cos": 0.9285,
+        "ans_cos_ci95": [
+          0.9083,
+          0.9452
+        ],
+        "pred_cos": 0.9351,
+        "pred_cos_ci95": [
+          0.9169,
+          0.951
         ]
       },
       {
@@ -140,6 +170,21 @@
         "magnitude_ci95": [
           0.6403,
           0.9836
+        ],
+        "ctx_cos": 0.9376,
+        "ctx_cos_ci95": [
+          0.9111,
+          0.9593
+        ],
+        "ans_cos": 0.9508,
+        "ans_cos_ci95": [
+          0.9245,
+          0.9708
+        ],
+        "pred_cos": 0.958,
+        "pred_cos_ci95": [
+          0.9409,
+          0.9717
         ]
       },
       {
@@ -165,9 +210,171 @@
         "magnitude_ci95": [
           0.5839,
           0.7139
+        ],
+        "ctx_cos": 0.942,
+        "ctx_cos_ci95": [
+          0.9181,
+          0.9621
+        ],
+        "ans_cos": 0.9119,
+        "ans_cos_ci95": [
+          0.8803,
+          0.9398
+        ],
+        "pred_cos": 0.9486,
+        "pred_cos_ci95": [
+          0.9318,
+          0.9634
         ]
       }
     ],
+    "drawn_values": {
+      "One-word topic": {
+        "ctx_cos": 0.9313,
+        "ctx_cos_ci95": [
+          0.9077,
+          0.9521
+        ],
+        "ans_cos": 0.8931,
+        "ans_cos_ci95": [
+          0.8657,
+          0.9186
+        ],
+        "pred_cos": 0.9295,
+        "pred_cos_ci95": [
+          0.9114,
+          0.9466
+        ],
+        "twoway": 0.8958,
+        "twoway_ci95": [
+          0.8125,
+          0.9589
+        ]
+      },
+      "slot: subject": {
+        "ctx_cos": 0.9213,
+        "ctx_cos_ci95": [
+          0.8951,
+          0.9453
+        ],
+        "ans_cos": 0.9285,
+        "ans_cos_ci95": [
+          0.9083,
+          0.9452
+        ],
+        "pred_cos": 0.9351,
+        "pred_cos_ci95": [
+          0.9169,
+          0.951
+        ],
+        "twoway": 0.8542,
+        "twoway_ci95": [
+          0.7708,
+          0.9375
+        ]
+      },
+      "slot: verb": {
+        "ctx_cos": 0.9376,
+        "ctx_cos_ci95": [
+          0.9111,
+          0.9593
+        ],
+        "ans_cos": 0.9508,
+        "ans_cos_ci95": [
+          0.9245,
+          0.9708
+        ],
+        "pred_cos": 0.958,
+        "pred_cos_ci95": [
+          0.9409,
+          0.9717
+        ],
+        "twoway": 0.75,
+        "twoway_ci95": [
+          0.6458,
+          0.8542
+        ]
+      },
+      "slot: object": {
+        "ctx_cos": 0.942,
+        "ctx_cos_ci95": [
+          0.9181,
+          0.9621
+        ],
+        "ans_cos": 0.9119,
+        "ans_cos_ci95": [
+          0.8803,
+          0.9398
+        ],
+        "pred_cos": 0.9486,
+        "pred_cos_ci95": [
+          0.9318,
+          0.9634
+        ],
+        "twoway": 0.8958,
+        "twoway_ci95": [
+          0.8125,
+          0.9583
+        ]
+      }
+    },
+    "within_pair_series": [
+      {
+        "key": "ctx_cos",
+        "label": "Context vectors",
+        "color": "#687078",
+        "marker": "x",
+        "row_offset": 0.24
+      },
+      {
+        "key": "ans_cos",
+        "label": "Observed answers",
+        "color": "#C98A1B",
+        "marker": "s",
+        "row_offset": 0.0
+      },
+      {
+        "key": "pred_cos",
+        "label": "Predicted answers",
+        "color": "#176B87",
+        "marker": "o",
+        "row_offset": -0.24
+      }
+    ],
+    "within_pair_axis": {
+      "xlim": [
+        0.8,
+        1.0
+      ],
+      "xticks": [
+        0.8,
+        0.85,
+        0.9,
+        0.95,
+        1.0
+      ],
+      "label": "Within-pair cosine",
+      "shared_range_in_main_figures": [
+        0.0,
+        1.0
+      ],
+      "focused_because": "every slot row sits above 0.86 with overlapping intervals, which the unit interval the two main figures use would hide",
+      "centering": "contexts centered on the ridge map's xmu, observed and predicted answers on its ymu"
+    },
+    "twoway_axis": {
+      "xlim": [
+        0.47,
+        1.03
+      ],
+      "xticks": [
+        0.5,
+        0.6,
+        0.7,
+        0.8,
+        0.9,
+        1.0
+      ]
+    },
     "row_labels": {
       "One-word topic": "One-word topic",
       "slot: subject": "\u2026subject swapped",
@@ -175,8 +382,7 @@
       "slot: object": "\u2026object swapped"
     },
     "reference_line": {
-      "twoway": 0.5,
-      "magnitude": 1.0
+      "twoway": 0.5
     },
     "order": "pooled one-word row, then subject, verb, object",
     "bootstrap": {
@@ -192,13 +398,16 @@
       "separation": "cos(ans_A, ans_B), mean; near 1.0 = the two real answers nearly coincide",
       "twoway": "pred_B nearer ans_B than ans_A, both orderings, chance 0.5",
       "direction": "cos(pred_B - pred_A, ans_B - ans_A), mean",
-      "magnitude": "||pred_B - pred_A|| / ||ans_B - ans_A||, median"
+      "magnitude": "||pred_B - pred_A|| / ||ans_B - ans_A||, median",
+      "ctx_cos": "cos(ctx_A - xmu, ctx_B - xmu), mean; the two contexts, centered on the map's training mean",
+      "ans_cos": "cos(ans_A - ymu, ans_B - ymu), mean; the two real answers, centered on the map's training mean",
+      "pred_cos": "cos(pred_A - ymu, pred_B - ymu), mean; the two predicted answers, centered on the map's training mean"
     },
     "caveat": "raw, not disattenuated for rollout noise"
   },
   "output_sha256": {
-    "pdf": "ac141118b5ebb9d5947ca1ccb6c1522355db454665de1ce68fcc28dddaeeb944",
-    "png": "ebb35ddb4e824e99f4875fc83bcdc79c56a29169806632751ebed36e08f94ccc",
-    "grayscale": "dfb301036f09789f2e16571b3fbc10efcb689751af31527de7db721ecda13a8f"
+    "pdf": "4ac4278773041445b39991d140703de716b96a8d6b19fd43a669cc8f2f562026",
+    "png": "216785b1b29c0c91cf035d098703c886de96e1f89fe7c076564dd2931baf7970",
+    "grayscale": "f5db5a17c6b6c17ac5b6b1f7e3a8dcda56e4888020fc9df0d362ff67ccf9a000"
   }
 }

@@ -6,8 +6,8 @@ banked context and answer vectors so both figures trace to a single artifact.
 Rows, in the order the main figure carries them:
 
     Tone, Persona, Output format, Question topic, One-word topic,
-    Refusal reverses: intent swap, Refusal holds: intent swap,
-    Refusal reverses: framing rewrite, Refusal holds: framing rewrite
+    Refuse/comply: content edit, Same decision: content edit,
+    Refuse/comply: framing edit, Same decision: framing edit
 
 Every one of those display names comes from
 src/explore_persona_space/analysis/c2a_row_labels.py, which the two figure
@@ -26,6 +26,17 @@ direction is the mean cosine between predicted and observed answer shift, and
 magnitude is the median ratio of predicted to observed shift norm.  Intervals
 are 2,000-draw pair bootstraps under a pinned seed.  The numbers are raw, not
 disattenuated for rollout noise.
+
+Three more quantities say how alike the two members of a pair are, on the same
+cosine scale, at three points of the pipeline: ctx_cos between the two context
+vectors, ans_cos between the two real answer vectors, and pred_cos between the
+two answer vectors the map predicts.  All three are centered on the ridge map's
+own training means -- the contexts on xmu, the observed and predicted answers on
+ymu -- so a cosine is read against the map's origin rather than the raw
+activation cloud's dominant direction, which compresses every cosine toward 1.
+Reading the three together says whether the map preserves, widens or narrows the
+gap the contexts came in with.  ans_cos and separation measure the same pair of
+answer vectors and differ only in the centering, so they are not interchangeable.
 
 Plot-only in the sense that matters: no fit, no generation, no model call.
 Every input is banked.  Three input roots are staging rather than repository
@@ -111,6 +122,12 @@ METRIC_DEFINITIONS = {
     "twoway": "pred_B nearer ans_B than ans_A, both orderings, chance 0.5",
     "direction": "cos(pred_B - pred_A, ans_B - ans_A), mean",
     "magnitude": "||pred_B - pred_A|| / ||ans_B - ans_A||, median",
+    "ctx_cos": "cos(ctx_A - xmu, ctx_B - xmu), mean; the two contexts, centered on the map's "
+    "training mean",
+    "ans_cos": "cos(ans_A - ymu, ans_B - ymu), mean; the two real answers, centered on the "
+    "map's training mean",
+    "pred_cos": "cos(pred_A - ymu, pred_B - ymu), mean; the two predicted answers, centered "
+    "on the map's training mean",
 }
 CAVEAT = "raw, not disattenuated for rollout noise"
 
@@ -177,10 +194,16 @@ def _intervals(
     direction: list[float],
     magnitude: list[float],
     retrieval: list[float],
+    within_pair: dict[str, list[float]],
     hits: int,
     ordered: int,
 ) -> dict:
-    """Point estimates plus 95% pair-level bootstrap intervals under a pinned seed."""
+    """Point estimates plus 95% pair-level bootstrap intervals under a pinned seed.
+
+    ``within_pair`` carries the three within-pair cosines (``ctx_cos``,
+    ``ans_cos``, ``pred_cos``), each aggregated by mean over the same resampled
+    pair indices as the four quantities above.
+    """
     rng = np.random.default_rng(BOOTSTRAP_SEED)
     sep, dirn, mag, ret = (
         np.asarray(values) for values in (separation, direction, magnitude, retrieval)
@@ -194,7 +217,7 @@ def _intervals(
             round(float(np.percentile(resampled, 97.5)), 4),
         ]
 
-    return {
+    row = {
         "n_pairs": ordered // 2,
         "separation": round(float(sep.mean()), 4),
         "separation_ci95": interval(sep, np.mean),
@@ -205,6 +228,11 @@ def _intervals(
         "magnitude": round(float(np.median(mag)), 4),
         "magnitude_ci95": interval(mag, np.median),
     }
+    for key, values in within_pair.items():
+        array = np.asarray(values)
+        row[key] = round(float(array.mean()), 4)
+        row[f"{key}_ci95"] = interval(array, np.mean)
+    return row
 
 
 def _metrics(
@@ -213,22 +241,31 @@ def _metrics(
     answers: dict[str, torch.Tensor],
     ridge: tuple,
 ) -> dict:
-    """The four row quantities for one group of ordered minimal pairs.
+    """The row quantities for one group of ordered minimal pairs.
+
+    The four shift quantities, plus the three within-pair cosines, which are
+    centered on the ridge map's own training means: the contexts on ``xmu``, the
+    observed and predicted answers on ``ymu``.
 
     ``pairs`` order matters: the interval resamples pair indices, so a
     reordering changes the interval.
     """
+    _weights, xmu, _xsd, ymu = ridge
     predictions: dict[str, torch.Tensor] = {}
     separation: list[float] = []
     direction: list[float] = []
     magnitude: list[float] = []
     retrieval: list[float] = []
+    within_pair: dict[str, list[float]] = {"ctx_cos": [], "ans_cos": [], "pred_cos": []}
     hits = 0
     for a, b in pairs:
         for cid in (a, b):
             if cid not in predictions:
                 predictions[cid] = _predict(contexts[cid], ridge)
         separation.append(_cos(answers[a], answers[b]))
+        within_pair["ctx_cos"].append(_cos(contexts[a] - xmu, contexts[b] - xmu))
+        within_pair["ans_cos"].append(_cos(answers[a] - ymu, answers[b] - ymu))
+        within_pair["pred_cos"].append(_cos(predictions[a] - ymu, predictions[b] - ymu))
         observed = answers[b] - answers[a]
         predicted = predictions[b] - predictions[a]
         direction.append(_cos(predicted, observed))
@@ -240,7 +277,9 @@ def _metrics(
             )
         hits += pair_hits
         retrieval.append(pair_hits / 2.0)
-    return _intervals(separation, direction, magnitude, retrieval, hits, 2 * len(pairs))
+    return _intervals(
+        separation, direction, magnitude, retrieval, within_pair, hits, 2 * len(pairs)
+    )
 
 
 def _minpair_rows(ridge: tuple) -> list[dict]:
@@ -410,14 +449,18 @@ def _slot_rows(ridge: tuple) -> list[dict]:
 
 
 def _print_table(title: str, rows: list[dict]) -> None:
-    header = f"{'row':<26}{'n':>6}{'sep':>8}{'2way':>8}{'dir':>9}{'ratio':>8}"
+    header = (
+        f"{'row':<28}{'n':>6}{'sep':>8}{'2way':>8}{'dir':>9}{'ratio':>8}"
+        f"{'ctx':>8}{'ans':>8}{'pred':>8}"
+    )
     print(f"\n{title}")
     print(header)
     print("-" * len(header))
     for row in rows:
         print(
-            f"{row['row']:<26}{row['n_pairs']:>6}{row['separation']:>8.3f}"
+            f"{row['row']:<28}{row['n_pairs']:>6}{row['separation']:>8.3f}"
             f"{row['twoway']:>8.1%}{row['direction']:>+9.3f}{row['magnitude']:>8.2f}"
+            f"{row['ctx_cos']:>8.3f}{row['ans_cos']:>8.3f}{row['pred_cos']:>8.3f}"
         )
 
 
