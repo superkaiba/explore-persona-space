@@ -1,0 +1,97 @@
+"""Derive the pilot report directly from frozen result artifacts; no refitting."""
+from pathlib import Path
+from datetime import datetime, UTC
+import hashlib
+import json
+
+OUT = Path('/home/thomasjiralerspong/.codex/worktrees/825-turn-k5-pilot-20260914/eval_results/issue_825/turn-k5-pilot-20260914/analysis')
+result = json.loads((OUT / 'results.json').read_text())
+coverage = json.loads((OUT / 'coverage_and_caps.json').read_text())
+params = json.loads((OUT / 'fold_parameter_summary.json').read_text())
+monitor = json.loads((OUT / 'cpu_monitor_final.json').read_text())
+assert result['status'] == monitor['status'] == 'complete'
+assert result['coverage']['n_conversations'] == coverage['joint_complete_conversations'] == 934
+names = {'instruct': 'Instruct', 'pretrained': 'Pretrained'}
+methods = {'raw': 'Raw transfer', 'bias': '+ bias', 'bias_scale': '+ bias and scale', 'identity_bias': 'Identity + bias', 'own12': 'Own turn-12 map'}
+
+
+def cell(model, train_k, eval_k, method):
+    return next(r for r in result['models'][model]['cells'] if (r['train_k'], r['eval_k'], r['method']) == (train_k, eval_k, method))
+
+
+def estimate(row, metric='r2'):
+    a, b = row[f'{metric}_ci95']
+    return f"{row[metric]:.4f} [{a:.4f}, {b:.4f}]"
+
+
+def table(headers, rows):
+    return '\n'.join(['| ' + ' | '.join(headers) + ' |', '| ' + ' | '.join('---' for _ in headers) + ' |', *['| ' + ' | '.join(map(str, row)) + ' |' for row in rows]])
+
+
+sections = [
+    '# Five-answer turn-transfer pilot (2026-09-14)\n',
+    f"Verified on {datetime.now(UTC).isoformat()}. Source results SHA256: `{hashlib.sha256((OUT / 'results.json').read_bytes()).hexdigest()}`.",
+    'Averaging five fresh model-generated answers improves held-out turn-1-to-turn-12 mapping in this matched pilot. With train-only bias and scale calibration, R² rises from 0.3407 to 0.3762 for Instruct and from 0.2250 to 0.3213 for Pretrained. This improvement is present when the test target is held fixed to the same single answer: K5-trained raw maps improve R² by 0.0207 and 0.0688, respectively. The diagonal comparison combines changes in map fitting and test-target averaging; cross-K scoring separates these statistical comparisons without establishing a causal mechanism.',
+    'The panel contains 934 complete conversations shared by both models, both turns, and both K conditions, from 1,000 planned conversations. Each model generated 10,000 answers (five at turns 1 and 12). K1 is draw 0; K5 equally averages the five per-answer token means. Six identical outer folds contain 155–156 conversations each. Bias and one scalar are fitted only on destination training conversations, with calibration K matching map-training K. Every interval below is a 95% paired conversation bootstrap interval conditional on the fitted maps and captured answer bank (1,000 resamples; no refits).',
+    '## Primary diagonal comparison',
+]
+rows = []
+for m in names:
+    for k in (1, 5):
+        rows.append([names[m], k, *[f"{cell(m,k,k,method)['r2']:.4f}" for method in ('raw','bias','bias_scale','identity_bias','own12')], f"{100*cell(m,k,k,'bias_scale')['r2_retention']:.2f}%"])
+sections.append(table(['Model','K','Raw R²','+ bias R²','+ bias/scale R²','Identity+bias R²','Own-12 R²','Calibrated retention'], rows))
+rows=[]
+for m in names:
+    for method in ('raw','bias','bias_scale','own12'):
+        delta=next(r for r in result['models'][m]['paired_k_comparisons'] if r['method']==method and r['comparison']=='diagonal_k5_minus_k1')
+        rows.append([names[m],methods[method],estimate(cell(m,1,1,method)),estimate(cell(m,5,5,method)),estimate(delta)])
+sections.append(table(['Model','Method','K1 R² [95% CI]','K5 R² [95% CI]','Paired K5 − K1'],rows))
+sections.append('Retention divides transfer R² by the separately fitted own-turn-12 reference matching train K and eval K. All own-reference intervals are positive; no ratio is suppressed. Calibrated retention rises from 75.71% to 76.90% for Instruct and from 52.19% to 60.92% for Pretrained.')
+sections.append('## Cross-K scoring')
+rows=[]
+for m in names:
+    for method in ('raw','bias','bias_scale','own12'):
+        rows.append([names[m],methods[method],*[f"{cell(m,k,e,method)['r2']:.4f}" for k,e in ((1,1),(1,5),(5,1),(5,5))]])
+sections.append(table(['Model','Method','Train 1 / eval 1','Train 1 / eval 5','Train 5 / eval 1','Train 5 / eval 5'],rows))
+rows=[]
+for m in names:
+    for method in ('raw','bias_scale'):
+        for label in ('training_k5_minus_k1_evaluated_k1','training_k5_minus_k1_evaluated_k5','target_k5_minus_k1_trained_k1','target_k5_minus_k1_trained_k5'):
+            r=next(r for r in result['models'][m]['paired_k_comparisons'] if r['method']==method and r['comparison']==label)
+            rows.append([names[m],methods[method],label,estimate(r)])
+sections.append(table(['Model','Method','Paired comparison','ΔR² [95% CI]'],rows))
+sections.append('The same-test-target raw comparisons support improved map predictions beyond changing the evaluation target. Calibration comparisons additionally change the training-estimated bias/scale, and the chosen ridge penalty can differ between K conditions. Comparing R² across evaluation targets also changes the target variance denominator.')
+sections.append('## Bias and scale')
+rows=[]
+for m in names:
+    for k in (1,5):
+        for comparison in ('bias_minus_raw','bias_scale_minus_bias'):
+            r=next(r for r in result['models'][m]['paired_calibration_comparisons'] if r['train_k']==r['eval_k']==k and r['comparison']==comparison)
+            rows.append([names[m],k,comparison,estimate(r)])
+sections.append(table(['Model','K','Paired calibration comparison','ΔR² [95% CI]'],rows))
+sections.append('Bias accounts for most of the calibration gain. The added scalar has a small K5 effect for Instruct (ΔR² 0.0003) and a larger K5 effect for Pretrained (0.0103). Mean fitted scale across folds is 0.9451/0.9827 for Instruct K1/K5 and 0.9426/1.2003 for Pretrained; the Pretrained K5 range is 0.9655–1.2641. Fold parameters and lambda-selection curves are preserved. Instruct selects λ=1,000 in every source/destination fold; Pretrained selects λ=1,000 or 3,162.28. None reaches the grid endpoints.')
+sections.append('## Retrieval')
+rows=[]
+for m in names:
+    for method in ('raw','bias','bias_scale','identity_bias','own12'):
+        a,b=(cell(m,k,k,method) for k in (1,5))
+        rows.append([names[m],methods[method],f"{100*a['cosine_top1']:.2f}%",f"{100*b['cosine_top1']:.2f}%",f"{100*a['euclidean_top1']:.2f}%",f"{100*b['euclidean_top1']:.2f}%"])
+sections.append(table(['Model','Method','Cosine K1','Cosine K5','Euclidean K1','Euclidean K5'],rows))
+sections.append('Candidate pools contain only the 155–156 held-out conversations in each fold; average chance is 0.6424%. Identity+bias has negative R² while preserving strong retrieval, especially for Pretrained, so these metrics support different conclusions. Calibration does not uniformly improve retrieval: adding scale reduces Instruct K5 cosine accuracy from 64.67% to 64.35% and Euclidean accuracy from 59.96% to 58.89%. Full retrieval intervals and paired deltas are in results.json.')
+sections.append('## Coverage and generation caps')
+sections.append('Instruct captured all 10,000 draws and all 1,000 conversations. Pretrained captured 9,645 draws and 934 complete conversations: 335 excluded draws from context-prefix mismatches (62 conversations) and 20 from four empty-completion groups (four conversations). All five draws in an invalid group were removed; the joint analysis drops all 66 affected conversations from both models. No excluded cell is imputed as zero.')
+rows=[]
+for m in names:
+    for turn in ('1','12'):
+        full=coverage['models'][m]['generated_by_turn'][turn]
+        match=coverage['models'][m]['matched_cap_counts_by_turn'][turn]
+        rows.append([names[m],turn,f"{full['cap_hits']}/{full['draws']} ({100*full['cap_hits']/full['draws']:.2f}%)",f"{match['all_five_cap_hits']}/{match['all_five_draws']}",f"{match['draw0_cap_hits']}/{match['draw0_count']}",match['conversation_groups_with_any_cap']])
+sections.append(table(['Model','Turn','All generated cap hits','Matched five-draw cap hits','Matched draw-0 cap hits','Matched groups with any cap'],rows))
+sections.append('## Compute, persistence, and limits')
+sections.append(f"CPU analysis completed all 12 model/fold units in {monitor['elapsed_seconds']:.1f} seconds, with sampled peak RSS {monitor['sampled_peak_rss_bytes']/1024**3:.3f} GiB and the first-fold venue gate passed. All 38 NPZ artifacts ({monitor['completion_verification']['artifact_bytes']:,} bytes) are content-verified and archived: 24 exact dual map representations, 12 held-out prediction banks, and two OOF row banks. The private model archive revision is `98f07ea29a59492c27480236ec7e5906563b861f`, prefix `issue825_turn_k5_pilot_20260914/analysis`. GPU completion and raw-bank receipts are retained separately.")
+sections.append('This endpoint pilot measures turn 1 → turn 12; it is not an all-turn K5 curve. Train-only destination calibration is target-informed transfer, not zero-shot transfer. The source ridge recipe uses corrected four-fold inner group CV, so comparison to earlier 5,000-conversation legacy-GCV results cannot isolate a K effect. The intervals condition on this fitted model and draw bank; they do not include refitting, panel-selection uncertainty, or a new-generation bank. No causal conclusion is claimed.')
+text='\n\n'.join(sections)+'\n'
+for name in ('SUMMARY.md','SUMMARY.txt'):
+    (OUT/name).write_text(text)
+(OUT/'report_derivation.txt').write_text(Path(__file__).read_text())
+print(OUT/'SUMMARY.md')

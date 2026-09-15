@@ -1,0 +1,48 @@
+{
+  "status": "complete",
+  "supervisor_pid": 1231682,
+  "started_at": "2026-09-15T03:25:17.801011+00:00",
+  "command": [
+    "/home/thomasjiralerspong/explore-persona-space/.venv/bin/python3",
+    "/home/thomasjiralerspong/.codex/worktrees/825-turn-k5-pilot-20260914/scripts/issue825_turn_k5_fit.py",
+    "--instruct-root",
+    "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_k5_capture_inputs/capture/instruct",
+    "--pretrained-root",
+    "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_k5_capture_inputs/capture/pretrained",
+    "--out-dir",
+    "/home/thomasjiralerspong/.codex/worktrees/825-turn-k5-pilot-20260914/eval_results/issue_825/turn-k5-pilot-20260914/analysis",
+    "--store-dir",
+    "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_k5_fit_store"
+  ],
+  "log": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_k5_cpu_monitor/fit.log",
+  "pilot_gate": {
+    "status": "passed",
+    "observed_at": "2026-09-15T03:25:41.868899+00:00",
+    "fold_receipt": "/home/thomasjiralerspong/.codex/worktrees/825-turn-k5-pilot-20260914/eval_results/issue_825/turn-k5-pilot-20260914/analysis/folds/instruct_fold0.json",
+    "fold_seconds": 13.145228073000908,
+    "projected_fit_seconds": 157.7427368760109,
+    "sampled_peak_rss_bytes": 1565429760,
+    "max_projected_seconds": 1800,
+    "max_rss_bytes": 17179869184,
+    "basis": "first complete model/outer-fold (two turns, both K fits) times 12"
+  },
+  "child_pid": 1231684,
+  "observed_at": "2026-09-15T03:28:08.234543+00:00",
+  "heartbeat_epoch": 1789442888.234568,
+  "elapsed_seconds": 170.4335838649422,
+  "memory": {
+    "process_exited": true
+  },
+  "sampled_peak_rss_bytes": 1584746496,
+  "completed_fold_checkpoints": 12,
+  "log_bytes": 555,
+  "log_tail": "[fit] unit 1/12 instruct/fold0 elapsed=13.2s\n[fit] unit 2/12 instruct/fold1 elapsed=12.6s\n[fit] unit 3/12 instruct/fold2 elapsed=13.2s\n[fit] unit 4/12 instruct/fold3 elapsed=12.9s\n[fit] unit 5/12 instruct/fold4 elapsed=13.3s\n[fit] unit 6/12 instruct/fold5 elapsed=13.0s\n[fit] unit 7/12 pretrained/fold0 elapsed=12.7s\n[fit] unit 8/12 pretrained/fold1 elapsed=14.6s\n[fit] unit 9/12 pretrained/fold2 elapsed=12.9s\n[fit] unit 10/12 pretrained/fold3 elapsed=13.1s\n[fit] unit 11/12 pretrained/fold4 elapsed=12.9s\n[fit] unit 12/12 pretrained/fold5 elapsed=12.8s\n",
+  "completion_verification": {
+    "results_sha256": "e0fe8b177f2a49606d6f990bd7dbc7a838bad9a9aa3b3333e9dff17e92ea5ccf",
+    "artifact_count": 38,
+    "artifact_bytes": 2258215684,
+    "verified_at": "2026-09-15T03:28:15.627300+00:00"
+  },
+  "exit_code": 0,
+  "finished_at": "2026-09-15T03:28:15.627831+00:00"
+}

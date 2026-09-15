@@ -1497,3 +1497,11 @@ eval_results/issue_2643/direct_edges_tuned/tuning_trials.json:generic-api-key:42
 eval_results/issue_2643/direct_edges_tuned/tuning_trials.json:generic-api-key:425
 eval_results/issue_2643/direct_edges_tuned/tuning_trials.json:generic-api-key:4340
 eval_results/issue_2643/direct_edges_tuned/tuning_trials.json:generic-api-key:910
+# Task 825 K5 pilot: tokenizer_revision fields contain the pinned public Qwen
+# model commit SHAs a09a35458c702b33eeacc393d103063234e8bc28 and
+# d149729398750b98c0af14eb82c78cfe92750796, verified against the input pins.
+# These four exact findings are model provenance, not credentials.
+eval_results/issue_825/turn-k5-pilot-20260914/analysis/inputs_and_recipe.json:generic-api-key:30115
+eval_results/issue_825/turn-k5-pilot-20260914/analysis/inputs_and_recipe.json:generic-api-key:34257
+eval_results/issue_825/turn-k5-pilot-20260914/analysis/stage_verification.json:generic-api-key:33549
+eval_results/issue_825/turn-k5-pilot-20260914/analysis/stage_verification.json:generic-api-key:37691

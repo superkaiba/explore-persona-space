@@ -1,0 +1,38 @@
+{
+  "fingerprint": "26b78d8bf63d9a049322b7b7b44eaef1c458884cf5adf8f03695f4806dfc8a42",
+  "model": "pretrained",
+  "fold": 4,
+  "artifacts": [
+    {
+      "path": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_k5_fit_store/maps/pretrained_turn1_fold4.npz",
+      "sha256": "4e7b0615ec087a457d2813a41859d97a504f7a3226700c75a7ae6f260955ece8",
+      "bytes": 67204122
+    },
+    {
+      "path": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_k5_fit_store/maps/pretrained_turn12_fold4.npz",
+      "sha256": "a70478358576e3327ea8aa319a313ff48300080740c0a559c54ab95a60dd02cd",
+      "bytes": 67204122
+    },
+    {
+      "path": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_k5_fit_store/predictions/pretrained_fold4.npz",
+      "sha256": "3b94250e22750df5b15ee02ea2b047cb4967a7642f517b1fac6afab97f620cbb",
+      "bytes": 53614612
+    }
+  ],
+  "predictions": {
+    "path": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_k5_fit_store/predictions/pretrained_fold4.npz",
+    "sha256": "3b94250e22750df5b15ee02ea2b047cb4967a7642f517b1fac6afab97f620cbb",
+    "bytes": 53614612
+  },
+  "elapsed_seconds": 12.914381694048643,
+  "selected_lambdas": {
+    "1": [
+      3162.2776601683795,
+      3162.2776601683795
+    ],
+    "12": [
+      1000.0,
+      1000.0
+    ]
+  }
+}

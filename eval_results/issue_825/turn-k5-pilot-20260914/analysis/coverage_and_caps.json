@@ -1,0 +1,112 @@
+{
+  "observed_at": "2026-09-15T03:27:14.827803+00:00",
+  "planned_conversations": 1000,
+  "joint_complete_conversations": 934,
+  "outer_fold_sizes": {
+    "0": 156,
+    "2": 156,
+    "3": 156,
+    "1": 156,
+    "5": 155,
+    "4": 155
+  },
+  "models": {
+    "instruct": {
+      "generated": {
+        "cap_hits": 215,
+        "draws": 10000,
+        "empty_answers": 0,
+        "generated_tokens": 3120963,
+        "prompts": 2000
+      },
+      "generated_by_turn": {
+        "1": {
+          "cap_hits": 67,
+          "draws": 5000,
+          "empty_answers": 0,
+          "generated_tokens": 1537097
+        },
+        "12": {
+          "cap_hits": 148,
+          "draws": 5000,
+          "empty_answers": 0,
+          "generated_tokens": 1583866
+        }
+      },
+      "captured_draws": 10000,
+      "capture_complete_conversations": 1000,
+      "excluded_draws": 0,
+      "capture_exclusion_counts": {},
+      "matched_draws": 9340,
+      "matched_cap_counts_by_turn": {
+        "1": {
+          "all_five_draws": 4670,
+          "all_five_cap_hits": 57,
+          "draw0_count": 934,
+          "draw0_cap_hits": 9,
+          "conversation_groups_with_any_cap": 32
+        },
+        "12": {
+          "all_five_draws": 4670,
+          "all_five_cap_hits": 140,
+          "draw0_count": 934,
+          "draw0_cap_hits": 29,
+          "conversation_groups_with_any_cap": 59
+        }
+      },
+      "excluded_conversations_by_reason": {}
+    },
+    "pretrained": {
+      "generated": {
+        "cap_hits": 9,
+        "draws": 10000,
+        "empty_answers": 4,
+        "generated_tokens": 523443,
+        "prompts": 2000
+      },
+      "generated_by_turn": {
+        "1": {
+          "cap_hits": 8,
+          "draws": 5000,
+          "empty_answers": 4,
+          "generated_tokens": 261912
+        },
+        "12": {
+          "cap_hits": 1,
+          "draws": 5000,
+          "empty_answers": 0,
+          "generated_tokens": 261531
+        }
+      },
+      "captured_draws": 9645,
+      "capture_complete_conversations": 934,
+      "excluded_draws": 355,
+      "capture_exclusion_counts": {
+        "context_prefix_token_mismatch": 335,
+        "empty_completion": 20
+      },
+      "matched_draws": 9340,
+      "matched_cap_counts_by_turn": {
+        "1": {
+          "all_five_draws": 4670,
+          "all_five_cap_hits": 7,
+          "draw0_count": 934,
+          "draw0_cap_hits": 0,
+          "conversation_groups_with_any_cap": 7
+        },
+        "12": {
+          "all_five_draws": 4670,
+          "all_five_cap_hits": 1,
+          "draw0_count": 934,
+          "draw0_cap_hits": 0,
+          "conversation_groups_with_any_cap": 1
+        }
+      },
+      "excluded_conversations_by_reason": {
+        "context_prefix_token_mismatch": 62,
+        "empty_completion": 4
+      }
+    }
+  },
+  "stage_verification_sha256": "951878a73d8798e22627d583178310eba42e08b92ecd109d9ee6fff4a1469be0"
+}
