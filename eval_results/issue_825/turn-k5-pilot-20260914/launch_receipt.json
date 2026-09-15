@@ -1,0 +1,28 @@
+{
+  "backend": "gcp",
+  "job_id": "616442219335063430",
+  "pod_name": "eps-issue-825-turnk5",
+  "log_path": "/workspace/logs/issue-825.log",
+  "backend_details": {
+    "attempt_id": "att-20260915-021145-turnk5",
+    "machine_type": "a2-ultragpu-2g",
+    "gpu_count": 2,
+    "realized_gpu_count": 2,
+    "zone": "us-central1-a",
+    "project": "eps-persona-gpu-jun2026",
+    "gcloud_config": "eps-gcp",
+    "repo_branch": "codex/825-turn-k5-pilot-20260914",
+    "provisioning_model": "FLEX_START",
+    "boot_disk_size_gb": 200,
+    "workload_cmd": "uv run python scripts/issue825_turn_k5_dispatch.py --config configs/analysis/issue825_turn_k5_inputs.json --out /workspace/issue825_turn_k5_pilot_20260914",
+    "time_budget_hours": 12.0
+  },
+  "code_commit": "f854f81e8103d4b1fb50d3b2fa9e9073e6561aef",
+  "observed_epoch": 1789438579.6393003,
+  "monitor_pid": 1181632,
+  "monitor_status": "polling",
+  "monitor_heartbeat_at": "2026-09-15T02:16:16.144881+00:00",
+  "status": "GPU machine started; environment bootstrapping; scientific result pending",
+  "estimated_gpu_hours": 4,
+  "router_estimate_note": "Router reports24GPU-hours from the12h protective wall fence times2GPUs. Scientific workload estimate remains4GPU-hours pending smoke."
+}
