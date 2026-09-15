@@ -75,6 +75,15 @@ def publish(out, figures, name):
             files[f"{prefix}/code/{script}"] = REPO / "scripts" / script
         test = REPO / "tests/test_issue2054_k5_matched_rank.py"
         files[f"{prefix}/code/{test.name}"] = test
+    if name == "map_geometry":
+        for script in (
+            "issue2054_k5_map_geometry.py",
+            "issue2054_k5_map_geometry_plot.py",
+            "issue2054_k5_matched_rank.py",
+        ):
+            files[f"{prefix}/code/{script}"] = REPO / "scripts" / script
+        test = REPO / "tests/test_issue2054_k5_map_geometry.py"
+        files[f"{prefix}/code/{test.name}"] = test
     if not files or not any(p.suffix == ".png" for p in files.values()):
         raise RuntimeError("no artifacts or figure to publish")
     hashes = {destination: base.sha(path) for destination, path in files.items()}
@@ -167,6 +176,7 @@ def main():
             "matched_queries",
             "matched_shift_scale",
             "matched_rank",
+            "map_geometry",
         ],
         required=True,
     )
