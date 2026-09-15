@@ -50,12 +50,24 @@ def policy():
     return recovery.load_policy(REPO / "configs/issue2054_k3_capture_policy.json")
 
 
-def selected(manifest):
-    """Return the exact six settings per model shown in the manuscript."""
-    cells = [c for c in manifest["cells"] if k3fit.displayed(c["cell"])]
-    if len(cells) != 12 or any("raw" not in c for c in cells):
-        raise RuntimeError("expected twelve on-policy manuscript cells")
-    return sorted(cells, key=lambda c: (c["cell"].split("__")[-1], c["cell"]))
+def selected(manifest, *, cells=None):
+    """Select explicit on-policy cells, or the unchanged manuscript panel."""
+    if cells is None:
+        records = [c for c in manifest["cells"] if k3fit.displayed(c["cell"])]
+        expected = 12
+    else:
+        names = list(cells)
+        if not names or len(set(names)) != len(names):
+            raise ValueError("explicit cells must be nonempty and unique")
+        records = [c for c in manifest["cells"] if c["cell"] in names]
+        expected = len(names)
+        if {c["cell"] for c in records} != set(names) or any(
+            c["cell"].split("__")[1] != "on_policy" for c in records
+        ):
+            raise ValueError("explicit cells must resolve to on-policy manifest entries")
+    if len(records) != expected or any("raw" not in c for c in records):
+        raise RuntimeError(f"expected {expected} unique on-policy cells with raw sources")
+    return sorted(records, key=lambda c: (c["cell"].split("__")[-1], c["cell"]))
 
 
 def seed(cell, conv_id, draw):
@@ -67,7 +79,7 @@ def seed(cell, conv_id, draw):
     )
 
 
-def fingerprint(manifest, cell):
+def fingerprint(manifest, cell, *, cells=None):
     """Bind every new checkpoint to inputs, source, capture policy and recipe."""
     payload = {
         "parent_revision": PARENT_REV,
@@ -75,7 +87,11 @@ def fingerprint(manifest, cell):
         "new_source": k3.sha(__file__),
         "new_draws": NEW_DRAWS,
         "counts": COUNTS,
-        "pool": "six displayed settings separately within each model",
+        "pool": (
+            "six displayed settings separately within each model"
+            if cells is None
+            else {"explicit_cells": [r["cell"] for r in selected(manifest, cells=cells)]}
+        ),
     }
     return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
 
@@ -98,7 +114,7 @@ def verified_parent(root, relative, expected_fingerprint=None):
     return path
 
 
-def prepare(root, *, first_chunks=False):
+def prepare(root, *, first_chunks=False, cells=None):
     """Restore exactly the displayed captures/raw text and validate row identity."""
     from huggingface_hub import HfApi
     from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
@@ -113,8 +129,8 @@ def prepare(root, *, first_chunks=False):
         for slug, mid in k3.capture._MODEL_ID.items()
     }:
         raise RuntimeError("parent source/model revision mismatch")
-    cells = selected(manifest)
-    if sum(c["n"] for c in cells) != 95999:
+    records = selected(manifest, cells=cells)
+    if cells is None and sum(c["n"] for c in records) != 95999:
         raise RuntimeError("manuscript source population changed")
     k3.atomic_json(root / "manifest.json", manifest)
     k3.atomic_json(root / "capture_policy.json", policy())
@@ -140,7 +156,7 @@ def prepare(root, *, first_chunks=False):
                 continue
             rel = entry.path.removeprefix(prefix + "/")
             parts = Path(rel).parts
-            if len(parts) < 3 or parts[1] not in {c["cell"] for c in cells}:
+            if len(parts) < 3 or parts[1] not in {c["cell"] for c in records}:
                 continue
             if parts[0] not in (
                 ("captures", "capture_audits") if prefix == PARENT_PREFIX else ("raw",)
@@ -164,7 +180,7 @@ def prepare(root, *, first_chunks=False):
                 k3.log(
                     f"[phase=restore_transfer] files={i}/{len(jobs)} elapsed={time.monotonic() - started:.1f}s"
                 )
-    for record in cells:
+    for record in records:
         # The verified K3 captures already contain draw0 and fixed context;
         # their source activation identities stay in the frozen manifest.
         for key in ("raw",):
@@ -175,7 +191,7 @@ def prepare(root, *, first_chunks=False):
     if k3.sha(fold) != manifest["fold_sha256"]:
         raise RuntimeError("fold identity changed")
     chunks = answers = 0
-    for record in cells:
+    for record in records:
         cell = record["cell"]
         rows = k3.banked_rows(root, record, first_chunks)
         old_fp = k3.fingerprint(manifest, cell, False)
@@ -228,7 +244,7 @@ def prepare(root, *, first_chunks=False):
         k3.log(f"[phase=restore_verify] {cell} chunks={chunks} reused_answers={answers}")
     report = {
         "revision": PARENT_REV,
-        "cells": [c["cell"] for c in cells],
+        "cells": [c["cell"] for c in records],
         "capture_chunks": chunks,
         "reused_fresh_answers": answers,
         "first_chunks_only": first_chunks,
@@ -264,14 +280,14 @@ def save_raw(path, rows, timing, root, fp):
     artifacts.seal_many([*paths, path, timing_path], root, fp)
 
 
-def phase_headroom(root, manifest, stage):
+def phase_headroom(root, manifest, stage, *, cells=None):
     """Bind conservative remaining-write estimates to the actual output mount."""
     from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
 
     pending = 0
-    for record in selected(manifest):
+    for record in selected(manifest, cells=cells):
         cell = record["cell"]
-        fp = fingerprint(manifest, cell)
+        fp = fingerprint(manifest, cell, cells=cells)
         if stage == "aggregate":
             # Aggregates are rewritten, including expansion of reusable pilot
             # rows into full production under the same recipe fingerprint.
@@ -287,19 +303,19 @@ def phase_headroom(root, manifest, stage):
         assert_out_root_headroom(root, pending * per_unit_gb * 1.5 + 3, phase=f"k5_{stage}")
 
 
-def generate(root, manifest, args):
+def generate(root, manifest, args, *, cells=None):
     """Run production-sized vLLM chunks with the inherited stops and caps."""
     os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
     k3.log(f"[phase=vllm_launch_env] model={args.model} VLLM_WORKER_MULTIPROC_METHOD=spawn")
     from vllm import LLM, SamplingParams
 
-    records = [c for c in selected(manifest) if c["cell"].endswith("__" + args.model)]
+    records = [c for c in selected(manifest, cells=cells) if c["cell"].endswith("__" + args.model)]
     engine = None
-    for ci, record in enumerate(selected(manifest)):
+    for ci, record in enumerate(selected(manifest, cells=cells)):
         if record not in records:
             continue
         cell = record["cell"]
-        fp = fingerprint(manifest, cell)
+        fp = fingerprint(manifest, cell, cells=cells)
         rows = k3.banked_rows(root, record, args.first_chunks)
         spec = manifest["models"][args.model]
         for offset in range(0, len(rows), k3.CHUNK):
@@ -378,7 +394,7 @@ def generate(root, manifest, args):
             )
 
 
-def capture(root, manifest, args):
+def capture(root, manifest, args, *, cells=None):
     """Capture draws 3/4 while preserving the exact K3 context and first draws."""
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -399,12 +415,12 @@ def capture(root, manifest, args):
         .to("cuda")
         .eval()
     )
-    for ci, record in enumerate(selected(manifest)):
+    for ci, record in enumerate(selected(manifest, cells=cells)):
         cell = record["cell"]
         if not cell.endswith("__" + args.model):
             continue
         rows = k3.banked_rows(root, record, args.first_chunks)
-        fp = fingerprint(manifest, cell)
+        fp = fingerprint(manifest, cell, cells=cells)
         pending = []
         for offset in range(0, len(rows), k3.CHUNK):
             if not k3.owns_chunk(ci, offset, args.shard, args.shards):
@@ -489,12 +505,12 @@ def average_targets(old, new):
     return targets, keep, caps
 
 
-def aggregate(root, manifest, *, first_chunks=False):
+def aggregate(root, manifest, *, first_chunks=False, cells=None):
     """Write matched target arrays and realized coverage per displayed cell."""
     reports = []
-    for record in selected(manifest):
+    for record in selected(manifest, cells=cells):
         cell = record["cell"]
-        fp = fingerprint(manifest, cell)
+        fp = fingerprint(manifest, cell, cells=cells)
         rows = k3.banked_rows(root, record, first_chunks)
         old_chunks = []
         new_chunks = []
