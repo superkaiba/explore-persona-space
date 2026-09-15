@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import importlib
+import importlib.util
+import inspect
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -15,6 +17,25 @@ from explore_persona_space.analysis.turn_transfer_calibration import (
     adapted_predictions,
     fit_batched_gcv,
 )
+
+
+def test_scoring_fingerprint_survives_comment_edit_above_loaded_function(driver, tmp_path):
+    """Replay the real live-file line shift that misidentified the scoring source."""
+    path = tmp_path / "copy_driver.py"
+    original = Path(driver.__file__).read_text()
+    path.write_text(original)
+    spec = importlib.util.spec_from_file_location("calibration_snapshot_fixture", path)
+    copied = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(copied)
+    receipt = {"fingerprint": "fixture-source", "map_sha256": "fixture-map"}
+    before = copied.score_fingerprint(receipt)
+    path.write_text(
+        original.replace(
+            "def source_fit(args, panel):", "# added comment\ndef source_fit(args, panel):", 1
+        )
+    )
+    assert inspect.getsource(copied.score_target) != copied.SCORE_TARGET_SOURCE
+    assert copied.score_fingerprint(receipt) == before
 
 
 @pytest.fixture
@@ -48,15 +69,11 @@ def inputs(tmp_path):
         source_turn=1,
     )
     args.inputs.mkdir()
-    (args.inputs / "inputs.json").write_text(
-        '{"fixture": "six disjoint conversation folds"}'
-    )
+    (args.inputs / "inputs.json").write_text('{"fixture": "six disjoint conversation folds"}')
     return args, panel
 
 
-def test_persistence_creates_nested_directories_and_source_map_roundtrips(
-    driver, inputs
-):
+def test_persistence_creates_nested_directories_and_source_map_roundtrips(driver, inputs):
     """First fit persists its map into a fresh store and resumes identical coefficients."""
     args, panel = inputs
     fitted, first = driver.source_fit(args, panel)
@@ -91,9 +108,7 @@ def test_target_test_answers_cannot_change_calibration(driver, inputs):
             "raw_prediction",
         ]:
             np.testing.assert_array_equal(a[name], b[name])
-    assert (
-        before["metrics"]["bias_scale"]["sse"] != after["metrics"]["bias_scale"]["sse"]
-    )
+    assert before["metrics"]["bias_scale"]["sse"] != after["metrics"]["bias_scale"]["sse"]
 
 
 @pytest.mark.parametrize("fitting_stage", ["source", "calibration"])
@@ -103,9 +118,7 @@ def test_score_rejects_conversation_overlap(driver, inputs, fitting_stage):
     fitted, source = driver.source_fit(args, panel)
     changed = panel | {"ids": panel["ids"].astype(object)}
     source_turn = 1 if fitting_stage == "source" else 12
-    train_row = np.flatnonzero(
-        (panel["turns"] == source_turn) & (panel["membership"] != 0)
-    )[0]
+    train_row = np.flatnonzero((panel["turns"] == source_turn) & (panel["membership"] != 0))[0]
     test_row = np.flatnonzero((panel["turns"] == 12) & (panel["membership"] == 0))[0]
     changed["ids"][train_row] = "overlap_fixture"
     changed["ids"][test_row] = "overlap_fixture"
@@ -121,8 +134,7 @@ def test_methods_score_identical_target_rows_and_retrieval_pools(driver, inputs)
     with np.load(row["prediction_file"], allow_pickle=False) as arrays:
         train, test = arrays["calibration_indices"], arrays["test_indices"]
         coefficients = {
-            name: arrays[name]
-            for name in ["bias", "gain", "prediction_mean", "target_mean"]
+            name: arrays[name] for name in ["bias", "gain", "prediction_mean", "target_mean"]
         }
         raw = fitted.predict(0, panel["x"][test])
         expected = {"raw": raw} | adapted_predictions(raw, coefficients)
@@ -163,9 +175,7 @@ def reduction_inputs(driver, inputs, monkeypatch):
     selected = np.flatnonzero(panel["turns"] == 12)
     membership = panel["membership"][selected]
     train_indices = [np.flatnonzero(membership != fold) for fold in range(6)]
-    independent = fit_batched_gcv(
-        panel["x"][selected], panel["y"][selected], train_indices
-    )
+    independent = fit_batched_gcv(panel["x"][selected], panel["y"][selected], train_indices)
     sse, sst = 0.0, 0.0
     for fold in range(6):
         test = selected[membership == fold]
@@ -191,30 +201,25 @@ def reduction_inputs(driver, inputs, monkeypatch):
     return args, rows, source
 
 
-def test_reducer_uses_fold_sums_and_weights_retrieval_by_test_size(
-    driver, reduction_inputs
-):
+def test_reducer_uses_fold_sums_and_weights_retrieval_by_test_size(driver, reduction_inputs):
     """Real unequal folds aggregate by SSE/SST and sample counts, not mean scores."""
     args, rows, _source = reduction_inputs
     driver.reduce_results(args)
     result = json.loads((args.out / "results.json").read_text())
     assert len(result["cells"]) == 1
     cell = result["cells"][0]
-    expected = 1 - sum(r["metrics"]["raw"]["sse"] for r in rows) / sum(
-        r["sst"] for r in rows
-    )
+    expected = 1 - sum(r["metrics"]["raw"]["sse"] for r in rows) / sum(r["sst"] for r in rows)
     assert cell["metrics"]["raw"]["r2"] == pytest.approx(expected)
     assert cell["metrics"]["raw"]["retention"] == pytest.approx(1)
     assert not np.isclose(expected, np.mean([r["metrics"]["raw"]["r2"] for r in rows]))
     for method in driver.METHODS:
         for metric in ["cosine", "euclidean"]:
             expected_top1 = sum(
-                r["metrics"][method]["retrieval"][metric]["acc_at_k"][1] * r["n_test"]
-                for r in rows
+                r["metrics"][method]["retrieval"][metric]["acc_at_k"][1] * r["n_test"] for r in rows
             ) / sum(r["n_test"] for r in rows)
-            assert cell["metrics"][method]["retrieval"][metric][
-                "top1"
-            ] == pytest.approx(expected_top1)
+            assert cell["metrics"][method]["retrieval"][metric]["top1"] == pytest.approx(
+                expected_top1
+            )
 
 
 @pytest.mark.parametrize(

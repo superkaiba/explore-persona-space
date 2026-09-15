@@ -309,7 +309,7 @@ def score_fingerprint(source_record):
     payload = {
         "source_fingerprint": source_record["fingerprint"],
         "source_map_sha256": source_record["map_sha256"],
-        "scoring_code": inspect.getsource(score_target),
+        "scoring_code": SCORE_TARGET_SOURCE,
         "baselines_sha256": sha(mapping_baselines.__file__),
         "numerical_sha256": sha(turn_transfer_calibration.__file__),
     }
@@ -414,6 +414,11 @@ def score_target(args, panel, fitted, source_record, target, fold):
         f"bias_scale={metrics['bias_scale']['r2']:.6f}"
     )
     return record
+
+
+# Capture source while its line numbers still match the loaded function object.
+# A later edit to an unrelated line must not redirect inspect.getsource().
+SCORE_TARGET_SOURCE = inspect.getsource(score_target)
 
 
 def fit(args):

@@ -38,7 +38,7 @@ METHODS = {
 }
 MODELS = {
     "pretrained": ("Base", "base_model"),
-    "instruct": ("Instruction-tuned", "post_trained"),
+    "instruct": ("Instruct", "post_trained"),
 }
 
 
@@ -74,6 +74,7 @@ def main():
         color = ROLES[role].color
         for col, source in enumerate((1, 3)):
             ax = fig.add_subplot(grid[row, col])
+            panel_ylim = (0.93, 1.01) if args.metric == "retention" and source == 3 else ylim
             for method, (_, linestyle, marker) in METHODS.items():
                 turns = list(range(source, 13))
                 scores = [indexed[model, source, turn]["metrics"][method] for turn in turns]
@@ -83,7 +84,7 @@ def main():
                     else s["retrieval"]["cosine"]["top1"]
                     for s in scores
                 ]
-                if not all(ylim[0] <= value <= ylim[1] for value in values):
+                if not all(panel_ylim[0] <= value <= panel_ylim[1] for value in values):
                     raise RuntimeError("plotted value falls outside the declared axis")
                 (line,) = ax.plot(
                     turns,
@@ -111,10 +112,13 @@ def main():
                 ax.axhline(1, color=MUTED, linewidth=1.2, linestyle=(0, (6, 4)))
             ax.set_xlim(0.8, 12.25)
             ax.set_xticks([1, 3, 6, 9, 12])
-            ax.set_ylim(*ylim)
             ax.set_yticks(
                 [0.4, 0.6, 0.8, 1.0] if args.metric == "retention" else [0, 0.25, 0.5, 0.75, 1]
             )
+            if args.metric == "retention" and source == 3:
+                ax.set_yticks([0.94, 0.96, 0.98, 1.0])
+            # Tick placement can expand limits; apply the declared range last.
+            ax.set_ylim(*panel_ylim)
             if col == 0:
                 ax.set_ylabel(
                     better_label(
@@ -126,6 +130,7 @@ def main():
             if row == 1:
                 ax.set_xlabel("Evaluated conversation turn")
             style_axis(ax)
+            np.testing.assert_allclose(ax.get_ylim(), panel_ylim, rtol=0, atol=1e-12)
             letter = "ABCD"[row * 2 + col]
             panel_header(
                 ax, letter, label, title=f"{letter}  {label}: map from turn {source}", title_y=1.055
@@ -172,6 +177,10 @@ def main():
         "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "points": points,
         "metric": args.metric,
+        "axis_limits": {
+            "source1": ylim,
+            "source3": (0.93, 1.01) if args.metric == "retention" else ylim,
+        },
         "retrieval_pools": "Each fold's held-out answer vectors; see results.json for exact pool sizes and chance rates.",
         "calibration": data["calibration"],
         "answer_draws": 1,
