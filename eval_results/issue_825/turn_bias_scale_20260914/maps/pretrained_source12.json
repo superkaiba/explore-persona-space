@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "numerical_sha256": "71d2fe894d3d03261dcfb73775d779412f712c56bf62bd48b0c472f4cac5553c",
+  "fitting_code_sha256": "c25da469c90fe853d9c734a7e9ac28d4e1fabc442d51de56b842fb2833d2ca47",
+  "reference_sha256": "3c79d0630f9794ef03baa6a030b84d253b8585bfb8e5a6b958b6ff77f87bc3bb",
+  "inputs_sha256": "55d331583d94e25c1399ec944ed13e879dd74781cdbc65f3a2a27c5b5f660a74",
+  "model": "pretrained",
+  "source_turn": 12,
+  "fold_hash": "ce1f979de55db241b378ab66e60fe784ec42985ed54aba33453570d76e1f1acb",
+  "fingerprint": "e7b5795e8e5dcd668b5b3f7b2a7792066c442e52a29db8e2f6eccb44790c5c05",
+  "map_sha256": "c739cd621723f6a4d75a50f3a57b93db786942790ce40169bdcf38169d1221ba",
+  "map_file": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_outputs/maps/pretrained_source12.npz",
+  "fit_seconds": 39.49575395695865,
+  "max_rss_kib": 5989468,
+  "lambda_by_fold": [
+    3162.2776601683795,
+    3162.2776601683795,
+    3162.2776601683795,
+    3162.2776601683795,
+    3162.2776601683795,
+    3162.2776601683795
+  ],
+  "n_train": [
+    4164,
+    4162,
+    4164,
+    4163,
+    4164,
+    4163
+  ]
+}

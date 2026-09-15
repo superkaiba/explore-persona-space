@@ -1,0 +1,156 @@
+{
+  "model": "instruct",
+  "source_turn": 3,
+  "target_turn": 4,
+  "fold": 5,
+  "fingerprint": "2f7e1c50f371b2019aac656d8e4ca4f4a02a0d5c9d9bbec3315b44275773eb74",
+  "source_map_sha256": "15940b6e7a4d10b8a5937488479dcb443751f7539ec665e355ec1df04e3049f6",
+  "prediction_sha256": "2bd8e49991e1286951be8ff914c3320a3ae90c2049ac266f81e3fd5fcb67a5c0",
+  "prediction_file": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_outputs/predictions/instruct_source3_target4_fold5.npz",
+  "n_train_source": 4166,
+  "n_calibration": 4166,
+  "n_test": 833,
+  "test_source_overlap": 0,
+  "test_calibration_overlap": 0,
+  "target_labels_used_for_calibration": true,
+  "scale": 0.9745354105595714,
+  "bias_norm": 1.1886619499319266,
+  "sst": 1244344.0132021138,
+  "metrics": {
+    "raw": {
+      "sse": 555777.3338651094,
+      "r2": 0.5533571681396142,
+      "retrieval": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.8547418967587035
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8949678762438815
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.8307322929171669
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8768563522520229
+        }
+      }
+    },
+    "bias": {
+      "sse": 554782.6584550398,
+      "r2": 0.554156525390918,
+      "retrieval": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.8535414165666266
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8942527138355479
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.8355342136854742
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8795527459895192
+        }
+      }
+    },
+    "bias_scale": {
+      "sse": 553680.3405140718,
+      "r2": 0.5550423880858584,
+      "retrieval": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.8499399759903962
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8901042832415161
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.8139255702280912
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8660098135376961
+        }
+      }
+    },
+    "identity_bias": {
+      "sse": 2488893.786259815,
+      "r2": -1.0001653560859411,
+      "retrieval": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.6386554621848739
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7123860766635728
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.5918367346938775
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 1.0,
+          "mrr": 0.6630027466187994
+        }
+      }
+    }
+  },
+  "seconds": 9.767495954409242,
+  "max_rss_kib": 5987968,
+  "fingerprint_repair": {
+    "original_fingerprint": "00928e448cfb5f0e80e8c8360111106fa02ecf19565176d7e2cfa24c23efd5cd",
+    "reason": "Runtime inspect.getsource resolved the preceding function after a comment shifted source lines; executable scoring AST and numerical artifacts unchanged.",
+    "audit": "provenance_repair/audit.json"
+  }
+}

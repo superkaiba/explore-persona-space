@@ -1,0 +1,151 @@
+{
+  "model": "instruct",
+  "source_turn": 1,
+  "target_turn": 7,
+  "fold": 4,
+  "fingerprint": "731922e197e80b7c59a89cab61d2f6744b492ca130baedaea731a08299f1f428",
+  "source_map_sha256": "60b700deb7c0ff334330f220bcd743f66bce1ef685bdf51c24568c51b559cf92",
+  "prediction_sha256": "fb5cb51a74e3733f837bf5bc60aefb6230976776a893951803c7681c3b947aad",
+  "prediction_file": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_outputs/predictions/instruct_source1_target7_fold4.npz",
+  "n_train_source": 4167,
+  "n_calibration": 4166,
+  "n_test": 833,
+  "test_source_overlap": 0,
+  "test_calibration_overlap": 0,
+  "target_labels_used_for_calibration": true,
+  "scale": 0.8983833848371675,
+  "bias_norm": 10.320601996384653,
+  "sst": 1227293.5332518523,
+  "metrics": {
+    "raw": {
+      "sse": 791201.8725159249,
+      "r2": 0.3553279219034533,
+      "retrieval": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.6974789915966386
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7712462974772407
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.6422569027611045
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7210117640041666
+        }
+      }
+    },
+    "bias": {
+      "sse": 703124.5124944351,
+      "r2": 0.4270934430564238,
+      "retrieval": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.7262905162064826
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7926804410527885
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.680672268907563
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7502135656414526
+        }
+      }
+    },
+    "bias_scale": {
+      "sse": 696232.9633719523,
+      "r2": 0.43270868418315156,
+      "retrieval": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.6626650660264105
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7384957361153274
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.6110444177671068
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 1.0,
+          "mrr": 0.6884868611245364
+        }
+      }
+    },
+    "identity_bias": {
+      "sse": 2466421.7807940524,
+      "r2": -1.009642937055971,
+      "retrieval": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.6494597839135654
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7190090713938397
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.602641056422569
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 1.0,
+          "mrr": 0.6759485250208039
+        }
+      }
+    }
+  },
+  "seconds": 6.289122020825744,
+  "max_rss_kib": 3556776
+}

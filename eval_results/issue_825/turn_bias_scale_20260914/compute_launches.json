@@ -1,0 +1,104 @@
+{
+  "pilot": {
+    "pid": 916811,
+    "launch_epoch": 1789430167.5537276,
+    "command": [
+      "/home/thomasjiralerspong/explore-persona-space/.venv/bin/python3",
+      "/home/thomasjiralerspong/.codex/worktrees/825-turn-bias-scale-20260914/scripts/issue825_turn_bias_scale_monitor.py",
+      "pilot",
+      "--inputs",
+      "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_inputs",
+      "--out",
+      "/home/thomasjiralerspong/.codex/worktrees/825-turn-bias-scale-20260914/eval_results/issue_825/turn_bias_scale_20260914",
+      "--store",
+      "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_outputs",
+      "--reference",
+      "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_825/turn_dynamics/results.json",
+      "--monitor-dir",
+      "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_pilot_monitor"
+    ],
+    "log": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_pilot_supervisor.log"
+  },
+  "pilot2": {
+    "pid": 925474,
+    "launch_epoch": 1789430568.2449117,
+    "command": [
+      "/home/thomasjiralerspong/explore-persona-space/.venv/bin/python3",
+      "/home/thomasjiralerspong/.codex/worktrees/825-turn-bias-scale-20260914/scripts/issue825_turn_bias_scale_monitor.py",
+      "pilot",
+      "--inputs",
+      "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_inputs",
+      "--out",
+      "/home/thomasjiralerspong/.codex/worktrees/825-turn-bias-scale-20260914/eval_results/issue_825/turn_bias_scale_20260914",
+      "--store",
+      "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_outputs",
+      "--reference",
+      "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_825/turn_dynamics/results.json",
+      "--monitor-dir",
+      "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_pilot2_monitor"
+    ],
+    "supersedes": 916811,
+    "fix_engaged": "NUMPY_MADVISE_HUGEPAGE=0",
+    "log": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_pilot2_supervisor.log"
+  },
+  "full_instruct": {
+    "pid": 928339,
+    "launch_epoch": 1789430734.1013145,
+    "command": [
+      "/home/thomasjiralerspong/explore-persona-space/.venv/bin/python3",
+      "/home/thomasjiralerspong/.codex/worktrees/825-turn-bias-scale-20260914/scripts/issue825_turn_bias_scale_monitor.py",
+      "full",
+      "--model",
+      "instruct",
+      "--inputs",
+      "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_inputs",
+      "--out",
+      "/home/thomasjiralerspong/.codex/worktrees/825-turn-bias-scale-20260914/eval_results/issue_825/turn_bias_scale_20260914",
+      "--store",
+      "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_outputs",
+      "--reference",
+      "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_825/turn_dynamics/results.json",
+      "--monitor-dir",
+      "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_full_instruct_monitor"
+    ],
+    "environment": {
+      "OMP_NUM_THREADS": "8",
+      "MKL_NUM_THREADS": "8",
+      "OPENBLAS_NUM_THREADS": "8",
+      "NUMEXPR_NUM_THREADS": "8",
+      "NUMPY_MADVISE_HUGEPAGE": "0",
+      "MALLOC_ARENA_MAX": "2",
+      "MALLOC_MMAP_THRESHOLD_": "131072"
+    }
+  },
+  "full_pretrained": {
+    "pid": 928340,
+    "launch_epoch": 1789430734.1029818,
+    "command": [
+      "/home/thomasjiralerspong/explore-persona-space/.venv/bin/python3",
+      "/home/thomasjiralerspong/.codex/worktrees/825-turn-bias-scale-20260914/scripts/issue825_turn_bias_scale_monitor.py",
+      "full",
+      "--model",
+      "pretrained",
+      "--inputs",
+      "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_inputs",
+      "--out",
+      "/home/thomasjiralerspong/.codex/worktrees/825-turn-bias-scale-20260914/eval_results/issue_825/turn_bias_scale_20260914",
+      "--store",
+      "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_outputs",
+      "--reference",
+      "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_825/turn_dynamics/results.json",
+      "--monitor-dir",
+      "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_full_pretrained_monitor"
+    ],
+    "environment": {
+      "OMP_NUM_THREADS": "8",
+      "MKL_NUM_THREADS": "8",
+      "OPENBLAS_NUM_THREADS": "8",
+      "NUMEXPR_NUM_THREADS": "8",
+      "NUMPY_MADVISE_HUGEPAGE": "0",
+      "MALLOC_ARENA_MAX": "2",
+      "MALLOC_MMAP_THRESHOLD_": "131072"
+    }
+  }
+}

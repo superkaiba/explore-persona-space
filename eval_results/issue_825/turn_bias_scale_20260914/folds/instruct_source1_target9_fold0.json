@@ -1,0 +1,151 @@
+{
+  "model": "instruct",
+  "source_turn": 1,
+  "target_turn": 9,
+  "fold": 0,
+  "fingerprint": "731922e197e80b7c59a89cab61d2f6744b492ca130baedaea731a08299f1f428",
+  "source_map_sha256": "60b700deb7c0ff334330f220bcd743f66bce1ef685bdf51c24568c51b559cf92",
+  "prediction_sha256": "6d1f10d6ff093ca78fdda8f899c833983dd04ee08572987a3d7ddaba94357f39",
+  "prediction_file": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_outputs/predictions/instruct_source1_target9_fold0.npz",
+  "n_train_source": 4166,
+  "n_calibration": 4166,
+  "n_test": 832,
+  "test_source_overlap": 0,
+  "test_calibration_overlap": 0,
+  "target_labels_used_for_calibration": true,
+  "scale": 0.8921505166642688,
+  "bias_norm": 10.872696180326011,
+  "sst": 1233463.5723000274,
+  "metrics": {
+    "raw": {
+      "sse": 827249.9997316775,
+      "r2": 0.329327579420029,
+      "retrieval": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 832,
+          "n_pool": 832,
+          "acc_at_k": {
+            "1": 0.6935096153846154
+          },
+          "chance_at_k": {
+            "1": 0.001201923076923077
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7574170409849313
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 832,
+          "n_pool": 832,
+          "acc_at_k": {
+            "1": 0.65625
+          },
+          "chance_at_k": {
+            "1": 0.001201923076923077
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7236554258419032
+        }
+      }
+    },
+    "bias": {
+      "sse": 730526.0300768272,
+      "r2": 0.4077441389577299,
+      "retrieval": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 832,
+          "n_pool": 832,
+          "acc_at_k": {
+            "1": 0.7007211538461539
+          },
+          "chance_at_k": {
+            "1": 0.001201923076923077
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7635129354826027
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 832,
+          "n_pool": 832,
+          "acc_at_k": {
+            "1": 0.6574519230769231
+          },
+          "chance_at_k": {
+            "1": 0.001201923076923077
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7287152637415251
+        }
+      }
+    },
+    "bias_scale": {
+      "sse": 722890.43369412,
+      "r2": 0.4139345093538892,
+      "retrieval": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 832,
+          "n_pool": 832,
+          "acc_at_k": {
+            "1": 0.6382211538461539
+          },
+          "chance_at_k": {
+            "1": 0.001201923076923077
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7109624019046564
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 832,
+          "n_pool": 832,
+          "acc_at_k": {
+            "1": 0.5805288461538461
+          },
+          "chance_at_k": {
+            "1": 0.001201923076923077
+          },
+          "median_rank": 1.0,
+          "mrr": 0.6632207858198674
+        }
+      }
+    },
+    "identity_bias": {
+      "sse": 2477571.4841951635,
+      "r2": -1.0086296343355001,
+      "retrieval": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 832,
+          "n_pool": 832,
+          "acc_at_k": {
+            "1": 0.6274038461538461
+          },
+          "chance_at_k": {
+            "1": 0.001201923076923077
+          },
+          "median_rank": 1.0,
+          "mrr": 0.6946359379519278
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 832,
+          "n_pool": 832,
+          "acc_at_k": {
+            "1": 0.5516826923076923
+          },
+          "chance_at_k": {
+            "1": 0.001201923076923077
+          },
+          "median_rank": 1.0,
+          "mrr": 0.6289919417051235
+        }
+      }
+    }
+  },
+  "seconds": 5.7980531472712755,
+  "max_rss_kib": 3556776
+}

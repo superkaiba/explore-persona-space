@@ -1,0 +1,151 @@
+{
+  "model": "pretrained",
+  "source_turn": 3,
+  "target_turn": 1,
+  "fold": 5,
+  "fingerprint": "21d5b4147ccb3114a3935186bd7ce090482a40652d607dd81beb6c6b16b86b74",
+  "source_map_sha256": "fc97bfeb5a4b66c21819631968fff72cd84f7775ff0e468e90469cfd512b9f9b",
+  "prediction_sha256": "0fd2327cbbe00ebbf0d73ed82981de8feb7d5034772f2ee1fdc83c66ed74a83d",
+  "prediction_file": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_outputs/predictions/pretrained_source3_target1_fold5.npz",
+  "n_train_source": 4166,
+  "n_calibration": 4167,
+  "n_test": 833,
+  "test_source_overlap": 0,
+  "test_calibration_overlap": 0,
+  "target_labels_used_for_calibration": true,
+  "scale": 1.0059492598455524,
+  "bias_norm": 13.319433005328445,
+  "sst": 1861266.3786097819,
+  "metrics": {
+    "raw": {
+      "sse": 1500431.2868940025,
+      "r2": 0.19386536815073974,
+      "retrieval": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.2917166866746699
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 10.0,
+          "mrr": 0.3711654615787423
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.19447779111644659
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 21.0,
+          "mrr": 0.2693409912314929
+        }
+      }
+    },
+    "bias": {
+      "sse": 1344574.0958342543,
+      "r2": 0.27760254454360034,
+      "retrieval": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.2845138055222089
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 10.0,
+          "mrr": 0.36450078063824837
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.22569027611044418
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 18.0,
+          "mrr": 0.30206661600317625
+        }
+      }
+    },
+    "bias_scale": {
+      "sse": 1344546.1768388664,
+      "r2": 0.2776175445434438,
+      "retrieval": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.2893157262905162
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 10.0,
+          "mrr": 0.3683891580492314
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.226890756302521
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 17.0,
+          "mrr": 0.30327950702222733
+        }
+      }
+    },
+    "identity_bias": {
+      "sse": 2379845.869009673,
+      "r2": -0.27861648196064714,
+      "retrieval": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.3625450180072029
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 4.0,
+          "mrr": 0.437003644449769
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 833,
+          "n_pool": 833,
+          "acc_at_k": {
+            "1": 0.2797118847539016
+          },
+          "chance_at_k": {
+            "1": 0.0012004801920768306
+          },
+          "median_rank": 10.0,
+          "mrr": 0.3592837627527079
+        }
+      }
+    }
+  },
+  "seconds": 4.56595990806818,
+  "max_rss_kib": 5989748
+}

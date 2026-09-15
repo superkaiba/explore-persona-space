@@ -1,0 +1,15 @@
+{
+  "status": "verified",
+  "canonical_repo": "superkaiba1/explore-persona-space-data",
+  "canonical_repo_type": "dataset",
+  "canonical_revision": "81e4276c9190df25b64d052ad47bfa916804dcb6",
+  "pointer": {
+    "overflow_repo": "superkaiba1/explore-persona-space-overflow",
+    "path_in_repo": "issue825_turn_bias_scale_20260914",
+    "ts": 1789432833.400387,
+    "used_tb": 20.286284188709,
+    "ceiling_tb": 20.0
+  },
+  "overflow_repo_type": "model",
+  "overflow_revision": "0a18fd3ab603e739ba7e1d57091437934607ef50"
+}

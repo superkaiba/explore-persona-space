@@ -1,0 +1,1133 @@
+{
+  "results_sha256": "95d1fb22e5e99705942919affe02d642ce665fe533c32ea71412ff3bb10fc057",
+  "script_sha256": "716e3a49aa44d0bd598bfb654a45adf52752a1676f90b7b0f3b08cc43ec3de06",
+  "points": [
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 1,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.9999999999999997
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 2,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.5904362479765427
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 3,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.5183023626205787
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 4,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.4784321885859605
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 5,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.45270914373520493
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 6,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.4286828061011175
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 7,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.4111812563236169
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 8,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.4025427389457743
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 9,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.3860275319907216
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 10,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.37087578910742547
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 11,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.36517391473351507
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 12,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.35939799280688683
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 1,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.9999999999999997
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 2,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.654627810399056
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 3,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.6060844403634081
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 4,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.5843379474619579
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 5,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.5741735246889148
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 6,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.5641103391129899
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 7,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.5570031648839574
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 8,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.556638060384595
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 9,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.5518509038204489
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 10,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.5463926155246912
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 11,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.5443802908563576
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 12,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.5443803322016819
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 1,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.9519155228577646
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 2,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.6762173259931947
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 3,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.6278500020332309
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 4,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.6043899836589849
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 5,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.5947324908219617
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 6,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.5853757216652743
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 7,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.577449488980661
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 8,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.5757003919001602
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 9,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.5715879059429221
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 10,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.565730774668338
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 11,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.5639586877620962
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 1,
+      "target_turn": 12,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.5633663561059853
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 3,
+      "method": "raw",
+      "metric": "retention",
+      "value": 1.0
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 4,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.9913327049346251
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 5,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.9860397974807215
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 6,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.9768506784048462
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 7,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.9678050391640179
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 8,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.9616145170682452
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 9,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.9573767961353973
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 10,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.9490111946533816
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 11,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.94484624138853
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 12,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.9412476646623775
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 3,
+      "method": "bias",
+      "metric": "retention",
+      "value": 1.0
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 4,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.9929047181564419
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 5,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.9905139277555708
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 6,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.9847632755667765
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 7,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.9795002638197676
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 8,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.9763276866413246
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 9,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.9757185145970277
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 10,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.9711036107270881
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 11,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.9693939312985845
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 12,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.9684966169950202
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 3,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.9835852941985913
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 4,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.9937977956755651
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 5,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.9915803671374032
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 6,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.9859339719413123
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 7,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.9809680718286953
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 8,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.9779321419808885
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 9,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.9775964461608059
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 10,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.9730208489359509
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 11,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.9711649090791041
+    },
+    {
+      "model": "pretrained",
+      "source_turn": 3,
+      "target_turn": 12,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.970602895141169
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 1,
+      "method": "raw",
+      "metric": "retention",
+      "value": 1.0
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 2,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.8279441459059929
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 3,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.7537386058936454
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 4,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.7087907507216671
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 5,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.6777402095982124
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 6,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.6494079029580265
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 7,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.6272380150134396
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 8,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.6158183017959812
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 9,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.5976021237805506
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 10,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.5870462842638873
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 11,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.5780062960903509
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 12,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.5746254885503241
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 1,
+      "method": "bias",
+      "metric": "retention",
+      "value": 1.0
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 2,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.8703260527328698
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 3,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.8242916996668159
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 4,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.7999387239986179
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 5,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.7851194125212824
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 6,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.7715656641839055
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 7,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.7600426359301161
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 8,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.7587314856853117
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 9,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.7497999927338543
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 10,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.748100518292874
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 11,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.746710969449224
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 12,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.746471095434183
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 1,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.9802380853437219
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 2,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.8776045501500587
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 3,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.8341822146819454
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 4,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.8096964495012464
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 5,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.7961109707120537
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 6,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.7834614484230378
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 7,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.7710234521813641
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 8,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.7699673269424441
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 9,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.762161910813863
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 10,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.7602760970636346
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 11,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.7596458321154674
+    },
+    {
+      "model": "instruct",
+      "source_turn": 1,
+      "target_turn": 12,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.7579144381907064
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 3,
+      "method": "raw",
+      "metric": "retention",
+      "value": 1.0
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 4,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.9964316055289788
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 5,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.9893877707731288
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 6,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.9808101391639489
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 7,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.9727468484631974
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 8,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.9663210144913885
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 9,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.9609840055470655
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 10,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.9560918894196135
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 11,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.9542408883030693
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 12,
+      "method": "raw",
+      "metric": "retention",
+      "value": 0.9487382385060599
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 3,
+      "method": "bias",
+      "metric": "retention",
+      "value": 1.0
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 4,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.9978198070832751
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 5,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.9933090541564895
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 6,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.9878115254280345
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 7,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.9828118302826561
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 8,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.9791191521100403
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 9,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.9763355259580915
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 10,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.9740646634631914
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 11,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.9747013731391638
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 12,
+      "method": "bias",
+      "metric": "retention",
+      "value": 0.9711376684788595
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 3,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.970918943700331
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 4,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.9997144998723361
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 5,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.9956957764221495
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 6,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.9901653507013104
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 7,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.9846035186606491
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 8,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.9811827325550708
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 9,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.978732110947903
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 10,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.9763682390075493
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 11,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.9770915091569403
+    },
+    {
+      "model": "instruct",
+      "source_turn": 3,
+      "target_turn": 12,
+      "method": "bias_scale",
+      "metric": "retention",
+      "value": 0.9731412335889538
+    }
+  ],
+  "metric": "retention",
+  "axis_limits": {
+    "source1": [
+      0.25,
+      1.1
+    ],
+    "source3": [
+      0.93,
+      1.01
+    ]
+  },
+  "retrieval_pools": "Each fold's held-out answer vectors; see results.json for exact pool sizes and chance rates.",
+  "calibration": "Per source/target pair, one vector bias and optional one scalar. Fitted only on target-turn non-test conversations. Source-map training and calibration may share training conversations. All test conversations are excluded from both stages. Target-informed adaptation, not zero-shot transfer.",
+  "answer_draws": 1,
+  "layer": 19,
+  "uncertainty": "Point estimates; no confidence intervals fitted",
+  "own_turn_reference": "Uncalibrated diagonal of the pinned original transfer matrix",
+  "not_drawn": "Backward transfer, own-turn-12 calibration anchor and identity+bias baseline; all retained in results.json.",
+  "style_deviations": "Line style and marker encode calibration method; color encodes model. Single descriptive titles replace duplicate kickers.",
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      8.774
+    ],
+    "exported_size_inches": [
+      13.095,
+      8.158
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/turn_transfer_bias_scale_single_answer_20260914.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  \u00b7  BASE",
+      "1",
+      "3",
+      "6",
+      "9",
+      "12",
+      "Fraction of own-turn $R^2$ \u2191",
+      "0.4",
+      "0.6",
+      "0.8",
+      "1.0",
+      "A  Base: map from turn 1",
+      "B  \u00b7  BASE",
+      "0.94",
+      "0.96",
+      "0.98",
+      "1.00",
+      "B  Base: map from turn 3",
+      "C  \u00b7  INSTRUCT",
+      "Evaluated conversation turn",
+      "C  Instruct: map from turn 1",
+      "D  \u00b7  INSTRUCT",
+      "D  Instruct: map from turn 3",
+      "Uncalibrated",
+      "Bias only",
+      "Bias + scale"
+    ]
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "scientific_tests": {
+    "passed": 25,
+    "command": "pytest -q tests/test_turn_transfer_calibration.py tests/test_issue825_turn_bias_scale.py"
+  },
+  "mapped_tests": {
+    "passed": 50,
+    "failed": 1,
+    "failure": "test_no_new_torch_before_dotenv_vm_entrypoints",
+    "attribution": "13 pre-existing unrelated scripts; no round-owned path",
+    "final_mapping": "8 pairs across 8 payload paths; same 3 test files as completed mapped test run."
+  },
+  "workflow_lint": {
+    "whole_repository": "ran to completion, 20 findings; one own listing-call false positive fixed by documented wrapper annotation; missing sparse uv.lock restored; other findings pre-existing",
+    "payload": "all no-flags check types applicable to 7 payload files:40 ran,46 skipped, PASS",
+    "scope": "scripts/issue825_turn_bias_scale.py; scripts/issue825_turn_bias_scale_monitor.py; scripts/plot_issue825_turn_bias_scale.py; scripts/upload_issue825_turn_bias_scale.py; src/explore_persona_space/analysis/turn_transfer_calibration.py; tests/test_issue825_turn_bias_scale.py; tests/test_turn_transfer_calibration.py",
+    "recovery_payload": "40 checks ran, 46 skipped, PASS; driver, bounded repair script, regression test."
+  },
+  "independent_review": "Numerical recipe versus archived producer, fold leakage, serialization, stale checkpoint protection, reducer provenance, plotting axis/coverage and upload class coverage reviewed. All raised findings addressed.",
+  "hub_storage_routing": {
+    "observed_public_used_tb": 20.286284188709,
+    "configured_soft_ceiling_tb": 20.0,
+    "probe": "live-api",
+    "planned_destination": "private model repository superkaiba1/explore-persona-space-overflow"
+  },
+  "provenance_repair": {
+    "affected_receipts": 120,
+    "independent_audit": "All mismatches exactly match wrong-function-source variant; adding one comment left executable AST unchanged. Original receipts, hashes and audit retained. No numerical field or tensor changed. Regression replays real live-file line shift; source snapshot fixes it.",
+    "audit": "provenance_repair/audit.json"
+  },
+  "figures": {
+    "visual_inspection": "Color and grayscale layouts inspected; source-3 axis range fixed after tick expansion; 132 values per figure and final axis limits asserted.",
+    "http_get_verified": [
+      {
+        "url": "https://eps.superkaiba.com/tasks/825/figure/turn_transfer_bias_scale_single_answer_20260914.png",
+        "sha256": "2e23ad2aae93b211be6994e220b6dfc670fbb5aac6b53ef3085a65a781816d98"
+      },
+      {
+        "url": "https://eps.superkaiba.com/tasks/825/figure/turn_transfer_bias_scale_single_answer_20260914_grayscale.png",
+        "sha256": "dd6c9c1b168ce22b4014040a1fce0e171e1516466dc88eb509ca9f05ac267e27"
+      },
+      {
+        "url": "https://eps.superkaiba.com/tasks/825/figure/turn_transfer_bias_scale_single_answer_20260914_retrieval.png",
+        "sha256": "c8a0b6e95cc13cf8fd4cd664117bcc50195f28a3ac2d6b9dfce83b499a97156f"
+      },
+      {
+        "url": "https://eps.superkaiba.com/tasks/825/figure/turn_transfer_bias_scale_single_answer_20260914_retrieval_grayscale.png",
+        "sha256": "dae26c8fa385499e70efa08ef65ad30cb1ca6e72448c97f26398ef2b8e759a6f"
+      }
+    ]
+  },
+  "ruff": "All 8 Python payload paths PASS.",
+  "archive": {
+    "status": "verified",
+    "repo": "superkaiba1/explore-persona-space-overflow",
+    "repo_type": "model",
+    "private": true,
+    "revision": "0a18fd3ab603e739ba7e1d57091437934607ef50",
+    "prefix": "issue825_turn_bias_scale_20260914",
+    "count": 306,
+    "bytes": 7330936096,
+    "verified_at_utc": "2026-09-15T00:34:28Z"
+  }
+}
