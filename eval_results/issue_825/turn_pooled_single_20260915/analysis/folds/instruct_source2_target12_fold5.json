@@ -1,0 +1,23 @@
+{
+  "model": "instruct",
+  "source": "2",
+  "fold": 5,
+  "fingerprint": "0e30004f94c6d5f1ab342ff27db8a10c472b973486a43e82cfed4591c3fcd9a9",
+  "sha256": "ed18f56a12d6d343bebcf97e4efd9bcc7a84ad5d2e93fdae85b4952a1ea6e19e",
+  "path": "/workspace/issue825_turn_pooled_single_20260915/store/predictions/instruct_source2_target12_fold5.npz",
+  "n_test": 830,
+  "n_train_source": 4166,
+  "n_calibration": 4147,
+  "n_train_source_conversations": 4166,
+  "lambda": 1000.0,
+  "scale": 0.961153945655359,
+  "test_training_overlap": 0,
+  "sse": [
+    628838.3705550402,
+    598503.5689864975,
+    597887.5264497724,
+    2464234.782228586
+  ],
+  "sst": 1242416.8173098983,
+  "elapsed_seconds": 4.264651567999977
+}

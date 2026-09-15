@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "model": "pretrained",
+  "source": "1+2+3",
+  "turns": [
+    1,
+    2,
+    3
+  ],
+  "fold_hash": "ce1f979de55db241b378ab66e60fe784ec42985ed54aba33453570d76e1f1acb",
+  "config_sha256": "660b328402923b52b9816b819048bc5d1a36794e869909eabe98c3149fc965c6",
+  "source_sha256": {
+    "issue825_turn_pooled_single.py": "af9697d7c435ab6f2229beb58d66126bec58e95387460e4f192838f1a677319a",
+    "pooled_turn_transfer.py": "a59455f5676df1a1cb90bbc6668554102e39bd0acbd4b4ffbd99ba5109206c1d",
+    "turn_transfer_calibration.py": "71d2fe894d3d03261dcfb73775d779412f712c56bf62bd48b0c472f4cac5553c",
+    "issue825_turn_bias_scale.py": "b7ebdf8d97384a8a2a6b82f61b4949430b93459429205c4c92cd343592bdbe88"
+  },
+  "lambda_grid": {
+    "log10_start": -2,
+    "log10_stop": 4,
+    "count": 13
+  },
+  "selector": "legacy rowwise GCV",
+  "weighting": "equal weight per eligible source row",
+  "fingerprint": "2aefc2db8117194060f9f9cda288f3e2a2395a9a6fc965d251e5f3b604635961",
+  "sha256": "1ef8f08223a73343189eb4ae4f84e25cae5e2740278f76407458b23397168e08",
+  "path": "/workspace/issue825_turn_pooled_single_20260915/store/maps/pretrained_source1+2+3_folds4-5.npz",
+  "elapsed_seconds": 22.976892292000002,
+  "max_rss_kib": 4625368,
+  "folds": [
+    4,
+    5
+  ],
+  "lambda_by_fold": [
+    3162.2776601683795,
+    3162.2776601683795
+  ],
+  "n_train": [
+    12498,
+    12498
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "status": "pass",
+  "observed_at": 1789455276.5088327,
+  "rows": {
+    "instruct": {
+      "realized_unique_test_conversations": 4977,
+      "source_conditions": 6,
+      "identical_target_ids": true
+    },
+    "pretrained": {
+      "realized_unique_test_conversations": 4996,
+      "source_conditions": 6,
+      "identical_target_ids": true
+    }
+  },
+  "archive_namesets": "exact",
+  "top_level_files": [
+    {
+      "path": "complete.json",
+      "size": 47848
+    },
+    {
+      "path": "tensor_receipt.json",
+      "size": 26295
+    },
+    {
+      "path": "text_receipt.json",
+      "size": 26690
+    }
+  ],
+  "results_sha256": "b327f4a6045cd03818ecbd72630e4f141f7783704228d2ffbe3d02a3ad1b67d5"
+}

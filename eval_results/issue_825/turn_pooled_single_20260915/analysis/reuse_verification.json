@@ -1,0 +1,213 @@
+{
+  "status": "verified",
+  "observed_at": 1789455025.139964,
+  "input_files": 376,
+  "input_bytes": 1728754303,
+  "config_sha256": "660b328402923b52b9816b819048bc5d1a36794e869909eabe98c3149fc965c6",
+  "maps": [
+    {
+      "version": 2,
+      "numerical_sha256": "71d2fe894d3d03261dcfb73775d779412f712c56bf62bd48b0c472f4cac5553c",
+      "fitting_code_sha256": "c25da469c90fe853d9c734a7e9ac28d4e1fabc442d51de56b842fb2833d2ca47",
+      "reference_sha256": "3c79d0630f9794ef03baa6a030b84d253b8585bfb8e5a6b958b6ff77f87bc3bb",
+      "inputs_sha256": "55d331583d94e25c1399ec944ed13e879dd74781cdbc65f3a2a27c5b5f660a74",
+      "model": "instruct",
+      "source_turn": 1,
+      "fold_hash": "ce1f979de55db241b378ab66e60fe784ec42985ed54aba33453570d76e1f1acb",
+      "fingerprint": "82c687bdc4f06d0234745a0aef35b9d0a7f47508842b2ec5f205bff88f0b341b",
+      "map_sha256": "60b700deb7c0ff334330f220bcd743f66bce1ef685bdf51c24568c51b559cf92",
+      "map_file": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_outputs/maps/instruct_source1.npz",
+      "fit_seconds": 50.548854103311896,
+      "max_rss_kib": 5987904,
+      "lambda_by_fold": [
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0
+      ],
+      "n_train": [
+        4166,
+        4166,
+        4167,
+        4167,
+        4167,
+        4167
+      ],
+      "hf_path": "issue825_turn_bias_scale_20260914/maps/instruct_source1.npz",
+      "bytes": 617081224,
+      "staged_path": "/workspace/issue825_turn_pooled_single_20260915/reused/models--superkaiba1--explore-persona-space-overflow/snapshots/0a18fd3ab603e739ba7e1d57091437934607ef50/issue825_turn_bias_scale_20260914/maps/instruct_source1.npz"
+    },
+    {
+      "version": 2,
+      "numerical_sha256": "71d2fe894d3d03261dcfb73775d779412f712c56bf62bd48b0c472f4cac5553c",
+      "fitting_code_sha256": "c25da469c90fe853d9c734a7e9ac28d4e1fabc442d51de56b842fb2833d2ca47",
+      "reference_sha256": "3c79d0630f9794ef03baa6a030b84d253b8585bfb8e5a6b958b6ff77f87bc3bb",
+      "inputs_sha256": "55d331583d94e25c1399ec944ed13e879dd74781cdbc65f3a2a27c5b5f660a74",
+      "model": "instruct",
+      "source_turn": 12,
+      "fold_hash": "ce1f979de55db241b378ab66e60fe784ec42985ed54aba33453570d76e1f1acb",
+      "fingerprint": "5fedc5d410ea0f579cb2e2c0adb8d9b287ece473242265626b855d85fb335882",
+      "map_sha256": "efe1fb1da35da42296434800c82b7f688013d7877d57027d9842a18055ef63fc",
+      "map_file": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_outputs/maps/instruct_source12.npz",
+      "fit_seconds": 36.366862181574106,
+      "max_rss_kib": 5976088,
+      "lambda_by_fold": [
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0
+      ],
+      "n_train": [
+        4151,
+        4145,
+        4148,
+        4145,
+        4149,
+        4147
+      ],
+      "hf_path": "issue825_turn_bias_scale_20260914/maps/instruct_source12.npz",
+      "bytes": 617081224,
+      "staged_path": "/workspace/issue825_turn_pooled_single_20260915/reused/models--superkaiba1--explore-persona-space-overflow/snapshots/0a18fd3ab603e739ba7e1d57091437934607ef50/issue825_turn_bias_scale_20260914/maps/instruct_source12.npz"
+    },
+    {
+      "version": 2,
+      "numerical_sha256": "71d2fe894d3d03261dcfb73775d779412f712c56bf62bd48b0c472f4cac5553c",
+      "fitting_code_sha256": "c25da469c90fe853d9c734a7e9ac28d4e1fabc442d51de56b842fb2833d2ca47",
+      "reference_sha256": "3c79d0630f9794ef03baa6a030b84d253b8585bfb8e5a6b958b6ff77f87bc3bb",
+      "inputs_sha256": "55d331583d94e25c1399ec944ed13e879dd74781cdbc65f3a2a27c5b5f660a74",
+      "model": "instruct",
+      "source_turn": 3,
+      "fold_hash": "ce1f979de55db241b378ab66e60fe784ec42985ed54aba33453570d76e1f1acb",
+      "fingerprint": "eaade10e359709d750146c2d202e4ba2a546d8c8ed797c35b90e2ea878fe32e4",
+      "map_sha256": "15940b6e7a4d10b8a5937488479dcb443751f7539ec665e355ec1df04e3049f6",
+      "map_file": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_outputs/maps/instruct_source3.npz",
+      "fit_seconds": 53.45695498213172,
+      "max_rss_kib": 5987968,
+      "lambda_by_fold": [
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0
+      ],
+      "n_train": [
+        4166,
+        4165,
+        4166,
+        4166,
+        4166,
+        4166
+      ],
+      "hf_path": "issue825_turn_bias_scale_20260914/maps/instruct_source3.npz",
+      "bytes": 617081224,
+      "staged_path": "/workspace/issue825_turn_pooled_single_20260915/reused/models--superkaiba1--explore-persona-space-overflow/snapshots/0a18fd3ab603e739ba7e1d57091437934607ef50/issue825_turn_bias_scale_20260914/maps/instruct_source3.npz"
+    },
+    {
+      "version": 2,
+      "numerical_sha256": "71d2fe894d3d03261dcfb73775d779412f712c56bf62bd48b0c472f4cac5553c",
+      "fitting_code_sha256": "c25da469c90fe853d9c734a7e9ac28d4e1fabc442d51de56b842fb2833d2ca47",
+      "reference_sha256": "3c79d0630f9794ef03baa6a030b84d253b8585bfb8e5a6b958b6ff77f87bc3bb",
+      "inputs_sha256": "55d331583d94e25c1399ec944ed13e879dd74781cdbc65f3a2a27c5b5f660a74",
+      "model": "pretrained",
+      "source_turn": 1,
+      "fold_hash": "ce1f979de55db241b378ab66e60fe784ec42985ed54aba33453570d76e1f1acb",
+      "fingerprint": "ea895da8adc9fca15acb02e3175534e037d51a3413edb948af455813aa035948",
+      "map_sha256": "1e61f57b705260c95c16b224ad752025288766f66b903406875fb3b90837b999",
+      "map_file": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_outputs/maps/pretrained_source1.npz",
+      "fit_seconds": 72.36160047724843,
+      "max_rss_kib": 5987580,
+      "lambda_by_fold": [
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795
+      ],
+      "n_train": [
+        4166,
+        4166,
+        4167,
+        4167,
+        4167,
+        4167
+      ],
+      "hf_path": "issue825_turn_bias_scale_20260914/maps/pretrained_source1.npz",
+      "bytes": 617081224,
+      "staged_path": "/workspace/issue825_turn_pooled_single_20260915/reused/models--superkaiba1--explore-persona-space-overflow/snapshots/0a18fd3ab603e739ba7e1d57091437934607ef50/issue825_turn_bias_scale_20260914/maps/pretrained_source1.npz"
+    },
+    {
+      "version": 2,
+      "numerical_sha256": "71d2fe894d3d03261dcfb73775d779412f712c56bf62bd48b0c472f4cac5553c",
+      "fitting_code_sha256": "c25da469c90fe853d9c734a7e9ac28d4e1fabc442d51de56b842fb2833d2ca47",
+      "reference_sha256": "3c79d0630f9794ef03baa6a030b84d253b8585bfb8e5a6b958b6ff77f87bc3bb",
+      "inputs_sha256": "55d331583d94e25c1399ec944ed13e879dd74781cdbc65f3a2a27c5b5f660a74",
+      "model": "pretrained",
+      "source_turn": 12,
+      "fold_hash": "ce1f979de55db241b378ab66e60fe784ec42985ed54aba33453570d76e1f1acb",
+      "fingerprint": "e7b5795e8e5dcd668b5b3f7b2a7792066c442e52a29db8e2f6eccb44790c5c05",
+      "map_sha256": "c739cd621723f6a4d75a50f3a57b93db786942790ce40169bdcf38169d1221ba",
+      "map_file": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_outputs/maps/pretrained_source12.npz",
+      "fit_seconds": 39.49575395695865,
+      "max_rss_kib": 5989468,
+      "lambda_by_fold": [
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795
+      ],
+      "n_train": [
+        4164,
+        4162,
+        4164,
+        4163,
+        4164,
+        4163
+      ],
+      "hf_path": "issue825_turn_bias_scale_20260914/maps/pretrained_source12.npz",
+      "bytes": 617081224,
+      "staged_path": "/workspace/issue825_turn_pooled_single_20260915/reused/models--superkaiba1--explore-persona-space-overflow/snapshots/0a18fd3ab603e739ba7e1d57091437934607ef50/issue825_turn_bias_scale_20260914/maps/pretrained_source12.npz"
+    },
+    {
+      "version": 2,
+      "numerical_sha256": "71d2fe894d3d03261dcfb73775d779412f712c56bf62bd48b0c472f4cac5553c",
+      "fitting_code_sha256": "c25da469c90fe853d9c734a7e9ac28d4e1fabc442d51de56b842fb2833d2ca47",
+      "reference_sha256": "3c79d0630f9794ef03baa6a030b84d253b8585bfb8e5a6b958b6ff77f87bc3bb",
+      "inputs_sha256": "55d331583d94e25c1399ec944ed13e879dd74781cdbc65f3a2a27c5b5f660a74",
+      "model": "pretrained",
+      "source_turn": 3,
+      "fold_hash": "ce1f979de55db241b378ab66e60fe784ec42985ed54aba33453570d76e1f1acb",
+      "fingerprint": "d41740aacc1bde2bbab09833f10107663cf3ba2bd45ba4699d671dddc9ade92d",
+      "map_sha256": "fc97bfeb5a4b66c21819631968fff72cd84f7775ff0e468e90469cfd512b9f9b",
+      "map_file": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_bias_scale_outputs/maps/pretrained_source3.npz",
+      "fit_seconds": 41.70381107367575,
+      "max_rss_kib": 5989748,
+      "lambda_by_fold": [
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795,
+        3162.2776601683795
+      ],
+      "n_train": [
+        4166,
+        4165,
+        4166,
+        4166,
+        4166,
+        4166
+      ],
+      "hf_path": "issue825_turn_bias_scale_20260914/maps/pretrained_source3.npz",
+      "bytes": 617081224,
+      "staged_path": "/workspace/issue825_turn_pooled_single_20260915/reused/models--superkaiba1--explore-persona-space-overflow/snapshots/0a18fd3ab603e739ba7e1d57091437934607ef50/issue825_turn_bias_scale_20260914/maps/pretrained_source3.npz"
+    }
+  ]
+}

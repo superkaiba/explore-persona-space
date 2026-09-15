@@ -1,0 +1,37 @@
+{
+  "status": "pass",
+  "observed_at": 1789455355.583311,
+  "archives": {
+    "tensor": {
+      "repo": "superkaiba1/explore-persona-space-overflow",
+      "repo_type": "model",
+      "prefix": "issue825_turn_pooled_single_20260915/numerical",
+      "revision": "7ae2293b6e93cae23293354fcb4c2129e3431544",
+      "count": 92,
+      "bytes": 7158398424
+    },
+    "text": {
+      "repo": "superkaiba1/explore-persona-space-data",
+      "repo_type": "dataset",
+      "prefix": "issue825_turn_pooled_single_20260915/analysis",
+      "revision": "41cff3480959dae7a57efbe4860215e35cc2e6ee",
+      "count": 99,
+      "bytes": 147021
+    }
+  },
+  "rows": {
+    "instruct": {
+      "realized_unique_test_conversations": 4977,
+      "source_conditions": 6,
+      "identical_target_ids": true
+    },
+    "pretrained": {
+      "realized_unique_test_conversations": 4996,
+      "source_conditions": 6,
+      "identical_target_ids": true
+    }
+  },
+  "outroot": "residue-committed",
+  "namesets": "exact",
+  "method": "independent Hub listing, per-file bytes and LFS SHA256/Git blob hash; all available local files SHA256; actual72 NPZ test-ID counts"
+}

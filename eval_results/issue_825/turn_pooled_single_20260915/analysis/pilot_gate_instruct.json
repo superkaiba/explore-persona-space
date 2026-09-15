@@ -1,0 +1,11 @@
+{
+  "model": "instruct",
+  "status": "pass",
+  "observed_at": 1789455032.3305726,
+  "fingerprint": "b15594f0416b1d5f8d243c1962f92a1149193c5780552a7f597ef00efbec0ed1",
+  "checkpoint_sha256": "dbb5b67c7a0fa04a40cf910ef04da0d5860752e55556d9333c10e0f156491caa",
+  "fit_seconds": 22.770590690000063,
+  "chunks_projected": 18,
+  "projection_seconds": 409.87063242000113,
+  "max_rss_kib": 4412976
+}

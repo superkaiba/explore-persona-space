@@ -1,0 +1,47 @@
+{
+  "status": "verified",
+  "repo": "superkaiba1/explore-persona-space-data",
+  "repo_type": "dataset",
+  "revision": "7c9e2dbc78950a285379ae6d5b001e10f0f9579e",
+  "prefix": "issue825_turn_pooled_single_20260915/runtime",
+  "files": {
+    "issue825_turn_pooled_single_20260915/runtime/backend_completion_sentinel.json": {
+      "local": "backend_completion_sentinel.json",
+      "sha256": "3c39630669731f680e80e0fe0530bce99543d18c88cce6694326106cbb10268d",
+      "size": 77
+    },
+    "issue825_turn_pooled_single_20260915/runtime/complete.json": {
+      "local": "complete.json",
+      "sha256": "af6bd29a0c5d5555764c87b8525215211b5b127108deff751dc1fb94888d0d1f",
+      "size": 47848
+    },
+    "issue825_turn_pooled_single_20260915/runtime/issue-825.log": {
+      "local": "issue-825.log",
+      "sha256": "42d85f21cb2968ff8ef88e8e5ce1470a4a0d3ea5d9d4d7143f64f7702248d0fb",
+      "size": 145738
+    },
+    "issue825_turn_pooled_single_20260915/runtime/offline_tracking_receipt.json": {
+      "local": "offline_tracking_receipt.json",
+      "sha256": "f760d55ca5bf263e218f3917bd9cc2e6498ad8ac277af3976da29675468f913f",
+      "size": 349
+    },
+    "issue825_turn_pooled_single_20260915/runtime/row_and_residue_verification.json": {
+      "local": "row_and_residue_verification.json",
+      "sha256": "b646cb8a68fe17148abe8ea08eaebde38bdb7c2d10c71759baa074041c05ff17",
+      "size": 706
+    },
+    "issue825_turn_pooled_single_20260915/runtime/tensor_receipt.json": {
+      "local": "tensor_receipt.json",
+      "sha256": "fae218a06f9c7990b2b0ca5c5f676782070faa4e3e2edbb5ec333318003f8e5a",
+      "size": 26295
+    },
+    "issue825_turn_pooled_single_20260915/runtime/text_receipt.json": {
+      "local": "text_receipt.json",
+      "sha256": "21570743e07677b0073b60b08e4259bdc1379aeaee59e1ba7ebac2813fa2b862",
+      "size": 26690
+    }
+  },
+  "count": 7,
+  "bytes": 247703,
+  "verified_at": 1789455385.200041
+}

@@ -1,0 +1,350 @@
+{
+  "status": "PASS",
+  "reviewer": "independent pooled_protocol_review",
+  "frozen_code_commit": "3b99dc1790d209c4815b5565cc04dfc18ca83f87",
+  "results_sha256": "b327f4a6045cd03818ecbd72630e4f141f7783704228d2ffbe3d02a3ad1b67d5",
+  "local_archive_checks": {
+    "tensor": {
+      "pinned_revision": "7ae2293b6e93cae23293354fcb4c2129e3431544",
+      "available_local_files_hash_verified": 4,
+      "archive_count": 92
+    },
+    "text": {
+      "pinned_revision": "41cff3480959dae7a57efbe4860215e35cc2e6ee",
+      "available_local_files_hash_verified": 99,
+      "archive_count": 99
+    }
+  },
+  "models": {
+    "instruct": {
+      "status": "PASS",
+      "n_test": 4977,
+      "pool_sizes": [
+        826,
+        832,
+        829,
+        832,
+        828,
+        830
+      ],
+      "chance": 0.0012055455093429777,
+      "oof_sha256": "015e3d3b70de577756ab909a98f3eac5faa633baa37969a8a829f7922e0ab3bf",
+      "source_arrays_hash_verified": 120,
+      "fold_receipts_checked": 36,
+      "point_cells_checked": 24,
+      "paired_comparisons_checked": 24,
+      "parent_raw_anchor_errors": {
+        "1": 1.1102230246251565e-16,
+        "2": 2.220446049250313e-16,
+        "3": 1.1102230246251565e-16,
+        "12": 0.0
+      },
+      "raw_bank_verified": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_pooled_single_outputs/store/predictions/instruct_source1+2+3_target12_fold0.npz",
+      "raw_bank_max_row_sse_error": 0,
+      "raw_r2": {
+        "1": 0.31689869282486127,
+        "2": 0.4892522504342157,
+        "3": 0.5232171450904958,
+        "1+2": 0.5086925222202117,
+        "1+2+3": 0.5554170127217981,
+        "12": 0.5514873585304045
+      },
+      "raw_paired_comparisons": [
+        {
+          "left": "1+2",
+          "right": "1",
+          "method": "raw",
+          "r2": 0.1917938293953504,
+          "r2_ci95": [
+            0.18920948047561018,
+            0.194315596745346
+          ],
+          "cosine": 0.1597347799879445,
+          "cosine_ci95": [
+            0.14888487040385778,
+            0.17058468957203132
+          ],
+          "euclidean": 0.1711874623267028,
+          "euclidean_ci95": [
+            0.1615380751456701,
+            0.18223829616234677
+          ]
+        },
+        {
+          "left": "1+2",
+          "right": "2",
+          "method": "raw",
+          "r2": 0.019440271785995944,
+          "r2_ci95": [
+            0.018648453571469045,
+            0.020178386579987044
+          ],
+          "cosine": 0.023909985935302358,
+          "cosine_ci95": [
+            0.018083182640144635,
+            0.029535864978902926
+          ],
+          "euclidean": 0.028732167972674305,
+          "euclidean_ci95": [
+            0.02290536467751658,
+            0.03475989551938918
+          ]
+        },
+        {
+          "left": "1+2+3",
+          "right": "1+2",
+          "method": "raw",
+          "r2": 0.046724490501586446,
+          "r2_ci95": [
+            0.04542785158414179,
+            0.048081308610335674
+          ],
+          "cosine": 0.04038577456298975,
+          "cosine_ci95": [
+            0.03435804701627487,
+            0.04601165360659032
+          ],
+          "euclidean": 0.05183845690174804,
+          "euclidean_ci95": [
+            0.045408880851918854,
+            0.058273056057866264
+          ]
+        },
+        {
+          "left": "1+2+3",
+          "right": "3",
+          "method": "raw",
+          "r2": 0.03219986763130234,
+          "r2_ci95": [
+            0.0312287703941894,
+            0.033137558550476794
+          ],
+          "cosine": 0.03777375929274662,
+          "cosine_ci95": [
+            0.031746031746031744,
+            0.04380148683946161
+          ],
+          "euclidean": 0.04942736588306207,
+          "euclidean_ci95": [
+            0.04259594133011857,
+            0.0562638135422946
+          ]
+        },
+        {
+          "left": "1+2",
+          "right": "3",
+          "method": "raw",
+          "r2": -0.01452462287028411,
+          "r2_ci95": [
+            -0.016574940552855466,
+            -0.012538654301662434
+          ],
+          "cosine": -0.0026120152702431287,
+          "cosine_ci95": [
+            -0.01064898533252956,
+            0.004621257785814792
+          ],
+          "euclidean": -0.0024110910186859735,
+          "euclidean_ci95": [
+            -0.010247136829415249,
+            0.005023106288929102
+          ]
+        },
+        {
+          "left": "1+2+3",
+          "right": "12",
+          "method": "raw",
+          "r2": 0.003929654191393572,
+          "r2_ci95": [
+            0.0019521775617552973,
+            0.005938778370302291
+          ],
+          "cosine": 0.011251758087201136,
+          "cosine_ci95": [
+            0.004420333534257637,
+            0.018083182640144635
+          ],
+          "euclidean": 0.011854530841872601,
+          "euclidean_ci95": [
+            0.004018485031143215,
+            0.01848503114325895
+          ]
+        }
+      ]
+    },
+    "pretrained": {
+      "status": "PASS",
+      "n_test": 4996,
+      "pool_sizes": [
+        832,
+        834,
+        832,
+        833,
+        832,
+        833
+      ],
+      "chance": 0.0012009607686148918,
+      "oof_sha256": "5fe924e721de88b20960363d26d3e4710ec94a4b9afcf69bdce21b99cd6eb30b",
+      "source_arrays_hash_verified": 120,
+      "fold_receipts_checked": 36,
+      "point_cells_checked": 24,
+      "paired_comparisons_checked": 24,
+      "parent_raw_anchor_errors": {
+        "1": 0.0,
+        "2": 1.1102230246251565e-16,
+        "3": 1.1102230246251565e-16,
+        "12": 0.0
+      },
+      "raw_bank_verified": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_pooled_single_outputs/store/predictions/pretrained_source1+2+3_target12_fold0.npz",
+      "raw_bank_max_row_sse_error": 0,
+      "raw_r2": {
+        "1": 0.19761793529749117,
+        "2": 0.48195806758537274,
+        "3": 0.517552751592885,
+        "1+2": 0.483470732812492,
+        "1+2+3": 0.5409188924701256,
+        "12": 0.5498582052562431
+      },
+      "raw_paired_comparisons": [
+        {
+          "left": "1+2",
+          "right": "1",
+          "method": "raw",
+          "r2": 0.2858527975150008,
+          "r2_ci95": [
+            0.28222427557624463,
+            0.2895314679574232
+          ],
+          "cosine": 0.3074459567654123,
+          "cosine_ci95": [
+            0.2946257005604484,
+            0.3200560448358687
+          ],
+          "euclidean": 0.39771817453963165,
+          "euclidean_ci95": [
+            0.3837019615692554,
+            0.41092874299439547
+          ]
+        },
+        {
+          "left": "1+2",
+          "right": "2",
+          "method": "raw",
+          "r2": 0.0015126652271192365,
+          "r2_ci95": [
+            0.0007604041463707328,
+            0.002209558088093186
+          ],
+          "cosine": 0.028022417934347454,
+          "cosine_ci95": [
+            0.022618094475580497,
+            0.03323158526821465
+          ],
+          "euclidean": 0.035028022417934346,
+          "euclidean_ci95": [
+            0.028823058446757366,
+            0.04143314651721386
+          ]
+        },
+        {
+          "left": "1+2+3",
+          "right": "1+2",
+          "method": "raw",
+          "r2": 0.05744815965763361,
+          "r2_ci95": [
+            0.05649242398472766,
+            0.05842528037463855
+          ],
+          "cosine": 0.03763010408326661,
+          "cosine_ci95": [
+            0.03182546036829459,
+            0.04323959167333866
+          ],
+          "euclidean": 0.0630504403522818,
+          "euclidean_ci95": [
+            0.05624499599679744,
+            0.06986088871096882
+          ]
+        },
+        {
+          "left": "1+2+3",
+          "right": "3",
+          "method": "raw",
+          "r2": 0.023366140877240538,
+          "r2_ci95": [
+            0.022437315690311304,
+            0.024214427387142225
+          ],
+          "cosine": 0.039831865492393925,
+          "cosine_ci95": [
+            0.0340272217774219,
+            0.04583666933546837
+          ],
+          "euclidean": 0.052241793434747774,
+          "euclidean_ci95": [
+            0.04563650920736584,
+            0.05904723779023213
+          ]
+        },
+        {
+          "left": "1+2",
+          "right": "3",
+          "method": "raw",
+          "r2": -0.034082018780393075,
+          "r2_ci95": [
+            -0.035529242793968074,
+            -0.032621932767863286
+          ],
+          "cosine": 0.002201761409127312,
+          "cosine_ci95": [
+            -0.004003202562049668,
+            0.008211569255404314
+          ],
+          "euclidean": -0.010808646917534026,
+          "euclidean_ci95": [
+            -0.018414731785428406,
+            -0.0037980384307445786
+          ]
+        },
+        {
+          "left": "1+2+3",
+          "right": "12",
+          "method": "raw",
+          "r2": -0.008939312786117481,
+          "r2_ci95": [
+            -0.010569014990445654,
+            -0.007227705528457173
+          ],
+          "cosine": 0.012610088070456382,
+          "cosine_ci95": [
+            0.006805444355484358,
+            0.017819255404323473
+          ],
+          "euclidean": 0.01881505204163325,
+          "euclidean_ci95": [
+            0.01180944755804647,
+            0.02522518014411532
+          ]
+        }
+      ]
+    }
+  },
+  "checks": [
+    "48 point R2/retrieval/retention cells and their conditional bootstrap intervals independently reproduced",
+    "All paired contrasts and intervals independently reproduced from shared bootstrap draws",
+    "72 fold receipts match original source IDs, source row counts, heldout/calibration counts, SSE/SST and conversation isolation",
+    "All original six-fold test ID orders and every heldout-fold SST independently reconstructed from pinned source banks",
+    "Eight original raw anchors reproduce within 1e-6",
+    "Sampled pooled-1+2+3 fold0 in both models: raw/bias/bias-scale/identity+bias SSE and exact retrieval hits independently reconstructed",
+    "Both complete and archive receipts bind the current result hash and pinned archives"
+  ],
+  "scope_limits": [
+    "No ridge refits; prior prelaunch code tests and production equivalence gates cover the fit implementation",
+    "Full raw prediction reconstruction sampled one pooled fold per model; all remaining fold metrics and all confidence intervals verified through OOF banks and receipts",
+    "Gain and prediction_mean calibration estimates were applied and checked for algebraic consistency, but not independently refitted because full target-training map predictions were not downloaded",
+    "Remote archive hash verification is owned by root; this audit independently checks pinned receipt identity and every available local file against it",
+    "Intervals are conditional on fitted maps and fixed generated-answer bank; source pooling changes training-row count and turn diversity together",
+    "Bias/scale use target-training labels and must remain distinct from raw transfer; W&B dashboard synchronization may remain pending despite scientific/archive completion"
+  ],
+  "completed_at": "2026-09-15T06:58:06.531275+00:00"
+}

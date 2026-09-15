@@ -1,0 +1,14 @@
+{
+  "status": "pass",
+  "fingerprint": "e3fea85ce571dd6db958f544ffb3427b6e87055863f81ffb1674b31ba3e4e394",
+  "max_prediction_errors": [
+    7.283063041541027e-13,
+    5.631051180898794e-13
+  ],
+  "selected_lambdas": [
+    1000.0,
+    1000.0
+  ],
+  "elapsed_seconds": 18.475511473999973,
+  "observed_at": 1789453848.3873653
+}

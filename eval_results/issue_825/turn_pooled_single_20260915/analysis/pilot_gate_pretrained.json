@@ -1,0 +1,11 @@
+{
+  "model": "pretrained",
+  "status": "pass",
+  "observed_at": 1789455065.6264393,
+  "fingerprint": "2aefc2db8117194060f9f9cda288f3e2a2395a9a6fc965d251e5f3b604635961",
+  "checkpoint_sha256": "fb0fc82c52cd0497a58632187ab634002c73dc133a374614a45325a45ef7f52e",
+  "fit_seconds": 22.950136735,
+  "chunks_projected": 18,
+  "projection_seconds": 413.10246123,
+  "max_rss_kib": 4624160
+}

@@ -1,0 +1,67 @@
+{
+  "backend_observed_at": "2026-09-15T06:43:58.438647+00:00",
+  "backend_status": "dead",
+  "completion_scope": "GPU backend failed",
+  "consecutive_poll_errors": 0,
+  "elapsed_seconds": 1370.4549367632717,
+  "experiment_complete": false,
+  "finished_at": "2026-09-15T06:43:58.440560+00:00",
+  "handle": {
+    "attempt_id": "att-20260915-062128-pooledsingle",
+    "backend": "gcp",
+    "job_id": "8502705514340506911",
+    "mtime_epoch": 1789453754.884783,
+    "path": "/home/thomasjiralerspong/explore-persona-space/.claude/cache/issue-825-pooledsingle-handle.json",
+    "pod_name": "eps-issue-825-pooledsingle",
+    "ready": true,
+    "sha256": "a2201cc8f5bc42c3d2b4955d26c9c6e246aa8839ff1a34d8a5d154183b49efc7"
+  },
+  "handle_file": "/home/thomasjiralerspong/explore-persona-space/.claude/cache/issue-825-pooledsingle-handle.json",
+  "handle_wait": {
+    "ready": false,
+    "reason": "handle_missing"
+  },
+  "heartbeat_at": "2026-09-15T06:43:58.440576+00:00",
+  "heartbeat_epoch": 1789454638.4405801,
+  "last_backend_result": {
+    "current_phase": "terminal_no_compute_available",
+    "failure_class": "infra",
+    "gate": null,
+    "gpu_util": "unknown",
+    "issue": 825,
+    "last_log_mtime_sec_ago": 1000000000,
+    "log_tail_excerpt": "GCP workload crash on eps-issue-825-pooledsingle; RunPod also unavailable (#659 async failover; provision-residue: no-residue)",
+    "new_milestone": true,
+    "next_interval": 540,
+    "phase_log_mtime_sec_ago": 1000000000,
+    "pid_alive": false,
+    "reason": "no_compute_available",
+    "sentinels_processed": 0,
+    "shard_log_mtime_sec_ago": 1000000000,
+    "status": "dead"
+  },
+  "last_poll_error": null,
+  "last_poll_overdue": false,
+  "launch_after_epoch": 1789453267.9215631,
+  "monitor_pid": 1394319,
+  "monitor_started_at": "2026-09-15T06:21:07.985651+00:00",
+  "monitor_status": "terminal",
+  "poll_child_pid": null,
+  "poll_elapsed_seconds": 15.010861488059163,
+  "poll_exit_code": 0,
+  "poll_overdue": false,
+  "poll_started_at": "2026-09-15T06:43:38.411888+00:00",
+  "poll_stderr": {
+    "bytes": 277,
+    "mtime_epoch": 1789454633.6449199,
+    "path": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_pooled_single_monitor/poll_00019.stderr.log",
+    "tail": "2026-09-14 23:43:48,663 INFO explore_persona_space.backends.slurm: post-marker issue=825 kind=epm:backend-selected v=1\n2026-09-14 23:43:53,645 INFO root: backend_poll: cleared runpod_provision_intent for issue 825 at gcp_core_no_compute (attempt completed; #1838 episode over)\n"
+  },
+  "poll_stdout": {
+    "bytes": 843,
+    "mtime_epoch": 1789454633.8619597,
+    "path": "/home/thomasjiralerspong/.codex/visualizations/2026/09/14/01a0a1ac-945e-7e80-9363-b1e71d5c97ce/turn_pooled_single_monitor/poll_00019.stdout.log",
+    "tail": "{\n  \"ts\": \"2026-09-15T06:43:48Z\",\n  \"kind\": \"epm:backend-selected\",\n  \"version\": 1,\n  \"by\": \"backends.router\",\n  \"note\": \"{\\\"attempts\\\": [], \\\"chosen_kind\\\": \\\"gcp\\\", \\\"cluster\\\": null, \\\"elapsed_seconds\\\": 0.0, \\\"extra\\\": {}, \\\"reason\\\": \\\"cpu_fallback_infeasible_for_plan\\\", \\\"requested_kind\\\": null}\"\n}\n{\"status\": \"dead\", \"current_phase\": \"terminal_no_compute_available\", \"new_milestone\": true, \"last_log_mtime_sec_ago\": 1000000000, \"pid_alive\": false, \"log_tail_excerpt\": \"GCP workload crash on eps-issue-825-pooledsingle; RunPod also unavailable (#659 async failover; provision-residue: no-residue)\", \"gate\": null, \"sentinels_processed\": 0, \"phase_log_mtime_sec_ago\": 1000000000, \"shard_log_mtime_sec_ago\": 1000000000, \"gpu_util\": \"unknown\", \"next_interval\": 540, \"failure_class\": \"infra\", \"reason\": \"no_compute_available\", \"issue\": 825}\n"
+  },
+  "polls_completed": 19
+}

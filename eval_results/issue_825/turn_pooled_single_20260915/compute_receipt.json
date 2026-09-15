@@ -1,0 +1,23 @@
+{
+  "status": "finalized",
+  "observed_at": 1789455530.2983036,
+  "instance": "eps-issue-825-pooledsingle",
+  "live_instance_list": [],
+  "gpu_hours": 0,
+  "cpu_vcpus": 8,
+  "ram_gib": 32,
+  "allocated_interval_upper_bound_seconds": 1962.151,
+  "vcpu_hours_upper_bound": 4.360335555555555,
+  "intervals": [
+    [
+      "2026-09-15T06:21:36.305+00:00",
+      "2026-09-15T06:45:29.148+00:00"
+    ],
+    [
+      "2026-09-15T06:48:47.596+00:00",
+      "2026-09-15T06:57:36.904+00:00"
+    ]
+  ],
+  "deleted_operation_end": "2026-09-15T06:57:36.904Z",
+  "notes": "Upper bound includes first creation-to-observed-stop interval and restart-to-delete-complete interval. Monitor wrapper has legacy K5 completion_scope prose; actual backend done state and CPU-only allocation are authoritative."
+}
