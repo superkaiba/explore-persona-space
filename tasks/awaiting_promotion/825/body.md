@@ -3,7 +3,6 @@ title: The context→answer mapping is inherited from pretraining
 kind: experiment
 tags:
 - followup-manual
-- keep-running
 created_at: '2026-07-02T00:14:16Z'
 has_clean_result: true
 parent_id: 779
