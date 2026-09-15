@@ -7,7 +7,7 @@
   "title": "What the context-to-answer map keeps per changed context element",
   "subject": "Within-pair cosine of the two context vectors, the two observed answer vectors and the two predicted answer vectors, and the two-way discrimination rate, per controlled context element, with 95% pair-bootstrap intervals",
   "git": {
-    "commit": "0772c54472e1aef61b7259fb8acedbdcc259f779",
+    "commit": "75b0af498bddec621eb2ec4cb289beaf056acb9a",
     "tracked_worktree_dirty": true
   },
   "sources": [
@@ -40,7 +40,7 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "C  \u00b7  CONTROLLED MINIMAL PAIRS",
+      "A  \u00b7  MEAN COSINE",
       "Within-pair cosine",
       "0.0",
       "0.2",
@@ -57,7 +57,7 @@
       "Same decision:\ncontent edit (n=63)",
       "Refuse/comply:\nframing edit (n=307)",
       "Same decision:\nframing edit (n=1924)",
-      "What the map keeps when one context element changes",
+      "B  \u00b7  RATE",
       "Two-way discrimination rate \u2191",
       "0.5",
       "0.7",
@@ -735,8 +735,8 @@
     "caveat": "raw, not disattenuated for rollout noise"
   },
   "output_sha256": {
-    "pdf": "a3e8d3bf861d7d708c4a6cc86759992abbe577c99afabf7956648dd581b50ac8",
-    "png": "3dfdd65d6142bfd088cd5cb20fbd411eadf80fc4f7021dd1024190999a91bec9",
-    "grayscale": "1aca99b0f4d7d5dbe7e64a3c2cc72ef0ffe3f3a54fa2f836b1bb702e36949825"
+    "pdf": "6d77e61f9ee122c83316a53cf0dc88fc76ff9690c3affabbc8eea285a9f95898",
+    "png": "5abc880e30ebcdf5f655e61df79ef14eb9920f2bcd0ba058f4c516addbdf55ce",
+    "grayscale": "1b6c083f68c56b2cd2f2b794dffb8dce3d9072e369ce173092b550285efcaf64"
   }
 }

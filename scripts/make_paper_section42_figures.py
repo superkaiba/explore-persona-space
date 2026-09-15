@@ -1224,14 +1224,10 @@ def make_element_shifts_figure(data: dict) -> tuple[plt.Figure, float]:
         # The pair count rides the row label so nothing is placed by hand.
         ytick_labels=[L.tick_label(row["row"], row["n_pairs"]) for row in rows],
     )
-    panel_header(
-        ax_cosine,
-        "C",
-        "controlled minimal pairs",
-        "What the map keeps when one context element changes",
-        kicker_y=1.0 + _ELEMENT_KICKER_OFF_IN / plot_h_in,
-        title_y=1.0 + _ELEMENT_TITLE_OFF_IN / plot_h_in,
-    )
+    # One letter per column so the caption's \panel{A} / \panel{B} point at a
+    # drawn header; the figure carries no on-canvas title (the caption does).
+    panel_header(ax_cosine, "A", "mean cosine", kicker_y=1.0 + _ELEMENT_KICKER_OFF_IN / plot_h_in)
+    panel_header(ax_twoway, "B", "rate", kicker_y=1.0 + _ELEMENT_KICKER_OFF_IN / plot_h_in)
     _draw_row_metric_panel(
         ax_twoway,
         rows,
