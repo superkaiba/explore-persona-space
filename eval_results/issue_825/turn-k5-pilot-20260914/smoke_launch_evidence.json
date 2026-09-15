@@ -1,0 +1,76 @@
+{
+  "observed_at": "2026-09-15T02:26:20.435044+00:00",
+  "smoke_projection": {
+    "gpu_width": 2,
+    "includes_model_load_in_extrapolation": false,
+    "method": "fixed startup/load/teardown once plus processing scaled by conversations",
+    "phases": {
+      "instruct": {
+        "capture": {
+          "fixed_startup_load_teardown_s": 16.141737069959163,
+          "model_load_s": 5.472553330999972,
+          "processing_s": 23.066109809999944,
+          "processing_scale": 62.5,
+          "projected_s": 1457.7736001949556
+        },
+        "gen": {
+          "fixed_startup_load_teardown_s": 243.11276761175873,
+          "model_load_s": 209.21400502,
+          "processing_s": 19.94742711899994,
+          "processing_scale": 62.5,
+          "projected_s": 1489.826962549255
+        }
+      },
+      "pretrained": {
+        "capture": {
+          "fixed_startup_load_teardown_s": 16.350077090384502,
+          "model_load_s": 7.503701641000021,
+          "processing_s": 19.345771612999897,
+          "processing_scale": 62.5,
+          "projected_s": 1225.460802902878
+        },
+        "gen": {
+          "fixed_startup_load_teardown_s": 241.11862410065714,
+          "model_load_s": 208.83798537899997,
+          "processing_s": 8.077933898000083,
+          "processing_scale": 62.5,
+          "projected_s": 745.9894927256623
+        }
+      }
+    },
+    "projected_active_gpu_h": 1.3664030162146532,
+    "projected_allocated_gpu_h": 1.6375558681912283,
+    "projected_wall_h": 0.8187779340956142,
+    "utc": "2026-09-15T02:24:06.659997+00:00"
+  },
+  "smoke_coverage": {
+    "common_n": 15,
+    "planned_n": 16
+  },
+  "monitor_verified_at_epoch": 1789439212.3636103,
+  "monitor_heartbeat_at": "2026-09-15T02:26:51.427353+00:00",
+  "monitor_pid": 1181632,
+  "current_backend": {
+    "current_phase": "workload",
+    "gate": null,
+    "gcp_gpu_idle_advisory_posted": false,
+    "gcp_gpu_idle_escalation_posted": false,
+    "gcp_gpu_width_advisory_posted": false,
+    "gpu_util": "unknown",
+    "handle_older_than_relaunch": false,
+    "handle_stale_vs_live": false,
+    "last_log_mtime_sec_ago": 85,
+    "log_tail_excerpt": "+ typer==0.24.1\n + typing-extensions==4.15.0\n + typing-inspection==0.4.2\n + tzdata==2025.3\n + urllib3==2.6.3\n + uvicorn==0.42.0\n + uvloop==0.22.1\n + vllm==0.11.0\n + wandb==0.25.0\n + watchfiles==1.1.1\n + websockets==16.0\n + word2number==1.1\n + xformers==0.0.32.post1\n + xgrammar==0.1.25\n + xxhash==3.6.0\n + yarl==1.23.0\n + zstandard==0.25.0\n[phase=workload] startup-script 2026-09-15T02:18:42Z\n[phase=stage]\nStaged and opened 1000 exact selected conversations\n[phase=smoke]\npretrained gen pid=2789 log=/workspace/issue825_turn_k5_pilot_20260914/work/smoke/attempt_1789438728470601860/logs/pretrained_gen.log\ninstruct gen pid=2788 log=/workspace/issue825_turn_k5_pilot_20260914/work/smoke/attempt_1789438728470601860/logs/instruct_gen.log\nVerified 4 text files at superkaiba1/explore-persona-space-data@f7347e2d5a388518dfab693a2a3b12e244de15a0/issue825_turn_k5_pilot_20260914/gpu/smoke/attempt_1789438728470601860/gen/pretrained\npretrained capture pid=4863 log=/workspace/issue825_turn_k5_pilot_20260914/work/smoke/attempt_1789438728470601860/logs/pretrained_capture.log\nVerified 4 text files at superkaiba1/explore-persona-space-data@d7200b2a05971df113385f5dad93ee1cb3ec91c8/issue825_turn_k5_pilot_20260914/gpu/smoke/attempt_1789438728470601860/gen/instruct\ninstruct capture pid=4947 log=/workspace/issue825_turn_k5_pilot_20260914/work/smoke/attempt_1789438728470601860/logs/instruct_capture.log\n[phase=production] measured projection=1.64 allocated GPU-h\ninstruct gen pid=5051 log=/workspace/issue825_turn_k5_pilot_20260914/work/production/logs/instruct_gen.log\npretrained gen pid=5052 log=/workspace/issue825_turn_k5_pilot_20260914/work/production/logs/pretrained_gen.log",
+    "new_milestone": false,
+    "next_interval": 540,
+    "phase_log_mtime_sec_ago": 1000000000,
+    "pid_alive": true,
+    "post_done_phase_advisory_posted": false,
+    "post_done_phase_lines": [],
+    "sentinels_processed": 0,
+    "shard_log_mtime_sec_ago": 1000000000,
+    "stall_reason": null,
+    "status": "running"
+  },
+  "status": "production_running; CPU fitting pending"
+}
