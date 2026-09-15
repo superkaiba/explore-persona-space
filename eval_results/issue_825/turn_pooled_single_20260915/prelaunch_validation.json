@@ -1,0 +1,16 @@
+{
+  "status": "prelaunch_pass",
+  "independent_protocol_review": "PASS",
+  "independent_code_review": "PASS; resource-gate resume fixed and tested",
+  "focused_tests": "6 passed",
+  "workflow_lint": "PASS40checks",
+  "plan_version": 31,
+  "plan_verifier": "PASS;5warnings",
+  "source_sha256": {
+    "scripts/issue825_turn_pooled_single.py": "af9697d7c435ab6f2229beb58d66126bec58e95387460e4f192838f1a677319a",
+    "src/explore_persona_space/analysis/pooled_turn_transfer.py": "a59455f5676df1a1cb90bbc6668554102e39bd0acbd4b4ffbd99ba5109206c1d",
+    "tests/test_issue825_pooled_turn_transfer.py": "b748ecd65e0da3db7f8b19e693e97c88da0705c05210fe43101ded4bd5cf6c09"
+  },
+  "production_gates": "not yet run: real-data primal equivalence, venue/RSS, single-turn raw anchor reduction",
+  "warnings_explanation": "Corpus holdout not claimed: all outer folds hold out entire conversations. Source pin/model code/shape/recipe matching enumerated in contract and independently reviewed. Artifact hashes checked at pinned Hub revisions. Phase/RSS/time estimates remain gated at production venue."
+}
