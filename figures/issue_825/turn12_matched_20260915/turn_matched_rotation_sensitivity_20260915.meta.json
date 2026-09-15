@@ -1,0 +1,88 @@
+{
+  "title": "Sensitivity to pooled turn assignment",
+  "subject": "Three counterbalanced pooled fits shown as dotted curves; solid curve averages performance.",
+  "source_path": "/home/thomasjiralerspong/.codex/worktrees/825-turn12-matched-20260915/eval_results/issue_825/turn12_matched_20260915/results_with_turn12.json",
+  "source_sha256": "306b7e251a552a77aa3578a67467d14d72d809dd1431fa3e73053ac8a8bb0ddc",
+  "n_conversations": 4975,
+  "answer_draws": 1,
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      6.286
+    ],
+    "exported_size_inches": [
+      13.095,
+      4.877
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/turn_matched_rotation_sensitivity_20260915.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  \u00b7  INSTRUCT",
+      "Evaluation turn",
+      "1",
+      "2",
+      "3",
+      "6",
+      "9",
+      "12",
+      "Held-out $R^2$ \u2191",
+      "0.0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "B  \u00b7  PRETRAINED",
+      "MAP TRAINING TURNS",
+      "Turn 1",
+      "Turn 2",
+      "Turn 3",
+      "Turn 12",
+      "Turns 1 + 2 + 3"
+    ]
+  },
+  "encodings": [
+    {
+      "source": "1",
+      "label": "Turn 1",
+      "color": "#868d93",
+      "marker": "s"
+    },
+    {
+      "source": "2",
+      "label": "Turn 2",
+      "color": "#687078",
+      "marker": "^"
+    },
+    {
+      "source": "3",
+      "label": "Turn 3",
+      "color": "#393e42",
+      "marker": "D"
+    },
+    {
+      "source": "12",
+      "label": "Turn 12",
+      "color": "#22272B",
+      "marker": "v"
+    },
+    {
+      "source": "1+2+3",
+      "label": "Turns 1 + 2 + 3",
+      "color": "#176B87",
+      "marker": "o"
+    }
+  ],
+  "caveat": "Turns1\u20133 overlap pooled source support; forward transfer is turns4\u201312. Each pooled rotation is a distinct matched-N fit; average losses, not predictions."
+}

@@ -1,0 +1,101 @@
+{
+  "status": "verified",
+  "repo": "superkaiba1/explore-persona-space-data",
+  "repo_type": "dataset",
+  "revision": "52296b6f96d84c3de468b1b9d1c1941fcf4dbb61",
+  "prefix": "issue825_turn12_matched_20260915/figures",
+  "count": 18,
+  "bytes": 3383585,
+  "files": {
+    "issue825_turn12_matched_20260915/figures/c4_shared_speakers.data.json": {
+      "local": "c4_shared_speakers.data.json",
+      "size": 998221,
+      "sha256": "8f13c5c32dc7d15c7d7fa505f5bb8dc9afb28b31bf987839f3873b580f64bc29"
+    },
+    "issue825_turn12_matched_20260915/figures/c4_shared_speakers.meta.json": {
+      "local": "c4_shared_speakers.meta.json",
+      "size": 999859,
+      "sha256": "d6bef7ef7f57b56cc2c9fcb16d6905b9e20d9a9ff3bdc2c935ef8d239c2905c7"
+    },
+    "issue825_turn12_matched_20260915/figures/c4_shared_speakers.pdf": {
+      "local": "c4_shared_speakers.pdf",
+      "size": 22768,
+      "sha256": "4833b93690ec29d201d2a3de10c401282f55b861242acc77466ba218d13a139a"
+    },
+    "issue825_turn12_matched_20260915/figures/c4_shared_speakers.png": {
+      "local": "c4_shared_speakers.png",
+      "size": 212284,
+      "sha256": "3260bfad3e911b5ea4e3462b02cb6b5c602b092aad7762fd1247f16abae1e56b"
+    },
+    "issue825_turn12_matched_20260915/figures/c4_shared_speakers.render.py": {
+      "local": "c4_shared_speakers.render.py",
+      "size": 6866,
+      "sha256": "c6ac90330a170df292ebce61189dfa89fcd265e9532350063a7de8d49f89a466"
+    },
+    "issue825_turn12_matched_20260915/figures/c4_shared_speakers_grayscale.png": {
+      "local": "c4_shared_speakers_grayscale.png",
+      "size": 88564,
+      "sha256": "4ca9570b978736fb02577d070dacd39c8f474a5d783518b143eb1f545bb3dcc0"
+    },
+    "issue825_turn12_matched_20260915/figures/turn_matched_copy_baselines_20260915.meta.json": {
+      "local": "turn_matched_copy_baselines_20260915.meta.json",
+      "size": 2264,
+      "sha256": "3350c6e8d0a660edac8c751a844f83f062c3d20ca583bd531bfc9a57a76cc590"
+    },
+    "issue825_turn12_matched_20260915/figures/turn_matched_copy_baselines_20260915.pdf": {
+      "local": "turn_matched_copy_baselines_20260915.pdf",
+      "size": 23032,
+      "sha256": "1b3840e611820f8bcf0e41d972290ae30184bf10b8c6e6f5ba6a511ff0e72103"
+    },
+    "issue825_turn12_matched_20260915/figures/turn_matched_copy_baselines_20260915.png": {
+      "local": "turn_matched_copy_baselines_20260915.png",
+      "size": 256737,
+      "sha256": "6463697c5b20df90f3df37966c9b5628de8ee522c6664fba52b87e2e8f5a09da"
+    },
+    "issue825_turn12_matched_20260915/figures/turn_matched_copy_baselines_20260915_grayscale.png": {
+      "local": "turn_matched_copy_baselines_20260915_grayscale.png",
+      "size": 109162,
+      "sha256": "f13e8a6974494cb072e24a7a55d218abd2fa747a77cf04fe8bda8cfe07705b2d"
+    },
+    "issue825_turn12_matched_20260915/figures/turn_matched_rotation_sensitivity_20260915.meta.json": {
+      "local": "turn_matched_rotation_sensitivity_20260915.meta.json",
+      "size": 2208,
+      "sha256": "ce3d3375a2a94e2eb4b55b0354e5ba336aedbc3924d80973ffce77c4d7dca485"
+    },
+    "issue825_turn12_matched_20260915/figures/turn_matched_rotation_sensitivity_20260915.pdf": {
+      "local": "turn_matched_rotation_sensitivity_20260915.pdf",
+      "size": 20822,
+      "sha256": "959cb36c5e01cd241932bbbaa488036486ee14196aa3ec0f989951ee509701ac"
+    },
+    "issue825_turn12_matched_20260915/figures/turn_matched_rotation_sensitivity_20260915.png": {
+      "local": "turn_matched_rotation_sensitivity_20260915.png",
+      "size": 202857,
+      "sha256": "96ec851f34e5f6a7905258aea3d1736ca808dfe32dcd580ffca16a6da251cf69"
+    },
+    "issue825_turn12_matched_20260915/figures/turn_matched_rotation_sensitivity_20260915_grayscale.png": {
+      "local": "turn_matched_rotation_sensitivity_20260915_grayscale.png",
+      "size": 88830,
+      "sha256": "fb4997797375e3bfb9c7267c8106a2ea1365b700f001b3f2a6bfd9936d2763b3"
+    },
+    "issue825_turn12_matched_20260915/figures/turn_matched_transfer_20260915.meta.json": {
+      "local": "turn_matched_transfer_20260915.meta.json",
+      "size": 2181,
+      "sha256": "c8fa8e1c62449cf9637f7e9a8acdf38ac237a2a049987db5a18cab586082d66a"
+    },
+    "issue825_turn12_matched_20260915/figures/turn_matched_transfer_20260915.pdf": {
+      "local": "turn_matched_transfer_20260915.pdf",
+      "size": 22254,
+      "sha256": "d61ad56f44866829af8efd67f94ea46855ef0bd217e9c80163a24cc05946f33e"
+    },
+    "issue825_turn12_matched_20260915/figures/turn_matched_transfer_20260915.png": {
+      "local": "turn_matched_transfer_20260915.png",
+      "size": 227195,
+      "sha256": "14305b431fd94a8c5714cf3683503399c45b60ed44c465a6b016ba4afadddc86"
+    },
+    "issue825_turn12_matched_20260915/figures/turn_matched_transfer_20260915_grayscale.png": {
+      "local": "turn_matched_transfer_20260915_grayscale.png",
+      "size": 97481,
+      "sha256": "1f696b647155f6bedba38f3ea93f7445031a8a48c5f578e8c4f57b9be75df4cf"
+    }
+  }
+}

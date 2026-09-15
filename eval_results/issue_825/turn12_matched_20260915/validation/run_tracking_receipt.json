@@ -1,0 +1,47 @@
+{
+  "status": "verified",
+  "repo": "superkaiba1/explore-persona-space-data",
+  "repo_type": "dataset",
+  "revision": "f7d5ff7e8b86a0073e95526d6c09a3df81cc3611",
+  "prefix": "issue825_turn12_matched_20260915/tracking",
+  "files": {
+    "issue825_turn12_matched_20260915/tracking/debug-internal.log": {
+      "local": "debug-internal.log",
+      "sha256": "c8555c6528066a544b0c0a8cf00f6fb07c1ac068406c0bd36a31c66caeb10b44",
+      "size": 1435
+    },
+    "issue825_turn12_matched_20260915/tracking/debug.log": {
+      "local": "debug.log",
+      "sha256": "ecc75677242464c0cf9cd7e9bf1e54b9d2dbd3a21b37cc2d5ac4dc241fd7ed7c",
+      "size": 2754
+    },
+    "issue825_turn12_matched_20260915/tracking/offline-run-20260915_223041-pu232apl/files/requirements.txt": {
+      "local": "offline-run-20260915_223041-pu232apl/files/requirements.txt",
+      "sha256": "c05d7a82825b723d9921943ec4744017f945a867957e023504f49edadc6ff299",
+      "size": 4104
+    },
+    "issue825_turn12_matched_20260915/tracking/offline-run-20260915_223041-pu232apl/logs/debug-core.log": {
+      "local": "offline-run-20260915_223041-pu232apl/logs/debug-core.log",
+      "sha256": "ef37269b9427ba6d89d11fa5a6801a04964c0c7f625e9c737fb03f9a5bc1531c",
+      "size": 1199
+    },
+    "issue825_turn12_matched_20260915/tracking/offline-run-20260915_223041-pu232apl/logs/debug-internal.log": {
+      "local": "offline-run-20260915_223041-pu232apl/logs/debug-internal.log",
+      "sha256": "c8555c6528066a544b0c0a8cf00f6fb07c1ac068406c0bd36a31c66caeb10b44",
+      "size": 1435
+    },
+    "issue825_turn12_matched_20260915/tracking/offline-run-20260915_223041-pu232apl/logs/debug.log": {
+      "local": "offline-run-20260915_223041-pu232apl/logs/debug.log",
+      "sha256": "ecc75677242464c0cf9cd7e9bf1e54b9d2dbd3a21b37cc2d5ac4dc241fd7ed7c",
+      "size": 2754
+    },
+    "issue825_turn12_matched_20260915/tracking/offline-run-20260915_223041-pu232apl/run-pu232apl.wandb": {
+      "local": "offline-run-20260915_223041-pu232apl/run-pu232apl.wandb",
+      "sha256": "522d6e9147e27f34a2de4a18b86444af0aefd3bc267b52844089b20177fd4a9c",
+      "size": 4016
+    }
+  },
+  "count": 7,
+  "bytes": 17697,
+  "verified_at": 1789511487.152128
+}

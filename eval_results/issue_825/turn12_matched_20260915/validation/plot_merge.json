@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "earlier_cells_preserved": 192,
+  "source12_cells_added": 48,
+  "panels_ab_sha256": {
+    "panel_a": "d951aeef081fdd1e25d6b1e42454ff3cd82d692d8297d25b065a11af610c53c3",
+    "panel_b": "fce852763f4029a1ac6bba166fde3962b3501b2f8a401fa63dfc5ef826307420"
+  },
+  "sources": [
+    {
+      "conditions": [
+        "1",
+        "2",
+        "3",
+        "1+2+3"
+      ],
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/8c09aa563b7bfe47b1c44e0c96c9572acfd6a9e6/issue825_turn_matched_20260915/analysis/results.json",
+      "sha256": "b86c7e3400462187116b5de03cb5160f8483556be085ae4853dfe27ec9bdb635"
+    },
+    {
+      "conditions": [
+        "12"
+      ],
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/206ebcf9dfbc8b844c1817e79b75fd4314ad0324/issue825_turn12_matched_20260915/analysis/results.json",
+      "sha256": "c8d9e93fa11b062df46e806f55d693c3d0dceb49f4f5cb038730373760cab167",
+      "source_commit": "271e6ded945a6078c0f8ae03d72e40fda3d0ea03"
+    }
+  ]
+}

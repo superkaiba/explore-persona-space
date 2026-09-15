@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "name": "issue825-turn12-matched",
+  "monitor_unit": "eps825-turn12-matched-monitor.service",
+  "observation": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue825-turn12-matched/observation.json",
+  "state_dir": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue825-turn12-matched",
+  "workdir": "/home/thomasjiralerspong/.codex/worktrees/825-turn12-matched-20260915",
+  "runbook": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue825-turn12-matched/runbook.md",
+  "codex": "/home/thomasjiralerspong/.local/bin/codex",
+  "uv_environment": "/home/thomasjiralerspong/explore-persona-space/.venv",
+  "source_sha": "271e6ded945a6078c0f8ae03d72e40fda3d0ea03",
+  "stale_seconds": 900,
+  "recovery_seconds": 2700,
+  "max_recoveries_per_day": 2,
+  "notify_argv": [
+    "/home/thomasjiralerspong/bin/intent-notify.sh"
+  ]
+}

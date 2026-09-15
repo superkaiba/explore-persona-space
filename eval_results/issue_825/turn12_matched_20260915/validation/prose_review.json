@@ -1,0 +1,28 @@
+{
+  "verdict": "PASS",
+  "mode": "academic",
+  "reviewer": "turn12_caption_prose_review",
+  "normalized_score": 0,
+  "category_scores": {
+    "vocabulary": 0,
+    "structure": 0,
+    "rhythm": 0,
+    "voice": 0,
+    "interpretation": 0,
+    "results_writing": 0
+  },
+  "writing_counts": {
+    "A": 0,
+    "B": 0,
+    "C": 1,
+    "D": 0,
+    "E": 0,
+    "F": 0,
+    "G": 0,
+    "H": 0,
+    "I": 0,
+    "J": 0
+  },
+  "disposition": "One technical rather-than distinction retained: logged histories versus free-running rollouts; specific justification accepted.",
+  "mechanical_gates": "Both pass; no hard bans; no unaddressed flags."
+}

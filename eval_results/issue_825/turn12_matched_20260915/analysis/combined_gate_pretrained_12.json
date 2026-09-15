@@ -1,0 +1,27 @@
+{
+  "status": "pass",
+  "projection_seconds": 242.84004958200035,
+  "projection_limit_seconds": 900,
+  "fit_chunks": 6,
+  "observed_at": 1789511267.2050014,
+  "basis": {
+    "model": "pretrained",
+    "variant": "12",
+    "folds": [
+      0,
+      1
+    ],
+    "fingerprint": "f53fedca2ca86e3c543be321ab563c82abef2735ddceee41ebe4164a97f1068f",
+    "sha256": "ef57eec5de57769960e8801cdd46145b4573489315530487b740233c5fcd1d4a",
+    "n_train": [
+      4149,
+      4143
+    ],
+    "lambdas": [
+      3162.2776601683795,
+      3162.2776601683795
+    ],
+    "elapsed_seconds": 40.47334159700006,
+    "max_rss_kib": 4242264
+  }
+}

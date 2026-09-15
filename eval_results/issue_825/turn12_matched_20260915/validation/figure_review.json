@@ -1,0 +1,17 @@
+{
+  "verdict": "PASS",
+  "reviewer": "turn12_fit_review",
+  "original_cells_preserved": 192,
+  "new_cells": 48,
+  "source_commit_verified": true,
+  "source_hash_verified": true,
+  "cohort_and_folds_verified": true,
+  "all_CI_endpoints_within_bounds": true,
+  "color_and_grayscale": "reviewed readable",
+  "compiled_pages": [
+    8,
+    45
+  ],
+  "compiled_pages_total": 57,
+  "post_review_display_delta": "Turn12 triangle now points down in main, matching its appendix marker; numerical data and geometry unchanged."
+}

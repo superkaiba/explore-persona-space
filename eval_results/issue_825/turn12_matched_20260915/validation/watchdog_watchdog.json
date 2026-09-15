@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "notifications": [
+    {
+      "key": "complete",
+      "message": "issue825-turn12-matched: experiment completed; outputs verified.",
+      "created_at": 1789511520.1763315,
+      "delivered_at": 1789511520.8299847,
+      "last_attempt": 1789511520.1763315
+    }
+  ],
+  "recoveries": [],
+  "incident": null,
+  "worker": null,
+  "checked_at": 1789511580.2226639,
+  "observed_status": "complete",
+  "reason": "exact-source completion verified by monitor"
+}

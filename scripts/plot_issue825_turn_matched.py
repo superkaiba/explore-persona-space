@@ -7,11 +7,16 @@ import hashlib
 import json
 from pathlib import Path
 
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
 import matplotlib.pyplot as plt
 from matplotlib.colors import to_hex, to_rgb
 import numpy as np
 
 from explore_persona_space.analysis.c2a_plot_style import (
+    INK,
     ROLES,
     better_label,
     c2a_figure,
@@ -40,6 +45,8 @@ def main():
         ("3", "Turn 3", to_hex(0.55 * control), "D"),
         ("1+2+3", "Turns 1 + 2 + 3", ROLES["linear"].color, "o"),
     ]
+    if "12" in result["source_conditions"]:
+        encodings.insert(3, ("12", "Turn 12", INK, "v"))
     rendered = []
     for kind in ("transfer", "rotation_sensitivity", "copy_baselines"):
         fig, fraction = c2a_figure("full", aspect=0.48)
@@ -70,6 +77,7 @@ def main():
                     markerfacecolor=color if source == "1+2+3" else "white",
                     markersize=6,
                     linewidth=2.4 if source == "1+2+3" else 1.8,
+                    linestyle="--" if source == "12" else "-",
                 )
                 if kind != "rotation_sensitivity":
                     ax.fill_between(turns, ci[:, 0], ci[:, 1], color=color, alpha=0.13, linewidth=0)
@@ -105,7 +113,7 @@ def main():
             labels,
             loc="lower left",
             bbox_to_anchor=(0.08, 0.07),
-            ncol=4,
+            ncol=len(encodings),
             frameon=False,
             columnspacing=1.25,
         )

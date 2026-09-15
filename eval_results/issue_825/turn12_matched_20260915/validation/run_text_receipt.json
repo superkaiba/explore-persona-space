@@ -1,0 +1,147 @@
+{
+  "status": "verified",
+  "repo": "superkaiba1/explore-persona-space-data",
+  "repo_type": "dataset",
+  "revision": "206ebcf9dfbc8b844c1817e79b75fd4314ad0324",
+  "prefix": "issue825_turn12_matched_20260915/analysis",
+  "files": {
+    "issue825_turn12_matched_20260915/analysis/combined_gate_instruct_12.json": {
+      "local": "combined_gate_instruct_12.json",
+      "sha256": "fdb45843cac6a8aceed101758c0b94e87a8d952778a17049608d7254229e3ad4",
+      "size": 597
+    },
+    "issue825_turn12_matched_20260915/analysis/combined_gate_pretrained_12.json": {
+      "local": "combined_gate_pretrained_12.json",
+      "sha256": "04de96d14165f7d9a658b792ae10a54edf31131530eca205c1288e505f0f4c99",
+      "size": 623
+    },
+    "issue825_turn12_matched_20260915/analysis/coverage_instruct.json": {
+      "local": "coverage_instruct.json",
+      "sha256": "c0d9a05822e6dbf3ba03fbb2dad6bffa6925df120c68b18b9a7a7cfd4f56bc16",
+      "size": 247700
+    },
+    "issue825_turn12_matched_20260915/analysis/coverage_pretrained.json": {
+      "local": "coverage_pretrained.json",
+      "sha256": "2a02d25015e09b6eef8c6cff8583229fb403b7ad516011ea9aa176fcae87c3e5",
+      "size": 247702
+    },
+    "issue825_turn12_matched_20260915/analysis/fit_gate_instruct_12.json": {
+      "local": "fit_gate_instruct_12.json",
+      "sha256": "97e68aec1451e8a24e10b80dc8a690e58d51e35a985b86d43cc9dc002e734de1",
+      "size": 597
+    },
+    "issue825_turn12_matched_20260915/analysis/fit_gate_pretrained_12.json": {
+      "local": "fit_gate_pretrained_12.json",
+      "sha256": "c328d19864a24c237ca1d880f363c671c13ff0f58381fb0ce98e9adda716da25",
+      "size": 622
+    },
+    "issue825_turn12_matched_20260915/analysis/maps/instruct_12_folds0-1.json": {
+      "local": "maps/instruct_12_folds0-1.json",
+      "sha256": "c3d495365c168efa7af57f2ff57f34de958514759e6d89aa7c806941a830583d",
+      "size": 390
+    },
+    "issue825_turn12_matched_20260915/analysis/maps/instruct_12_folds2-3.json": {
+      "local": "maps/instruct_12_folds2-3.json",
+      "sha256": "614c6bbea2c2fe861ef314af7a246d095ae3f5680d73cdb7d1d5c52f07c56a8b",
+      "size": 390
+    },
+    "issue825_turn12_matched_20260915/analysis/maps/instruct_12_folds4-5.json": {
+      "local": "maps/instruct_12_folds4-5.json",
+      "sha256": "028b8dc09274f89323fffc5f05f56896453d27710332af7f5dc6899f81fd640b",
+      "size": 389
+    },
+    "issue825_turn12_matched_20260915/analysis/maps/pretrained_12_folds0-1.json": {
+      "local": "maps/pretrained_12_folds0-1.json",
+      "sha256": "951dd4fde1358a1c03eb1ae1fec86b847dd79ccabbbd9ded1cfb537087466230",
+      "size": 415
+    },
+    "issue825_turn12_matched_20260915/analysis/maps/pretrained_12_folds2-3.json": {
+      "local": "maps/pretrained_12_folds2-3.json",
+      "sha256": "f64a9e100f27b268f0751625cb9dfbfc90faf2f58c9a38092cede1537323376c",
+      "size": 416
+    },
+    "issue825_turn12_matched_20260915/analysis/maps/pretrained_12_folds4-5.json": {
+      "local": "maps/pretrained_12_folds4-5.json",
+      "sha256": "73820279b53f57f032e6553c782555f1242b935e2ba24a9f944a740d5345c83e",
+      "size": 416
+    },
+    "issue825_turn12_matched_20260915/analysis/results.json": {
+      "local": "results.json",
+      "sha256": "c8d9e93fa11b062df46e806f55d693c3d0dceb49f4f5cb038730373760cab167",
+      "size": 28085
+    },
+    "issue825_turn12_matched_20260915/analysis/scores/instruct_12_fold0.json": {
+      "local": "scores/instruct_12_fold0.json",
+      "sha256": "1a6198a7e34ec1cd32db3ae8a3ac5e2812ab84c5502b1d3cb2535b75b1842fb5",
+      "size": 442
+    },
+    "issue825_turn12_matched_20260915/analysis/scores/instruct_12_fold1.json": {
+      "local": "scores/instruct_12_fold1.json",
+      "sha256": "f5ba68ea6c9eab512e1778febc5b245a75739ec4ecbb0c193e09de5793a559fb",
+      "size": 442
+    },
+    "issue825_turn12_matched_20260915/analysis/scores/instruct_12_fold2.json": {
+      "local": "scores/instruct_12_fold2.json",
+      "sha256": "b826eee4e7135b0dca7344e763848e3c6c1eb6efba3fcb9f9af21d2e942378df",
+      "size": 442
+    },
+    "issue825_turn12_matched_20260915/analysis/scores/instruct_12_fold3.json": {
+      "local": "scores/instruct_12_fold3.json",
+      "sha256": "30360f13c04c529300e596017bb95ab16f3dededad4c3fd59d1237ec0ffa1411",
+      "size": 442
+    },
+    "issue825_turn12_matched_20260915/analysis/scores/instruct_12_fold4.json": {
+      "local": "scores/instruct_12_fold4.json",
+      "sha256": "f2a6f7e7510f118f132a0f692ac3486581c9b89bdd9fca0fe3b04fc2cab9777c",
+      "size": 442
+    },
+    "issue825_turn12_matched_20260915/analysis/scores/instruct_12_fold5.json": {
+      "local": "scores/instruct_12_fold5.json",
+      "sha256": "1c507d42c53cc67c618811c28122ddbd1b129f835b4e6e5ffa9e2a22a405adae",
+      "size": 441
+    },
+    "issue825_turn12_matched_20260915/analysis/scores/pretrained_12_fold0.json": {
+      "local": "scores/pretrained_12_fold0.json",
+      "sha256": "946e90355294f3b7123780223c20734cd63b9ce3232c6aa0e7615129be914c03",
+      "size": 444
+    },
+    "issue825_turn12_matched_20260915/analysis/scores/pretrained_12_fold1.json": {
+      "local": "scores/pretrained_12_fold1.json",
+      "sha256": "223c8be9e3e30276a966e0203c9371c577a26653e4a985fec854db30d6fb4b50",
+      "size": 443
+    },
+    "issue825_turn12_matched_20260915/analysis/scores/pretrained_12_fold2.json": {
+      "local": "scores/pretrained_12_fold2.json",
+      "sha256": "217dda020ed4cee02c9e8821c30aa0c5050a26b9c3490e074d418413604dd915",
+      "size": 444
+    },
+    "issue825_turn12_matched_20260915/analysis/scores/pretrained_12_fold3.json": {
+      "local": "scores/pretrained_12_fold3.json",
+      "sha256": "8333c25ec31a182706b55455794c184d7de8bb25c3030c3b28adcff4b1e76436",
+      "size": 444
+    },
+    "issue825_turn12_matched_20260915/analysis/scores/pretrained_12_fold4.json": {
+      "local": "scores/pretrained_12_fold4.json",
+      "sha256": "16e6a6e3d50d84c326497204c226da838809965c03dfdfb0a63e0833774bef73",
+      "size": 444
+    },
+    "issue825_turn12_matched_20260915/analysis/scores/pretrained_12_fold5.json": {
+      "local": "scores/pretrained_12_fold5.json",
+      "sha256": "1f12b2121dc171a09b8e5e9dd88a0533ebe9af85d38ff486cb84f06e9d64a66d",
+      "size": 443
+    },
+    "issue825_turn12_matched_20260915/analysis/stage.json": {
+      "local": "stage.json",
+      "sha256": "66fae48d93bb334bb627a65e28ae954d55f6f970516d1e34c423955ef52ec3ec",
+      "size": 164
+    },
+    "issue825_turn12_matched_20260915/analysis/tracking.json": {
+      "local": "tracking.json",
+      "sha256": "656546d94f646b7b64bf5d680f94190d8275dda534578026ab085241e064dd9b",
+      "size": 44
+    }
+  },
+  "count": 27,
+  "bytes": 533863,
+  "verified_at": 1789511464.4871523
+}

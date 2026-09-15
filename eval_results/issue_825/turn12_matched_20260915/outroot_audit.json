@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "checked_paths": 817,
+  "backed_cache_paths": 752,
+  "new_or_derived_paths": 65,
+  "unpersisted_paths": [],
+  "operator_validation_revision": "92e170c3d076270bda6fe884183346912e686b90",
+  "source_sha": "271e6ded945a6078c0f8ae03d72e40fda3d0ea03",
+  "n_conversations": 4975,
+  "rows": "reconciled",
+  "outroot": "swept-clean",
+  "late_log": "Final W&B core shutdown log separately archived because it changed after initial tracking upload."
+}

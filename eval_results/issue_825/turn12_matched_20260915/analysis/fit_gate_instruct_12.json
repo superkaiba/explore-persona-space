@@ -1,0 +1,27 @@
+{
+  "status": "pass",
+  "projection_seconds": 91.05141049799977,
+  "projection_limit_seconds": 900,
+  "fit_chunks": 6,
+  "observed_at": 1789511088.1533475,
+  "basis": {
+    "model": "instruct",
+    "variant": "12",
+    "folds": [
+      0,
+      1
+    ],
+    "fingerprint": "29b86ee4753b2bb7b60c4f74dfd7818f83b7a8e15f0ece8f47aaa3a265c7399a",
+    "sha256": "a9b860b92cd89c38c7899bc11d02f57fe878c48c385c167be14ecab0a5dcd104",
+    "n_train": [
+      4149,
+      4143
+    ],
+    "lambdas": [
+      1000.0,
+      1000.0
+    ],
+    "elapsed_seconds": 15.175235082999961,
+    "max_rss_kib": 3984260
+  }
+}

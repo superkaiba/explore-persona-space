@@ -1,0 +1,112 @@
+{
+  "status": "verified",
+  "repo": "superkaiba1/explore-persona-space-overflow",
+  "repo_type": "model",
+  "revision": "455893ff68eaf94f533125b815f41f0567a7a784",
+  "prefix": "issue825_turn12_matched_20260915/numerical",
+  "files": {
+    "issue825_turn12_matched_20260915/numerical/instruct_oof.npz": {
+      "local": "instruct_oof.npz",
+      "sha256": "636bf9c50f46528d58e9e076f70d8a32efefb16537c658ccd6db745f0595508b",
+      "size": 1971346
+    },
+    "issue825_turn12_matched_20260915/numerical/maps/instruct_12_folds0-1.npz": {
+      "local": "maps/instruct_12_folds0-1.npz",
+      "sha256": "a9b860b92cd89c38c7899bc11d02f57fe878c48c385c167be14ecab0a5dcd104",
+      "size": 205694888
+    },
+    "issue825_turn12_matched_20260915/numerical/maps/instruct_12_folds2-3.npz": {
+      "local": "maps/instruct_12_folds2-3.npz",
+      "sha256": "b67cfadb0019092926bebd8fec530d8f8fc1ac0c10650e9cfe1326cf18578362",
+      "size": 205694888
+    },
+    "issue825_turn12_matched_20260915/numerical/maps/instruct_12_folds4-5.npz": {
+      "local": "maps/instruct_12_folds4-5.npz",
+      "sha256": "3f647bd676b828803e9e65416c52fd080f37be13552ed9aa5d0d3946aca92b19",
+      "size": 205694888
+    },
+    "issue825_turn12_matched_20260915/numerical/maps/pretrained_12_folds0-1.npz": {
+      "local": "maps/pretrained_12_folds0-1.npz",
+      "sha256": "ef57eec5de57769960e8801cdd46145b4573489315530487b740233c5fcd1d4a",
+      "size": 205694888
+    },
+    "issue825_turn12_matched_20260915/numerical/maps/pretrained_12_folds2-3.npz": {
+      "local": "maps/pretrained_12_folds2-3.npz",
+      "sha256": "43e089119b409f8c36da9c8912925c24e117a7d6423a1438ba462297fef1d2b9",
+      "size": 205694888
+    },
+    "issue825_turn12_matched_20260915/numerical/maps/pretrained_12_folds4-5.npz": {
+      "local": "maps/pretrained_12_folds4-5.npz",
+      "sha256": "dcf626a289ba9aae3943deea2d5f892ed10da1af9f491dcab01d7be3df149d9a",
+      "size": 205694888
+    },
+    "issue825_turn12_matched_20260915/numerical/predictions/instruct_12_fold0.npz": {
+      "local": "predictions/instruct_12_fold0.npz",
+      "sha256": "b5d1ab00a896296ed0becc06a22b4e7ac2b88746e850b1082f1ef10fcd7a9815",
+      "size": 284554370
+    },
+    "issue825_turn12_matched_20260915/numerical/predictions/instruct_12_fold1.npz": {
+      "local": "predictions/instruct_12_fold1.npz",
+      "sha256": "82fc71af323c098318d8e42e6c7915e5d0d53ed3b5a2bb25299ee941c4e8d6aa",
+      "size": 286621130
+    },
+    "issue825_turn12_matched_20260915/numerical/predictions/instruct_12_fold2.npz": {
+      "local": "predictions/instruct_12_fold2.npz",
+      "sha256": "20c4e233540d10aa052e3175c39ef12a304831aa95088763a6b1b46540b48f98",
+      "size": 285587750
+    },
+    "issue825_turn12_matched_20260915/numerical/predictions/instruct_12_fold3.npz": {
+      "local": "predictions/instruct_12_fold3.npz",
+      "sha256": "6de7fe49ae45ae36de860f5ee0bfcd7f6c99e2a1bdc8d10dcc8dc4a3bec556a1",
+      "size": 286276670
+    },
+    "issue825_turn12_matched_20260915/numerical/predictions/instruct_12_fold4.npz": {
+      "local": "predictions/instruct_12_fold4.npz",
+      "sha256": "54232632421fa94b1de12f9ee7428dd43980f9c3feecf0b9a5d14f6e9938de04",
+      "size": 284898830
+    },
+    "issue825_turn12_matched_20260915/numerical/predictions/instruct_12_fold5.npz": {
+      "local": "predictions/instruct_12_fold5.npz",
+      "sha256": "6fa0bdc558eba755e8b9995bbd28484a4cf2079b9a17c294b59bdfcc8af00227",
+      "size": 285932210
+    },
+    "issue825_turn12_matched_20260915/numerical/predictions/pretrained_12_fold0.npz": {
+      "local": "predictions/pretrained_12_fold0.npz",
+      "sha256": "ccbb4d5df493d984f17dab4ee69531015bab4202f1f5a903519b140be85ef049",
+      "size": 284554370
+    },
+    "issue825_turn12_matched_20260915/numerical/predictions/pretrained_12_fold1.npz": {
+      "local": "predictions/pretrained_12_fold1.npz",
+      "sha256": "b38a433e84cde7f143345f0973a698196b6b463e19f11fbfb5efac5f695197ff",
+      "size": 286621130
+    },
+    "issue825_turn12_matched_20260915/numerical/predictions/pretrained_12_fold2.npz": {
+      "local": "predictions/pretrained_12_fold2.npz",
+      "sha256": "67775ead91bc46cba74b32c6f149c8392e278d257a78c10ac828a681e845041e",
+      "size": 285587750
+    },
+    "issue825_turn12_matched_20260915/numerical/predictions/pretrained_12_fold3.npz": {
+      "local": "predictions/pretrained_12_fold3.npz",
+      "sha256": "20d277ffbc3d0f57211a251f61040b939114bf7d0393a01099bbc07e1686f8ed",
+      "size": 286276670
+    },
+    "issue825_turn12_matched_20260915/numerical/predictions/pretrained_12_fold4.npz": {
+      "local": "predictions/pretrained_12_fold4.npz",
+      "sha256": "10875c7482f222803d2af82cf8680ccaec1999597c4883b2de7db8ab9bacf779",
+      "size": 284898830
+    },
+    "issue825_turn12_matched_20260915/numerical/predictions/pretrained_12_fold5.npz": {
+      "local": "predictions/pretrained_12_fold5.npz",
+      "sha256": "bf39abe69081346d9e20888a329429ef19d2037744d138ea5ab6c0db0cceba40",
+      "size": 285932210
+    },
+    "issue825_turn12_matched_20260915/numerical/pretrained_oof.npz": {
+      "local": "pretrained_oof.npz",
+      "sha256": "239029dc1075c8cd9b123c5350d8900ef9d59f7bf267f574c2e84f03d22d5b4a",
+      "size": 1971346
+    }
+  },
+  "count": 20,
+  "bytes": 4665853940,
+  "verified_at": 1789511439.0295863
+}

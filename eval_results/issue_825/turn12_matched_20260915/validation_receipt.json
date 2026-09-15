@@ -1,0 +1,102 @@
+{
+  "status": "verified",
+  "repo": "superkaiba1/explore-persona-space-data",
+  "repo_type": "dataset",
+  "revision": "92e170c3d076270bda6fe884183346912e686b90",
+  "prefix": "issue825_turn12_matched_20260915/operator_validation",
+  "files": {
+    "issue825_turn12_matched_20260915/operator_validation/figure_review.json": {
+      "local": "figure_review.json",
+      "sha256": "26e97a7f7c64e7cc5bdb87c6d7a66d8c5bea5713724b007dbbf2da49b19f7b9e",
+      "size": 519
+    },
+    "issue825_turn12_matched_20260915/operator_validation/final_wandb_debug-core.log": {
+      "local": "final_wandb_debug-core.log",
+      "sha256": "35947e0020fa3177ec846d678687614056d97167f73c707cbb2dd060c413e2be",
+      "size": 2112
+    },
+    "issue825_turn12_matched_20260915/operator_validation/outroot_inventory.json": {
+      "local": "outroot_inventory.json",
+      "sha256": "21f8f2ce8314210457982fdf001035877036b6581490dca7b5bc1fdd39214786",
+      "size": 256340
+    },
+    "issue825_turn12_matched_20260915/operator_validation/plot_merge.json": {
+      "local": "plot_merge.json",
+      "sha256": "8e91ff20347714c73489db86ea7a6615f6f83e1355068b1cd4329e561f383aa5",
+      "size": 1069
+    },
+    "issue825_turn12_matched_20260915/operator_validation/prose_review.json": {
+      "local": "prose_review.json",
+      "sha256": "0eec77dad5324960203d01eb1e246eef65baaefd7c2776abe72e0d9b1f7e916b",
+      "size": 634
+    },
+    "issue825_turn12_matched_20260915/operator_validation/row_metric_check.json": {
+      "local": "row_metric_check.json",
+      "sha256": "bf14f2a6ace6d37f311d0f0b9e4a98ee235aa17ba2df216d683ab437892d19cb",
+      "size": 1590
+    },
+    "issue825_turn12_matched_20260915/operator_validation/run_complete.json": {
+      "local": "run_complete.json",
+      "sha256": "f38205a554db82ba8da6142ba745f1a8030cc0cbf6a37dfdc5c5a7bbe7119ed6",
+      "size": 12903
+    },
+    "issue825_turn12_matched_20260915/operator_validation/run_inputs_inputs.json": {
+      "local": "run_inputs_inputs.json",
+      "sha256": "3e5e197e1cb9c0b0cfe5502b2f318f0914ee5a02113888d063d2024f746ed5e1",
+      "size": 266937
+    },
+    "issue825_turn12_matched_20260915/operator_validation/run_inputs_inputs.partial.json": {
+      "local": "run_inputs_inputs.partial.json",
+      "sha256": "d7f21b7800b452ccd08b6d3aba68c45e2a7ec2934209e900337768f21c940e91",
+      "size": 259267
+    },
+    "issue825_turn12_matched_20260915/operator_validation/run_tensor_receipt.json": {
+      "local": "run_tensor_receipt.json",
+      "sha256": "d821494b4fd7efd6935187d6a06db187acb3d56bbf291609a477b19a472262b2",
+      "size": 5295
+    },
+    "issue825_turn12_matched_20260915/operator_validation/run_text_receipt.json": {
+      "local": "run_text_receipt.json",
+      "sha256": "1591621f2f0c0e6e175305c8ffcc5a57d5a700873aa48a16210c585912d98cf9",
+      "size": 6657
+    },
+    "issue825_turn12_matched_20260915/operator_validation/run_tracking_receipt.json": {
+      "local": "run_tracking_receipt.json",
+      "sha256": "edef809d461ed8902bdf7d8536f48ecb2e219503ac4bba1f2cfd8aa8dcf32286",
+      "size": 2188
+    },
+    "issue825_turn12_matched_20260915/operator_validation/runtime_receipt.json": {
+      "local": "runtime_receipt.json",
+      "sha256": "2e0af683620ad24e87fe2b94d0a8a317e8befbe0fa982baf43d3e6aa159093f9",
+      "size": 1166
+    },
+    "issue825_turn12_matched_20260915/operator_validation/verified_completion.json": {
+      "local": "verified_completion.json",
+      "sha256": "77f6324a4ea0d6e45628d5b4ebb0e77de81b71c04148b3a38f21b5a1e65c34bb",
+      "size": 15810
+    },
+    "issue825_turn12_matched_20260915/operator_validation/watchdog_canary.json": {
+      "local": "watchdog_canary.json",
+      "sha256": "98bc4f366dfa3887ee35fd92575ad0bb76d032a32add156e4005f4b73be9b094",
+      "size": 116
+    },
+    "issue825_turn12_matched_20260915/operator_validation/watchdog_config.json": {
+      "local": "watchdog_config.json",
+      "sha256": "472861388fe021697b6dfd4d57013074e2a0b1110cf619a545d2070408a3a63e",
+      "size": 895
+    },
+    "issue825_turn12_matched_20260915/operator_validation/watchdog_watchdog.json": {
+      "local": "watchdog_watchdog.json",
+      "sha256": "6f9c4cdefa2269e69d394d3e06e647f50a8446a379f7963e6cc4c93eb05ff549",
+      "size": 475
+    },
+    "issue825_turn12_matched_20260915/operator_validation/workload.log": {
+      "local": "workload.log",
+      "sha256": "5bbd9ebeb36fd02a16342fe813313437af6b65255e8b6ab8e4445b5283c54ea4",
+      "size": 218519
+    }
+  },
+  "count": 18,
+  "bytes": 1052492,
+  "verified_at": 1789512239.0463374
+}

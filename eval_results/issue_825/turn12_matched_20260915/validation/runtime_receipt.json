@@ -1,0 +1,32 @@
+{
+  "status": "verified",
+  "repo": "superkaiba1/explore-persona-space-data",
+  "repo_type": "dataset",
+  "revision": "dc223c33b3f9a85f348a0d4ce66d090b56c97aa9",
+  "prefix": "issue825_turn12_matched_20260915/runtime",
+  "files": {
+    "issue825_turn12_matched_20260915/runtime/complete.json": {
+      "local": "complete.json",
+      "sha256": "b89870a2df70df64da984658281f8466ac1808e512a54207be0c03da89186417",
+      "size": 15743
+    },
+    "issue825_turn12_matched_20260915/runtime/tensor_receipt.json": {
+      "local": "tensor_receipt.json",
+      "sha256": "d821494b4fd7efd6935187d6a06db187acb3d56bbf291609a477b19a472262b2",
+      "size": 5295
+    },
+    "issue825_turn12_matched_20260915/runtime/text_receipt.json": {
+      "local": "text_receipt.json",
+      "sha256": "1591621f2f0c0e6e175305c8ffcc5a57d5a700873aa48a16210c585912d98cf9",
+      "size": 6657
+    },
+    "issue825_turn12_matched_20260915/runtime/tracking_receipt.json": {
+      "local": "tracking_receipt.json",
+      "sha256": "edef809d461ed8902bdf7d8536f48ecb2e219503ac4bba1f2cfd8aa8dcf32286",
+      "size": 2188
+    }
+  },
+  "count": 4,
+  "bytes": 29883,
+  "verified_at": 1789511505.6687446
+}

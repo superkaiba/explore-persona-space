@@ -1,0 +1,22 @@
+{
+  "verified_at": "2026-09-15T22:51:54.364411+00:00",
+  "dispatch": {
+    "chosen_kind": "gcp",
+    "issue": 825,
+    "ok": true,
+    "phase": "teardown",
+    "pod_name": "eps-issue-825-turn12matched",
+    "sidecar_finalized": "/home/thomasjiralerspong/explore-persona-space/.claude/cache/issue-825-turn12matched-handle.json.finalized"
+  },
+  "gcp_instances": [],
+  "completion_notification": [
+    {
+      "key": "complete",
+      "message": "issue825-turn12-matched: experiment completed; outputs verified.",
+      "created_at": 1789511520.1763315,
+      "delivered_at": 1789511520.8299847,
+      "last_attempt": 1789511520.1763315
+    }
+  ],
+  "units": "Id=eps825-turn12-matched-monitor.service\nActiveState=inactive\nUnitFileState=disabled\n\nId=eps-watchdog-issue825-turn12-matched.timer\nActiveState=inactive\nUnitFileState=disabled\n"
+}
