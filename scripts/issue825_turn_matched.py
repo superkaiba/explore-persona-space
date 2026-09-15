@@ -1,4 +1,4 @@
-"""Matched-row and matched-conversation early-turn transfer on the pinned K1 bank."""
+"""Matched-conversation turn transfer on the pinned K1 bank, including source-only fits."""
 
 # ruff: noqa: E402
 from __future__ import annotations
@@ -26,11 +26,32 @@ from explore_persona_space.analysis import pooled_turn_transfer as numeric
 from explore_persona_space.analysis import turn_transfer_calibration as calibration
 from explore_persona_space.backends.artifacts import write_completion_sentinel
 from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
+from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
 
 REPO = Path(__file__).resolve().parents[1]
 VARIANTS = ("1", "2", "3", "mix0", "mix1", "mix2")
 SOURCES = ("1", "2", "3", "1+2+3")
 PREFIX = "issue825_turn_matched_20260915"
+
+
+def source_regime(args):
+    """Keep the original six-fit regime unless the bounded turn-12 extension is requested."""
+    turn = getattr(args, "single_source_turn", None)
+    if turn is None:
+        return dict(
+            source_mode="matched_early_turns",
+            variants=list(VARIANTS),
+            source_conditions=list(SOURCES),
+            archive_prefix=PREFIX,
+        )
+    if turn != 12:
+        raise ValueError("only source turn 12 is approved for the single-source extension")
+    return dict(
+        source_mode="single_source_turn",
+        variants=[str(turn)],
+        source_conditions=[str(turn)],
+        archive_prefix="issue825_turn12_matched_20260915",
+    )
 
 
 def assignments(ids, labels):
@@ -96,6 +117,7 @@ def provenance(args, panel, model):
         lambda_grid=["logspace", -2, 4, 13],
         selector="legacy rowwise GCV",
         answer_draws=1,
+        **source_regime(args),
     )
     return hashlib.sha256(json.dumps(record, sort_keys=True).encode()).hexdigest(), record
 
@@ -143,15 +165,18 @@ def checked_npz(path, receipt, fingerprint):
         return {k: z[k] for k in z.files}, record
 
 
-def venue_gate(record, path):
+def venue_gate(record, path, fit_chunks=36):
     """Enforce production measurements on both fresh and resumed first chunks."""
-    projection = 36 * record["elapsed_seconds"]
-    ok = projection <= 5400 and record["max_rss_kib"] <= 24 * 1024**2
+    projection = fit_chunks * record["elapsed_seconds"]
+    projection_limit = fit_chunks * 150
+    ok = projection <= projection_limit and record["max_rss_kib"] <= 24 * 1024**2
     parent.atomic_json(
         path,
         dict(
             status="pass" if ok else "halt",
             projection_seconds=projection,
+            projection_limit_seconds=projection_limit,
+            fit_chunks=fit_chunks,
             observed_at=time.time(),
             basis=record,
         ),
@@ -219,7 +244,9 @@ def run_model(args, model):
         ),
     )
     base_fp = fp
-    for variant in VARIANTS:
+    variants = source_regime(args)["variants"]
+    fit_chunks = len(parent.MODELS) * len(variants) * 3
+    for variant in variants:
         fp = hashlib.sha256(f"{base_fp}:{variant}".encode()).hexdigest()
         x, y, _ = source_rows(panel, variant)
         for first in range(0, 6, 2):
@@ -255,24 +282,28 @@ def run_model(args, model):
                 )
                 parent.atomic_json(receipt, fit_record)
                 parent.log(f"[fit] {name} complete seconds={fit_record['elapsed_seconds']:.1f}")
-            if first == 0 and variant in ("1", "mix0"):
-                venue_gate(fit_record, args.out / f"fit_gate_{model}_{variant}.json")
+            if first == 0 and variant in ("1", "mix0", "12"):
+                venue_gate(fit_record, args.out / f"fit_gate_{model}_{variant}.json", fit_chunks)
             score_records = [
                 score_fold(args, panel, model, variant, f, fitted, j, fp)
                 for j, f in enumerate(folds)
             ]
-            if first == 0 and variant in ("1", "mix0"):
+            if first == 0 and variant in ("1", "mix0", "12"):
                 combined = dict(fit_record)
                 combined["elapsed_seconds"] += sum(r["elapsed_seconds"] for r in score_records)
                 combined["max_rss_kib"] = max(
                     [fit_record["max_rss_kib"]] + [r["max_rss_kib"] for r in score_records]
                 )
-                venue_gate(combined, args.out / f"combined_gate_{model}_{variant}.json")
+                venue_gate(combined, args.out / f"combined_gate_{model}_{variant}.json", fit_chunks)
             del fitted
 
 
-def collapse_rotations(values):
+def collapse_rotations(values, single_source_turn=None):
     """Average losses or hits across counterbalanced fits, never average predictions."""
+    if single_source_turn is not None:
+        if single_source_turn != 12 or values.shape[0] != 1:
+            raise ValueError("expected one source-turn-12 fit")
+        return values
     if values.shape[0] != 6:
         raise ValueError("expected three single sources and three pooled rotations")
     return np.concatenate([values[:3], values[3:].mean(axis=0, keepdims=True)], axis=0)
@@ -283,18 +314,28 @@ def reduce(args):
     contract = json.loads(args.config.read_text())
     ids = np.array(contract["cohort_ids"])
     n = len(ids)
+    regime = source_regime(args)
+    single_source = getattr(args, "single_source_turn", None)
+    code = git_provenance(cwd=REPO, argv0=__file__)
+    if code.commit_sha_full is None:
+        raise ValueError("cannot identify source commit for result provenance")
     weights = (
         np.random.default_rng(0).multinomial(n, np.full(n, 1 / n), size=1000).astype(np.float64)
     )
     result = dict(
         answer_draws=1,
         n_conversations=n,
-        source_conditions=SOURCES,
-        pooled_definition="mean performance of three counterbalanced matched-N maps; no prediction ensemble",
+        **regime,
+        source_sha=code.commit_sha_full,
+        metadata=as_metadata_dict(code, phase="matched-reduce"),
         uncertainty="1000 paired conversation bootstraps, seed 0; pointwise, conditional on maps, assignments and K1 bank",
         target_turns=list(range(1, 13)),
         models={},
     )
+    if single_source is None:
+        result["pooled_definition"] = (
+            "mean performance of three counterbalanced matched-N maps; no prediction ensemble"
+        )
     for model in parent.MODELS:
         coverage = json.loads((args.out / f"coverage_{model}.json").read_text())
         labels = np.array(contract["fold_labels"])
@@ -307,7 +348,7 @@ def reduce(args):
         np.testing.assert_array_equal(coverage["fold_sizes"], np.bincount(labels, minlength=6))
         quantities = {k: [] for k in ("sse", "cosine_hit", "euclidean_hit")}
         common_sst = None
-        for variant in VARIANTS:
+        for variant in regime["variants"]:
             fp = hashlib.sha256(f"{base_fp}:{variant}".encode()).hexdigest()
             blocks, all_ids = [], []
             for fold in range(6):
@@ -348,14 +389,14 @@ def reduce(args):
             raise ValueError("nonpositive SST")
         estimates, boot = {}, {}
         for key, raw_values in rows.items():
-            values = collapse_rotations(raw_values)
+            values = collapse_rotations(raw_values, single_source)
             totals = values.sum(-1)
             sampled = np.einsum("bn,amtn->bamt", weights, values, optimize=True)
             metric = "r2" if key == "sse" else key.replace("_hit", "_top1")
             estimates[metric] = 1 - totals / denominator if key == "sse" else totals / n
             boot[metric] = 1 - sampled / boot_den[:, None, None, :] if key == "sse" else sampled / n
         cells = []
-        for a, source in enumerate(SOURCES):
+        for a, source in enumerate(regime["source_conditions"]):
             for m, method in enumerate(("raw", "source_identity_bias")):
                 for t in range(12):
                     cell = dict(source=source, method=method, target_turn=t + 1)
@@ -366,7 +407,12 @@ def reduce(args):
                         ).tolist()
                     cells.append(cell)
         comparisons = []
-        for targets, label in (([11], "turn12"), (list(range(3, 12)), "mean_turns4_12")):
+        contrasts = (
+            (([11], "turn12"), (list(range(3, 12)), "mean_turns4_12"))
+            if single_source is None
+            else ()
+        )
+        for targets, label in contrasts:
             delta = estimates["r2"][3, 0, targets].mean() - estimates["r2"][2, 0, targets].mean()
             sampled = (boot["r2"][:, 3, 0][:, targets] - boot["r2"][:, 2, 0][:, targets]).mean(-1)
             comparisons.append(
@@ -402,7 +448,18 @@ def main():
         "--reference", type=Path, default=REPO / "eval_results/issue_825/turn_dynamics/results.json"
     )
     p.add_argument("--model", choices=parent.MODELS)
+    p.add_argument(
+        "--single-source-turn",
+        type=int,
+        choices=[12],
+        help="fit only source turn 12 on the unchanged frozen matched cohort",
+    )
     args = p.parse_args()
+    regime = source_regime(args)
+    if args.single_source_turn is not None and parent.sha(args.config) != parent.sha(
+        REPO / "configs/analysis/issue825_turn_matched_inputs.json"
+    ):
+        raise ValueError("source turn 12 requires the unchanged frozen matched-cohort config")
     args.inputs, args.out, args.store = (
         args.root / "inputs",
         args.root / "analysis",
@@ -412,8 +469,9 @@ def main():
         path.mkdir(parents=True, exist_ok=True)
     parent.reference(args.reference)
     if args.phase in ("stage", "run"):
-        pending_maps = max(0, 36 - len(list((args.out / "maps").glob("*.json"))))
-        pending_scores = max(0, 72 - len(list((args.out / "scores").glob("*.json"))))
+        fit_chunks = len(parent.MODELS) * len(regime["variants"]) * 3
+        pending_maps = max(0, fit_chunks - len(list((args.out / "maps").glob("*.json"))))
+        pending_scores = max(0, 2 * fit_chunks - len(list((args.out / "scores").glob("*.json"))))
         need = 1.5 * (2 + 0.21 * pending_maps + 0.29 * pending_scores) + 1
         assert_out_root_headroom(args.root, need_gb=need, phase="matched-turn-transfer")
         parent.log("[phase=matched_stage] verify pinned single-answer bank")
@@ -429,15 +487,20 @@ def main():
         reduce(args)
     if args.phase == "run":
         parent.log("[phase=matched_archive] numerical outputs before optional tracking")
-        upload(args.store, PREFIX + "/numerical", "tensors", args.root / "tensor_receipt.json")
+        prefix = regime["archive_prefix"]
+        upload(args.store, prefix + "/numerical", "tensors", args.root / "tensor_receipt.json")
         import wandb
 
         with wandb.init(
             project="explore-persona-space",
-            name="issue825-matched-turn-transfer",
+            name=(
+                "issue825-matched-turn-transfer"
+                if args.single_source_turn is None
+                else "issue825-turn12-matched-turn-transfer"
+            ),
             mode="offline",
             dir=str(args.root),
-            config=dict(answer_draws=1, conditions=SOURCES),
+            config=dict(answer_draws=1, conditions=regime["source_conditions"], **regime),
         ) as run:
             results = json.loads((args.out / "results.json").read_text())
             run.log(
@@ -449,14 +512,25 @@ def main():
                 }
             )
             parent.atomic_json(args.out / "tracking.json", dict(mode="offline", id=run.id))
-        upload(args.out, PREFIX + "/analysis", "text", args.root / "text_receipt.json")
+        upload(args.out, prefix + "/analysis", "text", args.root / "text_receipt.json")
+        archive_names = ["tensor", "text"]
+        if args.single_source_turn is not None:
+            upload(
+                args.root / "wandb",
+                prefix + "/tracking",
+                "tracking",
+                args.root / "tracking_receipt.json",
+            )
+            archive_names.append("tracking")
         completion = dict(
             status="complete",
             completed_at=time.time(),
             results_sha256=parent.sha(args.out / "results.json"),
+            source_sha=results["source_sha"],
+            source_mode=regime["source_mode"],
+            source_conditions=regime["source_conditions"],
             archives={
-                k: json.loads((args.root / f"{k}_receipt.json").read_text())
-                for k in ("tensor", "text")
+                k: json.loads((args.root / f"{k}_receipt.json").read_text()) for k in archive_names
             },
         )
         write_completion_sentinel(
@@ -467,6 +541,18 @@ def main():
             != completion["results_sha256"]
         ):
             raise RuntimeError("sentinel readback failed")
+        if args.single_source_turn is not None:
+            for name in ["complete.json", *(f"{k}_receipt.json" for k in archive_names)]:
+                parent.atomic_json(
+                    args.root / "runtime" / name,
+                    json.loads((args.root / name).read_text()),
+                )
+            upload(
+                args.root / "runtime",
+                prefix + "/runtime",
+                "text",
+                args.root / "runtime_receipt.json",
+            )
         if os.environ.get("EPS_SENTINEL_PATH"):
             write_completion_sentinel(
                 sentinel_path=os.environ["EPS_SENTINEL_PATH"], issue=825, extra=completion

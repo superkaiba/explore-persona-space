@@ -33,16 +33,27 @@ def digest(path: Path) -> str:
 
 
 def upload(root: Path, prefix: str, kind: str, receipt: Path) -> None:
-    """Upload exact text or tensor file sets and verify every Hub content hash."""
-    suffixes = {".json", ".jsonl", ".txt", ".log"} if kind == "text" else {".npz", ".npy"}
-    files = sorted(path for path in root.rglob("*") if path.is_file() and path.suffix in suffixes)
+    """Upload verified text/tensor subsets, or every file of an explicit tracking archive."""
+    suffixes = {
+        "text": {".json", ".jsonl", ".txt", ".log"},
+        "tensors": {".npz", ".npy"},
+        "tracking": None,
+    }
+    if kind not in suffixes:
+        raise ValueError(f"unsupported archive kind: {kind}")
+    selected_suffixes = suffixes[kind]
+    files = sorted(
+        path
+        for path in root.rglob("*")
+        if path.is_file() and (selected_suffixes is None or path.suffix in selected_suffixes)
+    )
     if not files:
         raise ValueError(f"no {kind} artifacts below {root}")
     if receipt.resolve().is_relative_to(root.resolve()):
         raise ValueError("archive receipt must live outside the archived tree")
     if kind == "text" and any(path.stat().st_size >= 9_000_000 for path in files):
         raise ValueError("text artifact exceeds 9 MB: shard before uploading")
-    repo, repo_type = (DATA_REPO, "dataset") if kind == "text" else (TENSOR_REPO, "model")
+    repo, repo_type = (TENSOR_REPO, "model") if kind == "tensors" else (DATA_REPO, "dataset")
     api = HfApi()
     if kind == "tensors" and not retry_transient(
         lambda: api.repo_info(repo, repo_type=repo_type).private,
@@ -192,7 +203,7 @@ def main() -> None:
     up = sub.add_parser("upload")
     up.add_argument("--root", type=Path, required=True)
     up.add_argument("--prefix", required=True)
-    up.add_argument("--kind", choices=("text", "tensors"), required=True)
+    up.add_argument("--kind", choices=("text", "tensors", "tracking"), required=True)
     up.add_argument("--receipt", type=Path, required=True)
     args = p.parse_args()
     if args.command == "pack":
