@@ -1,0 +1,24 @@
+{
+  "focused_tests": {
+    "passed": 49,
+    "failed": 0
+  },
+  "mapped_tests": {
+    "passed": 72,
+    "failed": 1,
+    "failure": "pre-existing test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints; all named paths belong to other tasks"
+  },
+  "ruff": "PASS check and format at project configuration",
+  "cli_static_bindings": "PASS six entrypoints",
+  "full_workflow_lint": "Executed; reported pre-existing and sparse-layout findings plus three new-file issues, corrected before dispatch. Payload scope rerun separately.",
+  "independent_review": "PASS methodology, generation, fitting, dispatcher, monitor; Codex only",
+  "smoke": "Actual-model GPU smoke remains required before production",
+  "source_sha256": {
+    "scripts/issue825_turn_k5_archive.py": "64b5ee3a8ac5cc02e35a3d0e5eda8934622a1198c473965e5576084c07d99a56",
+    "scripts/issue825_turn_k5_dispatch.py": "7e35d4da1bfa63c3f84af6f11ba0b577bcce8ed05dddeffe1c8e3e1444f255fc",
+    "scripts/issue825_turn_k5_fit.py": "922d3db3ca889bca1790c6497e0f3b57b1ef0c255e3628beee3078b21859f56b",
+    "scripts/issue825_turn_k5_gpu.py": "d3d12a2ad6e2cec7f75dd24e7bb547e27cf14e153948a368c2b4b4110f4f3e40",
+    "scripts/issue825_turn_k5_monitor.py": "4a2b97f73cffe0d547242c8bf9e5eee424753199943b38e9c8c4dd0317356248",
+    "scripts/issue825_turn_k5_prepare.py": "4e630220d26a457009e5b26fa7137ece4adce20d4433317eada14c2c4ac71d0c"
+  }
+}

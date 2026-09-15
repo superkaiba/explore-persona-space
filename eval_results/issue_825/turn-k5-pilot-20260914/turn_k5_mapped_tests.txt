@@ -1,0 +1,64 @@
+.............................................................F.......... [ 98%]
+.                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_no_new_torch_before_dotenv_vm_entrypoints ________________
+
+    def test_no_new_torch_before_dotenv_vm_entrypoints() -> None:
+        """No NEW VM CPU entrypoint may import a heavy root before load_dotenv().
+    
+        The env.py thread-cap hook binds in-process only when ``load_dotenv()``
+        runs before the import that (transitively) freezes the BLAS/intra-op
+        pools (#847 incident: the offender scripts all violated this; #1146
+        extended the predicate from literal torch/numpy to every
+        HEAVY_IMPORT_ROOTS root; #1187 widened the target set to ALL tracked
+        ``scripts/**/*.py`` plus ``__main__``-guarded src/experiments modules —
+        the two class rules live in ``_scan_targets``). Existing violators are
+        frozen above; this FAILs only on new violations — including branch-side
+        violators at their merges. #2209: UNTRACKED files in LINKED worktrees are
+        now in scope too, so a session whose own untracked scratch script reds the
+        Step 9c gate diagnoses it in one read — and a brand-new entrypoint fails
+        HERE pre-commit instead of shipping a false green (#2203).
+        """
+        root = Path(__file__).resolve().parents[1]
+        targets = _scan_targets(root)
+        assert targets, "scan target globs matched nothing — repo layout changed?"
+    
+        violations: list[str] = []
+        for path in targets:
+            src = path.read_text()
+            heavy = _first_heavy_import_line(ast.parse(src))
+            if heavy is None:
+                continue  # no module-top torch/numpy import
+            rel = path.relative_to(root).as_posix()
+            dotenv = _first_load_dotenv_line(src)
+            if (dotenv is None or heavy < dotenv) and rel not in GRANDFATHERED_TORCH_BEFORE_DOTENV:
+                violations.append(
+                    f"{rel} (module-top heavy import at line {heavy}, "
+                    f"first load_dotenv( at line {dotenv})"
+                )
+>       assert not violations, (
+            "NEW heavy-import-before-load_dotenv VM entrypoint(s) — call "
+            "explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any "
+            "HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process:\n  "
+            + "\n  ".join(violations)
+        )
+E       AssertionError: NEW heavy-import-before-load_dotenv VM entrypoint(s) — call explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process:
+E           scripts/issue1902_lasttoken_transfer.py (module-top heavy import at line 56, first load_dotenv( at line 93)
+E           scripts/issue2254_answer_strength_sweep.py (module-top heavy import at line 32, first load_dotenv( at line None)
+E           scripts/issue2254_information_type_position.py (module-top heavy import at line 29, first load_dotenv( at line None)
+E           scripts/issue2254_low_dose_large_replication.py (module-top heavy import at line 23, first load_dotenv( at line None)
+E           scripts/issue2254_multitype_attrition_analysis.py (module-top heavy import at line 19, first load_dotenv( at line None)
+E           scripts/issue2254_multitype_context_preference.py (module-top heavy import at line 41, first load_dotenv( at line None)
+E           scripts/issue2254_probe_context_followup.py (module-top heavy import at line 57, first load_dotenv( at line None)
+E           scripts/issue2254_probe_context_qwen35.py (module-top heavy import at line 34, first load_dotenv( at line None)
+E           scripts/issue2254_probe_context_qwen35_personas.py (module-top heavy import at line 32, first load_dotenv( at line None)
+E           scripts/issue2546_ladder_audit.py (module-top heavy import at line 15, first load_dotenv( at line None)
+E           scripts/issue2546_retrieval_recipe_check.py (module-top heavy import at line 11, first load_dotenv( at line None)
+E           scripts/issue2546_retrieval_recipe_decomposition.py (module-top heavy import at line 1, first load_dotenv( at line None)
+E           scripts/issue2546_sink_token_test.py (module-top heavy import at line 8, first load_dotenv( at line None)
+E       assert not ['scripts/issue1902_lasttoken_transfer.py (module-top heavy import at line 56, first load_dotenv( at line 93)', 'scrip.../issue2254_multitype_context_preference.py (module-top heavy import at line 41, first load_dotenv( at line None)', ...]
+
+tests/test_shared_vm_thread_caps.py:1000: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints
+1 failed, 72 passed in 64.97s (0:01:04)

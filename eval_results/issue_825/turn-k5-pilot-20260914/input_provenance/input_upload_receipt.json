@@ -1,0 +1,27 @@
+{
+  "status": "verified",
+  "repo": "superkaiba1/explore-persona-space-data",
+  "repo_type": "dataset",
+  "revision": "c0d8e73281264f6090fa6981d1a6a447f3be00c7",
+  "prefix": "issue825_turn_k5_pilot_20260914/inputs",
+  "files": {
+    "issue825_turn_k5_pilot_20260914/inputs/input_manifest.json": {
+      "local": "input_manifest.json",
+      "sha256": "9d515f7c05ddc360d54a76b57078ddf57d485b0fd769e7bed1c73d59d5cb09b0",
+      "size": 58094
+    },
+    "issue825_turn_k5_pilot_20260914/inputs/panel_shard000.jsonl": {
+      "local": "panel_shard000.jsonl",
+      "sha256": "46a55e6572300e8b4c01fccdaa917bae03574f78835d7f5e78e7444dd3533727",
+      "size": 7993883
+    },
+    "issue825_turn_k5_pilot_20260914/inputs/panel_shard001.jsonl": {
+      "local": "panel_shard001.jsonl",
+      "sha256": "ec09080a8d853a0767eb8e05ca6fde70d38732fbce9b4870ce6c62f1d8a9a7b6",
+      "size": 5145463
+    }
+  },
+  "count": 3,
+  "bytes": 13197440,
+  "verified_at": 1789437125.439941
+}

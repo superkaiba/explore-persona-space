@@ -1,0 +1,10 @@
+tests/test_issue825_turn_k5_dispatch.py	scripts/issue825_turn_k5_dispatch.py
+tests/test_issue825_turn_k5_fit.py	scripts/issue825_turn_k5_fit.py
+tests/test_issue825_turn_k5_gpu.py	scripts/issue825_turn_k5_gpu.py
+tests/test_issue825_turn_k5_monitor.py	scripts/issue825_turn_k5_monitor.py
+tests/test_shared_vm_thread_caps.py	scripts/issue825_turn_k5_archive.py
+tests/test_shared_vm_thread_caps.py	scripts/issue825_turn_k5_dispatch.py
+tests/test_shared_vm_thread_caps.py	scripts/issue825_turn_k5_fit.py
+tests/test_shared_vm_thread_caps.py	scripts/issue825_turn_k5_gpu.py
+tests/test_shared_vm_thread_caps.py	scripts/issue825_turn_k5_monitor.py
+tests/test_shared_vm_thread_caps.py	scripts/issue825_turn_k5_prepare.py
