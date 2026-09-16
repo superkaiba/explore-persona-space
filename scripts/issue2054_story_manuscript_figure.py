@@ -1,6 +1,10 @@
-"""Plot the approved four-panel speaker figure from completed, pinned results."""
+"""Plot the three-panel speaker figure from completed, pinned results."""
 
 from __future__ import annotations
+
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
 
 import argparse
 import hashlib
@@ -13,7 +17,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 
 from explore_persona_space.analysis.c2a_plot_style import (
     INK,
@@ -40,7 +44,6 @@ NAMES = [
 METHODS = [
     ("frozen", "Frozen", "o"),
     ("bias", "+ Bias", "D"),
-    ("bias_scale", "+ Bias + scale", "^"),
     ("own", "Own map", "s"),
 ]
 PAIRS = [("story", "characters"), ("chat", "story"), ("plain", "story"), ("story", "chat")]
@@ -70,7 +73,7 @@ def setting(cell: str) -> str:
     raise ValueError(cell)
 
 
-def summarize(k5: dict, story: dict, turns: dict) -> dict:
+def summarize(k5: dict, story: dict, turns: dict, shared_seven: dict) -> dict:
     """Keep exact fold metrics, all controls and equal-character averages."""
     if story["status"] != "complete":
         raise ValueError("Assistant-story analysis is incomplete")
@@ -117,108 +120,116 @@ def summarize(k5: dict, story: dict, turns: dict) -> dict:
             "recovery": (np.array(shared) / own).tolist(),
             "transfers": pairs,
         }
+    if shared_seven["status"] != "complete" or shared_seven["training_settings"] != 7:
+        raise ValueError("Seven-setting pooled fit is incomplete")
+    if shared_seven["model"] != "qwen2.5-7b-instruct" or len(shared_seven["rows"]) != 35:
+        raise ValueError("Unexpected shared-fit model or coverage")
+    seven = {setting(row["cell"]): row for row in shared_seven["summary"]}
+    order = ["chat", "plain", "helios", "wren", "dana", "vex", "story"]
+    instruct = result["models"]["qwen2.5-7b-instruct"]
+    np.testing.assert_allclose(
+        [seven[key]["r2_mean"]["own"] for key in order], instruct["own"], atol=1e-12, rtol=0
+    )
+    instruct["shared"] = [seven[key]["r2_mean"]["shared"] for key in order]
+    instruct["recovery"] = [seven[key]["shared_over_own"] for key in order]
+    result["shared_seven"] = shared_seven
     return result
 
 
 def render(data: dict, output: Path) -> dict:
-    """Use two rows of panels with the same checkpoint colors throughout."""
+    """Place joint/separate bars, Instruct transfer bars and turn heatmaps in one row."""
     set_c2a_style()
-    fig, fraction = c2a_figure("full", aspect=0.76)
-    a = fig.add_axes([0.175, 0.60, 0.33, 0.29])
-    b = fig.add_axes([0.68, 0.60, 0.30, 0.29])
-    c = fig.add_axes([0.175, 0.15, 0.33, 0.29])
-    for ax, letter, title in [
-        (a, "A", "Separate maps"),
-        (b, "B", "Shared map (Instruct)"),
-        (c, "C", "Speaker transfer"),
-    ]:
-        style_axis(ax, grid_axis="x")
+    fig, fraction = c2a_figure("full", aspect=0.55)
+    a = fig.add_axes([0.080, 0.31, 0.245, 0.57])
+    b = fig.add_axes([0.465, 0.31, 0.245, 0.57])
+    for ax, letter, title in [(a, "A", "Separate and shared"), (b, "B", "Transfer (Instruct)")]:
+        style_axis(ax, grid_axis="none")
         panel_header(ax, letter, title, kicker_y=1.07)
-    for i, (model, label, role) in enumerate(MODELS):
-        style = ROLES[role]
-        a.plot(
-            data["models"][model]["own"],
-            np.arange(7) + (i - 0.5) * 0.25,
-            linestyle="none",
-            marker=style.marker,
-            color=style.color,
-            markerfacecolor="white" if i == 0 else style.color,
+    base_color, instruct_color = ROLES["base_model"].color, ROLES["post_trained"].color
+    base = data["models"]["qwen2.5-7b"]
+    instruct = data["models"]["qwen2.5-7b-instruct"]
+    bars = [
+        (base["own"], base_color, None, "Base: separate"),
+        (instruct["own"], instruct_color, None, "Instruct: separate"),
+        (instruct["shared"], "white", "////", "Instruct: shared"),
+    ]
+    for j, (values, color, hatch, label) in enumerate(bars):
+        a.barh(
+            np.arange(7) + (j - 1) * 0.24,
+            values,
+            height=0.21,
+            color=color,
+            edgecolor=instruct_color if hatch else color,
+            linewidth=0.8,
+            hatch=hatch,
             label=label,
         )
-    a.set_yticks(range(7), NAMES)
+    a.set_yticks(range(7), ["Chat", "Plain", "HELIOS", "Wren", "Dana", "Vex", "Story"])
     a.set_ylim(6.5, -0.5)
-    a.set_xlim(0, 0.8)
-    a.set_xticks([0, 0.4, 0.8])
+    a.set_xlim(0, 0.75)
+    a.set_xticks([0, 0.3, 0.6])
     a.set_xlabel(better_label("Held-out $R^2$"))
-    a.legend(loc="lower left", bbox_to_anchor=(0, 1.13), ncol=2, borderaxespad=0)
-    ins = data["models"]["qwen2.5-7b-instruct"]
-    b.plot(ins["recovery"][:6], np.arange(6), "o", color=ROLES["post_trained"].color)
-    b.plot(ins["recovery"][6], 6, "o", color=ROLES["post_trained"].color, markerfacecolor="white")
-    b.axvline(1, color=ROLES["control"].color, linestyle="--", linewidth=1)
-    b.set_yticks(range(7), ["Chat", "Plain", "HELIOS", "Wren", "Dana", "Vex", "Story assistant*"])
-    b.set_ylim(6.5, -0.5)
-    b.set_xlim(0.75, 1.10)
-    b.set_xticks([0.8, 0.9, 1.0, 1.1])
-    b.set_xlabel(better_label("Fraction of own $R^2$"))
-    for i, (model, _, role) in enumerate(MODELS):
-        color = ROLES[role].color
-        for j, pair in enumerate(data["models"][model]["transfers"]):
-            for k, (method, _, marker) in enumerate(METHODS):
-                stat = pair["metrics"][method]
-                mean, folds = stat["mean"], stat["folds"]
-                y = j + (i - 0.5) * 0.36 + (k - 1.5) * 0.075
-                c.errorbar(
-                    mean,
-                    y,
-                    xerr=[[mean - min(folds)], [max(folds) - mean]],
-                    fmt=marker,
-                    color=color,
-                    markerfacecolor="white" if i == 0 else color,
-                    markersize=5,
-                    capsize=2,
-                    linewidth=1,
-                )
-    c.set_yticks(
-        range(4),
-        [
-            "Story assistant\n→ characters",
-            "Chat → story\nassistant",
-            "Plain → story\nassistant",
-            "Story assistant\n→ chat",
-        ],
+    a.legend(loc="upper left", bbox_to_anchor=(-0.12, -0.22), borderaxespad=0, handlelength=1.4)
+    method_style = {
+        "frozen": (instruct_color, None),
+        "bias": ("white", "////"),
+        "own": ("white", None),
+    }
+    for j, pair in enumerate(instruct["transfers"]):
+        for k, (method, _, _) in enumerate(METHODS):
+            stat = pair["metrics"][method]
+            mean, folds = stat["mean"], stat["folds"]
+            color, hatch = method_style[method]
+            b.barh(
+                j + (k - 1) * 0.24,
+                mean,
+                height=0.21,
+                color=color,
+                edgecolor=instruct_color,
+                linewidth=0.8,
+                hatch=hatch,
+                xerr=[[mean - min(folds)], [max(folds) - mean]],
+                error_kw={"ecolor": INK, "capsize": 2, "elinewidth": 0.8, "capthick": 0.8},
+            )
+    b.set_yticks(
+        range(4), ["Story →\ncharacters", "Chat →\nstory", "Plain →\nstory", "Story →\nchat"]
     )
-    c.set_ylim(3.55, -0.55)
+    b.set_ylim(3.5, -0.5)
     endpoints = [
-        value
-        for model in data["models"].values()
-        for pair in model["transfers"]
+        v
+        for pair in instruct["transfers"]
         for method, _, _ in METHODS
-        for value in pair["metrics"][method]["folds"]
+        for v in pair["metrics"][method]["folds"]
     ]
     assert min(endpoints) >= -1.0 and max(endpoints) <= 0.75
-    c.set_xlim(-1.0, 0.75)
-    c.set_xticks([-1.0, -0.5, 0, 0.5])
-    c.axvline(0, color=ROLES["control"].color, linewidth=1)
-    c.set_xlabel(better_label("Held-out $R^2$"))
-    c.legend(
+    b.set_xlim(-1.0, 0.75)
+    b.set_xticks([-1.0, 0, 0.5])
+    b.axvline(0, color=ROLES["control"].color, linewidth=0.8, zorder=0)
+    b.set_xlabel(better_label("Held-out $R^2$"))
+    b.legend(
         handles=[
-            Line2D([], [], color=INK, marker=marker, linestyle="none", label=label)
-            for _, label, marker in METHODS
+            Patch(
+                facecolor=method_style[method][0],
+                edgecolor=instruct_color,
+                hatch=method_style[method][1],
+                label=label,
+                linewidth=0.8,
+            )
+            for method, label, _ in METHODS
         ],
-        ncol=2,
         loc="upper left",
-        bbox_to_anchor=(-0.1, -0.26),
+        bbox_to_anchor=(0, -0.22),
         borderaxespad=0,
-        columnspacing=0.8,
+        handlelength=1.4,
     )
     conditions = ["1", "2", "3", "12", "1+2+3"]
     matrices = {}
     for i, (key, label, role) in enumerate(
         [("pretrained", "Base", "base_model"), ("instruct", "Instruct", "post_trained")]
     ):
-        ax = fig.add_axes([0.68, 0.285 - i * 0.17, 0.245, 0.12])
+        ax = fig.add_axes([0.790, 0.645 - i * 0.335, 0.140, 0.205])
         if i == 0:
-            panel_header(ax, "D", "Turn transfer", kicker_y=1.45)
+            panel_header(ax, "C", "Turn transfer", kicker_y=1.38)
         cells = data["turns"]["results"]["models"][key]["cells"]
         matrix = []
         for source in conditions:
@@ -235,14 +246,14 @@ def render(data: dict, output: Path) -> dict:
         ax.set_title(label, loc="left", color=ROLES[role].color, pad=6)
         ax.set_yticks(range(5), ["1", "2", "3", "12", "1–3"])
         ax.set_ylabel("Train turn")
-        ax.set_xticks([0, 2, 5, 8, 11], ["1", "3", "6", "9", "12"])
+        ax.set_xticks([0, 5, 11], ["1", "6", "12"])
         if i == 0:
             ax.tick_params(labelbottom=False)
         else:
             ax.set_xlabel("Evaluation turn")
         for spine in ax.spines.values():
             spine.set_visible(False)
-    color_ax = fig.add_axes([0.937, 0.115, 0.012, 0.29])
+    color_ax = fig.add_axes([0.950, 0.31, 0.010, 0.54])
     cb = fig.colorbar(im, cax=color_ax, ticks=[0, 0.3, 0.6])
     cb.ax.set_title(better_label("$R^2$"), pad=12)
     rendered = save_c2a_figure(
@@ -250,7 +261,7 @@ def render(data: dict, output: Path) -> dict:
         output / "c4_shared_speakers",
         include_width=fraction,
         title="Maps across speakers, framings and turns",
-        subject="K5 speaker maps and matched-count K1 turn transfer",
+        subject="K5 seven-setting speaker maps and matched-count K1 turn transfer",
         creator="scripts/issue2054_story_manuscript_figure.py",
     )
     plt.close(fig)
@@ -266,12 +277,17 @@ def main() -> None:
         "k5": ROOT / "eval_results/issue_2054/section44_k5/k5_results.json",
         "story": ROOT / "eval_results/issue_2054/assistant_story_k5/results.json",
         "turns": ROOT / "eval_results/issue_2054/manuscript_story_transfer/turns_source.json",
+        "shared_seven": ROOT / "eval_results/issue_2054/shared_seven/results.json",
     }
+    # SHA_PIN_DOMAIN: BYTES
     k5 = load(sources["k5"], "90309ec95e757ee5bd2e1b941e006858bd24a328656386444b6c55fb43f928f2")
+    # SHA_PIN_DOMAIN: BYTES
     story = load(
-        sources["story"], "d9f67bd2dfaf0cbd14a97af3234adb943e82bdf6b6150071af2b061817fe8070"
+        # SHA_PIN_DOMAIN: BYTES
+        sources["story"],
+        "d9f67bd2dfaf0cbd14a97af3234adb943e82bdf6b6150071af2b061817fe8070",
     )
-    data = summarize(k5, story, load(sources["turns"]))
+    data = summarize(k5, story, load(sources["turns"]), load(sources["shared_seven"]))
     args.output.mkdir(parents=True, exist_ok=True)
     result = render(data, args.output)
     result["data"] = data
@@ -298,11 +314,10 @@ def main() -> None:
         text=True,
     ).splitlines()
     result["visual_encodings"] = {
-        "checkpoint_colors": {label: ROLES[role].color for _, label, role in MODELS},
-        "panel_c_model_fill": {"Base": "open", "Instruct": "filled"},
-        "panel_c_method_markers": {label: marker for _, label, marker in METHODS},
-        "panel_b_open_asterisk": "Assistant in story excluded from shared fitting",
-        "panel_c_error_bars": "Minimum and maximum across five fold means",
+        "panel_a": "Base own (amber), Instruct own (teal), Instruct seven-setting shared (hatched teal)",
+        "panel_b": "Instruct only: frozen (teal), bias (hatched teal), own (outline)",
+        "panel_b_error_bars": "Minimum and maximum across five fold means",
+        "gridlines": "Removed; panel B retains a zero reference",
         "character_aggregation": "Equal average of four characters within each fold",
         "turn_heatmaps": {"colormap": "cividis", "limits": [0, 0.6]},
     }

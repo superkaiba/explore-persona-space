@@ -34,6 +34,7 @@ from scripts.issue2054_pool_specialize import PooledMomentRidge
 MODEL = "qwen2.5-7b-instruct"
 STORY_REV = "400ad464ce9f092722f737dd336fc31a03fba524"
 STORY_SHA = "fb04162702296cc52aa918b9aba5e275b229a3ccaf9355885e3d2de865e69c58"
+# SHA_PIN_DOMAIN: BYTES
 FOLD_SHA = "4ab1839a0e8c5e8705147cbb529b2df36975ac46b987fe71ab3f919265e4c39e"
 PREFIX = "issue2054_shared_seven_k5"
 METHODS = ("shared", "shared_bias", "pooled_identity_bias", "target_identity_bias")
@@ -58,6 +59,7 @@ def read_inputs(out):
     if (
         base.sha(old_path) != geometry.REFERENCE_SHA
         or base.sha(story_path)
+        # SHA_PIN_DOMAIN: BYTES
         != "d9f67bd2dfaf0cbd14a97af3234adb943e82bdf6b6150071af2b061817fe8070"
     ):
         raise ValueError("Reference result bytes changed")

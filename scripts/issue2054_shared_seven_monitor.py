@@ -23,6 +23,7 @@ def atomic(path, data):
 def verify(out, source_sha):
     """Check source, coverage, local hashes and the immutable uploaded inventory."""
     from huggingface_hub import HfApi, hf_hub_download
+    from explore_persona_space.orchestrate.hub import retry_transient
 
     complete = json.loads((out / "complete.json").read_text())
     result = json.loads((out / "results.json").read_text())
@@ -54,11 +55,14 @@ def verify(out, source_sha):
     paths = [f"{prefix}/{row['path']}" for row in files]
     remote = {
         e.path: e
-        for e in api.get_paths_info(
-            "superkaiba1/explore-persona-space-data",
-            paths,
-            repo_type="dataset",
-            revision=complete["verified_revision"],
+        for e in retry_transient(
+            lambda: api.get_paths_info(
+                "superkaiba1/explore-persona-space-data",
+                paths,
+                repo_type="dataset",
+                revision=complete["verified_revision"],
+            ),
+            what="verify shared-seven inventory metadata",
         )
     }
     for row, path in zip(files, paths, strict=True):
@@ -76,11 +80,14 @@ def verify(out, source_sha):
             if lfs.sha256 != row["sha256"]:
                 raise ValueError(f"Remote hash mismatch: {path}")
         else:
-            downloaded = hf_hub_download(
-                "superkaiba1/explore-persona-space-data",
-                path,
-                repo_type="dataset",
-                revision=complete["verified_revision"],
+            downloaded = retry_transient(
+                lambda: hf_hub_download(
+                    "superkaiba1/explore-persona-space-data",
+                    path,
+                    repo_type="dataset",
+                    revision=complete["verified_revision"],
+                ),
+                what="verify shared-seven metadata bytes",
             )
             if hashlib.sha256(Path(downloaded).read_bytes()).hexdigest() != row["sha256"]:
                 raise ValueError(f"Remote metadata mismatch: {path}")

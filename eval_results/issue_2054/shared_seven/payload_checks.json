@@ -1,0 +1,28 @@
+{
+  "source_run": "7eec89bbf53c9379f5ed37435c5719524ee824c2",
+  "files": [
+    "scripts/issue2054_shared_seven.py",
+    "scripts/issue2054_shared_seven_monitor.py",
+    "scripts/issue2054_story_manuscript_figure.py"
+  ],
+  "ruff": "PASS",
+  "sha_domain_payload": "PASS",
+  "import_order_exact_mapped_predicate": "PASS",
+  "monitor_live_verification_after_retry_fix": "PASS",
+  "export_exact_png_reproduction": "PASS",
+  "mapped_tests": {
+    "passed": 26,
+    "failed": 1,
+    "failure_attribution": "pre-existing other entrypoints; exact payload predicate passes"
+  },
+  "workflow_lint": {
+    "full_instrument_ran": true,
+    "initial_findings": 48,
+    "payload_findings_fixed": [
+      "early environment loading",
+      "SHA content domain",
+      "HF bounded retry"
+    ],
+    "targeted_followup": "remaining findings outside payload"
+  }
+}
