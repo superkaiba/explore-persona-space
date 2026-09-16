@@ -325,3 +325,30 @@ their own producer, which renders the banked excerpts in
 ```bash
 uv run python scripts/issue1901_qualitative_retrieval_failures.py
 ```
+
+## Results Section 4.3 figure
+
+`c1_posttraining_dynamics` (`fig:posttraining`) is rendered by
+`scripts/section43_posttraining_onpolicy_figure.py` from one input, the
+matched-format OLMo-2-7B on-policy summary
+(`issue1902_olmo_onpolicy_20260914/production_v1/fits/olmo/summary.json`, HF
+revision `7761da33`), copied to
+`figures/issue_1902/section43/inputs/olmo_onpolicy_summary.json` and SHA-256
+checked on every run. Regenerate with
+
+```bash
+uv run python scripts/section43_posttraining_onpolicy_figure.py --fetch
+```
+
+One `full`-width row of three panels at aspect 0.33. Format is a series in every
+panel: plain text is a solid line with filled circles, the chat template a dotted
+line with filled diamonds. Panel A draws each checkpoint's own map in the
+post-trained teal. Panel B adds base-model context vectors in amber. Panel C draws
+retention of the preceding checkpoint's map on the next checkpoint's pairs, as is
+(open marker) and with a refit bias (filled marker), plain at the left of each
+transition and chat at the right. The scalar-rescaling-plus-bias retention is in
+the summary and the data sidecar but is not drawn (2026-09-16). The earlier
+plain-text capture on 16,391 contexts, which the appendix layer and length
+controls cite, has its own renderer, `scripts/section43_posttraining_figure.py`;
+it writes to the same stem, so do not rerun it into `figures/paper`.
+

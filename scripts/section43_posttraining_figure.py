@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Render the Section 4.3 post-training summary figure (paper Figure 7).
+"""Render the EARLIER-CAPTURE Section 4.3 post-training figure (superseded).
+
+SUPERSEDED for the paper figure ``fig:posttraining`` on 2026-09-16 by
+``scripts/section43_posttraining_onpolicy_figure.py`` (matched-format on-policy
+rerun, 13,333 contexts, chat + plain). This script renders the earlier plain-text
+capture on 16,391 contexts, which only the appendix layer/length controls cite.
+Its outputs share the ``c1_posttraining_dynamics`` stem: do NOT rerun it into
+``figures/paper`` or it clobbers the paper figure.
 
 Panel A (within-stage fits + retrieval) reads the committed last-token
 comparison artifacts under ``figures/issue_1902/section43/inputs``. Panels B
