@@ -465,6 +465,8 @@ def _load_labeled(
     config: str,
     need_rollout_rows: bool,
     rollout_rows_kind: str = "t1",
+    context_variants: tuple[str, ...] = ("prefix_end", "context_end"),
+    include_answers: bool = True,
 ) -> LabeledTable:
     """Round-B labeled store + DV dataset -> per-CONTEXT layer-leading arrays.
 
@@ -476,12 +478,20 @@ def _load_labeled(
     A/B; the round-1 review's split-pooling gap). group_key is REQUIRED on
     every kept row (LOFO folds are load-bearing — fail loud, never a silent
     per-context fallback).
+
+    ``context_variants`` limits optional context-side arrays. With
+    ``include_answers=False``, answer shards are never read and ``z_ans`` is
+    None; this supports context-only controls without loading unused arrays.
     """
     import numpy as np
 
     from explore_persona_space.experiments.issue_1739 import store_io
 
-    kinds = ("prefix_end", "context_end", "t1")
+    if not context_variants or not set(context_variants) <= {"prefix_end", "context_end"}:
+        raise ValueError(f"invalid context variants: {context_variants}")
+    if need_rollout_rows and not include_answers:
+        raise ValueError("rollout rows require include_answers=True")
+    kinds = (*context_variants, *(("t1",) if include_answers else ()))
     arrays, meta = store_io.load_summaries(
         store_dir, kinds, tuple(layers), hidden_dim=arrays_dim(store_dir, layers)
     )
@@ -520,14 +530,16 @@ def _load_labeled(
     if not ctx_order:
         raise RuntimeError("no labeled contexts join the DV dataset and the store")
     first = np.array([rows_by_ctx[c][0] for c in ctx_order])
-    z_ctx = np.stack([arrays[("context_end", ly)][first] for ly in layers])
-    z_pre = np.stack([arrays[("prefix_end", ly)][first] for ly in layers])
+    z_by_variant = {
+        kind: np.stack([arrays[(kind, ly)][first] for ly in layers])
+        for kind in context_variants
+    }
     z_ans = np.stack(
         [
             np.stack([arrays[("t1", ly)][rows_by_ctx[c]].mean(axis=0) for c in ctx_order])
             for ly in layers
         ]
-    )
+    ) if include_answers else None
     dv = np.array([dv_by_ctx[c]["dv"] for c in ctx_order], dtype=float)
     groups = [str(dv_by_ctx[c]["group_key"]) for c in ctx_order]
     row_rungs = [str(dv_by_ctx[c].get("rung")) for c in ctx_order]
@@ -565,7 +577,7 @@ def _load_labeled(
         ans_row_k = np.asarray(sel_k, dtype=np.int64)
 
     return LabeledTable(
-        z_by_variant={"context_end": z_ctx, "prefix_end": z_pre},
+        z_by_variant=z_by_variant,
         z_ans=z_ans,
         dv=dv,
         groups=groups,
