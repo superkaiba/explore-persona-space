@@ -1,0 +1,472 @@
+{
+  "behavior": "hallucination",
+  "layer": 19,
+  "source_sha": "722ce8ae2c003209df22ab8adc4442cf72afb3df",
+  "config_sha256": "2f42b14bbb83a22faf1b81b57c60fc99d61c200f0bce53ad01c61dc9770405a8",
+  "planned_rungs": [
+    "nqopen",
+    "simpleqa",
+    "wildchat_rung"
+  ],
+  "direction_type": "unfiltered instruction contrast",
+  "judge_filtered": false,
+  "direction_audit": {
+    "positive_rollouts": 1000,
+    "negative_rollouts": 1000,
+    "positive_contexts": 100,
+    "negative_contexts": 100,
+    "excluded_rollouts": 0,
+    "judge_filtered": false,
+    "definition": "positive instruction mean minus negative instruction mean",
+    "retained_row_sha256": "160850391904fbb3541b0bd3a0b1f3bb8740725e771c68c8382f5cb0b58e0e87"
+  },
+  "answer_pooling_caveat": "Frozen #779 v_x averages response plus assistant-closing template tokens; #1739 t1 averages completion tokens only. This is a declared endpoint mismatch.",
+  "coordinate_space": "raw activations; #779 map internally standardizes inputs only",
+  "downstream_behavior_regression": false,
+  "coverage": [
+    {
+      "namespace": "hallucination_labeling",
+      "planned": 7188,
+      "retained": 7185
+    },
+    {
+      "namespace": "wildchat",
+      "planned": 419,
+      "retained": 4
+    }
+  ],
+  "n_eval": 7189,
+  "map_projection_max_abs_error": [
+    2.4158453015843406e-13,
+    1.4921397450962104e-13,
+    1.0658141036401503e-13,
+    1.3500311979441904e-13,
+    1.2079226507921703e-13,
+    1.9184653865522705e-13
+  ],
+  "input_label_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/dv_dataset/hallucination/labeling.json": "39c3a7beaffbba08a01057a730e1e415410537158bf296cdb40adaac9382cf5f",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/wildchat_rung/dv_dataset/hallucination/labeling.json": "bd73ee462436e3aa2fa16812412678377cdceb47c74e89648c3ff40e8fbc1cc5"
+  },
+  "n_boot": 2000,
+  "bootstrap_scope": "evaluation groups conditional on frozen directions and maps",
+  "results": [
+    {
+      "rung": "nqopen",
+      "n": 3164,
+      "n_groups": 2844,
+      "arms": {
+        "real_answer": {
+          "rho": -0.009030505664167387,
+          "ci95": [
+            -0.04327475020960738,
+            0.02736870104942677
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "mapped_answer": {
+          "rho": -0.08463577413152112,
+          "ci95": [
+            -0.1197735655450555,
+            -0.0483358650382066
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "context_native": {
+          "rho": -0.12690757863741656,
+          "ci95": [
+            -0.16405498580644842,
+            -0.0878528346215255
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "answer_direction_on_context": {
+          "rho": -0.13275554990589777,
+          "ci95": [
+            -0.16898231160575808,
+            -0.09602522211782019
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed0": {
+          "rho": 0.01990045655899887,
+          "ci95": [
+            -0.015571382431687831,
+            0.05792936290047435
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed1": {
+          "rho": -0.027365670066354174,
+          "ci95": [
+            -0.06347592844499601,
+            0.010067981742872618
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed2": {
+          "rho": 0.184907920515559,
+          "ci95": [
+            0.14901078339270082,
+            0.2194227243190058
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed3": {
+          "rho": 0.10877208653222628,
+          "ci95": [
+            0.0734303618433529,
+            0.1437077754537471
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed4": {
+          "rho": -0.05319496509342404,
+          "ci95": [
+            -0.09017031249408428,
+            -0.01723860770880211
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_map": {
+          "rho": 0.04660396568940119,
+          "ci95": [
+            0.029797277066286106,
+            0.06245301330349696
+          ],
+          "seed_rhos": [
+            0.01990045655899887,
+            -0.027365670066354174,
+            0.184907920515559,
+            0.10877208653222628,
+            -0.05319496509342404
+          ],
+          "seed_sd": 0.09891570927915816,
+          "valid_bootstrap_draws": 2000,
+          "estimand": "mean of five seed-specific Spearman correlations"
+        }
+      },
+      "differences": {
+        "map_minus_context_native": {
+          "delta": 0.04227180450589543,
+          "ci95": [
+            0.017884812227407287,
+            0.06601338942494342
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "map_minus_answer_on_context": {
+          "delta": 0.04811977577437665,
+          "ci95": [
+            0.023486782448021933,
+            0.07115890151343442
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "real_answer_minus_map": {
+          "delta": 0.07560526846735374,
+          "ci95": [
+            0.05465132233600376,
+            0.09540803832599104
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "map_minus_shuffled_map": {
+          "delta": -0.13123973982092232,
+          "ci95": [
+            -0.17613221230294138,
+            -0.08431078190270615
+          ],
+          "valid_bootstrap_draws": 2000
+        }
+      }
+    },
+    {
+      "rung": "simpleqa",
+      "n": 4021,
+      "n_groups": 3419,
+      "arms": {
+        "real_answer": {
+          "rho": 0.6050385630065428,
+          "ci95": [
+            0.5799991204722551,
+            0.630943173326192
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "mapped_answer": {
+          "rho": 0.4491818245310722,
+          "ci95": [
+            0.422072774478213,
+            0.477929592055215
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "context_native": {
+          "rho": 0.5065271546145845,
+          "ci95": [
+            0.47949938268352105,
+            0.5336169298447966
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "answer_direction_on_context": {
+          "rho": 0.46414936384923894,
+          "ci95": [
+            0.4352863952750986,
+            0.49361583367528117
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed0": {
+          "rho": 0.2521061680398476,
+          "ci95": [
+            0.22053514656442266,
+            0.28128137768921957
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed1": {
+          "rho": -0.4913643646955182,
+          "ci95": [
+            -0.5184289505927467,
+            -0.46641586011805497
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed2": {
+          "rho": -0.09879788367825511,
+          "ci95": [
+            -0.1313977011725258,
+            -0.06663183814042863
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed3": {
+          "rho": 0.19688796387205135,
+          "ci95": [
+            0.1668083327749783,
+            0.22746088251470387
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed4": {
+          "rho": -0.13071871757105663,
+          "ci95": [
+            -0.16163776082834905,
+            -0.10050807124125445
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_map": {
+          "rho": -0.054377366806586204,
+          "ci95": [
+            -0.0676066489941834,
+            -0.04080990749317853
+          ],
+          "seed_rhos": [
+            0.2521061680398476,
+            -0.4913643646955182,
+            -0.09879788367825511,
+            0.19688796387205135,
+            -0.13071871757105663
+          ],
+          "seed_sd": 0.2982554458902142,
+          "valid_bootstrap_draws": 2000,
+          "estimand": "mean of five seed-specific Spearman correlations"
+        }
+      },
+      "differences": {
+        "map_minus_context_native": {
+          "delta": -0.057345330083512336,
+          "ci95": [
+            -0.06752989927786124,
+            -0.047320698543519286
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "map_minus_answer_on_context": {
+          "delta": -0.014967539318166745,
+          "ci95": [
+            -0.02633485594243754,
+            -0.0037118448543954877
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "real_answer_minus_map": {
+          "delta": 0.1558567384754706,
+          "ci95": [
+            0.13757253623607152,
+            0.17467501512435693
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "map_minus_shuffled_map": {
+          "delta": 0.5035591913376584,
+          "ci95": [
+            0.4695609017465525,
+            0.5379456820730688
+          ],
+          "valid_bootstrap_draws": 2000
+        }
+      }
+    },
+    {
+      "rung": "wildchat_rung",
+      "n": 4,
+      "n_groups": 4,
+      "arms": {
+        "real_answer": {
+          "rho": 0.8,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969,
+          "status": "ok"
+        },
+        "mapped_answer": {
+          "rho": 0.8,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969,
+          "status": "ok"
+        },
+        "context_native": {
+          "rho": -0.2,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969,
+          "status": "ok"
+        },
+        "answer_direction_on_context": {
+          "rho": 0.8,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969,
+          "status": "ok"
+        },
+        "shuffled_seed0": {
+          "rho": 0.2,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969,
+          "status": "ok"
+        },
+        "shuffled_seed1": {
+          "rho": 0.8,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969,
+          "status": "ok"
+        },
+        "shuffled_seed2": {
+          "rho": 1.0,
+          "ci95": [
+            1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969,
+          "status": "ok"
+        },
+        "shuffled_seed3": {
+          "rho": -0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969,
+          "status": "ok"
+        },
+        "shuffled_seed4": {
+          "rho": 1.0,
+          "ci95": [
+            1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969,
+          "status": "ok"
+        },
+        "shuffled_map": {
+          "rho": 0.52,
+          "ci95": [
+            0.2,
+            1.0
+          ],
+          "seed_rhos": [
+            0.2,
+            0.8,
+            1.0,
+            -0.4,
+            1.0
+          ],
+          "seed_sd": 0.6099180272790763,
+          "valid_bootstrap_draws": 1969,
+          "estimand": "mean of five seed-specific Spearman correlations"
+        }
+      },
+      "differences": {
+        "map_minus_context_native": {
+          "delta": 1.0,
+          "ci95": [
+            -2.0,
+            2.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "map_minus_answer_on_context": {
+          "delta": 0.0,
+          "ci95": [
+            -2.0,
+            2.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "real_answer_minus_map": {
+          "delta": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "map_minus_shuffled_map": {
+          "delta": 0.28,
+          "ci95": [
+            -1.2,
+            0.8
+          ],
+          "valid_bootstrap_draws": 1969
+        }
+      }
+    }
+  ]
+}

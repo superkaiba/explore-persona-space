@@ -1,0 +1,180 @@
+{
+  "answer_pooling_caveat": "Frozen #779 v_x averages response plus assistant-closing template tokens; #1739 t1 averages completion tokens only. This is a declared endpoint mismatch.",
+  "identity_bias_source": "frozen map's train-only ymu-xmu; stored fp32 means upcast to fp64",
+  "datasets": {
+    "hhrt": {
+      "identity_plus_bias": {
+        "r2": -2.0647974763886783,
+        "mean_cosine": 0.7966344821814805,
+        "nearest_neighbor_accuracy": 0.4926908500270709,
+        "retrieval_pool_size": 1847,
+        "retrieval_chance": 0.0005414185165132648,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      },
+      "frozen_map": {
+        "r2": 0.6495388425934723,
+        "mean_cosine": 0.9716157144900336,
+        "nearest_neighbor_accuracy": 0.7498646453708717,
+        "retrieval_pool_size": 1847,
+        "retrieval_chance": 0.0005414185165132648,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      },
+      "shuffled_seed0": {
+        "r2": -0.609105394772119,
+        "mean_cosine": 0.8644695348418114,
+        "nearest_neighbor_accuracy": 0.0005414185165132648,
+        "retrieval_pool_size": 1847,
+        "retrieval_chance": 0.0005414185165132648,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      },
+      "shuffled_seed1": {
+        "r2": -0.6085600938285431,
+        "mean_cosine": 0.8645030790331627,
+        "nearest_neighbor_accuracy": 0.0005414185165132648,
+        "retrieval_pool_size": 1847,
+        "retrieval_chance": 0.0005414185165132648,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      },
+      "shuffled_seed2": {
+        "r2": -0.6078282336541989,
+        "mean_cosine": 0.864592513164496,
+        "nearest_neighbor_accuracy": 0.0005414185165132648,
+        "retrieval_pool_size": 1847,
+        "retrieval_chance": 0.0005414185165132648,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      },
+      "shuffled_seed3": {
+        "r2": -0.607499418054898,
+        "mean_cosine": 0.8646057369826522,
+        "nearest_neighbor_accuracy": 0.0005414185165132648,
+        "retrieval_pool_size": 1847,
+        "retrieval_chance": 0.0005414185165132648,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      },
+      "shuffled_seed4": {
+        "r2": -0.6090422630577381,
+        "mean_cosine": 0.8644898459110795,
+        "nearest_neighbor_accuracy": 0.0005414185165132648,
+        "retrieval_pool_size": 1847,
+        "retrieval_chance": 0.0005414185165132648,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      }
+    },
+    "toxicchat": {
+      "identity_plus_bias": {
+        "r2": -1.3563428071800834,
+        "mean_cosine": 0.7377526975377865,
+        "nearest_neighbor_accuracy": 0.4702702702702703,
+        "retrieval_pool_size": 370,
+        "retrieval_chance": 0.002702702702702703,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      },
+      "frozen_map": {
+        "r2": 0.5728071600215007,
+        "mean_cosine": 0.944904158696674,
+        "nearest_neighbor_accuracy": 0.6243243243243243,
+        "retrieval_pool_size": 370,
+        "retrieval_chance": 0.002702702702702703,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      },
+      "shuffled_seed0": {
+        "r2": -0.27637616409789456,
+        "mean_cosine": 0.8235319015320559,
+        "nearest_neighbor_accuracy": 0.002702702702702703,
+        "retrieval_pool_size": 370,
+        "retrieval_chance": 0.002702702702702703,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      },
+      "shuffled_seed1": {
+        "r2": -0.27654294219161524,
+        "mean_cosine": 0.823511156526709,
+        "nearest_neighbor_accuracy": 0.002702702702702703,
+        "retrieval_pool_size": 370,
+        "retrieval_chance": 0.002702702702702703,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      },
+      "shuffled_seed2": {
+        "r2": -0.2765020413420425,
+        "mean_cosine": 0.8235094066375709,
+        "nearest_neighbor_accuracy": 0.002702702702702703,
+        "retrieval_pool_size": 370,
+        "retrieval_chance": 0.002702702702702703,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      },
+      "shuffled_seed3": {
+        "r2": -0.2768341911124548,
+        "mean_cosine": 0.8234718504297162,
+        "nearest_neighbor_accuracy": 0.002702702702702703,
+        "retrieval_pool_size": 370,
+        "retrieval_chance": 0.002702702702702703,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      },
+      "shuffled_seed4": {
+        "r2": -0.27746748875662286,
+        "mean_cosine": 0.8233883972598506,
+        "nearest_neighbor_accuracy": 0.002702702702702703,
+        "retrieval_pool_size": 370,
+        "retrieval_chance": 0.002702702702702703,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      }
+    },
+    "wildchat_rung": {
+      "identity_plus_bias": {
+        "r2": -1.0366868873269461,
+        "mean_cosine": 0.7080479718681978,
+        "nearest_neighbor_accuracy": 1.0,
+        "retrieval_pool_size": 4,
+        "retrieval_chance": 0.25,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      },
+      "frozen_map": {
+        "r2": 0.7575785272783526,
+        "mean_cosine": 0.9504980535330186,
+        "nearest_neighbor_accuracy": 1.0,
+        "retrieval_pool_size": 4,
+        "retrieval_chance": 0.25,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      },
+      "shuffled_seed0": {
+        "r2": -0.3351146800393745,
+        "mean_cosine": 0.7463095501600814,
+        "nearest_neighbor_accuracy": 0.25,
+        "retrieval_pool_size": 4,
+        "retrieval_chance": 0.25,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      },
+      "shuffled_seed1": {
+        "r2": -0.3339186380871835,
+        "mean_cosine": 0.746520638216331,
+        "nearest_neighbor_accuracy": 0.25,
+        "retrieval_pool_size": 4,
+        "retrieval_chance": 0.25,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      },
+      "shuffled_seed2": {
+        "r2": -0.334153478000742,
+        "mean_cosine": 0.7464946213206582,
+        "nearest_neighbor_accuracy": 0.25,
+        "retrieval_pool_size": 4,
+        "retrieval_chance": 0.25,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      },
+      "shuffled_seed3": {
+        "r2": -0.335282298971989,
+        "mean_cosine": 0.7463500422057545,
+        "nearest_neighbor_accuracy": 0.25,
+        "retrieval_pool_size": 4,
+        "retrieval_chance": 0.25,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      },
+      "shuffled_seed4": {
+        "r2": -0.3353340282959456,
+        "mean_cosine": 0.7462135345286114,
+        "nearest_neighbor_accuracy": 0.25,
+        "retrieval_pool_size": 4,
+        "retrieval_chance": 0.25,
+        "retrieval_metric": "raw cosine; argmax first-index tie rule; identical eligible rung pool"
+      }
+    }
+  }
+}

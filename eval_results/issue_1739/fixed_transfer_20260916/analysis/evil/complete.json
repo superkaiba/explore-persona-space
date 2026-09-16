@@ -1,0 +1,15 @@
+{
+  "source_sha": "722ce8ae2c003209df22ab8adc4442cf72afb3df",
+  "config_sha256": "2f42b14bbb83a22faf1b81b57c60fc99d61c200f0bce53ad01c61dc9770405a8",
+  "artifact_sha256": {
+    "bootstrap_rhos.npz": "0d40dd95de2f3a0588c64f4090f15d6d7fe415d3f1471bf2694df1aa17f3a267",
+    "capture_provenance_audit.json": "dec17ccdf265ef044d356d157e62dd0e14bcf4bf4a4d1210c83200f79d1b8191",
+    "directions.npz": "c0e7b1793696da59f9166d8e938f359cf27bb46f428b7c05fe916b91ad4c9d4f",
+    "evaluation_hashes.json": "dd0eba11d6aec53010e3be406a070c34d1831e7874ef85b97962671a4fa15bfe",
+    "leakage_exclusions.json": "84e20af503cc6f30e4952a34afe97b1ad36cfcce9343aa068d06c5bcdda9eb68",
+    "predictions.npz": "c66aa4e805587c0dde30e7b192d5288ce71177b1f892ef224164c9595a43808c",
+    "reconstruction.json": "e3c190868eb35528f615ad482490734472cf0768aba25ade703ccbbb12a180ed",
+    "results.json": "c9d3ba521940c4aea2bd3f216fd681ed431f272b5a30b0afbcdc2ed896a56efd",
+    "rollout_alignment.json": "752bfd74487b15774921124a204651d0dd413f16af09bcd1a062d418a2a926fb"
+  }
+}

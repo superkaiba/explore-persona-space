@@ -1,0 +1,430 @@
+{
+  "behavior": "evil",
+  "layer": 19,
+  "source_sha": "722ce8ae2c003209df22ab8adc4442cf72afb3df",
+  "config_sha256": "2f42b14bbb83a22faf1b81b57c60fc99d61c200f0bce53ad01c61dc9770405a8",
+  "planned_rungs": [
+    "hhrt",
+    "toxicchat",
+    "wildchat_rung"
+  ],
+  "direction_type": "unfiltered instruction contrast",
+  "judge_filtered": false,
+  "direction_audit": {
+    "positive_rollouts": 1000,
+    "negative_rollouts": 1000,
+    "positive_contexts": 100,
+    "negative_contexts": 100,
+    "excluded_rollouts": 0,
+    "judge_filtered": false,
+    "definition": "positive instruction mean minus negative instruction mean",
+    "retained_row_sha256": "160850391904fbb3541b0bd3a0b1f3bb8740725e771c68c8382f5cb0b58e0e87"
+  },
+  "answer_pooling_caveat": "Frozen #779 v_x averages response plus assistant-closing template tokens; #1739 t1 averages completion tokens only. This is a declared endpoint mismatch.",
+  "coordinate_space": "raw activations; #779 map internally standardizes inputs only",
+  "downstream_behavior_regression": false,
+  "coverage": [
+    {
+      "namespace": "evil_labeling",
+      "planned": 2666,
+      "retained": 2217
+    },
+    {
+      "namespace": "wildchat",
+      "planned": 419,
+      "retained": 4
+    }
+  ],
+  "n_eval": 2221,
+  "map_projection_max_abs_error": [
+    5.684341886080801e-13,
+    3.979039320256561e-13,
+    3.979039320256561e-13,
+    5.115907697472721e-13,
+    3.410605131648481e-13,
+    2.2737367544323206e-13
+  ],
+  "input_label_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/dv_dataset/evil/labeling.json": "21ce1f8ce437f50399dd81d22553fb84ef3381120217781f94e53dc7b8fe59c1",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/wildchat_rung/dv_dataset/evil/labeling.json": "3fc06817c9d3da512253026d3606b89c410a72e3e143742e1ecb6c3635ba5b96"
+  },
+  "n_boot": 2000,
+  "bootstrap_scope": "evaluation groups conditional on frozen directions and maps",
+  "results": [
+    {
+      "rung": "hhrt",
+      "n": 1847,
+      "n_groups": 1847,
+      "arms": {
+        "real_answer": {
+          "rho": 0.0723457250894371,
+          "ci95": [
+            0.03580710877568492,
+            0.10655004565408241
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "mapped_answer": {
+          "rho": 0.057758591591320414,
+          "ci95": [
+            0.021542318004031592,
+            0.0907202479298404
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "context_native": {
+          "rho": 0.0008701159913479909,
+          "ci95": [
+            -0.035179959813181914,
+            0.0385126258626594
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "answer_direction_on_context": {
+          "rho": 0.04206859991335759,
+          "ci95": [
+            0.006171738174905361,
+            0.07983376874956769
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed0": {
+          "rho": 0.001382909822984529,
+          "ci95": [
+            -0.04775611993478282,
+            0.05257672053433041
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed1": {
+          "rho": -0.07121885124131165,
+          "ci95": [
+            -0.10387533425702253,
+            -0.03519521752232597
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed2": {
+          "rho": 0.03436771154470285,
+          "ci95": [
+            -0.007472274221929212,
+            0.07665941991237078
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed3": {
+          "rho": -0.020818443188277157,
+          "ci95": [
+            -0.06055015017981749,
+            0.019290381712339152
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed4": {
+          "rho": 0.07173772076741164,
+          "ci95": [
+            0.019497691269346175,
+            0.12121570041320805
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_map": {
+          "rho": 0.0030902095411020417,
+          "ci95": [
+            -0.009660198763611906,
+            0.015080870731242866
+          ],
+          "seed_rhos": [
+            0.001382909822984529,
+            -0.07121885124131165,
+            0.03436771154470285,
+            -0.020818443188277157,
+            0.07173772076741164
+          ],
+          "seed_sd": 0.054284293288154595,
+          "valid_bootstrap_draws": 2000,
+          "estimand": "mean of five seed-specific Spearman correlations"
+        }
+      },
+      "differences": {
+        "map_minus_context_native": {
+          "delta": 0.05688847559997243,
+          "ci95": [
+            0.02446883737630538,
+            0.08826375257334466
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "map_minus_answer_on_context": {
+          "delta": 0.015689991677962825,
+          "ci95": [
+            -0.01623050624589129,
+            0.0461653712680444
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "real_answer_minus_map": {
+          "delta": 0.014587133498116682,
+          "ci95": [
+            -0.013934761940031088,
+            0.041190092053389055
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "map_minus_shuffled_map": {
+          "delta": 0.05466838205021837,
+          "ci95": [
+            0.02283939004763929,
+            0.08372743138929535
+          ],
+          "valid_bootstrap_draws": 2000
+        }
+      }
+    },
+    {
+      "rung": "toxicchat",
+      "n": 370,
+      "n_groups": 370,
+      "arms": {
+        "real_answer": {
+          "rho": 0.4398576216849149,
+          "ci95": [
+            0.3579909438216154,
+            0.5134492248282095
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "mapped_answer": {
+          "rho": 0.42602468358374446,
+          "ci95": [
+            0.3484247630047359,
+            0.4974341567414563
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "context_native": {
+          "rho": 0.40316114042643586,
+          "ci95": [
+            0.32166262969323994,
+            0.4761914295411549
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "answer_direction_on_context": {
+          "rho": 0.4488849806060623,
+          "ci95": [
+            0.36198845509425276,
+            0.5217430160022499
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed0": {
+          "rho": 0.2595513169002012,
+          "ci95": [
+            0.17787433648861342,
+            0.3411732662885808
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed1": {
+          "rho": -0.0181372720524389,
+          "ci95": [
+            -0.11072772072291971,
+            0.08387549357508926
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed2": {
+          "rho": 0.18906494459365483,
+          "ci95": [
+            0.09257995774789642,
+            0.2843512995640386
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed3": {
+          "rho": 0.2286655597634694,
+          "ci95": [
+            0.1358111657833103,
+            0.3154667456887387
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed4": {
+          "rho": -0.20299654444037174,
+          "ci95": [
+            -0.29237705264923947,
+            -0.11580084446773427
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_map": {
+          "rho": 0.09122960095290296,
+          "ci95": [
+            0.054705390553725135,
+            0.12721428368999216
+          ],
+          "seed_rhos": [
+            0.2595513169002012,
+            -0.0181372720524389,
+            0.18906494459365483,
+            0.2286655597634694,
+            -0.20299654444037174
+          ],
+          "seed_sd": 0.19705502711354364,
+          "valid_bootstrap_draws": 2000,
+          "estimand": "mean of five seed-specific Spearman correlations"
+        }
+      },
+      "differences": {
+        "map_minus_context_native": {
+          "delta": 0.022863543157308597,
+          "ci95": [
+            -0.02587484435921873,
+            0.07186399438488547
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "map_minus_answer_on_context": {
+          "delta": -0.022860297022317844,
+          "ci95": [
+            -0.07030486584852585,
+            0.02404982974962429
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "real_answer_minus_map": {
+          "delta": 0.013832938101170422,
+          "ci95": [
+            -0.013341953698654874,
+            0.04252297168911232
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "map_minus_shuffled_map": {
+          "delta": 0.3347950826308415,
+          "ci95": [
+            0.2704709841621777,
+            0.3976167538964635
+          ],
+          "valid_bootstrap_draws": 2000
+        }
+      }
+    },
+    {
+      "rung": "wildchat_rung",
+      "n": 4,
+      "n_groups": 4,
+      "arms": {
+        "real_answer": {
+          "rho": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0,
+          "status": "undefined_constant_or_insufficient_data"
+        },
+        "mapped_answer": {
+          "rho": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0,
+          "status": "undefined_constant_or_insufficient_data"
+        },
+        "context_native": {
+          "rho": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0,
+          "status": "undefined_constant_or_insufficient_data"
+        },
+        "answer_direction_on_context": {
+          "rho": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0,
+          "status": "undefined_constant_or_insufficient_data"
+        },
+        "shuffled_seed0": {
+          "rho": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0,
+          "status": "undefined_constant_or_insufficient_data"
+        },
+        "shuffled_seed1": {
+          "rho": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0,
+          "status": "undefined_constant_or_insufficient_data"
+        },
+        "shuffled_seed2": {
+          "rho": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0,
+          "status": "undefined_constant_or_insufficient_data"
+        },
+        "shuffled_seed3": {
+          "rho": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0,
+          "status": "undefined_constant_or_insufficient_data"
+        },
+        "shuffled_seed4": {
+          "rho": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0,
+          "status": "undefined_constant_or_insufficient_data"
+        },
+        "shuffled_map": {
+          "rho": null,
+          "ci95": null,
+          "seed_rhos": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "seed_sd": null,
+          "valid_bootstrap_draws": 0,
+          "estimand": "mean of five seed-specific Spearman correlations"
+        }
+      },
+      "differences": {
+        "map_minus_context_native": {
+          "delta": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0
+        },
+        "map_minus_answer_on_context": {
+          "delta": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0
+        },
+        "real_answer_minus_map": {
+          "delta": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0
+        },
+        "map_minus_shuffled_map": {
+          "delta": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0
+        }
+      }
+    }
+  ]
+}

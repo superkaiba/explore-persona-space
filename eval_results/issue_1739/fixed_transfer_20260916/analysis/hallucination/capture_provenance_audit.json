@@ -1,0 +1,44 @@
+[
+  {
+    "namespace": "hallucination_extraction",
+    "n_contexts": 200,
+    "n_capture_rows": 2000,
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "source_shards": [
+      "extraction_hallucination.shard00.jsonl"
+    ],
+    "capture_source_join_sha256": "38dbd66b12617ea807fe2bcc3b693c2078d6dea51a38601185695195c65452a9"
+  },
+  {
+    "namespace": "hallucination_labeling",
+    "n_contexts": 7185,
+    "n_capture_rows": 35925,
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "source_shards": [
+      "labeling_hallucination.shard00.jsonl",
+      "labeling_hallucination.shard01.jsonl",
+      "labeling_hallucination.shard02.jsonl",
+      "labeling_hallucination.shard03.jsonl",
+      "labeling_hallucination.shard04.jsonl",
+      "labeling_hallucination.shard05.jsonl",
+      "labeling_hallucination.shard06.jsonl"
+    ],
+    "capture_source_join_sha256": "b8265342cd2431a792e8674daf82714c232cbba503fe46d6306f6b8882388db4"
+  },
+  {
+    "namespace": "wildchat",
+    "n_contexts": 4,
+    "n_capture_rows": 20,
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "source_shards": [
+      "wildchat.shard01.jsonl",
+      "wildchat.shard05.jsonl",
+      "wildchat.shard07.jsonl",
+      "wildchat.shard08.jsonl"
+    ],
+    "capture_source_join_sha256": "3f22a2779b7e607addfd9c04e59b9da2913b49b93aaa00f6dc92a3727318e3d8"
+  }
+]

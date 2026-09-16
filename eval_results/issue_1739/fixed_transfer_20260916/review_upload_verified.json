@@ -1,0 +1,11 @@
+{
+  "revision": "faa5830bff8b3e1961b41cda9e3d5d08125334d1",
+  "prefix": "issue1739_fixed_transfer_20260916/review",
+  "files": [
+    "summary.md",
+    "final_scientific_review.json",
+    "wildchat_overlap_witness_audit.json",
+    "upload_verified.json"
+  ],
+  "content_verified": true
+}

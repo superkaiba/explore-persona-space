@@ -1,0 +1,332 @@
+{
+  "behavior": "sycophancy",
+  "layer": 19,
+  "source_sha": "722ce8ae2c003209df22ab8adc4442cf72afb3df",
+  "config_sha256": "2f42b14bbb83a22faf1b81b57c60fc99d61c200f0bce53ad01c61dc9770405a8",
+  "planned_rungs": [
+    "aita",
+    "wildchat_rung"
+  ],
+  "direction_type": "unfiltered instruction contrast",
+  "judge_filtered": false,
+  "direction_audit": {
+    "positive_rollouts": 1000,
+    "negative_rollouts": 1000,
+    "positive_contexts": 100,
+    "negative_contexts": 100,
+    "excluded_rollouts": 0,
+    "judge_filtered": false,
+    "definition": "positive instruction mean minus negative instruction mean",
+    "retained_row_sha256": "160850391904fbb3541b0bd3a0b1f3bb8740725e771c68c8382f5cb0b58e0e87"
+  },
+  "answer_pooling_caveat": "Frozen #779 v_x averages response plus assistant-closing template tokens; #1739 t1 averages completion tokens only. This is a declared endpoint mismatch.",
+  "coordinate_space": "raw activations; #779 map internally standardizes inputs only",
+  "downstream_behavior_regression": false,
+  "coverage": [
+    {
+      "namespace": "sycophancy_labeling",
+      "planned": 1304,
+      "retained": 1304
+    },
+    {
+      "namespace": "wildchat",
+      "planned": 419,
+      "retained": 4
+    }
+  ],
+  "n_eval": 1308,
+  "map_projection_max_abs_error": [
+    5.968558980384842e-13,
+    2.8421709430404007e-13,
+    2.2737367544323206e-13,
+    3.694822225952521e-13,
+    3.410605131648481e-13,
+    3.126388037344441e-13
+  ],
+  "input_label_sha256": {
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/dv_dataset/sycophancy/labeling.json": "8d6aed280943e1c6868bfb44448dbfa6fbee17d91b26533fa26896931617defb",
+    "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/wildchat_rung/dv_dataset/sycophancy/labeling.json": "b6217ef9f7089915a87094d3a34ee1d48ec10c17f969353dae93121cc5cb5765"
+  },
+  "n_boot": 2000,
+  "bootstrap_scope": "evaluation groups conditional on frozen directions and maps",
+  "results": [
+    {
+      "rung": "aita",
+      "n": 1304,
+      "n_groups": 1304,
+      "arms": {
+        "real_answer": {
+          "rho": 0.21529304550980313,
+          "ci95": [
+            0.16090583633681615,
+            0.27267038345705663
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "mapped_answer": {
+          "rho": 0.25490509324538835,
+          "ci95": [
+            0.20066123748224798,
+            0.3119657835451455
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "context_native": {
+          "rho": 0.3187069625997087,
+          "ci95": [
+            0.26598215707154776,
+            0.37018424105348574
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "answer_direction_on_context": {
+          "rho": 0.18646030060614227,
+          "ci95": [
+            0.12993136724085788,
+            0.24586176961963557
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed0": {
+          "rho": 0.4433004685011296,
+          "ci95": [
+            0.39402521778885075,
+            0.4906088229586168
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed1": {
+          "rho": -0.12097959010713653,
+          "ci95": [
+            -0.17666600551148695,
+            -0.06706710407197504
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed2": {
+          "rho": -0.39225128078873917,
+          "ci95": [
+            -0.44177812576600795,
+            -0.3408496292977744
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed3": {
+          "rho": 0.08831776894230572,
+          "ci95": [
+            0.031057889247237565,
+            0.14090360646534994
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_seed4": {
+          "rho": -0.15073456072244198,
+          "ci95": [
+            -0.20176254334339236,
+            -0.09764952156983248
+          ],
+          "valid_bootstrap_draws": 2000,
+          "status": "ok"
+        },
+        "shuffled_map": {
+          "rho": -0.026469438834976478,
+          "ci95": [
+            -0.04524698472821714,
+            -0.007898041734286007
+          ],
+          "seed_rhos": [
+            0.4433004685011296,
+            -0.12097959010713653,
+            -0.39225128078873917,
+            0.08831776894230572,
+            -0.15073456072244198
+          ],
+          "seed_sd": 0.3130615810116914,
+          "valid_bootstrap_draws": 2000,
+          "estimand": "mean of five seed-specific Spearman correlations"
+        }
+      },
+      "differences": {
+        "map_minus_context_native": {
+          "delta": -0.06380186935432036,
+          "ci95": [
+            -0.11610259452657538,
+            -0.015793659296764417
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "map_minus_answer_on_context": {
+          "delta": 0.06844479263924608,
+          "ci95": [
+            0.017901009822915055,
+            0.11826960420332834
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "real_answer_minus_map": {
+          "delta": -0.039612047735585215,
+          "ci95": [
+            -0.06769818378433289,
+            -0.010429790815933307
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "map_minus_shuffled_map": {
+          "delta": 0.28137453208036484,
+          "ci95": [
+            0.22419442705601145,
+            0.3400146426243879
+          ],
+          "valid_bootstrap_draws": 2000
+        }
+      }
+    },
+    {
+      "rung": "wildchat_rung",
+      "n": 4,
+      "n_groups": 4,
+      "arms": {
+        "real_answer": {
+          "rho": -0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969,
+          "status": "ok"
+        },
+        "mapped_answer": {
+          "rho": -0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969,
+          "status": "ok"
+        },
+        "context_native": {
+          "rho": -0.8,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969,
+          "status": "ok"
+        },
+        "answer_direction_on_context": {
+          "rho": -0.8,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969,
+          "status": "ok"
+        },
+        "shuffled_seed0": {
+          "rho": 0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969,
+          "status": "ok"
+        },
+        "shuffled_seed1": {
+          "rho": 0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969,
+          "status": "ok"
+        },
+        "shuffled_seed2": {
+          "rho": -0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969,
+          "status": "ok"
+        },
+        "shuffled_seed3": {
+          "rho": 0.2,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969,
+          "status": "ok"
+        },
+        "shuffled_seed4": {
+          "rho": 0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969,
+          "status": "ok"
+        },
+        "shuffled_map": {
+          "rho": 0.2,
+          "ci95": [
+            -0.6,
+            0.6
+          ],
+          "seed_rhos": [
+            0.4,
+            0.4,
+            -0.4,
+            0.2,
+            0.4
+          ],
+          "seed_sd": 0.3464101615137755,
+          "valid_bootstrap_draws": 1969,
+          "estimand": "mean of five seed-specific Spearman correlations"
+        }
+      },
+      "differences": {
+        "map_minus_context_native": {
+          "delta": 0.4,
+          "ci95": [
+            0.0,
+            2.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "map_minus_answer_on_context": {
+          "delta": 0.4,
+          "ci95": [
+            0.0,
+            2.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "real_answer_minus_map": {
+          "delta": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "map_minus_shuffled_map": {
+          "delta": -0.6000000000000001,
+          "ci95": [
+            -1.6,
+            1.2
+          ],
+          "valid_bootstrap_draws": 1969
+        }
+      }
+    }
+  ]
+}

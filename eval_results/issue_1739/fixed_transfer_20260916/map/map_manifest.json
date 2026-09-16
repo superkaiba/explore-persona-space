@@ -1,0 +1,71 @@
+{
+  "complete": true,
+  "recipe": "issue1739-fixed-transfer-map-v1",
+  "layer": 19,
+  "n_train": 963444,
+  "n_val": 400,
+  "n_test": 1000,
+  "source_revision": "9d8f789bf034d8f244e1d00e0dbbe6aba6d272c5",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "model_revision_evidence": "#779 used the default model revision; HF main has remained at this SHA since 2025-01-12, before the July2026 captures; #1739 explicitly pins this SHA. The #779 tensor payload itself did not persist a model revision.",
+  "layer_semantics": "post-block19 residual stream; model.layers[19] output = hidden_states[20]",
+  "frozen_payload": "/dev/shm/issue1739-fixed-transfer/outputs/map/frozen.pt",
+  "null_payloads": {
+    "0": "/dev/shm/issue1739-fixed-transfer/outputs/map/shuffle_seed0.pt",
+    "1": "/dev/shm/issue1739-fixed-transfer/outputs/map/shuffle_seed1.pt",
+    "2": "/dev/shm/issue1739-fixed-transfer/outputs/map/shuffle_seed2.pt",
+    "3": "/dev/shm/issue1739-fixed-transfer/outputs/map/shuffle_seed3.pt",
+    "4": "/dev/shm/issue1739-fixed-transfer/outputs/map/shuffle_seed4.pt"
+  },
+  "map_prompt_hashes": "/dev/shm/issue1739-fixed-transfer/outputs/map/map_prompt_hashes.npz",
+  "hash_normalization": "sha256 UTF-8; normalized: ' '.join(text.lower().split())",
+  "map_coordinate_system": "raw input -> train-coordinate standardization -> W -> raw answer mean",
+  "target_pooling": "#779 mean over response plus closing assistant template tokens",
+  "evaluation_pooling_caveat": "#1739 t1 excludes boundary/closing template tokens",
+  "null_recipe": "independent permutations of training/validation answer rows; full parent lambda grid",
+  "artifacts_sha256": {
+    "frozen": {
+      "path": "/dev/shm/issue1739-fixed-transfer/outputs/map/frozen.pt",
+      "sha256": "188486f8afd9d95221e32492f3a0be2a3bdb2098cbe7fadfecf1d46433567909"
+    },
+    "true_refit": {
+      "path": "/dev/shm/issue1739-fixed-transfer/outputs/map/true_refit.pt",
+      "sha256": "66bb219f609a189c4c83e0ce1a070aecbd5876085c297a09af3ab3851b976d8a"
+    },
+    "shuffle_seed0": {
+      "path": "/dev/shm/issue1739-fixed-transfer/outputs/map/shuffle_seed0.pt",
+      "sha256": "7b1f413e3a75d462f571ecf62c9851cee4df748adea9a931cedd326a892501ed"
+    },
+    "shuffle_seed1": {
+      "path": "/dev/shm/issue1739-fixed-transfer/outputs/map/shuffle_seed1.pt",
+      "sha256": "24605f1185ad0061c1398fb339140339bec1be38e356018a7474b1f206459633"
+    },
+    "shuffle_seed2": {
+      "path": "/dev/shm/issue1739-fixed-transfer/outputs/map/shuffle_seed2.pt",
+      "sha256": "cb4c05f2294adbec7a63be71283aae8e3f507fcfe32fe161e41729107c144e00"
+    },
+    "shuffle_seed3": {
+      "path": "/dev/shm/issue1739-fixed-transfer/outputs/map/shuffle_seed3.pt",
+      "sha256": "af5054d47ded6347767ada68c0dbb028b6c6ddf1c1e363ac55d7628129b52205"
+    },
+    "shuffle_seed4": {
+      "path": "/dev/shm/issue1739-fixed-transfer/outputs/map/shuffle_seed4.pt",
+      "sha256": "bab95aa505304711139d5f3679ccd513c61a4e462add64afe5989258aa1efcbf"
+    },
+    "prompt_hashes": {
+      "path": "/dev/shm/issue1739-fixed-transfer/outputs/map/map_prompt_hashes.npz",
+      "sha256": "0db2037115fbfcd1a683c14f392ba4b53723e617bf7e9d58cff45b9af8ad6540"
+    }
+  },
+  "payload_sha256": {
+    "/dev/shm/issue1739-fixed-transfer/outputs/map/frozen.pt": "188486f8afd9d95221e32492f3a0be2a3bdb2098cbe7fadfecf1d46433567909",
+    "/dev/shm/issue1739-fixed-transfer/outputs/map/true_refit.pt": "66bb219f609a189c4c83e0ce1a070aecbd5876085c297a09af3ab3851b976d8a",
+    "/dev/shm/issue1739-fixed-transfer/outputs/map/shuffle_seed0.pt": "7b1f413e3a75d462f571ecf62c9851cee4df748adea9a931cedd326a892501ed",
+    "/dev/shm/issue1739-fixed-transfer/outputs/map/shuffle_seed1.pt": "24605f1185ad0061c1398fb339140339bec1be38e356018a7474b1f206459633",
+    "/dev/shm/issue1739-fixed-transfer/outputs/map/shuffle_seed2.pt": "cb4c05f2294adbec7a63be71283aae8e3f507fcfe32fe161e41729107c144e00",
+    "/dev/shm/issue1739-fixed-transfer/outputs/map/shuffle_seed3.pt": "af5054d47ded6347767ada68c0dbb028b6c6ddf1c1e363ac55d7628129b52205",
+    "/dev/shm/issue1739-fixed-transfer/outputs/map/shuffle_seed4.pt": "bab95aa505304711139d5f3679ccd513c61a4e462add64afe5989258aa1efcbf"
+  },
+  "map_prompt_hashes_sha256": "0db2037115fbfcd1a683c14f392ba4b53723e617bf7e9d58cff45b9af8ad6540"
+}
