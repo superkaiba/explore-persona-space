@@ -1,0 +1,70 @@
+{
+  "status": "pass",
+  "validated_at_utc": "2026-09-16T17:19:22.256063+00:00",
+  "scope": "Manuscript revision and replot from completed artifacts; no fitting or generation",
+  "overleaf_project": "https://www.overleaf.com/project/6a59c927290f8b8b5eee0055",
+  "overleaf_commit": "198dc76470514a3363def9997d4e45649a96f13f",
+  "overleaf_remote_verified": true,
+  "source_result_commit": "58fd5e56c445df4234257aa4df5c389485086067",
+  "figure_metadata_sha256": "124612e9939cfae0ee948bd550a9e74dbee1843950dd47b7dcef54458b50e275",
+  "plot_source_and_output_hashes_verified": true,
+  "plotted_transfer_fold_values": 160,
+  "plotted_transfer_fold_range": [
+    -0.9543812510694196,
+    0.6794285464823051
+  ],
+  "review": {
+    "prose_and_evidence": {
+      "agent": "review_persona_proposal",
+      "verdict": "PASS",
+      "academic_score": "0/130",
+      "new_table_numeric_cells_independently_checked": 168,
+      "flags_resolved": [
+        "Restrict negligible shared-map shift claim to the six training settings",
+        "Label bias-plus-scale table column explicitly",
+        "Point retrieval and baselines to the actual tables",
+        "Disambiguate generation caps across checkpoints"
+      ]
+    },
+    "figure_and_data": {
+      "agent": "review_manuscript_figure",
+      "verdict": "PASS",
+      "checked": [
+        "14 own-map values and shared-fit ratios",
+        "32 transfer means and 160 fold values",
+        "Equal character weighting within each fold",
+        "120 unchanged turn heatmap values",
+        "Source, producer, style and export hashes",
+        "Embedded fonts, color and grayscale"
+      ],
+      "flags_resolved": [
+        "Panel D header spacing",
+        "Show every negative panel C interval endpoint",
+        "Record Git state and visual encodings"
+      ]
+    }
+  },
+  "checks": {
+    "ruff_check": "PASS",
+    "ruff_format": "PASS",
+    "git_diff_check": "PASS",
+    "writing_tells": "PASS; existing watch flags preserved",
+    "humanize_bans": "PASS; single new therefore watch flag reviewed",
+    "latexmk": "PASS; 61 pages, resolved references and citations",
+    "layout": "PASS; main section, main figure, both tables and full transfer plot inspected",
+    "overleaf_renderer": "PASS; exact color and grayscale PNG hashes reproduced from adjacent inputs"
+  },
+  "self_review": {
+    "contribution": "Describes shared predictability and within-story transfer while retaining the chat-to-story limitation.",
+    "writing_clarity": "Uses the approved concise run-in headings and neighboring figure-reference convention.",
+    "experimental_strength": "Uses held-out conversations and existing K5 artifacts; no new experimental claim is inferred from a replot.",
+    "evaluation_completeness": "Appendix reports R2, Euclidean retrieval, identity-plus-bias controls, pools and chance.",
+    "method_soundness": "Distinguishes target-trained calibration, query/scene confounds and the held-out story assistant from exclusively non-story training."
+  },
+  "manuscript_file_sha256": {
+    "sections/results/04_speakers.tex": "585e7b54a5b941c230259e9a34cf1d4beb9be59491b87c926404f73a39b7175f",
+    "sections/05_method_details.tex": "82b8bef8761e16a1366214737169f8498250b0d0fcfb35963a573019e6f15790",
+    "figures/paper/c4_shared_speakers.pdf": "f6aae65ddefd519b1dd9f94d33da9397204bb5cbc8e36b2c4bb291f78b00f934",
+    "figures/paper/c4_speaker_transfer_full.pdf": "9237985b301ba21051bceaea9a8ef32c7a6f9ef2f3872573c0a023fd7c599bb8"
+  }
+}
