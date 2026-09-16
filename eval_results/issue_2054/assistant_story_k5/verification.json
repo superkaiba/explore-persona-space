@@ -1,0 +1,26 @@
+{
+  "source_sha": "b3d843420034183473f92ab64062aab263f73f41",
+  "status": "complete",
+  "checked_at": 1789527294.5439737,
+  "verified_revision": "400ad464ce9f092722f737dd336fc31a03fba524",
+  "verified_files": 713,
+  "results_sha256": "d9f67bd2dfaf0cbd14a97af3234adb943e82bdf6b6150071af2b061817fe8070",
+  "validation": "Independent supervisor verified generation and analysis completion, inventories, content SHA256 and sizes at one immutable HF revision; numerical audits recomputed summaries from per-query arrays.",
+  "raw_artifacts": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/400ad464ce9f092722f737dd336fc31a03fba524/issue2054_assistant_story_k5/production_v1",
+  "checks": {
+    "focused_tests": "33 passed",
+    "ruff": "passed",
+    "diff_whitespace": "passed",
+    "independent_numeric_and_figure_review": "PASS",
+    "browser_figure_heads": "Both unauthenticated URLs return 200 image/png"
+  },
+  "compute_finalization": {
+    "chosen_kind": "gcp",
+    "detail": "task carries the keep-running tag - teardown SKIPPED, backend left alive, sidecar kept. Recover: `task.py remove-tag 2054 keep-running` then re-run finalize.",
+    "issue": 2054,
+    "ok": true,
+    "phase": "teardown_skipped",
+    "pod_name": "eps-issue-2054-assistant-story",
+    "reason": "keep_running_tag_present"
+  }
+}

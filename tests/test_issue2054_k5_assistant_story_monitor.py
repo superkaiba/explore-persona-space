@@ -3,8 +3,8 @@
 import json
 import subprocess
 import sys
-from types import SimpleNamespace
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -33,6 +33,36 @@ def test_parent_heartbeat_cannot_hide_stale_child():
 def test_fresh_child_is_healthy():
     result = monitor.assess_progress(observation(1450), "a" * 40, 1500)
     assert "stall_reason" not in result
+
+
+def test_progressing_peer_cannot_hide_stalled_worker():
+    backend = observation(1450)
+    backend["outputs"]["active_workers"] = [
+        {
+            "started": 100,
+            "latest_progress": 120,
+            "model": "base",
+            "stage": "generate",
+            "pid_exists": True,
+        }
+    ]
+    result = monitor.assess_progress(backend, "a" * 40, 1500)
+    assert "base generate worker stopped" in result["stall_reason"]
+
+
+def test_worker_exit_has_short_status_flush_grace():
+    backend = observation(1490)
+    backend["outputs"]["active_workers"] = [
+        {
+            "started": 100,
+            "latest_progress": 1490,
+            "model": "base",
+            "stage": "generate",
+            "pid_exists": False,
+        }
+    ]
+    assert "stall_reason" not in monitor.assess_progress(backend, "a" * 40, 1500)
+    assert "exited" in monitor.assess_progress(backend, "a" * 40, 1530)["stall_reason"]
 
 
 def test_dead_or_wrong_source_driver_is_not_healthy():

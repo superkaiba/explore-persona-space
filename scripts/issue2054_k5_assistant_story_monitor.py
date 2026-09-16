@@ -84,6 +84,22 @@ for directory in ('raw', 'captures', 'capture_audits', 'k5', 'analysis', 'logs')
 result.update(files=len(files), bytes=sum(f[1] for f in files),
               latest_outputs=sorted(files, key=lambda f:f[2], reverse=True)[:6],
               latest_progress=max((f[2] for f in files), default=None))
+workers = []
+for path in (root / 'logs').glob('*.status.json'):
+    worker = json.loads(path.read_text())
+    if 'finished' in worker or worker['started'] < result.get('started', 0):
+        continue
+    log = root / worker['log']
+    model = worker['model']
+    directory = 'raw' if worker['stage'] == 'generate' else 'captures'
+    latest = [entry[2] for entry in files
+              if entry[0].startswith(directory + '/') and ('__' + model + '/') in entry[0]]
+    if log.exists():
+        latest.append(log.stat().st_mtime)
+    worker.update(pid_exists=(pathlib.Path('/proc') / str(worker['pid'])).exists(),
+                  latest_progress=max(latest, default=worker['started']))
+    workers.append(worker)
+result['active_workers'] = workers
 print(json.dumps(result))
 """
 
@@ -251,6 +267,16 @@ def assess_progress(
             backend["stall_reason"] = "child logs and output checkpoints stopped advancing"
         elif latest is None and now - outputs["started"] > startup_seconds:
             backend["stall_reason"] = "startup exceeded budget without a first child output"
+        for worker in outputs.get("active_workers", []):
+            age = now - max(worker["started"], worker["latest_progress"])
+            if age > stall_seconds:
+                backend["stall_reason"] = (
+                    f"{worker['model']} {worker['stage']} worker stopped advancing"
+                )
+            elif not worker["pid_exists"] and age > 30:
+                backend["stall_reason"] = (
+                    f"{worker['model']} {worker['stage']} worker exited without a final status"
+                )
     return backend
 
 

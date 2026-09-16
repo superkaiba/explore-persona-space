@@ -1,0 +1,353 @@
+{
+  "review_status": "PASS_numeric_with_interpretation_limits",
+  "reviewed_at_utc": "2026-09-16T02:04:55.047394+00:00",
+  "model": "qwen2.5-7b",
+  "source_git_sha": "b3d843420034183473f92ab64062aab263f73f41",
+  "retrieved_revision": "68c2b84cecc5692cdc4b8574b433600ad57edd6b",
+  "analysis_fingerprint": "c9b0654ddbee236598983648c0a26d8bbbc70415416b05e87c5ca36f53ebdc85",
+  "source_files": [
+    {
+      "path": "/tmp/issue2054-assistant-story-review/analysis/qwen2.5-7b.json",
+      "sha256": "2eb261c5884c9aa28a40accb4f964239e81f345376aa949a16515da01a6f1edd",
+      "receipt_checked": true
+    },
+    {
+      "path": "/tmp/issue2054-assistant-story-review/analysis/answers/qwen2.5-7b.npz",
+      "sha256": "205544757608d24de5523aa305601a71cc3ef0a887ec09344fac00746e6653c3",
+      "receipt_checked": true
+    }
+  ],
+  "coverage": {
+    "n_story_complete_five": 7994,
+    "n_chat_complete_five": 7999,
+    "n_shared_complete_five": 7993,
+    "n_query_matched_complete_five": 7993
+  },
+  "query_audit_counts": [
+    {
+      "cell": "conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b",
+      "n_original": 8000,
+      "n_shared_id": 7999,
+      "exact_query": 7999,
+      "whitespace_query": 0,
+      "mismatch_ids_count": 0,
+      "missing_chat_ids_count": 1
+    },
+    {
+      "cell": "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b",
+      "n_original": 7999,
+      "n_shared_id": 7999,
+      "exact_query": 7999,
+      "whitespace_query": 0,
+      "mismatch_ids_count": 0,
+      "missing_chat_ids_count": 0
+    }
+  ],
+  "fold_counts": {
+    "0": 1588,
+    "1": 1585,
+    "2": 1656,
+    "3": 1605,
+    "4": 1559
+  },
+  "checks": {
+    "all_reported_means_reproduced": true,
+    "max_mean_absolute_error": 1.0822986951097846e-10,
+    "all_reported_ci_endpoints_reproduced": true,
+    "max_ci_absolute_error": 2.2737367544323206e-12,
+    "bootstrap_seed": 1396352254,
+    "bootstrap_unit": "conversation",
+    "corrected_raw_identity_max_absolute_error": 0.0,
+    "normalized_identity_max_absolute_error": 0.0,
+    "equivalent_k5_sample_mean_identity_max_absolute_error": 0.00016425408830400556,
+    "equivalent_k5_sample_mean_identity_note": "Small residual arises from published float32 K5 means versus float64 arithmetic on original stored draws.",
+    "negative_corrected_estimates": 19,
+    "normalization_scale_by_fold": {
+      "0": [
+        2747.95455332888
+      ],
+      "1": [
+        2747.946225883762
+      ],
+      "2": [
+        2746.3408653416236
+      ],
+      "3": [
+        2740.3235711954085
+      ],
+      "4": [
+        2743.3256317724345
+      ]
+    },
+    "cap_fraction_matches_saved_masks": true
+  },
+  "summary_recomputed": {
+    "mean_answer_cosine": {
+      "mean": 0.8424737761191569,
+      "ci95": [
+        0.8410777554943009,
+        0.843675619568917
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    },
+    "centered_mean_answer_cosine": {
+      "mean": 0.4087991123328052,
+      "ci95": [
+        0.4037124099985391,
+        0.4129786682870759
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    },
+    "mean_answer_squared_distance": {
+      "mean": 913.0767984185813,
+      "ci95": [
+        903.3988510184516,
+        928.3516741226612
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    },
+    "normalized_mean_answer_squared_distance": {
+      "mean": 0.3326136393419556,
+      "ci95": [
+        0.32908609678449624,
+        0.33818001859179975
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    },
+    "cross_draw_cosine": {
+      "mean": 0.7043556575649931,
+      "ci95": [
+        0.7025592567244883,
+        0.7058671007311809
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    },
+    "story_within_draw_cosine": {
+      "mean": 0.8186113608661093,
+      "ci95": [
+        0.8166442532300149,
+        0.8201453200705819
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    },
+    "chat_within_draw_cosine": {
+      "mean": 0.7662533881941755,
+      "ci95": [
+        0.7644518493748912,
+        0.7681900887877796
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    },
+    "cross_draw_squared_distance": {
+      "mean": 2050.0790934979323,
+      "ci95": [
+        2034.1964233752674,
+        2071.162272448027
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    },
+    "story_within_squared_distance": {
+      "mean": 1346.7832448280658,
+      "ci95": [
+        1334.6355735224622,
+        1361.8713696366635
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    },
+    "chat_within_squared_distance": {
+      "mean": 1495.7224925608652,
+      "ci95": [
+        1480.050809872641,
+        1512.6194529634677
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    },
+    "corrected_mean_response_squared_displacement": {
+      "mean": 628.8262248034638,
+      "ci95": [
+        619.8632678393523,
+        643.9000978320661
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    },
+    "normalized_corrected_mean_response_squared_displacement": {
+      "mean": 0.22906839777466295,
+      "ci95": [
+        0.22580141709470028,
+        0.23456353302116628
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    },
+    "training_normalization_scale": {
+      "mean": 2745.1834184184595,
+      "ci95": [
+        2745.112471838207,
+        2745.2461867954908
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    },
+    "lexical_jaccard": {
+      "mean": 0.05668171016667642,
+      "ci95": [
+        0.05596536600592169,
+        0.05745412825514446
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    },
+    "story_answer_characters": {
+      "mean": 308.9945452270724,
+      "ci95": [
+        302.1107838108343,
+        314.3989215563618
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    },
+    "chat_answer_characters": {
+      "mean": 3570.757062429631,
+      "ci95": [
+        3527.076541974227,
+        3613.632274490178
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    },
+    "story_lexical_tokens": {
+      "mean": 60.251620167646685,
+      "ci95": [
+        58.904839859877384,
+        61.40242462154383
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    },
+    "chat_lexical_tokens": {
+      "mean": 747.689403227823,
+      "ci95": [
+        737.6698961591394,
+        756.2981471287377
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    },
+    "story_cap_fraction": {
+      "mean": 0.00027524083573126485,
+      "ci95": [
+        0.00012510947078693858,
+        0.0005004378831477543
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    },
+    "chat_cap_fraction": {
+      "mean": 0.11247341423746086,
+      "ci95": [
+        0.10936694607781834,
+        0.11562992618541229
+      ],
+      "n_conversations": 7993,
+      "bootstrap_draws": 200
+    }
+  },
+  "cap_audit": {
+    "story": {
+      "capped_answers": 11,
+      "answer_denominator": 39965,
+      "fraction": 0.00027524083573126485,
+      "caps_by_draw": [
+        1,
+        2,
+        4,
+        1,
+        3
+      ],
+      "cap_rate_by_draw": [
+        0.00012510947078693858,
+        0.00025021894157387716,
+        0.0005004378831477543,
+        0.00012510947078693858,
+        0.0003753284123608157
+      ],
+      "queries_with_any_cap": 11,
+      "queries_with_all_five_capped": 0,
+      "fresh_draw_budget": 2048,
+      "fresh_draw_stop": "ASCII double quote",
+      "draw0_budget": "not recorded per draw",
+      "draw0_stop_reason": "not recorded per draw"
+    },
+    "chat": {
+      "capped_answers": 4495,
+      "answer_denominator": 39965,
+      "fraction": 0.11247341423745777,
+      "caps_by_draw": [
+        447,
+        993,
+        1010,
+        999,
+        1046
+      ],
+      "cap_rate_by_draw": [
+        0.05592393344176154,
+        0.12423370449143001,
+        0.12636056549480795,
+        0.12498436131615163,
+        0.13086450644313774
+      ],
+      "queries_with_any_cap": 3341,
+      "queries_with_all_five_capped": 1,
+      "fresh_draw_budget": 4096,
+      "fresh_draw_stop": "<|im_end|>",
+      "draw0_budget": "not recorded per draw",
+      "draw0_stop_reason": "not recorded per draw"
+    }
+  },
+  "targeted_cap_metadata_provenance": {
+    "path": "/tmp/issue2054-assistant-story-review/reviews/stripped_s636_targeted_posthoc_provenance.json",
+    "sha256": "29c57d3562ec311b26af2b8411b0ed20870e177f5c3c80ed91ca3786cd761b7e",
+    "input_packet_hash_verified": true,
+    "scope": "One independently audited original/fresh source case plus full-corpus analyzer validation of fresh per-cell budgets and finish-reason masks."
+  },
+  "cap_free_posthoc_descriptive_subset": {
+    "n_conversations": 4648,
+    "means": {
+      "mean_answer_cosine": 0.8600056164431055,
+      "centered_mean_answer_cosine": 0.44485366270321053,
+      "corrected_mean_response_squared_displacement": 568.3392304216875,
+      "normalized_corrected_mean_response_squared_displacement": 0.2070382119895071
+    },
+    "note": "No fits; arithmetic subsetting of saved per-query metrics; outcome-selected, not a replacement for primary cohort."
+  },
+  "formulas": {
+    "cross": "Dcross(q)=1/25 sum_i,j ||s_i(q)-c_j(q)||^2",
+    "within": "Ds(q)=1/10 sum_i<j ||s_i(q)-s_j(q)||^2; Dc analogously",
+    "corrected": "Dcross-(Ds+Dc)/2",
+    "equivalent": "||mean(s)-mean(c)||^2-(Ds+Dc)/10 for exact K5 means",
+    "normalized": "corrected(q)/common_scale(training folds of q); common_scale=0.5*(mean_train ||K5_story||^2 + mean_train ||K5_chat||^2)"
+  },
+  "interpretation_and_limits": [
+    "Numerical PASS: all 20 reported means and all 40 interval endpoints reproduce from the saved per-conversation arrays; both noise-correction identities and normalization agree. No new fits or generations were run.",
+    "Complete-five pairing retains 7,993 conversations: story has 7,994 complete rows and chat 7,999. Source query-audit counts show all 7,999 shared raw story/chat IDs have exact question matches; the stored arrays cannot independently re-audit the original prefix text.",
+    "Raw K5 mean cosine is 0.842 but becomes 0.409 after each framing is centered using paired training folds. Cross-framing draw cosine (0.704) is below within-story (0.819) and within-chat (0.766). Shared activation orientation is not semantic equivalence.",
+    "The corrected squared displacement is a qualified diagnostic under independent identically distributed draws within each framing. The stored arithmetic is valid, but draw-zero per-draw caps/stops/runtime are not fully documented, so the statistic should not be called an established noise-free framing effect.",
+    "Fresh draws 1\u20134 use 2,048 tokens for story and 4,096 for Base chat, with different configured stop strings. Draw-zero per-draw budgets and stop reasons are absent in the audited source case. Its lower chat cap frequency alone does not prove a different numeric budget.",
+    "Cap fraction is implemented correctly as the mean of each cell\u2019s saved finish_reason==length flags. It is not a comparison at a common token threshold. Every fresh row is checked against k3.cap_for(cell) and every fresh cap mask against its saved finish_reason before analysis.",
+    "Chat outputs average 3,571 characters and 748 lexical tokens, versus 309 characters and 60 lexical tokens for story. The 11.247% versus 0.0275% cap rates, boundaries and long continuations materially limit full-answer activation and length comparisons.",
+    "Bootstrap intervals resample conversations (not the correlated 25 draw pairs), with 200 draws. They condition on stored captures, estimated training-fold centering/scales and the observed five responses; they do not refit those constants or include all generation/runtime uncertainty.",
+    "The correction retains 19 negative per-conversation estimates; clipping would upward-bias its mean. Corrected displacement is not centered R\u00b2 or a fraction of semantic disagreement.",
+    "The cap-free descriptive subset has 4,648 conversations and still shows a positive corrected representation difference, but this post hoc subset selects on generated outcomes and is not a replacement primary estimate."
+  ]
+}

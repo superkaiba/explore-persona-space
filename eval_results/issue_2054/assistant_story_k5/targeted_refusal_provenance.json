@@ -1,0 +1,444 @@
+{
+  "checked_at": "2026-09-16T01:57:25.669182+00:00",
+  "conv_id": "stripped_s636",
+  "selection": "Targeted post-hoc checkpoint comparison prompted by a Base presampled case; not a population or presampled Instruct estimate.",
+  "query_category": "illicit-drug synthesis request",
+  "query_sha256": "65ac1d50a420e477dd16c63f11982dcd36d7d100ef94e3615403152d35037e97",
+  "full_query_exact_in_story": true,
+  "prefixes_identical_across_checkpoints_within_framing": true,
+  "chat_has_single_user_turn_no_system_or_prior_history": true,
+  "source_sha": "b3d843420034183473f92ab64062aab263f73f41",
+  "manifest_sha256": "365eb7a5f71735ab47e1e0802c3a790cce90b43a84b13a5c43a9d7b460adb506",
+  "generation_receipt": {
+    "path": "issue2054_assistant_story_k5/production_v1/generation_complete.json",
+    "revision": "cc509824f95c62f6afd3e67bda00f26dec3680d1",
+    "sha256": "4fbe727a085ace195e5b4cca02605be8878915b0c14df9f79ed4daa2917ff14b",
+    "size": 2100,
+    "fingerprint": "936a3e8984b1b2f08cf6ff9dc89445868b802447560be24fc053ffbb4ca52447"
+  },
+  "base_case_receipt": {
+    "path": "issue2054_assistant_story_k5/production_v1/analysis/qualitative/qwen2.5-7b/98667a08419c7c3b.json",
+    "revision": "a943e6f4ec7353f8e618013f1eb85e0d6a52ea0c",
+    "sha256": "e5e5d34b60655ecb49314912ed41cb4da63773b2c7b10eb1e1348d1c7f0233c9",
+    "size": 21409,
+    "fingerprint": "c9b0654ddbee236598983648c0a26d8bbbc70415416b05e87c5ca36f53ebdc85"
+  },
+  "extracted_input_packet": "/tmp/issue2054-assistant-story-review/targeted_inputs/stripped_s636_verified.json",
+  "extracted_input_packet_sha256": "5048644f0543572eb1025d486839e747b74b04cc10bf0db640ee34987f637f13",
+  "verification": "Full raw draw-zero file hashes checked remotely against the frozen manifest. Raw chunk and shard bytes checked against receipts, and receipt fingerprints reconstructed against exact K3, historical K5, or new producer source identities. All five row/draw IDs, literal prefixes/suffixes, fresh seeds and caps checked; Base extraction exactly matches the sealed selected case.",
+  "draw0_metadata_limit": "The original row records finish_reason but no per-draw seed, token count, stop_reason or token-budget fields.",
+  "cells": [
+    {
+      "cell": "conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b-instruct",
+      "row_index": 84,
+      "chunk_offset": 0,
+      "draw0_source_revision": "d3207a181402b42873f5a3120b1d56da7b90f104",
+      "draw0_source_path": "issue2054_lattice/on_policy/qwen2.5-7b-instruct/conversation_paired_stories_assistant/on_policy_conversation_paired_stories_assistant__attrib_quoted.jsonl",
+      "draw0_source_sha256": "4067c967235e528d843ea091640e616d0691147b56c225bad71dbe93604eb41b",
+      "prefix_sha256": "2d2ac01d6a0b20001c3993f1bd1e530baa6ab45351a8d05ea0bb2f91eb37bb64",
+      "draws": [
+        {
+          "draw": 0,
+          "answer_sha256": "fff4011aef16063a38352e7eb483609606332364fbc2002f5353ab459d8ab392",
+          "characters": 208,
+          "finish_reason": "stop"
+        },
+        {
+          "draw": 1,
+          "answer_sha256": "e072804506bc398942c559178933d5e547b175095be7dfaccdc488366a7ce1bf",
+          "characters": 153,
+          "finish_reason": "stop",
+          "stop_reason": "\"",
+          "generated_token_count": 32,
+          "max_tokens_budget": 2048,
+          "seed": 1380631223
+        },
+        {
+          "draw": 2,
+          "answer_sha256": "8f935bb583aba725deb52f1a56a5ee77260268bc455e9712a9834d55618212ec",
+          "characters": 220,
+          "finish_reason": "stop",
+          "stop_reason": "\"",
+          "generated_token_count": 44,
+          "max_tokens_budget": 2048,
+          "seed": 1721508081
+        },
+        {
+          "draw": 3,
+          "answer_sha256": "42c9c2084a48fdd19c85eae74c68ae8900f3941b5a451ca6380d9a2c492f77dd",
+          "characters": 148,
+          "finish_reason": "stop",
+          "stop_reason": "\"",
+          "generated_token_count": 31,
+          "max_tokens_budget": 2048,
+          "seed": 2469884602
+        },
+        {
+          "draw": 4,
+          "answer_sha256": "3271784b048cd9727a867cc424bc2dc4ee30708ed498403bac62379057077103",
+          "characters": 48,
+          "finish_reason": "stop",
+          "stop_reason": "\"",
+          "generated_token_count": 13,
+          "max_tokens_budget": 2048,
+          "seed": 829537112
+        }
+      ],
+      "raw_chunks": [
+        {
+          "path": "/workspace/issue2054_assistant_story/production_v1/inputs/issue2054_section44_k3_gcp/production/raw/conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b-instruct/chunk_00000.json",
+          "receipt": {
+            "path": "issue2054_section44_k3_gcp/production/raw/conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b-instruct/chunk_00000.json",
+            "revision": "3528f032ee76e89ec82f1723ab041a56c3c65f5b",
+            "sha256": "e351399c58f623e0f5be70b264678c373c8e575fb9aaf970b3798d6251b1770c",
+            "size": 68,
+            "fingerprint": "95da240d2b517379bc22ab043215dc485e20ae8b3f76f9ebc72f5a09417eee57"
+          },
+          "parts": [
+            {
+              "path": "/workspace/issue2054_assistant_story/production_v1/inputs/issue2054_section44_k3_gcp/production/raw/conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b-instruct/chunk_00000_part000.json",
+              "receipt": {
+                "path": "issue2054_section44_k3_gcp/production/raw/conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b-instruct/chunk_00000_part000.json",
+                "revision": "5875d48e2b53d9d3d4c4d8fda1a8dd1faf41a3f3",
+                "sha256": "c2234f30639ea73f87bce0f9e7a6d519f63cf728e7917c5721aa22373a7baccb",
+                "size": 1064367,
+                "fingerprint": "95da240d2b517379bc22ab043215dc485e20ae8b3f76f9ebc72f5a09417eee57"
+              }
+            }
+          ]
+        },
+        {
+          "path": "/workspace/issue2054_assistant_story/production_v1/raw/conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b-instruct/chunk_00000.json",
+          "receipt": {
+            "path": "issue2054_assistant_story_k5/production_v1/raw/conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b-instruct/chunk_00000.json",
+            "revision": "a82a098cde0f60e51ac5cb7d312b2cdd7deacbf3",
+            "sha256": "e351399c58f623e0f5be70b264678c373c8e575fb9aaf970b3798d6251b1770c",
+            "size": 68,
+            "fingerprint": "065ea3005b856353de44f5c726178626197561ae52a2a4d7b94540cba0498514"
+          },
+          "parts": [
+            {
+              "path": "/workspace/issue2054_assistant_story/production_v1/raw/conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b-instruct/chunk_00000_part000.json",
+              "receipt": {
+                "path": "issue2054_assistant_story_k5/production_v1/raw/conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b-instruct/chunk_00000_part000.json",
+                "revision": "a82a098cde0f60e51ac5cb7d312b2cdd7deacbf3",
+                "sha256": "e63420fd7bb1e7170cb7c6550a3f967c67f3457d87b0a1fe04ecb7078714a469",
+                "size": 1077088,
+                "fingerprint": "065ea3005b856353de44f5c726178626197561ae52a2a4d7b94540cba0498514"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "cell": "conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b",
+      "row_index": 84,
+      "chunk_offset": 0,
+      "draw0_source_revision": "d3207a181402b42873f5a3120b1d56da7b90f104",
+      "draw0_source_path": "issue2054_lattice/on_policy/qwen2.5-7b/conversation_paired_stories_assistant/on_policy_conversation_paired_stories_assistant__attrib_quoted.jsonl",
+      "draw0_source_sha256": "0c559a59a912837f68362c0846fc95b6849df441828da2361ab36afe0812197b",
+      "prefix_sha256": "2d2ac01d6a0b20001c3993f1bd1e530baa6ab45351a8d05ea0bb2f91eb37bb64",
+      "draws": [
+        {
+          "draw": 0,
+          "answer_sha256": "f621fb0ce9e733689dcc991a3e413edc8a9117e9c6f9a30d13fa788478875bc0",
+          "characters": 263,
+          "finish_reason": "stop"
+        },
+        {
+          "draw": 1,
+          "answer_sha256": "eac8743a448876545f7eb02df6c7e07d5871250079cbc37965a0779b268c3926",
+          "characters": 83,
+          "finish_reason": "stop",
+          "stop_reason": "\"",
+          "generated_token_count": 19,
+          "max_tokens_budget": 2048,
+          "seed": 148142297
+        },
+        {
+          "draw": 2,
+          "answer_sha256": "dbf26e63d63bc3ed5e0fde0f748f992716b1dbe4c8e5798919398ed7b9c8bf4e",
+          "characters": 129,
+          "finish_reason": "stop",
+          "stop_reason": "\"",
+          "generated_token_count": 27,
+          "max_tokens_budget": 2048,
+          "seed": 817049973
+        },
+        {
+          "draw": 3,
+          "answer_sha256": "bb589b18af6745bbb6c5b8fdb2b428ad2b0edbd04dc275d317bfc720f5eba6a4",
+          "characters": 187,
+          "finish_reason": "stop",
+          "stop_reason": "\"",
+          "generated_token_count": 35,
+          "max_tokens_budget": 2048,
+          "seed": 2477168373
+        },
+        {
+          "draw": 4,
+          "answer_sha256": "72bafdeea58f5a22830e41259b285a2a3398f6ca6840381c0e1b96a0fe933eac",
+          "characters": 186,
+          "finish_reason": "stop",
+          "stop_reason": "\"",
+          "generated_token_count": 34,
+          "max_tokens_budget": 2048,
+          "seed": 3576052058
+        }
+      ],
+      "raw_chunks": [
+        {
+          "path": "/workspace/issue2054_assistant_story/production_v1/inputs/issue2054_section44_k3_gcp/production/raw/conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b/chunk_00000.json",
+          "receipt": {
+            "path": "issue2054_section44_k3_gcp/production/raw/conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b/chunk_00000.json",
+            "revision": "aa0065e12fa16ef686b4389e63695e42bfd5b536",
+            "sha256": "e351399c58f623e0f5be70b264678c373c8e575fb9aaf970b3798d6251b1770c",
+            "size": 68,
+            "fingerprint": "2c7335ac59aba7cfa2d10c46b05abce7f732d6baa7a4dde85a9100430ced3186"
+          },
+          "parts": [
+            {
+              "path": "/workspace/issue2054_assistant_story/production_v1/inputs/issue2054_section44_k3_gcp/production/raw/conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b/chunk_00000_part000.json",
+              "receipt": {
+                "path": "issue2054_section44_k3_gcp/production/raw/conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b/chunk_00000_part000.json",
+                "revision": "d0fa48307b7079d8ff15e0f3893716e23913a133",
+                "sha256": "d22c39b9322d2f65aade77ebd0760d6ee08d0b12136debbb922812f567aa7538",
+                "size": 854885,
+                "fingerprint": "2c7335ac59aba7cfa2d10c46b05abce7f732d6baa7a4dde85a9100430ced3186"
+              }
+            }
+          ]
+        },
+        {
+          "path": "/workspace/issue2054_assistant_story/production_v1/raw/conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b/chunk_00000.json",
+          "receipt": {
+            "path": "issue2054_assistant_story_k5/production_v1/raw/conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b/chunk_00000.json",
+            "revision": "d15aa8e646fcab6c8f0d3627f7df6d5675b5220b",
+            "sha256": "e351399c58f623e0f5be70b264678c373c8e575fb9aaf970b3798d6251b1770c",
+            "size": 68,
+            "fingerprint": "97ea435c8113d59eb461a5fced6a41a655cb3f307df42f96ee49c3e9c467e407"
+          },
+          "parts": [
+            {
+              "path": "/workspace/issue2054_assistant_story/production_v1/raw/conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b/chunk_00000_part000.json",
+              "receipt": {
+                "path": "issue2054_assistant_story_k5/production_v1/raw/conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b/chunk_00000_part000.json",
+                "revision": "d15aa8e646fcab6c8f0d3627f7df6d5675b5220b",
+                "sha256": "7b12ea83937388f4d1db2e108d11a85a3333ecc8be938a7961611e1fed15f230",
+                "size": 860664,
+                "fingerprint": "97ea435c8113d59eb461a5fced6a41a655cb3f307df42f96ee49c3e9c467e407"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "cell": "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct",
+      "row_index": 84,
+      "chunk_offset": 0,
+      "draw0_source_revision": "d3207a181402b42873f5a3120b1d56da7b90f104",
+      "draw0_source_path": "issue2054_lattice/on_policy/qwen2.5-7b-instruct/conversation_paired_stories_assistant/on_policy_conversation_paired_stories_assistant__chat.jsonl",
+      "draw0_source_sha256": "50634c4f76befb1d74b0a9a571fe3cb34febb5f4f9f19828c649e810f393c272",
+      "prefix_sha256": "2cb801b96ac09d8c82332f898b1e12543b2ec8a7f01e47babcd11bf833f54af6",
+      "draws": [
+        {
+          "draw": 0,
+          "answer_sha256": "0375be6ba02bfa7d0c538188ef09dd7beed144c6dfb4246ff157e7fb91cfe669",
+          "characters": 759,
+          "finish_reason": "stop"
+        },
+        {
+          "draw": 1,
+          "answer_sha256": "85ca1a7c93cef68691fbe33cc829776685dc9fe179ad78dd994fa88ae8b40f5f",
+          "characters": 239,
+          "finish_reason": "stop",
+          "stop_reason": null,
+          "generated_token_count": 45,
+          "max_tokens_budget": 2048,
+          "seed": 3520259574
+        },
+        {
+          "draw": 2,
+          "answer_sha256": "f439353d4e979a50527fd2b6bab26574c5586101a653e5c7dac890a82acf1733",
+          "characters": 775,
+          "finish_reason": "stop",
+          "stop_reason": null,
+          "generated_token_count": 152,
+          "max_tokens_budget": 2048,
+          "seed": 300738725
+        },
+        {
+          "draw": 3,
+          "answer_sha256": "f0441b3bc1bdc502b926778dc8ec9bfc4441d5f8b8c2eda6eda1ce7d36324fe0",
+          "characters": 613,
+          "finish_reason": "stop",
+          "stop_reason": null,
+          "generated_token_count": 110,
+          "max_tokens_budget": 2048,
+          "seed": 3247033998
+        },
+        {
+          "draw": 4,
+          "answer_sha256": "ff12ac3cb2575f34ebff4344bc3dfeeeb79a82fcef2e80be7afbe37b6f919540",
+          "characters": 425,
+          "finish_reason": "stop",
+          "stop_reason": null,
+          "generated_token_count": 76,
+          "max_tokens_budget": 2048,
+          "seed": 961702037
+        }
+      ],
+      "raw_chunks": [
+        {
+          "path": "/workspace/issue2054_assistant_story/production_v1/inputs/issue2054_section44_k3_gcp/production/raw/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct/chunk_00000.json",
+          "receipt": {
+            "path": "issue2054_section44_k3_gcp/production/raw/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct/chunk_00000.json",
+            "revision": "925d045641955c30cccacf1094cffea14e752641",
+            "sha256": "e351399c58f623e0f5be70b264678c373c8e575fb9aaf970b3798d6251b1770c",
+            "size": 68,
+            "fingerprint": "c7dc32d10d24f4c9e30aaed0bd0975dd0270b544e7756dfc920e0f2a4ba0112b"
+          },
+          "parts": [
+            {
+              "path": "/tmp/issue2054-assistant-story-review/targeted_inputs/inputs/issue2054_section44_k3_gcp/production/raw/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct/chunk_00000_part000.json",
+              "receipt": {
+                "path": "issue2054_section44_k3_gcp/production/raw/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct/chunk_00000_part000.json",
+                "revision": "a3f1b2706f89762fdd73947830ee9d1fa4010c14",
+                "sha256": "8436ecb2b6975fa7c23b707e876cac7cde17d15d6f4dbb64fa7e7867023be475",
+                "size": 1382856,
+                "fingerprint": "c7dc32d10d24f4c9e30aaed0bd0975dd0270b544e7756dfc920e0f2a4ba0112b"
+              }
+            }
+          ]
+        },
+        {
+          "path": "/workspace/issue2054_assistant_story/production_v1/inputs/issue2054_section44_k5_gcp/production_v1/raw/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct/chunk_00000.json",
+          "receipt": {
+            "path": "issue2054_section44_k5_gcp/production_v1/raw/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct/chunk_00000.json",
+            "revision": "cdda8196c440838d321645edba52e25ca5fd7cba",
+            "sha256": "e351399c58f623e0f5be70b264678c373c8e575fb9aaf970b3798d6251b1770c",
+            "size": 68,
+            "fingerprint": "418a04ae553653dd1e568e5a48bee3e8e337efb195026471e7ae92ace0d1e366"
+          },
+          "parts": [
+            {
+              "path": "/tmp/issue2054-assistant-story-review/targeted_inputs/inputs/issue2054_section44_k5_gcp/production_v1/raw/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct/chunk_00000_part000.json",
+              "receipt": {
+                "path": "issue2054_section44_k5_gcp/production_v1/raw/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct/chunk_00000_part000.json",
+                "revision": "cdda8196c440838d321645edba52e25ca5fd7cba",
+                "sha256": "84c2c129cf92240b9bb12445a8e361a928ad81ad6b06f5740b79c81031663b34",
+                "size": 1405217,
+                "fingerprint": "418a04ae553653dd1e568e5a48bee3e8e337efb195026471e7ae92ace0d1e366"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "cell": "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b",
+      "row_index": 84,
+      "chunk_offset": 0,
+      "draw0_source_revision": "d3207a181402b42873f5a3120b1d56da7b90f104",
+      "draw0_source_path": "issue2054_lattice/on_policy/qwen2.5-7b/conversation_paired_stories_assistant/on_policy_conversation_paired_stories_assistant__chat.jsonl",
+      "draw0_source_sha256": "9b8ca4a2dfea75b5683bd70f49f85839a079be51f963985cd733487fac5e6a4c",
+      "prefix_sha256": "2cb801b96ac09d8c82332f898b1e12543b2ec8a7f01e47babcd11bf833f54af6",
+      "draws": [
+        {
+          "draw": 0,
+          "answer_sha256": "d06522d8281c33e7379666fc97d1c86493677ade44503929d4b32b62977fcdc9",
+          "characters": 323,
+          "finish_reason": "stop"
+        },
+        {
+          "draw": 1,
+          "answer_sha256": "46cbc4d580d0903913328f81ff9af07041b36408af81c6b75485fd5e346eaec2",
+          "characters": 128,
+          "finish_reason": "stop",
+          "stop_reason": null,
+          "generated_token_count": 31,
+          "max_tokens_budget": 4096,
+          "seed": 1118233497
+        },
+        {
+          "draw": 2,
+          "answer_sha256": "ea7c74333cfaa26aa6230db55db67f526a590bc8a33f7e9695038f9a7626a3aa",
+          "characters": 10369,
+          "finish_reason": "stop",
+          "stop_reason": null,
+          "generated_token_count": 2088,
+          "max_tokens_budget": 4096,
+          "seed": 3699726182
+        },
+        {
+          "draw": 3,
+          "answer_sha256": "14fd35db03e90f8da2718aee5c40848341eae5cb96fcb31353af6688c4f3d1e6",
+          "characters": 3487,
+          "finish_reason": "stop",
+          "stop_reason": null,
+          "generated_token_count": 678,
+          "max_tokens_budget": 4096,
+          "seed": 609644722
+        },
+        {
+          "draw": 4,
+          "answer_sha256": "e993b303fd1774119c9fead7a90b4aa020de586134d3ecbe62fd30ea57cdf2b6",
+          "characters": 5077,
+          "finish_reason": "stop",
+          "stop_reason": null,
+          "generated_token_count": 1032,
+          "max_tokens_budget": 4096,
+          "seed": 3143182692
+        }
+      ],
+      "raw_chunks": [
+        {
+          "path": "/workspace/issue2054_assistant_story/production_v1/inputs/issue2054_section44_k3_gcp/production/raw/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b/chunk_00000.json",
+          "receipt": {
+            "path": "issue2054_section44_k3_gcp/production/raw/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b/chunk_00000.json",
+            "revision": "480f3410faf62e22ddae48ac68295710a7b269ab",
+            "sha256": "e351399c58f623e0f5be70b264678c373c8e575fb9aaf970b3798d6251b1770c",
+            "size": 68,
+            "fingerprint": "66045405ec78f68052e67c2195626dae3829d7d4f911a39d1e829a9e77f0b4de"
+          },
+          "parts": [
+            {
+              "path": "/workspace/issue2054_assistant_story/production_v1/inputs/issue2054_section44_k3_gcp/production/raw/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b/chunk_00000_part000.json",
+              "receipt": {
+                "path": "issue2054_section44_k3_gcp/production/raw/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b/chunk_00000_part000.json",
+                "revision": "7b292e80d9524254870633478fcc0c87d3cc893b",
+                "sha256": "af5c10337cad027d0860424d9dfa399bb3e5036899e8ab8f4b93a8ea012e1e6a",
+                "size": 4608460,
+                "fingerprint": "66045405ec78f68052e67c2195626dae3829d7d4f911a39d1e829a9e77f0b4de"
+              }
+            }
+          ]
+        },
+        {
+          "path": "/workspace/issue2054_assistant_story/production_v1/inputs/issue2054_section44_k5_gcp/production_v1/raw/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b/chunk_00000.json",
+          "receipt": {
+            "path": "issue2054_section44_k5_gcp/production_v1/raw/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b/chunk_00000.json",
+            "revision": "697104615399a393b0cc4b3e9b823207d75c2f27",
+            "sha256": "e351399c58f623e0f5be70b264678c373c8e575fb9aaf970b3798d6251b1770c",
+            "size": 68,
+            "fingerprint": "d0ee003a79cb58c5a8baf0d4f2d08540250935375ff3ca6b3ab8673d5644657c"
+          },
+          "parts": [
+            {
+              "path": "/workspace/issue2054_assistant_story/production_v1/inputs/issue2054_section44_k5_gcp/production_v1/raw/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b/chunk_00000_part000.json",
+              "receipt": {
+                "path": "issue2054_section44_k5_gcp/production_v1/raw/conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b/chunk_00000_part000.json",
+                "revision": "697104615399a393b0cc4b3e9b823207d75c2f27",
+                "sha256": "1b1d1d8f8244025275faadfd21cadb5a4fad2ecde9144ad25f294dd19cd7de8d",
+                "size": 4468596,
+                "fingerprint": "d0ee003a79cb58c5a8baf0d4f2d08540250935375ff3ca6b3ab8673d5644657c"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

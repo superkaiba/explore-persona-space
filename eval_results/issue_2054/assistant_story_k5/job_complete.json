@@ -1,0 +1,63 @@
+{
+  "status": "complete",
+  "stage": "generation_capture_aggregation",
+  "source_sha": "b3d843420034183473f92ab64062aab263f73f41",
+  "started": 1789514754.3539243,
+  "finished": 1789527235.3851008,
+  "parent_revision": "5ae90722bf11330deddfa42cf41f9fec6da8b69f",
+  "hf_prefix": "issue2054_assistant_story_k5/production_v1",
+  "coverage": [
+    {
+      "cell": "conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b",
+      "original_rows": 8000,
+      "complete_five_rows": 7994,
+      "complete_three_rows": 7999,
+      "empty_draw_rows_excluded": 6,
+      "cap_counts_each_draw": [
+        1,
+        2,
+        4,
+        1,
+        3
+      ],
+      "original_draw_stopped_valid": 7993,
+      "all_five_stopped_valid": 7983
+    },
+    {
+      "cell": "conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b-instruct",
+      "original_rows": 8000,
+      "complete_five_rows": 7999,
+      "complete_three_rows": 8000,
+      "empty_draw_rows_excluded": 1,
+      "cap_counts_each_draw": [
+        78,
+        69,
+        71,
+        64,
+        76
+      ],
+      "original_draw_stopped_valid": 7921,
+      "all_five_stopped_valid": 7674
+    }
+  ],
+  "restore": {
+    "revision": "5ae90722bf11330deddfa42cf41f9fec6da8b69f",
+    "cells": [
+      "conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b",
+      "conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b-instruct"
+    ],
+    "capture_chunks": 64,
+    "reused_fresh_answers": 32000,
+    "first_chunks_only": false,
+    "manifest_sha256": "365eb7a5f71735ab47e1e0802c3a790cce90b43a84b13a5c43a9d7b460adb506"
+  },
+  "selected_cells": [
+    "conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b",
+    "conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b-instruct"
+  ],
+  "manifest_sha256": "365eb7a5f71735ab47e1e0802c3a790cce90b43a84b13a5c43a9d7b460adb506",
+  "inventory_sha256": "93337dc0cd6d2f684246f984f4f373cf61f5da152750a0c5583267eea4b94a83",
+  "outputs_revision": "f29c87604af1f7ba98cbc4d4cf17524d357cc11e",
+  "analysis_requested": true,
+  "generation_revision": "cc509824f95c62f6afd3e67bda00f26dec3680d1"
+}

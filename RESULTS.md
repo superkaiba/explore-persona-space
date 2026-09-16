@@ -1,5 +1,7 @@
 # Explore Persona Space: Results
 
+**2026-09-16 — Assistant in a story (K5):** A source-only story-assistant map transfers to four named story characters (mean held-out R² 0.466 Base / 0.478 Instruct). Chat → story assistant remains negative (−0.344 / −0.243); story → chat is positive only for Instruct (0.270). Matched answers show both agreement and content differences; activation similarity is not semantic equivalence. [Results](eval_results/issue_2054/assistant_story_k5/README.md) · [Task 2054](https://eps.superkaiba.com/tasks/2054).
+
 **2026-09-07 — Rollout-count ablation:** With the paper's Qwen2.5-7B-Instruct layer-19 maps frozen, averaging K=1→5 evaluation answers raises held-out R² by 0.052 (linear) and 0.055 (nonlinear). Extending K=5→10 adds 0.0077 and 0.0064, with paired 95% intervals above zero for both. Whitened-cosine/CSLS top-1 on 942 fixed candidates rises 97.35%→97.88% and 97.88%→98.09%; the nonlinear retrieval change remains unresolved (95% CI −0.21 to +0.64 percentage points). Training-target K and K>10 are untested. [Task 1901](https://eps.superkaiba.com/tasks/1901) · [K=1–5 results](eval_results/issue_1901/k_rollout_ablation/README.md) · [K=10 results](eval_results/issue_1901/k10_rollout_ablation/README.md).
 
 **Goals:**

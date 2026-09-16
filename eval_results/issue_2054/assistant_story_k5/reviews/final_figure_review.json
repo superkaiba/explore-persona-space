@@ -1,0 +1,55 @@
+{
+  "status": "PASS",
+  "reviewed_at_utc": "2026-09-16T03:02:47.351409+00:00",
+  "scope": "Independent read-only review of final color/grayscale figures, plotter, numerical aggregation and report claims. No source or figure edits; no new fits or generations; no external judge.",
+  "production_source_sha": "b3d843420034183473f92ab64062aab263f73f41",
+  "production_revision": "400ad464ce9f092722f737dd336fc31a03fba524",
+  "figure_revision": "062eb3fd1b090ecc161048a542eac07307c2b4f6",
+  "inputs": {
+    "results": {
+      "path": "/tmp/issue2054-assistant-story-review/analysis/results.json",
+      "sha256": "d9f67bd2dfaf0cbd14a97af3234adb943e82bdf6b6150071af2b061817fe8070"
+    },
+    "report": {
+      "path": "/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration/eval_results/issue_2054/assistant_story_k5/README.md",
+      "sha256": "5a746b4785abde3acb5cdf5bbb2b198253ae4bb3fe5453e1b1004448748c8805"
+    },
+    "figure_summary": {
+      "path": "/mnt/eps-data/thomasjiralerspong/wt-2054-k5-transfer-calibration/figures/issue_2054/assistant_story_k5/summary.json",
+      "sha256": "f79c4dc512b3a21962d581e540653c3a4643d7fc73c0d771630b65bb942d777c"
+    },
+    "plotter_sha256": "e90b834ccd3ef55c8659fce23e5d7123ce16824f9876da5a0abbf8b4f28e190a",
+    "style_sha256": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1"
+  },
+  "figures": {
+    "assistant_story_transfer": {
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/062eb3fd1b090ecc161048a542eac07307c2b4f6/issue2054_assistant_story_k5/production_v1/figures/assistant_story_transfer.png",
+      "png_sha256": "c3ea5a9906301e7a9bbee93eba14a0d2c3512dc016ff41b4eaf0282151da5b4e",
+      "grayscale_sha256": "8354757a5c665d857e23cae0c4431c4fc7559b97a9048950af5b66d9dae07d2a",
+      "pdf_sha256": "9237985b301ba21051bceaea9a8ef32c7a6f9ef2f3872573c0a023fd7c599bb8"
+    },
+    "assistant_story_answer_similarity": {
+      "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/062eb3fd1b090ecc161048a542eac07307c2b4f6/issue2054_assistant_story_k5/production_v1/figures/assistant_story_answer_similarity.png",
+      "png_sha256": "c1ce6a0d7c3d880f181e84e947c34749d29db3b335ba90e22119925d25860d0a",
+      "grayscale_sha256": "dc207c11efbb508bc987697821508255454ad1814fbe5c59c8f51c54cf463540",
+      "pdf_sha256": "49a1993f65ac72b171ff3d06bcfaa374f4394b3bc958e31459b90103588096da"
+    }
+  },
+  "checks": [
+    "Viewed both color PNGs and both grayscale PNGs; source/target direction, checkpoint identity, y-axis categories and shape legend match the code and data. No material clipping or grayscale ambiguity.",
+    "All 96 plotted transfer means and fold-min/max endpoints independently reproduced from the 120 primary transfer-fold records; means agree exactly. Every directed pair has the five unique folds.",
+    "All 10 plotted answer means match the hash-verified per-query NPZ arrays. Independently reproduced all ten 95% percentile intervals from 200 conversation multinomial bootstrap resamples: maximum absolute delta 3.3306690738754696e-16.",
+    "Matched-question counts 7993 Base and 7999 Instruct agree with NPZ lengths and coverage. Source results, plotter, style and six output-file hashes agree with summary.json.",
+    "All 14 report transfer-table rows independently recalculated, including pooled-six diagnostics and equal-character/equal-fold means. Displayed R2/top1 rounding is correct.",
+    "Report answer means, lengths, cap fractions, normalized corrected-distance means/intervals, full retrieval pool range 1543\u20131659 and nominal chance 0.060\u20130.065% agree with current results.",
+    "Exact-query sensitivity preserves every frozen directional fold-mean R2 sign; matched character pools 482\u2013648. Both identity-plus-bias controls have negative fold-averaged R2 in every direction. Instruct chat-to-story bias versus bias+scale retrieval 21.1% versus 8.3% is correct.",
+    "Report explicitly states that Direct is source-only, calibration uses target-training examples, transfer whiskers are fold ranges and answer intervals bootstrap conversations. It distinguishes activation similarity from semantic equivalence and states narrative/stopping/selection confounds.",
+    "Qualitative report summaries and 50-case/100-prefix/500-answer counts agree with the colocated source-hashed qualitative audit. This figure review did not repeat all fifty full-text case reads; targeted stripped_s636 was independently read in the preceding targeted review."
+  ],
+  "must_fixes": [],
+  "interpretive_limits": [
+    "Keep the report/caption with the figures: calibration and uncertainty definitions are in the report and summary metadata, not printed inside the PNGs.",
+    "Answer intervals are conditional on saved per-query measurements and fixed training-fold centering constants; the bootstrap does not refit them.",
+    "The 713-file completion verification is attributed to the independent monitor; this review checked local results/answer arrays/plot outputs and did not download all production files again."
+  ]
+}

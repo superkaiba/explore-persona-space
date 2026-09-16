@@ -1,0 +1,12 @@
+{
+  "status": "complete",
+  "analysis_fingerprint": "c9b0654ddbee236598983648c0a26d8bbbc70415416b05e87c5ca36f53ebdc85",
+  "source_sha": "b3d843420034183473f92ab64062aab263f73f41",
+  "results_sha256": "d9f67bd2dfaf0cbd14a97af3234adb943e82bdf6b6150071af2b061817fe8070",
+  "results_revision": "a92a5e7f0d8b12165d5f1b7718d88da4bee93ac7",
+  "results_path": "analysis/results.json",
+  "results_hf_path": "issue2054_assistant_story_k5/production_v1/analysis/results.json",
+  "inventory_sha256": "637d4c1f8ea87338d97e79dbcc3d0314dbf9467c58b09f77c6e082ba1047fac5",
+  "inventory_path": "analysis/inventory.json",
+  "completed_at": 1789527153.3255293
+}

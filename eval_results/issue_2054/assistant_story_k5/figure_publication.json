@@ -1,0 +1,44 @@
+{
+  "repo": "superkaiba1/explore-persona-space-data",
+  "revision": "062eb3fd1b090ecc161048a542eac07307c2b4f6",
+  "prefix": "issue2054_assistant_story_k5/production_v1/figures",
+  "files": {
+    "issue2054_assistant_story_k5/production_v1/figures/assistant_story_transfer.pdf": {
+      "sha256": "9237985b301ba21051bceaea9a8ef32c7a6f9ef2f3872573c0a023fd7c599bb8",
+      "size": 29835
+    },
+    "issue2054_assistant_story_k5/production_v1/figures/assistant_story_transfer.png": {
+      "sha256": "c3ea5a9906301e7a9bbee93eba14a0d2c3512dc016ff41b4eaf0282151da5b4e",
+      "size": 302737
+    },
+    "issue2054_assistant_story_k5/production_v1/figures/assistant_story_transfer_grayscale.png": {
+      "sha256": "8354757a5c665d857e23cae0c4431c4fc7559b97a9048950af5b66d9dae07d2a",
+      "size": 134885
+    },
+    "issue2054_assistant_story_k5/production_v1/figures/assistant_story_answer_similarity.pdf": {
+      "sha256": "49a1993f65ac72b171ff3d06bcfaa374f4394b3bc958e31459b90103588096da",
+      "size": 18470
+    },
+    "issue2054_assistant_story_k5/production_v1/figures/assistant_story_answer_similarity.png": {
+      "sha256": "c1ce6a0d7c3d880f181e84e947c34749d29db3b335ba90e22119925d25860d0a",
+      "size": 200953
+    },
+    "issue2054_assistant_story_k5/production_v1/figures/assistant_story_answer_similarity_grayscale.png": {
+      "sha256": "dc207c11efbb508bc987697821508255454ad1814fbe5c59c8f51c54cf463540",
+      "size": 86692
+    },
+    "issue2054_assistant_story_k5/production_v1/figures/summary.json": {
+      "sha256": "f79c4dc512b3a21962d581e540653c3a4643d7fc73c0d771630b65bb942d777c",
+      "size": 1439337
+    }
+  },
+  "urls": {
+    "assistant_story_transfer.pdf": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/062eb3fd1b090ecc161048a542eac07307c2b4f6/issue2054_assistant_story_k5/production_v1/figures/assistant_story_transfer.pdf",
+    "assistant_story_transfer.png": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/062eb3fd1b090ecc161048a542eac07307c2b4f6/issue2054_assistant_story_k5/production_v1/figures/assistant_story_transfer.png",
+    "assistant_story_transfer_grayscale.png": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/062eb3fd1b090ecc161048a542eac07307c2b4f6/issue2054_assistant_story_k5/production_v1/figures/assistant_story_transfer_grayscale.png",
+    "assistant_story_answer_similarity.pdf": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/062eb3fd1b090ecc161048a542eac07307c2b4f6/issue2054_assistant_story_k5/production_v1/figures/assistant_story_answer_similarity.pdf",
+    "assistant_story_answer_similarity.png": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/062eb3fd1b090ecc161048a542eac07307c2b4f6/issue2054_assistant_story_k5/production_v1/figures/assistant_story_answer_similarity.png",
+    "assistant_story_answer_similarity_grayscale.png": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/062eb3fd1b090ecc161048a542eac07307c2b4f6/issue2054_assistant_story_k5/production_v1/figures/assistant_story_answer_similarity_grayscale.png",
+    "summary.json": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/062eb3fd1b090ecc161048a542eac07307c2b4f6/issue2054_assistant_story_k5/production_v1/figures/summary.json"
+  }
+}

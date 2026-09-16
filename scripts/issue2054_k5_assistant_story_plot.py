@@ -22,7 +22,9 @@ from explore_persona_space.analysis.c2a_plot_style import (
     panel_header,
     save_c2a_figure,
     set_c2a_style,
+    style_axis,
 )
+from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
 from scripts.issue2054_k5_assistant_story_analysis import STORY
 from scripts.issue2054_k5_loso_calibration import SETTINGS
 
@@ -81,6 +83,15 @@ def transfer_figure(summary, out):
     fig, fraction = c2a_figure("full", 0.95)
     axes = fig.subplots(2, 2)
     labels = ["Assistant, chat", "Assistant, plain", "HELIOS", "Wren", "Dana", "Vex"]
+    endpoints = [
+        endpoint
+        for result in summary.values()
+        for pair in result["transfers"]
+        for method in pair["methods"].values()
+        for endpoint in method["fold_range"]
+    ]
+    low, high = min(0, min(endpoints)), max(0, max(endpoints))
+    padding = 0.05 * (high - low)
     for row, (model, result) in enumerate(summary.items()):
         checkpoint = "Instruction-tuned" if model.endswith("-instruct") else "Base"
         for col, direction in enumerate(("out", "in")):
@@ -110,6 +121,8 @@ def transfer_figure(summary, out):
             ax.axvline(0, color=ROLES["control"].color, linewidth=0.8)
             ax.grid(False, axis="y")
             ax.grid(True, axis="x", alpha=0.2)
+            style_axis(ax, grid_axis="x")
+            ax.set_xlim(low - padding, high + padding)
             ax.set_xlabel(better_label("Held-out $R^2$"))
             title = "Story assistant → target" if direction == "out" else "Source → story assistant"
             panel_header(ax, "ABCD"[row * 2 + col], checkpoint, title, kicker_y=1.14)
@@ -169,6 +182,7 @@ def answer_figure(summary, out):
         ax.set_xlabel(better_label("Answer-vector cosine"))
         ax.grid(False, axis="y")
         ax.grid(True, axis="x", alpha=0.2)
+        style_axis(ax, grid_axis="x")
         checkpoint = "Instruction-tuned" if model.endswith("-instruct") else "Base"
         n = result["coverage"]["n_query_matched_complete_five"]
         panel_header(ax, letter, checkpoint, f"{n:,} matched questions", kicker_y=1.14)
@@ -202,6 +216,16 @@ def main():
         "render": renders,
         "models": summary,
         "source_sha256": hashlib.sha256(args.results.read_bytes()).hexdigest(),
+        "plotter_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "style_sha256": hashlib.sha256(
+            (REPO / "src/explore_persona_space/analysis/c2a_plot_style.py").read_bytes()
+        ).hexdigest(),
+        "metadata": as_metadata_dict(git_provenance(cwd=REPO), phase="assistant_story_plot"),
+        "outputs_sha256": {
+            name: hashlib.sha256((args.out / name).read_bytes()).hexdigest()
+            for stem in ("assistant_story_transfer", "assistant_story_answer_similarity")
+            for name in (f"{stem}.pdf", f"{stem}.png", f"{stem}_grayscale.png")
+        },
         "transfer_errorbars": "Minimum and maximum across the five held-out folds; not confidence intervals.",
         "answer_errorbars": "95% percentile intervals from 200 conversation-level bootstrap resamples.",
         "calibration": "Bias and bias plus scale use target-training examples; Direct uses none.",
