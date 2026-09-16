@@ -140,8 +140,8 @@ def render(data: dict, output: Path) -> dict:
     """Place joint/separate bars, Instruct transfer bars and turn heatmaps in one row."""
     set_c2a_style()
     fig, fraction = c2a_figure("full", aspect=0.55)
-    a = fig.add_axes([0.080, 0.31, 0.245, 0.57])
-    b = fig.add_axes([0.465, 0.31, 0.245, 0.57])
+    a = fig.add_axes([0.105, 0.31, 0.215, 0.57])
+    b = fig.add_axes([0.510, 0.31, 0.200, 0.57])
     for ax, letter, title in [(a, "A", "Separate and shared"), (b, "B", "Transfer (Instruct)")]:
         style_axis(ax, grid_axis="none")
         panel_header(ax, letter, title, kicker_y=1.07)
@@ -164,7 +164,18 @@ def render(data: dict, output: Path) -> dict:
             hatch=hatch,
             label=label,
         )
-    a.set_yticks(range(7), ["Chat", "Plain", "HELIOS", "Wren", "Dana", "Vex", "Story"])
+    a.set_yticks(
+        range(7),
+        [
+            "Assistant\n(chat)",
+            "Assistant\n(plain text)",
+            "HELIOS",
+            "Wren",
+            "Dana",
+            "Vex",
+            "Assistant\n(story)",
+        ],
+    )
     a.set_ylim(6.5, -0.5)
     a.set_xlim(0, 0.75)
     a.set_xticks([0, 0.3, 0.6])
@@ -192,7 +203,13 @@ def render(data: dict, output: Path) -> dict:
                 error_kw={"ecolor": INK, "capsize": 2, "elinewidth": 0.8, "capthick": 0.8},
             )
     b.set_yticks(
-        range(4), ["Story →\ncharacters", "Chat →\nstory", "Plain →\nstory", "Story →\nchat"]
+        range(4),
+        [
+            "Assistant (story)\n→ characters",
+            "Assistant (chat)\n→ assistant (story)",
+            "Assistant (plain text)\n→ assistant (story)",
+            "Assistant (story)\n→ assistant (chat)",
+        ],
     )
     b.set_ylim(3.5, -0.5)
     endpoints = [

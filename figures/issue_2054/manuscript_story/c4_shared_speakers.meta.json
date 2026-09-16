@@ -28,23 +28,23 @@
       "0.0",
       "0.3",
       "0.6",
-      "Chat",
-      "Plain",
+      "Assistant\n(chat)",
+      "Assistant\n(plain text)",
       "HELIOS",
       "Wren",
       "Dana",
       "Vex",
-      "Story",
+      "Assistant\n(story)",
       "Base: separate",
       "Instruct: separate",
       "Instruct: shared",
       "B  \u00b7  TRANSFER (INSTRUCT)",
       "\u22121.0",
       "0.5",
-      "Story \u2192\ncharacters",
-      "Chat \u2192\nstory",
-      "Plain \u2192\nstory",
-      "Story \u2192\nchat",
+      "Assistant (story)\n\u2192 characters",
+      "Assistant (chat)\n\u2192 assistant (story)",
+      "Assistant (plain text)\n\u2192 assistant (story)",
+      "Assistant (story)\n\u2192 assistant (chat)",
       "Frozen",
       "+ Bias",
       "Own map",
@@ -61730,10 +61730,9 @@
       "sha256": "79e9a117078b801b2fa707e150aaa254a0290f75e1cad286d042172bb48a1273"
     }
   },
-  "git_head_at_render": "7eec89bbf53c9379f5ed37435c5719524ee824c2",
+  "git_head_at_render": "c267e3538d776925f28f9ee85ee2af38bc77e640",
   "source_status_at_render": [
-    " M scripts/issue2054_story_manuscript_figure.py",
-    "?? eval_results/issue_2054/shared_seven/results.json"
+    " M scripts/issue2054_story_manuscript_figure.py"
   ],
   "visual_encodings": {
     "panel_a": "Base own (amber), Instruct own (teal), Instruct seven-setting shared (hatched teal)",
@@ -61749,11 +61748,11 @@
       ]
     }
   },
-  "script_sha256": "3b66769b5e165c49440995f6ae44cc8e0a6613f9980e9e872d4daf71841e8098",
+  "script_sha256": "905702d66763bffc889ea9fe1aaf98c61e7744f01bc72f01cd1f5546fbb58cdf",
   "style_sha256": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1",
   "output_sha256": {
-    "c4_shared_speakers.png": "09f35ec43b0d7011adacc21eaffad3665e585d4c4346d83ceb9d4915fc119cf9",
-    "c4_shared_speakers_grayscale.png": "9b101038c959b6c88d8f2bb9f7bffadc304a532e690bb0ea4bfb8a01eee8b780",
-    "c4_shared_speakers.pdf": "811e487725c321c3994d3d3d90922d901488b6599ad1c791c975d8603d6913ed"
+    "c4_shared_speakers.png": "d6429f38ee8aed397fc01e300f4796f1507f27a0c491f42a9707507f4163bbfa",
+    "c4_shared_speakers_grayscale.png": "5efb050aa9377aa158143b6337e99d211fd91cbb1d47ca144506a93f03fba4e5",
+    "c4_shared_speakers.pdf": "ec23a812ca308969a57bcb9fc6f54e1445596b7c35b4913a7c4a21b598d8545b"
   }
 }
