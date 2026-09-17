@@ -95,7 +95,10 @@ def render_paper_margin_forest(mod, table: dict) -> Path:
 
     fig, frac = c2a_figure("wide", aspect=0.62)
     ax = fig.add_subplot(111)
-    fig.subplots_adjust(left=0.43, right=0.97, bottom=0.14, top=0.84)
+    # Left margin sized to the longest reader-facing row label
+    # ("harmful compliance: multi-turn human jailbreaks"), which is wider than
+    # the "evil: ..." slug it replaces.
+    fig.subplots_adjust(left=0.45, right=0.97, bottom=0.14, top=0.84)
     forest_rows: list[dict] = []
     for y, r in zip(ys, order, strict=True):
         m = r["dtrue"]
@@ -138,8 +141,10 @@ def render_paper_margin_forest(mod, table: dict) -> Path:
     ax.set_yticks(ys)
     ax.set_yticklabels(labels)
     # Ten long set names need a step below the pinned tick size to fit the
-    # margin (same disclosed deviation as c4_shared_speakers).
-    ax.tick_params(axis="y", labelsize=14)
+    # margin (same disclosed deviation as c4_shared_speakers). 13 rather than
+    # 14, and a wider left margin: the reader-facing behavior names are longer
+    # than the rung slugs they replace.
+    ax.tick_params(axis="y", labelsize=13)
     ax.set_ylim(-0.6, len(order) - 0.4)
     ax.set_xlabel("$\\Delta$ Spearman $\\rho$ (mapped answer $-$ context)")
     style_axis(ax, grid_axis="x")
@@ -147,7 +152,7 @@ def render_paper_margin_forest(mod, table: dict) -> Path:
         ax,
         "",
         "Regression readouts · OOD evaluation sets",
-        title="Mapped answer minus context, per set",
+        title="Mapped answer minus context",
     )
     checkout = Path(__file__).resolve().parent.parent
     if not (checkout / "eval_results").exists():

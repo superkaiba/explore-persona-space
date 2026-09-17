@@ -47,6 +47,9 @@ def _ensure_repo_root_on_syspath() -> Path:
         raise RuntimeError(f"repo-root resolution failed: {sentinel} missing")
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
+    scripts_dir = root / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
     return root
 
 
@@ -135,7 +138,12 @@ SERIES_SHUF_LABEL = "shuffled-map advantage (pairing-shuffled map)"
 
 
 def rung_label(behavior: str, rung: str) -> str:
-    return f"{behavior}: {RUNG_LABEL.get(rung, rung)}"
+    """Row label: the reader-facing behavior name plus the evaluation set."""
+    # Lazy import: `issue1739_recut_common` pulls numpy at its module top, and
+    # this file keeps every heavy import inside the function that needs it.
+    from issue1739_recut_common import behavior_display
+
+    return f"{behavior_display(behavior)}: {RUNG_LABEL.get(rung, rung)}"
 
 
 def _log(msg: str) -> None:

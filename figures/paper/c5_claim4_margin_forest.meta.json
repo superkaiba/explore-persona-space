@@ -6,57 +6,45 @@
  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
  "reproduction_command": "uv run python scripts/issue1739_claim4_relabel_figs.py --style iclr",
  "git": {
-  "git_commit": "adeed6da49516182b9577311a4fd40804938044c",
+  "git_commit": "97a3b6f64fab45271655609db65b4097995152a1",
   "git_dirty": true,
   "git_dirty_paths": [
-   ".claude/agent-memory/implementer-lean/MEMORY.md",
-   "docs/paper_context_answer_map/plotting_style.md",
-   "docs/paper_context_answer_map/qualitative_examples.md",
-   "eval_results/issue_779/plot3_redesign/plot3_redesign.json",
-   "figures/paper/c1_offpolicy_origin.pdf",
-   "figures/paper/c1_offpolicy_origin.png",
-   "figures/paper/c1_offpolicy_origin_data.json",
-   "figures/paper/c1_offpolicy_origin_grayscale.png",
-   "figures/paper/c3_persona_direction_spectrum.meta.json",
-   "figures/paper/c3_persona_direction_spectrum.pdf",
-   "figures/paper/c3_persona_direction_spectrum.png",
-   "figures/paper/c3_persona_topic_separation.meta.json",
-   "figures/paper/c3_persona_topic_separation.pdf",
-   "figures/paper/c3_persona_topic_separation.png",
-   "figures/paper/c3_persona_topic_separation_grayscale.png",
-   "figures/paper/c3_qualitative_discrimination.meta.json",
-   "figures/paper/c3_qualitative_discrimination.pdf",
-   "figures/paper/c3_qualitative_discrimination.png",
-   "figures/paper/c3_qualitative_discrimination_grayscale.png",
-   "figures/paper/c3_sae_tier_gradient.meta.json",
-   "figures/paper/c3_sae_tier_gradient.pdf",
-   "figures/paper/c3_sae_tier_gradient.png",
-   "figures/paper/c3_sae_tier_gradient_grayscale.png",
+   ".claude/agent-memory/experiment-implementer-lean/MEMORY.md",
+   ".claude/agent-memory/experimenter/feedback_pod_sparse_clone_committed_inputs.md",
+   "CLAUDE.md",
+   "docs/paper_context_answer_map/fig1_schematic.pdf",
+   "docs/paper_context_answer_map/fig1_schematic.tex",
+   "eval_results/issue_2546/necessity_r2/summary.json",
+   "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+   "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+   "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+   "figures/paper/c3_features_and_shifts.meta.json",
+   "figures/paper/c3_features_and_shifts.pdf",
+   "figures/paper/c3_features_and_shifts.png",
+   "figures/paper/c3_features_and_shifts_grayscale.png",
    "figures/paper/c5_claim4_margin_forest.meta.json",
    "figures/paper/c5_claim4_margin_forest.pdf",
    "figures/paper/c5_claim4_margin_forest.png",
-   "figures/paper/c5_pv_methods_regimes.meta.json",
-   "figures/paper/c5_pv_methods_regimes.pdf",
-   "figures/paper/c5_pv_methods_regimes.png",
-   "figures/paper/figure2_predictability_scaling.meta.json",
-   "figures/paper/figure2_predictability_scaling.pdf",
-   "figures/paper/figure2_predictability_scaling.png",
-   "figures/paper/figure2_predictability_scaling_grayscale.png",
+   "figures/paper/c5_claim4_margin_forest_grayscale.png",
+   "pyproject.toml",
+   "scripts/codex_daemon_reaper.py",
+   "scripts/cron_watch_issue_1739.sh",
+   "scripts/cron_watch_issue_2091.sh",
+   "scripts/install_gcp_audit_cron.sh",
+   "scripts/issue1739_claim4_fold.py",
    "scripts/issue1739_claim4_relabel_figs.py",
-   "scripts/issue1739_result2_fourpanel_fig.py",
-   "scripts/issue779_plot3_redesign.py",
-   "scripts/make_paper_figure2.py",
+   "scripts/issue1901_encbaseline_figure.py",
    "scripts/make_paper_section42_figures.py",
-   "scripts/section43_posttraining_figure.py",
-   "scripts/section4_offpolicy_figure.py",
-   "src/explore_persona_space/analysis/c2a_plot_style.py"
+   "src/explore_persona_space/analysis/c2a_plot_style.py",
+   "tests/test_codex_daemon_reaper.py",
+   "uv.lock"
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue1739_claim4_relabel_figs.py"
  },
  "sources": {
   "claim4_per_rung_table": {
-   "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/paper-figstd/eval_results/issue_1739/claim4_controls/claim4_per_rung_table.json",
+   "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/claim4_controls/claim4_per_rung_table.json",
    "sha256": "79bb051b54e79ffe56aa613a80528300e083a02e8bef3a752cf89b38764fd577"
   }
  },
@@ -94,17 +82,17 @@
    "0.4",
    "0.5",
    "0.6",
-   "evil: multi-turn human jailbreaks",
-   "evil: PAIR optimizer attacks",
-   "evil: HH red-team",
-   "evil: ToxicChat",
+   "harmful compliance: multi-turn human jailbreaks",
+   "harmful compliance: PAIR optimizer attacks",
+   "harmful compliance: HH red-team",
+   "harmful compliance: ToxicChat",
    "hallucination: NQ-Open",
    "hallucination: SimpleQA",
    "sycophancy: AITA slot (held-out Reddit)",
    "sycophancy: answer",
    "sycophancy: feedback",
    "sycophancy: model-written evaluations",
-   "Mapped answer minus context, per set"
+   "Mapped answer minus context"
   ]
  },
  "data": {
@@ -112,7 +100,7 @@
    {
     "behavior": "evil",
     "eval_rung": "evil_mhj",
-    "label": "evil: multi-turn human jailbreaks",
+    "label": "harmful compliance: multi-turn human jailbreaks",
     "mean": 0.08295003199437437,
     "tci": [
      0.04100955710523784,
@@ -129,7 +117,7 @@
    {
     "behavior": "evil",
     "eval_rung": "evil_pair",
-    "label": "evil: PAIR optimizer attacks",
+    "label": "harmful compliance: PAIR optimizer attacks",
     "mean": 0.12036031924691837,
     "tci": [
      0.07884830949838181,
@@ -146,7 +134,7 @@
    {
     "behavior": "evil",
     "eval_rung": "hhrt",
-    "label": "evil: HH red-team",
+    "label": "harmful compliance: HH red-team",
     "mean": 0.03323828757268093,
     "tci": [
      0.01951123408251109,
@@ -163,7 +151,7 @@
    {
     "behavior": "evil",
     "eval_rung": "toxicchat",
-    "label": "evil: ToxicChat",
+    "label": "harmful compliance: ToxicChat",
     "mean": 0.04360358558373343,
     "tci": [
      0.02596051538566517,
@@ -282,8 +270,8 @@
   ]
  },
  "output_sha256": {
-  "pdf": "3771cf1e365eb3fcbcc29a44aa1492d2d2b6b170e35d86c3c6870934165b0805",
-  "png": "c6c014b8c76d75af6d8f9eea33f5aeb9ebe3ec3318cedbd644c8a096e45390c0",
-  "grayscale": "f4fcc66a301758de3a61abd0057a5a2241bef810b689fa634f54a3698cf90c13"
+  "pdf": "1c187ede588244faebcabdba7b17d080da7d07dc37dd1bd3e0b2d9c83c61e121",
+  "png": "03a1bcc52d4b80daaae2ed94a9568e90f6f1667e9ed81ab09f0877c8764d0e1a",
+  "grayscale": "617a7b7247788d93a9a62eb2b89bcdd8af3e625c0bfd0e908b84eff45949a214"
  }
 }
