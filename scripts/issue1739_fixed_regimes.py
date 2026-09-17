@@ -92,10 +92,10 @@ def progress(out, phase, **extra):
     print(json.dumps(value), flush=True)
 
 
-def estimates(rho, boot):
+def estimates(rho, boot, names=NAMES):
     """Keep undefined correlations null; never render them as zero."""
     result = {}
-    for i, name in enumerate(NAMES):
+    for i, name in enumerate(names):
         valid = np.isfinite(boot[i])
         result[name] = dict(
             rho=float(rho[i]) if np.isfinite(rho[i]) else None,
@@ -105,7 +105,7 @@ def estimates(rho, boot):
     return result
 
 
-def summarize(data, pred, *, seed, out, behavior):
+def summarize(data, pred, *, seed, out, behavior, names=NAMES):
     """Bootstrap within datasets, pairing arms and independently sampling rungs."""
     cells, draws = [], {}
     for i, rung in enumerate(sorted(set(data["rungs"]))):
@@ -129,7 +129,7 @@ def summarize(data, pred, *, seed, out, behavior):
                 informative=len(ix) >= 30,  # Retain the preceding analysis's reporting gate.
                 dv_unique=len(np.unique(data["dv"][ix])),
                 floor_mass=float(np.mean(data["dv"][ix] == 0)),
-                arms=estimates(rho, boot),
+                arms=estimates(rho, boot, names),
             )
         )
     return cells, draws
