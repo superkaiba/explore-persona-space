@@ -1,6 +1,5 @@
 ---
-title: Under ten-persona centering, sarcasm and lists approach the full persona at
-  all 64 Qwen3.8-27B blocks (MODERATE confidence)
+title: Does context-vector cosine predict story-imprinting tracer uptake?
 kind: experiment
 tags: []
 created_at: '2026-09-17T20:00:03Z'
