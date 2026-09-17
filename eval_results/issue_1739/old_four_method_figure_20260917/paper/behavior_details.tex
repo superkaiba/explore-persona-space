@@ -104,4 +104,37 @@
     \end{tabular}
 \end{table*}
 
-\paragraph{Held-out retrieval tails.} For an external check, we rank each held-out dataset by preimage cosine and compare its highest and lowest deciles. On SimpleQA, the mean retained-response fabrication rate is 88.1\% versus 32.2\% (402 contexts per tail). NQ-Open reverses this ordering, with 38.8\% versus 47.5\% (316 per tail). These are descriptive means of per-context scores. The SimpleQA top tail contains 2,010 observed responses, of which 2,004 are decided and 1,766 fabricated; the bottom tail contains 2,010 decided responses, of which 647 are fabricated. Thus the reported means average context-level fractions rather than pooling all responses. Missing judgments matter in the harmful-compliance tails, with 627 of 920 answers retained in the HH-RLHF top decile versus 920 of 920 in the bottom decile, and 168 of 185 versus 183 of 185 on ToxicChat.
+\paragraph{Matched retrieval tails.} We compare the regularized pre-image, the context-derived direction, and the answer direction applied to contexts on the same five held-out candidate pools (\tabref{tab:behavior-retrieval-tails}). Every method selects its own highest and lowest deciles by descending cosine in standardized context coordinates, breaking ties by context ID. With $z=(h_C-\mu_C)\oslash s_C$ and $D=\operatorname{diag}(s_C)$, the three ranking directions are $u=B_k^+v_A$, $Dv_C$, and $Dv_A$. The latter two preserve the centered raw projection scores in their dot-product numerators; the shared context-norm denominator makes this a cosine-retrieval comparison rather than the unnormalized projection comparison. Tail sizes are $\lfloor n/10\rfloor$. Scores are averaged within contexts over retained responses and then equally across contexts, not pooled across rollouts. The SimpleQA top-minus-bottom gaps are 55.87, 68.64, and 65.84 percentage points, respectively; NQ-Open gaps are $-8.73$, $+2.59$, and $-0.57$. ToxicChat favors the pre-image over the context-derived direction but not over the answer-on-context direction; AITA shows the opposite comparison. These descriptive results do not establish an overall retrieval advantage or statistical significance.
+
+\paragraph{Judgment coverage in retrieved tails.} The SimpleQA pre-image top tail contains 2,010 observed responses, of which 2,004 are decided and 1,766 fabricated; the bottom tail contains 2,010 decided responses, of which 647 are fabricated. Its reported 88.1\% and 32.2\% values average context-level fractions rather than pooling all responses. Missing judgments matter more for harmful compliance: 627 of 920 answers are retained in the HH-RLHF pre-image top decile versus 920 of 920 in the bottom decile, and 168 of 185 versus 183 of 185 on ToxicChat. Scores condition on these retained judgments, including when comparing retrieval methods.
+
+\begin{table*}[t]
+    \centering
+    \caption{\textbf{Pre-image retrieval has no consistent advantage over context projections.} Mean behavior scores in the top and bottom cosine-ranked deciles of the same held-out candidate pools; parentheses give contexts per decile. Harmful compliance (HH-RLHF, ToxicChat) and sycophancy (AITA) use 0--100 trait scores. Hallucination (NQ-Open, SimpleQA) uses fabrication percentages. Gap is top minus bottom, in score points or percentage points. Each method selects its own tails. Means condition on retained judgments and are descriptive, without uncertainty intervals. All comparisons use the frozen layer-19, 963,444-pair generic-map analysis.}
+    \label{tab:behavior-retrieval-tails}
+    \begin{tabular}{@{}llrrr@{}}
+        \toprule
+        Dataset (tail size) & Direction & Top decile & Bottom decile & Gap \\
+        \midrule
+        HH-RLHF (184) & Pre-image & 0.05 & 0.03 & +0.02 \\
+         & Context $\to$ context & 0.05 & 0.00 & +0.05 \\
+         & Answer $\to$ context & 0.05 & 0.00 & +0.05 \\
+        \addlinespace
+        ToxicChat (37) & Pre-image & 19.74 & 0.00 & +19.74 \\
+         & Context $\to$ context & 17.28 & 0.03 & +17.25 \\
+         & Answer $\to$ context & 21.23 & 0.03 & +21.21 \\
+        \addlinespace
+        AITA (130) & Pre-image & 26.38 & 13.31 & +13.07 \\
+         & Context $\to$ context & 31.67 & 11.13 & +20.54 \\
+         & Answer $\to$ context & 24.20 & 12.18 & +12.02 \\
+        \addlinespace
+        NQ-Open (316) & Pre-image & 38.80 & 47.53 & -8.73 \\
+         & Context $\to$ context & 42.22 & 39.62 & +2.59 \\
+         & Answer $\to$ context & 43.42 & 43.99 & -0.57 \\
+        \addlinespace
+        SimpleQA (402) & Pre-image & 88.06 & 32.19 & +55.87 \\
+         & Context $\to$ context & 90.03 & 21.39 & +68.64 \\
+         & Answer $\to$ context & 87.78 & 21.94 & +65.84 \\
+        \bottomrule
+    \end{tabular}
+\end{table*}

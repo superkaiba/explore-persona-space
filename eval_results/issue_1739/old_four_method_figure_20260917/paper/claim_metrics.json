@@ -783,7 +783,8 @@
   ],
   "preimage_case_audit_sha256": "8007c7d7520e5b652c1368b2ed95b9058db443f74045cd52f575e666246cc45e",
   "manuscript_sha256": {
-    "06_behavior.tex": "0f178a7bcc4df6f5202c9b6a4b80bdc3745f41c8832dcf4a870a65b3a654b3e0",
-    "behavior_details.tex": "4985adc22d776968a64b63138e642857ef0fb565d24b3f561764ceecb62afa33"
-  }
+    "06_behavior.tex": "a57ee2117b2d08c1938e707ce0b2e6758f07fb22ff244ed039ca2be968b7016e",
+    "behavior_details.tex": "38be6fe1583605651f932581b5da3d83978c5952b4bb51574e4498c40db3025d"
+  },
+  "retrieval_comparison_sha256": "f4b1f27329ebb69c8da07d13712ea901df19d48c01135ff7f4920886bdd5dba6"
 }

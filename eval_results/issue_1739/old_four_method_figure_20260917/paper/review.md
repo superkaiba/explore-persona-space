@@ -2,11 +2,9 @@
 
 ## Outline and paragraph roles
 
-- Opening: define the three behaviors, evaluation regimes, and original augmented-map protocol.
-- Method: transfer a fixed answer-derived readout without fitting a behavior-specific regression.
-- Evidence: compare predicted-answer and observed-answer readouts using the nine displayed cells.
-- Comparison: quantify gains against both fixed context projections and state hallucination exceptions.
-- Application and limitation: use the separate million-pair map's approximate inverse to retrieve a verified SimpleQA failure, with NQ counterevidence and baseline ranks.
+- Opening: define behaviors, evaluation regimes, and the original augmented-map protocol.
+- Combined claim: transfer fixed answer-derived readouts before generation, approach observed-answer performance on average, and exceed both context baselines in most settings; retain the hallucination exceptions.
+- Quantitative retrieval claim: compare pre-images against both context controls on identical held-out pools, report SimpleQA and NQ top/bottom gaps, and keep the verified Dalí example with all three ranks.
 
 ## Claim–evidence map
 
@@ -34,3 +32,21 @@ truncated inverse; it is not the transpose pullback of the answer score.
 Independent evidence review by `four_method_review` found no material blockers.
 The full manuscript compiled with resolved references. The parent inspected the
 behavior pages and revised plot at manuscript scale; plot labels contain no sample counts.
+
+## Quantitative retrieval revision
+
+All 15 cosine-decile rows (three methods, five datasets) were independently
+reconstructed from cached predictions and existing labels by `four_method_review`.
+SimpleQA top/bottom percentages: pre-image 88.06/32.19; context-derived 90.03/21.39;
+answer direction on context 87.78/21.94. Pre-images are never the best of these
+three methods on top-decile mean or top-minus-bottom separation across the five
+cached datasets. The claim explicitly avoids a general advantage or significance
+assertion. NQ reverses the pre-image ranking and remains in the main text.
+
+The main paragraph retains the distinct million-pair map. Appendix H gives the
+15-row table, common standardized coordinates, baseline directions D v_C and
+D v_A, floor(n/10) tail sizes, direction-specific selections, rubric-score versus
+percentage units, and judgment-coverage limitations. No new fitting, judging,
+bootstrap, or generation was performed. Independent final prose review passed;
+the full manuscript compiled and the behavior page and appendix table were
+visually inspected. The unchanged figure still has no sample-count labels.
