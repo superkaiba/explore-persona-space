@@ -1,7 +1,7 @@
 {
   "metadata": {
     "folds": "six held-out folds",
-    "generated_utc": "2026-09-17T06:04:08Z",
+    "generated_utc": "2026-09-17T21:13:00Z",
     "hf_path": "issue1902_olmo_onpolicy_20260914/production_v1/fits/olmo/summary.json",
     "hf_repo": "superkaiba1/explore-persona-space-data",
     "hf_revision": "7761da3391e9f670b66f2ab246cdefcd4bd7d974",
@@ -13,12 +13,12 @@
     "metric": "Held-out pooled SSE/SST centered on training-fold target mean",
     "model": "OLMo-2-7B (Base, SFT, DPO, RLVR)",
     "n_contexts": 13333,
-    "not_drawn": "panel_c scale_bias (scalar rescaling + bias) retention",
+    "not_drawn": "panel_c bias and scale_bias retention",
     "series_encoding": {
-      "format": "plain text = solid line, filled circle; chat template = dotted line, filled diamond (panels A, B, C)",
+      "format": "plain text = filled circle; chat template = filled diamond; panels A/B add solid plain-text and dotted chat-template lines",
       "panel_a": "one hue (post_trained teal); each checkpoint's own map",
       "panel_b": "own context vectors = teal; base-model context vectors = amber (ROLES['base_model'])",
-      "panel_c": "correction by fill: as is = open marker, refit bias = filled marker; plain at x-0.15, chat at x+0.15; scale_bias present in the summary, not drawn"
+      "panel_c": "unchanged source maps, filled format markers; plain at x-0.15, chat at x+0.15; bias and scale_bias retained in source results, not drawn"
     },
     "target_definition": "Target-checkpoint encodings of target-generated answers, with generation and capture format matched",
     "uncertainty": "1000 paired context-row bootstrap draws, seed1944; no refit"
@@ -71,12 +71,9 @@
       "1.5",
       "FORMAT",
       "CONTEXT SOURCE",
-      "CORRECTION",
       "Plain text",
       "Chat template",
-      "Own",
-      "as is",
-      "with refit bias"
+      "Own"
     ]
   }
 }

@@ -346,11 +346,34 @@ inline, the context-source entries reading Own and Base). Format is a series in 
 panel: plain text is a solid line with filled circles, the chat template a dotted
 line with filled diamonds. Panel A draws each checkpoint's own map in the
 post-trained teal. Panel B adds base-model context vectors in amber. Panel C draws
-retention of the preceding checkpoint's map on the next checkpoint's pairs, as is
-(open marker) and with a refit bias (filled marker), plain at the left of each
-transition and chat at the right. The scalar-rescaling-plus-bias retention is in
-the summary and the data sidecar but is not drawn (2026-09-16). The earlier
+retention of the preceding checkpoint's unchanged map on the next checkpoint's pairs,
+with filled circles for plain text and filled diamonds for chat. Plain text is
+at the left of each transition and chat at the right. Bias-calibrated retention
+remains in the saved data but is not drawn (2026-09-17). The earlier
 plain-text capture on 16,391 contexts, which the appendix layer and length
 controls cite, has its own renderer, `scripts/section43_posttraining_figure.py`;
 it writes to the same stem, so do not rerun it into `figures/paper`.
 
+
+## Speaker-transfer presentation (2026-09-17)
+
+The [speaker figure](https://www.overleaf.com/project/6a59c927290f8b8b5eee0055)
+is rendered by `scripts/issue2054_story_manuscript_figure.py`. Its `--data` mode
+reads `figures/paper/c4_shared_speakers.data.json` with the matching metadata
+sidecar. The twelve directed character-pair results come from the saved K5
+map-geometry fits under `figures/paper/inputs/speaker_character_transfer/`.
+No fitting or inference runs during rendering.
+
+Panel B shows frozen and target-trained maps, with character-to-character
+transfer first. Each source map trains on only one character. The twelve
+directed pairs are averaged equally within each of five conversation folds,
+then across folds. The other four transfer rows and panels A/C retain their
+previous numerical inputs. The negative horizontal axis is continuously
+compressed fourfold, while positive values retain a linear scale. No interval
+is omitted and all fold-range endpoints remain visible. The caption states
+the scale change, and the appendix gives every directed character pair.
+
+```bash
+uv run python scripts/issue2054_story_manuscript_figure.py \
+  --data figures/paper/c4_shared_speakers.data.json --output figures/paper
+```
