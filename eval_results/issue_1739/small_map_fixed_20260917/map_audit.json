@@ -1,0 +1,64 @@
+{
+  "metadata": {
+    "variant": "context_end",
+    "u_label": "full",
+    "layers": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27
+    ],
+    "w_fit_rows": 18793,
+    "solver": "primal",
+    "dtype": "w=fp16; mu/sd=fp32",
+    "apply": "pred = ((x - x_mu)/x_sd) @ w + y_mu (whitened space)",
+    "git_commit": "795f4747125a2d8c240330ef5276789354000d7f",
+    "ts": "2026-07-30T07:47:29Z"
+  },
+  "original_map_sha256": "28b4a76707184010f48bcd94baa9fce975b94d5be67f9357307695921f1952fb",
+  "whitening_source_sha256": "c90297d422833bbd53c85ac223c9d84747101d1d9d849d0931b857f0a31d26ac",
+  "coordinate_moment_max_error": {
+    "x_mu": 4.6055524151322746e-10,
+    "x_sd": 2.980171676103538e-08,
+    "y_mu": 1.6401970981405611e-06
+  },
+  "u_source_sha256": {
+    "context_end_L19.npy": "e02be7abc200936b08e1ef8de69045ec2d7a73cf4425d06265bfada7df197000",
+    "t1_L19.npy": "77cd60046e003b57051eefc7abf092aa7a0dffff5ad437376ea451c0b768d181",
+    "manifest.jsonl": "e582a3b41ae9c5b724602730b46634c01df8bdd2281db524d70450e821e24227",
+    "staging_manifest.json": "f27eda589d1107d4e2b4019bd2ddeb1dea1ced388f684f978ca62b4eb01c1dd9"
+  },
+  "map_source": {
+    "repo": "superkaiba1/explore-persona-space-data",
+    "revision": "09cb65bd25a90e322059504f0fce379702f9e054",
+    "path": "issue1739_ctxmap/analysis_tensors/maps/context_end__ufull.npz",
+    "bytes": 720530580,
+    "sha256": "28b4a76707184010f48bcd94baa9fce975b94d5be67f9357307695921f1952fb"
+  },
+  "formula": "raw prediction = ((((x-mu)@S-x_mu)/x_sd)@w+y_mu)@inverse(S)+mu",
+  "pooling": "#1092 t1 and #1739 t1 are completion-token means, excluding assistant-closing template tokens"
+}

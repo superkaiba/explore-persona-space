@@ -1,0 +1,80 @@
+{
+  "validated_at": 1789672519.3759663,
+  "source_sha": "72451d724ebb00f3c85f2c382ae54301e1b4b20f",
+  "complete_sha256": "79e6b957af6a56de190274de9408decac8e081df5fc0b7936b914860372d450b",
+  "artifact_hashes_verified": 35,
+  "checks": [
+    {
+      "behavior": "evil",
+      "scipy_verified_cells": 4,
+      "matched_score_parity": [
+        {
+          "source": "/mnt/eps-data/thomasjiralerspong/issue1739-fixed-regimes-20260917/evil/predictions.npz",
+          "n_shared": 8689,
+          "unchanged_baselines": [
+            "real_answer",
+            "context_native"
+          ]
+        },
+        {
+          "source": "/dev/shm/issue1739-fixed-transfer/outputs/analysis/evil/predictions.npz",
+          "n_shared": 2221,
+          "unchanged_baselines": [
+            "real_answer",
+            "context_native",
+            "answer_direction_on_context"
+          ]
+        }
+      ],
+      "generic_n": 416
+    },
+    {
+      "behavior": "sycophancy",
+      "scipy_verified_cells": 3,
+      "matched_score_parity": [
+        {
+          "source": "/mnt/eps-data/thomasjiralerspong/issue1739-fixed-regimes-20260917/sycophancy/predictions.npz",
+          "n_shared": 17308,
+          "unchanged_baselines": [
+            "real_answer",
+            "context_native"
+          ]
+        },
+        {
+          "source": "/dev/shm/issue1739-fixed-transfer/outputs/analysis/sycophancy/predictions.npz",
+          "n_shared": 1308,
+          "unchanged_baselines": [
+            "real_answer",
+            "context_native",
+            "answer_direction_on_context"
+          ]
+        }
+      ],
+      "generic_n": 414
+    },
+    {
+      "behavior": "hallucination",
+      "scipy_verified_cells": 4,
+      "matched_score_parity": [
+        {
+          "source": "/mnt/eps-data/thomasjiralerspong/issue1739-fixed-regimes-20260917/hallucination/predictions.npz",
+          "n_shared": 23176,
+          "unchanged_baselines": [
+            "real_answer",
+            "context_native"
+          ]
+        },
+        {
+          "source": "/dev/shm/issue1739-fixed-transfer/outputs/analysis/hallucination/predictions.npz",
+          "n_shared": 7189,
+          "unchanged_baselines": [
+            "real_answer",
+            "context_native",
+            "answer_direction_on_context"
+          ]
+        }
+      ],
+      "generic_n": 410
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "overleaf_project": "https://www.overleaf.com/project/6a59c927290f8b8b5eee0055",
+  "overleaf_sha": "4be2a1341b319c73ea876fb98a7f0f24e465da94",
+  "figure_url": "https://eps.superkaiba.com/tasks/1739/figure/c5_behavior_transfer_small.png?v=fa228b5910e4",
+  "figure_sha256": "fa228b5910e45bfb4b107850bd0246d35bdfdb978eaa3e7e3d0ff66397b07fd3",
+  "compiled_pdf": "/tmp/overleaf-behavior-build-20260917/main.pdf",
+  "compile": "latexmk successful after final Overleaf rebase",
+  "checked_at": 1789672983.373475
+}
