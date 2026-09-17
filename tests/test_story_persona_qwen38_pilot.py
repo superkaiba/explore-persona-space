@@ -10,8 +10,10 @@ from omegaconf import OmegaConf
 
 from scripts.story_persona_qwen38_pilot import (
     capture_last,
+    capture_production,
     digest,
     file_digest,
+    numerical_smoke,
     pack_batches,
     phase_analyze,
     read_checksums,
@@ -31,6 +33,7 @@ class TinyDecoder(torch.nn.Module):
         with torch.no_grad():
             self.model.embed_tokens.weight.copy_(torch.arange(128).reshape(32, 4))
         self.model.layers = torch.nn.ModuleList([torch.nn.Identity() for _ in range(64)])
+        self.calls = []
 
     def forward(
         self,
@@ -45,6 +48,7 @@ class TinyDecoder(torch.nn.Module):
         assert use_cache is False
         assert return_dict is True
         assert logits_to_keep == 1
+        self.calls.append((tuple(input_ids.shape), bool(attention_mask.all())))
         hidden = self.model.embed_tokens(input_ids)
         hidden = (hidden * attention_mask[..., None]).cumsum(dim=1)
         states = [hidden]
@@ -78,6 +82,59 @@ def test_packing_preserves_every_row_and_both_budgets():
     )
     with pytest.raises(ValueError, match="invalid"):
         pack_batches([21], 3, 20)
+
+
+def test_production_uses_only_unpadded_singletons_and_preserves_row_order():
+    """Stored groups must never reintroduce the rejected batched forward path."""
+    model = TinyDecoder()
+    values, errors = capture_production(model, [[2, 3], [4, 5, 6, 7]], 0, check_tuple=True)
+    assert model.calls == [((1, 2), True), ((1, 4), True)]
+    expected = torch.stack(
+        [model.model.embed_tokens(torch.tensor(row)).sum(0) for row in [[2, 3], [4, 5, 6, 7]]]
+    )
+    torch.testing.assert_close(values[:, -1], expected)
+    assert all(max(row.values()) == 0 for row in errors.values())
+    with pytest.raises(ValueError, match="exactly one unpadded"):
+        capture_last(model, [[2], [3, 4]], 0, require_unpadded_singleton=True)
+
+
+def test_numerical_smoke_checks_state_isolation_and_persists_diagnostics(tmp_path):
+    """The real smoke must distinguish repeatability from mixed-batch diagnostics."""
+    cfg = OmegaConf.create(
+        {
+            "capture": {
+                "execution_mode": "unpadded_singleton",
+                "numerics": "ieee_math",
+                "parity_relative_tolerance": 0.01,
+                "repeatability_relative_tolerance": 1e-5,
+            },
+            "model": {"layers": 64, "hidden_dim": 4},
+        }
+    )
+    ids = [[i + 2] if i % 2 == 0 else [i + 2, 3] for i in range(20)]
+    prompts = [{"id": f"p{i}"} for i in range(10)]
+    questions = [{"id": "q0"}, {"id": "q1"}]
+    tokenizer = SimpleNamespace(pad_token_id=0)
+    smoke = numerical_smoke(TinyDecoder(), tokenizer, ids, prompts, questions, cfg, tmp_path, "pin")
+    assert smoke["passed"] and smoke["repeatability_bitwise_equal"]
+    assert smoke["mixed_batch_diagnostic"]["used_in_production"] is False
+    assert len(smoke["bank_indices"]) == 20
+    np.testing.assert_array_equal(
+        smoke["backend_sensitivity"]["maximum_absolute_cosine_difference_by_layer"], 0
+    )
+    assert (tmp_path / "smoke_vectors.npz").exists()
+
+    class StatefulDecoder(TinyDecoder):
+        """A faulty model boundary that leaks mutable state between contexts."""
+
+        def forward(self, *args, **kwargs):
+            with torch.no_grad():
+                self.model.embed_tokens.weight.add_(1)
+            return super().forward(*args, **kwargs)
+
+    with pytest.raises(RuntimeError, match="singleton repeatability failed"):
+        numerical_smoke(StatefulDecoder(), tokenizer, ids, prompts, questions, cfg, tmp_path, "pin")
+    assert json.loads((tmp_path / "smoke.json").read_text())["passed"] is False
 
 
 def test_resume_rejects_wrong_ids_recipe_nonfinite_and_dtype(tmp_path):

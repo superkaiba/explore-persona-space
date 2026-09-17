@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 import time
+from contextlib import contextmanager
 from pathlib import Path
 
 from explore_persona_space.orchestrate.env import load_dotenv
@@ -156,8 +157,46 @@ def render_rows(tokenizer, rows: list[dict], cfg: DictConfig) -> list[list[int]]
     return result
 
 
+@contextmanager
+def numerical_backend(strict: bool):
+    """Select recorded accuracy controls, restoring every global option on exit."""
+    from torch.nn.attention import SDPBackend, sdpa_kernel
+
+    original = (
+        torch.get_float32_matmul_precision(),
+        torch.backends.cuda.matmul.allow_tf32,
+        torch.backends.cudnn.allow_tf32,
+        torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction,
+        torch.backends.cuda.fp16_bf16_reduction_math_sdp_allowed(),
+    )
+    try:
+        torch.set_float32_matmul_precision("highest")
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cudnn.allow_tf32 = False
+        torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = not strict
+        torch.backends.cuda.allow_fp16_bf16_reduction_math_sdp(False)
+        backends = [SDPBackend.MATH]
+        if not strict:
+            backends += [SDPBackend.FLASH_ATTENTION, SDPBackend.EFFICIENT_ATTENTION]
+        with sdpa_kernel(backends):
+            yield
+    finally:
+        torch.backends.cuda.matmul.allow_tf32 = original[1]
+        torch.backends.cudnn.allow_tf32 = original[2]
+        torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = original[3]
+        torch.backends.cuda.allow_fp16_bf16_reduction_math_sdp(original[4])
+        torch.set_float32_matmul_precision(original[0])
+
+
 @torch.inference_mode()
-def capture_last(model, ids_rows: list[list[int]], pad_id: int, *, check_tuple=False):
+def capture_last(
+    model,
+    ids_rows: list[list[int]],
+    pad_id: int,
+    *,
+    check_tuple=False,
+    require_unpadded_singleton=False,
+):
     """Gather only last-prefix block outputs, preserving pre-final-norm convention."""
     blocks, _embed, _depth = _resolve_decoder_blocks(model)
     if blocks is None:
@@ -166,6 +205,8 @@ def capture_last(model, ids_rows: list[list[int]], pad_id: int, *, check_tuple=F
     lengths = torch.tensor([len(row) for row in ids_rows], device=device)
     ids = torch.full((len(ids_rows), int(lengths.max())), pad_id, device=device, dtype=torch.long)
     mask = torch.arange(ids.shape[1], device=device)[None] < lengths[:, None]
+    if require_unpadded_singleton and (len(ids_rows) != 1 or not bool(mask.all())):
+        raise ValueError("production requires exactly one unpadded context per forward")
     for i, tokens in enumerate(ids_rows):
         ids[i, : len(tokens)] = torch.tensor(tokens, device=device)
     selected, handles = {}, []
@@ -208,6 +249,132 @@ def capture_last(model, ids_rows: list[list[int]], pad_id: int, *, check_tuple=F
     return values.cpu(), tuple_errors
 
 
+def capture_production(model, ids_rows: list[list[int]], pad_id: int, *, check_tuple=False):
+    """Capture a storage group with independently evaluated, unpadded singletons."""
+    values, errors = [], {}
+    with numerical_backend(strict=True):
+        for index, ids in enumerate(ids_rows):
+            value, row_errors = capture_last(
+                model,
+                [ids],
+                pad_id,
+                check_tuple=check_tuple,
+                require_unpadded_singleton=True,
+            )
+            values.append(value)
+            errors[str(index)] = row_errors
+    return torch.cat(values), errors
+
+
+def production_numerical_controls() -> dict:
+    """Read back the real runtime controls used by the production context manager."""
+    with numerical_backend(strict=True):
+        settings = {
+            "attention_interface": "sdpa",
+            "math_sdp_enabled": torch.backends.cuda.math_sdp_enabled(),
+            "flash_sdp_enabled": torch.backends.cuda.flash_sdp_enabled(),
+            "mem_efficient_sdp_enabled": torch.backends.cuda.mem_efficient_sdp_enabled(),
+            "float32_matmul_precision": torch.get_float32_matmul_precision(),
+            "matmul_allow_tf32": torch.backends.cuda.matmul.allow_tf32,
+            "cudnn_allow_tf32": torch.backends.cudnn.allow_tf32,
+            "allow_bf16_reduced_precision_reduction": torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction,
+            "allow_fp16_bf16_reduction_math_sdp": torch.backends.cuda.fp16_bf16_reduction_math_sdp_allowed(),
+        }
+    return settings
+
+
+def numerical_smoke(model, tokenizer, ids, prompts, questions, cfg, out, fingerprint):
+    """Check singleton state isolation and quantify backend effects on centered geometry."""
+    if (cfg.capture.execution_mode, cfg.capture.numerics) != ("unpadded_singleton", "ieee_math"):
+        raise ValueError("unsupported production execution mode")
+    extreme = [
+        min(range(len(ids)), key=lambda i: len(ids[i])),
+        max(range(len(ids)), key=lambda i: len(ids[i])),
+    ]
+    sample = [ids[i] for i in extreme]
+    initial, tuple_errors = capture_production(
+        model, sample, tokenizer.pad_token_id, check_tuple=True
+    )
+    # Both questions are fixed by input order, before inspecting any geometry.
+    bank_indices = [p * len(questions) + q for p in range(len(prompts)) for q in (0, 1)]
+    bank_ids = [ids[i] for i in bank_indices]
+    production, bank_tuple_errors = capture_production(
+        model, bank_ids, tokenizer.pad_token_id, check_tuple=True
+    )
+    repeated, _ = capture_production(model, sample, tokenizer.pad_token_id, check_tuple=True)
+    repeat_error = (initial.float() - repeated.float()).norm(dim=-1) / initial.float().norm(
+        dim=-1
+    ).clamp_min(1e-12)
+    # The rejected mixed-batch path remains a diagnostic. It is never called by production.
+    with numerical_backend(strict=True):
+        mixed, _ = capture_last(model, sample, tokenizer.pad_token_id)
+    mixed_error = (mixed.float() - initial.float()).norm(dim=-1) / initial.float().norm(
+        dim=-1
+    ).clamp_min(1e-12)
+    with numerical_backend(strict=False):
+        alternate = torch.cat(
+            [
+                capture_last(model, [row], tokenizer.pad_token_id, require_unpadded_singleton=True)[
+                    0
+                ]
+                for row in bank_ids
+            ]
+        )
+    banks = (
+        torch.stack([production, alternate])
+        .double()
+        .reshape(2, len(prompts), 2, cfg.model.layers, cfg.model.hidden_dim)
+        .mean(2)
+    )
+    centered = banks - banks.mean(1, keepdim=True)
+    if torch.any(centered.norm(dim=-1) == 0):
+        raise RuntimeError("degenerate numerical smoke bank")
+    units = torch.nn.functional.normalize(centered, dim=-1)
+    cosines = torch.einsum("bplh,bqlh->blpq", units, units)
+    drift = (cosines[0] - cosines[1]).abs()
+    smoke = {
+        "fingerprint": fingerprint,
+        "execution_mode": "unpadded_singleton",
+        "sample_indices": extreme,
+        "bank_indices": bank_indices,
+        "hook_tuple_relative_errors": tuple_errors,
+        "bank_hook_tuple_relative_errors": bank_tuple_errors,
+        "repeatability_relative_errors": repeat_error.tolist(),
+        "repeatability_bitwise_equal": bool(torch.equal(initial, repeated)),
+        "mixed_batch_diagnostic": {
+            "relative_errors": mixed_error.tolist(),
+            "passed_original_threshold": bool(
+                mixed_error.max() <= cfg.capture.parity_relative_tolerance
+            ),
+            "used_in_production": False,
+            "original_failed_attempt_max_relative_error": 0.021424712613224983,
+        },
+        "backend_sensitivity": {
+            "description": "Strict IEEE/math singleton production versus automatic SDPA/BF16-reduction singleton diagnostic; neither is an FP32-weight oracle.",
+            "personas": [p["id"] for p in prompts],
+            "question_ids": [q["id"] for q in questions[:2]],
+            "centered_cosine": cosines.tolist(),
+            "maximum_absolute_cosine_difference_by_layer": drift.amax(dim=(1, 2)).tolist(),
+        },
+        "passed": bool(repeat_error.max() <= cfg.capture.repeatability_relative_tolerance),
+        "checked_at": time.time(),
+    }
+    np.savez(
+        out / "smoke_vectors.npz",
+        sample_indices=extreme,
+        bank_indices=bank_indices,
+        initial=initial.float().numpy(),
+        repeated=repeated.float().numpy(),
+        mixed=mixed.float().numpy(),
+        production=production.float().numpy(),
+        alternate=alternate.float().numpy(),
+    )
+    write_json(out / "smoke.json", smoke)
+    if not smoke["passed"]:
+        raise RuntimeError(f"singleton repeatability failed: {float(repeat_error.max())}")
+    return smoke
+
+
 def load_model(cfg: DictConfig):
     """Load the verified BF16 multimodal wrapper; check text geometry and runtime."""
     import transformers
@@ -237,8 +404,11 @@ def load_model(cfg: DictConfig):
         dtype=torch.bfloat16,
         device_map={"": 0},
         low_cpu_mem_usage=True,
+        attn_implementation="sdpa",
     )
     model.eval()
+    if model.config.text_config._attn_implementation != "sdpa":
+        raise RuntimeError("numerical backend controls require the SDPA attention interface")
     return model, tokenizer
 
 
@@ -306,6 +476,7 @@ def phase_capture(cfg: DictConfig, out: Path) -> None:
         "layers": list(range(cfg.model.layers)),
         "position": "last_generation_prefix_token",
         "final_layer": "pre_final_norm",
+        "numerical_controls": production_numerical_controls(),
     }
     fingerprint = digest(spec)
     manifest_path = out / "manifest.json"
@@ -318,33 +489,16 @@ def phase_capture(cfg: DictConfig, out: Path) -> None:
     write_json(manifest_path, {"fingerprint": fingerprint, "spec": spec, "provenance": provenance})
     write_json(out / "rows.json", rows)
     (out / "chunks").mkdir(parents=True, exist_ok=True)
-    sample_indices = [
-        min(range(len(ids)), key=lambda i: len(ids[i])),
-        max(range(len(ids)), key=lambda i: len(ids[i])),
-    ]
-    sample = [ids[i] for i in sample_indices]
-    print(f"[capture] checking hook and padding parity; checked_at={time.time()}", flush=True)
-    together, tuple_errors = capture_last(model, sample, tokenizer.pad_token_id, check_tuple=True)
-    single = torch.cat([capture_last(model, [row], tokenizer.pad_token_id)[0] for row in sample])
-    relative = (together.float() - single.float()).norm(dim=-1) / single.float().norm(
-        dim=-1
-    ).clamp_min(1e-12)
-    smoke = {
-        "fingerprint": fingerprint,
-        "sample_indices": sample_indices,
-        "hook_tuple_relative_errors": tuple_errors,
-        "padding_relative_errors": relative.tolist(),
-        "passed": bool(relative.max() <= cfg.capture.parity_relative_tolerance),
-        "elapsed_seconds": time.monotonic() - start,
-        "checked_at": time.time(),
-    }
-    write_json(out / "smoke.json", smoke)
-    if not smoke["passed"]:
-        raise RuntimeError(f"batch/singleton parity failed: max relative error {relative.max()}")
+    print(
+        f"[capture] checking unpadded singleton correctness and backend sensitivity; checked_at={time.time()}",
+        flush=True,
+    )
+    smoke = numerical_smoke(model, tokenizer, ids, prompts, questions, cfg, out, fingerprint)
+    smoke["elapsed_seconds"] = time.monotonic() - start
     torch.cuda.reset_peak_memory_stats()
     torch.cuda.synchronize()
     batch_start = time.monotonic()
-    capture_last(model, [ids[i] for i in batches[0]], tokenizer.pad_token_id)
+    capture_production(model, [ids[i] for i in batches[0]], tokenizer.pad_token_id)
     torch.cuda.synchronize()
     batch_seconds = time.monotonic() - batch_start
     smoke.update(
@@ -380,7 +534,9 @@ def phase_capture(cfg: DictConfig, out: Path) -> None:
                     path, fingerprint, indices, shape, expected_sha256=checksums[path.name]
                 )
             else:
-                values, _ = capture_last(model, [ids[i] for i in indices], tokenizer.pad_token_id)
+                values, _ = capture_production(
+                    model, [ids[i] for i in indices], tokenizer.pad_token_id
+                )
                 tmp = path.with_suffix(".pt.tmp")
                 torch.save({"fingerprint": fingerprint, "indices": indices, "vectors": values}, tmp)
                 tmp.replace(path)

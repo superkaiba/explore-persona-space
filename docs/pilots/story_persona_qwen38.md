@@ -2,118 +2,46 @@
 
 ## Goal
 
-Inspect the geometry of persona-prompted contexts on Qwen/Qwen3.8-27B, using
-the project's last-context-token extraction and centered cosine metric.
-Determine whether the paper's progressive persona prompts become more similar
-to its full sarcastic/French/list persona. This pilot measures context geometry;
-it does not measure or establish behavioral leakage on Qwen.
+Inspect whether the Story Imprinting persona prompts form the expected progressive similarity trajectories in Qwen3.8-27B last-context-token representations, using all-layer centered cosine on the same 240 questions without measuring behavioral leakage.
 
-## Authorized scope and launch gate
-
-User request: "ok try it on qwen3.8 27b as a pilot first". Earlier clarification:
-"i just wanted to actually look at the context vectors for persona prompted
-contexts. similar to our previous experiments".
-
-The user explicitly approved task creation and end-to-end execution on
-2026-09-17: "yes run it end to end". Create the canonical experiment task via
-scripts/task.py, record this approval, and run the reviewed pilot through
-capture, analysis, figures, verified persistence, and gated compute teardown.
-Routine runtime fixes within this design are authorized; preserve the Goal.
+Task [2673](https://eps.superkaiba.com/tasks/2673) records the user's approval: “yes run it end to end”. Its [complete plan](https://eps.superkaiba.com/tasks/2673/plan) is canonical. Operational recovery preserves this Goal.
 
 ## Design
 
-- Primary panel: the six exact conditions from Story Imprinting Appendix C.6,
-  Tables 8–9 (empty system message; sarcasm; sarcasm+lists; full SFL; French;
-  French+lists). Paper: https://arxiv.org/html/2609.10883v1#A3.SS6.
-- Secondary panel: the four exact Table 7 prompts (dismissive, sarcastic,
-  saboteur, peer). Paper: https://arxiv.org/html/2609.10883v1#A3.SS4.
-- Questions: all 240 existing data/assistant_axis/extraction_questions.jsonl
-  rows, identically paired across conditions. Reuse the established extraction
-  battery for comparability; its constructed questions limit distributional
-  generalization. No new synthetic questions are generated.
-- Total: 10 conditions × 240 questions = 2,400 contexts, no sampled completions.
-- Model: official Qwen/Qwen3.8-27B BF16 checkpoint, immutable Hub revision
-  verified before dispatch. Assert 64 decoder blocks and hidden width 5,120.
-- Render: native chat template, add_generation_prompt=true,
-  enable_thinking=false; preserve the paper's empty system message explicitly.
-  Capture the actual last token of this complete assistant-generation prefix.
-- Capture all 64 block outputs in one batched forward pass per context;
-  positions are zero-based decoder-block indices, including pre-final-norm
-  block 63. Save only the selected token per layer, not whole sequences.
-- Begin with batch size 8 and a padded-token budget; validate on the real model
-  before the complete panel. Batch settings are operational pilot choices,
-  not research hypotheses. No truncation: reject an overlength row.
+- Ten exact published conditions: six progressive prompts from [Appendix C.6](https://arxiv.org/html/2609.10883v1#A3.SS6), plus four personas from [Appendix C.4](https://arxiv.org/html/2609.10883v1#A3.SS4).
+- All 240 existing `data/assistant_axis/extraction_questions.jsonl` questions, paired identically across conditions: 2,400 contexts. This constructed battery preserves comparability with previous experiments; it does not represent a naturalistic user distribution.
+- Official `Qwen/Qwen3.8-27B`, revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`, BF16, Transformers 5.15.0 overlay. Assert 64 text blocks and width 5,120.
+- Native template, `add_generation_prompt=true`, `enable_thinking=false`. Preserve the empty default system message as a template input. Verify direct versus rendered tokenization for every row. Reject contexts over 2,048 tokens; never truncate.
+- Last input token of the complete assistant-generation prefix, all 64 blocks in one forward, final block before final RMSNorm. No answers, training, judging, learned probes, or behavior measurements.
 
-## Quantities and interpretation
+## Numerical correction
 
-For each layer and persona, average vectors over the same question set. Center
-the ten-persona centroid bank by its global mean, L2-normalize, then compute
-pairwise cosine with the existing compute_cosine_matrix helper (#536). Record
-all persona names and centering provenance. Also provide explicitly labeled raw
-cosines and a six-condition centering sensitivity; never pool different banks.
+The original A100-80GB attempt at source `e24537a33b7f4b9f6825b4f157cdaa51115c7c83` failed its 1% mixed-batch versus singleton tolerance before writing production chunks. The 17-token row peaked at 1.2559% relative difference at block 51; the 130-token row peaked at 2.1425% at block 63. The longest row had no padding, so padding alone is not an established cause. Same-forward hook/tuple differences at the checked nonfinal blocks were zero. Exact metadata is in the [immutable evidence bundle](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/6967500dfd9394371cf86beeb7665f0f0aedae98/issue2673_story_persona_qwen38/failed_attempts/e24537a33b7f4b9f6825b4f157cdaa51115c7c83/1789679657687401513), linked by `eval_results/issue_2673/failed_smoke_rescue_receipt.json`.
 
-Report cosine matrices and both ladder trajectories toward the full SFL
-centroid at every layer, with fixed representative depths 15, 31, 47, 63.
-No best-layer selection, fitted map, statistical ranking claim, or correlation
-against approximate readings from the paper's plotted leakage rates.
-Record prompt token counts and split-half question stability. Prompt length,
-explicit prohibitions, and language/format instructions remain confounds of a
-causal interpretation of "persona similarity".
+V2 executes exactly one unpadded context per production forward. Storage groups of up to eight rows do not batch model inputs. Production selects SDPA math, highest FP32 matmul precision, disables TF32 and BF16 reduced precision GEMM reductions, and disables reduced precision math-SDPA reductions. Actual readbacks enter the manifest fingerprint. Weights and activations remain BF16; this is not an FP32 oracle.
 
-## Implementation and validation
+Smoke requires selected nonfinal hook/tuple agreement within 1e-5 and interleaved singleton repeatability within 1e-5 at every layer. The mixed-batch test remains a separately labeled diagnostic with its original 1% threshold; a failure is never relabeled as successful batching. The first two questions for all ten personas also run through alternate singleton controls. Save both banks and all-layer centered-cosine differences. This 20-row check changes SDPA eligibility and BF16 reduction permission jointly; it neither isolates a cause nor certifies all 240 questions.
 
-Reuse analysis/extraction.py decoder resolution and output unwrapping,
-analysis/representation_shift.py cosine calculation, the established Qwen3.8
-loader/render checks from scripts/context_risk_qwen38_smoke.py, and the current
-question battery. Record exact source hashes for any unmerged reused code.
+## Metric and interpretation
 
-Before full capture verify geometry, tokenizer/render parity, exact row/ID
-coverage, finite activations, mixed-length batch versus singleton parity on a
-small real-model slice, and capture versus the model's hidden-state tuple for
-selected non-final layers. Label the final block's pre-norm convention.
-Persist each capture batch with a fingerprint including model revision,
-prompts/questions, render choices, layers, dtype, library versions, and source.
-Resume only from validated matching chunks; a fresh completion sentinel follows
-exact coverage and content verification. Run focused CPU tests and independent
-review before launch.
+At each layer, average each persona over its 240 vectors using FP64. Subtract the ten-persona global mean, L2-normalize, and compute cosine using the existing helper. Persist raw cosine, separately centered six-condition cosine, and even/odd 120-question-half diagnostics.
 
-The remote workload is `bash scripts/story_persona_qwen38_workload.sh`, invoked
-only by the approved task dispatcher. It uses the established
-`uv run --with 'transformers==5.15.0'` overlay because the project's default
-dependency pin is below version 5. The capture phase checks that exact runtime
-before loading weights; the repository lockfile is unchanged. The wrapper runs
-capture and verified analysis sequentially. Each batch has a durably recorded
-checksum; resume checks it before accepting saved tensors. Analysis recomputes
-the manifest fingerprint and checks every chunk against the completion record.
+Report both ladders toward full SFL at every layer, with fixed displays at blocks 15, 31, 47, 63. Self-cosine is one by definition: only the two preceding increments in each ladder are informative. No best-layer selection or independent-layer significance claim. Differences comparable to measured numerical drift remain unresolved. Prompt length, language, lists, and explicit prohibitions remain confounds. Geometry cannot establish behavioral leakage.
 
-Local validation on 2026-09-17: input preparation verified 2,400 rows; all six
-focused CPU tests passed (boundary selection, packing, resume validation,
-checksum integrity, manifest integrity, streamed centroids/cosines); Ruff and
-the workload shell syntax check passed. These checks use small test tensors,
-not Qwen activations. Real-model smoke, capture, and plots remain pending the
-required task creation and remote launch.
+## Execution and persistence
 
-## Compute and monitoring
+Only the approved dispatcher invokes `bash scripts/story_persona_qwen38_workload.sh` with an exact published source SHA. The wrapper stages shallow branch/main refs before full preflight; no preflight is bypassed. Capture, analysis, plots, upload, and exact verification precede completion.
 
-One remote GPU with at least 80 GB HBM and sufficient host RAM; BF16 weights are
-about 54 GB, with modest short-context batches. No weights or activation stores
-on the nearly-full local disks. Allow 1–2 node-hours for staging, loading,
-smoke, extraction, and verification; this is provisional and replaced by the
-measured smoke estimate before the full capture. Approximately 1.57 GB for all
-per-context vectors at BF16 (2,400 × 64 × 5,120 × 2 bytes), plus small metadata
-and summaries; checkpoints and dependency staging require separate disk space.
+GCP was tried first. After the numerical failure, a restart for evidence rescue hit `ZONE_RESOURCE_POOL_EXHAUSTED`. The correction uses one retained RunPod H100-80GB, at least 100 GB actual RAM, and 200 GB requested disk. Check actual host RAM and effective quota before staging the 55.56-GB model. No model or raw store lands on the nearly full shared VM. The two-hour estimate is provisional; the actual singleton production timing probe replaces the capture estimate.
 
-Use the existing approved-task dispatcher and preflight. Keep a timestamped
-process/log/output-progress monitor plus the tested experiment_watchdog
-supervisor, durable recovery runbook, bounded retries, and acknowledged alerts
-through the established personal notification route. Verify the real canary,
-timer, startup, and first output progress before unattended operation.
+V2 outputs use `/workspace/analysis_tensors_story_persona_qwen38_v2`: 1,572,864,000 bytes of raw vectors, metadata, about 78.6 MB FP64 centroids, and approximately 60 MB smoke banks. Atomic chunks carry checksums. Resume requires matching source/input/runtime fingerprints, shape, BF16 dtype, finiteness, row mapping, and checksums.
+
+On failure the wrapper uploads the whole output directory, including incomplete files as evidence, and verifies exact hashes. It retains the original failing exit and emits no completion. Unverified output requires retaining the pod. Known WandB convenience symlinks are recorded without dereferencing; unknown links fail closed. Successful publication verifies immutable HF content and explicit Git result paths before gated teardown.
+
+Revalidate the independent watchdog and timestamped process/log/output monitor for the new source and handle before launch. Verify actual recovery-worker execution, acknowledged personal notification, and a scheduled timer tick. Investigate failures promptly within the existing bounded recovery budget; no Claude automation.
+
+Correction validation on 2026-09-17: 18 focused CPU tests passed, including production singleton assertions, stateful repeatability failure, capture integrity/aggregation, incomplete-evidence persistence, and monitor checks. Independent code and artifact reviews approved the retained-pod correction. Actual v2 GPU validation and results are pending.
 
 ## Deliverables
 
-Raw context vectors and row metadata; per-layer centroids and cosine matrices;
-render/padding and model-compatibility smoke report; token-length and stability
-diagnostics; a concise results report; browser-accessible plots. Upload and
-verify all results before any compute teardown, using the repository's gated
-lifecycle tooling. No training, judge calls, Claude automation, or new behavior
-implantation is part of this pilot.
+Complete raw vectors, exact rendered rows, manifests/checksums, numerical smoke banks/report, centroids, all-layer cosine matrices, stability diagnostics, browser-accessible figures, verified HF/Git receipts, and a concise report. Completion requires all 2,400 actual row keys and 64 layers.

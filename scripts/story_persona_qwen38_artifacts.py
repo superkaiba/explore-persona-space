@@ -64,19 +64,21 @@ LABELS = {
 }
 
 
-def inventory(root: Path) -> dict[str, dict]:
+def inventory(root: Path, *, include_incomplete: bool = False) -> dict[str, dict]:
     """Inventory all regular files, rejecting symlinks and unstable write remnants."""
     result = {}
     for path in sorted(root.rglob("*")):
         if path.is_symlink():
             relative = path.relative_to(root).as_posix()
+            if include_incomplete and relative in WANDB_ALIASES:
+                continue  # Record link text in the failure receipt without dereferencing it.
             target = path.resolve(strict=True)
             if relative in WANDB_ALIASES and target.is_relative_to((root / "wandb").resolve()):
                 continue  # Actual target is inventoried; record convenience alias separately.
             raise RuntimeError(f"refusing symlink in upload tree: {path}")
         if not path.is_file():
             continue
-        if path.suffix == ".tmp" or ".tmp." in path.name:
+        if not include_incomplete and (path.suffix == ".tmp" or ".tmp." in path.name):
             raise RuntimeError(f"unfinished output: {path}")
         size = path.stat().st_size
         sha1 = hashlib.sha1(f"blob {size}\0".encode())
@@ -282,6 +284,67 @@ def git(repo: Path, *args: str, check: bool = True) -> subprocess.CompletedProce
     return proc
 
 
+def persist_failure(out: Path, logs: Path) -> dict | None:
+    """Preserve the complete failed output tree without claiming capture completion."""
+    if not out.exists() or not any(p.is_file() for p in out.rglob("*")):
+        print("[failure-persist] no capture files were produced", flush=True)
+        return None
+    expected = inventory(out, include_incomplete=True)
+    source = os.environ["EPS_STORY_PERSONA_SOURCE_SHA"]
+    if not re.fullmatch(r"[0-9a-f]{40}", source):
+        raise RuntimeError("failure persistence requires the source SHA")
+    prefix = f"issue2673_story_persona_qwen38/failed_attempts/{source}/{time.time_ns()}"
+    destination = hub._upload_folder_filtered(
+        out,
+        hub.DEFAULT_DATASET_REPO,
+        "dataset",
+        prefix,
+        allow_patterns=["*"],
+        ignore_patterns=[*WANDB_ALIASES, "wandb/latest-run/**"],
+        expected_repo_paths=[f"{prefix}/{name}" for name in expected],
+        delete_after=False,
+    )
+    if not destination or not destination.endswith("/" + prefix):
+        raise RuntimeError("failed-output upload returned no verified destination")
+    repo_id = destination[: -len("/" + prefix)]
+    api = HfApi()
+    revision = hub._retry_upload(
+        lambda: api.repo_info(repo_id, repo_type="dataset").sha,
+        what="resolve failed-output revision",
+    )
+    if not re.fullmatch(r"[0-9a-f]{40}", revision):
+        raise RuntimeError("failed-output upload lacks immutable revision")
+    entries = hub._retry_upload(
+        lambda: list(
+            api.list_repo_tree(
+                repo_id, repo_type="dataset", revision=revision, path_in_repo=prefix, recursive=True
+            )
+        ),
+        what="verify failed-output inventory",
+    )
+    verify_hub_entries(entries, expected, prefix)
+    if inventory(out, include_incomplete=True) != expected:
+        raise RuntimeError("failed output changed during persistence")
+    receipt = {
+        "source_sha": source,
+        "verified_revision": revision,
+        "hf_repo": repo_id,
+        "hf_prefix": prefix,
+        "files": expected,
+        "checked_at": time.time(),
+        "status": "failed-attempt-evidence-only; incomplete files are not resume-valid",
+        "excluded_convenience_aliases": {
+            alias: {"link_text": os.readlink(out / alias), "disposition": "known alias excluded"}
+            for alias in WANDB_ALIASES
+            if (out / alias).is_symlink()
+        },
+        "url": f"https://huggingface.co/datasets/{repo_id}/tree/{revision}/{prefix}",
+    }
+    write_json(logs / f"issue2673-failed-output-{time.time_ns()}.json", receipt)
+    print(f"[failure-persist] verified {len(expected)} files at {receipt['url']}", flush=True)
+    return receipt
+
+
 def push_results(repo: Path, paths: list[Path]) -> str:
     """Commit explicit files, push with bounded rebase retries, then check remote blobs."""
     branch = git(repo, "branch", "--show-current").stdout.strip()
@@ -438,12 +501,15 @@ def publish(out: Path, repo: Path, logs: Path, sentinel_path: Path) -> None:
 def main() -> None:
     """Run offline rendering or the approved remote upload/report phase."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--phase", choices=("prepare", "publish"), required=True)
+    parser.add_argument("--phase", choices=("prepare", "publish", "persist-failure"), required=True)
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--logs-dir", type=Path, default=Path("/workspace/logs"))
     parser.add_argument("--sentinel-path", type=Path)
     args = parser.parse_args()
+    if args.phase == "persist-failure":
+        persist_failure(args.out_dir.resolve(), args.logs_dir.resolve())
+        return
     if args.phase == "prepare":
         prepare(args.out_dir.resolve(), args.repo_root.resolve())
         return

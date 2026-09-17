@@ -176,3 +176,54 @@ def test_git_result_push_verifies_remote_bytes(tmp_path):
         == result.read_text()
     )
     assert push_results(repo, [result]) == revision
+
+
+def test_failed_output_persistence_verifies_custom_root_and_incomplete_files(tmp_path, monkeypatch):
+    """Failure evidence uploads without requiring a completed capture or losing partial files."""
+    from types import SimpleNamespace
+    from unittest.mock import create_autospec
+
+    from huggingface_hub import HfApi
+
+    from scripts import story_persona_qwen38_artifacts as artifacts
+
+    out, logs = tmp_path / "out", tmp_path / "logs"
+    out.mkdir()
+    (out / "smoke.json").write_text('{"passed":false}')
+    (out / "chunk.pt.tmp").write_bytes(b"unfinished unit-test fixture")
+    (out / "wandb").mkdir()
+    (out / "wandb/latest-run").symlink_to("missing-offline-run", target_is_directory=True)
+    expected = inventory(out, include_incomplete=True)
+    api = create_autospec(HfApi, instance=True)
+    api.repo_info.return_value = SimpleNamespace(sha="c" * 40)
+    factory = create_autospec(HfApi, return_value=api)
+    uploader = create_autospec(artifacts.hub._upload_folder_filtered)
+
+    def uploaded(*args, **kwargs):
+        """External network fixture whose call signature is enforced by autospec."""
+        prefix = args[3]
+        api.list_repo_tree.return_value = [
+            RepoFile(path=f"{prefix}/{name}", size=entry["size"], oid=entry["git_blob_sha1"])
+            for name, entry in expected.items()
+        ]
+        return f"test/overflow/{prefix}"
+
+    uploader.side_effect = uploaded
+    monkeypatch.setattr(artifacts, "HfApi", factory)
+    monkeypatch.setattr(artifacts.hub, "_upload_folder_filtered", uploader)
+    monkeypatch.setenv("EPS_STORY_PERSONA_SOURCE_SHA", "a" * 40)
+    receipt = artifacts.persist_failure(out, logs)
+    assert receipt["files"] == expected
+    assert receipt["hf_repo"] == "test/overflow"
+    assert receipt["verified_revision"] == "c" * 40
+    assert (
+        receipt["excluded_convenience_aliases"]["wandb/latest-run"]["link_text"]
+        == "missing-offline-run"
+    )
+    assert len(list(logs.glob("issue2673-failed-output-*.json"))) == 1
+    assert not (out / "capture_complete.json").exists()
+    uploader.side_effect = None
+    uploader.return_value = None
+    with pytest.raises(RuntimeError, match="no verified destination"):
+        artifacts.persist_failure(out, logs)
+    assert len(list(logs.glob("issue2673-failed-output-*.json"))) == 1

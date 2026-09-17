@@ -13,10 +13,14 @@ prompts: configs/pilots/story_persona_prompts.json
 questions: data/assistant_axis/extraction_questions.jsonl
 expected_questions: 240
 capture:
+  execution_mode: unpadded_singleton
+  numerics: ieee_math
+  # Eight rows per stored chunk; each model forward contains exactly one row.
   batch_rows: 8
   padded_token_budget: 4096
   max_context_tokens: 2048
   parity_relative_tolerance: 0.01
+  repeatability_relative_tolerance: 0.00001
 output_dir: ${oc.env:EPS_STORY_PERSONA_OUT,eval_results/story_persona_qwen38}
 wandb_mode: offline
 hydra:
