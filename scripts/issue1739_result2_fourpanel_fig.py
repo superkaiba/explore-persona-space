@@ -119,11 +119,13 @@ ICLR_FILLED = {m: f for m, _l, _c, f in ICLR_METHODS}
 # from the behavior-prediction experiment; keep regression on context /
 # predicted answer / real answer). All bars filled: fill no longer encodes a
 # readout family because only one readout remains. Labels say "predicted
-# answer" (the paper's vocabulary), not "mapped answer".
+# answer" (the paper's vocabulary), not "mapped answer", and they name the
+# input alone: the legend kicker already reads REGRESSION INPUT, and repeating
+# "Regression on " three times is what forced the legend onto a second row.
 ICLR_REGRESSION_METHODS = [
-    ("regression_ctx", "Regression on context", "persona_vector", True),
-    ("reg_map_linear", "Regression on predicted answer", "instruct", True),
-    ("reg_oracle", "Regression on real answer (ceiling)", "oracle_answer", True),
+    ("regression_ctx", "Context", "persona_vector", True),
+    ("reg_map_linear", "Predicted answer", "instruct", True),
+    ("reg_oracle", "Real answer (ceiling)", "oracle_answer", True),
 ]
 # The paper roster also drops the synthetic setting (user order 2026-09-03):
 # only the three real settings are shown.
@@ -133,15 +135,35 @@ ICLR_ROSTERS = {
     "regression": (
         ICLR_REGRESSION_METHODS,
         "c5_regression_regimes",
-        2,
-        # 0.60 before the provenance eyebrow and the error-bar note came off the
-        # canvas (the manuscript caption states the model, the read layers and
-        # the CI definition). The reclaimed row goes to the axes rather than
-        # becoming a whitespace band, so the top rises by 0.055.
-        0.655,
+        # Both None: this roster draws one legend row of every handle, and it
+        # sizes its canvas and subplot box from REG_LAYOUT_IN (inches) rather
+        # than from a figure fraction. A stale column count or top fraction
+        # here would be a trap rather than a setting.
+        None,
+        None,
         ICLR_REGRESSION_GROUPS,
     ),
     "all": (ICLR_METHODS, "c5_pv_methods_regimes", 2, 0.55, None),
+}
+
+# Vertical budget of the paper (regression) roster, in inches of authored
+# canvas, top to bottom. The figure is included at \textwidth, so each inch
+# here prints as C2A_SCALE inches of page height; budgeting in inches rather
+# than in figure fractions keeps the top block fixed when the aspect changes,
+# and makes the cost of every band legible. Canvas height is the sum, so the
+# aspect is derived, never typed.
+# Every *_h is a measured text bounding box (which already carries its own
+# leading), so the *_gap entries are white space on top of that.
+REG_LAYOUT_IN = {
+    "top_pad": 0.04,  # canvas top -> REGRESSION INPUT kicker
+    "kicker_h": 0.15,  # the kicker line itself
+    "kicker_gap": 0.04,  # kicker -> legend row
+    "legend_h": 0.24,  # the single legend row
+    "legend_gap": 0.05,  # legend row -> behavior heading
+    "heading_h": 0.17,  # the behavior heading line
+    "heading_gap": 0.05,  # behavior heading -> axes top
+    "axes_h": 2.00,  # plot box (2.02 in before this layout: no bar was resized)
+    "xlabels_h": 0.81,  # 8 pt tick pad + the 20-degree rotated setting labels
 }
 
 GROUPS = ["synthetic", "generic chat", "in-distribution", "completely OOD"]
@@ -557,7 +579,12 @@ PAPER_GROUP_LABEL = {
 }
 
 
-def render_iclr(points: dict, verdicts: dict, roster: str = "regression") -> int:
+def render_iclr(
+    points: dict,
+    verdicts: dict,
+    roster: str = "regression",
+    out_dir: str | None = None,
+) -> int:
     """Three unlettered behaviour facets at the paper (c2a-v2) standard.
 
     ``roster="regression"`` (the paper since 2026-09-03) -> ``figures/paper/
@@ -586,6 +613,7 @@ def render_iclr(points: dict, verdicts: dict, roster: str = "regression") -> int
         STYLE_VERSION,
         better_label,
         c2a_figure,
+        canvas_width_in,
         legend_kicker,
         panel_header,
         save_c2a_figure,
@@ -616,15 +644,42 @@ def render_iclr(points: dict, verdicts: dict, roster: str = "regression") -> int
     bar_w = GROUP_WIDTH / len(slots)
 
     set_c2a_style()
-    fig, frac = c2a_figure("full", aspect=0.33)
-    axes = fig.subplots(1, 3, sharey=True)
-    fig.subplots_adjust(left=0.08, right=0.99, bottom=0.2, top=subplot_top, wspace=0.08)
-    # The regression roster dropped its eyebrow row, so its axes are taller and
-    # its legend stack rides 0.055 higher; the panel kicker scales down by the
-    # same amount in axes coordinates to sit where it did in figure coordinates.
-    # The legacy "all" roster never drew an eyebrow and renders unchanged.
-    panel_kicker_y = 1.14 if roster == "regression" else 1.16
-    legend_top = 0.97 if roster == "regression" else 0.915
+    if roster == "regression":
+        # Every position below is derived from REG_LAYOUT_IN, so the bands stay
+        # put when the canvas height changes. Collapsing the legend to one row
+        # and trimming the margins took the canvas from 4.32 in to the budget's
+        # sum; the axes box itself is unchanged in inches, so no bar moved.
+        canvas_w = canvas_width_in(1.0)
+        height_in = sum(REG_LAYOUT_IN.values())
+        above_axes = height_in - REG_LAYOUT_IN["axes_h"] - REG_LAYOUT_IN["xlabels_h"]
+        fig, frac = c2a_figure("full", aspect=height_in / canvas_w)
+        axes = fig.subplots(1, 3, sharey=True)
+        fig.subplots_adjust(
+            left=0.08,
+            right=0.99,
+            bottom=REG_LAYOUT_IN["xlabels_h"] / height_in,
+            top=1.0 - above_axes / height_in,
+            wspace=0.08,
+        )
+        # panel_header draws its kicker with va="bottom" in axes coordinates.
+        panel_kicker_y = 1.0 + REG_LAYOUT_IN["heading_gap"] / REG_LAYOUT_IN["axes_h"]
+        legend_top = 1.0 - (REG_LAYOUT_IN["top_pad"] + REG_LAYOUT_IN["kicker_h"] / 2) / height_in
+        legend_row_y = (
+            1.0
+            - (REG_LAYOUT_IN["top_pad"] + REG_LAYOUT_IN["kicker_h"] + REG_LAYOUT_IN["kicker_gap"])
+            / height_in
+        )
+        # A one-row legend of four entries measures 12.69 in, so it starts left
+        # of the axes box; the kicker follows it to stay flush.
+        legend_x = 0.02
+    else:
+        fig, frac = c2a_figure("full", aspect=0.33)
+        axes = fig.subplots(1, 3, sharey=True)
+        fig.subplots_adjust(left=0.08, right=0.99, bottom=0.2, top=subplot_top, wspace=0.08)
+        panel_kicker_y = 1.16
+        legend_top = 0.915
+        legend_row_y = legend_top - 0.02
+        legend_x = 0.08
     n_bars = 0
     bar_records: list[dict] = []
     for ax, panel in zip(axes, panels, strict=True):
@@ -700,7 +755,7 @@ def render_iclr(points: dict, verdicts: dict, roster: str = "regression") -> int
         for m in slots
     ]
     muted_label = (
-        "Faded: behavior almost never elicited, so no predictor can be ranked"
+        "Faded: behavior too rarely elicited to rank predictors"
         if roster == "regression"
         else "Uninterpretable (muted)"
     )
@@ -709,43 +764,42 @@ def render_iclr(points: dict, verdicts: dict, roster: str = "regression") -> int
     # layers and the 95% paired-bootstrap CI definition are all stated in the
     # manuscript caption, so drawing them here duplicated it. Only the legend
     # group heading survives, because it decodes a mark.
-    legend_kicker(fig, 0.08, legend_top, "Regression input")
-    legend_kwargs = dict(
-        loc="upper left",
-        frameon=False,
-        columnspacing=0.8,
-        labelspacing=0.3,
-        handlelength=1.2,
-    )
+    legend_kicker(fig, legend_x, legend_top, "Regression input")
     if roster == "regression":
-        # Two single-row legends: the three arm entries on one line, the long
-        # faded-bar explainer on its own line below — a 2-column grid puts the
-        # two longest labels in one column and spills past the fixed-scale
-        # canvas edge.
+        # One row: the three arm entries and the faded-bar explainer side by
+        # side. It fits only because the arm labels name the input alone and
+        # the handle/column padding is tight; at the pinned legend size the
+        # previous wording needs 20.2 in on a 13.10 in canvas, which is why it
+        # used to sit on two lines. Never reach for fontsize= to buy width.
         fig.legend(
-            handles=handles[:-1],
-            bbox_to_anchor=(0.08, legend_top - 0.02),
-            ncol=len(handles) - 1,
-            **legend_kwargs,
-        )
-        fig.legend(
-            handles=handles[-1:],
-            bbox_to_anchor=(0.08, legend_top - 0.07),
-            ncol=1,
-            **legend_kwargs,
+            handles=handles,
+            bbox_to_anchor=(legend_x, legend_row_y),
+            ncol=len(handles),
+            loc="upper left",
+            frameon=False,
+            columnspacing=0.5,
+            labelspacing=0.3,
+            handlelength=0.9,
+            handletextpad=0.4,
+            borderpad=0.0,
+            borderaxespad=0.0,
         )
     else:
         fig.legend(
             handles=handles,
-            bbox_to_anchor=(0.08, legend_top - 0.02),
+            bbox_to_anchor=(legend_x, legend_row_y),
             ncol=legend_ncol,
-            **legend_kwargs,
+            loc="upper left",
+            frameon=False,
+            columnspacing=0.8,
+            labelspacing=0.3,
+            handlelength=1.2,
         )
     # Paper outputs land in THIS checkout (the paper-figure worktree), never the
     # shared repo root that recut_common.ROOT hardcodes.
     from pathlib import Path as _Path
 
-    out_dir = _Path(__file__).resolve().parents[1] / "figures/paper"
+    out_dir = _Path(out_dir) if out_dir else _Path(__file__).resolve().parents[1] / "figures/paper"
     out_dir.mkdir(parents=True, exist_ok=True)
     stem = out_dir / stem_name
     if roster == "regression":
@@ -835,13 +889,22 @@ def main() -> None:
             "roster with the persona-vector projections -> c5_pv_methods_regimes"
         ),
     )
+    ap.add_argument(
+        "--out-dir",
+        default=None,
+        help=(
+            "iclr only. Write the PDF/PNG/grayscale/sidecar here instead of "
+            "figures/paper/ (for previewing a layout change without touching "
+            "the manuscript assets)"
+        ),
+    )
     args = ap.parse_args()
 
     verdicts = load_verdicts()
     if args.style == "iclr":
         n_slots = len(ICLR_ROSTERS[args.roster][0])
         n_groups = len(ICLR_ROSTERS[args.roster][4] or GROUPS)
-        n = render_iclr(load_points_iclr(), verdicts, roster=args.roster)
+        n = render_iclr(load_points_iclr(), verdicts, roster=args.roster, out_dir=args.out_dir)
         if n != 3 * n_groups * n_slots:
             raise SystemExit(f"iclr figure plotted {n} bars, expected {3 * n_groups * n_slots}")
         return
