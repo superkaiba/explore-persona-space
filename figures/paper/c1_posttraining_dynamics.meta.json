@@ -1,7 +1,7 @@
 {
   "metadata": {
     "folds": "six held-out folds",
-    "generated_utc": "2026-09-16T16:57:53Z",
+    "generated_utc": "2026-09-17T06:04:08Z",
     "hf_path": "issue1902_olmo_onpolicy_20260914/production_v1/fits/olmo/summary.json",
     "hf_repo": "superkaiba1/explore-persona-space-data",
     "hf_revision": "7761da3391e9f670b66f2ab246cdefcd4bd7d974",
@@ -26,12 +26,12 @@
   "record": {
     "authoring_size_inches": [
       13.095,
-      4.321
+      3.732
     ],
     "background": "#FFFFFF",
     "exported_size_inches": [
       13.095,
-      4.024
+      3.429
     ],
     "include_width_frac": 1.0,
     "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c1_posttraining_dynamics.pdf}",
@@ -74,8 +74,7 @@
       "CORRECTION",
       "Plain text",
       "Chat template",
-      "Own states",
-      "Base states",
+      "Own",
       "as is",
       "with refit bias"
     ]

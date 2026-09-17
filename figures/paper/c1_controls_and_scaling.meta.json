@@ -5,10 +5,10 @@
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
   "rescore_script": "scripts/issue1901_figure2_five_rollout_scaling.py",
   "reproduction_command": "uv run python scripts/make_paper_figure2.py",
-  "repository_manuscript_asset": "figures/paper/c1_controls_and_scaling.pdf",
+  "repository_manuscript_asset": "/tmp/claude-1001/-home-thomasjiralerspong-explore-persona-space/dc96b7ec-142c-4958-b340-f3f6a2e1f377/scratchpad/figs_out/fig1/c1_controls_and_scaling.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
-    "commit": "549ece96ed7c0da7a8e6a913ae215fefd3e6ae5b",
+    "commit": "c6298c90bac1423c68c771b3d1b1df192104241c",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -36,16 +36,16 @@
     "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
     "resolved_font": "Inter",
     "authoring_size_inches": [
-      3.929,
-      6.325
+      4.714,
+      5.469
     ],
     "exported_size_inches": [
-      3.929,
-      6.611
+      4.714,
+      5.382
     ],
     "scale": 0.42,
-    "include_width_frac": 0.3,
-    "latex_include_line": "\\includegraphics[width=0.3\\textwidth]{figures/paper/c1_controls_and_scaling.pdf}",
+    "include_width_frac": 0.36,
+    "latex_include_line": "\\includegraphics[width=0.36\\textwidth]{figures/paper/c1_controls_and_scaling.pdf}",
     "realized_font_pt": {
       "body": 7.56,
       "tick": 7.14,
@@ -62,7 +62,7 @@
       "0",
       "0.5",
       "1",
-      "Maps vs.\ncontrols",
+      "Maps vs. controls",
       "C",
       "Training contexts",
       "5k",
@@ -73,11 +73,11 @@
       "0.7",
       "0.8",
       "0.9",
-      "Scaling with\ntraining data"
+      "Scaling with training data"
     ]
   },
   "legend_asset": {
-    "pdf": "figures/paper/c1_controls_and_scaling_legend.pdf",
+    "pdf": "/tmp/claude-1001/-home-thomasjiralerspong-explore-persona-space/dc96b7ec-142c-4958-b340-f3f6a2e1f377/scratchpad/figs_out/fig1/c1_controls_and_scaling_legend.pdf",
     "placement": "its own asset, included under the schematic in the manuscript's left minipage at 0.5 textwidth; the column carries no legend",
     "render": {
       "style_version": "c2a-v2",
@@ -938,9 +938,9 @@
   },
   "baselines_on_panel_b": null,
   "output_sha256": {
-    "pdf": "3dbb0a275cf79f2e316b3f0025f3d147c8d7eeeadbfd3f4f50def489d9aeb6c3",
-    "png": "552f855669a285ead833b6cb5ea6147a8046aa61d4a453503d6f9b79a1d7b570",
-    "grayscale": "6c5e39ea2d935782f35f9a37c39eb17c9c7ea9c906369890a8ff01199a701f52",
+    "pdf": "8a2b9aa2ecd9700895c6d0f38153045e2ddd6099bae60a2973e839f310ed50ee",
+    "png": "fe0182c440e9597664a2de4a7deb15bdf2266256678cf4c53e1a7636293df3a5",
+    "grayscale": "2409346b4ddfa163c75c3f2a665652a65baaca0ab5d9ac63bbc6011256134e9b",
     "legend_pdf": "30da40a1beb8a87afcd7798b66adebb9999a80ec190899741f029f3a5059b325",
     "legend_png": "d536bec884bd498f05687a00d6122e903181635d200dbdce888eeaff90683cbd",
     "legend_grayscale": "3c8312d5caa7bac8ec3273013fa588e1748e8c111d2cb2a67444e94f402f3416"
