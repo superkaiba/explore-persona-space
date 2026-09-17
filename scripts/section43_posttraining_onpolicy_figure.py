@@ -13,9 +13,12 @@ Input is ONE file, ``fits/olmo/summary.json`` from the pinned HF revision,
 copied to ``figures/issue_1902/section43/inputs/olmo_onpolicy_summary.json``
 and SHA-256 checked on every run (``--fetch`` downloads it when absent).
 
-Layout: one ``full``-width row of three panels at aspect 0.33 (the pre-09-16
-shape of this figure). Format is a series everywhere: plain text = solid line,
-filled circle; chat template = dotted line, filled diamond.
+Layout: one ``full``-width row of three panels at aspect 0.285, with ONE kicker
+legend row above them (each group's uppercase heading inline with its entries,
+per ``figure_standard.md`` 2.5) and the panel kickers set close to their axes.
+That prints 1.44 in tall at the 5.5 in text width, down from 1.69 in; no plotted
+value changed. Format is a series everywhere: plain text = solid line, filled
+circle; chat template = dotted line, filled diamond.
 
   A  each checkpoint's own map, held-out R^2 by checkpoint;
   B  R^2 into each post-trained checkpoint's answer vectors from its own
@@ -89,6 +92,27 @@ FORMAT_STYLE = {
 CORRECTIONS = (("direct", "as is"), ("bias", "with refit bias"))
 TEAL = ROLES["post_trained"].color
 AMBER = ROLES["base_model"].color
+
+# One kicker legend row above the panels (figure_standard.md 2.5).  The heading
+# sits inline with its entries, so the legend costs one row, not two.  At the
+# pinned c2a type sizes the three headings plus six labels only fit on one line
+# with the context-source labels carrying the heading's noun: "CONTEXT SOURCE"
+# over "Own"/"Base" rather than "Own states"/"Base states".
+LEGEND_Y = 0.905
+"""Figure-fraction centre line of the kicker legend row."""
+
+LEGEND_MARGIN = 0.006
+"""Canvas margin kept free at both ends of the legend row."""
+
+HEADING_GAP = 0.009
+"""Figure-fraction gap between a group heading and its first legend entry."""
+
+MIN_GROUP_GAP = 0.02
+"""Smallest figure-fraction gap tolerated between two legend groups."""
+
+KICKER_Y = 1.04
+"""Panel-kicker baseline in axes fractions (the c2a default 1.16 left a gap
+the size of the kicker itself between the kicker and the axes)."""
 SERIES_ENCODING = {
     "format": "plain text = solid line, filled circle; chat template = dotted line, "
     "filled diamond (panels A, B, C)",
@@ -232,7 +256,7 @@ def plot_panel_a(ax: plt.Axes, data: dict[str, Any]) -> None:
     ax.set_ylim(0.5, 0.68)
     ax.set_ylabel(better_label("Held-out $R^2$"))
     style_axis(ax)
-    panel_header(ax, "A", "Own fits")
+    panel_header(ax, "A", "Own fits", kicker_y=KICKER_Y)
 
 
 def plot_panel_b(ax: plt.Axes, data: dict[str, Any]) -> None:
@@ -245,7 +269,7 @@ def plot_panel_b(ax: plt.Axes, data: dict[str, Any]) -> None:
     ax.set_xlabel("Answer source")
     ax.set_ylabel(better_label("Held-out $R^2$"))
     style_axis(ax)
-    panel_header(ax, "B", "Context sources")
+    panel_header(ax, "B", "Context sources", kicker_y=KICKER_Y)
 
 
 def plot_panel_c(ax: plt.Axes, data: dict[str, Any]) -> None:
@@ -273,19 +297,73 @@ def plot_panel_c(ax: plt.Axes, data: dict[str, Any]) -> None:
     ax.set_ylim(0, 1.08)
     ax.set_ylabel(better_label(r"$R^2_{i\to j}\,/\,R^2_{j\to j}$"))
     style_axis(ax)
-    panel_header(ax, "C", "Map transfer")
+    panel_header(ax, "C", "Map transfer", kicker_y=KICKER_Y)
+
+
+def draw_legend_row(fig: plt.Figure, groups: tuple[tuple[str, list[Line2D]], ...]) -> None:
+    """Lay the legend groups out as ONE kicker row above the panels.
+
+    Each group is its own frameless legend preceded inline by its uppercase
+    heading.  Widths are measured after a draw and the leftover width is split
+    evenly between the groups, so a relabelled entry re-spaces the row instead
+    of colliding with its neighbour.
+    """
+
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    width_in = fig.get_figwidth()
+    placed = []
+    for heading, handles in groups:
+        seen = {id(text) for text in fig.texts}
+        legend_kicker(fig, 0.0, LEGEND_Y, heading)
+        fresh = [text for text in fig.texts if id(text) not in seen]
+        if len(fresh) != 1:
+            msg = f"legend_kicker added {len(fresh)} figure texts, expected exactly 1"
+            raise RuntimeError(msg)
+        head = fresh[0]
+        head_w = head.get_window_extent(renderer).width / fig.dpi / width_in
+        legend = fig.legend(
+            handles=handles,
+            loc="center left",
+            bbox_to_anchor=(0.0, LEGEND_Y),
+            bbox_transform=fig.transFigure,
+            ncol=len(handles),
+            frameon=False,
+            handlelength=1.05,
+            handletextpad=0.3,
+            columnspacing=0.6,
+            borderaxespad=0.0,
+        )
+        legend_w = legend.get_window_extent(renderer).width / fig.dpi / width_in
+        placed.append((head, head_w, legend, legend_w))
+
+    spans = [head_w + HEADING_GAP + legend_w for _, head_w, _, legend_w in placed]
+    free = 1.0 - 2 * LEGEND_MARGIN - sum(spans)
+    gap = free / (len(placed) - 1) if len(placed) > 1 else 0.0
+    if gap < MIN_GROUP_GAP:
+        msg = (
+            f"legend row needs {sum(spans):.3f} of the canvas width, leaving {gap:.3f} "
+            f"between groups (min {MIN_GROUP_GAP}); shorten a label or a heading"
+        )
+        raise ValueError(msg)
+
+    x = LEGEND_MARGIN
+    for (head, head_w, legend, _), span in zip(placed, spans, strict=True):
+        head.set_x(x)
+        legend.set_bbox_to_anchor((x + head_w + HEADING_GAP, LEGEND_Y), transform=fig.transFigure)
+        x += span + gap
 
 
 def render(data: dict[str, Any], out_dir: Path) -> dict[str, Any]:
-    fig, include_frac = c2a_figure("full", aspect=0.33)
+    fig, include_frac = c2a_figure("full", aspect=0.285)
     grid = fig.add_gridspec(
         1,
         3,
         width_ratios=[1.0, 1.0, 1.05],
         left=0.07,
         right=0.975,
-        top=0.70,
-        bottom=0.20,
+        top=0.775,
+        bottom=0.225,
         wspace=0.42,
     )
     axes = [fig.add_subplot(grid[0, i]) for i in range(3)]
@@ -298,8 +376,8 @@ def render(data: dict[str, Any], out_dir: Path) -> dict[str, Any]:
         for s in FORMAT_STYLE.values()
     ]
     src_handles = [
-        Line2D([], [], color=TEAL, marker="o", label="Own states"),
-        Line2D([], [], color=AMBER, marker="o", label="Base states"),
+        Line2D([], [], color=TEAL, marker="o", label="Own"),
+        Line2D([], [], color=AMBER, marker="o", label="Base"),
     ]
     corr_handles = [
         Line2D(
@@ -314,23 +392,14 @@ def render(data: dict[str, Any], out_dir: Path) -> dict[str, Any]:
         )
         for mode, label in CORRECTIONS
     ]
-    for x0, heading, handles in (
-        (0.005, "Format", fmt_handles),
-        (0.34, "Context source", src_handles),
-        (0.68, "Correction", corr_handles),
-    ):
-        legend_kicker(fig, x0, 0.955, heading)
-        fig.legend(
-            handles=handles,
-            loc="upper left",
-            bbox_to_anchor=(x0 - 0.001, 0.92),
-            ncol=len(handles),
-            frameon=False,
-            handlelength=1.3,
-            handletextpad=0.4,
-            columnspacing=0.8,
-            borderaxespad=0.0,
-        )
+    draw_legend_row(
+        fig,
+        (
+            ("Format", fmt_handles),
+            ("Context source", src_handles),
+            ("Correction", corr_handles),
+        ),
+    )
     outputs = save_c2a_figure(
         fig,
         out_dir / OUT_STEM,
