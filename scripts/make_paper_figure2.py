@@ -1150,18 +1150,34 @@ PANEL_LAYOUTS: dict[str, dict[str, object]] = {
         # Figure 1's column, split in two (reviewer comment, 2026-09-14): B holds
         # the maps beside the controls at one training-context count on the cut
         # axis; C holds the scaling curves alone on a focused 0.6-0.95 range, so
-        # the 5k-to-500k trend is no longer flattened by the controls' span. Same
-        # 0.30 include width as "b". The legend is a separate strip asset that
-        # sits under the schematic in the manuscript's left minipage, so the
-        # column holds only B and C and the two minipages come out about the
-        # same height (the in-column legend left ~0.6 in of blank paper above
-        # and below the schematic).
-        "width": "sliver",
-        "aspect": 1.61,
+        # the 5k-to-500k trend is no longer flattened by the controls' span. The
+        # legend is a separate strip asset that sits under the schematic in the
+        # manuscript's left minipage, so the column holds only B and C.
+        #
+        # The column is included at "narrow" rather than "sliver" (2026-09-16):
+        # at 0.30 textwidth it printed 2.78 in tall and set the whole figure's
+        # height, taller than the schematic column beside it. A wider include
+        # buys height back twice over. The canvas grows 20% in width at the same
+        # printed type size, so both panel titles fit on ONE line instead of two
+        # (0.67 in of canvas returned), and the same content then fits a much
+        # smaller aspect, so the printed column drops to 2.26 in. The schematic
+        # column takes the complementary 0.62 and sets the figure height now
+        # (its legend, authored at "half", rides that column at
+        # 0.80645\linewidth, which is the same 0.5\textwidth as before).
+        "width": "narrow",
+        "aspect": 1.16,
         "letters": {"compare": "B", "scale": "C"},
-        "margins": {"left": 0.300, "right": 0.975, "top": 0.846, "bottom": 0.068},
-        "legend_x": (0.300, 0.300),
-        "ylabel_x": -0.235,
+        # left holds the shared y label and the tick labels (0.87 in) and is the
+        # start of both panel titles, so it also caps their one-line width: the
+        # longer of the two sets 3.77 in of the 3.84 in that remains to the
+        # canvas edge.
+        "margins": {"left": 0.185, "right": 0.960, "top": 0.885, "bottom": 0.152},
+        "legend_x": (0.185, 0.185),
+        # The shared y label is anchored by its baseline, so it occupies the
+        # 0.26 in to the LEFT of this offset: far enough from the axes to clear
+        # the tick labels, near enough that neither it nor the last x tick
+        # pushes the tight export box past the authored canvas width.
+        "ylabel_x": -0.146,
         "rows": {"plain": 0.985, "with_controls": 0.985, "baseline": 0.995},
         # The legend as its own asset (make_legend_strip): the three headed
         # groups of the Figure 2 form, MAP, CONTROL, METRIC, side by side on a
@@ -1177,22 +1193,30 @@ PANEL_LAYOUTS: dict[str, dict[str, object]] = {
             "fontsize": 11.5,
         },
         # Both panels carry the paper's two-row header: the grey letter-only
-        # kicker over a bold two-line title stating what is plotted. Two lines
-        # because the column is too narrow for either title on one line at the
-        # paper's title size. The training-context scope lives on the x axes
+        # kicker over a bold title stating what is plotted, on ONE line each at
+        # this include width. The training-context scope lives on the x axes
         # instead (B's single tick label, C's rung ticks), not in the kickers.
         # The y values are axes fractions, so the shorter panel B needs the
         # larger offsets to put its header at the same distance above the axes
-        # as C's.
-        "compare_kicker_y": 1.54,
-        "compare_title_y": 1.10,
-        "scale_kicker_y": 1.33,
-        "scale_title_y": 1.06,
+        # as C's: both titles sit 0.13 in above their axes and both kickers
+        # 0.40 in, the one-line-title version of the offsets the two-line
+        # header used.
+        "compare_title": "Maps vs. controls",
+        "scale_title": "Scaling with training data",
+        "compare_kicker_y": 1.32,
+        "compare_title_y": 1.11,
+        "scale_kicker_y": 1.22,
+        "scale_title_y": 1.07,
         # Height of B relative to C, and the gap between them (gridspec hspace,
         # a fraction of the mean panel height): the gap holds B's tick label
-        # and C's header.
-        "compare_height": 0.60,
-        "hspace": 0.78,
+        # (0.33 in) and C's header (0.57 in to the top of the kicker), so 0.91 in
+        # of the canvas, which is what hspace is solved for. B keeps a larger
+        # share of the column than it did at "sliver" (0.68 against 0.60) because
+        # its below-zero band has to stay taller than the 0.22 in value label the
+        # broken bar carries, which is a fixed type size and does not shrink with
+        # the panel.
+        "compare_height": 0.68,
+        "hspace": 0.59,
         # One linear strip per panel, same tick formatter, no axis cut: B spans
         # a little below zero so an off-axis bar keeps a visible stub for its
         # break glyph; C keeps the focused range the split exists for.
@@ -1301,10 +1325,11 @@ def make_figure(
             ax_scale,
             scaling["rows"],
             letter=letters["scale"],
-            # The split column is too narrow for the title on one line, so it
-            # wraps; the bare column render carries the title in its caption.
+            # The split column's title comes from its layout: one line at
+            # "narrow", wrapped at "sliver". The bare column render carries the
+            # title in its caption instead.
             title=(
-                "Scaling with\ntraining data"
+                str(spec.get("scale_title", "Scaling with\ntraining data"))
                 if draw_compare
                 else (None if bare else "Scaling with training data")
             ),
@@ -1346,7 +1371,7 @@ def make_figure(
             ax_compare,
             "",
             letters["compare"] or "",
-            "Maps vs.\ncontrols",
+            str(spec.get("compare_title", "Maps vs.\ncontrols")),
             kicker_y=float(spec.get("compare_kicker_y", spec.get("kicker_y", 1.24))),  # type: ignore[arg-type]
             title_y=float(spec.get("compare_title_y", spec.get("title_y", 1.08))),  # type: ignore[arg-type]
         )
