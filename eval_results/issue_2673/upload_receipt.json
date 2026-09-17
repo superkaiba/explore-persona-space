@@ -1,0 +1,15 @@
+{
+  "issue": 2673,
+  "fingerprint": "65ca9c9892b4012747f8f1e1793d6ed3eb3c4acec1d801bf58ceba993a61c27a",
+  "source_sha": "f0c06bbd4515bc0f9cb200be42f2ddcf874fc9dc",
+  "verified_revision": "ecd84d8418969b8690d126f5a03908b5fa23cc84",
+  "hf_repo": "superkaiba1/explore-persona-space-data",
+  "hf_prefix": "issue2673_story_persona_qwen38/analysis_tensors",
+  "repo_id": "superkaiba1/explore-persona-space-data",
+  "prefix": "issue2673_story_persona_qwen38/analysis_tensors",
+  "file_count": 318,
+  "total_bytes": 1716623575,
+  "verified_at_utc": "2026-09-17T22:05:54Z",
+  "verification": "Exact file set and size; LFS SHA256 or non-LFS Git blob SHA1; local SHA256 manifest",
+  "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ecd84d8418969b8690d126f5a03908b5fa23cc84/issue2673_story_persona_qwen38/analysis_tensors"
+}

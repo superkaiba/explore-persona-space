@@ -1,0 +1,71 @@
+{
+  "fingerprint": "65ca9c9892b4012747f8f1e1793d6ed3eb3c4acec1d801bf58ceba993a61c27a",
+  "source_sha": "f0c06bbd4515bc0f9cb200be42f2ddcf874fc9dc",
+  "summary_sha256": "434653fee50c2777b26648782eed07c697b60718b943fb77766966098fe737ef",
+  "centroids_sha256": "c322f6338a428505a84e129614bf37effd4938f2a615e668a2cab7e15a3cb1ce",
+  "script_sha256": "90d6a0b6fb4ac277131aedcd2c83ed46fabb0a33c24cf795b1dca8b4c32ea656",
+  "fixed_layers_zero_based": [
+    15,
+    31,
+    47,
+    63
+  ],
+  "centering": "global mean across all ten persona centroids, separately per layer",
+  "question_count": 240,
+  "interpretation": "Context geometry only; no Qwen behavioral leakage measurement.",
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      17.024
+    ],
+    "exported_size_inches": [
+      13.095,
+      16.13
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/centered_cosine_fixed_layers.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  \u00b7  BLOCK 15 (ZERO-BASED)",
+      "Default",
+      "Sarcasm",
+      "Sarcasm + lists",
+      "Full SFL",
+      "French",
+      "French + lists",
+      "Dismissive",
+      "Sarcastic",
+      "Saboteur",
+      "Peer",
+      "B  \u00b7  BLOCK 31 (ZERO-BASED)",
+      "C  \u00b7  BLOCK 47 (ZERO-BASED)",
+      "D  \u00b7  BLOCK 63 (ZERO-BASED)",
+      "Centered cosine similarity",
+      "\u22121.00",
+      "\u22120.75",
+      "\u22120.50",
+      "\u22120.25",
+      "0.00",
+      "0.25",
+      "0.50",
+      "0.75",
+      "1.00"
+    ]
+  },
+  "output_sha256": {
+    "png": "4a034b927fcdf703fb10a87853726a864853df3f73bace0c90ec01b460180d3c",
+    "pdf": "b1dbcdf390d4ea2f79fab094dc99e996c7f681f13f46751a79b4cdf39fdcb909",
+    "grayscale": "6ae43f305b4b096ea7d784b509bccaaa4dca6613419579c2d23b644cfe3a3b8b"
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "fingerprint": "65ca9c9892b4012747f8f1e1793d6ed3eb3c4acec1d801bf58ceba993a61c27a",
+  "source_sha": "f0c06bbd4515bc0f9cb200be42f2ddcf874fc9dc",
+  "summary_sha256": "434653fee50c2777b26648782eed07c697b60718b943fb77766966098fe737ef",
+  "centroids_sha256": "c322f6338a428505a84e129614bf37effd4938f2a615e668a2cab7e15a3cb1ce",
+  "script_sha256": "90d6a0b6fb4ac277131aedcd2c83ed46fabb0a33c24cf795b1dca8b4c32ea656",
+  "fixed_layers_zero_based": [
+    15,
+    31,
+    47,
+    63
+  ],
+  "centering": "global mean across all ten persona centroids, separately per layer",
+  "question_count": 240,
+  "interpretation": "Context geometry only; no Qwen behavioral leakage measurement.",
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      6.81
+    ],
+    "exported_size_inches": [
+      13.095,
+      5.774
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/sfl_similarity_by_layer.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "TEN-PERSONA CENTERING",
+      "Decoder block (zero-based)",
+      "\u221210",
+      "0",
+      "10",
+      "20",
+      "30",
+      "40",
+      "50",
+      "60",
+      "70",
+      "Centered cosine with full SFL",
+      "\u22121.5",
+      "\u22121.0",
+      "\u22120.5",
+      "0.0",
+      "0.5",
+      "1.0",
+      "1.5",
+      "Similarity to sarcasm + French + lists",
+      "Default",
+      "Sarcasm",
+      "Sarcasm + lists",
+      "Full SFL",
+      "French",
+      "French + lists"
+    ]
+  },
+  "output_sha256": {
+    "png": "18ee3a28075a32dd334b83e254c96e376d7de74954f925698ac474b1089d3723",
+    "pdf": "338ccc38c21b791ac0ab19812fdb40c3c6bfe3fd8b47c40e09aca2771c5e5a59",
+    "grayscale": "24ce634a980d1df33d5530b1c0ac74d1af16218e3225cf29fc9219cc7ec9ab39"
+  }
+}
