@@ -4,7 +4,7 @@ title: Under ten-persona centering, sarcasm and lists approach the full persona 
 kind: experiment
 tags: []
 created_at: '2026-09-17T20:00:03Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: ok try it on qwen3.8 27b as a pilot first; yes run it end to end
 workflow: v1
 goal: Inspect whether the Story Imprinting persona prompts form the expected progressive
