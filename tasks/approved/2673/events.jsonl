@@ -1,1 +1,2 @@
 {"ts": "2026-09-17T20:00:03Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-09-17T20:03:16Z", "kind": "epm:user-approved", "version": 1, "by": "unknown", "note": "User approved the concrete reviewed Qwen3.8-27B pilot and required task creation: yes run it end to end. Scope: 10 exact published persona prompts x 240 questions, all64 last-context-token block outputs and centered cosine; one80GB GPU, capture/analysis/plots/upload/verification/teardown. No training or behavioral leakage claim."}
