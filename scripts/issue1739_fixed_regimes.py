@@ -51,6 +51,40 @@ class Config:
 ConfigStore.instance().store(name="fixed_regimes", node=Config)
 
 
+def verify_input_pins(cache):
+    """Bind reused map, membership, labels, and captures to the preceding run."""
+    prior_path = cache / "outputs/analysis/config.json"
+    prior = json.loads(prior_path.read_text())
+    manifest_path = cache / "outputs/map/map_manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    pins = {
+        manifest_path: prior["map_manifest_sha256"],
+        cache / "inputs/provenance/prompt_index.jsonl": prior["prompt_index_sha256"],
+        cache / "inputs/provenance/hallucination_per_rollout.json": prior[
+            "hallu_per_rollout_sha256"
+        ],
+        Path(manifest["map_prompt_hashes"]): manifest["map_prompt_hashes_sha256"],
+        cache / "outputs/map/frozen.pt": prior["map_payload_sha256"][
+            str(cache / "outputs/map/frozen.pt")
+        ],
+    }
+    for path, expected in pins.items():
+        assert sha256(path) == expected, str(path)
+    counts = {}
+    for behavior in BEHAVIORS:
+        store = cache / "inputs" / f"{behavior}_labeling"
+        members = json.loads((store / "slice_manifest.json").read_text())["members"]
+        for name, member in members.items():
+            assert member["sha256"] == prior["store_sha256"][str(store / name)], name
+        counts[behavior] = len(members)
+    return dict(
+        prior_config_sha256=sha256(prior_path),
+        checked_sha256={str(p): v for p, v in pins.items()},
+        slice_members_bound_to_prior_run=counts,
+        verified_at=time.time(),
+    )
+
+
 def progress(out, phase, **extra):
     """Publish timestamped stage evidence for active supervision."""
     value = dict(time=time.time(), phase=phase, **extra)
@@ -220,6 +254,7 @@ def main(cfg: Config):
     """Run the three cached CPU extensions in a fresh, durable output directory."""
     cache, out = Path(cfg.cache), Path(cfg.out)
     out.mkdir(parents=True, exist_ok=False)
+    input_continuity = verify_input_pins(cache)
     source_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     manifest_path = cache / "outputs/map/map_manifest.json"
     manifest = json.loads(manifest_path.read_text())
@@ -232,6 +267,7 @@ def main(cfg: Config):
     payload = ft.load_payload(map_path)
     summary = dict(
         source_sha=source_sha,
+        input_continuity=input_continuity,
         script_sha256=sha256(Path(__file__)),
         map_sha256=sha256(map_path),
         map_training_pairs=manifest["n_train"],

@@ -2,8 +2,8 @@
 
 Reads completed JSON summaries only. No fitting, sampling, or judging occurs.
 All values and pointwise intervals are preserved, including negative results.
-The main figure compares fixed contrastive answer/context projections and
-inverse-direction scoring. Supervised ridge controls remain in the appendix.
+The main figure compares fixed contrastive projections by behavior and regime.
+Per-dataset projections, inverse directions, and regressions are in the appendix.
 """
 
 from __future__ import annotations
@@ -28,6 +28,7 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     MUTED,
     PAPER,
     ROLES,
+    better_label,
     c2a_figure,
     panel_header,
     save_c2a_figure,
@@ -36,6 +37,7 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
 )
 
 INPUT = ROOT / "eval_results/issue_1739/million_cached_20260916"
+REGIMES = ROOT / "eval_results/issue_1739/fixed_regimes_20260917"
 ROWS = (
     ("evil", "hhrt", "HH-RLHF", 1847),
     ("evil", "toxicchat", "ToxicChat", 370),
@@ -143,7 +145,8 @@ def save(fig, frac, out: Path, stem: str, data: dict):
     plt.close(fig)
 
 
-def main_figure(data, out):
+def dataset_figure(data, out):
+    """Retain individual OOD datasets and their preimage comparison in the appendix."""
     fig, frac = c2a_figure("full", aspect=0.36)
     axes = fig.subplots(1, 2)
     fig.subplots_adjust(left=0.12, right=0.99, top=0.90, bottom=0.31, wspace=0.25)
@@ -191,6 +194,89 @@ def main_figure(data, out):
             handletextpad=0.5,
             labelspacing=0.25,
         )
+    save(fig, frac, out, "c5_behavior_datasets", data)
+
+
+def regime_figure(out):
+    """Match the preceding behavior-by-regime layout, excluding synthetic evaluation."""
+    path = REGIMES / "summary.json"
+    done = json.loads((REGIMES / "complete.json").read_text())
+    if sha(path) != done["artifact_sha256"]["summary.json"]:
+        raise ValueError("Completed regime summary changed")
+    data = json.loads(path.read_text())
+    data["inputs"] = {str(path.relative_to(ROOT)): sha(path)}
+    fig, frac = c2a_figure("full", aspect=0.36)
+    axes = fig.subplots(1, 3, sharey=True)
+    fig.subplots_adjust(left=0.075, right=0.99, top=0.89, bottom=0.36, wspace=0.15)
+    labels = {
+        "mapped_answer": "Answer direction → predicted answer",
+        "real_answer": "Answer direction → observed answer",
+        "context_native": "Context direction → context",
+    }
+    headings = ("Harmful compliance", "Sycophancy", "Hallucination")
+    for panel, (ax, behavior, heading) in enumerate(
+        zip(axes, data["behaviors"], headings, strict=True)
+    ):
+        for group, cell in enumerate(behavior["regimes"]):
+            if not cell["informative"]:
+                if cell["regime"] != "generic chat" or cell["n"] != 4:
+                    raise ValueError(f"Unexpected missing cell: {cell}")
+                ax.text(
+                    group,
+                    0.28,
+                    "Insufficient\ndata\n(n = 4)",
+                    color=MUTED,
+                    ha="center",
+                    va="center",
+                )
+                continue
+            for offset, arm in zip((-0.23, 0, 0.23), labels, strict=True):
+                row = cell["arms"][arm]
+                value, (lo, hi) = row["rho"], row["ci95"]
+                if not np.isfinite([value, lo, hi]).all() or lo > hi or lo < -0.45 or hi > 0.80:
+                    raise ValueError(f"Invalid interval: {row}")
+                color, _, face, _ = STYLES[arm]
+                ax.bar(
+                    group + offset,
+                    value,
+                    width=0.20,
+                    color=face,
+                    edgecolor=color,
+                    linewidth=1.4,
+                    label=labels[arm] if panel == 0 and group == 1 else None,
+                    zorder=2,
+                )
+                ax.vlines(group + offset, lo, hi, color=INK, linewidth=1.1, zorder=3)
+                ax.hlines(
+                    [lo, hi],
+                    group + offset - 0.035,
+                    group + offset + 0.035,
+                    color=INK,
+                    linewidth=1.1,
+                    zorder=3,
+                )
+        ax.set_xlim(-0.52, 2.52)
+        ax.set_ylim(-0.45, 0.80)
+        ax.set_yticks([-0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8])
+        ax.set_xticks([0, 1, 2], ["Generic\nchat", "In-distrib.", "OOD"])
+        ax.tick_params(axis="x", length=0, pad=8)
+        style_axis(ax, grid_axis="none")
+        ax.axhline(0, color=MUTED, linewidth=0.7, zorder=0)
+        panel_header(ax, chr(65 + panel), heading, kicker_y=1.07)
+        if panel:
+            ax.spines["left"].set_visible(False)
+            ax.tick_params(axis="y", length=0)
+    axes[0].set_ylabel(better_label(r"Spearman $\rho$"))
+    handles, legend_labels = axes[0].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        legend_labels,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.005),
+        ncol=1,
+        labelspacing=0.25,
+        handlelength=1.0,
+    )
     save(fig, frac, out, "c5_behavior_transfer", data)
 
 
@@ -267,9 +353,10 @@ def main():
     args = parser.parse_args()
     set_c2a_style()
     data = read_data()
-    main_figure(data, args.out)
+    regime_figure(args.out)
+    dataset_figure(data, args.out)
     difference_figure(data, args.out)
-    print(f"Rendered two figures from six hash-verified summaries in {args.out}")
+    print(f"Rendered three figures from hash-verified completed summaries in {args.out}")
 
 
 if __name__ == "__main__":
