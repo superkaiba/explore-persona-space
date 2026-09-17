@@ -1,0 +1,13 @@
+defaults:
+  - override hydra/job_logging: disabled
+  - _self_
+source_dir: /home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue2673-story-persona/analysis-v2
+cache_dir: /home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue2673-story-persona/no_centering_v1
+output_dir: eval_results/issue_2673/no_centering
+layers: [15, 31, 47, 63]  # Fixed before the leakage comparison, task #2673.
+hf_revision: ecd84d8418969b8690d126f5a03908b5fa23cc84
+workers: 4
+hydra:
+  run:
+    dir: .
+  output_subdir: null

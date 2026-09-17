@@ -1,0 +1,122 @@
+{
+  "source": "eval_results/issue_2673/no_centering/summary.json",
+  "source_sha256": "880050a84be62acbeea482ffb621f948a1106e72e2559a7f5e718864f9ebcabe",
+  "layer": 63,
+  "plotted_values": {
+    "raw": {
+      "n": 6,
+      "personas": [
+        "default",
+        "sarcasm",
+        "sarcasm_lists",
+        "french",
+        "french_lists",
+        "sfl"
+      ],
+      "cosine_to_sfl": [
+        0.6534697672676509,
+        0.8841354700845021,
+        0.9793294428901756,
+        0.6545365640022277,
+        0.7158887206666339,
+        1.0000000000000002
+      ],
+      "sfl_tracer_uptake": [
+        0.18799999999999994,
+        0.38399999999999995,
+        0.44499999999999995,
+        0.35200000000000004,
+        0.43599999999999994,
+        0.345
+      ],
+      "pearson_r": 0.4617179601110497,
+      "spearman_rho": 0.3714285714285715
+    },
+    "whitened": {
+      "n": 6,
+      "personas": [
+        "default",
+        "sarcasm",
+        "sarcasm_lists",
+        "french",
+        "french_lists",
+        "sfl"
+      ],
+      "cosine_to_sfl": [
+        -0.006322459580342906,
+        0.006767265914274153,
+        0.07955122738137171,
+        -0.0004957969148905622,
+        0.010407825431228588,
+        1.0
+      ],
+      "sfl_tracer_uptake": [
+        0.18799999999999994,
+        0.38399999999999995,
+        0.44499999999999995,
+        0.35200000000000004,
+        0.43599999999999994,
+        0.345
+      ],
+      "pearson_r": -0.023355753484322547,
+      "spearman_rho": 0.4285714285714286
+    }
+  },
+  "notes": "No mean subtraction. Whitening uses same-battery regularized second moment. Self-pair retained; published outcome is from another model; figure-derived means lack raw uncertainty.",
+  "export": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      5.631
+    ],
+    "exported_size_inches": [
+      13.095,
+      4.711
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/no_centering_leakage_block63.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "Default",
+      "Sarcasm",
+      "Sarcasm + lists",
+      "French",
+      "French + lists",
+      "Full SFL (self)",
+      "Qwen cosine to full SFL",
+      "0.7",
+      "0.8",
+      "0.9",
+      "1.0",
+      "Published Kimi tracer uptake",
+      "10%",
+      "20%",
+      "30%",
+      "40%",
+      "50%",
+      "60%",
+      "Ordinary cosine",
+      "0.00",
+      "0.25",
+      "0.50",
+      "0.75",
+      "1.00",
+      "Whitened cosine"
+    ]
+  },
+  "output_sha256": {
+    "png": "a44f3e554e88d9725c8351b71fc07b793989c84b6d43277f2124379b5ba468ef",
+    "pdf": "4e557e8d26cf4bac14ef6665b6413841394a1042072c328b2362f5c1280805f0",
+    "grayscale": "955e475d86b2a587761597bd77aa743575e2979e524b26e956d23c64b0d46c5e"
+  }
+}
