@@ -526,3 +526,23 @@ Source commit: `722ce8ae2c003209df22ab8adc4442cf72afb3df`. Forty-one focused tes
 [Verified source, raw predictions, directions, map payloads, bootstraps, exclusions, provenance, and figures](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/750831d2f8d5b7cdf2cc3859ddd69f0ce6825dac/issue1739_fixed_transfer_20260916): all 92 files, 1,402,357,312 bytes, verified against the remote immutable revision. Inputs are pinned to prior archived generation and judge artifacts. No fresh generations or judgments were needed.
 
 The monitored run exited successfully; the independent watchdog acknowledged completion notification delivery. Both completed-run services were disabled after upload verification.
+
+
+## Cached CPU follow-up: million-map covariance and preimage retrieval
+
+User-authorized inline cached analysis, completed 2026-09-17 UTC with source `2cf01b584b922c0df3db7405feffc6666f2ce60d`. No GPU, generation, judging, activation capture, map refit, or new compute provision was used.
+
+### Findings
+
+Using the frozen layer-19 map trained on 963,444 context–answer pairs, we transferred fixed instruction-contrast answer directions into context space with a regularized inverse, selecting its rank using generic validation pairs only. Preimage scores correlated with behavior on ToxicChat (ρ = .410), AITA (.322), and SimpleQA (.435), compared with .403, .319, and .507 for context-native directions. Prediction was weak on HH (ρ = .051), and transfer was not uniform: the hallucination preimage was negatively correlated with hallucination on NQ (ρ = −.171), where the original answer-side direction also failed validation (ρ = −.009).
+
+Retrieval from the generic context pool revealed interpretable but imperfect associations: explicit malicious-persona requests for the evil direction, benign interpersonal-response prompts for sycophancy, and requests for detailed obscure-company descriptions for hallucination—all 30 top hallucination prompts shared the same company-introduction template. These training-pool examples are descriptive. On held-out SimpleQA, the highest versus lowest preimage-similarity deciles had mean retained-response fabrication rates of 88.1% versus 32.2%; NQ showed the opposite ordering, 38.8% versus 47.5%. Thus, coherent retrieval does not establish a general behavior detector.
+
+Finally, matched behavior regressions showed no statistically supported advantage for mapped over raw-context features on any of the five natural datasets; mapping performed worse on AITA and SimpleQA. The context-only covariance control beat mapping on SimpleQA and lost on AITA, where raw contexts remained stronger. These results support dataset-dependent behavioral transfer and exploratory interpretation, but do not establish a consistent predictive advantage from the map.
+
+*Scope: Pointwise 95% paired group-bootstrap intervals condition on fitted models. Scores average retained judged responses and can exclude refusals; answer-token pooling remains mismatched. WildChat retained only four contexts per behavior and is not used for substantive conclusions.*
+
+
+### Artifacts and validation
+
+[Immutable archive](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/449c48d4047efffec50dbe8492d78c905b4bb588/issue1739_million_cached_20260916): 99 files, 527,619,423 bytes, all remote hashes verified. Compact tables, deterministic prompt examples and judge-coverage audit are in `eval_results/issue_1739/million_cached_20260916/`; results commit `ce62c45be4a` on `codex/1739-covariance-ablation-20260916`. Independent audit checked 1,096 numerical comparisons (max discrepancy 2.22e-16), training/evaluation content separation, generic inverse-rank selection, and every retrieved prompt hash. Four focused tests passed; global tests/lint retain documented pre-existing failures outside this round’s payload. The supervised CPU run took about 17 minutes including upload; the independent watchdog acknowledged the completion alert and completed-run services were disabled.
