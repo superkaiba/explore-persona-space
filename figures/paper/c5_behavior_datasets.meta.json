@@ -1153,11 +1153,11 @@
     ],
     "exported_size_inches": [
       13.095,
-      4.751
+      4.798
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
-    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c5_behavior_controls.pdf}",
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c5_behavior_datasets.pdf}",
     "realized_font_pt": {
       "body": 7.56,
       "tick": 7.14,
@@ -1167,31 +1167,26 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "A  \u00b7  PREIMAGE COMPARISONS",
-      "Difference in Spearman $\\rho$",
-      "\u22120.1",
+      "A  \u00b7  CONTRASTIVE DIRECTIONS",
+      "Spearman $\\rho$",
+      "\u22120.2",
       "0.0",
-      "0.1",
+      "0.4",
+      "0.8",
       "HH-RLHF",
       "ToxicChat",
       "AITA",
       "NQ-Open",
       "SimpleQA",
-      "Preimage \u2212 context direction",
-      "Preimage \u2212 predicted answer",
-      "B  \u00b7  REGRESSION COMPARISONS",
-      "\u22120.05",
-      "0.00",
-      "0.05",
-      "0.10",
-      "0.15",
-      "Predicted answer \u2212 context",
-      "Predicted answer \u2212 covariance",
-      "Predicted answer \u2212 shuffled"
+      "Answer direction \u2192 predicted answer",
+      "Answer direction \u2192 observed answer",
+      "Context direction \u2192 context",
+      "B  \u00b7  PREIMAGE DIRECTION",
+      "Preimage direction \u2192 context"
     ]
   },
   "renderer_sha256": "28d0749246be84ad8db2640c8defa970d6bce50b3193ef56d169579d85ddb41b",
-  "pdf_sha256": "93d2749ed19929154948f404ac6381ba2ff54b8b8d81a8eabf646ad1cc62de32",
-  "png_sha256": "51575a7056d8712f6e9e4ffcd60e784d0218932414af9ad46ff957b8d75da10e",
-  "grayscale_sha256": "2c3be8c2b9728172a1f7740fb9050853a19d221e0047c61e5b8834b2fa914fcf"
+  "pdf_sha256": "670cced993e0fd0ebe04fe1dc1788fd8124d303882dc7688099054f995996360",
+  "png_sha256": "f7b386666f463a559b35100254ffedc302ce0660ca2bbdd9afa456c95ece9f3f",
+  "grayscale_sha256": "b28bcbf4ea70a5d416e5702f2bcf94fe8738bf18a45d68c3e9c1f315187254c2"
 }

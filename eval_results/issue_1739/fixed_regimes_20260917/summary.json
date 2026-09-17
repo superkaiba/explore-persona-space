@@ -728,56 +728,5 @@
         }
       ]
     }
-  ],
-  "inputs": {
-    "eval_results/issue_1739/fixed_regimes_20260917/summary.json": "3a902dd93579da1d687a0d8a0358d11bca3feac8936f52ba3d9cd455e68991a0"
-  },
-  "render": {
-    "style_version": "c2a-v2",
-    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
-    "resolved_font": "Inter",
-    "authoring_size_inches": [
-      13.095,
-      4.714
-    ],
-    "exported_size_inches": [
-      13.095,
-      4.439
-    ],
-    "scale": 0.42,
-    "include_width_frac": 1.0,
-    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c5_behavior_transfer.pdf}",
-    "realized_font_pt": {
-      "body": 7.56,
-      "tick": 7.14,
-      "label": 8.4,
-      "title": 9.24
-    },
-    "png_dpi": 240,
-    "background": "#FFFFFF",
-    "text": [
-      "Insufficient\ndata\n(n = 4)",
-      "A  \u00b7  HARMFUL COMPLIANCE",
-      "Generic\nchat",
-      "In-distrib.",
-      "OOD",
-      "Spearman $\\rho$ \u2191",
-      "\u22120.4",
-      "\u22120.2",
-      "0.0",
-      "0.2",
-      "0.4",
-      "0.6",
-      "0.8",
-      "B  \u00b7  SYCOPHANCY",
-      "C  \u00b7  HALLUCINATION",
-      "Answer direction \u2192 predicted answer",
-      "Answer direction \u2192 observed answer",
-      "Context direction \u2192 context"
-    ]
-  },
-  "renderer_sha256": "28d0749246be84ad8db2640c8defa970d6bce50b3193ef56d169579d85ddb41b",
-  "pdf_sha256": "e198691c5319e9d4eb6ef3295d6ed37064678847aef6d62e5a7e0d44c5685196",
-  "png_sha256": "422bf05a85e3feee608e01e9990b95d56227c48e15a13cae458309ffe82fe306",
-  "grayscale_sha256": "eb0ba9b8fc89df17f6cab132a8ac0d2b3b1d9c714b66454e5dc4f074982b22aa"
+  ]
 }

@@ -1,0 +1,37 @@
+{
+  "checked_at": 1789668013.595753,
+  "completed_source_sha": "ec2c2e903285932d67cec00ed5361a464ea7d4bb",
+  "input_continuity": {
+    "prior_config_sha256": "8daeee50e2aab02753262b20e2c8ec3470530d8542d125f9951176372854dc9c",
+    "checked_sha256": {
+      "/dev/shm/issue1739-fixed-transfer/outputs/map/map_manifest.json": "2b0839f051aaa8a8e0ee6a081c10da8c8e6caffec72c46f71d4ebcb121ddea4a",
+      "/dev/shm/issue1739-fixed-transfer/inputs/provenance/prompt_index.jsonl": "18b2bb0bfa510b6e5aebf235d66abb0c9052ece2fbf12ac2a58c74276a8e6f9d",
+      "/dev/shm/issue1739-fixed-transfer/inputs/provenance/hallucination_per_rollout.json": "63f6bac43ed117022bd810ad0209ffa45ed8178f84ba6d5d16d9addae6c6d73b",
+      "/dev/shm/issue1739-fixed-transfer/outputs/map/map_prompt_hashes.npz": "0db2037115fbfcd1a683c14f392ba4b53723e617bf7e9d58cff45b9af8ad6540",
+      "/dev/shm/issue1739-fixed-transfer/outputs/map/frozen.pt": "188486f8afd9d95221e32492f3a0be2a3bdb2098cbe7fadfecf1d46433567909"
+    },
+    "slice_members_bound_to_prior_run": {
+      "evil": 315,
+      "sycophancy": 507,
+      "hallucination": 681
+    },
+    "verified_at": 1789668014.6091955
+  },
+  "datasets": {
+    "evil": {
+      "existing_scores_exactly_preserved": true,
+      "scipy_spearman_parity": true,
+      "n_contexts": 8689
+    },
+    "sycophancy": {
+      "existing_scores_exactly_preserved": true,
+      "scipy_spearman_parity": true,
+      "n_contexts": 17308
+    },
+    "hallucination": {
+      "existing_scores_exactly_preserved": true,
+      "scipy_spearman_parity": true,
+      "n_contexts": 23176
+    }
+  }
+}

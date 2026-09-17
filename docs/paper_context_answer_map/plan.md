@@ -3,18 +3,21 @@
 ## Current behavior-results scope (Thomas, 2026-09-17)
 
 Section 4.7 uses the cached layer-19, 963,444-pair metamodel comparison.
-Its compact main figure compares the same fixed contrastive answer direction on
-predicted and observed answers against a contrastive context direction on contexts.
-A second panel compares regularized preimage scoring against context-native directions.
-The appendix contains paired differences, highest-ranked prompt excerpts, and the
-supplementary regression/covariance controls. Thomas clarified on 2026-09-17 that
-the main comparison must concern contrastive directions rather than regressions.
-The supported conclusion is dataset-dependent transfer without a consistent
-advantage over context-native contrastive directions. Abstract, introduction, and discussion use that conclusion.
-This supersedes the older C5 framing and the exclusion of fixed-direction arms
-below. Conditional judge retention and answer-token pooling mismatch remain
-explicit. No new inference or judging was run for this presentation update.
+The main figure has three behavior panels (harmful compliance, sycophancy,
+hallucination), each grouped into generic chat, in-distribution, and OOD. It
+compares the same fixed answer instruction-contrast direction on predicted and
+observed answers against a context instruction-contrast direction on contexts.
+Synthetic evaluation is excluded. Generic chat retains only four non-overlapping
+contexts per behavior and is marked insufficient. OOD bars are equal-weight means
+of dataset-specific correlations; individual OOD datasets and preimages remain
+in the appendix, alongside supplementary regression/covariance controls.
 
+The cached CPU extension adds 38,455 in-distribution contexts to the 10,706 OOD
+contexts. No map/readout fitting, generation, or judging was performed. Transfer
+remains dataset-dependent: the fixed hallucination direction fails validation on
+TriviaQA and NQ-Open, while SimpleQA is positive. Conditional judge retention and
+answer-token pooling mismatch remain explicit. This supersedes the older C5
+framing and fixed-direction exclusions below.
 
 ## Current methodology scope (Thomas, 2026-09-11)
 

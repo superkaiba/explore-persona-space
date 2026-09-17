@@ -1,28 +1,24 @@
 {
   "overleaf_project": "https://www.overleaf.com/project/6a59c927290f8b8b5eee0055",
-  "overleaf_commit": "2f6c93966f3f38e0f998d7ae4f7efe5102dd18ec",
+  "overleaf_commit": "9d5cb6dc66b2f22e07cdaf97ac268c94a9d9dcce",
   "figures": {
     "c5_behavior_transfer": {
-      "url": "https://eps.superkaiba.com/tasks/1739/figure/c5_behavior_transfer.png?v=f7b386666f46",
-      "png_sha256": "f7b386666f463a559b35100254ffedc302ce0660ca2bbdd9afa456c95ece9f3f",
-      "panel_a_arms": [
-        "mapped_answer",
-        "real_answer",
-        "context_native"
-      ],
-      "panel_a_estimator": "fixed contrastive direction projection",
-      "panel_b_arms": [
-        "preimage",
-        "context_native"
-      ]
+      "url": "https://eps.superkaiba.com/tasks/1739/figure/c5_behavior_transfer.png?v=422bf05a85e3",
+      "png_sha256": "422bf05a85e3feee608e01e9990b95d56227c48e15a13cae458309ffe82fe306"
+    },
+    "c5_behavior_datasets": {
+      "url": "https://eps.superkaiba.com/tasks/1739/figure/c5_behavior_datasets.png?v=f7b386666f46",
+      "png_sha256": "f7b386666f463a559b35100254ffedc302ce0660ca2bbdd9afa456c95ece9f3f"
     },
     "c5_behavior_controls": {
-      "url": "https://eps.superkaiba.com/tasks/1739/figure/c5_behavior_controls.png",
+      "url": "https://eps.superkaiba.com/tasks/1739/figure/c5_behavior_controls.png?v=51575a7056d8",
       "png_sha256": "51575a7056d8712f6e9e4ffcd60e784d0218932414af9ad46ff957b8d75da10e"
     }
   },
-  "compiled_pages": 52,
+  "compiled_pages": 53,
   "unresolved_references": 0,
-  "source_data_unchanged": true,
+  "source_data_unchanged": false,
+  "existing_ood_scores_unchanged": true,
+  "added_in_distribution_contexts": 38455,
   "regression_controls_location": "appendix only"
 }

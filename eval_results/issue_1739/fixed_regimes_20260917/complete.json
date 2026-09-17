@@ -1,0 +1,26 @@
+{
+  "finished_at": 1789667962.5308373,
+  "source_sha": "ec2c2e903285932d67cec00ed5361a464ea7d4bb",
+  "artifact_sha256": {
+    "config.json": "715287c1db22d82798befd15d7917f2788b2eb4b5ac6de6474cf3ca298e0453f",
+    "summary.json": "3a902dd93579da1d687a0d8a0358d11bca3feac8936f52ba3d9cd455e68991a0",
+    "evil/complete.json": "8ed2fd928403292ce6d2a8987a47b6de37575dc4382d961195be6fb0f640a84f",
+    "evil/rollout_alignment.json": "2b008645e8dec1ca92eb90f3d4c00bb8405d51b64c35ded4dc7384371a0f9338",
+    "evil/results.json": "8fb334d594379e00a894fb96cf67639363f17f32d2820d4326475977f3009082",
+    "evil/audit.json": "1b4137fd0e6ab17d88f58ed015777664f1ce15b1bf290b64f585c4f794d8eaf9",
+    "evil/bootstraps.npz": "75ba490c8e9f34cc01f2faed54338e5faa104bda5ff75e6466f4f281117d03f1",
+    "evil/predictions.npz": "02ab8904dd70765bb172c7636875f417b6383c3513a11a3ac0b995b7c4764365",
+    "hallucination/complete.json": "b9b80be19ef6271a1b0449bdc357bc2095064ac044082d0d29ca64f3d6889d3e",
+    "hallucination/rollout_alignment.json": "2369ad01b25c70a642d48eaafb230f84b581fc27ea0609d973b6c4eb1cbad2e7",
+    "hallucination/results.json": "8f57aca5fcd2b703e21de5b27d777bbb28e46eed0983a0711959fce24140acf6",
+    "hallucination/audit.json": "cb00af67e0f3d146d16ebe8688de45e8ee7f4fb07853d4f6701e79dac5395d50",
+    "hallucination/bootstraps.npz": "a8e95e271c9de7dc067482eed277e24aedc6f143e79286be15336cae10b49f8a",
+    "hallucination/predictions.npz": "d3e5e41ebcccfc949f0ff75eb952795be905fc4e190b37c7178af756e09026fd",
+    "sycophancy/complete.json": "2bf95411e62cf1ef948977f43e62cfea9ac7f619ee4f40b973206763b203acbf",
+    "sycophancy/rollout_alignment.json": "5c97d626999bcb008e14f07689d82e61762f0bc2b725163b8e7d88c4ac5c2be7",
+    "sycophancy/results.json": "5f338ca0e7fd210449e3321237942ef8d6f0f9e4bffbd5399b7ef9bd7b940659",
+    "sycophancy/audit.json": "bf5665726c7b17ac963919bc1e1171a03c4d18c958c6c0a978b2ac3251ec5f37",
+    "sycophancy/bootstraps.npz": "87cbda689f3a4f2e3cddb6a96da4c9fb6934e4d2ea60ac66698cebc7b4565258",
+    "sycophancy/predictions.npz": "5b77dc95f9036c9be93dd3038b6779dbaad17397018a3397755a85296f450f13"
+  }
+}
