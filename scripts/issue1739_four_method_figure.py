@@ -193,8 +193,17 @@ def assemble():
     return data
 
 
-def render(data):
-    """Draw all 36 estimates with literal CI endpoints and a shared axis scale."""
+def render(
+    data,
+    *,
+    stem=STEM,
+    title="Fixed-direction projections · million-context map",
+    footer=(
+        "Generic chat includes map-training overlap. OOD averages dataset correlations.",
+        "Whiskers: 95% group-bootstrap intervals. Same fixed directions across all panels.",
+    ),
+):
+    """Draw all 36 estimates, preserving supplied intervals and a shared axis scale."""
     set_c2a_style()
     fig, fraction = c2a_figure("full", aspect=0.80)
     axes = fig.subplots(3, 3, sharey=True)
@@ -208,9 +217,15 @@ def render(data):
                 c for c in data["cells"] if c["behavior"] == behavior and c["regime"] == regime
             )
             for i, method in enumerate(METHODS):
-                value = cell["arms"][method]["rho"]
-                lo, hi = cell["arms"][method]["ci95"]
-                if not np.isfinite([value, lo, hi]).all() or not -0.45 <= lo <= hi <= 0.75:
+                estimate = cell["arms"][method]
+                value = estimate["rho"]
+                interval = estimate.get("interval", estimate.get("ci95"))
+                if not np.isfinite(value) or not -0.45 <= value <= 0.75:
+                    raise ValueError(f"Invalid or clipped estimate: {cell}")
+                if interval is not None and (
+                    not np.isfinite(interval).all()
+                    or not -0.45 <= interval[0] <= interval[1] <= 0.75
+                ):
                     raise ValueError(f"Invalid or clipped interval: {cell}")
                 ax.bar(
                     i,
@@ -222,8 +237,10 @@ def render(data):
                     hatch="///" if i == 0 else None,
                     label=LABELS[i],
                 )
-                ax.vlines(i, lo, hi, color=INK, linewidth=1.2)
-                ax.hlines([lo, hi], i - 0.09, i + 0.09, color=INK, linewidth=1.2)
+                if interval is not None:
+                    lo, hi = interval
+                    ax.vlines(i, lo, hi, color=INK, linewidth=1.2)
+                    ax.hlines([lo, hi], i - 0.09, i + 0.09, color=INK, linewidth=1.2)
             ax.set_ylim(-0.45, 0.75)
             ax.set_yticks([-0.4, -0.2, 0, 0.2, 0.4, 0.6])
             ax.set_xticks([])
@@ -239,7 +256,7 @@ def render(data):
             if row == 0:
                 fig.text(ax.get_position().x0, 0.94, regime, va="top", fontweight=650)
         fig.text(0.085, axes[row, 0].get_position().y1 + 0.045, heading, fontweight=650)
-    fig.suptitle("Fixed-direction projections · million-context map", y=0.985, fontweight=650)
+    fig.suptitle(title, y=0.985, fontweight=650)
     handles, labels = axes[0, 0].get_legend_handles_labels()
     fig.legend(
         handles,
@@ -253,19 +270,19 @@ def render(data):
     fig.text(
         0.085,
         0.032,
-        "Generic chat includes map-training overlap. OOD averages dataset correlations.",
+        footer[0],
         color=MUTED,
     )
     fig.text(
         0.085,
         0.008,
-        "Whiskers: 95% group-bootstrap intervals. Same fixed directions across all panels.",
+        footer[1],
         color=MUTED,
     )
     output = save_c2a_figure(
         fig,
-        ROOT / "figures/paper" / STEM,
-        title="Four fixed-direction projections with the million map",
+        ROOT / "figures/paper" / stem,
+        title=title,
         subject="Generic chat, ID and OOD; three behaviors",
         creator=str(Path(__file__).relative_to(ROOT)),
         include_width=fraction,
@@ -273,7 +290,7 @@ def render(data):
     metadata = {**data, "render": output["record"], "renderer_sha256": sha(Path(__file__))}
     for key in ("pdf", "png", "grayscale"):
         metadata[f"{key}_sha256"] = sha(output[key])
-    (ROOT / "figures/paper" / f"{STEM}.meta.json").write_text(json.dumps(metadata, indent=2) + "\n")
+    (ROOT / "figures/paper" / f"{stem}.meta.json").write_text(json.dumps(metadata, indent=2) + "\n")
     plt.close(fig)
     print(json.dumps({k: str(v) for k, v in output.items() if k != "record"}), flush=True)
 
