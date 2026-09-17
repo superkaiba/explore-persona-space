@@ -7,7 +7,7 @@
   "title": "SAE feature properties and what the context-to-answer map keeps per changed context element",
   "subject": "Conditional association between an SAE feature property and the held-out R2 of its decoder direction, beside the within-pair cosine of the two context vectors, the two observed answer vectors and the two predicted answer vectors, and the two-way discrimination rate, per controlled context element, for the seven rows left after the two same-decision rows are dropped, with 95% pair-bootstrap intervals",
   "git": {
-    "commit": "97a3b6f64fab45271655609db65b4097995152a1",
+    "commit": "03ab5e2ae5aea166d9abf0ecd636d566b29094c2",
     "tracked_worktree_dirty": true
   },
   "sources": [
@@ -30,11 +30,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      5.596
+      4.96
     ],
     "exported_size_inches": [
       13.095,
-      5.266
+      4.85
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -76,7 +76,7 @@
       "Refuse/comply:\ncontent edit",
       "Refuse/comply:\nframing edit",
       "C  \u00b7  RATE",
-      "Two-way\ndiscrimination\nrate \u2191",
+      "Two-way\ndiscrimination rate \u2191",
       "0.5",
       "0.9",
       "Context vectors",
@@ -761,8 +761,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "7c781408e8f35005d1dd37e9d1cc9e901f3f2896486e2790da9f62c1a696a9f0",
-    "png": "771eac798740267795a4122f8417b6f508bdb4c87b0d1a51ab8cb280b46530e3",
-    "grayscale": "a6926997e2d48d712d7c53d188938139054f77fb8a567dda50345773d6177712"
+    "pdf": "ba66f0f5f859671b19022769a961b75218515c08e9f4bfee8c1bfd18a3548b56",
+    "png": "182121ce87ea3f4c8ef599a257ba2c735460a3c71aa72cb2256046f10da33025",
+    "grayscale": "2c511c94a79cc1f9e13b3c2b78797505d63971f7596eeec302fe51837664b567"
   }
 }
