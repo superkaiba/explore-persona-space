@@ -34,7 +34,7 @@
         "1.0",
         "Assistant, chat",
         "Assistant, plain",
-        "HELIOS",
+        "Helios",
         "Wren",
         "Dana",
         "Vex",
@@ -44029,24 +44029,25 @@
     }
   },
   "source_sha256": "d9f67bd2dfaf0cbd14a97af3234adb943e82bdf6b6150071af2b061817fe8070",
-  "plotter_sha256": "e90b834ccd3ef55c8659fce23e5d7123ce16824f9876da5a0abbf8b4f28e190a",
+  "plotter_sha256": "03d0288da734832053f891c9b58d70eb6aa903b37da6decbf5fa804f483deb39",
   "style_sha256": "79ca4536dc29f87c11084747c50bc15e08ac4683ae82d3d91474f0c8dfaef9a1",
   "metadata": {
-    "git_commit": "b3d843420034183473f92ab64062aab263f73f41",
+    "git_commit": "f7827205f7fff3eb8500aee6f16cfa225e8ad1ab",
     "git_dirty": true,
     "phase": "assistant_story_plot",
     "git_dirty_paths": [
-      "scripts/issue2054_k5_assistant_story_monitor.py",
-      "scripts/issue2054_k5_assistant_story_plot.py",
-      "tests/test_issue2054_k5_assistant_story_monitor.py"
+      "figures/issue_2054/assistant_story_k5/assistant_story_transfer.pdf",
+      "figures/issue_2054/assistant_story_k5/assistant_story_transfer.png",
+      "figures/issue_2054/assistant_story_k5/assistant_story_transfer_grayscale.png",
+      "scripts/issue2054_k5_assistant_story_plot.py"
     ],
     "git_argv0_state": "modified",
     "git_argv0_path": "scripts/issue2054_k5_assistant_story_plot.py"
   },
   "outputs_sha256": {
-    "assistant_story_transfer.pdf": "9237985b301ba21051bceaea9a8ef32c7a6f9ef2f3872573c0a023fd7c599bb8",
-    "assistant_story_transfer.png": "c3ea5a9906301e7a9bbee93eba14a0d2c3512dc016ff41b4eaf0282151da5b4e",
-    "assistant_story_transfer_grayscale.png": "8354757a5c665d857e23cae0c4431c4fc7559b97a9048950af5b66d9dae07d2a",
+    "assistant_story_transfer.pdf": "dea14abc5b982589054baf3d76d20370b1d13fe35e2d59f5d15ade6eb523a293",
+    "assistant_story_transfer.png": "6ca1d06896bc602193aa468396a0be195cacf9ee7890ba004e9d87fc6a7af622",
+    "assistant_story_transfer_grayscale.png": "0fff0c79319fc2b6991efe0e82cbe363e7c126467af526d24201dee38d268407",
     "assistant_story_answer_similarity.pdf": "49a1993f65ac72b171ff3d06bcfaa374f4394b3bc958e31459b90103588096da",
     "assistant_story_answer_similarity.png": "c1ce6a0d7c3d880f181e84e947c34749d29db3b335ba90e22119925d25860d0a",
     "assistant_story_answer_similarity_grayscale.png": "dc207c11efbb508bc987697821508255454ad1814fbe5c59c8f51c54cf463540"

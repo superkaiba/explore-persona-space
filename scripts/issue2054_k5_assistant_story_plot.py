@@ -82,7 +82,8 @@ def summarize(data):
 def transfer_figure(summary, out):
     fig, fraction = c2a_figure("full", 0.95)
     axes = fig.subplots(2, 2)
-    labels = ["Assistant, chat", "Assistant, plain", "HELIOS", "Wren", "Dana", "Vex"]
+    # Display names only; the data keys in results.json keep their own spelling.
+    labels = ["Assistant, chat", "Assistant, plain", "Helios", "Wren", "Dana", "Vex"]
     endpoints = [
         endpoint
         for result in summary.values()
