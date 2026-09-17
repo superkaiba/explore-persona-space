@@ -26,7 +26,7 @@ CAPTION = (
     "across datasets. The original maps, whitening, and method-specific layers are "
     "retained. ID rows were included in map fitting and therefore do not measure "
     "map-held-out generalization. The context-direction baseline uses the matching "
-    "cached extraction. Sample counts appear below each evaluation group."
+    "cached extraction."
 )
 
 
@@ -40,7 +40,7 @@ def render():
     shared.set_c2a_style()
     fig, fraction = shared.c2a_figure("full", aspect=0.38)
     axes = fig.subplots(1, 3, sharey=True)
-    fig.subplots_adjust(left=0.075, right=0.99, top=0.91, bottom=0.36, wspace=0.15)
+    fig.subplots_adjust(left=0.075, right=0.99, top=0.91, bottom=0.31, wspace=0.15)
     faces = (shared.MUTED, shared.ROLES["linear"].color, shared.PAPER, shared.INK)
     edges = (shared.INK, shared.ROLES["linear"].color, shared.MUTED, shared.INK)
     offsets = (-0.285, -0.095, 0.095, 0.285)
@@ -57,7 +57,7 @@ def render():
                 raise ValueError(f"Missing or duplicated cell: {behavior}/{regime}")
             cell = matches[0]
             label = "Generic\nchat" if regime == "Generic chat" else regime
-            ticklabels.append(f"{label}\nn={cell['n']:,}")
+            ticklabels.append(label)
             for index, method in enumerate(shared.METHODS):
                 estimate = cell["arms"][method]
                 value, interval = estimate["rho"], estimate["interval"]

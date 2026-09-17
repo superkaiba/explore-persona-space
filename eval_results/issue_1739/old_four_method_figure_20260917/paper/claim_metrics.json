@@ -1,53 +1,15 @@
 {
-  "protocol": "Original P-B",
-  "methods": [
-    "answer_direction_on_context",
-    "mapped_answer",
-    "context_native",
-    "real_answer"
-  ],
-  "maps": {
-    "sycophancy": {
-      "n_pairs": 34793,
-      "pool": "add34793_gen18793_elic16000",
-      "frozen_layers": {
-        "arm11_oracle_proj": 11,
-        "arm1_ctx_e1": 16,
-        "arm4_ridge_ctx": 20,
-        "arm6_map_proj_e1": 11,
-        "arm7_map_ridge_pred": 19
-      }
-    },
-    "hallucination": {
-      "n_pairs": 34793,
-      "pool": "add34793_gen18793_elic16000",
-      "frozen_layers": {
-        "arm11_oracle_proj": 27,
-        "arm1_ctx_e1": 24,
-        "arm4_ridge_ctx": 20,
-        "arm6_map_proj_e1": 23,
-        "arm7_map_ridge_pred": 20
-      }
-    },
-    "evil": {
-      "n_pairs": 25261,
-      "pool": "add25261_gen18793_elic6468",
-      "frozen_layers": {
-        "arm11_oracle_proj": 22,
-        "arm1_ctx_e1": 15,
-        "arm4_ridge_ctx": 18,
-        "arm6_map_proj_e1": 22,
-        "arm7_map_ridge_pred": 20
-      }
-    }
+  "source_summary_sha256": "ba6dda3bd3ca206e65725085532e40b277e0cbd1b4a2f1d0b2a72c0158cb2384",
+  "aggregation": "Equal arithmetic mean of nine behavior-by-regime Spearman correlations; within OOD each dataset weighted equally. Descriptive, no equivalence/significance test.",
+  "mean_correlations": {
+    "answer_direction_on_context": 0.030039750784637297,
+    "mapped_answer": 0.22432939077631533,
+    "context_native": 0.06493227621054275,
+    "real_answer": 0.26537248446529677
   },
-  "inputs": {
-    "5aae0a472b:eval_results/issue_1739/r2v2_fits/sycophancy/all_arms_spearman.json": "e84534f4a1980baa1bfbbc7746fcb496f6f08f962b012b3043f3a2b18d5085d7",
-    "6dba8178f061980d3285fe4d35ba3149f7bdba3c:eval_results/issue_1739/r2v2_factorial/sycophancy/factorial_rows.json": "5e341635287d7b914d847cfc30f990f3b9aa486192d426239927e66d042b188e",
-    "5aae0a472b:eval_results/issue_1739/r2v2_fits/hallucination/all_arms_spearman.json": "cd00f748fdff6729b10df22fd9fa1f3f0a0c39c0594cdd19c93775c1a241efce",
-    "6dba8178f061980d3285fe4d35ba3149f7bdba3c:eval_results/issue_1739/r2v2_factorial/hallucination/factorial_rows.json": "bcf30198b700305823ceaab3201cd90600e84be1bc9181ebba779b7169da1884",
-    "5aae0a472b:eval_results/issue_1739/r2v2_fits/evil/all_arms_spearman.json": "e4ceb6b32d2a7daebe700cac42c91d4eeb689e0906012ad0f190f659b7df1066",
-    "6dba8178f061980d3285fe4d35ba3149f7bdba3c:eval_results/issue_1739/r2v2_factorial/evil/factorial_rows.json": "4f0926a8f65716850738b8de391f8eecd6890d5fdb6843e141fe4730d1540b9c"
+  "mapped_wins": {
+    "context_native": 7,
+    "answer_direction_on_context": 8
   },
   "cells": [
     {
@@ -819,66 +781,9 @@
       }
     }
   ],
-  "projection_space": "Original context-covariance whitening of activations and directions",
-  "uncertainty": "Original \u00b11 standard error across OOD datasets; no generic/ID interval",
-  "context_baseline": "Cached e1_fc arm1_ctx_e1, using the original context-projection layer",
-  "validation": {
-    "exact_e1_parity_rows": 312
-  },
-  "caveats": [
-    "ID is held out from the behavior readout, but included in fitting the ADD map.",
-    "Layers differ across behaviors and projection methods.",
-    "Three harmful-compliance OOD datasets and generic chat had low DV spread in the source figure."
-  ],
-  "assembler_sha256": "0a2cefbe54ed94459e0ce1fd7723c8b10b6594fc0d7fc3041cd674fde9591368",
-  "summary_sha256": "ba6dda3bd3ca206e65725085532e40b277e0cbd1b4a2f1d0b2a72c0158cb2384",
-  "renderer_sha256": "657844c07b793dbedbc1d74f79a50fdac63bb4a28dc5d165da8994e39a1b986d",
-  "render": {
-    "style_version": "c2a-v2",
-    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
-    "resolved_font": "Inter",
-    "authoring_size_inches": [
-      13.095,
-      4.976
-    ],
-    "exported_size_inches": [
-      13.095,
-      4.75
-    ],
-    "scale": 0.42,
-    "include_width_frac": 1.0,
-    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c5_behavior_transfer_original_combined.pdf}",
-    "realized_font_pt": {
-      "body": 7.56,
-      "tick": 7.14,
-      "label": 8.4,
-      "title": 9.24
-    },
-    "png_dpi": 240,
-    "background": "#FFFFFF",
-    "text": [
-      "A  \u00b7  SYCOPHANCY",
-      "Generic\nchat",
-      "ID",
-      "OOD",
-      "Spearman $\\rho$ \u2191",
-      "\u22120.2",
-      "0.0",
-      "0.2",
-      "0.4",
-      "0.6",
-      "0.8",
-      "B  \u00b7  HALLUCINATION",
-      "C  \u00b7  HARMFUL COMPLIANCE",
-      "Answer \u2192 context",
-      "Answer \u2192 mapped answer",
-      "Context \u2192 context",
-      "Answer \u2192 real answer"
-    ]
-  },
-  "caption": "**Mapped answers usually improve prediction from fixed answer directions.** (A) Sycophancy, (B) hallucination, and (C) harmful compliance across generic chat, in-distribution (ID), and out-of-distribution (OOD) evaluations. Bars show Spearman correlations. OOD bars average datasets equally; whiskers show one standard error across datasets. The original maps, whitening, and method-specific layers are retained. ID rows were included in map fitting and therefore do not measure map-held-out generalization. The context-direction baseline uses the matching cached extraction.",
-  "layout": "Three behavior panels; generic, ID and OOD groups; unchanged historical values",
-  "pdf_sha256": "ce5ff39322bbb24c2013d561394dba09fa3bef9fb3c11dc5943a84e1e327a15d",
-  "png_sha256": "2ab3133e0f2abeb52c2c5211a464842a446b07ec9933d255fc1339aef1353651",
-  "grayscale_sha256": "488ad08ce183e2d2a0e06a0e48b1842c2a3acecb17487c10e3a23ce6bc901b43"
+  "preimage_case_audit_sha256": "8007c7d7520e5b652c1368b2ed95b9058db443f74045cd52f575e666246cc45e",
+  "manuscript_sha256": {
+    "06_behavior.tex": "0f178a7bcc4df6f5202c9b6a4b80bdc3745f41c8832dcf4a870a65b3a654b3e0",
+    "behavior_details.tex": "4985adc22d776968a64b63138e642857ef0fb565d24b3f561764ceecb62afa33"
+  }
 }

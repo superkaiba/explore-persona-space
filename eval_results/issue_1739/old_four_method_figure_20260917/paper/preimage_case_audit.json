@@ -1,0 +1,547 @@
+{
+  "audit_type": "Read-only cached-evidence audit; no new inference, API requests, or judging",
+  "primary_case": {
+    "context_id": "hallucination-eval-simpleqa-004245",
+    "prompt": "Who lent Salvador Dalí a villa for several months in 1938 so he could work?",
+    "saved_gold_answer_aliases": [
+      "Gabrielle Coco Chanel"
+    ],
+    "ranks": {
+      "preimage": {
+        "rank": 1,
+        "pool_n": 4021,
+        "cosine": 0.014372476646617244
+      },
+      "mapped_answer": {
+        "rank": 16,
+        "pool_n": 4021,
+        "cosine": 0.019585026857904454
+      },
+      "context_native": {
+        "rank": 13,
+        "pool_n": 4021,
+        "cosine": -0.023414466846510877
+      },
+      "answer_direction_on_context": {
+        "rank": 13,
+        "pool_n": 4021,
+        "cosine": 0.009135337315271665
+      }
+    },
+    "mean_context_fabrication_fraction": 1.0,
+    "n_rollouts": 5,
+    "n_decided": 5,
+    "n_unjudged": 0,
+    "classification_counts": {
+      "correct": 0,
+      "abstained": 0,
+      "fabricated": 5
+    },
+    "responses": [
+      {
+        "rollout_k": 0,
+        "source": "labeling/hallucination/hallucination-eval-simpleqa-004245_seed0.json",
+        "classification": "fabricated",
+        "saved_score": 100.0,
+        "completion": "In 1938, Salvador Dalí was lent a villa called \"Vacaville\" in São Paulo, Brazil, by the insurance magnate and art collector Carlos Primo de Rivera. However, Carlos Primo de Rivera was not a Brazilian, but rather a Spanish individual. It seems there might be some confusion with the name. \n\nThe correct answer is that the villa was lent to Salvador Dalí by Brazilian industrialist développeur, Stuart and Suzanne Casey. They provided Dalí with the Villaisors, also known as \"Villa Dubois,\" which he occupied for several months. This location allowed Dalí to work and was a significant period in his career, which included hosting a famous Surrealist ball in August 1938.",
+        "completion_sha256": "d2ab23e6351f82cec85d447fdef3a91c4aa01049a7e547c2d39271c73bafb46d",
+        "finish_reason": "stop",
+        "generation_meta": {
+          "model": "Qwen/Qwen2.5-7B-Instruct",
+          "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+          "temperature": 1.0,
+          "max_new_tokens": 1024,
+          "seed": 720222208,
+          "fingerprint": "54cfef68343b79b3",
+          "git_commit": "0aef8d661e93a7dd362bcec38d73f786612dfdb8",
+          "ts": "2026-07-28T14:30:37Z"
+        }
+      },
+      {
+        "rollout_k": 1,
+        "source": "labeling/hallucination/hallucination-eval-simpleqa-004245_seed1.json",
+        "classification": "fabricated",
+        "saved_score": 100.0,
+        "completion": "In 1938, André Breton, a leading figure in the Surrealist movement, lent Salvador Dalí a villa in Port Lligat, Catalonia, Spain. This villa became an important setting for Dalí's creative work during that period.",
+        "completion_sha256": "3fd83f845fa344f29c20bc29d9ed1d8fe4679e4ef13f5a483835720a9a215210",
+        "finish_reason": "stop",
+        "generation_meta": {
+          "model": "Qwen/Qwen2.5-7B-Instruct",
+          "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+          "temperature": 1.0,
+          "max_new_tokens": 1024,
+          "seed": 720222208,
+          "fingerprint": "54cfef68343b79b3",
+          "git_commit": "0aef8d661e93a7dd362bcec38d73f786612dfdb8",
+          "ts": "2026-07-28T14:30:37Z"
+        }
+      },
+      {
+        "rollout_k": 2,
+        "source": "labeling/hallucination/hallucination-eval-simpleqa-004245_seed2.json",
+        "classification": "fabricated",
+        "saved_score": 100.0,
+        "completion": "Salvador Dalí was lent a villa by the former American socialite and art collector, Colette Jacques, in 1938. Colette Jacques purchased the Villa Dalí in Port Lligat, Catalonia, Spain, and allowed Dalí to work there, providing him with a secluded and inspiring environment to focus on his artistic endeavors during this period.",
+        "completion_sha256": "95407953e839b6e98237624df28e9032bb791068ef5796ff526867e9241b60c3",
+        "finish_reason": "stop",
+        "generation_meta": {
+          "model": "Qwen/Qwen2.5-7B-Instruct",
+          "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+          "temperature": 1.0,
+          "max_new_tokens": 1024,
+          "seed": 720222208,
+          "fingerprint": "54cfef68343b79b3",
+          "git_commit": "0aef8d661e93a7dd362bcec38d73f786612dfdb8",
+          "ts": "2026-07-28T14:30:37Z"
+        }
+      },
+      {
+        "rollout_k": 3,
+        "source": "labeling/hallucination/hallucination-eval-simpleqa-004245_seed3.json",
+        "classification": "fabricated",
+        "saved_score": 100.0,
+        "completion": "In 1938, the French酱油画家(Cantonese: sàam yihng gheaaj faahy) Élie Faure lent Salvador Dalí a villa in Port Lligat, Catalonia, Spain, where Dalí could work and reside. Port Lligat is a scenic coastal town on the Costa Brava, about 120 kilometers north of Barcelona. This villa became a significant location in Dalí's life and career, as it was there that he produced some of his most renowned works during the late 1930s.",
+        "completion_sha256": "db844202a032aa214a5a7c60b47d9eef281c92fd171e56ded70679b0c8a39f12",
+        "finish_reason": "stop",
+        "generation_meta": {
+          "model": "Qwen/Qwen2.5-7B-Instruct",
+          "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+          "temperature": 1.0,
+          "max_new_tokens": 1024,
+          "seed": 720222208,
+          "fingerprint": "54cfef68343b79b3",
+          "git_commit": "0aef8d661e93a7dd362bcec38d73f786612dfdb8",
+          "ts": "2026-07-28T14:30:37Z"
+        }
+      },
+      {
+        "rollout_k": 4,
+        "source": "labeling/hallucination/hallucination-eval-simpleqa-004245_seed4.json",
+        "classification": "fabricated",
+        "saved_score": 100.0,
+        "completion": "Salvador Dalí was lent a villa by Peggy Guggenheim for several months in 1938. Peggy Guggenheim, a prominent American art collector and patron, allowed Dalí to live and work in her Villa Classe in Cagnes-sur-Mer, France. This provided Dalí with a peaceful and inspiring environment to focus on his artistic endeavors during a period of his life when he was seeking a change from the bustling and bohemian atmosphere of Paris.",
+        "completion_sha256": "95acd94ce8c6d33169f364819c34c72b986fd319c0766d635919423b64898f42",
+        "finish_reason": "stop",
+        "generation_meta": {
+          "model": "Qwen/Qwen2.5-7B-Instruct",
+          "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+          "temperature": 1.0,
+          "max_new_tokens": 1024,
+          "seed": 720222208,
+          "fingerprint": "54cfef68343b79b3",
+          "git_commit": "0aef8d661e93a7dd362bcec38d73f786612dfdb8",
+          "ts": "2026-07-28T14:30:37Z"
+        }
+      }
+    ],
+    "evaluation_provenance": {
+      "context_id": "hallucination-eval-simpleqa-004245",
+      "namespace": "hallucination_labeling",
+      "exact_sha256": "5e9ef26ad18baa8b406aec646c84bde20bffbec225f124be9117ff7dc768e60f",
+      "normalized_sha256": "39d9abc0e1c852c98f0c0c6a8ef213a6209a2a62538288d064bb097caf29293f",
+      "first_user_exact_sha256": "ebea75a982cd1e25edf702ed10d76d13a117ce916bc87ada49f585a70f1473d2",
+      "first_user_normalized_sha256": "0ef4f2edc582bafd47f269658f3addebc1fefa2fc62d9b2831f576e895c79925",
+      "question_exact_sha256": "ebea75a982cd1e25edf702ed10d76d13a117ce916bc87ada49f585a70f1473d2",
+      "question_normalized_sha256": "0ef4f2edc582bafd47f269658f3addebc1fefa2fc62d9b2831f576e895c79925",
+      "user_turn_hashes": [
+        {
+          "exact_sha256": "ebea75a982cd1e25edf702ed10d76d13a117ce916bc87ada49f585a70f1473d2",
+          "normalized_sha256": "0ef4f2edc582bafd47f269658f3addebc1fefa2fc62d9b2831f576e895c79925",
+          "turn_index": 0
+        }
+      ],
+      "generation_metadata": [
+        {
+          "fingerprint": "54cfef68343b79b3",
+          "git_commit": "0aef8d661e93a7dd362bcec38d73f786612dfdb8",
+          "model": "Qwen/Qwen2.5-7B-Instruct",
+          "revision": "a09a35458c702b33eeacc393d103063234e8bc28"
+        }
+      ],
+      "rollouts": [
+        {
+          "packed_src": "labeling/hallucination/hallucination-eval-simpleqa-004245_seed0.json",
+          "rollout_k": 0,
+          "source_file": "hallucination-eval-simpleqa-004245_seed0.json"
+        },
+        {
+          "packed_src": "labeling/hallucination/hallucination-eval-simpleqa-004245_seed1.json",
+          "rollout_k": 1,
+          "source_file": "hallucination-eval-simpleqa-004245_seed1.json"
+        },
+        {
+          "packed_src": "labeling/hallucination/hallucination-eval-simpleqa-004245_seed2.json",
+          "rollout_k": 2,
+          "source_file": "hallucination-eval-simpleqa-004245_seed2.json"
+        },
+        {
+          "packed_src": "labeling/hallucination/hallucination-eval-simpleqa-004245_seed3.json",
+          "rollout_k": 3,
+          "source_file": "hallucination-eval-simpleqa-004245_seed3.json"
+        },
+        {
+          "packed_src": "labeling/hallucination/hallucination-eval-simpleqa-004245_seed4.json",
+          "rollout_k": 4,
+          "source_file": "hallucination-eval-simpleqa-004245_seed4.json"
+        }
+      ],
+      "source_shards": [
+        "labeling_hallucination.shard06.jsonl"
+      ],
+      "split": "eval",
+      "rung": "simpleqa",
+      "group_key": "gabrielle coco chanel"
+    }
+  },
+  "backup_case": {
+    "context_id": "hallucination-eval-simpleqa-004041",
+    "prompt": "During whose papacy did Gian Lorenzo Bernini create the \"Ecstasy of Saint Teresa\"?",
+    "saved_gold_answer_aliases": [
+      "Innocent X"
+    ],
+    "ranks": {
+      "preimage": {
+        "rank": 3,
+        "pool_n": 4021,
+        "cosine": 0.010893557303176106
+      },
+      "mapped_answer": {
+        "rank": 4,
+        "pool_n": 4021,
+        "cosine": 0.028380599974947865
+      },
+      "context_native": {
+        "rank": 2,
+        "pool_n": 4021,
+        "cosine": -0.00304673687574553
+      },
+      "answer_direction_on_context": {
+        "rank": 5,
+        "pool_n": 4021,
+        "cosine": 0.01643473541767714
+      }
+    },
+    "mean_context_fabrication_fraction": 1.0,
+    "n_rollouts": 5,
+    "n_decided": 5,
+    "n_unjudged": 0,
+    "classification_counts": {
+      "correct": 0,
+      "abstained": 0,
+      "fabricated": 5
+    },
+    "responses": [
+      {
+        "rollout_k": 0,
+        "source": "labeling/hallucination/hallucination-eval-simpleqa-004041_seed0.json",
+        "classification": "fabricated",
+        "saved_score": 100.0,
+        "completion": "Gian Lorenzo Bernini created the statue \"Ecstasy of Saint Teresa\" during the papacy of Pope Urban VIII, who reigned from 1623 to 1644. Pope Urban VIII commissioned this artwork, and he was quite supportive of Bernini's ambitious projects, including the renowned colonnades in St. Peter's Square and the Baldachin over the papal altar in St. Peter's Basilica.",
+        "completion_sha256": "73060db8f640d56b1cdb8c3ebc1e2f30d51b1b47c0dd430471fdba71158a09be",
+        "finish_reason": "stop",
+        "generation_meta": {
+          "model": "Qwen/Qwen2.5-7B-Instruct",
+          "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+          "temperature": 1.0,
+          "max_new_tokens": 1024,
+          "seed": 772057207,
+          "fingerprint": "54cfef68343b79b3",
+          "git_commit": "0aef8d661e93a7dd362bcec38d73f786612dfdb8",
+          "ts": "2026-07-28T14:30:37Z"
+        }
+      },
+      {
+        "rollout_k": 1,
+        "source": "labeling/hallucination/hallucination-eval-simpleqa-004041_seed1.json",
+        "classification": "fabricated",
+        "saved_score": 100.0,
+        "completion": "Gian Lorenzo Bernini created \"The Ecstasy of Saint Teresa\" during the papacy of Pope Urban VIII, who was in office from 1623 to 1644. Pope Urban VIII was a great patron of the arts and played a significant role in commissioning Bernini for various projects, including this famous sculptural work.",
+        "completion_sha256": "cda7a3b53543b7dd9b66cfeb2fdc170db41c6d7f2bf2c93643fdcff64a763371",
+        "finish_reason": "stop",
+        "generation_meta": {
+          "model": "Qwen/Qwen2.5-7B-Instruct",
+          "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+          "temperature": 1.0,
+          "max_new_tokens": 1024,
+          "seed": 772057207,
+          "fingerprint": "54cfef68343b79b3",
+          "git_commit": "0aef8d661e93a7dd362bcec38d73f786612dfdb8",
+          "ts": "2026-07-28T14:30:37Z"
+        }
+      },
+      {
+        "rollout_k": 2,
+        "source": "labeling/hallucination/hallucination-eval-simpleqa-004041_seed2.json",
+        "classification": "fabricated",
+        "saved_score": 100.0,
+        "completion": "The \"Ecstasy of Saint Teresa\" by Gian Lorenzo Bernini was created during the papacy of Pope Urban VIII, whose name in Latin is Urbanus VIII and in Italian is Urbano VIII. Bernini began working on this masterpiece in 1647 and completed it by 1652. Pope Urban VIII was a patron of the arts and was instrumental in commissioning many of Bernini's most famous works, including the \"Ecstasy of Saint Teresa,\" which can be found in the Cornaro Chapel of the Church of Santa Marie della Vittoria in Rome.",
+        "completion_sha256": "79a4c13c2ace96d44dc3ff16ee8869c8f8d66617b51a49a11422bf00aef3417d",
+        "finish_reason": "stop",
+        "generation_meta": {
+          "model": "Qwen/Qwen2.5-7B-Instruct",
+          "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+          "temperature": 1.0,
+          "max_new_tokens": 1024,
+          "seed": 772057207,
+          "fingerprint": "54cfef68343b79b3",
+          "git_commit": "0aef8d661e93a7dd362bcec38d73f786612dfdb8",
+          "ts": "2026-07-28T14:30:37Z"
+        }
+      },
+      {
+        "rollout_k": 3,
+        "source": "labeling/hallucination/hallucination-eval-simpleqa-004041_seed3.json",
+        "classification": "fabricated",
+        "saved_score": 100.0,
+        "completion": "Gian Lorenzo Bernini created the sculpture \"Ecstasy of Saint Teresa\" during the papacy of Pope Urban VIII, specifically in the period from 1647 to 1652. Pope Urban VIII, whose given name was Pietro Barberini, was a prominent figure who encouraged the arts and sought to promote the power of the Papacy through grand projects and artwork. Bernini was a favored artist of Pope Urban VIII and during this period, created not only \"Ecstasy of Saint Teresa\" but also the colonnades in St. Peter's Square, which are among his most famous works.",
+        "completion_sha256": "a818e005cb813b3a2e855657c28daebabc895dd7352ba760f056a6e81c297d00",
+        "finish_reason": "stop",
+        "generation_meta": {
+          "model": "Qwen/Qwen2.5-7B-Instruct",
+          "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+          "temperature": 1.0,
+          "max_new_tokens": 1024,
+          "seed": 772057207,
+          "fingerprint": "54cfef68343b79b3",
+          "git_commit": "0aef8d661e93a7dd362bcec38d73f786612dfdb8",
+          "ts": "2026-07-28T14:30:37Z"
+        }
+      },
+      {
+        "rollout_k": 4,
+        "source": "labeling/hallucination/hallucination-eval-simpleqa-004041_seed4.json",
+        "classification": "fabricated",
+        "saved_score": 100.0,
+        "completion": "Gian Lorenzo Bernini created \"The Ecstasy of Saint Teresa\" during the papacy of Pope Urban VIII, who reigned from 1623 to 1644. Pope Urban VIII was a patron of the arts and played a significant role in commissioning and supporting Bernini's works.",
+        "completion_sha256": "3aae374086ed12441031bb7320ea83209124a1b4ca087644b960fbf95bbcc60c",
+        "finish_reason": "stop",
+        "generation_meta": {
+          "model": "Qwen/Qwen2.5-7B-Instruct",
+          "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+          "temperature": 1.0,
+          "max_new_tokens": 1024,
+          "seed": 772057207,
+          "fingerprint": "54cfef68343b79b3",
+          "git_commit": "0aef8d661e93a7dd362bcec38d73f786612dfdb8",
+          "ts": "2026-07-28T14:30:37Z"
+        }
+      }
+    ],
+    "evaluation_provenance": {
+      "context_id": "hallucination-eval-simpleqa-004041",
+      "namespace": "hallucination_labeling",
+      "exact_sha256": "cf4eec95915c5f94c55b734b3b8be8aced1e955aa2b486239f40809e0eb73372",
+      "normalized_sha256": "77521d9adac7ef7e96c38f5a66ace6991fc49f3f7712ee4035debb181cf805e7",
+      "first_user_exact_sha256": "750af1f52806aa1e0cb771deb41b373fe68155c502038cb008c3fffe831572b4",
+      "first_user_normalized_sha256": "9bfbda7076d0c062ed574df0a83b9f997d93558761011ff3633d7142a17a2119",
+      "question_exact_sha256": "750af1f52806aa1e0cb771deb41b373fe68155c502038cb008c3fffe831572b4",
+      "question_normalized_sha256": "9bfbda7076d0c062ed574df0a83b9f997d93558761011ff3633d7142a17a2119",
+      "user_turn_hashes": [
+        {
+          "exact_sha256": "750af1f52806aa1e0cb771deb41b373fe68155c502038cb008c3fffe831572b4",
+          "normalized_sha256": "9bfbda7076d0c062ed574df0a83b9f997d93558761011ff3633d7142a17a2119",
+          "turn_index": 0
+        }
+      ],
+      "generation_metadata": [
+        {
+          "fingerprint": "54cfef68343b79b3",
+          "git_commit": "0aef8d661e93a7dd362bcec38d73f786612dfdb8",
+          "model": "Qwen/Qwen2.5-7B-Instruct",
+          "revision": "a09a35458c702b33eeacc393d103063234e8bc28"
+        }
+      ],
+      "rollouts": [
+        {
+          "packed_src": "labeling/hallucination/hallucination-eval-simpleqa-004041_seed0.json",
+          "rollout_k": 0,
+          "source_file": "hallucination-eval-simpleqa-004041_seed0.json"
+        },
+        {
+          "packed_src": "labeling/hallucination/hallucination-eval-simpleqa-004041_seed1.json",
+          "rollout_k": 1,
+          "source_file": "hallucination-eval-simpleqa-004041_seed1.json"
+        },
+        {
+          "packed_src": "labeling/hallucination/hallucination-eval-simpleqa-004041_seed2.json",
+          "rollout_k": 2,
+          "source_file": "hallucination-eval-simpleqa-004041_seed2.json"
+        },
+        {
+          "packed_src": "labeling/hallucination/hallucination-eval-simpleqa-004041_seed3.json",
+          "rollout_k": 3,
+          "source_file": "hallucination-eval-simpleqa-004041_seed3.json"
+        },
+        {
+          "packed_src": "labeling/hallucination/hallucination-eval-simpleqa-004041_seed4.json",
+          "rollout_k": 4,
+          "source_file": "hallucination-eval-simpleqa-004041_seed4.json"
+        }
+      ],
+      "source_shards": [
+        "labeling_hallucination.shard06.jsonl"
+      ],
+      "split": "eval",
+      "rung": "simpleqa",
+      "group_key": "innocent x"
+    }
+  },
+  "method": {
+    "map_training_pairs": 963444,
+    "map_layer": 19,
+    "map_definition": "y_hat = z W + y_mu; z = (x - x_mu) / x_sd",
+    "inverse_definition": "For W = U diag(s) V^T, u = U[:, :k] diag(1/s[:k]) V[:, :k]^T v_answer. This is the truncated-SVD approximate preimage in standardized context coordinates, not the score pullback W v_answer.",
+    "rank": 378,
+    "rank_selection": {
+      "selected_rank": 378,
+      "numerical_rank": 3584,
+      "selection": "actual generic validation answers reconstruct standardized contexts",
+      "validation_r2_vs_zero": 0.03300578862094827,
+      "test_r2": 0.011972905159849834,
+      "test_mean_baseline_r2": -0.02271003783946357,
+      "smallest_singular_value": 2.4126608994278182e-05,
+      "largest_singular_value": 7.329799239212571,
+      "inverse_available": true
+    },
+    "ranking": "Descending cosine(z, u) within each held-out dataset; ties by context ID",
+    "direction": "Frozen raw unfiltered positive-minus-negative instruction-contrast answer vector",
+    "approximate_preimage_relative_target_residual": 0.2921555697351249,
+    "producer_source_sha": "2cf01b584b922c0df3db7405feffc6666f2ce60d"
+  },
+  "tail_metrics": [
+    {
+      "dataset": "simpleqa",
+      "side": "bottom",
+      "n_candidate_contexts": 4021,
+      "n_tail_contexts": 402,
+      "mean_context_fabrication_fraction": 0.3218905472636816,
+      "rollouts_observed": 2010,
+      "rollouts_decided": 2010,
+      "rollouts_fabricated": 647,
+      "context_ids_sha256": "179be1a561938b4c1a19a674233ad58fc4a7a6ca9ac5011bcd375bca06802c23"
+    },
+    {
+      "dataset": "simpleqa",
+      "side": "top",
+      "n_candidate_contexts": 4021,
+      "n_tail_contexts": 402,
+      "mean_context_fabrication_fraction": 0.8805970149253731,
+      "rollouts_observed": 2010,
+      "rollouts_decided": 2004,
+      "rollouts_fabricated": 1766,
+      "context_ids_sha256": "369189a3d99b00e9d24aadc93d7719d5daa6ae4a54e63fe9fc598bfd8e0997b1"
+    },
+    {
+      "dataset": "nqopen",
+      "side": "bottom",
+      "n_candidate_contexts": 3164,
+      "n_tail_contexts": 316,
+      "mean_context_fabrication_fraction": 0.4753164556962025,
+      "rollouts_observed": 1580,
+      "rollouts_decided": 1580,
+      "rollouts_fabricated": 751,
+      "context_ids_sha256": "906d2531cdad5fa97ff5a4270f8d60750d13addac8821d3cb8eb54ed5dccb017"
+    },
+    {
+      "dataset": "nqopen",
+      "side": "top",
+      "n_candidate_contexts": 3164,
+      "n_tail_contexts": 316,
+      "mean_context_fabrication_fraction": 0.38797468354430376,
+      "rollouts_observed": 1580,
+      "rollouts_decided": 1580,
+      "rollouts_fabricated": 613,
+      "context_ids_sha256": "4090b847f24b6a07bd55472ca185c714cca7f15d01137385856dd68a44a21cf2"
+    }
+  ],
+  "limitations": [
+    "The preimage analysis uses the million-context L19 map; the main old-results figure uses behavior-specific ADD maps and method-specific layers. They are separate analyses.",
+    "These examples demonstrate failure retrieval, not a unique advantage over all baselines. The primary example also ranks 13th for context-native cosine and 16th for mapped-answer cosine.",
+    "SimpleQA top-decile enrichment is positive; NQ enrichment reverses. Do not generalize the retrieval claim to all datasets.",
+    "Tail means average context-level fabrication fractions over decided responses, not one pooled rollout fraction. Six of 2010 SimpleQA top-tail responses are undecided.",
+    "The example has 5/5 decided responses, all classified fabricated; no selected-response denominator caveat for this individual case.",
+    "Raw classifier deliberations/votes were not inspected. Saved per-rollout classifications and committed aggregate counts were checked against raw generations and saved gold answers.",
+    "The generic 963444-prompt retrieval contains descriptive prompt templates without scored associated responses; it cannot establish hallucination from prompt text alone.",
+    "The map answer pooling includes assistant closing tokens whereas behavioral evaluation pools completion tokens only.",
+    "The inverse is truncated/approximate; its hallucination target residual fraction is about 0.292, so it is not an exact inverse."
+  ],
+  "sources": {
+    "predictions": {
+      "path": "/dev/shm/issue1739-million-cached/outputs/hallucination/fixed_predictions.npz",
+      "sha256": "40bebde8b95a6353d69e1ff3fcae904d0566a60d491ceb8fb446a12216f2c78b"
+    },
+    "selected_examples": {
+      "path": "/dev/shm/issue1739-million-cached/outputs/hallucination/heldout_examples_index.json",
+      "sha256": "80698644d8494fc80448f56db79e20c16bc0757b96e78d0157104d9116c7b85a"
+    },
+    "joined_responses": {
+      "path": "/dev/shm/issue1739-million-cached/outputs/hallucination/heldout_examples_text.json",
+      "sha256": "38a5f9b218e4001117e27de5fe960347051964b56a6f53a9d6aeeecc6c3f828b"
+    },
+    "producer_complete": {
+      "path": "/dev/shm/issue1739-million-cached/outputs/hallucination/complete.json",
+      "sha256": "a696a00461cd1b9dbc8058939e15e307c0a80c4f26e9112b21915256fd0068dd"
+    },
+    "fixed_diagnostics": {
+      "path": "/dev/shm/issue1739-million-cached/outputs/hallucination/fixed.json",
+      "sha256": "a37fd6024de2bd0be869552000cf2b670a7bfa64ff59cce5b3094ccc4f676645"
+    },
+    "tail_metrics": {
+      "path": "/dev/shm/issue1739-million-cached/outputs/hallucination/heldout_deciles.json",
+      "sha256": "121258d7ecea7cc934ebc190a9202ee39b20c9c88cd4f3f19553e5325e9c1fae"
+    },
+    "inverse_selection": {
+      "path": "/dev/shm/issue1739-million-cached/outputs/transforms/inverse.json",
+      "sha256": "26df5237635c3ce47e6ba670b157d425cf0674a64a11c4146f1e2bb3c400d75f"
+    },
+    "inverse_complete": {
+      "path": "/dev/shm/issue1739-million-cached/outputs/transforms/complete.json",
+      "sha256": "26ef47bd0cfceedf6ba04f9c531845fc19675089a8e50ac1c288025b6cbf99b1"
+    },
+    "raw_generation_shard": {
+      "path": "/dev/shm/issue1739-fixed-transfer/inputs/raw_metadata/original/labeling_hallucination.shard06.jsonl",
+      "sha256": "64434f4657236a9ca3321e72894d1683253cf8d4b8559fbfb163ca4ccfc44f70"
+    },
+    "raw_generation_manifest": {
+      "path": "/dev/shm/issue1739-fixed-transfer/inputs/raw_metadata/original/pack_manifest.json",
+      "sha256": "bc51139a59c1d9ae64dc384e55bb90ba040c3dc9d7322ae7125bb9a9a6333376"
+    },
+    "judge_aggregate_with_rollout_scores": {
+      "path": "/dev/shm/issue1739-fixed-transfer/inputs/provenance/hallucination_per_rollout.json",
+      "sha256": "63f6bac43ed117022bd810ad0209ffa45ed8178f84ba6d5d16d9addae6c6d73b"
+    },
+    "committed_judge_aggregate": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_1739/dv_dataset/hallucination/labeling.json",
+      "sha256": "39c3a7beaffbba08a01057a730e1e415410537158bf296cdb40adaac9382cf5f"
+    },
+    "evaluation_provenance": {
+      "path": "/dev/shm/issue1739-fixed-transfer/outputs/analysis/hallucination/evaluation_hashes.json",
+      "sha256": "5e15227d8e2a830a1805cae36d953a45937f682260a89d5d7b94f6f44c979a28"
+    },
+    "direction_bank": {
+      "path": "/dev/shm/issue1739-fixed-transfer/outputs/analysis/hallucination/directions.npz",
+      "sha256": "fd8cd93fa2a1adcae62ca492bbe994a8dbb9afdc4a1a4534db08c66a845b0dfc"
+    },
+    "map_manifest": {
+      "path": "/dev/shm/issue1739-fixed-transfer/outputs/map/map_manifest.json",
+      "sha256": "2b0839f051aaa8a8e0ee6a081c10da8c8e6caffec72c46f71d4ebcb121ddea4a"
+    },
+    "map_payload": {
+      "path": "/dev/shm/issue1739-fixed-transfer/outputs/map/frozen.pt",
+      "sha256": "188486f8afd9d95221e32492f3a0be2a3bdb2098cbe7fadfecf1d46433567909"
+    },
+    "source_script": {
+      "path": "/home/thomasjiralerspong/.codex-worktrees/1739-covariance-ablation/scripts/issue1739_million_cached.py",
+      "sha256": "24e3914d849e93ef75ece5c28873c2de9d1983023bdb12fd52464b04493c511f"
+    }
+  },
+  "checks": [
+    "Completed-output hashes matched",
+    "Raw generation shard matched original pack-manifest SHA256",
+    "All 10 selected generation records exactly match joined saved responses and original source filenames",
+    "Saved gold answer aliases read directly from generation records",
+    "Per-rollout labels reproduce committed aggregate counts",
+    "All eight example method ranks reconstructed from saved score arrays",
+    "Four tail means reconstructed; observed/decided/fabricated denominators counted"
+  ]
+}

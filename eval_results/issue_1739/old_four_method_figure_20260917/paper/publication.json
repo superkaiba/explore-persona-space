@@ -1,0 +1,24 @@
+{
+  "overleaf_project": "https://www.overleaf.com/project/6a59c927290f8b8b5eee0055",
+  "overleaf_commit": "8e9080fb4dc1831e172d468a302851cc2861cddc",
+  "remote_head_verified": true,
+  "plot": {
+    "url": "https://eps.superkaiba.com/tasks/1739/figure/c5_behavior_transfer_original_combined.png?v=2ab3133e0f2a",
+    "sha256": "2ab3133e0f2abeb52c2c5211a464842a446b07ec9933d255fc1339aef1353651",
+    "browser_bytes_verified": 146415,
+    "summary_sha256": "ba6dda3bd3ca206e65725085532e40b277e0cbd1b4a2f1d0b2a72c0158cb2384",
+    "sample_count_labels": false
+  },
+  "compile_pdf": "/tmp/eps1739-behavior-rewrite/main.pdf",
+  "compile_sha256": "4764a3996136ca3e25f222d451886732970b4afb1a4cf410919a106b2ec39a58",
+  "evidence_sha256": "8e21916fcefaf0a5daf1ab6f3e44550121e0698c411ca7a63703c03810872ec6",
+  "preimage_audit_sha256": "8007c7d7520e5b652c1368b2ed95b9058db443f74045cd52f575e666246cc45e",
+  "manuscript_files": {
+    "sections/00_abstract.tex": "eca46c4ffc67ddb8ed7ff7038d9220132230f455c85963b1a9517f2b2fed7f52",
+    "sections/01_introduction.tex": "7fc77f0569a575aa779acf14feccdd023f9b8d50e47a0906d9d7cbf9eb6ae67a",
+    "sections/05_discussion.tex": "3e483c114b70717691e744555540c2baf248ddc0e59584176236aadbe960af8a",
+    "sections/05_method_details.tex": "a82aa20e10e035f3f432ec860b338524c1852aa41036eb5930dffb0688a2fdb3",
+    "sections/results/06_behavior.tex": "0f178a7bcc4df6f5202c9b6a4b80bdc3745f41c8832dcf4a870a65b3a654b3e0",
+    "figures/paper/c5_behavior_transfer_original_combined.pdf": "ce5ff39322bbb24c2013d561394dba09fa3bef9fb3c11dc5943a84e1e327a15d"
+  }
+}

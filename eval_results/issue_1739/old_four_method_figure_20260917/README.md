@@ -37,7 +37,7 @@ PNG, PDF, grayscale audit and metadata are under
 
 ## Compact manuscript layout
 
-[Combined browser plot](https://eps.superkaiba.com/tasks/1739/figure/c5_behavior_transfer_original_combined.png?v=aa87d956f095)
+[Combined browser plot](https://eps.superkaiba.com/tasks/1739/figure/c5_behavior_transfer_original_combined.png?v=2ab3133e0f2a)
 
 The combined version uses one full-width row of three behavior panels, each with
 generic chat, ID and OOD groups, a shared axis and a shared four-method legend.
