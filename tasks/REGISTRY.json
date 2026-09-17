@@ -12918,7 +12918,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/2673",
       "status": "interpreting",
-      "title": "Story Imprinting persona-context geometry on Qwen3.8-27B"
+      "title": "Under ten-persona centering, sarcasm and lists approach the full persona at all 64 Qwen3.8-27B blocks (MODERATE confidence)"
     },
     "268": {
       "has_clean_result": false,

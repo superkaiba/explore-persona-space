@@ -1,5 +1,6 @@
 ---
-title: Story Imprinting persona-context geometry on Qwen3.8-27B
+title: Under ten-persona centering, sarcasm and lists approach the full persona at
+  all 64 Qwen3.8-27B blocks (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-09-17T20:00:03Z'
