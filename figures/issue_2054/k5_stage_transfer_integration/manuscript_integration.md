@@ -1,8 +1,20 @@
 # Integration into the existing results and discussion
 
-Proposal checked against freshly fetched Overleaf commit
-`378d2ae3453aa9ac197a2afa97a01ade1d48e784` on 2026-09-17. The live manuscript
-has not been edited. This supersedes the earlier proposal to add a separate
+Publication update: a shorter Results paragraph and revised Discussion were
+approved and applied to Overleaf at commit
+`3342e70e5c6ac2b48992f3408e580d6eec6fc3d8` on 2026-09-17. The Results paragraph
+omits the repeated bank/fold setup and reports only story retention 68–78%
+versus chat 26%. The Discussion connects the shared map, limited chat/story
+transfer, and post-training specialization specifically for the assistant in
+the chat template. Independent prose/evidence review and writing gates passed.
+The 57-page manuscript compiled with resolved references, and modified pages
+were visually checked after preserving concurrent edits through rebase.
+The remote SHA and both modified source files were verified after a fast-forward
+push. Only the two requested prose files changed. The earlier figure preview
+and appendix suggestions below remain proposals.
+
+Historical proposal checked against freshly fetched Overleaf commit
+`378d2ae3453aa9ac197a2afa97a01ade1d48e784` on 2026-09-17. This superseded the earlier proposal to add a separate
 discussion paragraph: the current draft already contains a suitable paragraph.
 
 ## Compact outline and placement

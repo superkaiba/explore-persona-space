@@ -90,7 +90,9 @@ Insert [proposed_results.tex](proposed_results.tex) after the current paragraph
 about the chat assistant ranking first only after post-training, in
 `sections/results/04_speakers.tex`. This places checkpoint transfer beside the
 own-map comparison and before the separate within-checkpoint speaker-transfer
-analysis. The live Overleaf manuscript has not been edited.
+analysis. A shorter user-approved version was added to the live Overleaf
+manuscript on 2026-09-17 at commit
+`3342e70e5c6ac2b48992f3408e580d6eec6fc3d8`, together with the revised Discussion.
 
 Paragraph outline: state frozen cross-checkpoint protocol; compare character
 retention with chat; report assistant-in-story; refer to retrieval and calibration

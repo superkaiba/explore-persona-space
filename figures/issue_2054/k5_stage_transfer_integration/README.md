@@ -5,8 +5,9 @@ Each diamond is a frozen Base map evaluated on the same Instruct targets as the
 teal separate-fit bar. Its horizontal whisker is the minimum-to-maximum range
 over five folds, not a confidence interval. Plain-text dialogue has no diamond
 because that checkpoint-transfer cell was not evaluated. Existing bars and
-panels B/C retain their numerical inputs. This is a preview; the live Overleaf
-manuscript has not been edited.
+panels B/C retain their numerical inputs. This figure remains a preview. The
+user-approved Results and Discussion text was published separately to Overleaf
+on 2026-09-17 at commit `3342e70e5c6ac2b48992f3408e580d6eec6fc3d8`.
 
 The figure can carry the new comparison without an additional panel. Keep
 retrieval and the identity/bias controls in the results text or appendix rather
