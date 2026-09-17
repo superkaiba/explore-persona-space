@@ -234,11 +234,11 @@ with the labels drawn on B. Both gutters are cut rather than the panels: the
 property names wrap to two lines (2.23 in against 3.84 in set on one line) and
 the per-row pair count leaves the element labels for the caption and the sidecar
 (1.94 in against 2.67 in with it). That returns 2.34 in to the plot boxes, which
-leaves panel A at 2.45 in and the two metric columns at 2.80 in each. At that
+leaves panel A at 2.45 in and the two metric columns at 2.87 in each (2.80 until 2026-09-16). At that
 pitch a descriptive panel title still does not fit, the ones the earlier stacked
 layout carried measure 3.40 in to 4.46 in, so each panel carries its letter and
 the estimator as a kicker and states the metric in full in its axis label. The
-within-pair legend sits in the footer under panel B; the export crops the canvas
+within-pair legend sits in one frameless row above the panels (in the footer under panel B until 2026-09-16); the export crops the canvas
 vertically, so the footer slack it needs costs the manuscript nothing.
 
 Panel C is drawn on a cut axis, following
@@ -246,7 +246,7 @@ Panel C is drawn on a cut axis, following
 and 1.0 with its interval reaching 0.8125, so one linear 0-to-1 axis flattens the
 rows and a truncated axis drops the 0.5 chance reference. The axis is two linear
 segments, [0.46, 0.54] and [0.78, 1.015], whose plotted widths are proportional
-to their data spans, so both realize the same 4.81 in per data unit and a
+to their data spans, so both realize the same 8.00 in per data unit and a
 distance means the same thing in either. Diagonal marks sit on the cut, and a
 value or interval endpoint landing in the omitted range raises rather than being
 clipped.
@@ -340,7 +340,9 @@ checked on every run. Regenerate with
 uv run python scripts/section43_posttraining_onpolicy_figure.py --fetch
 ```
 
-One `full`-width row of three panels at aspect 0.33. Format is a series in every
+One `full`-width row of three panels at aspect 0.285 (0.33 until 2026-09-16, when the
+two legend rows above the panels became one kicker row with each group's heading
+inline, the context-source entries reading Own and Base). Format is a series in every
 panel: plain text is a solid line with filled circles, the chat template a dotted
 line with filled diamonds. Panel A draws each checkpoint's own map in the
 post-trained teal. Panel B adds base-model context vectors in amber. Panel C draws
