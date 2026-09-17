@@ -5,11 +5,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      5.5
+      6.155
     ],
     "exported_size_inches": [
       13.095,
-      5.384
+      6.025
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -29,7 +29,6 @@
       "0.3",
       "0.6",
       "Assistant\n(chat)",
-      "Assistant\n(plain text)",
       "Helios",
       "Wren",
       "Dana",
@@ -39,9 +38,7 @@
       "\u22120.8",
       "One character\n\u2192 other characters",
       "Assistant (story)\n\u2192 characters",
-      "Assistant (chat)\n\u2192 assistant (plain text)",
       "Assistant (chat)\n\u2192 assistant (story)",
-      "Assistant (plain text)\n\u2192 assistant (story)",
       "Assistant (story)\n\u2192 assistant (chat)",
       "C  \u00b7  TURN TRANSFER",
       "1",
@@ -63856,13 +63853,41 @@
       "sha256": "9382ba54a4172b05d605b766c1430dffb7be6e416a589ef48414c5caab5f1fa2"
     }
   },
-  "git_head_at_render": "1b768a2f616bd6b1d3a447a3f9499e4f8f550de5",
+  "git_head_at_render": "70a020dc5a2ba84f6f250e8bacb524037f65d1fc",
   "source_status_at_render": [
     " M scripts/issue2054_story_manuscript_figure.py"
   ],
   "visual_encodings": {
     "panel_a": "Base own (amber), Instruct own (teal), Instruct seven-setting shared (hatched teal)",
-    "panel_b": "Instruct only: frozen (teal), target-trained (outline)",
+    "panel_b": "Instruct only: frozen (charcoal), target-trained (charcoal outline)",
+    "displayed_setting_indices": [
+      0,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "displayed_transfer_pairs": [
+      [
+        "character",
+        "other_characters"
+      ],
+      [
+        "story",
+        "characters"
+      ],
+      [
+        "chat",
+        "story"
+      ],
+      [
+        "story",
+        "chat"
+      ]
+    ],
+    "omitted_comparison": "Plain-text assistant; numerical inputs remain archived",
+    "shared_training_scope": "Original seven-setting fit, including plain-text training rows",
     "panel_b_axis": {
       "negative_scale": 0.25,
       "positive_scale": 1,
@@ -63883,11 +63908,11 @@
       ]
     }
   },
-  "script_sha256": "7540f9f39dce39c5b2b5bc01f4bea372fef19aaaf595ecb063f274f41bea4db2",
+  "script_sha256": "ba5d33bff98c76b6f22cb075cf2a9ea6656986f2228a1772c62189fe691c7c21",
   "style_sha256": "74d774c6f04778e69a36cc58595e009cf06f3b612b7414f09423601fba1b5f98",
   "output_sha256": {
-    "c4_shared_speakers.pdf": "c3fc607ccbd57f8ec2b575db234d79f3444dbfd56c27b9dcda2cf6967e86ea27",
-    "c4_shared_speakers_grayscale.png": "b84bf80df27caa47392f3f06dcab43a474fcc25b59a0ac3965a7ebabdc5eaeee",
-    "c4_shared_speakers.png": "c1e7226902c830a65c6ca6b06878a7e4abbfb970d578677954d8496e1f239918"
+    "c4_shared_speakers.pdf": "80e0594b05e93bf0127568c006c863c2e2952e50763436844b98914c243375bf",
+    "c4_shared_speakers_grayscale.png": "5674ad6ca301edb4e106c153c83e5696bc85482ca148a2e836302261b712d3d0",
+    "c4_shared_speakers.png": "f87562204a12fe672c1b4e527787455e3dabc770aec9bf0b5b16777ae1938d4f"
   }
 }

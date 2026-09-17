@@ -1,0 +1,66 @@
+{
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      11.131
+    ],
+    "exported_size_inches": [
+      13.095,
+      10.583
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c4_speaker_transfer_full.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  \u00b7  BASE",
+      "Held-out $R^2$ \u2191",
+      "\u22120.5",
+      "0.0",
+      "0.5",
+      "Assistant, chat",
+      "Helios",
+      "Wren",
+      "Dana",
+      "Vex",
+      "Story assistant \u2192 target",
+      "B  \u00b7  BASE",
+      "Source \u2192 story assistant",
+      "C  \u00b7  INSTRUCTION-TUNED",
+      "D  \u00b7  INSTRUCTION-TUNED",
+      "Frozen",
+      "+ Bias",
+      "+ Bias + scale",
+      "Target's own map"
+    ]
+  },
+  "plotting_script": "scripts/issue2054_story_transfer_appendix.py",
+  "plotter_sha256": "8533cb879f9dca386dc7e7fadcada7f91d2ccff20086259727884d1f155bc62e",
+  "data_sha256": "487a4d0a9ce1e97823dde553fad9a5eca067308efd410b6238d5ee777e184f72",
+  "style_sha256": "74d774c6f04778e69a36cc58595e009cf06f3b612b7414f09423601fba1b5f98",
+  "source_results_sha256": "d9f67bd2dfaf0cbd14a97af3234adb943e82bdf6b6150071af2b061817fe8070",
+  "displayed_settings": [
+    "Chat",
+    "Helios",
+    "Wren",
+    "Dana",
+    "Vex"
+  ],
+  "omitted_comparison": "Plain-text assistant; original data preserved",
+  "transfer_errorbars": "Minimum and maximum across five held-out folds",
+  "output_sha256": {
+    "c4_speaker_transfer_full.png": "edb630629dba689bde864babb91ef5952edfeeb8a736d40a3df13c4a2b1bb646",
+    "c4_speaker_transfer_full_grayscale.png": "a61ba35a3147f05fcb9ced0b1ec2bcea2a9b7ddc16432da9824efdc214c289d9",
+    "c4_speaker_transfer_full.pdf": "bc0796f829124e48beedb08da701e5f5d022e8cc0681acd6f7398eb3a84ad368"
+  }
+}

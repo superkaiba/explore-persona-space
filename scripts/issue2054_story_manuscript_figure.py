@@ -50,6 +50,15 @@ METHODS = [
     ("own", "Target-trained", "s"),
 ]
 PAIRS = [("story", "characters"), ("chat", "story"), ("plain", "story"), ("story", "chat")]
+# Plain-text comparisons are archived but omitted from the manuscript. The
+# shared map retains its original seven-setting training provenance.
+DISPLAY_INDICES = (0, 2, 3, 4, 5, 6)
+DISPLAY_PAIRS = [
+    ("character", "other_characters"),
+    ("story", "characters"),
+    ("chat", "story"),
+    ("story", "chat"),
+]
 # Bar geometry in row units. The row pitch shrinks with the shorter canvas, so
 # the bars and the within-row offset shrink with it and the gutter between rows
 # stays readable.
@@ -271,14 +280,12 @@ def expand_negative(values):
 def render(data: dict, output: Path) -> dict:
     """Place joint/separate bars, Instruct transfer bars and turn heatmaps in one row."""
     set_c2a_style()
-    # The two legends used to stack three rows each BELOW the panels, which cost
-    # about 1.4 in of canvas and made this the tallest figure in the paper. They
-    # now share one frameless kicker row ABOVE the panels, split by semantic role
-    # (the figure standard's multi-panel form), so the canvas drops from aspect
-    # 0.55 to 0.42 with every panel, series and plotted value unchanged.
-    fig, fraction = c2a_figure("full", aspect=0.42)
-    a = fig.add_axes([0.105, 0.145, 0.215, 0.655])
-    b = fig.add_axes([0.510, 0.145, 0.200, 0.655])
+    # Reserve a separate legend column above each bar panel. Scale the vertical
+    # coordinates to retain the existing physical panel heights and text sizes.
+    fig, fraction = c2a_figure("full", aspect=0.47)
+    vertical_scale = 0.42 / 0.47
+    a = fig.add_axes([0.105, 0.145 * vertical_scale, 0.215, 0.655 * vertical_scale])
+    b = fig.add_axes([0.510, 0.145 * vertical_scale, 0.200, 0.655 * vertical_scale])
     for ax, letter, title in [(a, "A", "Separate and shared"), (b, "B", "Transfer (Instruct)")]:
         style_axis(ax, grid_axis="none")
         panel_header(ax, letter, title, kicker_y=1.045)
@@ -292,8 +299,8 @@ def render(data: dict, output: Path) -> dict:
     ]
     for j, (values, color, hatch, label) in enumerate(bars):
         a.barh(
-            np.arange(7) + (j - 1) * BAR_OFFSET,
-            values,
+            np.arange(len(DISPLAY_INDICES)) + (j - 1) * BAR_OFFSET,
+            [values[i] for i in DISPLAY_INDICES],
             height=BAR_HEIGHT,
             color=color,
             edgecolor=instruct_color if hatch else color,
@@ -302,10 +309,9 @@ def render(data: dict, output: Path) -> dict:
             label=label,
         )
     a.set_yticks(
-        range(7),
+        range(6),
         [
             "Assistant\n(chat)",
-            "Assistant\n(plain text)",
             "Helios",
             "Wren",
             "Dana",
@@ -315,19 +321,26 @@ def render(data: dict, output: Path) -> dict:
     )
     for tick in a.get_yticklabels():
         tick.set_linespacing(TICK_LINESPACING)
-    a.set_ylim(6.5, -0.5)
+    a.set_ylim(5.5, -0.5)
     a.set_xlim(0, 0.75)
     a.set_xticks([0, 0.3, 0.6])
     a.set_xlabel(better_label("Held-out $R^2$"))
     fit_handles, fit_labels = a.get_legend_handles_labels()
+    # Panel A uses hue for model identity. Panel B uses neutral fill/outline for
+    # transfer method, avoiding a second meaning for the same teal bars.
+    transfer_color = INK
     method_style = {
-        "frozen": (instruct_color, None),
+        "frozen": (transfer_color, None),
         "own": ("white", None),
     }
     expected_pairs = [("character", "other_characters"), PAIRS[0], ("chat", "plain"), *PAIRS[1:]]
     if [(r["source"], r["target"]) for r in instruct["transfers"]] != expected_pairs:
         raise ValueError("Unexpected transfer-panel rows")
-    for j, pair in enumerate(instruct["transfers"]):
+    displayed_transfers = [
+        r for r in instruct["transfers"] if (r["source"], r["target"]) in DISPLAY_PAIRS
+    ]
+    assert [(r["source"], r["target"]) for r in displayed_transfers] == DISPLAY_PAIRS
+    for j, pair in enumerate(displayed_transfers):
         for k, (method, _, _) in enumerate(METHODS):
             stat = pair["metrics"][method]
             mean, folds = stat["mean"], stat["folds"]
@@ -337,29 +350,27 @@ def render(data: dict, output: Path) -> dict:
                 mean,
                 height=BAR_HEIGHT,
                 color=color,
-                edgecolor=instruct_color,
+                edgecolor=transfer_color,
                 linewidth=0.8,
                 hatch=hatch,
                 xerr=[[max(0, mean - min(folds))], [max(0, max(folds) - mean)]],
                 error_kw={"ecolor": INK, "capsize": 2, "elinewidth": 0.8, "capthick": 0.8},
             )
     b.set_yticks(
-        range(6),
+        range(4),
         [
             "One character\n→ other characters",
             "Assistant (story)\n→ characters",
-            "Assistant (chat)\n→ assistant (plain text)",
             "Assistant (chat)\n→ assistant (story)",
-            "Assistant (plain text)\n→ assistant (story)",
             "Assistant (story)\n→ assistant (chat)",
         ],
     )
     for tick in b.get_yticklabels():
         tick.set_linespacing(TICK_LINESPACING)
-    b.set_ylim(5.5, -0.5)
+    b.set_ylim(3.5, -0.5)
     endpoints = [
         v
-        for pair in instruct["transfers"]
+        for pair in displayed_transfers
         for method, _, _ in METHODS
         for v in pair["metrics"][method]["folds"]
     ]
@@ -372,23 +383,17 @@ def render(data: dict, output: Path) -> dict:
     method_handles = [
         Patch(
             facecolor=method_style[method][0],
-            edgecolor=instruct_color,
+            edgecolor=transfer_color,
             hatch=method_style[method][1],
             label=label,
             linewidth=0.8,
         )
         for method, label, _ in METHODS
     ]
-    # One kicker row above the panels, split by the two semantic roles the bars
-    # carry: which model the map was fitted on and whether it is separate or
-    # shared (panel A), and how a map from one setting is reused (panel B).
-    # The first group starts at the left content edge, not at panel A's axes, so
-    # its three long labels leave a clear gap before the second group and the
-    # second group still ends inside the canvas. The row sits high enough to
-    # clear panel C's kicker.
+    # Each legend stays above its own panel, including the longest label.
     for x0, heading, handles, labels in [
-        (0.060, "Model and fit", fit_handles, fit_labels),
-        (0.632, "Transfer method", method_handles, [m[1] for m in METHODS]),
+        (0.105, "Model and fit", fit_handles, fit_labels),
+        (0.510, "Transfer method", method_handles, [m[1] for m in METHODS]),
     ]:
         legend_kicker(fig, x0, 0.978, heading)
         fig.legend(
@@ -396,7 +401,7 @@ def render(data: dict, output: Path) -> dict:
             labels=labels,
             loc="upper left",
             bbox_to_anchor=(x0 - 0.001, 0.945),
-            ncol=len(handles),
+            ncol=1,
             frameon=False,
             handlelength=1.3,
             handletextpad=0.4,
@@ -412,7 +417,9 @@ def render(data: dict, output: Path) -> dict:
         # The old 0.13-fraction gap between the two heatmaps was about twice what
         # the "Instruct" title needs. Halving it keeps both maps at their published
         # printed height inside the shorter canvas.
-        ax = fig.add_axes([0.790, 0.4885 - i * 0.3535, 0.140, 0.2685])
+        ax = fig.add_axes(
+            [0.790, (0.4885 - i * 0.3535) * vertical_scale, 0.140, 0.2685 * vertical_scale]
+        )
         if i == 0:
             panel_header(ax, "C", "Turn transfer", kicker_y=1.309)
         cells = data["turns"]["results"]["models"][key]["cells"]
@@ -438,7 +445,7 @@ def render(data: dict, output: Path) -> dict:
             ax.set_xlabel("Evaluation turn")
         for spine in ax.spines.values():
             spine.set_visible(False)
-    color_ax = fig.add_axes([0.950, 0.145, 0.010, 0.600])
+    color_ax = fig.add_axes([0.950, 0.145 * vertical_scale, 0.010, 0.600 * vertical_scale])
     cb = fig.colorbar(im, cax=color_ax, ticks=[0, 0.3, 0.6])
     cb.ax.set_title(better_label("$R^2$"), pad=12)
     rendered = save_c2a_figure(
@@ -521,7 +528,11 @@ def main() -> None:
         "panel_a": (
             "Base own (amber), Instruct own (teal), Instruct seven-setting shared (hatched teal)"
         ),
-        "panel_b": "Instruct only: frozen (teal), target-trained (outline)",
+        "panel_b": "Instruct only: frozen (charcoal), target-trained (charcoal outline)",
+        "displayed_setting_indices": list(DISPLAY_INDICES),
+        "displayed_transfer_pairs": DISPLAY_PAIRS,
+        "omitted_comparison": "Plain-text assistant; numerical inputs remain archived",
+        "shared_training_scope": "Original seven-setting fit, including plain-text training rows",
         "panel_b_axis": {
             "negative_scale": 0.25,
             "positive_scale": 1,

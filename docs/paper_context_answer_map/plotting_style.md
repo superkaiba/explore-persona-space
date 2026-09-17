@@ -367,15 +367,28 @@ No fitting or inference runs during rendering.
 Panel B shows frozen and target-trained maps, with character-to-character
 transfer first. Each source map trains on only one character. The twelve
 directed pairs are averaged equally within each of five conversation folds,
-then across folds. Chat-to-plain-text assistant transfer is the third row,
-using the same saved K5 map-geometry fits. The reverse direction is archived
-and reported in the appendix. The four original transfer rows and panels A/C
-retain their previous numerical inputs. The negative horizontal axis is continuously
+then across folds. The remaining rows show the story assistant to characters,
+chat to story assistant, and story assistant to chat. Panel A displays the six
+chat/story settings. Plain-text comparisons are omitted from this section,
+but the original numerical inputs are preserved. The joint map still uses its
+original seven-setting training pool, disclosed in the methods. Panel C is
+unchanged. The negative horizontal axis is continuously
 compressed fourfold, while positive values retain a linear scale. No interval
-is omitted and all fold-range endpoints remain visible. The caption states
+is omitted and all fold-range endpoints remain visible. The methods state
 the scale change, and the appendix gives every directed character pair.
 
 ```bash
 uv run python scripts/issue2054_story_manuscript_figure.py \
   --data figures/paper/c4_shared_speakers.data.json --output figures/paper
+```
+
+The appendix chat/story transfer panels use
+`scripts/issue2054_story_transfer_appendix.py` and the archived
+`figures/paper/c4_speaker_transfer_full.data.json`. The archive retains all
+original results; the renderer selects chat and the four story characters.
+Plain-text comparisons remain in the separate post-training section.
+
+```bash
+uv run python scripts/issue2054_story_transfer_appendix.py \
+  --data figures/paper/c4_speaker_transfer_full.data.json --out figures/paper
 ```
