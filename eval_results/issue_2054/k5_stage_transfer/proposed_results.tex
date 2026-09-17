@@ -1,7 +1,8 @@
-\noindent\textbf{Story maps retain more predictive accuracy across the Base-to-Instruct transition than the chat map:}
-Using the same five-answer banks and conversation folds, we freeze each Base map, including its input normalization and intercept, and apply it to Instruct activations.
-The four character maps reach $R^2=0.346$--$0.437$, retaining 67.5\%--77.8\% of their Instruct-specific fits, compared with $R^2=0.177$ and 26.2\% retention for chat.
-The assistant in a story also transfers well ($R^2=0.400$, 73.3\% retention).
-Euclidean top-1 answer retrieval is 51.4\%--63.5\% for the characters and 55.5\% for the story assistant, versus 9.3\% for chat, among 1,543--1,659 candidates per fold.
-Identity-plus-bias controls have negative $R^2$ but outperform frozen-map retrieval in several settings.
-These results show partial predictive portability across checkpoints, including for the assistant in a narrative setting; they do not isolate the contribution of supervised fine-tuning.
+% Insert after "The chat assistant ranks first in predictability only after post-training".
+% Apply together with the panel-A marker preview and the appendix/limitations text
+% in figures/issue_2054/k5_stage_transfer_integration/manuscript_integration.md.
+\noindent\textbf{Base maps transfer more strongly to Instruct in story settings than in chat} (\figref[A]{fig:speaker-maps})\textbf{:}
+Using the same five-answer banks and matched conversation folds, we apply each Base map to Instruct activations, freezing its weights, input normalization, and intercept.
+The four character maps reach $R^2=0.346$--$0.437$, retaining 68\%--78\% of Instruct-specific $R^2$, compared with $R^2=0.177$ and 26\% retention for chat.
+The assistant in a story follows the character pattern ($R^2=0.400$, 73\% retention).
+Retrieval and calibration controls are reported in \appref{app:speakers}.

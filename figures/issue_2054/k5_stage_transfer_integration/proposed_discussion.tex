@@ -1,3 +1,6 @@
-% Insert after the persona-selection paragraph in sections/05_discussion.tex.
-% Read against Overleaf origin/main 433800ea38c2075f33aacb2f465984458c4d3b1c.
-Frozen cross-checkpoint transfer provides more direct evidence of continuity across post-training: Base maps retain 68\%--78\% of Instruct-specific $R^2$ for the four story characters and 73\% for the assistant in a story, compared with 26\% for assistant chat (\figref[A]{fig:speaker-maps}). The assistant-in-story result places the contrast between settings rather than between the assistant and fictional characters, and is consistent with greater preservation of the context--answer relationship in narrative settings. This comparison does not isolate SFT or establish a causal role for persona representations; differences in template familiarity and response quality may also contribute.
+% Replace the existing paragraph beginning "Under this view, the assistant".
+% Read against Overleaf origin/main 378d2ae3453aa9ac197a2afa97a01ade1d48e784.
+Under this view, the assistant is itself one such character, learned during pretraining and subsequently refined and privileged through post-training for interaction within the chat template \citep{g2026assistantprivilegedpersonacanonical}. Our frozen Base-to-Instruct transfer results are consistent with this account (Section~\ref{sec:results-speakers}): post-training appears to reshape the context--answer relationship more strongly for the assistant in the chat template, while preserving much of its predictive structure in story settings, including when the speaker is the assistant.
+
+% Add to limitations; this is part of the proposal, not optional fine print.
+The Base-to-Instruct comparison does not isolate SFT, and differences in template familiarity and response quality may also contribute to the transfer differences.

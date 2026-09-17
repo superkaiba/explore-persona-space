@@ -93,12 +93,15 @@ own-map comparison and before the separate within-checkpoint speaker-transfer
 analysis. The live Overleaf manuscript has not been edited.
 
 Paragraph outline: state frozen cross-checkpoint protocol; compare character
-retention with chat; report assistant-in-story and retrieval; delimit the claim.
-The main claim is partial predictive portability. The numbers are directly
-traceable to `summary[*].metrics` and `frozen_retention` in `results.json`.
-The control sentence prevents a blanket retrieval-superiority claim.
-The final sentence limits causal attribution to SFT. No new cross-reference,
-figure, or stronger statistical claim is required for this proposed paragraph.
+retention with chat; report assistant-in-story; refer to retrieval and calibration
+controls in the appendix. The main claim is partial predictive portability.
+The numbers are directly traceable to `summary[*].metrics` and `frozen_retention`
+in `results.json`. The updated proposal now references the six transfer markers
+in panel A and moves the full controls and causal limitations to the appendix
+and limitations, respectively. Apply these components together following
+`figures/issue_2054/k5_stage_transfer_integration/manuscript_integration.md`,
+checked against Overleaf commit `378d2ae3453aa9ac197a2afa97a01ade1d48e784`.
+No stronger statistical claim is proposed.
 
 ## Artifacts and reproduction
 

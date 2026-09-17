@@ -25,15 +25,18 @@ refines one. The assistant in a story sits within the character range, so the
 better-supported contrast is story versus chat. It does not establish the
 discussion's further suggestion that generated tokens reinforce a character.
 
-Use the short paragraph in `proposed_discussion.tex` after the current
-persona-selection paragraph, or incorporate its first two sentences into that
-paragraph and put its caveat in the limitations. Reference manuscript:
-Overleaf commit `433800ea38c2075f33aacb2f465984458c4d3b1c`, fetched 2026-09-17.
+Use the replacement paragraph in `proposed_discussion.tex` for the existing
+paragraph beginning “Under this view, the assistant,” and put its caveat in
+the limitations. The updated placement proposal is in `manuscript_integration.md`,
+checked against Overleaf commit `378d2ae3453aa9ac197a2afa97a01ade1d48e784`.
+The figure preview was prepared against the earlier manuscript at commit
+`433800ea38c2075f33aacb2f465984458c4d3b1c`.
 `proposed_caption.tex` describes the additional markers and also clarifies that
 only panel B's first row is averaged across four characters.
 
-Paragraph outline: cross-checkpoint preservation; setting-specific contrast;
-limits on interpretation. Claim-to-evidence mapping:
+Results/discussion outline: cross-checkpoint preservation in Results;
+setting-specific interpretation in the existing Discussion paragraph; caveat
+in Limitations. Claim-to-evidence mapping:
 
 | Claim | Evidence | Limit |
 |---|---|---|
