@@ -186,13 +186,14 @@ def projection(p, x, direction):
 
 def deltas(rho, boot):
     """Paired map-minus-baseline intervals from the same resamples."""
+    rho = np.asarray(rho, dtype=float)
     result = {}
     for j, name in enumerate(NAMES[1:], 1):
         keep = np.isfinite(boot[[0, j]]).all(0)
         difference = boot[0, keep] - boot[j, keep]
         result["mapped_minus_" + name] = dict(
-            delta=float(rho[0] - rho[j]),
-            ci95=np.quantile(difference, [0.025, 0.975]).tolist(),
+            delta=float(rho[0] - rho[j]) if np.isfinite(rho[[0, j]]).all() else None,
+            ci95=np.quantile(difference, [0.025, 0.975]).tolist() if keep.any() else None,
             valid_bootstrap_draws=int(keep.sum()),
         )
     return result

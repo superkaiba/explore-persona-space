@@ -53,6 +53,7 @@ STYLES = {
     "real_answer": (INK, "x", INK, "Observed answer"),
     "preimage": (TEAL, "D", TEAL, "Preimage"),
     "context_native": (MUTED, "s", PAPER, "Context direction"),
+    "answer_direction_on_context": (MUTED, "s", MUTED, "Answer direction on context"),
     "raw_context": (MUTED, "x", MUTED, "Context"),
     "context_covariance": (MUTED, "s", PAPER, "Covariance-whitened"),
 }
@@ -197,10 +198,10 @@ def dataset_figure(data, out):
     save(fig, frac, out, "c5_behavior_datasets", data)
 
 
-def regime_figure(out):
+def regime_figure(out, *, summary_dir=REGIMES, stem="c5_behavior_transfer"):
     """Match the preceding behavior-by-regime layout, excluding synthetic evaluation."""
-    path = REGIMES / "summary.json"
-    done = json.loads((REGIMES / "complete.json").read_text())
+    path = summary_dir / "summary.json"
+    done = json.loads((summary_dir / "complete.json").read_text())
     if sha(path) != done["artifact_sha256"]["summary.json"]:
         raise ValueError("Completed regime summary changed")
     data = json.loads(path.read_text())
@@ -213,6 +214,9 @@ def regime_figure(out):
         "real_answer": "Answer direction → observed answer",
         "context_native": "Context direction → context",
     }
+    four_methods = "answer_direction_on_context" in data.get("methods", [])
+    if four_methods:
+        labels["answer_direction_on_context"] = "Answer direction → context"
     headings = ("Harmful compliance", "Sycophancy", "Hallucination")
     for panel, (ax, behavior, heading) in enumerate(
         zip(axes, data["behaviors"], headings, strict=True)
@@ -230,7 +234,8 @@ def regime_figure(out):
                     va="center",
                 )
                 continue
-            for offset, arm in zip((-0.23, 0, 0.23), labels, strict=True):
+            offsets = (-0.285, -0.095, 0.095, 0.285) if four_methods else (-0.23, 0, 0.23)
+            for offset, arm in zip(offsets, labels, strict=True):
                 row = cell["arms"][arm]
                 value, (lo, hi) = row["rho"], row["ci95"]
                 if not np.isfinite([value, lo, hi]).all() or lo > hi or lo < -0.45 or hi > 0.80:
@@ -239,10 +244,11 @@ def regime_figure(out):
                 ax.bar(
                     group + offset,
                     value,
-                    width=0.20,
+                    width=0.16 if four_methods else 0.20,
                     color=face,
                     edgecolor=color,
                     linewidth=1.4,
+                    hatch="///" if arm == "answer_direction_on_context" else None,
                     label=labels[arm] if panel == 0 and group == 1 else None,
                     zorder=2,
                 )
@@ -258,7 +264,10 @@ def regime_figure(out):
         ax.set_xlim(-0.52, 2.52)
         ax.set_ylim(-0.45, 0.80)
         ax.set_yticks([-0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8])
-        ax.set_xticks([0, 1, 2], ["Generic\nchat", "In-distrib.", "OOD"])
+        generic_label = "Generic\nchat"
+        if four_methods:
+            generic_label += f"\n(n = {behavior['regimes'][0]['n']})"
+        ax.set_xticks([0, 1, 2], [generic_label, "In-distrib.", "OOD"])
         ax.tick_params(axis="x", length=0, pad=8)
         style_axis(ax, grid_axis="none")
         ax.axhline(0, color=MUTED, linewidth=0.7, zorder=0)
@@ -273,11 +282,11 @@ def regime_figure(out):
         legend_labels,
         loc="lower center",
         bbox_to_anchor=(0.5, 0.005),
-        ncol=1,
+        ncol=2 if four_methods else 1,
         labelspacing=0.25,
         handlelength=1.0,
     )
-    save(fig, frac, out, "c5_behavior_transfer", data)
+    save(fig, frac, out, stem, data)
 
 
 def difference_figure(data, out):
@@ -348,10 +357,20 @@ def difference_figure(data, out):
 
 
 def main():
+    """Render either the established million-map figures or the smaller-map companion."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=ROOT / "figures/paper")
+    parser.add_argument("--small-map-only", action="store_true")
     args = parser.parse_args()
     set_c2a_style()
+    if args.small_map_only:
+        regime_figure(
+            args.out,
+            summary_dir=ROOT / "eval_results/issue_1739/small_map_fixed_20260917",
+            stem="c5_behavior_transfer_small",
+        )
+        print(f"Rendered four-method smaller-map comparison in {args.out}")
+        return
     data = read_data()
     regime_figure(args.out)
     dataset_figure(data, args.out)

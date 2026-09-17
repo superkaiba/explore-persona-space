@@ -1,0 +1,1487 @@
+{
+  "git_commit": "72451d724ebb00f3c85f2c382ae54301e1b4b20f",
+  "git_dirty": false,
+  "phase": "fixed-small-map",
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue1739_small_map_fixed.py",
+  "source_sha": "72451d724ebb00f3c85f2c382ae54301e1b4b20f",
+  "script_sha256": "bc250a4f5d097939f5d2ecf55d1ffa98f7c02c8963fe372020cf1c7ad8cb9620",
+  "map_training_pairs": 18793,
+  "layer": 19,
+  "methods": [
+    "mapped_answer",
+    "real_answer",
+    "context_native",
+    "answer_direction_on_context"
+  ],
+  "n_boot": 2000,
+  "original_map_sha256": "28b4a76707184010f48bcd94baa9fce975b94d5be67f9357307695921f1952fb",
+  "prior_config_sha256": "8daeee50e2aab02753262b20e2c8ec3470530d8542d125f9951176372854dc9c",
+  "excluded_evaluation": "pvsynth",
+  "directions": "frozen raw unfiltered instruction contrasts",
+  "in_distribution": "historical behavior-regression training rung; no readout fitted here",
+  "ood_aggregation": "equal-weight mean of dataset Spearman correlations; independent dataset group resamples, paired methods",
+  "comparison_scope": "smaller-map companion; different map recipe and held-out roster from million-map analysis",
+  "behaviors": [
+    {
+      "behavior": "evil",
+      "datasets": [
+        {
+          "rung": "hhrt",
+          "n": 1868,
+          "n_groups": 1868,
+          "informative": true,
+          "dv_unique": 21,
+          "floor_mass": 0.9839400428265525,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.03191160932039428,
+              "ci95": [
+                -0.007448137394892975,
+                0.06856363135729968
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": 0.07060956535598231,
+              "ci95": [
+                0.03357181600041028,
+                0.10418724812060846
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": -0.0002583347206646162,
+              "ci95": [
+                -0.03848100585859302,
+                0.036609799203276915
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": 0.04082706571064921,
+              "ci95": [
+                0.0018132796679998942,
+                0.07605987160612947
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": -0.03869795603558803,
+              "ci95": [
+                -0.08158046972837685,
+                0.0058729839486531266
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": 0.0321699440410589,
+              "ci95": [
+                -0.006211703418330154,
+                0.0710364063756143
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": -0.008915456390254928,
+              "ci95": [
+                -0.049174801063207006,
+                0.03345279370088683
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        },
+        {
+          "rung": "toxicchat",
+          "n": 519,
+          "n_groups": 519,
+          "informative": true,
+          "dv_unique": 48,
+          "floor_mass": 0.8901734104046243,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.2780165272831924,
+              "ci95": [
+                0.20141458672056425,
+                0.35111924401170913
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": 0.40611394219145097,
+              "ci95": [
+                0.33789863254886576,
+                0.4692457852548291
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": 0.3788279689128414,
+              "ci95": [
+                0.30487557241874214,
+                0.4425866202684753
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": 0.40117401902486177,
+              "ci95": [
+                0.32772829872932957,
+                0.4665987474169941
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": -0.12809741490825854,
+              "ci95": [
+                -0.18015278325829182,
+                -0.07838270766239043
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": -0.10081144162964895,
+              "ci95": [
+                -0.16641188173214708,
+                -0.04132002047326599
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": -0.12315749174166934,
+              "ci95": [
+                -0.18921324361447023,
+                -0.06532392755276109
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        },
+        {
+          "rung": "train",
+          "n": 6468,
+          "n_groups": 1330,
+          "informative": true,
+          "dv_unique": 1012,
+          "floor_mass": 0.4911873840445269,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.5004442223582075,
+              "ci95": [
+                0.4688139038698022,
+                0.534010532532834
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": 0.6404164418273705,
+              "ci95": [
+                0.6175414617632515,
+                0.6624396785720681
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": 0.5706510218053812,
+              "ci95": [
+                0.5426010251373052,
+                0.5990552072428409
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": 0.5549310197794637,
+              "ci95": [
+                0.525685175293538,
+                0.5836932459192404
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": -0.13997221946916294,
+              "ci95": [
+                -0.16463045014385835,
+                -0.11480723026460762
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": -0.07020679944717367,
+              "ci95": [
+                -0.09683363394138073,
+                -0.04158233241959175
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": -0.05448679742125617,
+              "ci95": [
+                -0.08321279082552319,
+                -0.025792113502418824
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        },
+        {
+          "rung": "wildchat_rung",
+          "n": 416,
+          "n_groups": 416,
+          "informative": true,
+          "dv_unique": 10,
+          "floor_mass": 0.9783653846153846,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.21253003470827397,
+              "ci95": [
+                0.1348846329749149,
+                0.27999871533723475
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": 0.2350417356023861,
+              "ci95": [
+                0.15453266235771596,
+                0.3052979500524419
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": 0.19697986317836136,
+              "ci95": [
+                0.11230552049922712,
+                0.2695192543756273
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": 0.21875010332023903,
+              "ci95": [
+                0.13614742180277264,
+                0.28726010772622756
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": -0.022511700894112113,
+              "ci95": [
+                -0.04851781412309537,
+                0.00251825451306506
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": 0.015550171529912615,
+              "ci95": [
+                -0.02507620672221895,
+                0.0625845131505556
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": -0.006220068611965057,
+              "ci95": [
+                -0.037525491043978405,
+                0.02299203051898671
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        }
+      ],
+      "regimes": [
+        {
+          "regime": "generic chat",
+          "datasets": [
+            "wildchat_rung"
+          ],
+          "rung": "wildchat_rung",
+          "n": 416,
+          "n_groups": 416,
+          "informative": true,
+          "dv_unique": 10,
+          "floor_mass": 0.9783653846153846,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.21253003470827397,
+              "ci95": [
+                0.1348846329749149,
+                0.27999871533723475
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": 0.2350417356023861,
+              "ci95": [
+                0.15453266235771596,
+                0.3052979500524419
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": 0.19697986317836136,
+              "ci95": [
+                0.11230552049922712,
+                0.2695192543756273
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": 0.21875010332023903,
+              "ci95": [
+                0.13614742180277264,
+                0.28726010772622756
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": -0.022511700894112113,
+              "ci95": [
+                -0.04851781412309537,
+                0.00251825451306506
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": 0.015550171529912615,
+              "ci95": [
+                -0.02507620672221895,
+                0.0625845131505556
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": -0.006220068611965057,
+              "ci95": [
+                -0.037525491043978405,
+                0.02299203051898671
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        },
+        {
+          "regime": "in-distribution",
+          "datasets": [
+            "train"
+          ],
+          "rung": "train",
+          "n": 6468,
+          "n_groups": 1330,
+          "informative": true,
+          "dv_unique": 1012,
+          "floor_mass": 0.4911873840445269,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.5004442223582075,
+              "ci95": [
+                0.4688139038698022,
+                0.534010532532834
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": 0.6404164418273705,
+              "ci95": [
+                0.6175414617632515,
+                0.6624396785720681
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": 0.5706510218053812,
+              "ci95": [
+                0.5426010251373052,
+                0.5990552072428409
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": 0.5549310197794637,
+              "ci95": [
+                0.525685175293538,
+                0.5836932459192404
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": -0.13997221946916294,
+              "ci95": [
+                -0.16463045014385835,
+                -0.11480723026460762
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": -0.07020679944717367,
+              "ci95": [
+                -0.09683363394138073,
+                -0.04158233241959175
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": -0.05448679742125617,
+              "ci95": [
+                -0.08321279082552319,
+                -0.025792113502418824
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        },
+        {
+          "regime": "OOD",
+          "datasets": [
+            "hhrt",
+            "toxicchat"
+          ],
+          "n": 2387,
+          "informative": true,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.15496406830179335,
+              "ci95": [
+                0.11206266271858549,
+                0.19592968824408827
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": 0.23836175377371666,
+              "ci95": [
+                0.1974207985840592,
+                0.27435917272833
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": 0.18928481709608838,
+              "ci95": [
+                0.1470547513071017,
+                0.2267432826347778
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": 0.2210005423677555,
+              "ci95": [
+                0.17971192272754608,
+                0.25856926109181494
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": -0.0833976854719233,
+              "ci95": [
+                -0.11765031117716282,
+                -0.049229104308373545
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": -0.03432074879429503,
+              "ci95": [
+                -0.07160300321407825,
+                0.0022454976614863457
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": -0.06603647406596214,
+              "ci95": [
+                -0.10330252888734515,
+                -0.02965295700606961
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        }
+      ]
+    },
+    {
+      "behavior": "sycophancy",
+      "datasets": [
+        {
+          "rung": "aita",
+          "n": 1304,
+          "n_groups": 1304,
+          "informative": true,
+          "dv_unique": 495,
+          "floor_mass": 0.03450920245398773,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.2486025512682368,
+              "ci95": [
+                0.19793403489210576,
+                0.30116359106954266
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": 0.21529304550980313,
+              "ci95": [
+                0.16396068495632338,
+                0.2709509116202034
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": 0.3187069625997087,
+              "ci95": [
+                0.2664491152922885,
+                0.368373830347893
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": 0.18646030060614227,
+              "ci95": [
+                0.12971796774024405,
+                0.24151036053568906
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": 0.033309505758433666,
+              "ci95": [
+                -0.007686895263251154,
+                0.07186159159674613
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": -0.07010441133147191,
+              "ci95": [
+                -0.12081340784783047,
+                -0.016731054210975912
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": 0.06214225066209453,
+              "ci95": [
+                0.008980874226284413,
+                0.12029453221415665
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        },
+        {
+          "rung": "train",
+          "n": 16000,
+          "n_groups": 16000,
+          "informative": true,
+          "dv_unique": 1984,
+          "floor_mass": 0.011375,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.25724057608904305,
+              "ci95": [
+                0.24241472290091587,
+                0.2730416680145094
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": 0.2695851716378829,
+              "ci95": [
+                0.254005636982819,
+                0.2855098267571309
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": 0.2751917150369671,
+              "ci95": [
+                0.25993280566672367,
+                0.290676968571786
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": 0.15532619688367374,
+              "ci95": [
+                0.1397007848025123,
+                0.17144847161302318
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": -0.012344595548839876,
+              "ci95": [
+                -0.023989635039776188,
+                0.000559077089656452
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": -0.01795113894792405,
+              "ci95": [
+                -0.03311950878940044,
+                -0.001363680593743403
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": 0.1019143792053693,
+              "ci95": [
+                0.08574228014268952,
+                0.11779171860659966
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        },
+        {
+          "rung": "wildchat_rung",
+          "n": 414,
+          "n_groups": 414,
+          "informative": true,
+          "dv_unique": 207,
+          "floor_mass": 0.2391304347826087,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.16937910937662543,
+              "ci95": [
+                0.07045034893933246,
+                0.26722432510528393
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": 0.12714453077640764,
+              "ci95": [
+                0.029516184996549035,
+                0.2296474731311876
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": 0.3003458783714189,
+              "ci95": [
+                0.21197035718571386,
+                0.39016990694821535
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": 0.3521318378466916,
+              "ci95": [
+                0.25979348351371506,
+                0.44142696053888447
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": 0.04223457860021779,
+              "ci95": [
+                -0.007970328084799957,
+                0.094135157802359
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": -0.13096676899479348,
+              "ci95": [
+                -0.2051046826574603,
+                -0.059530111773168665
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": -0.18275272847006618,
+              "ci95": [
+                -0.2593635084409301,
+                -0.10725891429893701
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        }
+      ],
+      "regimes": [
+        {
+          "regime": "generic chat",
+          "datasets": [
+            "wildchat_rung"
+          ],
+          "rung": "wildchat_rung",
+          "n": 414,
+          "n_groups": 414,
+          "informative": true,
+          "dv_unique": 207,
+          "floor_mass": 0.2391304347826087,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.16937910937662543,
+              "ci95": [
+                0.07045034893933246,
+                0.26722432510528393
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": 0.12714453077640764,
+              "ci95": [
+                0.029516184996549035,
+                0.2296474731311876
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": 0.3003458783714189,
+              "ci95": [
+                0.21197035718571386,
+                0.39016990694821535
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": 0.3521318378466916,
+              "ci95": [
+                0.25979348351371506,
+                0.44142696053888447
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": 0.04223457860021779,
+              "ci95": [
+                -0.007970328084799957,
+                0.094135157802359
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": -0.13096676899479348,
+              "ci95": [
+                -0.2051046826574603,
+                -0.059530111773168665
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": -0.18275272847006618,
+              "ci95": [
+                -0.2593635084409301,
+                -0.10725891429893701
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        },
+        {
+          "regime": "in-distribution",
+          "datasets": [
+            "train"
+          ],
+          "rung": "train",
+          "n": 16000,
+          "n_groups": 16000,
+          "informative": true,
+          "dv_unique": 1984,
+          "floor_mass": 0.011375,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.25724057608904305,
+              "ci95": [
+                0.24241472290091587,
+                0.2730416680145094
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": 0.2695851716378829,
+              "ci95": [
+                0.254005636982819,
+                0.2855098267571309
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": 0.2751917150369671,
+              "ci95": [
+                0.25993280566672367,
+                0.290676968571786
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": 0.15532619688367374,
+              "ci95": [
+                0.1397007848025123,
+                0.17144847161302318
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": -0.012344595548839876,
+              "ci95": [
+                -0.023989635039776188,
+                0.000559077089656452
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": -0.01795113894792405,
+              "ci95": [
+                -0.03311950878940044,
+                -0.001363680593743403
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": 0.1019143792053693,
+              "ci95": [
+                0.08574228014268952,
+                0.11779171860659966
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        },
+        {
+          "regime": "OOD",
+          "datasets": [
+            "aita"
+          ],
+          "n": 1304,
+          "informative": true,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.2486025512682368,
+              "ci95": [
+                0.19793403489210576,
+                0.30116359106954266
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": 0.21529304550980313,
+              "ci95": [
+                0.16396068495632338,
+                0.2709509116202034
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": 0.3187069625997087,
+              "ci95": [
+                0.2664491152922885,
+                0.368373830347893
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": 0.18646030060614227,
+              "ci95": [
+                0.12971796774024405,
+                0.24151036053568906
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": 0.033309505758433666,
+              "ci95": [
+                -0.007686895263251154,
+                0.07186159159674613
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": -0.07010441133147191,
+              "ci95": [
+                -0.12081340784783047,
+                -0.016731054210975912
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": 0.06214225066209453,
+              "ci95": [
+                0.008980874226284413,
+                0.12029453221415665
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        }
+      ]
+    },
+    {
+      "behavior": "hallucination",
+      "datasets": [
+        {
+          "rung": "nqopen",
+          "n": 3167,
+          "n_groups": 2846,
+          "informative": true,
+          "dv_unique": 6,
+          "floor_mass": 0.2718661193558573,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.08999899503678566,
+              "ci95": [
+                0.055676991640044374,
+                0.1251716143868041
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": -0.00901263518152953,
+              "ci95": [
+                -0.04533867510745734,
+                0.02363886814055939
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": -0.1264816753976556,
+              "ci95": [
+                -0.16283861160712848,
+                -0.09118440230927723
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": -0.13213304452188898,
+              "ci95": [
+                -0.16743058667943608,
+                -0.09558035066237709
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": 0.09901163021831519,
+              "ci95": [
+                0.061069162417439884,
+                0.13900197726256172
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": 0.21648067043444125,
+              "ci95": [
+                0.17585104181879865,
+                0.26042452481309536
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": 0.22213203955867464,
+              "ci95": [
+                0.17819497669277604,
+                0.2648670144646876
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        },
+        {
+          "rung": "simpleqa",
+          "n": 4021,
+          "n_groups": 3419,
+          "informative": true,
+          "dv_unique": 9,
+          "floor_mass": 0.08331260880378015,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.4258522416245624,
+              "ci95": [
+                0.3984113232875254,
+                0.45471064442066533
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": 0.6050385630065428,
+              "ci95": [
+                0.5775052321261119,
+                0.6287630763104474
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": 0.5065271546145845,
+              "ci95": [
+                0.47773809912610415,
+                0.5336093162532318
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": 0.46414936384923894,
+              "ci95": [
+                0.43390719803733807,
+                0.49284829890848597
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": -0.17918632138198037,
+              "ci95": [
+                -0.20718922383283006,
+                -0.147808888018316
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": -0.08067491299002211,
+              "ci95": [
+                -0.11124205676279952,
+                -0.048846906768247336
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": -0.038297122224676516,
+              "ci95": [
+                -0.0694871170640692,
+                -0.005324428631345884
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        },
+        {
+          "rung": "train",
+          "n": 16000,
+          "n_groups": 10733,
+          "informative": true,
+          "dv_unique": 7,
+          "floor_mass": 0.547,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.052827620429964674,
+              "ci95": [
+                0.03571310675957898,
+                0.06841303162573682
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": -0.09818801216139862,
+              "ci95": [
+                -0.11407218008908317,
+                -0.08209916274791448
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": -0.35179891665405827,
+              "ci95": [
+                -0.3652487864896495,
+                -0.337334545937694
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": -0.25426004405672187,
+              "ci95": [
+                -0.269573431215473,
+                -0.2380779952560235
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": 0.1510156325913633,
+              "ci95": [
+                0.1328273690298488,
+                0.16833922026422918
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": 0.40462653708402296,
+              "ci95": [
+                0.3860451833118966,
+                0.42250609984301646
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": 0.30708766448668656,
+              "ci95": [
+                0.28672529087974163,
+                0.32706781870861135
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        },
+        {
+          "rung": "wildchat_rung",
+          "n": 410,
+          "n_groups": 410,
+          "informative": true,
+          "dv_unique": 266,
+          "floor_mass": 0.1024390243902439,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.14898840621913623,
+              "ci95": [
+                0.05122739048092103,
+                0.24941775155927923
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": 0.22165446018617907,
+              "ci95": [
+                0.12151566413095771,
+                0.32042944896881037
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": 0.11603050421058003,
+              "ci95": [
+                0.022293191731507195,
+                0.20934177705341128
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": 0.02424440384424722,
+              "ci95": [
+                -0.07100828944156845,
+                0.11844683286700855
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": -0.07266605396704284,
+              "ci95": [
+                -0.1443823235598126,
+                0.004809742425584608
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": 0.032957902008556195,
+              "ci95": [
+                -0.059472444402764627,
+                0.12500548050581448
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": 0.124744002374889,
+              "ci95": [
+                0.03415953980076234,
+                0.216904807799307
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        }
+      ],
+      "regimes": [
+        {
+          "regime": "generic chat",
+          "datasets": [
+            "wildchat_rung"
+          ],
+          "rung": "wildchat_rung",
+          "n": 410,
+          "n_groups": 410,
+          "informative": true,
+          "dv_unique": 266,
+          "floor_mass": 0.1024390243902439,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.14898840621913623,
+              "ci95": [
+                0.05122739048092103,
+                0.24941775155927923
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": 0.22165446018617907,
+              "ci95": [
+                0.12151566413095771,
+                0.32042944896881037
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": 0.11603050421058003,
+              "ci95": [
+                0.022293191731507195,
+                0.20934177705341128
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": 0.02424440384424722,
+              "ci95": [
+                -0.07100828944156845,
+                0.11844683286700855
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": -0.07266605396704284,
+              "ci95": [
+                -0.1443823235598126,
+                0.004809742425584608
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": 0.032957902008556195,
+              "ci95": [
+                -0.059472444402764627,
+                0.12500548050581448
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": 0.124744002374889,
+              "ci95": [
+                0.03415953980076234,
+                0.216904807799307
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        },
+        {
+          "regime": "in-distribution",
+          "datasets": [
+            "train"
+          ],
+          "rung": "train",
+          "n": 16000,
+          "n_groups": 10733,
+          "informative": true,
+          "dv_unique": 7,
+          "floor_mass": 0.547,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.052827620429964674,
+              "ci95": [
+                0.03571310675957898,
+                0.06841303162573682
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": -0.09818801216139862,
+              "ci95": [
+                -0.11407218008908317,
+                -0.08209916274791448
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": -0.35179891665405827,
+              "ci95": [
+                -0.3652487864896495,
+                -0.337334545937694
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": -0.25426004405672187,
+              "ci95": [
+                -0.269573431215473,
+                -0.2380779952560235
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": 0.1510156325913633,
+              "ci95": [
+                0.1328273690298488,
+                0.16833922026422918
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": 0.40462653708402296,
+              "ci95": [
+                0.3860451833118966,
+                0.42250609984301646
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": 0.30708766448668656,
+              "ci95": [
+                0.28672529087974163,
+                0.32706781870861135
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        },
+        {
+          "regime": "OOD",
+          "datasets": [
+            "nqopen",
+            "simpleqa"
+          ],
+          "n": 7188,
+          "informative": true,
+          "arms": {
+            "mapped_answer": {
+              "rho": 0.25792561833067407,
+              "ci95": [
+                0.2369208731143344,
+                0.27931933095462586
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "real_answer": {
+              "rho": 0.29801296391250665,
+              "ci95": [
+                0.2749682382014357,
+                0.31862487660586514
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "context_native": {
+              "rho": 0.19002273960846447,
+              "ci95": [
+                0.16570295860278175,
+                0.2123667214105603
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "answer_direction_on_context": {
+              "rho": 0.166008159663675,
+              "ci95": [
+                0.14230414984789502,
+                0.1887599538776465
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          },
+          "differences": {
+            "mapped_minus_real_answer": {
+              "delta": -0.04008734558183258,
+              "ci95": [
+                -0.06455898990944443,
+                -0.01417576678329143
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_context_native": {
+              "delta": 0.0679028787222096,
+              "ci95": [
+                0.04235480328023235,
+                0.0951625007652373
+              ],
+              "valid_bootstrap_draws": 2000
+            },
+            "mapped_minus_answer_direction_on_context": {
+              "delta": 0.09191745866699907,
+              "ci95": [
+                0.06536011568462707,
+                0.11930948933440041
+              ],
+              "valid_bootstrap_draws": 2000
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "inputs": {
+    "eval_results/issue_1739/small_map_fixed_20260917/summary.json": "ca12ba39f7e5bd626c5837d2b592000e84939fa39b4e83f96f1d67942f0ab682"
+  },
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      4.714
+    ],
+    "exported_size_inches": [
+      13.095,
+      4.439
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c5_behavior_transfer_small.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  \u00b7  HARMFUL COMPLIANCE",
+      "Generic\nchat\n(n = 416)",
+      "In-distrib.",
+      "OOD",
+      "Spearman $\\rho$ \u2191",
+      "\u22120.4",
+      "\u22120.2",
+      "0.0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "B  \u00b7  SYCOPHANCY",
+      "Generic\nchat\n(n = 414)",
+      "C  \u00b7  HALLUCINATION",
+      "Generic\nchat\n(n = 410)",
+      "Answer direction \u2192 predicted answer",
+      "Answer direction \u2192 observed answer",
+      "Context direction \u2192 context",
+      "Answer direction \u2192 context"
+    ]
+  },
+  "renderer_sha256": "7d2ceb38b8b849040a7b23201a055d7a795d56699460c9aeab6d26e9c874273e",
+  "pdf_sha256": "2f391d43a6560e301b461a3fa5496acbc8492d1d9d7074b9ac7560a9279d5d9e",
+  "png_sha256": "fa228b5910e45bfb4b107850bd0246d35bdfdb978eaa3e7e3d0ff66397b07fd3",
+  "grayscale_sha256": "21411f4447a30dd40a6d9dee0fe391c9986047436e4d959db011c75a97fc4e04"
+}

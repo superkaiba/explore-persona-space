@@ -352,20 +352,32 @@ Evidence / figures:
 
 ### C5. The mapping is useful. (= "Claim 4" + Applications)
 
-Flagship application — **predicting behavior pre-generation**:
-- Behaviors: sycophancy, hallucination, evil
-- Datasets: persona-vectors synthetic eval, realistic trait-eliciting datasets, generic data
-- Methods: regression on context / regression on predicted answer / regression
-  on real answer (ceiling). The persona-vector projection arms were dropped from
-  the paper on 2026-09-03 (Thomas: "remove the persona vectors projection from
-  the behavior prediction experiment"). **LLM judge on the context** comparator
-  still open (added 2026-08-19; #2356 in-flight already runs refuse/comply
-  prediction vs a judge)
-- Status — grid exists (#1739, HIGH) and is ADVERSE for map-then-project (see
-  claims.md C5): direct context probes win. FRAMING DECISION OPEN: lead with what
-  the map wins (#1979 FT-change prediction; #1901/#2202 retrieval/discrimination)
-  and state the #1739 boundary honestly, vs waiting on in-flight runs (#2223
-  capping, #2356 judge comparison, #2379 re-elicitation).
+Flagship application — **predicting behavior before generation**:
+- Behaviors: harmful compliance (the cached `evil` rubric includes malicious
+  persona and style), sycophancy, and hallucination.
+- Main comparison: fixed, unfiltered instruction contrasts in answer and context
+  activations. Compare the answer direction on predicted and observed answers
+  with the context direction on contexts. No behavior readout is fitted.
+- Frozen main map: 963,444 generic pairs, layer 19. Eight natural datasets span
+  in-distribution and OOD regimes; synthetic evaluation is excluded. Generic
+  chat has only four eligible contexts after map-overlap exclusions.
+- Smaller-map companion: the frozen generic-only 18,793-pair context-end map,
+  with native whitening restored and predicted answers unwhitened before scoring.
+  Add the identical answer direction directly on contexts, and restore the
+  eligible generic-chat evaluation. Keep the map sizes and evaluation rosters
+  separate; this comparison does not isolate the effect of training-set size.
+- Interpretation: the million-map fixed-direction transfer is positive on some
+  datasets but does not consistently beat context directions. Observed-answer
+  projection is a validation check, not an upper bound; negative TriviaQA and
+  NQ-Open associations limit the hallucination claim.
+- Preimages: report individual datasets and retrieved prompt types descriptively.
+  Unjudged training-pool retrieval does not validate behavior induction.
+- Supplementary regression/covariance controls: matched million-map readouts do
+  not establish a consistently positive advantage over context regression.
+- The requested fixed-direction results supersede the 2026-09-03 decision to
+  omit persona-vector projections. Canonical manuscript: `06_behavior.tex` and
+  the behavior appendix. The smaller-map companion is tracked in
+  `eval_results/issue_1739/small_map_fixed_20260917`.
 
 Other candidate applications (scope ⟵ DECIDE, see Decisions):
 - Predicting the effect of finetuning (see § Finetuning below)
