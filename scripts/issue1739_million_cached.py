@@ -231,18 +231,27 @@ def prepare_behavior(args, behavior, index):
     return data, train, old, audit
 
 
+def finite_float(value):
+    return float(value) if np.isfinite(value) else None
+
+
 def summarize(pred, data, names, n_boot, comparisons):
     result, boot_save = [], {}
     for rung in sorted(set(data["rungs"])):
         ix = np.flatnonzero(data["rungs"] == rung)
-        rho = arms.spearman_rows(pred[:, ix], data["dv"][ix])
-        boots, ng = group_bootstrap_rhos(
-            pred[:, ix],
-            data["dv"][ix],
-            data["groups"][ix],
-            n_boot=n_boot,
-            rng=np.random.default_rng(1739963),
-        )
+        active = np.isfinite(pred[:, ix]).all(axis=1)
+        rho = np.full(len(names), np.nan)
+        boots = np.full((len(names), n_boot), np.nan)
+        ng = len(set(data["groups"][ix]))
+        if active.any():
+            rho[active] = arms.spearman_rows(pred[active][:, ix], data["dv"][ix])
+            boots[active], ng = group_bootstrap_rhos(
+                pred[active][:, ix],
+                data["dv"][ix],
+                data["groups"][ix],
+                n_boot=n_boot,
+                rng=np.random.default_rng(1739963),
+            )
 
         def ci(v):
             valid = np.isfinite(v)
@@ -260,19 +269,19 @@ def summarize(pred, data, names, n_boot, comparisons):
         for a, b in comparisons:
             ia, ib = names.index(a), names.index(b)
             diffs[a + "_minus_" + b] = dict(
-                delta=float(rho[ia] - rho[ib]), ci95=ci(boots[ia] - boots[ib])
+                delta=finite_float(rho[ia] - rho[ib]), ci95=ci(boots[ia] - boots[ib])
             )
         if set(ft.NULL_ARMS) <= set(names):
             indices = [names.index(n) for n in ft.NULL_ARMS]
             estimates["shuffled_mean"] = dict(
-                rho=float(rho[indices].mean()),
+                rho=finite_float(rho[indices].mean()),
                 ci95=ci(boots[indices].mean(0)),
-                seed_rhos=rho[indices].tolist(),
-                seed_sd=float(rho[indices].std(ddof=1)),
+                seed_rhos=[finite_float(v) for v in rho[indices]],
+                seed_sd=finite_float(rho[indices].std(ddof=1)),
             )
             a = names.index("mapped_answer")
             diffs["mapped_answer_minus_shuffled_mean"] = dict(
-                delta=float(rho[a] - rho[indices].mean()),
+                delta=finite_float(rho[a] - rho[indices].mean()),
                 ci95=ci(boots[a] - boots[indices].mean(0)),
             )
         result.append(
@@ -374,14 +383,24 @@ def behavior_analysis(args, behavior):
     inv = np.load(args.out / "transforms/inverse.npz")
     rank = int(inv["rank"])
     numerical_rank = len(inv["val_sse"]) - 1
-    u = inverse_direction(inv["u"], inv["s"], inv["vt"], va, rank)
+    u = (
+        inverse_direction(inv["u"], inv["s"], inv["vt"], va, rank)
+        if rank > 0
+        else np.full_like(va, np.nan)
+    )
     weights = np.stack(
         [u, arr(payload, "W") @ va, arr(payload, "xsd") * vc, arr(payload, "xsd") * va]
     )
     z = (data["x"] - arr(payload, "xmu")) / arr(payload, "xsd")
     dot = z @ weights.T
     cosine = dot / (np.linalg.norm(z, axis=1)[:, None] * np.linalg.norm(weights, axis=1)[None, :])
-    diag_ranks = sorted({max(1, rank // 2), rank, min(numerical_rank, 2 * rank), numerical_rank})
+    diag_ranks = sorted(
+        {
+            k
+            for k in (max(1, rank // 2), rank, min(numerical_rank, 2 * rank), numerical_rank)
+            if k > 0
+        }
+    )
     rank_weights = np.stack(
         [inverse_direction(inv["u"], inv["s"], inv["vt"], va, k) for k in diag_ranks]
     )
@@ -414,8 +433,9 @@ def behavior_analysis(args, behavior):
             results=summary,
             selected_rank=rank,
             diagnostic_ranks=diag_ranks,
-            inverse_norm=float(np.linalg.norm(u)),
-            target_residual_fraction=float(
+            inverse_available=rank > 0,
+            inverse_norm=finite_float(np.linalg.norm(u)),
+            target_residual_fraction=finite_float(
                 np.linalg.norm(u @ arr(payload, "W") - va) / np.linalg.norm(va)
             ),
             preserved_score_max_error=float(np.max(np.abs(parity - old["predictions"][:4]))),
@@ -429,6 +449,8 @@ def behavior_analysis(args, behavior):
             continue
         for metric, scores in [("dot", dot), ("cosine", cosine)]:
             for j, name in enumerate(FIX_ARMS):
+                if not np.isfinite(scores[ix, j]).all():
+                    continue
                 lo, hi = extreme_ids(scores[ix, j], data["context_ids"][ix], max(1, len(ix) // 10))
                 dv = data["dv"][ix]
                 deciles.append(
@@ -518,6 +540,8 @@ def retrieval(args):
     wanted = {}
     for bidx, b in enumerate(ft.ROSTER):
         for j, name in enumerate(FIX_ARMS):
+            if not np.isfinite(all_w[bidx * 4 + j]).all():
+                continue
             for mi, metric in enumerate(("dot", "cosine")):
                 for sign, side in ((1, "bottom"), (-1, "top")):
                     order = np.lexsort((rows, sign * scores[:, mi, bidx * 4 + j]))

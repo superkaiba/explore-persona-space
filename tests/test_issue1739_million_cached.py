@@ -41,3 +41,17 @@ def test_inverse_ignores_zero_singular_components_and_ties_are_id_ordered():
     assert len(errors) == 3 and np.isfinite(errors).all()
     lo, hi = extreme_ids(np.ones(3), np.array(["c", "a", "b"]), 2)
     assert lo.tolist() == hi.tolist() == [1, 2]
+
+
+def test_undefined_cells_serialize_without_invented_zero_results():
+    import json
+
+    from scripts.issue1739_million_cached import REG_ARMS, summarize
+
+    data = dict(dv=np.zeros(4), groups=np.array(list("abcd")), rungs=np.array(["wc"] * 4))
+    pred = np.arange(len(REG_ARMS) * 4).reshape(len(REG_ARMS), 4).astype(float)
+    pred[0] = np.nan
+    result, _ = summarize(pred, data, REG_ARMS, 20, [("mapped_answer", "context_covariance")])
+    json.dumps(result, allow_nan=False)
+    assert all(v["rho"] is None for v in result[0]["arms"].values())
+    assert result[0]["differences"]["mapped_answer_minus_context_covariance"]["delta"] is None
