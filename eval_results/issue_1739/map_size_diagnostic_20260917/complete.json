@@ -1,0 +1,32 @@
+{
+  "source_sha": "52454addb1d810a679f62588309ebe7252651850",
+  "finished_at": 1789673535.8193994,
+  "artifact_sha256": {
+    "config.json": "e04f673d92e6a106ee58ba85f39e2315c084e6b86f9157dabf947ae298cee2dc",
+    "summary.json": "667707c31aa5a83f79a540832c3ade0f9e964d27fa172353914954e7b2944a09",
+    "evil/complete.json": "a82a1f7c0b352104faf0b5482be127336b55ce9b0a83a3d1200949e1d38c7be2",
+    "evil/matched_heldout.npz": "f267119391aaffa1d2e22cf70e948d5acb3eacd735fb06550f25ffca1d86c79c",
+    "evil/all_cached_generic_chat_bootstrap.npz": "d31ac2fafb7ae498c05be8de569078d9d2a738a2a53af69847dcc0656ceb8ce9",
+    "evil/rollout_alignment.json": "701ce3d1c0667c01b135136e2e743263c09304c7b5cb8d13c3cf4d90ea2f00b5",
+    "evil/historical_eval_including_overlap_bootstrap.npz": "7a7355d53079567ca05ad0e1ab980034da913317023345ba3f8c0d838179c2a8",
+    "evil/matched_results.json": "efa0440f1caac82021c9e75617a7ef41582d0a9468b27149e9588d6b7e62e3f7",
+    "evil/generic_predictions.npz": "0d09b81e107514343f32d22be05b58a0e001ca785efde265539fc92a7cfd641b",
+    "evil/generic_results.json": "702d31afd415042656973eb6c705437583429296b08915692dc87c8624e67a83",
+    "hallucination/complete.json": "5aad43f625d47686a0aca5735185c82765b83a597c5e8e22e677ee8396de42ee",
+    "hallucination/matched_heldout.npz": "b207c19438a40bfc07a81cd48d6165b9a9163f7ce3bc15a910d1b0d6aa342208",
+    "hallucination/all_cached_generic_chat_bootstrap.npz": "03f5ac9dc546385f9680d4f039d2d4338708d890404b92b60e930186f77cb093",
+    "hallucination/rollout_alignment.json": "15c6f942b37027258616090bcd67ef78c492241c149b3958768f654b2d664e7a",
+    "hallucination/historical_eval_including_overlap_bootstrap.npz": "1b9186627a934fba662e66f06c26d32ba2fde4e4135a26c1757b4ff620f05cda",
+    "hallucination/matched_results.json": "d5882df4f3cb93d0fc20fe4596ee0cba4c86e580e5c050f2e0486dfe51104fdb",
+    "hallucination/generic_predictions.npz": "3caabf8ee0e71778621d5a41adf56134f008f6c4a6f2fa577c581d3f45f6fb61",
+    "hallucination/generic_results.json": "315a985ea253b266fecb72ad643a4423b43de4e11a89976084dfe93117f159de",
+    "sycophancy/complete.json": "abd3b2bce6b4791ebd05388552318eaafaa79bfef20920242ef8c3ac8f9a3564",
+    "sycophancy/matched_heldout.npz": "a3678d28308d332c958519c4e3f241eb5fddedf3c0ddfe214a917dd5cc395971",
+    "sycophancy/all_cached_generic_chat_bootstrap.npz": "d78ac022e897221c3ac1b05111786a4a654f21733566c07a52b4d5abcd830f7b",
+    "sycophancy/rollout_alignment.json": "30a94e865276696462bd8fdaea4a7c7d2255630d58a3ae42c16fafb896f7b911",
+    "sycophancy/historical_eval_including_overlap_bootstrap.npz": "b20ef1cd3a1b53c688734be02855a4e5695af278ff63d31c8281632308bfa920",
+    "sycophancy/matched_results.json": "5f21c3d631c5cc2d7b947295931a4f28797599f0aa5ed751b1c9f7558dc7d9b3",
+    "sycophancy/generic_predictions.npz": "6122f941bf1c9e7eac364ff0de2430bfd59aca06927579cc5cfe7466a7609aaa",
+    "sycophancy/generic_results.json": "469c0ce021b6a93c1dc3049e8911469cb14fec59ce247430878f2daf6ab288ba"
+  }
+}

@@ -1,0 +1,999 @@
+{
+  "audited_at": "2026-09-17T19:36:31.159913+00:00",
+  "protocol": "Hashes of bare map first-user text vs full rendered evaluation prompt, stripped constituent user turns, and final query. Lowercase/whitespace normalization; counts nonexclusive. Canonical single-turn exact match additionally requires actual full evaluation prompt to equal pinned tokenizer single-user rendering of stripped final query. Does not assert identical generations or activation vectors.",
+  "map_hashes_sha256": "0db2037115fbfcd1a683c14f392ba4b53723e617bf7e9d58cff45b9af8ad6540",
+  "prompt_index_sha256": "18b2bb0bfa510b6e5aebf235d66abb0c9052ece2fbf12ac2a58c74276a8e6f9d",
+  "raw_source_sha256": {
+    "raw_metadata/wildchat/wildchat.shard00.jsonl": "37e166874f4294649e79202e41270989c89f711bd1c06f7a019707e98fc022ec",
+    "raw_metadata/wildchat/wildchat.shard01.jsonl": "d881d4cbda6fa1385be2b6802e8d4e49d28b95c410b50757d7706f855066e876",
+    "raw_metadata/wildchat/wildchat.shard02.jsonl": "f0f25e40efd8c7eadf86cb1c767d111626019324c368f22b0814a7248d575023",
+    "raw_metadata/wildchat/wildchat.shard03.jsonl": "567f60dcba027f5eeabfdea60b964c58ea8f847dfea30acbe7c94c25cb153e4a",
+    "raw_metadata/wildchat/wildchat.shard04.jsonl": "ae3572b17b1cbf4e751216ede815f94b163664d4b2da8fe9afe21ead33d0dfca",
+    "raw_metadata/wildchat/wildchat.shard05.jsonl": "51ca3f6bf45b2db85bc20feedafc83f177a6e168a62ccae7c65fcddbeacb1546",
+    "raw_metadata/wildchat/wildchat.shard06.jsonl": "4ca0f1e5a8840192f077b8462b257bfea8e1608e74236bd4da22157f32aff6c0",
+    "raw_metadata/wildchat/wildchat.shard07.jsonl": "cbc487d438492cc3ea898943d85d14a661d4820f3b413fd479250b92eae9cb79",
+    "raw_metadata/wildchat/wildchat.shard08.jsonl": "6c7869b001e8e6b25e4a77e696b310d51230ef639ee97abe1a16151068f96617",
+    "raw_metadata/wildchat/wildchat.shard09.jsonl": "53b7e5d46ecda4ea8c74417d91baa8f09b9f5ce6f74ca576c0ab99e364b84231",
+    "raw_metadata/wildchat/wildchat.shard10.jsonl": "be4f72a006ee01824a41043dbc770a3b5e4968a0938ce7b6422013b1ce7052f6",
+    "raw_metadata/wildchat/wildchat.shard11.jsonl": "f98993061889481560ed4f117fd4449d3d3f34774e66203449aa1f8c99a4ba51",
+    "raw_metadata/wildchat/wildchat.shard12.jsonl": "70e50df24429632cb4aee46064b974dcdeefbe2b6573170dfa29acafc5cdb0e7"
+  },
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "all_2000_candidate_pool": {
+    "n": 2000,
+    "single_user_turn": 987,
+    "multi_user_turn": 1013,
+    "canonical_single_user_render_exact": 860,
+    "canonical_single_user_render_normalized": 873,
+    "train": {
+      "full_rendered_prompt": {
+        "exact": 0,
+        "normalized": 0,
+        "either": 0
+      },
+      "first_user": {
+        "exact": 1974,
+        "normalized": 1987,
+        "either": 1987
+      },
+      "final_user": {
+        "exact": 1024,
+        "normalized": 1032,
+        "either": 1032
+      },
+      "query_unstripped": {
+        "exact": 894,
+        "normalized": 1032,
+        "either": 1032
+      },
+      "any_user": {
+        "exact": 1977,
+        "normalized": 1989,
+        "either": 1989
+      },
+      "middle_user": {
+        "exact": 53,
+        "normalized": 63,
+        "either": 63
+      },
+      "declared_overlap": 1989,
+      "only_later_user_without_first": 2,
+      "canonical_single_turn_exact_match": 853,
+      "canonical_single_turn_normalized_match": 867,
+      "overlapping_single_user_turn": 981,
+      "overlapping_multi_user_turn": 1008
+    },
+    "validation": {
+      "full_rendered_prompt": {
+        "exact": 0,
+        "normalized": 0,
+        "either": 0
+      },
+      "first_user": {
+        "exact": 5,
+        "normalized": 8,
+        "either": 8
+      },
+      "final_user": {
+        "exact": 0,
+        "normalized": 0,
+        "either": 0
+      },
+      "query_unstripped": {
+        "exact": 0,
+        "normalized": 0,
+        "either": 0
+      },
+      "any_user": {
+        "exact": 9,
+        "normalized": 13,
+        "either": 13
+      },
+      "middle_user": {
+        "exact": 4,
+        "normalized": 5,
+        "either": 5
+      },
+      "declared_overlap": 13,
+      "only_later_user_without_first": 5,
+      "canonical_single_turn_exact_match": 0,
+      "canonical_single_turn_normalized_match": 0,
+      "overlapping_single_user_turn": 0,
+      "overlapping_multi_user_turn": 13
+    },
+    "train_or_validation": {
+      "full_rendered_prompt": {
+        "exact": 0,
+        "normalized": 0,
+        "either": 0
+      },
+      "first_user": {
+        "exact": 1974,
+        "normalized": 1987,
+        "either": 1987
+      },
+      "final_user": {
+        "exact": 1024,
+        "normalized": 1032,
+        "either": 1032
+      },
+      "query_unstripped": {
+        "exact": 894,
+        "normalized": 1032,
+        "either": 1032
+      },
+      "any_user": {
+        "exact": 1977,
+        "normalized": 1989,
+        "either": 1989
+      },
+      "middle_user": {
+        "exact": 53,
+        "normalized": 63,
+        "either": 63
+      },
+      "declared_overlap": 1989,
+      "only_later_user_without_first": 2,
+      "canonical_single_turn_exact_match": 853,
+      "canonical_single_turn_normalized_match": 867,
+      "overlapping_single_user_turn": 981,
+      "overlapping_multi_user_turn": 1008
+    }
+  },
+  "historical_419_candidate_pool": {
+    "n": 419,
+    "single_user_turn": 208,
+    "multi_user_turn": 211,
+    "canonical_single_user_render_exact": 183,
+    "canonical_single_user_render_normalized": 186,
+    "train": {
+      "full_rendered_prompt": {
+        "exact": 0,
+        "normalized": 0,
+        "either": 0
+      },
+      "first_user": {
+        "exact": 411,
+        "normalized": 415,
+        "either": 415
+      },
+      "final_user": {
+        "exact": 215,
+        "normalized": 216,
+        "either": 216
+      },
+      "query_unstripped": {
+        "exact": 189,
+        "normalized": 216,
+        "either": 216
+      },
+      "any_user": {
+        "exact": 412,
+        "normalized": 415,
+        "either": 415
+      },
+      "middle_user": {
+        "exact": 7,
+        "normalized": 8,
+        "either": 8
+      },
+      "declared_overlap": 415,
+      "only_later_user_without_first": 0,
+      "canonical_single_turn_exact_match": 182,
+      "canonical_single_turn_normalized_match": 185,
+      "overlapping_single_user_turn": 207,
+      "overlapping_multi_user_turn": 208
+    },
+    "validation": {
+      "full_rendered_prompt": {
+        "exact": 0,
+        "normalized": 0,
+        "either": 0
+      },
+      "first_user": {
+        "exact": 1,
+        "normalized": 2,
+        "either": 2
+      },
+      "final_user": {
+        "exact": 0,
+        "normalized": 0,
+        "either": 0
+      },
+      "query_unstripped": {
+        "exact": 0,
+        "normalized": 0,
+        "either": 0
+      },
+      "any_user": {
+        "exact": 1,
+        "normalized": 3,
+        "either": 3
+      },
+      "middle_user": {
+        "exact": 0,
+        "normalized": 1,
+        "either": 1
+      },
+      "declared_overlap": 3,
+      "only_later_user_without_first": 1,
+      "canonical_single_turn_exact_match": 0,
+      "canonical_single_turn_normalized_match": 0,
+      "overlapping_single_user_turn": 0,
+      "overlapping_multi_user_turn": 3
+    },
+    "train_or_validation": {
+      "full_rendered_prompt": {
+        "exact": 0,
+        "normalized": 0,
+        "either": 0
+      },
+      "first_user": {
+        "exact": 411,
+        "normalized": 415,
+        "either": 415
+      },
+      "final_user": {
+        "exact": 215,
+        "normalized": 216,
+        "either": 216
+      },
+      "query_unstripped": {
+        "exact": 189,
+        "normalized": 216,
+        "either": 216
+      },
+      "any_user": {
+        "exact": 412,
+        "normalized": 415,
+        "either": 415
+      },
+      "middle_user": {
+        "exact": 7,
+        "normalized": 8,
+        "either": 8
+      },
+      "declared_overlap": 415,
+      "only_later_user_without_first": 0,
+      "canonical_single_turn_exact_match": 182,
+      "canonical_single_turn_normalized_match": 185,
+      "overlapping_single_user_turn": 207,
+      "overlapping_multi_user_turn": 208
+    }
+  },
+  "behaviors": {
+    "evil": {
+      "historical_retained": {
+        "n": 417,
+        "single_user_turn": 208,
+        "multi_user_turn": 209,
+        "canonical_single_user_render_exact": 183,
+        "canonical_single_user_render_normalized": 186,
+        "train": {
+          "full_rendered_prompt": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "first_user": {
+            "exact": 409,
+            "normalized": 413,
+            "either": 413
+          },
+          "final_user": {
+            "exact": 214,
+            "normalized": 215,
+            "either": 215
+          },
+          "query_unstripped": {
+            "exact": 188,
+            "normalized": 215,
+            "either": 215
+          },
+          "any_user": {
+            "exact": 410,
+            "normalized": 413,
+            "either": 413
+          },
+          "middle_user": {
+            "exact": 6,
+            "normalized": 7,
+            "either": 7
+          },
+          "declared_overlap": 413,
+          "only_later_user_without_first": 0,
+          "canonical_single_turn_exact_match": 182,
+          "canonical_single_turn_normalized_match": 185,
+          "overlapping_single_user_turn": 207,
+          "overlapping_multi_user_turn": 206
+        },
+        "validation": {
+          "full_rendered_prompt": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "first_user": {
+            "exact": 1,
+            "normalized": 2,
+            "either": 2
+          },
+          "final_user": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "query_unstripped": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "any_user": {
+            "exact": 1,
+            "normalized": 3,
+            "either": 3
+          },
+          "middle_user": {
+            "exact": 0,
+            "normalized": 1,
+            "either": 1
+          },
+          "declared_overlap": 3,
+          "only_later_user_without_first": 1,
+          "canonical_single_turn_exact_match": 0,
+          "canonical_single_turn_normalized_match": 0,
+          "overlapping_single_user_turn": 0,
+          "overlapping_multi_user_turn": 3
+        },
+        "train_or_validation": {
+          "full_rendered_prompt": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "first_user": {
+            "exact": 409,
+            "normalized": 413,
+            "either": 413
+          },
+          "final_user": {
+            "exact": 214,
+            "normalized": 215,
+            "either": 215
+          },
+          "query_unstripped": {
+            "exact": 188,
+            "normalized": 215,
+            "either": 215
+          },
+          "any_user": {
+            "exact": 410,
+            "normalized": 413,
+            "either": 413
+          },
+          "middle_user": {
+            "exact": 6,
+            "normalized": 7,
+            "either": 7
+          },
+          "declared_overlap": 413,
+          "only_later_user_without_first": 0,
+          "canonical_single_turn_exact_match": 182,
+          "canonical_single_turn_normalized_match": 185,
+          "overlapping_single_user_turn": 207,
+          "overlapping_multi_user_turn": 206
+        }
+      },
+      "all_cached_retained": {
+        "n": 1987,
+        "single_user_turn": 978,
+        "multi_user_turn": 1009,
+        "canonical_single_user_render_exact": 853,
+        "canonical_single_user_render_normalized": 865,
+        "train": {
+          "full_rendered_prompt": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "first_user": {
+            "exact": 1961,
+            "normalized": 1974,
+            "either": 1974
+          },
+          "final_user": {
+            "exact": 1013,
+            "normalized": 1021,
+            "either": 1021
+          },
+          "query_unstripped": {
+            "exact": 885,
+            "normalized": 1021,
+            "either": 1021
+          },
+          "any_user": {
+            "exact": 1964,
+            "normalized": 1976,
+            "either": 1976
+          },
+          "middle_user": {
+            "exact": 51,
+            "normalized": 61,
+            "either": 61
+          },
+          "declared_overlap": 1976,
+          "only_later_user_without_first": 2,
+          "canonical_single_turn_exact_match": 846,
+          "canonical_single_turn_normalized_match": 859,
+          "overlapping_single_user_turn": 972,
+          "overlapping_multi_user_turn": 1004
+        },
+        "validation": {
+          "full_rendered_prompt": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "first_user": {
+            "exact": 5,
+            "normalized": 8,
+            "either": 8
+          },
+          "final_user": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "query_unstripped": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "any_user": {
+            "exact": 9,
+            "normalized": 13,
+            "either": 13
+          },
+          "middle_user": {
+            "exact": 4,
+            "normalized": 5,
+            "either": 5
+          },
+          "declared_overlap": 13,
+          "only_later_user_without_first": 5,
+          "canonical_single_turn_exact_match": 0,
+          "canonical_single_turn_normalized_match": 0,
+          "overlapping_single_user_turn": 0,
+          "overlapping_multi_user_turn": 13
+        },
+        "train_or_validation": {
+          "full_rendered_prompt": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "first_user": {
+            "exact": 1961,
+            "normalized": 1974,
+            "either": 1974
+          },
+          "final_user": {
+            "exact": 1013,
+            "normalized": 1021,
+            "either": 1021
+          },
+          "query_unstripped": {
+            "exact": 885,
+            "normalized": 1021,
+            "either": 1021
+          },
+          "any_user": {
+            "exact": 1964,
+            "normalized": 1976,
+            "either": 1976
+          },
+          "middle_user": {
+            "exact": 51,
+            "normalized": 61,
+            "either": 61
+          },
+          "declared_overlap": 1976,
+          "only_later_user_without_first": 2,
+          "canonical_single_turn_exact_match": 846,
+          "canonical_single_turn_normalized_match": 859,
+          "overlapping_single_user_turn": 972,
+          "overlapping_multi_user_turn": 1004
+        }
+      }
+    },
+    "sycophancy": {
+      "historical_retained": {
+        "n": 415,
+        "single_user_turn": 206,
+        "multi_user_turn": 209,
+        "canonical_single_user_render_exact": 182,
+        "canonical_single_user_render_normalized": 185,
+        "train": {
+          "full_rendered_prompt": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "first_user": {
+            "exact": 407,
+            "normalized": 411,
+            "either": 411
+          },
+          "final_user": {
+            "exact": 212,
+            "normalized": 213,
+            "either": 213
+          },
+          "query_unstripped": {
+            "exact": 187,
+            "normalized": 213,
+            "either": 213
+          },
+          "any_user": {
+            "exact": 408,
+            "normalized": 411,
+            "either": 411
+          },
+          "middle_user": {
+            "exact": 6,
+            "normalized": 7,
+            "either": 7
+          },
+          "declared_overlap": 411,
+          "only_later_user_without_first": 0,
+          "canonical_single_turn_exact_match": 181,
+          "canonical_single_turn_normalized_match": 184,
+          "overlapping_single_user_turn": 205,
+          "overlapping_multi_user_turn": 206
+        },
+        "validation": {
+          "full_rendered_prompt": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "first_user": {
+            "exact": 1,
+            "normalized": 2,
+            "either": 2
+          },
+          "final_user": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "query_unstripped": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "any_user": {
+            "exact": 1,
+            "normalized": 3,
+            "either": 3
+          },
+          "middle_user": {
+            "exact": 0,
+            "normalized": 1,
+            "either": 1
+          },
+          "declared_overlap": 3,
+          "only_later_user_without_first": 1,
+          "canonical_single_turn_exact_match": 0,
+          "canonical_single_turn_normalized_match": 0,
+          "overlapping_single_user_turn": 0,
+          "overlapping_multi_user_turn": 3
+        },
+        "train_or_validation": {
+          "full_rendered_prompt": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "first_user": {
+            "exact": 407,
+            "normalized": 411,
+            "either": 411
+          },
+          "final_user": {
+            "exact": 212,
+            "normalized": 213,
+            "either": 213
+          },
+          "query_unstripped": {
+            "exact": 187,
+            "normalized": 213,
+            "either": 213
+          },
+          "any_user": {
+            "exact": 408,
+            "normalized": 411,
+            "either": 411
+          },
+          "middle_user": {
+            "exact": 6,
+            "normalized": 7,
+            "either": 7
+          },
+          "declared_overlap": 411,
+          "only_later_user_without_first": 0,
+          "canonical_single_turn_exact_match": 181,
+          "canonical_single_turn_normalized_match": 184,
+          "overlapping_single_user_turn": 205,
+          "overlapping_multi_user_turn": 206
+        }
+      },
+      "all_cached_retained": {
+        "n": 1982,
+        "single_user_turn": 974,
+        "multi_user_turn": 1008,
+        "canonical_single_user_render_exact": 850,
+        "canonical_single_user_render_normalized": 862,
+        "train": {
+          "full_rendered_prompt": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "first_user": {
+            "exact": 1957,
+            "normalized": 1970,
+            "either": 1970
+          },
+          "final_user": {
+            "exact": 1009,
+            "normalized": 1017,
+            "either": 1017
+          },
+          "query_unstripped": {
+            "exact": 882,
+            "normalized": 1017,
+            "either": 1017
+          },
+          "any_user": {
+            "exact": 1959,
+            "normalized": 1971,
+            "either": 1971
+          },
+          "middle_user": {
+            "exact": 50,
+            "normalized": 60,
+            "either": 60
+          },
+          "declared_overlap": 1971,
+          "only_later_user_without_first": 1,
+          "canonical_single_turn_exact_match": 843,
+          "canonical_single_turn_normalized_match": 856,
+          "overlapping_single_user_turn": 968,
+          "overlapping_multi_user_turn": 1003
+        },
+        "validation": {
+          "full_rendered_prompt": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "first_user": {
+            "exact": 5,
+            "normalized": 8,
+            "either": 8
+          },
+          "final_user": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "query_unstripped": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "any_user": {
+            "exact": 9,
+            "normalized": 13,
+            "either": 13
+          },
+          "middle_user": {
+            "exact": 4,
+            "normalized": 5,
+            "either": 5
+          },
+          "declared_overlap": 13,
+          "only_later_user_without_first": 5,
+          "canonical_single_turn_exact_match": 0,
+          "canonical_single_turn_normalized_match": 0,
+          "overlapping_single_user_turn": 0,
+          "overlapping_multi_user_turn": 13
+        },
+        "train_or_validation": {
+          "full_rendered_prompt": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "first_user": {
+            "exact": 1957,
+            "normalized": 1970,
+            "either": 1970
+          },
+          "final_user": {
+            "exact": 1009,
+            "normalized": 1017,
+            "either": 1017
+          },
+          "query_unstripped": {
+            "exact": 882,
+            "normalized": 1017,
+            "either": 1017
+          },
+          "any_user": {
+            "exact": 1959,
+            "normalized": 1971,
+            "either": 1971
+          },
+          "middle_user": {
+            "exact": 50,
+            "normalized": 60,
+            "either": 60
+          },
+          "declared_overlap": 1971,
+          "only_later_user_without_first": 1,
+          "canonical_single_turn_exact_match": 843,
+          "canonical_single_turn_normalized_match": 856,
+          "overlapping_single_user_turn": 968,
+          "overlapping_multi_user_turn": 1003
+        }
+      }
+    },
+    "hallucination": {
+      "historical_retained": {
+        "n": 411,
+        "single_user_turn": 204,
+        "multi_user_turn": 207,
+        "canonical_single_user_render_exact": 179,
+        "canonical_single_user_render_normalized": 182,
+        "train": {
+          "full_rendered_prompt": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "first_user": {
+            "exact": 403,
+            "normalized": 407,
+            "either": 407
+          },
+          "final_user": {
+            "exact": 210,
+            "normalized": 211,
+            "either": 211
+          },
+          "query_unstripped": {
+            "exact": 184,
+            "normalized": 211,
+            "either": 211
+          },
+          "any_user": {
+            "exact": 404,
+            "normalized": 407,
+            "either": 407
+          },
+          "middle_user": {
+            "exact": 6,
+            "normalized": 7,
+            "either": 7
+          },
+          "declared_overlap": 407,
+          "only_later_user_without_first": 0,
+          "canonical_single_turn_exact_match": 178,
+          "canonical_single_turn_normalized_match": 181,
+          "overlapping_single_user_turn": 203,
+          "overlapping_multi_user_turn": 204
+        },
+        "validation": {
+          "full_rendered_prompt": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "first_user": {
+            "exact": 1,
+            "normalized": 2,
+            "either": 2
+          },
+          "final_user": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "query_unstripped": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "any_user": {
+            "exact": 1,
+            "normalized": 3,
+            "either": 3
+          },
+          "middle_user": {
+            "exact": 0,
+            "normalized": 1,
+            "either": 1
+          },
+          "declared_overlap": 3,
+          "only_later_user_without_first": 1,
+          "canonical_single_turn_exact_match": 0,
+          "canonical_single_turn_normalized_match": 0,
+          "overlapping_single_user_turn": 0,
+          "overlapping_multi_user_turn": 3
+        },
+        "train_or_validation": {
+          "full_rendered_prompt": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "first_user": {
+            "exact": 403,
+            "normalized": 407,
+            "either": 407
+          },
+          "final_user": {
+            "exact": 210,
+            "normalized": 211,
+            "either": 211
+          },
+          "query_unstripped": {
+            "exact": 184,
+            "normalized": 211,
+            "either": 211
+          },
+          "any_user": {
+            "exact": 404,
+            "normalized": 407,
+            "either": 407
+          },
+          "middle_user": {
+            "exact": 6,
+            "normalized": 7,
+            "either": 7
+          },
+          "declared_overlap": 407,
+          "only_later_user_without_first": 0,
+          "canonical_single_turn_exact_match": 178,
+          "canonical_single_turn_normalized_match": 181,
+          "overlapping_single_user_turn": 203,
+          "overlapping_multi_user_turn": 204
+        }
+      },
+      "all_cached_retained": {
+        "n": 1967,
+        "single_user_turn": 963,
+        "multi_user_turn": 1004,
+        "canonical_single_user_render_exact": 840,
+        "canonical_single_user_render_normalized": 852,
+        "train": {
+          "full_rendered_prompt": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "first_user": {
+            "exact": 1942,
+            "normalized": 1955,
+            "either": 1955
+          },
+          "final_user": {
+            "exact": 998,
+            "normalized": 1006,
+            "either": 1006
+          },
+          "query_unstripped": {
+            "exact": 872,
+            "normalized": 1006,
+            "either": 1006
+          },
+          "any_user": {
+            "exact": 1944,
+            "normalized": 1956,
+            "either": 1956
+          },
+          "middle_user": {
+            "exact": 50,
+            "normalized": 60,
+            "either": 60
+          },
+          "declared_overlap": 1956,
+          "only_later_user_without_first": 1,
+          "canonical_single_turn_exact_match": 833,
+          "canonical_single_turn_normalized_match": 846,
+          "overlapping_single_user_turn": 957,
+          "overlapping_multi_user_turn": 999
+        },
+        "validation": {
+          "full_rendered_prompt": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "first_user": {
+            "exact": 5,
+            "normalized": 8,
+            "either": 8
+          },
+          "final_user": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "query_unstripped": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "any_user": {
+            "exact": 9,
+            "normalized": 13,
+            "either": 13
+          },
+          "middle_user": {
+            "exact": 4,
+            "normalized": 5,
+            "either": 5
+          },
+          "declared_overlap": 13,
+          "only_later_user_without_first": 5,
+          "canonical_single_turn_exact_match": 0,
+          "canonical_single_turn_normalized_match": 0,
+          "overlapping_single_user_turn": 0,
+          "overlapping_multi_user_turn": 13
+        },
+        "train_or_validation": {
+          "full_rendered_prompt": {
+            "exact": 0,
+            "normalized": 0,
+            "either": 0
+          },
+          "first_user": {
+            "exact": 1942,
+            "normalized": 1955,
+            "either": 1955
+          },
+          "final_user": {
+            "exact": 998,
+            "normalized": 1006,
+            "either": 1006
+          },
+          "query_unstripped": {
+            "exact": 872,
+            "normalized": 1006,
+            "either": 1006
+          },
+          "any_user": {
+            "exact": 1944,
+            "normalized": 1956,
+            "either": 1956
+          },
+          "middle_user": {
+            "exact": 50,
+            "normalized": 60,
+            "either": 60
+          },
+          "declared_overlap": 1956,
+          "only_later_user_without_first": 1,
+          "canonical_single_turn_exact_match": 833,
+          "canonical_single_turn_normalized_match": 846,
+          "overlapping_single_user_turn": 957,
+          "overlapping_multi_user_turn": 999
+        }
+      }
+    }
+  }
+}
