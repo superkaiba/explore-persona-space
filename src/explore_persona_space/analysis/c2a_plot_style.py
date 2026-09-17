@@ -51,8 +51,19 @@ TEXT_WIDTH_IN = 5.5
 C2A_SCALE = 0.42
 """Realized printed size divided by script point size, identical for every figure."""
 
-INCLUDE_WIDTHS: dict[str, float] = {"full": 1.0, "wide": 0.75, "half": 0.5, "sliver": 0.30}
-"""The only ``\\includegraphics`` width fractions a paper figure may use."""
+INCLUDE_WIDTHS: dict[str, float] = {
+    "full": 1.0,
+    "wide": 0.75,
+    "half": 0.5,
+    "narrow": 0.36,
+    "sliver": 0.30,
+}
+"""The only ``\\includegraphics`` width fractions a paper figure may use.
+
+``narrow`` and ``sliver`` are the minor member of an uneven side-by-side pair whose
+other member is a non-c2a asset at the complementary fraction: Figure 1 pairs the
+schematic at 0.62 with the scaling panel at 0.36.
+"""
 
 BASE_FONT_PT: dict[str, float] = {"body": 18, "tick": 17, "label": 20, "title": 22}
 """Script-side point sizes pinned by :func:`set_c2a_style`."""
