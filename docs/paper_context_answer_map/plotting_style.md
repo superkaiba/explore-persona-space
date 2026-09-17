@@ -367,8 +367,10 @@ No fitting or inference runs during rendering.
 Panel B shows frozen and target-trained maps, with character-to-character
 transfer first. Each source map trains on only one character. The twelve
 directed pairs are averaged equally within each of five conversation folds,
-then across folds. The other four transfer rows and panels A/C retain their
-previous numerical inputs. The negative horizontal axis is continuously
+then across folds. Chat-to-plain-text assistant transfer is the third row,
+using the same saved K5 map-geometry fits. The reverse direction is archived
+and reported in the appendix. The four original transfer rows and panels A/C
+retain their previous numerical inputs. The negative horizontal axis is continuously
 compressed fourfold, while positive values retain a linear scale. No interval
 is omitted and all fold-range endpoints remain visible. The caption states
 the scale change, and the appendix gives every directed character pair.

@@ -39,6 +39,7 @@
       "\u22120.8",
       "One character\n\u2192 other characters",
       "Assistant (story)\n\u2192 characters",
+      "Assistant (chat)\n\u2192 assistant (plain text)",
       "Assistant (chat)\n\u2192 assistant (story)",
       "Assistant (plain text)\n\u2192 assistant (story)",
       "Assistant (story)\n\u2192 assistant (chat)",
@@ -11589,6 +11590,105 @@
           },
           {
             "source": "chat",
+            "target": "plain",
+            "metrics": {
+              "frozen": {
+                "mean": -0.02753470407803902,
+                "folds": [
+                  -0.029851876888830953,
+                  -0.07050815982422542,
+                  -0.02302541252776069,
+                  0.018926789383798548,
+                  -0.03321486053317657
+                ]
+              },
+              "own": {
+                "mean": 0.4694130884411954,
+                "folds": [
+                  0.46156411695624566,
+                  0.4798467373764811,
+                  0.4743118341403645,
+                  0.4662746477224132,
+                  0.46506810601047244
+                ]
+              },
+              "source_identity_bias": {
+                "mean": -7.652317468445467,
+                "folds": [
+                  -7.618894799109665,
+                  -7.551224124347563,
+                  -7.68019231571232,
+                  -7.665300866327598,
+                  -7.745975236730191
+                ]
+              }
+            },
+            "source_records": [
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 0,
+                "frozen": -0.029851876888830953,
+                "own": 0.46156411695624566,
+                "source_identity_bias": -7.618894799109665,
+                "retrieval_pool": 1588,
+                "chance_top1": 0.0006297229219143577,
+                "euclidean_top1": 0.02707808564231738,
+                "cosine_top1": 0.03904282115869018
+              },
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 1,
+                "frozen": -0.07050815982422542,
+                "own": 0.4798467373764811,
+                "source_identity_bias": -7.551224124347563,
+                "retrieval_pool": 1589,
+                "chance_top1": 0.0006293266205160479,
+                "euclidean_top1": 0.03146633102580239,
+                "cosine_top1": 0.0434235368156073
+              },
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 2,
+                "frozen": -0.02302541252776069,
+                "own": 0.4743118341403645,
+                "source_identity_bias": -7.68019231571232,
+                "retrieval_pool": 1656,
+                "chance_top1": 0.0006038647342995169,
+                "euclidean_top1": 0.03864734299516908,
+                "cosine_top1": 0.050120772946859904
+              },
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 3,
+                "frozen": 0.018926789383798548,
+                "own": 0.4662746477224132,
+                "source_identity_bias": -7.665300866327598,
+                "retrieval_pool": 1607,
+                "chance_top1": 0.0006222775357809583,
+                "euclidean_top1": 0.03298070939639079,
+                "cosine_top1": 0.04853764779091475
+              },
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 4,
+                "frozen": -0.03321486053317657,
+                "own": 0.46506810601047244,
+                "source_identity_bias": -7.745975236730191,
+                "retrieval_pool": 1560,
+                "chance_top1": 0.000641025641025641,
+                "euclidean_top1": 0.03141025641025641,
+                "cosine_top1": 0.046794871794871795
+              }
+            ],
+            "aggregation": "Mean across five conversation folds"
+          },
+          {
+            "source": "chat",
             "target": "story",
             "metrics": {
               "frozen": {
@@ -19670,6 +19770,206 @@
                 "analysis_fingerprint": "c9b0654ddbee236598983648c0a26d8bbbc70415416b05e87c5ca36f53ebdc85"
               }
             ]
+          }
+        ],
+        "chat_plain_transfers": [
+          {
+            "source": "chat",
+            "target": "plain",
+            "metrics": {
+              "frozen": {
+                "mean": -0.02753470407803902,
+                "folds": [
+                  -0.029851876888830953,
+                  -0.07050815982422542,
+                  -0.02302541252776069,
+                  0.018926789383798548,
+                  -0.03321486053317657
+                ]
+              },
+              "own": {
+                "mean": 0.4694130884411954,
+                "folds": [
+                  0.46156411695624566,
+                  0.4798467373764811,
+                  0.4743118341403645,
+                  0.4662746477224132,
+                  0.46506810601047244
+                ]
+              },
+              "source_identity_bias": {
+                "mean": -7.652317468445467,
+                "folds": [
+                  -7.618894799109665,
+                  -7.551224124347563,
+                  -7.68019231571232,
+                  -7.665300866327598,
+                  -7.745975236730191
+                ]
+              }
+            },
+            "source_records": [
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 0,
+                "frozen": -0.029851876888830953,
+                "own": 0.46156411695624566,
+                "source_identity_bias": -7.618894799109665,
+                "retrieval_pool": 1588,
+                "chance_top1": 0.0006297229219143577,
+                "euclidean_top1": 0.02707808564231738,
+                "cosine_top1": 0.03904282115869018
+              },
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 1,
+                "frozen": -0.07050815982422542,
+                "own": 0.4798467373764811,
+                "source_identity_bias": -7.551224124347563,
+                "retrieval_pool": 1589,
+                "chance_top1": 0.0006293266205160479,
+                "euclidean_top1": 0.03146633102580239,
+                "cosine_top1": 0.0434235368156073
+              },
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 2,
+                "frozen": -0.02302541252776069,
+                "own": 0.4743118341403645,
+                "source_identity_bias": -7.68019231571232,
+                "retrieval_pool": 1656,
+                "chance_top1": 0.0006038647342995169,
+                "euclidean_top1": 0.03864734299516908,
+                "cosine_top1": 0.050120772946859904
+              },
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 3,
+                "frozen": 0.018926789383798548,
+                "own": 0.4662746477224132,
+                "source_identity_bias": -7.665300866327598,
+                "retrieval_pool": 1607,
+                "chance_top1": 0.0006222775357809583,
+                "euclidean_top1": 0.03298070939639079,
+                "cosine_top1": 0.04853764779091475
+              },
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 4,
+                "frozen": -0.03321486053317657,
+                "own": 0.46506810601047244,
+                "source_identity_bias": -7.745975236730191,
+                "retrieval_pool": 1560,
+                "chance_top1": 0.000641025641025641,
+                "euclidean_top1": 0.03141025641025641,
+                "cosine_top1": 0.046794871794871795
+              }
+            ],
+            "aggregation": "Mean across five conversation folds"
+          },
+          {
+            "source": "plain",
+            "target": "chat",
+            "metrics": {
+              "frozen": {
+                "mean": -0.26913526703709234,
+                "folds": [
+                  -0.3232127825102311,
+                  -0.2297167236703983,
+                  -0.2903512381191977,
+                  -0.2153111212836034,
+                  -0.28708446960203116
+                ]
+              },
+              "own": {
+                "mean": 0.40975305477375856,
+                "folds": [
+                  0.4151429352691014,
+                  0.4145367703471189,
+                  0.4175378427168289,
+                  0.38715252636282105,
+                  0.41439519917292245
+                ]
+              },
+              "source_identity_bias": {
+                "mean": -9.524922192231106,
+                "folds": [
+                  -9.717711084208448,
+                  -9.694191290619694,
+                  -9.661167048137862,
+                  -9.002685018326844,
+                  -9.548856519862685
+                ]
+              }
+            },
+            "source_records": [
+              {
+                "source": "Plain",
+                "target": "Chat",
+                "fold": 0,
+                "frozen": -0.3232127825102311,
+                "own": 0.4151429352691014,
+                "source_identity_bias": -9.717711084208448,
+                "retrieval_pool": 1588,
+                "chance_top1": 0.0006297229219143577,
+                "euclidean_top1": 0.018891687657430732,
+                "cosine_top1": 0.01700251889168766
+              },
+              {
+                "source": "Plain",
+                "target": "Chat",
+                "fold": 1,
+                "frozen": -0.2297167236703983,
+                "own": 0.4145367703471189,
+                "source_identity_bias": -9.694191290619694,
+                "retrieval_pool": 1588,
+                "chance_top1": 0.0006297229219143577,
+                "euclidean_top1": 0.020780856423173802,
+                "cosine_top1": 0.0327455919395466
+              },
+              {
+                "source": "Plain",
+                "target": "Chat",
+                "fold": 2,
+                "frozen": -0.2903512381191977,
+                "own": 0.4175378427168289,
+                "source_identity_bias": -9.661167048137862,
+                "retrieval_pool": 1656,
+                "chance_top1": 0.0006038647342995169,
+                "euclidean_top1": 0.017512077294685992,
+                "cosine_top1": 0.02355072463768116
+              },
+              {
+                "source": "Plain",
+                "target": "Chat",
+                "fold": 3,
+                "frozen": -0.2153111212836034,
+                "own": 0.38715252636282105,
+                "source_identity_bias": -9.002685018326844,
+                "retrieval_pool": 1607,
+                "chance_top1": 0.0006222775357809583,
+                "euclidean_top1": 0.010578718108276292,
+                "cosine_top1": 0.012445550715619166
+              },
+              {
+                "source": "Plain",
+                "target": "Chat",
+                "fold": 4,
+                "frozen": -0.28708446960203116,
+                "own": 0.41439519917292245,
+                "source_identity_bias": -9.548856519862685,
+                "retrieval_pool": 1560,
+                "chance_top1": 0.000641025641025641,
+                "euclidean_top1": 0.016025641025641024,
+                "cosine_top1": 0.016666666666666666
+              }
+            ],
+            "aggregation": "Mean across five conversation folds"
           }
         ]
       },
@@ -31051,6 +31351,105 @@
           },
           {
             "source": "chat",
+            "target": "plain",
+            "metrics": {
+              "frozen": {
+                "mean": -0.7481521032024409,
+                "folds": [
+                  -0.7974083471459474,
+                  -0.6742122085058906,
+                  -0.8327869894367148,
+                  -0.652140060560866,
+                  -0.7842129103627853
+                ]
+              },
+              "own": {
+                "mean": 0.4540790840918386,
+                "folds": [
+                  0.4547960847144028,
+                  0.4582477474501526,
+                  0.4416816408481439,
+                  0.4615518470902663,
+                  0.45411810035622724
+                ]
+              },
+              "source_identity_bias": {
+                "mean": -6.729134678787179,
+                "folds": [
+                  -6.771875297565759,
+                  -6.646849456399449,
+                  -6.909292266209782,
+                  -6.6155160003201035,
+                  -6.702140373440805
+                ]
+              }
+            },
+            "source_records": [
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 0,
+                "frozen": -0.7974083471459474,
+                "own": 0.4547960847144028,
+                "source_identity_bias": -6.771875297565759,
+                "retrieval_pool": 1588,
+                "chance_top1": 0.0006297229219143577,
+                "euclidean_top1": 0.2141057934508816,
+                "cosine_top1": 0.20340050377833754
+              },
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 1,
+                "frozen": -0.6742122085058906,
+                "own": 0.4582477474501526,
+                "source_identity_bias": -6.646849456399449,
+                "retrieval_pool": 1589,
+                "chance_top1": 0.0006293266205160479,
+                "euclidean_top1": 0.2668344870988043,
+                "cosine_top1": 0.26179987413467587
+              },
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 2,
+                "frozen": -0.8327869894367148,
+                "own": 0.4416816408481439,
+                "source_identity_bias": -6.909292266209782,
+                "retrieval_pool": 1656,
+                "chance_top1": 0.0006038647342995169,
+                "euclidean_top1": 0.20833333333333334,
+                "cosine_top1": 0.20350241545893719
+              },
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 3,
+                "frozen": -0.652140060560866,
+                "own": 0.4615518470902663,
+                "source_identity_bias": -6.6155160003201035,
+                "retrieval_pool": 1607,
+                "chance_top1": 0.0006222775357809583,
+                "euclidean_top1": 0.28375855631611696,
+                "cosine_top1": 0.2744243932794026
+              },
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 4,
+                "frozen": -0.7842129103627853,
+                "own": 0.45411810035622724,
+                "source_identity_bias": -6.702140373440805,
+                "retrieval_pool": 1560,
+                "chance_top1": 0.000641025641025641,
+                "euclidean_top1": 0.21474358974358973,
+                "cosine_top1": 0.21025641025641026
+              }
+            ],
+            "aggregation": "Mean across five conversation folds"
+          },
+          {
+            "source": "chat",
             "target": "story",
             "metrics": {
               "frozen": {
@@ -39132,6 +39531,206 @@
                 "analysis_fingerprint": "c9b0654ddbee236598983648c0a26d8bbbc70415416b05e87c5ca36f53ebdc85"
               }
             ]
+          }
+        ],
+        "chat_plain_transfers": [
+          {
+            "source": "chat",
+            "target": "plain",
+            "metrics": {
+              "frozen": {
+                "mean": -0.7481521032024409,
+                "folds": [
+                  -0.7974083471459474,
+                  -0.6742122085058906,
+                  -0.8327869894367148,
+                  -0.652140060560866,
+                  -0.7842129103627853
+                ]
+              },
+              "own": {
+                "mean": 0.4540790840918386,
+                "folds": [
+                  0.4547960847144028,
+                  0.4582477474501526,
+                  0.4416816408481439,
+                  0.4615518470902663,
+                  0.45411810035622724
+                ]
+              },
+              "source_identity_bias": {
+                "mean": -6.729134678787179,
+                "folds": [
+                  -6.771875297565759,
+                  -6.646849456399449,
+                  -6.909292266209782,
+                  -6.6155160003201035,
+                  -6.702140373440805
+                ]
+              }
+            },
+            "source_records": [
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 0,
+                "frozen": -0.7974083471459474,
+                "own": 0.4547960847144028,
+                "source_identity_bias": -6.771875297565759,
+                "retrieval_pool": 1588,
+                "chance_top1": 0.0006297229219143577,
+                "euclidean_top1": 0.2141057934508816,
+                "cosine_top1": 0.20340050377833754
+              },
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 1,
+                "frozen": -0.6742122085058906,
+                "own": 0.4582477474501526,
+                "source_identity_bias": -6.646849456399449,
+                "retrieval_pool": 1589,
+                "chance_top1": 0.0006293266205160479,
+                "euclidean_top1": 0.2668344870988043,
+                "cosine_top1": 0.26179987413467587
+              },
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 2,
+                "frozen": -0.8327869894367148,
+                "own": 0.4416816408481439,
+                "source_identity_bias": -6.909292266209782,
+                "retrieval_pool": 1656,
+                "chance_top1": 0.0006038647342995169,
+                "euclidean_top1": 0.20833333333333334,
+                "cosine_top1": 0.20350241545893719
+              },
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 3,
+                "frozen": -0.652140060560866,
+                "own": 0.4615518470902663,
+                "source_identity_bias": -6.6155160003201035,
+                "retrieval_pool": 1607,
+                "chance_top1": 0.0006222775357809583,
+                "euclidean_top1": 0.28375855631611696,
+                "cosine_top1": 0.2744243932794026
+              },
+              {
+                "source": "Chat",
+                "target": "Plain",
+                "fold": 4,
+                "frozen": -0.7842129103627853,
+                "own": 0.45411810035622724,
+                "source_identity_bias": -6.702140373440805,
+                "retrieval_pool": 1560,
+                "chance_top1": 0.000641025641025641,
+                "euclidean_top1": 0.21474358974358973,
+                "cosine_top1": 0.21025641025641026
+              }
+            ],
+            "aggregation": "Mean across five conversation folds"
+          },
+          {
+            "source": "plain",
+            "target": "chat",
+            "metrics": {
+              "frozen": {
+                "mean": 0.13997135938301258,
+                "folds": [
+                  0.1487406960338773,
+                  0.1555943994329234,
+                  0.11540054600166694,
+                  0.14351814202003232,
+                  0.1366030134265629
+                ]
+              },
+              "own": {
+                "mean": 0.6750569054608923,
+                "folds": [
+                  0.679428546482305,
+                  0.6676768770462826,
+                  0.6731071729904388,
+                  0.6782543917964778,
+                  0.676817538988957
+                ]
+              },
+              "source_identity_bias": {
+                "mean": -2.84364751215171,
+                "folds": [
+                  -2.8589440338581458,
+                  -2.8317100385874983,
+                  -2.8445521849596527,
+                  -2.856444186085239,
+                  -2.8265871172680135
+                ]
+              }
+            },
+            "source_records": [
+              {
+                "source": "Plain",
+                "target": "Chat",
+                "fold": 0,
+                "frozen": 0.1487406960338773,
+                "own": 0.679428546482305,
+                "source_identity_bias": -2.8589440338581458,
+                "retrieval_pool": 1588,
+                "chance_top1": 0.0006297229219143577,
+                "euclidean_top1": 0.05289672544080604,
+                "cosine_top1": 0.1580604534005038
+              },
+              {
+                "source": "Plain",
+                "target": "Chat",
+                "fold": 1,
+                "frozen": 0.1555943994329234,
+                "own": 0.6676768770462826,
+                "source_identity_bias": -2.8317100385874983,
+                "retrieval_pool": 1589,
+                "chance_top1": 0.0006293266205160479,
+                "euclidean_top1": 0.09188168659534299,
+                "cosine_top1": 0.20201384518565135
+              },
+              {
+                "source": "Plain",
+                "target": "Chat",
+                "fold": 2,
+                "frozen": 0.11540054600166694,
+                "own": 0.6731071729904388,
+                "source_identity_bias": -2.8445521849596527,
+                "retrieval_pool": 1656,
+                "chance_top1": 0.0006038647342995169,
+                "euclidean_top1": 0.07246376811594203,
+                "cosine_top1": 0.213768115942029
+              },
+              {
+                "source": "Plain",
+                "target": "Chat",
+                "fold": 3,
+                "frozen": 0.14351814202003232,
+                "own": 0.6782543917964778,
+                "source_identity_bias": -2.856444186085239,
+                "retrieval_pool": 1607,
+                "chance_top1": 0.0006222775357809583,
+                "euclidean_top1": 0.0715619166148102,
+                "cosine_top1": 0.194150591163659
+              },
+              {
+                "source": "Plain",
+                "target": "Chat",
+                "fold": 4,
+                "frozen": 0.1366030134265629,
+                "own": 0.676817538988957,
+                "source_identity_bias": -2.8265871172680135,
+                "retrieval_pool": 1560,
+                "chance_top1": 0.000641025641025641,
+                "euclidean_top1": 0.05705128205128205,
+                "cosine_top1": 0.18525641025641026
+              }
+            ],
+            "aggregation": "Mean across five conversation folds"
           }
         ]
       }
@@ -63257,9 +63856,9 @@
       "sha256": "9382ba54a4172b05d605b766c1430dffb7be6e416a589ef48414c5caab5f1fa2"
     }
   },
-  "git_head_at_render": "e0e59e45ca2e035043155dbed6aac9b2f59a98c6",
+  "git_head_at_render": "1b768a2f616bd6b1d3a447a3f9499e4f8f550de5",
   "source_status_at_render": [
-    "?? scripts/issue2054_story_manuscript_figure.py"
+    " M scripts/issue2054_story_manuscript_figure.py"
   ],
   "visual_encodings": {
     "panel_a": "Base own (amber), Instruct own (teal), Instruct seven-setting shared (hatched teal)",
@@ -63284,11 +63883,11 @@
       ]
     }
   },
-  "script_sha256": "d0c68ba49542dc6dd06f270101f284578972d07f5d1362e53e05fbb9d8ea580e",
+  "script_sha256": "7540f9f39dce39c5b2b5bc01f4bea372fef19aaaf595ecb063f274f41bea4db2",
   "style_sha256": "74d774c6f04778e69a36cc58595e009cf06f3b612b7414f09423601fba1b5f98",
   "output_sha256": {
-    "c4_shared_speakers.pdf": "5d292e697250895f716b14a4f7452ba200c0bc153084595270584574b4fe85e7",
-    "c4_shared_speakers_grayscale.png": "ecd68a0862d191c7ade525850a18108065726e92551f5bb21cfd146e4384b214",
-    "c4_shared_speakers.png": "834585c1d8854729a77473c468e7b97fa80992853b1305eae538a5be8c005e78"
+    "c4_shared_speakers.pdf": "c3fc607ccbd57f8ec2b575db234d79f3444dbfd56c27b9dcda2cf6967e86ea27",
+    "c4_shared_speakers_grayscale.png": "b84bf80df27caa47392f3f06dcab43a474fcc25b59a0ac3965a7ebabdc5eaeee",
+    "c4_shared_speakers.png": "c1e7226902c830a65c6ca6b06878a7e4abbfb970d578677954d8496e1f239918"
   }
 }

@@ -150,7 +150,7 @@ def summarize(k5: dict, story: dict, turns: dict, shared_seven: dict) -> dict:
 
 
 def add_character_transfers(data: dict, sources: dict[str, Path]) -> None:
-    """Summarize all twelve directed single-character transfers from saved fits."""
+    """Summarize character and chat/plain transfers from the same saved fits."""
     characters = ("HELIOS", "Wren", "Dana", "Vex")
     for model, path in sources.items():
         geometry = load(path)
@@ -209,6 +209,51 @@ def add_character_transfers(data: dict, sources: dict[str, Path]) -> None:
             },
             *existing,
         ]
+        framing_transfers = []
+        for source, target in [("Chat", "Plain"), ("Plain", "Chat")]:
+            framing_records = []
+            for fold in geometry["folds"]:
+                row = next(r for r in fold["evaluations"] if r["target"] == target)
+                i, j = fold["labels"].index(source), fold["labels"].index(target)
+                framing_records.append(
+                    {
+                        "source": source,
+                        "target": target,
+                        "fold": fold["fold"],
+                        "frozen": row["r2"][i],
+                        "own": row["r2"][j],
+                        "source_identity_bias": row["source_identity_bias_r2"][i],
+                        "retrieval_pool": row["retrieval"]["pool_size"],
+                        "chance_top1": row["retrieval"]["chance_top1"],
+                        "euclidean_top1": row["retrieval"]["euclidean_top1"][i],
+                        "cosine_top1": row["retrieval"]["cosine_top1"][i],
+                    }
+                )
+            framing_metrics = {}
+            for method in ("frozen", "own", "source_identity_bias"):
+                values = [r[method] for r in framing_records]
+                framing_metrics[method] = {"mean": float(np.mean(values)), "folds": values}
+            np.testing.assert_allclose(
+                framing_metrics["own"]["mean"],
+                data["models"][model]["own"][["Chat", "Plain"].index(target)],
+                rtol=0,
+                atol=1e-12,
+            )
+            framing_transfers.append(
+                {
+                    "source": source.lower(),
+                    "target": target.lower(),
+                    "metrics": framing_metrics,
+                    "source_records": framing_records,
+                    "aggregation": "Mean across five conversation folds",
+                }
+            )
+        data["models"][model]["chat_plain_transfers"] = framing_transfers
+        # Keep the reverse direction in the archive and appendix. Insert the
+        # displayed direction after the two story-speaker rows, idempotently.
+        rows = data["models"][model]["transfers"]
+        rows = [r for r in rows if (r["source"], r["target"]) != ("chat", "plain")]
+        data["models"][model]["transfers"] = rows[:2] + framing_transfers[:1] + rows[2:]
 
 
 def compress_negative(values):
@@ -279,7 +324,7 @@ def render(data: dict, output: Path) -> dict:
         "frozen": (instruct_color, None),
         "own": ("white", None),
     }
-    expected_pairs = [("character", "other_characters"), *PAIRS]
+    expected_pairs = [("character", "other_characters"), PAIRS[0], ("chat", "plain"), *PAIRS[1:]]
     if [(r["source"], r["target"]) for r in instruct["transfers"]] != expected_pairs:
         raise ValueError("Unexpected transfer-panel rows")
     for j, pair in enumerate(instruct["transfers"]):
@@ -299,10 +344,11 @@ def render(data: dict, output: Path) -> dict:
                 error_kw={"ecolor": INK, "capsize": 2, "elinewidth": 0.8, "capthick": 0.8},
             )
     b.set_yticks(
-        range(5),
+        range(6),
         [
             "One character\n→ other characters",
             "Assistant (story)\n→ characters",
+            "Assistant (chat)\n→ assistant (plain text)",
             "Assistant (chat)\n→ assistant (story)",
             "Assistant (plain text)\n→ assistant (story)",
             "Assistant (story)\n→ assistant (chat)",
@@ -310,7 +356,7 @@ def render(data: dict, output: Path) -> dict:
     )
     for tick in b.get_yticklabels():
         tick.set_linespacing(TICK_LINESPACING)
-    b.set_ylim(4.5, -0.5)
+    b.set_ylim(5.5, -0.5)
     endpoints = [
         v
         for pair in instruct["transfers"]
