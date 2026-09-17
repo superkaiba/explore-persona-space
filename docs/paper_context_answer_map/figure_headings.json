@@ -580,17 +580,17 @@
     {
       "number": 22,
       "path": "figures/paper/c5_claim4_margin_forest.pdf",
-      "source_sha256": "3771cf1e365eb3fcbcc29a44aa1492d2d2b6b170e35d86c3c6870934165b0805",
+      "source_sha256": "1c187ede588244faebcabdba7b17d080da7d07dc37dd1bd3e0b2d9c83c61e121",
       "rows": [
         {
           "remove": [
             "REGRESSION READOUTS \u00b7 OOD EVALUATION SETS",
-            "Mapped answer minus context, per set"
+            "Mapped answer minus context"
           ],
           "headings": [
             {
-              "x": 281.071,
-              "width": 414.0718833007812,
+              "x": 321.629,
+              "width": 373.5138833,
               "text": "Readout gain on OOD sets"
             }
           ]
@@ -598,9 +598,10 @@
       ],
       "source_metadata": {
         "path": "figures/paper/c5_claim4_margin_forest.meta.json",
-        "sha256": "babc4adaf3dcd9ca71f3d54a781851b3a8d88a72ff6eb410e77f9c04a406011b",
+        "sha256": "646cc66129f996c76c7f59700646521778d0c600805a123fef0aace6bdd65081",
         "pdf_link_status": "pdf_hash_matched"
-      }
+      },
+      "source_commit": "8a42dd12eb950ac181e1aa918cda450858417e41"
     }
   ],
   "source_commit": "f1cca902f3db6cce6d36958f621758e939d4597a",
