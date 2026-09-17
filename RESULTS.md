@@ -1,5 +1,7 @@
 # Explore Persona Space: Results
 
+**2026-09-17 — Story Imprinting context-vector pilot:** With ten-persona centering on Qwen3.8-27B, both informative Default → Sarcasm → Sarcasm + lists increments toward the full sarcasm/French/lists persona are positive at all 64 blocks. The French ladder progresses at 55/64; six-persona recentering changes it to 37/64 while sarcasm remains 64/64. All 2,400 contexts were captured and independently verified. This is fixed-bank geometry, with numerical sensitivity for small increments and no behavioral leakage measurement. [Task 2673](https://eps.superkaiba.com/tasks/2673) · [All-layer increments](https://github.com/superkaiba/explore-persona-space/blob/bd4a3d8989004b8b52b307068cfe742112b964ba/eval_results/issue_2673/descriptive_metrics.json).
+
 **2026-09-07 — Rollout-count ablation:** With the paper's Qwen2.5-7B-Instruct layer-19 maps frozen, averaging K=1→5 evaluation answers raises held-out R² by 0.052 (linear) and 0.055 (nonlinear). Extending K=5→10 adds 0.0077 and 0.0064, with paired 95% intervals above zero for both. Whitened-cosine/CSLS top-1 on 942 fixed candidates rises 97.35%→97.88% and 97.88%→98.09%; the nonlinear retrieval change remains unresolved (95% CI −0.21 to +0.64 percentage points). Training-target K and K>10 are untested. [Task 1901](https://eps.superkaiba.com/tasks/1901) · [K=1–5 results](eval_results/issue_1901/k_rollout_ablation/README.md) · [K=10 results](eval_results/issue_1901/k10_rollout_ablation/README.md).
 
 **Goals:**

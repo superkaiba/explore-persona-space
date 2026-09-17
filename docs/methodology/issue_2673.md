@@ -1,0 +1,56 @@
+# Methodology — issue 2673
+
+**Design:** We used nine verbatim system prompts from [Story Imprinting, Tables 7 and 9](https://arxiv.org/html/2609.10883v1#A3.SS4), plus its no-system-prompt baseline (Table 8): Default (`default`), Sarcasm (`sarcasm`), Sarcasm + lists (`sarcasm_lists`), full sarcasm/French/lists (`sfl`), French (`french`), French + lists (`french_lists`), Dismissive (`persona_dismissive`), brief Sarcastic (`persona_sarcastic`), Saboteur (`persona_saboteur`), and Peer (`persona_peer`). Every condition received the same 240 questions, IDs 0–239, from the existing constructed Assistant Axis extraction battery. Coverage was complete; each even/odd question half contained 120 questions per persona. The source [prompt bank](https://github.com/superkaiba/explore-persona-space/blob/f0c06bbd4515bc0f9cb200be42f2ddcf874fc9dc/configs/pilots/story_persona_prompts.json) and immutable [rendered input rows](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/ecd84d8418969b8690d126f5a03908b5fa23cc84/issue2673_story_persona_qwen38/analysis_tensors/rows.json) preserve the exact wording.
+
+**Training:** **N/A — no model training**. No answer generation, judging, or behavioral leakage evaluation occurred.
+
+**Evaluation:** Let c[p,l] be the mean final-context-token vector for persona p at block l across 240 questions. We subtracted the mean of all ten c[p,l], normalized each centered vector, and computed pairwise cosine. For each ladder we evaluated its first two increments in cosine with SFL; SFL's self-cosine equals one by construction. All 64 blocks were retained, with displays fixed in advance at blocks 15, 31, 47, and 63. Raw cosine, six-persona recentering, and independently centered even/odd question halves were prespecified diagnostics. The layer counts describe this fixed model, prompt bank, question battery, and numerical configuration; they are not inferential tests.
+
+| Parameter | Executed value | Provenance |
+|---|---|---|
+| Model | Qwen/Qwen3.8-27B; revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` | [Manifest](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/ecd84d8418969b8690d126f5a03908b5fa23cc84/issue2673_story_persona_qwen38/analysis_tensors/manifest.json) |
+| Representation | All 64 text decoder blocks; width 5,120; block 63 before final RMSNorm | [Capture source](https://github.com/superkaiba/explore-persona-space/blob/f0c06bbd4515bc0f9cb200be42f2ddcf874fc9dc/scripts/story_persona_qwen38_pilot.py) |
+| Context position | Final native assistant-generation-prefix token, ID 271 | [Rows](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/ecd84d8418969b8690d126f5a03908b5fa23cc84/issue2673_story_persona_qwen38/analysis_tensors/rows.json) |
+| Rendering | Native template; `add_generation_prompt=True`, `enable_thinking=False`; 17–130 tokens | [Manifest](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/ecd84d8418969b8690d126f5a03908b5fa23cc84/issue2673_story_persona_qwen38/analysis_tensors/manifest.json) |
+| Precision | BF16 saved vectors; FP64 centroids and cosine | [Independent verification](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/ecd84d8418969b8690d126f5a03908b5fa23cc84/issue2673_story_persona_qwen38/analysis_tensors/independent_verification.json) |
+| Forward execution | Unpadded singleton, all-one mask, `use_cache=False`; eight forwards per storage group | [Source](https://github.com/superkaiba/explore-persona-space/blob/f0c06bbd4515bc0f9cb200be42f2ddcf874fc9dc/scripts/story_persona_qwen38_pilot.py) |
+| Numerical controls | SDPA math; highest FP32 matmul precision; TF32 and BF16 reduced-precision GEMM/math-SDPA reductions disabled | [Actual readbacks](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/ecd84d8418969b8690d126f5a03908b5fa23cc84/issue2673_story_persona_qwen38/analysis_tensors/manifest.json) |
+| Token cap | 2,048 as rejection guard; no truncation | [Configuration](https://github.com/superkaiba/explore-persona-space/blob/f0c06bbd4515bc0f9cb200be42f2ddcf874fc9dc/configs/pilots/story_persona_qwen38.yaml) |
+| Runtime | Torch 2.8.0+cu128; Transformers 5.15.0 | [Manifest](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/ecd84d8418969b8690d126f5a03908b5fa23cc84/issue2673_story_persona_qwen38/analysis_tensors/manifest.json) |
+| Validation tolerances | Same-forward hooks and interleaved singleton replay ≤1e-5; observed relative errors zero | [Smoke](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/ecd84d8418969b8690d126f5a03908b5fa23cc84/issue2673_story_persona_qwen38/analysis_tensors/smoke.json) |
+
+**Data extraction:** The question battery is constructed, retained for comparability with our previous experiments, and is not a representative sample of real user traffic. Its SHA256 is `31650b9a55d6b827d29ec2ee89034c7efd454672779b3ad9d7c8c4e9ea14f69e`; the prompt-bank SHA256 is `d89e79a63eaef551974d2a858b6c9585385030ae5a16fb0b7c432b94c6966a50`. Direct template tokenization matched render-then-tokenize for every input. The default's empty system message was omitted by the native template. Atomic BF16 chunks recorded row indices, recipe fingerprint, and checksums.
+
+The initial batched attempt failed numerical parity and produced no production vectors. Approved plan v2 changed production to strict singleton forwards. The successful run's repeat check had zero observed difference across all blocks, and same-forward hook/tuple checks were zero at blocks 0, 15, 31, 47, and 62. Mixed-batch execution remained diagnostic only and still differed by up to 1.96% in relative vector error. The alternate singleton backend jointly changed SDPA eligibility and BF16 reduction settings; it is neither an FP32 oracle nor an isolated causal test of one setting. Its 20 inputs comprise the first two questions under all ten personas.
+
+An [independent verifier](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/ecd84d8418969b8690d126f5a03908b5fa23cc84/issue2673_story_persona_qwen38/analysis_tensors/verify_story_persona_2673_v2.py) read all 300 saved chunks, replayed all tokenized prefixes, and recomputed centroids, half-centroids, raw and centered cosines directly from tensors. It found all 2,400 unique rows, exact centroid agreement, cosine discrepancies below 4e-15, and exact matches for 22 smoke/capture rows. Hook comparisons rely on reviewed source and saved metadata because full hidden-state tuples were not retained. Publication resumed after a stopped WandB log symlink was materialized with identical bytes and an [audit](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/ecd84d8418969b8690d126f5a03908b5fa23cc84/issue2673_story_persona_qwen38/analysis_tensors/packaging_recovery.json); vectors and capture source were unchanged.
+
+In the two-question backend diagnostic, maximum absolute pairwise centered-cosine drift is 0.1295, at block 10. The maxima at the fixed blocks 15, 31, 47, and 63 are respectively 0.00788, 0.00596, 0.01435, and 0.00911. Five French increment signs reverse across the tested backends: French → French + lists at blocks 4, 19, 22, and 23, and Default → French at block 55. This small diagnostic is not an error bound for the full 240-question result; small early-layer steps remain numerically uncertain despite repeatability on the chosen runtime.
+
+Prompt wording, length, language, list formatting, and behavioral prohibitions covary with the persona labels. No paraphrase or length-matched controls were collected. No behavioral leakage scalar was measured on Qwen, so these cosines cannot yet be interpreted as a validated leakage predictor. 
+
+**Persistence and compute:**
+
+The [immutable tensor archive](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ecd84d8418969b8690d126f5a03908b5fa23cc84/issue2673_story_persona_qwen38/analysis_tensors) contains 318 files totaling 1,716,623,575 bytes, including all chunks, full and half centroids, smoke vectors, exact input rows, logs, and verification evidence. [Git completion receipt](https://github.com/superkaiba/explore-persona-space/blob/0bc1504202014a77524819d9bc6fe88e87989930/eval_results/issue_2673/completion_receipt.json) binds the source and remote revisions. On one H100 80GB, the successful capture phase took 731.4 seconds including cold model staging, load, and smoke; the measured longest-group peak allocation was 51.05 GiB. Hardware is recorded in the [prelaunch observation](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/5d7bb54d3a5a8f7caedb17115965df75d5effa05/issue2673_story_persona_qwen38/final_analysis_evidence/20260917T2217Z/hardware_observation.json); timing is recorded in the [final workload log](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/92095019056edbd2c7083e7906691640f6395904/issue2673_story_persona_qwen38/final_operator_evidence/20260917T2206Z/final_workload.log). Provisioning, earlier failed attempts, recovery, and publication time are additional. No missing condition was treated as zero.
+
+**Sample training/evaluation data + completions:** These are two actual captured inputs out of 2,400, selected to show the empty default and a concise persona description. The complete system and user text is shown; no completions were produced. [Complete input and tensor archive](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/ecd84d8418969b8690d126f5a03908b5fa23cc84/issue2673_story_persona_qwen38/analysis_tensors). [Full input artifact](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/ecd84d8418969b8690d126f5a03908b5fa23cc84/issue2673_story_persona_qwen38/analysis_tensors/rows.json).
+
+Cherry-picked example 1 of 2, showing the default input; [full 2,400-row artifact](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/ecd84d8418969b8690d126f5a03908b5fa23cc84/issue2673_story_persona_qwen38/analysis_tensors/rows.json).
+
+```text
+row_id: default:0
+system: ""
+user: What is the relationship between law and morality?
+```
+
+Cherry-picked example 2 of 2, showing the brief sarcastic instruction; [full 2,400-row artifact](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/ecd84d8418969b8690d126f5a03908b5fa23cc84/issue2673_story_persona_qwen38/analysis_tensors/rows.json).
+
+```text
+row_id: persona_sarcastic:0
+system: You speak in a highly sarcastic, eye rolling style.
+user: What is the relationship between law and morality?
+```
+
+The [figure export directory](https://github.com/superkaiba/explore-persona-space/tree/43bf031791a9742d8cd38a012f9d8267dde3e396/figures/issue_2673) also preserves `centered_cosine_fixed_layers_grayscale.png` and `sfl_similarity_by_layer_grayscale.png` as alternative renderings of the two displayed plots.
+
+Acknowledgment: figure sidecar text coverage is unavailable in this renderer; both plots were visually checked against their source values. The figure tracking warning searches issue-named branches, while these artifacts are tracked on `codex/story-persona-qwen38-pilot-20260917` and verified at their immutable links.
