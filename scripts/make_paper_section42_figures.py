@@ -1472,7 +1472,9 @@ def make_features_and_shifts_figure(
     estimator as a kicker, and the x-axis label states the metric in full, in
     the same words the other Section 4.2 figures use.
     """
-    rows, bands = _fs_grouped_rows(elements, _FEATURES_AND_SHIFTS_GROUPS)
+    rows, _bands = _fs_grouped_rows(elements, _FEATURES_AND_SHIFTS_GROUPS)
+    # Panels B and C carry no row-group stripes (removed 2026-09-16 on request);
+    # the group sizes still feed the sidecar description below.
     # Row pitch is pinned, so the canvas follows the row count instead of
     # squeezing the rows: the element labels wrap to two lines and clear their
     # neighbours, and panel A's six bars inherit the same pitch.
@@ -1518,7 +1520,7 @@ def make_features_and_shifts_figure(
     handles = _draw_within_pair_panel(
         ax_b,
         rows,
-        bands=bands,
+        bands=None,
         xticks=_WITHIN_PAIR_XTICKS,
         # The two metric columns share one label column, drawn on the first.
         ytick_labels=[L.tick_label(row["row"]) for row in rows],
@@ -1557,7 +1559,7 @@ def make_features_and_shifts_figure(
             xlabel="",
             xlim=span,
             reference=(_FS_TWOWAY_REFERENCE if low <= _FS_TWOWAY_REFERENCE <= high else None),
-            bands=bands,
+            bands=None,
             xticks=list(ticks),
         )
         segments.append(ax)
