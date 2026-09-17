@@ -1,0 +1,31 @@
+{
+  "transformers": "5.15.0",
+  "models": {
+    "Qwen/Qwen3.8-27B": {
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "model_type": "qwen3_5",
+      "layers": 64,
+      "width": 5120,
+      "tokenizer_class": "Qwen2Tokenizer",
+      "context_count": 1920,
+      "min_tokens": 56,
+      "max_tokens": 188,
+      "total_tokens": 214448,
+      "bos_token_id": null,
+      "eos_token_id": 248046
+    },
+    "deepseek-ai/DeepSeek-V3.1-Base": {
+      "revision": "d3d4eafdc470de44bbf6f0a74f852eb522357be8",
+      "model_type": "deepseek_v3",
+      "layers": 61,
+      "width": 7168,
+      "tokenizer_class": "TokenizersBackend",
+      "context_count": 1920,
+      "min_tokens": 44,
+      "max_tokens": 173,
+      "total_tokens": 188744,
+      "bos_token_id": 0,
+      "eos_token_id": 1
+    }
+  }
+}

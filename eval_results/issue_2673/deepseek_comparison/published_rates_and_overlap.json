@@ -1,0 +1,295 @@
+{
+  "source_url": "https://arxiv.org/html/2609.10883v1/images/selectivity/fxbc_bloom_deepseek_base_grid.png",
+  "source_sha256": "0d80dd99ecfaf97e049215a1cca04c65232e466009999845186230b70e3f483f",
+  "source_type": "digitized aggregate bar means; not raw rollout observations",
+  "digitization_bound_note": "1.5 pixels, approximately 0.34 percentage points; not a sampling CI",
+  "rates": {
+    "hhh": {
+      "dismissive": {
+        "helpful": {
+          "rate": 0.4360730593607306,
+          "bar_top_y": 299.0,
+          "digitization_bound": 0.003424657534246575
+        },
+        "other": {
+          "rate": 0.0730593607305936,
+          "bar_top_y": 458.0,
+          "digitization_bound": 0.003424657534246575
+        }
+      },
+      "sarcastic": {
+        "helpful": {
+          "rate": 0.6027397260273972,
+          "bar_top_y": 226.0,
+          "digitization_bound": 0.003424657534246575
+        },
+        "other": {
+          "rate": 0.04337899543378995,
+          "bar_top_y": 471.0,
+          "digitization_bound": 0.003424657534246575
+        }
+      },
+      "saboteur": {
+        "helpful": {
+          "rate": 0.54337899543379,
+          "bar_top_y": 252.0,
+          "digitization_bound": 0.003424657534246575
+        },
+        "other": {
+          "rate": 0.1095890410958904,
+          "bar_top_y": 442.0,
+          "digitization_bound": 0.003424657534246575
+        }
+      },
+      "peer": {
+        "helpful": {
+          "rate": 0.3470319634703196,
+          "bar_top_y": 338.0,
+          "digitization_bound": 0.003424657534246575
+        },
+        "other": {
+          "rate": 0.05707762557077625,
+          "bar_top_y": 465.0,
+          "digitization_bound": 0.003424657534246575
+        }
+      },
+      "help_seeker": {
+        "helpful": {
+          "rate": 0.2853881278538813,
+          "bar_top_y": 365.0,
+          "digitization_bound": 0.003424657534246575
+        },
+        "other": {
+          "rate": 0.0365296803652968,
+          "bar_top_y": 474.0,
+          "digitization_bound": 0.003424657534246575
+        }
+      }
+    },
+    "fred": {
+      "dismissive": {
+        "helpful": {
+          "rate": 0.13013698630136986,
+          "bar_top_y": 1109.0,
+          "digitization_bound": 0.003424657534246575
+        },
+        "other": {
+          "rate": 0.58675799086758,
+          "bar_top_y": 909.0,
+          "digitization_bound": 0.003424657534246575
+        }
+      },
+      "sarcastic": {
+        "helpful": {
+          "rate": 0.07990867579908675,
+          "bar_top_y": 1131.0,
+          "digitization_bound": 0.003424657534246575
+        },
+        "other": {
+          "rate": 0.4041095890410959,
+          "bar_top_y": 989.0,
+          "digitization_bound": 0.003424657534246575
+        }
+      },
+      "saboteur": {
+        "helpful": {
+          "rate": 0.2694063926940639,
+          "bar_top_y": 1048.0,
+          "digitization_bound": 0.003424657534246575
+        },
+        "other": {
+          "rate": 0.2899543378995434,
+          "bar_top_y": 1039.0,
+          "digitization_bound": 0.003424657534246575
+        }
+      },
+      "peer": {
+        "helpful": {
+          "rate": 0.2762557077625571,
+          "bar_top_y": 1045.0,
+          "digitization_bound": 0.003424657534246575
+        },
+        "other": {
+          "rate": 0.06621004566210045,
+          "bar_top_y": 1137.0,
+          "digitization_bound": 0.003424657534246575
+        }
+      },
+      "help_seeker": {
+        "helpful": {
+          "rate": 0.2648401826484018,
+          "bar_top_y": 1050.0,
+          "digitization_bound": 0.003424657534246575
+        },
+        "other": {
+          "rate": 0.03424657534246575,
+          "bar_top_y": 1151.0,
+          "digitization_bound": 0.003424657534246575
+        }
+      }
+    }
+  },
+  "qwen_existing_overlap": {
+    "15": {
+      "n_character_pairs": 4,
+      "other_characters": [
+        "dismissive",
+        "sarcastic",
+        "saboteur",
+        "peer"
+      ],
+      "deepseek_hhh_other_tracer_rate": [
+        0.0730593607305936,
+        0.04337899543378995,
+        0.1095890410958904,
+        0.05707762557077625
+      ],
+      "qwen_metric_source_sha256": "55566fc94dca79e4e6ac84262ff9501eef721e70913df6ff7fe7e60b0b89131f",
+      "metrics": {
+        "raw": {
+          "similarity": [
+            0.9780994937142798,
+            0.987593744301155,
+            0.9872970387153597,
+            0.9903272872992772
+          ],
+          "pearson_r": -0.15456777709445763,
+          "spearman_rho": -0.6000000000000001
+        },
+        "whitened": {
+          "similarity": [
+            -0.046402625251908754,
+            0.07065922755102219,
+            0.03104390236722923,
+            0.10326590155817553
+          ],
+          "pearson_r": -0.4070602962954414,
+          "spearman_rho": -0.6000000000000001
+        }
+      }
+    },
+    "31": {
+      "n_character_pairs": 4,
+      "other_characters": [
+        "dismissive",
+        "sarcastic",
+        "saboteur",
+        "peer"
+      ],
+      "deepseek_hhh_other_tracer_rate": [
+        0.0730593607305936,
+        0.04337899543378995,
+        0.1095890410958904,
+        0.05707762557077625
+      ],
+      "qwen_metric_source_sha256": "689070af86e8cfc57f9232de47027f1702fd41d3aae033b6eb8c1e587e1bf9f3",
+      "metrics": {
+        "raw": {
+          "similarity": [
+            0.8016967634106192,
+            0.8354791102092083,
+            0.8887580051498185,
+            0.9281766200802589
+          ],
+          "pearson_r": 0.15002621767533622,
+          "spearman_rho": 0.0
+        },
+        "whitened": {
+          "similarity": [
+            -0.004974494691182352,
+            0.004910878940390432,
+            0.007991203940042919,
+            0.019134362365819346
+          ],
+          "pearson_r": -0.11495885543018898,
+          "spearman_rho": 0.0
+        }
+      }
+    },
+    "47": {
+      "n_character_pairs": 4,
+      "other_characters": [
+        "dismissive",
+        "sarcastic",
+        "saboteur",
+        "peer"
+      ],
+      "deepseek_hhh_other_tracer_rate": [
+        0.0730593607305936,
+        0.04337899543378995,
+        0.1095890410958904,
+        0.05707762557077625
+      ],
+      "qwen_metric_source_sha256": "0165bd23578ee80480a6995cdc286f507aea54a8014419bebf287b844eacc4a3",
+      "metrics": {
+        "raw": {
+          "similarity": [
+            0.6705729489487221,
+            0.6895265520647121,
+            0.7925088825468782,
+            0.8324998941503673
+          ],
+          "pearson_r": 0.29617906155330054,
+          "spearman_rho": 0.0
+        },
+        "whitened": {
+          "similarity": [
+            -0.0008689454947664024,
+            0.0008420579271509743,
+            0.00231380470907424,
+            0.00512113842437079
+          ],
+          "pearson_r": -0.024824374366474267,
+          "spearman_rho": 0.0
+        }
+      }
+    },
+    "63": {
+      "n_character_pairs": 4,
+      "other_characters": [
+        "dismissive",
+        "sarcastic",
+        "saboteur",
+        "peer"
+      ],
+      "deepseek_hhh_other_tracer_rate": [
+        0.0730593607305936,
+        0.04337899543378995,
+        0.1095890410958904,
+        0.05707762557077625
+      ],
+      "qwen_metric_source_sha256": "896f38640923f26a956ee730bb2f1a1ca79f4b3bccc54cad21e49dfa5247c5b7",
+      "metrics": {
+        "raw": {
+          "similarity": [
+            0.6923460527664321,
+            0.5833148810560332,
+            0.9038831969918886,
+            0.799852234427599
+          ],
+          "pearson_r": 0.821738310793505,
+          "spearman_rho": 0.7999999999999999
+        },
+        "whitened": {
+          "similarity": [
+            -0.0020634514893438293,
+            0.001571163052577387,
+            0.012896192380911579,
+            0.010468200226114438
+          ],
+          "pearson_r": 0.5072566579905025,
+          "spearman_rho": 0.39999999999999997
+        }
+      }
+    }
+  },
+  "limitations": [
+    "Qwen default is only a proxy for the paper's few-shot HHH persona.",
+    "Four Table 7 persona prompts are proxies for story-character types.",
+    "No existing Qwen HHH, Fred or help-seeker vectors are available in this capture.",
+    "Qwen is unfinetuned on stories; outcomes are story-finetuned DeepSeek.",
+    "Question contexts differ from the paper's multi-turn triggered Bloom distribution.",
+    "Whitening is uncentered but calibrated on the same rank-deficient Qwen bank.",
+    "Only four paired aggregates; descriptive correlations, no inferential p-values."
+  ]
+}
