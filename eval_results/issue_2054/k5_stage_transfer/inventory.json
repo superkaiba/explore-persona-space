@@ -1,0 +1,321 @@
+{
+  "source_sha": "532718ec8fb1f0b2749cfbc8afdb9f1554a999ba",
+  "fingerprint": "b8e04d559dca49f9164c67ce1c2da35157251c74c366914ff2599345fdf98ff9",
+  "files": [
+    {
+      "path": "results.json",
+      "size": 580137,
+      "sha256": "07d3251afabb5c4400e2a470e823df7e6c2b2942b140e749abdb1960cd5c3f6d"
+    },
+    {
+      "path": "run_identity.json",
+      "size": 1471701,
+      "sha256": "68967023e13890e3edef1a109039daeaeee1e2d6fd1edda87ff1c9872d0e9ff3"
+    },
+    {
+      "path": "manifest.json",
+      "size": 1379092,
+      "sha256": "35a689111c8b75983320955a5f4379ea0ccdcd919f516ade8b0ae66bbec7378c"
+    },
+    {
+      "path": "folds/Assistant-story__fold0.json",
+      "size": 14859,
+      "sha256": "8802febafad63fc8e2bfc94f1e270256abdd45502a096ca5c6dab771b27a4c69"
+    },
+    {
+      "path": "folds/Assistant-story__fold1.json",
+      "size": 14951,
+      "sha256": "0f093a675c27a90fb23121034314d7e24e2de4d2265f572bb9e0454f5d924fd2"
+    },
+    {
+      "path": "folds/Assistant-story__fold2.json",
+      "size": 14949,
+      "sha256": "66884ec2a084ea9523386735420b867cd829edcff02d380b1797d06973642bb8"
+    },
+    {
+      "path": "folds/Assistant-story__fold3.json",
+      "size": 14923,
+      "sha256": "d0a29cfd92c2d15fa9294138d15440a11cd7707abadc018cc014f60a020835dd"
+    },
+    {
+      "path": "folds/Assistant-story__fold4.json",
+      "size": 14888,
+      "sha256": "7e8b55f8d7a0315cbe7ae0b6f18fe92759ed57e59698629aed39ab074b074896"
+    },
+    {
+      "path": "folds/Chat__fold0.json",
+      "size": 14908,
+      "sha256": "74c4368b82a836a0656f8f984fe1a0857f9dd59e16227a80c88a81c41e10f2a8"
+    },
+    {
+      "path": "folds/Chat__fold1.json",
+      "size": 14903,
+      "sha256": "f7015db1751684176c8115f32f273b2899454cf97edbe67ec823a6a24846b8b5"
+    },
+    {
+      "path": "folds/Chat__fold2.json",
+      "size": 14858,
+      "sha256": "cf60da055f9c0fac8f912f62f74c77431a580357678f8125021042be9764cadd"
+    },
+    {
+      "path": "folds/Chat__fold3.json",
+      "size": 14906,
+      "sha256": "6ac0d408f27dc2af4ad046afe0d5d83f52368fe4b7f3845f1502a23d793e1fb4"
+    },
+    {
+      "path": "folds/Chat__fold4.json",
+      "size": 14811,
+      "sha256": "165f8d747341de882b82b527a3e10801fabbb3e1cdf3885d5f3902ae9db5e735"
+    },
+    {
+      "path": "folds/Dana__fold0.json",
+      "size": 14784,
+      "sha256": "201d26d15841a2ca93a321209629888991242751ab27e5b67581193f91f62f24"
+    },
+    {
+      "path": "folds/Dana__fold1.json",
+      "size": 14804,
+      "sha256": "32735f6a653d018bf713ea2e37599e1ee897e05b915847489a6976f67930f445"
+    },
+    {
+      "path": "folds/Dana__fold2.json",
+      "size": 14815,
+      "sha256": "081bc93529a1557ebe3c438086b1f97035d29ddc1584130a58a745c0e066b37f"
+    },
+    {
+      "path": "folds/Dana__fold3.json",
+      "size": 14829,
+      "sha256": "9a332e35383b8de22d42f1ec426644d10d33e2c6a0c2b4e6f4c4990c97b4446d"
+    },
+    {
+      "path": "folds/Dana__fold4.json",
+      "size": 14830,
+      "sha256": "fa23664aa2acd2993430efe6b574a534771e54208b846fd4e75ea3b1c6541ad2"
+    },
+    {
+      "path": "folds/HELIOS__fold0.json",
+      "size": 14850,
+      "sha256": "5fd3e7bb02efcd73c1dbbe36eaf5f98abcfd9802b13f52597e6c58a19b90be20"
+    },
+    {
+      "path": "folds/HELIOS__fold1.json",
+      "size": 14845,
+      "sha256": "21953c234618532c704732efef5fb0a92b1ec48ac302178aee9fc9e2c11c2227"
+    },
+    {
+      "path": "folds/HELIOS__fold2.json",
+      "size": 14828,
+      "sha256": "13d462199a1fa78ffb5472b3511b7f361b7f2d2db7999c831ce3d73c9d95a29c"
+    },
+    {
+      "path": "folds/HELIOS__fold3.json",
+      "size": 14819,
+      "sha256": "04e62b7aa5590e9d10283357a8084d17f06d53530ed6e9bf94d46153806eb87e"
+    },
+    {
+      "path": "folds/HELIOS__fold4.json",
+      "size": 14831,
+      "sha256": "09b6eed5780d4570a49476f7b037060812b6a59fdbe494921ba90059080ebadd"
+    },
+    {
+      "path": "folds/Vex__fold0.json",
+      "size": 14830,
+      "sha256": "c4a67f58146f565515a0077e4da4788ca8cb5a5ab4f59d2844dfadf6a686c3b6"
+    },
+    {
+      "path": "folds/Vex__fold1.json",
+      "size": 14812,
+      "sha256": "9c34c07f70bbb6a9f523e81d002c8d9b5979638408df414c77c4c1994e0875c2"
+    },
+    {
+      "path": "folds/Vex__fold2.json",
+      "size": 14838,
+      "sha256": "ca6e1d55abab71dfd619d59eb4035c9429d28d577a2cc4fb3ae42e8becfdd304"
+    },
+    {
+      "path": "folds/Vex__fold3.json",
+      "size": 14816,
+      "sha256": "776c4589fc8a47384e6a4d87168683598e18df9edd7d0d15cf690b8e76a72777"
+    },
+    {
+      "path": "folds/Vex__fold4.json",
+      "size": 14796,
+      "sha256": "08475edf148b6bfe400659debc329bdc89299b4aeb6dc1b90395b197cbf92a24"
+    },
+    {
+      "path": "folds/Wren__fold0.json",
+      "size": 14809,
+      "sha256": "0154d041a19ccda76f610d6e5f79fda1c134d5bb8ed88ddb08d1769644620e77"
+    },
+    {
+      "path": "folds/Wren__fold1.json",
+      "size": 14821,
+      "sha256": "7687e4d4b07d4892699eb856942a626a54dfdb5efb33f42d0980ff6c84d5e4f2"
+    },
+    {
+      "path": "folds/Wren__fold2.json",
+      "size": 14832,
+      "sha256": "4501c1ec956554c63b5254c9ac54e727f977bb270c6f5b8f2324775ca6b42310"
+    },
+    {
+      "path": "folds/Wren__fold3.json",
+      "size": 14842,
+      "sha256": "64f7233f21fe090da85654931427ee9ba047676e8792def6dc1f5c036e5a4f0a"
+    },
+    {
+      "path": "folds/Wren__fold4.json",
+      "size": 14832,
+      "sha256": "dc9efc3c9eae52b03dc991b5eae1ba6f8d070af2bd424686e444f097894b5c61"
+    },
+    {
+      "path": "folds/Assistant-story__fold0.npz",
+      "size": 42668398,
+      "sha256": "f6a8b7f5fab00f1175415c5db3e33ea58f2d4570318bca95f289546592192a5e"
+    },
+    {
+      "path": "folds/Assistant-story__fold1.npz",
+      "size": 42721231,
+      "sha256": "6b95a9250c44e3222153b7e3c720b126c7196bf63f7c547797053f7096a0e15d"
+    },
+    {
+      "path": "folds/Assistant-story__fold2.npz",
+      "size": 44516168,
+      "sha256": "d7db073fa2709b6d8a70dcd7ea6127ad180dabefd83fd04f8b23ac0409d2bc49"
+    },
+    {
+      "path": "folds/Assistant-story__fold3.npz",
+      "size": 43205798,
+      "sha256": "375a384a53dc683a91933ccebef5c2f83654495ad6ddc708fd8fd0bd2482dcb0"
+    },
+    {
+      "path": "folds/Assistant-story__fold4.npz",
+      "size": 41944518,
+      "sha256": "294d25f91d88d74f8082c71fa672ee271ee4448db31c3a09b342856faecc029f"
+    },
+    {
+      "path": "folds/Chat__fold0.npz",
+      "size": 42735391,
+      "sha256": "55051f9ac90b5349184901e45913f71dea0b8c12b9ff617b8ae053cc0fc1226d"
+    },
+    {
+      "path": "folds/Chat__fold1.npz",
+      "size": 42761947,
+      "sha256": "14b21b0ebd2b0ec67cdebc4d6ef6e5541c75e18ad2424c7afe8297b89c0e455d"
+    },
+    {
+      "path": "folds/Chat__fold2.npz",
+      "size": 44558259,
+      "sha256": "0ec63a0c5e766ca0905e5315242165ff6b1dac688e18099432be0c02bf7295b7"
+    },
+    {
+      "path": "folds/Chat__fold3.npz",
+      "size": 43247768,
+      "sha256": "1f58c68f2d5917e251f5fac875991603a6dd8b985919eb6341b41b84c812256e"
+    },
+    {
+      "path": "folds/Chat__fold4.npz",
+      "size": 41981226,
+      "sha256": "b4a661b17ccb15ba0561867d53abf528192a1322fa382b6e4f5c79d3a747db77"
+    },
+    {
+      "path": "folds/Dana__fold0.npz",
+      "size": 44253149,
+      "sha256": "4d3f1becbb9580a33b8f16628c888dc14c1e14cdd96d5c29e9dc4d6cc8121c28"
+    },
+    {
+      "path": "folds/Dana__fold1.npz",
+      "size": 42190717,
+      "sha256": "21a6b98fe49b01e9f645f2bff07c363cc26c854fba6d7a8f5b51530cc3a9339d"
+    },
+    {
+      "path": "folds/Dana__fold2.npz",
+      "size": 42593481,
+      "sha256": "a4b8115879b0f0b90e6833f479b39da6497ba3e702040e372c73794b1b43436f"
+    },
+    {
+      "path": "folds/Dana__fold3.npz",
+      "size": 43957853,
+      "sha256": "3488deadba7dfc3b96512900d409f0efdf4a34a2c42630dfcadb0d86a10496b2"
+    },
+    {
+      "path": "folds/Dana__fold4.npz",
+      "size": 41976932,
+      "sha256": "74a47f655238707318eb08212d619dfeaea49bc0f2804df603e1c9fb2ca9469f"
+    },
+    {
+      "path": "folds/HELIOS__fold0.npz",
+      "size": 44593900,
+      "sha256": "dbb76146b68e9fbb067c51eeb844b77f6da158cf8662c999dc06583b7b671a73"
+    },
+    {
+      "path": "folds/HELIOS__fold1.npz",
+      "size": 41485599,
+      "sha256": "cf1110bc1da470fa6bef65d6a4de7853f13d78ec36c5f7718a4bcf8c9f97c7fb"
+    },
+    {
+      "path": "folds/HELIOS__fold2.npz",
+      "size": 43307381,
+      "sha256": "898dc99140382789b1547ffe8b7a64198c40f1d030c39c1de4a1c45b87cc133b"
+    },
+    {
+      "path": "folds/HELIOS__fold3.npz",
+      "size": 42211509,
+      "sha256": "3f325624473052fd2ef6f85690942b8b41d13962aadbded1491ce7ee4546ac58"
+    },
+    {
+      "path": "folds/HELIOS__fold4.npz",
+      "size": 43443367,
+      "sha256": "cc5cdcb42ccb921b5c5378ff1a24df92adaba76787e7609f449c0ae0815b81fb"
+    },
+    {
+      "path": "folds/Vex__fold0.npz",
+      "size": 43295821,
+      "sha256": "91d495237e7812e85e7fd3098c53969208c660f8140bb7436a0a88ee2bee57c5"
+    },
+    {
+      "path": "folds/Vex__fold1.npz",
+      "size": 42251504,
+      "sha256": "4b417975277300064b2edc44365b776cf47b518e864f0b77d8c9532e070d48bb"
+    },
+    {
+      "path": "folds/Vex__fold2.npz",
+      "size": 43993712,
+      "sha256": "b47caf956e1fd0497517bc31d40bdb38162eefcd957bb5bf64092434f31a9aa1"
+    },
+    {
+      "path": "folds/Vex__fold3.npz",
+      "size": 43646898,
+      "sha256": "683cb6f0cade431acd074d8f49ef12b0024f6fb4742ee412e69e8382b7741e5b"
+    },
+    {
+      "path": "folds/Vex__fold4.npz",
+      "size": 41823150,
+      "sha256": "73a5ce6710ab69075de44add8ca7bbc2fcb7235754c081d7c965016da7487d83"
+    },
+    {
+      "path": "folds/Wren__fold0.npz",
+      "size": 42875930,
+      "sha256": "dd16cc0e33239817b4e902bf3a54b97d4578aef673d4cd5f09744351cef68199"
+    },
+    {
+      "path": "folds/Wren__fold1.npz",
+      "size": 42983909,
+      "sha256": "081513ae9e873d2b5c6f22460e1584763edc32bb6fd82eb1694cc8c544f6fa8b"
+    },
+    {
+      "path": "folds/Wren__fold2.npz",
+      "size": 42444653,
+      "sha256": "e6f6db0e1ec33e714884a630e9821eb534201a8fbed436ebf987624dc9b115ba"
+    },
+    {
+      "path": "folds/Wren__fold3.npz",
+      "size": 44481569,
+      "sha256": "5b1aa18fc877850e393f88d154a1f10738ba46578b86f1f4cffd88d690ff3261"
+    },
+    {
+      "path": "folds/Wren__fold4.npz",
+      "size": 42203212,
+      "sha256": "ccede586b94ded08b7d5a2be94f1cbc74f137bd35108fb98afbe5568fb97f2bd"
+    }
+  ]
+}

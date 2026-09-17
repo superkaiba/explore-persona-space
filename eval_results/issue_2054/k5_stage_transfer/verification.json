@@ -1,0 +1,78 @@
+{
+  "verified_at": 1789675018.0556304,
+  "source_sha": "532718ec8fb1f0b2749cfbc8afdb9f1554a999ba",
+  "source_code_runtime": "532718ec8fb1f0b2749cfbc8afdb9f1554a999ba",
+  "complete": {
+    "source_sha": "532718ec8fb1f0b2749cfbc8afdb9f1554a999ba",
+    "status": "complete",
+    "finished_at": 1789674784.6212406,
+    "results_sha256": "07d3251afabb5c4400e2a470e823df7e6c2b2942b140e749abdb1960cd5c3f6d",
+    "inventory_sha256": "9f9873ccc30720600caf41cd1ebc0b29cc11b7fbafad7c6828425c789f28243f",
+    "verified_revision": "eef6dd87be3846876367e26fd77b5db72e75cf5c",
+    "uploaded_files": 64
+  },
+  "planned_units": 30,
+  "realized_units": 30,
+  "settings": 6,
+  "own_r2_checks": 60,
+  "max_own_r2_delta": 1.3322676295501878e-15,
+  "independent_endpoint_retrieval_checks": 360,
+  "independent_endpoint_retrieval_max_delta": 0,
+  "independent_sse_sst_r2_checks": 150,
+  "independent_sse_sst_max_delta": 1.1102230246251565e-15,
+  "cross_stage_leakage": 0,
+  "max_shared_id_frozen_r2_change": 6.91363387967936e-05,
+  "monitor_observation": {
+    "source_sha": "532718ec8fb1f0b2749cfbc8afdb9f1554a999ba",
+    "status": "complete",
+    "checked_at": 1789674865.099515,
+    "results": {
+      "source_sha": "532718ec8fb1f0b2749cfbc8afdb9f1554a999ba",
+      "status": "complete",
+      "finished_at": 1789674784.6212406,
+      "results_sha256": "07d3251afabb5c4400e2a470e823df7e6c2b2942b140e749abdb1960cd5c3f6d",
+      "inventory_sha256": "9f9873ccc30720600caf41cd1ebc0b29cc11b7fbafad7c6828425c789f28243f",
+      "verified_revision": "eef6dd87be3846876367e26fd77b5db72e75cf5c",
+      "uploaded_files": 64
+    },
+    "backend_observation": {
+      "status": "done"
+    }
+  },
+  "watchdog_final_observation": {
+    "checked_at": 1789674960.4669812,
+    "observed_status": "complete",
+    "reason": "exact-source completion verified by monitor"
+  },
+  "canary": "real Codex execution and acknowledged personal notification passed",
+  "monitor_regression_tests": 15,
+  "focused_helper_tests": 20,
+  "independent_review_focused_tests": 10,
+  "mapped_tests_initial": {
+    "passed": 36,
+    "failed": 1,
+    "failure": "pre-existing thread-cap scanner violations in 16 unrelated scripts"
+  },
+  "inline_gate": {
+    "status": "PASS",
+    "exit_code": 0,
+    "certified_paths": [
+      "scripts/issue2054_k5_stage_transfer.py",
+      "scripts/issue2054_k5_stage_transfer_inputs.py",
+      "scripts/issue2054_k5_stage_transfer_run.py",
+      "tests/test_issue2054_k5_stage_transfer.py",
+      "tests/test_issue2054_k5_stage_transfer_run.py"
+    ],
+    "completed_at": 1789675749.9298775,
+    "full_scan_terminal_and_test_summary": [
+      "workflow_lint: FAIL (40 error(s))",
+      "1 failed, 36 passed in 49.42s"
+    ],
+    "attribution": "Only pre-existing unrelated or sparse-excluded file findings remain; all five changed code/test paths certified",
+    "audit_files": [
+      "inline_lint.txt",
+      "inline_map.txt"
+    ]
+  },
+  "monitor_teardown": "completed monitor and watchdog timer disabled after independent remote verification; all outputs retained"
+}

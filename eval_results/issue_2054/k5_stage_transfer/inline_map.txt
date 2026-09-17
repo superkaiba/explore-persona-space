@@ -1,0 +1,9 @@
+tests/test_issue2054_k5_stage_transfer.py	scripts/issue2054_k5_stage_transfer.py
+tests/test_issue2054_k5_stage_transfer_run.py	scripts/issue2054_k5_stage_transfer.py
+tests/test_issue2054_k5_stage_transfer_run.py	scripts/issue2054_k5_stage_transfer_run.py
+tests/test_shared_vm_thread_caps.py	scripts/issue2054_k5_stage_transfer.py
+tests/test_shared_vm_thread_caps.py	scripts/issue2054_k5_stage_transfer_inputs.py
+tests/test_shared_vm_thread_caps.py	scripts/issue2054_k5_stage_transfer_run.py
+
+select_step9c_tests: work root /mnt/eps-data/thomasjiralerspong/wt-2054-k5-stage-transfer (branch: codex/issue2054-k5-stage-transfer-20260917)
+select_step9c_tests: map-files — 6 pairs, 3 tests; recommended-timeout-s=600

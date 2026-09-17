@@ -31,8 +31,9 @@ SETTINGS = [
     ("Vex", "char_vex__on_policy__attrib_quoted"),
 ]
 STORY_HASHES = {
+    # SHA_PIN_DOMAIN: BYTES
     "qwen2.5-7b": "b872e32f8de186617fa0a1243feb36f634e3602944daf379d0a8c07017bb07bc",
-    "qwen2.5-7b-instruct": "fb04162702296cc52aa918b9aba5e275b229a3ccaf9355885e3d2de865e69c58",
+    "qwen2.5-7b-instruct": seven.STORY_SHA,
 }
 
 
@@ -43,6 +44,7 @@ def prepare(out, original_cache, shared_inputs):
     story_path = ROOT / "eval_results/issue_2054/assistant_story_k5/results.json"
     if base.sha(old_path) != seven.geometry.REFERENCE_SHA:
         raise ValueError("Original K5 result identity changed")
+    # SHA_PIN_DOMAIN: BYTES
     if base.sha(story_path) != "d9f67bd2dfaf0cbd14a97af3234adb943e82bdf6b6150071af2b061817fe8070":
         raise ValueError("Assistant-story result identity changed")
     old = json.loads(old_path.read_text())

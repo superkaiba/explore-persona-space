@@ -1,0 +1,186 @@
+
+WARN: check-prod-import-lockfile: dangling first-party import root '_issue506_common' (4 site(s)) — module absent from main (unmerged branch or deleted); latent breakage, not a third-party verdict
+WARN: check-prod-import-lockfile: dangling first-party import root 'issue1902_lasttoken_comparison' (1 site(s)) — module absent from main (unmerged branch or deleted); latent breakage, not a third-party verdict
+WARN: check-prod-import-lockfile: dangling first-party import root 'issue2588_mapping_rank_vs_capability' (1 site(s)) — module absent from main (unmerged branch or deleted); latent breakage, not a third-party verdict
+WARN: check-prod-import-lockfile: dangling first-party import root 'issue500_predictors' (2 site(s)) — module absent from main (unmerged branch or deleted); latent breakage, not a third-party verdict
+WARN: check-prod-import-lockfile: dangling first-party import root 'issue541_personas' (1 site(s)) — module absent from main (unmerged branch or deleted); latent breakage, not a third-party verdict
+WARN: check-prod-import-lockfile: dangling first-party import root 'issue541_predictors' (1 site(s)) — module absent from main (unmerged branch or deleted); latent breakage, not a third-party verdict
+WARN: check-prod-import-lockfile: dangling first-party import root 'issue541_upload_lib' (1 site(s)) — module absent from main (unmerged branch or deleted); latent breakage, not a third-party verdict
+WARN: check-prod-import-lockfile: dangling first-party import root 'issue621_analyze' (1 site(s)) — module absent from main (unmerged branch or deleted); latent breakage, not a third-party verdict
+WARN: check-prod-import-lockfile: dangling first-party import root 'issue_521_prep_turner_corpus' (1 site(s)) — module absent from main (unmerged branch or deleted); latent breakage, not a third-party verdict
+WARN: check-prod-import-lockfile: import root 'liger_kernel' (dist 'liger-kernel', 2 non-exempt site(s)) resolves only via non-default extra/group 'gpu' — a bare 'uv sync --locked' (the pod bootstrap, bootstrap_pod.sh:425) does not install it
+WARN: check-prod-import-lockfile: import root 'umap' (dist 'umap-learn', 7 non-exempt site(s)) resolves only via non-default extra/group 'viz' — a bare 'uv sync --locked' (the pod bootstrap, bootstrap_pod.sh:425) does not install it
+WARN: .claude/rules/LESSONS.md at 10457/10492 bytes — inside the warn band (>7200); slim rows or plan a deliberate cap decision before the next addition FAILs. Largest rows: gotchas (1353 B), artifact-reuse (279 B), plan-compute-sizing (277 B).
+WARN: .claude/agents/analyzer.md: 37158 bytes exceeds the 28000-byte agent-spec WARN budget (FAIL above 40000).
+WARN: .claude/agents/clean-result-critic.md: 30459 bytes exceeds the 28000-byte agent-spec WARN budget (FAIL above 40000).
+WARN: .claude/agents/code-reviewer.md: 109441 bytes — grandfathered; 159 bytes under its cap (109600).
+WARN: .claude/agents/codex-clean-result-critic.md: 48119 bytes — grandfathered; 2081 bytes under its cap (50200).
+WARN: .claude/agents/codex-code-reviewer.md: 50203 bytes — grandfathered; 1997 bytes under its cap (52200).
+WARN: .claude/agents/consistency-checker.md: 29371 bytes exceeds the 28000-byte agent-spec WARN budget (FAIL above 40000).
+WARN: .claude/agents/experiment-implementer.md: 68157 bytes — grandfathered; 1443 bytes under its cap (69600).
+WARN: .claude/agents/experimenter.md: 69756 bytes — grandfathered; 2744 bytes under its cap (72500).
+WARN: .claude/agents/follow-up-proposer.md: 30199 bytes exceeds the 28000-byte agent-spec WARN budget (FAIL above 40000).
+WARN: .claude/agents/implementer.md: 33495 bytes exceeds the 28000-byte agent-spec WARN budget (FAIL above 40000).
+WARN: .claude/agents/interpretation-critic.md: 35567 bytes exceeds the 28000-byte agent-spec WARN budget (FAIL above 40000).
+WARN: .claude/agents/planner.md: 39991 bytes exceeds the 28000-byte agent-spec WARN budget (FAIL above 40000).
+WARN: .claude/agents/research-pm.md: 29011 bytes exceeds the 28000-byte agent-spec WARN budget (FAIL above 40000).
+WARN: .claude/agents/upload-verifier.md: 39177 bytes exceeds the 28000-byte agent-spec WARN budget (FAIL above 40000).
+WARN: .claude/agent-memory/experiment-implementer/MEMORY.md: 20012 bytes exceeds the 20000-byte agent-memory index WARN budget (FAIL above 24000; the loader truncates at ~25,000 bytes) — curate it: trim each index hook to ~1 line (<=~150 chars), move the detail into the pointed-to per-entry file, and merge duplicate/sibling rows (see #1891).
+WARN: .claude/skills/adversarial-planner/SKILL.md: 80407 bytes — grandfathered; 2293 bytes under its cap (82700).
+WARN: .claude/skills/clean-results/SPEC.md: 107605 bytes — grandfathered; 2795 bytes under its cap (110400).
+WARN: .claude/skills/daily/SKILL.md: 88010 bytes — grandfathered; 2790 bytes under its cap (90800).
+WARN: .claude/skills/issue/SKILL.md: 67797 bytes — grandfathered; 2703 bytes under its cap (70500).
+WARN: .claude/skills/issue/steps/09-step-5.md: 125729 bytes — grandfathered; 2771 bytes under its cap (128500).
+WARN: .claude/skills/issue/steps/10-step-6.md: 149253 bytes — grandfathered; 2547 bytes under its cap (151800).
+WARN: .claude/skills/issue/steps/13-step-9.md: 250333 bytes — grandfathered; 2567 bytes under its cap (252900).
+WARN: .claude/skills/issue/steps/18-step-10d.md: 301425 bytes — grandfathered; 575 bytes under its cap (302000).
+WARN: /mnt/eps-data/thomasjiralerspong/wt-2054-k5-stage-transfer/.claude/skills/issue/steps/18-step-10d.md:2157: root-guard hook returned unexpected rc=-1 after one retry — a NON-BLOCKING code under the PreToolUse contract (only rc 0/2 are interpreted; rc=1/127/timeout signals a transient hook-invocation or infrastructure error, not a verdict — #1610) ("hook invocation failed: Command '['bash', '/mnt/eps-data/thomasjiralerspong/wt-2054-k5-stage-transfer/scripts/guard_repo_root_branch.sh']' timed out after 20 seconds").
+WARN: stale-gotchas-pointer: tasks/REGISTRY.json absent from scan root — id-cap disabled (registry-less tree, e.g. the Step 10d gate archive); all co-cited ids treated as in-cap
+workflow_lint: note: --check-no-unannotated-gcp-pin-guidance SKIPPED (GCP_PROVISIONING_DISABLED is False (rollback) — gcp-pin guidance is live again, the check would be noise)
+workflow_lint: note: --check-lane-order-adjective head='gcp', scanned 148 file(s), 0 finding(s)
+workflow_lint: /mnt/eps-data/thomasjiralerspong/wt-2054-k5-stage-transfer/scripts/issue1902_lasttoken_transfer.py:91: bare `dotenv` load_dotenv + huggingface_hub import without explore_persona_space.orchestrate.env.load_dotenv (#745). The bare dotenv walks cwd (misses the project .env from a worktree/subdir) and sets no env, so the HF Hub upload accelerators (HF_XET_HIGH_PERFORMANCE / HF_HUB_ENABLE_HF_TRANSFER) never get their setdefault and large uploads crawl. Import the project wrapper `from explore_persona_space.orchestrate.env import load_dotenv` and call load_dotenv() BEFORE the huggingface_hub import, or — if bare dotenv is genuinely correct here — waive with '# DOTENV_LINT_EXEMPT: <reason>' (reason ≥ 10 chars) on the import line or the previous non-blank line.
+workflow_lint: scripts/issue1902_lasttoken_transfer.py:56: check-torch-before-dotenv: module-top heavy import precedes load_dotenv( (first at line 93) — call explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process. Canonical shape: scripts/issue778_null_battery.py.
+workflow_lint: scripts/issue2054_k5_assistant_story_plot.py:12: check-torch-before-dotenv: module-top heavy import precedes load_dotenv( (first at line None) — call explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process. Canonical shape: scripts/issue778_null_battery.py.
+workflow_lint: scripts/issue2054_k5_paper_figures.py:12: check-torch-before-dotenv: module-top heavy import precedes load_dotenv( (first at line None) — call explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process. Canonical shape: scripts/issue778_null_battery.py.
+workflow_lint: scripts/issue2254_answer_strength_sweep.py:32: check-torch-before-dotenv: module-top heavy import precedes load_dotenv( (first at line None) — call explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process. Canonical shape: scripts/issue778_null_battery.py.
+workflow_lint: scripts/issue2254_information_type_position.py:29: check-torch-before-dotenv: module-top heavy import precedes load_dotenv( (first at line None) — call explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process. Canonical shape: scripts/issue778_null_battery.py.
+workflow_lint: scripts/issue2254_low_dose_large_replication.py:23: check-torch-before-dotenv: module-top heavy import precedes load_dotenv( (first at line None) — call explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process. Canonical shape: scripts/issue778_null_battery.py.
+workflow_lint: scripts/issue2254_multitype_attrition_analysis.py:19: check-torch-before-dotenv: module-top heavy import precedes load_dotenv( (first at line None) — call explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process. Canonical shape: scripts/issue778_null_battery.py.
+workflow_lint: scripts/issue2254_multitype_context_preference.py:41: check-torch-before-dotenv: module-top heavy import precedes load_dotenv( (first at line None) — call explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process. Canonical shape: scripts/issue778_null_battery.py.
+workflow_lint: scripts/issue2254_probe_context_followup.py:57: check-torch-before-dotenv: module-top heavy import precedes load_dotenv( (first at line None) — call explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process. Canonical shape: scripts/issue778_null_battery.py.
+workflow_lint: scripts/issue2254_probe_context_qwen35.py:34: check-torch-before-dotenv: module-top heavy import precedes load_dotenv( (first at line None) — call explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process. Canonical shape: scripts/issue778_null_battery.py.
+workflow_lint: scripts/issue2254_probe_context_qwen35_personas.py:32: check-torch-before-dotenv: module-top heavy import precedes load_dotenv( (first at line None) — call explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process. Canonical shape: scripts/issue778_null_battery.py.
+workflow_lint: scripts/issue2546_ladder_audit.py:15: check-torch-before-dotenv: module-top heavy import precedes load_dotenv( (first at line None) — call explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process. Canonical shape: scripts/issue778_null_battery.py.
+workflow_lint: scripts/issue2546_retrieval_recipe_check.py:11: check-torch-before-dotenv: module-top heavy import precedes load_dotenv( (first at line None) — call explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process. Canonical shape: scripts/issue778_null_battery.py.
+workflow_lint: scripts/issue2546_retrieval_recipe_decomposition.py:1: check-torch-before-dotenv: module-top heavy import precedes load_dotenv( (first at line None) — call explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process. Canonical shape: scripts/issue778_null_battery.py.
+workflow_lint: scripts/issue2546_sink_token_test.py:8: check-torch-before-dotenv: module-top heavy import precedes load_dotenv( (first at line None) — call explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process. Canonical shape: scripts/issue778_null_battery.py.
+workflow_lint: scripts/section45_cot_necessity_figure.py:38: check-torch-before-dotenv: module-top heavy import precedes load_dotenv( (first at line None) — call explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process. Canonical shape: scripts/issue778_null_battery.py.
+workflow_lint: /mnt/eps-data/thomasjiralerspong/wt-2054-k5-stage-transfer/scripts/issue2054_k3_restore.py:27: bare Hub verify call ('.list_repo_tree(') — un-retried listings/probes re-create the #920 false-failure class (a transient 504 on a cursor page fails a successful upload's verify; huggingface_hub retries only 429 there). Route through explore_persona_space.orchestrate.hub: verify_repo_paths_uploaded (exact-set post-upload verify), list_hf_files_under_path (scoped listing), or list_repo_files_complete (full listing). A genuinely-correct raw call (e.g. one you wrap in hub.retry_transient yourself) takes the waiver: '# HUB_VERIFY_RETRY_EXEMPT: <reason>' (reason >= 10 chars) on the call's line or the previous non-blank line (#920/#997/#1202). Monkeypatch assignment TARGETS (`HfApi.X = fake`) are exempt by AST ctx and need no waiver; a monkeypatch SAVE of the bare reference (`orig = HfApi.X`) still takes the waiver — a saved alias later called still storms (#1482/#1561).
+workflow_lint: /mnt/eps-data/thomasjiralerspong/wt-2054-k5-stage-transfer/scripts/issue2054_k5_assistant_story.py:118: bare Hub verify call ('.list_repo_tree(') — un-retried listings/probes re-create the #920 false-failure class (a transient 504 on a cursor page fails a successful upload's verify; huggingface_hub retries only 429 there). Route through explore_persona_space.orchestrate.hub: verify_repo_paths_uploaded (exact-set post-upload verify), list_hf_files_under_path (scoped listing), or list_repo_files_complete (full listing). A genuinely-correct raw call (e.g. one you wrap in hub.retry_transient yourself) takes the waiver: '# HUB_VERIFY_RETRY_EXEMPT: <reason>' (reason >= 10 chars) on the call's line or the previous non-blank line (#920/#997/#1202). Monkeypatch assignment TARGETS (`HfApi.X = fake`) are exempt by AST ctx and need no waiver; a monkeypatch SAVE of the bare reference (`orig = HfApi.X`) still takes the waiver — a saved alias later called still storms (#1482/#1561).
+workflow_lint: /mnt/eps-data/thomasjiralerspong/wt-2054-k5-stage-transfer/scripts/issue2054_k5_loso_calibration.py:78: bare Hub verify call ('.list_repo_tree(') — un-retried listings/probes re-create the #920 false-failure class (a transient 504 on a cursor page fails a successful upload's verify; huggingface_hub retries only 429 there). Route through explore_persona_space.orchestrate.hub: verify_repo_paths_uploaded (exact-set post-upload verify), list_hf_files_under_path (scoped listing), or list_repo_files_complete (full listing). A genuinely-correct raw call (e.g. one you wrap in hub.retry_transient yourself) takes the waiver: '# HUB_VERIFY_RETRY_EXEMPT: <reason>' (reason >= 10 chars) on the call's line or the previous non-blank line (#920/#997/#1202). Monkeypatch assignment TARGETS (`HfApi.X = fake`) are exempt by AST ctx and need no waiver; a monkeypatch SAVE of the bare reference (`orig = HfApi.X`) still takes the waiver — a saved alias later called still storms (#1482/#1561).
+workflow_lint: /mnt/eps-data/thomasjiralerspong/wt-2054-k5-stage-transfer/scripts/issue2054_k5_transfer_publish.py:118: bare Hub verify call ('.list_repo_tree(') — un-retried listings/probes re-create the #920 false-failure class (a transient 504 on a cursor page fails a successful upload's verify; huggingface_hub retries only 429 there). Route through explore_persona_space.orchestrate.hub: verify_repo_paths_uploaded (exact-set post-upload verify), list_hf_files_under_path (scoped listing), or list_repo_files_complete (full listing). A genuinely-correct raw call (e.g. one you wrap in hub.retry_transient yourself) takes the waiver: '# HUB_VERIFY_RETRY_EXEMPT: <reason>' (reason >= 10 chars) on the call's line or the previous non-blank line (#920/#997/#1202). Monkeypatch assignment TARGETS (`HfApi.X = fake`) are exempt by AST ctx and need no waiver; a monkeypatch SAVE of the bare reference (`orig = HfApi.X`) still takes the waiver — a saved alias later called still storms (#1482/#1561).
+workflow_lint: /mnt/eps-data/thomasjiralerspong/wt-2054-k5-stage-transfer/docs/marker_training_recipe.md: missing — pin 'marker-token-id' binds a snippet here to src/explore_persona_space/artifacts/recipe.py::MARKER_TOKEN_ID; the marker-recipe doc was moved or deleted — update _MARKER_RECIPE_PINS in scripts/workflow_lint.py (#1154).
+workflow_lint: /mnt/eps-data/thomasjiralerspong/wt-2054-k5-stage-transfer/docs/marker_training_recipe.md: missing — pin 'collator-tail-tokens' binds a snippet here to src/explore_persona_space/train/sft.py::MarkerOnlyDataCollator.__init__ tail_tokens default; the marker-recipe doc was moved or deleted — update _MARKER_RECIPE_PINS in scripts/workflow_lint.py (#1154).
+workflow_lint: /mnt/eps-data/thomasjiralerspong/wt-2054-k5-stage-transfer/docs/marker_training_recipe.md: missing — pin 'mix-reject-floor' binds a snippet here to src/explore_persona_space/artifacts/organisms.py::MIX_MAX_REJECT_FRAC; the marker-recipe doc was moved or deleted — update _MARKER_RECIPE_PINS in scripts/workflow_lint.py (#1154).
+workflow_lint: /mnt/eps-data/thomasjiralerspong/wt-2054-k5-stage-transfer/docs/marker_training_recipe.md: missing — pin 'bandstop-low' binds a snippet here to src/explore_persona_space/eval/callbacks.py::MarkerBandStopCallback.__init__ low_nats default; the marker-recipe doc was moved or deleted — update _MARKER_RECIPE_PINS in scripts/workflow_lint.py (#1154).
+workflow_lint: /mnt/eps-data/thomasjiralerspong/wt-2054-k5-stage-transfer/docs/marker_training_recipe.md: missing — pin 'bandstop-high' binds a snippet here to src/explore_persona_space/eval/callbacks.py::MarkerBandStopCallback.__init__ high_nats default; the marker-recipe doc was moved or deleted — update _MARKER_RECIPE_PINS in scripts/workflow_lint.py (#1154).
+workflow_lint: [live-hf-retry-routing] scripts/issue1901_figure2_five_rollout_scaling.py:83: bare HF Hub call in LIVE code — route through hub.retry_transient, waive with `# NO_RETRY: <reason>`, or (pre-existing file this round never touched — snapshot staleness, #1568) regen on a main-synced tree: `workflow_lint.py --regen-hf-routing-snapshot`: hf_hub_download(
+workflow_lint: [live-hf-retry-routing] scripts/issue1901_singleturn_retrieval_final.py:133: bare HF Hub call in LIVE code — route through hub.retry_transient, waive with `# NO_RETRY: <reason>`, or (pre-existing file this round never touched — snapshot staleness, #1568) regen on a main-synced tree: `workflow_lint.py --regen-hf-routing-snapshot`: hf_hub_download(
+workflow_lint: [live-hf-retry-routing] scripts/issue1902_lasttoken_transfer.py:251: bare HF Hub call in LIVE code — route through hub.retry_transient, waive with `# NO_RETRY: <reason>`, or (pre-existing file this round never touched — snapshot staleness, #1568) regen on a main-synced tree: `workflow_lint.py --regen-hf-routing-snapshot`: hf_hub_download(
+workflow_lint: [live-hf-retry-routing] scripts/issue2054_k5_assistant_story_monitor.py:149: bare HF Hub call in LIVE code — route through hub.retry_transient, waive with `# NO_RETRY: <reason>`, or (pre-existing file this round never touched — snapshot staleness, #1568) regen on a main-synced tree: `workflow_lint.py --regen-hf-routing-snapshot`: local = Path(hf_hub_download(DATA_REPO, path, repo_type="dataset", revision=revision))
+workflow_lint: [live-hf-retry-routing] scripts/issue2054_k5_assistant_story_monitor.py:152: bare HF Hub call in LIVE code — route through hub.retry_transient, waive with `# NO_RETRY: <reason>`, or (pre-existing file this round never touched — snapshot staleness, #1568) regen on a main-synced tree: `workflow_lint.py --regen-hf-routing-snapshot`: hf_hub_download(
+workflow_lint: [live-hf-retry-routing] scripts/issue2054_k5_assistant_story_monitor.py:198: bare HF Hub call in LIVE code — route through hub.retry_transient, waive with `# NO_RETRY: <reason>`, or (pre-existing file this round never touched — snapshot staleness, #1568) regen on a main-synced tree: `workflow_lint.py --regen-hf-routing-snapshot`: hf_hub_download(DATA_REPO, entry.path, repo_type="dataset", revision=revision)
+workflow_lint: [live-hf-retry-routing] scripts/section45_cot_necessity_figure.py:106: bare HF Hub call in LIVE code — route through hub.retry_transient, waive with `# NO_RETRY: <reason>`, or (pre-existing file this round never touched — snapshot staleness, #1568) regen on a main-synced tree: `workflow_lint.py --regen-hf-routing-snapshot`: hf_hub_download(
+workflow_lint: /mnt/eps-data/thomasjiralerspong/wt-2054-k5-stage-transfer/scripts/issue2054_k3_artifacts.py:12: scripts-import-guard: module-top-level scripts.* import without a repo-root sys.path guard. In script mode (python /abs/path/driver.py) sys.path[0] is the script's own dir — 'scripts' is unimportable pod/GCE-side and this import crashes at process start (#823/#853; .claude/rules/gotchas.md "Script mode puts the SCRIPT's dir on sys.path[0]"). Call _ensure_repo_root_on_syspath() immediately before the import (copy the run_823.py exemplar, commit 14234c9112), or waive a genuinely-safe site with '# SCRIPTS_IMPORT_GUARD_EXEMPT: <reason>' (reason ≥ 10 chars).
+workflow_lint: /mnt/eps-data/thomasjiralerspong/wt-2054-k5-stage-transfer/scripts/issue2054_k3_restore.py:13: scripts-import-guard: module-top-level scripts.* import without a repo-root sys.path guard. In script mode (python /abs/path/driver.py) sys.path[0] is the script's own dir — 'scripts' is unimportable pod/GCE-side and this import crashes at process start (#823/#853; .claude/rules/gotchas.md "Script mode puts the SCRIPT's dir on sys.path[0]"). Call _ensure_repo_root_on_syspath() immediately before the import (copy the run_823.py exemplar, commit 14234c9112), or waive a genuinely-safe site with '# SCRIPTS_IMPORT_GUARD_EXEMPT: <reason>' (reason ≥ 10 chars).
+workflow_lint: sha-pin-domain/scripts/issue2054_k3.py:253: undeclared cross-module sha pin 4ab1839a0e8c... (binding `fold`; also pinned in ['scripts/issue2054_shared_seven.py']). Declare the content domain — a `# SHA_PIN_DOMAIN: <INDEX|IDS|PROMPT|BYTES|CONTENT>` comment on the pin line or the line above, or a domain token in the binding name — or waive the site with `# SHA_PIN_DOMAIN_EXEMPT: <reason>` (#2079; the #1776/#1491 wrong-domain class)
+workflow_lint: sha-pin-domain/scripts/issue2054_k5_loso_calibration.py:60: undeclared cross-module sha pin 56beabc6855f... (binding `path`; also pinned in ['scripts/issue2054_k5_paper_figures.py']). Declare the content domain — a `# SHA_PIN_DOMAIN: <INDEX|IDS|PROMPT|BYTES|CONTENT>` comment on the pin line or the line above, or a domain token in the binding name — or waive the site with `# SHA_PIN_DOMAIN_EXEMPT: <reason>` (#2079; the #1776/#1491 wrong-domain class)
+workflow_lint: sha-pin-domain/scripts/issue2054_k5_paper_figures.py:39: undeclared cross-module sha pin 56beabc6855f... (binding `<bare>`; also pinned in ['scripts/issue2054_k5_loso_calibration.py']). Declare the content domain — a `# SHA_PIN_DOMAIN: <INDEX|IDS|PROMPT|BYTES|CONTENT>` comment on the pin line or the line above, or a domain token in the binding name — or waive the site with `# SHA_PIN_DOMAIN_EXEMPT: <reason>` (#2079; the #1776/#1491 wrong-domain class)
+workflow_lint: sha-pin-domain/scripts/issue2054_k5_map_geometry.py:29: undeclared cross-module sha pin 90309ec95e75... (binding `REFERENCE_SHA`; also pinned in ['scripts/issue2054_k5_paper_figures.py', 'scripts/issue2054_story_manuscript_figure.py']). Declare the content domain — a `# SHA_PIN_DOMAIN: <INDEX|IDS|PROMPT|BYTES|CONTENT>` comment on the pin line or the line above, or a domain token in the binding name — or waive the site with `# SHA_PIN_DOMAIN_EXEMPT: <reason>` (#2079; the #1776/#1491 wrong-domain class)
+workflow_lint: sha-pin-domain/scripts/issue2054_k5_paper_figures.py:34: undeclared cross-module sha pin 90309ec95e75... (binding `SOURCES`; also pinned in ['scripts/issue2054_k5_map_geometry.py', 'scripts/issue2054_story_manuscript_figure.py']). Declare the content domain — a `# SHA_PIN_DOMAIN: <INDEX|IDS|PROMPT|BYTES|CONTENT>` comment on the pin line or the line above, or a domain token in the binding name — or waive the site with `# SHA_PIN_DOMAIN_EXEMPT: <reason>` (#2079; the #1776/#1491 wrong-domain class)
+workflow_lint: FAIL (40 error(s))
+
+.........................F...........                                    [100%]
+=================================== FAILURES ===================================
+________________ test_no_new_torch_before_dotenv_vm_entrypoints ________________
+
+    def test_no_new_torch_before_dotenv_vm_entrypoints() -> None:
+        """No NEW VM CPU entrypoint may import a heavy root before load_dotenv().
+    
+        The env.py thread-cap hook binds in-process only when ``load_dotenv()``
+        runs before the import that (transitively) freezes the BLAS/intra-op
+        pools (#847 incident: the offender scripts all violated this; #1146
+        extended the predicate from literal torch/numpy to every
+        HEAVY_IMPORT_ROOTS root; #1187 widened the target set to ALL tracked
+        ``scripts/**/*.py`` plus ``__main__``-guarded src/experiments modules —
+        the two class rules live in ``_scan_targets``). Existing violators are
+        frozen above; this FAILs only on new violations — including branch-side
+        violators at their merges. #2209: UNTRACKED files in LINKED worktrees are
+        now in scope too, so a session whose own untracked scratch script reds the
+        Step 9c gate diagnoses it in one read — and a brand-new entrypoint fails
+        HERE pre-commit instead of shipping a false green (#2203).
+        """
+        root = Path(__file__).resolve().parents[1]
+        targets = _scan_targets(root)
+        assert targets, "scan target globs matched nothing — repo layout changed?"
+    
+        violations: list[str] = []
+        for path in targets:
+            src = path.read_text()
+            heavy = _first_heavy_import_line(ast.parse(src))
+            if heavy is None:
+                continue  # no module-top torch/numpy import
+            rel = path.relative_to(root).as_posix()
+            dotenv = _first_load_dotenv_line(src)
+            if (dotenv is None or heavy < dotenv) and rel not in GRANDFATHERED_TORCH_BEFORE_DOTENV:
+                violations.append(
+                    f"{rel} (module-top heavy import at line {heavy}, "
+                    f"first load_dotenv( at line {dotenv})"
+                )
+>       assert not violations, (
+            "NEW heavy-import-before-load_dotenv VM entrypoint(s) — call "
+            "explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any "
+            "HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process:\n  "
+            + "\n  ".join(violations)
+        )
+E       AssertionError: NEW heavy-import-before-load_dotenv VM entrypoint(s) — call explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process:
+E           scripts/issue1902_lasttoken_transfer.py (module-top heavy import at line 56, first load_dotenv( at line 93)
+E           scripts/issue2054_k5_assistant_story_plot.py (module-top heavy import at line 12, first load_dotenv( at line None)
+E           scripts/issue2054_k5_paper_figures.py (module-top heavy import at line 12, first load_dotenv( at line None)
+E           scripts/issue2254_answer_strength_sweep.py (module-top heavy import at line 32, first load_dotenv( at line None)
+E           scripts/issue2254_information_type_position.py (module-top heavy import at line 29, first load_dotenv( at line None)
+E           scripts/issue2254_low_dose_large_replication.py (module-top heavy import at line 23, first load_dotenv( at line None)
+E           scripts/issue2254_multitype_attrition_analysis.py (module-top heavy import at line 19, first load_dotenv( at line None)
+E           scripts/issue2254_multitype_context_preference.py (module-top heavy import at line 41, first load_dotenv( at line None)
+E           scripts/issue2254_probe_context_followup.py (module-top heavy import at line 57, first load_dotenv( at line None)
+E           scripts/issue2254_probe_context_qwen35.py (module-top heavy import at line 34, first load_dotenv( at line None)
+E           scripts/issue2254_probe_context_qwen35_personas.py (module-top heavy import at line 32, first load_dotenv( at line None)
+E           scripts/issue2546_ladder_audit.py (module-top heavy import at line 15, first load_dotenv( at line None)
+E           scripts/issue2546_retrieval_recipe_check.py (module-top heavy import at line 11, first load_dotenv( at line None)
+E           scripts/issue2546_retrieval_recipe_decomposition.py (module-top heavy import at line 1, first load_dotenv( at line None)
+E           scripts/issue2546_sink_token_test.py (module-top heavy import at line 8, first load_dotenv( at line None)
+E           scripts/section45_cot_necessity_figure.py (module-top heavy import at line 38, first load_dotenv( at line None)
+E       assert not ['scripts/issue1902_lasttoken_transfer.py (module-top heavy import at line 56, first load_dotenv( at line 93)', 'scrip...ts/issue2254_low_dose_large_replication.py (module-top heavy import at line 23, first load_dotenv( at line None)', ...]
+
+tests/test_shared_vm_thread_caps.py:1000: AssertionError
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED tests/test_issue2054_k5_stage_transfer.py::test_restoration_matches_independent_standardized_ridge_and_raw_transfer
+PASSED tests/test_issue2054_k5_stage_transfer.py::test_heldout_changes_cannot_change_maps_or_bias_calibration
+PASSED tests/test_issue2054_k5_stage_transfer.py::test_evaluate_fold_matches_canonical_metrics_and_stores_exact_error_contributions
+PASSED tests/test_issue2054_k5_stage_transfer.py::test_evaluation_rejects_changed_published_endpoint[0]
+PASSED tests/test_issue2054_k5_stage_transfer.py::test_evaluation_rejects_changed_published_endpoint[1]
+PASSED tests/test_issue2054_k5_stage_transfer.py::test_load_bank_rejects_changed_hash_fold_ids_and_incomplete_answer_mask
+PASSED tests/test_issue2054_k5_stage_transfer.py::test_resume_rejects_changed_method_input_code_and_prediction_content
+PASSED tests/test_issue2054_k5_stage_transfer.py::test_summary_uses_equal_fold_mean_and_ratio_of_means_not_mean_ratio
+PASSED tests/test_issue2054_k5_stage_transfer.py::test_source_hash_verification_reaches_git_and_rejects_changed_driver
+PASSED tests/test_issue2054_k5_stage_transfer_run.py::test_coverage_rejects_duplicates_and_source_mismatch
+PASSED tests/test_shared_vm_thread_caps.py::test_detected_by_data_disk_mount
+PASSED tests/test_shared_vm_thread_caps.py::test_detected_by_hostname
+PASSED tests/test_shared_vm_thread_caps.py::test_runpod_excluded
+PASSED tests/test_shared_vm_thread_caps.py::test_slurm_excluded
+PASSED tests/test_shared_vm_thread_caps.py::test_gce_local_route_fails_open
+PASSED tests/test_shared_vm_thread_caps.py::test_forced_on_and_off
+PASSED tests/test_shared_vm_thread_caps.py::test_caps_applied_default_8
+PASSED tests/test_shared_vm_thread_caps.py::test_explicit_value_wins
+PASSED tests/test_shared_vm_thread_caps.py::test_cap_knob_custom_value
+PASSED tests/test_shared_vm_thread_caps.py::test_cap_knob_zero_and_empty_disable
+PASSED tests/test_shared_vm_thread_caps.py::test_cap_knob_malformed_raises
+PASSED tests/test_shared_vm_thread_caps.py::test_off_vm_no_caps
+PASSED tests/test_shared_vm_thread_caps.py::test_load_dotenv_wires_caps
+PASSED tests/test_shared_vm_thread_caps.py::test_dotenv_file_value_wins_over_cap
+PASSED tests/test_shared_vm_thread_caps.py::test_setup_worker_caps_before_torch_import
+PASSED tests/test_shared_vm_thread_caps.py::test_scan_targets_env_extra_unions_untracked
+PASSED tests/test_shared_vm_thread_caps.py::test_scan_targets_env_extra_experiments_requires_main_guard
+PASSED tests/test_shared_vm_thread_caps.py::test_scan_targets_worktree_untracked_unioned
+PASSED tests/test_shared_vm_thread_caps.py::test_scan_targets_staged_already_enumerated
+PASSED tests/test_shared_vm_thread_caps.py::test_scan_targets_worktree_extras_obey_class_rules
+PASSED tests/test_shared_vm_thread_caps.py::test_scan_targets_worktree_syntax_broken_untracked_skipped
+PASSED tests/test_shared_vm_thread_caps.py::test_worktree_violator_flagged_end_to_end
+PASSED tests/test_shared_vm_thread_caps.py::test_scan_targets_worktree_extras_dedup_with_env_extras
+PASSED tests/test_shared_vm_thread_caps.py::test_grandfathered_895_block_is_current
+PASSED tests/test_shared_vm_thread_caps.py::test_grandfathered_1187_block_is_current
+PASSED tests/test_shared_vm_thread_caps.py::test_dotenv_wrapper_import_chain_is_heavy_free
+FAILED tests/test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints
+1 failed, 36 passed in 49.42s
+
