@@ -16,6 +16,8 @@ goal: Inspect whether the Story Imprinting persona prompts form the expected pro
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [Standalone methodology](https://github.com/superkaiba/explore-persona-space/blob/451268ab2c917f291ef8f35ac20f25c00035e015/docs/methodology/issue_2673.md).
+
 ## Takeaways
 
 - With ten-persona centering, both informative sarcasm-ladder increments are positive at 64/64 blocks; French-ladder progression holds at 55/64. These are observed signs, not backend-independent guarantees.
