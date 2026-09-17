@@ -1,0 +1,890 @@
+{
+  "protocol": "Original P-B",
+  "methods": [
+    "answer_direction_on_context",
+    "mapped_answer",
+    "context_native",
+    "real_answer"
+  ],
+  "maps": {
+    "sycophancy": {
+      "n_pairs": 34793,
+      "pool": "add34793_gen18793_elic16000",
+      "frozen_layers": {
+        "arm11_oracle_proj": 11,
+        "arm1_ctx_e1": 16,
+        "arm4_ridge_ctx": 20,
+        "arm6_map_proj_e1": 11,
+        "arm7_map_ridge_pred": 19
+      }
+    },
+    "hallucination": {
+      "n_pairs": 34793,
+      "pool": "add34793_gen18793_elic16000",
+      "frozen_layers": {
+        "arm11_oracle_proj": 27,
+        "arm1_ctx_e1": 24,
+        "arm4_ridge_ctx": 20,
+        "arm6_map_proj_e1": 23,
+        "arm7_map_ridge_pred": 20
+      }
+    },
+    "evil": {
+      "n_pairs": 25261,
+      "pool": "add25261_gen18793_elic6468",
+      "frozen_layers": {
+        "arm11_oracle_proj": 22,
+        "arm1_ctx_e1": 15,
+        "arm4_ridge_ctx": 18,
+        "arm6_map_proj_e1": 22,
+        "arm7_map_ridge_pred": 20
+      }
+    }
+  },
+  "inputs": {
+    "5aae0a472b:eval_results/issue_1739/r2v2_fits/sycophancy/all_arms_spearman.json": "e84534f4a1980baa1bfbbc7746fcb496f6f08f962b012b3043f3a2b18d5085d7",
+    "6dba8178f061980d3285fe4d35ba3149f7bdba3c:eval_results/issue_1739/r2v2_factorial/sycophancy/factorial_rows.json": "5e341635287d7b914d847cfc30f990f3b9aa486192d426239927e66d042b188e",
+    "5aae0a472b:eval_results/issue_1739/r2v2_fits/hallucination/all_arms_spearman.json": "cd00f748fdff6729b10df22fd9fa1f3f0a0c39c0594cdd19c93775c1a241efce",
+    "6dba8178f061980d3285fe4d35ba3149f7bdba3c:eval_results/issue_1739/r2v2_factorial/hallucination/factorial_rows.json": "bcf30198b700305823ceaab3201cd90600e84be1bc9181ebba779b7169da1884",
+    "5aae0a472b:eval_results/issue_1739/r2v2_fits/evil/all_arms_spearman.json": "e4ceb6b32d2a7daebe700cac42c91d4eeb689e0906012ad0f190f659b7df1066",
+    "6dba8178f061980d3285fe4d35ba3149f7bdba3c:eval_results/issue_1739/r2v2_factorial/evil/factorial_rows.json": "4f0926a8f65716850738b8de391f8eecd6890d5fdb6843e141fe4730d1540b9c"
+  },
+  "cells": [
+    {
+      "behavior": "sycophancy",
+      "regime": "Generic chat",
+      "n": 415,
+      "datasets": [
+        "wildchat_rung"
+      ],
+      "arms": {
+        "answer_direction_on_context": {
+          "rho": -0.03910039610309418,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "wildchat_rung": {
+              "rho_frozen": -0.03910039610309418,
+              "n_eval": 415,
+              "layer": 16
+            }
+          }
+        },
+        "mapped_answer": {
+          "rho": 0.09223660209399395,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "wildchat_rung": {
+              "rho_frozen": 0.09223660209399395,
+              "n_eval": 415,
+              "layer": 11
+            }
+          }
+        },
+        "context_native": {
+          "rho": -0.005546888638905077,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "wildchat_rung": {
+              "rho_frozen": -0.005546888638905077,
+              "n_eval": 415,
+              "layer": 16
+            }
+          }
+        },
+        "real_answer": {
+          "rho": 0.07624932674428626,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "wildchat_rung": {
+              "rho_frozen": 0.07624932674428626,
+              "n_eval": 415,
+              "layer": 11
+            }
+          }
+        }
+      }
+    },
+    {
+      "behavior": "sycophancy",
+      "regime": "ID",
+      "n": 3235,
+      "datasets": [
+        "heldin:train"
+      ],
+      "arms": {
+        "answer_direction_on_context": {
+          "rho": 0.021890690576524707,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "heldin:train": {
+              "rho_frozen": 0.021890690576524707,
+              "n_eval": 3235,
+              "layer": 16
+            }
+          }
+        },
+        "mapped_answer": {
+          "rho": 0.2808621849487408,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "heldin:train": {
+              "rho_frozen": 0.2808621849487408,
+              "n_eval": 3235,
+              "layer": 11
+            }
+          }
+        },
+        "context_native": {
+          "rho": 0.023388027699176674,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "heldin:train": {
+              "rho_frozen": 0.023388027699176674,
+              "n_eval": 3235,
+              "layer": 16
+            }
+          }
+        },
+        "real_answer": {
+          "rho": 0.3101110921598534,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "heldin:train": {
+              "rho_frozen": 0.3101110921598534,
+              "n_eval": 3235,
+              "layer": 11
+            }
+          }
+        }
+      }
+    },
+    {
+      "behavior": "sycophancy",
+      "regime": "OOD",
+      "n": 3916,
+      "datasets": [
+        "aita",
+        "sycoans",
+        "sycoays",
+        "sycofb",
+        "sycomim",
+        "sycomwe"
+      ],
+      "arms": {
+        "answer_direction_on_context": {
+          "rho": 0.09810753391032911,
+          "sem": 0.042473364075890835,
+          "interval": [
+            0.05563416983443828,
+            0.14058089798621995
+          ],
+          "dataset_rows": {
+            "aita": {
+              "rho_frozen": 0.06085386456800987,
+              "n_eval": 1304,
+              "layer": 16
+            },
+            "sycoans": {
+              "rho_frozen": 0.15070121043301568,
+              "n_eval": 594,
+              "layer": 16
+            },
+            "sycoays": {
+              "rho_frozen": 0.24679134704944886,
+              "n_eval": 598,
+              "layer": 16
+            },
+            "sycofb": {
+              "rho_frozen": 0.09857986915607433,
+              "n_eval": 559,
+              "layer": 16
+            },
+            "sycomim": {
+              "rho_frozen": -0.06878414079494789,
+              "n_eval": 285,
+              "layer": 16
+            },
+            "sycomwe": {
+              "rho_frozen": 0.10050305305037388,
+              "n_eval": 576,
+              "layer": 16
+            }
+          }
+        },
+        "mapped_answer": {
+          "rho": 0.20960401207248042,
+          "sem": 0.035364048887569485,
+          "interval": [
+            0.17423996318491092,
+            0.24496806096004992
+          ],
+          "dataset_rows": {
+            "aita": {
+              "rho_frozen": 0.2398471924190651,
+              "n_eval": 1304,
+              "layer": 11
+            },
+            "sycoans": {
+              "rho_frozen": 0.20809156092676126,
+              "n_eval": 594,
+              "layer": 11
+            },
+            "sycoays": {
+              "rho_frozen": 0.3642887179631798,
+              "n_eval": 598,
+              "layer": 11
+            },
+            "sycofb": {
+              "rho_frozen": 0.1409920170180543,
+              "n_eval": 559,
+              "layer": 11
+            },
+            "sycomim": {
+              "rho_frozen": 0.12596622792734402,
+              "n_eval": 285,
+              "layer": 11
+            },
+            "sycomwe": {
+              "rho_frozen": 0.17843835618047793,
+              "n_eval": 576,
+              "layer": 11
+            }
+          }
+        },
+        "context_native": {
+          "rho": 0.08121774083617886,
+          "sem": 0.09805155110122933,
+          "interval": [
+            -0.016833810265050472,
+            0.1792692919374082
+          ],
+          "dataset_rows": {
+            "aita": {
+              "rho_frozen": 0.05085260281453181,
+              "n_eval": 1304,
+              "layer": 16
+            },
+            "sycoans": {
+              "rho_frozen": -0.1373116862905605,
+              "n_eval": 594,
+              "layer": 16
+            },
+            "sycoays": {
+              "rho_frozen": 0.4883172683761515,
+              "n_eval": 598,
+              "layer": 16
+            },
+            "sycofb": {
+              "rho_frozen": 0.21042151893406577,
+              "n_eval": 559,
+              "layer": 16
+            },
+            "sycomim": {
+              "rho_frozen": -0.15198666968895472,
+              "n_eval": 285,
+              "layer": 16
+            },
+            "sycomwe": {
+              "rho_frozen": 0.027013410871839304,
+              "n_eval": 576,
+              "layer": 16
+            }
+          }
+        },
+        "real_answer": {
+          "rho": 0.2759460746054791,
+          "sem": 0.05927688093969245,
+          "interval": [
+            0.21666919366578663,
+            0.33522295554517156
+          ],
+          "dataset_rows": {
+            "aita": {
+              "rho_frozen": 0.2495902989637087,
+              "n_eval": 1304,
+              "layer": 11
+            },
+            "sycoans": {
+              "rho_frozen": 0.30626850753736296,
+              "n_eval": 594,
+              "layer": 11
+            },
+            "sycoays": {
+              "rho_frozen": 0.35899789972474533,
+              "n_eval": 598,
+              "layer": 11
+            },
+            "sycofb": {
+              "rho_frozen": 0.2208675984875264,
+              "n_eval": 559,
+              "layer": 11
+            },
+            "sycomim": {
+              "rho_frozen": 0.04392393032075607,
+              "n_eval": 285,
+              "layer": 11
+            },
+            "sycomwe": {
+              "rho_frozen": 0.47602821259877515,
+              "n_eval": 576,
+              "layer": 11
+            }
+          }
+        }
+      }
+    },
+    {
+      "behavior": "hallucination",
+      "regime": "Generic chat",
+      "n": 411,
+      "datasets": [
+        "wildchat_rung"
+      ],
+      "arms": {
+        "answer_direction_on_context": {
+          "rho": -0.10319922809106985,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "wildchat_rung": {
+              "rho_frozen": -0.10319922809106985,
+              "n_eval": 411,
+              "layer": 24
+            }
+          }
+        },
+        "mapped_answer": {
+          "rho": 0.17577133744895965,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "wildchat_rung": {
+              "rho_frozen": 0.17577133744895965,
+              "n_eval": 411,
+              "layer": 23
+            }
+          }
+        },
+        "context_native": {
+          "rho": 0.04281505072932264,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "wildchat_rung": {
+              "rho_frozen": 0.04281505072932264,
+              "n_eval": 411,
+              "layer": 24
+            }
+          }
+        },
+        "real_answer": {
+          "rho": 0.28059178964074377,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "wildchat_rung": {
+              "rho_frozen": 0.28059178964074377,
+              "n_eval": 411,
+              "layer": 27
+            }
+          }
+        }
+      }
+    },
+    {
+      "behavior": "hallucination",
+      "regime": "ID",
+      "n": 3350,
+      "datasets": [
+        "heldin:train"
+      ],
+      "arms": {
+        "answer_direction_on_context": {
+          "rho": -0.016830928997864265,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "heldin:train": {
+              "rho_frozen": -0.016830928997864265,
+              "n_eval": 3350,
+              "layer": 24
+            }
+          }
+        },
+        "mapped_answer": {
+          "rho": -0.05625555702934265,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "heldin:train": {
+              "rho_frozen": -0.05625555702934265,
+              "n_eval": 3350,
+              "layer": 23
+            }
+          }
+        },
+        "context_native": {
+          "rho": 0.0522096712041754,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "heldin:train": {
+              "rho_frozen": 0.0522096712041754,
+              "n_eval": 3350,
+              "layer": 24
+            }
+          }
+        },
+        "real_answer": {
+          "rho": 0.056203189976959625,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "heldin:train": {
+              "rho_frozen": 0.056203189976959625,
+              "n_eval": 3350,
+              "layer": 27
+            }
+          }
+        }
+      }
+    },
+    {
+      "behavior": "hallucination",
+      "regime": "OOD",
+      "n": 7188,
+      "datasets": [
+        "nqopen",
+        "simpleqa"
+      ],
+      "arms": {
+        "answer_direction_on_context": {
+          "rho": 0.14501562929350292,
+          "sem": 0.10021343826370939,
+          "interval": [
+            0.044802191029793534,
+            0.2452290675572123
+          ],
+          "dataset_rows": {
+            "nqopen": {
+              "rho_frozen": 0.04480219102979353,
+              "n_eval": 3167,
+              "layer": 24
+            },
+            "simpleqa": {
+              "rho_frozen": 0.24522906755721233,
+              "n_eval": 4021,
+              "layer": 24
+            }
+          }
+        },
+        "mapped_answer": {
+          "rho": 0.2147356549758243,
+          "sem": 0.24825404359386113,
+          "interval": [
+            -0.033518388618036826,
+            0.4629896985696854
+          ],
+          "dataset_rows": {
+            "nqopen": {
+              "rho_frozen": -0.033518388618036826,
+              "n_eval": 3167,
+              "layer": 23
+            },
+            "simpleqa": {
+              "rho_frozen": 0.46298969856968547,
+              "n_eval": 4021,
+              "layer": 23
+            }
+          }
+        },
+        "context_native": {
+          "rho": 0.2515388942317002,
+          "sem": 0.22241500313019671,
+          "interval": [
+            0.029123891101503513,
+            0.47395389736189697
+          ],
+          "dataset_rows": {
+            "nqopen": {
+              "rho_frozen": 0.02912389110150348,
+              "n_eval": 3167,
+              "layer": 24
+            },
+            "simpleqa": {
+              "rho_frozen": 0.47395389736189697,
+              "n_eval": 4021,
+              "layer": 24
+            }
+          }
+        },
+        "real_answer": {
+          "rho": 0.3533441767857403,
+          "sem": 0.22537326767790708,
+          "interval": [
+            0.12797090910783324,
+            0.5787174444636474
+          ],
+          "dataset_rows": {
+            "nqopen": {
+              "rho_frozen": 0.12797090910783324,
+              "n_eval": 3167,
+              "layer": 27
+            },
+            "simpleqa": {
+              "rho_frozen": 0.5787174444636474,
+              "n_eval": 4021,
+              "layer": 27
+            }
+          }
+        }
+      }
+    },
+    {
+      "behavior": "evil",
+      "regime": "Generic chat",
+      "n": 417,
+      "datasets": [
+        "wildchat_rung"
+      ],
+      "arms": {
+        "answer_direction_on_context": {
+          "rho": 0.06707034670126535,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "wildchat_rung": {
+              "rho_frozen": 0.06707034670126535,
+              "n_eval": 417,
+              "layer": 15
+            }
+          }
+        },
+        "mapped_answer": {
+          "rho": 0.22541778412988908,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "wildchat_rung": {
+              "rho_frozen": 0.22541778412988908,
+              "n_eval": 417,
+              "layer": 22
+            }
+          }
+        },
+        "context_native": {
+          "rho": -0.01500240886312545,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "wildchat_rung": {
+              "rho_frozen": -0.01500240886312545,
+              "n_eval": 417,
+              "layer": 15
+            }
+          }
+        },
+        "real_answer": {
+          "rho": 0.22644899839439725,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "wildchat_rung": {
+              "rho_frozen": 0.22644899839439725,
+              "n_eval": 417,
+              "layer": 22
+            }
+          }
+        }
+      }
+    },
+    {
+      "behavior": "evil",
+      "regime": "ID",
+      "n": 1162,
+      "datasets": [
+        "heldin:train"
+      ],
+      "arms": {
+        "answer_direction_on_context": {
+          "rho": -0.0075143728880254414,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "heldin:train": {
+              "rho_frozen": -0.0075143728880254414,
+              "n_eval": 1162,
+              "layer": 15
+            }
+          }
+        },
+        "mapped_answer": {
+          "rho": 0.6675617388187668,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "heldin:train": {
+              "rho_frozen": 0.6675617388187668,
+              "n_eval": 1162,
+              "layer": 22
+            }
+          }
+        },
+        "context_native": {
+          "rho": 0.045839372282923604,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "heldin:train": {
+              "rho_frozen": 0.045839372282923604,
+              "n_eval": 1162,
+              "layer": 15
+            }
+          }
+        },
+        "real_answer": {
+          "rho": 0.6891455426954929,
+          "sem": null,
+          "interval": null,
+          "dataset_rows": {
+            "heldin:train": {
+              "rho_frozen": 0.6891455426954929,
+              "n_eval": 1162,
+              "layer": 22
+            }
+          }
+        }
+      }
+    },
+    {
+      "behavior": "evil",
+      "regime": "OOD",
+      "n": 5337,
+      "datasets": [
+        "hhrt",
+        "toxicchat",
+        "evil_mhj",
+        "evil_pair",
+        "evil_tomgibbs"
+      ],
+      "arms": {
+        "answer_direction_on_context": {
+          "rho": 0.1049184826601673,
+          "sem": 0.08355119830103383,
+          "interval": [
+            0.021367284359133473,
+            0.18846968096120115
+          ],
+          "dataset_rows": {
+            "hhrt": {
+              "rho_frozen": 0.009478463580156925,
+              "n_eval": 1868,
+              "layer": 15
+            },
+            "toxicchat": {
+              "rho_frozen": 0.0195113243787477,
+              "n_eval": 519,
+              "layer": 15
+            },
+            "evil_mhj": {
+              "rho_frozen": -0.027791283789040264,
+              "n_eval": 533,
+              "layer": 15
+            },
+            "evil_pair": {
+              "rho_frozen": 0.09370586223298097,
+              "n_eval": 917,
+              "layer": 15
+            },
+            "evil_tomgibbs": {
+              "rho_frozen": 0.42968804689799117,
+              "n_eval": 1500,
+              "layer": 15
+            }
+          }
+        },
+        "mapped_answer": {
+          "rho": 0.20903075952752573,
+          "sem": 0.06344561734190257,
+          "interval": [
+            0.14558514218562316,
+            0.27247637686942827
+          ],
+          "dataset_rows": {
+            "hhrt": {
+              "rho_frozen": 0.06470666693570033,
+              "n_eval": 1868,
+              "layer": 22
+            },
+            "toxicchat": {
+              "rho_frozen": 0.25083424306392416,
+              "n_eval": 519,
+              "layer": 22
+            },
+            "evil_mhj": {
+              "rho_frozen": 0.1384995198874108,
+              "n_eval": 533,
+              "layer": 22
+            },
+            "evil_pair": {
+              "rho_frozen": 0.1577491635325607,
+              "n_eval": 917,
+              "layer": 22
+            },
+            "evil_tomgibbs": {
+              "rho_frozen": 0.4333642042180326,
+              "n_eval": 1500,
+              "layer": 22
+            }
+          }
+        },
+        "context_native": {
+          "rho": 0.10793102641343785,
+          "sem": 0.11333413322614334,
+          "interval": [
+            -0.005403106812705491,
+            0.2212651596395812
+          ],
+          "dataset_rows": {
+            "hhrt": {
+              "rho_frozen": 0.03254994653314767,
+              "n_eval": 1868,
+              "layer": 15
+            },
+            "toxicchat": {
+              "rho_frozen": -0.07163590791197351,
+              "n_eval": 519,
+              "layer": 15
+            },
+            "evil_mhj": {
+              "rho_frozen": 0.03208532162940137,
+              "n_eval": 533,
+              "layer": 15
+            },
+            "evil_pair": {
+              "rho_frozen": -0.00818686572982744,
+              "n_eval": 917,
+              "layer": 15
+            },
+            "evil_tomgibbs": {
+              "rho_frozen": 0.5548426375464411,
+              "n_eval": 1500,
+              "layer": 15
+            }
+          }
+        },
+        "real_answer": {
+          "rho": 0.12031216918471836,
+          "sem": 0.11366596306555961,
+          "interval": [
+            0.006646206119158754,
+            0.23397813225027797
+          ],
+          "dataset_rows": {
+            "hhrt": {
+              "rho_frozen": 0.08267989033931226,
+              "n_eval": 1868,
+              "layer": 22
+            },
+            "toxicchat": {
+              "rho_frozen": 0.2581151286565159,
+              "n_eval": 519,
+              "layer": 22
+            },
+            "evil_mhj": {
+              "rho_frozen": 0.31726955027683434,
+              "n_eval": 533,
+              "layer": 22
+            },
+            "evil_pair": {
+              "rho_frozen": 0.2501888201996974,
+              "n_eval": 917,
+              "layer": 22
+            },
+            "evil_tomgibbs": {
+              "rho_frozen": -0.3066925435487681,
+              "n_eval": 1500,
+              "layer": 22
+            }
+          }
+        }
+      }
+    }
+  ],
+  "projection_space": "Original context-covariance whitening of activations and directions",
+  "uncertainty": "Original \u00b11 standard error across OOD datasets; no generic/ID interval",
+  "context_baseline": "Cached e1_fc arm1_ctx_e1, using the original context-projection layer",
+  "validation": {
+    "exact_e1_parity_rows": 312
+  },
+  "caveats": [
+    "ID is held out from the behavior readout, but included in fitting the ADD map.",
+    "Layers differ across behaviors and projection methods.",
+    "Three harmful-compliance OOD datasets and generic chat had low DV spread in the source figure."
+  ],
+  "assembler_sha256": "0a2cefbe54ed94459e0ce1fd7723c8b10b6594fc0d7fc3041cd674fde9591368",
+  "summary_sha256": "ba6dda3bd3ca206e65725085532e40b277e0cbd1b4a2f1d0b2a72c0158cb2384",
+  "renderer_sha256": "97a83c1f6806c2f71fe7f96d9ecdf70bd9d928cd54b912248fb86907bd5b23d6",
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      4.976
+    ],
+    "exported_size_inches": [
+      13.095,
+      4.735
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c5_behavior_transfer_original_combined.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  \u00b7  SYCOPHANCY",
+      "Generic\nchat\nn=415",
+      "ID\nn=3,235",
+      "OOD\nn=3,916",
+      "Spearman $\\rho$ \u2191",
+      "\u22120.2",
+      "0.0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "0.8",
+      "B  \u00b7  HALLUCINATION",
+      "Generic\nchat\nn=411",
+      "ID\nn=3,350",
+      "OOD\nn=7,188",
+      "C  \u00b7  HARMFUL COMPLIANCE",
+      "Generic\nchat\nn=417",
+      "ID\nn=1,162",
+      "OOD\nn=5,337",
+      "Answer \u2192 context",
+      "Answer \u2192 mapped answer",
+      "Context \u2192 context",
+      "Answer \u2192 real answer"
+    ]
+  },
+  "caption": "**Mapped answers usually improve prediction from fixed answer directions.** (A) Sycophancy, (B) hallucination, and (C) harmful compliance across generic chat, in-distribution (ID), and out-of-distribution (OOD) evaluations. Bars show Spearman correlations. OOD bars average datasets equally; whiskers show one standard error across datasets. The original maps, whitening, and method-specific layers are retained. ID rows were included in map fitting and therefore do not measure map-held-out generalization. The context-direction baseline uses the matching cached extraction. Sample counts appear below each evaluation group.",
+  "layout": "Three behavior panels; generic, ID and OOD groups; unchanged historical values",
+  "pdf_sha256": "fe2162f46837aa3f140889951a99051d6251fd9fc67497804f2cdb377c6f31f7",
+  "png_sha256": "aa87d956f09560ecccb14177627c8b1765d19d4879a7b18fce42d6d3065b4c5e",
+  "grayscale_sha256": "ab3ca9c6587c1133a8114917c7f17ab004e0f46d93ee63026cb0ef2cf11e1bca"
+}

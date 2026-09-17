@@ -34,3 +34,18 @@ Reproduce with `uv run python scripts/issue1739_old_four_method_figure.py`.
 The summary records all 36 estimates, source rows, layers, counts and input hashes.
 PNG, PDF, grayscale audit and metadata are under
 `figures/paper/c5_behavior_transfer_original_four.*`.
+
+## Compact manuscript layout
+
+[Combined browser plot](https://eps.superkaiba.com/tasks/1739/figure/c5_behavior_transfer_original_combined.png?v=aa87d956f095)
+
+The combined version uses one full-width row of three behavior panels, each with
+generic chat, ID and OOD groups, a shared axis and a shared four-method legend.
+All 36 estimates and the original OOD standard-error intervals remain unchanged.
+It uses the paper's `c2a-v2` fonts, palette and authoring scale.
+
+Reproduce with `uv run python scripts/issue1739_old_combined_figure.py`.
+Vector PDF, review PNG, grayscale audit, caption and provenance metadata are under
+`figures/paper/c5_behavior_transfer_original_combined.*`. Include the PDF at
+exactly `\textwidth`. `combined_publication.json` records the verified browser
+copy and its SHA-256.
