@@ -1,0 +1,549 @@
+{
+  "map_training_pairs": 963444,
+  "layer": 19,
+  "map_sha256": "188486f8afd9d95221e32492f3a0be2a3bdb2098cbe7fadfecf1d46433567909",
+  "directions": "Frozen raw positive-minus-negative instruction contrasts; unfiltered",
+  "methods": [
+    "answer_direction_on_context",
+    "mapped_answer",
+    "context_native",
+    "real_answer"
+  ],
+  "inputs": {
+    "/mnt/eps-data/thomasjiralerspong/issue1739-fixed-regimes-20260917/sycophancy/predictions.npz": "5b77dc95f9036c9be93dd3038b6779dbaad17397018a3397755a85296f450f13",
+    "/mnt/eps-data/thomasjiralerspong/issue1739-small-map-20260917/outputs/sycophancy/predictions.npz": "47ba29af39f5d8db90b306543f6c020e164c52d6417cfb2926820897c4688cc5",
+    "/mnt/eps-data/thomasjiralerspong/issue1739-fixed-regimes-20260917/sycophancy/bootstraps.npz": "87cbda689f3a4f2e3cddb6a96da4c9fb6934e4d2ea60ac66698cebc7b4565258",
+    "/mnt/eps-data/thomasjiralerspong/issue1739-map-size-diagnostic-20260917/sycophancy/generic_results.json": "469c0ce021b6a93c1dc3049e8911469cb14fec59ce247430878f2daf6ab288ba",
+    "/mnt/eps-data/thomasjiralerspong/issue1739-fixed-regimes-20260917/hallucination/predictions.npz": "d3e5e41ebcccfc949f0ff75eb952795be905fc4e190b37c7178af756e09026fd",
+    "/mnt/eps-data/thomasjiralerspong/issue1739-small-map-20260917/outputs/hallucination/predictions.npz": "fa665e3296b39eb95c4fea439dc3a9722bc6e3ba0803525b36c03174b759abae",
+    "/mnt/eps-data/thomasjiralerspong/issue1739-fixed-regimes-20260917/hallucination/bootstraps.npz": "a8e95e271c9de7dc067482eed277e24aedc6f143e79286be15336cae10b49f8a",
+    "/mnt/eps-data/thomasjiralerspong/issue1739-map-size-diagnostic-20260917/hallucination/generic_results.json": "315a985ea253b266fecb72ad643a4423b43de4e11a89976084dfe93117f159de",
+    "/mnt/eps-data/thomasjiralerspong/issue1739-fixed-regimes-20260917/evil/predictions.npz": "02ab8904dd70765bb172c7636875f417b6383c3513a11a3ac0b995b7c4764365",
+    "/mnt/eps-data/thomasjiralerspong/issue1739-small-map-20260917/outputs/evil/predictions.npz": "e2bc8b6cc4f447da5eab22ec22690f4a861b757702d0b52b849eb5f674d75038",
+    "/mnt/eps-data/thomasjiralerspong/issue1739-fixed-regimes-20260917/evil/bootstraps.npz": "75ba490c8e9f34cc01f2faed54338e5faa104bda5ff75e6466f4f281117d03f1",
+    "/mnt/eps-data/thomasjiralerspong/issue1739-map-size-diagnostic-20260917/evil/generic_results.json": "702d31afd415042656973eb6c705437583429296b08915692dc87c8624e67a83"
+  },
+  "cells": [
+    {
+      "behavior": "sycophancy",
+      "regime": "Generic chat",
+      "rung": "wildchat_rung",
+      "n": 415,
+      "n_groups": 415,
+      "informative": true,
+      "dv_unique": 208,
+      "floor_mass": 0.2385542168674699,
+      "arms": {
+        "mapped_answer": {
+          "rho": 0.15126245206004918,
+          "ci95": [
+            0.05011425492373144,
+            0.246977648937938
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "real_answer": {
+          "rho": 0.1289170863545449,
+          "ci95": [
+            0.02821394764889172,
+            0.22446773303100337
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "context_native": {
+          "rho": 0.3044046065042011,
+          "ci95": [
+            0.20933106826401685,
+            0.3887260953992086
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "answer_direction_on_context": {
+          "rho": 0.35602001002658856,
+          "ci95": [
+            0.2586178324421231,
+            0.4448745324187957
+          ],
+          "valid_bootstrap_draws": 2000
+        }
+      },
+      "differences": {
+        "mapped_minus_real_answer": {
+          "delta": 0.022345365705504272,
+          "ci95": [
+            -0.011081048163881835,
+            0.05739938367452375
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "mapped_minus_context_native": {
+          "delta": -0.1531421544441519,
+          "ci95": [
+            -0.215481239339051,
+            -0.0914476253340538
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "mapped_minus_answer_direction_on_context": {
+          "delta": -0.20475755796653938,
+          "ci95": [
+            -0.28113187092996667,
+            -0.12974109418837992
+          ],
+          "valid_bootstrap_draws": 2000
+        }
+      },
+      "subset": "historical_eval_including_overlap",
+      "train_overlap": 411,
+      "validation_overlap": 3,
+      "neither_overlap": 4
+    },
+    {
+      "behavior": "sycophancy",
+      "regime": "ID",
+      "datasets": [
+        "train"
+      ],
+      "n": 16000,
+      "arms": {
+        "answer_direction_on_context": {
+          "rho": 0.15532619688367374,
+          "ci95": [
+            0.1397007848025123,
+            0.17144847161302318
+          ]
+        },
+        "mapped_answer": {
+          "rho": 0.28892375210793947,
+          "ci95": [
+            0.27331645911251756,
+            0.30513310949909256
+          ]
+        },
+        "context_native": {
+          "rho": 0.2751917150369671,
+          "ci95": [
+            0.25993280566672367,
+            0.290676968571786
+          ]
+        },
+        "real_answer": {
+          "rho": 0.2695851716378829,
+          "ci95": [
+            0.254005636982819,
+            0.2855098267571309
+          ]
+        }
+      }
+    },
+    {
+      "behavior": "sycophancy",
+      "regime": "OOD",
+      "datasets": [
+        "aita"
+      ],
+      "n": 1304,
+      "arms": {
+        "answer_direction_on_context": {
+          "rho": 0.18646030060614227,
+          "ci95": [
+            0.12971796774024405,
+            0.24151036053568906
+          ]
+        },
+        "mapped_answer": {
+          "rho": 0.25490509324538835,
+          "ci95": [
+            0.19942704338660366,
+            0.3081052940215397
+          ]
+        },
+        "context_native": {
+          "rho": 0.3187069625997087,
+          "ci95": [
+            0.2664491152922885,
+            0.368373830347893
+          ]
+        },
+        "real_answer": {
+          "rho": 0.21529304550980316,
+          "ci95": [
+            0.16396068495632338,
+            0.2709509116202034
+          ]
+        }
+      }
+    },
+    {
+      "behavior": "hallucination",
+      "regime": "Generic chat",
+      "rung": "wildchat_rung",
+      "n": 411,
+      "n_groups": 411,
+      "informative": true,
+      "dv_unique": 266,
+      "floor_mass": 0.10218978102189781,
+      "arms": {
+        "mapped_answer": {
+          "rho": 0.2280497401867239,
+          "ci95": [
+            0.13161641645629404,
+            0.32303967038302817
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "real_answer": {
+          "rho": 0.2196206546174867,
+          "ci95": [
+            0.1180503399862462,
+            0.31368046558513063
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "context_native": {
+          "rho": 0.11346190782829713,
+          "ci95": [
+            0.022386129018048515,
+            0.20718677366320176
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "answer_direction_on_context": {
+          "rho": 0.021133502260753723,
+          "ci95": [
+            -0.07689331812605439,
+            0.11215796777426297
+          ],
+          "valid_bootstrap_draws": 2000
+        }
+      },
+      "differences": {
+        "mapped_minus_real_answer": {
+          "delta": 0.008429085569237188,
+          "ci95": [
+            -0.035251076906512496,
+            0.05261353144222944
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "mapped_minus_context_native": {
+          "delta": 0.11458783235842676,
+          "ci95": [
+            0.03455534339457605,
+            0.19221853972184458
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "mapped_minus_answer_direction_on_context": {
+          "delta": 0.20691623792597016,
+          "ci95": [
+            0.12916990554592794,
+            0.283309761874238
+          ],
+          "valid_bootstrap_draws": 2000
+        }
+      },
+      "subset": "historical_eval_including_overlap",
+      "train_overlap": 407,
+      "validation_overlap": 3,
+      "neither_overlap": 4
+    },
+    {
+      "behavior": "hallucination",
+      "regime": "ID",
+      "datasets": [
+        "train"
+      ],
+      "n": 15987,
+      "arms": {
+        "answer_direction_on_context": {
+          "rho": -0.2539490172309954,
+          "ci95": [
+            -0.26908021143523264,
+            -0.23842896291195875
+          ]
+        },
+        "mapped_answer": {
+          "rho": -0.107834401834345,
+          "ci95": [
+            -0.12477722146913058,
+            -0.09206864889176837
+          ]
+        },
+        "context_native": {
+          "rho": -0.3512801769678346,
+          "ci95": [
+            -0.36479238846140866,
+            -0.3369368718183647
+          ]
+        },
+        "real_answer": {
+          "rho": -0.09883279263526461,
+          "ci95": [
+            -0.11501910135302168,
+            -0.08288922722878725
+          ]
+        }
+      }
+    },
+    {
+      "behavior": "hallucination",
+      "regime": "OOD",
+      "datasets": [
+        "nqopen",
+        "simpleqa"
+      ],
+      "n": 7185,
+      "arms": {
+        "answer_direction_on_context": {
+          "rho": 0.16569690697167055,
+          "ci95": [
+            0.1408783163276157,
+            0.18801503040206904
+          ]
+        },
+        "mapped_answer": {
+          "rho": 0.18227302519977548,
+          "ci95": [
+            0.15920385506433055,
+            0.2037174071029839
+          ]
+        },
+        "context_native": {
+          "rho": 0.189809787988584,
+          "ci95": [
+            0.16542990023326776,
+            0.211326795044238
+          ]
+        },
+        "real_answer": {
+          "rho": 0.29800402867118764,
+          "ci95": [
+            0.27582756744411163,
+            0.31820144159877395
+          ]
+        }
+      }
+    },
+    {
+      "behavior": "evil",
+      "regime": "Generic chat",
+      "rung": "wildchat_rung",
+      "n": 417,
+      "n_groups": 417,
+      "informative": true,
+      "dv_unique": 10,
+      "floor_mass": 0.9784172661870504,
+      "arms": {
+        "mapped_answer": {
+          "rho": 0.21595375522482352,
+          "ci95": [
+            0.1378353650624339,
+            0.2861424999870941
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "real_answer": {
+          "rho": 0.2348071921748834,
+          "ci95": [
+            0.15254985277200445,
+            0.305399834890481
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "context_native": {
+          "rho": 0.19688237276715478,
+          "ci95": [
+            0.11605601805514246,
+            0.26921266568351215
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "answer_direction_on_context": {
+          "rho": 0.2185743609362227,
+          "ci95": [
+            0.13700622390516043,
+            0.28883468922407096
+          ],
+          "valid_bootstrap_draws": 2000
+        }
+      },
+      "differences": {
+        "mapped_minus_real_answer": {
+          "delta": -0.018853436950059893,
+          "ci95": [
+            -0.044833174517869376,
+            -3.3697710806180496e-05
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "mapped_minus_context_native": {
+          "delta": 0.019071382457668734,
+          "ci95": [
+            -0.007708850828246589,
+            0.04654976659044226
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "mapped_minus_answer_direction_on_context": {
+          "delta": -0.0026206057113991876,
+          "ci95": [
+            -0.020108972332461436,
+            0.012034079385545548
+          ],
+          "valid_bootstrap_draws": 2000
+        }
+      },
+      "subset": "historical_eval_including_overlap",
+      "train_overlap": 413,
+      "validation_overlap": 3,
+      "neither_overlap": 4
+    },
+    {
+      "behavior": "evil",
+      "regime": "ID",
+      "datasets": [
+        "train"
+      ],
+      "n": 6468,
+      "arms": {
+        "answer_direction_on_context": {
+          "rho": 0.5549310197794638,
+          "ci95": [
+            0.525685175293538,
+            0.5836932459192404
+          ]
+        },
+        "mapped_answer": {
+          "rho": 0.5969220904653405,
+          "ci95": [
+            0.5705683526162608,
+            0.6228102909047668
+          ]
+        },
+        "context_native": {
+          "rho": 0.5706510218053812,
+          "ci95": [
+            0.5426010251373052,
+            0.5990552072428409
+          ]
+        },
+        "real_answer": {
+          "rho": 0.6404164418273706,
+          "ci95": [
+            0.6175414617632515,
+            0.6624396785720681
+          ]
+        }
+      }
+    },
+    {
+      "behavior": "evil",
+      "regime": "OOD",
+      "datasets": [
+        "hhrt",
+        "toxicchat"
+      ],
+      "n": 2217,
+      "arms": {
+        "answer_direction_on_context": {
+          "rho": 0.24547679025970992,
+          "ci95": [
+            0.19923368604884475,
+            0.287468577753448
+          ]
+        },
+        "mapped_answer": {
+          "rho": 0.24189163758753238,
+          "ci95": [
+            0.19917370108984897,
+            0.27991467310818474
+          ]
+        },
+        "context_native": {
+          "rho": 0.2020156282088919,
+          "ci95": [
+            0.1562194167209495,
+            0.24315052941010967
+          ]
+        },
+        "real_answer": {
+          "rho": 0.25610167338717604,
+          "ci95": [
+            0.21130354649773794,
+            0.2940030821421363
+          ]
+        }
+      }
+    }
+  ],
+  "uncertainty": "2000 paired group-bootstrap draws, conditional on frozen directions/map",
+  "ood_aggregation": "Equal-weight mean of dataset-specific Spearman correlations",
+  "generic_pool": "Historical 419 candidates, retaining map-training/validation overlaps",
+  "caveats": [
+    "Generic chat is not conversation-disjoint from map training.",
+    "Generic hallucination is a graded trait score; QA uses fabricated fractions.",
+    "Map answer pooling includes closing tokens; evaluation uses completion tokens.",
+    "Negative real-answer correlations on TriviaQA/NQ limit direction validity."
+  ],
+  "validation": "Shared-row/DV/group parity and all 24 original bootstrap series reproduced",
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      10.476
+    ],
+    "exported_size_inches": [
+      13.095,
+      10.325
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c5_behavior_transfer_million_four.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  \u00b7  N = 415",
+      "Spearman $\\rho$ \u2191",
+      "\u22120.4",
+      "\u22120.2",
+      "0.0",
+      "0.2",
+      "0.4",
+      "0.6",
+      "B  \u00b7  N = 16,000",
+      "C  \u00b7  N = 1,304",
+      "D  \u00b7  N = 411",
+      "E  \u00b7  N = 15,987",
+      "F  \u00b7  N = 7,185",
+      "G  \u00b7  N = 417",
+      "H  \u00b7  N = 6,468",
+      "I  \u00b7  N = 2,217",
+      "Generic chat",
+      "ID",
+      "OOD",
+      "Sycophancy",
+      "Hallucination",
+      "Harmful compliance",
+      "Fixed-direction projections \u00b7 million-context map",
+      "Generic chat includes map-training overlap. OOD averages dataset correlations.",
+      "Whiskers: 95% group-bootstrap intervals. Same fixed directions across all panels.",
+      "Answer \u2192 context",
+      "Answer \u2192 mapped answer",
+      "Context \u2192 context",
+      "Answer \u2192 real answer"
+    ]
+  },
+  "renderer_sha256": "9093d859555560876e89f8bc642099ab4ce0f3c580a5540abe6b282ffd7458ab",
+  "pdf_sha256": "9bc7e37d7c723518a97021b772b50b07ad69493b9981ee857a3b7ef2f94a6371",
+  "png_sha256": "e60a31eb3b2d9c6192db662c0f1e38459c9f8727642d18383050666b1f864d8a",
+  "grayscale_sha256": "7cfd68ea2a2a1571bee25e9561bc11813358ce0ab78c07728cef07b926b3dd6c"
+}
