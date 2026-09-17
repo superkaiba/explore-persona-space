@@ -5,9 +5,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import sys
 import time
+from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -50,8 +52,8 @@ def write_packets(path, records):
 
 
 def prepare(args):
-    if (args.out / "manifest.json").exists():
-        raise ValueError("Refusing to replace a frozen annotation manifest")
+    if args.out.exists() and any(args.out.iterdir()):
+        raise ValueError("Refusing to replace a nonempty annotation directory")
     source = args.source
     for phase in ("selection", "responses"):
         done = json.loads((source / phase / "complete.json").read_text())
@@ -64,6 +66,8 @@ def prepare(args):
         for r in jsonl(p)
     ]
     by_ci = {r["ci"]: r for r in records}
+    if len(by_ci) != len(records):
+        raise ValueError("Duplicate source context IDs")
     memberships = json.loads((source / "selection/memberships.json").read_text())
     random = {r["ci"] for r in memberships if r["method"] == "random"}
     key, manifest = {}, {}
@@ -103,7 +107,10 @@ def prepare(args):
         dict(
             created_at=time.time(),
             behaviors=manifest,
-            source_response_sha256=sha256(source / "responses/selected_responses_000.jsonl"),
+            source_response_sha256={
+                p.name: sha256(p)
+                for p in sorted((source / "responses").glob("selected_responses_*.jsonl"))
+            },
             source_membership_sha256=sha256(source / "selection/memberships.json"),
             judge_model="gpt-5.6-luna",
             reasoning_effort="medium",
@@ -142,6 +149,18 @@ def validate_rows(records, labels, behavior):
             isinstance(x, str) for x in row["sources"]
         ):
             raise ValueError("Sources must be a list of URLs")
+        if any(
+            urlparse(u).scheme not in ("https", "http") or not urlparse(u).netloc
+            for u in row["sources"]
+        ):
+            raise ValueError("Sources must be HTTP(S) URLs; factual support still needs audit")
+        if row["evidence_type"] not in (
+            "transcript",
+            "reference",
+            "calculation",
+            "no_factual_claim",
+        ):
+            raise ValueError("Invalid evidence type")
         if row["status"] == "scored":
             if type(row["score"]) is not int or not 0 <= row["score"] <= 100:
                 raise ValueError("Invalid score")
@@ -217,32 +236,47 @@ def monitor(args):
     verify_source(config)
     previous = None
     last_progress = time.time()
+    started = time.time()
     try:
         while True:
+            counts = status_counts(Path(config["annotation_root"]))
             finished = Path(config["state_dir"]) / "analysis_archive_verified.json"
             if finished.exists():
                 verified = json.loads(finished.read_text())
                 assert verified["source_sha"] == config["source_sha"]
                 assert verified["verified_revision"]
+                assert verified["verified_at"] >= started
+                assert verified["manifest_sha256"] == sha256(
+                    Path(config["annotation_root"]) / "manifest.json"
+                )
+                assert all(
+                    v["packets_done"] == v["packets_total"]
+                    for phases in counts.values()
+                    for v in phases.values()
+                )
+                for rel, digest in verified["annotation_file_sha256"].items():
+                    assert sha256(Path(config["annotation_root"]) / rel) == digest
                 observe(config, "complete", {"status": "done"}, results=verified)
                 return
-            counts = status_counts(Path(config["annotation_root"]))
             evidence = json.dumps(counts, sort_keys=True)
             if evidence != previous:
                 previous, last_progress = evidence, time.time()
                 print(json.dumps(dict(checked_at=time.time(), counts=counts)), flush=True)
             stalled = time.time() - last_progress
+            native_path = Path(config["state_dir"]) / "native_agents.json"
+            native = json.loads(native_path.read_text()) if native_path.exists() else {}
             backend = dict(
                 status="running",
-                pid_alive=True,
+                monitor_pid=os.getpid(),
+                native_agents=native,
+                native_status_age_seconds=time.time() - native.get("checked_at", 0),
                 progress=counts,
                 seconds_without_measured_progress=stalled,
-                last_log_mtime_sec_ago=stalled,
             )
             if stalled > config["progress_timeout_seconds"]:
-                backend["stall_reason"] = "No newly validated annotation packets within deadline"
-                observe(config, "backend_failed", backend)
-                raise RuntimeError(backend["stall_reason"])
+                raise RuntimeError("No newly validated annotation packets within deadline")
+            if backend["native_status_age_seconds"] > 600:
+                raise RuntimeError("Native-agent observation from active root is stale")
             observe(config, "running_native_luna_annotation", backend)
             time.sleep(30)
     except BaseException as exc:
