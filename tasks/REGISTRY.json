@@ -12916,8 +12916,8 @@
       "goal": "Test whether context-vector cosine similarity predicts measured story-imprinting tracer uptake across matched persona conditions, using Qwen3.8-27B as an initial pilot.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/interpreting/2673",
-      "status": "interpreting",
+      "path": "tasks/approved/2673",
+      "status": "approved",
       "title": "Does context-vector cosine predict story-imprinting tracer uptake?"
     },
     "268": {
