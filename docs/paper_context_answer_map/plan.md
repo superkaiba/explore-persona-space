@@ -1,5 +1,19 @@
 # Paper plan — Context → Answer Mapping (v1, 2026-08-18)
 
+## Current behavior-results scope (Thomas, 2026-09-17)
+
+Section 4.7 uses the cached layer-19, 963,444-pair metamodel comparison.
+Its compact main figure separates fixed answer-direction prediction, regularized
+preimage scoring against context-native directions, and matched behavior
+regressions with the covariance estimated from the exact same generic contexts.
+The appendix contains paired differences and highest-ranked prompt excerpts.
+The supported conclusion is dataset-dependent transfer without a consistent
+regression advantage. Abstract, introduction, and discussion use that conclusion.
+This supersedes the older C5 framing and the exclusion of fixed-direction arms
+below. Conditional judge retention and answer-token pooling mismatch remain
+explicit. No new inference or judging was run for this presentation update.
+
+
 ## Current methodology scope (Thomas, 2026-09-11)
 
 Models and data are detailed in Appendix A.1, alongside the experimental-settings

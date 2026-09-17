@@ -1,0 +1,1197 @@
+{
+  "inputs": {
+    "eval_results/issue_1739/million_cached_20260916/evil/fixed.json": "7ecdb2e20add4ed376100b27ab4f1269dad8e1335b3a6a59f945be38211e9906",
+    "eval_results/issue_1739/million_cached_20260916/evil/regression.json": "1d17a373789b7b6712404ca038a10c6612f3b925931585a1c42c5abde098d805",
+    "eval_results/issue_1739/million_cached_20260916/sycophancy/fixed.json": "bb2feafb7f6b8ef8eb8a3ae37035716a3d1477a44799c86d531e80ad04630fa1",
+    "eval_results/issue_1739/million_cached_20260916/sycophancy/regression.json": "7752b3c8be6434453cbd63f9eebb06df5ecb7174a14b2a13ae848fc7b54b2fd8",
+    "eval_results/issue_1739/million_cached_20260916/hallucination/fixed.json": "a37fd6024de2bd0be869552000cf2b670a7bfa64ff59cce5b3094ccc4f676645",
+    "eval_results/issue_1739/million_cached_20260916/hallucination/regression.json": "686bbb5181eaacf30b84359e35a9c8cc8f75275678b4ba6958f382813925cb89"
+  },
+  "archive_revision": "449c48d4047efffec50dbe8492d78c905b4bb588",
+  "archive_prefix": "issue1739_million_cached_20260916",
+  "map_training_pairs": 963444,
+  "model": "Qwen2.5-7B-Instruct",
+  "layer": 19,
+  "inverse_rank": 378,
+  "uncertainty": "pointwise 95% paired group-bootstrap, 2000 draws, fixed fits",
+  "excluded": "WildChat: only four retained contexts per behavior",
+  "pooling_caveat": "Map target includes assistant-closing template tokens. Observed evaluation answer vectors average completion tokens only.",
+  "cells": [
+    {
+      "behavior": "evil",
+      "dataset": "HH-RLHF",
+      "n": 1847,
+      "fixed": {
+        "rung": "hhrt",
+        "n": 1847,
+        "n_groups": 1847,
+        "informative": true,
+        "arms": {
+          "preimage": {
+            "rho": 0.05104611476834851,
+            "ci95": [
+              0.010265823408534885,
+              0.09110346734831587
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "mapped_answer": {
+            "rho": 0.057758591591320414,
+            "ci95": [
+              0.021542318004031592,
+              0.0907202479298404
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "context_native": {
+            "rho": 0.0008701159913479909,
+            "ci95": [
+              -0.035179959813181914,
+              0.0385126258626594
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "answer_direction_on_context": {
+            "rho": 0.04206859991335759,
+            "ci95": [
+              0.006171738174905361,
+              0.07983376874956769
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank189": {
+            "rho": 0.03929411685767401,
+            "ci95": [
+              0.004043146991541558,
+              0.07554565267213445
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank378": {
+            "rho": 0.05104611476834851,
+            "ci95": [
+              0.010265823408534885,
+              0.09110346734831587
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank756": {
+            "rho": 0.041380998305583734,
+            "ci95": [
+              0.0011400105330991435,
+              0.08364437671507223
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank3584": {
+            "rho": -0.027425345578106462,
+            "ci95": [
+              -0.07025595913616857,
+              0.015299038271855943
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "real_answer": {
+            "rho": 0.0723457250894371,
+            "ci95": [
+              0.03580710877568492,
+              0.10655004565408241
+            ],
+            "valid_bootstrap_draws": 2000
+          }
+        },
+        "differences": {
+          "preimage_minus_mapped_answer": {
+            "delta": -0.006712476822971901,
+            "ci95": [
+              -0.03536540175600469,
+              0.024863122835362794
+            ]
+          },
+          "preimage_minus_context_native": {
+            "delta": 0.050175998777000526,
+            "ci95": [
+              0.023720855201346935,
+              0.07585474236490103
+            ]
+          },
+          "mapped_answer_minus_context_native": {
+            "delta": 0.05688847559997243,
+            "ci95": [
+              0.02446883737630538,
+              0.08826375257334466
+            ]
+          }
+        }
+      },
+      "regression": {
+        "rung": "hhrt",
+        "n": 1847,
+        "n_groups": 1847,
+        "informative": true,
+        "arms": {
+          "raw_context": {
+            "rho": 0.08220438964012408,
+            "ci95": [
+              0.037601873278167254,
+              0.125710883541095
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "context_covariance": {
+            "rho": 0.08661041193975597,
+            "ci95": [
+              0.040389700018813944,
+              0.13069872771662244
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "mapped_answer": {
+            "rho": 0.06995365419309282,
+            "ci95": [
+              0.021587167193623573,
+              0.11661276848754144
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed0": {
+            "rho": 0.08007974929505497,
+            "ci95": [
+              0.035443869824984806,
+              0.12408601929099863
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed1": {
+            "rho": 0.08181115695128972,
+            "ci95": [
+              0.03615974215656774,
+              0.1251750377693307
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed2": {
+            "rho": 0.054435538997016523,
+            "ci95": [
+              0.008680335990657947,
+              0.09815699159281903
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed3": {
+            "rho": 0.06612359642093253,
+            "ci95": [
+              0.022837094799367304,
+              0.1088572553806231
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed4": {
+            "rho": 0.07391554627181754,
+            "ci95": [
+              0.029672354162308,
+              0.1178376126763612
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_mean": {
+            "rho": 0.07127311758722225,
+            "ci95": [
+              0.02918239864061144,
+              0.11404732243652134
+            ],
+            "seed_rhos": [
+              0.08007974929505497,
+              0.08181115695128972,
+              0.054435538997016523,
+              0.06612359642093253,
+              0.07391554627181754
+            ],
+            "seed_sd": 0.011242898714884791
+          }
+        },
+        "differences": {
+          "mapped_answer_minus_raw_context": {
+            "delta": -0.012250735447031258,
+            "ci95": [
+              -0.04469199253506595,
+              0.02123885744272183
+            ]
+          },
+          "mapped_answer_minus_context_covariance": {
+            "delta": -0.016656757746663142,
+            "ci95": [
+              -0.05798357241229778,
+              0.028947071150538805
+            ]
+          },
+          "context_covariance_minus_raw_context": {
+            "delta": 0.004406022299631884,
+            "ci95": [
+              -0.03582173916232316,
+              0.04032732560221561
+            ]
+          },
+          "mapped_answer_minus_shuffled_mean": {
+            "delta": -0.0013194633941294304,
+            "ci95": [
+              -0.03579630723088608,
+              0.03436274592230988
+            ]
+          }
+        }
+      }
+    },
+    {
+      "behavior": "evil",
+      "dataset": "ToxicChat",
+      "n": 370,
+      "fixed": {
+        "rung": "toxicchat",
+        "n": 370,
+        "n_groups": 370,
+        "informative": true,
+        "arms": {
+          "preimage": {
+            "rho": 0.4099715316371103,
+            "ci95": [
+              0.3198004763407504,
+              0.4898604465737622
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "mapped_answer": {
+            "rho": 0.42602468358374446,
+            "ci95": [
+              0.3484247630047359,
+              0.4974341567414563
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "context_native": {
+            "rho": 0.40316114042643586,
+            "ci95": [
+              0.32166262969323994,
+              0.4761914295411549
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "answer_direction_on_context": {
+            "rho": 0.4488849806060623,
+            "ci95": [
+              0.36198845509425276,
+              0.5217430160022499
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank189": {
+            "rho": 0.40568541614864784,
+            "ci95": [
+              0.3215199708674018,
+              0.4795971323937987
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank378": {
+            "rho": 0.4099715316371103,
+            "ci95": [
+              0.3198004763407504,
+              0.4898604465737622
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank756": {
+            "rho": 0.40761463475036086,
+            "ci95": [
+              0.31820310382316314,
+              0.4862164544564388
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank3584": {
+            "rho": 0.03653291616180088,
+            "ci95": [
+              -0.057188172566328944,
+              0.12640478960456641
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "real_answer": {
+            "rho": 0.4398576216849149,
+            "ci95": [
+              0.3579909438216154,
+              0.5134492248282095
+            ],
+            "valid_bootstrap_draws": 2000
+          }
+        },
+        "differences": {
+          "preimage_minus_mapped_answer": {
+            "delta": -0.016053151946634148,
+            "ci95": [
+              -0.07377641736970073,
+              0.03972927876388756
+            ]
+          },
+          "preimage_minus_context_native": {
+            "delta": 0.006810391210674449,
+            "ci95": [
+              -0.03846888958974674,
+              0.04808948151935726
+            ]
+          },
+          "mapped_answer_minus_context_native": {
+            "delta": 0.022863543157308597,
+            "ci95": [
+              -0.02587484435921873,
+              0.07186399438488547
+            ]
+          }
+        }
+      },
+      "regression": {
+        "rung": "toxicchat",
+        "n": 370,
+        "n_groups": 370,
+        "informative": true,
+        "arms": {
+          "raw_context": {
+            "rho": 0.38884507646674743,
+            "ci95": [
+              0.31471263003570443,
+              0.45828994484314156
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "context_covariance": {
+            "rho": 0.32907074674636644,
+            "ci95": [
+              0.2199570595795703,
+              0.42758145503552536
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "mapped_answer": {
+            "rho": 0.3913368908390515,
+            "ci95": [
+              0.31573213434027403,
+              0.46430210996748156
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed0": {
+            "rho": 0.3793355240112323,
+            "ci95": [
+              0.3028080921858672,
+              0.45146828306110787
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed1": {
+            "rho": 0.35991795603008264,
+            "ci95": [
+              0.2774764069371515,
+              0.43553781828098853
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed2": {
+            "rho": 0.34641241140090673,
+            "ci95": [
+              0.260822076333771,
+              0.42357995903070644
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed3": {
+            "rho": 0.36020929664550594,
+            "ci95": [
+              0.2795294779939685,
+              0.4358700905538569
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed4": {
+            "rho": 0.36234484770257097,
+            "ci95": [
+              0.27731054841498765,
+              0.4393347171415754
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_mean": {
+            "rho": 0.36164400715805967,
+            "ci95": [
+              0.28233331387849914,
+              0.43533718043741915
+            ],
+            "seed_rhos": [
+              0.3793355240112323,
+              0.35991795603008264,
+              0.34641241140090673,
+              0.36020929664550594,
+              0.36234484770257097
+            ],
+            "seed_sd": 0.011731582396414642
+          }
+        },
+        "differences": {
+          "mapped_answer_minus_raw_context": {
+            "delta": 0.0024918143723040576,
+            "ci95": [
+              -0.03351495189153143,
+              0.03527839917819449
+            ]
+          },
+          "mapped_answer_minus_context_covariance": {
+            "delta": 0.06226614409268505,
+            "ci95": [
+              -0.0229866928724705,
+              0.15356368293571826
+            ]
+          },
+          "context_covariance_minus_raw_context": {
+            "delta": -0.05977432972038099,
+            "ci95": [
+              -0.1466945547883029,
+              0.019196936413702643
+            ]
+          },
+          "mapped_answer_minus_shuffled_mean": {
+            "delta": 0.029692883680991822,
+            "ci95": [
+              -0.01516306715975144,
+              0.07508991770657816
+            ]
+          }
+        }
+      }
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "AITA",
+      "n": 1304,
+      "fixed": {
+        "rung": "aita",
+        "n": 1304,
+        "n_groups": 1304,
+        "informative": true,
+        "arms": {
+          "preimage": {
+            "rho": 0.32182996694758303,
+            "ci95": [
+              0.26844533809458654,
+              0.37345774923408315
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "mapped_answer": {
+            "rho": 0.25490509324538835,
+            "ci95": [
+              0.20066123748224798,
+              0.3119657835451455
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "context_native": {
+            "rho": 0.3187069625997087,
+            "ci95": [
+              0.26598215707154776,
+              0.37018424105348574
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "answer_direction_on_context": {
+            "rho": 0.18646030060614227,
+            "ci95": [
+              0.12993136724085788,
+              0.24586176961963557
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank189": {
+            "rho": 0.3127154199825914,
+            "ci95": [
+              0.2583353438173084,
+              0.36307317951322243
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank378": {
+            "rho": 0.32182996694758303,
+            "ci95": [
+              0.26844533809458654,
+              0.37345774923408315
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank756": {
+            "rho": 0.2967035393172994,
+            "ci95": [
+              0.2439986472457784,
+              0.3495391435710248
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank3584": {
+            "rho": -0.2212459104522306,
+            "ci95": [
+              -0.2776380581665133,
+              -0.1637082684437852
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "real_answer": {
+            "rho": 0.21529304550980313,
+            "ci95": [
+              0.16090583633681615,
+              0.27267038345705663
+            ],
+            "valid_bootstrap_draws": 2000
+          }
+        },
+        "differences": {
+          "preimage_minus_mapped_answer": {
+            "delta": 0.06692487370219469,
+            "ci95": [
+              0.02899896938610611,
+              0.10439497325695796
+            ]
+          },
+          "preimage_minus_context_native": {
+            "delta": 0.0031230043478743252,
+            "ci95": [
+              -0.04103818691350906,
+              0.048862475270789206
+            ]
+          },
+          "mapped_answer_minus_context_native": {
+            "delta": -0.06380186935432036,
+            "ci95": [
+              -0.11610259452657538,
+              -0.015793659296764417
+            ]
+          }
+        }
+      },
+      "regression": {
+        "rung": "aita",
+        "n": 1304,
+        "n_groups": 1304,
+        "informative": true,
+        "arms": {
+          "raw_context": {
+            "rho": 0.7598062166979448,
+            "ci95": [
+              0.7301860656091455,
+              0.7882264710061089
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "context_covariance": {
+            "rho": 0.7299816831073277,
+            "ci95": [
+              0.6986473592053293,
+              0.7601509649604998
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "mapped_answer": {
+            "rho": 0.7457360310875906,
+            "ci95": [
+              0.7145143492280871,
+              0.774912209652685
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed0": {
+            "rho": 0.7439245517729838,
+            "ci95": [
+              0.7129008264075805,
+              0.7733323626714109
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed1": {
+            "rho": 0.7495311121357371,
+            "ci95": [
+              0.7194489827545014,
+              0.779014200943203
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed2": {
+            "rho": 0.7447562002709478,
+            "ci95": [
+              0.7138000167075533,
+              0.7745018893084468
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed3": {
+            "rho": 0.748285707250475,
+            "ci95": [
+              0.7173960127390779,
+              0.7777226638042529
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed4": {
+            "rho": 0.7487417221776564,
+            "ci95": [
+              0.718021262779181,
+              0.7777381150824809
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_mean": {
+            "rho": 0.7470478587215601,
+            "ci95": [
+              0.716784550883025,
+              0.7757911316618961
+            ],
+            "seed_rhos": [
+              0.7439245517729838,
+              0.7495311121357371,
+              0.7447562002709478,
+              0.748285707250475,
+              0.7487417221776564
+            ],
+            "seed_sd": 0.002528573444491238
+          }
+        },
+        "differences": {
+          "mapped_answer_minus_raw_context": {
+            "delta": -0.014070185610354224,
+            "ci95": [
+              -0.023712816644328533,
+              -0.004655841262113178
+            ]
+          },
+          "mapped_answer_minus_context_covariance": {
+            "delta": 0.015754347980262873,
+            "ci95": [
+              0.0029393295012459606,
+              0.027919951326579793
+            ]
+          },
+          "context_covariance_minus_raw_context": {
+            "delta": -0.029824533590617097,
+            "ci95": [
+              -0.04167047456205709,
+              -0.018923134905549564
+            ]
+          },
+          "mapped_answer_minus_shuffled_mean": {
+            "delta": -0.0013118276339695312,
+            "ci95": [
+              -0.01149886645835323,
+              0.009001597789301964
+            ]
+          }
+        }
+      }
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "NQ-Open",
+      "n": 3164,
+      "fixed": {
+        "rung": "nqopen",
+        "n": 3164,
+        "n_groups": 2844,
+        "informative": true,
+        "arms": {
+          "preimage": {
+            "rho": -0.17128835395325726,
+            "ci95": [
+              -0.20584518644390976,
+              -0.13469226677022922
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "mapped_answer": {
+            "rho": -0.08463577413152112,
+            "ci95": [
+              -0.1197735655450555,
+              -0.0483358650382066
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "context_native": {
+            "rho": -0.12690757863741656,
+            "ci95": [
+              -0.16405498580644842,
+              -0.0878528346215255
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "answer_direction_on_context": {
+            "rho": -0.13275554990589777,
+            "ci95": [
+              -0.16898231160575808,
+              -0.09602522211782019
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank189": {
+            "rho": -0.106180406750614,
+            "ci95": [
+              -0.14225329376179913,
+              -0.068877439772702
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank378": {
+            "rho": -0.17128835395325726,
+            "ci95": [
+              -0.20584518644390976,
+              -0.13469226677022922
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank756": {
+            "rho": -0.16199182127834774,
+            "ci95": [
+              -0.1970512976389993,
+              -0.12256477274072064
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank3584": {
+            "rho": -0.04782083986127835,
+            "ci95": [
+              -0.08372486617479459,
+              -0.007172109156005913
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "real_answer": {
+            "rho": -0.009030505664167387,
+            "ci95": [
+              -0.04327475020960738,
+              0.02736870104942677
+            ],
+            "valid_bootstrap_draws": 2000
+          }
+        },
+        "differences": {
+          "preimage_minus_mapped_answer": {
+            "delta": -0.08665257982173613,
+            "ci95": [
+              -0.10650537066448015,
+              -0.06715799482081637
+            ]
+          },
+          "preimage_minus_context_native": {
+            "delta": -0.0443807753158407,
+            "ci95": [
+              -0.06270142963582816,
+              -0.025754584900717994
+            ]
+          },
+          "mapped_answer_minus_context_native": {
+            "delta": 0.04227180450589543,
+            "ci95": [
+              0.017884812227407287,
+              0.06601338942494342
+            ]
+          }
+        }
+      },
+      "regression": {
+        "rung": "nqopen",
+        "n": 3164,
+        "n_groups": 2844,
+        "informative": true,
+        "arms": {
+          "raw_context": {
+            "rho": 0.4260263212671776,
+            "ci95": [
+              0.39549349511760473,
+              0.454522362930006
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "context_covariance": {
+            "rho": 0.42591123910645434,
+            "ci95": [
+              0.394121067561313,
+              0.4551245853011549
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "mapped_answer": {
+            "rho": 0.43111755408943336,
+            "ci95": [
+              0.39907203132546387,
+              0.4601029601917483
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed0": {
+            "rho": 0.41783187074685924,
+            "ci95": [
+              0.38620519650639884,
+              0.44668168537291086
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed1": {
+            "rho": 0.41975747629717897,
+            "ci95": [
+              0.38800073525467366,
+              0.44780685897039924
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed2": {
+            "rho": 0.424421310241199,
+            "ci95": [
+              0.3932277283804096,
+              0.4531367185930147
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed3": {
+            "rho": 0.41761646709391487,
+            "ci95": [
+              0.38584694813800735,
+              0.44645521996574794
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed4": {
+            "rho": 0.41496835321319364,
+            "ci95": [
+              0.38346680594029087,
+              0.443660922168365
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_mean": {
+            "rho": 0.4189190955184691,
+            "ci95": [
+              0.38772048160685646,
+              0.4474022275810093
+            ],
+            "seed_rhos": [
+              0.41783187074685924,
+              0.41975747629717897,
+              0.424421310241199,
+              0.41761646709391487,
+              0.41496835321319364
+            ],
+            "seed_sd": 0.003516550599105886
+          }
+        },
+        "differences": {
+          "mapped_answer_minus_raw_context": {
+            "delta": 0.005091232822255765,
+            "ci95": [
+              -0.0024528476245255057,
+              0.013494917539173824
+            ]
+          },
+          "mapped_answer_minus_context_covariance": {
+            "delta": 0.005206314982979021,
+            "ci95": [
+              -0.00773322611986034,
+              0.018989610128901883
+            ]
+          },
+          "context_covariance_minus_raw_context": {
+            "delta": -0.00011508216072325661,
+            "ci95": [
+              -0.011531014333958377,
+              0.012062759190014536
+            ]
+          },
+          "mapped_answer_minus_shuffled_mean": {
+            "delta": 0.012198458570964243,
+            "ci95": [
+              0.0026504877189819655,
+              0.02213340671302537
+            ]
+          }
+        }
+      }
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "SimpleQA",
+      "n": 4021,
+      "fixed": {
+        "rung": "simpleqa",
+        "n": 4021,
+        "n_groups": 3419,
+        "informative": true,
+        "arms": {
+          "preimage": {
+            "rho": 0.4346389027308943,
+            "ci95": [
+              0.4070931744930721,
+              0.46344028910635
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "mapped_answer": {
+            "rho": 0.4491818245310722,
+            "ci95": [
+              0.422072774478213,
+              0.477929592055215
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "context_native": {
+            "rho": 0.5065271546145845,
+            "ci95": [
+              0.47949938268352105,
+              0.5336169298447966
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "answer_direction_on_context": {
+            "rho": 0.46414936384923894,
+            "ci95": [
+              0.4352863952750986,
+              0.49361583367528117
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank189": {
+            "rho": 0.4714357531253014,
+            "ci95": [
+              0.4439085058517856,
+              0.4992033811759277
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank378": {
+            "rho": 0.4346389027308943,
+            "ci95": [
+              0.4070931744930721,
+              0.46344028910635
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank756": {
+            "rho": 0.43285055008467677,
+            "ci95": [
+              0.4047463429523763,
+              0.4616898569081725
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "inverse_rank3584": {
+            "rho": 0.5407144631281381,
+            "ci95": [
+              0.5141454650489526,
+              0.5673712938320721
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "real_answer": {
+            "rho": 0.6050385630065428,
+            "ci95": [
+              0.5799991204722551,
+              0.630943173326192
+            ],
+            "valid_bootstrap_draws": 2000
+          }
+        },
+        "differences": {
+          "preimage_minus_mapped_answer": {
+            "delta": -0.01454292180017791,
+            "ci95": [
+              -0.023107923610283368,
+              -0.0060534437899126105
+            ]
+          },
+          "preimage_minus_context_native": {
+            "delta": -0.07188825188369025,
+            "ci95": [
+              -0.08107857390567366,
+              -0.06349616898193937
+            ]
+          },
+          "mapped_answer_minus_context_native": {
+            "delta": -0.057345330083512336,
+            "ci95": [
+              -0.06752989927786124,
+              -0.047320698543519286
+            ]
+          }
+        }
+      },
+      "regression": {
+        "rung": "simpleqa",
+        "n": 4021,
+        "n_groups": 3419,
+        "informative": true,
+        "arms": {
+          "raw_context": {
+            "rho": 0.35799912668054623,
+            "ci95": [
+              0.33105661813944026,
+              0.3861642354933063
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "context_covariance": {
+            "rho": 0.39247666254012825,
+            "ci95": [
+              0.36569586368620266,
+              0.41933676856957625
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "mapped_answer": {
+            "rho": 0.3330384164182184,
+            "ci95": [
+              0.304578092549528,
+              0.3617935994342513
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed0": {
+            "rho": 0.3437212069054121,
+            "ci95": [
+              0.3158776280142679,
+              0.37271687258316194
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed1": {
+            "rho": 0.36400018484776936,
+            "ci95": [
+              0.3369933523740229,
+              0.3920610891944268
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed2": {
+            "rho": 0.35974514575888084,
+            "ci95": [
+              0.3327505692602162,
+              0.3875611483003053
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed3": {
+            "rho": 0.358263261326725,
+            "ci95": [
+              0.33153582862924136,
+              0.3865718965632297
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_seed4": {
+            "rho": 0.3617870321101332,
+            "ci95": [
+              0.33413476840975975,
+              0.39001305903237826
+            ],
+            "valid_bootstrap_draws": 2000
+          },
+          "shuffled_mean": {
+            "rho": 0.35750336618978407,
+            "ci95": [
+              0.33032208935149737,
+              0.38546003913010995
+            ],
+            "seed_rhos": [
+              0.3437212069054121,
+              0.36400018484776936,
+              0.35974514575888084,
+              0.358263261326725,
+              0.3617870321101332
+            ],
+            "seed_sd": 0.008001708836043607
+          }
+        },
+        "differences": {
+          "mapped_answer_minus_raw_context": {
+            "delta": -0.024960710262327823,
+            "ci95": [
+              -0.03442326096917916,
+              -0.015437642594173932
+            ]
+          },
+          "mapped_answer_minus_context_covariance": {
+            "delta": -0.05943824612190984,
+            "ci95": [
+              -0.07522149860828671,
+              -0.04464076774395568
+            ]
+          },
+          "context_covariance_minus_raw_context": {
+            "delta": 0.03447753585958202,
+            "ci95": [
+              0.023563406334143132,
+              0.046230138279769815
+            ]
+          },
+          "mapped_answer_minus_shuffled_mean": {
+            "delta": -0.02446494977156566,
+            "ci95": [
+              -0.0347778442530374,
+              -0.014169057350427509
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      4.714
+    ],
+    "exported_size_inches": [
+      13.095,
+      4.751
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c5_behavior_controls.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  \u00b7  PREIMAGE COMPARISONS",
+      "Difference in Spearman $\\rho$",
+      "\u22120.1",
+      "0.0",
+      "0.1",
+      "HH-RLHF",
+      "ToxicChat",
+      "AITA",
+      "NQ-Open",
+      "SimpleQA",
+      "Preimage \u2212 context direction",
+      "Preimage \u2212 predicted answer",
+      "B  \u00b7  REGRESSION COMPARISONS",
+      "\u22120.05",
+      "0.00",
+      "0.05",
+      "0.10",
+      "0.15",
+      "Predicted answer \u2212 context",
+      "Predicted answer \u2212 covariance",
+      "Predicted answer \u2212 shuffled"
+    ]
+  },
+  "renderer_sha256": "a381cfd976444595c5c12cf40a6f4b419be314df1c6e6b239f04dfc107c9b10f",
+  "pdf_sha256": "93d2749ed19929154948f404ac6381ba2ff54b8b8d81a8eabf646ad1cc62de32",
+  "png_sha256": "51575a7056d8712f6e9e4ffcd60e784d0218932414af9ad46ff957b8d75da10e",
+  "grayscale_sha256": "2c3be8c2b9728172a1f7740fb9050853a19d221e0047c61e5b8834b2fa914fcf"
+}
