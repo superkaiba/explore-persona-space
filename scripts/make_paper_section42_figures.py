@@ -252,6 +252,7 @@ def _draw_property_rows(
     xlabel: str,
     extra_group: dict | None = None,
     xticks: list[float] | None = None,
+    ypad: float = 0.62,
 ) -> None:
     """Feature-property concordance as one horizontal bar per property.
 
@@ -263,6 +264,9 @@ def _draw_property_rows(
     ``c3_features_and_shifts``.
 
     ``xticks`` pins the tick locations; the default five fit only a wide panel.
+    ``ypad`` is the room above the first bar and below the last, in row units;
+    it sets the panel's row pitch for a given plot-box height, so a figure that
+    shares its rhythm with a sibling column passes the sibling's value.
 
     ``extra_group`` carries rows measured on a DIFFERENT population under the
     same statistic.  They are pushed below a one-row gap, backed by the shaded
@@ -320,7 +324,7 @@ def _draw_property_rows(
         )
         y = np.concatenate([y, extra_y])
         labels = labels + [row["label"] for row in extra_rows]
-        ax.set_ylim(extra_y[-1] - 0.62, float(y.max()) + 0.62)
+        ax.set_ylim(extra_y[-1] - ypad, float(y.max()) + ypad)
     ax.axvline(0, color=INK, lw=1.2)
     ax.set_yticks(y, labels)
     ax.set_xlim(-0.17, 0.37)
@@ -1017,10 +1021,16 @@ def _style_row_axis(
     xlabel: str,
     xticks: list[float] | None,
     ytick_labels: list[str] | None,
+    ypad: float = 0.6,
 ) -> None:
-    """Shared axis treatment of a row-per-element column: limits, ticks and row labels."""
+    """Shared axis treatment of a row-per-element column: limits, ticks and row labels.
+
+    ``ypad`` is the room above the first row and below the last, in row units.
+    The default keeps the rhythm the nine-row figures were tuned on; a figure
+    whose canvas height the manuscript pays for passes a smaller one.
+    """
     ax.set_xlim(*xlim)
-    ax.set_ylim(-0.6, len(y) - 0.4)
+    ax.set_ylim(-ypad, len(y) - 1 + ypad)
     style_axis(ax, grid_axis="x")
     ax.set_xlabel(xlabel)
     if xticks is not None:
@@ -1039,6 +1049,7 @@ def _draw_within_pair_panel(
     xlim: tuple[float, float] = _WITHIN_PAIR_XLIM,
     xticks: list[float] | None = None,
     xlabel: str = _WITHIN_PAIR_XLABEL,
+    ypad: float = 0.6,
 ) -> list[Line2D]:
     """Three within-pair cosines per row, each with its 95% interval.
 
@@ -1086,22 +1097,33 @@ def _draw_within_pair_panel(
                 label=label,
             )
         )
-    _style_row_axis(ax, y, xlim=xlim, xlabel=xlabel, xticks=xticks, ytick_labels=ytick_labels)
+    _style_row_axis(
+        ax, y, xlim=xlim, xlabel=xlabel, xticks=xticks, ytick_labels=ytick_labels, ypad=ypad
+    )
     return handles
 
 
-def _within_pair_legend(fig: plt.Figure, handles: list[Line2D], ax: plt.Axes, y_in: float) -> None:
-    """Frameless one-row legend, centered under the plot box it explains.
+def _within_pair_legend(
+    fig: plt.Figure,
+    handles: list[Line2D],
+    ax: plt.Axes,
+    y_in: float,
+    *,
+    x_center: float | None = None,
+) -> None:
+    """Frameless one-row legend whose bottom edge sits ``y_in`` inches above the canvas floor.
 
-    Placed ``y_in`` inches above the canvas floor.  The export crops the canvas
-    vertically, so a footer sized with room to spare costs no white space in the
-    manuscript but keeps the legend clear of the axis label above it.
+    Centered on the plot box it explains by default.  ``x_center`` is a figure
+    fraction that overrides that centre, which is what a legend heading a whole
+    row of panels needs: it spans them all, so it centres on the row rather than
+    on one member of it.
     """
     position = ax.get_position()
+    centre = position.x0 + position.width / 2.0 if x_center is None else x_center
     fig.legend(
         handles=handles,
         loc="lower center",
-        bbox_to_anchor=(position.x0 + position.width / 2.0, y_in / fig.get_figheight()),
+        bbox_to_anchor=(centre, y_in / fig.get_figheight()),
         ncol=len(handles),
         frameon=False,
         handletextpad=0.5,
@@ -1151,6 +1173,7 @@ def _draw_row_metric_panel(
     bands: list[int] | None = None,
     ytick_labels: list[str] | None = None,
     xticks: list[float] | None = None,
+    ypad: float = 0.6,
 ) -> None:
     """One column of a row-per-element figure: point estimate plus its 95% interval.
 
@@ -1181,7 +1204,9 @@ def _draw_row_metric_panel(
         lw=0,
         zorder=3,
     )
-    _style_row_axis(ax, y, xlim=xlim, xlabel=xlabel, xticks=xticks, ytick_labels=ytick_labels)
+    _style_row_axis(
+        ax, y, xlim=xlim, xlabel=xlabel, xticks=xticks, ytick_labels=ytick_labels, ypad=ypad
+    )
 
 
 def _element_row_grid(
@@ -1265,26 +1290,58 @@ def make_element_shifts_figure(data: dict) -> tuple[plt.Figure, float]:
 #
 # Together those two cuts return 2.34 in to the plot boxes.  Dropping the two
 # shift columns for one within-pair cosine column leaves two metric columns
-# rather than three, so each is 2.80 in wide instead of 1.73 in; panel A keeps
+# rather than three, so each is 2.87 in wide instead of 1.73 in; panel A keeps
 # its pinned width so the SAE bars print at the size they did before.
+#
+# The shared element-row gutter and the gap between the two metric columns are
+# each cut to what their widest drawn string needs: the widest row label is
+# 1.76 in and the gutter carries an 0.11 in tick pad, and the widest pair of
+# neighbouring tick labels leaves 0.30 in between the two columns.  The 0.14 in
+# that returns goes to the metric columns, which is also what lets panel C's
+# axis label set on two lines instead of three (a wider column moves its centre
+# left, away from the canvas edge the label would otherwise cross).
 _FS_LEFT_MARGIN_IN = 0.06
 _FS_A_LABEL_IN = 2.30
-_FS_BC_LABEL_IN = 2.10
+_FS_BC_LABEL_IN = 2.00
 _FS_A_WIDTH_IN = 2.45
-_FS_COL_GAP_IN = 0.40
+_FS_COL_GAP_IN = 0.34
 _FS_RIGHT_MARGIN_IN = 0.20
-# Panel A carries the separate-dictionary group kicker inside its plot box and
-# a signed axis, neither of which the two metric columns have.
-# No figure-level provenance eyebrow (model and read layer live in the
-# caption), so the header keeps only the panel kicker: 0.20 in of offset plus
-# one 13 pt line, and about 0.10 in of top margin.
-_FS_HEADER_IN = 0.52
-# Room under the axis labels for the within-pair legend.  The export crops the
-# canvas vertically, so the slack costs the manuscript nothing.
-_FS_FOOTER_IN = 1.62
-_FS_KICKER_OFF_IN = 0.20
-_FS_XLABEL_OFF_IN = 0.34
-_FS_LEGEND_Y_IN = 0.22
+# Header, in inches above the plot boxes.  The within-pair legend heads the
+# figure as one frameless row above the panel kickers, which is the form the
+# figure standard gives a multi-panel figure (section 2.5).  Below it sits the
+# kicker line, then the plot boxes:
+#
+#   0.10 kicker offset + 0.17 kicker line + 0.06 gap + 0.22 legend row,
+#
+# plus about 0.07 in of top margin the export crops away.  Reading the legend
+# once, before the panels, also costs less height than the separate bottom band
+# it replaces: that band sat below three axis labels of different depths, so it
+# carried the deepest one's slack under the other two.
+_FS_KICKER_OFF_IN = 0.10
+_FS_KICKER_LINE_IN = 0.17
+_FS_LEGEND_GAP_IN = 0.06
+_FS_LEGEND_ROW_IN = 0.22
+_FS_HEADER_TOP_MARGIN_IN = 0.07
+_FS_HEADER_IN = (
+    _FS_KICKER_OFF_IN
+    + _FS_KICKER_LINE_IN
+    + _FS_LEGEND_GAP_IN
+    + _FS_LEGEND_ROW_IN
+    + _FS_HEADER_TOP_MARGIN_IN
+)
+# Footer, in inches below the plot boxes: the x tick pad and one line of tick
+# labels (0.30 in together), then the deepest axis label, which is panel A's
+# two lines at 0.60 in.  0.98 in leaves that clear with room the export crops.
+_FS_FOOTER_IN = 0.98
+_FS_XTICK_PAD_PT = 6
+_FS_XLABEL_OFF_IN = 0.315
+# Leading inside a wrapped axis label, tighter than the matplotlib default so
+# the two lines bind into one block.  Same reason as the wrapped row labels.
+_FS_XLABEL_LINESPACING = 0.95
+# Room above the first row and below the last, in row units.  0.5 puts the two
+# metric columns on exactly seven row units, which is also what panel A's six
+# bars and their one-row group gap span, so all three columns share one pitch.
+_FS_ROW_YPAD = 0.5
 
 # Rows drawn by this figure: the two same-decision rows are not among them, so
 # it keeps its own group tuple rather than sharing the nine-row one above.
@@ -1381,9 +1438,21 @@ def _fs_wrap_labels(properties: list[dict]) -> list[dict]:
     return wrapped
 
 
+def _fs_tune_x_ticks(ax: plt.Axes) -> None:
+    """The figure's own x tick pad, tighter than the shared one.
+
+    The row labels keep the shared pad; only the x tick labels move, and they
+    move by 2 pt, which buys the axis labels below them the same amount on a
+    canvas the manuscript pays for by the inch.  Panel C's two segments both
+    take it, so their tick labels stay on one line.
+    """
+    ax.tick_params(axis="x", pad=_FS_XTICK_PAD_PT)
+
+
 def _fs_place_xlabel(ax: plt.Axes, *, x_axes: float, plot_h_in: float) -> None:
-    """One x-label offset below every plot box, so all four labels share a top edge."""
+    """One x-label offset below every plot box, so all three labels share a top edge."""
     ax.xaxis.set_label_coords(x_axes, -_FS_XLABEL_OFF_IN / plot_h_in)
+    ax.xaxis.label.set_linespacing(_FS_XLABEL_LINESPACING)
 
 
 def _fs_assert_in_segments(
@@ -1464,13 +1533,21 @@ def make_features_and_shifts_figure(
     controlled context change.  Seven element rows; the two same-decision rows
     are not drawn here.
 
-    Three panels across leave each metric column about 2.8 in wide on the
-    13.10 in canvas, with about 3.2 in of pitch from one column's left edge to
+    Three panels across leave each metric column about 2.87 in wide on the
+    13.10 in canvas, with about 3.21 in of pitch from one column's left edge to
     the next.  Descriptive panel titles still do not fit that pitch: the ones
     the stacked layout carried measure 3.40 in to 4.46 in, so they would
     overlap their neighbours.  Each panel therefore carries its letter and the
     estimator as a kicker, and the x-axis label states the metric in full, in
     the same words the other Section 4.2 figures use.
+
+    The canvas is 4.96 in tall against the 5.60 in the figure was authored at
+    before, which prints as 2.04 in rather than 2.21 in at the manuscript's
+    text width.  The height came off the furniture, not the data: the legend
+    moved from a band of its own under the panels to one row above them, panel
+    C's axis label set on two lines instead of three, and the row padding above
+    the first row and below the last came down to half a row.  Every plotted
+    value, axis range and row pitch is unchanged.
     """
     rows, _bands = _fs_grouped_rows(elements, _FEATURES_AND_SHIFTS_GROUPS)
     # Panels B and C carry no row-group stripes (removed 2026-09-16 on request);
@@ -1478,7 +1555,7 @@ def make_features_and_shifts_figure(
     # Row pitch is pinned, so the canvas follows the row count instead of
     # squeezing the rows: the element labels wrap to two lines and clear their
     # neighbours, and panel A's six bars inherit the same pitch.
-    plot_h_in = L.WRAPPED_ROW_PITCH_IN * (len(rows) + 0.2)
+    plot_h_in = L.WRAPPED_ROW_PITCH_IN * len(rows)
     height_in = _FS_HEADER_IN + plot_h_in + _FS_FOOTER_IN
     fig, include_frac = c2a_figure("full", aspect=height_in / canvas_width_in(1.0))
     height_in = fig.get_figheight()
@@ -1508,7 +1585,9 @@ def make_features_and_shifts_figure(
         # the widest label ("+0.3") is 0.52 in, so they would collide.  The zero
         # line is drawn as a rule, so it needs no tick of its own.
         xticks=[-0.1, 0.1, 0.3],
+        ypad=_FS_ROW_YPAD,
     )
+    _fs_tune_x_ticks(ax_a)
     for label in ax_a.get_yticklabels():
         label.set_linespacing(L.WRAPPED_TICK_LINESPACING)
     _fs_place_xlabel(ax_a, x_axes=0.5, plot_h_in=plot_h_in)
@@ -1524,7 +1603,9 @@ def make_features_and_shifts_figure(
         xticks=_WITHIN_PAIR_XTICKS,
         # The two metric columns share one label column, drawn on the first.
         ytick_labels=[L.tick_label(row["row"]) for row in rows],
+        ypad=_FS_ROW_YPAD,
     )
+    _fs_tune_x_ticks(ax_b)
     _fs_place_xlabel(ax_b, x_axes=0.5, plot_h_in=plot_h_in)
     panel_header(ax_b, next(letters), "mean cosine", kicker_y=kicker_y)
 
@@ -1561,7 +1642,9 @@ def make_features_and_shifts_figure(
             reference=(_FS_TWOWAY_REFERENCE if low <= _FS_TWOWAY_REFERENCE <= high else None),
             bands=None,
             xticks=list(ticks),
+            ypad=_FS_ROW_YPAD,
         )
+        _fs_tune_x_ticks(ax)
         segments.append(ax)
     chance_ax, data_ax = segments
     chance_ax.spines["right"].set_visible(False)
@@ -1570,14 +1653,23 @@ def make_features_and_shifts_figure(
     _fs_draw_cut_marks(chance_ax, data_ax)
     positions = [ax.get_position() for ax in segments]
     center = (positions[0].x0 + positions[-1].x1) / 2.0
-    chance_ax.set_xlabel(better_label("Two-way\ndiscrimination\nrate"))
+    # Two lines, not three, and broken after "Two-way" rather than before
+    # "rate": the metric name stays whole and the block measures 2.73 in, which
+    # is inside the 2.87 in column, so it clears the canvas edge.
+    chance_ax.set_xlabel(better_label("Two-way\ndiscrimination rate"))
     _fs_place_xlabel(
         chance_ax,
         x_axes=(center - positions[0].x0) / positions[0].width,
         plot_h_in=plot_h_in,
     )
     panel_header(chance_ax, next(letters), "rate", kicker_y=kicker_y)
-    _within_pair_legend(fig, handles, ax_b, _FS_LEGEND_Y_IN)
+    # One frameless legend row above the panel kickers, centered on the band of
+    # plot boxes it explains rather than on any one of them.
+    legend_y_in = (
+        height_in - _FS_HEADER_IN + _FS_KICKER_OFF_IN + _FS_KICKER_LINE_IN + _FS_LEGEND_GAP_IN
+    )
+    band_centre = (boxes[0][0] + boxes[-1][1]) / 2.0
+    _within_pair_legend(fig, handles, ax_b, legend_y_in, x_center=band_centre)
 
     return fig, include_frac
 
