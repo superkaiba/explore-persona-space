@@ -1,0 +1,60 @@
+defaults:
+  - override hydra/job_logging: disabled
+  - _self_
+phase: capture
+model_key: qwen
+model: ${models.${model_key}}
+models:
+  qwen:
+    id: Qwen/Qwen3.8-27B
+    revision: 1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0
+    transformers_version: 5.15.0
+    torch_version: 2.8.0+cu128
+    triton_version: 3.4.0
+    layers: 64
+    hidden_dim: 5120
+    enable_thinking: false
+    execution_mode: unpadded_singleton
+    expected_tokens: {min: 56, max: 188, total: 214448}
+  deepseek:
+    id: deepseek-ai/DeepSeek-V3.1-Base
+    revision: d3d4eafdc470de44bbf6f0a74f852eb522357be8
+    transformers_version: 5.15.0
+    torch_version: 2.9.1+cu128
+    triton_version: 3.5.1
+    layers: 61
+    hidden_dim: 7168
+    execution_mode: padded_batch
+    bos_token_id: 0
+    eos_token_id: 1
+    add_special_tokens: true
+    add_bos_token: false
+    expected_tokens: {min: 44, max: 173, total: 188744}
+    gpu_count: 8
+    min_gpu_bytes: 130000000000
+    min_host_bytes: 1000000000000
+    max_parameter_gib_per_gpu: 120
+    kernel_repo: kernels-community/finegrained-fp8
+    kernel_revision: 8c178950e8710e26a2210e4e909cd02dc16c8715
+    kernel_repo_type: kernel
+    kernels_version: 0.17.1
+    experts_implementation: grouped_mm
+prompts: configs/pilots/story_persona_deepseek_prompts.json
+questions: data/assistant_axis/extraction_questions.jsonl
+expected_questions: 240
+capture:
+  batch_rows: 8
+  padded_token_budget: 4096
+  max_context_tokens: 2048
+  parity_relative_tolerance: 0.01
+  repeatability_relative_tolerance: 0.00001
+  # Pilot assumptions, not measured throughput claims. Slowest warmed batch × margin.
+  timing_batches: 3
+  projection_margin: 1.25
+  preservation_reserve_seconds: 900
+  checkpoint_every_chunks: 25
+output_dir: ${oc.env:EPS_STORY_PERSONA_OUT,eval_results/story_persona_crossmodel}
+hydra:
+  run:
+    dir: .
+  output_subdir: null

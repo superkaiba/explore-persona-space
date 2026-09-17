@@ -7,11 +7,99 @@ from dataclasses import asdict
 import json
 import os
 from pathlib import Path
+import re
 import shlex
 import signal
 import subprocess
 import sys
 import time
+
+PROGRESS_STALL = "no fresh staging/capture/analysis/publication progress for 900 seconds"
+
+
+def uv_cache_progress(root: Path, *, max_entries=100000, budget_seconds=5) -> dict:
+    """Bound the cache walk and measure allocated file bytes, never log heartbeats."""
+    started = time.monotonic()
+    stack = [root]
+    allocated, files, entries = 0, 0, 0
+    complete = True
+    while stack:
+        directory = stack.pop()
+        try:
+            with os.scandir(directory) as scan:
+                for entry in scan:
+                    entries += 1
+                    if entries > max_entries or time.monotonic() - started > budget_seconds:
+                        return {"allocated_bytes": allocated, "files": files, "complete": False}
+                    try:
+                        if entry.is_dir(follow_symlinks=False):
+                            stack.append(Path(entry.path))
+                        elif entry.is_file(follow_symlinks=False):
+                            allocated += entry.stat(follow_symlinks=False).st_blocks * 512
+                            files += 1
+                    except FileNotFoundError:
+                        # UV can atomically rename an extraction directory mid-scan.
+                        complete = False
+        except FileNotFoundError:
+            if directory != root:
+                complete = False
+    return {"allocated_bytes": allocated, "files": files, "complete": complete}
+
+
+def loading_counters(tail: str) -> dict:
+    """Read actual model-loading counters from tqdm, including carriage-return logs."""
+    counters = {}
+    clean = re.sub(r"\x1b\[[0-9;]*[A-Za-z]", "", tail)
+    for line in clean.splitlines():
+        match = re.search(
+            r"(Loading checkpoint shards|Loading weights):[^\r\n]*?\b([\d,]+)/([\d,]+)\b",
+            line,
+        )
+        if match:
+            name, completed, total = match.groups()
+            completed, total = int(completed.replace(",", "")), int(total.replace(",", ""))
+            if 0 <= completed <= total and total > 0:
+                counters[name] = {"completed": completed, "total": total}
+    return counters
+
+
+def apply_loading_progress(observed: dict, previous: dict, *, now: float) -> None:
+    """Use advancing real counters to resolve only generic progress/log staleness."""
+    pilot = observed.get("pilot", {})
+    if not pilot.get("pids"):
+        return
+    old = previous.get("pilot", {})
+    current_uv, old_uv = pilot.get("uv_cache", {}), old.get("uv_cache", {})
+    uv_grew = (
+        current_uv.get("complete") is True
+        and old_uv.get("complete") is True
+        and current_uv["allocated_bytes"] > old_uv["allocated_bytes"]
+    )
+    loading_advanced = any(
+        name in old.get("loading_counters", {})
+        and counter["total"] == old["loading_counters"][name]["total"]
+        and counter["completed"] > old["loading_counters"][name]["completed"]
+        for name, counter in pilot.get("loading_counters", {}).items()
+    )
+    recent = []
+    for key, advanced, phase in (
+        ("last_uv_growth_at", uv_grew, "runtime_bootstrap"),
+        ("last_loading_progress_at", loading_advanced, "model_loading"),
+    ):
+        timestamp = now if advanced else old.get(key)
+        if timestamp is not None:
+            pilot[key] = timestamp
+            if 0 <= now - timestamp < 900:
+                recent.append((timestamp, phase))
+    if (
+        recent
+        and observed.get("stall_reason") in {None, PROGRESS_STALL}
+        and not observed.get("reachability_alarm")
+        and observed.get("status") in {"running", "pending", "stalled"}
+        and (observed.get("status") != "stalled" or observed.get("log_only_backend_stall"))
+    ):
+        observed.pop("stall_reason", None)
+        observed.update(status="pending", current_phase=max(recent)[1])
 
 
 def write_json(path: Path, value: dict) -> None:
@@ -70,6 +158,10 @@ def remote_probe(out: Path, log: Path) -> dict:
                     b"/story_persona_qwen38_pilot.py",
                     b"/story_persona_qwen38_artifacts.py",
                     b"/story_persona_qwen38_workload.sh",
+                    b"/story_persona_crossmodel_capture.py",
+                    b"/story_persona_crossmodel_analysis.py",
+                    b"/story_persona_crossmodel_artifacts.py",
+                    b"/story_persona_crossmodel_workload.sh",
                 )
             )
             for arg in argv
@@ -78,24 +170,32 @@ def remote_probe(out: Path, log: Path) -> dict:
             if b"--phase" in argv:
                 position = argv.index(b"--phase") + 1
                 stages.append(argv[position].decode())
+            stages.extend(
+                arg.split(b"=", 1)[1].decode() for arg in argv if arg.startswith(b"phase=")
+            )
     values = {}
-    for name in ("progress.json", "smoke.json", "capture_complete.json"):
+    for name in ("progress.json", "smoke.json", "capture_complete.json", "analysis_complete.json"):
         path = out / name
         if path.exists():
             values[name] = json.loads(path.read_text())
     chunks = list((out / "chunks").glob("batch_*.pt"))
-    cache = Path("/workspace/.cache/huggingface/hub/models--Qwen--Qwen3.8-27B/blobs")
-    cache_files = list(cache.glob("*")) if cache.exists() else []
+    cache_root = Path("/workspace/.cache/huggingface/hub")
+    cache_files = [
+        p
+        for model_dir in ("models--Qwen--Qwen3.8-27B", "models--deepseek-ai--DeepSeek-V3.1-Base")
+        for p in (cache_root / model_dir / "blobs").glob("*")
+    ]
     local_outputs = list(out.iterdir()) if out.exists() else []
     activity = [p.stat().st_mtime for p in chunks + cache_files + local_outputs if p.is_file()]
     if out.exists():
         activity.append(out.stat().st_mtime)
-    log_age, errors = None, []
+    log_age, errors, counters = None, [], {}
     if log.exists():
         log_age = now - log.stat().st_mtime
         with log.open("rb") as stream:
             stream.seek(max(0, log.stat().st_size - 32768))
             tail = stream.read().decode(errors="replace")
+        counters = loading_counters(tail)
         errors = [
             line
             for line in tail.splitlines()
@@ -113,6 +213,8 @@ def remote_probe(out: Path, log: Path) -> dict:
         chunk_count=len(chunks),
         chunk_bytes=sum(p.stat().st_size for p in chunks),
         model_cache_bytes=sum(p.stat().st_size for p in cache_files if p.is_file()),
+        uv_cache=uv_cache_progress(Path("/workspace/.cache/uv")),
+        loading_counters=counters,
         model_cache_age_seconds=(
             now - max(p.stat().st_mtime for p in cache_files if p.is_file())
             if any(p.is_file() for p in cache_files)
@@ -136,8 +238,11 @@ def probe_backend(handle_path: Path, out: Path) -> dict:
 
     handle = RunHandle(**json.loads(handle_path.read_text()))
     observed = asdict(_resolve_backend(handle.backend).poll(handle))
-    if observed["status"] not in {"running", "pending", "queued"}:
+    if observed["status"] not in {"running", "pending", "queued", "stalled"}:
         return observed
+    observed["log_only_backend_stall"] = observed["status"] == "stalled" and not observed.get(
+        "stall_reason"
+    )
     probe = shlex.join(
         ["python3", "-", "--remote-probe", "--out-dir", str(out), "--log-path", handle.log_path]
     )
@@ -189,14 +294,14 @@ def probe_backend(handle_path: Path, out: Path) -> dict:
         if observed["last_log_mtime_sec_ago"] is None:
             observed["last_log_mtime_sec_ago"] = 1801
         if detail["output_age_seconds"] is None or detail["output_age_seconds"] > 900:
-            observed["stall_reason"] = (
-                "no fresh staging/capture/analysis/publication progress for 900 seconds"
-            )
+            if not observed.get("stall_reason"):
+                observed["stall_reason"] = PROGRESS_STALL
         elif (
             not detail["chunk_count"]
             and detail["model_cache_age_seconds"] is not None
             and detail["model_cache_age_seconds"] < 900
             and observed["last_log_mtime_sec_ago"] > 900
+            and not observed.get("stall_reason")
         ):
             # Capture is pending while freshly measured model files grow.
             # Preserve actual log age rather than fabricate a log heartbeat.
@@ -241,11 +346,13 @@ def monitor(config: dict) -> None:
                 ).splitlines()[-1]
             )
             pilot = observed.get("pilot", {})
-            old_pilot = previous.get("backend_observation", {}).get("pilot", {})
+            old_backend = previous.get("backend_observation", {})
+            old_pilot = old_backend.get("pilot", {})
+            apply_loading_progress(observed, old_backend, now=time.time())
             if "publish" in pilot.get("stages", []) and "network_tx_bytes" in old_pilot:
                 delta = pilot["network_tx_bytes"] - old_pilot["network_tx_bytes"]
                 pilot["network_tx_delta_bytes"] = delta
-                if delta >= 1024 * 1024:
+                if delta >= 1024 * 1024 and observed.get("stall_reason") in {None, PROGRESS_STALL}:
                     observed.pop("stall_reason", None)
                     if observed.get("last_log_mtime_sec_ago", 0) > 900:
                         observed.update(status="pending", current_phase="artifact_upload")

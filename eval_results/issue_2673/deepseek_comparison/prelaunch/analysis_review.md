@@ -1,0 +1,15 @@
+# Independent cross-model analysis review
+
+**PASS for the analysis implementation.** Reviewed `scripts/story_persona_crossmodel_analysis.py`, its focused tests, and the reused `metric_gram`, `select_ridge`, and `cosine_from_gram` functions. Nine focused tests passed in 3.97 seconds. No model execution, provider call, source edit, or task mutation was performed.
+
+The implementation reconstructs FP64 centroids from verified BF16 chunks by explicit row indices and persona/question identities. It verifies the model revision, complete eight-by-240 Cartesian product, exact chunk schedule and hashes, source prompt/question text, token metadata, capture boundary, and successful numerical smoke. The shuffled-row test checks real persisted chunks and prevents accidental dependence on storage order.
+
+The raw metric performs no mean subtraction. Full-bank and two cross-half fits use the requested uncentered second moment and symmetric metric cosine. Ridge selection uses only the fitting rows, with the inherited fixed grid and condition bound; evaluation centroids come from the disjoint question half. The registered split is first 120 versus last 120 questions in bank order, and both fold identities are persisted. Tests independently reconstruct all 12 layer/fold metrics using dense primal Cholesky with a common offset that would expose accidental centering. The production solver also checks its full-dimensional implicit residual and a clearly labeled small real-data primal oracle.
+
+Pairing preserves all ten signed contrasts, five per HHH/Fred stratum, the original rates and digitization bounds, secondary alternative uptake, and explicitly supplementary pooled correlations. Constant-input correlations remain undefined rather than coerced to zero. The outputs retain the shared-Helpful, generic-question, description-only, quantization/wrapper, and same-persona calibration limitations. The code clears stale analysis completion before starting and publishes a new completion manifest only after rechecking input/chunk hashes.
+
+**Publisher integration still requires verification:** the producer now emits `analysis_fingerprint` and an exact output SHA256/size inventory in `analysis_complete.json` (lines 611–624). The publisher should enforce that inventory, both NPZs, and matching analysis fingerprints, in addition to its repaired exact four-block and capture-fingerprint checks. A capture fingerprint alone cannot detect mixing outputs from different analyses of the same captured vectors. This is an integration requirement for the publisher, not a mathematical defect in the analyzer.
+
+This review does not establish that production DeepSeek FP8 capture will pass its runtime gates, nor that the resulting correlations validate prediction on unseen personas or behavior-generating contexts.
+
+Publisher integration rechecked: the current consumer now verifies the emitted analysis output manifest, byte counts/hashes, matching analysis fingerprints and complete fold sets. The noted integration requirement is resolved; six focused publisher/monitor regressions passed.

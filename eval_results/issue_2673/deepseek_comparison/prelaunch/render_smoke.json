@@ -1,0 +1,24 @@
+{
+  "qwen": {
+    "rows": 1920,
+    "batches": 240,
+    "min": 56,
+    "max": 188,
+    "total_tokens": 214448,
+    "padded_tokens": 214912,
+    "all_token_ids_persisted": true,
+    "bos_token_id": null,
+    "add_bos_token": false
+  },
+  "deepseek": {
+    "rows": 1920,
+    "batches": 240,
+    "min": 44,
+    "max": 173,
+    "total_tokens": 188744,
+    "padded_tokens": 189144,
+    "all_token_ids_persisted": true,
+    "bos_token_id": 0,
+    "add_bos_token": false
+  }
+}

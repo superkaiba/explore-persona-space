@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "torch": "2.9.1+cpu",
+  "triton": "3.5.1",
+  "kernels": "0.17.1",
+  "repo_type": "kernel",
+  "revision": "8c178950e8710e26a2210e4e909cd02dc16c8715",
+  "module_file": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/kernels--kernels-community--finegrained-fp8/snapshots/8c178950e8710e26a2210e4e909cd02dc16c8715/build/torch-cuda/__init__.py",
+  "symbols": {
+    "matmul_2d": true,
+    "matmul_batched": true,
+    "matmul_grouped": true
+  },
+  "cuda_available": false,
+  "coverage": "Python API import only in CPU wheel; actual GPU arch/kernel execution remains untested",
+  "build_sha256": {
+    "__init__.py": "ce17d7a851e967594fbf4854c1a3a1247c66703ab641c13d47ef5c8157cb4c8e",
+    "_ops.py": "ebedf77d611c471e7131056e0f33dbe7cafd04e77416cbf95ede43c627bc20ae",
+    "batched.py": "d59bbd36d2b9798e09a3a86f9f3002438f6e98eb005646170fdd39a75fc175ea",
+    "bayesian_autotuner.py": "8c1518bf27e9107b13060165a6dd93b397a6cfe092332be37354f151f64a56b8",
+    "fused_batched.py": "e712ca6aff1d589a9162429d546c75e2e2fd168331a9e1c21153320407672034",
+    "fused_grouped.py": "55893766cd9c34a4fe9b56254f3c8cdb0de2cdb8128bb5766724c1cefa6f31d0",
+    "grouped.py": "382b03b38f0d0531d4fc6d2ce5e7441576ff9b9a38f3e3200f616ac060c69206",
+    "matmul.py": "0f668b5d9e0e7db0675ea4518052b9320830f64f2468f2ecbcae7d0876336807",
+    "utils.py": "2cb87f98ab385e41c95fdf1e1bec777a25c8e0bb003a357a72c07a53c2b7b5d0"
+  }
+}
