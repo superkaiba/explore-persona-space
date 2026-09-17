@@ -1,0 +1,550 @@
+{
+  "results": [
+    {
+      "rung": "nqopen",
+      "n": 3164,
+      "n_groups": 2844,
+      "informative": true,
+      "arms": {
+        "raw_context": {
+          "rho": 0.4260263212671776,
+          "ci95": [
+            0.39549349511760473,
+            0.454522362930006
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "context_covariance": {
+          "rho": 0.42591123910645434,
+          "ci95": [
+            0.394121067561313,
+            0.4551245853011549
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "mapped_answer": {
+          "rho": 0.43111755408943336,
+          "ci95": [
+            0.39907203132546387,
+            0.4601029601917483
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed0": {
+          "rho": 0.41783187074685924,
+          "ci95": [
+            0.38620519650639884,
+            0.44668168537291086
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed1": {
+          "rho": 0.41975747629717897,
+          "ci95": [
+            0.38800073525467366,
+            0.44780685897039924
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed2": {
+          "rho": 0.424421310241199,
+          "ci95": [
+            0.3932277283804096,
+            0.4531367185930147
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed3": {
+          "rho": 0.41761646709391487,
+          "ci95": [
+            0.38584694813800735,
+            0.44645521996574794
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed4": {
+          "rho": 0.41496835321319364,
+          "ci95": [
+            0.38346680594029087,
+            0.443660922168365
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_mean": {
+          "rho": 0.4189190955184691,
+          "ci95": [
+            0.38772048160685646,
+            0.4474022275810093
+          ],
+          "seed_rhos": [
+            0.41783187074685924,
+            0.41975747629717897,
+            0.424421310241199,
+            0.41761646709391487,
+            0.41496835321319364
+          ],
+          "seed_sd": 0.003516550599105886
+        }
+      },
+      "differences": {
+        "mapped_answer_minus_raw_context": {
+          "delta": 0.005091232822255765,
+          "ci95": [
+            -0.0024528476245255057,
+            0.013494917539173824
+          ]
+        },
+        "mapped_answer_minus_context_covariance": {
+          "delta": 0.005206314982979021,
+          "ci95": [
+            -0.00773322611986034,
+            0.018989610128901883
+          ]
+        },
+        "context_covariance_minus_raw_context": {
+          "delta": -0.00011508216072325661,
+          "ci95": [
+            -0.011531014333958377,
+            0.012062759190014536
+          ]
+        },
+        "mapped_answer_minus_shuffled_mean": {
+          "delta": 0.012198458570964243,
+          "ci95": [
+            0.0026504877189819655,
+            0.02213340671302537
+          ]
+        }
+      }
+    },
+    {
+      "rung": "simpleqa",
+      "n": 4021,
+      "n_groups": 3419,
+      "informative": true,
+      "arms": {
+        "raw_context": {
+          "rho": 0.35799912668054623,
+          "ci95": [
+            0.33105661813944026,
+            0.3861642354933063
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "context_covariance": {
+          "rho": 0.39247666254012825,
+          "ci95": [
+            0.36569586368620266,
+            0.41933676856957625
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "mapped_answer": {
+          "rho": 0.3330384164182184,
+          "ci95": [
+            0.304578092549528,
+            0.3617935994342513
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed0": {
+          "rho": 0.3437212069054121,
+          "ci95": [
+            0.3158776280142679,
+            0.37271687258316194
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed1": {
+          "rho": 0.36400018484776936,
+          "ci95": [
+            0.3369933523740229,
+            0.3920610891944268
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed2": {
+          "rho": 0.35974514575888084,
+          "ci95": [
+            0.3327505692602162,
+            0.3875611483003053
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed3": {
+          "rho": 0.358263261326725,
+          "ci95": [
+            0.33153582862924136,
+            0.3865718965632297
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed4": {
+          "rho": 0.3617870321101332,
+          "ci95": [
+            0.33413476840975975,
+            0.39001305903237826
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_mean": {
+          "rho": 0.35750336618978407,
+          "ci95": [
+            0.33032208935149737,
+            0.38546003913010995
+          ],
+          "seed_rhos": [
+            0.3437212069054121,
+            0.36400018484776936,
+            0.35974514575888084,
+            0.358263261326725,
+            0.3617870321101332
+          ],
+          "seed_sd": 0.008001708836043607
+        }
+      },
+      "differences": {
+        "mapped_answer_minus_raw_context": {
+          "delta": -0.024960710262327823,
+          "ci95": [
+            -0.03442326096917916,
+            -0.015437642594173932
+          ]
+        },
+        "mapped_answer_minus_context_covariance": {
+          "delta": -0.05943824612190984,
+          "ci95": [
+            -0.07522149860828671,
+            -0.04464076774395568
+          ]
+        },
+        "context_covariance_minus_raw_context": {
+          "delta": 0.03447753585958202,
+          "ci95": [
+            0.023563406334143132,
+            0.046230138279769815
+          ]
+        },
+        "mapped_answer_minus_shuffled_mean": {
+          "delta": -0.02446494977156566,
+          "ci95": [
+            -0.0347778442530374,
+            -0.014169057350427509
+          ]
+        }
+      }
+    },
+    {
+      "rung": "wildchat_rung",
+      "n": 4,
+      "n_groups": 4,
+      "informative": false,
+      "arms": {
+        "raw_context": {
+          "rho": 1.0,
+          "ci95": [
+            1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "context_covariance": {
+          "rho": 0.6,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "mapped_answer": {
+          "rho": 0.8,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "shuffled_seed0": {
+          "rho": 1.0,
+          "ci95": [
+            1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "shuffled_seed1": {
+          "rho": 1.0,
+          "ci95": [
+            1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "shuffled_seed2": {
+          "rho": 1.0,
+          "ci95": [
+            1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "shuffled_seed3": {
+          "rho": 1.0,
+          "ci95": [
+            1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "shuffled_seed4": {
+          "rho": 1.0,
+          "ci95": [
+            1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "shuffled_mean": {
+          "rho": 1.0,
+          "ci95": [
+            1.0,
+            1.0
+          ],
+          "seed_rhos": [
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "seed_sd": 0.0
+        }
+      },
+      "differences": {
+        "mapped_answer_minus_raw_context": {
+          "delta": -0.19999999999999996,
+          "ci95": [
+            -2.0,
+            0.0
+          ]
+        },
+        "mapped_answer_minus_context_covariance": {
+          "delta": 0.20000000000000007,
+          "ci95": [
+            0.0,
+            2.0
+          ]
+        },
+        "context_covariance_minus_raw_context": {
+          "delta": -0.4,
+          "ci95": [
+            -2.0,
+            0.0
+          ]
+        },
+        "mapped_answer_minus_shuffled_mean": {
+          "delta": -0.19999999999999996,
+          "ci95": [
+            -2.0,
+            0.0
+          ]
+        }
+      }
+    }
+  ],
+  "n_boot": 2000,
+  "selected_lambdas": {
+    "raw_context": [
+      {
+        "n_train": 17556,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "10000.0": 1
+        }
+      }
+    ],
+    "context_covariance": [
+      {
+        "n_train": 17556,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "10000.0": 1
+        }
+      }
+    ],
+    "mapped_answer": [
+      {
+        "n_train": 17556,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "10000.0": 1
+        }
+      }
+    ],
+    "shuffled_seed0": [
+      {
+        "n_train": 17556,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "100.0": 1
+        }
+      }
+    ],
+    "shuffled_seed1": [
+      {
+        "n_train": 17556,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "100.0": 1
+        }
+      }
+    ],
+    "shuffled_seed2": [
+      {
+        "n_train": 17556,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "100.0": 1
+        }
+      }
+    ],
+    "shuffled_seed3": [
+      {
+        "n_train": 17556,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "100.0": 1
+        }
+      }
+    ],
+    "shuffled_seed4": [
+      {
+        "n_train": 17556,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "1000.0": 1
+        }
+      }
+    ]
+  }
+}

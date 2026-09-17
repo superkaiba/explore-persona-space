@@ -1,0 +1,170 @@
+{
+  "version": 1,
+  "name": "issue1739-million-cached",
+  "monitor_unit": "eps1739-million-cached-monitor.service",
+  "observation": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue1739-million-cached/observation.json",
+  "state_dir": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue1739-million-cached",
+  "workdir": "/home/thomasjiralerspong/.codex-worktrees/1739-covariance-ablation",
+  "runbook": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue1739-million-cached/runbook.md",
+  "codex": "/home/thomasjiralerspong/.local/bin/codex",
+  "uv_environment": "/home/thomasjiralerspong/explore-persona-space/.venv",
+  "source_sha": "2cf01b584b922c0df3db7405feffc6666f2ce60d",
+  "stale_seconds": 900,
+  "recovery_seconds": 2700,
+  "max_recoveries_per_day": 2,
+  "notify_argv": [
+    "/home/thomasjiralerspong/bin/intent-notify.sh"
+  ],
+  "inputs": "/dev/shm/issue1739-fixed-transfer",
+  "outputs": "/dev/shm/issue1739-million-cached/outputs",
+  "ram_root": "/dev/shm/issue1739-million-cached",
+  "repo_root": "/home/thomasjiralerspong/explore-persona-space",
+  "hf_prefix": "issue1739_million_cached_20260916",
+  "phases": [
+    {
+      "name": "transforms",
+      "max_seconds": 1800,
+      "command": [
+        "/home/thomasjiralerspong/explore-persona-space/.venv/bin/python",
+        "/home/thomasjiralerspong/.codex-worktrees/1739-covariance-ablation/scripts/issue1739_million_cached.py",
+        "transforms",
+        "--out",
+        "/dev/shm/issue1739-million-cached/outputs",
+        "--source-sha",
+        "2cf01b584b922c0df3db7405feffc6666f2ce60d"
+      ]
+    },
+    {
+      "name": "evil",
+      "max_seconds": 1800,
+      "command": [
+        "/home/thomasjiralerspong/explore-persona-space/.venv/bin/python",
+        "/home/thomasjiralerspong/.codex-worktrees/1739-covariance-ablation/scripts/issue1739_million_cached.py",
+        "behavior",
+        "--out",
+        "/dev/shm/issue1739-million-cached/outputs",
+        "--source-sha",
+        "2cf01b584b922c0df3db7405feffc6666f2ce60d",
+        "--behavior",
+        "evil"
+      ]
+    },
+    {
+      "name": "sycophancy",
+      "max_seconds": 1800,
+      "command": [
+        "/home/thomasjiralerspong/explore-persona-space/.venv/bin/python",
+        "/home/thomasjiralerspong/.codex-worktrees/1739-covariance-ablation/scripts/issue1739_million_cached.py",
+        "behavior",
+        "--out",
+        "/dev/shm/issue1739-million-cached/outputs",
+        "--source-sha",
+        "2cf01b584b922c0df3db7405feffc6666f2ce60d",
+        "--behavior",
+        "sycophancy"
+      ]
+    },
+    {
+      "name": "hallucination",
+      "max_seconds": 1800,
+      "command": [
+        "/home/thomasjiralerspong/explore-persona-space/.venv/bin/python",
+        "/home/thomasjiralerspong/.codex-worktrees/1739-covariance-ablation/scripts/issue1739_million_cached.py",
+        "behavior",
+        "--out",
+        "/dev/shm/issue1739-million-cached/outputs",
+        "--source-sha",
+        "2cf01b584b922c0df3db7405feffc6666f2ce60d",
+        "--behavior",
+        "hallucination"
+      ]
+    },
+    {
+      "name": "retrieval",
+      "max_seconds": 1800,
+      "command": [
+        "/home/thomasjiralerspong/explore-persona-space/.venv/bin/python",
+        "/home/thomasjiralerspong/.codex-worktrees/1739-covariance-ablation/scripts/issue1739_million_cached.py",
+        "retrieval",
+        "--out",
+        "/dev/shm/issue1739-million-cached/outputs",
+        "--source-sha",
+        "2cf01b584b922c0df3db7405feffc6666f2ce60d"
+      ]
+    },
+    {
+      "name": "text",
+      "max_seconds": 1800,
+      "command": [
+        "/home/thomasjiralerspong/explore-persona-space/.venv/bin/python",
+        "/home/thomasjiralerspong/.codex-worktrees/1739-covariance-ablation/scripts/issue1739_million_cached.py",
+        "text",
+        "--out",
+        "/dev/shm/issue1739-million-cached/outputs",
+        "--source-sha",
+        "2cf01b584b922c0df3db7405feffc6666f2ce60d"
+      ]
+    }
+  ],
+  "progress_paths": [
+    "/dev/shm/issue1739-million-cached/outputs/progress.json"
+  ],
+  "required_outputs": [
+    "transforms/complete.json",
+    "retrieval/complete.json",
+    "evil/complete.json",
+    "sycophancy/complete.json",
+    "hallucination/complete.json"
+  ],
+  "source_files": [
+    "fixed_transfer_artifact_inventory.md",
+    "fixed_transfer_plan.md",
+    "scripts/issue1739_claim4_fold.py",
+    "scripts/issue1739_covariance_ablation.py",
+    "scripts/issue1739_covariance_monitor.py",
+    "scripts/issue1739_covariance_stage.py",
+    "scripts/issue1739_fixed_transfer.py",
+    "scripts/issue1739_map963k_slice.py",
+    "scripts/issue1739_million_cached.py",
+    "scripts/issue1739_million_monitor.py",
+    "scripts/issue1739_result2fair_score.py",
+    "scripts/issue1739_transfer_figure.py",
+    "scripts/issue1739_transfer_map.py",
+    "scripts/issue1739_transfer_metadata.py",
+    "scripts/issue1739_transfer_monitor.py",
+    "scripts/issue1739_transfer_stage.py",
+    "scripts/issue779_ffc_n1m_fits.py",
+    "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "src/explore_persona_space/experiments/issue_1739/arms.py",
+    "src/explore_persona_space/experiments/issue_1739/generation.py",
+    "src/explore_persona_space/experiments/issue_1739/store_io.py"
+  ],
+  "input_records": [
+    "map_inputs/prepare_complete.json",
+    "outputs/map/map_manifest.json",
+    "outputs/map/diagnostics.json"
+  ],
+  "source_file_sha256": {
+    "fixed_transfer_artifact_inventory.md": "0cf1d1e24d05c53fe7535a453f9bca322a07d58c8f522aedebf6f0062feb5737",
+    "fixed_transfer_plan.md": "84debd54038fe20b2c54d8b90091db4b841711f8ea5136f10cdb9416a8fa4032",
+    "scripts/issue1739_claim4_fold.py": "ba23ff7dc51d52d51de9cae849b8002b975ff305f31231b3c41b595b90b8e0f2",
+    "scripts/issue1739_covariance_ablation.py": "923ed84757866931f73347128032f9fbb8d29e41022e00bc2cd9f85ddba62e27",
+    "scripts/issue1739_covariance_monitor.py": "d5f5a3601a692c1482ba0f76a6b9e613033dcb3a033ce562329afe9ca0295a23",
+    "scripts/issue1739_covariance_stage.py": "742039cb26c4ee6ad08cd07e889b280f5780d8f7a26684ed9c04600dce73433b",
+    "scripts/issue1739_fixed_transfer.py": "f19636ed038e152a55384460261d924dcbca35a79c888dc70433e49674209798",
+    "scripts/issue1739_map963k_slice.py": "d3dbc752556ca17c7893da02b1bd0a58b6468fa5082de02762bf640bbdd6a433",
+    "scripts/issue1739_million_cached.py": "24e3914d849e93ef75ece5c28873c2de9d1983023bdb12fd52464b04493c511f",
+    "scripts/issue1739_million_monitor.py": "90ff8d71de567e1d10b36d1be826f506b313e0b9ec0afa2c5ded65e521c61abc",
+    "scripts/issue1739_result2fair_score.py": "7a489686e0d8bcbdcb82f0080ca73ce8090e8e0dce10bec6887b11598f4733ab",
+    "scripts/issue1739_transfer_figure.py": "744c50d600427787b213d2c27376a66bfbfa56dcaa803a8653a3a8f5a9536849",
+    "scripts/issue1739_transfer_map.py": "a21bace053e223273f65884e07e0c51c165caf3e25c6008a4766e6e38d504344",
+    "scripts/issue1739_transfer_metadata.py": "9607e0df6f9845615cdaf2d0e9b70ffb5f711fa8416480537df21cdcee495eab",
+    "scripts/issue1739_transfer_monitor.py": "7f19e4bab0ab0521ef464385aaad86afb72c0a4a476f1a2e00896a2918b7e1f1",
+    "scripts/issue1739_transfer_stage.py": "f606e8b8373c5194680446b39e126409637fab4ab3e610d254fccdf8e6bb05b3",
+    "scripts/issue779_ffc_n1m_fits.py": "8800a6fd8c18af0518e80d51040ffa2de8269d55661627f86b6bf1ffa85b004b",
+    "src/explore_persona_space/analysis/c2a_plot_style.py": "d706b5b9d7fbce9fd1250496323ddc95ad579ff76f97ebadc1bc3dd38a02259f",
+    "src/explore_persona_space/experiments/issue_1739/arms.py": "ff47238f1498259950702129f8e7f4a1b4a450c3afd81c4ccb81895e6b22101a",
+    "src/explore_persona_space/experiments/issue_1739/generation.py": "b27341dbe38a28c88cb88c24ff0c362e92af13eb69220510e413f69c62d941ba",
+    "src/explore_persona_space/experiments/issue_1739/store_io.py": "4f422770663efbe7ea9fa32d5e162f8d56ef3df8b34aa12dc3b49becafc4240d"
+  }
+}

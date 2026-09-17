@@ -1,0 +1,26 @@
+{
+  "source_sha": "2cf01b584b922c0df3db7405feffc6666f2ce60d",
+  "finished_at": 1789625713.7881281,
+  "artifact_sha256": {
+    "fixed.json": "a37fd6024de2bd0be869552000cf2b670a7bfa64ff59cce5b3094ccc4f676645",
+    "fixed_bootstraps.npz": "18b53266bfdc10ae7750111516de0df65e23862611bea8ba423fa954aba82e52",
+    "fixed_predictions.npz": "40bebde8b95a6353d69e1ff3fcae904d0566a60d491ceb8fb446a12216f2c78b",
+    "heldout_deciles.json": "121258d7ecea7cc934ebc190a9202ee39b20c9c88cd4f3f19553e5325e9c1fae",
+    "heldout_examples_index.json": "80698644d8494fc80448f56db79e20c16bc0757b96e78d0157104d9116c7b85a",
+    "heldout_examples_text.json": "38a5f9b218e4001117e27de5fe960347051964b56a6f53a9d6aeeecc6c3f828b",
+    "regression.json": "686bbb5181eaacf30b84359e35a9c8cc8f75275678b4ba6958f382813925cb89",
+    "regression_bootstraps.npz": "83c4488d4f754d57e5aa2515e6d482ed063159328127bad153e720cc47b1625e",
+    "regression_context_covariance.npy": "4803c07ec9a11088b67b47de33e6fa96e725dab9a8e1a14a78a8d16afe8d52be",
+    "regression_mapped_answer.npy": "0cbee14cbcfa3fbf921dbd33f83bb3bc615afb86c383735c1ae817fd209ca91a",
+    "regression_predictions.npz": "b78ded44d9018aef1ca9917efbdbf7c17983a953766b868c5aa231fdadab6ec1",
+    "regression_raw_context.npy": "922fa86c6e3cb514421340f0bf7e862ec5183b8a55542a0bbef90aac79f76d2a",
+    "regression_shuffled_seed0.npy": "51cb528f8d7b9a8f7e886ab5a1e901ca90694ab31dde020532e6b303a9b2b917",
+    "regression_shuffled_seed1.npy": "a87bbfcf43747215b485727eb65123c2079ec6e6a07e1a476ef17feebd10239d",
+    "regression_shuffled_seed2.npy": "6aaae8489ba2cb2fa7e295a58b414ab5ccf636b6f49a865d18c182b813fdd380",
+    "regression_shuffled_seed3.npy": "b5a301d45f961d1de5d01910c6315ee0207c009f9094f650e04fec93fc796b88",
+    "regression_shuffled_seed4.npy": "be7b121296d9fa79c37916f7fed11e278e801e586c58e4d6cbaedb0885406704",
+    "retrieval_weights.npz": "4135127f3e338a5f29bcd0950b8b4da2a827bc232e5a19d2efd44d01efaa41df",
+    "ridge_selection.json": "f4ae006efaedf4c3b9cb94898c73e90e3a6c7c02796b5f92c36c453c8c54b12b",
+    "training_audit.json": "60c3568002228aacf7dde097e0b9e37ed481a3a7afb2ff6e07411c0a6901a93f"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "n_train": 963444,
+  "n_validation": 400,
+  "shrinkage_candidates": [
+    {
+      "gamma": 0.01,
+      "nll": -5173.6256612981415
+    },
+    {
+      "gamma": 0.05,
+      "nll": -4666.503925372259
+    },
+    {
+      "gamma": 0.1,
+      "nll": -4063.2087644397943
+    },
+    {
+      "gamma": 0.3,
+      "nll": -2420.527754972687
+    }
+  ],
+  "selected_gamma": 0.01,
+  "selected_grid_endpoint": true,
+  "answers_used": false,
+  "checkpoint_sha256": "c84c3d969c33ca3691f6a7fc1b480302175f218d1c64fbff1d22c139791d8a43",
+  "denominator": 963443
+}

@@ -1,0 +1,222 @@
+{
+  "results": [
+    {
+      "rung": "aita",
+      "n": 1304,
+      "n_groups": 1304,
+      "informative": true,
+      "arms": {
+        "preimage": {
+          "rho": 0.32182996694758303,
+          "ci95": [
+            0.26844533809458654,
+            0.37345774923408315
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "mapped_answer": {
+          "rho": 0.25490509324538835,
+          "ci95": [
+            0.20066123748224798,
+            0.3119657835451455
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "context_native": {
+          "rho": 0.3187069625997087,
+          "ci95": [
+            0.26598215707154776,
+            0.37018424105348574
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "answer_direction_on_context": {
+          "rho": 0.18646030060614227,
+          "ci95": [
+            0.12993136724085788,
+            0.24586176961963557
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "inverse_rank189": {
+          "rho": 0.3127154199825914,
+          "ci95": [
+            0.2583353438173084,
+            0.36307317951322243
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "inverse_rank378": {
+          "rho": 0.32182996694758303,
+          "ci95": [
+            0.26844533809458654,
+            0.37345774923408315
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "inverse_rank756": {
+          "rho": 0.2967035393172994,
+          "ci95": [
+            0.2439986472457784,
+            0.3495391435710248
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "inverse_rank3584": {
+          "rho": -0.2212459104522306,
+          "ci95": [
+            -0.2776380581665133,
+            -0.1637082684437852
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "real_answer": {
+          "rho": 0.21529304550980313,
+          "ci95": [
+            0.16090583633681615,
+            0.27267038345705663
+          ],
+          "valid_bootstrap_draws": 2000
+        }
+      },
+      "differences": {
+        "preimage_minus_mapped_answer": {
+          "delta": 0.06692487370219469,
+          "ci95": [
+            0.02899896938610611,
+            0.10439497325695796
+          ]
+        },
+        "preimage_minus_context_native": {
+          "delta": 0.0031230043478743252,
+          "ci95": [
+            -0.04103818691350906,
+            0.048862475270789206
+          ]
+        },
+        "mapped_answer_minus_context_native": {
+          "delta": -0.06380186935432036,
+          "ci95": [
+            -0.11610259452657538,
+            -0.015793659296764417
+          ]
+        }
+      }
+    },
+    {
+      "rung": "wildchat_rung",
+      "n": 4,
+      "n_groups": 4,
+      "informative": false,
+      "arms": {
+        "preimage": {
+          "rho": -0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "mapped_answer": {
+          "rho": -0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "context_native": {
+          "rho": -0.8,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "answer_direction_on_context": {
+          "rho": -0.8,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "inverse_rank189": {
+          "rho": -0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "inverse_rank378": {
+          "rho": -0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "inverse_rank756": {
+          "rho": -0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "inverse_rank3584": {
+          "rho": 0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "real_answer": {
+          "rho": -0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        }
+      },
+      "differences": {
+        "preimage_minus_mapped_answer": {
+          "delta": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "preimage_minus_context_native": {
+          "delta": 0.4,
+          "ci95": [
+            0.0,
+            2.0
+          ]
+        },
+        "mapped_answer_minus_context_native": {
+          "delta": 0.4,
+          "ci95": [
+            0.0,
+            2.0
+          ]
+        }
+      }
+    }
+  ],
+  "selected_rank": 378,
+  "diagnostic_ranks": [
+    189,
+    378,
+    756,
+    3584
+  ],
+  "inverse_available": true,
+  "inverse_norm": 9.923806803384347,
+  "target_residual_fraction": 0.36326342904621955,
+  "preserved_score_max_error": 0.0,
+  "pooling_caveat": "Frozen #779 v_x averages response plus assistant-closing template tokens; #1739 t1 averages completion tokens only. This is a declared endpoint mismatch."
+}

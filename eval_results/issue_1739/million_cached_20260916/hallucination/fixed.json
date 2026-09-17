@@ -1,0 +1,325 @@
+{
+  "results": [
+    {
+      "rung": "nqopen",
+      "n": 3164,
+      "n_groups": 2844,
+      "informative": true,
+      "arms": {
+        "preimage": {
+          "rho": -0.17128835395325726,
+          "ci95": [
+            -0.20584518644390976,
+            -0.13469226677022922
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "mapped_answer": {
+          "rho": -0.08463577413152112,
+          "ci95": [
+            -0.1197735655450555,
+            -0.0483358650382066
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "context_native": {
+          "rho": -0.12690757863741656,
+          "ci95": [
+            -0.16405498580644842,
+            -0.0878528346215255
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "answer_direction_on_context": {
+          "rho": -0.13275554990589777,
+          "ci95": [
+            -0.16898231160575808,
+            -0.09602522211782019
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "inverse_rank189": {
+          "rho": -0.106180406750614,
+          "ci95": [
+            -0.14225329376179913,
+            -0.068877439772702
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "inverse_rank378": {
+          "rho": -0.17128835395325726,
+          "ci95": [
+            -0.20584518644390976,
+            -0.13469226677022922
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "inverse_rank756": {
+          "rho": -0.16199182127834774,
+          "ci95": [
+            -0.1970512976389993,
+            -0.12256477274072064
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "inverse_rank3584": {
+          "rho": -0.04782083986127835,
+          "ci95": [
+            -0.08372486617479459,
+            -0.007172109156005913
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "real_answer": {
+          "rho": -0.009030505664167387,
+          "ci95": [
+            -0.04327475020960738,
+            0.02736870104942677
+          ],
+          "valid_bootstrap_draws": 2000
+        }
+      },
+      "differences": {
+        "preimage_minus_mapped_answer": {
+          "delta": -0.08665257982173613,
+          "ci95": [
+            -0.10650537066448015,
+            -0.06715799482081637
+          ]
+        },
+        "preimage_minus_context_native": {
+          "delta": -0.0443807753158407,
+          "ci95": [
+            -0.06270142963582816,
+            -0.025754584900717994
+          ]
+        },
+        "mapped_answer_minus_context_native": {
+          "delta": 0.04227180450589543,
+          "ci95": [
+            0.017884812227407287,
+            0.06601338942494342
+          ]
+        }
+      }
+    },
+    {
+      "rung": "simpleqa",
+      "n": 4021,
+      "n_groups": 3419,
+      "informative": true,
+      "arms": {
+        "preimage": {
+          "rho": 0.4346389027308943,
+          "ci95": [
+            0.4070931744930721,
+            0.46344028910635
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "mapped_answer": {
+          "rho": 0.4491818245310722,
+          "ci95": [
+            0.422072774478213,
+            0.477929592055215
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "context_native": {
+          "rho": 0.5065271546145845,
+          "ci95": [
+            0.47949938268352105,
+            0.5336169298447966
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "answer_direction_on_context": {
+          "rho": 0.46414936384923894,
+          "ci95": [
+            0.4352863952750986,
+            0.49361583367528117
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "inverse_rank189": {
+          "rho": 0.4714357531253014,
+          "ci95": [
+            0.4439085058517856,
+            0.4992033811759277
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "inverse_rank378": {
+          "rho": 0.4346389027308943,
+          "ci95": [
+            0.4070931744930721,
+            0.46344028910635
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "inverse_rank756": {
+          "rho": 0.43285055008467677,
+          "ci95": [
+            0.4047463429523763,
+            0.4616898569081725
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "inverse_rank3584": {
+          "rho": 0.5407144631281381,
+          "ci95": [
+            0.5141454650489526,
+            0.5673712938320721
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "real_answer": {
+          "rho": 0.6050385630065428,
+          "ci95": [
+            0.5799991204722551,
+            0.630943173326192
+          ],
+          "valid_bootstrap_draws": 2000
+        }
+      },
+      "differences": {
+        "preimage_minus_mapped_answer": {
+          "delta": -0.01454292180017791,
+          "ci95": [
+            -0.023107923610283368,
+            -0.0060534437899126105
+          ]
+        },
+        "preimage_minus_context_native": {
+          "delta": -0.07188825188369025,
+          "ci95": [
+            -0.08107857390567366,
+            -0.06349616898193937
+          ]
+        },
+        "mapped_answer_minus_context_native": {
+          "delta": -0.057345330083512336,
+          "ci95": [
+            -0.06752989927786124,
+            -0.047320698543519286
+          ]
+        }
+      }
+    },
+    {
+      "rung": "wildchat_rung",
+      "n": 4,
+      "n_groups": 4,
+      "informative": false,
+      "arms": {
+        "preimage": {
+          "rho": 0.2,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "mapped_answer": {
+          "rho": 0.8,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "context_native": {
+          "rho": -0.2,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "answer_direction_on_context": {
+          "rho": 0.8,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "inverse_rank189": {
+          "rho": 0.8,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "inverse_rank378": {
+          "rho": 0.2,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "inverse_rank756": {
+          "rho": 0.2,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "inverse_rank3584": {
+          "rho": -0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "real_answer": {
+          "rho": 0.8,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        }
+      },
+      "differences": {
+        "preimage_minus_mapped_answer": {
+          "delta": -0.6000000000000001,
+          "ci95": [
+            -2.0,
+            0.0
+          ]
+        },
+        "preimage_minus_context_native": {
+          "delta": 0.4,
+          "ci95": [
+            -2.0,
+            2.0
+          ]
+        },
+        "mapped_answer_minus_context_native": {
+          "delta": 1.0,
+          "ci95": [
+            -2.0,
+            2.0
+          ]
+        }
+      }
+    }
+  ],
+  "selected_rank": 378,
+  "diagnostic_ranks": [
+    189,
+    378,
+    756,
+    3584
+  ],
+  "inverse_available": true,
+  "inverse_norm": 9.4487450396,
+  "target_residual_fraction": 0.2921555697351249,
+  "preserved_score_max_error": 0.0,
+  "pooling_caveat": "Frozen #779 v_x averages response plus assistant-closing template tokens; #1739 t1 averages completion tokens only. This is a declared endpoint mismatch."
+}

@@ -1,0 +1,178 @@
+[
+  {
+    "rung": "nqopen",
+    "method": "preimage",
+    "metric": "dot",
+    "n": 3164,
+    "n_tail": 316,
+    "bottom_mean_dv": 0.4778481012658228,
+    "top_mean_dv": 0.39746835443037976,
+    "delta": -0.08037974683544302,
+    "overall_mean_dv": 0.5588495575221238
+  },
+  {
+    "rung": "nqopen",
+    "method": "mapped_answer",
+    "metric": "dot",
+    "n": 3164,
+    "n_tail": 316,
+    "bottom_mean_dv": 0.4462025316455696,
+    "top_mean_dv": 0.440506329113924,
+    "delta": -0.0056962025316456,
+    "overall_mean_dv": 0.5588495575221238
+  },
+  {
+    "rung": "nqopen",
+    "method": "context_native",
+    "metric": "dot",
+    "n": 3164,
+    "n_tail": 316,
+    "bottom_mean_dv": 0.39303797468354434,
+    "top_mean_dv": 0.4056962025316456,
+    "delta": 0.012658227848101278,
+    "overall_mean_dv": 0.5588495575221238
+  },
+  {
+    "rung": "nqopen",
+    "method": "answer_direction_on_context",
+    "metric": "dot",
+    "n": 3164,
+    "n_tail": 316,
+    "bottom_mean_dv": 0.4329113924050633,
+    "top_mean_dv": 0.4348101265822785,
+    "delta": 0.0018987341772152,
+    "overall_mean_dv": 0.5588495575221238
+  },
+  {
+    "rung": "nqopen",
+    "method": "preimage",
+    "metric": "cosine",
+    "n": 3164,
+    "n_tail": 316,
+    "bottom_mean_dv": 0.4753164556962025,
+    "top_mean_dv": 0.38797468354430376,
+    "delta": -0.08734177215189876,
+    "overall_mean_dv": 0.5588495575221238
+  },
+  {
+    "rung": "nqopen",
+    "method": "mapped_answer",
+    "metric": "cosine",
+    "n": 3164,
+    "n_tail": 316,
+    "bottom_mean_dv": 0.45569620253164556,
+    "top_mean_dv": 0.45506329113924054,
+    "delta": -0.0006329113924050112,
+    "overall_mean_dv": 0.5588495575221238
+  },
+  {
+    "rung": "nqopen",
+    "method": "context_native",
+    "metric": "cosine",
+    "n": 3164,
+    "n_tail": 316,
+    "bottom_mean_dv": 0.39620253164556957,
+    "top_mean_dv": 0.42215189873417713,
+    "delta": 0.025949367088607567,
+    "overall_mean_dv": 0.5588495575221238
+  },
+  {
+    "rung": "nqopen",
+    "method": "answer_direction_on_context",
+    "metric": "cosine",
+    "n": 3164,
+    "n_tail": 316,
+    "bottom_mean_dv": 0.439873417721519,
+    "top_mean_dv": 0.4341772151898734,
+    "delta": -0.0056962025316456,
+    "overall_mean_dv": 0.5588495575221238
+  },
+  {
+    "rung": "simpleqa",
+    "method": "preimage",
+    "metric": "dot",
+    "n": 4021,
+    "n_tail": 402,
+    "bottom_mean_dv": 0.32338308457711445,
+    "top_mean_dv": 0.8745024875621891,
+    "delta": 0.5511194029850746,
+    "overall_mean_dv": 0.7790972394926635
+  },
+  {
+    "rung": "simpleqa",
+    "method": "mapped_answer",
+    "metric": "dot",
+    "n": 4021,
+    "n_tail": 402,
+    "bottom_mean_dv": 0.3104477611940299,
+    "top_mean_dv": 0.8880597014925373,
+    "delta": 0.5776119402985074,
+    "overall_mean_dv": 0.7790972394926635
+  },
+  {
+    "rung": "simpleqa",
+    "method": "context_native",
+    "metric": "dot",
+    "n": 4021,
+    "n_tail": 402,
+    "bottom_mean_dv": 0.23233830845771145,
+    "top_mean_dv": 0.8953565505804311,
+    "delta": 0.6630182421227196,
+    "overall_mean_dv": 0.7790972394926635
+  },
+  {
+    "rung": "simpleqa",
+    "method": "answer_direction_on_context",
+    "metric": "dot",
+    "n": 4021,
+    "n_tail": 402,
+    "bottom_mean_dv": 0.23880597014925373,
+    "top_mean_dv": 0.8730099502487562,
+    "delta": 0.6342039800995024,
+    "overall_mean_dv": 0.7790972394926635
+  },
+  {
+    "rung": "simpleqa",
+    "method": "preimage",
+    "metric": "cosine",
+    "n": 4021,
+    "n_tail": 402,
+    "bottom_mean_dv": 0.3218905472636816,
+    "top_mean_dv": 0.8805970149253731,
+    "delta": 0.5587064676616915,
+    "overall_mean_dv": 0.7790972394926635
+  },
+  {
+    "rung": "simpleqa",
+    "method": "mapped_answer",
+    "metric": "cosine",
+    "n": 4021,
+    "n_tail": 402,
+    "bottom_mean_dv": 0.30398009950248756,
+    "top_mean_dv": 0.8895522388059702,
+    "delta": 0.5855721393034827,
+    "overall_mean_dv": 0.7790972394926635
+  },
+  {
+    "rung": "simpleqa",
+    "method": "context_native",
+    "metric": "cosine",
+    "n": 4021,
+    "n_tail": 402,
+    "bottom_mean_dv": 0.21393034825870647,
+    "top_mean_dv": 0.9003316749585406,
+    "delta": 0.6864013266998341,
+    "overall_mean_dv": 0.7790972394926635
+  },
+  {
+    "rung": "simpleqa",
+    "method": "answer_direction_on_context",
+    "metric": "cosine",
+    "n": 4021,
+    "n_tail": 402,
+    "bottom_mean_dv": 0.21940298507462683,
+    "top_mean_dv": 0.8778192371475954,
+    "delta": 0.6584162520729685,
+    "overall_mean_dv": 0.7790972394926635
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "source_sha": "2cf01b584b922c0df3db7405feffc6666f2ce60d",
+  "finished_at": 1789625689.1264615,
+  "artifact_sha256": {
+    "generic_examples.json": "0aa1d59af29ba54a4d270c158fe1728390f57c5ad557a75108d638e66a4fcda2",
+    "generic_score_rows.npy": "230e7b2d1a732ee54e1672a7f1def533cda8ed0df0ca910e352cccb29ffea684",
+    "generic_scores.npy": "490c689319d3026365ce5c80754d1b035aa79ac0e460fff38d6b56db5ee34031"
+  },
+  "n_pool": 963444,
+  "unique_retrieved_prompts": 1113,
+  "primary_metric": "centered standardized cosine",
+  "interpretation": "training-pool descriptive retrieval"
+}

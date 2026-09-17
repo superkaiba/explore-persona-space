@@ -1,0 +1,433 @@
+{
+  "results": [
+    {
+      "rung": "aita",
+      "n": 1304,
+      "n_groups": 1304,
+      "informative": true,
+      "arms": {
+        "raw_context": {
+          "rho": 0.7598062166979448,
+          "ci95": [
+            0.7301860656091455,
+            0.7882264710061089
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "context_covariance": {
+          "rho": 0.7299816831073277,
+          "ci95": [
+            0.6986473592053293,
+            0.7601509649604998
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "mapped_answer": {
+          "rho": 0.7457360310875906,
+          "ci95": [
+            0.7145143492280871,
+            0.774912209652685
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed0": {
+          "rho": 0.7439245517729838,
+          "ci95": [
+            0.7129008264075805,
+            0.7733323626714109
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed1": {
+          "rho": 0.7495311121357371,
+          "ci95": [
+            0.7194489827545014,
+            0.779014200943203
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed2": {
+          "rho": 0.7447562002709478,
+          "ci95": [
+            0.7138000167075533,
+            0.7745018893084468
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed3": {
+          "rho": 0.748285707250475,
+          "ci95": [
+            0.7173960127390779,
+            0.7777226638042529
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed4": {
+          "rho": 0.7487417221776564,
+          "ci95": [
+            0.718021262779181,
+            0.7777381150824809
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_mean": {
+          "rho": 0.7470478587215601,
+          "ci95": [
+            0.716784550883025,
+            0.7757911316618961
+          ],
+          "seed_rhos": [
+            0.7439245517729838,
+            0.7495311121357371,
+            0.7447562002709478,
+            0.748285707250475,
+            0.7487417221776564
+          ],
+          "seed_sd": 0.002528573444491238
+        }
+      },
+      "differences": {
+        "mapped_answer_minus_raw_context": {
+          "delta": -0.014070185610354224,
+          "ci95": [
+            -0.023712816644328533,
+            -0.004655841262113178
+          ]
+        },
+        "mapped_answer_minus_context_covariance": {
+          "delta": 0.015754347980262873,
+          "ci95": [
+            0.0029393295012459606,
+            0.027919951326579793
+          ]
+        },
+        "context_covariance_minus_raw_context": {
+          "delta": -0.029824533590617097,
+          "ci95": [
+            -0.04167047456205709,
+            -0.018923134905549564
+          ]
+        },
+        "mapped_answer_minus_shuffled_mean": {
+          "delta": -0.0013118276339695312,
+          "ci95": [
+            -0.01149886645835323,
+            0.009001597789301964
+          ]
+        }
+      }
+    },
+    {
+      "rung": "wildchat_rung",
+      "n": 4,
+      "n_groups": 4,
+      "informative": false,
+      "arms": {
+        "raw_context": {
+          "rho": 0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "context_covariance": {
+          "rho": 1.0,
+          "ci95": [
+            1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "mapped_answer": {
+          "rho": 0.8,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "shuffled_seed0": {
+          "rho": 0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "shuffled_seed1": {
+          "rho": 0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "shuffled_seed2": {
+          "rho": 0.2,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "shuffled_seed3": {
+          "rho": 0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "shuffled_seed4": {
+          "rho": 0.4,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "valid_bootstrap_draws": 1969
+        },
+        "shuffled_mean": {
+          "rho": 0.36,
+          "ci95": [
+            -1.0,
+            1.0
+          ],
+          "seed_rhos": [
+            0.4,
+            0.4,
+            0.2,
+            0.4,
+            0.4
+          ],
+          "seed_sd": 0.08944271909999159
+        }
+      },
+      "differences": {
+        "mapped_answer_minus_raw_context": {
+          "delta": 0.4,
+          "ci95": [
+            0.0,
+            2.0
+          ]
+        },
+        "mapped_answer_minus_context_covariance": {
+          "delta": -0.19999999999999996,
+          "ci95": [
+            -2.0,
+            0.0
+          ]
+        },
+        "context_covariance_minus_raw_context": {
+          "delta": 0.6,
+          "ci95": [
+            0.0,
+            2.0
+          ]
+        },
+        "mapped_answer_minus_shuffled_mean": {
+          "delta": 0.44000000000000006,
+          "ci95": [
+            0.0,
+            2.0
+          ]
+        }
+      }
+    }
+  ],
+  "n_boot": 2000,
+  "selected_lambdas": {
+    "raw_context": [
+      {
+        "n_train": 17567,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "1000.0": 1
+        }
+      }
+    ],
+    "context_covariance": [
+      {
+        "n_train": 17567,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "1000.0": 1
+        }
+      }
+    ],
+    "mapped_answer": [
+      {
+        "n_train": 17567,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "100.0": 1
+        }
+      }
+    ],
+    "shuffled_seed0": [
+      {
+        "n_train": 17567,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "1.0": 1
+        }
+      }
+    ],
+    "shuffled_seed1": [
+      {
+        "n_train": 17567,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "1.0": 1
+        }
+      }
+    ],
+    "shuffled_seed2": [
+      {
+        "n_train": 17567,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "1.0": 1
+        }
+      }
+    ],
+    "shuffled_seed3": [
+      {
+        "n_train": 17567,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "1.0": 1
+        }
+      }
+    ],
+    "shuffled_seed4": [
+      {
+        "n_train": 17567,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "10.0": 1
+        }
+      }
+    ]
+  }
+}

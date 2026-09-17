@@ -1,0 +1,11 @@
+{
+  "selected_rank": 378,
+  "numerical_rank": 3584,
+  "selection": "actual generic validation answers reconstruct standardized contexts",
+  "validation_r2_vs_zero": 0.03300578862094827,
+  "test_r2": 0.011972905159849834,
+  "test_mean_baseline_r2": -0.02271003783946357,
+  "smallest_singular_value": 2.4126608994278182e-05,
+  "largest_singular_value": 7.329799239212571,
+  "inverse_available": true
+}

@@ -1,0 +1,511 @@
+{
+  "results": [
+    {
+      "rung": "hhrt",
+      "n": 1847,
+      "n_groups": 1847,
+      "informative": true,
+      "arms": {
+        "raw_context": {
+          "rho": 0.08220438964012408,
+          "ci95": [
+            0.037601873278167254,
+            0.125710883541095
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "context_covariance": {
+          "rho": 0.08661041193975597,
+          "ci95": [
+            0.040389700018813944,
+            0.13069872771662244
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "mapped_answer": {
+          "rho": 0.06995365419309282,
+          "ci95": [
+            0.021587167193623573,
+            0.11661276848754144
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed0": {
+          "rho": 0.08007974929505497,
+          "ci95": [
+            0.035443869824984806,
+            0.12408601929099863
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed1": {
+          "rho": 0.08181115695128972,
+          "ci95": [
+            0.03615974215656774,
+            0.1251750377693307
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed2": {
+          "rho": 0.054435538997016523,
+          "ci95": [
+            0.008680335990657947,
+            0.09815699159281903
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed3": {
+          "rho": 0.06612359642093253,
+          "ci95": [
+            0.022837094799367304,
+            0.1088572553806231
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed4": {
+          "rho": 0.07391554627181754,
+          "ci95": [
+            0.029672354162308,
+            0.1178376126763612
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_mean": {
+          "rho": 0.07127311758722225,
+          "ci95": [
+            0.02918239864061144,
+            0.11404732243652134
+          ],
+          "seed_rhos": [
+            0.08007974929505497,
+            0.08181115695128972,
+            0.054435538997016523,
+            0.06612359642093253,
+            0.07391554627181754
+          ],
+          "seed_sd": 0.011242898714884791
+        }
+      },
+      "differences": {
+        "mapped_answer_minus_raw_context": {
+          "delta": -0.012250735447031258,
+          "ci95": [
+            -0.04469199253506595,
+            0.02123885744272183
+          ]
+        },
+        "mapped_answer_minus_context_covariance": {
+          "delta": -0.016656757746663142,
+          "ci95": [
+            -0.05798357241229778,
+            0.028947071150538805
+          ]
+        },
+        "context_covariance_minus_raw_context": {
+          "delta": 0.004406022299631884,
+          "ci95": [
+            -0.03582173916232316,
+            0.04032732560221561
+          ]
+        },
+        "mapped_answer_minus_shuffled_mean": {
+          "delta": -0.0013194633941294304,
+          "ci95": [
+            -0.03579630723088608,
+            0.03436274592230988
+          ]
+        }
+      }
+    },
+    {
+      "rung": "toxicchat",
+      "n": 370,
+      "n_groups": 370,
+      "informative": true,
+      "arms": {
+        "raw_context": {
+          "rho": 0.38884507646674743,
+          "ci95": [
+            0.31471263003570443,
+            0.45828994484314156
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "context_covariance": {
+          "rho": 0.32907074674636644,
+          "ci95": [
+            0.2199570595795703,
+            0.42758145503552536
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "mapped_answer": {
+          "rho": 0.3913368908390515,
+          "ci95": [
+            0.31573213434027403,
+            0.46430210996748156
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed0": {
+          "rho": 0.3793355240112323,
+          "ci95": [
+            0.3028080921858672,
+            0.45146828306110787
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed1": {
+          "rho": 0.35991795603008264,
+          "ci95": [
+            0.2774764069371515,
+            0.43553781828098853
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed2": {
+          "rho": 0.34641241140090673,
+          "ci95": [
+            0.260822076333771,
+            0.42357995903070644
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed3": {
+          "rho": 0.36020929664550594,
+          "ci95": [
+            0.2795294779939685,
+            0.4358700905538569
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_seed4": {
+          "rho": 0.36234484770257097,
+          "ci95": [
+            0.27731054841498765,
+            0.4393347171415754
+          ],
+          "valid_bootstrap_draws": 2000
+        },
+        "shuffled_mean": {
+          "rho": 0.36164400715805967,
+          "ci95": [
+            0.28233331387849914,
+            0.43533718043741915
+          ],
+          "seed_rhos": [
+            0.3793355240112323,
+            0.35991795603008264,
+            0.34641241140090673,
+            0.36020929664550594,
+            0.36234484770257097
+          ],
+          "seed_sd": 0.011731582396414642
+        }
+      },
+      "differences": {
+        "mapped_answer_minus_raw_context": {
+          "delta": 0.0024918143723040576,
+          "ci95": [
+            -0.03351495189153143,
+            0.03527839917819449
+          ]
+        },
+        "mapped_answer_minus_context_covariance": {
+          "delta": 0.06226614409268505,
+          "ci95": [
+            -0.0229866928724705,
+            0.15356368293571826
+          ]
+        },
+        "context_covariance_minus_raw_context": {
+          "delta": -0.05977432972038099,
+          "ci95": [
+            -0.1466945547883029,
+            0.019196936413702643
+          ]
+        },
+        "mapped_answer_minus_shuffled_mean": {
+          "delta": 0.029692883680991822,
+          "ci95": [
+            -0.01516306715975144,
+            0.07508991770657816
+          ]
+        }
+      }
+    },
+    {
+      "rung": "wildchat_rung",
+      "n": 4,
+      "n_groups": 4,
+      "informative": false,
+      "arms": {
+        "raw_context": {
+          "rho": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0
+        },
+        "context_covariance": {
+          "rho": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0
+        },
+        "mapped_answer": {
+          "rho": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0
+        },
+        "shuffled_seed0": {
+          "rho": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0
+        },
+        "shuffled_seed1": {
+          "rho": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0
+        },
+        "shuffled_seed2": {
+          "rho": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0
+        },
+        "shuffled_seed3": {
+          "rho": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0
+        },
+        "shuffled_seed4": {
+          "rho": null,
+          "ci95": null,
+          "valid_bootstrap_draws": 0
+        },
+        "shuffled_mean": {
+          "rho": null,
+          "ci95": null,
+          "seed_rhos": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "seed_sd": null
+        }
+      },
+      "differences": {
+        "mapped_answer_minus_raw_context": {
+          "delta": null,
+          "ci95": null
+        },
+        "mapped_answer_minus_context_covariance": {
+          "delta": null,
+          "ci95": null
+        },
+        "context_covariance_minus_raw_context": {
+          "delta": null,
+          "ci95": null
+        },
+        "mapped_answer_minus_shuffled_mean": {
+          "delta": null,
+          "ci95": null
+        }
+      }
+    }
+  ],
+  "n_boot": 2000,
+  "selected_lambdas": {
+    "raw_context": [
+      {
+        "n_train": 8028,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "1000.0": 1
+        }
+      }
+    ],
+    "context_covariance": [
+      {
+        "n_train": 8028,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "10000.0": 1
+        }
+      }
+    ],
+    "mapped_answer": [
+      {
+        "n_train": 8028,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "1000.0": 1
+        }
+      }
+    ],
+    "shuffled_seed0": [
+      {
+        "n_train": 8028,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "10.0": 1
+        }
+      }
+    ],
+    "shuffled_seed1": [
+      {
+        "n_train": 8028,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "10.0": 1
+        }
+      }
+    ],
+    "shuffled_seed2": [
+      {
+        "n_train": 8028,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "10.0": 1
+        }
+      }
+    ],
+    "shuffled_seed3": [
+      {
+        "n_train": 8028,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "10.0": 1
+        }
+      }
+    ],
+    "shuffled_seed4": [
+      {
+        "n_train": 8028,
+        "d": 3584,
+        "gram_space": "primal",
+        "n_slices": 1,
+        "n_targets": 1,
+        "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+        "lambda_grid": [
+          0.01,
+          0.1,
+          1.0,
+          10.0,
+          100.0,
+          1000.0,
+          10000.0,
+          100000.0,
+          1000000.0
+        ],
+        "selected_lambda_counts": {
+          "100.0": 1
+        }
+      }
+    ]
+  }
+}

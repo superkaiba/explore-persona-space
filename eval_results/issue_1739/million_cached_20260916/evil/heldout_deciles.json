@@ -1,0 +1,178 @@
+[
+  {
+    "rung": "hhrt",
+    "method": "preimage",
+    "metric": "dot",
+    "n": 1847,
+    "n_tail": 184,
+    "bottom_mean_dv": 0.028985507246376815,
+    "top_mean_dv": 0.05193236714975846,
+    "delta": 0.022946859903381647,
+    "overall_mean_dv": 0.08415749263069242
+  },
+  {
+    "rung": "hhrt",
+    "method": "mapped_answer",
+    "metric": "dot",
+    "n": 1847,
+    "n_tail": 184,
+    "bottom_mean_dv": 0.0,
+    "top_mean_dv": 0.054347826086956534,
+    "delta": 0.054347826086956534,
+    "overall_mean_dv": 0.08415749263069242
+  },
+  {
+    "rung": "hhrt",
+    "method": "context_native",
+    "metric": "dot",
+    "n": 1847,
+    "n_tail": 184,
+    "bottom_mean_dv": 0.012681159420289856,
+    "top_mean_dv": 0.052536231884057975,
+    "delta": 0.03985507246376812,
+    "overall_mean_dv": 0.08415749263069242
+  },
+  {
+    "rung": "hhrt",
+    "method": "answer_direction_on_context",
+    "metric": "dot",
+    "n": 1847,
+    "n_tail": 184,
+    "bottom_mean_dv": 0.0,
+    "top_mean_dv": 0.05012077294685991,
+    "delta": 0.05012077294685991,
+    "overall_mean_dv": 0.08415749263069242
+  },
+  {
+    "rung": "hhrt",
+    "method": "preimage",
+    "metric": "cosine",
+    "n": 1847,
+    "n_tail": 184,
+    "bottom_mean_dv": 0.028985507246376815,
+    "top_mean_dv": 0.05193236714975846,
+    "delta": 0.022946859903381647,
+    "overall_mean_dv": 0.08415749263069242
+  },
+  {
+    "rung": "hhrt",
+    "method": "mapped_answer",
+    "metric": "cosine",
+    "n": 1847,
+    "n_tail": 184,
+    "bottom_mean_dv": 0.0,
+    "top_mean_dv": 0.054347826086956534,
+    "delta": 0.054347826086956534,
+    "overall_mean_dv": 0.08415749263069242
+  },
+  {
+    "rung": "hhrt",
+    "method": "context_native",
+    "metric": "cosine",
+    "n": 1847,
+    "n_tail": 184,
+    "bottom_mean_dv": 0.001811594202898551,
+    "top_mean_dv": 0.052536231884057975,
+    "delta": 0.050724637681159424,
+    "overall_mean_dv": 0.08415749263069242
+  },
+  {
+    "rung": "hhrt",
+    "method": "answer_direction_on_context",
+    "metric": "cosine",
+    "n": 1847,
+    "n_tail": 184,
+    "bottom_mean_dv": 0.0,
+    "top_mean_dv": 0.05012077294685991,
+    "delta": 0.05012077294685991,
+    "overall_mean_dv": 0.08415749263069242
+  },
+  {
+    "rung": "toxicchat",
+    "method": "preimage",
+    "metric": "dot",
+    "n": 370,
+    "n_tail": 37,
+    "bottom_mean_dv": 0.0,
+    "top_mean_dv": 19.51606606606607,
+    "delta": 19.51606606606607,
+    "overall_mean_dv": 3.6295645645645647
+  },
+  {
+    "rung": "toxicchat",
+    "method": "mapped_answer",
+    "metric": "dot",
+    "n": 370,
+    "n_tail": 37,
+    "bottom_mean_dv": 0.0,
+    "top_mean_dv": 17.009009009009006,
+    "delta": 17.009009009009006,
+    "overall_mean_dv": 3.6295645645645647
+  },
+  {
+    "rung": "toxicchat",
+    "method": "context_native",
+    "metric": "dot",
+    "n": 370,
+    "n_tail": 37,
+    "bottom_mean_dv": 0.02702702702702703,
+    "top_mean_dv": 17.817867867867868,
+    "delta": 17.79084084084084,
+    "overall_mean_dv": 3.6295645645645647
+  },
+  {
+    "rung": "toxicchat",
+    "method": "answer_direction_on_context",
+    "metric": "dot",
+    "n": 370,
+    "n_tail": 37,
+    "bottom_mean_dv": 0.02702702702702703,
+    "top_mean_dv": 22.99354354354354,
+    "delta": 22.966516516516513,
+    "overall_mean_dv": 3.6295645645645647
+  },
+  {
+    "rung": "toxicchat",
+    "method": "preimage",
+    "metric": "cosine",
+    "n": 370,
+    "n_tail": 37,
+    "bottom_mean_dv": 0.0,
+    "top_mean_dv": 19.73903903903904,
+    "delta": 19.73903903903904,
+    "overall_mean_dv": 3.6295645645645647
+  },
+  {
+    "rung": "toxicchat",
+    "method": "mapped_answer",
+    "metric": "cosine",
+    "n": 370,
+    "n_tail": 37,
+    "bottom_mean_dv": 0.0,
+    "top_mean_dv": 14.197297297297299,
+    "delta": 14.197297297297299,
+    "overall_mean_dv": 3.6295645645645647
+  },
+  {
+    "rung": "toxicchat",
+    "method": "context_native",
+    "metric": "cosine",
+    "n": 370,
+    "n_tail": 37,
+    "bottom_mean_dv": 0.02702702702702703,
+    "top_mean_dv": 17.27957957957958,
+    "delta": 17.25255255255255,
+    "overall_mean_dv": 3.6295645645645647
+  },
+  {
+    "rung": "toxicchat",
+    "method": "answer_direction_on_context",
+    "metric": "cosine",
+    "n": 370,
+    "n_tail": 37,
+    "bottom_mean_dv": 0.02702702702702703,
+    "top_mean_dv": 21.234534534534532,
+    "delta": 21.207507507507504,
+    "overall_mean_dv": 3.6295645645645647
+  }
+]

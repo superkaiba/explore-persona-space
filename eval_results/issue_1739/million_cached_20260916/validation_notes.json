@@ -1,0 +1,9 @@
+{
+  "checked_at": 1789624880.9560158,
+  "source_sha": "2cf01b584b922c0df3db7405feffc6666f2ce60d",
+  "focused_tests": "4 passed",
+  "mapped_tests": "29 passed; 1 pre-existing repository-wide failure, test_no_new_torch_before_dotenv_vm_entrypoints, only unrelated1902/2254/2546 scripts named",
+  "independent_review": "transfer_review verified algebra, fixed NaN serialization and rank-zero handling, including actual production functions on tiny fixtures; no remaining launch blockers",
+  "lint_status": "Completed no-flags workflow_lint:30 pre-existing errors; zero errors name round payload files issue1739_million_cached.py or issue1739_million_monitor.py. Includes sparse-hidden marker recipe, existing unrelated scripts, old source SHA domain pins.",
+  "watchdog": "v2 realCodex canary and acknowledged notification PASS; scheduled tick verified at06:00UTC; linger=yes"
+}

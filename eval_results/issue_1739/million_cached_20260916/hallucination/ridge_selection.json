@@ -1,0 +1,194 @@
+{
+  "raw_context": [
+    {
+      "n_train": 17556,
+      "d": 3584,
+      "gram_space": "primal",
+      "n_slices": 1,
+      "n_targets": 1,
+      "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+      "lambda_grid": [
+        0.01,
+        0.1,
+        1.0,
+        10.0,
+        100.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0
+      ],
+      "selected_lambda_counts": {
+        "10000.0": 1
+      }
+    }
+  ],
+  "context_covariance": [
+    {
+      "n_train": 17556,
+      "d": 3584,
+      "gram_space": "primal",
+      "n_slices": 1,
+      "n_targets": 1,
+      "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+      "lambda_grid": [
+        0.01,
+        0.1,
+        1.0,
+        10.0,
+        100.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0
+      ],
+      "selected_lambda_counts": {
+        "10000.0": 1
+      }
+    }
+  ],
+  "mapped_answer": [
+    {
+      "n_train": 17556,
+      "d": 3584,
+      "gram_space": "primal",
+      "n_slices": 1,
+      "n_targets": 1,
+      "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+      "lambda_grid": [
+        0.01,
+        0.1,
+        1.0,
+        10.0,
+        100.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0
+      ],
+      "selected_lambda_counts": {
+        "10000.0": 1
+      }
+    }
+  ],
+  "shuffled_seed0": [
+    {
+      "n_train": 17556,
+      "d": 3584,
+      "gram_space": "primal",
+      "n_slices": 1,
+      "n_targets": 1,
+      "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+      "lambda_grid": [
+        0.01,
+        0.1,
+        1.0,
+        10.0,
+        100.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0
+      ],
+      "selected_lambda_counts": {
+        "100.0": 1
+      }
+    }
+  ],
+  "shuffled_seed1": [
+    {
+      "n_train": 17556,
+      "d": 3584,
+      "gram_space": "primal",
+      "n_slices": 1,
+      "n_targets": 1,
+      "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+      "lambda_grid": [
+        0.01,
+        0.1,
+        1.0,
+        10.0,
+        100.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0
+      ],
+      "selected_lambda_counts": {
+        "100.0": 1
+      }
+    }
+  ],
+  "shuffled_seed2": [
+    {
+      "n_train": 17556,
+      "d": 3584,
+      "gram_space": "primal",
+      "n_slices": 1,
+      "n_targets": 1,
+      "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+      "lambda_grid": [
+        0.01,
+        0.1,
+        1.0,
+        10.0,
+        100.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0
+      ],
+      "selected_lambda_counts": {
+        "100.0": 1
+      }
+    }
+  ],
+  "shuffled_seed3": [
+    {
+      "n_train": 17556,
+      "d": 3584,
+      "gram_space": "primal",
+      "n_slices": 1,
+      "n_targets": 1,
+      "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+      "lambda_grid": [
+        0.01,
+        0.1,
+        1.0,
+        10.0,
+        100.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0
+      ],
+      "selected_lambda_counts": {
+        "100.0": 1
+      }
+    }
+  ],
+  "shuffled_seed4": [
+    {
+      "n_train": 17556,
+      "d": 3584,
+      "gram_space": "primal",
+      "n_slices": 1,
+      "n_targets": 1,
+      "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+      "lambda_grid": [
+        0.01,
+        0.1,
+        1.0,
+        10.0,
+        100.0,
+        1000.0,
+        10000.0,
+        100000.0,
+        1000000.0
+      ],
+      "selected_lambda_counts": {
+        "1000.0": 1
+      }
+    }
+  ]
+}

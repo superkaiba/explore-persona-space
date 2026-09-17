@@ -1,0 +1,404 @@
+{
+  "source_sha": "2cf01b584b922c0df3db7405feffc6666f2ce60d",
+  "verified_revision": "449c48d4047efffec50dbe8492d78c905b4bb588",
+  "prefix": "issue1739_million_cached_20260916",
+  "files": {
+    "evil/complete.json": {
+      "bytes": 2129,
+      "sha256": "141e0ebe53a1219720bdfdbfb13019e58963133dd00042dc52f6ff11391a056b"
+    },
+    "evil/fixed.json": {
+      "bytes": 7397,
+      "sha256": "7ecdb2e20add4ed376100b27ab4f1269dad8e1335b3a6a59f945be38211e9906"
+    },
+    "evil/fixed_bootstraps.npz": {
+      "bytes": 432770,
+      "sha256": "79101889190ebb10086b27e38e1c1131c8e321b8ec1226475bb27e6a4bdbba45"
+    },
+    "evil/fixed_predictions.npz": {
+      "bytes": 926644,
+      "sha256": "494325ba2a8df7a3df6eb1ce9a1d8630da85468fc12a4f3fcd022df4e824657c"
+    },
+    "evil/heldout_deciles.json": {
+      "bytes": 4344,
+      "sha256": "32467a4a80b0e8507593e820ed109c0e3df9255a7e103dc97b48831a8d6abaeb"
+    },
+    "evil/heldout_examples_index.json": {
+      "bytes": 21629,
+      "sha256": "3bf9b475eaf3d33344d777140c3997b60c457034310104a248e3b0b3b40395bf"
+    },
+    "evil/heldout_examples_text.json": {
+      "bytes": 421497,
+      "sha256": "f36698d3c845d4b83473ddd2ce1b3728ef4b889ea4372dc13a4093c0b0997a59"
+    },
+    "evil/regression.json": {
+      "bytes": 11984,
+      "sha256": "1d17a373789b7b6712404ca038a10c6612f3b925931585a1c42c5abde098d805"
+    },
+    "evil/regression_bootstraps.npz": {
+      "bytes": 384770,
+      "sha256": "044a3229f4b8a11155d73bb7394c7929296d0991e3a91a50bdd3f9d83dd30fe9"
+    },
+    "evil/regression_context_covariance.npy": {
+      "bytes": 17896,
+      "sha256": "5b2bdec2da1ebf301de3ee071ee468af01ad8dedd2a39271171cd3f6fc4662b6"
+    },
+    "evil/regression_mapped_answer.npy": {
+      "bytes": 17896,
+      "sha256": "6393b20573e6587d3c983b67f817b544621da9a17478842007cd2f655af9da44"
+    },
+    "evil/regression_predictions.npz": {
+      "bytes": 837164,
+      "sha256": "04a9680d9b26e224a8de2a37312271410b73059e198670fe6933ea3c44e944fe"
+    },
+    "evil/regression_raw_context.npy": {
+      "bytes": 17896,
+      "sha256": "f1c67649fad16c1c0534c57c760db47e3bbe249ed9bcc7c7c4950c32e0fbbaef"
+    },
+    "evil/regression_shuffled_seed0.npy": {
+      "bytes": 17896,
+      "sha256": "0656d6923cdbbcb746950ac8c3bc89f507227d0fd8f71035a1cf8851875fb46f"
+    },
+    "evil/regression_shuffled_seed1.npy": {
+      "bytes": 17896,
+      "sha256": "d345abd44d95fcfa0fcbfcebad09928c8b5049add9605f7e501ccb654ee2da72"
+    },
+    "evil/regression_shuffled_seed2.npy": {
+      "bytes": 17896,
+      "sha256": "95ac9d2cf0a8c91f2f9f95065b37f04390cf8cb3318b0cdd64b05397e4eb630d"
+    },
+    "evil/regression_shuffled_seed3.npy": {
+      "bytes": 17896,
+      "sha256": "7db60d28443648e9e1808189d0b2b2ccf662f81c41e2c2950ac08f90a25c3d66"
+    },
+    "evil/regression_shuffled_seed4.npy": {
+      "bytes": 17896,
+      "sha256": "d43b43f016e3afdb657438e869be2c8939d80eb4cfdb15f5e14d112c928d001d"
+    },
+    "evil/retrieval_weights.npz": {
+      "bytes": 115628,
+      "sha256": "c5a30aeb7edf497af2ac787c78835eaa93090b644eeb6c6c3743f21e30e89fed"
+    },
+    "evil/ridge_selection.json": {
+      "bytes": 3547,
+      "sha256": "e583c41714b915045795b908d3d34ff0b259fb37af8859918839fb06b8d4f567"
+    },
+    "evil/training_audit.json": {
+      "bytes": 1634399,
+      "sha256": "94815feb3acc35ff58256487de5347e78756aec6602df054b283c8b8fb624751"
+    },
+    "hallucination/complete.json": {
+      "bytes": 2129,
+      "sha256": "a696a00461cd1b9dbc8058939e15e307c0a80c4f26e9112b21915256fd0068dd"
+    },
+    "hallucination/fixed.json": {
+      "bytes": 7941,
+      "sha256": "a37fd6024de2bd0be869552000cf2b670a7bfa64ff59cce5b3094ccc4f676645"
+    },
+    "hallucination/fixed_bootstraps.npz": {
+      "bytes": 432772,
+      "sha256": "18b53266bfdc10ae7750111516de0df65e23862611bea8ba423fa954aba82e52"
+    },
+    "hallucination/fixed_predictions.npz": {
+      "bytes": 4258596,
+      "sha256": "40bebde8b95a6353d69e1ff3fcae904d0566a60d491ceb8fb446a12216f2c78b"
+    },
+    "hallucination/heldout_deciles.json": {
+      "bytes": 4476,
+      "sha256": "121258d7ecea7cc934ebc190a9202ee39b20c9c88cd4f3f19553e5325e9c1fae"
+    },
+    "hallucination/heldout_examples_index.json": {
+      "bytes": 22215,
+      "sha256": "80698644d8494fc80448f56db79e20c16bc0757b96e78d0157104d9116c7b85a"
+    },
+    "hallucination/heldout_examples_text.json": {
+      "bytes": 328200,
+      "sha256": "38a5f9b218e4001117e27de5fe960347051964b56a6f53a9d6aeeecc6c3f828b"
+    },
+    "hallucination/regression.json": {
+      "bytes": 12594,
+      "sha256": "686bbb5181eaacf30b84359e35a9c8cc8f75275678b4ba6958f382813925cb89"
+    },
+    "hallucination/regression_bootstraps.npz": {
+      "bytes": 384772,
+      "sha256": "83c4488d4f754d57e5aa2515e6d482ed063159328127bad153e720cc47b1625e"
+    },
+    "hallucination/regression_context_covariance.npy": {
+      "bytes": 57640,
+      "sha256": "4803c07ec9a11088b67b47de33e6fa96e725dab9a8e1a14a78a8d16afe8d52be"
+    },
+    "hallucination/regression_mapped_answer.npy": {
+      "bytes": 57640,
+      "sha256": "0cbee14cbcfa3fbf921dbd33f83bb3bc615afb86c383735c1ae817fd209ca91a"
+    },
+    "hallucination/regression_predictions.npz": {
+      "bytes": 3970396,
+      "sha256": "b78ded44d9018aef1ca9917efbdbf7c17983a953766b868c5aa231fdadab6ec1"
+    },
+    "hallucination/regression_raw_context.npy": {
+      "bytes": 57640,
+      "sha256": "922fa86c6e3cb514421340f0bf7e862ec5183b8a55542a0bbef90aac79f76d2a"
+    },
+    "hallucination/regression_shuffled_seed0.npy": {
+      "bytes": 57640,
+      "sha256": "51cb528f8d7b9a8f7e886ab5a1e901ca90694ab31dde020532e6b303a9b2b917"
+    },
+    "hallucination/regression_shuffled_seed1.npy": {
+      "bytes": 57640,
+      "sha256": "a87bbfcf43747215b485727eb65123c2079ec6e6a07e1a476ef17feebd10239d"
+    },
+    "hallucination/regression_shuffled_seed2.npy": {
+      "bytes": 57640,
+      "sha256": "6aaae8489ba2cb2fa7e295a58b414ab5ccf636b6f49a865d18c182b813fdd380"
+    },
+    "hallucination/regression_shuffled_seed3.npy": {
+      "bytes": 57640,
+      "sha256": "b5a301d45f961d1de5d01910c6315ee0207c009f9094f650e04fec93fc796b88"
+    },
+    "hallucination/regression_shuffled_seed4.npy": {
+      "bytes": 57640,
+      "sha256": "be7b121296d9fa79c37916f7fed11e278e801e586c58e4d6cbaedb0885406704"
+    },
+    "hallucination/retrieval_weights.npz": {
+      "bytes": 115628,
+      "sha256": "4135127f3e338a5f29bcd0950b8b4da2a827bc232e5a19d2efd44d01efaa41df"
+    },
+    "hallucination/ridge_selection.json": {
+      "bytes": 3562,
+      "sha256": "f4ae006efaedf4c3b9cb94898c73e90e3a6c7c02796b5f92c36c453c8c54b12b"
+    },
+    "hallucination/training_audit.json": {
+      "bytes": 3969459,
+      "sha256": "60c3568002228aacf7dde097e0b9e37ed481a3a7afb2ff6e07411c0a6901a93f"
+    },
+    "input_provenance/map_inputs/prepare_complete.json": {
+      "bytes": 1179,
+      "sha256": "508654d4b5289b69f15a8004f8eedeea67e5f4d3365a93d7b898816878ed92a0"
+    },
+    "input_provenance/outputs/map/diagnostics.json": {
+      "bytes": 17612,
+      "sha256": "de75ea1273593f8de2f0a1dd8c80b1f6e7a5c99b690f61538c669a4ff6c61580"
+    },
+    "input_provenance/outputs/map/map_manifest.json": {
+      "bytes": 4324,
+      "sha256": "2b0839f051aaa8a8e0ee6a081c10da8c8e6caffec72c46f71d4ebcb121ddea4a"
+    },
+    "progress.json": {
+      "bytes": 141,
+      "sha256": "9189cfe4e6534d038321a79aa01024cb310463e2d52dd780f7e60f47b1004d9f"
+    },
+    "retrieval/complete.json": {
+      "bytes": 583,
+      "sha256": "b24ad9960b19f4e224258ada7f06208b13c7d3366b8e664d23e9e9f6bb3f6426"
+    },
+    "retrieval/generic_examples.json": {
+      "bytes": 874029,
+      "sha256": "0aa1d59af29ba54a4d270c158fe1728390f57c5ad557a75108d638e66a4fcda2"
+    },
+    "retrieval/generic_score_rows.npy": {
+      "bytes": 7707680,
+      "sha256": "230e7b2d1a732ee54e1672a7f1def533cda8ed0df0ca910e352cccb29ffea684"
+    },
+    "retrieval/generic_scores.npy": {
+      "bytes": 184981376,
+      "sha256": "490c689319d3026365ce5c80754d1b035aa79ac0e460fff38d6b56db5ee34031"
+    },
+    "run_complete.json": {
+      "bytes": 285,
+      "sha256": "f37a79e87064272b7edeb2ce8a8c34a2fb8749339c10fc03e4b374895eb5b6d5"
+    },
+    "run_config.json": {
+      "bytes": 7881,
+      "sha256": "d236eda79b68267015d58b0d34c96f0a53e1d17641e01a0cfbcfff22e0be1729"
+    },
+    "source/fixed_transfer_artifact_inventory.md": {
+      "bytes": 8496,
+      "sha256": "0cf1d1e24d05c53fe7535a453f9bca322a07d58c8f522aedebf6f0062feb5737"
+    },
+    "source/fixed_transfer_plan.md": {
+      "bytes": 24099,
+      "sha256": "84debd54038fe20b2c54d8b90091db4b841711f8ea5136f10cdb9416a8fa4032"
+    },
+    "source/scripts/issue1739_claim4_fold.py": {
+      "bytes": 62574,
+      "sha256": "ba23ff7dc51d52d51de9cae849b8002b975ff305f31231b3c41b595b90b8e0f2"
+    },
+    "source/scripts/issue1739_covariance_ablation.py": {
+      "bytes": 15014,
+      "sha256": "923ed84757866931f73347128032f9fbb8d29e41022e00bc2cd9f85ddba62e27"
+    },
+    "source/scripts/issue1739_covariance_monitor.py": {
+      "bytes": 11525,
+      "sha256": "d5f5a3601a692c1482ba0f76a6b9e613033dcb3a033ce562329afe9ca0295a23"
+    },
+    "source/scripts/issue1739_covariance_stage.py": {
+      "bytes": 16138,
+      "sha256": "742039cb26c4ee6ad08cd07e889b280f5780d8f7a26684ed9c04600dce73433b"
+    },
+    "source/scripts/issue1739_fixed_transfer.py": {
+      "bytes": 34533,
+      "sha256": "f19636ed038e152a55384460261d924dcbca35a79c888dc70433e49674209798"
+    },
+    "source/scripts/issue1739_map963k_slice.py": {
+      "bytes": 13391,
+      "sha256": "d3dbc752556ca17c7893da02b1bd0a58b6468fa5082de02762bf640bbdd6a433"
+    },
+    "source/scripts/issue1739_million_cached.py": {
+      "bytes": 28305,
+      "sha256": "24e3914d849e93ef75ece5c28873c2de9d1983023bdb12fd52464b04493c511f"
+    },
+    "source/scripts/issue1739_million_monitor.py": {
+      "bytes": 11044,
+      "sha256": "90ff8d71de567e1d10b36d1be826f506b313e0b9ec0afa2c5ded65e521c61abc"
+    },
+    "source/scripts/issue1739_result2fair_score.py": {
+      "bytes": 42190,
+      "sha256": "7a489686e0d8bcbdcb82f0080ca73ce8090e8e0dce10bec6887b11598f4733ab"
+    },
+    "source/scripts/issue1739_transfer_figure.py": {
+      "bytes": 7839,
+      "sha256": "744c50d600427787b213d2c27376a66bfbfa56dcaa803a8653a3a8f5a9536849"
+    },
+    "source/scripts/issue1739_transfer_map.py": {
+      "bytes": 28312,
+      "sha256": "a21bace053e223273f65884e07e0c51c165caf3e25c6008a4766e6e38d504344"
+    },
+    "source/scripts/issue1739_transfer_metadata.py": {
+      "bytes": 14857,
+      "sha256": "9607e0df6f9845615cdaf2d0e9b70ffb5f711fa8416480537df21cdcee495eab"
+    },
+    "source/scripts/issue1739_transfer_monitor.py": {
+      "bytes": 12005,
+      "sha256": "7f19e4bab0ab0521ef464385aaad86afb72c0a4a476f1a2e00896a2918b7e1f1"
+    },
+    "source/scripts/issue1739_transfer_stage.py": {
+      "bytes": 6942,
+      "sha256": "f606e8b8373c5194680446b39e126409637fab4ab3e610d254fccdf8e6bb05b3"
+    },
+    "source/scripts/issue779_ffc_n1m_fits.py": {
+      "bytes": 129423,
+      "sha256": "8800a6fd8c18af0518e80d51040ffa2de8269d55661627f86b6bf1ffa85b004b"
+    },
+    "source/src/explore_persona_space/analysis/c2a_plot_style.py": {
+      "bytes": 17437,
+      "sha256": "d706b5b9d7fbce9fd1250496323ddc95ad579ff76f97ebadc1bc3dd38a02259f"
+    },
+    "source/src/explore_persona_space/experiments/issue_1739/arms.py": {
+      "bytes": 92327,
+      "sha256": "ff47238f1498259950702129f8e7f4a1b4a450c3afd81c4ccb81895e6b22101a"
+    },
+    "source/src/explore_persona_space/experiments/issue_1739/generation.py": {
+      "bytes": 23784,
+      "sha256": "b27341dbe38a28c88cb88c24ff0c362e92af13eb69220510e413f69c62d941ba"
+    },
+    "source/src/explore_persona_space/experiments/issue_1739/store_io.py": {
+      "bytes": 23171,
+      "sha256": "4f422770663efbe7ea9fa32d5e162f8d56ef3df8b34aa12dc3b49becafc4240d"
+    },
+    "sycophancy/complete.json": {
+      "bytes": 2128,
+      "sha256": "8f7aab184be07fa80b348698db9ff26dbe7b23477919d8f212faefb9df4a42bb"
+    },
+    "sycophancy/fixed.json": {
+      "bytes": 5241,
+      "sha256": "bb2feafb7f6b8ef8eb8a3ae37035716a3d1477a44799c86d531e80ad04630fa1"
+    },
+    "sycophancy/fixed_bootstraps.npz": {
+      "bytes": 288520,
+      "sha256": "4e538595e2afdd9661ff579398ba4858f664ce1566369ec7bd413c6e8fa78370"
+    },
+    "sycophancy/fixed_predictions.npz": {
+      "bytes": 552068,
+      "sha256": "35195045da514312a5ad68e1ee3e41af2c98c877bf3e9467215b589d067d0f6a"
+    },
+    "sycophancy/heldout_deciles.json": {
+      "bytes": 2197,
+      "sha256": "576a69b6d9fd596b8417bae8f599e3228fc1050d8490b044768e9f9d4f1ff1eb"
+    },
+    "sycophancy/heldout_examples_index.json": {
+      "bytes": 11129,
+      "sha256": "302d56e7496f635508010540f2b72a3291ad9444ad261fd056b40b9187aaf796"
+    },
+    "sycophancy/heldout_examples_text.json": {
+      "bytes": 344434,
+      "sha256": "d7cf5a1b5249de8834dd7b51824a311b2c32c168eaa2c9c858c475a9a48ef86f"
+    },
+    "sycophancy/regression.json": {
+      "bytes": 9483,
+      "sha256": "7752b3c8be6434453cbd63f9eebb06df5ecb7174a14b2a13ae848fc7b54b2fd8"
+    },
+    "sycophancy/regression_bootstraps.npz": {
+      "bytes": 256520,
+      "sha256": "44b43764e0b33af1408ce92a3c25d9c0fe89dbd3d02ab2797d22954bdea2327d"
+    },
+    "sycophancy/regression_context_covariance.npy": {
+      "bytes": 10592,
+      "sha256": "e4f5cebc70392a0aa002942793793021112611795459c7105d2750960e8ab324"
+    },
+    "sycophancy/regression_mapped_answer.npy": {
+      "bytes": 10592,
+      "sha256": "e04fc72694c1add725085d59ea66c69168cb268281ef0e49e82a0c1ea7d225d8"
+    },
+    "sycophancy/regression_predictions.npz": {
+      "bytes": 499108,
+      "sha256": "a8288e34fbcf88a0ab068251a91b5277111c78024fb2b41a339bfdbd6d60ef25"
+    },
+    "sycophancy/regression_raw_context.npy": {
+      "bytes": 10592,
+      "sha256": "b9cb3ddd6e35183ac7e4f0537ab93e0b67c774b14d3a41bcfa6adda2f960613d"
+    },
+    "sycophancy/regression_shuffled_seed0.npy": {
+      "bytes": 10592,
+      "sha256": "87c63f829034e7ad1148c9642e0da42f27a512613c2823926890a21f065bc55d"
+    },
+    "sycophancy/regression_shuffled_seed1.npy": {
+      "bytes": 10592,
+      "sha256": "035607a66fab95446cb139e89815a6f1d597b471d22ab58a9107197449e0178d"
+    },
+    "sycophancy/regression_shuffled_seed2.npy": {
+      "bytes": 10592,
+      "sha256": "11edeba0a471cc7479fc26b06a4a3baa81a3ba1ed3081b4b72f7862933c24777"
+    },
+    "sycophancy/regression_shuffled_seed3.npy": {
+      "bytes": 10592,
+      "sha256": "53dda9741ecfa9f5c4ab681afa0599929f0a04db67b6b27dc0bad74a79d74544"
+    },
+    "sycophancy/regression_shuffled_seed4.npy": {
+      "bytes": 10592,
+      "sha256": "2c9fd4b10bf5f2e9d21c22bc74d4dd17cccdf817ba074bc25fcb1affbfbd6199"
+    },
+    "sycophancy/retrieval_weights.npz": {
+      "bytes": 115628,
+      "sha256": "1022bc7bba3cdd94516057a9d2f67cd57eca1f6c512ab15b78e3c5f38ad17249"
+    },
+    "sycophancy/ridge_selection.json": {
+      "bytes": 3548,
+      "sha256": "b521005f953659318dbf4d0cafcd812c676ff35581613d9013bcf722b9ad60f8"
+    },
+    "sycophancy/training_audit.json": {
+      "bytes": 3876632,
+      "sha256": "af77adc253a604c58d0da32523836398e6a38ebec78410dcf5f497819357261f"
+    },
+    "transforms/complete.json": {
+      "bytes": 483,
+      "sha256": "26ef47bd0cfceedf6ba04f9c531845fc19675089a8e50ac1c288025b6cbf99b1"
+    },
+    "transforms/covariance.json": {
+      "bytes": 544,
+      "sha256": "e528a5b5789757a699faacac0059fef8a8a3c5feb5969d8fbcd38a6913142f2f"
+    },
+    "transforms/covariance.npz": {
+      "bytes": 102818802,
+      "sha256": "1d06b88e400686441f90a4b19a5b5b747f005081414baa140e08df4b2252b18e"
+    },
+    "transforms/inverse.json": {
+      "bytes": 400,
+      "sha256": "26df5237635c3ce47e6ba670b157d425cf0674a64a11c4146f1e2bb3c400d75f"
+    },
+    "transforms/inverse.npz": {
+      "bytes": 205608396,
+      "sha256": "20753e22848ade43400eba332b6dc73bbb84c6958381f765f30b81ecfcca2547"
+    }
+  },
+  "verified_at": 1789625792.27403
+}

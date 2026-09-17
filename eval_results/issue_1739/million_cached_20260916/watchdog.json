@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "notifications": [
+    {
+      "key": "complete",
+      "message": "issue1739-million-cached: experiment completed; outputs verified.",
+      "created_at": 1789625820.239508,
+      "delivered_at": 1789625820.8971777,
+      "last_attempt": 1789625820.239508
+    }
+  ],
+  "recoveries": [],
+  "incident": null,
+  "worker": null,
+  "checked_at": 1789625820.239508,
+  "observed_status": "complete",
+  "reason": "exact-source completion verified by monitor"
+}
