@@ -12913,7 +12913,7 @@
       "title": "Point the Section 4.3 figure generator at the K=5 grid"
     },
     "2673": {
-      "goal": "Inspect whether the Story Imprinting persona prompts form the expected progressive similarity trajectories in Qwen3.8-27B last-context-token representations, using all-layer centered cosine on the same 240 questions without measuring behavioral leakage.",
+      "goal": "Test whether context-vector cosine similarity predicts measured story-imprinting tracer uptake across matched persona conditions, using Qwen3.8-27B as an initial pilot.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/2673",

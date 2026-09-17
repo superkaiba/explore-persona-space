@@ -7,10 +7,9 @@ created_at: '2026-09-17T20:00:03Z'
 has_clean_result: false
 origin_prompt: ok try it on qwen3.8 27b as a pilot first; yes run it end to end
 workflow: v1
-goal: Inspect whether the Story Imprinting persona prompts form the expected progressive
-  similarity trajectories in Qwen3.8-27B last-context-token representations, using
-  all-layer centered cosine on the same 240 questions without measuring behavioral
-  leakage.
+goal: Test whether context-vector cosine similarity predicts measured story-imprinting
+  tracer uptake across matched persona conditions, using Qwen3.8-27B as an initial
+  pilot.
 ---
 # Under ten-persona centering, sarcasm and lists approach the full persona at all 64 Qwen3.8-27B blocks (MODERATE confidence)
 
@@ -27,7 +26,7 @@ goal: Inspect whether the Story Imprinting persona prompts form the expected pro
 
 ## Goal
 
-**This experiment in context:** Inspect whether the Story Imprinting persona prompts form the expected progressive similarity trajectories in Qwen3.8-27B last-context-token representations, using all-layer centered cosine on the same 240 questions without measuring behavioral leakage.
+Test whether context-vector cosine similarity predicts measured story-imprinting tracer uptake across matched persona conditions, using Qwen3.8-27B as an initial pilot.
 
 **Broader narrative:** The pilot applies our existing context-vector measurement to the published persona panel. It asks whether instructions that progressively resemble a target also approach its representation. It does not correlate Qwen vectors with leakage measurements from another model.
 
