@@ -1,16 +1,16 @@
 {
   "path": "figures/paper/c5_regression_regimes.pdf",
   "status": "updated",
-  "source_commit": "1cf55f86103b085829cd4094099bb7c5feb47d4d",
-  "source_sha256": "f4d22538c7b8e0bc33489f3d51cb22d4f66f4771f3a082c3ea47ed5f262d4caf",
+  "source_commit": "f8761dd2180aadfeaf7a30c0f002301196e32b6d",
+  "source_sha256": "0feda98a58c1ac8b1cd0d450685c991eb406195c097f4a14507f8ca82367736f",
   "overleaf_source_commit": "030ffd942ba891e63628569f49bb07d73a8400d5",
   "old_size_pt": [
     942.8571166992188,
-    305.4047546386719
+    254.82473754882812
   ],
   "new_size_pt": [
     942.8571166992188,
-    325.4047546386719
+    274.8247375488281
   ],
   "heading_font_pt": 22,
   "font_sha256": "00fd6f4691ee8884a33b46bf45851b341927c37c30064f558e1befb242971c49",
@@ -23,7 +23,7 @@
       ],
       "headings": [
         {
-          "x": 64.054,
+          "x": 72.774,
           "width": 271.24,
           "text": "Harmful compliance",
           "lines": [
@@ -31,7 +31,7 @@
           ]
         },
         {
-          "x": 357.294,
+          "x": 366.014,
           "width": 271.241,
           "text": "Sycophancy",
           "lines": [
@@ -39,7 +39,7 @@
           ]
         },
         {
-          "x": 650.535,
+          "x": 659.255,
           "width": 280.3221166992188,
           "text": "Hallucination",
           "lines": [
@@ -47,14 +47,14 @@
           ]
         }
       ],
-      "start": 69.77696228027344,
-      "end": 85.51995849609375,
+      "start": 32.98674011230469,
+      "end": 48.729740142822266,
       "cut": [
-        70,
-        85
+        33,
+        48
       ],
       "height": 35,
-      "new_y": 70.0
+      "new_y": 33.0
     }
   ],
   "nonheading_text_unchanged": true,
@@ -63,7 +63,7 @@
     0.0,
     0.0
   ],
-  "output_sha256": "0b798fbb2135b7e81b1495a4c8b66df11aedf006a614e923f2be8a56b2945860",
-  "script_sha256": "3ffc5a386fb9aa2a710674345b14001482d937b8948cf8a46415c41c00f0cf28",
+  "output_sha256": "705437a6996c4ee0cefb5f04868e9d326c6ecbb9427f355a15b7396411424f5b",
+  "script_sha256": "f089cf3dd44156332b3cf52173c52bbd490936096f22985545bee083b66518c5",
   "data_recomputed": false
 }

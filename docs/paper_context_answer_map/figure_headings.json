@@ -27,10 +27,10 @@
       "rows": [
         {
           "remove": [
-            "A  \u00b7  120,716 SAE FEATURES",
-            "B  \u00b7  MEAN COSINE",
-            "C  \u00b7  MEDIAN RATIO",
-            "D  \u00b7  RATE"
+            "A  ·  120,716 SAE FEATURES",
+            "B  ·  MEAN COSINE",
+            "C  ·  MEDIAN RATIO",
+            "D  ·  RATE"
           ],
           "headings": [
             {
@@ -69,13 +69,13 @@
       "rows": [
         {
           "remove": [
-            "A  \u00b7  OLMO-2-7B, LAYER 18",
+            "A  ·  OLMO-2-7B, LAYER 18",
             "Held-out score of each",
             "stage's own map",
-            "B  \u00b7  CONTEXT\u2192ANSWER FITS",
+            "B  ·  CONTEXT→ANSWER FITS",
             "Held-out R2 into each stage's",
             "answers, by context source",
-            "C  \u00b7  MAP TRANSFER",
+            "C  ·  MAP TRANSFER",
             "Retention of the",
             "prior stage's map"
           ],
@@ -127,7 +127,7 @@
     {
       "number": 6,
       "path": "figures/paper/c5_regression_regimes.pdf",
-      "source_sha256": "f4d22538c7b8e0bc33489f3d51cb22d4f66f4771f3a082c3ea47ed5f262d4caf",
+      "source_sha256": "0feda98a58c1ac8b1cd0d450685c991eb406195c097f4a14507f8ca82367736f",
       "rows": [
         {
           "remove": [
@@ -137,17 +137,17 @@
           ],
           "headings": [
             {
-              "x": 64.054,
+              "x": 72.774,
               "width": 271.24,
               "text": "Harmful compliance"
             },
             {
-              "x": 357.294,
+              "x": 366.014,
               "width": 271.241,
               "text": "Sycophancy"
             },
             {
-              "x": 650.535,
+              "x": 659.255,
               "width": 280.3221166992188,
               "text": "Hallucination"
             }
@@ -156,10 +156,10 @@
       ],
       "source_metadata": {
         "path": "figures/paper/c5_regression_regimes.meta.json",
-        "sha256": "b0686f9e79c161166bb31bf64d5f79d0fa2cfd1a1fd35a8d7c59bd4f30ee5350",
+        "sha256": "54e929a7ba39695a4173f2efb6b6555da5ee10e4363b7c38070851349d82f1f9",
         "pdf_link_status": "pdf_hash_matched"
       },
-      "source_commit": "1cf55f86103b085829cd4094099bb7c5feb47d4d"
+      "source_commit": "f8761dd2180aadfeaf7a30c0f002301196e32b6d"
     },
     {
       "number": 7,
@@ -182,14 +182,14 @@
           "remove": [
             "A",
             "Held-out R2 of the ridge map",
-            "B  \u00b7  CHANCE 0.1%",
+            "B  ·  CHANCE 0.1%",
             "Top-1 retrieval of the ridge map"
           ],
           "headings": [
             {
               "x": 76.117,
               "width": 457.627,
-              "text": "A Held-out R\u00b2"
+              "text": "A Held-out R²"
             },
             {
               "x": 555.744,
@@ -212,8 +212,8 @@
       "rows": [
         {
           "remove": [
-            "A  \u00b7  RECONSTRUCTION",
-            "B  \u00b7  RETRIEVAL",
+            "A  ·  RECONSTRUCTION",
+            "B  ·  RETRIEVAL",
             "Variance explained",
             "Answer identification"
           ],
@@ -256,7 +256,7 @@
       "rows": [
         {
           "remove": [
-            "C  \u00b7  CONTROLLED MINIMAL PAIRS",
+            "C  ·  CONTROLLED MINIMAL PAIRS",
             "What the map keeps when one context element changes"
           ],
           "headings": [
@@ -311,7 +311,7 @@
       "rows": [
         {
           "remove": [
-            "A  \u00b7  FORWARD-SELECTED ASSOCIATIONS",
+            "A  ·  FORWARD-SELECTED ASSOCIATIONS",
             "Feature-property concordance",
             "B",
             "Median feature R2 by tier"
@@ -325,7 +325,7 @@
             {
               "x": 654.957,
               "width": 275.90011669921876,
-              "text": "B Feature R\u00b2 by tier"
+              "text": "B Feature R² by tier"
             }
           ]
         }
@@ -343,11 +343,11 @@
       "rows": [
         {
           "remove": [
-            "A  \u00b7  BY PAIR CLASS",
+            "A  ·  BY PAIR CLASS",
             "Answer separation",
-            "B  \u00b7  TWO-ALTERNATIVE CHOICE",
+            "B  ·  TWO-ALTERNATIVE CHOICE",
             "Hit rate by stratum",
-            "C  \u00b7  SPEARMAN BY STRATUM",
+            "C  ·  SPEARMAN BY STRATUM",
             "Loading vs margin"
           ],
           "headings": [
@@ -382,7 +382,7 @@
       "rows": [
         {
           "remove": [
-            "A  \u00b7  SHIFT DIRECTION, BY PAIR CLASS",
+            "A  ·  SHIFT DIRECTION, BY PAIR CLASS",
             "Cosine of predicted and observed shift"
           ],
           "headings": [
@@ -395,7 +395,7 @@
         },
         {
           "remove": [
-            "B  \u00b7  REFUSAL-DIRECTION PROJECTION, BY PAIR CLASS",
+            "B  ·  REFUSAL-DIRECTION PROJECTION, BY PAIR CLASS",
             "Projection on the refusal direction"
           ],
           "headings": [
@@ -408,7 +408,7 @@
         },
         {
           "remove": [
-            "C  \u00b7  SHIFT MAGNITUDE, BY PAIR CLASS",
+            "C  ·  SHIFT MAGNITUDE, BY PAIR CLASS",
             "Predicted over observed shift size"
           ],
           "headings": [
@@ -486,9 +486,9 @@
           "remove": [
             "A",
             "Context space",
-            "B  \u00b7  SAME COLORS AS A",
+            "B  ·  SAME COLORS AS A",
             "In answer space",
-            "C  \u00b7  ARI 0.44 VS A",
+            "C  ·  ARI 0.44 VS A",
             "Answer clusters"
           ],
           "headings": [
@@ -523,9 +523,9 @@
       "rows": [
         {
           "remove": [
-            "A  \u00b7  OWN MAP",
+            "A  ·  OWN MAP",
             "Answer-length control",
-            "B  \u00b7  FULL DATA \u00b7 5 LENGTH BINS",
+            "B  ·  FULL DATA · 5 LENGTH BINS",
             "Variance vs residual by length"
           ],
           "headings": [
@@ -584,7 +584,7 @@
       "rows": [
         {
           "remove": [
-            "REGRESSION READOUTS \u00b7 OOD EVALUATION SETS",
+            "REGRESSION READOUTS · OOD EVALUATION SETS",
             "Mapped answer minus context"
           ],
           "headings": [
