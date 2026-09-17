@@ -1149,11 +1149,11 @@
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      5.107
+      4.714
     ],
     "exported_size_inches": [
       13.095,
-      5.094
+      4.798
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -1167,7 +1167,7 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "A  \u00b7  FIXED ANSWER DIRECTION",
+      "A  \u00b7  CONTRASTIVE DIRECTIONS",
       "Spearman $\\rho$",
       "\u22120.2",
       "0.0",
@@ -1178,18 +1178,15 @@
       "AITA",
       "NQ-Open",
       "SimpleQA",
-      "Predicted answer",
-      "Observed answer",
+      "Answer direction \u2192 predicted answer",
+      "Answer direction \u2192 observed answer",
+      "Context direction \u2192 context",
       "B  \u00b7  PREIMAGE DIRECTION",
-      "Preimage",
-      "Context direction",
-      "C  \u00b7  BEHAVIOR REGRESSION",
-      "Context",
-      "Covariance-whitened"
+      "Preimage direction \u2192 context"
     ]
   },
-  "renderer_sha256": "a381cfd976444595c5c12cf40a6f4b419be314df1c6e6b239f04dfc107c9b10f",
-  "pdf_sha256": "3f11bd1acdc841d114fb97b05f35438f54f78810c4a9bbd684d0870b46f44af6",
-  "png_sha256": "a9b60b1f4889da72fffbfd2fe448a458ea660e4febeca549ea8ebbe6f044443c",
-  "grayscale_sha256": "2f46cf0b9487b46b71d487e7be429579a6515e9bfe85e55d07cd48f39256b3e7"
+  "renderer_sha256": "935781633658fb6357b3591904f32a19f093aae9e0a5c03b347b8c16dd4ec3ab",
+  "pdf_sha256": "670cced993e0fd0ebe04fe1dc1788fd8124d303882dc7688099054f995996360",
+  "png_sha256": "f7b386666f463a559b35100254ffedc302ce0660ca2bbdd9afa456c95ece9f3f",
+  "grayscale_sha256": "b28bcbf4ea70a5d416e5702f2bcf94fe8738bf18a45d68c3e9c1f315187254c2"
 }

@@ -44,3 +44,7 @@ correct, abstained, and fabricated responses. No automated Claude calls were mad
 - Writing-tells hard-ban scan passed. New flags concern meaningful distinctions: conditional versus unconditional scores, conditioning versus chance controls, and full-prompt versus template deduplication.
 - Served PNG bytes match local figure hashes. URLs appear in publication.json.
 - Overleaf main verified at ffe7d6923292916a099bcfb2c8c70429afb20f4f after a fresh fetch and fast-forward push.
+
+## User correction: contrastive projections, 2026-09-17
+
+The main result now compares exactly three fixed projections: the contrastive answer direction on predicted answers and on observed answers, and the contrastive context direction on contexts. Regression/covariance controls remain supplementary in Appendix H. Panel A shows these three arms together; panel B retains the preimage comparison. Abstract and discussion now summarize contrastive directions rather than regression performance. A bounded independent review found no required fixes and rechecked all newly quoted transferred-minus-context direction differences and CIs. Its optional clarification that correlations use mean retained behavior scores per context was applied. All original data estimates remain unchanged, including the improved but still negative NQ score. The corrected plot has distinct markers, readable legends, no clipping, and a verified browser image hash.

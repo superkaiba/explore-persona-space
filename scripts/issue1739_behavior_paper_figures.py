@@ -2,8 +2,8 @@
 
 Reads completed JSON summaries only. No fitting, sampling, or judging occurs.
 All values and pointwise intervals are preserved, including negative results.
-The main figure separates fixed answer-direction scoring, inverse-direction
-scoring, and supervised ridge readouts. The appendix shows paired differences.
+The main figure compares fixed contrastive answer/context projections and
+inverse-direction scoring. Supervised ridge controls remain in the appendix.
 """
 
 from __future__ import annotations
@@ -50,7 +50,7 @@ STYLES = {
     "mapped_answer": (TEAL, "o", TEAL, "Predicted answer"),
     "real_answer": (INK, "x", INK, "Observed answer"),
     "preimage": (TEAL, "D", TEAL, "Preimage"),
-    "context_native": (MUTED, "x", MUTED, "Context direction"),
+    "context_native": (MUTED, "s", PAPER, "Context direction"),
     "raw_context": (MUTED, "x", MUTED, "Context"),
     "context_covariance": (MUTED, "s", PAPER, "Covariance-whitened"),
 }
@@ -144,19 +144,24 @@ def save(fig, frac, out: Path, stem: str, data: dict):
 
 
 def main_figure(data, out):
-    fig, frac = c2a_figure("full", aspect=0.39)
-    axes = fig.subplots(1, 3)
-    fig.subplots_adjust(left=0.12, right=0.99, top=0.90, bottom=0.31, wspace=0.18)
+    fig, frac = c2a_figure("full", aspect=0.36)
+    axes = fig.subplots(1, 2)
+    fig.subplots_adjust(left=0.12, right=0.99, top=0.90, bottom=0.31, wspace=0.25)
     panels = (
-        ("A", "Fixed answer direction", "fixed", ("mapped_answer", "real_answer")),
-        ("B", "Preimage direction", "fixed", ("preimage", "context_native")),
         (
-            "C",
-            "Behavior regression",
-            "regression",
-            ("mapped_answer", "raw_context", "context_covariance"),
+            "A",
+            "Contrastive directions",
+            "fixed",
+            ("mapped_answer", "real_answer", "context_native"),
         ),
+        ("B", "Preimage direction", "fixed", ("preimage", "context_native")),
     )
+    projection_labels = {
+        "mapped_answer": "Answer direction → predicted answer",
+        "real_answer": "Answer direction → observed answer",
+        "context_native": "Context direction → context",
+        "preimage": "Preimage direction → context",
+    }
     for ax, (letter, heading, kind, arms) in zip(axes, panels, strict=True):
         for offset, arm in zip(np.linspace(-0.22, 0.22, len(arms)), arms, strict=True):
             color, marker, face, label = STYLES[arm]
@@ -168,7 +173,7 @@ def main_figure(data, out):
                 color=color,
                 marker=marker,
                 face=face,
-                label=label,
+                label=projection_labels[arm],
             )
         axes_style(
             ax,
