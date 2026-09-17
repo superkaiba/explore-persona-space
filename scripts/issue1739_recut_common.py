@@ -40,6 +40,21 @@ NUMDIR = ROOT / "eval_results/issue_1739/recuts"
 
 BEHAVIORS = ["evil", "sycophancy", "hallucination"]
 
+# Reader-facing names for the behavior keys above.  The keys name the banked
+# artifacts and never change; the manuscript calls the first behavior harmful
+# compliance, so every figure label and panel heading goes through this map.
+BEHAVIOR_DISPLAY = {
+    "evil": "harmful compliance",
+    "sycophancy": "sycophancy",
+    "hallucination": "hallucination",
+}
+
+
+def behavior_display(behavior: str) -> str:
+    """Reader-facing name for one behavior key, unchanged when unmapped."""
+    return BEHAVIOR_DISPLAY.get(behavior, behavior)
+
+
 # Max label budget per behavior (the "operating slice" L).
 LMAX = {"evil": 8000, "sycophancy": 16000, "hallucination": 16000}
 

@@ -59,7 +59,7 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     savefig_paper,
     set_paper_style,
 )
-from issue1739_recut_common import BEHAVIORS, ROOT  # noqa: E402
+from issue1739_recut_common import BEHAVIORS, ROOT, behavior_display  # noqa: E402
 
 # Result 1's corpus-identity labels, imported (not copied) so figures agree by
 # construction (same convention as scripts/issue1739_result2fair_fig.py).
@@ -376,7 +376,7 @@ def draw_panel(ax, panel: dict) -> int:
         rotation_mode="anchor",
     )
     ax.set_xlim(-0.6, len(xs) - 0.4)
-    ax.set_title(panel["title"], loc="left")
+    ax.set_title(behavior_display(panel["title"]), loc="left")
     return n_bars
 
 
@@ -688,7 +688,7 @@ def render_iclr(points: dict, verdicts: dict, roster: str = "regression") -> int
         # roster, whose shorter axes already land on 0.5.
         ax.yaxis.set_major_locator(MultipleLocator(0.5))
         style_axis(ax)
-        panel_header(ax, "", panel["title"], kicker_y=panel_kicker_y)
+        panel_header(ax, "", behavior_display(panel["title"]), kicker_y=panel_kicker_y)
     axes[0].set_ylabel(better_label("Spearman $\\rho$"))
     handles = [
         Patch(
@@ -709,7 +709,7 @@ def render_iclr(points: dict, verdicts: dict, roster: str = "regression") -> int
     # layers and the 95% paired-bootstrap CI definition are all stated in the
     # manuscript caption, so drawing them here duplicated it. Only the legend
     # group heading survives, because it decodes a mark.
-    legend_kicker(fig, 0.08, legend_top, "Predictor")
+    legend_kicker(fig, 0.08, legend_top, "Regression input")
     legend_kwargs = dict(
         loc="upper left",
         frameon=False,

@@ -547,14 +547,14 @@ def make_pair_shift_figure(rows: list[dict]) -> tuple[plt.Figure, float]:
 # standalone wide canvas, so the shared PAPER_OFFSETS do not transfer).
 # (dx, dy) in points from the data point, then ha/va.
 _COMBINED_SPECTRUM_OFFSETS = {
-    "evil": (69, 14, "left", "bottom"),
+    "harmful compliance": (69, 14, "left", "bottom"),
     "sycophancy": (56, 6, "right", "bottom"),
     "hallucination": (-45, 1, "center", "top"),
     "refusal": (14, 9, "left", "bottom"),
     "assistant axis": (3, -47, "right", "top"),
     "casualness": (6, -46, "left", "top"),
     "impoliteness": (-35, -2, "right", "bottom"),
-    "harmful compliance": (-45, -33, "center", "bottom"),
+    "AdvBench harmful requests": (-45, -33, "center", "bottom"),
     "correctness (math)": (79, 11, "center", "center"),
     "correctness (MMLU-Pro)": (81, -3, "left", "center"),
     "correctness (code)": (102, -14, "left", "center"),
@@ -615,11 +615,11 @@ def make_directions_and_pairs_figure(spectrum: dict, rows: list[dict]) -> tuple[
 # combined offsets transfer with only the crowded upper-right cluster retuned.
 _INFO_SPECTRUM_OFFSETS = dict(_COMBINED_SPECTRUM_OFFSETS)
 # The upper-left cluster fans further out than in c3_directions_and_pairs, whose
-# offsets leave "sycophancy refusal evil" and "assistant axis casualness" reading
+# offsets leave "sycophancy refusal harmful compliance" and "assistant axis casualness" reading
 # as single phrases.
 _INFO_SPECTRUM_OFFSETS.update(
     {
-        "evil": (104, 30, "left", "bottom"),
+        "harmful compliance": (104, 30, "left", "bottom"),
         "refusal": (8, 30, "right", "bottom"),
         "casualness": (40, -46, "left", "top"),
         "assistant axis": (-6, -47, "right", "top"),

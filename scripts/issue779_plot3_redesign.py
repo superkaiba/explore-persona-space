@@ -12,13 +12,16 @@ named "useful" direction is then overlaid as a labeled point at
 (its equivalent variance rank + 1, its held-out per-direction R²).
 
 Directions (all read at layer 19 = post-block-19 residual, d=3584):
-  evil / sycophancy / hallucination — #779 persona vectors (28-layer ``r_b``);
+  harmful compliance (the Chen et al. trait whose source artifact is named
+    ``evil``) / sycophancy / hallucination — #779 persona vectors
+    (28-layer ``r_b``);
   refusal — Arditi-style diff-of-means (refuse − engage) over #2356's banked
     armA consolidated context store (29 hidden states; block 19 = index 20);
   assistant axis — #2203 per-layer axis (``axis_by_layer["19"]``);
   casualness — #1434 writing-style persona vector (28-layer ``r_b``);
   impoliteness — #1482 rb4 persona vector (28-layer ``r_b``).
-  harmful compliance — #658 primary persona-vector ``diffmeans`` recipe;
+  AdvBench harmful requests — #658 primary persona-vector ``diffmeans``
+    recipe, AdvBench harmful requests minus the neutral probe pool;
   correctness (math / MMLU-Pro / code) — #2388 matched within-context
     mean(correct answer t1) minus mean(incorrect answer t1), then equal-weight
     averaged over spread contexts.  The three surface directions stay separate
@@ -73,7 +76,13 @@ HIDDEN = 3584
 
 # (name, plot label, provenance one-liner) in plot order.
 ROSTER = [
-    ("evil", "evil", "#779 persona vector r_B (HF issue779_monitoring/r_b/evil.pt)"),
+    # The Chen et al. trait the paper calls harmful compliance; the source
+    # artifact keeps its extraction-time name "evil".
+    (
+        "evil",
+        "harmful compliance",
+        "#779 persona vector r_B (HF issue779_monitoring/r_b/evil.pt)",
+    ),
     (
         "sycophancy",
         "sycophancy",
@@ -107,9 +116,12 @@ ROSTER = [
         "impoliteness",
         "#1482 rb4 persona vector (local data/issue_779/r_b/impolite.pt, #779-recipe extraction)",
     ),
+    # Distinct from the persona vector above: a diff-of-means over answer-side
+    # activations, AdvBench harmful requests minus the neutral probe pool, so
+    # the label names the corpus that built it.
     (
         "harmful_compliance",
-        "harmful compliance",
+        "AdvBench harmful requests",
         "#658 persona-vector primary diffmeans recipe "
         "(HF issue658_theory_assumptions/store/r_b.pt)",
     ),
@@ -377,14 +389,14 @@ def equality_gate(res: dict, banked_path: Path, tol: float = 1e-6) -> dict:
 # rendered PNG.  New points get conservative defaults, then are adjusted after
 # the actual evaluation rather than from their outcomes in advance.
 LABEL_OFFSETS = {
-    "evil": (0, -12, "center", "top"),
+    "harmful compliance": (0, -12, "center", "top"),
     "sycophancy": (-10, 12, "right", "bottom"),
     "hallucination": (-8, -2, "right", "center"),
     "refusal": (16, 12, "left", "bottom"),
     "assistant axis": (28, 7, "left", "bottom"),
     "casualness": (0, 12, "center", "bottom"),
     "impoliteness": (-5, -12, "right", "top"),
-    "harmful compliance": (-10, -10, "right", "top"),
+    "AdvBench harmful requests": (-10, -10, "right", "top"),
     "correctness (math)": (15, 8, "left", "bottom"),
     "correctness (MMLU-Pro)": (15, -8, "left", "top"),
     "correctness (code)": (10, -10, "left", "top"),
@@ -470,14 +482,17 @@ def _display_path(path: Path) -> str:
 # LABEL_OFFSETS above were tuned for the print-size iclr canvas and do not
 # transfer. (dx, dy) in points, then ha/va.
 PAPER_OFFSETS = {
-    "evil": (0, -14, "center", "top"),
+    # "harmful compliance" and "AdvBench harmful requests" are long labels, so
+    # the two rows below them are staggered to keep every label clear of its
+    # neighbours and of the correctness leader lines.
+    "harmful compliance": (-14, -14, "center", "top"),
     "sycophancy": (0, 12, "center", "bottom"),
     "hallucination": (-12, -2, "right", "center"),
     "refusal": (12, -2, "left", "center"),
     "assistant axis": (128, 18, "left", "bottom"),
     "casualness": (30, 16, "left", "bottom"),
-    "impoliteness": (-8, -20, "right", "top"),
-    "harmful compliance": (-10, -28, "right", "top"),
+    "impoliteness": (-30, -26, "right", "top"),
+    "AdvBench harmful requests": (-10, -28, "right", "top"),
     "correctness (math)": (20, 10, "left", "bottom"),
     "correctness (MMLU-Pro)": (20, -10, "left", "top"),
     "correctness (code)": (16, -12, "left", "top"),
