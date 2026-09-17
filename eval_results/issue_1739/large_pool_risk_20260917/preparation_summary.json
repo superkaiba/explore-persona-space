@@ -1,0 +1,66 @@
+{
+  "status": "preparation_complete_judging_blocked",
+  "selection": {
+    "n_map_rows": 963444,
+    "n_response_available_rows": 959844,
+    "n_unique_candidate_prompts": 952067,
+    "n_top_per_method": 200,
+    "n_random": 1000,
+    "seed": 1739,
+    "n_selected_unique_contexts": 2955,
+    "n_required_source_chunks": 1393,
+    "pool_is_map_training_data": true,
+    "answers_are_map_training_targets": true,
+    "behavior_scoring_complete": false,
+    "source_revision": "9d8f789bf034d8f244e1d00e0dbbe6aba6d272c5",
+    "source_score_sha256": "490c689319d3026365ce5c80754d1b035aa79ac0e460fff38d6b56db5ee34031",
+    "map_input_sha256": {
+      "ci.npy": "33f650605b2038c7e76fa8c9571087caf379420e31501099ccf8534d04b33902",
+      "split.npz": "38ac48c125cfc84b22d4bdba9aaeb7147b29ee4e72a93d3b716fc611a1aeb3f9",
+      "map_prompt_hashes.npz": "0db2037115fbfcd1a683c14f392ba4b53723e617bf7e9d58cff45b9af8ad6540"
+    },
+    "methods": {
+      "preimage_cosine": [
+        1,
+        0
+      ],
+      "context_native_cosine": [
+        1,
+        2
+      ],
+      "answer_on_context_cosine": [
+        1,
+        3
+      ],
+      "mapped_answer_projection": [
+        0,
+        1
+      ]
+    }
+  },
+  "responses": {
+    "n_contexts": 2955,
+    "n_source_chunks": 1393,
+    "cached_rollouts_per_context": 1,
+    "source_bytes": 2149336060,
+    "behavior_scoring_complete": false
+  },
+  "archive": {
+    "source_sha": "0500ee6cb0549b6087f7cb9c22fbca3d353b2eb0",
+    "verified_revision": "aaf0e20c5f9be2f5b1512efe3985c4459e777cff",
+    "preparation_complete": true,
+    "behavior_scoring_complete": false,
+    "n_files": 19,
+    "prefix": "issue1739_large_pool_risk_20260917"
+  },
+  "verified_at": "2026-09-17T22:44:14.771946+00:00",
+  "blocked_reason": "Configured OpenAI API key returned401; automated Claude/Anthropic prohibited by user AGENTS.md; authorized working non-Claude judge required",
+  "judge_calls": 0,
+  "new_generation_calls": 0,
+  "gpu_hours": 0,
+  "independent_selection_review": "four_method_review:all12rankings,randomdraw,deduplication,2955unionandindexing reproduced exactly",
+  "exact_prompt_and_response_hash_audit_count": 2955,
+  "independent_archive_verified_files": 19,
+  "tests_passed": 18,
+  "storage_recovery": "Initial shared-data disk capacity guard stopped run before selections; verified input copies moved to root volume, temporary HF source cache to tmpfs; fresh canary, actual output progress, watchdog scheduled ticks and all alerts acknowledged; monitor exitedzero; timerdisabledafterverifiedpreparationcompletion"
+}
