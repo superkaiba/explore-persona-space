@@ -18,7 +18,20 @@ goal: Test whether context-vector cosine similarity predicts measured story-impr
 
 Test whether context-vector cosine similarity predicts measured story-imprinting tracer uptake across matched persona conditions, using Qwen3.8-27B as an initial pilot.
 
-## Current evidence
+## Current evidence: requested metrics without centering
+
+The user requested ordinary cosine and whitened cosine, with no mean subtraction. Full SFL means the combined sarcasm, French closing sentence and numbered-list prompt. Each persona is compared with that prompt's context centroid, so full SFL is a self-comparison fixed at cosine 1 under either metric.
+
+The [completed uncentered reanalysis](https://github.com/superkaiba/explore-persona-space/blob/1e806baca0caa1d18c86e379cc577b6c7d6989af/eval_results/issue_2673/no_centering/README.md) uses the same saved Qwen vectors and the same published Kimi leakage outcomes. Ordinary cosine was computed at all 64 blocks; whitening at the four previously fixed blocks 15/31/47/63. Whitening uses the uncentered second moment of all 2,400 individual context vectors, regularized with the earlier #665/#666 conditioning rule; neither metric subtracts a mean.
+
+At block 63, all six unique conditions give raw Pearson r=0.4617/Spearman rho=0.3714, and whitened r=−0.0234/rho=0.4286. The five-condition omit-self sensitivity gives raw r=0.6112/rho=0.9000 and whitened r=0.5986/rho=1.0000. Full-six results remain primary. Same-battery, rank-deficient whitening can compress disjoint persona means toward orthogonality, so this does not establish improved or worsened general-purpose prediction.
+
+![Ordinary and whitened cosine versus published leakage](https://raw.githubusercontent.com/superkaiba/explore-persona-space/1e806baca0caa1d18c86e379cc577b6c7d6989af/figures/issue_2673/no_centering_leakage_block63.png)
+
+All 300 source chunks were hash-checked, all 2,400 rows occurred once, and reconstructed means matched archived centroids exactly. Five focused tests passed. Independent real-data 5,120-dimensional Cholesky verification matches the final-block whitening within 4.46e-13. Code, matrices, logs, figure and independent review are saved at the linked revision. No new model work occurred. Qwen-versus-Kimi and context-distribution limitations remain; this completes the requested metric reanalysis, not same-model leakage validation.
+
+## Earlier centered diagnostic
+
 
 A reviewed [comparison with published leakage rates](https://github.com/superkaiba/explore-persona-space/blob/4cb67ee32530e97871182807a50050ac9d5de69a/eval_results/issue_2673/published_leakage_comparison.md) now pairs the same six ladder persona conditions. Qwen3.8-27B provides globally centered cosine to the full SFL persona; story-finetuned Kimi-K2.6 provides SFL-associated tracer uptake. The leakage means are reconstructed from the official [Figure 28 vector graphic](https://arxiv.org/html/2609.10883v1/slf_ladder_4cell_tracer_rates.svg), with source hash, coordinates and scalar extraction recorded. No Qwen behavior was measured.
 
