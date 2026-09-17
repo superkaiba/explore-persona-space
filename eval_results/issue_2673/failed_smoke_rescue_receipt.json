@@ -1,0 +1,32 @@
+{
+  "source_sha": "e24537a33b7f4b9f6825b4f157cdaa51115c7c83",
+  "verified_revision": "6967500dfd9394371cf86beeb7665f0f0aedae98",
+  "hf_repo": "superkaiba1/explore-persona-space-data",
+  "hf_prefix": "issue2673_story_persona_qwen38/failed_attempts/e24537a33b7f4b9f6825b4f157cdaa51115c7c83/1789679657687401513",
+  "files": {
+    "capture_chunks.json": {
+      "size": 110,
+      "sha256": "7099db3b97adf3af7d9f6cae7315eac48922e78747dff736c518f1bf2c50a43e",
+      "git_blob_sha1": "e1b3fa8e37b8b1dbc21fbd6b8a9f6e35e8ceb3cf"
+    },
+    "manifest.json": {
+      "size": 45776,
+      "sha256": "b97d53288af783a8c78b2fae1402dffcfe093892a18bffcb2a17d23194ad23cd",
+      "git_blob_sha1": "e9bfbe18066fbf0f9c03d6c81ab1f291127e7e13"
+    },
+    "rows.json": {
+      "size": 2808599,
+      "sha256": "bba76e91550a62c94c42d28da4612ffff03a811142a461f001950b723111b360",
+      "git_blob_sha1": "3c8ef0b1e8fdd150329adccb1486d0ce0bf4d97a"
+    },
+    "smoke.json": {
+      "size": 3984,
+      "sha256": "eb8bf29521d52a70cb582f0a7b2a335c5ac2336b3a268ab9048b1903506e8b6f",
+      "git_blob_sha1": "70d4cd2259465c854850b68860999ebab15d96fa"
+    }
+  },
+  "checked_at": 1789679676.6058865,
+  "status": "failed-attempt-evidence-only; incomplete files are not resume-valid",
+  "excluded_convenience_aliases": {},
+  "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/6967500dfd9394371cf86beeb7665f0f0aedae98/issue2673_story_persona_qwen38/failed_attempts/e24537a33b7f4b9f6825b4f157cdaa51115c7c83/1789679657687401513"
+}
