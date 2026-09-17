@@ -12914,7 +12914,7 @@
     },
     "2673": {
       "goal": "Inspect whether the Story Imprinting persona prompts form the expected progressive similarity trajectories in Qwen3.8-27B last-context-token representations, using all-layer centered cosine on the same 240 questions without measuring behavioral leakage.",
-      "has_clean_result": true,
+      "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/2673",
       "status": "awaiting_promotion",
