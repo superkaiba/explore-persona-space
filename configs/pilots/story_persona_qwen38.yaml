@@ -1,0 +1,25 @@
+defaults:
+  - override hydra/job_logging: disabled
+  - _self_
+phase: prepare
+model:
+  id: Qwen/Qwen3.8-27B
+  revision: 1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0
+  transformers_version: 5.15.0
+  layers: 64
+  hidden_dim: 5120
+  enable_thinking: false
+prompts: configs/pilots/story_persona_prompts.json
+questions: data/assistant_axis/extraction_questions.jsonl
+expected_questions: 240
+capture:
+  batch_rows: 8
+  padded_token_budget: 4096
+  max_context_tokens: 2048
+  parity_relative_tolerance: 0.01
+output_dir: ${oc.env:EPS_STORY_PERSONA_OUT,eval_results/story_persona_qwen38}
+wandb_mode: offline
+hydra:
+  run:
+    dir: .
+  output_subdir: null
