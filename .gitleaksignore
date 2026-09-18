@@ -1497,3 +1497,6 @@ eval_results/issue_2643/direct_edges_tuned/tuning_trials.json:generic-api-key:42
 eval_results/issue_2643/direct_edges_tuned/tuning_trials.json:generic-api-key:425
 eval_results/issue_2643/direct_edges_tuned/tuning_trials.json:generic-api-key:4340
 eval_results/issue_2643/direct_edges_tuned/tuning_trials.json:generic-api-key:910
+# #1739 natural follow-up: verified public source commit 9263556c52a, not an API key.
+tasks/followups_running/1739/events.jsonl:wandb-api-key:1909
+tasks/awaiting_promotion/1739/events.jsonl:wandb-api-key:1909
