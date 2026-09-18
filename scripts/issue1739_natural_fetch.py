@@ -43,6 +43,7 @@ def fetch(observation_path: Path, destination: Path):
             e.path[len(prefix) + 1 :]: e
             for e in hub.retry_transient(
                 lambda: list(
+                    # HUB_VERIFY_RETRY_EXEMPT: Entire pagination is inside hub.retry_transient.
                     HfApi().list_repo_tree(
                         REPO,
                         path_in_repo=prefix,

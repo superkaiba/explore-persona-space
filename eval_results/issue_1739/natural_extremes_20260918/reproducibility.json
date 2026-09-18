@@ -1,0 +1,63 @@
+{
+  "completed_at_utc": "2026-09-18T04:43:22Z",
+  "source_sha": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+  "plan_version": 33,
+  "primary": "q01_s0",
+  "coverage": {
+    "frozen_layers": 7,
+    "ood_datasets": 13,
+    "historical_parity_cells": 76,
+    "unavailable_diagnostics": "E2 context-native structurally zero; endpoint tails without minimum support; map-exposed ID excluded in content sensitivity"
+  },
+  "validation": {
+    "focused_tests_passed": 83,
+    "independent_correlations": 833,
+    "independent_bootstrap_correlations": 416500,
+    "max_abs_error": 1.1102230246251565e-16,
+    "sensitivity_scipy_checks": 768
+  },
+  "artifacts": {
+    "figures": "563fa707eaceebf13be063fa8df7cf337afcbcd7",
+    "selected_examples": "60b3eea8f4b8b5676829125b712e04336ae32272",
+    "map_content_disjoint": "2f97470b6a2f881c598af9df9bfaf9d5a1eea423"
+  },
+  "workers": {
+    "evil": {
+      "chosen_kind": "gcp",
+      "issue": 1739,
+      "ok": true,
+      "phase": "teardown",
+      "pod_name": "eps-issue-1739-nat-evil-0918",
+      "sidecar_finalized": "/home/thomasjiralerspong/explore-persona-space/.claude/cache/issue-1739-nat-evil-0918-handle.json.finalized"
+    },
+    "sycophancy": {
+      "chosen_kind": "gcp",
+      "issue": 1739,
+      "ok": true,
+      "phase": "teardown",
+      "pod_name": "eps-issue-1739-nat-syco-0918",
+      "sidecar_finalized": "/home/thomasjiralerspong/explore-persona-space/.claude/cache/issue-1739-nat-syco-0918-handle.json.finalized"
+    },
+    "hallucination": {
+      "chosen_kind": "gcp",
+      "issue": 1739,
+      "ok": true,
+      "phase": "teardown",
+      "pod_name": "eps-issue-1739-nat-hallu-0918",
+      "sidecar_finalized": "/home/thomasjiralerspong/explore-persona-space/.claude/cache/issue-1739-nat-hallu-0918-handle.json.finalized"
+    }
+  },
+  "monitor": "Completed and delivered acknowledged notification; timer and monitor disabled after artifact-gated teardown.",
+  "generated_new_responses": false,
+  "raw_selected_contexts": 8492,
+  "raw_selected_responses": 42460,
+  "limitations": [
+    "Judgment-selected extraction",
+    "Conditional bootstrap does not resample extraction/maps",
+    "Evil relative tails are weak and small",
+    "SimpleQA observed-answer direction fails at mapped layer23",
+    "Map-exposed extraction prompts remain in sycophancy/hallucination",
+    "Tail sensitivity reverses some mapping advantages",
+    "Exact/LSH exclusion is not semantic duplicate certification"
+  ]
+}
