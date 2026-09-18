@@ -1,0 +1,104 @@
+{
+  "checked_at": 1789752489.664243,
+  "checked_at_utc": "2026-09-18T17:28:09.664243+00:00",
+  "account_scope": "personal",
+  "team_header_sent": false,
+  "expected_personal_identity_verified": true,
+  "poll_interval_seconds": 60,
+  "measured_first_two_checks_seconds": 60.2318058013916,
+  "initial_post_restart_check": 1789752388.2974715,
+  "observation": {
+    "source_sha": "cb794596d9a093b8d3c897352ed64874b8b69d76",
+    "checked_at": 1789752448.5292773,
+    "status": "waiting_for_capacity",
+    "backend_observation": {
+      "status": "pending"
+    },
+    "capacity": {
+      "myself": {
+        "expected_personal_identity_verified": true,
+        "team_memberships": []
+      },
+      "gpuTypes": [
+        {
+          "id": "NVIDIA H200",
+          "memoryInGb": 141,
+          "secure": {
+            "stockStatus": null,
+            "uninterruptablePrice": null,
+            "minMemory": null,
+            "minDisk": null,
+            "minDownload": null
+          },
+          "community": {
+            "stockStatus": null,
+            "uninterruptablePrice": null,
+            "minMemory": null,
+            "minDisk": null,
+            "minDownload": null
+          }
+        }
+      ]
+    }
+  },
+  "watchdog": {
+    "version": 1,
+    "notifications": [],
+    "recoveries": [],
+    "incident": null,
+    "worker": null,
+    "checked_at": 1789752480.2174675,
+    "observed_status": "healthy",
+    "reason": "waiting_for_capacity"
+  },
+  "units": {
+    "eps2673-deepseek-capacity.service": {
+      "MainPID": "2157008",
+      "Result": "success",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "running"
+    },
+    "eps2673-deepseek-capacity-resume.service": {
+      "MainPID": "0",
+      "Result": "success",
+      "LoadState": "loaded",
+      "ActiveState": "inactive",
+      "SubState": "dead"
+    },
+    "eps-watchdog-issue2673-deepseek-capacity.timer": {
+      "Result": "success",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "waiting"
+    }
+  },
+  "no_allocation_attempt_exemptions": [
+    1,
+    2
+  ],
+  "total_historical_attempts": 2,
+  "owned_deepseek_pods": [],
+  "deployment": {
+    "checked_at": 1789752387.976369,
+    "git_revision": "73dfeb45f43db8e53ba40cc21b3cff7884b7c9d8",
+    "files": {
+      "monitor.py": "20e15b0a577e3eeede852ff911e983786143311418e584f08e6030454f0fb9d2",
+      "config.json": "af99b1cd870ba5ece6a8d626354c8f28853b38d371c164421913e498544eebd2",
+      "runbook.md": "0d2aa24698f37d462d74bba9f9520416d44ac95b03ebdb310f817d2bd32f7f52",
+      "watchdog_helper.py": "24df4ba9037e337cad13f0815fd5466784a883e71d72d3f586e64b8f7d9e109c",
+      "personal-review.md": "56e874a604ed69fa0795e288a16a476c95fa33749439cae56bad18fa5fb16c52"
+    },
+    "verified_capacity_losses": [
+      1,
+      2
+    ],
+    "ledger_unchanged_sha256": "803089de66474b2ca95f4fac62db5ff0adbdcd6252bad5bfbb5f8a6a8e3f3a26",
+    "canary_passed_at": 1789752241.4094179,
+    "transport_source_sha256": "64dc8d6fa84f528b5c8e02db9c3007dde4ba2f25848dcc25e181d21fe340d7c4"
+  },
+  "test_count": 87,
+  "independent_review": "PASS",
+  "new_canary_acknowledgement_verified": true,
+  "scheduled_watchdog_tick_verified": true
+}
