@@ -1,0 +1,103 @@
+{
+  "checked_at": 1789705319.1293015,
+  "checked_at_utc": "2026-09-18T04:21:59.129302+00:00",
+  "status": "active_waiting_for_capacity",
+  "check_interval_seconds": 300,
+  "watchdog_interval_seconds": 60,
+  "approved_shape": {
+    "gpu_type": "NVIDIA H200",
+    "gpu_count": 8,
+    "maximum_wall_hours": 2
+  },
+  "remaining_gpu_hours_lower_bound": 16.34579123761919,
+  "max_continuation_attempts_per_day": 2,
+  "monitor_source": {
+    "checked_at": 1789705239.240577,
+    "git_revision": "33f36ae78d66fa22aa7c8b6bd194edf2cef1cbcf",
+    "files": {
+      "monitor.py": "2c6172ca848e9f1bca0b2e7da6381350453cc32cab43f4fcd58c37a6937b2eee",
+      "config.json": "68ba5a5aa3f45da3876f71ef218576296edc63e89041109fb5eddbe90d38ed06",
+      "runbook.md": "a6940a570cf755e7a564b2a454158bb18aec55e4e162c4993b06c018c013ac72",
+      "watchdog_helper.py": "24df4ba9037e337cad13f0815fd5466784a883e71d72d3f586e64b8f7d9e109c",
+      "verify_completed_arm.py": "14dd1396deb8ccfcc21e2bd49316ffe191e844a6a1b860b6cf9fe3e38528f0a1",
+      "review.md": "334bfcea01336210a24ad088b57bd4abfe952af5cd2cbfd34696dc2eb024b0e9"
+    }
+  },
+  "latest_capacity_observation": {
+    "source_sha": "cb794596d9a093b8d3c897352ed64874b8b69d76",
+    "checked_at": 1789705240.2630482,
+    "status": "waiting_for_capacity",
+    "backend_observation": {
+      "status": "pending"
+    },
+    "capacity": {
+      "gpuTypes": [
+        {
+          "id": "NVIDIA H200",
+          "memoryInGb": 141,
+          "secure": {
+            "stockStatus": null,
+            "uninterruptablePrice": null,
+            "minMemory": null,
+            "minDisk": null,
+            "minDownload": null
+          },
+          "community": {
+            "stockStatus": null,
+            "uninterruptablePrice": null,
+            "minMemory": null,
+            "minDisk": null,
+            "minDownload": null
+          }
+        }
+      ]
+    }
+  },
+  "watchdog": {
+    "version": 1,
+    "notifications": [],
+    "recoveries": [],
+    "incident": null,
+    "worker": null,
+    "checked_at": 1789705260.226191,
+    "observed_status": "healthy",
+    "reason": "waiting_for_capacity"
+  },
+  "units": {
+    "eps2673-deepseek-capacity.service": {
+      "MainPID": "1396136",
+      "ExecMainStatus": "0",
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled"
+    },
+    "eps-watchdog-issue2673-deepseek-capacity.timer": {
+      "NextElapseUSecRealtime": "Thu 2026-09-17 21:22:00 PDT",
+      "LastTriggerUSec": "Thu 2026-09-17 21:21:00 PDT",
+      "ActiveState": "active",
+      "SubState": "waiting",
+      "UnitFileState": "enabled"
+    },
+    "eps-watchdog-issue2673-deepseek-capacity.service": {
+      "MainPID": "0",
+      "ExecMainStatus": "0",
+      "ActiveState": "inactive",
+      "SubState": "dead",
+      "UnitFileState": "static"
+    },
+    "eps2673-deepseek-capacity-resume.service": {
+      "MainPID": "0",
+      "ExecMainStatus": "0",
+      "ActiveState": "inactive",
+      "SubState": "dead",
+      "UnitFileState": "static"
+    }
+  },
+  "user_linger": true,
+  "exact_owned_pods": [],
+  "handle_absent": true,
+  "real_recovery_and_acknowledged_notification_canary_passed_at": 1789704888.8898249,
+  "scheduled_watchdog_tick_verified": true,
+  "waiting_messages_suppressed": true,
+  "scientific_source_sha": "cb794596d9a093b8d3c897352ed64874b8b69d76"
+}
